@@ -1,0 +1,430 @@
+{
+  "admin.domain_lists.apply_reject_media": {
+    "defaultMessage": "Aplicar el rechazo de multimedia",
+    "description": "Checkbox of whether the reject_media of a row issues a rejection of media."
+  },
+  "admin.domain_lists.apply_reject_media.description": {
+    "defaultMessage": "Una fila que rechaza multimedia aplica la medida «Rechazar multimedia».",
+    "description": "Description of the checkbox of applying the rejection of media."
+  },
+  "admin.domain_lists.apply_reject_reports": {
+    "defaultMessage": "Aplicar el rechazo de denuncias",
+    "description": "Checkbox of whether the reject_reports of a row issues a rejection of reports."
+  },
+  "admin.domain_lists.apply_reject_reports.description": {
+    "defaultMessage": "Una fila que rechaza denuncias aplica la medida que rechaza las denuncias de ese servidor.",
+    "description": "Description of the checkbox of applying the rejection of reports."
+  },
+  "admin.domain_lists.back": {
+    "defaultMessage": "Volver a las suscripciones",
+    "description": "Link from the pages of one subscription and of a new one back to the list of subscriptions."
+  },
+  "admin.domain_lists.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of a confirmation of the subscription pages that closes it without doing anything."
+  },
+  "admin.domain_lists.column.title": {
+    "defaultMessage": "Suscripción",
+    "description": "Header of the column of a subscription's title in the list of subscriptions."
+  },
+  "admin.domain_lists.create_failed": {
+    "defaultMessage": "No se pudo suscribir a la lista: {reason}",
+    "description": "Error under the form when subscribing failed. {reason} is why."
+  },
+  "admin.domain_lists.delete": {
+    "defaultMessage": "Cancelar suscripción",
+    "description": "Button that deletes a subscription, and of its confirmation."
+  },
+  "admin.domain_lists.delete.confirm.description": {
+    "defaultMessage": "Esta acción no se puede deshacer. Para volver a incorporar la lista, suscríbete de nuevo.",
+    "description": "Text of the confirmation before deleting a subscription."
+  },
+  "admin.domain_lists.delete.confirm.title": {
+    "defaultMessage": "¿Cancelar la suscripción a {title}?",
+    "description": "Title of the confirmation before deleting a subscription. {title} is its name."
+  },
+  "admin.domain_lists.delete.description": {
+    "defaultMessage": "La lista deja de obtenerse. Las medidas que aplicó se mantienen, como si las hubiera aplicado un moderador, a menos que las levantes con ella.",
+    "description": "Description of deleting a subscription."
+  },
+  "admin.domain_lists.delete.lift_actions": {
+    "defaultMessage": "Levantar las medidas que aplicó esta suscripción",
+    "description": "Checkbox in the confirmation of deleting a subscription that lifts its actions too."
+  },
+  "admin.domain_lists.delete.lift_actions.description": {
+    "defaultMessage": "Los seguimientos que terminaron por sus suspensiones no se restablecen.",
+    "description": "Description of the checkbox of lifting the actions of a deleted subscription."
+  },
+  "admin.domain_lists.delete.title": {
+    "defaultMessage": "Cancelar suscripción",
+    "description": "Heading of the section that deletes a subscription."
+  },
+  "admin.domain_lists.delete_failed": {
+    "defaultMessage": "No se pudo eliminar la suscripción: {reason}",
+    "description": "Error in the confirmation when deleting a subscription failed. {reason} is why."
+  },
+  "admin.domain_lists.deleted": {
+    "defaultMessage": "Suscripción a {title} cancelada; sus medidas se mantienen.",
+    "description": "Toast after a subscription was deleted, keeping its actions. {title} is its name."
+  },
+  "admin.domain_lists.deleted_lifted": {
+    "defaultMessage": "Suscripción a {title} cancelada y sus medidas levantadas.",
+    "description": "Toast after a subscription was deleted with its actions lifted. {title} is its name."
+  },
+  "admin.domain_lists.detail.title": {
+    "defaultMessage": "Suscripción a lista de bloqueo",
+    "description": "Title of the page of one subscription to a domain blocklist when its title is not shown."
+  },
+  "admin.domain_lists.domains": {
+    "defaultMessage": "{count, plural, one {# dominio} other {# dominios}}",
+    "description": "How many domains a subscription holds after a fetch."
+  },
+  "admin.domain_lists.drafts.accept": {
+    "defaultMessage": "Aceptar",
+    "description": "Button of a draft that accepts it, and of the confirmation of accepting suspensions."
+  },
+  "admin.domain_lists.drafts.accept_all": {
+    "defaultMessage": "Aceptar todos",
+    "description": "Button that accepts every draft shown."
+  },
+  "admin.domain_lists.drafts.accept_domain": {
+    "defaultMessage": "Aceptar el borrador de {domain}",
+    "description": "Accessible name of the button that accepts a draft. {domain} is its domain."
+  },
+  "admin.domain_lists.drafts.accepted": {
+    "defaultMessage": "{count, plural, one {# borrador aceptado.} other {# borradores aceptados.}}",
+    "description": "Result after drafts were accepted."
+  },
+  "admin.domain_lists.drafts.accepted_missing": {
+    "defaultMessage": "{count, plural, one {# borrador aceptado;} other {# borradores aceptados;}} {missing, plural, one {# ya se había gestionado.} other {# ya se habían gestionado.}}",
+    "description": "Result after drafts were accepted while some had been handled since they were loaded."
+  },
+  "admin.domain_lists.drafts.change.issue": {
+    "defaultMessage": "Aplicar: {kind}",
+    "description": "What accepting a draft does: issue an action. {kind} is the kind of action."
+  },
+  "admin.domain_lists.drafts.change.lift": {
+    "defaultMessage": "Levantar: {kind}",
+    "description": "What accepting a draft does: lift an action the subscription issued. {kind} is the kind of action."
+  },
+  "admin.domain_lists.drafts.column.change": {
+    "defaultMessage": "Cambio",
+    "description": "Header of the column of what accepting a draft does."
+  },
+  "admin.domain_lists.drafts.column.domain": {
+    "defaultMessage": "Dominio",
+    "description": "Header of the column of a draft's domain."
+  },
+  "admin.domain_lists.drafts.confirm.description": {
+    "defaultMessage": "No se envía nada a estos dominios ni a sus subdominios ni se acepta nada de ellos, y sus cuentas y publicaciones quedan ocultas. Se terminan los seguimientos entre las personas de aquí y sus cuentas, y levantar la suspensión no los restablece.",
+    "description": "Text of the confirmation before accepting drafts that suspend domains."
+  },
+  "admin.domain_lists.drafts.confirm.title": {
+    "defaultMessage": "{count, plural, one {¿Suspender # dominio?} other {¿Suspender # dominios?}}",
+    "description": "Title of the confirmation before accepting drafts that suspend domains. {count} is how many."
+  },
+  "admin.domain_lists.drafts.count": {
+    "defaultMessage": "{count, plural, one {Hay # borrador en espera.} other {Hay # borradores en espera.}}",
+    "description": "How many drafts of a subscription are waiting."
+  },
+  "admin.domain_lists.drafts.description.automatic": {
+    "defaultMessage": "En el modo automático, aquí solo esperan las gravedades desconocidas y los levantamientos que serían demasiados a la vez.",
+    "description": "Description of the drafts of a subscription in the automatic mode."
+  },
+  "admin.domain_lists.drafts.description.draft": {
+    "defaultMessage": "En el modo borrador, aquí espera cada cambio de la lista. Aceptar un borrador aplica o levanta la medida para la suscripción; un borrador rechazado solo vuelve cuando la lista cambia esa fila.",
+    "description": "Description of the drafts of a subscription in the draft mode."
+  },
+  "admin.domain_lists.drafts.empty": {
+    "defaultMessage": "No hay borradores en espera",
+    "description": "Heading of the empty state of the drafts of a subscription."
+  },
+  "admin.domain_lists.drafts.failed": {
+    "defaultMessage": "No se pudieron gestionar los borradores: {reason}",
+    "description": "Error when accepting or rejecting drafts failed. {reason} is why."
+  },
+  "admin.domain_lists.drafts.reject": {
+    "defaultMessage": "Rechazar",
+    "description": "Button of a draft that rejects it."
+  },
+  "admin.domain_lists.drafts.reject_all": {
+    "defaultMessage": "Rechazar todos",
+    "description": "Button that rejects every draft shown."
+  },
+  "admin.domain_lists.drafts.reject_domain": {
+    "defaultMessage": "Rechazar el borrador de {domain}",
+    "description": "Accessible name of the button that rejects a draft. {domain} is its domain."
+  },
+  "admin.domain_lists.drafts.rejected": {
+    "defaultMessage": "{count, plural, one {# borrador rechazado.} other {# borradores rechazados.}}",
+    "description": "Result after drafts were rejected."
+  },
+  "admin.domain_lists.drafts.rejected_missing": {
+    "defaultMessage": "{count, plural, one {# borrador rechazado;} other {# borradores rechazados;}} {missing, plural, one {# ya se había gestionado.} other {# ya se habían gestionado.}}",
+    "description": "Result after drafts were rejected while some had been handled since they were loaded."
+  },
+  "admin.domain_lists.drafts.title": {
+    "defaultMessage": "Borradores",
+    "description": "Heading of the section of the drafts of a subscription, and caption of their table."
+  },
+  "admin.domain_lists.empty": {
+    "defaultMessage": "No hay suscripciones a listas de bloqueo",
+    "description": "Heading of the empty state of the list of subscriptions."
+  },
+  "admin.domain_lists.empty.description": {
+    "defaultMessage": "Suscríbete a una lista de bloqueo de dominios que publique otro servidor o persona para incorporar sus dominios como medidas de dominio.",
+    "description": "Description of the empty state of the list of subscriptions."
+  },
+  "admin.domain_lists.failures": {
+    "defaultMessage": "{count, plural, one {Ha fallado # vez seguida} other {Ha fallado # veces seguidas}}",
+    "description": "How many fetches of a subscription have failed in a row."
+  },
+  "admin.domain_lists.fetch": {
+    "defaultMessage": "Obtener ahora",
+    "description": "Button that queues a fetch of the subscribed list."
+  },
+  "admin.domain_lists.fetch.done": {
+    "defaultMessage": "Se obtuvo la lista: {count, plural, one {# dominio} other {# dominios}}.",
+    "description": "Result once the queued fetch has read the list. {count} is how many domains the subscription holds."
+  },
+  "admin.domain_lists.fetch.failed": {
+    "defaultMessage": "La obtención falló; no ha cambiado nada.",
+    "description": "Result once the queued fetch has failed."
+  },
+  "admin.domain_lists.fetch.queue_failed": {
+    "defaultMessage": "No se pudo poner en cola la obtención: {reason}",
+    "description": "Error when queueing a fetch failed. {reason} is why."
+  },
+  "admin.domain_lists.fetch.queued": {
+    "defaultMessage": "La obtención está en cola. Su resultado aparecerá aquí cuando se haya ejecutado.",
+    "description": "Result after a fetch was queued."
+  },
+  "admin.domain_lists.fetch_error.forbidden_destination": {
+    "defaultMessage": "la URL lleva a una dirección que no se obtiene",
+    "description": "Why a fetch failed: the URL or a redirect leads to an internal address."
+  },
+  "admin.domain_lists.fetch_error.http_status": {
+    "defaultMessage": "el servidor respondió con un error",
+    "description": "Why a fetch failed: an HTTP status other than success or not modified."
+  },
+  "admin.domain_lists.fetch_error.malformed": {
+    "defaultMessage": "la lista no se puede leer en su formato",
+    "description": "Why a fetch failed: the list is not in the subscription's format."
+  },
+  "admin.domain_lists.fetch_error.network": {
+    "defaultMessage": "no se pudo acceder al servidor",
+    "description": "Why a fetch failed: the server could not be reached or did not answer in time."
+  },
+  "admin.domain_lists.fetch_error.too_large": {
+    "defaultMessage": "la lista supera los 2 MiB",
+    "description": "Why a fetch failed: the list is too large."
+  },
+  "admin.domain_lists.fetch_error.too_many_entries": {
+    "defaultMessage": "la lista tiene más de 5000 filas",
+    "description": "Why a fetch failed: the list has too many rows."
+  },
+  "admin.domain_lists.fetches.column.entry_count": {
+    "defaultMessage": "Dominios",
+    "description": "Header of the column of how many domains the subscription holds after a fetch."
+  },
+  "admin.domain_lists.fetches.column.fetched_at": {
+    "defaultMessage": "Obtenida",
+    "description": "Header of the column of when a list was fetched."
+  },
+  "admin.domain_lists.fetches.column.outcome": {
+    "defaultMessage": "Resultado",
+    "description": "Header of the column of a fetch's outcome."
+  },
+  "admin.domain_lists.fetches.description": {
+    "defaultMessage": "La lista se obtiene cada día. Una suscripción que falla 3 veces seguidas avisa a quienes gestionan las medidas de dominio; una obtención fallida no cambia nada.",
+    "description": "Description of the fetches of a subscription."
+  },
+  "admin.domain_lists.fetches.empty": {
+    "defaultMessage": "Aún no hay obtenciones",
+    "description": "Heading of the empty state of the fetches of a subscription."
+  },
+  "admin.domain_lists.fetches.title": {
+    "defaultMessage": "Obtenciones",
+    "description": "Heading of the section of the fetches of a subscription, and caption of their table."
+  },
+  "admin.domain_lists.format": {
+    "defaultMessage": "Formato",
+    "description": "Label of the format of a subscribed list."
+  },
+  "admin.domain_lists.format.mastodon_csv": {
+    "defaultMessage": "CSV de Mastodon",
+    "description": "Format of a subscribed list: Mastodon's domain block CSV."
+  },
+  "admin.domain_lists.format.mastodon_csv.description": {
+    "defaultMessage": "El CSV de bloqueos de dominios que exporta Mastodon, leído como lo lee una importación.",
+    "description": "Description of the format Mastodon's CSV of a subscribed list."
+  },
+  "admin.domain_lists.format.mastodon_json": {
+    "defaultMessage": "Lista pública de un servidor Mastodon (JSON)",
+    "description": "Format of a subscribed list: the answer of a Mastodon server's public list of domain blocks."
+  },
+  "admin.domain_lists.format.mastodon_json.description": {
+    "defaultMessage": "Los bloqueos de dominios que un servidor Mastodon publica en /api/v1/instance/domain_blocks. Se omiten los dominios ocultos.",
+    "description": "Description of the JSON format of a subscribed list."
+  },
+  "admin.domain_lists.format.plain_text": {
+    "defaultMessage": "Un dominio por línea",
+    "description": "Format of a subscribed list: plain text with one domain on each line."
+  },
+  "admin.domain_lists.format.plain_text.description": {
+    "defaultMessage": "Texto sin formato; cada dominio se interpreta como una suspensión.",
+    "description": "Description of the plain text format of a subscribed list."
+  },
+  "admin.domain_lists.hold.draft_mode": {
+    "defaultMessage": "Modo borrador",
+    "description": "Why a draft waits: the subscription is in the draft mode."
+  },
+  "admin.domain_lists.hold.mass_lift": {
+    "defaultMessage": "En espera: una obtención levantaría demasiadas medidas a la vez",
+    "description": "Why a draft of an automatic subscription waits: the fetch would lift too many actions, which a broken list would do."
+  },
+  "admin.domain_lists.hold.unknown_severity": {
+    "defaultMessage": "En espera: la lista indica una gravedad que este servidor no conoce",
+    "description": "Why a draft of an automatic subscription waits: an unknown severity."
+  },
+  "admin.domain_lists.ignore": {
+    "defaultMessage": "Ninguna",
+    "description": "Choice of what a severity of a subscribed list issues: no action."
+  },
+  "admin.domain_lists.last_fetch": {
+    "defaultMessage": "Última obtención",
+    "description": "Header of the column, and term, of a subscription's last fetch."
+  },
+  "admin.domain_lists.mode": {
+    "defaultMessage": "Modo",
+    "description": "Label of a subscription's mode, and header of its column in the list of subscriptions."
+  },
+  "admin.domain_lists.mode.automatic": {
+    "defaultMessage": "Automático",
+    "description": "Mode of a subscription that applies the list at each fetch."
+  },
+  "admin.domain_lists.mode.automatic.description": {
+    "defaultMessage": "Cada obtención aplica la lista. Las gravedades desconocidas y una obtención que levantaría más de 10 medidas y más de la mitad de ellas siguen esperando como borradores.",
+    "description": "Description of the automatic mode of a subscription."
+  },
+  "admin.domain_lists.mode.description": {
+    "defaultMessage": "Ningún modo levanta ni reemplaza una medida aplicada por un moderador.",
+    "description": "Description of the choice of a subscription's mode."
+  },
+  "admin.domain_lists.mode.draft": {
+    "defaultMessage": "Borradores",
+    "description": "Mode of a subscription in which every change waits for a moderator."
+  },
+  "admin.domain_lists.mode.draft.description": {
+    "defaultMessage": "Lo que la lista añade, cambia y quita espera como borradores hasta que un moderador lo acepte o lo rechace.",
+    "description": "Description of the draft mode of a subscription."
+  },
+  "admin.domain_lists.never_fetched": {
+    "defaultMessage": "Aún no obtenida",
+    "description": "Shown for a subscription whose list has not been fetched yet."
+  },
+  "admin.domain_lists.new.description": {
+    "defaultMessage": "La lista se obtiene justo después de suscribirte y cada día a partir de entonces. Sus filas se convierten en medidas de dominio: como borradores que esperan a un moderador, o en cada obtención en el modo automático. Las medidas aplicadas por moderadores nunca se levantan ni se reemplazan.",
+    "description": "Description of the form of a new subscription to a domain blocklist."
+  },
+  "admin.domain_lists.new.title": {
+    "defaultMessage": "Añadir suscripción",
+    "description": "Button of the list of subscriptions that opens the form of a new one, and the title of that page."
+  },
+  "admin.domain_lists.outcome.applied": {
+    "defaultMessage": "Aplicada",
+    "description": "Outcome of a fetch that read the list and applied it."
+  },
+  "admin.domain_lists.outcome.failed": {
+    "defaultMessage": "Fallida",
+    "description": "Outcome of a fetch that failed and changed nothing."
+  },
+  "admin.domain_lists.outcome.failed_because": {
+    "defaultMessage": "Fallida: {reason}",
+    "description": "Outcome of a failed fetch with why. {reason} is why."
+  },
+  "admin.domain_lists.outcome.failed_status": {
+    "defaultMessage": "Fallida: {reason} (HTTP {status, number})",
+    "description": "Outcome of a failed fetch with why and the HTTP status of the answer. {reason} is why; {status} is the status code."
+  },
+  "admin.domain_lists.outcome.not_modified": {
+    "defaultMessage": "Sin cambios",
+    "description": "Outcome of a fetch whose list had not changed."
+  },
+  "admin.domain_lists.public_comment_from_list": {
+    "defaultMessage": "Copiar los comentarios públicos de la lista",
+    "description": "Checkbox of whether the actions copy the public comment of their row."
+  },
+  "admin.domain_lists.public_comment_from_list.description": {
+    "defaultMessage": "Las medidas toman el comentario público de su fila, que la lista publicada de medidas de dominio puede mostrar.",
+    "description": "Description of the checkbox of copying the public comments of the list."
+  },
+  "admin.domain_lists.rows": {
+    "defaultMessage": "Qué aplican las filas",
+    "description": "Legend of the group of fields of what the rows of a subscribed list issue on this server."
+  },
+  "admin.domain_lists.settings.description": {
+    "defaultMessage": "La URL y el formato no cambian. Al guardar se pone en cola una obtención que aplica la nueva configuración.",
+    "description": "Description of the settings of a subscription."
+  },
+  "admin.domain_lists.settings.save": {
+    "defaultMessage": "Guardar configuración",
+    "description": "Button that saves the settings of a subscription."
+  },
+  "admin.domain_lists.settings.save_failed": {
+    "defaultMessage": "No se pudo guardar la configuración: {reason}",
+    "description": "Error when saving the settings of a subscription failed. {reason} is why."
+  },
+  "admin.domain_lists.settings.saved": {
+    "defaultMessage": "Configuración guardada. Una obtención la aplicará.",
+    "description": "Result after the settings of a subscription were saved."
+  },
+  "admin.domain_lists.settings.title": {
+    "defaultMessage": "Configuración",
+    "description": "Heading of the section of the settings of a subscription."
+  },
+  "admin.domain_lists.settings.unchanged": {
+    "defaultMessage": "No hay nada que guardar.",
+    "description": "Result of saving the settings of a subscription without a change."
+  },
+  "admin.domain_lists.silence_as": {
+    "defaultMessage": "Un silenciamiento de la lista aplica",
+    "description": "Label of the choice of what a row with the severity silence issues; silence is the list's own word."
+  },
+  "admin.domain_lists.submit": {
+    "defaultMessage": "Suscribirse",
+    "description": "Button of the form of a new subscription."
+  },
+  "admin.domain_lists.suspend_as": {
+    "defaultMessage": "Una suspensión de la lista aplica",
+    "description": "Label of the choice of what a row with the severity suspend issues; suspend is the list's own word."
+  },
+  "admin.domain_lists.title": {
+    "defaultMessage": "Suscripciones a listas de bloqueo",
+    "description": "Name of the page of the subscriptions to domain blocklists, in the navigation between the pages of the domain actions screen and as its title."
+  },
+  "admin.domain_lists.title_field": {
+    "defaultMessage": "Nombre",
+    "description": "Label of the field of a subscription's title."
+  },
+  "admin.domain_lists.title_field.description": {
+    "defaultMessage": "Cómo se llama la lista en estas páginas y en el registro de auditoría.",
+    "description": "Description of the field of a subscription's title."
+  },
+  "admin.domain_lists.title_field.required": {
+    "defaultMessage": "Escribe un nombre.",
+    "description": "Error of the field of a subscription's title when it is empty."
+  },
+  "admin.domain_lists.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL of a subscribed list, in the form and on the subscription's page."
+  },
+  "admin.domain_lists.url.description": {
+    "defaultMessage": "Una URL https. Si la URL o una redirección lleva a una dirección interna, la obtención falla.",
+    "description": "Description of the field of the URL of a subscribed list."
+  },
+  "admin.domain_lists.url.required": {
+    "defaultMessage": "Escribe la URL de la lista.",
+    "description": "Error of the field of the URL of a subscribed list when it is empty."
+  }
+}

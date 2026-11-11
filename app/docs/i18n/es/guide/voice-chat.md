@@ -26,22 +26,20 @@ Si se interrumpe tu conexión, la llamada muestra «Reconectando…». Una llama
 misma sala desde otro dispositivo, cuando un anfitrión te expulsa, o cuando tú y el anfitrión o un coanfitrión se
 bloquean mutuamente.
 
-<!-- source: starting-a-room f9578f023829 -->
-## Iniciar una sala
+<!-- source: starting-a-room 9a2c5bc39c3c -->
+## Abrir una sala
 
-«Abrir una sala» aparece para las personas a las que los operadores del servidor permiten ser anfitrionas de salas. El
-formulario pide:
+«Abrir una sala» aparece para las personas a las que los operadores del servidor permiten ser anfitrionas de salas. El formulario pide:
 
-- **Nombre**, y un **Icono** y una **Descripción** opcionales.
-- **Etiquetas**: la sala aparece en las páginas de sus etiquetas.
-- **Quién puede ver y unirse**: «Todo el mundo en este servidor», «Seguidores del anfitrión», «Seguidores mutuos del anfitrión» o «Solo personas invitadas».
-- **Quién puede hablar sin pedirlo**: «Todos los que se unen», «Seguidores del anfitrión», «Seguidores mutuos del anfitrión» o «Solo las personas a las que los anfitriones dejan hablar».
-- **Publicación sobre la sala**: una publicación con el enlace a la sala, visible para todas las personas de este servidor o solo para tus seguidores.
-  En un servidor de una sola persona, la publicación sobre una sala para todas las personas de este servidor es para tus seguidores.
+- **Nombre** y, opcionalmente, un **Icono** y una **Descripción**.
+- **Etiquetas**: la sala se muestra en las páginas de sus etiquetas.
+- **Quién puede ver y unirse**: «Todos los de este servidor», «Seguidores del anfitrión», «Personas a las que sigue el anfitrión», «Seguidores mutuos del anfitrión» o «Solo personas invitadas».
+- **Quién puede hablar sin pedirlo**: «Todos los que se unen», «Seguidores del anfitrión», «Personas a las que sigue el anfitrión», «Seguidores mutuos del anfitrión» o «Solo las personas a las que los anfitriones dejan hablar».
+- **Publicar sobre la sala**: una publicación con el enlace a la sala, visible para todos en este servidor o solo para tus seguidores.
+  En un servidor de una sola persona, la publicación sobre una sala para todos en este servidor es para tus seguidores.
 
-«Abrir la sala» la abre. «Cambiar la configuración de la sala» la edita más tarde, e «Invitar» te permite invitar a una
-persona de tu servidor como oyente o como oradora; recibe una notificación y puede ver la sala desde ese momento.
-«Compartir» copia el enlace.
+«Abrir la sala» la abre. «Cambiar la configuración de la sala» la edita más tarde, e «Invitar» te permite invitar a una persona de tu
+servidor como oyente o como orador; recibe una notificación y puede ver la sala desde entonces. «Compartir» copia el enlace.
 
 <!-- source: hosting 3e89a2d62c4a -->
 ## Ser anfitrión

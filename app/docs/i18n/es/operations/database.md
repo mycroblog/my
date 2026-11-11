@@ -87,26 +87,28 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 4996c9dc9019 -->
+<!-- source: upgrading 3882f4bb0751 -->
 ## Actualizar
 
-Una actualización a una versión nueva siempre ejecuta estos pasos en este orden, con la imagen del servidor de la versión **nueva**:
+Una actualización a una versión nueva ejecuta siempre estos pasos en este orden, con la imagen de servidor de la versión **nueva**:
 
-1. **Haz una copia de seguridad** de la base de datos (y, con el almacén de blobs en el sistema de archivos, de los archivos multimedia). Consulta [Hacer la copia](#backing-up).
-2. **`my db upgrade -check`**. No cambia nada. Termina con `1` cuando el esquema nuevo eliminaría datos que la base de datos todavía no ha
-   trasladado, y nombra la versión por la que hay que actualizar primero; en ese caso, detente y sigue [Saltar versiones](#skipping-releases).
-   Una base de datos vacía pasa.
-3. **`my schema apply`**, como en [Inicializar](#initializing-applying-the-schema). Comprueba antes el SQL con `-dry-run`.
-4. **`my db upgrade`**. Ejecuta cada paso de actualización de datos de la versión que la base de datos todavía no ha registrado, reconstruye las
-   proyecciones que esos pasos nombran y registra cada paso. Si se ejecuta de nuevo, no hace nada. Si un paso falla, termina con `1`; los pasos que se completaron
-   siguen registrados, y al ejecutarlo de nuevo se reanuda desde el que falló.
-5. **Inicia el servidor nuevo.** Responde `503` en `/readyz` y registra los pasos que faltan hasta que todos los pasos de actualización de datos de su versión estén registrados.
+1. **Haz una copia de seguridad** de la base de datos (y, con el almacén de blobs en el sistema de archivos, del contenido multimedia). Consulta [Copias de seguridad](#backing-up).
+2. **`my db upgrade -check`**. No cambia nada. Termina con `1` cuando el nuevo esquema eliminaría datos que la base de datos aún no ha
+   trasladado, y nombra la versión por la que actualizar antes; entonces detente y sigue [Saltarse versiones](#skipping-releases).
+   Una base de datos vacía lo supera.
+3. **`my schema apply`**, como en [Inicialización](#initializing-applying-the-schema). Comprueba antes el SQL con `-dry-run`.
+4. **`my db upgrade`**. Ejecuta cada paso de actualización de datos de la versión que la base de datos aún no ha registrado, reconstruye las
+   proyecciones que esos pasos nombran y registra cada paso. Si se vuelve a ejecutar, no hace nada. Si un paso falla, termina con `1`; los pasos que se completaron
+   siguen registrados, y volver a ejecutarlo continúa desde el que falló.
+5. **Arranca el servidor nuevo.** Responde `503` en `/readyz` y registra los pasos que faltan hasta que todos los pasos de actualización de datos de su versión están registrados.
 
-`my serve` nunca ejecuta `my db upgrade -check`, `my schema apply` ni `my db upgrade`; son trabajos puntuales. Ejecuta solo uno de ellos a la vez sobre una base de datos.
+`my serve` nunca ejecuta `my db upgrade -check`, `my schema apply` ni `my db upgrade`; son trabajos puntuales. Ejecuta solo uno de ellos a la vez contra una base de datos.
 
-La mayoría de las versiones no tienen ningún paso de actualización de datos: `my db upgrade -check` muestra `ok: the database can be upgraded to this release` y
-`my db upgrade` muestra `ok: no data upgrade step to run`. Ejecuta ambos de todos modos, para que el procedimiento no dependa de leer todas las notas de cada versión.
-La sección **Actualizar** de las notas de la versión lista los pasos de cada versión.
+La mayoría de las versiones no añaden ningún paso de actualización de datos: `my db upgrade -check` imprime `ok: the database can be upgraded to this release` y, en una
+base de datos que registró los pasos de las versiones anteriores, `my db upgrade` imprime `ok: no data upgrade step to run`. Una base de datos nueva registra
+todos los pasos de la versión en su primer `my db upgrade`, sin nada que reescribir. Ejecuta ambos de todos modos, para que el procedimiento no dependa de leer
+cada nota de versión.
+La sección **Upgrading** de las notas de versión enumera los pasos de cada versión.
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->
 ### El servidor durante una actualización

@@ -1,0 +1,26 @@
+{
+  "thread_mute.action": {
+    "defaultMessage": "Silenciar este hilo",
+    "description": "Item of a post's menu that mutes the thread (conversation) of the post: the user is no longer notified of replies, mentions, boosts, favourites, reactions, or quotes in it; the posts still appear in timelines."
+  },
+  "thread_mute.done": {
+    "defaultMessage": "Hilo silenciado. Sus publicaciones siguen apareciendo en tus cronologías, pero ya no te notifica.",
+    "description": "Toast after the user muted the thread of a post."
+  },
+  "thread_mute.failed": {
+    "defaultMessage": "No se pudo silenciar el hilo: {reason}",
+    "description": "Toast when muting the thread of a post failed. {reason} is the server's or the network's reason."
+  },
+  "thread_mute.undo_action": {
+    "defaultMessage": "Dejar de silenciar este hilo",
+    "description": "Item of a post's menu, in place of 'Mute this thread' while the thread of the post is muted, that ends the mute."
+  },
+  "thread_mute.undo_failed": {
+    "defaultMessage": "No se pudo dejar de silenciar el hilo: {reason}",
+    "description": "Toast when unmuting the thread of a post failed. {reason} is the server's or the network's reason."
+  },
+  "thread_mute.undone": {
+    "defaultMessage": "Hilo no silenciado. Vuelve a notificarte.",
+    "description": "Toast after the user unmuted the thread of a post."
+  }
+}

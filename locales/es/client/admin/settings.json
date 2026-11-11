@@ -71,6 +71,22 @@
     "defaultMessage": "Contacto y miniatura",
     "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
   },
+  "admin.settings.preview.title": {
+    "defaultMessage": "Vistas previas de enlaces",
+    "description": "Heading of the section of the server settings' general page that sets the image of link previews (preview_image)."
+  },
+  "admin.settings.preview.description": {
+    "defaultMessage": "La imagen que muestra un enlace a este servidor en otros servicios, como X, Mastodon y Slack, para las páginas que no tienen imagen propia. Si no hay ninguna, se usa la miniatura, luego el logotipo y, por último, el logotipo de mycroblog.",
+    "description": "Explains the link preview section: which pages use the image and what is used when it is not set, in order."
+  },
+  "admin.settings.preview.image": {
+    "defaultMessage": "Imagen de vista previa",
+    "description": "Heading of the image field of link previews (preview_image)."
+  },
+  "admin.settings.preview.image.description": {
+    "defaultMessage": "Una imagen ancha de 1200 × 630 píxeles se muestra como tarjeta grande.",
+    "description": "Hint under the heading of the preview image: the recommended size."
+  },
   "admin.settings.descriptions.description": {
     "defaultMessage": "La descripción breve es un párrafo que la página de información y otras aplicaciones muestran junto al nombre del servidor; la descripción completa dice más en la página de información. Escríbelas una vez, en cualquier idioma: todo el mundo las ve tal cual, sea cual sea el idioma de su aplicación.",
     "description": "Description of the server's descriptions."
@@ -206,6 +222,78 @@
   "admin.settings.income.plans.description": {
     "defaultMessage": "Todo el mundo ve también cuántos miembros tiene ahora cada plan, nunca sus importes. En un plan con pocos miembros, se puede adivinar quiénes son.",
     "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.funding.title": {
+    "defaultMessage": "Medidor de financiación",
+    "description": "Heading of the part of the costs screen's publication form about the funding meter, which shows how far this month's income goes toward a monthly goal."
+  },
+  "admin.settings.funding.description": {
+    "defaultMessage": "La página de información puede mostrar cuánto de una meta mensual cubren los ingresos de este mes, después de las comisiones del proveedor de pagos. Nunca envía notificaciones.",
+    "description": "Description of the funding meter in the costs screen's publication form."
+  },
+  "admin.settings.funding.visibility": {
+    "defaultMessage": "Qué muestra el medidor",
+    "description": "Label of the choice of what the funding meter publishes (server setting funding_meter_visibility)."
+  },
+  "admin.settings.funding.off": {
+    "defaultMessage": "No mostrarlo",
+    "description": "Choice of not showing the funding meter."
+  },
+  "admin.settings.funding.off.description": {
+    "defaultMessage": "La página de información no tiene medidor.",
+    "description": "Description of not showing the funding meter."
+  },
+  "admin.settings.funding.percent": {
+    "defaultMessage": "Solo el porcentaje",
+    "description": "Choice of showing only the percentage of the monthly goal that this month's income covers."
+  },
+  "admin.settings.funding.percent.description": {
+    "defaultMessage": "Todos ven cuánto de la meta cubren los ingresos de este mes, redondeado hacia abajo al 1 %, y si el mes está cubierto. No se muestra ningún importe.",
+    "description": "Description of showing only the percentage of the funding meter."
+  },
+  "admin.settings.funding.amounts": {
+    "defaultMessage": "El porcentaje y los importes",
+    "description": "Choice of showing the percentage, this month's income, and the goal."
+  },
+  "admin.settings.funding.amounts.description": {
+    "defaultMessage": "Todos ven además los ingresos de este mes y la meta.",
+    "description": "Description of showing the amounts of the funding meter too."
+  },
+  "admin.settings.funding.unavailable": {
+    "defaultMessage": "{reason, select, needs_private {Solo está disponible mientras no se publiquen ni los costos ni los ingresos: si se publica alguno de los dos, el porcentaje delataría el importe oculto.} other {Solo está disponible mientras se publiquen tanto los costos como los ingresos: de lo contrario, los importes delatarían el lado oculto.}}",
+    "description": "Description of a choice of the funding meter that cannot be chosen with the costs and the income published as they are in the form, and why. reason is needs_private (the percentage alone) or needs_public (the amounts)."
+  },
+  "admin.settings.funding.turns_off": {
+    "defaultMessage": "{reason, select, needs_private {Al guardar se desactiva el medidor: el porcentaje solo puede mostrarse mientras no se publiquen ni los costos ni los ingresos.} other {Al guardar se desactiva el medidor: los importes solo pueden mostrarse mientras se publiquen tanto los costos como los ingresos.}}",
+    "description": "Note in the publication form when the costs or the income published as changed in the form rule out the funding meter's choice, which the server then turns off. reason is needs_private or needs_public."
+  },
+  "admin.settings.funding.target.description": {
+    "defaultMessage": "Deja la meta vacía para usar los costos de funcionamiento de este mes, que deben estar en una sola moneda. En un mes sin meta, el medidor no se muestra.",
+    "description": "Description of the monthly goal of the funding meter in the publication form."
+  },
+  "admin.settings.funding.target.amount": {
+    "defaultMessage": "Meta mensual",
+    "description": "Label of the field of the funding meter's monthly goal (server setting funding_meter_target_amount)."
+  },
+  "admin.settings.funding.target.amount.description": {
+    "defaultMessage": "En la unidad principal de la moneda, como 1650 o 12,50.",
+    "description": "Description of the field of the funding meter's monthly goal."
+  },
+  "admin.settings.funding.target.currency": {
+    "defaultMessage": "Moneda de la meta",
+    "description": "Label of the field of the currency of the funding meter's goal (server setting funding_meter_target_currency)."
+  },
+  "admin.settings.funding.target.currency.description": {
+    "defaultMessage": "Un código ISO 4217, como JPY. Vacío: la moneda de los costos de este mes.",
+    "description": "Description of the field of the currency of the funding meter's goal."
+  },
+  "admin.settings.funding.rail": {
+    "defaultMessage": "Mostrarlo también en la columna lateral",
+    "description": "Label of the switch that also shows the funding meter in the third column of wide screens (server setting funding_meter_rail)."
+  },
+  "admin.settings.funding.rail.description": {
+    "defaultMessage": "Quienes han iniciado sesión ven el medidor en la columna junto a la página en pantallas anchas, además de en la página de información.",
+    "description": "Description of showing the funding meter in the third column of wide screens too."
   },
   "admin.settings.supporter_list.title": {
     "defaultMessage": "Lista de mecenas",
@@ -1278,5 +1366,85 @@
   "admin.settings.auto_delete.confirm.confirm": {
     "defaultMessage": "Guardar y notificar",
     "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  },
+  "admin.settings.federation.scope": {
+    "defaultMessage": "Alcance de la federación",
+    "description": "Label of the radio buttons of the federation scope setting (federation_scope): which servers this server federates with."
+  },
+  "admin.settings.federation.scope.description": {
+    "defaultMessage": "Con qué servidores se federa este servidor.",
+    "description": "Description of the federation scope setting."
+  },
+  "admin.settings.federation.scope.open": {
+    "defaultMessage": "Todos los servidores",
+    "description": "Choice of the federation scope: every server that no domain action suspends."
+  },
+  "admin.settings.federation.scope.open.description": {
+    "defaultMessage": "Se federa con todos los servidores que ninguna medida de dominio suspenda.",
+    "description": "Description of the federation scope All servers."
+  },
+  "admin.settings.federation.scope.allowlist": {
+    "defaultMessage": "Solo dominios permitidos",
+    "description": "Choice of the federation scope: only the domains on the allowlist."
+  },
+  "admin.settings.federation.scope.allowlist.description": {
+    "defaultMessage": "Se federa solo con los dominios permitidos y sus subdominios; cualquier otro servidor se trata como suspendido, y las obtenciones de ActivityPub necesitan la firma de un servidor permitido.",
+    "description": "Description of the federation scope Allowed domains only."
+  },
+  "admin.settings.federation.scope.allowlist_link": {
+    "defaultMessage": "Dominios permitidos",
+    "description": "Link from the federation scope to the allowlist; shown to people who manage domain actions."
+  },
+  "admin.settings.federation.scope.confirm.title": {
+    "defaultMessage": "¿Federar solo con dominios permitidos?",
+    "description": "Title of the confirmation before limiting the federation to the allowlist."
+  },
+  "admin.settings.federation.scope.confirm.loading": {
+    "defaultMessage": "Contando los seguimientos que terminaría el cambio…",
+    "description": "Shown in the confirmation of limiting the federation while the count loads."
+  },
+  "admin.settings.federation.scope.confirm.failed": {
+    "defaultMessage": "No se pudieron contar los seguimientos que terminaría el cambio.",
+    "description": "Shown in the confirmation of limiting the federation when the count failed."
+  },
+  "admin.settings.federation.scope.confirm.count_again": {
+    "defaultMessage": "Contar de nuevo",
+    "description": "Button that counts again the follows the switch would end after a failure."
+  },
+  "admin.settings.federation.scope.confirm.none": {
+    "defaultMessage": "No termina ningún seguimiento: todos los servidores a los que siguen las personas de aquí, o por los que son seguidas, están permitidos.",
+    "description": "Shown in the confirmation of limiting the federation when no follow ends."
+  },
+  "admin.settings.federation.scope.confirm.count": {
+    "defaultMessage": "{follows, plural, one {Termina # seguimiento} other {Terminan # seguimientos}}, de {accounts, plural, one {# cuenta local} other {# cuentas locales}} con {servers, plural, one {# servidor} other {# servidores}}.",
+    "description": "How many follows the switch to the allowlist ends, how many local accounts lose one, and with how many servers."
+  },
+  "admin.settings.federation.scope.confirm.top": {
+    "defaultMessage": "Los servidores con más seguimientos que terminan:",
+    "description": "Heading of the list of the servers with the most follows the switch ends."
+  },
+  "admin.settings.federation.scope.confirm.domain": {
+    "defaultMessage": "{domain}: {count, plural, one {# seguimiento} other {# seguimientos}}",
+    "description": "One server of the list of the servers with the most follows the switch ends. {domain} is the domain; {count} how many."
+  },
+  "admin.settings.federation.scope.confirm.permanent": {
+    "defaultMessage": "Los seguimientos terminan para siempre: volver a «Todos los servidores» o permitir un servidor más adelante no los restablece.",
+    "description": "Bullet of the confirmation of limiting the federation: the follows do not come back."
+  },
+  "admin.settings.federation.scope.confirm.notified": {
+    "defaultMessage": "Cada persona de aquí que pierda un seguimiento recibe una notificación con cuántos son.",
+    "description": "Bullet of the confirmation of limiting the federation: the users are notified."
+  },
+  "admin.settings.federation.scope.confirm.signatures": {
+    "defaultMessage": "Se rechazan las obtenciones de ActivityPub sin la firma de un servidor permitido, así que los servidores y rastreadores que no firman dejan de ver las publicaciones públicas.",
+    "description": "Bullet of the confirmation of limiting the federation: unsigned fetches are refused."
+  },
+  "admin.settings.federation.scope.confirm.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the confirmation of limiting the federation that closes it without saving."
+  },
+  "admin.settings.federation.scope.confirm.confirm": {
+    "defaultMessage": "Cambiar y guardar",
+    "description": "Button of the confirmation of limiting the federation that saves the settings."
   }
 }

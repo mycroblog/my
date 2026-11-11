@@ -5,7 +5,7 @@ El chat de voz permite a los usuarios con la sesión iniciada abrir una sala, in
 Esta guía explica esa elección, los servidores STUN y TURN o el servidor multimedia que necesita cada opción, y lo que conviene saber sobre el despliegue, la privacidad y la moderación.
 Toda la configuración que se nombra aquí se describe en la [referencia de configuración](../reference/configuration.md#voice).
 
-<!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
+<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
 ## Elegir cómo viaja el audio
 
 `voice` elige un método para toda la instancia; todas las salas lo usan.
@@ -50,7 +50,7 @@ Los límites mantienen acotado el costo de un servidor multimedia de pago. `0` q
 | Ajuste | Predeterminado | Significado |
 | --- | --- | --- |
 | `voice_max_room_duration` | `4h` | Lo máximo que una sala permanece abierta. Una sala que lo alcanza se termina. |
-| `voice_max_open_rooms` | `10` | Cuántas salas pueden estar abiertas a la vez en este servidor. |
+| `voice_max_open_rooms` | `10` | Cuántas salas pueden estar abiertas a la vez en este servidor. Una sala abierta para una hora programada cuenta desde su apertura, mientras espera a su primer participante. |
 | `voice_sfu_max_participants` | `10` | El tamaño de sala para `livekit` y `sora`. |
 | `voice_p2p_max_participants` | `10` | El tamaño de sala para `p2p`, de 2 a 50. |
 

@@ -122,10 +122,10 @@ La KEK llega al servidor como un archivo montado, nombrado por `MY_KEK_FILE`. Lo
 
 Para mantener la KEK en Cloud KMS desde el principio, sustituye el bloque `kek` de `main.tf` como indica su comentario y activa `cloudkms.googleapis.com`. Para traer una KEK o una clave VAPID propias, define `create = false` en el módulo `kek`, o quita la clave de `generate_p256_keys`, antes de este paso. Un secreto creado en otro lugar solo necesita su ID: pásalo a `secret_env` del módulo app, o al módulo que lo usa.
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
-### 5. Crear lo que necesita la migración
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
+### 5. Crea lo que necesita la migración
 
-La sonda de inicio del servicio espera a `/readyz`, que responde `503` hasta que existe el esquema, así que el esquema tiene que ir primero. Crea el trabajo de migración y aquello de lo que depende, que incluye la dirección del balanceador de carga, ya que la configuración del servidor la nombra:
+La sonda de arranque del servicio espera a `/health/ready`, que responde `503` hasta que existe el esquema, así que el esquema tiene que ir primero. Crea el trabajo de migración y aquello de lo que depende, lo que incluye la dirección del balanceador de carga, ya que los ajustes del servidor la nombran:
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,10 +189,10 @@ tofu apply -var console_enabled=false
 
 El comando no tiene entrada estándar ni terminal, así que un comando que lee de ellos una contraseña o un archivo no puede ejecutarse de este modo. Lo que imprime queda en los registros, así que no ejecutes un comando cuya salida no escribirías allí.
 
-<!-- source: upgrading 1a1e204c5173 -->
-## Actualización
+<!-- source: upgrading 31acbd137681 -->
+## Actualizar
 
-Lee antes [Actualización](database.md#upgrading) y las notas de la versión, y avanza una versión menor cada vez.
+Lee primero [Actualizar](database.md#upgrading) y las notas de la versión, y avanza una versión menor cada vez.
 
 ```sh
 # 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
@@ -208,27 +208,27 @@ pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 
 El script hace lo siguiente y se detiene en el primer paso que falla:
 
-1. Pone el servicio en el [modo de mantenimiento](maintenance.md) con `--maintenance`.
+1. Pasa el servicio al [modo de mantenimiento](maintenance.md) con `--maintenance`.
 2. Da al trabajo de migración la imagen nueva.
 3. Ejecuta `my config check`, `my db upgrade -check`, `my schema apply` y `my db upgrade`, cada uno esperando al anterior.
-4. Despliega la revisión nueva, sin el modo de mantenimiento. Recibe tráfico solo cuando su sonda de inicio pasa en `/readyz`.
+4. Despliega la revisión nueva, sin el modo de mantenimiento. Solo recibe tráfico cuando su sonda de arranque pasa en `/health/ready`.
 
-Sin `--maintenance`, la revisión antigua sigue sirviendo durante los pasos 2 y 3, lo que [no está garantizado que funcione](database.md#the-server-during-an-upgrade). Añade `--allow-destructive` cuando las notas de la versión lo pidan. Fija un digest con `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, lo que recomienda la [lista de comprobación de producción](production-checklist.md#operations).
+Sin `--maintenance`, la revisión antigua sigue sirviendo durante los pasos 2 y 3, lo que [no está garantizado que funcione](database.md#the-server-during-an-upgrade). Añade `--allow-destructive` cuando las notas de la versión lo pidan. Fija un digest con `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, que recomienda la [lista de comprobación de producción](production-checklist.md#operations).
 
-Después define `image` en `terraform.tfvars` con el mismo valor, y `ref` en `main.tf` con la misma versión, seguido de `tofu init` y `tofu plan`. Lee ese plan antes de aplicarlo: los módulos de una versión nueva pueden cambiar recursos. `tofu apply` nunca cambia la imagen de un servicio o trabajo que existe, así que un `image` olvidado no hace daño, pero ese valor es el punto de partida de un trabajo nuevo o de un servicio recreado.
+Después define `image` en `terraform.tfvars` con el mismo valor, y `ref` en `main.tf` con la misma versión, seguido de `tofu init` y `tofu plan`. Lee ese plan antes de aplicarlo: los módulos de una versión nueva pueden cambiar recursos. `tofu apply` nunca cambia la imagen de un servicio o trabajo que existe, así que olvidar `image` no causa daño, pero ese valor es del que partiría un trabajo nuevo o un servicio recreado.
 
-**Cuando un paso falla**, el servicio se queda en su revisión, en el modo de mantenimiento si lo pediste. Corrige la causa y ejecuta el script de nuevo: los pasos se pueden repetir sin riesgo. Para salir del modo de mantenimiento sin actualizar, cuando `my schema apply` no se ha ejecutado:
+**Cuando un paso falla**, el servicio se queda en su revisión, en el modo de mantenimiento si lo pediste. Corrige la causa y vuelve a ejecutar el script: los pasos se pueden repetir sin riesgo. Para salir del modo de mantenimiento sin actualizar, cuando `my schema apply` no se ha ejecutado:
 
 ```sh
 gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
 ```
 
-Para volver atrás después de que el esquema cambió, restaura la copia de seguridad: consulta [Volver a una versión anterior](database.md#rolling-back).
+Para volver atrás después de que el esquema haya cambiado, restaura la copia de seguridad: consulta [Revertir](database.md#rolling-back).
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## Monitorización y alertas
 
-El módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) añade una comprobación de disponibilidad de `/readyz`, políticas de alerta con los nombres de [la guía de actuación](alerts.md) y notificaciones por correo electrónico. Nunca se ha aplicado, así que pruébalo una vez haciendo fallar una comprobación. Activa antes `monitoring.googleapis.com` y lee en su README lo que cuesta la comprobación: cada ejecución despierta una instancia y, a través de `/readyz`, la base de datos, lo que se suma a [la contrapartida del tick](#costs).
+El módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) añade una comprobación de disponibilidad de `/health/live`, políticas de alerta con los nombres de [el runbook](alerts.md) y notificaciones por correo. Nunca se ha aplicado, así que pruébalo una vez haciendo fallar una comprobación. Activa primero `monitoring.googleapis.com` y lee en su README lo que cuesta la comprobación: cada ejecución despierta una instancia, y también la base de datos si la apuntas a `/health/ready`, lo que se suma a [la contrapartida del temporizador](#costs).
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## Cambiar un backend
@@ -334,22 +334,23 @@ Cloud Tasks y Cloud Scheduler no llegan por ninguno de los dos: llaman directame
 
 Para usar la URL propia del servicio u otra cosa delante, como una CDN, quita el bloque `ingress` y su línea en `backends`, y deja `service_ingress` en lo que necesites: es siempre una elección explícita tuya, y `all` deja la URL `run.app` abierta a cualquiera. Define `MY_TRUSTED_PROXIES` en `env` con lo que se conecta al servidor. Lo que pongas delante debe seguir respondiendo en `https://{host}`.
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` pone Cloudflare delante de `host`, con la caché omitida para todo, e `ingress-cloudflare-media` añade un host de multimedia en caché junto a cualquier ingress. Lee antes el README de cada módulo ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). El token va en `CLOUDFLARE_API_TOKEN`. Estos módulos solo se han ejecutado con proveedores simulados.
+`ingress-cloudflare-app` pone Cloudflare delante de `host`, con la caché omitida para todo, e `ingress-cloudflare-media` añade un host de contenido multimedia en caché junto a cualquier ingress. Lee primero el README de cada módulo ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). El token va en `CLOUDFLARE_API_TOKEN`. Estos módulos solo se han ejecutado con proveedores simulados.
 
-- **Tu plan decide el origen.** Cloud Run enruta por `Host`, y Cloudflare ofrece la sustitución de la cabecera Host solo en el plan Enterprise. En cualquier otro plan un origen `*.run.app` hace fallar el plan, así que el origen debe aceptar tu host por sí mismo: conserva un `ingress-gcp-domain-mapping` de ese host, fuera de `backends`, y define `origin_host = "ghs.googlehosted.com"`. Cada host necesita su propia asignación. No está verificado si su certificado se emite y se renueva detrás del proxy, así que empieza con `proxied = false`.
-- **Una cabecera cierra el origen.** `ingress-cloudflare-app` añade una regla de transformación de cabecera de solicitud, y el servidor rechaza con un `403` una solicitud sin la cabecera, salvo las comprobaciones de estado y los `POST` propios de los trabajos, que comprueban sus tokens. Así nadie rodea Cloudflare a través de la URL `run.app`, y un Cloudflare Worker de quien llama no puede elegir la dirección de cliente que ven los límites de frecuencia.
-- **El valor acaba en el estado.** El proveedor de Cloudflare no tiene una forma de solo escritura para el valor de la cabecera de una regla. Genera uno con `openssl rand -hex 32`, añádelo a un secreto con `gcloud secrets versions add`, pasa el mismo valor con `TF_VAR_origin_secret` y mantén el estado en privado. [La guía de la CDN](cdn.md#rotate-the-value) explica cómo rotarlo.
-- **Nada añade la cabecera mientras un registro no pasa por el proxy**, así que el servidor rechaza todo salvo sus comprobaciones de estado: con `proxied = false` para el certificado de una asignación de dominio, configura el secreto después de eso.
-- **Desactiva Bot Fight Mode** en el panel. Cubre toda la zona y ninguna regla puede omitirlo, y un desafío en `/ap/`, `/.well-known/` o `/api/` rompe la federación, porque otros servidores no son navegadores. Los trabajos no pasan por Cloudflare. Los módulos no añaden ningún desafío y desactivan Browser Integrity Check, pero no gestionan Bot Fight Mode. No actives «I'm Under Attack» por la misma razón.
+- **Tu plan decide el origen.** Cloud Run enruta por `Host`, y Cloudflare ofrece la sustitución de la cabecera Host solo en el plan Enterprise. En cualquier otro plan, un origen `*.run.app` hace fallar el plan, así que el origen debe aceptar tu host por sí mismo: conserva un `ingress-gcp-domain-mapping` de ese host, fuera de `backends`, y define `origin_host = "ghs.googlehosted.com"`. Cada host necesita su propia asignación. No está verificado si su certificado se emite y se renueva detrás del proxy, así que empieza con `proxied = false`.
+- **Una cabecera cierra el origen.** `ingress-cloudflare-app` añade una regla de transformación de cabecera de solicitud, y el servidor rechaza con un `403` una solicitud sin la cabecera, salvo las comprobaciones de salud y los `POST` de los propios trabajos, que comprueban sus tokens. Así nadie esquiva Cloudflare por la URL `run.app`, y un Cloudflare Worker de un llamante no puede elegir la dirección de cliente que ven los límites de tasa.
+- **El valor acaba en el estado.** El proveedor de Cloudflare no tiene una forma de solo escritura para el valor de cabecera de una regla. Genera uno con `openssl rand -hex 32`, añádelo a un secreto con `gcloud secrets versions add`, pasa el mismo valor con `TF_VAR_origin_secret` y mantén el estado privado. [La guía de la CDN](cdn.md#rotate-the-value) explica cómo rotarlo.
+- **Nada añade la cabecera mientras un registro no pasa por el proxy**, así que el servidor rechaza todo salvo sus comprobaciones de salud: con `proxied = false` para el certificado de una asignación de dominio, configura el secreto después de eso.
+- **Desactiva Bot Fight Mode** en el panel. Cubre toda la zona y ninguna regla puede omitirlo, y un desafío en `/ap/`, `/.well-known/` o `/api/` rompe la federación, porque los demás servidores no son navegadores. Los trabajos no pasan por Cloudflare. Los módulos no añaden ningún desafío y desactivan Browser Integrity Check, pero no gestionan Bot Fight Mode. No actives «I'm Under Attack» por la misma razón.
+- **Email Address Obfuscation puede quedarse activado.** Reescribe las direcciones de correo del HTML como `[email protected]` y añade un script para restaurarlas, que la Content-Security-Policy del servidor rechaza. Las propias páginas del servidor, como la que indica adónde fue el correo de confirmación, marcan su contenido para que se dejen las direcciones como están.
 - **Activa Always Use HTTPS** en el panel si quieres que `http://` se redirija. Cubre toda la zona, así que los módulos te lo dejan a ti.
-- **Tiempos de espera**: Cloudflare responde `524` cuando el origen no envía nada durante 125 segundos. Los trabajos no se ven afectados, ya que llaman directamente a la URL `run.app`. Las transmisiones envían un latido cada 30 segundos, por debajo del límite de inactividad de 900 segundos. No está verificado si almacena en búfer las transmisiones en un host normal con proxy.
+- **Tiempos de espera**: Cloudflare responde `524` cuando el origen no envía nada durante 125 segundos. Los trabajos no se ven afectados, ya que llaman directamente a la URL `run.app`. Los streams envían un latido cada 30 segundos, por debajo del límite de inactividad de 900 segundos. No está verificado si almacena en búfer los streams en un host normal con proxy.
 - **Subidas**: 100 MB en Free y Pro, por encima de los 32 MiB de Cloud Run, que sigue siendo el límite.
-- **Video**: las condiciones de Cloudflare restringen servir video y una cantidad desproporcionada de archivos grandes en Free, Pro y Business, y puede redirigir el contenido o tomar otras medidas. Decide esto antes de poner video en caché en el host de multimedia.
+- **Video**: los términos de Cloudflare restringen servir video y una cantidad desproporcionada de archivos grandes en Free, Pro y Business, y puede redirigir el contenido o tomar otras medidas. Decide esto antes de poner video en caché en el host de contenido multimedia.
 
-**Un archivo eliminado sigue en caché.** El host de multimedia sigue el `Cache-Control` del servidor, así que un archivo local eliminado puede seguir visible hasta un año, y uno remoto durante `remote_media_cache_ttl_seconds`. El servidor no lo purga. Cuando algo deba desaparecer, purga a mano, en **Caching > Configuration > Custom Purge** en el panel, o:
+**Un archivo eliminado sigue en caché.** El host de contenido multimedia sigue el `Cache-Control` del servidor, así que un archivo local eliminado puede seguir visible hasta un año, y uno remoto durante `remote_media_cache_ttl_seconds`. El servidor no lo purga. Cuando algo deba desaparecer, purga a mano, en **Caching > Configuration > Custom Purge** en el panel, o:
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -358,7 +359,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-Una URL de proxy lleva su `sig` en la cadena de consulta, que forma parte de lo que se guarda en caché, así que indica la URL completa.
+Una URL de proxy lleva su `sig` en la cadena de consulta, que forma parte de lo que se almacena en caché, así que indica la URL completa.
 
 <!-- source: changing-the-kek-backend c5e918ea5c81 -->
 ## Cambiar el backend de la KEK

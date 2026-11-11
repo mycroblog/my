@@ -1,0 +1,226 @@
+{
+  "articles.editor.title": {
+    "defaultMessage": "Nuevo artículo",
+    "description": "Heading and document title of the article editor, where the user writes a long post in Markdown with a title, a summary and a cover image."
+  },
+  "articles.editor.title.edit": {
+    "defaultMessage": "Editar artículo",
+    "description": "Heading and document title of the article editor when it edits an article the user published."
+  },
+  "articles.editor.write": {
+    "defaultMessage": "Escribir un artículo",
+    "description": "Link under the new-post form to the article editor, for a long post with a title in Markdown."
+  },
+  "articles.not_allowed.title": {
+    "defaultMessage": "No puedes escribir artículos aquí",
+    "description": "Heading of the article editor when the server lets only some roles write new articles and the user has none of them."
+  },
+  "articles.not_allowed.body": {
+    "defaultMessage": "En este servidor, solo algunos roles pueden escribir artículos nuevos. Aun así, puedes editar los artículos que publicaste.",
+    "description": "Under the heading of the article editor when the user may not write new articles."
+  },
+  "articles.field.title": {
+    "defaultMessage": "Título",
+    "description": "Label of the field of the article's title in the article editor."
+  },
+  "articles.field.summary": {
+    "defaultMessage": "Resumen",
+    "description": "Label of the field of the article's summary in the article editor."
+  },
+  "articles.field.summary.description": {
+    "defaultMessage": "Se muestra bajo el título allí donde se lista el artículo. Si lo dejas vacío, se genera a partir del comienzo del cuerpo.",
+    "description": "Help under the summary field of the article editor."
+  },
+  "articles.field.cover": {
+    "defaultMessage": "Imagen de portada",
+    "description": "Label of the group of the article's cover image in the article editor: its picker, description and removal."
+  },
+  "articles.cover.choose": {
+    "defaultMessage": "Elegir una imagen de portada",
+    "description": "Button of the article editor that opens the file picker for the article's cover image."
+  },
+  "articles.cover.replace": {
+    "defaultMessage": "Reemplazar la imagen de portada",
+    "description": "Button of the article editor that opens the file picker for another cover image in place of the one chosen."
+  },
+  "articles.cover.remove": {
+    "defaultMessage": "Quitar la imagen de portada",
+    "description": "Button of the article editor that takes the cover image off the article."
+  },
+  "articles.cover.description": {
+    "defaultMessage": "Descripción de la imagen de portada",
+    "description": "Label of the field of the cover image's alternative text in the article editor."
+  },
+  "articles.cover.uploading": {
+    "defaultMessage": "Subiendo la imagen de portada…",
+    "description": "Shown in the article editor while the chosen cover image uploads."
+  },
+  "articles.cover.processing": {
+    "defaultMessage": "El servidor está procesando la imagen de portada.",
+    "description": "Shown in the article editor after the cover image uploaded and before the server has made its renditions."
+  },
+  "articles.cover.failed": {
+    "defaultMessage": "El servidor no pudo procesar esta imagen de portada. Elige otra.",
+    "description": "Shown in the article editor when the server failed to process the uploaded cover image."
+  },
+  "articles.field.body": {
+    "defaultMessage": "Cuerpo",
+    "description": "Label of the text area of the article's body in Markdown, in the article editor."
+  },
+  "articles.field.body.description": {
+    "defaultMessage": "Escrito en Markdown: # inicia un encabezado, **texto** es negrita. Suelta, pega o añade imágenes; escribe la descripción de una imagen entre sus corchetes.",
+    "description": "Help under the body of the article editor. An image goes into the body as ![description](media:ID), and its description is the text between the square brackets."
+  },
+  "articles.format.bold": {
+    "defaultMessage": "Negrita",
+    "description": "Button above the body of the article editor that makes the selected text bold (Ctrl+B)."
+  },
+  "articles.format.link": {
+    "defaultMessage": "Enlace",
+    "description": "Button above the body of the article editor that makes the selected text a link and selects its address to type (Ctrl+K)."
+  },
+  "articles.format.image": {
+    "defaultMessage": "Añadir imágenes",
+    "description": "Button above the body of the article editor that opens the file picker for images to put into the body at the caret."
+  },
+  "articles.images.drop": {
+    "defaultMessage": "Suelta para añadir al cuerpo",
+    "description": "Shown over the body of the article editor while image files are dragged over it."
+  },
+  "articles.images.uploading": {
+    "defaultMessage": "{count, plural, one {Subiendo # imagen…} other {Subiendo # imágenes…}}",
+    "description": "Under the body of the article editor while dropped, pasted or picked images upload; they go into the body once uploaded."
+  },
+  "articles.images.failed": {
+    "defaultMessage": "No se pudo subir la imagen: {reason}",
+    "description": "Under the body or the cover image of the article editor when an image failed to upload. {reason} is the server's or the network's explanation."
+  },
+  "articles.images.unsupported": {
+    "defaultMessage": "En un artículo solo pueden ir imágenes JPEG, PNG, GIF y WebP.",
+    "description": "Shown in the article editor when a dropped, pasted or picked file is not an image the server takes."
+  },
+  "articles.field.tags": {
+    "defaultMessage": "Etiquetas",
+    "description": "Label of the field of the article's hashtags in the article editor."
+  },
+  "articles.field.tags.description": {
+    "defaultMessage": "Sepáralas con espacios, hasta {max, number}. El artículo se lista bajo ellas; un # en el cuerpo sigue siendo texto.",
+    "description": "Help under the hashtags field of the article editor. {max} is the most hashtags an article takes."
+  },
+  "articles.field.language": {
+    "defaultMessage": "Idioma",
+    "description": "Label of the select of the article's language in the article editor."
+  },
+  "articles.field.visibility": {
+    "defaultMessage": "Visibilidad",
+    "description": "Label of the select of who can see the article, in the article editor. An article cannot be a direct message."
+  },
+  "articles.field.sensitive": {
+    "defaultMessage": "Marcar como sensible",
+    "description": "Checkbox of the article editor: readers see the title and the summary, and the cover and the body are folded until they show them."
+  },
+  "articles.field.sensitive.description": {
+    "defaultMessage": "Los lectores ven primero el título y el resumen; la portada y el cuerpo quedan plegados hasta que los muestren.",
+    "description": "Help under the sensitive checkbox of the article editor."
+  },
+  "articles.preview.heading": {
+    "defaultMessage": "Vista previa",
+    "description": "Heading of the region of the article editor that shows the article as readers will see it, rendered by the server."
+  },
+  "articles.preview.empty": {
+    "defaultMessage": "Escribe el cuerpo y aquí aparecerá tal como lo verán los lectores.",
+    "description": "The preview of the article editor while the body is empty."
+  },
+  "articles.preview.failed": {
+    "defaultMessage": "No se pudo mostrar la vista previa: {reason}",
+    "description": "The preview of the article editor when the server could not render the body. {reason} is the server's or the network's explanation."
+  },
+  "articles.preview.summary_from_body": {
+    "defaultMessage": "Generado a partir del comienzo del cuerpo, porque el resumen está vacío",
+    "description": "Under the summary in the preview of the article editor when the user wrote none and the server made it from the body."
+  },
+  "articles.preview.sensitive": {
+    "defaultMessage": "Marcado como sensible: los lectores muestran la portada y el cuerpo por sí mismos.",
+    "description": "In the preview of the article editor when the article is marked as sensitive."
+  },
+  "articles.preview.size": {
+    "defaultMessage": "{bytes, number} de {maxBytes, number} bytes, {images, number} de {maxImages, number} imágenes",
+    "description": "Under the preview of the article editor: the size of the rendered body and the number of its images, against the server's limits. {bytes} and {maxBytes} are numbers of bytes."
+  },
+  "articles.preview.over": {
+    "defaultMessage": "El cuerpo supera el límite del servidor. Acórtalo o quita imágenes antes de publicar.",
+    "description": "Under the preview of the article editor when the rendered body is larger than the server takes, or has more images."
+  },
+  "articles.autosave.saving": {
+    "defaultMessage": "Guardando el borrador…",
+    "description": "In the article editor while it saves the article as a draft on the server, a moment after the user stops typing."
+  },
+  "articles.autosave.saved": {
+    "defaultMessage": "Borrador guardado",
+    "description": "In the article editor once the article is saved as a draft on the server, which opens on any device from the drafts page."
+  },
+  "articles.autosave.failed": {
+    "defaultMessage": "Borrador no guardado",
+    "description": "In the article editor when the draft could not be saved; the reason follows."
+  },
+  "articles.autosave.failed.detail": {
+    "defaultMessage": "No se pudo guardar el borrador: {reason}. Se guardará de nuevo con tu próximo cambio.",
+    "description": "In the article editor when the draft could not be saved. {reason} is the server's or the network's explanation."
+  },
+  "articles.autosave.conflict": {
+    "defaultMessage": "Este borrador se modificó en otro dispositivo desde que lo abriste, así que no se sobrescribió. Tu texto sigue aquí y ya no se guarda mientras escribes.",
+    "description": "In the article editor when the draft was saved on another device meanwhile: nothing was overwritten, the text stays in the editor, and saving stops until the user saves it as a new draft."
+  },
+  "articles.autosave.save_new": {
+    "defaultMessage": "Guardar como borrador nuevo",
+    "description": "Button after the conflict message of the article editor: saves the text as another draft, leaving the other device's draft as it is, and saving goes on as the user types."
+  },
+  "articles.publish": {
+    "defaultMessage": "Publicar",
+    "description": "Submit button of the article editor: publishes the article now."
+  },
+  "articles.save_edit": {
+    "defaultMessage": "Guardar cambios",
+    "description": "Submit button of the article editor when it edits a published article."
+  },
+  "articles.schedule": {
+    "defaultMessage": "Programar",
+    "description": "Button of the article editor that opens the popover to choose when the article is published."
+  },
+  "articles.schedule.scheduled": {
+    "defaultMessage": "Programado para el {date}",
+    "description": "The schedule button of the article editor when the draft is scheduled already. {date} is the date and time."
+  },
+  "articles.published": {
+    "defaultMessage": "Artículo publicado",
+    "description": "Toast after the article editor published the article; the article's page opens."
+  },
+  "articles.updated": {
+    "defaultMessage": "Artículo actualizado",
+    "description": "Toast after the article editor saved the changes of a published article; the article's page opens."
+  },
+  "articles.publish.failed": {
+    "defaultMessage": "No se pudo publicar el artículo: {reason}",
+    "description": "Beside the publish button of the article editor when publishing failed. {reason} is the server's or the network's explanation."
+  },
+  "articles.update.failed": {
+    "defaultMessage": "No se pudieron guardar los cambios: {reason}",
+    "description": "Beside the save button of the article editor when saving the changes of a published article failed. {reason} is the server's or the network's explanation."
+  },
+  "articles.blocked.title": {
+    "defaultMessage": "Ponle un título al artículo.",
+    "description": "Under the title field and beside the publish button of the article editor, after publish or schedule was pressed without a title."
+  },
+  "articles.blocked.text": {
+    "defaultMessage": "Escribe el cuerpo del artículo.",
+    "description": "Under the body and beside the publish button of the article editor, after publish or schedule was pressed with an empty body."
+  },
+  "articles.blocked.tags": {
+    "defaultMessage": "Un artículo admite hasta {max, number} etiquetas.",
+    "description": "Under the hashtags field and beside the publish button of the article editor, after publish was pressed with too many hashtags."
+  },
+  "articles.blocked.uploading": {
+    "defaultMessage": "Espera a que se suban las imágenes.",
+    "description": "Beside the publish button of the article editor, after it was pressed while an image or the cover was still uploading."
+  }
+}

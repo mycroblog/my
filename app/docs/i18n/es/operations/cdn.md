@@ -102,61 +102,61 @@ No sirve cuando es una función de la propia plataforma la que reenvía el tráf
 
 Si no se establece ninguno, no se comprueba nada y el servidor se comporta como si esta sección no existiera.
 
-<!-- source: what-passes-without-the-header 38e1ceda6e34 -->
+<!-- source: what-passes-without-the-header b79877bb91a3 -->
 ### Qué pasa sin la cabecera
 
-| Solicitud | Motivo |
+| Solicitud | Por qué |
 | --- | --- |
-| `GET` o `HEAD` de `/healthz`, `/readyz`, `/api/v1/instance/health` | Los sondeos de la plataforma y los monitores de disponibilidad los llaman directamente |
-| `POST` a rutas `/_internal/` | Cloud Tasks y Cloud Scheduler las llaman en la URL propia del servidor. Llevan su propio token firmado |
+| `GET` o `HEAD` de `/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health` | Las sondas de la plataforma y los monitores de disponibilidad las llaman directamente |
+| `POST` a rutas `/_internal/` | Cloud Tasks y Cloud Scheduler las llaman en la propia URL del servidor. Llevan su propio token firmado |
 
-Todo lo demás necesita la cabecera, también en modo de mantenimiento: el cliente web y sus recursos, `/media/`, la API de cliente, OAuth y ActivityPub, incluidas las entregas de otros servidores.
-Por eso se rechaza todo lo que llame al servidor directamente por su propia dirección, en lugar de pasar por el CDN: un webhook propio, un servidor multimedia de voz, un script. Dirígelo al nombre de host del CDN.
+Todo lo demás necesita la cabecera, también en el modo de mantenimiento: el cliente web y sus recursos, `/media/`, la API de cliente, OAuth y ActivityPub, incluidas las entregas de otros servidores.
+Por tanto, todo lo que llame al servidor directamente por su propia dirección, en lugar de a través de la CDN, se rechaza: un webhook propio, un servidor multimedia de voz, un script. Apúntalo al nombre de host de la CDN.
 
-El puerto de métricas (`metrics_listen`) es un listener aparte, que no es público y no se comprueba.
+El puerto de métricas (`metrics_listen`) es un listener aparte que no es público y no se comprueba.
 
-Una solicitud que no lleva el secreto no influye en el resto del tratamiento, ni siquiera cuando pasa: su IP de cliente es la del par de la conexión, diga lo que diga `X-Forwarded-For`, y se ignoran su `traceparent` y su `X-Request-Id`.
+Una solicitud que no lleva el secreto no tiene voz en el resto del tratamiento, aunque pase: su IP de cliente es la del par de la conexión, diga lo que diga `X-Forwarded-For`, y su `traceparent` y su `X-Request-Id` se ignoran.
 
-<!-- source: set-it-up ee0a17ad2d33 -->
+<!-- source: set-it-up 3804d0cc5c18 -->
 ### Configurarlo
 
-Todos los nombres de host que el CDN reenvía al servidor necesitan la cabecera: `host`, el host de `media_origin` y un `account_domain` aparte si el CDN lo sirve. Un host de archivos multimedia detrás del mismo CDN también la establece, ya que `/media/` se rechaza como todo lo demás.
+Todo nombre de host que la CDN reenvía al servidor necesita la cabecera: `host`, el host de `media_origin` y un `account_domain` aparte si la CDN lo sirve. Un host de contenido multimedia detrás de la misma CDN también la define, ya que `/media/` se rechaza como todo lo demás.
 
-1. Genera el valor y elige un nombre que no use nada más:
+1. Genera el valor y elige un nombre que nada más use:
 
    ```sh
    openssl rand -hex 32
    ```
 
-2. **Establece primero la cabecera en el CDN.** El servidor ignora una cabecera que no conoce, así que este paso aún no cambia nada.
-   - **Cloudflare**: una regla de transformación de cabecera de solicitud (Rules, después Transform Rules y después Modify Request Header), disponible en todos los planes. Haz que coincida con todas las solicitudes entrantes de la zona y elige **Set static** con tu nombre y tu valor. Reemplaza un valor enviado por un cliente. Una regla que cubra solo algunos nombres de host deja bloqueados al resto.
-   - **Amazon CloudFront**: una cabecera personalizada de origen en el origen de cada distribución. También reemplaza el valor de quien visita.
+2. **Define primero la cabecera en la CDN.** El servidor ignora una cabecera que no conoce, así que este paso aún no cambia nada.
+   - **Cloudflare**: una regla de transformación de cabecera de solicitud (Rules, luego Transform Rules, luego Modify Request Header), en cualquier plan. Haz coincidir todas las solicitudes entrantes de la zona y elige **Set static** con tu nombre y valor. Sustituye un valor que envió un cliente. Una regla solo para algunos nombres de host deja a los demás bloqueados.
+   - **Amazon CloudFront**: una cabecera personalizada de origen en el origen de cada distribución. También sustituye el valor del espectador.
    - **Balanceadores de carga de Google Cloud**: una cabecera de solicitud personalizada en el servicio de backend.
-   - Cualquier otro CDN o proxy: la cabecera debe establecerse, no añadirse, en cada solicitud al servidor.
-3. Establece `MY_ORIGIN_SECRET` y `MY_ORIGIN_SECRET_HEADER` y despliega. `my config check` los valida y repite lo que se comprueba, pero no puede ver el CDN.
+   - Cualquier otra CDN o proxy: la cabecera debe definirse, no añadirse, en cada solicitud al servidor.
+3. Define `MY_ORIGIN_SECRET` y `MY_ORIGIN_SECRET_HEADER` y despliega. `my config check` los valida y repite lo que se comprueba, pero no puede ver la CDN.
 4. Comprueba desde fuera, con la dirección del propio origen:
 
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
-Incluye también las direcciones del CDN en [`trusted_proxies`](../reference/configuration.md#trusted_proxies); si no, el servidor ve un único cliente y todas las solicitudes comparten los límites de frecuencia del CDN. `my config check` avisa de ello.
+Incluye también las direcciones de la CDN en [`trusted_proxies`](../reference/configuration.md#trusted_proxies), o el servidor ve un solo cliente y todas las solicitudes comparten los límites de tasa de la CDN; `my config check` avisa de ello.
 
-Una solicitud rechazada recibe el mismo documento de problema `403` que cualquier otra solicitud prohibida, con `Cache-Control: no-store`, sea cual sea el fallo de la cabecera. Nada en la respuesta nombra la cabecera.
+Una solicitud rechazada recibe el mismo documento de problema `403` que cualquier otra solicitud prohibida, con `Cache-Control: no-store`, sea cual sea el modo en que la cabecera era incorrecta. Nada en la respuesta nombra la cabecera.
 
-<!-- source: when-everyone-is-locked-out 47c8f706e5e7 -->
+<!-- source: when-everyone-is-locked-out bd514f7ec98b -->
 ### Cuando todos quedan bloqueados
 
-Una configuración errónea rechaza todas las solicitudes mientras las comprobaciones de salud siguen en `200`, de modo que la plataforma ve un servidor sano y un monitor de disponibilidad de `/healthz` no detecta nada. Las señales son:
+Una configuración incorrecta rechaza todas las solicitudes mientras las comprobaciones de salud siguen en `200`, así que la plataforma ve un servidor sano y un monitor de disponibilidad de `/health/live` no ve nada. Las señales son:
 
-- `403` en todas las páginas a través del CDN.
+- `403` en todas las páginas a través de la CDN.
 - La métrica `my.http.origin_refused` sube mientras las solicitudes de `http.server.request.duration` se detienen.
 - Líneas `http request` en el registro con el estado `403` y sin `http.route`. El registro y las trazas nunca contienen la cabecera, su nombre ni su valor. Una solicitud rechazada no crea ningún span de traza.
 
-Para recuperarte, despliega sin la comprobación: quita `MY_ORIGIN_SECRET` y `MY_ORIGIN_SECRET_HEADER`. Otros servidores reintentan sus entregas, pero mientras tanto las personas no podían llegar al servidor.
-Después compara el nombre y el valor del CDN con la configuración, comprueba que la regla cubre todos los nombres de host y vuelve a establecerlos.
+Para recuperarte, despliega sin la comprobación: quita `MY_ORIGIN_SECRET` y `MY_ORIGIN_SECRET_HEADER`. Otros servidores reintentan sus entregas, pero las personas no pudieron llegar al servidor mientras tanto.
+Después compara el nombre y el valor en la CDN con los ajustes, comprueba que la regla cubre todos los nombres de host y vuelve a definirlos.
 
 <!-- source: rotate-the-value b88f695fde31 -->
 ### Rotar el valor

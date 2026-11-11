@@ -287,6 +287,18 @@
     "defaultMessage": "Tienes una notificación sin leer en {instance}.",
     "description": "Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.event.when": {
+    "defaultMessage": "Cuándo: {when}",
+    "description": "Paragraph of the email of a notification of an event: when it starts. {when} is the date and time of the start in the event's time zone, written as 2026-11-14 21:00 followed by the IANA name of the zone in parentheses, such as (Asia/Tokyo). The email never says where the event is held."
+  },
+  "mail.event.organizer": {
+    "defaultMessage": "Organiza {name}",
+    "description": "Paragraph of the email of a notification of an event: who organizes it. {name} is the display name, or the @handle, of the organizer."
+  },
+  "mail.event.coorganizer": {
+    "defaultMessage": "Coorganiza {name}",
+    "description": "Paragraph of the email of a notification of an event, one for each co-organizer. {name} is the display name, or the @handle, of a co-organizer."
+  },
   "mail.action.open_notification": {
     "defaultMessage": "Abrir",
     "description": "Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications."
@@ -334,6 +346,10 @@
   "mail.group.voice": {
     "defaultMessage": "Chats de voz",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.event": {
+    "defaultMessage": "Eventos",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the invitations, changes, cancellations, reminders, and starts of events. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_report": {
     "defaultMessage": "Denuncias nuevas",
@@ -407,6 +423,18 @@
     "defaultMessage": "Una revisión externa de {instance} sigue fallando",
     "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.admin_domain_list_failing.body": {
+    "defaultMessage": "El servidor {instance} no pudo obtener tres veces seguidas una lista de bloqueo a la que está suscrito. Hasta que una obtención vuelva a funcionar, la lista no cambia ninguna medida de dominio; las medidas que aplicó se mantienen.",
+    "description": "First paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_domain_list_failing.detail": {
+    "defaultMessage": "Abre las suscripciones a listas de bloqueo para ver por qué fallaron las obtenciones.",
+    "description": "Second paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing, before the link."
+  },
+  "mail.admin_domain_list_failing.subject": {
+    "defaultMessage": "Una suscripción a una lista de bloqueo de {instance} sigue fallando",
+    "description": "Subject of the email to a moderator who gets moderator notifications by email: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_hook_appeal.body": {
     "defaultMessage": "Un usuario de {instance} ha apelado una publicación que la revisión automática rechazó, y la apelación está pendiente de los moderadores.",
     "description": "Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none."
@@ -421,6 +449,10 @@
   },
   "mail.group.admin_hook_appeal": {
     "defaultMessage": "Apelaciones de publicaciones rechazadas",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_domain_list_failing": {
+    "defaultMessage": "Suscripciones a listas de bloqueo con fallos",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   }
 }

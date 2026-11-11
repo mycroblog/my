@@ -351,6 +351,14 @@
     "defaultMessage": "No es una traducción automática: es el texto del propio autor.",
     "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
   },
+  "status.translation.browser": {
+    "defaultMessage": "Tu navegador ({browser})",
+    "description": "On the line under a translated post: who translated it, the reader's own browser. {browser} is the browser's product name."
+  },
+  "status.translation.browser_unnamed": {
+    "defaultMessage": "Tu navegador",
+    "description": "On the line under a translated post: who translated it, the reader's own browser, whose name is not known."
+  },
   "status.translation.browser_failed": {
     "defaultMessage": "Tu navegador no pudo traducir esta publicación. Inténtalo de nuevo.",
     "description": "Next to the translate button: the translator built into the browser failed, or lost a mention or a link of the post on the way. The original stays in view."
@@ -399,9 +407,17 @@
     "defaultMessage": "No se pudo traducir esta publicación: {reason}",
     "description": "Next to the translate button: the request failed for another reason, such as no connection. {reason} is the localized reason."
   },
+  "status.translation.from": {
+    "defaultMessage": "Traducido del {language}",
+    "description": "Start of the line under a translated post: what happened. {language} is the name of the language the post was written in, in the UI's language (\"English\")."
+  },
   "status.translation.limit": {
     "defaultMessage": "Se alcanzó el límite mensual de traducciones, así que esta publicación no se tradujo. Podrás traducir de nuevo el mes que viene.",
     "description": "Next to the translate button: the limit of the reader or of the server on translated characters is used up until the next month. The original stays in view."
+  },
+  "status.translation.machine": {
+    "defaultMessage": "Traducción automática",
+    "description": "Start of the line under a translated post when the language it was written in is not known."
   },
   "status.translation.original_shown": {
     "defaultMessage": "Mostrando la publicación original.",
@@ -558,5 +574,65 @@
   "status.focused.replies": {
     "defaultMessage": "{count, plural, one {# respuesta} other {# respuestas}}",
     "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
+  },
+  "status.interaction_policy.action": {
+    "defaultMessage": "Cambiar quién puede responder, impulsar y citar",
+    "description": "Item of the menu of the user's own post that opens the dialog choosing who may reply to, boost, and quote it."
+  },
+  "status.interaction_policy.title": {
+    "defaultMessage": "Quién puede responder, impulsar y citar esta publicación",
+    "description": "Title of the dialog that chooses who may reply to, boost, and quote one of the user's posts."
+  },
+  "status.interaction_policy.close": {
+    "defaultMessage": "Cerrar",
+    "description": "Accessible name of the close button of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.description": {
+    "defaultMessage": "Cada elección se guarda al instante. Las respuestas, los impulsos y las citas aprobados antes se mantienen; las solicitudes que admite la nueva elección se aprueban.",
+    "description": "Description of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.done": {
+    "defaultMessage": "Se ha cambiado quién puede interactuar con la publicación",
+    "description": "Toast after the user changed who may reply to, boost, or quote one of their posts."
+  },
+  "status.interaction_policy.failed": {
+    "defaultMessage": "No se pudo cambiar quién puede interactuar con la publicación: {reason}",
+    "description": "Toast when the change of who may reply to, boost, or quote a post failed. {reason} is the server's reason."
+  },
+  "status.boost.pending": {
+    "defaultMessage": "Se ha pedido al autor que apruebe tu impulso",
+    "description": "Announced after the user boosted a post whose author approves boosts: the boost waits for the approval."
+  },
+  "status.boost.approval.pending": {
+    "defaultMessage": "Tu impulso espera la aprobación del autor.",
+    "description": "At the end of the actions of a post that the user boosted while its author approves boosts, until the author answers."
+  },
+  "status.boost.approval.rejected": {
+    "defaultMessage": "El autor ha rechazado tu impulso.",
+    "description": "At the end of the actions of a post whose author refused the user's boost."
+  },
+  "status.approval.pending": {
+    "defaultMessage": "Esperando aprobación: solo tú puedes ver esta respuesta",
+    "description": "Under the user's own reply while the author of the post it replies to has not approved it; nobody else sees it until then."
+  },
+  "status.approval.rejected": {
+    "defaultMessage": "Rechazada: solo tú puedes ver esta respuesta",
+    "description": "Under the user's own reply that the author of the post it replies to refused; nobody else sees it."
+  },
+  "status.article.kind": {
+    "defaultMessage": "Artículo",
+    "description": "Line above the title of an article (a long post with a title) in a list, saying what the card is."
+  },
+  "status.article.sensitive": {
+    "defaultMessage": "El autor ha marcado este artículo como sensible.",
+    "description": "On the page of an article the author marked sensitive, above the button that shows its cover and body; its title and summary are shown."
+  },
+  "status.article.show": {
+    "defaultMessage": "Mostrar el artículo",
+    "description": "Button on the page of a sensitive article that shows or hides its cover and body. The same text is used in both states."
+  },
+  "status.article.untitled": {
+    "defaultMessage": "Artículo sin título",
+    "description": "Stands for the title of an article from another server that has none: the link of its card, and the heading of its page."
   }
 }

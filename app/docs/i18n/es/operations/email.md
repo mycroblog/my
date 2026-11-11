@@ -24,50 +24,51 @@ al usuario se le dice «hemos enviado un correo de confirmación», y lo pide de
 
 Los correos de notificación para mecenas (`notification.supporter_email`) pasan por la misma cola de trabajos.
 
-<!-- source: which-notifications-are-emailed 76c2b871762c -->
-### Qué notificaciones se envían por correo electrónico
+<!-- source: which-notifications-are-emailed a19ef61af242 -->
+### Qué notificaciones se envían por correo
 
-Cada usuario elige, por tipo de notificación, si llega a la aplicación y por correo electrónico, en la página **Notificaciones** de
-la configuración (`/settings/notifications` en el cliente web). La columna de correo electrónico aparece allí solo mientras el servidor envía
-correo electrónico. Un tipo desactivado en la aplicación no se crea en absoluto, así que tampoco se envía por correo ni como notificación push.
+Cada usuario elige, por tipo de notificación, si llega en la aplicación y por correo, en la página **Notificaciones** de
+los ajustes (`/settings/notifications` en el cliente web). La columna de correo aparece allí solo mientras el servidor envía
+correo. Un tipo desactivado en la aplicación no se crea en absoluto, así que tampoco se envía por correo ni como push.
 
-| Tipo | Correo electrónico por defecto | Cuándo se envía |
+| Tipo | Correo por defecto | Cuándo se envía |
 | --- | --- | --- |
-| Notificaciones de otros usuarios (menciones, nuevos seguidores, solicitudes de seguimiento, solicitudes de seguimiento aceptadas, impulsos, favoritos, reacciones con emoji, citas, encuestas terminadas, cuentas que sigues que se mudan, chats de voz) | Desactivado | 15 minutos después de la notificación, solo si sigue sin leer (no marcada como leída, no descartada) y sigue siendo visible, y el usuario sigue recibiendo ese tipo por correo electrónico. Un correo por notificación |
-| Avisos de los moderadores (una acción de moderación sobre la cuenta, una denuncia resuelta, una apelación resuelta, seguimientos perdidos por una suspensión, una solicitud de emoji personalizado resuelta) | Desactivado | Igual que arriba |
-| Avisos a moderadores (nuevas denuncias, registros pendientes de aprobación, apelaciones, webhooks desactivados, solicitudes de emoji personalizado, cuentas limitadas que se mudan, el paso de la fecha de cierre, errores nuevos y recurrentes), a las personas cuyo rol tiene el permiso | Activado | De inmediato, sin esperar a que se lea |
-| Cierre del servicio y avisos de los planes de apoyo | Siempre | De inmediato; no se pueden desactivar |
+| Notificaciones de otros usuarios (menciones, nuevos seguidores, solicitudes de seguimiento, solicitudes de seguimiento aceptadas, impulsos, favoritos, reacciones con emoji, citas, encuestas terminadas, cuentas que sigues que se mudan, chats de voz) | Desactivado | 15 minutos después de la notificación, solo si sigue sin leer (no marcada como leída ni descartada) y aún visible, y el usuario sigue recibiendo ese tipo por correo. Un correo por notificación |
+| Eventos (invitaciones, fechas confirmadas, cambios de fecha o de lugar, cancelaciones, recordatorios e inicios de eventos de este servidor) | Desactivado | Igual que arriba, salvo los recordatorios, que se envían de inmediato. El correo indica el título, el inicio y los organizadores del evento, y nunca dónde se celebra |
+| Avisos de los moderadores (una medida de moderación sobre la cuenta, una denuncia resuelta, una apelación decidida, seguimientos perdidos por una suspensión, una solicitud de emoji personalizado decidida) | Desactivado | Igual que arriba |
+| Avisos a los moderadores (nuevas denuncias, registros pendientes de aprobación, apelaciones, webhooks desactivados, solicitudes de emoji personalizado, mudanzas de cuentas limitadas, llegada de la fecha de cierre, errores nuevos y recurrentes), a las personas cuyo rol tiene el permiso | Activado | De inmediato, sin esperar a que se lea |
+| Cierre del servicio y avisos de los planes de mecenas | Siempre | De inmediato; no se pueden desactivar |
 
 Los correos de notificación van solo a la dirección principal del usuario una vez confirmada, y nunca a una dirección cuyos correos
 estén detenidos (consulta más abajo). El asunto del correo de una notificación de otro usuario es el mismo texto que su mensaje de Web Push,
-y el correo enlaza a la publicación, al perfil o a las notificaciones.
+y el correo enlaza con la publicación, el perfil o las notificaciones.
 
-Los correos de cierre del servicio van a todos los usuarios cuya dirección principal está confirmada. Perderse uno puede significar perder datos, así que se envían
-como correo transaccional, no llevan enlace para darse de baja y una queja no los detiene (un rebote definitivo sí).
+Los correos de cierre del servicio van a todos los usuarios cuya dirección principal está confirmada. Perder uno puede significar perder datos, así que se envían
+como correo transaccional, no llevan enlace para darse de baja y una queja no los detiene (un rebote permanente sí).
 El anuncio, un cambio de fecha, una cancelación y el cierre encolan cada uno `identity.closure_email_fanout` en la misma
 transacción que su registro. El trabajo horario `identity.queue_closure_reminders` decide cuándo enviar los recordatorios de 7 días y
-1 día antes de la fecha de cierre y de 7 días antes del plazo de exportación. Un recordatorio cuyo momento ya había pasado cuando se
-anunció el cierre no se envía, porque el correo del anuncio indica las fechas.
+1 día antes de la fecha de cierre y de 7 días antes del plazo de exportación. Un recordatorio cuyo momento ya había pasado cuando se anunció
+el cierre no se envía, porque el correo del anuncio indica las fechas.
 El trabajo de difusión registra una fila de `service_closure_emails` por usuario y encola `identity.closure_email` solo para los usuarios que
-pudo registrar, de modo que, por muchas veces que se ejecute el trabajo, cada usuario recibe cada correo una sola vez. Antes de enviar, el trabajo comprueba que el correo
-sigue siendo válido (que no es de un anuncio cancelado ni de una fecha que ha cambiado desde entonces).
+pudo registrar, así que por muchas veces que se ejecute el trabajo, cada usuario recibe cada correo una sola vez. Antes de enviar, el trabajo comprueba que el correo
+sigue siendo válido (que no corresponde a un anuncio cancelado ni a una fecha que ha cambiado desde entonces).
 
-La configuración `mail` elige cómo se envía el correo electrónico.
+El ajuste `mail` elige cómo se envía el correo.
 
 | `mail` | Comportamiento |
 | --- | --- |
-| `none` (por defecto) | No envía nada y escribe `mail not sent (mail = none)` en el registro del servidor con la categoría del mensaje. Con `profile = development`, la línea contiene además las direcciones, el asunto y el cuerpo, enlaces incluidos. Para configuraciones que no usan correo electrónico y para desarrollo |
-| `smtp` | Envía por SMTP submission. Requiere STARTTLS y verifica el certificado antes de autenticarse y enviar |
-| `ses` | Envía con la API v2 de Amazon SES (`SendEmail` con contenido sin procesar). Se autentica con la cadena de credenciales por defecto del SDK de AWS (un rol de IAM, por ejemplo) y no tiene contraseña SMTP |
-| `plugin` | Entrega cada mensaje a un [plugin](#a-plugin-mail--plugin) que tú ejecutas, para un servicio de correo que solo ofrece una API HTTP |
+| `none` (predeterminado) | No envía nada y escribe `mail not sent (mail = none)` en el registro del servidor con la categoría del mensaje. Con `profile = development`, la línea también contiene las direcciones, el asunto y el cuerpo, enlaces incluidos. Para configuraciones que no usan correo y para desarrollo |
+| `smtp` | Envía por SMTP submission. Exige STARTTLS y verifica el certificado antes de autenticarse y enviar |
+| `ses` | Envía con la API Amazon SES v2 (`SendEmail` con contenido sin procesar). Se autentica mediante la cadena de credenciales predeterminada del SDK de AWS (un rol de IAM, por ejemplo) y no guarda ninguna contraseña SMTP |
+| `plugin` | Entrega cada mensaje a un [plugin](#a-plugin-mail--plugin) que ejecutas tú, para un servicio de correo que solo ofrece una API HTTP |
 
-Las configuraciones de `smtp` son `mail_from`, `mail_smtp_host`, `mail_smtp_port` (por defecto 587), `mail_smtp_username` y `mail_smtp_password`. Los
-configuraciones de `ses` son `mail_from`, `mail_ses_region` y `mail_ses_configuration_set`. Las configuraciones de `plugin` son `mail_from`
+Los ajustes de `smtp` son `mail_from`, `mail_smtp_host`, `mail_smtp_port` (587 de forma predeterminada), `mail_smtp_username` y `mail_smtp_password`. Los
+ajustes de `ses` son `mail_from`, `mail_ses_region` y `mail_ses_configuration_set`. Los ajustes de `plugin` son `mail_from`
 y `plugin_mailer_address` con el resto de [su destino](plugins.md#the-destination).
-`mail_from` es una dirección sin nombre, como `noreply@social.example`. `From` pasa a ser `"<server name>" <mail_from>`, y el dominio
-de `mail_from` es también el dominio de `Message-ID` y aquel al que se aplican SPF, DKIM y DMARC (consulta más abajo).
-`Reply-To` es la configuración de la instancia `contact_email` cuando está definida ([configuración de la instancia](instance-settings.md)).
-Todos los correos llevan `Auto-Submitted: auto-generated`.
+`mail_from` es una dirección simple como `noreply@social.example`. `From` pasa a ser `"<server name>" <mail_from>`, y el dominio
+de `mail_from` es también el dominio de `Message-ID` y el que aplican SPF, DKIM y DMARC (consulta más abajo).
+`Reply-To` es el ajuste de instancia `contact_email` cuando está definido ([ajustes de la instancia](instance-settings.md)).
+Todo correo lleva `Auto-Submitted: auto-generated`.
 `smtp` y `ses` construyen el mismo mensaje. No se usa SMTPUTF8, así que las direcciones se envían en ASCII y los dominios internacionalizados se
 convierten a Punycode. No se puede enviar a una dirección cuya parte local (antes de la `@`) no sea ASCII, y su trabajo falla.
 

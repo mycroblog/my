@@ -19,6 +19,10 @@
     "defaultMessage": "{visibility, select, totals {La página de información publica los totales de los ingresos.} plans {La página de información publica los totales de los ingresos y los miembros de cada plan.} other {Los ingresos no se publican.}}",
     "description": "What the server publishes of the income on its information page, on the costs screen, by the server setting income_visibility (private, totals, or plans)."
   },
+  "admin.finance.funding_visibility": {
+    "defaultMessage": "{visibility, select, percent {La página de información muestra el medidor de financiación solo con el porcentaje.} amounts {La página de información muestra el medidor de financiación con el porcentaje y los importes.} other {El medidor de financiación no se muestra este mes.}}",
+    "description": "What the server shows of the funding meter on its information page, on the costs screen, by the server setting funding_meter_visibility (percent or amounts); other when it is off or the month has no goal."
+  },
   "admin.finance.viewer": {
     "defaultMessage": "{names, select, shown {Quienes pueden leer las finanzas ven los nombres de los elementos,} other {Quienes pueden leer las finanzas no ven los nombres de los elementos,}} {memos, select, shown {ven sus notas,} other {no ven sus notas,}} {income, select, plans {y ven los ingresos con los miembros de cada plan.} other {y ven solo los totales de los ingresos.}}",
     "description": "What the holders of the view_finance permission see on the finances page, on the costs screen, by the server settings finance_viewer_item_names and finance_viewer_item_memos (shown or hidden) and finance_viewer_income (totals or plans)."
@@ -439,6 +443,10 @@
     "defaultMessage": "Una aproximación a partir de las notificaciones de presupuesto: totales basados en estimaciones, sin desglose por servicio.",
     "description": "Note under a provider on the costs screen when Google Cloud is imported from its budget notifications (billing_gcp_method = budget): the figures are approximate."
   },
+  "admin.finance.imports.method.billable_usage": {
+    "defaultMessage": "Solo cargos por uso, por producto. Los planes, los complementos, los impuestos y los créditos no se importan: añádelos tú como costos.",
+    "description": "Note under a provider on the costs screen when Cloudflare is imported from its billable usage (billing_sources = cloudflare): only usage charges by product, without plans, taxes, or credits."
+  },
   "admin.finance.imports.months": {
     "defaultMessage": "Meses de facturación de {provider}",
     "description": "Accessible name of the list of a provider's imported billing months on the costs screen."
@@ -554,5 +562,17 @@
   "admin.finance.movements.gross_fee": {
     "defaultMessage": "Bruto {gross}, comisión {fee}",
     "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
+  },
+  "admin.finance.movements.source.subscription": {
+    "defaultMessage": "Suscripción",
+    "description": "The source of a money movement: a subscription to a supporter plan."
+  },
+  "admin.finance.movements.source.one_time": {
+    "defaultMessage": "Propina",
+    "description": "The source of a money movement: a tip, a one-time payment to the server's operation with nothing in return."
+  },
+  "admin.finance.movements.source.unknown": {
+    "defaultMessage": "Ni suscripción ni propina",
+    "description": "The source of a money movement: neither, such as a payment taken outside this server or a fee of no subscription."
   }
 }

@@ -1,16 +1,17 @@
-<!-- source: importing-cloud-usage-costs db52fcd17ff9 -->
+<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
 # Importación de los costos de uso de la nube
 
-El servidor importa cada 24 horas los cargos de uso de los proveedores indicados en la configuración [`billing_sources`](../reference/configuration.md#billing_sources), o de [un plugin](#a-plugin-billing_sources--plugin) para un proveedor del que no tiene adaptador, y los suma a los costos de la instancia. El valor por defecto está vacío, lo que no importa nada.
+El servidor importa cada 24 horas los cargos de uso de los proveedores indicados en la configuración [`billing_sources`](../reference/configuration.md#billing_sources), o de [un plugin](#a-plugin-billing_sources--plugin) para un proveedor del que no tiene adaptador, y los suma a los costos de la instancia. El valor predeterminado está vacío, lo que no importa nada.
 Importa los cargos del mes de facturación actual y del anterior (hasta el día 15 del mes, o hasta que el mes anterior sea definitivo), como una línea por servicio y tipo de cargo (uso, crédito, reembolso, impuesto, soporte, tarifa, otro).
 Hasta que el proveedor cierra un mes, los valores se registran como estimaciones; después de cerrarlo, como definitivos; y cuando un valor cambia una vez definitivo, como una corrección. Los registros del pasado nunca se reescriben.
 El estado de las importaciones (el último éxito, el tipo del último fallo y el número de solicitudes de este mes) se muestra en la página de costos de la administración y con `GET /api/v1/admin/billing_imports`.
 Las métricas cuentan cada intento por origen, resultado y tipo de fallo (`my.billing.imports`) e informan de los orígenes cuyo intento más reciente falló (`my.billing.import.failing`);
 [Alertas y guía de actuación](alerts.md#mybillingimportfailing) describe la alerta sobre ellas.
 
-La configuración de este servidor no guarda credenciales. Da al entorno de ejecución lo que lee la cadena de credenciales por defecto del SDK de cada proveedor (para AWS, el rol de ejecución, las variables de entorno o los archivos de credenciales compartidos; para Google Cloud, las Application Default Credentials).
+Para AWS y Google Cloud, la configuración de este servidor no guarda credenciales. Da al entorno de ejecución lo que lee la cadena de credenciales predeterminada del SDK de cada proveedor (para AWS, el rol de ejecución, las variables de entorno o los archivos de credenciales compartidos; para Google Cloud, las Application Default Credentials).
+Cloudflare no tiene una cadena así, por lo que su importación lee un token de API de [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
-<!-- source: with-the-opentofu-modules 51ec4f78f058 -->
+<!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## Con los módulos de OpenTofu
 
 Los módulos [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) y [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) definen `billing_sources` y hacen las partes de esta guía que permite la API de un proveedor. `billing-gcp` solo funciona con el módulo de aplicación de Google Cloud, así que en AWS los módulos importan únicamente los costos de AWS. `billing-aws` funciona con los módulos de aplicación de AWS y con el de Cloud Run, donde ambos pueden estar en `backends`. Ninguno se ha aplicado todavía en una cuenta real.
@@ -24,6 +25,7 @@ Los módulos [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md
 | El tema y la suscripción pull de un presupuesto, y el rol de suscriptor | `billing-gcp` con `method = "budget"` |
 | Crear el presupuesto y conectarlo al tema | A mano, en la consola de Google Cloud, con un rol en la cuenta de facturación |
 | Activar la API de BigQuery o de Pub/Sub | A mano, como en [Despliegue en Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| Cloudflare | No con estos módulos. Define `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` y `MY_BILLING_CLOUDFLARE_API_TOKEN` (desde un secreto) como para un plugin |
 | Un plugin | No con estos módulos. Sin ningún módulo de facturación en `backends`, define `MY_BILLING_SOURCES = plugin` y la configuración de [el plugin](#a-plugin-billing_sources--plugin) en el `env` del módulo de aplicación; junto a un módulo de facturación, el módulo de aplicación rechaza `MY_BILLING_SOURCES` en `env`, así que añade un backend propio que devuelva `billing_sources = ["plugin"]` ([los campos de un backend](../../deploy/opentofu/README.md)) |
 
 <!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
@@ -304,6 +306,56 @@ La etiqueta de compilación `no_billing_gcp` elimina también este método. La b
 | `unavailable` | `UNAVAILABLE`, `INTERNAL` y similares, fallo de red | El trabajo reintenta tras una pausa |
 | `invalid_response` | Un mensaje que no se puede leer como notificación de presupuesto, un presupuesto que no es mensual, dos presupuestos con el mismo nombre visible | Haz el presupuesto mensual, da a los presupuestos nombres visibles distintos y no envíes otros mensajes al tema |
 
+<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+## Cloudflare (`billing_sources = cloudflare`)
+
+El servidor lee el uso facturable de una cuenta de Cloudflare: los cargos de uso de sus productos de pago por uso, como R2, Workers y D1, un registro por métrica y día.
+Los suma por producto (`R2`, `Workers`, `D1`) en meses naturales UTC, de modo que cada producto es una línea de uso al mes. El uso dentro de una franja gratuita también se importa, con valor 0.
+Solo una cuenta facturada por pago por uso tiene estos datos; una cuenta con contrato Enterprise falla con `not_enabled`.
+Un binario compilado con la etiqueta de compilación `no_billing_cloudflare` rechaza `cloudflare` (consulta [build-tags.md](../reference/build-tags.md)).
+
+<!-- source: what-it-does-not-import 2028c00feb4d -->
+### Lo que no importa
+
+El uso facturable de Cloudflare contiene solo cargos de uso. Los planes y complementos con tarifa fija (Pro, Business, Workers Paid y similares), los impuestos y los créditos no están en él, así que los costos muestran solo la parte de uso de la factura.
+Añade las tarifas fijas como costos propios en la página de costos, o impórtalas desde [un plugin](#a-plugin-billing_sources--plugin).
+
+<!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
+### Ciclos de facturación y meses definitivos
+
+Cloudflare factura en ciclos que empiezan el mismo día de cada mes, el día de la primera compra de la cuenta, en UTC (un ciclo que empezaría el 31 empieza el último día de un mes más corto).
+La factura de un ciclo llega cuando el ciclo termina, así que un mes natural abarca partes de dos ciclos. El servidor lee cada ciclo que se solapa con los meses que importa y coloca cada registro diario en el mes natural de su día, de modo que las líneas de un mes son los cargos de sus propios días, no de una factura.
+Un mes es definitivo cuando el ciclo que contiene su último día terminó hace dos días, o cuando termina el mes siguiente, lo que ocurra primero. Hasta entonces es una estimación desde el primer día del mes hasta el último día con datos. Los datos de Cloudflare van uno o dos días por detrás.
+
+<!-- source: cost-and-limits-2 085888f73215 -->
+### Costo y límites
+
+Cloudflare no cobra por su API, así que el servidor no fija ningún tope de solicitudes. Una importación hace una solicitud para las suscripciones de la cuenta y una por cada ciclo de facturación que lee: hasta cuatro para dos meses.
+La API permite 1200 solicitudes cada cinco minutos por usuario, compartidas con el panel y con tus demás usos del propietario del token.
+
+<!-- source: create-the-api-token 343e937f28d4 -->
+### Crear el token de API
+
+1. En el panel de Cloudflare, abre la cuenta y anota su ID de cuenta en la vista general de la cuenta (32 dígitos hexadecimales).
+2. En «Manage Account» → «Account API Tokens» (o «My Profile» → «API Tokens»), crea un token personalizado con el único permiso **Account** → **Billing** → **Read**, solo para esta cuenta.
+3. Define `MY_BILLING_SOURCES=cloudflare`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID=<account ID>` y `MY_BILLING_CLOUDFLARE_API_TOKEN=<token>`, con el token procedente de un almacén de secretos (o `MY_BILLING_CLOUDFLARE_API_TOKEN_FILE`).
+
+Da a la importación un token propio. El servidor nunca lee `CLOUDFLARE_API_TOKEN`, que usan Wrangler y el proveedor de OpenTofu, de modo que un token que puede editar DNS o Workers no se toma por error.
+
+<!-- source: kinds-of-failure-2 b0cd3fd7b5c3 -->
+### Tipos de fallo
+
+| Tipo | Respuesta de Cloudflare | Cómo solucionarlo |
+| --- | --- | --- |
+| `permission` | `400` con el código 9106 (un token no válido), `401`, `403` (el token no tiene Billing Read, o el ID de cuenta es incorrecto: Cloudflare responde a ambos con el código 10000) | Comprueba el permiso del token y `billing_cloudflare_account_id` |
+| `not_enabled` | El uso facturable de la cuenta no está cubierto | La cuenta no se factura por pago por uso (un contrato Enterprise), así que no hay nada que importar |
+| `not_found` | `404` | Comprueba `billing_cloudflare_account_id` |
+| `throttled` | `429` | El trabajo reintenta tras una pausa |
+| `unavailable` | 5xx, fallo de red | El trabajo reintenta tras una pausa |
+| `invalid_response` | Una respuesta ilegible, un registro de más de un día, dos monedas en un mes | Cloudflare cambió su respuesta; infórmalo |
+
+Reintentar no puede arreglar un fallo que no sea `throttled` ni `unavailable`, así que el servidor lo registra y se detiene, y la importación programada del día siguiente lo intenta de nuevo.
+
 <!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
 ## Un plugin (`billing_sources = plugin`)
 
@@ -371,10 +423,10 @@ Content-Type: application/json
 
 `maxRequests` 0 prohíbe cualquier solicitud facturada. El servidor no hace ninguna llamada cuando enviaría 0, pero `my plugin test --kind billing` sí la hace, con el campo omitido como permite la asignación de proto3, y espera `OUTCOME_REQUEST_CAP` sin líneas y sin solicitudes.
 
-<!-- source: kinds-of-failure-2 205a6c0ecdd9 -->
+<!-- source: kinds-of-failure-3 205a6c0ecdd9 -->
 ### Tipos de fallo
 
-Un plugin informa de un fallo en `outcome`. El servidor conserva las `requests` de un fallo, ignora sus líneas y deja las importaciones anteriores como están, igual que con los demás orígenes.
+Un plugin informa de un fallo en `outcome`. El servidor conserva los `requests` de un fallo, ignora sus líneas y deja las importaciones anteriores como están, igual que con los demás orígenes.
 
 | Resultado | Tipo | Se reintenta |
 | --- | --- | --- |
@@ -387,9 +439,9 @@ Un plugin informa de un fallo en `outcome`. El servidor conserva las `requests` 
 | `OUTCOME_INVALID_RESPONSE` | `invalid_response` | No |
 | `OUTCOME_UNAVAILABLE` | `unavailable` | Sí |
 | Un resultado ausente o desconocido, o una línea o un recuento que incumple las reglas anteriores | `invalid_response` | No |
-| Un error HTTP o de Connect, un plazo agotado, una respuesta de más de 4 MiB, ninguna respuesta | `unavailable` | Sí |
+| Un error HTTP o de Connect, un plazo vencido, una respuesta de más de 4 MiB, ninguna respuesta | `unavailable` | Sí |
 
-Lo que no se reintenta espera a la siguiente importación diaria. El motivo de un fallo está en el registro del plugin, ya que el servidor descarta el mensaje de un error, y cuenta también en [`my.plugin.failures`](running.md).
+Lo que no se reintenta espera a la siguiente importación diaria. El motivo de un fallo está en el registro del plugin, ya que el servidor descarta el mensaje de un error, y también cuenta en [`my.plugin.failures`](running.md).
 
 <!-- source: test-it 10a2c62a53d8 -->
 ### Probarlo

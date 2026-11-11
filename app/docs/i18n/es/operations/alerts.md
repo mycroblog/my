@@ -55,22 +55,31 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Panel de Grafana
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) es un panel de Grafana de las mismas métricas de Prometheus:
+la tasa de solicitudes, los códigos de estado y la latencia; las ejecuciones de trabajos, el tiempo de worker de cada tipo de trabajo y la cola; las entregas, las actividades de la bandeja de entrada
+y los servidores remotos; y la CPU y la memoria de cada proceso. Impórtalo en Grafana (**Dashboards** → **New** → **Import**) y elige tu
+origen de datos de Prometheus; su variable **Job** selecciona el trabajo de recopilación (`my` de forma predeterminada).
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud (Cloud Run)
 
 Con `metrics_exporter = none`, construye las alertas a partir de lo que Cloud Run y Cloud Logging ya tienen:
 
-- **Errores HTTP y latencia**: el recuento de peticiones de Cloud Run por clase de código de respuesta y la métrica de latencia de peticiones del servicio.
+- **Errores HTTP y latencia**: el recuento de solicitudes de Cloud Run por clase de código de respuesta y la métrica de latencia de solicitudes del servicio.
 - **Errores**: las líneas `error report` van a Error Reporting, que las agrupa y puede avisarte de errores nuevos y recurrentes ([Informe de errores](error-reporting.md#google-cloud-cloud-run)).
-- **Trabajos y peticiones**: el servidor escribe una línea de registro por petición HTTP (`msg` = `http request`) y por ejecución de trabajo (`msg` = `job`), con las
+- **Trabajos y solicitudes**: el servidor escribe una línea de registro por cada solicitud HTTP (`msg` = `http request`) y por cada ejecución de trabajo (`msg` = `job`), con las
   mismas etiquetas que las métricas. Crea métricas basadas en registros a partir de ellas, por ejemplo un contador de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   para los trabajos fallidos, o una distribución de `jsonPayload.duration_seconds` filtrada por `jsonPayload."my.surface"="client_api"` para la latencia.
-- **Acumulación en la cola**: con `queue = cloudtasks` los trabajos están en la base de datos, así que la pantalla de trabajos y las líneas de registro de las ejecuciones muestran la acumulación;
-  la métrica de profundidad de cola de Cloud Tasks cuenta las señales que esperan a ser entregadas.
-- **Base de datos**: las métricas de uso de disco y de conexiones de Cloud SQL, o las alertas de uso de tu proveedor de base de datos.
-- **Costos**: un presupuesto de Cloud Billing con umbrales de alerta ([Costos y presupuesto](#cost-and-budget)).
+- **Cola acumulada y almacenamiento**: cada 15 minutos el trabajo `metrics.snapshot` escribe una línea (`msg` = `metrics snapshot`) con los valores
+  de toda la instancia, como `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` y `my.media.stored_bytes`. Crea métricas basadas en registros a partir de sus campos;
+  un hueco en estas líneas significa que el temporizador o la cola se detuvieron. La métrica de profundidad de cola de Cloud Tasks cuenta las señales que esperan ser entregadas.
+- **Base de datos**: las métricas de utilización de disco y de conexiones de Cloud SQL, o las alertas de uso de tu proveedor de base de datos.
+- **Costo**: un presupuesto de Cloud Billing con umbrales de alerta ([Costo y presupuesto](#cost-and-budget)).
 
-El módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) las crea como políticas con los nombres de la tabla de abajo, y enumera cada alerta que cubre de otra manera o que no puede expresar. Nunca se ha aplicado. Una métrica que solo produce el tráfico tiene huecos en un servicio que escala a cero, así que una alerta por su ausencia salta en falso; su comprobación de disponibilidad es lo que detecta un servidor inactivo que ha caído.
+El módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) las crea como políticas con los nombres de la tabla de abajo, y enumera cada alerta que cubre de otra manera o que no puede expresar. Nunca se ha aplicado. Una métrica que solo produce el tráfico tiene huecos en un servicio que escala a cero, así que una alerta por su ausencia se dispara en falso; su comprobación de disponibilidad es lo que detecta un servidor inactivo que ha caído.
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -126,28 +135,33 @@ Gravedad: **page** = actuar ya, **ticket** = durante el horario laboral. «–»
 | Costos | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 durante 6 h | ticket | Faltan permisos, la exportación de facturación no está configurada, se alcanzó el tope de peticiones, el proveedor no está disponible |
 | Costos | Presupuesto superado | – | – | – | Tráfico, almacenamiento o una mala configuración que cuestan más de lo previsto ([más abajo](#cost-and-budget)) |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
+<!-- source: where-to-look b9e94304077f -->
 ## Dónde mirar
 
-Estas herramientas reaparecen en la mayoría de las entradas de la guía de actuación de abajo.
+Estas herramientas reaparecen en la mayoría de las entradas del runbook de abajo.
 
-- **La pantalla de trabajos** (Administración → Trabajos, `/admin/jobs`, requiere `manage_jobs`): los recuentos por estado (en cola, en ejecución, reintentando, fallidos) y por tipo, y
-  el trabajo en espera más antiguo; su página **Trabajos** (`/admin/jobs/list`) enumera los trabajos de un estado, y la página de cada trabajo tiene su último error y los intentos que no tuvieron éxito. Los trabajos pendientes solo se enumeran para las colas que se guardan en la base de datos
-  (`queue = db` y `cloudtasks`); los trabajos y los intentos fallidos se enumeran para todas las colas.
+- **La pantalla de trabajos** (Administración → Trabajos, `/admin/jobs`, requiere `manage_jobs`): los recuentos por estado (en cola, en ejecución, reintentando, fallidos) y tipo, y
+  el trabajo en espera más antiguo; su página **Trabajos** (`/admin/jobs/list`) enumera los trabajos de un estado, y la página de cada trabajo tiene su último error y los intentos que no tuvieron éxito. Los trabajos pendientes se enumeran solo para las colas que se guardan en la base de datos
+  (`queue = db` y `cloudtasks`); los trabajos fallidos y los intentos se enumeran para todas las colas.
 - **El comando `my job`** en un host que tenga la configuración del servidor (`queue = db` y `cloudtasks`):
   `my job list` enumera los trabajos fallidos, los más recientes primero; `my job retry <id>...` los devuelve a la cola; `my job delete <id>...` los descarta.
-  Los trabajos se pueden ejecutar de nuevo sin riesgo.
-- **La pantalla de servidores remotos** (Moderación → Servidores remotos, `/moderation/instances`, requiere `manage_domains`): los servidores a los que las entregas no pudieron llegar,
-  y aquellos cuyas entregas están en pausa, con el motivo y el momento. «Reanudar envíos» vuelve a marcar un servidor como disponible.
-- **Los registros**: líneas JSON en la salida de error estándar. Cada petición HTTP termina con una línea cuyo `msg` es `http request`, y cada ejecución de un trabajo con una línea cuyo `msg` es `job`
-  (`INFO` si tiene éxito, `WARN` si se reintenta, `ERROR` si el trabajo falló definitivamente, con `error`, `job_id` y `my.job.type`).
-  Las líneas dentro de una petición llevan su `request_id`, que el cliente ve como `X-Request-Id`.
+  Es seguro volver a ejecutar los trabajos.
+- **La pantalla de servidores remotos** (Moderación → Servidores remotos, `/moderation/instances`, requiere `manage_domains`): los servidores a los que las entregas no lograron llegar,
+  y aquellos cuyas entregas están en pausa, con el motivo y cuándo. «Reanudar envíos» vuelve a marcar un servidor como disponible.
+- **Los registros**: líneas JSON en la salida de error estándar. Cada solicitud HTTP termina con una línea cuyo `msg` es `http request`, y cada ejecución de trabajo con una línea cuyo `msg` es `job`
+  (`INFO` si tiene éxito, `WARN` si se reintenta, `ERROR` si el trabajo falló definitivamente, con el `error`, el `job_id` y el `my.job.type`).
+  Las líneas dentro de una solicitud llevan su `request_id`, que el cliente ve como `X-Request-Id`.
+  - La línea de una ejecución de `federation.deliver` también indica adónde fue la entrega y cómo terminó: `my.delivery.domain` (el dominio del servidor remoto),
+    `activity.type` (por ejemplo `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure` o `skipped`) y
+    `http.response.status_code` (la respuesta de la bandeja de entrada, ausente cuando no dio ninguna o no se envió nada). `my.outcome` sigue siendo el resultado de la ejecución del trabajo.
+    La línea nunca nombra al remitente, la actividad ni la URL de la bandeja de entrada.
+    Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``
 - **Informes de errores**: las líneas `error report` y la pantalla de Errores (Administración → Errores, `/admin/errors`, requiere `manage_errors`) ([Informe de errores](error-reporting.md)).
-- **Trazas**, cuando `traces_exporter = otlp`: las líneas de registro llevan `trace_id`; ábrelo en tu backend de trazas para ver dónde pasó el tiempo una petición lenta.
-- **El modo de mantenimiento** ([Mantenimiento](maintenance.md)): responde a todas las peticiones con una página de mantenimiento y no toca ningún adaptador. Úsalo mientras reparas la base de datos
+- **Trazas**, cuando `traces_exporter = otlp`: las líneas de registro llevan `trace_id`; ábrelo en tu backend de trazas para ver dónde pasó el tiempo una solicitud lenta.
+- **El modo de mantenimiento** ([Mantenimiento](maintenance.md)): responde a cada solicitud con una página de mantenimiento y no toca ningún adaptador. Úsalo mientras reparas la base de datos
   o el almacén KV.
 
 <!-- source: runbook e60e811fcff0 -->

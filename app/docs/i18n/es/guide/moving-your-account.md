@@ -4,21 +4,21 @@
 Puedes mover tu cuenta a otra cuenta, del mismo servidor o de otro. Tus seguidores siguen a la cuenta nueva y la cuenta
 antigua indica que se ha movido. Funciona igual en el otro sentido, cuando te mudas a este servidor desde otro.
 
-<!-- source: what-moves-and-what-stays 4ea7b64d67bd -->
-## Qué se mueve y qué se queda
+<!-- source: what-moves-and-what-stays 321714556a43 -->
+## Qué se muda y qué se queda
 
-| Se mueve | Se queda en la cuenta antigua |
+| Se muda | Se queda en la cuenta antigua |
 | --- | --- |
 | Tus seguidores | Tus publicaciones, las cuentas que sigues, tus bloqueos, silencios y marcadores |
 
-![A la izquierda la cuenta antigua y a la derecha la cuenta nueva: un alias, el movimiento, tus seguidores pasando a la cuenta nueva y lo que se queda en la cuenta antigua. La lista de abajo dice lo mismo.](images/account-move.svg)
+![La cuenta antigua a la izquierda y la cuenta nueva a la derecha: un alias, la mudanza, tus seguidores pasando a la cuenta nueva y lo que se queda en la cuenta antigua. La lista de abajo dice lo mismo.](images/account-move.svg)
 
 De arriba abajo en el diagrama:
 
 1. **Añade un alias.** En la cuenta nueva, añade la cuenta antigua en «Alias».
-2. **Mudar cuenta.** En la cuenta antigua, elige «Mudar cuenta» e indica la cuenta nueva.
-3. **Qué se mueve.** Tus seguidores siguen a la cuenta nueva. La cuenta antigua muestra «Tu cuenta se ha mudado»: aún puedes iniciar sesión, leer y exportar tus datos allí.
-4. **Qué se queda aquí.** Tus publicaciones, las cuentas que sigues, y tus bloqueos, silencios y marcadores se quedan en la cuenta antigua. Tus publicaciones no se mueven. Lleva el resto tú mismo: exporta tus seguidos, bloqueos, silencios y marcadores como archivos CSV con «Importar y exportar» en la cuenta antigua e impórtalos en la nueva ([llevar tus seguidos contigo](#taking-your-follows-with-you)).
+2. **Mudar la cuenta.** En la cuenta antigua, elige «Mudar cuenta» e indica la cuenta nueva.
+3. **Lo que se muda.** Tus seguidores siguen la cuenta nueva. La cuenta antigua muestra «Tu cuenta se ha mudado»: aún puedes iniciar sesión, leer y exportar tus datos allí.
+4. **Lo que se queda aquí.** Tus publicaciones, las cuentas y etiquetas que sigues, y tus bloqueos, silencios y marcadores se quedan en la cuenta antigua. Tus publicaciones no se mudan. Lleva el resto tú mismo: exporta tus seguimientos, etiquetas seguidas, bloqueos, silencios y marcadores como archivos CSV con «Importar y exportar» en la cuenta antigua e impórtalos en la nueva ([llevarte tus seguimientos](#taking-your-follows-with-you)).
 
 <!-- source: moving-from-this-account 7836944c7996 -->
 ## Moverse desde esta cuenta
@@ -43,17 +43,17 @@ Añade la cuenta desde la que te mueves como alias en «Alias», en la configura
 Un alias por sí solo no cambia nada; solo permite que la otra cuenta mueva sus seguidores hacia ti. Solo puedes tener
 unos pocos alias, y «Quitar» elimina uno.
 
-<!-- source: taking-your-follows-with-you ab2475388452 -->
-## Llevar tus seguidos contigo
+<!-- source: taking-your-follows-with-you 8109773a2d6a -->
+## Llevarte tus seguimientos
 
-«Importar y exportar», en «Cuenta y datos» de la configuración, exporta e importa archivos CSV en el formato que usa
-Mastodon. Puedes exportar «Seguimientos», «Cuentas bloqueadas», «Cuentas silenciadas», «Dominios silenciados» y
-«Marcadores», e importarlos en la cuenta nueva. «Combinar» conserva lo que tienes y añade lo que indica el archivo;
-«Sobrescribir» deja la lista exactamente como la indica el archivo. Las cuentas y publicaciones de otros servidores se
-buscan en segundo plano, lo que puede tardar un poco.
+«Importar y exportar», en «Cuenta y datos» dentro de los ajustes, exporta e importa archivos CSV en el formato que usa Mastodon.
+Puedes exportar «Seguidos», «Etiquetas seguidas», «Cuentas bloqueadas», «Cuentas silenciadas», «Dominios silenciados» y «Marcadores», e
+importarlos en la cuenta nueva. Mastodon no tiene un archivo de etiquetas seguidas, así que solo un servidor que ejecute el mismo software que
+este importa ese archivo. «Combinar» conserva lo que tienes y añade lo que enumera el archivo; «Sobrescribir» deja la lista exactamente como la del
+archivo. Las cuentas y publicaciones de otros servidores se buscan en segundo plano, lo que puede tardar un poco.
 
-«Archivo y eliminación» prepara un archivo ZIP con tus publicaciones, tu perfil, y tus seguidos, bloqueos, silencios y
-marcadores.
+«Archivo y eliminación» prepara un archivo ZIP con tus publicaciones, tu perfil, tus filtros de palabras clave y tus seguimientos,
+etiquetas seguidas, bloqueos, silencios, dominios silenciados y marcadores.
 
 <!-- source: when-an-account-you-follow-moves 81ab63afe43d -->
 ## Cuando se mueve una cuenta que sigues

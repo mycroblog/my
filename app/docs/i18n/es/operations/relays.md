@@ -40,10 +40,10 @@ administración muestra una advertencia.
 - Los documentos de las publicaciones públicas llevan una firma de Linked Data (`RsaSignature2017`), para que Mastodon y Misskey puedan aceptar publicaciones que un relé transmite sin cambios.
 - El número de entregas crece según el número de relés unidos multiplicado por el número de publicaciones públicas (las entregas a un relé se combinan en una).
 
-<!-- source: what-the-server-receives ff962150d1a7 -->
+<!-- source: what-the-server-receives fa99c4ec4217 -->
 ## Qué recibe el servidor
 
-- Una publicación pública transportada por un relé unido se recupera de nuevo desde su origen y se comprueba antes de incorporarla. Aparece entonces en la cronología federada y en las cronologías de etiquetas. No aparece en las cronologías de inicio y no crea ninguna notificación.
+- Una publicación pública transportada por un relé unido se recupera de nuevo desde su origen y se comprueba antes de incorporarla. Aparece entonces en la cronología federada y en las cronologías de etiquetas, y en las cronologías de inicio de las personas que siguen una de sus etiquetas. No aparece en ninguna otra cronología de inicio y no crea ninguna notificación.
 - Se incorporan como máximo `relay_max_activities_per_hour` publicaciones por hora (1000 de forma predeterminada) por relé. Lo que supera el límite se descarta sin recuperarse. La página del relé en el área de administración y `my admin relay list` muestran cuántas se incorporaron en las últimas 24 horas y cuántas se descartaron por superar el límite. Si se descartan muchas, sube el límite o replantéate el relé.
 - Una publicación no se incorpora cuando su dominio o su cuenta tiene un `suspend` (una restricción de federación) o un `limit` (una restricción que la retira de los lugares públicos).
 - Una publicación que llegó solo mediante un relé se retira de la vista pública tras el ajuste de instancia `relay_status_retention_days` (7 de forma predeterminada). Una publicación a la que una persona local respondió, que impulsó, marcó como favorita o guardó en marcadores, y las publicaciones de autores a los que sigue una persona local, tienen la misma retención que otras publicaciones remotas (`remote_status_retention_days`).
