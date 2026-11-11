@@ -504,11 +504,11 @@ func (c *checker) searchCall(cwd string, g grepCall) *denial {
 		"generated files and tests (--tests adds them), and prints a bounded list grouped by file with the " +
 		"enclosing declaration of each match."
 	if m := reDecl.FindStringSubmatch(g.pattern.text); m != nil {
-		show := "`" + ak + " show " + m[1] + "` prints that declaration whole"
+		show := "`" + ak + " show " + m[1] + "`"
 		if g.context > 0 {
-			reason = "Read a declaration with " + show + ". To search instead: `" + strings.Join(parts, " ") + "`."
+			reason = show + " prints the whole declaration of " + m[1] + ", with its comment. To search instead: `" + strings.Join(parts, " ") + "`."
 		} else {
-			reason += " To read it: " + show + "."
+			reason += " " + show + " prints the whole declaration of " + m[1] + "."
 		}
 	}
 	return &denial{"search", reason}
