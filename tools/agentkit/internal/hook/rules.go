@@ -171,7 +171,8 @@ func (c *checker) show(t target) string {
 
 func quote(s string) string {
 	if s != "" && strings.IndexFunc(s, func(r rune) bool {
-		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("_-./:=@%+,", r))
+		plain := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("_-./:=@%+,", r)
+		return !plain
 	}) < 0 {
 		return s
 	}
@@ -296,7 +297,6 @@ type grepCall struct {
 	quiet      bool
 	count      bool
 	unsupp     bool // -v, -L, -z, -f: agentkit grep has no equivalent
-	fromFile   bool
 }
 
 var (
@@ -905,7 +905,7 @@ var (
 	// Any write.
 	reWriteAny = regexp.MustCompile(`\bopen\([^()\n]*,\s*["'][wa]\+?b?["']|\.write_(?:text|bytes)\(|writeFileSync\(|\bwriteFile\(|Bun\.write\(|File\.write\(`)
 	// A string that looks like a path; the {parts} of an f-string or a template stand for anything.
-	rePathLit = regexp.MustCompile("[\"'`]([\\w@.~/*{}$-]+\\.\\w{1,6})[\"'`]")
+	rePathLit = regexp.MustCompile("[\"'`]([\\w@.~/*{}$-]*\\.\\w{1,12})[\"'`]")
 	reSubst   = regexp.MustCompile(`\$?\{[^{}]*\}`)
 )
 

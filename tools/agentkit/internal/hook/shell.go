@@ -119,7 +119,7 @@ func splitCommand(cmd string) []segment {
 			}
 			flush("|")
 			i++
-		case c == '&' && !(i > 0 && (cmd[i-1] == '<' || cmd[i-1] == '>')) && !(i+1 < n && cmd[i+1] == '>'):
+		case c == '&' && !redirects(cmd, i):
 			flush("&")
 			i++
 		default:
@@ -129,6 +129,13 @@ func splitCommand(cmd string) []segment {
 	}
 	flush("")
 	return segs
+}
+
+// redirects reports whether the & at i belongs to a redirection (>&2, &>file) and does not end a command.
+func redirects(cmd string, i int) bool {
+	after := i > 0 && (cmd[i-1] == '<' || cmd[i-1] == '>')
+	before := i+1 < len(cmd) && cmd[i+1] == '>'
+	return after || before
 }
 
 // heredocEnd finds the line that is tag alone in s: where the body ends and where the text after it starts.

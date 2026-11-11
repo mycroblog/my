@@ -17,11 +17,16 @@ const usage = `agentkit — context and workflow tools for coding agents in mycr
 
 Read (instead of grep / cat over the repository):
   ctx <issue> [--layer server|web] [--budget 30000]   everything an issue needs, in one pack (.tmp/agentkit/ctx/<n>.md)
+  grep <pattern> [path|glob ...] [-i] [-w] [-F] [-l] [-o] [-C N] [-n 40] [--max 6000] [--kind go,ts,md,sql,yaml,json]
+       [--tests|--only-tests] [--gen]                  exact / regexp search of the tracked files: bounded, grouped by
+                                                       file, with the declaration or section of each match; skips
+                                                       generated files, lock files, snapshots and tests
   find <words> [--kind k,k] [--under path] [-n 15]     ranked locations; kinds: section adr adr-section requirement
                                                        go go-test ts ts-test op schema table query msg file
-  show <ref> [--max 12000]                             the text of a ref: ADR-0070#decision, FR-915,
-                                                       data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
-                                                       table:<name>, query:<Name>, <GoName>, path:10-40
+  show <ref> [--max 12000]                             the text of a ref: a declaration (<GoName>, Recv.Name,
+                                                       pkg.Name, <path>:<Name>), lines (<path>:10-40), ADR-0070#decision,
+                                                       FR-915, data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
+                                                       table:<name>, query:<Name>
   outline <path>                                       headings / declarations with line ranges and sizes
   refs <ref> [-n 40]                                   what points at ref, and what ref points at
   trace <op:id|GoName> [--depth 6]                     handler -> app -> adapter -> query -> table

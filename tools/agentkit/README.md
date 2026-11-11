@@ -12,13 +12,17 @@ Run it through `scripts/agentkit.sh <command>`, which builds `bin/agentkit` when
 | Instead of | Run |
 | --- | --- |
 | Reading the issue, then every ADR, requirement, and document section it names | `ctx <issue> [--layer server\|web]`: one pack within a token budget (default 30k), also saved to `.tmp/agentkit/ctx/<n>.md` for subagents |
-| `grep -rn` over the repository | `find <words> [--kind adr,section,go,ts,op,table,query,...] [--under <path>]`: ranked locations with sizes |
-| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'data-model§4.4'`, `show 'ADR-0070#decision'`, `show FR-915`, `show <path>:<from>-<to>` |
+| `grep` / `rg` / `git grep` over the repository | `grep <pattern> [path\|glob ...] [-i] [-w] [-F] [-l] [-o] [-C N] [--kind go,ts,md,sql,yaml,json]`: a regular expression (or `-F` string) over the tracked files, without generated files, lock files, snapshots, and tests (`--tests`, `--only-tests`, `--gen`); at most 40 matches (`-n`) and 6,000 characters (`--max`), grouped by file, each with its declaration or section and line range, and a last line that counts what was left out |
+| `grep "func X" -A 40`, `sed -n 'A,Bp'`, `head`, `tail` | `show <Name>` (also `Recv.Name`, `pkg.Name`, `<path>:<Name>`, `'func (s *Service) Create'`): the whole declaration; `show <path>:<from>-<to>`: the lines. The path may be relative to the working directory or any ending that names one file |
+| Looking for where a topic lives | `find <words> [--kind adr,section,go,ts,op,table,query,...] [--under <path>]`: ranked locations with sizes |
+| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'data-model§4.4'`, `show 'ADR-0070#decision'`, `show FR-915` |
 | Following a request through the layers by hand | `trace op:<operationId>` or `trace <GoName>`: handler → app → adapter → query → table |
 | Grepping for the users of a name | `refs <ref>`: what points at it (documents, code, queries, client calls) and what it points at |
 | Listing `docs/adr/` and opening every ADR | `adr list [--status Proposed]`: number, status (the first word of its `- Status:` line), and title |
 
-`show` prints the outline instead of the text when a node is bigger than `--max` tokens (default 12k).
+`show` prints the outline instead of the text when a node is bigger than `--max` tokens (default 12k), cuts a line
+range there, and lists the candidates of a name that several declarations share (one declaration outside the tests
+is shown, the test helpers of its name counted).
 References: node ids (`ADR-0070`, `FR-915`, `op:<id>`, `table:<name>`, `query:<Name>`, `schema:<Name>`,
 `sym:<dir>.<Recv>.<Name>`, `ts:<path>:<Name>`), short names (`SubmitRequest`, `custom_emojis`), sections by number or
 anchor of any unique path suffix (`data-model§4.4`, `web-client#5-アクセシビリティ`), and line ranges.
@@ -101,11 +105,24 @@ compares those numbers with the names it collected, and fails when the sentence 
 ## Claude Code hooks
 
 `.claude/settings.json` runs `scripts/agentkit-hook.sh` ([ADR-0004](docs/adr/0004-claude-code-hooks.md)): at session
-start it builds and indexes; it denies reading a whole Markdown file of 40KB or more (code: 80KB) and watching CI with
-`gh pr checks --watch` / `gh run watch`, and polling for a background command with a loop that sleeps or with
-`pgrep`, with what to use instead; it hints at `find` for unbounded
-recursive greps; and it cuts Bash output over 20,000 characters to its head and tail, saving the whole to
-`.tmp/agentkit/out/`. `AGENTKIT_BIG_FILE` and `AGENTKIT_MAX_OUTPUT` change the limits.
+start it builds and indexes, and it cuts Bash output over 20,000 characters to its head and tail, saving the whole to
+`.tmp/agentkit/out/`. Before a Bash or Read call it denies the following, for every agent, and the reason names the
+command to run instead, filled in from the denied one:
+
+| Denied | Use instead |
+| --- | --- |
+| `grep` / `rg` / `ag` / `git grep` over files of the repository | `grep`, or `show <Name>` for a declaration |
+| `sed -n 'A,Bp'`, `head`, `tail`, `awk 'NR>=A'` on a file of the repository, `cat <file> \|` | the Read tool with offset and limit, `show <path>:A-B`, `outline` |
+| `sed -i`, `perl -pi`, a `python3` / `node` script that writes a file of the repository | the Edit tool; `scripts/i18n.sh add\|mv\|rm` for `locales/` |
+| `git merge` of `main`, `git pull` without `--rebase` or `--ff-only` | `git fetch origin && git rebase origin/main`, `regen`, `git push --force-with-lease` |
+| `gh pr checks`, `gh run watch`, `gh run view` without `--log-failed`, `gh run list` without `--workflow`, `gh api` of check runs and workflow runs, `statusCheckRollup` | `pr wait <pr>` in the background |
+| a loop that sleeps, `pgrep`, also inside `bash -c` | `run_in_background` and its notification |
+| reading a whole Markdown file of 40KB or more (code: 80KB) | `outline`, then `show` |
+
+It splits a compound command at `;`, `&&`, `||`, `|` and newlines outside quotes and here-documents, and follows `cd`
+and the variables the command sets. It leaves alone: grep as a filter on a pipe, files outside the working tree, files
+git ignores (`.tmp/`, `node_modules/`, logs), a path the shell computes, `grep -q`, a search of a revision, a merge with
+`--ff-only` or of another branch, and anything it cannot parse. `AGENTKIT_BIG_FILE` and `AGENTKIT_MAX_OUTPUT` change the limits.
 
 ## Measuring
 
@@ -123,8 +140,8 @@ a change to see what it saved.
   indexes only what changed (the first build takes seconds, later ones tens of milliseconds).
 - `internal/gh` talks to GitHub through `gh` and caches issues and merged pull requests (with their changed files) in
   the same database.
-- `internal/kb` answers `find` / `show` / `outline` / `refs` / `trace`; `internal/pack` builds `ctx`; `internal/ops`
-  runs the workflow steps; `internal/hook` implements the hooks; `internal/stats` measures; `internal/docslint`
+- `internal/kb` answers `find` / `show` / `outline` / `refs` / `trace`; `internal/grep` searches the working tree;
+  `internal/pack` builds `ctx`; `internal/ops` runs the workflow steps; `internal/hook` implements the hooks; `internal/stats` measures; `internal/docslint`
   checks the documentation rules.
 
 ## Developing

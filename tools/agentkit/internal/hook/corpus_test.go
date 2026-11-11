@@ -33,14 +33,14 @@ func TestCorpus(t *testing.T) {
 	if c.session == "" {
 		t.Fatal("not in a working tree with scripts/agentkit.sh")
 	}
-	f, err := os.Open(filepath.Clean(corpus))
+	f, err := os.Open(filepath.Clean(corpus)) //nolint:gosec // the corpus the developer names
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = f.Close() }()
 	out := os.Stdout
 	if p := os.Getenv("AGENTKIT_HOOK_RESULT"); p != "" {
-		if out, err = os.Create(filepath.Clean(p)); err != nil {
+		if out, err = os.Create(filepath.Clean(p)); err != nil { //nolint:gosec // the file the developer names
 			t.Fatal(err)
 		}
 		defer func() { _ = out.Close() }()

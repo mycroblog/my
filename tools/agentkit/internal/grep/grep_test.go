@@ -20,9 +20,9 @@ func fixture(t *testing.T) *repo.Repo {
 	root := t.TempDir()
 	long := strings.Repeat("x", 300) + " needle " + strings.Repeat("y", 300)
 	files := map[string]string{
-		ctxmap.File:                    "ignore:\n  - \"**/*.gen.go\"\n  - \"api/openapi.yaml\"\nentries: []\n",
-		".gitignore":                   ".tmp/\nnode_modules/\n",
-		"internal/app/note/service.go": "package note\n\n// Service creates notes.\ntype Service struct{}\n\n// Create makes a note.\nfunc (s *Service) Create(text string) error {\n\tif text == \"\" {\n\t\treturn errEmpty\n\t}\n\treturn nil\n}\n\nfunc helper() { _ = \"Create\" }\n",
+		ctxmap.File:                         "ignore:\n  - \"**/*.gen.go\"\n  - \"api/openapi.yaml\"\nentries: []\n",
+		".gitignore":                        ".tmp/\nnode_modules/\n",
+		"internal/app/note/service.go":      "package note\n\n// Service creates notes.\ntype Service struct{}\n\n// Create makes a note.\nfunc (s *Service) Create(text string) error {\n\tif text == \"\" {\n\t\treturn errEmpty\n\t}\n\treturn nil\n}\n\nfunc helper() { _ = \"Create\" }\n",
 		"internal/app/note/service_test.go": "package note\n\nfunc TestCreate(t *testing.T) { Create() }\n",
 		"internal/app/note/zz.gen.go":       "package note\n\nfunc CreateGenerated() {}\n",
 		"api/openapi.yaml":                  "operationId: createNote\n",
