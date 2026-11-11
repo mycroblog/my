@@ -48,8 +48,8 @@ func TestBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = s.Close() }()
-	m := &ctxmap.Map{Entries: []ctxmap.Entry{{
-		Name: "schema", Paths: []string{"schema/**"}, Docs: []string{"docs/architecture/data-model/04-tables/04-content.md#44-content"},
+	m := &ctxmap.Map{Dirs: map[string]ctxmap.Entry{"schema": {
+		Name: "schema", Docs: []string{"docs/architecture/data-model/04-tables/04-content.md#44-content"},
 		Userdocs: []string{"docs/operations/database.md#upgrading"},
 		Checks:   []string{"schema", "go"}, Shared: true,
 	}}}

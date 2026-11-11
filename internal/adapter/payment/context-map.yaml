@@ -1,8 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/adr/0074-payment-provider-port.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]
-  - paths: ["stripe/**"]
-    userdocs: ["docs/operations/payments-stripe.md"]
-  - paths: ["payjp/**"]
-    userdocs: ["docs/operations/payments-payjp.md"]
+docs: ["docs/adr/0074-payment-provider-port.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]
+userdocs: ["docs/operations/payments-payjp.md", "docs/operations/payments-stripe.md"]

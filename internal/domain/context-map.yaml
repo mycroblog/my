@@ -1,5 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/architecture/overview.md#2-モジュール境界づけられたコンテキスト", "docs/architecture/data-model/04-tables/README.md#40-所有モジュール"]
-    checks: [go]
+docs: ["docs/architecture/overview.md#2-モジュール境界づけられたコンテキスト", "docs/architecture/data-model/04-tables/README.md#40-所有モジュール"]

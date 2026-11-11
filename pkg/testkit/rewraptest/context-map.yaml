@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["sealed_value_contract.go"]
-    docs: ["docs/adr/0019-security-baseline.md", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
-    userdocs: ["docs/operations/key-management.md#rotate-the-kek"]
-  - paths: ["**"]
-    docs: ["docs/adr/0153-test-boundaries.md#3-db-の集約点をモジュールで分ける", "docs/adr/0015-testing-strategy.md"]

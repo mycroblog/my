@@ -1,5 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["CONTRIBUTING.md#local-development", "CONTRIBUTING.md#emails"]
-    checks: [docker, shell]
+docs: ["CONTRIBUTING.md#local-development", "CONTRIBUTING.md#emails"]
+checks: [shell]

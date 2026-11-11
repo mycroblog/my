@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The context map: each context-map.yaml maps the paths of its directory (patterns relative to it: `*` within one
-# segment, `**` any number of segments) to the document sections to read before changing them (docs), the user and
-# operator documents that describe them (userdocs), the `scripts/task.sh check` contexts they need (checks), and
-# whether parallel work treats them as shared files (shared). Docs and userdocs are <path> or <path>#<anchor> from
-# the repository root. This file also holds the settings of the whole map. `agentkit map check` verifies it.
+# The context map: a context-map.yaml describes its directory as a whole, and what is below it down to the next
+# context-map.yaml: the document sections to read before changing it (docs) and the user and operator documents
+# that describe it (userdocs), as <path> or <path>#<anchor> from the repository root, the `scripts/task.sh check`
+# contexts it needs (checks), and whether parallel work treats it as shared files (shared). This file holds the
+# settings of the whole map and, alone, patterns: the entries of the root's files and dot-directories, of which
+# the first that matches a path describes it. `agentkit map check` verifies the map.
 
 ignore:
   - "**/*.gen.go"
@@ -17,26 +18,8 @@ ignore:
   - "internal/interface/web/dist/**"
   - ".tmp/**"
 
-# Every directory that matches holds a context-map.yaml of its own (names that start with a dot are exempt).
-strict:
-  - "*"
-  - "docs/*"
-  - "internal/*"
-  - "internal/domain/*"
-  - "internal/app/*"
-  - "internal/adapter/*"
-  - "internal/interface/*"
-  - "app/*"
-  - "app/web/src/features/*"
-  - "app/web/src/lib/*"
-  - "pkg/*"
-  - "pkg/testkit/*"
-  - "cmd/*"
-  - "tools/*"
-  - "deploy/*"
-
 userdocs:
-  # The user and operator documents: each is the userdocs of some entry.
+  # The user and operator documents: each is the userdocs of some map.
   cover:
     - "docs/operations/*.md"
     - "docs/reference/*.md"
@@ -55,43 +38,25 @@ userdocs:
     - "test/federation-live/**"
 
 entries:
-  - paths: ["*.md", "LICENSE", ".editorconfig", ".gitattributes", ".git-blame-ignore-revs", ".gitignore", ".dockerignore", ".markdownlint-cli2.jsonc", ".tool-versions"]
-    checks: [docs]
   - paths: ["Taskfile.yml", ".github/**", ".claude/**"]
     docs: ["docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0081-generated-files-policy.md", "docs/agents/releasing.md"]
+    userdocs: ["docs/reference/commands.md"]
     checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
     shared: true
-  - paths: ["Taskfile.yml"]
-    userdocs: ["docs/reference/commands.md"]
-  - paths: [".github/workflows/release.yml", ".github/workflows/release-image.yml", ".github/workflows/slow-suite.yml"]
-    docs: ["docs/agents/releasing.md"]
   - paths: ["go.mod", "go.sum", "go.work", ".golangci.yml"]
     docs: ["docs/architecture/overview.md#依存ルール"]
     checks: [go]
-  - paths: [".github/workflows/docs-site-deploy.yml", ".github/workflows/docs-site-preview.yml", ".github/workflows/docs-site-preview-deploy.yml", ".github/workflows/docs-site-preview-cleanup.yml"]
-    docs: ["docs/adr/0150-documentation-site.md", "docs/agents/releasing.md#the-documentation-site", "docs/agents/translating-docs.md"]
-    userdocs: ["docs/reference/commands.md"]
-    checks: [site, docs]
-  - paths: [".github/workflows/acme-contract.yml"]
-    docs: ["docs/adr/0163-acme-tls.md", "docs/architecture/data-model/04-tables/09-instance.md#49-instance"]
-    userdocs: ["docs/operations/running.md#serving-https-from-the-server", "docs/operations/production-checklist.md", "docs/operations/key-management.md"]
   - paths: ["sqlc.yaml"]
-    docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
-    userdocs: ["docs/operations/privacy-policy-template.md", "docs/operations/processing-record-template.md"]
-    checks: [schema, go]
+    docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0023-declarative-schema-management.md"]
+    checks: [go, schema]
     shared: true
   - paths: ["bunfig.toml", ".prettierignore"]
-    docs: ["docs/adr/0025-web-client-stack.md", "docs/adr/0081-generated-files-policy.md"]
+    docs: ["docs/adr/0025-web-client-stack.md"]
     checks: [web]
     shared: true
-  - paths: [".github/workflows/nightly.yml", ".github/actions/start-mailpit/**"]
-    docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/architecture/web-client/screens/README.md"]
-    userdocs: ["docs/reference/commands.md"]
-  - paths: ["Dockerfile"]
-    docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "docs/operations/running.md"]
-    checks: [docker]
-  - paths: ["Dockerfile"]
-    userdocs: ["docs/operations/deploy-docker-compose.md", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
-  - paths: ["compose.yaml"]
-    docs: ["CONTRIBUTING.md#local-development", "CONTRIBUTING.md#emails"]
+  - paths: ["Dockerfile", "compose.yaml"]
+    docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "CONTRIBUTING.md#local-development"]
+    userdocs: ["docs/operations/deploy-docker-compose.md"]
     checks: [docker, shell]
+  - paths: ["*.md", "LICENSE", ".*"]
+    checks: [docs]

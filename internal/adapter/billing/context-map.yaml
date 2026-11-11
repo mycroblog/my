@@ -1,8 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
-    userdocs: ["docs/operations/billing-import.md"]
-  - paths: ["cloudflare/**"]
-    docs: ["docs/adr/0068-billing-import.md#11-cloudflare-adapterinternaladapterbillingcloudflare", "docs/operations/billing-import.md#cloudflare-billing_sources--cloudflare"]
-    userdocs: ["docs/operations/billing-import.md", "docs/reference/build-tags.md"]
+docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
+userdocs: ["docs/operations/billing-import.md"]

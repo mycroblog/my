@@ -1,5 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/adr/0000-record-architecture-decisions.md"]
-    checks: [docs]
+docs: ["docs/adr/0000-record-architecture-decisions.md"]

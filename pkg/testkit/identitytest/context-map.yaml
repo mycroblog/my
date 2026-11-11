@@ -1,6 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["oidc_contract.go"]
-    docs: ["docs/adr/0106-external-login-providers.md#5-idp-への-http", "docs/adr/0019-security-baseline.md"]
-  - paths: ["**"]
-    docs: ["docs/adr/0153-test-boundaries.md#3-db-の集約点をモジュールで分ける", "docs/adr/0015-testing-strategy.md"]

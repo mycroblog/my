@@ -1,8 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]
-  - paths: ["preview.go", "preview_image.go", "shell.go"]
-    userdocs: ["docs/operations/link-previews.md"]
-  - paths: ["crawlers.go"]
-    userdocs: ["docs/operations/crawlers.md"]
+docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]
+userdocs: ["docs/operations/crawlers.md", "docs/operations/link-previews.md"]

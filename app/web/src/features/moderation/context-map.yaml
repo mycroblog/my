@@ -1,13 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["components/DomainListSubscription*.tsx", "hooks/useDomainListSubscriptions.ts"]
-    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/data-model/04-tables/03-moderation.md#ドメインのブロックリストの購読"]
-    userdocs: ["docs/operations/moderation.md#subscribing-to-blocklists", "docs/reference/jobs.md", "docs/reference/cli.md"]
-  - paths: ["components/DomainAllows.tsx", "hooks/useDomainAllows.ts"]
-    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/federation.md#11-モデレーションとの連携", "docs/architecture/data-model/04-tables/03-moderation.md#43-moderation"]
-    userdocs: ["docs/operations/moderation.md#federating-only-with-allowed-servers", "docs/operations/instance-settings.md", "docs/reference/jobs.md"]
-  - paths: ["components/HookAppeals.tsx", "components/HookAppealDetail.tsx", "components/HookDecisionDetail.tsx", "components/hookDecisionParts.tsx"]
-    docs: ["docs/architecture/data-model/04-tables/16-hook.md#416-hook", "docs/adr/0147-decision-hooks.md", "docs/adr/0146-plugin-protocol.md"]
-    userdocs: ["docs/operations/decision-hooks.md", "docs/reference/jobs.md#upkeep", "docs/operations/instance-settings.md"]
-  - paths: ["**"]
-    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
+docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]

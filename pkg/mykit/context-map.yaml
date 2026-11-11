@@ -1,12 +1,4 @@
 # SPDX-License-Identifier: MIT
-entries:
-  - paths: ["integration/featured_tags_test.go"]
-    docs: ["docs/adr/0006-federation-protocol-scope.md#17-リモートのピン留めfeaturedと注目のハッシュタグfeaturedtags", "docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/federation.md#62-actor-とハンドル", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
-    userdocs: ["docs/reference/jobs.md"]
-  - paths: ["**"]
-    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
-    userdocs: ["docs/developers/libraries.md"]
-    checks: [mykit]
-  - paths: ["ts/**"]
-    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0016-client-api-style.md"]
-    checks: [mykit]
+docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
+userdocs: ["docs/developers/libraries.md"]
+checks: [mykit]

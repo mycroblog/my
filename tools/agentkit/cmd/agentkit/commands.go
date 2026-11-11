@@ -67,9 +67,9 @@ Maintenance:
                                                        and listed task is mentioned in its document
   docs impact [--base origin/main]                     the user and operator documents (userdocs) of the changed
                                                        paths
-  map check                                            every path is covered by a context-map.yaml, every strict
-                                                       directory holds one, every user document is some entry's userdocs
-  map show <path>                                      the context-map entries, docs and checks of a path
+  map check                                            every path is under a context-map.yaml, no map repeats one
+                                                       above it, every user document is some map's userdocs
+  map show <path>                                      the context map, docs and checks of a path
   stats [--since 2026-10-01] [--top 20]                token use of past Claude Code sessions in this repository
   hook pre|post                                        Claude Code hooks (reads the hook JSON on stdin)
   index                                                build the index now and print its size

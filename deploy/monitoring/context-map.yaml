@@ -1,6 +1,4 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md", "deploy/opentofu/modules/internal/monitoring-gcp/README.md", "deploy/opentofu/modules/internal/monitoring-aws/README.md"]
-    userdocs: ["docs/operations/alerts.md"]
-    checks: [docker, docs]
+docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md", "deploy/opentofu/modules/internal/monitoring-gcp/README.md", "deploy/opentofu/modules/internal/monitoring-aws/README.md"]
+userdocs: ["docs/operations/alerts.md"]
+checks: [docs]

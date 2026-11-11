@@ -1,5 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/adr/0015-testing-strategy.md", "CONTRIBUTING.md#the-fake-push-service"]
-    userdocs: ["docs/reference/build-tags.md#test-builds"]
+docs: ["docs/adr/0015-testing-strategy.md", "CONTRIBUTING.md#the-fake-push-service"]
+userdocs: ["docs/reference/build-tags.md#test-builds"]

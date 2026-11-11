@@ -56,7 +56,7 @@ tasks:
       - scripts/agentkit-deps-check.sh
 
   map-check:
-    desc: Fail when the context-map.yaml files do not cover every path, a strict directory holds none, or a user or operator document is the userdocs of no entry
+    desc: Fail when a path is under no context-map.yaml, a map repeats one above it, or a user or operator document is the userdocs of no map
     deps: [build]
     cmds:
       - bin/agentkit map check

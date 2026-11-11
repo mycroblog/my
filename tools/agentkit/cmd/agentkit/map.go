@@ -42,25 +42,24 @@ func runMap(r *repo.Repo, args []string) error {
 		return nil
 	case "show":
 		for _, p := range args[1:] {
-			es := m.For(p)
-			if len(es) == 0 {
-				fmt.Printf("%s: no entry\n", p)
+			e, ok := m.For(p)
+			if !ok {
+				fmt.Printf("%s: no map\n", p)
+				continue
 			}
-			for _, e := range es {
-				fmt.Printf("%s: %s", p, e.Name)
-				if e.Shared {
-					fmt.Print(" [shared]")
-				}
-				if len(e.Checks) > 0 {
-					fmt.Printf(" checks=%s", strings.Join(e.Checks, ","))
-				}
-				fmt.Println()
-				for _, d := range e.Docs {
-					fmt.Println("  doc  " + d)
-				}
-				for _, d := range e.Userdocs {
-					fmt.Println("  userdoc " + d)
-				}
+			fmt.Printf("%s: %s", p, e.Name)
+			if e.Shared {
+				fmt.Print(" [shared]")
+			}
+			if len(e.Checks) > 0 {
+				fmt.Printf(" checks=%s", strings.Join(e.Checks, ","))
+			}
+			fmt.Println()
+			for _, d := range e.Docs {
+				fmt.Println("  doc  " + d)
+			}
+			for _, d := range e.Userdocs {
+				fmt.Println("  userdoc " + d)
 			}
 		}
 		return nil

@@ -46,14 +46,13 @@ prints the directory's `README.md`.
 
 ## The context map
 
-Each `context-map.yaml` maps the paths of its directory (patterns relative to it) to the document sections that govern
-them (`docs`), the user and operator documents that describe them (`userdocs`), their check contexts, and whether
-parallel work treats them as shared files; the [root file](../../context-map.yaml) also holds `ignore`, `strict`, and
-`userdocs.cover` / `skip`. A new module, adapter, or feature adds a file in its own directory.
-`scripts/task.sh agentkit:check` (`map check`) fails when a file is not covered, when a directory under a `strict`
-pattern holds no `context-map.yaml`, when a `docs` or `userdocs` reference does not resolve, or when a file of
-`userdocs.cover` is the `userdocs` of no entry ([ADR-0003](docs/adr/0003-context-map.md)). `ctx` uses the map to pick
-the documents of the areas an issue touches; `map show <path>` prints the entries of a path.
+A `context-map.yaml` describes its directory as a whole, down to the next one below: the document sections that
+govern it (`docs`), the user and operator documents that describe it (`userdocs`), its check contexts (`checks`), and
+whether parallel work treats it as shared files (`shared`). `docs`, `userdocs`, and `checks` add to those of the maps
+above, so a file holds only what differs. The [root file](../../context-map.yaml) alone lists patterns, for the root's
+files and dot-directories. `map check` fails when a path is under no map, a map repeats one above it, a reference does
+not resolve, or a file of `userdocs.cover` is no map's `userdocs` ([ADR-0003](docs/adr/0003-context-map.md)).
+`map show <path>` prints what describes a path.
 
 ## Documentation that changes with the code
 

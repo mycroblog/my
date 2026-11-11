@@ -1,8 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["*.md"]
-    checks: [docs]
-    shared: true
-  - paths: ["web-client/**", "data-model/**"]
-    docs: ["docs/adr/0081-generated-files-policy.md"]
-    checks: [docs]
+shared: true

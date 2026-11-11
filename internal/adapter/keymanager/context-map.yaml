@@ -1,15 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]
-  - paths: ["**"]
-    userdocs: ["docs/operations/key-management.md"]
-  - paths: ["plugin/**"]
-    docs: ["docs/adr/0146-plugin-protocol.md", "docs/adr/0019-security-baseline.md#decision決定"]
-    userdocs: ["docs/operations/key-management.md#a-plugin", "docs/operations/plugins.md", "docs/reference/build-tags.md"]
-  - paths: ["gcpkms/**"]
-    docs: ["docs/adr/0019-security-baseline.md#decision決定"]
-    userdocs: ["docs/operations/key-management.md#google-cloud-kms", "docs/reference/build-tags.md"]
-  - paths: ["awskms/**"]
-    docs: ["docs/adr/0019-security-baseline.md#decision決定"]
-    userdocs: ["docs/operations/key-management.md#aws-kms", "docs/reference/build-tags.md"]
+docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]
+userdocs: ["docs/operations/key-management.md"]

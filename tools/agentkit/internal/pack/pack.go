@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"path"
 	"regexp"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -298,7 +297,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		files := prFiles(p.Data)
 		var kept []string
 		for _, f := range files {
-			if m.For(f) == nil || ignoredForPrecedent(f) || !layerOK(f, o.Layer) {
+			if _, ok := m.For(f); !ok || ignoredForPrecedent(f) || !layerOK(f, o.Layer) {
 				continue
 			}
 			kept = append(kept, f)
@@ -307,20 +306,18 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		prec = append(prec, fmt.Sprintf("- #%d %s (%d files; shares %d refs): %s", p.Number, p.Title, len(files), p.Score, summarizeFiles(kept, 12)))
 	}
 
-	// Areas: the context-map entries of the paths above, most-referenced first.
+	// Areas: the context maps of the paths above, most-referenced first.
 	areaScore := map[string]int{}
 	areas := map[string]ctxmap.Entry{}
 	for p, n := range paths {
-		for _, e := range m.For(p) {
+		if e, ok := m.For(p); ok {
 			areaScore[e.Name] += n
 			areas[e.Name] = e
 		}
 	}
-	for _, e := range m.Entries {
-		if (o.Layer == "web" && slices.Contains(e.Paths, "app/web/**")) || (o.Layer == "server" && slices.Contains(e.Paths, "internal/**")) {
-			areaScore[e.Name] += 100
-			areas[e.Name] = e
-		}
+	if e, ok := m.For(map[string]string{"web": "app/web", "server": "internal"}[o.Layer]); ok && o.Layer != "" {
+		areaScore[e.Name] += 100
+		areas[e.Name] = e
 	}
 	names := text.SortedKeys(areas)
 	sort.SliceStable(names, func(i, j int) bool { return areaScore[names[i]] > areaScore[names[j]] })

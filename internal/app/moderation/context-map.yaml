@@ -1,14 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
-    userdocs: ["docs/operations/moderation.md", "docs/guide/safety.md"]
-  - paths: ["domain_list*.go"]
-    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/data-model/04-tables/03-moderation.md#ドメインのブロックリストの購読"]
-    userdocs: ["docs/operations/moderation.md#subscribing-to-blocklists", "docs/reference/jobs.md", "docs/reference/cli.md"]
-  - paths: ["allowlist.go"]
-    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/federation.md#11-モデレーションとの連携", "docs/architecture/data-model/04-tables/03-moderation.md#43-moderation"]
-    userdocs: ["docs/operations/moderation.md#federating-only-with-allowed-servers", "docs/operations/instance-settings.md", "docs/reference/jobs.md"]
-  - paths: ["retention.go", "suspension.go"]
-    docs: ["docs/adr/0004-job-queue-abstraction.md"]
-    userdocs: ["docs/reference/jobs.md"]
+docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
+userdocs: ["docs/operations/moderation.md", "docs/guide/safety.md"]

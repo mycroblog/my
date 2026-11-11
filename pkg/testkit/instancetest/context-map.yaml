@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["instance_tls_*.go", "acme_*.go"]
-    docs: ["docs/adr/0163-acme-tls.md", "docs/architecture/data-model/04-tables/09-instance.md#49-instance"]
-    userdocs: ["docs/operations/running.md#serving-https-from-the-server", "docs/operations/production-checklist.md", "docs/operations/key-management.md"]
-  - paths: ["**"]
-    docs: ["docs/adr/0153-test-boundaries.md#3-db-の集約点をモジュールで分ける", "docs/adr/0015-testing-strategy.md"]

@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["federation-live/**"]
-    docs: ["test/federation-live/README.md", "docs/architecture/federation.md#12-テスト"]
-    checks: [docker, go]
-  - paths: ["upgrade-test/**"]
-    docs: ["docs/agents/releasing.md#the-upgrade-test", "docs/operations/database.md#upgrading"]
-    checks: [docker, shell]

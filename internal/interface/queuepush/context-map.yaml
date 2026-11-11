@@ -1,5 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-entries:
-  - paths: ["**"]
-    docs: ["docs/adr/0004-job-queue-abstraction.md"]
-    userdocs: ["docs/operations/running.md#the-job-queue-and-failed-dead-jobs", "docs/operations/maintenance.md#push-queues", "docs/reference/build-tags.md"]
+docs: ["docs/adr/0004-job-queue-abstraction.md"]
+userdocs: ["docs/operations/running.md#the-job-queue-and-failed-dead-jobs", "docs/operations/maintenance.md#push-queues", "docs/reference/build-tags.md"]
