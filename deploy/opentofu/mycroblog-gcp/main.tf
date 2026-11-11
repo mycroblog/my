@@ -140,6 +140,10 @@ resource "random_password" "origin_secret" {
   }
 }
 
+locals {
+  settings_list = jsondecode(file("${path.module}/../modules/internal/settings/settings.json"))
+}
+
 module "settings" {
   source = "../modules/internal/settings"
 
@@ -155,7 +159,10 @@ module "secrets" {
   project_id = local.project_id
   secrets = merge(
     { MY_VAPID_PRIVATE_KEY = local.secret_ids.vapid },
-    { for key, s in module.settings.secrets : s.env => s.secret },
+    # From the input and the settings list, not from module.settings, whose checks read what the sections set: through its
+    # output, the sections, which read these secrets' IDs, would depend on themselves. module.settings still refuses a wrong
+    # key before the plan, since the app reads its env.
+    { for key in var.secrets : local.settings_list[key].env => "${var.name}-${replace(key, "_", "-")}" if contains(keys(local.settings_list), key) },
   )
   generate_p256_keys = ["MY_VAPID_PRIVATE_KEY"]
   # Created empty for you to fill, or written here: the section's module sets the setting from the ID.
