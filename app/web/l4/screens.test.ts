@@ -46,6 +46,19 @@ describe("parseSetup", () => {
       /seed/,
     );
   });
+
+  it("reads a budget of three counts or null, and rejects another form", () => {
+    const front = (budget: string) => `---\nstart: "/"\npersona: null\npaths: []\nbudget: ${budget}\n---\n`;
+    expect(parseSetup("x", front('{"controls": 3, "helpers": 0, "words": 40}')).budget).toEqual({
+      controls: 3,
+      helpers: 0,
+      words: 40,
+    });
+    expect(parseSetup("x", front("null")).budget).toBeNull();
+    expect(() => parseSetup("x", front('{"controls": 3}'))).toThrow(/"budget" must be the counts/);
+    expect(() => parseSetup("x", front('{"controls": 3, "helpers": 0, "words": -1}'))).toThrow(/budget/);
+    expect(() => parseSetup("x", front('{"controls": 3, "helpers": 0, "words": 1, "h2": 2}'))).toThrow(/budget/);
+  });
 });
 
 describe("applySeed", () => {

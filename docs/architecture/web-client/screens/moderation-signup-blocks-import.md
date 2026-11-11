@@ -3,6 +3,7 @@ start: "/moderation/signup-blocks"
 persona: "marco"
 paths: ["app/web/src/routes/moderation.signup-blocks_.import.tsx", "app/web/src/features/moderation/components/SignupBlockImport.tsx", "app/web/src/features/moderation/hooks/useSignupBlockImport.ts", "app/web/src/features/moderation/api/signupBlocks.ts"]
 unavailable: {"テキストファイルを選んで一覧を読み込む": "the agent has no file to choose: the browser tools give it none"}
+budget: {"controls": 8, "helpers": 10, "words": 192}
 ---
 
 ## 登録の拒否の一覧からの追加（`/moderation/signup-blocks/import`）

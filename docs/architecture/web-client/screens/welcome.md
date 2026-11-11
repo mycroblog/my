@@ -7,6 +7,7 @@ personas: {"ランディングページからアカウントを作り、1 人を
 seed: [{"my": ["instance", "set", "registration_mode", "open"]}]
 mail: {"ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": "mio"}
 unavailable: {"アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none"}
+budget: {"controls": 4, "helpers": 2, "words": 55}
 ---
 
 ## ようこそ（`/welcome`、アカウントを作った直後）

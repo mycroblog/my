@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.link-card-domains.tsx", "app/web/src/features/admin/components/LinkCardDomainSettings.tsx", "app/web/src/features/admin/hooks/useLinkCardDomains.ts", "app/web/src/features/admin/api/linkCardDomains.ts"]
 seed: [{"api": "hana", "method": "PUT", "path": "/admin/link_card_domains/images.example", "body": {"mode": "no_images", "note": "Heavy images"}}]
+budget: {"controls": 4, "helpers": 0, "words": 29}
 ---
 
 ## リンクのカードのドメイン（`/admin/link-card-domains`）

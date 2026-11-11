@@ -4,6 +4,7 @@ persona: "yuki"
 paths: ["app/web/src/routes/notifications.tsx", "app/web/src/features/notifications/**", "app/ui/src/NotificationKindMark.tsx", "app/web/src/features/settings/components/PushPrompt.tsx", "app/web/src/features/settings/hooks/usePushPrompt.ts"]
 push: {"案内からこの端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "layla"}
 notes: {"案内からこの端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "Judged by the harness: the server holds the browser's subscription, and the fake push service receives and decrypts the notification of a reply by layla after the task. Not measured: the agent sees neither OS notifications nor the browser's permission prompt (notifications are granted beforehand)."}
+budget: {"controls": 11, "helpers": 1, "words": 60}
 ---
 
 ## 通知（`/notifications`）

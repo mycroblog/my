@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.errors.tsx", "app/web/src/routes/admin.errors_.$id.tsx", "app/web/src/features/admin/components/ErrorGroups.tsx", "app/web/src/features/admin/components/ErrorGroupDetail.tsx", "app/web/src/features/admin/hooks/useErrors.ts", "app/web/src/features/admin/api/errors.ts"]
 unavailable: {"増えているエラーを見つける": "the demo scenario records no error", "エラーが 1 時間ごとにどれだけ起きたかを知る": "the demo scenario records no error", "エラーを解決にする": "the demo scenario records no error"}
+budget: {"controls": 6, "helpers": 4, "words": 231}
 ---
 
 ## エラー（`/admin/errors`・`/admin/errors/{id}`）

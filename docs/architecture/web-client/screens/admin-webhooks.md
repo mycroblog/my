@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.webhooks.tsx", "app/web/src/features/admin/components/WebhookSettings.tsx", "app/web/src/features/admin/hooks/useWebhooks.ts", "app/web/src/features/admin/api/webhooks.ts"]
 seed: [{"api": "hana", "method": "POST", "path": "/admin/webhooks", "body": {"url": "https://hooks.example/in", "description": "Moderation chat", "events": ["report.created"]}}]
+budget: {"controls": 2, "helpers": 0, "words": 31}
 ---
 
 ## Webhook（`/admin/webhooks`）

@@ -3,6 +3,7 @@ start: "/moderation/domain-actions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.subscriptions.tsx", "app/web/src/features/moderation/components/DomainListSubscriptions.tsx", "app/web/src/features/moderation/hooks/useDomainListSubscriptions.ts", "app/web/src/features/moderation/api/domainLists.ts"]
 unavailable: {"購読の最後の取得を確かめる": "The demo server's subscriptions would fetch a list from a host the scenario does not serve."}
+budget: {"controls": 3, "helpers": 0, "words": 33}
 ---
 
 ## ブロックリストの購読の一覧（`/moderation/domain-actions/subscriptions`）

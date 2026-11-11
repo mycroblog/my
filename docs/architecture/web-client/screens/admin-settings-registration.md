@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 unavailable: {"一人のサーバーにする": "The demo server has more than one local account, so the server refuses the mode."}
 paths: ["app/web/src/routes/admin.settings_.registration.tsx", "app/web/src/features/admin/components/PolicySettings.tsx", "app/web/src/features/admin/hooks/useServerPolicies.ts", "app/web/src/features/admin/api/settings.ts", "app/web/src/features/admin/components/ServerSettings.tsx", "app/ui/src/LocalNav.tsx"]
+budget: {"controls": 12, "helpers": 18, "words": 510}
 ---
 
 ## サーバーの設定: 登録（`/admin/settings/registration`）

@@ -2,6 +2,7 @@
 start: "/home"
 persona: "kai"
 paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/home.tsx"]
+budget: null
 ---
 
 ## 始め方のチェックリストとおすすめのアカウント（`/home` の、始めたばかりの人）

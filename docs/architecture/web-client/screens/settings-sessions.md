@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**"]
+budget: {"controls": 5, "helpers": 1, "words": 91}
 ---
 
 ## ログイン中のブラウザ（`/settings/sessions`）

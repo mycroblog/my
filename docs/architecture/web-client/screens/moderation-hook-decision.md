@@ -2,6 +2,7 @@
 start: "/moderation/hook-decisions"
 persona: "marco"
 paths: ["app/web/src/features/moderation/**", "app/web/src/routes/moderation.hook-decisions_.$id.tsx"]
+budget: {"controls": 2, "helpers": 1, "words": 63}
 ---
 
 ## 自動審査の判定（`/moderation/hook-decisions/{id}`）

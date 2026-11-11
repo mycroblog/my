@@ -3,6 +3,7 @@ start: "/notifications"
 persona: "yuki"
 paths: ["app/web/src/routes/notifications_.requests.tsx", "app/web/src/features/notifications/components/NotificationRequests.tsx", "app/web/src/features/notifications/components/NotificationRequestsLink.tsx", "app/web/src/features/notifications/hooks/useNotificationRequests.ts", "app/web/src/features/notifications/api/requests.ts"]
 unavailable: {"リクエストを 1 つ受け入れる": "the demo scenario keeps every notification policy at accept, so no notification is held in a request", "リクエストを 1 つ閉じる": "the demo scenario keeps every notification policy at accept, so no notification is held in a request"}
+budget: {"controls": 6, "helpers": 0, "words": 57}
 ---
 
 ## 通知のリクエスト（`/notifications/requests`）

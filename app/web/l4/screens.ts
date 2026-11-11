@@ -51,7 +51,17 @@ export type ScreenSetup = {
   notes?: Readonly<Record<string, string>>;
   /** The tasks (by their text in the L1) that the demo server cannot set up, and why; they are recorded, not measured. */
   unavailable?: Readonly<Record<string, string>>;
+  /**
+   * The most one story of the screen may show (budget.ts); the story test fails a story that shows more. null for a
+   * part or a state of another screen's route (a menu beside its pages, a first run), measured with that screen.
+   */
+  budget?: ScreenBudget | null;
 };
+
+/** The most a story of a screen may show, as src/test/screenMeasure.ts counts them. */
+export type ScreenBudget = { controls: number; helpers: number; words: number };
+
+const budgetFields = ["controls", "helpers", "words"] as const;
 
 const methods = new Set<string>(["GET", "PUT", "PATCH", "POST", "DELETE"]);
 
@@ -83,6 +93,15 @@ function isSeedStep(value: unknown): value is SeedStep {
   );
 }
 
+function isBudget(value: unknown): value is ScreenBudget | null {
+  if (value === null) return true;
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === budgetFields.length &&
+    budgetFields.every((field) => Number.isInteger(value[field]) && (value[field] as number) >= 0)
+  );
+}
+
 /** The check of each key of the front matter, and the form it expects. */
 const keys: Readonly<Record<keyof ScreenSetup, [(value: unknown) => boolean, string]>> = {
   start: [(v) => typeof v === "string" && v.startsWith("/"), "a path"],
@@ -101,6 +120,7 @@ const keys: Readonly<Record<keyof ScreenSetup, [(value: unknown) => boolean, str
   push: [isStringRecord, "an object of tasks and usernames"],
   notes: [isStringRecord, "an object of tasks and notes"],
   unavailable: [isStringRecord, "an object of tasks and reasons"],
+  budget: [isBudget, 'the counts {"controls": N, "helpers": N, "words": N} or null'],
 };
 
 /**

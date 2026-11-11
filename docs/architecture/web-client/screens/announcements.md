@@ -2,6 +2,7 @@
 start: "/home"
 persona: "yuki"
 paths: ["app/web/src/routes/announcements.tsx", "app/web/src/features/announcements/**"]
+budget: {"controls": 4, "helpers": 2, "words": 56}
 ---
 
 ## お知らせの一覧（`/announcements`）

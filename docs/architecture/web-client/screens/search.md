@@ -2,6 +2,7 @@
 start: "/home"
 persona: "yuki"
 paths: ["app/web/src/features/search/**"]
+budget: {"controls": 26, "helpers": 2, "words": 107}
 ---
 
 ## 検索（`/search`）

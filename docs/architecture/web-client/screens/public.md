@@ -2,6 +2,7 @@
 start: "/home"
 persona: "yuki"
 paths: ["app/web/src/routes/public.tsx", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**"]
+budget: {"controls": 22, "helpers": 1, "words": 84}
 ---
 
 ## 連合タイムライン（`/public`）

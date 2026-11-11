@@ -2,6 +2,7 @@
 start: "/moderation/accounts"
 persona: "marco"
 paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+budget: {"controls": 4, "helpers": 0, "words": 24}
 ---
 
 ## アカウントへの処分の履歴（`/moderation/accounts/{id}/actions`）

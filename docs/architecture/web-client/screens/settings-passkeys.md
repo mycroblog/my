@@ -3,6 +3,7 @@ start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/ui/src/ListSection.tsx"]
 unavailable: {"設定のメニューから来て、パスキー「ノート PC」を追加する（ブラウザの確認は数えない）": "the browser of the L4 run has no authenticator to create a passkey with", "パスキー「ノート PC」を削除する": "the demo scenario seeds no passkey, and the run cannot add one"}
+budget: {"controls": 6, "helpers": 5, "words": 118}
 ---
 
 ## パスキー（`/settings/passkeys`）

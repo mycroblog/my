@@ -3,6 +3,7 @@ start: "/moderation"
 persona: "marco"
 paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
 unavailable: {"違法な内容の通報を開く": "the demo scenario has no report of the legal category"}
+budget: {"controls": 5, "helpers": 0, "words": 83}
 ---
 
 ## 通報の一覧（`/moderation/reports`）

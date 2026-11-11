@@ -3,6 +3,7 @@ start: "/moderation/reports"
 persona: "marco"
 paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
 unavailable: {"ほかの言語の通報を翻訳して読み、原文に戻す": "the demo server registers no translation provider and enables no browser translation, so no report offers the action"}
+budget: {"controls": 16, "helpers": 17, "words": 443}
 ---
 
 ## 通報の詳細（`/moderation/reports/{id}`）

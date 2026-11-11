@@ -2,6 +2,7 @@
 start: "/about"
 persona: null
 paths: ["app/web/src/routes/about_.costs.tsx", "app/web/src/features/costs/**"]
+budget: {"controls": 6, "helpers": 3, "words": 259}
 ---
 
 ## 運営の費用（`/about/costs`）

@@ -2,6 +2,7 @@
 start: "/moderation"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.invites.tsx", "app/web/src/features/moderation/components/Invites.tsx", "app/web/src/features/moderation/components/inviteParts.tsx", "app/web/src/features/moderation/hooks/useInvites.ts", "app/web/src/features/moderation/api/invites.ts"]
+budget: {"controls": 3, "helpers": 0, "words": 25}
 ---
 
 ## 招待の一覧（`/moderation/invites`）

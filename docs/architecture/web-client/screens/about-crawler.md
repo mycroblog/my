@@ -2,6 +2,7 @@
 start: "/about/crawler"
 persona: null
 paths: ["app/web/src/routes/about_.crawler.tsx", "app/web/src/features/about/components/LinkCardCrawler.tsx", "app/web/src/features/about/hooks/useLinkCardCrawler.ts"]
+budget: {"controls": 3, "helpers": 3, "words": 637}
 ---
 
 ## リンクのカードのクローラー（`/about/crawler`）

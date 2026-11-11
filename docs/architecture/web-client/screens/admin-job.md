@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.jobs_.$id.tsx", "app/web/src/features/admin/components/JobDetail.tsx", "app/web/src/features/admin/components/jobParts.tsx", "app/web/src/features/admin/hooks/useJobs.ts", "app/web/src/features/admin/api/jobs.ts"]
+budget: {"controls": 2, "helpers": 0, "words": 54}
 ---
 
 ## ジョブ（`/admin/jobs/{id}`）

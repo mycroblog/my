@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.closure.tsx", "app/web/src/features/admin/components/ServiceClosureSettings.tsx", "app/web/src/features/admin/hooks/useServiceClosure.ts", "app/web/src/features/admin/api/closure.ts"]
 unavailable: {"クローズした後に、配送がどこまで進んだかを知る": "closing the demo server would end the demo for every task", "サーバーをクローズする": "closing the demo server would end the demo for every task"}
+budget: {"controls": 6, "helpers": 12, "words": 367}
 ---
 
 ## サービスの終了（`/admin/closure`）

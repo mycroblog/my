@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.announcements_.new.tsx", "app/web/src/features/admin/components/NewAnnouncement.tsx", "app/web/src/features/admin/components/AnnouncementFields.tsx", "app/web/src/features/admin/hooks/useAnnouncements.ts", "app/web/src/features/admin/api/announcements.ts"]
+budget: {"controls": 6, "helpers": 5, "words": 112}
 ---
 
 ## お知らせを書く（`/admin/announcements/new`）

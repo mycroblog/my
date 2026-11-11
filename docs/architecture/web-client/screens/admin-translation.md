@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.translation.tsx", "app/web/src/features/admin/components/TranslationSettings.tsx", "app/web/src/features/admin/hooks/useTranslationSettings.ts", "app/web/src/features/admin/api/translation.ts"]
+budget: {"controls": 9, "helpers": 8, "words": 295}
 ---
 
 ## 翻訳（`/admin/translation`）

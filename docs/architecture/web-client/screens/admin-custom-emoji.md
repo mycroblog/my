@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.custom-emojis_.$id.tsx", "app/web/src/features/admin/components/CustomEmojiDetail.tsx", "app/web/src/features/admin/hooks/useCustomEmojis.ts", "app/web/src/features/admin/api/customEmojis.ts"]
 unavailable: {"このサーバーの絵文字のカテゴリを変える": "the demo scenario registers no custom emoji", "このサーバーの絵文字を削除する": "the demo scenario registers no custom emoji", "ほかのサーバーの絵文字をこのサーバーに複製する": "the demo server federates with no other server, so it has no remote emoji"}
+budget: {"controls": 8, "helpers": 6, "words": 169}
 ---
 
 ## カスタム絵文字の詳細（`/admin/custom-emojis/{id}`）

@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.settings_.auto-delete.tsx", "app/web/src/features/admin/components/PolicySettings.tsx", "app/web/src/features/admin/hooks/useServerPolicies.ts", "app/web/src/features/admin/api/settings.ts", "app/web/src/features/admin/components/ServerSettings.tsx", "app/ui/src/LocalNav.tsx"]
+budget: {"controls": 26, "helpers": 9, "words": 279}
 ---
 
 ## サーバーの設定: 投稿の自動削除（`/admin/settings/auto-delete`）

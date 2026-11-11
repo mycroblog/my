@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.finance_.imports.tsx", "app/web/src/features/admin/components/BillingImports.tsx", "app/web/src/features/admin/components/FinanceParts.tsx", "app/web/src/features/admin/hooks/useFinance.ts", "app/web/src/features/admin/api/finance.ts"]
 unavailable: {"最後の取り込みが成功したかを知る": "the demo server configures no billing source, so the page lists no import to read", "利用料金をすぐに取り込む": "the demo server configures no billing source, so the page lists none"}
+budget: {"controls": 2, "helpers": 0, "words": 56}
 ---
 
 ## 利用料金の取り込み（`/admin/finance/imports`）

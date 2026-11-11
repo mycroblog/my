@@ -2,6 +2,7 @@
 start: "/home"
 persona: "yuki"
 paths: ["app/web/src/routes/local.tsx", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**"]
+budget: {"controls": 22, "helpers": 1, "words": 84}
 ---
 
 ## ローカルタイムライン（`/local`）

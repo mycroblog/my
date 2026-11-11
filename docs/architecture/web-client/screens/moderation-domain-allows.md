@@ -3,6 +3,7 @@ start: "/moderation/domain-actions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.allowed.tsx", "app/web/src/features/moderation/components/DomainAllows.tsx", "app/web/src/features/moderation/hooks/useDomainAllows.ts", "app/web/src/features/moderation/api/domainLists.ts"]
 seed: [{"my": ["admin", "domain", "allow", "add", "-comment", "Partner server", "friend.example"]}]
+budget: {"controls": 5, "helpers": 3, "words": 90}
 ---
 
 ## 許可したドメイン（`/moderation/domain-actions/allowed`）

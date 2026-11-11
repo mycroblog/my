@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.supporters_.plans.tsx", "app/web/src/features/admin/components/SupporterPlans.tsx", "app/web/src/features/admin/hooks/useSupporters.ts", "app/web/src/features/admin/api/supporters.ts", "app/web/src/features/admin/components/supporterParts.tsx"]
+budget: {"controls": 4, "helpers": 0, "words": 27}
 ---
 
 ## サポーター: プラン（`/admin/supporters/plans`）

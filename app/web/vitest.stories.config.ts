@@ -6,6 +6,7 @@
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig, mergeConfig } from "vitest/config";
+import { screenBudget } from "./l4/budgetRun.ts";
 import viteConfig from "./vite.config.ts";
 
 export default mergeConfig(
@@ -22,7 +23,11 @@ export default mergeConfig(
       name: "storybook",
       // A screen loads the app and its data through the worker; room for a loaded machine (web-client/README.md T7).
       testTimeout: 30_000,
+      // What each story shows against the budget of its screen's L1 file (l4/budget.ts).
+      setupFiles: ["./src/test/storyBudget.ts"],
+      globalSetup: ["./l4/budgetRun.ts"],
       browser: {
+        commands: { screenBudget },
         enabled: true,
         headless: true,
         provider: playwright(),

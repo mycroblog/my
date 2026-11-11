@@ -3,6 +3,7 @@ start: "/moderation/domain-actions/subscriptions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.subscriptions_.new.tsx", "app/web/src/features/moderation/components/DomainListSubscriptions.tsx", "app/web/src/features/moderation/components/domainListParts.tsx", "app/web/src/features/moderation/hooks/useDomainListSubscriptions.ts", "app/web/src/features/moderation/api/domainLists.ts"]
 unavailable: {"lists.example の CSV のブロックリストを下書きのモードで購読する": "The demo server cannot serve a list over https, so the subscription's first fetch fails."}
+budget: {"controls": 11, "helpers": 12, "words": 266}
 ---
 
 ## ブロックリストの購読の追加（`/moderation/domain-actions/subscriptions/new`）

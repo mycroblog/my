@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.oauth-apps.tsx", "app/web/src/features/admin/components/OAuthAppSettings.tsx", "app/web/src/features/admin/hooks/useOAuthApps.ts", "app/web/src/features/admin/api/oauthApps.ts"]
 unavailable: {"利用者が登録したアプリを無効にする": "the demo scenario registers no OAuth app besides the server's own"}
+budget: {"controls": 4, "helpers": 1, "words": 82}
 ---
 
 ## OAuth のアプリ（`/admin/oauth-apps`）

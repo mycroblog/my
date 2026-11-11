@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.custom-emojis_.requests.tsx", "app/web/src/features/admin/components/CustomEmojiRequests.tsx", "app/web/src/features/admin/components/CustomEmojiNav.tsx", "app/web/src/features/admin/hooks/useCustomEmojiRequests.ts", "app/web/src/features/admin/api/customEmojiRequests.ts"]
 unavailable: {"審査中の申請を承認する": "the demo scenario makes no custom emoji request"}
+budget: {"controls": 5, "helpers": 1, "words": 91}
 ---
 
 ## カスタム絵文字の申請（`/admin/custom-emojis/requests`）

@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/filters/**", "app/web/src/routes/settings.filters.tsx"]
+budget: {"controls": 35, "helpers": 8, "words": 204}
 ---
 
 ## キーワードフィルター（`/settings/filters`）

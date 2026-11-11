@@ -2,6 +2,7 @@
 start: "/moderation/accounts"
 persona: "hana"
 paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+budget: {"controls": 3, "helpers": 1, "words": 38}
 ---
 
 ## アカウントの管理（`/moderation/accounts/{id}/manage`）

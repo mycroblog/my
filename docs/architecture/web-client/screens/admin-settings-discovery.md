@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.settings_.discovery.tsx", "app/web/src/features/admin/components/PolicySettings.tsx", "app/web/src/features/admin/hooks/useServerPolicies.ts", "app/web/src/features/admin/api/settings.ts", "app/web/src/features/admin/components/ServerSettings.tsx", "app/ui/src/LocalNav.tsx", "app/web/src/lib/fullTextSearch.ts"]
+budget: {"controls": 6, "helpers": 8, "words": 213}
 ---
 
 ## サーバーの設定: 検索とクローラー（`/admin/settings/discovery`）

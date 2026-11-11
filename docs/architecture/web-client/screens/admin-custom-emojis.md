@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.custom-emojis.tsx", "app/web/src/features/admin/components/CustomEmojiList.tsx", "app/web/src/features/admin/components/CustomEmojiNav.tsx", "app/web/src/features/admin/hooks/useCustomEmojis.ts", "app/web/src/features/admin/api/customEmojis.ts"]
 unavailable: {"登録した絵文字を shortcode で探す": "the demo scenario registers no custom emoji", "ほかのサーバーの絵文字を無効にする": "the demo server federates with no other server, so it has no remote emoji"}
+budget: {"controls": 7, "helpers": 1, "words": 51}
 ---
 
 ## カスタム絵文字（`/admin/custom-emojis`）

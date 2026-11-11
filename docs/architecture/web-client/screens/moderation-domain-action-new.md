@@ -2,6 +2,7 @@
 start: "/moderation/domain-actions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.new.tsx", "app/web/src/features/moderation/components/NewDomainAction.tsx", "app/web/src/features/moderation/hooks/useDomainActions.ts"]
+budget: {"controls": 8, "helpers": 10, "words": 175}
 ---
 
 ## 新しいドメインへの処分（`/moderation/domain-actions/new`）

@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/routes/settings.followed-tags.tsx", "app/web/src/features/hashtags/**", "app/ui/src/ListSection.tsx"]
+budget: {"controls": 6, "helpers": 3, "words": 56}
 ---
 
 ## フォローしたハッシュタグ（`/settings/followed-tags`）

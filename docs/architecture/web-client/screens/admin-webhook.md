@@ -4,6 +4,7 @@ persona: "hana"
 paths: ["app/web/src/routes/admin.webhooks_.$id.tsx", "app/web/src/features/admin/components/WebhookSettings.tsx", "app/web/src/features/admin/components/WebhookDeliveries.tsx", "app/web/src/features/admin/components/webhookParts.tsx", "app/web/src/features/admin/hooks/useWebhooks.ts", "app/web/src/features/admin/api/webhooks.ts"]
 seed: [{"api": "hana", "method": "POST", "path": "/admin/webhooks", "body": {"url": "https://hooks.example/in", "description": "Moderation chat", "events": ["report.created"]}}]
 notes: {"Moderation chat にテストのメッセージを送る": "the demo server reaches no receiver: the test delivery stays failing"}
+budget: {"controls": 26, "helpers": 4, "words": 227}
 ---
 
 ## Webhook のページ（`/admin/webhooks/{id}`）

@@ -2,6 +2,7 @@
 start: "/home"
 persona: "layla"
 paths: ["app/web/src/routes/direct-messages.tsx", "app/web/src/features/direct-messages/**"]
+budget: {"controls": 4, "helpers": 0, "words": 41}
 ---
 
 ## DM（`/direct-messages`）
