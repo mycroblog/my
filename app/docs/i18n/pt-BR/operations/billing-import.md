@@ -14,7 +14,7 @@ A Cloudflare não tem uma cadeia assim, então a importação dela lê um token 
 <!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## Com os módulos do OpenTofu
 
-Os módulos [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) e [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) definem `billing_sources` e fazem as partes deste guia que a API de um provedor permite. `billing-gcp` funciona apenas com o módulo de aplicação do Google Cloud, então na AWS os módulos importam somente os custos da AWS. `billing-aws` funciona com os módulos de aplicação da AWS e com o do Cloud Run, em que ambos podem estar em `backends`. Nenhum dos dois foi aplicado em uma conta real ainda.
+Os módulos [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) e [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) definem `billing_sources` e fazem as partes deste guia que a API de um provedor permite. `billing-gcp` funciona apenas com o módulo de aplicação do Google Cloud, então na AWS os módulos importam somente os custos da AWS. `billing-aws` funciona com os módulos de aplicação da AWS e com o do Cloud Run, em que ambos podem estar em `backends`. Nenhum dos dois foi aplicado em uma conta real ainda.
 
 | Etapa deste guia | Com os módulos |
 | --- | --- |

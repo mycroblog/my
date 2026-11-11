@@ -15,7 +15,7 @@ Les informations de tiers ci-dessous portent la date à laquelle elles ont été
 | `GET /readyz`, `GET /health/ready` | La sonde de disponibilité du répartiteur de charge ou de Kubernetes | À chaque requête (les requêtes simultanées partagent une seule vérification) | `200` `{"status":"maintenance"}` |
 
 Faites pointer le moniteur externe vers **`/api/v1/instance/health`**, pas vers `/readyz` (`/health/ready`) : celui-ci interroge la base de données à chaque requête ; un moniteur à court intervalle garde donc éveillée une base de données qui descend à zéro. Les sondes sont destinées à votre plateforme.
-Les modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) et [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) vérifient `/health/live` (`monitoring-gcp`) ou `/readyz` (`monitoring-aws`) depuis le moniteur propre à la plateforme, à un long intervalle, et leurs README indiquent ce que cela coûte.
+Les modules [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) et [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) vérifient `/health/live` (`monitoring-gcp`) ou `/readyz` (`monitoring-aws`) depuis le moniteur propre à la plateforme, à un long intervalle, et leurs README indiquent ce que cela coûte.
 
 Réponses de `/api/v1/instance/health` (sans authentification, `Cache-Control: no-store`) :
 

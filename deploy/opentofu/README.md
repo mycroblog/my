@@ -1,465 +1,310 @@
 # OpenTofu modules
 
-Modules that compose a deployment of `my` from swappable backends. They are written for [OpenTofu](https://opentofu.org)
-and need version 1.11 or later: they use its `lifecycle` `enabled`, ephemeral resources, and write-only attributes. Only OpenTofu is supported. To deploy, follow [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md);
-this file is the contract for whoever uses or adds a module.
+`mycroblog-gcp` deploys `my` on Google Cloud in one module block: a Cloud Run service and a backend for each role, which you
+pick by the `kind` of a section and which defaults to the recommended setup. `mycroblog-aws` does the same on AWS, with ECS on
+Fargate, and **has never been applied** ([AWS](#aws)). Both are written for [OpenTofu](https://opentofu.org) and need version
+1.11 or later. Terraform is not supported. To deploy on Google Cloud, follow
+[Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md). The sections up to [AWS](#aws) describe `mycroblog-gcp`.
 
 ```text
 deploy/opentofu/
-  modules/app-gcp-cloud-run/      service, migration job, console, service account, public access
-  modules/queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
-  modules/queue-db/               the queue in the database, for a process that stays up: settings only
-  modules/blob-gcp-gcs/           media bucket
-  modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
-  modules/db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
-  modules/db-neon/                a Neon project it creates, with the password in the state: read its README
-  modules/db-gcp-cloud-sql/       Cloud SQL, through the connector's socket or on a network, never applied
-  modules/blob-s3/                any S3-compatible store, given an endpoint and a key
-  modules/blob-cloudflare-r2/     an R2 bucket, with its credentials by reference
-  modules/kv-external/            a Valkey outside this configuration, by a URL in the secret store
-  modules/kv-gcp-memorystore/     Memorystore for Valkey, on a network, never applied
-  modules/kv-aws-elasticache/     ElastiCache Serverless for Valkey, on a network, never applied
-  modules/network-gcp-vpc/        a VPC that the others take as network, never applied
-  modules/network-aws-vpc/        the same on AWS, never applied
-  modules/workers/                what the workers input means, for the app and queue modules: no block of a deployment
-  modules/stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
-  modules/stream-postgres/        the broker on LISTEN / NOTIFY of the database
-  modules/mail-smtp/              email through any SMTP service
-  modules/ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
-  modules/ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
-  modules/ingress-cloudflare-app/      traffic through Cloudflare, for any origin
-  modules/ingress-cloudflare-media/    a media host through Cloudflare, beside any ingress
-  modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
-  modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
-  modules/kek-gcp-kms/                 the KEK in Cloud KMS
-  modules/billing-gcp/                 the usage cost import from Google Cloud, never applied
-  modules/billing-aws/                 the usage cost import from AWS, never applied
-  modules/monitoring-gcp/              uptime check, log-based metrics, and alert policies
-  examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
-  modules/*-aws-*/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
-  upgrade.sh                      migration job first, then the service
-  console.sh                      runs one my command through an app module's console
-  aws-ecs.sh                      what those two share on ECS
+  mycroblog-gcp/                 the public module for Google Cloud
+  mycroblog-aws/                 the public module for AWS, never applied: see "AWS" below
+  examples/gcp-cloud-run-neon/   the google provider and one block of mycroblog-gcp, to copy
+  examples/aws-ecs-neon/         the aws provider and one block of mycroblog-aws, never applied
+  upgrade.sh                     migration job first, then the workers, then the service
+  console.sh                     runs one my command through the console job
+  modules/internal/              the modules the public modules compose, with no promise of compatibility
 ```
 
-## Using a module
+## Using the module
 
-A module is a Git source pinned to a release. A pin is required: an unpinned module could change the KEK's resources under you.
-
-```hcl
-module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
-  # ...
-}
-```
-
-Keep every block at the same release, the one you deploy, whether stable or a prerelease such as `v0.1.0-rc.4`. A module exists
-only from the first tag that contains it, so an earlier tag has none of them. `.terraform/modules/app/deploy/opentofu` holds
-`upgrade.sh` and `console.sh` after `tofu init`, at that release. `examples/gcp-cloud-run-neon` works when copied to an empty
-directory with its lock file: [the guide](../../docs/operations/deploy-cloud-run.md#3-copy-the-example-and-set-the-variables)
-starts that way.
-
-In this repository, `MODULE_REF` holds the release the examples name. Inside the repository the checks test the modules of the
-same commit: `scripts/task.sh tofu:example-test` runs on a copy whose sources are rewritten to local paths, and never
-fetches from GitHub. To update the example's lock file, use `scripts/task.sh tofu:lock`.
-
-## Naming
-
-A module is named `<role>-<provider>-<service>`, so that the name says what it is for before where it runs:
-
-| Role | What it provides |
-| --- | --- |
-| `app` | The server itself. It merges what the others return |
-| `db` | The database |
-| `queue` | The job queue and what triggers the periodic jobs |
-| `blob` | The media store |
-| `kv` | The key-value store of caches and rate limits, for `kv = valkey`. `kv = db`, the default, needs no module |
-| `stream` | The broker of the real-time updates |
-| `mail` | Email |
-| `secrets` | Secrets, filled by hand or generated |
-| `kek` | The key that encrypts the secrets in the database |
-| `ingress` | How traffic reaches the app |
-| `billing` | What the import of a provider's usage costs reads |
-| `monitoring` | The uptime check, the alerts, and the settings of the metrics that they read |
-| `network` | The private network that the others take as an input. It is no backend |
-
-A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
-not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
-A module that covers a provider's several services for one purpose drops the service (`billing-gcp`).
-
-## Platforms
-
-A module of one cloud works only with that cloud's app. Every module says which it belongs to in the output `platform`, and an app refuses a backend of another platform at plan, with what to use instead:
-
-| `platform` | Modules | Apps |
-| --- | --- | --- |
-| `gcp` | Every module with `gcp` in its name | `app-gcp-cloud-run` |
-| `aws` | Every module with `aws` in its name | `app-aws-ecs` |
-| `neutral` | `db-external`, `db-neon`, `mail-smtp`, `blob-s3`, `blob-cloudflare-r2`, `kv-external`, `ingress-cloudflare-*`, `stream-valkey`, `stream-postgres`, `queue-db` | Every app |
-
-A network has a platform too, and every module that takes one refuses another platform's: [The network contract](#the-network-contract).
-
-Mixing them would take identity bridges between clouds, and more combinations that nobody has applied. A store outside the platform is still a neutral module away: on Cloud Run, `blob-s3` with keys takes the place of `blob-aws-s3`.
-
-**The one exception** is `billing-aws` with `web_identity = true` on `app-gcp-cloud-run`, since reading another cloud's costs is only an outside API call: [The billing modules](#the-billing-modules) has how. The validation of `backends` in that app is the only place that allows it. `billing-gcp` has no such exception, so a server on AWS does not import Google Cloud's costs through these modules.
-
-**`queue-db` needs a process that stays up**, so being neutral does not make it fit everywhere. `app-aws-ecs` takes it. `app-gcp-cloud-run` refuses it unless `min_instances` is at least 1 and `cpu_always_allocated` is `true`, which bills an instance all the time. Each refusal covers a deployment that names no queue, since `db` is the server's default.
-
-`scripts/task.sh tofu:backend-fields` fails when a module has no `platform`, or one that its name contradicts.
-
-## The backend contract
-
-Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
-changing one module block:
-
-| Output | Type | Meaning |
-| --- | --- | --- |
-| `platform` | `string` | `gcp`, `aws`, or `neutral`: read [Platforms](#platforms). The one field that every backend must have, also one that names its outputs one by one |
-| `env` | `map(string)` | Settings by variable name (`MY_DATABASE`) |
-| `secret_env` | `map(string)` | Secret settings: variable name to a reference to a secret in the platform's store. The reference is the store's own: a secret ID in Secret Manager, a full ARN in AWS Secrets Manager. How the value reaches the server is the app module's business |
-| `secret_files` (optional) | `map(string)` | Secret settings to mount as files: a variable name ending in `_FILE` to the secret's reference. The app sets the variable to the path, on the service and every job. A platform with no mounted secrets treats it as `secret_env` of the name without `_FILE` |
-| `permissions` | `list(object({ permission, resource, ... }))`, with `scope` on Google Cloud and `conditions` on AWS | What the app's identity is permitted |
-| `direct_secret_env` (optional) | `map(string)` | What the one-off work takes over a setting of `secret_env`, which the service keeps: `MY_DATABASE_URL` as a direct connection when `secret_env` names a pooled one. Each name must be in `secret_env` |
-| `cloud_sql_instances` (optional) | `list(string)` | Cloud SQL instances, as `<project>:<region>:<instance>`, that Cloud Run mounts at `/cloudsql` on the service and every job |
-| `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS, such as those of `db-aws-rds` and `kv-aws-elasticache` |
-| `private_network` (optional) | `string` | The network on which this backend has private addresses: `network` of the shape on Google Cloud, `vpc_id` on AWS. The app must have the same network, and a plan fails otherwise. Read [The network contract](#the-network-contract) |
-| `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
-| `workers` (optional) | `map(list(string))` | The job types of each worker that a queue module was given. The app must have been given the same, and a plan fails otherwise. Read [Workers](#workers) |
-| `pool_max_conns` (optional) | `number` | `pool_max_conns` of the database URL, or `0` for the server's default, where a `db-*` module knows it: what the `concurrency` of a worker must stay below |
-| `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
-
-A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role, so its shape is the platform's:
-
-| Platform | `permission` | `scope` | `resource` | `conditions` |
-| --- | --- | --- | --- | --- |
-| Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | Not available |
-| AWS | One IAM action, such as `s3:GetObject` | None: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
-
-The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a
-backend asks for as little as it can. Google Cloud's app keys one resource on each grant, so it reads the names of `permissions` and
-`invokers` at plan time: a backend there builds them from its inputs rather than from attributes of its resources, and uses
-`depends_on` on the output for the order. AWS's app makes one document of them, so a backend there may name an attribute of its
-resources.
-
-The rules:
-
-- No secret value reaches the plan or the state, with one exception: the origin secret of an ingress, as its section says. A backend takes or creates a secret by ID, and the operator adds a value that
-  comes from elsewhere by hand. What the deployment can generate itself (the KEK, a VAPID key) goes through an ephemeral
-  resource and a write-only attribute, whose version number is fixed in the module, never an input: changing it writes a new
-  value, and the old one cannot be had again. A value that another system also holds, which can be written again without losing anything, is the
-  exception, and its version is an input: a database's password goes to the database and into the URL in one apply (`password_version`), and a value
-  from a module with no write-only form goes through `write_values` of a `secrets-*` module (`write_version`). `secrets-gcp-secret-manager` exposes the IDs as `ids`; a secret made elsewhere needs only its ID. The app can read every secret in `secret_env`, `direct_secret_env`, and `secret_files` without a role for it.
-- Exactly one KEK: a plan fails if the server would need one and no backend provides it (`kek` with `key_manager = local`,
-  `kms_key` otherwise).
-- A backend does not name the app. What it needs from the app is an input known in advance, such as `host`, so nothing
-  is circular: the queue calls the service's `run.app` URL, built from the service's name, and its service account exists before the service does.
-- A setting belongs to one place. The same setting named by two backends, by `env` and `secret_env`, by what the app
-  module sets itself, or as both `X` and `X_FILE`, fails the plan and lists the names. `merge()` alone would let the last
-  one win without a word. `MY_BILLING_SOURCES` is one setting that lists what several modules read, so no module names it: each
-  returns `billing_sources`. The same source twice, or the setting in `env` beside them, fails the same way.
-
-Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
-`secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
-object with `platform` and these fields can go in `backends`.
-
-**An app takes every field of these tables and either uses it or refuses it**, because OpenTofu drops an unknown field without a word when it converts a module's
-outputs to the type of `backends`, and a backend's settings or security groups would vanish while the plan passes. So a field of another platform fails the plan, and
-`scripts/task.sh tofu:backend-fields` fails when the tables and the type of `backends` of an app disagree, or when a module returns an output that is neither here nor listed there as being for the operator.
-
-### The database's two connections
-
-A database has a direct connection, and may have a pooled one. `my schema apply` holds a session-level lock and `LISTEN` belongs to
-a session, so neither can go through a pooler in transaction mode, while the service gets the most from one, and works through one
-that handles protocol-level prepared statements: [Through a connection pooler](../../docs/operations/database.md#through-a-connection-pooler). So:
-
-| Who | `MY_DATABASE_URL` | Comes from |
-| --- | --- | --- |
-| The service | The pooled connection when there is one, otherwise the direct one | `secret_env` |
-| The migration job and the console | Always the direct one | `direct_secret_env`, over `secret_env` |
-
-A `db-*` module with a pooled connection also returns `MY_STREAM_POSTGRES_URL`, the direct one, in `secret_env`, for `stream = postgres`.
-Which module has what:
-
-| Module | Direct | Pooled |
-| --- | --- | --- |
-| `db-external` | `url_secret_id`, required | `pooled_url_secret_id`, optional |
-| `db-neon` | `connection_uri` | `connection_uri_pooler` |
-| `db-gcp-cloud-sql` | The connector's socket, or the private address with a network | None: its pooling needs the Enterprise Plus edition |
-| `db-aws-rds` | The instance's endpoint | None: RDS Proxy pins on what the server does. Its README has why |
-
-The module list above names the database modules; each README says what stays unverified, and what moving your data takes. **Changing the `db` block is one block in the
-configuration and a data migration in practice**: a new database is empty.
-
-## The ingress contract
-
-An `ingress-*` module decides how traffic reaches the app. It is a backend, with these outputs on top of the usual ones:
-
-| Output | Type | Meaning |
-| --- | --- | --- |
-| `trusted_proxies` | `list(string)` | What this ingress puts in front of the platform. The app module adds what the platform itself puts in front of the server (Cloud Run's `169.254.0.0/16`) and sets `MY_TRUSTED_PROXIES` from both, so that the server finds the client's address in `X-Forwarded-For` and the ingress does not need to know the platform |
-| `service_ingress` | `string` or null | What the ingress needs of the service: `all` when its traffic comes from the internet, `internal-and-load-balancer` for a load balancer of Cloud Run, `load-balancer` for one that the service attaches to, as on ECS. It must agree with what the app can do, and a disagreement fails the plan. Null for a module that needs nothing, such as a media host |
-| `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
-| `load_balancer` (optional) | `object({ target_group_arn, security_group_id })` | What the service attaches to, on a platform where the app registers with its load balancer rather than the load balancer naming the app. An app with no way to attach refuses the ingress by its `service_ingress` |
-
-It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
-is no cycle as long as `platform`, `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
-`dns_records` may, so `backends` names those four outputs rather than the whole module:
+The module is a Git source pinned to a release. A pin is required: an unpinned module could change the KEK's resources under
+you. Configure the `google` provider in your configuration; the module takes its project and region unless you give
+`project_id` and `region`.
 
 ```hcl
-{ platform = module.ingress.platform, env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
-```
-
-A module that only adds a host, such as `ingress-cloudflare-media`, returns no `trusted_proxies` and no `service_ingress`, so
-it sits beside any other. A Cloudflare zone has one ruleset per phase, so two modules in one zone share them: one owns them, and
-takes the other's `rules` as `extra_rules`.
-
-Swapping one for another changes its block, and `service_ingress` of the app if the new one needs another setting, which the plan says. `service_ingress` of Cloud Run's app is
-required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. AWS's app has no such input, because one setting works:
-ECS accepts `load-balancer`, and refuses the others. An ingress may also be left out, for a deployment that uses the
-service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
-it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
-
-An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
-**That value lands in the state**: the provider has no write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
-
-`ingress-aws-cloudfront` is no backend: it sits in front of `ingress-aws-alb` with `behind_cloudfront`, which stays the app's ingress. The load balancer then admits CloudFront alone and checks CloudFront's header itself, so the server checks none, and the value lands in the state as above.
-
-## The network contract
-
-A `network-*` module is **no backend**: it returns no settings, it goes in no `backends`, and an app's `backends` would drop what it returns. It is an input of the others, so that one deployment has one private network it controls:
-
-```hcl
-module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
-  # ...
+provider "google" {
+  project = "my-project"
+  region  = "asia-northeast1"
 }
 
-module "db" {
-  # ...
-  network = module.network
-}
-```
+module "mycroblog" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-gcp?ref=v0.1.0&depth=1"
 
-**A network depends on nothing else, and the others only read it**, so nothing is circular, and the order follows from the references: its outputs wait for what they promise, so a database that reads `private_services_range` waits for the connection. A module takes `network` and no network of its own.
-
-**A VPC you have already is the same object, with no module.** Write out the fields of your platform below and pass it where `module.network` would go. Nothing checks your VPC against what you say of it, so what you say of it must be true: a field you leave out is what a module that needs it refuses at plan.
-
-A plan fails, with what to use instead:
-
-- when a network of another platform reaches a module, by `platform`;
-- when a field that a module needs is missing or in the wrong form;
-- when a backend's `private_network` is not the app's network. On AWS an ID may be unknown until the apply that creates it, and the comparison waits for then.
-
-### The network on Google Cloud
-
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `platform` | `string` | `gcp` |
-| `network` | `string` | `projects/<project>/global/networks/<name>` |
-| `subnetwork` | `string` | `projects/<project>/regions/<region>/subnetworks/<name>`, in the app's region, of `/26` or larger: what the service and the jobs attach to |
-| `private_services_range` | `string` | Name of a reserved range with its connection to `servicenetworking.googleapis.com` made, of `/24` or larger, for `db-gcp-cloud-sql`. Null where you have none, which only that module refuses |
-| `memorystore_connection_policy` | `bool` | Whether the VPC has a service connection policy of the class `gcp-memorystore` in this region, for `kv-gcp-memorystore`, which refuses `false` |
-| `nat` | `bool` | Whether the subnet reaches the internet through Cloud NAT |
-
-Keep every range in RFC 1918: an app with egress for private ranges sends only those through the VPC.
-
-### The network on AWS
-
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `platform` | `string` | `aws` |
-| `vpc_id` | `string` | The VPC |
-| `vpc_cidr` | `string` | Its primary range, which the load balancer's group allows out to reach the tasks |
-| `public_subnet_ids` | `list(string)` | Subnets with a route to an internet gateway: the load balancer's, in two zones or more, and the tasks' with `assign_public_ip` |
-| `public_subnet_cidrs` | `list(string)` | The range of each of those, in the same order, which is what the server trusts behind the load balancer |
-| `private_subnet_ids` | `list(string)` | Subnets for RDS, in two zones or more, ElastiCache, and the tasks without `assign_public_ip` |
-| `nat` | `bool` | Whether the private subnets reach the internet, through a NAT gateway or anything else that does it |
-
-### Who takes it
-
-| Module | With a network | With none |
-| --- | --- | --- |
-| `app-gcp-cloud-run` | Direct VPC egress of the service and the jobs | Attaches nothing: enough for everything on public endpoints |
-| `db-gcp-cloud-sql` | A private address alone, reached over TCP | A public address that only the connector reaches, which needs no VPC |
-| `kv-gcp-memorystore` | Required | Refused: only Private Service Connect reaches it |
-| `app-aws-ecs` | Required: a task is always in a VPC | Refused |
-| `db-aws-rds`, `kv-aws-elasticache`, `ingress-aws-alb` | Required | Refused: they live in a VPC |
-
-Nothing else takes one. `ingress-gcp-load-balancer` reaches the service through a serverless network endpoint group, so it has no address in a VPC.
-
-### The way out to the internet
-
-An instance that runs jobs must reach anyone, since federation does, so **a plan refuses every setting where it could not**:
-
-| App | With `nat` of the network | With it off |
-| --- | --- | --- |
-| `app-gcp-cloud-run` with `vpc_egress = PRIVATE_RANGES_ONLY`, the default | Not used | Fine: only private ranges go into the VPC, and public destinations keep Cloud Run's own path |
-| `app-gcp-cloud-run` with `vpc_egress = ALL_TRAFFIC` | Through Cloud NAT | **Refused** |
-| `app-aws-ecs` with `assign_public_ip = true` | Not used: a public subnet, with the task's own address | Fine |
-| `app-aws-ecs` with `assign_public_ip = false` | A private subnet, through the gateway | **Refused** |
-
-`nat` of a VPC of yours is what you say of it: set it when the private subnets, or the subnet of Cloud Run, reach the internet by whatever means. Nothing reads the routes.
-
-Google's guide for Direct VPC egress says that `all-traffic` sends everything through the VPC and that resources need Private Google Access for Google's APIs, which `network-gcp-vpc` sets, and it does not say in so many words that the internet then takes Cloud NAT. That follows from a subnet whose instances have no public address, and it is why the plan requires it. `ALL_TRAFFIC` with the connector of Cloud SQL is refused too: the same guide says to use a private address when all egress goes through the VPC.
-
-### What stays closed
-
-The server's outbound HTTP to destinations that remote servers influence, such as federation and link previews, goes through a client that refuses private and link-local addresses at connection time, so a network adds no way for a remote server to reach what is on it. `http_allow_private_networks` turns that off, and it is refused in the `production` profile, and an app on a network refuses it at plan. The database and Valkey clients do not go through that client, since their addresses come from the operator, so a private address works for them.
-
-## The billing modules
-
-`billing-gcp` works on Google Cloud's app, and `billing-aws` on either platform's: on Cloud Run it is [the one exception](#platforms). Both can sit in the `backends` of Cloud Run. Each module uses
-the provider of the cloud it reads and no other, and takes what it needs of the other cloud as a string, so the root
-configuration needs the other provider only when it has that block. A permission on AWS's resource cannot go through
-`permissions` of Cloud Run's app, so the module holds it itself:
-
-| Block | App | Provider of the block | What holds the permission |
-| --- | --- | --- | --- |
-| `billing-aws` | AWS | `aws`, which the app has | The app's role, through `permissions` |
-| `billing-aws` with `web_identity` | Google Cloud | `aws`, on top of the app's `google` | A role of this module, which trusts the app's service account |
-| `billing-gcp` | Google Cloud | `google`, which the app has | The app's service account, through `permissions` |
-
-`billing-aws` on Cloud Run takes `module.app.service_account_unique_id`, so name its outputs in `backends` rather than the whole
-module, as with an ingress. Its `env` is built from names, so it does not wait for the role. Without `web_identity` it asks the app for a permission, and Cloud Run's app refuses it.
-
-Neither module has ever been applied, and turning on a billing export or a budget stays a step in the Console: [each README](modules/billing-gcp/README.md#what-stays-manual) says which, and [the guide](../../docs/operations/billing-import.md) what the import does with them.
-
-## The monitoring contract
-
-A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
-
-## The app contract
-
-Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
-`origin_host`, the host name its service answers on, for an ingress that takes the origin as an input. It is null on a platform
-where the service has no host of its own, such as ECS, whose tasks each have another address: an ingress that needs a host then fails the plan.
-
-### Private networking
-
-Most backends are reached over the internet with the platform's own identity, and need no network of their own. A backend that has only private addresses says so through `backends`, and the backend still does not name the app:
-
-| Platform | Field | What the app does | Returned by |
-| --- | --- | --- | --- |
-| Google Cloud, AWS | `private_network` | Fails the plan unless its own `network` is that one | `kv-gcp-memorystore`, `db-gcp-cloud-sql` with a network, `db-aws-rds`, `kv-aws-elasticache` |
-| ECS | `security_group_ids` | The service and every one-off task join each group | `db-aws-rds`, `kv-aws-elasticache` |
-
-The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
-null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, and each README says what it costs.
-
-### Workers
-
-A busy type of job should not hold up the rest. An app takes `workers` and builds what it says, and a queue module takes the same value and creates what that needs, so **no queue name, URL, route, or `worker_job_types` is written by hand**:
-
-```hcl
-locals {
-  workers = {
-    delivery = {
-      job_types     = ["federation.fanout", "federation.deliver"]
-      max_instances = 20
-      concurrency   = 16
-    }
+  host  = "social.example.org"
+  image = "ghcr.io/mycroblog/my:0.1.0"
+  media = { bucket_name = "my-project-my-media" }
+  mail = {
+    from = "noreply@social.example.org"
+    smtp = { host = "smtp.example.org", username = "my-smtp-user" }
   }
 }
-
-module "queue" {
-  # ...
-  workers = local.workers
-}
-
-module "app" {
-  # ...
-  workers = local.workers
-}
 ```
 
-The key names everything, and whatever no worker names goes to the default service, which an app always has. **An empty `workers`, the default, plans as if it were not there**, with one service and one queue. Each is derived from inputs, not from created resources, so nothing is circular: the queue builds a service's URL from its name as it does for the default.
+Keep `ref` at the release you deploy, whether stable or a prerelease such as `v0.1.0-rc.4`, and `image` at the same version.
+The module exists only from the first release that contains it. After `tofu init`, `.terraform/modules/mycroblog/deploy/opentofu`
+holds `upgrade.sh` and `console.sh` at that release, under the name of your block. `examples/gcp-cloud-run-neon` works when
+copied to an empty directory with its lock file, which is where [the guide](../../docs/operations/deploy-cloud-run.md#3-copy-the-example-and-set-the-variables)
+starts.
 
-| | `queue-gcp-cloud-tasks` on Cloud Run | `queue-db` on Cloud Run or ECS |
+The module declares the `random` and `cloudflare` providers itself, which need no configuration. Without a Cloudflare kind no
+resource uses `cloudflare`, so a plan needs no `CLOUDFLARE_API_TOKEN`; with one, the provider reads the token from it.
+
+## Sections
+
+Each section is an object, and every field has a default, so you write only what you change. The first kind of each row is the
+default.
+
+| Section | Kinds | What it does |
 | --- | --- | --- |
-| A worker | A service `<app>-<key>`, a queue `<queue>-<key>` | A service `<app>-<key>`, no queue |
-| How jobs reach it | `MY_QUEUE_CLOUDTASKS_ROUTES`, to its queue and its deterministic URL | `MY_WORKER_JOB_TYPES`, and `MY_WORKER_JOB_TYPES_EXCEPT` of the default with every type of every worker |
-| `concurrency` | Requests of an instance at once, since one signal is one job | `MY_WORKER_JOB_CONCURRENCY` |
+| `ingress` | `load-balancer`, `domain-mapping`, `cloudflare` | How traffic reaches the service. The load balancer closes the `run.app` URL, at a monthly fee. The domain mapping costs nothing, is a Preview feature, and leaves the `run.app` URL open. Cloudflare closes the origin with a secret the module generates. `media_host` adds a cached media host on Cloudflare beside any of them |
+| `database` | `external`, `cloud-sql` | `external` reads the URL of a PostgreSQL you run, such as Neon, from a secret you fill, and `pooled = true` adds a second secret for a pooled URL, which the service then uses. `cloud-sql` creates an instance and its password, and bills while idle: `tier`, `disk_size_gb`, `retained_backups`, `deletion_protection` |
+| `queue` | `cloud-tasks`, `db` | `cloud-tasks` pushes jobs to the service, which can scale to zero. `db` polls the database from a process that stays up. `tick_schedule`, every minute by default, wakes the server and the database; `max_concurrent_dispatches` bounds a burst |
+| `media` | `gcs`, `r2`, `s3` | `bucket_name` is required. `gcs` creates a bucket in `location`, the region by default. `r2` creates an R2 bucket in `cloudflare.account_id`. `s3` uses any S3-compatible store at `endpoint`, with `s3_region` and `path_style`. `r2` and `s3` read their access key from secrets you fill |
+| `kv` | `db`, `memorystore`, `external` | The store of caches and rate limits. `memorystore` creates Memorystore for Valkey, which bills while idle and needs a VPC. `external` reads a Valkey URL from a secret you fill, and with `tls_ca = true` the CA of its certificate from another |
+| `stream` | `pubsub`, `postgres`, `valkey` | The broker of real-time updates. `postgres` uses the database's direct connection, and `valkey` the Valkey of `kv` |
+| `mail` | SMTP | Required: `from`, and `smtp.host`, `smtp.port` (587), and `smtp.username`. With a username, the password goes in a secret you fill |
+| `kek` | `secret-manager`, `kms` | The key that encrypts the secrets in the database: a generated secret, mounted as a file, or a key in Cloud KMS that never leaves it |
+| `network` | `none`, `vpc`, `existing` | The VPC the service attaches to. `vpc` creates one, and `nat = true` sends all egress through Cloud NAT for a static source address. `existing` takes yours: `network`, `subnetwork`, `private_services_range`, and `memorystore_connection_policy`. With a VPC, `cloud-sql` takes a private address on it |
+| `cloudflare` | | `zone_id` and `account_id`, for the Cloudflare kinds. `host_header_override = true`, on the Enterprise plan only, lets Cloudflare connect to the `run.app` URL; otherwise a domain mapping of each host is its origin. `proxied = false` leaves the records unproxied, which a domain mapping may need until its certificate is issued |
+| `service` | | The Cloud Run service: `min_instances` (0, which scales to zero), `max_instances` (3), `cpu`, `memory_mib`, `concurrency`, `cpu_always_allocated`, `request_timeout_seconds` |
+| `jobs` | | The migration and console jobs: `memory_mib`, `timeout_seconds` |
+| `workers` | | Services that run some job types apart from the default service, by a key that names each: [Workers](#workers) |
+| `monitoring` | | Required: an uptime check, log-based metrics, and alert policies, which notify at least one of `notification_emails` and `notification_channels`. Null creates none. Its fields: `notification_emails`, `notification_channels`, `page_notification_channels`, `uptime_period`, `disabled_alerts`, `metrics_exporter`, and size limits. Each uptime check wakes an instance |
+| `billing` | | Null by default. `billing_account_id`, `method`, and `dataset_location` import the usage cost into the server's dashboard |
 
-| Field | Cloud Run | ECS | Otherwise |
-| --- | --- | --- | --- |
-| `job_types` | Required | Required | Names and prefixes, as [the server reads them](../../docs/operations/running.md#splitting-workers-by-job-type) |
-| `min_instances`, `max_instances` | Yes | | The service's. With `queue-db`, `min_instances` is 1 and must stay at least that |
-| `instances` | | Yes | 1 task. ECS here has no scaling |
-| `cpu`, `memory_mib` | Yes | Yes | The service's |
-| `concurrency` | Yes | Yes | As in the table above |
-| `max_concurrent_dispatches`, `max_dispatches_per_second` | With Cloud Tasks | | The queue's input, and Cloud Tasks' own default |
+`name` (`my` by default) starts every name the module creates, so two deployments can share a project: the service is `<name>`,
+the secrets `<name>-kek`, `<name>-database-url`, and so on, the queue `<name>-jobs`. `console_enabled` creates the console
+job for as long as you need it, and `deletion_protection` refuses to destroy the service.
 
-**A plan refuses** a field that nothing reads or that the platform and queue do not have, since a conversion would drop it without a word; a key that cannot name things or that a deployment already uses; a name or prefix that matches no job type; a type on two workers; a `concurrency` outside 1 to 128, or known not to be below the pool of the database; a queue module given other workers than the app, since a process with other routes undoes the split without an error; `stream = hub`, which would keep a job's updates in the process that ran it; and **a split of the types that must stay on one worker**, which [the guide](../../docs/operations/running.md#splitting-workers-by-job-type) lists. A prefix covers its types, so `federation.*` keeps them together.
+**What does not fit together fails before the plan**, with a message that names the inputs:
 
-`modules/workers` holds the job types and that list in one place, as JSON. It is no block of a deployment, and the modules that take `workers` read it. `scripts/tofu-workers-check.sh`, in `tofu:backend-fields`, fails when they drift from `internal/platform/job_types.go`, which `my job types` prints, or from the table in the guide; `--write` updates the types. **What the plan cannot see** is that some types exist only with a setting: a name that the running server has not registered, such as `notification.push` with no VAPID key, still stops the start.
+- `kv.kind = memorystore` with `network.kind = none`;
+- `stream.kind = valkey` with `kv.kind = db`;
+- `queue.kind = db` without `service.min_instances` of 1 or more and `service.cpu_always_allocated = true`, which bill an
+  instance all the time;
+- `ingress.kind = cloudflare` or `ingress.media_host` without `cloudflare.zone_id`, and `media.kind = r2` without
+  `cloudflare.account_id`;
+- `media.kind = s3` without `media.endpoint`; `database.pooled` with `cloud-sql`; `network.nat` without `network.kind = vpc`;
+  `network.kind = existing` without `network.network` and `network.subnetwork`; `kv.tls_ca` or `kv.key_prefix` without
+  `kv.kind = external`.
 
-What a worker has of the app: the image, the settings, the secrets with `direct_secret_env` left to the one-off work as for the service, the identity, and the network. **Its `role` is `worker`, and the default stays at the `role` it has**, `all` unless said otherwise: it serves the traffic and runs what no worker names. **A worker takes no public traffic.** On Cloud Run its service is internal, and only the queue's account may invoke it. On ECS it has no load balancer, and joins a group that admits nothing. The console is unaffected.
+The modules behind the sections also refuse what they cannot do, such as a split of workers that keeps apart the job types
+that must stay together.
 
-**One audience, and one account, across the services of Cloud Tasks.** A process checks a token against `queue_cloudtasks_url` plus the path, unless `queue_cloudtasks_audience` is set. That same URL is where the process sends the tasks of the default queue, so a worker cannot name its own URL there without taking those tasks. So with workers the queue module sets one audience, the default service's URL, for every process and for the tick, and a worker's service accepts it as a custom audience, which Cloud Run's own check of the token needs. There is one invoker account rather than one per service, because the server creates every task with the one `queue_cloudtasks_service_account` and accepts only that, and a route cannot name another.
+## Other settings and secrets
 
-`upgrade.sh` finds the workers on the platform and moves each after the migration and before the default: by a label on Cloud Run, and by being in the cluster on ECS. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
+`settings` takes any other setting of the [configuration reference](../../docs/reference/configuration.md) by its key, such as
+`translator_deepl_url`, and the module passes it to the service, the workers, and the jobs. `secrets` takes the keys of secret
+settings: for each, the module creates an empty secret `<name>-<key>`, with hyphens for underscores, passes it to the server,
+and lists it in `secrets_to_fill`. A key that a section sets or the module fixes fails the plan, and so does a key the
+module does not take, such as `listen`: the error gives the reason.
 
-Never applied, like everything here. Unverified: that Cloud Run accepts a token whose audience is a custom one on a service that shares it with no other, on the URL that Cloud Tasks counts as internal, and that the same value of audience on several services is allowed, which Google's page does not say; that `gcloud`'s filter finds a service by that label; and that `role = worker` answers Cloud Run's probes as the configuration reference says it does.
+```hcl
+  settings = { translator_deepl_url = "https://api.deepl.com" }
+  secrets  = ["translator_deepl_api_key"]
+```
 
-### The console
+## Secrets
 
-A console runs one `my` command as a one-off, with the same image, settings, and secrets as the app, for tasks such as
-creating the first administrator.
+No secret value you give reaches the OpenTofu plan or state. The module generates what it can: the KEK and the VAPID key
+through write-only attributes, which never reach the state, and the Cloud SQL password the same way. The one exception is the
+origin secret of `ingress.kind = cloudflare`: Cloudflare's rule holds the value, so it lands in the state, which must stay
+private.
 
-- The input `console_enabled`, off by default, turns it on for as long as it is needed, so that nothing extra that can
-  read the secrets stays around.
-- The output `console` is null while it is off. Otherwise it is an object with a `platform`, and whatever else that
-  platform needs.
-- [`console.sh`](console.sh) is the one way to use it. It reads that output on standard input and takes the `my` command
-  as its arguments, waits for it, prints its output, and exits with its exit code. A new platform adds one function
-  there, chosen by `platform`.
-- The command has no standard input and no terminal, on every platform. Anything it prints stays wherever the platform
-  keeps output, so a command that needs a secret must not take it from there or print it casually:
-  `my admin create -password-link` exists for this.
+The secrets only you have, such as the URL of an external database, the SMTP password, an access key, or the keys of
+`secrets`, the module creates empty. The output `secrets_to_fill` lists each, with what goes in it and the `gcloud` command
+that adds it. An instance whose secret has no version does not start, so add them before the service.
+
+**OpenTofu generates the KEK once and never again.** The secret and its version have `prevent_destroy`, and the version number
+that would write a new value is fixed in the module: a new random KEK would make everything the old one encrypted unreadable.
+The output `kek` says where it is and how to copy it.
+
+## Outputs
+
+| Output | What it holds |
+| --- | --- |
+| `secrets_to_fill` | Secret ID to `what` goes in it and the `command` that adds it |
+| `dns_records` | The records to add at your DNS provider for the ingress. Empty where Cloudflare creates them |
+| `kek` | Where the KEK is, and with `secret-manager` the command that copies it |
+| `service_uri` | The URL Cloud Run gave the service |
+| `console` | What `console.sh` reads, or null while `console_enabled` is off |
+| `upgrade` | The `project`, `region`, and `name` that `upgrade.sh` takes, and the services it moves |
+
+## Workers
+
+A busy type of job should not hold up the rest. `workers` takes a map by a key that names each worker, with its `job_types`
+and its size; the module gives the same value to the service, the queue, and the monitoring, so no queue name, URL, or route
+is written by hand:
+
+```hcl
+  workers = {
+    delivery = { job_types = ["federation.fanout", "federation.deliver"], max_instances = 20, concurrency = 16 }
+  }
+```
+
+Each worker is a Cloud Run service `<name>-<key>`, which takes no traffic from outside, with a Cloud Tasks queue
+`<name>-jobs-<key>`. A worker also takes `min_instances`, `cpu`, `memory_mib`, `max_concurrent_dispatches`, and
+`max_dispatches_per_second`. Whatever no worker names runs on the default service. [Splitting jobs into workers](../../docs/operations/deploy-cloud-run.md#splitting-jobs-into-workers)
+has what to split.
+
+## The scripts
+
+[`upgrade.sh`](upgrade.sh) moves a deployment to another image: the migration job first, which runs `my config check`,
+`my db upgrade -check`, `my schema apply`, and `my db upgrade`, then each worker, then the service, and it stops at the first
+step that fails. An apply never changes the image of a service or job that exists: `image` is what a new one starts from.
+
+[`console.sh`](console.sh) runs one `my` command through the console job. It reads the output `console` on standard input and
+takes the command as its arguments, waits for it, prints its output, and exits with its exit code:
 
 ```sh
-tofu output -json console | deploy/opentofu/console.sh admin create -username alice -email alice@example.com -password-link
+tofu output -json console | .terraform/modules/mycroblog/deploy/opentofu/console.sh admin create -username alice -email alice@example.com -password-link
 ```
 
-### Upgrading
+The command has no standard input and no terminal. What it prints stays in Cloud Logging, so a command that needs a secret
+must not take it from there or print it casually.
 
-[`upgrade.sh`](upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
-`config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
-chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
-gives a revision no traffic until `/readyz` answers, and ECS goes back when a new task fails its load balancer's check.
+## AWS
 
-## AWS: unverified
+`mycroblog-aws` deploys `my` on AWS in one block: an ECS service on Fargate behind an Application Load Balancer, the jobs in
+the database, and a backend for each role, picked by the `kind` of a section as in `mycroblog-gcp`. **Nothing of it has ever
+been applied on AWS**: the checks plan it on mocked providers and with no credentials, which shows that the configuration is
+consistent, not that AWS accepts it or that the server starts. Treat a first deployment as a test.
 
-The modules for AWS test whether this contract holds on a second platform. **None has ever been applied**, so use Google Cloud unless you mean to be the first.
+```hcl
+provider "aws" {
+  region = "ap-northeast-1"
+}
 
-`app-aws-ecs` runs the released image as it is, with its secrets from ECS and its one-off commands as tasks, so nothing is known to be missing: `modules/app-aws-ecs/README.md` says what stays unverified and what it costs. Unlike Cloud Run it costs money while idle.
+module "mycroblog" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-aws?ref=v0.1.0&depth=1"
 
-| Module | Replaces on AWS |
+  host       = "social.example.org"
+  image      = "ghcr.io/mycroblog/my:0.1.0"
+  network    = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
+  ingress    = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000" }
+  media      = { bucket_name = "social-example-org-media" }
+  mail       = { from = "noreply@social.example.org" }
+  monitoring = { notification_emails = ["ops@social.example.org"] }
+}
+```
+
+`examples/aws-ecs-neon` is this block with its variables, to copy with its lock file. The module takes the region of the `aws`
+provider and declares `random`, `archive`, and `cloudflare` itself. It uses no provider alias, so the certificate that
+CloudFront needs in `us-east-1` comes in as an ARN, created by hand in AWS Certificate Manager like the load balancer's.
+
+### Sections of mycroblog-aws
+
+Required: `network.egress`, `ingress.certificate_arn`, `media.bucket_name`, `mail.from`, and `monitoring`, which is null or
+names who the alarms notify. Every other field has a default. The first kind of each row is the default.
+
+| Section | Kinds | What it does |
+| --- | --- | --- |
+| `network` | `vpc`, `existing` | ECS always needs a VPC. `vpc` creates one over `availability_zones`, at least two, in `cidr_block`. `existing` takes yours: `vpc_id`, `vpc_cidr`, `public_subnet_ids`, `public_subnet_cidrs`, and `private_subnet_ids`. `egress` has no default, since both ways out bill by the hour: `public-ip` gives each task a public IPv4 address in a public subnet, `nat` puts the tasks in private subnets behind a NAT gateway, which `vpc` creates and a VPC of yours must have |
+| `ingress` | `load-balancer`, `cloudfront`, `cloudflare` | The load balancer is always there, with `certificate_arn`, a certificate for `host` in the region. `load-balancer` serves `host` from it, with the records in the Route 53 zone `route53_zone_id` or listed in `dns_records` (`host_is_apex` for an apex without Route 53). `cloudfront` puts CloudFront in front, with `/media/` cached, and the load balancer then admits CloudFront alone: `cloudfront_certificate_arn` (in `us-east-1`) and `cloudfront_price_class`. `cloudflare` puts the zone of `cloudflare` in front, which creates the record, and the server refuses what lacks a secret the module generates. `media_host` adds a cached media host on Cloudflare beside `load-balancer` or `cloudflare`; the certificate must cover it too |
+| `database` | `external`, `rds` | `external` reads the URL of a PostgreSQL you run, such as Neon, from a secret you fill, and `pooled = true` adds a secret for a pooled URL, which the service then uses. `rds` creates an instance and its password in the private subnets, and bills while idle: `instance_class`, `allocated_storage_gb`, `max_allocated_storage_gb`, `backup_retention_days`, `multi_az`, `deletion_protection` |
+| `media` | `s3`, `r2`, `s3-compatible` | `bucket_name` is required. `s3` creates a bucket, with `versioning` and `noncurrent_version_days`. `r2` creates an R2 bucket in `cloudflare.account_id`. `s3-compatible` uses another store at `endpoint`, with `s3_region` and `path_style`. `r2` and `s3-compatible` read their access key from secrets you fill |
+| `kv` | `db`, `elasticache`, `external` | The store of caches and rate limits. `elasticache` creates ElastiCache Serverless for Valkey, which bills while idle. `external` reads a Valkey URL from a secret you fill, and with `tls_ca = true` the CA of its certificate from another |
+| `stream` | `sns`, `postgres`, `valkey` | The broker of real-time updates. `postgres` uses the database's direct connection, and `valkey` the Valkey of `kv` |
+| `mail` | `ses`, `smtp` | `from` is required. `ses` sends through Amazon SES in the region, from the domain of `from`, with an optional `configuration_set`: read [Email through Amazon SES](#email-through-amazon-ses). `smtp` takes `smtp.host`, `smtp.port` (587), and `smtp.username`, whose password goes in a secret you fill |
+| `kek` | `secrets-manager`, `kms` | The key that encrypts the secrets in the database: a generated secret, or a key in AWS KMS that never leaves it |
+| `cloudflare` | | `zone_id` and `account_id`, for the Cloudflare kinds |
+| `service` | | The ECS service: `desired_count` (1), `cpu` (256), `memory_mib` (1024), and `health_check_grace_seconds`. Nothing scales to zero: a task bills for as long as it runs |
+| `jobs` | | The migration and console tasks: `cpu` and `memory_mib` |
+| `workers` | | Services that run some job types apart from the default service, by a key that names each: `job_types`, `instances`, `cpu`, `memory_mib`, and `concurrency` |
+| `monitoring` | | Required: a CloudWatch Synthetics canary, metrics in CloudWatch, and alarms, which notify at least one of `notification_emails` and `notification_topic_arns`. Null creates none. Also `page_notification_topic_arns`, `uptime_period_minutes` (15), `disabled_alerts`, and size limits. Each run of the canary is billed |
+| `billing` | | Null by default. `{}` imports the usage cost from Cost Explorer into the server's dashboard, with the tasks' own role |
+
+There is no `queue` section: the tasks stay up, so they take the jobs from the database. `name`, `console_enabled`,
+`log_retention_days`, `settings`, and `secrets` work as in `mycroblog-gcp`, with the secrets in Secrets Manager.
+
+**What does not fit together fails before the plan**, with a message that names the inputs:
+
+- `network.kind = vpc` without two `availability_zones`, or `availability_zones` with `existing`; `existing` without its five
+  fields;
+- `ingress.kind = cloudfront` without `cloudfront_certificate_arn`, or that certificate with another kind;
+  `ingress.kind = cloudflare` or `media_host` without `cloudflare.zone_id`; `route53_zone_id` with `cloudflare`;
+  `media_host` with `cloudfront`, or equal to `host`;
+- `database.pooled` with `rds`; `media.kind = s3-compatible` without `endpoint`; `r2` without `cloudflare.account_id`;
+- `kv.tls_ca` or `kv.key_prefix` without `kv.kind = external`; `stream.kind = valkey` with `kv.kind = db`;
+- `mail.kind = smtp` without `mail.smtp`, `mail.smtp` with `ses`, and `mail.configuration_set` with `smtp`;
+- `monitoring` that names nobody to notify.
+
+### Outputs of mycroblog-aws
+
+| Output | What it holds |
 | --- | --- |
-| `app-aws-ecs` | `app-gcp-cloud-run` |
-| `db-aws-rds` | `db-gcp-cloud-sql` |
-| `queue-db` | `queue-gcp-cloud-tasks` |
-| `blob-aws-s3` | `blob-gcp-gcs` |
-| `stream-aws-sns` | `stream-gcp-pubsub` |
-| `mail-aws-ses` | Beside `mail-smtp`, which works unchanged |
-| `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
-| `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
-| `ingress-aws-alb`, and `ingress-aws-cloudfront` in front of it | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
-| `billing-aws` | `billing-gcp`, and it also runs on Google Cloud's app: read [The billing modules](#the-billing-modules) |
-| `monitoring-aws` | `monitoring-gcp` |
+| `secrets_to_fill` | Secret name to `what` goes in it and the `aws secretsmanager put-secret-value` command that adds it |
+| `dns_records` | The records to add at your DNS provider: `host`, unless Route 53 or Cloudflare creates it, and with `mail.kind = ses` the DKIM records of the domain of `mail.from` |
+| `dns_note` | What `dns_records` cannot say, or null: at an apex without Route 53, the record of `host` needs an ALIAS or ANAME |
+| `kek` | Where the KEK is, and with `secrets-manager` the command that copies it |
+| `domain_name` | What `host` points at: the distribution with `cloudfront`, the load balancer otherwise |
+| `console` | What `console.sh` reads, or null while `console_enabled` is off |
+| `upgrade` | The `region` and `name` that `upgrade.sh --platform aws-ecs` takes, and the services it moves |
 
-`db-external`, `db-neon`, and `mail-smtp` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
-tests show that a block of one platform fails the plan on the other's app. `examples/aws-ecs-neon` composes them, and its tests swap each block
-its comments name; those tests mock the provider.
+### The first deployment on AWS
+
+`/readyz` fails until the schema exists, so the schema comes first. Create the secrets, fill the ones that `secrets_to_fill`
+lists, create the migration's task definition, run the migration, then apply everything:
+
+```sh
+tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secrets_manager
+tofu output secrets_to_fill   # run each command with its value
+tofu apply -target='module.mycroblog.module.app.aws_ecs_task_definition.task["migrate"]'
+
+SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
+"$SCRIPTS/upgrade.sh" --platform aws-ecs --region ap-northeast-1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
+
+tofu apply
+tofu output dns_records       # add each at your DNS provider
+```
+
+`upgrade.sh --platform aws-ecs` upgrades later, as on Google Cloud, and `console.sh` runs a command through the console's task
+definition, whose output stays in CloudWatch Logs.
+
+### What it costs on AWS
+
+Nothing scales to zero on ECS: the task, the load balancer, and its public addresses bill all month. With one task of 0.25 vCPU
+and 1 GB, expect about $42 a month at idle in Tokyo with `egress = "public-ip"`, and about $75 with `egress = "nat"`, before
+the database, storage, traffic, and the canary. These figures come from AWS's price list and have not been checked against a
+bill.
+
+### Email through Amazon SES
+
+`mail.kind = ses`, the default, sends with the SES API in the region of the deployment, from the domain of `mail.from`. The
+module creates the domain's identity and allows the tasks `ses:SendEmail` on it, so there is no password. Before SES sends to
+your users, add the records that `tofu output dns_records` lists and leave the sandbox:
+[Sending email through Amazon SES](../../docs/operations/email-ses.md) has the steps.
 
 ## Checks
 
-`scripts/task.sh tofu:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
-and the example, the tests on mocked providers, a check that every `MY_*` name here exists in the configuration, and a real
-apply against a local stub of Secret Manager, which shows the formats of the generated values, that none reaches the plan or
-the state, and that another apply writes nothing; `tofu:db-state-test` does the same against a stub of Cloud SQL and shows that the database user and the URL get the same password. None of them reaches a cloud, so they show that the configuration is
-consistent, not that an apply on Google Cloud succeeds. Only the example
-pins its providers (`.terraform.lock.hcl`). `tofu:sources` fails on a relative source or a `ref` other than `MODULE_REF`, and
-`tofu:git-source-test` runs `tofu init` on a copy of the example against a local bare repository with the tag.
-`tofu:aws-plan-test` plans the AWS modules that generate a value, `db-aws-rds` among them, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
-stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.
+`scripts/task.sh tofu:check` validates the public modules, the internal modules, and the examples, and runs their tests on
+mocked providers, which plan each kind of each section and each refused combination. `tofu:aws-plan-test` plans the AWS
+example with no credentials, a local stub answering its one read of the caller's identity. None of the checks reaches a
+cloud, so they show that the configuration is consistent, not that an apply on Google Cloud or AWS succeeds.
+
+### Every configuration key
+
+`coverage.json` in each public module says how the module handles every key of the configuration, one key or a prefix
+ending in `*` (`plugin_*`) per entry:
+
+- `section`, by the name of the module's variable: the section sets the key, for the kinds that need it;
+- `fixed`: the module sets a value of its own, such as `media_max_av_bytes` on Cloud Run;
+- `generic`: the operator sets it through `settings` or `secrets`;
+- `excluded`, with a reason of a few words: the module does not take it.
+
+The module reads the file: `settings` and `secrets` refuse the keys of `section` (while that section is set), `fixed`, and
+`excluded`. `scripts/task.sh tofu:coverage` fails on a key with no class, a key that two entries match, an entry that matches
+no key, and a `section` or `fixed` key whose `MY_` name `tests/coverage.tftest.hcl` does not name: that file plans the kind
+that sets each such key on mocked providers and asserts that the service's environment has it.
+
+A pull request that adds a configuration key, for a new adapter or anything else, runs `scripts/task.sh go:config-docs`, which
+rewrites `modules/internal/settings/settings.json`, and then classifies the key in the `coverage.json` of every public
+module:
+
+- An adapter that needs only a URL and a secret is `generic`, and needs nothing more.
+- An adapter for which the module must create a resource, grant a permission, enable an API, join a network, or generate a
+  value is a new `kind` of a section, or a new section: add the internal module and its block, put its keys under that
+  section, and add a run to `tests/coverage.tftest.hcl` that plans the kind and names each key's `MY_` variable.
+- A key that cannot work on the platform is `excluded`, with the reason.

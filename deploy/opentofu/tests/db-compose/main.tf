@@ -39,14 +39,14 @@ locals {
 }
 
 module "cloud_sql" {
-  source = "../../modules/db-gcp-cloud-sql"
+  source = "../../modules/internal/db-gcp-cloud-sql"
 
   project_id = "p"
   region     = "asia-northeast1"
 }
 
 module "app_on_cloud_sql" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   env = { MY_QUEUE = "cloudtasks" }
 
@@ -61,7 +61,7 @@ module "app_on_cloud_sql" {
 }
 
 module "neon_on_gcp" {
-  source = "../../modules/db-neon"
+  source = "../../modules/internal/db-neon"
 
   org_id               = "org-1"
   region_id            = "aws-ap-southeast-1"
@@ -70,7 +70,7 @@ module "neon_on_gcp" {
 }
 
 module "secrets_on_gcp" {
-  source = "../../modules/secrets-gcp-secret-manager"
+  source = "../../modules/internal/secrets-gcp-secret-manager"
 
   project_id = "p"
   referenced = { database_url = "my-database-url", database_url_pooled = "my-database-url-pooled" }
@@ -82,7 +82,7 @@ module "secrets_on_gcp" {
 }
 
 module "app_on_neon_gcp" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   env = { MY_QUEUE = "cloudtasks" }
 
@@ -97,13 +97,13 @@ module "app_on_neon_gcp" {
 }
 
 module "rds" {
-  source = "../../modules/db-aws-rds"
+  source = "../../modules/internal/db-aws-rds"
 
   network = local.aws_network
 }
 
 module "app_on_rds" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   name             = "rds"
   env              = { MY_BLOB = "s3" }
@@ -116,7 +116,7 @@ module "app_on_rds" {
 }
 
 module "neon_on_aws" {
-  source = "../../modules/db-neon"
+  source = "../../modules/internal/db-neon"
 
   org_id        = "org-1"
   region_id     = "aws-ap-southeast-1"
@@ -124,7 +124,7 @@ module "neon_on_aws" {
 }
 
 module "secrets_on_aws" {
-  source = "../../modules/secrets-aws-secrets-manager"
+  source = "../../modules/internal/secrets-aws-secrets-manager"
 
   referenced = { database_url = "my-database-url" }
   write_keys = ["database_url"]
@@ -134,7 +134,7 @@ module "secrets_on_aws" {
 }
 
 module "app_on_neon_aws" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   name             = "neon"
   env              = { MY_BLOB = "s3" }
@@ -147,14 +147,14 @@ module "app_on_neon_aws" {
 }
 
 module "valkey" {
-  source = "../../modules/kv-aws-elasticache"
+  source = "../../modules/internal/kv-aws-elasticache"
 
   network = local.aws_network
 }
 
 # Both reach the tasks by one field of backends, so neither needs the other nor anything of its own on the app.
 module "app_on_rds_and_valkey" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   name             = "ecs"
   image            = "ghcr.io/mycroblog/my:0.1.0"

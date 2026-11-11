@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Copy to terraform.tfvars. The secrets keep their default IDs; their values stay in Secret Manager.
+# Copy to terraform.tfvars. The module names the secrets; tofu output secrets_to_fill lists what to add after the first apply.
 
 project_id  = "my-project"
 host        = "social.example.org"
@@ -8,5 +8,6 @@ image       = "ghcr.io/mycroblog/my:0.1.0"
 bucket_name = "my-project-my-media"
 
 mail_from          = "noreply@social.example.org"
+alert_emails       = ["ops@social.example.org"]
 mail_smtp_host     = "smtp.example.org"
 mail_smtp_username = "my-smtp-user"

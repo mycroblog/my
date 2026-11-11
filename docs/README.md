@@ -34,6 +34,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Registration (registration modes, invitations, approval, email verification)](operations/registration.md)
 - [External login providers (OpenID Connect, GitHub, Mastodon)](operations/login-providers.md)
 - [Sending email (SMTP settings, SPF/DKIM/DMARC, failures and suppressions, unsubscribing)](operations/email.md)
+- [Sending email through Amazon SES (the domain's records, leaving the sandbox, bounces and complaints)](operations/email-ses.md)
 - [CAPTCHA against bots (Turnstile / hCaptcha / reCAPTCHA)](operations/captcha.md)
 - [Serving media through a CDN, and refusing requests that did not come through it (media_origin, origin pull, caching and purging, origin_secret)](operations/cdn.md)
 - [Link previews (OGP / X Cards / fediverse:creator)](operations/link-previews.md)

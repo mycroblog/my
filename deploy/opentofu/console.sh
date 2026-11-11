@@ -8,7 +8,7 @@
 #
 # Standard input is the `console` output of an app module; the arguments are the `my` command. The command itself gets
 # no standard input and no terminal. Each platform is one function below, chosen by the output's `platform`, that takes
-# the output as JSON and the command, and returns the command's exit code (deploy/opentofu/README.md).
+# the output as JSON and the command, and returns the command's exit code (deploy/opentofu/modules/internal/README.md).
 set -euo pipefail
 
 # shellcheck source=/dev/null # Beside this script, at the same release.

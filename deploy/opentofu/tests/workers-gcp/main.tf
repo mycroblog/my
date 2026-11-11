@@ -26,7 +26,7 @@ locals {
 }
 
 module "queue" {
-  source = "../../modules/queue-gcp-cloud-tasks"
+  source = "../../modules/internal/queue-gcp-cloud-tasks"
 
   project_id = "p"
   region     = "asia-northeast1"
@@ -34,7 +34,7 @@ module "queue" {
 }
 
 module "app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   project_id      = "p"
   region          = "asia-northeast1"
@@ -48,13 +48,13 @@ module "app" {
 }
 
 module "queue_db" {
-  source = "../../modules/queue-db"
+  source = "../../modules/internal/queue-db"
 
   workers = { media = { job_types = ["federation.*"], concurrency = 3 } }
 }
 
 module "app_db" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   project_id           = "p"
   region               = "asia-northeast1"

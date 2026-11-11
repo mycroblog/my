@@ -13,7 +13,7 @@ Cloudflare 沒有這樣的憑證鏈，所以它的匯入會從 [`billing_cloudfl
 <!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## 使用 OpenTofu 模組
 
-[`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) 模組會設定 `billing_sources`，並完成本指南中供應商 API 允許的部分。`billing-gcp` 只能搭配 Google Cloud 的 app 模組使用，所以在 AWS 上，這些模組只匯入 AWS 的費用。`billing-aws` 可以搭配 AWS 的 app 模組，也可以搭配 Cloud Run 的，兩者可以同時放在 `backends` 中。兩者都還沒有在真實的帳號上套用過。
+[`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) 模組會設定 `billing_sources`，並完成本指南中供應商 API 允許的部分。`billing-gcp` 只能搭配 Google Cloud 的 app 模組使用，所以在 AWS 上，這些模組只匯入 AWS 的費用。`billing-aws` 可以搭配 AWS 的 app 模組，也可以搭配 Cloud Run 的，兩者可以同時放在 `backends` 中。兩者都還沒有在真實的帳號上套用過。
 
 | 本指南中的步驟 | 使用模組時 |
 | --- | --- |

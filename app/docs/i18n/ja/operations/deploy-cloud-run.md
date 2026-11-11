@@ -52,7 +52,7 @@ Launch プランを見込んでください。既定のティックでは、コ�
 方法は 2 つあり、例では 1 つ目を使います。
 
 - **`db-external` を使って手で作る。** Neon のコンソールで、Cloud Run のリージョンに近いリージョンにプロジェクトを作り、その接続文字列をコピーします。パスワードは OpenTofu の状態に入りません。
-- **[`db-neon`](../../deploy/opentofu/modules/db-neon/README.md) を使う。** プロジェクトを作り、URL をシークレットに書き込んでくれます。**このときデータベースのパスワードは状態に入ります。** またプロバイダーはメンテナンスされていません。それが何を意味するかはその README にあり、`main.tf` の `db` ブロックのコメントに差し替え方があります。
+- **[`db-neon`](../../deploy/opentofu/modules/internal/db-neon/README.md) を使う。** プロジェクトを作り、URL をシークレットに書き込んでくれます。**このときデータベースのパスワードは状態に入ります。** またプロバイダーはメンテナンスされていません。それが何を意味するかはその README にあり、`main.tf` の `db` ブロックのコメントに差し替え方があります。
 
 プロジェクトには 2 つの接続文字列があり、デプロイはそれぞれを適した場所で使います。
 
@@ -228,40 +228,40 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --re
 <!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## 監視とアラート
 
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) は、`/health/live` の稼働時間チェック、[ランブック](alerts.md)の名前を付けたアラートポリシー、メールでの通知を追加します。このモジュールはまだ一度も適用されたことがないので、チェックを失敗させて一度試してください。先に `monitoring.googleapis.com` を有効にし、チェックにかかる費用をその README で読んでください。各実行はインスタンスを起こし、チェックを `/health/ready` に向けるとデータベースも起こすので、[ティックのトレードオフ](#costs)に上乗せされます。
+モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) は、`/health/live` の稼働時間チェック、[ランブック](alerts.md)の名前を付けたアラートポリシー、メールでの通知を追加します。このモジュールはまだ一度も適用されたことがないので、チェックを失敗させて一度試してください。先に `monitoring.googleapis.com` を有効にし、チェックにかかる費用をその README で読んでください。各実行はインスタンスを起こし、チェックを `/health/ready` に向けるとデータベースも起こすので、[ティックのトレードオフ](#costs)に上乗せされます。
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## バックエンドを変える
 
-`main.tf` のモジュールのブロックを置き換えます。app モジュールはブロックが返すものをそのまま受け取るので、ほかは何も変わりません。データベースを変えるときは、新しいデータベースは空なので、データの移行も必要です。手順は [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/db-gcp-cloud-sql/README.md#coming-from-db-external) にあります。たとえば、自分のデータベースを使うなら次のようにします。
+`main.tf` のモジュールのブロックを置き換えます。app モジュールはブロックが返すものをそのまま受け取るので、ほかは何も変わりません。データベースを変えるときは、新しいデータベースは空なので、データの移行も必要です。手順は [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/internal/db-gcp-cloud-sql/README.md#coming-from-db-external) にあります。たとえば、自分のデータベースを使うなら次のようにします。
 
 ```hcl
 module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = "another-database-url"
 }
 ```
 
-Google Cloud の外のストアを使うなら、`blob` ブロックを、S3 互換のサービスなら [`blob-s3`](../../deploy/opentofu/modules/blob-s3/README.md) に、または [`blob-cloudflare-r2`](../../deploy/opentofu/modules/blob-cloudflare-r2/README.md) に置き換えます。
+Google Cloud の外のストアを使うなら、`blob` ブロックを、S3 互換のサービスなら [`blob-s3`](../../deploy/opentofu/modules/internal/blob-s3/README.md) に、または [`blob-cloudflare-r2`](../../deploy/opentofu/modules/internal/blob-cloudflare-r2/README.md) に置き換えます。
 
 <!-- source: when-you-need-a-network fb392704a1e7 -->
 ## ネットワークが必要なとき
 
 このガイドではネットワークは必要ありません。Neon、Cloud Tasks、Cloud Storage、Pub/Sub にはどれもサービス自身の ID でインターネット越しに接続するので、Cloud Run は何にもアタッチせず、支払うものも管理するものもありません。
 
-ネットワークが必要になるのは、プライベートアドレスしかもたない Memorystore をデプロイに加えるときや、Cloud SQL に公開アドレスの代わりにプライベートアドレスを与えるときです。[`network-gcp-vpc`](../../deploy/opentofu/modules/network-gcp-vpc/README.md) を加えるか、手持ちの VPC を[同じ形](../../deploy/opentofu/README.md#the-network-on-google-cloud)のオブジェクトとして記述し、同じものをアプリと、それを受け取る各モジュールに渡します。
+ネットワークが必要になるのは、プライベートアドレスしかもたない Memorystore をデプロイに加えるときや、Cloud SQL に公開アドレスの代わりにプライベートアドレスを与えるときです。[`network-gcp-vpc`](../../deploy/opentofu/modules/internal/network-gcp-vpc/README.md) を加えるか、手持ちの VPC を[同じ形](../../deploy/opentofu/README.md#the-network-on-google-cloud)のオブジェクトとして記述し、同じものをアプリと、それを受け取る各モジュールに渡します。
 
 ```hcl
 module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/network-gcp-vpc?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   region     = var.region
 }
 
 module "kv" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kv-gcp-memorystore?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kv-gcp-memorystore?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   region     = var.region
@@ -269,7 +269,7 @@ module "kv" {
 }
 ```
 
-アプリにも `network = module.network` を与え、その `backends` に `module.kv` を加えます。ネットワークを通るのはプライベートな範囲だけなので、サービスはこれまでどおりインターネットに接続でき、Cloud NAT は不要です。プライベートアドレス上のバックエンドに対してアプリが別のネットワークにある、またはネットワークがないと、プランが失敗します。先に Service Networking と Network Connectivity の API、そして Compute Engine の API を有効にしてください。ネットワークはインスタンスのコールドスタートを長くします。[プライベートネットワークが加えるもの](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds)を読んでください。
+アプリにも `network = module.network` を与え、その `backends` に `module.kv` を加えます。ネットワークを通るのはプライベートな範囲だけなので、サービスはこれまでどおりインターネットに接続でき、Cloud NAT は不要です。プライベートアドレス上のバックエンドに対してアプリが別のネットワークにある、またはネットワークがないと、プランが失敗します。先に Service Networking と Network Connectivity の API、そして Compute Engine の API を有効にしてください。ネットワークはインスタンスのコールドスタートを長くします。[プライベートネットワークが加えるもの](../../deploy/opentofu/modules/internal/kv-gcp-memorystore/README.md#what-the-private-network-adds)を読んでください。
 
 <!-- source: splitting-jobs-into-workers ed661aede0a3 -->
 ## ジョブをワーカーに分ける
@@ -337,7 +337,7 @@ Cloud Tasks と Cloud Scheduler はどちらも通らず、既定の `run.app` �
 <!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` は、すべてのキャッシュをバイパスして `host` の前に Cloudflare を置きます。`ingress-cloudflare-media` は、どの ingress とも並べて、キャッシュするメディア用のホストを追加します。先に各モジュールの README を読んでください（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。トークンは `CLOUDFLARE_API_TOKEN` に入れます。これらのモジュールは、モックのプロバイダーでしか動かしたことがありません。
+`ingress-cloudflare-app` は、すべてのキャッシュをバイパスして `host` の前に Cloudflare を置きます。`ingress-cloudflare-media` は、どの ingress とも並べて、キャッシュするメディア用のホストを追加します。先に各モジュールの README を読んでください（[app](../../deploy/opentofu/modules/internal/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/internal/ingress-cloudflare-media/README.md)）。トークンは `CLOUDFLARE_API_TOKEN` に入れます。これらのモジュールは、モックのプロバイダーでしか動かしたことがありません。
 
 - **プランによってオリジンが決まります。** Cloud Run は `Host` でルーティングし、Cloudflare が Host ヘッダーの上書きを提供しているのは Enterprise プランだけです。それ以外のプランでは `*.run.app` のオリジンでプランが失敗するので、オリジン自身があなたのホストを受け付ける必要があります。そのホストの `ingress-gcp-domain-mapping` を `backends` の外に置いておき、`origin_host = "ghs.googlehosted.com"` を設定します。ホストごとに専用のマッピングが必要です。プロキシの後ろでその証明書が発行・更新されるかは確認されていないので、`proxied = false` から始めてください。
 - **ヘッダーでオリジンを閉じます。** `ingress-cloudflare-app` はリクエストヘッダーを変換するルールを加え、サーバーはそのヘッダーのないリクエストを `403` で拒否します。例外はヘルスチェックと、トークンを確認するジョブ自身の `POST` です。そのため、誰も `run.app` の URL を通って Cloudflare を迂回できず、呼び出し側が自分の Cloudflare Worker から、レート制限が見るクライアントのアドレスを選ぶこともできません。

@@ -14,7 +14,7 @@
 set -euo pipefail
 
 root="${TOFU_WORKERS_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-module="$root/deploy/opentofu/modules/workers"
+module="$root/deploy/opentofu/modules/internal/workers"
 source_list="$root/internal/platform/job_types.go"
 document="$root/docs/operations/running.md"
 
@@ -37,7 +37,7 @@ types="$(go_types)"
   exit 1
 }
 if [ "$(jq -r '.[]' "$module/job_types.json" | LC_ALL=C sort -u)" != "$types" ]; then
-  echo "tofu-workers-check: deploy/opentofu/modules/workers/job_types.json and internal/platform/job_types.go differ: run scripts/tofu-workers-check.sh --write" >&2
+  echo "tofu-workers-check: deploy/opentofu/modules/internal/workers/job_types.json and internal/platform/job_types.go differ: run scripts/tofu-workers-check.sh --write" >&2
   status=1
 fi
 
@@ -56,7 +56,7 @@ done | LC_ALL=C sort)"
 }
 held="$(jq -r '.[] | sort | join(" ")' "$module/keep_together.json" | LC_ALL=C sort)"
 if [ "$held" != "$table" ]; then
-  echo "tofu-workers-check: deploy/opentofu/modules/workers/keep_together.json and the table in docs/operations/running.md differ:" >&2
+  echo "tofu-workers-check: deploy/opentofu/modules/internal/workers/keep_together.json and the table in docs/operations/running.md differ:" >&2
   diff <(echo "$held") <(echo "$table") >&2 || true
   status=1
 fi

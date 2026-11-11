@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh, and scripts/tofu-backend-fields-check.sh against a gcloud
+# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh,
+# scripts/tofu-backend-fields-check.sh, scripts/tofu-workers-check.sh, and scripts/tofu-coverage.sh, the first ones against a gcloud
 # and an aws that record their calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows
 # nothing about Google Cloud or AWS themselves.
 set -euo pipefail
@@ -277,9 +278,14 @@ if "$root/scripts/tofu-env-check.sh" -r "$tmp/reference.md" "$tmp/bad" 2> /dev/n
 
 # tofu-examples: the sources and the release gate, on a small tree.
 tree="$tmp/tree"
-mkdir -p "$tree/deploy/opentofu/examples/e" "$tree/deploy/opentofu/modules/m" "$tree/docs/operations"
+mkdir -p "$tree/deploy/opentofu/examples/e" "$tree/deploy/opentofu/modules/internal/m" "$tree/deploy/opentofu/mycroblog-p" \
+  "$tree/docs/operations"
 echo v0.1.0 > "$tree/deploy/opentofu/MODULE_REF"
-good='git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/m?ref=v0.1.0&depth=1'
+good='git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-p?ref=v0.1.0&depth=1'
+write_public() {
+  printf 'module "m" {\n  source = "%s"\n}\n' "$1" > "$tree/deploy/opentofu/mycroblog-p/main.tf"
+}
+write_public '../modules/internal/m'
 write_example() {
   printf 'terraform {\n  required_providers {\n    google = {\n      source = "hashicorp/google"\n    }\n  }\n}\nmodule "m" {\n  source = "%s"\n}\n' "$1" > "$tree/deploy/opentofu/examples/e/main.tf"
 }
@@ -288,17 +294,27 @@ examples() {
 }
 write_example "$good"
 examples check || fail "a good source was refused"
-for bad in '../../modules/m' 'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/m' \
-  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/m?ref=v0.0.9&depth=1' \
-  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/none?ref=v0.1.0&depth=1' \
-  'git::https://github.com/someone/else.git//deploy/opentofu/modules/m?ref=v0.1.0&depth=1'; do
+write_example 'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'
+examples check || fail "an internal module by its Git source was refused"
+for bad in '../../mycroblog-p' '../../modules/internal/m' 'git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-p' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/examples/e?ref=v0.1.0&depth=1' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.0.9&depth=1' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/none?ref=v0.1.0&depth=1' \
+  'git::https://github.com/someone/else.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'; do
   write_example "$bad"
   if examples check; then fail "check passed: $bad"; fi
 done
 write_example "$good"
-printf '#   source = "../../modules/m"\n' >> "$tree/deploy/opentofu/examples/e/main.tf"
+printf '#   source = "../../modules/internal/m"\n' >> "$tree/deploy/opentofu/examples/e/main.tf"
 if examples check; then fail "check passed a relative source in a comment"; fi
 write_example "$good"
+for bad in '../modules/internal/none' '../../modules/internal/m' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'; do
+  write_public "$bad"
+  if examples check; then fail "check passed in a public module: $bad"; fi
+done
+write_public '../modules/internal/m'
 examples check --release v0.1.0 || fail "the release of MODULE_REF was refused"
 examples check --release v0.2.0-rc.1 || fail "a prerelease was checked"
 if examples check --release v0.2.0; then fail "a stable release passed with another ref"; fi
@@ -311,16 +327,16 @@ grep -qF 'ref=v0.2.0&depth=1' "$tree/deploy/opentofu/examples/e/main.tf" || fail
 fields="$tmp/fields"
 fields_copy() {
   rm -rf "$fields"
-  mkdir -p "$fields/modules"
-  cp "$root/deploy/opentofu/README.md" "$fields/"
-  for module in "$root"/deploy/opentofu/modules/*/; do
-    mkdir "$fields/modules/$(basename "$module")"
-    cp "$module"*.tf "$fields/modules/$(basename "$module")/"
+  mkdir -p "$fields"
+  cp "$root/deploy/opentofu/modules/internal/README.md" "$fields/"
+  for module in "$root"/deploy/opentofu/modules/internal/*/; do
+    mkdir "$fields/$(basename "$module")"
+    cp "$module"*.tf "$fields/$(basename "$module")/"
   done
 }
 fields_copy
 "$root/scripts/tofu-backend-fields-check.sh" "$fields" || fail "the fields check refused a copy"
-sed -i '/^    billing_sources = /d' "$fields/modules/app-aws-ecs/variables.tf"
+sed -i '/^    billing_sources = /d' "$fields/app-aws-ecs/variables.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an app without a contract field"; fi
 grep -qF 'app-aws-ecs: backends has no field billing_sources' "$tmp/fields.err" || fail "the fields check did not name the missing field"
 fields_copy
@@ -330,29 +346,29 @@ if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; 
 grep -qF 'backends has no field new_field' "$tmp/fields.err" || fail "the fields check did not name the new contract field"
 grep -qF 'billing_sources, which the contract' "$tmp/fields.err" || fail "the fields check did not name a field outside the contract"
 fields_copy
-sed -i 's/b\.cloud_sql_instances/b.other/g' "$fields/modules/app-gcp-cloud-run/main.tf"
+sed -i 's/b\.cloud_sql_instances/b.other/g' "$fields/app-gcp-cloud-run/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a field that nothing reads"; fi
 grep -qF 'app-gcp-cloud-run: nothing reads or refuses b.cloud_sql_instances' "$tmp/fields.err" || fail "the fields check did not name the field nothing reads"
 fields_copy
-printf 'output "client_group" {\n  value = "x"\n}\n' >> "$fields/modules/kv-external/main.tf"
+printf 'output "client_group" {\n  value = "x"\n}\n' >> "$fields/kv-external/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an output outside the contract"; fi
 grep -qF 'kv-external: the output client_group' "$tmp/fields.err" || fail "the fields check did not name the output"
 fields_copy
-sed -i '/^output "platform"/,/^}/d' "$fields/modules/blob-s3/main.tf"
+sed -i '/^output "platform"/,/^}/d' "$fields/blob-s3/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module with no platform"; fi
 grep -qF 'blob-s3: its platform is ""' "$tmp/fields.err" || fail "the fields check did not name the module with no platform"
 fields_copy
-sed -i '/^output "platform"/,/^}/s/"aws"/"neutral"/' "$fields/modules/blob-aws-s3/main.tf"
+sed -i '/^output "platform"/,/^}/s/"aws"/"neutral"/' "$fields/blob-aws-s3/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module of AWS that says it is neutral"; fi
 grep -qF 'blob-aws-s3: its platform is "neutral", and its name says aws' "$tmp/fields.err" || fail "the fields check did not name the module with the wrong platform"
 
 # tofu-backend-fields-check: a network's fields.
 fields_copy
-sed -i '/^    nat  *= optional/d' "$fields/modules/kv-aws-elasticache/main.tf"
+sed -i '/^    nat  *= optional/d' "$fields/kv-aws-elasticache/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module whose network type lacks a field"; fi
 grep -qF 'kv-aws-elasticache: the type of network' "$tmp/fields.err" || fail "the fields check did not name the module with the wrong network type"
 fields_copy
-printf 'output "extra" {\n  value = "x"\n}\n' >> "$fields/modules/network-aws-vpc/main.tf"
+printf 'output "extra" {\n  value = "x"\n}\n' >> "$fields/network-aws-vpc/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a network with a field outside its table"; fi
 grep -qF 'network-aws-vpc: a network returns' "$tmp/fields.err" || fail "the fields check did not name the network with the wrong outputs"
 
@@ -360,8 +376,8 @@ grep -qF 'network-aws-vpc: a network returns' "$tmp/fields.err" || fail "the fie
 "$root/scripts/tofu-workers-check.sh" || fail "the workers check refused the repository"
 workers_copy() {
   rm -rf "$tmp/w"
-  mkdir -p "$tmp/w/deploy/opentofu/modules/workers" "$tmp/w/internal/platform" "$tmp/w/docs/operations"
-  cp "$root/deploy/opentofu/modules/workers/"*.json "$tmp/w/deploy/opentofu/modules/workers/"
+  mkdir -p "$tmp/w/deploy/opentofu/modules/internal/workers" "$tmp/w/internal/platform" "$tmp/w/docs/operations"
+  cp "$root/deploy/opentofu/modules/internal/workers/"*.json "$tmp/w/deploy/opentofu/modules/internal/workers/"
   cp "$root/internal/platform/job_types.go" "$tmp/w/internal/platform/"
   cp "$root/docs/operations/running.md" "$tmp/w/docs/operations/"
 }
@@ -377,6 +393,55 @@ workers_copy
 sed -i 's/^| `supporters.sync`, `supporters.command` |/| `supporters.sync` |/' "$tmp/w/docs/operations/running.md"
 if TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" 2> "$tmp/workers.err"; then fail "the workers check passed a table that differs"; fi
 grep -qF 'keep_together.json and the table' "$tmp/workers.err" || fail "the workers check did not name the table: $(cat "$tmp/workers.err")"
+
+# tofu-coverage: the real classifications pass, and each mistake fails with its message.
+(cd "$root" && scripts/tofu-coverage.sh) || fail "the coverage check refused the repository"
+coverage_copy() {
+  rm -rf "$tmp/c"
+  mkdir -p "$tmp/c/deploy/opentofu/modules/internal/settings"
+  cp "$root/deploy/opentofu/modules/internal/settings/settings.json" "$tmp/c/deploy/opentofu/modules/internal/settings/"
+  local module
+  for module in "$root"/deploy/opentofu/mycroblog-*/; do
+    module="$(basename "$module")"
+    mkdir -p "$tmp/c/deploy/opentofu/$module/tests"
+    cp "$root/deploy/opentofu/$module/"*.tf "$root/deploy/opentofu/$module/coverage.json" "$tmp/c/deploy/opentofu/$module/"
+    cp "$root/deploy/opentofu/$module/tests/coverage.tftest.hcl" "$tmp/c/deploy/opentofu/$module/tests/"
+  done
+}
+# Runs the check on the copy, which must fail and say $1 ($2 names the mistake), and restores the copy.
+coverage_fails() {
+  if TOFU_COVERAGE_ROOT="$tmp/c" "$root/scripts/tofu-coverage.sh" 2> "$tmp/coverage.err"; then
+    fail "the coverage check passed $2"
+  elif ! grep -qF -- "$1" "$tmp/coverage.err"; then
+    fail "the coverage check did not say '$1' for $2: $(cat "$tmp/coverage.err")"
+  fi
+  coverage_copy
+}
+# Rewrites a JSON file of the copy with a jq filter.
+coverage_jq() {
+  jq "$2" "$1" > "$tmp/c.json" && mv "$tmp/c.json" "$1"
+}
+gcp="$tmp/c/deploy/opentofu/mycroblog-gcp"
+coverage_copy
+TOFU_COVERAGE_ROOT="$tmp/c" "$root/scripts/tofu-coverage.sh" || fail "the coverage check refused a copy"
+coverage_jq "$tmp/c/deploy/opentofu/modules/internal/settings/settings.json" '. + {brand_new: {env: "MY_BRAND_NEW", secret: false}}'
+coverage_fails "brand_new has no class" "a configuration key that no entry classifies"
+coverage_jq "$gcp/coverage.json" '.generic += ["listen"]'
+coverage_fails "listen is in two entries: listen (generic), listen (excluded)" "a key in two entries"
+coverage_jq "$gcp/coverage.json" '.section.media += ["blob_*"]'
+coverage_fails "blob_s3_bucket is in two entries" "a key that a prefix and another entry match"
+coverage_jq "$gcp/coverage.json" '.generic += ["gone_*"]'
+coverage_fails "gone_* (generic) matches no configuration key" "an entry that matches no key"
+coverage_jq "$gcp/coverage.json" '.section.cache = .section.kv | del(.section.kv)'
+coverage_fails "the section cache is no variable of the module" "a section that the module does not have"
+coverage_jq "$gcp/coverage.json" '.excluded.listen = ""'
+coverage_fails "the excluded listen gives no reason" "an exclusion without a reason"
+coverage_jq "$gcp/coverage.json" '.other = []'
+coverage_fails "other is no class" "an unknown class"
+sed -i 's/"MY_KMS_KEY"//' "$gcp/tests/coverage.tftest.hcl"
+coverage_fails "kms_key (section kek) has no wiring test" "a section key that no wiring test names"
+rm "$gcp/coverage.json"
+coverage_fails "mycroblog-gcp has no coverage.json" "a public module without a classification"
 
 if [ "$failures" -gt 0 ]; then
   echo "tofu-scripts-test: $failures failed" >&2

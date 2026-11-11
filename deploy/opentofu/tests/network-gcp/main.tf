@@ -33,14 +33,14 @@ locals {
 }
 
 module "network" {
-  source = "../../modules/network-gcp-vpc"
+  source = "../../modules/internal/network-gcp-vpc"
 
   project_id = local.project
   region     = local.region
 }
 
 module "db" {
-  source = "../../modules/db-gcp-cloud-sql"
+  source = "../../modules/internal/db-gcp-cloud-sql"
 
   project_id = local.project
   region     = local.region
@@ -48,7 +48,7 @@ module "db" {
 }
 
 module "kv" {
-  source = "../../modules/kv-gcp-memorystore"
+  source = "../../modules/internal/kv-gcp-memorystore"
 
   project_id = local.project
   region     = local.region
@@ -56,7 +56,7 @@ module "kv" {
 }
 
 module "app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   project_id      = local.project
   region          = local.region
@@ -70,7 +70,7 @@ module "app" {
 }
 
 module "existing_db" {
-  source = "../../modules/db-gcp-cloud-sql"
+  source = "../../modules/internal/db-gcp-cloud-sql"
 
   project_id    = local.project
   region        = local.region
@@ -80,7 +80,7 @@ module "existing_db" {
 }
 
 module "existing_kv" {
-  source = "../../modules/kv-gcp-memorystore"
+  source = "../../modules/internal/kv-gcp-memorystore"
 
   project_id = local.project
   region     = local.region
@@ -89,7 +89,7 @@ module "existing_kv" {
 }
 
 module "existing_app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   project_id      = local.project
   region          = local.region

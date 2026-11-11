@@ -61,7 +61,7 @@ promtool test rules alerts.test.yml
 - **数据库**：Cloud SQL 的磁盘使用率和连接数指标，或你的数据库提供商的用量告警。
 - **成本**：带有告警阈值的 Cloud Billing 预算（[成本和预算](#cost-and-budget)）。
 
-模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 会以下表中的名称把它们创建为策略，并列出它以不同方式覆盖或无法表达的每一项告警。它从未被应用过。只有流量才会产生的指标，在缩容到零的服务上会有空缺，因此针对其缺失的告警会误报；能发现空闲状态下服务器已挂掉的，是它的可用性检查。
+模块 [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 会以下表中的名称把它们创建为策略，并列出它以不同方式覆盖或无法表达的每一项告警。它从未被应用过。只有流量才会产生的指标，在缩容到零的服务上会有空缺，因此针对其缺失的告警会误报；能发现空闲状态下服务器已挂掉的，是它的可用性检查。
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -74,7 +74,7 @@ promtool test rules alerts.test.yml
 - **邮件**（`mail = ses`）：CloudWatch 中的 SES 信誉指标（退信率和投诉率）。
 - **费用**：带有告警的 AWS Budgets 预算（[费用和预算](#cost-and-budget)）。
 
-模块 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 会以下表中的名称把这些创建为告警，列表相同。该模块从未实际应用过。
+模块 [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 会以下表中的名称把这些创建为告警，列表相同。该模块从未实际应用过。
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## 告警列表

@@ -14,7 +14,7 @@
 | `GET /healthz`、`GET /health/live` | 平台的存活探测 | 从不 | `200` `{"status":"maintenance"}` |
 | `GET /readyz`、`GET /health/ready` | 负载均衡器或 Kubernetes 的就绪探测 | 每个请求都会访问（并发请求共用一次检查） | `200` `{"status":"maintenance"}` |
 
-请让外部监控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：后者每个请求都会查询数据库，因此间隔很短的监控会让缩容到零的数据库一直保持唤醒。这些探测是留给你的平台用的。模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 会用平台自带的监控，以较长的间隔检查 `/health/live`（`monitoring-gcp`）或 `/readyz`（`monitoring-aws`），它们的 README 说明了这要花费多少。
+请让外部监控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：后者每个请求都会查询数据库，因此间隔很短的监控会让缩容到零的数据库一直保持唤醒。这些探测是留给你的平台用的。模块 [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 会用平台自带的监控，以较长的间隔检查 `/health/live`（`monitoring-gcp`）或 `/readyz`（`monitoring-aws`），它们的 README 说明了这要花费多少。
 
 `/api/v1/instance/health` 的响应（无需认证，`Cache-Control: no-store`）：
 
