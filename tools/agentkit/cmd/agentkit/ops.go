@@ -56,13 +56,20 @@ func runIssue(r *repo.Repo, args []string) error {
 
 func runPR(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: agentkit pr open|wait|watch")
+		return fmt.Errorf("usage: agentkit pr open|land|wait|watch")
 	}
 	switch args[0] {
 	case "open":
 		fs := flag.NewFlagSet("pr open", flag.ContinueOnError)
 		var o ops.OpenOptions
-		fs.IntVar(&o.Issue, "issue", 0, "issue number (default: from the branch name)")
+		fs.Func("issue", "an issue the pull request closes (repeatable; default: the branch name's and the (#N) of the commit subjects)", func(v string) error {
+			n, err := strconv.Atoi(strings.TrimPrefix(v, "#"))
+			if err != nil {
+				return err
+			}
+			o.Issues = append(o.Issues, n)
+			return nil
+		})
 		fs.StringVar(&o.Base, "base", "main", "base branch (a stacked PR's base)")
 		fs.StringVar(&o.Title, "title", "", "PR title (default: the first commit's subject)")
 		fs.StringVar(&o.Summary, "summary", "", "summary: what and why")
@@ -113,6 +120,26 @@ func runPR(r *repo.Repo, args []string) error {
 			return exitError{res.Code, ""}
 		}
 		return nil
+	case "land":
+		fs := flag.NewFlagSet("pr land", flag.ContinueOnError)
+		timeout := fs.Duration("timeout", 3*time.Hour, "give up after")
+		interval := fs.Duration("interval", 30*time.Second, "poll interval")
+		pos, err := parse(fs, args[1:])
+		if err != nil || len(pos) != 1 {
+			return fmt.Errorf("usage: agentkit pr land <pr> [--timeout 3h]")
+		}
+		n, err := strconv.Atoi(strings.TrimPrefix(pos[0], "#"))
+		if err != nil {
+			return err
+		}
+		dir, err := r.TmpDir("ci")
+		if err != nil {
+			return err
+		}
+		if code := ops.Land(os.Stdout, r, n, ops.LandOptions{Timeout: *timeout, Interval: *interval, LogDir: dir}); code != 0 {
+			return exitError{code, ""}
+		}
+		return nil
 	case "watch":
 		fs := flag.NewFlagSet("pr watch", flag.ContinueOnError)
 		interval := fs.Duration("interval", 60*time.Second, "poll interval")
@@ -136,10 +163,16 @@ func runPR(r *repo.Repo, args []string) error {
 func runCheck(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("check", flag.ContinueOnError)
 	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
+	full := fs.Bool("full", false, "run scripts/task.sh check:changed, every check of the changed contexts")
+	fs.Bool("fast", true, "the quick checks of the changed files (the default)")
 	if _, err := parse(fs, args); err != nil {
 		return err
 	}
-	ok, lines, err := ops.Check(r, *base)
+	run := ops.CheckFast
+	if *full {
+		run = ops.Check
+	}
+	ok, lines, err := run(r, *base)
 	if err != nil {
 		return err
 	}
@@ -147,6 +180,27 @@ func runCheck(r *repo.Repo, args []string) error {
 	if !ok {
 		return exitError{1, ""}
 	}
+	return nil
+}
+
+func runTidy(r *repo.Repo, args []string) error {
+	fs := flag.NewFlagSet("tidy", flag.ContinueOnError)
+	dry := fs.Bool("dry-run", false, "print what it would remove")
+	hint := fs.Bool("hint", false, "print one line when merged branches are left, reading no remote (the SessionStart hook)")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	if *hint {
+		if n := ops.Leftovers(r); n > 0 {
+			fmt.Printf("%d merged local branches (with their worktrees) are left: run scripts/agentkit.sh tidy\n", n)
+		}
+		return nil
+	}
+	lines, err := ops.Tidy(r, *dry)
+	if err != nil {
+		return err
+	}
+	fmt.Println(strings.Join(lines, "\n"))
 	return nil
 }
 

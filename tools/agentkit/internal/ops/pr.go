@@ -20,7 +20,9 @@ import (
 
 // OpenOptions are the parts of a pull request the agent writes; the rest comes from the issue and the commits.
 type OpenOptions struct {
-	Issue     int
+	// Issues are the issues the pull request closes; empty takes the issue of the branch name and those the
+	// commit subjects name as "(#N)".
+	Issues    []int
 	Base      string
 	Title     string
 	Summary   string
@@ -56,10 +58,11 @@ func acceptanceCriteria(body string) []criterion {
 	return out
 }
 
-// Open pushes the branch and opens its pull request from .github/pull_request_template.md's sections: the
-// summary, Closes #N (or Stacked on #M first), the commit subjects as the changes, the issue's acceptance
-// criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed
-// paths and are not changed (docImpact), and opens the PR either way. It comments the PR on the issue and returns the PR URL.
+// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks, the screens
+// looked at), pushes it, and opens its pull request from .github/pull_request_template.md's sections: the
+// summary, Closes #N for each issue (or Stacked on #M first), the commit subjects as the changes, the screenshots
+// that were looked at, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
+// changed (docImpact), and opens the PR either way. It comments the PR on each issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	branch, err := r.Branch()
 	if err != nil {
@@ -68,25 +71,15 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if branch == "main" || branch == "HEAD" {
 		return "", fmt.Errorf("on %s: work on a <type>/<issue>-<slug> branch (workflow.md §3)", branch)
 	}
-	if o.Issue == 0 {
-		o.Issue, _ = strconv.Atoi(gh.BranchIssue(branch))
-	}
 	if o.Base == "" {
 		o.Base = "main"
 	}
+	looked, err := gate(r, branch, "origin/"+o.Base)
+	if err != nil {
+		return "", err
+	}
 	for _, l := range docImpact(r, "origin/"+o.Base) {
 		fmt.Fprintln(os.Stderr, l)
-	}
-	var is *gh.Issue
-	if o.Issue > 0 {
-		if is, err = gh.GetIssue(o.Issue); err != nil {
-			return "", err
-		}
-	}
-	if !o.NoPush {
-		if out, err := exec.Command("git", "-C", r.Root, "push", "-u", "origin", "HEAD").CombinedOutput(); err != nil {
-			return "", fmt.Errorf("git push: %w: %s", err, strings.TrimSpace(string(out)))
-		}
 	}
 	logOut, err := repo.Git(r.Root, "log", "--reverse", "--no-merges", "--format=%s", "origin/"+o.Base+"..HEAD")
 	if err != nil {
@@ -95,6 +88,16 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	subjects := strings.Split(strings.TrimSpace(logOut), "\n")
 	if len(subjects) == 0 || subjects[0] == "" {
 		return "", fmt.Errorf("no commits on %s since origin/%s", branch, o.Base)
+	}
+	issues, err := closing(o.Issues, branch, subjects)
+	if err != nil {
+		return "", err
+	}
+	if !o.NoPush {
+		// A rebased branch replaces what was pushed; the lease refuses when someone else pushed meanwhile.
+		if out, err := exec.Command("git", "-C", r.Root, "push", "--force-with-lease", "-u", "origin", "HEAD").CombinedOutput(); err != nil {
+			return "", fmt.Errorf("git push: %w: %s", err, strings.TrimSpace(string(out)))
+		}
 	}
 	if o.Title == "" {
 		o.Title = subjects[0]
@@ -110,30 +113,44 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		}
 	}
 	summary := strings.TrimSpace(o.Summary)
-	if summary == "" && is != nil {
-		summary = is.Title
+	if summary == "" && len(issues) > 0 {
+		summary = issues[0].Title
 	}
 	fmt.Fprintf(&b, "## Summary\n\n%s\n\n", summary)
-	if o.Issue > 0 {
-		fmt.Fprintf(&b, "Closes #%d\n\n", o.Issue)
+	for _, is := range issues {
+		fmt.Fprintf(&b, "Closes #%d\n", is.Number)
+	}
+	if len(issues) > 0 {
+		b.WriteString("\n")
 	}
 	b.WriteString("## Changes\n\n")
 	for _, s := range subjects {
 		fmt.Fprintf(&b, "- %s\n", s)
 	}
+	if len(looked) > 0 {
+		b.WriteString("\n## Screens\n\n")
+		for _, s := range looked {
+			fmt.Fprintf(&b, "- `%s`\n", s)
+		}
+	}
 	b.WriteString("\n## Acceptance criteria\n\n")
-	var ac []criterion
-	if is != nil {
-		ac = acceptanceCriteria(is.Body)
-	}
-	switch {
-	case is == nil:
+	if len(issues) == 0 {
 		b.WriteString("No issue: nothing to check.\n")
-	case len(ac) == 0:
-		b.WriteString("- [ ] (the issue has no checklist)\n")
 	}
-	for _, a := range ac {
-		fmt.Fprintf(&b, "- [%s] %s\n", mark(a.Checked), a.Text)
+	for i, is := range issues {
+		if len(issues) > 1 {
+			if i > 0 {
+				b.WriteString("\n")
+			}
+			fmt.Fprintf(&b, "#%d %s\n\n", is.Number, is.Title)
+		}
+		ac := acceptanceCriteria(is.Body)
+		if len(ac) == 0 {
+			b.WriteString("- [ ] (the issue has no checklist)\n")
+		}
+		for _, a := range ac {
+			fmt.Fprintf(&b, "- [%s] %s\n", mark(a.Checked), a.Text)
+		}
 	}
 	decisions := strings.TrimSpace(o.Decisions)
 	if decisions == "" {
@@ -161,8 +178,8 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if i := strings.LastIndex(url, "\n"); i >= 0 {
 		url = url[i+1:]
 	}
-	if o.Issue > 0 {
-		if _, err := gh.Run("issue", "comment", strconv.Itoa(o.Issue), "-R", gh.Repo(), "--body", "PR: "+url); err != nil {
+	for _, is := range issues {
+		if _, err := gh.Run("issue", "comment", strconv.Itoa(is.Number), "-R", gh.Repo(), "--body", "PR: "+url); err != nil {
 			return url, err
 		}
 	}

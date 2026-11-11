@@ -1,0 +1,393 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package ops
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/mycroblog/my/tools/agentkit/internal/gh"
+	"github.com/mycroblog/my/tools/agentkit/internal/repo"
+)
+
+// The exit statuses of Land other than 0 (merged) and 1 (CI failed, closed, or gh refused).
+const (
+	LandConflict  = 3   // the pull request conflicts with its base
+	LandCancelled = 4   // checks were cancelled and no newer run replaced them
+	LandDropped   = 5   // the merge queue put the pull request out without merging it
+	LandTimeout   = 124 // still open after the timeout
+)
+
+// rebaseFix is what brings a branch back to a state the merge queue takes.
+const rebaseFix = "in the branch's worktree: git fetch origin && git rebase origin/main && scripts/agentkit.sh regen && git push --force-with-lease; then run pr land again"
+
+// LandOptions are the waits of Land.
+type LandOptions struct {
+	Timeout  time.Duration
+	Interval time.Duration
+	LogDir   string // where the logs of failed jobs are saved
+}
+
+// settle is how long Land waits for GitHub to close the issues of a merged pull request, in steps.
+var settle = 5 * time.Second
+
+// Land takes pull request n to main and leaves nothing behind: it turns on auto-merge (the merge queue, a merge
+// commit), waits until the pull request is merged, printing one line per event, then removes the branch and its
+// worktree, checks that the issues it closes are closed, and closes each parent issue whose sub-issues are all
+// closed. It ends with three lines — merged, cleaned up, remains — and returns the exit status. A failure
+// prints what failed and the fix.
+func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
+	say := func(format string, args ...any) {
+		fmt.Fprintf(w, format+"\n", args...)
+		if f, ok := w.(*os.File); ok {
+			_ = f.Sync()
+		}
+	}
+	p, err := viewPR(n)
+	if err != nil {
+		say("pr land: %v", err)
+		return 1
+	}
+	switch {
+	case p.State == "MERGED":
+		return landed(w, r, p)
+	case p.State == "CLOSED":
+		say("PR #%d is closed without merging", n)
+		return 1
+	case p.Mergeable == "CONFLICTING":
+		say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix)
+		return LandConflict
+	}
+	if _, err := gh.Run("pr", "merge", strconv.Itoa(n), "-R", gh.Repo(), "--auto", "--merge"); err != nil {
+		say("PR #%d: could not turn on auto-merge: %v", n, err)
+		return 1
+	}
+	say("PR #%d: auto-merge on; waiting for its CI and the merge queue", n)
+	main := mainCheckout(r)
+	deadline := time.Now().Add(o.Timeout)
+	var old prSnapshot
+	had := false
+	for {
+		p, err := viewPR(n)
+		queue, qerr := queuedPRs()
+		switch {
+		case err != nil || qerr != nil:
+			// gh and the API fail now and then; give up only at the deadline.
+		case p.State == "MERGED":
+			return landed(w, r, p)
+		case p.State == "CLOSED":
+			say("PR #%d is closed without merging", n)
+			return 1
+		case p.Mergeable == "CONFLICTING":
+			say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix)
+			return LandConflict
+		case behindPush(main, p):
+			// GitHub has not seen the last push yet: its checks are the previous commit's.
+		default:
+			ci, failed, _ := summarize(p.StatusCheckRollup)
+			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[n]}
+			switch {
+			case ci == "failed":
+				say("%s", strings.Join(failureReport(n, p, failed, o.LogDir), "\n"))
+				say("fix: repair it in the branch's worktree, commit, push; then run pr land again")
+				return 1
+			case ci == "cancelled":
+				say("PR #%d: CI cancelled, not failed: %s; no newer run replaced them\nfix: gh run rerun <run> --failed, or push; then run pr land again", n, strings.Join(failed, ", "))
+				return LandCancelled
+			case had && old.queued && !cur.queued:
+				// A merge between the two reads above also empties the queue.
+				if again, err := viewPR(n); err == nil && again.State == "MERGED" {
+					return landed(w, r, again)
+				}
+				say("PR #%d left the merge queue without merging: its merge group failed, or it conflicts with a pull request ahead of it", n)
+				for _, l := range mergeGroupFailure(n, o.LogDir) {
+					say("%s", l)
+				}
+				say("fix: %s", rebaseFix)
+				return LandDropped
+			}
+			for _, e := range transitions(old, had, cur) {
+				say("%s PR #%d %s", time.Now().Format("15:04"), n, e)
+			}
+			old, had = cur, true
+		}
+		if time.Now().After(deadline) {
+			say("PR #%d: not merged after %s; run pr land again to keep waiting", n, o.Timeout)
+			return LandTimeout
+		}
+		time.Sleep(o.Interval)
+	}
+}
+
+// behindPush reports whether the local branch of p is pushed and GitHub's pull request is not at that commit yet.
+func behindPush(main string, p prState) bool {
+	local, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/heads/"+p.HeadRefName)
+	if err != nil {
+		return false
+	}
+	remote, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+p.HeadRefName)
+	return err == nil && strings.TrimSpace(local) == strings.TrimSpace(remote) && strings.TrimSpace(local) != p.HeadRefOid
+}
+
+// mergeGroupFailure returns the failing lines of the newest failed run of the merge group of pull request n
+// (the branch gh-readonly-queue/<base>/pr-<n>-<sha>), or nothing when there is none.
+func mergeGroupFailure(n int, logDir string) []string {
+	var runs []struct {
+		ID         int64  `json:"databaseId"`
+		HeadBranch string `json:"headBranch"`
+		Conclusion string `json:"conclusion"`
+	}
+	if err := gh.JSON(&runs, "run", "list", "-R", gh.Repo(), "--event", "merge_group", "--limit", "40", "--json", "databaseId,headBranch,conclusion"); err != nil {
+		return nil
+	}
+	for _, run := range runs {
+		if run.Conclusion != "failure" || !strings.Contains(run.HeadBranch, fmt.Sprintf("/pr-%d-", n)) {
+			continue
+		}
+		var view struct {
+			Jobs []struct {
+				ID         int64  `json:"databaseId"`
+				Name       string `json:"name"`
+				Conclusion string `json:"conclusion"`
+			} `json:"jobs"`
+		}
+		if err := gh.JSON(&view, "run", "view", strconv.FormatInt(run.ID, 10), "-R", gh.Repo(), "--json", "jobs"); err != nil {
+			return nil
+		}
+		var lines []string
+		shown := 0
+		for _, j := range view.Jobs {
+			if j.Conclusion != "failure" || j.Name == gateName || shown == 3 {
+				continue
+			}
+			shown++
+			out, err := gh.Run("api", "repos/"+gh.Repo()+"/actions/jobs/"+strconv.FormatInt(j.ID, 10)+"/logs")
+			if err != nil {
+				lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", j.Name, err))
+				continue
+			}
+			file := filepath.Join(logDir, fmt.Sprintf("pr-%d-%d.log", n, j.ID))
+			_ = os.WriteFile(file, out, 0o600)
+			lines = append(lines, fmt.Sprintf("== %s (merge group; full log: %s)", j.Name, file))
+			lines = append(lines, Failures(string(out), 40)...)
+		}
+		return lines
+	}
+	return nil
+}
+
+// reCloses matches the closing keywords of a pull request description.
+var reCloses = regexp.MustCompile(`(?i)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?) #(\d+)`)
+
+// closedBy returns the issues pull request n closes: those GitHub links to it, and the closing keywords of its
+// description.
+func closedBy(n int) []int {
+	var v struct {
+		Body    string `json:"body"`
+		Closing []struct {
+			Number int `json:"number"`
+		} `json:"closingIssuesReferences"`
+	}
+	_ = gh.JSON(&v, "pr", "view", strconv.Itoa(n), "-R", gh.Repo(), "--json", "body,closingIssuesReferences")
+	seen := map[int]bool{}
+	var out []int
+	add := func(i int) {
+		if i > 0 && !seen[i] {
+			seen[i] = true
+			out = append(out, i)
+		}
+	}
+	for _, c := range v.Closing {
+		add(c.Number)
+	}
+	for _, m := range reCloses.FindAllStringSubmatch(v.Body, -1) {
+		i, _ := strconv.Atoi(m[1])
+		add(i)
+	}
+	sort.Ints(out)
+	return out
+}
+
+const issueQuery = `query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    issue(number: $number) {
+      number title state
+      milestone { number title }
+      parent {
+        number title state
+        subIssuesSummary { total completed }
+        subIssues(first: 100) { nodes { number state } }
+      }
+    }
+  }
+}`
+
+// issueNode is an issue with its parent issue and the parent's sub-issues.
+type issueNode struct {
+	Number    int    `json:"number"`
+	Title     string `json:"title"`
+	State     string `json:"state"`
+	Milestone *struct {
+		Number int    `json:"number"`
+		Title  string `json:"title"`
+	} `json:"milestone"`
+	Parent *struct {
+		Number  int    `json:"number"`
+		Title   string `json:"title"`
+		State   string `json:"state"`
+		Summary struct {
+			Total     int `json:"total"`
+			Completed int `json:"completed"`
+		} `json:"subIssuesSummary"`
+		SubIssues struct {
+			Nodes []struct {
+				Number int    `json:"number"`
+				State  string `json:"state"`
+			} `json:"nodes"`
+		} `json:"subIssues"`
+	} `json:"parent"`
+}
+
+// issueWithParent reads issue n, its milestone, and its parent issue with the state of the parent's sub-issues.
+func issueWithParent(n int) (issueNode, error) {
+	owner, name, _ := strings.Cut(gh.Repo(), "/")
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Issue issueNode `json:"issue"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := gh.JSON(&resp, "api", "graphql", "-f", "query="+issueQuery, "-F", "owner="+owner, "-F", "name="+name, "-F", "number="+strconv.Itoa(n))
+	return resp.Data.Repository.Issue, err
+}
+
+// followUp checks that the issues pull request n closes are closed, closes each parent issue whose sub-issues
+// are all closed (and that parent's parent, in turn), and returns what is still open: issues the merge did not
+// close, parents with open sub-issues, and the milestones with their counts.
+func followUp(n int, issues []int) []string {
+	var remains []string
+	milestones := map[int]string{}
+	parents := map[int]bool{}
+	queue := append([]int(nil), issues...)
+	for depth := 0; len(queue) > 0 && depth < 50; depth++ {
+		num := queue[0]
+		queue = queue[1:]
+		is, err := issueWithParent(num)
+		// GitHub closes the issues a moment after the merge.
+		for try := 0; err == nil && is.State == "OPEN" && try < 3; try++ {
+			time.Sleep(settle)
+			is, err = issueWithParent(num)
+		}
+		if err != nil {
+			remains = append(remains, fmt.Sprintf("#%d unread (%v)", num, err))
+			continue
+		}
+		if is.Milestone != nil {
+			milestones[is.Milestone.Number] = is.Milestone.Title
+		}
+		if is.State == "OPEN" {
+			remains = append(remains, fmt.Sprintf("#%d is still open (gh issue close %d -R %s)", num, num, gh.Repo()))
+			continue
+		}
+		pa := is.Parent
+		if pa == nil || parents[pa.Number] {
+			continue
+		}
+		parents[pa.Number] = true
+		var open []string
+		for _, s := range pa.SubIssues.Nodes {
+			if s.State == "OPEN" {
+				open = append(open, "#"+strconv.Itoa(s.Number))
+			}
+		}
+		left := pa.Summary.Total - pa.Summary.Completed
+		if left < len(open) {
+			left = len(open)
+		}
+		switch {
+		case left > 0:
+			remains = append(remains, fmt.Sprintf("#%d %s: %d of %d sub-issues open (%s)", pa.Number, pa.Title, left, pa.Summary.Total, short(open, 8)))
+		case pa.State != "OPEN":
+			queue = append(queue, pa.Number)
+		default:
+			if _, err := gh.Run("issue", "close", strconv.Itoa(pa.Number), "-R", gh.Repo(), "--comment",
+				fmt.Sprintf("Every sub-issue is closed; #%d merged the last one.", n)); err != nil {
+				remains = append(remains, fmt.Sprintf("#%d %s: every sub-issue is closed, but closing it failed (%v)", pa.Number, pa.Title, err))
+				continue
+			}
+			remains = append(remains, fmt.Sprintf("closed #%d %s (every sub-issue is closed)", pa.Number, pa.Title))
+			queue = append(queue, pa.Number)
+		}
+	}
+	nums := make([]int, 0, len(milestones))
+	for m := range milestones {
+		nums = append(nums, m)
+	}
+	sort.Ints(nums)
+	for _, m := range nums {
+		var ms struct {
+			Open   int    `json:"open_issues"`
+			Closed int    `json:"closed_issues"`
+			State  string `json:"state"`
+		}
+		if err := gh.JSON(&ms, "api", fmt.Sprintf("repos/%s/milestones/%d", gh.Repo(), m)); err != nil {
+			continue
+		}
+		line := fmt.Sprintf("milestone %s: %d open, %d closed", milestones[m], ms.Open, ms.Closed)
+		if ms.Open == 0 && ms.State == "open" {
+			line += fmt.Sprintf(" (close it: gh api -X PATCH repos/%s/milestones/%d -f state=closed)", gh.Repo(), m)
+		}
+		remains = append(remains, line)
+	}
+	return remains
+}
+
+// landed finishes a merged pull request and prints the three closing lines.
+func landed(w io.Writer, r *repo.Repo, p prState) int {
+	issues := closedBy(p.Number)
+	closes := ""
+	if len(issues) > 0 {
+		refs := make([]string, len(issues))
+		for i, n := range issues {
+			refs[i] = "#" + strconv.Itoa(n)
+		}
+		closes = " (closes " + strings.Join(refs, ", ") + ")"
+	}
+	fmt.Fprintf(w, "merged: PR #%d %s%s\n", p.Number, p.Title, closes)
+	fmt.Fprintf(w, "cleaned up: %s\n", cleanUp(r, p))
+	remains := followUp(p.Number, issues)
+	if len(remains) == 0 {
+		remains = []string{"nothing (no parent issue, no milestone)"}
+	}
+	fmt.Fprintf(w, "remains: %s\n", strings.Join(remains, "; "))
+	return 0
+}
+
+// cleanUp removes the local branch of the merged pull request p and its worktree, and says what it did.
+func cleanUp(r *repo.Repo, p prState) string {
+	main := mainCheckout(r)
+	_, _ = repo.Git(main, "fetch", "--prune", "--quiet", "origin")
+	defer func() { _, _ = repo.Git(main, "worktree", "prune") }()
+	branch := p.HeadRefName
+	head, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+	if err != nil {
+		return "no local branch " + branch
+	}
+	if h := strings.TrimSpace(head); h != p.HeadRefOid && !ancestor(main, h, "origin/main") {
+		return fmt.Sprintf("kept %s: it has commits PR #%d did not merge (git log origin/main..%s)", branch, p.Number, branch)
+	}
+	wts, err := worktrees(main)
+	if err != nil {
+		return "kept " + branch + ": " + err.Error()
+	}
+	line, _ := removeBranch(main, r.Root, wts, branch, false)
+	return line
+}

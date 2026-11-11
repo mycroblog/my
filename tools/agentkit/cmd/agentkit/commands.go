@@ -30,16 +30,25 @@ Read (instead of grep / cat over the repository):
 Workflow (instead of gh / scripts/task.sh loops):
   issue claim <n> [--plan text]                        check agent:ready, no assignee, Accepted ADRs; assign; comment
   issue block <n> --reason text|--reason-file f        comment and add agent:blocked
-  pr open [--issue n] [--base b] [--summary-file f] [--decisions text] [--draft]
-                                                       push, open the PR from the template, link it on the issue;
+  pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
+                                                       the gate: refuses outside a worktree, on a merge or
+                                                       fixup! commit, a conflict with the base, a failing
+                                                       check, or UI screens not looked at; then pushes, opens
+                                                       the PR from the template, links it on each issue;
                                                        prints the unchanged documents of docs impact
+  pr land <pr> [--timeout 3h]                          the only way a PR finishes (run it in the background, in
+                                                       the main agent): auto-merge through the merge queue, one
+                                                       line per event, then remove the branch and worktree and
+                                                       close finished parent issues; exit 1 CI failed, 3
+                                                       conflict, 5 dropped by the queue (each prints the fix)
+  tidy [--dry-run]                                     remove the worktrees and branches of merged or closed PRs
   pr wait <pr> [--timeout 50m] [--all]                 block until CI ends; print one line, or the failing lines
                                                        (run it in the background; exit 3 on a conflict,
                                                        4 when cancelled with no newer run)
   pr watch [<pr>...] [--interval 60s]                  one line per event: merged, closed, conflicting, ci-failed,
                                                        ci-cancelled, ci-green, dequeued (for the Monitor tool)
-  check [--base origin/main]                           optional: scripts/task.sh check:changed with a summary, the
-                                                       failing lines, and the unchanged documents of docs impact
+  check [--base origin/main] [--full]                  the quick checks of the changed files, one line each
+                                                       (pr open runs them); --full: scripts/task.sh check:changed
   regen [--base origin/main] [--dry-run]               run the generators the changed sources need
   gh sync                                              refresh the local cache of issues and pull requests
 
@@ -86,6 +95,8 @@ func run(args []string) error {
 		return runCheck(r, rest)
 	case "regen":
 		return runRegen(r, rest)
+	case "tidy":
+		return runTidy(r, rest)
 	case "map":
 		return runMap(r, rest)
 	case "adr":
