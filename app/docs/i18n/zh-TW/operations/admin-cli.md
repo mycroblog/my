@@ -32,10 +32,13 @@ my admin create -username alice -email alice@example.com
 - 失敗的執行不會寫入任何東西，所以你可以排除原因後再執行同一個指令。
 - 結束代碼 2 表示用法錯誤。
 
-<!-- source: granting-and-revoking-roles b87e1adb131e -->
+<!-- source: granting-and-revoking-roles a8783994c097 -->
 ## 授予與撤銷角色
 
-角色擁有權限。內建角色為 `admin`（`position` 1000，擁有所有權限）和 `moderator`（`position` 100，擁有 `manage_reports`、`manage_accounts` 和 `view_audit`）。`my serve` 每次啟動時（任何 `role` 的行程）都會檢查內建角色，`my admin role` 每次執行時也會檢查。兩者都會建立缺少的角色，並將執行中版本的所有權限賦予 `admin`。升級新增權限時，不需要任何手動步驟。`moderator` 會保留管理員設定的權限和位階。
+角色包含權限。內建角色有 `admin`（`position` 為 1000，擁有所有權限）和 `moderator`（`position` 為 100，擁有 `manage_reports`、`manage_accounts` 和 `view_audit`）。
+`my serve` 每次啟動時（不論 `role` 為何的程序）都會檢查內建角色，`my admin role` 每次執行時也會檢查。
+兩者都會建立缺少的角色，並讓 `admin` 擁有目前執行版本的所有權限。
+升級新增權限時，不需要任何手動步驟。`moderator` 會保留管理員所設定的權限與 position。
 
 ```sh
 my admin role list                 # each role's position, permissions (grouped as moderation, server administration, and member features), and holders
@@ -47,16 +50,17 @@ my admin role revoke alice moderator
 - 權限分屬三個群組之一。
   - 審核：`manage_reports`、`manage_accounts`、`manage_domains`、`manage_invites`、`view_audit`。
   - 伺服器管理：`manage_settings`、`manage_rules`、`manage_roles`、`manage_jobs`、`manage_login_recovery`、`manage_custom_emojis`、`manage_webhooks`、`manage_announcements`、`manage_finance`、`manage_supporters`、`manage_oauth_apps`、`manage_service_closure`、`manage_errors`、`manage_login_providers`。
-  - 會員功能：`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`。
+  - 成員功能：`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`、`create_articles`、`create_events`。
 
-  `list` 會為每個群組印出一欄（`MODERATION`、`SERVER`、`MEMBER`）。網頁用戶端將前兩個群組顯示為「審核」和「管理」，會員功能則不計入任何一個（請參閱 [moderation.md](moderation.md)）。
-- 變更會在該使用者的下一次請求時生效。給版主的通知，會送給通知建立當下擁有該權限的人。
-- 授予和撤銷會以 `role_granted` 和 `role_revoked`（目標種類 `role`）寫入稽核記錄。CLI 操作的執行者是 `cli`（`my admin audit list -target-kind role`）。
-- 授予使用者已有的角色，或撤銷使用者沒有的角色，不會變更也不會記錄任何東西。
-- `admin` 的最後一位持有者無法失去這個角色（結束代碼 1）。請先將 `admin` 授予另一位使用者。
-- 管理 API 為 `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles` 以及 `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`，需要 `manage_roles` 權限。透過 API，你無法授予或撤銷高於你自己角色中最高 `position` 的角色（403）。撤銷最後一個 `admin` 會回傳 409。
-- 工作人員只能對位階較低的人採取行動。透過 API 執行審核處置及其解除、裁決申訴、解除電子郵件的寄送抑制、揭露帳號的私人資料、發行密碼重設連結，以及移除兩步驟驗證時，你角色中的最高 `position` 必須高於對象所有角色的位階；對位階較高或相同的對象（包括你自己的帳號）會回傳 403。版主無法對管理員採取行動，管理員之間也無法互相採取行動。這些指令（`my admin account ...`）沒有這項限制，所以當管理員之間意見不一時，請使用這些指令。
-- 唯一的管理員無法被鎖在外面或被移除：對其執行 `disable_login`、`suspend` 和 `ban` 時，透過 API（409）和這些指令（結束代碼 1）都會被拒絕，而且他們也無法刪除自己的帳號（409）。其他 `admin` 持有者只有在能夠登入時才算數：刪除帳號後，或在停權、封禁或 `disable_login` 期間都不算。
+  `list` 會為每個群組輸出一欄（`MODERATION`、`SERVER`、`MEMBER`）。網頁用戶端會將前兩個群組顯示為「審核」和「管理」，成員功能則不計入這兩者（請參閱 [moderation.md](moderation.md)）。
+- 變更會在使用者的下一次請求時生效。給版主的通知，會送給通知建立當下持有該權限的人。
+- 授予與撤銷會以 `role_granted` 和 `role_revoked`（目標種類為 `role`）寫入稽核紀錄。CLI 操作的執行者是 `cli`（`my admin audit list -target-kind role`）。
+- 授予使用者已有的角色，或撤銷他沒有的角色，不會變更也不會記錄任何東西。
+- `admin` 的最後一位持有者不能失去它（結束碼 1）。請先將 `admin` 授予另一位使用者。
+- 管理 API 是 `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`，以及 `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`，且需要 `manage_roles` 權限。
+  透過 API，你不能授予或撤銷高於你自己所有角色中最高 `position` 的角色（403）。撤銷最後一個 `admin` 會回傳 409。
+- 工作人員只能對較低的層級採取行動。透過 API，審核動作與解除這些動作、裁決申訴、解除電子郵件抑制、揭露帳號的私人資料、發出密碼重設連結，以及移除雙重驗證，都要求你的角色中最高的 `position` 高於目標的每一個角色；較高或相等的層級（包括你自己的帳號）會回傳 403。版主不能對管理員採取行動，一位管理員也不能對另一位管理員採取行動。這些指令（`my admin account ...`）沒有這樣的限制，所以在管理員之間意見不合時請使用它們。
+- 唯一的管理員不能被鎖在門外或被移除：對他執行 `disable_login`、`suspend` 和 `ban` 都會被拒絕，不論是透過 API（409）還是這些指令（結束碼 1），而且他不能刪除自己的帳號（409）。另一位 `admin` 持有者，只有在他還能登入時才算數：刪除帳號之後、遭到停權或封鎖期間，或處於 `disable_login` 之下，都不算。
 
 <!-- source: announcing-the-end-of-the-service e1c40ec145f0 -->
 ## 公告服務終止

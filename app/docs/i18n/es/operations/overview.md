@@ -20,7 +20,7 @@ De arriba abajo en el diagrama:
 - **Las partes que eliges.** Cada parte del centro del diagrama tiene una configuración que elige su adaptador, enumerado en [la sección siguiente](#parts-you-choose-by-configuration).
 - **Servicios externos al servidor.** CAPTCHA, el chat de voz, los pagos, los complementos y la importación de costos de la nube permanecen desactivados hasta que los configures; el servidor llama entonces al servicio que indiques.
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
 ## Partes que eliges mediante la configuración
 
 Cada parte es una configuración de la [referencia de configuración](../reference/configuration.md), definido en un archivo TOML o como variable de entorno (`MY_` y la clave en mayúsculas, como `MY_DATABASE`). La primera opción de cada lista es la predeterminada. Cuando una parte guarda datos, elígela antes del primer arranque: los datos no se mueven solos cuando cambia la configuración.
@@ -42,7 +42,7 @@ Cada parte es una configuración de la [referencia de configuración](../referen
 | Traducción de publicaciones | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | ninguna (solo la traducción del propio navegador); `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate), o un complemento tuyo delante del servicio que elijas | [Traducir publicaciones](translation.md), [un complemento de traducción](plugins.md#translating-posts) |
 | Búsqueda de texto completo de publicaciones | [`search`](../reference/configuration.md#search) | `none`; o `elasticsearch`, `opensearch` o `meilisearch` ([motores de búsqueda](search-engines.md)); o `plugin`, un complemento tuyo delante de otro motor | [Búsqueda de texto completo](search.md), [un complemento de búsqueda](plugins.md#searching-posts) |
 | CDN para contenido multimedia | [`media_origin`](../reference/configuration.md#media_origin) | sin definir (el servidor sirve el contenido multimedia desde su propio origen), o el origen de tu CDN | [Servir contenido multimedia mediante una CDN](cdn.md) |
-| Costos de la nube | [`billing_sources`](../reference/configuration.md#billing_sources) | ninguno, o cualquiera de `aws` (AWS Cost Explorer), `gcp` (la exportación de facturación o el presupuesto de Google Cloud), `plugin` | [Importar costos de la nube](billing-import.md) |
+| Costos de la nube | [`billing_sources`](../reference/configuration.md#billing_sources) | ninguno, o cualquiera de `aws` (AWS Cost Explorer), `gcp` (la exportación de facturación o el presupuesto de Google Cloud), `cloudflare` (los cargos de uso de Cloudflare), `plugin` | [Importar costos de la nube](billing-import.md) |
 | Métricas | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Métricas](running.md#metrics), [alertas](alerts.md) |
 | Trazas | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Trazas](running.md#traces) |
 | Informes de errores | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (solo la línea de registro y los grupos de errores), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Informes de errores](error-reporting.md) |

@@ -11,6 +11,14 @@
     "defaultMessage": "Nenhuma publicação ainda",
     "description": "Shown instead of the posts of a profile's tab when it has none."
   },
+  "timeline.empty.account.articles.heading": {
+    "defaultMessage": "Nenhum artigo ainda",
+    "description": "Shown instead of the articles of the articles tab of a profile when it has none."
+  },
+  "timeline.empty.account.tagged.heading": {
+    "defaultMessage": "Nenhuma publicação com #{tag} ainda",
+    "description": "Shown instead of the posts of an account that carry a hashtag when it has none. {tag} is the hashtag without the #."
+  },
   "timeline.empty.bookmarks.description": {
     "defaultMessage": "As publicações que você salvar aparecem aqui. Só você vê seus itens salvos.",
     "description": "Text under the heading of the empty list of bookmarks."

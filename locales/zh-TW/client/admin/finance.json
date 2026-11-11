@@ -19,6 +19,10 @@
     "defaultMessage": "{visibility, select, totals {關於頁面會公開收入的總計。} plans {關於頁面會公開收入的總計與各方案的成員。} other {收入不會公開。}}",
     "description": "What the server publishes of the income on its information page, on the costs screen, by the server setting income_visibility (private, totals, or plans)."
   },
+  "admin.finance.funding_visibility": {
+    "defaultMessage": "{visibility, select, percent {關於頁面的資金進度條只顯示百分比。} amounts {關於頁面的資金進度條會顯示百分比和金額。} other {本月不顯示資金進度條。}}",
+    "description": "What the server shows of the funding meter on its information page, on the costs screen, by the server setting funding_meter_visibility (percent or amounts); other when it is off or the month has no goal."
+  },
   "admin.finance.viewer": {
     "defaultMessage": "{names, select, shown {可以讀取財務資料的人看得到項目名稱、} other {可以讀取財務資料的人看不到項目名稱、}}{memos, select, shown {看得到其備註，} other {看不到其備註，}}{income, select, plans {並可看到收入與各方案的成員。} other {且只能看到收入的總計。}}",
     "description": "What the holders of the view_finance permission see on the finances page, on the costs screen, by the server settings finance_viewer_item_names and finance_viewer_item_memos (shown or hidden) and finance_viewer_income (totals or plans)."
@@ -439,6 +443,10 @@
     "defaultMessage": "根據預算通知估算：總計以估計值為準，不含各服務的明細。",
     "description": "Note under a provider on the costs screen when Google Cloud is imported from its budget notifications (billing_gcp_method = budget): the figures are approximate."
   },
+  "admin.finance.imports.method.billable_usage": {
+    "defaultMessage": "只匯入依產品計算的用量費用，方案、附加項目、稅金和抵免額不會匯入，請自行新增為成本。",
+    "description": "Note under a provider on the costs screen when Cloudflare is imported from its billable usage (billing_sources = cloudflare): only usage charges by product, without plans, taxes, or credits."
+  },
   "admin.finance.imports.months": {
     "defaultMessage": "{provider} 的帳單月份",
     "description": "Accessible name of the list of a provider's imported billing months on the costs screen."
@@ -554,5 +562,17 @@
   "admin.finance.movements.gross_fee": {
     "defaultMessage": "總額 {gross}，手續費 {fee}",
     "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
+  },
+  "admin.finance.movements.source.subscription": {
+    "defaultMessage": "訂閱",
+    "description": "The source of a money movement: a subscription to a supporter plan."
+  },
+  "admin.finance.movements.source.one_time": {
+    "defaultMessage": "小費",
+    "description": "The source of a money movement: a tip, a one-time payment to the server's operation with nothing in return."
+  },
+  "admin.finance.movements.source.unknown": {
+    "defaultMessage": "既非訂閱也非小費",
+    "description": "The source of a money movement: neither, such as a payment taken outside this server or a fee of no subscription."
   }
 }

@@ -147,6 +147,10 @@
     "defaultMessage": "Abonnés de l’hôte",
     "description": "Visibility of a voice chat room: the followers of its host."
   },
+  "voice.visibility.following": {
+    "defaultMessage": "Personnes suivies par l’hôte",
+    "description": "Visibility of a voice chat room: those whom the host follows."
+  },
   "voice.visibility.mutuals": {
     "defaultMessage": "Abonnés mutuels de l’hôte",
     "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
@@ -162,6 +166,10 @@
   "voice.speakers.followers": {
     "defaultMessage": "Abonnés de l’hôte",
     "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.following": {
+    "defaultMessage": "Personnes suivies par l’hôte",
+    "description": "Who may speak in a voice chat room without asking: those whom the host follows."
   },
   "voice.speakers.mutuals": {
     "defaultMessage": "Abonnés mutuels de l’hôte",

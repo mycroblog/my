@@ -133,7 +133,7 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 `rsync` para o host de backup mantém a cópia pequena depois da primeira vez, já que os arquivos de mídia nunca mudam depois de gravados.
 
-<!-- source: media-in-a-bucket 882f3a0f9a2b -->
+<!-- source: media-in-a-bucket ff4b1024347c -->
 ### Mídia em um bucket
 
 Os blob stores `s3` e `gcs` guardam cada arquivo como um objeto do bucket `blob_s3_bucket` ou `blob_gcs_bucket`, identificado por sua chave: a mídia processada em `media/`,
@@ -147,6 +147,10 @@ Um objeto excluído ou sobrescrito permanece como uma versão não atual, e o bu
 ```sh
 aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
 ```
+
+Com os módulos OpenTofu do Amazon S3 e do Google Cloud Storage, defina `versioning = true`: isso ativa o versionamento e adiciona a regra das versões não atuais
+abaixo, cuja idade é `noncurrent_version_days` (35 por padrão). O Cloudflare R2 não tem versionamento de objetos, e o módulo de outro armazenamento compatível com S3
+não cria o bucket, então, nesses dois casos, use uma cópia (abaixo).
 
 **Regras de ciclo de vida.** Com o versionamento, cada arquivo excluído mantém seu custo de armazenamento até que uma regra o remova. Adicione uma regra que exclua as versões não atuais
 depois da idade do seu backup de banco de dados mais antigo (35 dias para as gerações de [Com que frequência e onde](#how-often-and-where), sem as mensais),
@@ -208,6 +212,21 @@ O banco de dados nomeia os arquivos de mídia que usa, e a cópia da mídia é f
 
 A outra ordem é pior: todo arquivo enviado entre o backup da mídia e o backup do banco de dados estaria ausente depois de uma restauração,
 inclusive a mídia das publicações novas. Fazer ambos em modo de manutenção evita qualquer das duas lacunas.
+
+<!-- source: on-the-opentofu-targets 9862430f808c -->
+### Nos alvos OpenTofu
+
+Os módulos não mantêm nenhum backup próprio além do que o provedor oferece: o PostgreSQL gerenciado do Cloud SQL e do RDS tem backups automáticos
+com uma retenção que você define, enquanto um banco de dados com apenas o histórico do provedor (Neon) só pode voltar até onde esse histórico alcança.
+Agende o seguinte por conta própria, com credenciais que a instância não tem:
+
+1. **O banco de dados, todos os dias.** Execute `pg_dump` no PostgreSQL da instância a partir de uma máquina ou de um job agendado fora do provedor que hospeda o
+   banco de dados (veja [PostgreSQL](#postgresql)), criptografe o dump e grave-o em um bucket de outra conta ou de outro provedor. Mantenha as gerações de
+   [Com que frequência e onde](#how-often-and-where). O job precisa da `database_url` e de nada mais; ele não pode ter a KEK.
+2. **A mídia, logo depois.** Com `versioning = true` no módulo do bucket, as versões são a cópia durante os últimos `noncurrent_version_days`;
+   para o caso de perder a conta, execute também `rclone copy` do bucket da instância para um bucket em outro lugar, como em
+   [Mídia em um bucket](#media-in-a-bucket), no cronograma do dump do banco de dados.
+3. **A KEK e a configuração** não fazem parte do cronograma: faça o backup delas quando mudarem ([A KEK e a configuração](#the-kek-and-the-configuration)).
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->
 ### A KEK e a configuração
@@ -329,7 +348,7 @@ Com um mecanismo de busca, execute `my search rebuild` após a restauração, se
 - Encontre a KEK cujo ID de chave o erro nomeia, defina-a como `kek` (ou em `kek_previous`) e reinicie. Não há como recuperar um segredo sem a sua KEK;
   se a KEK for perdida de vez, as chaves dos atores precisam ser geradas novamente, e outros servidores veem cada ator como uma nova chave para a mesma conta.
 
-<!-- source: recovery-drill f9adfe0e0d28 -->
+<!-- source: recovery-drill cdd349df0cb8 -->
 ## Simulação de recuperação
 
 Só se sabe que um backup funciona depois de restaurá-lo. Ensaie uma restauração antes de a instância se tornar pública e de novo após uma mudança na forma como
@@ -338,7 +357,22 @@ os backups são feitos (pelo menos a cada poucos meses):
 1. Faça um backup da instância em produção como acima: o banco de dados, depois a mídia.
 2. Em outra máquina ou em outro projeto Compose, restaure-o com a KEK e a configuração de onde você as guarda
    (não copiadas do servidor em produção) e com `host` inalterado, para que as URLs dos atores coincidam.
-3. Não deixe a cópia federar: mantenha-a fora da internet ou ative o modo de manutenção assim que as verificações abaixo passarem.
-4. Percorra [Iniciando e verificando](#starting-and-checking): entrar, publicações e mídia, e o `publicKey` de alguns atores comparado com o da instância em produção.
-5. Inicie-a uma vez sem a KEK e outra com uma diferente, e verifique se ela falha como [Sem a KEK correta](#without-the-right-kek) descreve.
-6. Anote quanto tempo cada etapa levou: é por esse tempo que uma restauração real mantém a instância fora do ar.
+3. Não deixe a cópia federar. Defina `role = web`, que não executa nenhum worker de jobs: os jobs restaurados com o banco de dados incluem entregas que
+   estavam pendentes quando o backup foi feito, e uma cópia que as executa as assina com as chaves dos atores reais e as envia de novo a outros servidores.
+   Manter a cópia fora da internet não basta, pois é difícil garanti-lo. Ative o modo de manutenção assim que as verificações abaixo passarem, se você a mantiver em execução.
+4. Fora do Compose, por exemplo em uma máquina local apontando para uma instância na nuvem, dê à cópia estas configurações para que ela não toque em nada da instância em produção:
+
+   | Configuração | Valor na cópia | Por quê |
+   | --- | --- | --- |
+   | `role` | `web` | Não executa nenhum job, então nada do que foi restaurado é entregue de novo |
+   | `queue` | `db` | Os jobs enfileirados na cópia ficam no banco de dados dela em vez de chegar à fila em produção |
+   | `stream` | `postgres` | Não entra no stream de eventos em produção da instância |
+   | `mail` | `none` | Não envia e-mails a usuários reais |
+   | o blob store | um bucket (ou diretório) novo com a mídia restaurada | Deixa o bucket em produção intocado |
+   | `database_url` | o banco de dados restaurado | Nunca o de produção |
+   | a KEK (`MY_KEK`, ou `key_manager` e `kms_key`) | como em produção, de onde você a guarda | Sem ela a cópia não inicia |
+   | `host` | como em produção | Para que as URLs dos atores coincidam |
+
+5. Percorra [Iniciando e verificando](#starting-and-checking): entrar, publicações e mídia, e o `publicKey` de alguns atores comparado com o da instância em produção.
+6. Inicie-a uma vez sem a KEK e outra com uma diferente, e verifique se ela falha como [Sem a KEK correta](#without-the-right-kek) descreve.
+7. Anote quanto tempo cada etapa levou: é por esse tempo que uma restauração real mantém a instância fora do ar.

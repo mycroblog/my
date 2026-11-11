@@ -16,7 +16,7 @@
 - **選ぶ部品。** 図の中央にある各部品には、そのアダプターを選ぶ設定が 1 つずつあります。[次の節](#parts-you-choose-by-configuration)に一覧があります。
 - **サーバー外のサービス。** CAPTCHA、通話、支払い、プラグイン、クラウド費用の取り込みは、それぞれ設定するまで無効で、設定するとサーバーは指定したサービスを呼び出します。
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
 ## 設定で選ぶ部品
 
 どの部品も[設定リファレンス](../reference/configuration.md)の設定項目で、TOML ファイルか環境変数（`MY_` にキーを大文字にしたもの。例: `MY_DATABASE`）で設定します。各一覧の最初の選択肢が既定値です。データを保持する部品は、最初の起動の前に選んでください。設定を変えても、データが自動で移ることはありません。
@@ -38,7 +38,7 @@
 | 投稿の翻訳 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | なし（ブラウザ自身の翻訳だけ）、`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate）、または選んだサービスの前に置くあなたのプラグイン | [投稿の翻訳](translation.md)、[翻訳プラグイン](plugins.md#translating-posts) |
 | 投稿の全文検索 | [`search`](../reference/configuration.md#search) | `none`、または `elasticsearch`、`opensearch`、`meilisearch`（[検索エンジン](search-engines.md)）、またはほかのエンジンの前に置くあなたのプラグインである `plugin` | [全文検索](search.md)、[検索プラグイン](plugins.md#searching-posts) |
 | メディアの CDN | [`media_origin`](../reference/configuration.md#media_origin) | 未設定（サーバーが自身のオリジンからメディアを配信します）、または CDN のオリジン | [CDN からメディアを配信する](cdn.md) |
-| クラウド費用 | [`billing_sources`](../reference/configuration.md#billing_sources) | なし、または `aws`（AWS Cost Explorer）、`gcp`（Google Cloud の請求データのエクスポートまたは予算）、`plugin` のいずれか（複数可） | [クラウド費用の取り込み](billing-import.md) |
+| クラウド費用 | [`billing_sources`](../reference/configuration.md#billing_sources) | なし、または `aws`（AWS Cost Explorer）、`gcp`（Google Cloud の請求データのエクスポートまたは予算）、`cloudflare`（Cloudflare の従量課金）、`plugin` のいずれか（複数可） | [クラウド費用の取り込み](billing-import.md) |
 | メトリクス | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`、`prometheus`、`otlp`（OpenTelemetry）、`emf`（CloudWatch） | [メトリクス](running.md#metrics)、[アラート](alerts.md) |
 | トレース | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [トレース](running.md#traces) |
 | エラーレポート | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（ログ行とエラーグループだけ）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [エラーレポート](error-reporting.md) |

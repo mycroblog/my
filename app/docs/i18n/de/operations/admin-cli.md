@@ -37,12 +37,12 @@ my admin create -username alice -email alice@example.com
 - Ein fehlgeschlagener Lauf schreibt nichts, du kannst also die Ursache beheben und denselben Befehl erneut ausführen.
 - Exit-Code 2 bedeutet einen Aufruffehler.
 
-<!-- source: granting-and-revoking-roles b87e1adb131e -->
+<!-- source: granting-and-revoking-roles a8783994c097 -->
 ## Rollen vergeben und entziehen
 
-Rollen enthalten Berechtigungen. Die eingebauten Rollen sind `admin` (`position` 1000, jede Berechtigung) und
+Rollen bündeln Berechtigungen. Die eingebauten Rollen sind `admin` (`position` 1000, jede Berechtigung) und
 `moderator` (`position` 100, mit `manage_reports`, `manage_accounts` und `view_audit`).
-`my serve` prüft die eingebauten Rollen bei jedem Start (in einem Prozess mit beliebigem `role`), und `my admin role` prüft sie bei jedem Aufruf.
+`my serve` prüft die eingebauten Rollen bei jedem Start (in einem Prozess mit beliebiger `role`), und `my admin role` prüft sie bei jedem Aufruf.
 Beide legen an, was fehlt, und geben `admin` jede Berechtigung der laufenden Version.
 Wenn ein Upgrade eine Berechtigung hinzufügt, ist kein manueller Schritt nötig. Ein `moderator` behält die Berechtigungen und die Position, die der Administrator gesetzt hat.
 
@@ -56,17 +56,17 @@ my admin role revoke alice moderator
 - Berechtigungen gehören zu einer von drei Gruppen.
   - Moderation: `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
   - Serveradministration: `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers`.
-  - Mitgliederfunktionen: `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`.
+  - Funktionen für Mitglieder: `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`.
 
-  `list` gibt eine Spalte pro Gruppe aus (`MODERATION`, `SERVER`, `MEMBER`). Der Webclient zeigt „Moderation“ und „Administration“ für die ersten beiden Gruppen und rechnet die Mitgliederfunktionen keiner von beiden zu (siehe [moderation.md](moderation.md)).
-- Eine Änderung wirkt ab der nächsten Anfrage des Nutzers. Benachrichtigungen für Moderatoren gehen an die Personen, die die Berechtigung innehaben, wenn die Benachrichtigung erstellt wird.
-- Vergaben und Entzüge werden als `role_granted` und `role_revoked` ins Audit-Log geschrieben (Zielart `role`). Der Akteur einer CLI-Operation ist `cli` (`my admin audit list -target-kind role`).
-- Eine Rolle zu vergeben, die der Nutzer schon hat, oder eine zu entziehen, die er nicht hat, ändert und verzeichnet nichts.
-- Der letzte Inhaber von `admin` kann die Rolle nicht verlieren (Exit-Code 1). Vergib `admin` zuerst an einen anderen Nutzer.
-- Die Admin-API besteht aus `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` und `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}` und erfordert die Berechtigung `manage_roles`.
-  Über die API kannst du keine Rolle vergeben oder entziehen, die über der höchsten `position` deiner eigenen Rollen liegt (403). Den letzten `admin` zu entziehen liefert 409.
-- Das Team handelt nur gegenüber niedrigeren Rängen. Über die API erfordern Moderationsaktionen und ihre Aufhebung, das Entscheiden von Einsprüchen, das Aufheben von E-Mail-Sperren, das Offenlegen privater Daten eines Kontos, das Ausstellen eines Passwort-Reset-Links und das Entfernen der Zwei-Faktor-Authentifizierung, dass die höchste `position` unter deinen Rollen über der jeder Rolle des Ziels liegt; ein höherer oder gleicher Rang, auch dein eigenes Konto, liefert 403. Ein Moderator kann nicht auf einen Administrator einwirken, und ein Administrator nicht auf einen anderen. Diese Befehle (`my admin account ...`) kennen keine solche Grenze, nutze sie also, wenn Administratoren uneins sind.
-- Der einzige Administrator kann nicht ausgesperrt oder entfernt werden: `disable_login`, `suspend` und `ban` auf ihn werden abgelehnt, über die API (409) und über diese Befehle (Exit-Code 1), und er kann sein eigenes Konto nicht löschen (409). Ein weiterer Inhaber von `admin` zählt nur, solange er sich anmelden kann: nicht nach dem Löschen seines Kontos, nicht während einer Sperre (suspended oder banned) und nicht unter `disable_login`.
+  `list` gibt pro Gruppe eine Spalte aus (`MODERATION`, `SERVER`, `MEMBER`). Der Webclient zeigt für die ersten beiden Gruppen „Moderation“ und „Administration“ und rechnet die Funktionen für Mitglieder zu keiner von beiden (siehe [moderation.md](moderation.md)).
+- Eine Änderung wirkt ab der nächsten Anfrage des Benutzers. Benachrichtigungen für Moderatoren gehen an die Leute, die die Berechtigung innehaben, wenn die Benachrichtigung erstellt wird.
+- Vergaben und Entzüge werden als `role_granted` und `role_revoked` (Zielart `role`) in das Audit-Log geschrieben. Der Akteur einer CLI-Operation ist `cli` (`my admin audit list -target-kind role`).
+- Eine Rolle zu vergeben, die der Benutzer schon hat, oder eine zu entziehen, die er nicht hat, ändert und protokolliert nichts.
+- Der letzte Inhaber von `admin` kann sie nicht verlieren (Exit-Code 1). Vergib `admin` zuerst an einen anderen Benutzer.
+- Die Admin-API ist `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` und `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, und sie braucht die Berechtigung `manage_roles`.
+  Über die API kannst du keine Rolle vergeben oder entziehen, die über der höchsten `position` deiner eigenen Rollen liegt (403). Den letzten `admin` zu entziehen, liefert 409.
+- Das Personal handelt nur gegenüber niedrigeren Rängen. Über die API braucht es für Moderationsmaßnahmen und deren Aufhebung, das Entscheiden über Einsprüche, das Aufheben von E-Mail-Sperren, das Einsehen privater Daten eines Kontos, das Ausstellen eines Links zum Zurücksetzen des Passworts und das Entfernen der Zwei-Faktor-Authentifizierung, dass die höchste `position` unter deinen Rollen über der jeder Rolle des Ziels liegt; ein höherer oder gleicher Rang, auch dein eigenes Konto, liefert 403. Ein Moderator kann nicht auf einen Administrator einwirken, und ein Administrator nicht auf einen anderen. Diese Befehle (`my admin account ...`) haben keine solche Grenze; nutze sie, wenn Administratoren uneins sind.
+- Der einzige Administrator kann nicht ausgesperrt oder entfernt werden: `disable_login`, `suspend` und `ban` gegen ihn werden abgelehnt, über die API (409) und über diese Befehle (Exit-Code 1), und er kann sein eigenes Konto nicht löschen (409). Ein weiterer Inhaber von `admin` zählt nur, solange er sich anmelden kann: nicht nach dem Löschen seines Kontos und nicht, solange er gesperrt, verbannt oder unter `disable_login` ist.
 
 <!-- source: announcing-the-end-of-the-service e1c40ec145f0 -->
 ## Das Ende des Dienstes ankündigen

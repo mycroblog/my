@@ -133,24 +133,28 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 `rsync` auf den Backup-Host hält die Kopie nach dem ersten Mal klein, da sich Mediendateien nach dem Schreiben nie ändern.
 
-<!-- source: media-in-a-bucket 882f3a0f9a2b -->
+<!-- source: media-in-a-bucket ff4b1024347c -->
 ### Medien in einem Bucket
 
-Die Blob-Stores `s3` und `gcs` legen jede Datei als Objekt des Buckets `blob_s3_bucket` oder `blob_gcs_bucket` ab, benannt nach ihrem Schlüssel: die verarbeiteten Medien unter `media/`,
-die Uploads in der empfangenen Form unter `uploads/` und die zwischengespeicherten entfernten Dateien unter `remote/`. Der Bucket bleibt privat: Der Server liest die
-Dateien und liefert sie unter `/media/` aus. Ein Objekt erscheint erst, wenn es vollständig geschrieben ist, daher enthält eine Kopie, die während des Serverbetriebs entsteht, nie
-eine halbe Datei. Schütze den Bucket in drei Schichten, von der günstigsten zur sichersten.
+Die Blob-Stores `s3` und `gcs` speichern jede Datei als Objekt des Buckets `blob_s3_bucket` oder `blob_gcs_bucket`, benannt nach ihrem Schlüssel: die verarbeiteten Medien unter `media/`,
+die Uploads, wie sie empfangen wurden, unter `uploads/` und die zwischengespeicherten entfernten Dateien unter `remote/`. Der Bucket bleibt privat: Der Server liest die
+Dateien und liefert sie unter `/media/` aus. Ein Objekt erscheint erst, wenn es vollständig geschrieben ist, sodass eine Kopie, die während des Laufs des Servers entsteht, nie
+eine halbe Datei enthält. Schütze den Bucket in drei Schichten, von der günstigsten zur sichersten.
 
-**Versionierung.** Aktiviere die Objektversionierung des Buckets, wo der Dienst sie anbietet (Amazon S3, Google Cloud Storage, MinIO und andere).
+**Versionierung.** Schalte die Objektversionierung des Buckets ein, wo der Dienst sie anbietet (Amazon S3, Google Cloud Storage, MinIO und andere).
 Ein gelöschtes oder überschriebenes Objekt bleibt dann als nicht aktuelle Version erhalten, und der Bucket kann auf den Zeitpunkt eines Datenbank-Backups zurückgehen.
 
 ```sh
 aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
 ```
 
-**Lifecycle-Regeln.** Mit Versionierung verursacht jede gelöschte Datei weiter Speicherkosten, bis eine Regel sie entfernt. Füge eine Regel hinzu, die nicht aktuelle Versionen löscht,
-und zwar nach dem Alter deines ältesten Datenbank-Backups (35 Tage für die Generationen aus [Wie oft und wo](#how-often-and-where) ohne die monatlichen),
-damit jedes Datenbank-Backup, das du aufbewahrst, seine Dateien noch findet und eine von Nutzer gelöschte Datei nicht länger bleibt, als deine Datenschutzerklärung sagt.
+Setze bei den OpenTofu-Modulen für Amazon S3 und Google Cloud Storage `versioning = true`: Das schaltet die Versionierung ein und fügt die Regel für nicht aktuelle Versionen
+unten hinzu, deren Alter `noncurrent_version_days` ist (standardmäßig 35). Cloudflare R2 hat keine Objektversionierung, und das Modul für einen anderen S3-kompatiblen Store
+erstellt den Bucket nicht, nutze also für diese beiden eine Kopie (unten).
+
+**Lifecycle-Regeln.** Mit Versionierung behält jede gelöschte Datei ihre Speicherkosten, bis eine Regel sie entfernt. Füge eine Regel hinzu, die nicht aktuelle Versionen
+nach dem Alter deines ältesten Datenbank-Backups löscht (35 Tage für die Generationen aus [Wie oft und wo](#how-often-and-where) ohne die monatlichen),
+sodass jedes Datenbank-Backup, das du behältst, seine Dateien noch findet und eine Datei, die ein Benutzer gelöscht hat, nicht länger bleibt, als deine Datenschutzerklärung sagt.
 Füge eine Regel hinzu, die unvollständige Multipart-Uploads nach einem Tag abbricht: Der Server bricht einen fehlgeschlagenen Upload einer großen Datei selbst ab, aber ein Prozess,
 der mittendrin stoppt, hinterlässt seine Teile.
 
@@ -172,27 +176,27 @@ der mittendrin stoppt, hinterlässt seine Teile.
 aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-configuration file://lifecycle.json
 ```
 
-**Eine Kopie in einem anderen Konto oder einer anderen Region.** Versionierung schützt vor einem Fehler, nicht vor dem Verlust des Buckets oder des Kontos, dem er gehört,
+**Eine Kopie in einem anderen Konto oder einer anderen Region.** Versionierung schützt vor einem Versehen, nicht davor, den Bucket oder das Konto zu verlieren, dem er gehört,
 und die eigenen Zugangsdaten des Servers können Objekte löschen. Bewahre eine Kopie auf, die diese Zugangsdaten nicht erreichen:
 
 - **Replikation.** Amazon S3 repliziert einen versionierten Bucket in einen Bucket in einer anderen Region oder einem anderen Konto (Cross-Region oder Same-Region Replication,
-  wobei das Ziel dem anderen Konto gehört). Aktiviere die Versionierung auch für das Ziel und repliziere keine Löschungen
-  (lass die Replikation von Delete-Markern ausgeschaltet), damit eine Löschung auf dem Server die Kopie nicht erreicht.
-  Andere Dienste haben eigene Replikation, etwa die Dual-Region-Buckets von Cloud Storage und die Bucket-Replikation von MinIO.
+  wobei das Ziel dem anderen Konto gehört). Schalte die Versionierung auch für das Ziel ein und repliziere keine Löschungen
+  (lass die Replikation von Löschmarkierungen aus), damit eine Löschung auf der Instanz die Kopie nicht erreicht.
+  Andere Dienste haben ihre eigene Replikation, etwa die Dual-Region-Buckets von Cloud Storage und die Bucket-Replikation von MinIO.
 - **Eine geplante Kopie.** Wo es keine Replikation gibt oder um zu einem anderen Anbieter zu kopieren, kopiere den Bucket nach dem Zeitplan des Datenbank-Backups,
-  direkt danach, mit Zugangsdaten, die nur den Bucket des Servers lesen und nur den Backup-Bucket beschreiben können:
+  direkt danach, mit Zugangsdaten, die den Bucket der Instanz nur lesen und nur den Backup-Bucket schreiben können:
 
   ```sh
   rclone copy --checksum source:my-media backup:my-media-backup
   ```
 
-  `rclone copy` und `aws s3 sync` ohne `--delete` fügen neue Objekte hinzu und entfernen nie eines aus der Kopie. Dateien ändern sich nach dem Schreiben nie,
-  daher überträgt jede Kopie nach dem ersten Lauf nur die neuen. Lösche alte Objekte aus der Kopie nach dem Zeitplan deiner Aufbewahrungsrichtlinie
-  oder aktiviere dort ebenfalls Versionierung und eine Lifecycle-Regel.
+  `rclone copy` und `aws s3 sync` ohne `--delete` fügen neue Objekte hinzu und entfernen nie eines aus der Kopie. Dateien ändern sich nie, nachdem sie geschrieben wurden,
+  sodass nach dem ersten Lauf jede Kopie nur die neuen überträgt. Lösche alte Objekte aus der Kopie nach dem Zeitplan deiner Aufbewahrungsrichtlinie
+  oder schalte dort ebenfalls Versionierung und eine Lifecycle-Regel ein.
 
-Zugangsdaten gehören nicht in die Kopie: Der Bucket enthält kein Secret, aber die Konfiguration nennt den Schlüssel in `blob_s3_access_key_id`
-und `blob_s3_secret_access_key`, die zur Konfiguration gehören. Der Blob-Store `gcs` speichert keinen Schlüssel: Er verwendet das Servicekonto
-des Rechners oder von Cloud Run.
+Zugangsdaten bleiben außerhalb der Kopie: Der Bucket enthält kein Geheimnis, aber die Konfiguration nennt den Schlüssel in `blob_s3_access_key_id`
+und `blob_s3_secret_access_key`, die zur Konfiguration gehören. Der Blob-Store `gcs` hält keinen Schlüssel: Er nutzt das Dienstkonto
+der Maschine oder von Cloud Run.
 
 <!-- source: the-order-of-the-database-and-the-media 52b56171d6d9 -->
 ### Die Reihenfolge von Datenbank und Medien
@@ -208,6 +212,21 @@ Die Datenbank nennt die Mediendateien, die sie verwendet, und die Medienkopie en
 
 Die andere Reihenfolge ist schlimmer: Jede Datei, die zwischen dem Medien-Backup und dem Datenbank-Backup hochgeladen wurde, würde nach einer Wiederherstellung fehlen,
 auch die Medien neuer Beiträge. Beides im Wartungsmodus zu sichern vermeidet jede der Lücken.
+
+<!-- source: on-the-opentofu-targets 9862430f808c -->
+### Auf den OpenTofu-Zielen
+
+Die Module halten kein eigenes Backup über das hinaus, was der Anbieter bietet: Das verwaltete PostgreSQL von Cloud SQL und RDS hat automatische Backups
+mit einer Aufbewahrung, die du festlegst, während eine Datenbank mit nur der Historie des Anbieters (Neon) nur so weit zurückgehen kann, wie diese Historie reicht.
+Plane diese selbst, mit Zugangsdaten, die die Instanz nicht besitzt:
+
+1. **Die Datenbank, jeden Tag.** Führe `pg_dump` gegen das PostgreSQL der Instanz von einer Maschine oder einem geplanten Job außerhalb des Anbieters aus, der die
+   Datenbank hostet (siehe [PostgreSQL](#postgresql)), verschlüssele den Dump und schreibe ihn in einen Bucket eines anderen Kontos oder Anbieters. Behalte die Generationen aus
+   [Wie oft und wo](#how-often-and-where). Der Job braucht die `database_url` und sonst nichts; er darf den KEK nicht besitzen.
+2. **Die Medien, direkt danach.** Mit `versioning = true` am Bucket-Modul sind die Versionen die Kopie für die letzten `noncurrent_version_days`;
+   führe für den Verlust des Kontos außerdem `rclone copy` vom Bucket der Instanz in einen Bucket an anderer Stelle aus, wie unter
+   [Medien in einem Bucket](#media-in-a-bucket), nach dem Zeitplan des Datenbank-Dumps.
+3. **Der KEK und die Konfiguration** gehören nicht zum Zeitplan: Sichere sie, wenn sie sich ändern ([Der KEK und die Konfiguration](#the-kek-and-the-configuration)).
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->
 ### Der KEK und die Konfiguration
@@ -329,16 +348,31 @@ Mit einer Suchmaschine führst du nach der Wiederherstellung `my search rebuild`
 - Finde den KEK, dessen Schlüssel-ID der Fehler nennt, setze ihn als `kek` (oder in `kek_previous`) und starte neu. Ein Secret lässt sich ohne seinen KEK nicht wiederherstellen;
   wenn der KEK endgültig verloren ist, müssen die Schlüssel der Actors neu erzeugt werden, und andere Server sehen jeden Actor als neuen Schlüssel für dasselbe Konto.
 
-<!-- source: recovery-drill f9adfe0e0d28 -->
+<!-- source: recovery-drill cdd349df0cb8 -->
 ## Wiederherstellungsübung
 
-Von einem Backup weiß man erst, dass es funktioniert, wenn es wiederhergestellt wurde. Übe eine Wiederherstellung, bevor der Server öffentlich wird, und erneut nach einer Änderung daran, wie
+Von einem Backup weißt du erst, dass es funktioniert, wenn es wiederhergestellt wurde. Übe eine Wiederherstellung, bevor die Instanz öffentlich wird, und erneut nach einer Änderung daran, wie
 Backups erstellt werden (mindestens alle paar Monate):
 
-1. Erstelle wie oben ein Backup des laufenden Servers: die Datenbank, dann die Medien.
-2. Stelle es auf einem anderen Rechner oder in einem anderen Compose-Projekt wieder her, mit dem KEK und der Konfiguration von dort, wo du sie aufbewahrst
-   (nicht vom laufenden Server kopiert) und mit unverändertem `host`, damit die URLs der Actors übereinstimmen.
-3. Lass die Kopie nicht föderieren: Halte sie vom Internet fern oder schalte den Wartungsmodus ein, sobald die folgenden Prüfungen bestanden sind.
-4. Gehe [Starten und prüfen](#starting-and-checking) durch: Anmeldung, Beiträge und Medien sowie der `publicKey` einiger Actors im Vergleich mit dem laufenden Server.
-5. Starte sie einmal ohne den KEK und einmal mit einem anderen und prüfe, dass sie so fehlschlägt, wie [Ohne den richtigen KEK](#without-the-right-kek) beschreibt.
-6. Notiere, wie lange jeder Schritt gedauert hat: So lange bleibt der Server bei einer echten Wiederherstellung ausgefallen.
+1. Erstelle wie oben ein Backup der laufenden Instanz: die Datenbank, dann die Medien.
+2. Stelle es auf einer anderen Maschine oder in einem anderen Compose-Projekt mit dem KEK und der Konfiguration von dem Ort wieder her, an dem du sie aufbewahrst
+   (nicht vom laufenden Server kopiert), und mit unverändertem `host`, damit die URLs der Akteure übereinstimmen.
+3. Lass die Kopie nicht föderieren. Setze `role = web`, was keinen Job-Worker ausführt: Die mit der Datenbank wiederhergestellten Jobs enthalten Zustellungen, die
+   beim Backup fällig waren, und eine Kopie, die sie ausführt, signiert sie mit den Schlüsseln der echten Akteure und sendet sie erneut an andere Server.
+   Die Kopie vom Internet fernzuhalten, genügt nicht, da es schwer zu garantieren ist. Schalte den Wartungsmodus ein, sobald die folgenden Prüfungen bestanden sind, wenn du sie weiterlaufen lässt.
+4. Gib der Kopie außerhalb von Compose, zum Beispiel auf einer lokalen Maschine gegen eine Cloud-Instanz, diese Einstellungen, damit sie nichts von der laufenden Instanz berührt:
+
+   | Einstellung | Wert in der Kopie | Warum |
+   | --- | --- | --- |
+   | `role` | `web` | Führt keinen Job aus, sodass nichts Wiederhergestelltes erneut zugestellt wird |
+   | `queue` | `db` | In der Kopie eingereihte Jobs bleiben in ihrer Datenbank, statt die laufende Queue zu erreichen |
+   | `stream` | `postgres` | Tritt dem laufenden Ereignisstrom der Instanz nicht bei |
+   | `mail` | `none` | Sendet keine E-Mails an echte Benutzer |
+   | der Blob-Store | ein neuer Bucket (oder ein Verzeichnis) mit den wiederhergestellten Medien | Lässt den laufenden Bucket unberührt |
+   | `database_url` | die wiederhergestellte Datenbank | Nie die laufende |
+   | der KEK (`MY_KEK` oder `key_manager` und `kms_key`) | wie live, von dem Ort, an dem du ihn aufbewahrst | Ohne ihn startet die Kopie nicht |
+   | `host` | wie live | Damit die URLs der Akteure übereinstimmen |
+
+5. Gehe [Starten und prüfen](#starting-and-checking) durch: Anmelden, Beiträge und Medien sowie der `publicKey` einiger Akteure im Vergleich mit der laufenden Instanz.
+6. Starte sie einmal ohne den KEK und einmal mit einem anderen und prüfe, dass sie fehlschlägt, wie [Ohne den richtigen KEK](#without-the-right-kek) beschreibt.
+7. Notiere, wie lange jeder Schritt gedauert hat: So lange hält eine echte Wiederherstellung die Instanz außer Betrieb.

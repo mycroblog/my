@@ -32,16 +32,17 @@ Vous ne pouvez pas enregistrer le relais d’un serveur soumis à une action de 
 - Les documents des publications publiques portent une signature Linked Data (`RsaSignature2017`), afin que Mastodon et Misskey puissent accepter des publications qu’un relais transmet telles quelles.
 - Le nombre de livraisons augmente du nombre de relais rejoints multiplié par le nombre de publications publiques (les livraisons vers un relais sont regroupées en une seule).
 
-<!-- source: what-the-server-receives ff962150d1a7 -->
+<!-- source: what-the-server-receives fa99c4ec4217 -->
 ## Ce que le serveur reçoit
 
-- Une publication publique transportée par un relais rejoint est récupérée à nouveau depuis son origine et vérifiée avant d’être ingérée. Elle apparaît ensuite dans le fil fédéré et dans les fils de hashtags. Elle n’apparaît pas dans les fils d’accueil et ne crée aucune notification.
-- Au plus `relay_max_activities_per_hour` publications par heure (1 000 par défaut) sont ingérées par relais. Tout ce qui dépasse la limite est abandonné sans être récupéré. La page du relais dans la zone d’administration et `my admin relay list` indiquent combien ont été ingérées durant les dernières 24 heures et combien ont été abandonnées au-delà de la limite. Si beaucoup sont abandonnées, relevez la limite ou reconsidérez le relais.
+- Une publication publique portée par un relais rejoint est récupérée de nouveau depuis son origine et vérifiée avant d’être ingérée. Elle s’affiche ensuite dans le fil fédéré et les fils de hashtags, et dans les fils d’accueil des personnes qui suivent l’un de ses hashtags. Elle ne s’affiche dans aucun autre fil d’accueil et ne crée aucune notification.
+- Au plus `relay_max_activities_per_hour` publications par heure (1 000 par défaut) sont ingérées par relais. Tout ce qui dépasse la limite est écarté sans être récupéré.
+  La page du relais dans la zone d’administration et `my admin relay list` indiquent combien ont été ingérées au cours des 24 dernières heures et combien ont été écartées au-delà de la limite. Si beaucoup sont écartées, relevez la limite ou reconsidérez le relais.
 - Une publication n’est pas ingérée lorsque son domaine ou son compte fait l’objet d’un `suspend` (une restriction de fédération) ou d’un `limit` (une restriction qui la retire des lieux publics).
-- Une publication arrivée uniquement par un relais est retirée de la vue publique après le nombre de jours du paramètre d’instance `relay_status_retention_days` (7 par défaut). Une publication à laquelle une personne locale a répondu, qu’elle a boostée, mise en favori ou en marque-page, ainsi que les publications des auteurs qu’une personne locale suit, reçoivent la même durée de conservation que les autres publications distantes (`remote_status_retention_days`).
+- Une publication arrivée uniquement par un relais est retirée de la vue publique après le paramètre d’instance `relay_status_retention_days` (7 par défaut). Une publication à laquelle une personne locale a répondu, qu’elle a boostée, mise en favori ou en marque-page, ainsi que les publications d’auteurs qu’une personne locale suit, reçoivent la même conservation que les autres publications distantes (`remote_status_retention_days`).
 - L’ingestion coûte une récupération depuis l’origine par publication (plus une récupération de l’acteur pour un auteur inconnu). À la limite de 1 000 par heure, cela représente au plus 24 000 récupérations par jour.
 
-Les paramètres se trouvent dans la [référence de configuration](../reference/configuration.md#relay_max_activities_per_hour). Le résultat de l’ingestion est aussi exporté sous la forme de la métrique `my.relay.activities` (voir [Exécuter le serveur](running.md)).
+Les réglages se trouvent dans la [référence de configuration](../reference/configuration.md#relay_max_activities_per_hour). Le résultat de l’ingestion est aussi exporté sous la métrique `my.relay.activities` (voir [Exécuter le serveur](running.md)).
 
 <!-- source: leave-join-again-and-delete ea12da94f940 -->
 ## Quitter, rejoindre à nouveau et supprimer

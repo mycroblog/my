@@ -131,6 +131,10 @@
     "defaultMessage": "Noch keine Follower",
     "description": "Shown instead of the list of followers when there are none."
   },
+  "profile.followers.hidden": {
+    "defaultMessage": "{name} zeigt die eigenen Follower nicht an",
+    "description": "Shown instead of the list of followers when the account's owner keeps the list from the viewer. {name} is the account's display name."
+  },
   "profile.followers.title": {
     "defaultMessage": "Follower von {name}",
     "description": "Heading and document title of the list of an account's followers. {name} is the account's display name."
@@ -142,6 +146,10 @@
   "profile.following.empty": {
     "defaultMessage": "Folgt noch niemandem",
     "description": "Shown instead of the list of followed accounts when there are none."
+  },
+  "profile.following.hidden": {
+    "defaultMessage": "{name} zeigt nicht an, wem die Person folgt",
+    "description": "Shown instead of the list of followed accounts when the account's owner keeps the list from the viewer. {name} is the account's display name."
   },
   "profile.following.title": {
     "defaultMessage": "Konten, denen {name} folgt",
@@ -162,6 +170,10 @@
   "profile.list.back": {
     "defaultMessage": "Zurück zum Profil von {name}",
     "description": "Link from a follow list to the account's profile. {name} is the account's display name."
+  },
+  "profile.list.hidden.description": {
+    "defaultMessage": "Das Profil zeigt weiterhin an, wie viele es sind.",
+    "description": "Under the message that a follow list is hidden: its count stays on the profile."
   },
   "profile.list.load_more": {
     "defaultMessage": "Mehr anzeigen",
@@ -243,6 +255,10 @@
     "defaultMessage": "Ohne Boosts",
     "description": "Tab of a profile: only the posts the account wrote itself, without replies and boosts."
   },
+  "profile.tab.articles": {
+    "defaultMessage": "Artikel",
+    "description": "Tab of a profile: only the account's articles (long posts with a title), newest first."
+  },
   "profile.tab.posts": {
     "defaultMessage": "Beiträge",
     "description": "Tab of a profile: the account's posts and boosts, without its replies."
@@ -254,6 +270,14 @@
   "profile.tabs": {
     "defaultMessage": "Beiträge von {name}",
     "description": "Accessible name of the tab list that switches between the posts of a profile. {name} is the account's display name."
+  },
+  "profile.tagged.all": {
+    "defaultMessage": "Alle Beiträge mit #{tag}",
+    "description": "Link from the page with an account's posts that carry a hashtag to the page with every post that carries it. {tag} is the hashtag without the #."
+  },
+  "profile.tagged.title": {
+    "defaultMessage": "Beiträge von {name} mit #{tag}",
+    "description": "Heading and document title of the page with an account's posts that carry one hashtag. {name} is the account's display name; {tag} is the hashtag without the #."
   },
   "profile.tag.bot": {
     "defaultMessage": "Bot",
@@ -278,5 +302,69 @@
   "profile.title": {
     "defaultMessage": "Profil",
     "description": "Heading and document title of the signed-in user's own profile page."
+  },
+  "profile.note.title": {
+    "defaultMessage": "Private Notiz",
+    "description": "Heading of the region of a profile with the user's private note on the account, which only the user sees."
+  },
+  "profile.note.description": {
+    "defaultMessage": "Nur du kannst sie sehen.",
+    "description": "Note under the heading of the private note on a profile: the account is not told."
+  },
+  "profile.note.empty": {
+    "defaultMessage": "Du hast keine Notiz zu {name}.",
+    "description": "Shown in the private note region of a profile while the user has no note on the account. {name} is the account's display name."
+  },
+  "profile.note.add": {
+    "defaultMessage": "Notiz hinzufügen",
+    "description": "Button in the private note region of a profile that opens the dialog to write a note on the account."
+  },
+  "profile.note.edit": {
+    "defaultMessage": "Notiz bearbeiten",
+    "description": "Button in the private note region of a profile that opens the dialog to change the note on the account."
+  },
+  "profile.note.dialog_title": {
+    "defaultMessage": "Private Notiz zu {name}",
+    "description": "Title of the dialog where the user writes a private note on an account. {name} is the account's display name."
+  },
+  "profile.note.field": {
+    "defaultMessage": "Notiz",
+    "description": "Label of the text area of the private note dialog."
+  },
+  "profile.note.field_description": {
+    "defaultMessage": "Nur du kannst sie sehen, und {name} erfährt nichts davon. Lass das Feld leer, um die Notiz zu entfernen.",
+    "description": "Description of the text area of the private note dialog. {name} is the account's display name."
+  },
+  "profile.note.characters_left": {
+    "defaultMessage": "{count, plural, one {# Zeichen übrig} other {# Zeichen übrig}}",
+    "description": "How many more characters the private note on an account takes."
+  },
+  "profile.note.characters_over": {
+    "defaultMessage": "{count, plural, one {# Zeichen zu viel} other {# Zeichen zu viel}}",
+    "description": "How many characters the private note on an account is over its limit."
+  },
+  "profile.note.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that closes the private note dialog without saving."
+  },
+  "profile.note.save": {
+    "defaultMessage": "Speichern",
+    "description": "Button that saves the private note on an account."
+  },
+  "profile.note.close": {
+    "defaultMessage": "Schließen",
+    "description": "Accessible name of the close button of the private note dialog."
+  },
+  "profile.note.save_failed": {
+    "defaultMessage": "Die Notiz konnte nicht gespeichert werden: {reason}",
+    "description": "Error in the private note dialog when the note could not be saved. {reason} is the server's explanation."
+  },
+  "profile.note.saved": {
+    "defaultMessage": "Deine Notiz zu {name} wurde gespeichert.",
+    "description": "Toast when the private note on an account was saved. {name} is the account's display name."
+  },
+  "profile.note.removed": {
+    "defaultMessage": "Deine Notiz zu {name} wurde entfernt.",
+    "description": "Toast when the private note on an account was removed by saving it empty. {name} is the account's display name."
   }
 }

@@ -658,5 +658,113 @@
   "admin.supporters.subscription.no_period": {
     "defaultMessage": "Ninguno",
     "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  },
+  "admin.supporters.tips.title": {
+    "defaultMessage": "Propinas",
+    "description": "Heading of the section of the tips on the first page of the supporters screen. A tip is a one-time payment to the server's operation with nothing in return; never word it as a donation."
+  },
+  "admin.supporters.tips.description": {
+    "defaultMessage": "Una propina es un pago único de una persona usuaria de este servidor para su funcionamiento, sin nada a cambio. Las personas con una dirección de correo electrónico verificada eligen uno de tus importes y lo pagan en la página del proveedor de pagos. Las propinas no necesitan un plan.",
+    "description": "What the tips are, at the top of their section. Never word them as donations, and never suggest a deduction."
+  },
+  "admin.supporters.tips.accepting": {
+    "defaultMessage": "Los usuarios pueden dar propinas ahora",
+    "description": "Term of the tips' section: whether users may tip now."
+  },
+  "admin.supporters.tips.accepting.yes": {
+    "defaultMessage": "Sí",
+    "description": "Users may tip now."
+  },
+  "admin.supporters.tips.accepting.no": {
+    "defaultMessage": "No",
+    "description": "Users may not tip now."
+  },
+  "admin.supporters.tips.changed_at": {
+    "defaultMessage": "Último cambio",
+    "description": "Term of the tips' section: when the tips were last enabled, changed, or disabled."
+  },
+  "admin.supporters.tips.never": {
+    "defaultMessage": "Nunca",
+    "description": "The tips were never enabled."
+  },
+  "admin.supporters.tips.warning.no_one_time": {
+    "defaultMessage": "El proveedor de pagos no admite pagos únicos, así que no se pueden activar las propinas.",
+    "description": "Warning of the tips' section: the configured payment provider cannot take tips."
+  },
+  "admin.supporters.tips.warning.not_accepting": {
+    "defaultMessage": "Las propinas están activadas, pero los usuarios no pueden darlas mientras el programa de mecenas esté desactivado.",
+    "description": "Warning of the tips' section: the tips are enabled but the supporter program is off."
+  },
+  "admin.supporters.tips.warning.server_limit": {
+    "defaultMessage": "En la última hora, los inicios de propinas alcanzaron el límite de todo el servidor. Puede ser una prueba de tarjetas, alguien que prueba tarjetas robadas con pagos pequeños: revisa los pagos en el panel del proveedor.",
+    "description": "Warning of the tips' section: the server-wide rate limit of the starts of tips was reached in the last hour."
+  },
+  "admin.supporters.tips.note.disputes": {
+    "defaultMessage": "Cada contracargo cuesta la tarifa de disputa del proveedor de pagos, sea cual sea el importe de la propina: con Stripe en Japón, 1500 ¥ por disputa en el momento de escribir esto. Una propina pequeña puede costar varias veces lo que aportó.",
+    "description": "Note of the tips' section: the dispute fee of each chargeback."
+  },
+  "admin.supporters.tips.note.refunds": {
+    "defaultMessage": "Los reembolsos y los contracargos de las propinas se restan de los ingresos. Reembolsa una propina en el panel del proveedor; este servidor no tiene una operación de reembolso.",
+    "description": "Note of the tips' section: refunds and chargebacks subtract from the income."
+  },
+  "admin.supporters.tips.note.breakdown": {
+    "defaultMessage": "Los totales públicos de los ingresos incluyen las propinas, pero nunca muestran su importe ni cuántas hubo: en un servidor pequeño, un desglose revelaría quién pagó. Solo la página de pagos y reembolsos de la pantalla de costos muestra cada propina y quién la pagó.",
+    "description": "Note of the tips' section: why the public totals do not break the tips out."
+  },
+  "admin.supporters.tips.note.provider": {
+    "defaultMessage": "Comprobar si tu proveedor de pagos acepta propinas para el funcionamiento de un servicio te corresponde a ti, según su revisión y sus condiciones. Redacta tu información comercial como una propina para el funcionamiento del servicio, sin nada a cambio.",
+    "description": "Note of the tips' section: the operator checks the provider's terms. Never word the tips as donations."
+  },
+  "admin.supporters.tips.guide": {
+    "defaultMessage": "Lee sobre las propinas en la documentación para operadores",
+    "description": "Link from the tips' section to the operator documentation of the tips, which opens in a new tab."
+  },
+  "admin.supporters.tips.switch": {
+    "defaultMessage": "Aceptar propinas",
+    "description": "Label of the checkbox of the tips' form that enables or disables them."
+  },
+  "admin.supporters.tips.switch.description": {
+    "defaultMessage": "Una página de pago que ya está abierta sigue pudiéndose pagar hasta que termine, aunque desactives las propinas.",
+    "description": "Description of the checkbox that enables or disables the tips."
+  },
+  "admin.supporters.tips.currency": {
+    "defaultMessage": "Moneda",
+    "description": "Label of the choice of the currency of the amounts of the tips."
+  },
+  "admin.supporters.tips.amounts": {
+    "defaultMessage": "Importes",
+    "description": "Label of the field of the amounts that users choose from when they tip."
+  },
+  "admin.supporters.tips.amounts.description": {
+    "defaultMessage": "De 1 a {max} importes, separados por comas, como 500, 1000, 3000.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6."
+  },
+  "admin.supporters.tips.amounts.range": {
+    "defaultMessage": "De 1 a {max} importes, separados por comas, como 500, 1000, 3000, cada uno de {minimum} a {maximum}.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6; minimum and maximum are formatted amounts, such as ¥100 and ¥100,000."
+  },
+  "admin.supporters.tips.amounts.invalid": {
+    "defaultMessage": "Escribe cada importe como un número, como 500 o 5.00.",
+    "description": "Error of the field of the amounts of the tips: one is not a number."
+  },
+  "admin.supporters.tips.amounts.count": {
+    "defaultMessage": "Escribe de 1 a {max} importes distintos.",
+    "description": "Error of the field of the amounts of the tips: none or too many. max is a number, such as 6."
+  },
+  "admin.supporters.tips.save": {
+    "defaultMessage": "Guardar las propinas",
+    "description": "Button that saves the tips' form."
+  },
+  "admin.supporters.tips.saved": {
+    "defaultMessage": "Guardado. El registro de auditoría anota cada cambio.",
+    "description": "Shown beside the save button of the tips' form after it is saved."
+  },
+  "admin.supporters.tips.unchanged": {
+    "defaultMessage": "No ha cambiado nada.",
+    "description": "Shown beside the save button of the tips' form when it is saved without a change."
+  },
+  "admin.supporters.tips.failed": {
+    "defaultMessage": "No se pudo guardar: {reason}",
+    "description": "Shown beside the save button of the tips' form when it could not be saved, with the server's reason."
   }
 }

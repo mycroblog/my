@@ -1,0 +1,430 @@
+{
+  "admin.domain_lists.apply_reject_media": {
+    "defaultMessage": "同时拒绝媒体",
+    "description": "Checkbox of whether the reject_media of a row issues a rejection of media."
+  },
+  "admin.domain_lists.apply_reject_media.description": {
+    "defaultMessage": "拒绝媒体的行会执行“拒绝媒体”操作。",
+    "description": "Description of the checkbox of applying the rejection of media."
+  },
+  "admin.domain_lists.apply_reject_reports": {
+    "defaultMessage": "同时拒绝举报",
+    "description": "Checkbox of whether the reject_reports of a row issues a rejection of reports."
+  },
+  "admin.domain_lists.apply_reject_reports.description": {
+    "defaultMessage": "拒绝举报的行会执行拒绝该服务器举报的操作。",
+    "description": "Description of the checkbox of applying the rejection of reports."
+  },
+  "admin.domain_lists.back": {
+    "defaultMessage": "返回订阅列表",
+    "description": "Link from the pages of one subscription and of a new one back to the list of subscriptions."
+  },
+  "admin.domain_lists.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of a confirmation of the subscription pages that closes it without doing anything."
+  },
+  "admin.domain_lists.column.title": {
+    "defaultMessage": "订阅",
+    "description": "Header of the column of a subscription's title in the list of subscriptions."
+  },
+  "admin.domain_lists.create_failed": {
+    "defaultMessage": "无法订阅该列表：{reason}",
+    "description": "Error under the form when subscribing failed. {reason} is why."
+  },
+  "admin.domain_lists.delete": {
+    "defaultMessage": "停止订阅",
+    "description": "Button that deletes a subscription, and of its confirmation."
+  },
+  "admin.domain_lists.delete.confirm.description": {
+    "defaultMessage": "此操作无法撤消。如需再次引入该列表，请重新订阅。",
+    "description": "Text of the confirmation before deleting a subscription."
+  },
+  "admin.domain_lists.delete.confirm.title": {
+    "defaultMessage": "要停止订阅 {title} 吗？",
+    "description": "Title of the confirmation before deleting a subscription. {title} is its name."
+  },
+  "admin.domain_lists.delete.description": {
+    "defaultMessage": "将不再获取该列表。它已执行的操作会保留，就像由管理员执行的一样，除非你同时解除它们。",
+    "description": "Description of deleting a subscription."
+  },
+  "admin.domain_lists.delete.lift_actions": {
+    "defaultMessage": "解除此订阅执行的操作",
+    "description": "Checkbox in the confirmation of deleting a subscription that lifts its actions too."
+  },
+  "admin.domain_lists.delete.lift_actions.description": {
+    "defaultMessage": "因这些封禁而结束的关注关系不会恢复。",
+    "description": "Description of the checkbox of lifting the actions of a deleted subscription."
+  },
+  "admin.domain_lists.delete.title": {
+    "defaultMessage": "停止订阅",
+    "description": "Heading of the section that deletes a subscription."
+  },
+  "admin.domain_lists.delete_failed": {
+    "defaultMessage": "无法删除该订阅：{reason}",
+    "description": "Error in the confirmation when deleting a subscription failed. {reason} is why."
+  },
+  "admin.domain_lists.deleted": {
+    "defaultMessage": "已停止订阅 {title}，其操作予以保留。",
+    "description": "Toast after a subscription was deleted, keeping its actions. {title} is its name."
+  },
+  "admin.domain_lists.deleted_lifted": {
+    "defaultMessage": "已停止订阅 {title}，并解除了其操作。",
+    "description": "Toast after a subscription was deleted with its actions lifted. {title} is its name."
+  },
+  "admin.domain_lists.detail.title": {
+    "defaultMessage": "屏蔽列表订阅",
+    "description": "Title of the page of one subscription to a domain blocklist when its title is not shown."
+  },
+  "admin.domain_lists.domains": {
+    "defaultMessage": "{count, plural, other {# 个域名}}",
+    "description": "How many domains a subscription holds after a fetch."
+  },
+  "admin.domain_lists.drafts.accept": {
+    "defaultMessage": "接受",
+    "description": "Button of a draft that accepts it, and of the confirmation of accepting suspensions."
+  },
+  "admin.domain_lists.drafts.accept_all": {
+    "defaultMessage": "全部接受",
+    "description": "Button that accepts every draft shown."
+  },
+  "admin.domain_lists.drafts.accept_domain": {
+    "defaultMessage": "接受 {domain} 的草稿",
+    "description": "Accessible name of the button that accepts a draft. {domain} is its domain."
+  },
+  "admin.domain_lists.drafts.accepted": {
+    "defaultMessage": "{count, plural, other {已接受 # 条草稿。}}",
+    "description": "Result after drafts were accepted."
+  },
+  "admin.domain_lists.drafts.accepted_missing": {
+    "defaultMessage": "{count, plural, other {已接受 # 条草稿；}}{missing, plural, other {其中 # 条已被处理过。}}",
+    "description": "Result after drafts were accepted while some had been handled since they were loaded."
+  },
+  "admin.domain_lists.drafts.change.issue": {
+    "defaultMessage": "执行：{kind}",
+    "description": "What accepting a draft does: issue an action. {kind} is the kind of action."
+  },
+  "admin.domain_lists.drafts.change.lift": {
+    "defaultMessage": "解除：{kind}",
+    "description": "What accepting a draft does: lift an action the subscription issued. {kind} is the kind of action."
+  },
+  "admin.domain_lists.drafts.column.change": {
+    "defaultMessage": "变更",
+    "description": "Header of the column of what accepting a draft does."
+  },
+  "admin.domain_lists.drafts.column.domain": {
+    "defaultMessage": "域名",
+    "description": "Header of the column of a draft's domain."
+  },
+  "admin.domain_lists.drafts.confirm.description": {
+    "defaultMessage": "不会向这些域名及其子域名发送任何内容，也不再接受来自它们的任何内容，其账号和帖子将被隐藏。此处用户与这些账号之间的关注关系将会结束，解除封禁也不会恢复。",
+    "description": "Text of the confirmation before accepting drafts that suspend domains."
+  },
+  "admin.domain_lists.drafts.confirm.title": {
+    "defaultMessage": "{count, plural, other {要封禁 # 个域名吗？}}",
+    "description": "Title of the confirmation before accepting drafts that suspend domains. {count} is how many."
+  },
+  "admin.domain_lists.drafts.count": {
+    "defaultMessage": "{count, plural, other {有 # 条草稿待处理。}}",
+    "description": "How many drafts of a subscription are waiting."
+  },
+  "admin.domain_lists.drafts.description.automatic": {
+    "defaultMessage": "在自动模式下，只有未知严重程度的条目和一次解除过多的操作会在此等待。",
+    "description": "Description of the drafts of a subscription in the automatic mode."
+  },
+  "admin.domain_lists.drafts.description.draft": {
+    "defaultMessage": "在草稿模式下，列表的每项变更都会在此等待。接受草稿会为该订阅执行或解除相应操作；被拒绝的草稿只会在列表再次更改该行时重新出现。",
+    "description": "Description of the drafts of a subscription in the draft mode."
+  },
+  "admin.domain_lists.drafts.empty": {
+    "defaultMessage": "没有待处理的草稿",
+    "description": "Heading of the empty state of the drafts of a subscription."
+  },
+  "admin.domain_lists.drafts.failed": {
+    "defaultMessage": "无法处理草稿：{reason}",
+    "description": "Error when accepting or rejecting drafts failed. {reason} is why."
+  },
+  "admin.domain_lists.drafts.reject": {
+    "defaultMessage": "拒绝",
+    "description": "Button of a draft that rejects it."
+  },
+  "admin.domain_lists.drafts.reject_all": {
+    "defaultMessage": "全部拒绝",
+    "description": "Button that rejects every draft shown."
+  },
+  "admin.domain_lists.drafts.reject_domain": {
+    "defaultMessage": "拒绝 {domain} 的草稿",
+    "description": "Accessible name of the button that rejects a draft. {domain} is its domain."
+  },
+  "admin.domain_lists.drafts.rejected": {
+    "defaultMessage": "{count, plural, other {已拒绝 # 条草稿。}}",
+    "description": "Result after drafts were rejected."
+  },
+  "admin.domain_lists.drafts.rejected_missing": {
+    "defaultMessage": "{count, plural, other {已拒绝 # 条草稿；}}{missing, plural, other {其中 # 条已被处理过。}}",
+    "description": "Result after drafts were rejected while some had been handled since they were loaded."
+  },
+  "admin.domain_lists.drafts.title": {
+    "defaultMessage": "草稿",
+    "description": "Heading of the section of the drafts of a subscription, and caption of their table."
+  },
+  "admin.domain_lists.empty": {
+    "defaultMessage": "没有屏蔽列表订阅",
+    "description": "Heading of the empty state of the list of subscriptions."
+  },
+  "admin.domain_lists.empty.description": {
+    "defaultMessage": "订阅其他服务器或个人发布的域名屏蔽列表，将其中的域名作为域名操作引入。",
+    "description": "Description of the empty state of the list of subscriptions."
+  },
+  "admin.domain_lists.failures": {
+    "defaultMessage": "{count, plural, other {连续失败 # 次}}",
+    "description": "How many fetches of a subscription have failed in a row."
+  },
+  "admin.domain_lists.fetch": {
+    "defaultMessage": "立即获取",
+    "description": "Button that queues a fetch of the subscribed list."
+  },
+  "admin.domain_lists.fetch.done": {
+    "defaultMessage": "已获取列表：{count, plural, other {# 个域名}}。",
+    "description": "Result once the queued fetch has read the list. {count} is how many domains the subscription holds."
+  },
+  "admin.domain_lists.fetch.failed": {
+    "defaultMessage": "获取失败，没有任何变化。",
+    "description": "Result once the queued fetch has failed."
+  },
+  "admin.domain_lists.fetch.queue_failed": {
+    "defaultMessage": "无法将获取请求加入队列：{reason}",
+    "description": "Error when queueing a fetch failed. {reason} is why."
+  },
+  "admin.domain_lists.fetch.queued": {
+    "defaultMessage": "已将获取请求加入队列，执行后会在此显示结果。",
+    "description": "Result after a fetch was queued."
+  },
+  "admin.domain_lists.fetch_error.forbidden_destination": {
+    "defaultMessage": "该 URL 指向的地址不允许获取",
+    "description": "Why a fetch failed: the URL or a redirect leads to an internal address."
+  },
+  "admin.domain_lists.fetch_error.http_status": {
+    "defaultMessage": "服务器返回了错误",
+    "description": "Why a fetch failed: an HTTP status other than success or not modified."
+  },
+  "admin.domain_lists.fetch_error.malformed": {
+    "defaultMessage": "无法按其格式读取该列表",
+    "description": "Why a fetch failed: the list is not in the subscription's format."
+  },
+  "admin.domain_lists.fetch_error.network": {
+    "defaultMessage": "无法连接到服务器",
+    "description": "Why a fetch failed: the server could not be reached or did not answer in time."
+  },
+  "admin.domain_lists.fetch_error.too_large": {
+    "defaultMessage": "列表超过 2 MiB",
+    "description": "Why a fetch failed: the list is too large."
+  },
+  "admin.domain_lists.fetch_error.too_many_entries": {
+    "defaultMessage": "列表超过 5,000 行",
+    "description": "Why a fetch failed: the list has too many rows."
+  },
+  "admin.domain_lists.fetches.column.entry_count": {
+    "defaultMessage": "域名数",
+    "description": "Header of the column of how many domains the subscription holds after a fetch."
+  },
+  "admin.domain_lists.fetches.column.fetched_at": {
+    "defaultMessage": "获取时间",
+    "description": "Header of the column of when a list was fetched."
+  },
+  "admin.domain_lists.fetches.column.outcome": {
+    "defaultMessage": "结果",
+    "description": "Header of the column of a fetch's outcome."
+  },
+  "admin.domain_lists.fetches.description": {
+    "defaultMessage": "列表每天获取一次。订阅连续失败 3 次时，会通知负责域名操作的人员；获取失败不会造成任何变更。",
+    "description": "Description of the fetches of a subscription."
+  },
+  "admin.domain_lists.fetches.empty": {
+    "defaultMessage": "还没有获取记录",
+    "description": "Heading of the empty state of the fetches of a subscription."
+  },
+  "admin.domain_lists.fetches.title": {
+    "defaultMessage": "获取记录",
+    "description": "Heading of the section of the fetches of a subscription, and caption of their table."
+  },
+  "admin.domain_lists.format": {
+    "defaultMessage": "格式",
+    "description": "Label of the format of a subscribed list."
+  },
+  "admin.domain_lists.format.mastodon_csv": {
+    "defaultMessage": "Mastodon 的 CSV",
+    "description": "Format of a subscribed list: Mastodon's domain block CSV."
+  },
+  "admin.domain_lists.format.mastodon_csv.description": {
+    "defaultMessage": "Mastodon 导出的域名屏蔽 CSV，按导入时的方式读取。",
+    "description": "Description of the format Mastodon's CSV of a subscribed list."
+  },
+  "admin.domain_lists.format.mastodon_json": {
+    "defaultMessage": "Mastodon 服务器的公开列表（JSON）",
+    "description": "Format of a subscribed list: the answer of a Mastodon server's public list of domain blocks."
+  },
+  "admin.domain_lists.format.mastodon_json.description": {
+    "defaultMessage": "Mastodon 服务器在 /api/v1/instance/domain_blocks 发布的域名屏蔽列表。隐藏的域名会被跳过。",
+    "description": "Description of the JSON format of a subscribed list."
+  },
+  "admin.domain_lists.format.plain_text": {
+    "defaultMessage": "每行一个域名",
+    "description": "Format of a subscribed list: plain text with one domain on each line."
+  },
+  "admin.domain_lists.format.plain_text.description": {
+    "defaultMessage": "纯文本，每个域名都会按封禁处理。",
+    "description": "Description of the plain text format of a subscribed list."
+  },
+  "admin.domain_lists.hold.draft_mode": {
+    "defaultMessage": "草稿模式",
+    "description": "Why a draft waits: the subscription is in the draft mode."
+  },
+  "admin.domain_lists.hold.mass_lift": {
+    "defaultMessage": "等待处理：一次获取会同时解除过多操作",
+    "description": "Why a draft of an automatic subscription waits: the fetch would lift too many actions, which a broken list would do."
+  },
+  "admin.domain_lists.hold.unknown_severity": {
+    "defaultMessage": "等待处理：列表给出了本站无法识别的严重程度",
+    "description": "Why a draft of an automatic subscription waits: an unknown severity."
+  },
+  "admin.domain_lists.ignore": {
+    "defaultMessage": "不执行",
+    "description": "Choice of what a severity of a subscribed list issues: no action."
+  },
+  "admin.domain_lists.last_fetch": {
+    "defaultMessage": "上次获取",
+    "description": "Header of the column, and term, of a subscription's last fetch."
+  },
+  "admin.domain_lists.mode": {
+    "defaultMessage": "模式",
+    "description": "Label of a subscription's mode, and header of its column in the list of subscriptions."
+  },
+  "admin.domain_lists.mode.automatic": {
+    "defaultMessage": "自动",
+    "description": "Mode of a subscription that applies the list at each fetch."
+  },
+  "admin.domain_lists.mode.automatic.description": {
+    "defaultMessage": "每次获取都会应用该列表。未知的严重程度，以及会解除超过 10 项且超过半数操作的获取，仍会作为草稿等待处理。",
+    "description": "Description of the automatic mode of a subscription."
+  },
+  "admin.domain_lists.mode.description": {
+    "defaultMessage": "两种模式都不会解除或替换管理员已执行的操作。",
+    "description": "Description of the choice of a subscription's mode."
+  },
+  "admin.domain_lists.mode.draft": {
+    "defaultMessage": "草稿",
+    "description": "Mode of a subscription in which every change waits for a moderator."
+  },
+  "admin.domain_lists.mode.draft.description": {
+    "defaultMessage": "列表新增、更改和移除的内容会作为草稿等待，直到管理员接受或拒绝。",
+    "description": "Description of the draft mode of a subscription."
+  },
+  "admin.domain_lists.never_fetched": {
+    "defaultMessage": "尚未获取",
+    "description": "Shown for a subscription whose list has not been fetched yet."
+  },
+  "admin.domain_lists.new.description": {
+    "defaultMessage": "订阅后会立即获取该列表，之后每天获取一次。列表中的行会成为域名操作：在草稿模式下作为草稿等待管理员处理，在自动模式下则在每次获取时执行。管理员已执行的操作不会被解除或替换。",
+    "description": "Description of the form of a new subscription to a domain blocklist."
+  },
+  "admin.domain_lists.new.title": {
+    "defaultMessage": "添加订阅",
+    "description": "Button of the list of subscriptions that opens the form of a new one, and the title of that page."
+  },
+  "admin.domain_lists.outcome.applied": {
+    "defaultMessage": "已应用",
+    "description": "Outcome of a fetch that read the list and applied it."
+  },
+  "admin.domain_lists.outcome.failed": {
+    "defaultMessage": "失败",
+    "description": "Outcome of a fetch that failed and changed nothing."
+  },
+  "admin.domain_lists.outcome.failed_because": {
+    "defaultMessage": "失败：{reason}",
+    "description": "Outcome of a failed fetch with why. {reason} is why."
+  },
+  "admin.domain_lists.outcome.failed_status": {
+    "defaultMessage": "失败：{reason}（HTTP {status, number}）",
+    "description": "Outcome of a failed fetch with why and the HTTP status of the answer. {reason} is why; {status} is the status code."
+  },
+  "admin.domain_lists.outcome.not_modified": {
+    "defaultMessage": "无变化",
+    "description": "Outcome of a fetch whose list had not changed."
+  },
+  "admin.domain_lists.public_comment_from_list": {
+    "defaultMessage": "复制列表的公开备注",
+    "description": "Checkbox of whether the actions copy the public comment of their row."
+  },
+  "admin.domain_lists.public_comment_from_list.description": {
+    "defaultMessage": "这些操作会采用其所在行的公开备注，已发布的域名操作列表可能会显示这些备注。",
+    "description": "Description of the checkbox of copying the public comments of the list."
+  },
+  "admin.domain_lists.rows": {
+    "defaultMessage": "各行执行的操作",
+    "description": "Legend of the group of fields of what the rows of a subscribed list issue on this server."
+  },
+  "admin.domain_lists.settings.description": {
+    "defaultMessage": "URL 和格式不可更改。保存后会将一次获取加入队列，以应用新的设置。",
+    "description": "Description of the settings of a subscription."
+  },
+  "admin.domain_lists.settings.save": {
+    "defaultMessage": "保存设置",
+    "description": "Button that saves the settings of a subscription."
+  },
+  "admin.domain_lists.settings.save_failed": {
+    "defaultMessage": "无法保存设置：{reason}",
+    "description": "Error when saving the settings of a subscription failed. {reason} is why."
+  },
+  "admin.domain_lists.settings.saved": {
+    "defaultMessage": "设置已保存，稍后获取时会应用。",
+    "description": "Result after the settings of a subscription were saved."
+  },
+  "admin.domain_lists.settings.title": {
+    "defaultMessage": "设置",
+    "description": "Heading of the section of the settings of a subscription."
+  },
+  "admin.domain_lists.settings.unchanged": {
+    "defaultMessage": "没有需要保存的更改。",
+    "description": "Result of saving the settings of a subscription without a change."
+  },
+  "admin.domain_lists.silence_as": {
+    "defaultMessage": "列表中的“silence”会执行",
+    "description": "Label of the choice of what a row with the severity silence issues; silence is the list's own word."
+  },
+  "admin.domain_lists.submit": {
+    "defaultMessage": "订阅",
+    "description": "Button of the form of a new subscription."
+  },
+  "admin.domain_lists.suspend_as": {
+    "defaultMessage": "列表中的“suspend”会执行",
+    "description": "Label of the choice of what a row with the severity suspend issues; suspend is the list's own word."
+  },
+  "admin.domain_lists.title": {
+    "defaultMessage": "屏蔽列表订阅",
+    "description": "Name of the page of the subscriptions to domain blocklists, in the navigation between the pages of the domain actions screen and as its title."
+  },
+  "admin.domain_lists.title_field": {
+    "defaultMessage": "名称",
+    "description": "Label of the field of a subscription's title."
+  },
+  "admin.domain_lists.title_field.description": {
+    "defaultMessage": "该列表在这些页面和审核日志中的显示名称。",
+    "description": "Description of the field of a subscription's title."
+  },
+  "admin.domain_lists.title_field.required": {
+    "defaultMessage": "请输入名称。",
+    "description": "Error of the field of a subscription's title when it is empty."
+  },
+  "admin.domain_lists.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL of a subscribed list, in the form and on the subscription's page."
+  },
+  "admin.domain_lists.url.description": {
+    "defaultMessage": "必须是 https URL。URL 或重定向指向内部地址时，获取会失败。",
+    "description": "Description of the field of the URL of a subscribed list."
+  },
+  "admin.domain_lists.url.required": {
+    "defaultMessage": "请输入列表的 URL。",
+    "description": "Error of the field of the URL of a subscribed list when it is empty."
+  }
+}

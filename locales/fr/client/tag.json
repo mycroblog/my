@@ -1,6 +1,154 @@
 {
+  "tag.featured.add": {
+    "defaultMessage": "Ajouter un hashtag",
+    "description": "Button in the profile settings that adds a row for one more featured hashtag."
+  },
+  "tag.featured.count": {
+    "defaultMessage": "{count, plural, one {# publication} other {# publications}}",
+    "description": "How many of an account's public and unlisted posts have a featured hashtag, on its profile, when none has a date."
+  },
+  "tag.featured.description": {
+    "defaultMessage": "Jusqu’à {max} hashtags à afficher sur votre profil, dans cet ordre, avec le nombre de vos publications publiques et non répertoriées qui contiennent chacun.",
+    "description": "Description of the featured hashtags in the profile settings. {max} is the most, 10."
+  },
+  "tag.featured.field": {
+    "defaultMessage": "Hashtag {number}",
+    "description": "Label of the field of one featured hashtag in the profile settings. {number} is its place, 1 to 10."
+  },
+  "tag.featured.move_down": {
+    "defaultMessage": "Descendre le hashtag {number}",
+    "description": "Icon button and its tooltip that moves a featured hashtag one place down. {number} is its place."
+  },
+  "tag.featured.move_up": {
+    "defaultMessage": "Monter le hashtag {number}",
+    "description": "Icon button and its tooltip that moves a featured hashtag one place up. {number} is its place."
+  },
+  "tag.featured.moved": {
+    "defaultMessage": "{tag} déplacé à la position {position}.",
+    "description": "Announced once a featured hashtag moved. {tag} is the hashtag with its #; {position} its new place, from 1."
+  },
+  "tag.featured.moved_empty": {
+    "defaultMessage": "Hashtag vide déplacé à la position {position}.",
+    "description": "Announced once an empty row of the featured hashtags moved. {position} is its new place, from 1."
+  },
+  "tag.featured.remove": {
+    "defaultMessage": "Retirer le hashtag {number}",
+    "description": "Button in the profile settings that removes one featured hashtag. {number} is its place."
+  },
+  "tag.featured.save_failed": {
+    "defaultMessage": "Impossible d’enregistrer les hashtags mis en avant : {reason}",
+    "description": "Result of saving the profile settings when the featured hashtags were not saved. {reason} says why."
+  },
+  "tag.featured.stats": {
+    "defaultMessage": "{count, plural, one {# publication} other {# publications}}, la dernière le {date}",
+    "description": "How many of an account's public and unlisted posts have a featured hashtag, and when one last had it, on its profile. {date} is a formatted date."
+  },
+  "tag.featured.title": {
+    "defaultMessage": "Hashtags mis en avant",
+    "description": "Heading of the hashtags a profile features, on the profile and in the profile settings."
+  },
+  "tag.featured.too_many": {
+    "defaultMessage": "Un profil met en avant {max} hashtags au plus.",
+    "description": "Result of saving the profile settings with too many featured hashtags. {max} is the most, 10."
+  },
+  "tag.follow": {
+    "defaultMessage": "Suivre",
+    "description": "Button on a hashtag's page that follows the hashtag, so that its posts join the user's home timeline."
+  },
+  "tag.follow.description": {
+    "defaultMessage": "Ses publications publiques rejoignent votre fil d’accueil, y compris celles de personnes que vous ne suivez pas.",
+    "description": "Sentence under the follow button of a hashtag's page, saying what following the hashtag does."
+  },
+  "tag.follow.failed": {
+    "defaultMessage": "Impossible de modifier l’abonnement à {tag} : {reason}",
+    "description": "Toast when following or unfollowing a hashtag failed. {tag} is the hashtag with its #; {reason} says why."
+  },
+  "tag.follow.too_many": {
+    "defaultMessage": "Vous suivez autant de hashtags que possible ({max}). Ne suivez plus l’un d’eux pour en suivre un autre.",
+    "description": "Shown when the user follows the most hashtags allowed. {max} is that number, 100."
+  },
+  "tag.followed": {
+    "defaultMessage": "Vous suivez désormais {tag}.",
+    "description": "Announced, and shown above the list of followed hashtags, once the user followed a hashtag. {tag} is the hashtag with its #, for example '#cats'."
+  },
+  "tag.followed_list.count": {
+    "defaultMessage": "{count, plural, one {# hashtag suivi sur {max}} other {# hashtags suivis sur {max}}}",
+    "description": "What the count beside the list of followed hashtags means, read aloud. {count} is how many the user follows; {max} is the most they can, 100."
+  },
+  "tag.followed_list.description": {
+    "defaultMessage": "Les publications publiques avec ces hashtags rejoignent votre fil d’accueil, y compris celles de personnes que vous ne suivez pas. Les boosts n’y figurent pas.",
+    "description": "Description of the list of followed hashtags in the settings."
+  },
+  "tag.followed_list.empty": {
+    "defaultMessage": "Vous ne suivez aucun hashtag",
+    "description": "Heading of the empty list of followed hashtags."
+  },
+  "tag.followed_list.empty.description": {
+    "defaultMessage": "Suivez-en un ici ou sur sa page pour lire ses publications dans votre fil d’accueil.",
+    "description": "Sentence of the empty list of followed hashtags, which leads to following one."
+  },
+  "tag.followed_list.follow": {
+    "defaultMessage": "Suivre",
+    "description": "Button that submits the form that follows a hashtag, in the settings."
+  },
+  "tag.followed_list.follow_failed": {
+    "defaultMessage": "Impossible de suivre le hashtag : {reason}",
+    "description": "Error of the form that follows a hashtag. {reason} says why."
+  },
+  "tag.followed_list.list.title": {
+    "defaultMessage": "Hashtags que vous suivez",
+    "description": "Heading of the list of the hashtags the user follows, in the settings."
+  },
+  "tag.followed_list.new.title": {
+    "defaultMessage": "Suivre un hashtag",
+    "description": "Button that opens the form that follows a hashtag, and the title of that form, in the settings."
+  },
+  "tag.followed_list.since": {
+    "defaultMessage": "Suivi depuis le {date}",
+    "description": "When the user followed a hashtag, on its row in the settings. {date} is a formatted date."
+  },
+  "tag.followed_list.title": {
+    "defaultMessage": "Hashtags suivis",
+    "description": "Title of the settings page and menu item that lists the hashtags the user follows."
+  },
+  "tag.followed_list.unfollow": {
+    "defaultMessage": "Ne plus suivre",
+    "description": "Button on a row of the list of followed hashtags that unfollows the hashtag."
+  },
+  "tag.followed_list.unfollow_failed": {
+    "defaultMessage": "Impossible de ne plus suivre {tag} : {reason}",
+    "description": "Shown above the list of followed hashtags when unfollowing one failed. {tag} is the hashtag with its #; {reason} says why."
+  },
+  "tag.followed_mark": {
+    "defaultMessage": "{count, plural, one {Hashtag suivi} other {Hashtags suivis}} {tags}",
+    "description": "Line above a post on the home timeline that is there only because it has a hashtag the user follows, from someone the user does not follow. {tags} is the hashtags with their #, as links, for example '#cats' or '#cats and #dogs'; {count} is how many."
+  },
+  "tag.following": {
+    "defaultMessage": "Suivi",
+    "description": "Button on a hashtag's page while the user follows the hashtag; pressing it unfollows the hashtag."
+  },
+  "tag.name": {
+    "defaultMessage": "Hashtag",
+    "description": "Label of the field where the user types a hashtag to follow."
+  },
+  "tag.name.description": {
+    "defaultMessage": "Avec ou sans #, par exemple #chats. Lettres, chiffres et _.",
+    "description": "Help under the field where the user types a hashtag."
+  },
+  "tag.name.invalid": {
+    "defaultMessage": "Un hashtag ne contient que des lettres, des chiffres et _, avec au moins une lettre.",
+    "description": "Error of a hashtag field when the text is not a hashtag."
+  },
+  "tag.name.required": {
+    "defaultMessage": "Saisissez un hashtag.",
+    "description": "Error of the hashtag field when it is empty."
+  },
   "tag.title": {
     "defaultMessage": "#{tag}",
     "description": "Heading and document title of the page with the posts of one hashtag. {tag} is the hashtag without the #, for example 'cats'."
+  },
+  "tag.unfollowed": {
+    "defaultMessage": "Vous ne suivez plus {tag}.",
+    "description": "Announced once the user unfollowed a hashtag. {tag} is the hashtag with its #, for example '#cats'."
   }
 }

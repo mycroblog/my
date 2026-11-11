@@ -122,10 +122,10 @@ KEK は、`MY_KEK_FILE` で指定されるマウントされたファイルと�
 
 最初から KEK を Cloud KMS に置くには、`main.tf` の `kek` ブロックをそのコメントのとおりに置き換え、`cloudkms.googleapis.com` を有効にします。自分の KEK や VAPID キーを持ち込むには、この手順の前に、`kek` モジュールに `create = false` を設定するか、`generate_p256_keys` からその鍵を削除します。ほかで作ったシークレットに必要なのはその ID だけです。app モジュールの `secret_env` か、それを使うモジュールに渡してください。
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
 ### 5. マイグレーションに必要なものを作る
 
-サービスの起動プローブは `/readyz` を待ちますが、これはスキーマができるまで `503` を返すので、スキーマを先に作る必要があります。マイグレーションのジョブと、それが依存するものを作ります。サーバーの設定がロードバランサーのアドレスを指定しているので、そのアドレスも含まれます。
+サービスの起動プローブは `/health/ready` を待ちますが、これはスキーマができるまで `503` を返すので、スキーマを先に作る必要があります。マイグレーションのジョブと、それが依存するものを作ります。サーバーの設定がロードバランサーのアドレスを指定しているので、そのアドレスも含まれます。
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,7 +189,7 @@ tofu apply -var console_enabled=false
 
 コマンドには標準入力も端末もないので、そこからパスワードやファイルを読み込むコマンドはこの方法では実行できません。表示したものはログに残るので、そこに書かれては困る出力をするコマンドは実行しないでください。
 
-<!-- source: upgrading 1a1e204c5173 -->
+<!-- source: upgrading 31acbd137681 -->
 ## アップグレード
 
 まず[アップグレード](database.md#upgrading)とリリースノートを読み、マイナーバージョンを 1 つずつ上げてください。
@@ -211,7 +211,7 @@ pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 1. `--maintenance` を付けると、サービスを[メンテナンスモード](maintenance.md)に切り替えます。
 2. マイグレーションのジョブに新しいイメージを与えます。
 3. `my config check`、`my db upgrade -check`、`my schema apply`、`my db upgrade` を、それぞれ前のものを待ってから実行します。
-4. メンテナンスモードを外した新しいリビジョンをデプロイします。新しいリビジョンは、起動プローブが `/readyz` で成功したときにだけトラフィックを受けます。
+4. メンテナンスモードを外した新しいリビジョンをデプロイします。新しいリビジョンは、起動プローブが `/health/ready` で成功したときにだけトラフィックを受けます。
 
 `--maintenance` を付けないと、手順 2 と 3 の間も古いリビジョンが配信を続けますが、それが[動作する保証はありません](database.md#the-server-during-an-upgrade)。リリースノートで求められたときは `--allow-destructive` を加えます。[本番運用のチェックリスト](production-checklist.md#operations)が勧めるとおり、`--image ghcr.io/mycroblog/my:0.2.0@sha256:...` でダイジェストを固定してください。
 
@@ -225,10 +225,10 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --re
 
 スキーマが変わったあとで戻すには、バックアップを復元します。[ロールバック](database.md#rolling-back)を参照してください。
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## 監視とアラート
 
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) は、`/readyz` の稼働時間チェック、[ランブック](alerts.md)の名前を付けたアラートポリシー、メールでの通知を追加します。このモジュールはまだ一度も適用されたことがないので、チェックを失敗させて一度試してください。先に `monitoring.googleapis.com` を有効にし、チェックにかかる費用をその README で読んでください。各実行はインスタンスを起こし、`/readyz` を通してデータベースも起こすので、[ティックのトレードオフ](#costs)に上乗せされます。
+モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) は、`/health/live` の稼働時間チェック、[ランブック](alerts.md)の名前を付けたアラートポリシー、メールでの通知を追加します。このモジュールはまだ一度も適用されたことがないので、チェックを失敗させて一度試してください。先に `monitoring.googleapis.com` を有効にし、チェックにかかる費用をその README で読んでください。各実行はインスタンスを起こし、チェックを `/health/ready` に向けるとデータベースも起こすので、[ティックのトレードオフ](#costs)に上乗せされます。
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## バックエンドを変える
@@ -334,7 +334,7 @@ Cloud Tasks と Cloud Scheduler はどちらも通らず、既定の `run.app` �
 
 サービス自身の URL を使う場合や、CDN などほかのものを前に置く場合は、`ingress` ブロックと `backends` にあるその行を削除し、`service_ingress` は必要な値のままにしておきます。これは常にあなたが明示的に選ぶもので、`all` にすると `run.app` の URL が誰にでも開かれます。`env` の `MY_TRUSTED_PROXIES` には、サーバーに接続してくるものを設定します。前に何を置いても、`https://{host}` で応答しなければなりません。
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
 `ingress-cloudflare-app` は、すべてのキャッシュをバイパスして `host` の前に Cloudflare を置きます。`ingress-cloudflare-media` は、どの ingress とも並べて、キャッシュするメディア用のホストを追加します。先に各モジュールの README を読んでください（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。トークンは `CLOUDFLARE_API_TOKEN` に入れます。これらのモジュールは、モックのプロバイダーでしか動かしたことがありません。
@@ -344,6 +344,7 @@ Cloud Tasks と Cloud Scheduler はどちらも通らず、既定の `run.app` �
 - **値は状態に入ります。** Cloudflare のプロバイダーには、ルールのヘッダーの値を書き込み専用にする形がありません。`openssl rand -hex 32` で値を生成し、`gcloud secrets versions add` でシークレットに追加し、同じ値を `TF_VAR_origin_secret` で渡し、状態は非公開にしておきます。ローテーションの方法は [CDN のガイド](cdn.md#rotate-the-value)にあります。
 - **レコードがプロキシされていない間は、何もヘッダーを加えない**ので、サーバーはヘルスチェック以外のすべてを拒否します。ドメインマッピングの証明書のために `proxied = false` にしているなら、シークレットはそのあとで設定してください。
 - **ダッシュボードで Bot Fight Mode を無効にしてください。** これはゾーン全体にかかり、どのルールでも飛ばせません。そして `/ap/`、`/.well-known/`、`/api/` へのチャレンジは連合を壊します。ほかのサーバーはブラウザではないからです。ジョブは Cloudflare を通りません。モジュールはチャレンジを加えず、Browser Integrity Check を無効にしますが、Bot Fight Mode は管理しません。同じ理由で「I'm Under Attack」も有効にしないでください。
+- **Email Address Obfuscation は有効のままで構いません。** これは HTML の中のメールアドレスを `[email protected]` に書き換え、それを元に戻すスクリプトを加えますが、サーバーの Content-Security-Policy はそのスクリプトを拒否します。確認のメールの送り先を伝えるページなど、サーバー自身のページは、アドレスに手を加えられないよう、内容に印を付けています。
 - `http://` をリダイレクトしたいなら、**ダッシュボードで Always Use HTTPS を有効にしてください。** これはゾーン全体にかかるので、モジュールはあなたに任せています。
 - **タイムアウト**: オリジンが 125 秒間何も送らないと、Cloudflare は `524` を返します。ジョブは `run.app` の URL を直接呼び出すので影響を受けません。ストリームは 30 秒ごとにハートビートを送り、900 秒のアイドルの上限を下回ります。通常のプロキシされたホストでストリームがバッファリングされるかは確認されていません。
 - **アップロード**: Free と Pro では 100 MB で、Cloud Run の 32 MiB より大きいので、上限は Cloud Run の 32 MiB のままです。

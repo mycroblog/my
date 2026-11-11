@@ -53,7 +53,15 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Grafana ダッシュボード
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) は、同じ Prometheus のメトリクスを表示する Grafana のダッシュボードです。
+リクエスト率、ステータスコード、レイテンシ。ジョブの実行、ジョブの種類ごとのワーカーの時間、キュー。配送、受信箱のアクティビティ、
+リモートのサーバー。各プロセスの CPU とメモリ。Grafana でインポートし（**Dashboards** → **New** → **Import**）、Prometheus のデータソースを選んでください。
+**Job** 変数でスクレイプのジョブを選びます（既定は `my`）。
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud（Cloud Run）
 
 `metrics_exporter = none` の場合は、Cloud Run と Cloud Logging にすでにあるものからアラートを作ります。
@@ -63,8 +71,9 @@ promtool test rules alerts.test.yml
 - **ジョブとリクエスト**: サーバーは HTTP リクエストごと（`msg` = `http request`）とジョブの実行ごと（`msg` = `job`）に 1 行のログを、
   メトリクスと同じラベル付きで書き出します。これらからログベースの指標を作ります。たとえば失敗したジョブには `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` のカウンター、
   レイテンシには `jsonPayload."my.surface"="client_api"` で絞り込んだ `jsonPayload.duration_seconds` の分布を使います。
-- **キューの滞留**: `queue = cloudtasks` ではジョブはデータベースにあるため、ジョブの画面とジョブ実行のログの行で滞留が分かります。
-  Cloud Tasks のキューの深さのメトリクスは、配送を待っているシグナルを数えます。
+- **キューの滞留とストレージ**: 15 分ごとにジョブ `metrics.snapshot` が、インスタンス全体の値（`my.queue.oldest_ready_age`、`my.queue.dead`、`my.db.size`、`my.media.stored_bytes` など）を持つ行
+  （`msg` = `metrics snapshot`）を 1 行書き出します。そのフィールドからログベースの指標を作ります。
+  この行が途切れたら、ティックかキューが止まったということです。Cloud Tasks のキューの深さのメトリクスは、配送を待っているシグナルを数えます。
 - **データベース**: Cloud SQL のディスク使用率と接続のメトリクス、またはデータベースの事業者の使用量アラート。
 - **費用**: アラートのしきい値を設定した Cloud Billing の予算（[費用と予算](#cost-and-budget)）。
 
@@ -124,7 +133,7 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 | 費用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 が 6 時間続く | ticket | 権限の不足、課金のエクスポートが設定されていない、リクエストの上限に達した、事業者が利用できない |
 | 費用 | 予算の超過 | – | – | – | トラフィック、ストレージ、または設定の誤りで計画より費用がかかっている（[下記](#cost-and-budget)） |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
+<!-- source: where-to-look b9e94304077f -->
 ## 確認する場所
 
 以下のツールは、このあとのランブックのほとんどの項目に出てきます。
@@ -140,6 +149,11 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 - **ログ**: 標準エラーに出力される JSON の行。HTTP リクエストはそれぞれ `msg` が `http request` の行で終わり、ジョブの実行はそれぞれ `msg` が `job` の行で終わります
   （成功は `INFO`、再試行は `WARN`、最終的に失敗したジョブは `ERROR` で、`error`、`job_id`、`my.job.type` が付きます）。
   リクエストの中の行にはその `request_id` が付き、クライアントからは `X-Request-Id` として見えます。
+  - `federation.deliver` の実行の行には、配送の行き先と結果も書かれます。`my.delivery.domain`（リモートのサーバーのドメイン）、
+    `activity.type`（たとえば `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure`、`skipped`）、
+    `http.response.status_code`（受信箱の応答。応答がなかったときや何も送らなかったときはありません）です。`my.outcome` は、これまでどおりジョブの実行の結果です。
+    この行に、送信者、アクティビティ、受信箱の URL の名前は出ません。
+    Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``

@@ -5,56 +5,45 @@ Le chat vocal permet aux utilisateurs connectés d’ouvrir un salon vocal, d’
 Ce guide couvre ce choix, les serveurs STUN et TURN ou le serveur média dont chaque choix a besoin, ainsi que ce qu’il faut savoir sur le déploiement, la confidentialité et la modération.
 Chaque paramètre nommé ici est décrit dans la [référence de la configuration](../reference/configuration.md#voice).
 
-<!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
+<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
 ## Choisir comment l’audio circule
 
-`voice` choisit une méthode pour toute l’instance ; chaque salon vocal l’utilise.
+`voice` choisit une méthode pour toute l’instance ; chaque salon l’utilise.
 
-| `voice` | Ce qui transporte l’audio | Convient pour |
+| `voice` | Ce qui transporte l’audio | Convient à |
 | --- | --- | --- |
-| `off` | Rien. L’API du chat vocal répond `404`, le client web n’affiche aucun chat vocal, et les autres paramètres `voice_*` ne sont pas vérifiés au démarrage. | La valeur par défaut. |
-| `p2p` | Les navigateurs des participants s’envoient l’audio directement. Le serveur ne relaie que les messages qui établissent les connexions. | Les petits salons vocaux et la configuration la moins chère : aucun serveur supplémentaire, hormis un serveur STUN ou TURN facultatif. |
-| `livekit` | Un serveur LiveKit, auto-hébergé ou LiveKit Cloud. | Les salons vocaux plus grands, et un contrôle strict de qui peut parler. |
-| `sora` | Un serveur Sora, auto-hébergé ou Sora Cloud. | Idem, si vous exploitez déjà Sora. |
+| `off` | Rien. L’API du chat vocal répond `404`, le client web n’affiche aucun chat vocal, et les autres réglages `voice_*` ne sont pas vérifiés au démarrage. | La valeur par défaut. |
+| `p2p` | Les navigateurs des participants s’envoient l’audio directement. Le serveur ne relaie que les messages qui établissent les connexions. | Les petits salons et l’installation la moins coûteuse : aucun serveur supplémentaire, hormis un serveur STUN ou TURN facultatif. |
+| `livekit` | Un serveur LiveKit, auto-hébergé ou LiveKit Cloud. | Les salons plus grands, et un contrôle strict de qui peut parler. |
+| `sora` | Un serveur Sora, auto-hébergé ou Sora Cloud. | Pareil, si vous exploitez déjà Sora. |
 
-![Les trois méthodes côte à côte. Avec p2p, le serveur relaie les signaux et les navigateurs s’envoient l’audio entre eux, ou via un serveur TURN. Avec livekit et sora, les navigateurs envoient les signaux et l’audio au serveur média, et le serveur communique avec ce serveur média par son API et ses webhooks. La liste ci-dessous décrit chaque méthode.](images/voice-methods.svg)
+![Les trois méthodes côte à côte. Avec p2p, le serveur relaie les signaux et les navigateurs s’envoient l’audio, ou le font passer par un serveur TURN. Avec livekit et sora, les navigateurs envoient les signaux et l’audio au serveur média, et le serveur dialogue avec ce serveur média par son API et ses webhooks. La liste ci-dessous décrit chaque méthode.](images/voice-methods.svg)
 
-Dans toutes les méthodes, le serveur (`my serve`) détient les salons vocaux, les personnes qui y participent et leurs sessions, et remet à chaque
-participant une autorisation : ce dont le navigateur a besoin pour se connecter. Il ne transporte jamais l’audio. Ce qui diffère, c’est l’endroit où passent la signalisation
-(les messages qui établissent une connexion) et l’audio :
+Dans chaque méthode, le serveur (`my serve`) détient les salons, les personnes qui y participent et leurs sessions, et remet à chaque participant une autorisation : ce dont le navigateur a besoin pour se connecter. Il ne transporte jamais l’audio. Ce qui diffère, c’est où vont la signalisation (les messages qui établissent une connexion) et l’audio :
 
-- **`p2p`.** Un navigateur envoie ses signaux (offres, réponses et candidats ICE) au serveur, qui les transmet à
-  l’autre navigateur par le flux d’événements du salon vocal ; un signal attend dans le magasin clé-valeur pendant 30 secondes au plus. L’audio
-  va directement d’un navigateur à l’autre. L’autorisation liste les serveurs STUN de `voice_stun_urls` et le serveur TURN de
-  `voice_turn` (`coturn` ou `cloudflare`) avec des identifiants de courte durée. Un navigateur apprend son adresse publique grâce à STUN,
-  et le serveur TURN relaie l’audio quand les deux navigateurs ne trouvent aucun chemin direct.
-- **`livekit`.** L’autorisation contient `voice_livekit_url` et un jeton d’accès de 60 secondes. Le navigateur envoie ses signaux et son
-  audio au serveur LiveKit, qui apporte ses propres STUN et TURN et transmet l’audio aux autres participants (une unité de transfert sélectif,
-  ou SFU).
-  Le serveur crée les salons vocaux LiveKit et change qui peut parler via l’API de LiveKit, et LiveKit signale les arrivées et
-  les départs au serveur par des webhooks.
-- **`sora`.** L’autorisation contient `voice_sora_signaling_urls` et une valeur d’adhésion signée. Le navigateur envoie ses signaux et son
-  audio au serveur Sora, qui apporte ses propres STUN et TURN. Sora interroge le webhook d’authentification du serveur avant chaque
-  connexion, le serveur contrôle les salons vocaux via l’API de Sora, et Sora signale les connexions par des webhooks.
+- **`p2p`.** Un navigateur envoie ses signaux (offres, réponses et candidats ICE) au serveur, qui les transmet à l’autre navigateur par le flux d’événements du salon ; un signal attend dans le magasin clé-valeur au plus 30 secondes. L’audio va directement de navigateur à navigateur. L’autorisation liste les serveurs STUN de `voice_stun_urls` et le serveur TURN de `voice_turn` (`coturn` ou `cloudflare`) avec des identifiants de courte durée. Un navigateur apprend son adresse publique par STUN, et le serveur TURN relaie l’audio lorsque les deux navigateurs ne trouvent aucun chemin direct.
+- **`livekit`.** L’autorisation contient `voice_livekit_url` et un jeton d’accès de 60 secondes. Le navigateur envoie ses signaux et son audio au serveur LiveKit, qui apporte ses propres STUN et TURN et transmet l’audio aux autres participants (une unité de transmission sélective, ou SFU).
+  Le serveur crée les salons LiveKit et change qui peut parler par l’API de LiveKit, et LiveKit signale les arrivées et les départs au serveur par des webhooks.
+- **`sora`.** L’autorisation contient `voice_sora_signaling_urls` et une valeur de participation signée. Le navigateur envoie ses signaux et son audio au serveur Sora, qui apporte ses propres STUN et TURN. Sora interroge le webhook d’authentification du serveur avant chaque connexion, le serveur contrôle les salons par l’API de Sora, et Sora signale les connexions par des webhooks.
 
 Remarques sur le choix :
 
-- Avec `p2p`, l’audio ne passe jamais par ce serveur (il passe par le serveur TURN quand on en utilise un). La charge du serveur se limite aux messages des salons vocaux, aux heartbeats et aux flux.
+- Avec `p2p`, l’audio ne passe jamais par ce serveur (il passe par le serveur TURN lorsqu’on en utilise un). La charge du serveur se limite aux messages des salons, aux signaux de présence et aux flux.
 - Une petite instance est mieux servie par `p2p`, ou par la formule gratuite Build de LiveKit Cloud (voir [LiveKit Cloud](#livekit-cloud)).
-- Avec `livekit` ou `sora`, les paramètres STUN et TURN et la politique ICE ci-dessous ne sont pas utilisés (le serveur avertit au démarrage si vous les définissez), car le serveur média apporte ses propres serveurs. Les adresses IP des participants ne sont alors visibles que du serveur média, pas des autres participants.
-- Les build tags `no_voice_livekit` et `no_voice_sora` excluent d’un binaire les deux méthodes à serveur média ([build tags](../reference/build-tags.md)).
-- Servez l’instance en HTTPS : les navigateurs n’autorisent l’accès au microphone que sur les pages sécurisées.
+- Avec `livekit` ou `sora`, les réglages STUN et TURN et la politique ICE ci-dessous ne sont pas utilisés (le serveur avertit au démarrage si vous les définissez), car le serveur média apporte ses propres serveurs. Les adresses IP des participants ne sont alors visibles que du serveur média, pas des autres participants.
+- Les build tags `no_voice_livekit` et `no_voice_sora` excluent les deux méthodes à serveur média d’un binaire ([build tags](../reference/build-tags.md)).
+- Servez l’instance en HTTPS : les navigateurs n’autorisent l’accès au micro que sur des pages sécurisées.
 
-Les limites bornent le coût d’un serveur média payant. `0` supprime n’importe laquelle d’entre elles, sauf la dernière :
+Les limites bornent le coût d’un serveur média payant. `0` supprime n’importe laquelle d’entre elles sauf la dernière :
 
-| Paramètre | Par défaut | Signification |
+| Réglage | Valeur par défaut | Signification |
 | --- | --- | --- |
-| `voice_max_room_duration` | `4h` | La durée maximale pendant laquelle un salon vocal reste ouvert. Un salon vocal qui l’atteint est terminé. |
-| `voice_max_open_rooms` | `10` | Combien de salons vocaux peuvent être ouverts en même temps sur ce serveur. |
-| `voice_sfu_max_participants` | `10` | La taille du salon vocal pour `livekit` et `sora`. |
-| `voice_p2p_max_participants` | `10` | La taille du salon vocal pour `p2p`, de 2 à 50. |
+| `voice_max_room_duration` | `4h` | La durée maximale pendant laquelle un salon reste ouvert. Un salon qui l’atteint est terminé. |
+| `voice_max_open_rooms` | `10` | Combien de salons peuvent être ouverts en même temps sur ce serveur. Un salon ouvert pour une heure programmée compte à partir de son ouverture, pendant qu’il attend son premier participant. |
+| `voice_sfu_max_participants` | `10` | La taille du salon pour `livekit` et `sora`. |
+| `voice_p2p_max_participants` | `10` | La taille du salon pour `p2p`, de 2 à 50. |
 
-Qui peut ouvrir des salons vocaux relève du paramètre d’instance `voice_room_starters` ([paramètres d’instance](instance-settings.md)) : par défaut, seuls les titulaires de la permission `start_voice_rooms` (le rôle intégré `admin` l’a) ; `everyone` permet à tout utilisateur local connecté, qui n’est ni suspendu ni limité, d’ouvrir des salons vocaux.
+Qui peut ouvrir des salons est le paramètre d’instance `voice_room_starters` ([paramètres de l’instance](instance-settings.md)) : par défaut, seuls les détenteurs de la permission `start_voice_rooms` (le rôle intégré `admin` l’a) ; `everyone` permet à tout utilisateur local connecté qui n’est ni suspendu ni limité d’ouvrir des salons.
 
 <!-- source: peer-to-peer-rooms 2199ca9a427c -->
 ## Salons pair à pair

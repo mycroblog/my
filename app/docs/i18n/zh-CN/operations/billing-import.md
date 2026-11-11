@@ -1,24 +1,29 @@
-<!-- source: importing-cloud-usage-costs db52fcd17ff9 -->
+<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
 # 导入云服务使用费用
 
-服务器每 24 小时导入一次设置 [`billing_sources`](../reference/configuration.md#billing_sources) 中所列服务商的使用费用（对于服务器没有适配器的服务商，则通过[插件](#a-plugin-billing_sources--plugin)导入），并把它们加入实例的费用。默认值为空，即不导入任何内容。它导入当前账单月和上一个账单月的费用（上一个月导入到当月 15 日为止，或直到上一个月的费用确定为止），每项服务和每种费用类型（使用费、抵扣额、退款、税费、支持费、手续费、其他）各占一行。在服务商结算某个月之前，数值记录为估算值；结算之后记录为确定值；确定之后数值如果发生变化，则记录为更正。过去的记录从不被改写。导入的状态（最近一次成功、最近一次失败的类型以及本月的请求数）显示在管理界面的费用页面上，也可以通过 `GET /api/v1/admin/billing_imports` 获取。指标按来源、结果和失败类型统计每次尝试（`my.billing.imports`），并报告最近一次尝试失败的来源（`my.billing.import.failing`）；[告警与处置手册](alerts.md#mybillingimportfailing)中有针对它们的告警。
+服务器每 24 小时导入一次设置 [`billing_sources`](../reference/configuration.md#billing_sources) 中所列服务商的使用费用（对于服务器没有适配器的服务商，则通过[插件](#a-plugin-billing_sources--plugin)导入），并把它们加入实例的费用。默认值为空，即不导入任何内容。
+它导入当前账单月和上一个账单月的费用（上一个月导入到当月 15 日为止，或直到上一个月的费用确定为止），每项服务和每种费用类型（使用费、抵扣额、退款、税费、支持费、手续费、其他）各占一行。
+在服务商结算某个月之前，数值记录为估算值；结算之后记录为确定值；确定之后数值如果发生变化，则记录为更正。过去的记录从不被改写。
+导入的状态（最近一次成功、最近一次失败的类型以及本月的请求数）显示在管理界面的费用页面上，也可以通过 `GET /api/v1/admin/billing_imports` 获取。
+指标按来源、结果和失败类型统计每次尝试（`my.billing.imports`），并报告最近一次尝试失败的来源（`my.billing.import.failing`）；[告警与处置手册](alerts.md#mybillingimportfailing)中有针对它们的告警。
 
-本服务器的配置中不保存任何凭据。请为运行环境提供各服务商 SDK 的默认凭据链所读取的内容（AWS 为执行角色、环境变量或共享凭据文件；Google Cloud 为应用默认凭据）。
+对于 AWS 和 Google Cloud，本服务器的配置中不保存任何凭据。请为运行环境提供各服务商 SDK 的默认凭据链所读取的内容（AWS 为执行角色、环境变量或共享凭据文件；Google Cloud 为应用默认凭据）。Cloudflare 没有这样的凭据链，因此它的导入会从 [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare) 读取 API 令牌。
 
-<!-- source: with-the-opentofu-modules 51ec4f78f058 -->
+<!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## 使用 OpenTofu 模块
 
 模块 [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) 会设置 `billing_sources`，并完成本指南中服务商 API 允许自动完成的部分。`billing-gcp` 只能与 Google Cloud 的应用模块一起使用，因此在 AWS 上，这些模块只导入 AWS 的费用。`billing-aws` 可以与 AWS 的应用模块以及 Cloud Run 的应用模块一起使用，在后者中两个模块可以同时放在 `backends` 里。两个模块都尚未在真实账号上应用过。
 
 | 本指南中的步骤 | 使用模块时 |
 | --- | --- |
-| IAM 策略，以及“通过 Web 身份从 Cloud Run 调用”中的角色 | `billing-aws` |
+| IAM 策略，以及“Calling from Cloud Run with web identity”中的角色 | `billing-aws` |
 | 启用 Cost Explorer、Linked Account Access、成本分配标签 | 在 AWS 控制台中手动完成 |
-| 导出所用的数据集，以及“IAM 角色”中的角色 | `billing-gcp` |
+| 导出所用的数据集，以及“IAM roles”中的角色 | `billing-gcp` |
 | 启用导出（“Standard usage cost”） | 在 Google Cloud 控制台中手动完成，需要结算账号上的角色 |
 | 预算的主题和拉取订阅，以及订阅者角色 | `billing-gcp`，设置 `method = "budget"` |
 | 创建预算并将其连接到主题 | 在 Google Cloud 控制台中手动完成，需要结算账号上的角色 |
 | 启用 BigQuery 或 Pub/Sub API | 手动完成，方法同[在 Cloud Run 上部署](deploy-cloud-run.md#1-enable-the-apis) |
+| Cloudflare | 这些模块不负责。像插件一样设置 `MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID` 和 `MY_BILLING_CLOUDFLARE_API_TOKEN`（来自机密） |
 | 插件 | 这些模块不负责。`backends` 中没有账单模块时，在应用模块的 `env` 中设置 `MY_BILLING_SOURCES = plugin` 以及[插件](#a-plugin-billing_sources--plugin)的各项设置；与账单模块同时使用时，应用模块会拒绝 `env` 中的 `MY_BILLING_SOURCES`，因此请自行添加一个返回 `billing_sources = ["plugin"]` 的后端（[后端的字段](../../deploy/opentofu/README.md)） |
 
 <!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
@@ -275,6 +280,49 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 | `unavailable` | `UNAVAILABLE`、`INTERNAL` 等，网络故障 | 任务会在暂停后重试 |
 | `invalid_response` | 无法作为预算通知读取的消息、非每月的预算、显示名称相同的两个预算 | 把预算设为每月，为各预算设置不同的显示名称，并且不向该主题发送其他消息 |
 
+<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+## Cloudflare（`billing_sources = cloudflare`）
+
+服务器会读取 Cloudflare 账号的可计费用量：其按量付费产品（例如 R2、Workers 和 D1）的使用费用，每个指标每天一条记录。它按产品（`R2`、`Workers`、`D1`）把这些记录汇总到 UTC 日历月中，因此每个产品每月是一行使用费。免费额度内的用量也会导入，数值为 0。只有按量付费的账号才有这些数据；Enterprise 合同账号会以 `not_enabled` 失败。使用构建标签 `no_billing_cloudflare` 构建的二进制文件会拒绝 `cloudflare`（请参阅 [build-tags.md](../reference/build-tags.md)）。
+
+<!-- source: what-it-does-not-import 2028c00feb4d -->
+### 不导入的内容
+
+Cloudflare 的可计费用量只包含使用费。带固定费用的套餐和附加组件（Pro、Business、Workers Paid 等）、税费和抵扣额都不在其中，因此费用页面只显示账单中的使用费部分。请在费用页面上把固定费用作为你自己的费用添加，或者通过[插件](#a-plugin-billing_sources--plugin)导入。
+
+<!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
+### 账单周期和确定的月份
+
+Cloudflare 按周期计费，周期在每个月的同一天开始，即账号首次购买的那一天（UTC；本应在 31 日开始的周期，在较短的月份中从最后一天开始）。一个周期的账单在周期结束时产生，因此一个日历月会跨越两个周期的一部分。服务器会读取与它所导入月份重叠的每个周期，并把每条每日记录放进它所在日期的日历月，因此某个月的各行是它自己那些日子的费用，而不是一张账单的费用。当包含某月最后一天的周期已经结束两天，或者下个月已经结束时（以先到者为准），该月即为确定。在此之前，它是从当月 1 日到有数据的最后一天的估算值。Cloudflare 的数据会滞后一两天。
+
+<!-- source: cost-and-limits-2 085888f73215 -->
+### 费用与限额
+
+Cloudflare 不对其 API 收费，因此服务器不对请求设置上限。一次导入会为账号的订阅发出一个请求，并为它读取的每个账单周期各发出一个请求：两个月最多四个。该 API 允许每位用户每五分钟 1,200 个请求，与控制台以及令牌所有者对令牌的其他使用共享。
+
+<!-- source: create-the-api-token 343e937f28d4 -->
+### 创建 API 令牌
+
+1. 在 Cloudflare 控制台中打开该账号，并在账号概览中记下它的账号 ID（32 位十六进制数字）。
+2. 在“Manage Account”→“Account API Tokens”（或“My Profile”→“API Tokens”）下，创建一个自定义令牌，只授予一项权限 **Account** → **Billing** → **Read**，且仅限这个账号。
+3. 设置 `MY_BILLING_SOURCES=cloudflare`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID=<account ID>` 和 `MY_BILLING_CLOUDFLARE_API_TOKEN=<token>`，令牌来自机密存储（或使用 `MY_BILLING_CLOUDFLARE_API_TOKEN_FILE`）。
+
+请为导入使用一个专用的令牌。服务器从不读取 Wrangler 和 OpenTofu 提供程序所使用的 `CLOUDFLARE_API_TOKEN`，因此能编辑 DNS 或 Workers 的令牌不会被误用。
+
+<!-- source: kinds-of-failure-2 b0cd3fd7b5c3 -->
+### 失败类型
+
+| 类型 | Cloudflare 响应 | 如何修复 |
+| --- | --- | --- |
+| `permission` | `400` 且代码为 9106（无效的令牌）、`401`、`403`（令牌缺少 Billing Read，或账号 ID 有误：Cloudflare 对两者都返回代码 10000） | 检查令牌的权限和 `billing_cloudflare_account_id` |
+| `not_enabled` | 该账号的可计费用量不在覆盖范围内 | 该账号不是按量付费（Enterprise 合同），因此没有可导入的内容 |
+| `not_found` | `404` | 检查 `billing_cloudflare_account_id` |
+| `throttled` | `429` | 任务会在暂停后重试 |
+| `unavailable` | 5xx、网络故障 | 任务会在暂停后重试 |
+| `invalid_response` | 无法读取的响应、跨越不止一天的记录、同一个月中有两种货币 | Cloudflare 更改了它的响应；请报告此问题 |
+
+除 `throttled` 和 `unavailable` 之外，重试无法修复其他失败，因此服务器会记录它并停止，第二天的定时导入会再次尝试。
+
 <!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
 ## 插件（`billing_sources = plugin`）
 
@@ -342,7 +390,7 @@ Content-Type: application/json
 
 `maxRequests` 为 0 表示禁止任何计费请求。服务器在要发送 0 时不会进行调用，但 `my plugin test --kind billing` 会调用，并按照 proto3 映射的允许省略该字段，期望得到不含任何行、请求数为零的 `OUTCOME_REQUEST_CAP`。
 
-<!-- source: kinds-of-failure-2 205a6c0ecdd9 -->
+<!-- source: kinds-of-failure-3 205a6c0ecdd9 -->
 ### 失败类型
 
 插件在 `outcome` 中报告失败。与其他来源一样，服务器会保留失败时的 `requests`，忽略其中的行，并保持先前的导入不变。

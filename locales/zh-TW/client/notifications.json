@@ -91,6 +91,10 @@
     "defaultMessage": "開啟 Webhook",
     "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
   },
+  "notifications.link.domain_list_subscriptions": {
+    "defaultMessage": "開啟封鎖清單訂閱",
+    "description": "Link of an admin_domain_list_failing notification to the list of the subscriptions to domain block lists."
+  },
   "notifications.link.custom_emoji_requests": {
     "defaultMessage": "審核申請",
     "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
@@ -210,6 +214,10 @@
   "notifications.type.auto_delete_limit": {
     "defaultMessage": "伺服器保留貼文的上限將套用到你的貼文",
     "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
+  "notifications.type.scheduled_status_failed": {
+    "defaultMessage": "無法發布你的排程貼文",
+    "description": "Notification sentence: a post that the user scheduled could not be published at its time. The draft stays, to fix and schedule again; the notification says why below."
   },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "你的支持者方案付款失敗",
@@ -371,6 +379,38 @@
     "defaultMessage": "開啟聊天室",
     "description": "Link in a voice chat notification to the page of the room."
   },
+  "notifications.type.event_invited": {
+    "defaultMessage": "{name} 邀請你參加活動",
+    "description": "Notification sentence. {name} is the display name of the account that invited the user to an event of the server."
+  },
+  "notifications.type.event_schedule_confirmed": {
+    "defaultMessage": "{name} 的活動已訂定日期",
+    "description": "Notification sentence: the organizers fixed the date of an event whose date poll the user answered, or to which the user was invited. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_changed": {
+    "defaultMessage": "{name} 的活動變更了日期或地點",
+    "description": "Notification sentence: the organizers changed the date, the places, or the voice chat room of an event that the user is going to, may go to, or was invited to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_cancelled": {
+    "defaultMessage": "{name} 的活動已取消",
+    "description": "Notification sentence: an event that the user is going to, may go to, or was invited to was cancelled. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_reminder": {
+    "defaultMessage": "{name} 的活動即將開始",
+    "description": "Notification sentence: a reminder, at the time the user chose, of an event that the user is going to or may go to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_started": {
+    "defaultMessage": "{name} 的活動正要開始",
+    "description": "Notification sentence: an event that the user is going to or may go to starts now. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_room_unavailable": {
+    "defaultMessage": "你的活動的語音聊天室無法開啟",
+    "description": "Notification sentence to the organizer of an event: its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays."
+  },
+  "notifications.link.event": {
+    "defaultMessage": "開啟活動",
+    "description": "Link in a notification of an event to the page of the event."
+  },
   "notifications.type.admin_error_group_created": {
     "defaultMessage": "有新的錯誤回報",
     "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."
@@ -399,6 +439,42 @@
     "defaultMessage": "回覆",
     "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
   },
+  "notifications.follow_request.approve": {
+    "defaultMessage": "核准",
+    "description": "Button in the row of a follow request notification that accepts the request, so that the account follows the user."
+  },
+  "notifications.follow_request.decline": {
+    "defaultMessage": "拒絕",
+    "description": "Button in the row of a follow request notification that rejects the request."
+  },
+  "notifications.follow_request.action": {
+    "defaultMessage": "{action}：{name}",
+    "description": "Accessible name of a button of a follow request notification. {action} is its visible text (for example 'Approve'), {name} the display name of the account that asked to follow the user."
+  },
+  "notifications.follow_request.approved": {
+    "defaultMessage": "已核准",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, after the user approved the request."
+  },
+  "notifications.follow_request.declined": {
+    "defaultMessage": "已拒絕",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, after the user declined the request."
+  },
+  "notifications.follow_request.gone": {
+    "defaultMessage": "這項請求已回覆或已撤回。",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, and announced, when the user pressed one but the request no longer waits (answered on another device, or withdrawn by the account)."
+  },
+  "notifications.follow_request.accepted": {
+    "defaultMessage": "{name} 現在追蹤你了。",
+    "description": "Announced after the user approved a follow request from its notification. {name} is the account's display name."
+  },
+  "notifications.follow_request.rejected": {
+    "defaultMessage": "你已拒絕 {name} 的追蹤請求。",
+    "description": "Announced after the user declined a follow request from its notification. {name} is the account's display name."
+  },
+  "notifications.follow_request.failed": {
+    "defaultMessage": "無法回覆追蹤請求：{reason}",
+    "description": "Toast when approving or declining a follow request from its notification failed. {reason} is the localized reason of the failure."
+  },
   "notifications.announcement.titled": {
     "defaultMessage": "公告：{title}",
     "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."
@@ -418,6 +494,10 @@
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "外部審查的呼叫持續失敗",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_domain_list_failing": {
+    "defaultMessage": "封鎖清單訂閱的擷取持續失敗",
+    "description": "Notification sentence to a moderator: the server could not fetch a subscribed domain block list three times in a row, so the list changes no domain actions until it works again."
   },
   "notifications.type.admin_hook_appeal": {
     "defaultMessage": "有使用者對自動審查拒絕的貼文提出申訴",
@@ -443,8 +523,44 @@
     "defaultMessage": "從 {date} 起，你超過 {days, plural, other {# 天}}的貼文將被刪除，但此伺服器允許你保留的貼文除外。在此之前，仍套用你自己的設定。",
     "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
   },
+  "notifications.scheduled_status_failed.detail": {
+    "defaultMessage": "{reason, select, restricted {你的帳號目前無法發文。} reply_unavailable {它回覆的貼文已無法使用。} quote_unavailable {它引用的貼文已無法使用。} media_unavailable {附加的檔案已無法使用。} invalid {它不符合貼文的要求。} rejected {伺服器的自動審查拒絕了它。} other {}}它原定於 {date} 發布。草稿已保留，你可以修正後再次排程。",
+    "description": "In the notification that a scheduled post could not be published: {reason} says why (restricted: the account may not post now, because of a moderation action, a suspension, or an account that is not active; reply_unavailable: the post it replies to is gone, hidden from the user, or does not take the reply; quote_unavailable: the post it quotes is gone, hidden, or may not be quoted; media_unavailable: an attached file is gone or failed processing; invalid: the post does not pass the checks of a post, such as its length; rejected: the server's automated review refused the post). {date} is the formatted date and time it was to be published."
+  },
   "notifications.link.auto_delete": {
     "defaultMessage": "查看哪些貼文將被刪除",
     "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
+  },
+  "notifications.type.reply_request": {
+    "defaultMessage": "{name} 要求回覆你的貼文",
+    "description": "Notification sentence. {name} is the display name of the account whose reply to the user's post waits for the user's approval."
+  },
+  "notifications.type.boost_request": {
+    "defaultMessage": "{name} 要求轉發你的貼文",
+    "description": "Notification sentence. {name} is the display name of the account whose boost of the user's post waits for the user's approval."
+  },
+  "notifications.type.quote_request": {
+    "defaultMessage": "{name} 要求引用你的貼文",
+    "description": "Notification sentence. {name} is the display name of the account whose quote of the user's post waits for the user's approval."
+  },
+  "notifications.type.interaction_accepted": {
+    "defaultMessage": "{name} 已核准你的回覆、轉發或引用",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.type.interaction_rejected": {
+    "defaultMessage": "{name} 已拒絕你的回覆、轉發或引用",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who declined the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.link.interaction_requests": {
+    "defaultMessage": "查看請求",
+    "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
+  },
+  "notifications.severed.allowlist": {
+    "defaultMessage": "本站現在只與允許的伺服器聯邦。你失去了其他伺服器上的 {followers, plural, other {# 位追蹤者}}和 {following, plural, other {# 個你追蹤的帳號}}。",
+    "description": "Notification sentence: the administrators of this server switched it to federate only with the servers it allows, which ended the follows between the user and the accounts of every other server in both directions; they are not restored when the server federates with them again. {followers} is the number of those accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.allowlist_domain": {
+    "defaultMessage": "本站不再與 {domain} 聯邦。你失去了該處的 {followers, plural, other {# 位追蹤者}}和 {following, plural, other {# 個你追蹤的帳號}}。",
+    "description": "Notification sentence: the moderators of this server removed another server from the servers it federates with, which ended the follows between its accounts and the user in both directions; they are not restored when it is allowed again. {domain} is the server's domain name. {followers} is the number of its accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   }
 }

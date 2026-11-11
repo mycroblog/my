@@ -99,12 +99,12 @@ Não ajuda quando o próprio recurso da plataforma encaminha o tráfego e não a
 
 Sem nenhuma delas definida, nada é verificado e o servidor se comporta como se esta seção não existisse.
 
-<!-- source: what-passes-without-the-header 38e1ceda6e34 -->
+<!-- source: what-passes-without-the-header b79877bb91a3 -->
 ### O que passa sem o cabeçalho
 
 | Requisição | Motivo |
 | --- | --- |
-| `GET` ou `HEAD` de `/healthz`, `/readyz`, `/api/v1/instance/health` | As sondas da plataforma e os monitores de disponibilidade as chamam diretamente |
+| `GET` ou `HEAD` de `/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health` | As sondas da plataforma e os monitores de disponibilidade as chamam diretamente |
 | `POST` para caminhos `/_internal/` | Cloud Tasks e Cloud Scheduler as chamam na URL do próprio servidor. Elas trazem o próprio token assinado |
 
 Todo o resto exige o cabeçalho, também no modo de manutenção: o cliente web e os seus recursos, `/media/`, a API cliente, o OAuth e o ActivityPub, inclusive as entregas de outros servidores.
@@ -114,7 +114,7 @@ A porta de métricas (`metrics_listen`) é um listener separado, que não é pú
 
 Uma requisição que não traz o segredo não tem influência no restante do processamento, mesmo quando passa: o IP do cliente dela é o do par da conexão, qualquer que seja o valor de `X-Forwarded-For`, e o `traceparent` e o `X-Request-Id` dela são ignorados.
 
-<!-- source: set-it-up ee0a17ad2d33 -->
+<!-- source: set-it-up 3804d0cc5c18 -->
 ### Configurar
 
 Todo nome de host que a CDN encaminha ao servidor precisa do cabeçalho: `host`, o host de `media_origin` e um `account_domain` separado, se a CDN o servir. Um host de mídia atendido pela mesma CDN também o define, já que `/media/` é recusado como todo o resto.
@@ -136,17 +136,17 @@ Todo nome de host que a CDN encaminha ao servidor precisa do cabeçalho: `host`,
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
 Inclua também os endereços da CDN em [`trusted_proxies`](../reference/configuration.md#trusted_proxies); do contrário, o servidor vê um único cliente e todas as requisições compartilham os limites de taxa da CDN. `my config check` avisa sobre isso.
 
 Uma requisição recusada recebe o mesmo problema `403` de qualquer requisição proibida, com `Cache-Control: no-store`, qualquer que seja o modo como o cabeçalho estava errado. Nada na resposta menciona o cabeçalho.
 
-<!-- source: when-everyone-is-locked-out 47c8f706e5e7 -->
+<!-- source: when-everyone-is-locked-out bd514f7ec98b -->
 ### Quando todos ficam trancados para fora
 
-Uma configuração errada recusa todas as requisições enquanto as verificações de saúde continuam com `200`, então a plataforma vê um servidor saudável, e um monitor de disponibilidade de `/healthz` não percebe nada. Os sinais são:
+Uma configuração errada recusa todas as requisições enquanto as verificações de saúde continuam com `200`, então a plataforma vê um servidor saudável, e um monitor de disponibilidade de `/health/live` não percebe nada. Os sinais são:
 
 - `403` em todas as páginas acessadas pela CDN.
 - A métrica `my.http.origin_refused` subindo enquanto as requisições de `http.server.request.duration` param.

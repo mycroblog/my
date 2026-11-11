@@ -28,7 +28,7 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 <!-- source: keys ae25d36239c2 -->
 ## Claves
 
-<!-- source: settings-one-key-one-value 4f827bf97480 -->
+<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
 ### Configuraciones (una clave, un valor)
 
 | Clave | Tipo | Valor predeterminado | Descripción |
@@ -38,15 +38,16 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 | `default_locale` | etiqueta de idioma BCP 47 | `en` | El idioma predeterminado. Es el idioma inicial de la interfaz de los usuarios nuevos y el recurso cuando ningún catálogo coincide con la preferencia de un usuario |
 | `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | Quién puede ver la línea de tiempo local (`GET /api/v1/timelines/local`): nadie, los usuarios con sesión iniciada o todo el mundo. `off` responde 404 y `signed_in` responde 401 a los visitantes que no han iniciado sesión; en ambos casos la navegación la oculta. Salvo que el valor sea `everyone`, la página de inicio no muestra publicaciones de ejemplo. En un [servidor de una sola persona](#one-person-server) se lee como `off` |
 | `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | Quién puede ver la línea de tiempo federada (`GET /api/v1/timelines/federated`). Los valores significan lo mismo que para la línea de tiempo local, y en un servidor de una sola persona también se lee como `off` |
-| `preview_image` | ID de medio (vacío = sin definir) | vacío | La imagen de vista previa del enlace (`og:image`) para publicaciones y perfiles sin imagen. Sin definir, se usa la imagen predeterminada incluida ([vistas previas de enlaces](link-previews.md)) |
+| `preview_image` | ID de medio (vacío = sin definir) | vacío | La imagen de vista previa del enlace (`og:image`) para las páginas sin imagen propia, en «Vistas previas de enlaces» de Configuración → General. Sin definir, se usa la miniatura, después el logotipo y después la imagen incluida ([vistas previas de enlaces](link-previews.md)) |
 | `contact_account` | nombre de usuario de una cuenta local (vacío = sin definir) | vacío | La cuenta para contactar con los operadores. Consulta [contacto y miniatura](#contact-and-thumbnail) |
 | `contact_email` | dirección de correo electrónico (vacío = sin definir) | vacío | La dirección de correo electrónico para contactar con los operadores. Es también el `Reply-To` y la firma de los correos que envía el servidor |
-| `thumbnail` | ID de medio (vacío = sin definir) | vacío | Una imagen que representa la instancia (miniatura) |
+| `thumbnail` | ID de medio (vacío = sin definir) | vacío | Una imagen que representa la instancia (miniatura), en las páginas de información y de inicio, y en las vistas previas de enlaces cuando `preview_image` no está definido |
 | `remote_media_policy` | `none` / `avatars` / `all` | `none` | Si se conservan copias de los medios remotos. `none`: el proxy de medios retransmite cada solicitud. `avatars`: los avatares, las cabeceras y los emojis personalizados se guardan en caché en el almacenamiento de blobs durante `remote_media_cache_ttl_seconds`. `all`: todos los medios remotos. El tamaño total de la caché está limitado por la configuración `remote_media_cache_max_bytes` |
 | `remote_media_cache_ttl_seconds` | entero 60-31536000 (segundos) | `86400` | Cuánto tiempo pueden conservarse los medios remotos obtenidos. Es también el `Cache-Control: max-age` de las respuestas del proxy de medios, así que las CDN y los navegadores los guardan en caché durante este tiempo |
 | `remote_media_cache_max_bytes` | entero desde 1 (bytes) | `1073741824` | El límite de tamaño de las copias de medios remotos que conserva el proxy de medios. La limpieza cada hora elimina las copias caducadas y después las de acceso menos reciente que excedan este límite |
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch (modo seguro). Con `true`, un GET de ActivityPub sin una firma HTTP verificable recibe `401` para objetos y colecciones, y un documento mínimo con la clave para el actor de un usuario. El actor de la instancia devuelve siempre su documento completo, de modo que cualquier servidor puede obtener la clave para verificar una firma |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | La dirección de la federación. `off`: sin federación. `inbound`: sigues y lees cuentas remotas, pero las publicaciones, los perfiles y las reacciones locales no se envían, y los seguimientos desde fuera se rechazan (`Reject`). `outbound`: aceptas seguimientos desde fuera y entregas publicaciones locales, pero no se incorporan las publicaciones ni las reacciones remotas. `both`: enviar y recibir. Un cambio surte efecto de inmediato y requiere el permiso `manage_settings` |
+| `federation_scope` | `open` / `allowlist` | `open` | Con qué servidores federa este servidor. `open`: todos los servidores que ninguna medida de dominio suspende. `allowlist`: solo los dominios de la lista de permitidos y sus subdominios; cualquier otro servidor se trata como suspendido, y los GET de ActivityPub necesitan una firma de un servidor permitido diga lo que diga `authorized_fetch`. Pasar a `allowlist` pone fin definitivamente a los seguimientos con los servidores que deja fuera; consulta [federar solo con servidores permitidos](moderation.md#federating-only-with-allowed-servers). Un cambio surte efecto de inmediato y requiere el permiso `manage_settings` |
 | `dynamic_client_registration` | `true` / `false` | `true` | Registro dinámico de clientes (RFC 7591). Con `true`, `POST /oauth/register` acepta el registro de clientes públicos sin autenticación. Con `false`, el endpoint rechaza cada solicitud con `403` (`access_denied`); los clientes ya registrados siguen funcionando. Un trabajo periódico elimina los clientes registrados dinámicamente que no se usan, según la configuración `dynamic_client_unredeemed_retention` y `dynamic_client_idle_retention`. Un cambio surte efecto de inmediato y requiere `manage_settings` |
 | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | `off` | Quién puede ver la lista de dominios con acciones tomadas (`GET /api/v1/instance/domain_actions`): nadie, los usuarios con sesión iniciada o todo el mundo ([moderación](moderation.md#publishing-the-domains-you-act-on)) |
 | `domain_actions_rationale_visibility` | `off` / `signed_in` / `everyone` | `off` | Quién puede ver los comentarios públicos de esa lista. Quien no puede ver la lista no los ve nunca |
@@ -67,6 +68,7 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 | `auto_delete_default_min_age_days` | entero 1-3650 (días) | `30` | Cuántos días después de su publicación elimina una publicación la política de una cuenta nueva |
 | `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | Si la política de una cuenta nueva conserva las publicaciones que su autor fijó, marcó o marcó como favoritas |
 | `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | Si la política de una cuenta nueva conserva las publicaciones con medios o con una encuesta |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | Si la política de una cuenta nueva conserva los [artículos](#articles) |
 | `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | Si la política de una cuenta nueva conserva las publicaciones de esa visibilidad |
 | `auto_delete_default_keep_direct` | `true` / `false` | `true` | Si la política de una cuenta nueva conserva las publicaciones directas |
 | `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | entero 0-1000000 | `0` | La política de una cuenta nueva conserva una publicación impulsada o marcada como favorita al menos este número de veces. `0` no fija ningún umbral |
@@ -74,6 +76,7 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | Si las publicaciones fijadas pueden seguir conservándose bajo el máximo |
 | `auto_delete_max_kept_pins` | entero 1-5 | `5` | Cuántas publicaciones fijadas conservan publicaciones bajo el máximo, empezando por la fijada más recientemente. `5`, el máximo de publicaciones fijadas de una cuenta, conserva todas las fijadas |
 | `auto_delete_max_allow_bookmarked`, `auto_delete_max_allow_favourited`, `auto_delete_max_allow_media`, `auto_delete_max_allow_polls` | `true` / `false` | `false` | Si las publicaciones que el autor marcó o marcó como favoritas, o con medios o con una encuesta, pueden seguir conservándose bajo el máximo |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | Si los artículos pueden seguir conservándose bajo el máximo |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | Si las publicaciones pueden seguir conservándose por su visibilidad bajo el máximo |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | Si las publicaciones pueden seguir conservándose por sus impulsos y favoritos bajo el máximo |
 | `auto_delete_grace_days` | entero 0-365 (días) | `30` | Cuántos días conserva sus propias configuraciones una cuenta a la que el máximo se aplica por primera vez, desde que se le avisa. Un cambio no mueve las fechas de las cuentas ya avisadas |
@@ -88,10 +91,15 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 | `finance_viewer_item_memos` | `true` / `false` | `false` | Si los usuarios con `view_finance` ven las notas de los conceptos de costo en la pantalla de finanzas. Si la configuración del nombre o la de la nota es `true`, cada periodo muestra filas de conceptos (proveedor, categoría y el importe de ese periodo, más el nombre y la nota donde estén activados). Quienes tienen `manage_finance` lo ven todo en cualquier caso |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | Si los usuarios con `view_finance` ven solo los totales de ingresos (`totals`) o también el número de suscriptores por plan (`plans`). El importe por plan y quién pagó no se muestran nunca. Si `income_visibility` es `plans`, los recuentos publicados se muestran sea cual sea este valor. Los ingresos se leen en la pantalla de finanzas del cliente web (`/finance`) y en `GET /api/v1/finance/income_totals` |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | Cuánto de los ingresos de los mecenas (el importe tras las comisiones del proveedor de pagos) se publica. Se elige por separado de `finance_visibility`. `private`: no se publica nada (`GET /api/v1/instance/income_totals` es 404). `totals`: solo el total de ingresos por periodo y moneda. `plans`: también el número actual de suscriptores por plan, mostrado a todo el mundo. En un plan con pocos suscriptores, el recuento puede permitir adivinar quién se suscribe. El balance (ingresos menos costos) se muestra solo cuando ni este valor ni `finance_visibility` son `private`; de lo contrario, el balance revelaría el lado que ocultaste. En todos los niveles, los pagos individuales, los suscriptores, el importe por plan y los importes brutos y comisiones siguen siendo privados. Se publican los periodos hasta el que contiene el día de hoy (UTC) inclusive |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | Qué publica el medidor de financiación: hasta qué punto los ingresos de este mes (tras las comisiones del proveedor de pagos) cubren el objetivo mensual, que se muestra en la página de información, en la lista de mecenas (`/about/supporters`) y en `GET /api/v1/instance` (`funding_meter`). Se define junto con el objetivo en `/admin/finance/publication`, que desactiva las opciones que excluyen las visibilidades actuales y explica por qué. `off`: nada. `percent`: solo el porcentaje, redondeado hacia abajo al 1 %, si el mes está cubierto y si los costos estimados están en el objetivo. Solo se puede elegir mientras `finance_visibility` e `income_visibility` son ambos `private`. `amounts`: también los ingresos y el objetivo. Solo se puede elegir mientras ninguno es `private`. Mientras solo uno de ellos se publica, el medidor no puede mostrarse: los importes publicados y el porcentaje revelarían el lado oculto. Cambiar cualquiera de las visibilidades de modo que el valor elegido ya no esté permitido deja el medidor en `off`, y ese cambio se registra y se audita como cualquier otro. El mes es el mes natural que contiene el día de hoy (UTC), y solo cuentan los ingresos en la moneda del objetivo |
+| `funding_meter_target_amount` | decimal mayor que cero, o vacío | vacío | El objetivo mensual del medidor de financiación, en la unidad principal de `funding_meter_target_currency` (`1650` yenes, `12.50` dólares), sin más decimales de los que tiene la moneda. Vacío: el objetivo son los costos de este mes, lo que requiere que estén en una sola moneda; en un mes cuyos costos están en varias monedas, o son cero, el medidor no se muestra |
+| `funding_meter_target_currency` | código ISO 4217, o vacío | vacío | La moneda de `funding_meter_target_amount`, como `JPY`. Vacío: la moneda de los costos de este mes |
+| `funding_meter_rail` | `true` / `false` | `false` | Si el cliente web muestra también el medidor de financiación en la columna derecha del diseño ancho, además de la página de información, mientras `funding_meter_visibility` no es `off` |
 | `supporter_list_visibility` | `off` / `signed_in` / `everyone` | `off` | Quién puede ver la lista de mecenas (`GET /api/v1/instance/supporters` y `/about/supporters`). `off`: nadie (la API responde 404 y `/about` no tiene enlace). `signed_in`: solo quienes han iniciado sesión en este servidor (en caso contrario la API responde 401). `everyone`: todo el mundo. La lista muestra solo las cuentas y los planes de los suscriptores activos que eligieron figurar en ella; los importes, la facturación mensual o anual, las fechas y los recuentos no se muestran nunca. La página de la lista y la respuesta de la API son siempre `noindex, noarchive`, sea cual sea `search_indexing` |
 | `user_app_registration` | `true` / `false` | `true` | Si los usuarios con sesión iniciada pueden registrar sus propias aplicaciones OAuth (públicas o confidenciales) con la API de cliente (`POST /api/v1/oauth_apps`). Con `false`, registrar responde 403. Listar, cambiar y eliminar las aplicaciones registradas, volver a emitir secretos, emitirte un token a ti mismo y la autorización por otros usuarios siguen funcionando |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | Quién puede abrir salas de chat de voz, mientras la configuración `voice` no sea `off` ([configuración](../reference/configuration.md#voice)). `everyone`: todo usuario local con sesión iniciada que no esté suspendido ni limitado. `permitted`: solo quienes tienen el permiso `start_voice_rooms`, que por defecto solo tiene el rol integrado `admin` y que puede tener un rol de un plan de mecenas |
 | `voice_public_summary` | `true` / `false` | `false` | Si la página de una sala de chat de voz cuya visibilidad es `local` muestra su nombre, descripción, anfitrión y si sigue abierta a los visitantes que no han iniciado sesión en este servidor y a los usuarios remotos, y en su vista previa de enlace. Los participantes no se muestran nunca. Con `false`, esos visitantes solo ven que la sala es para los usuarios locales de este servidor |
+| `event_creators` | `everyone` / `permitted` | `everyone` | Quién puede crear eventos ([eventos](#events)). `everyone`: todos los usuarios locales con la sesión iniciada que no estén suspendidos ni limitados. `permitted`: solo los titulares del permiso `create_events`, que por defecto solo tiene el rol integrado `admin` y que puede tener un rol de un plan de mecenas |
 | `public_counts` | `true` / `false` | `true` | Si la página de inicio (`/`, sin sesión) y `GET /api/v1/instance/overview` muestran cuántos miembros tiene el servidor, cuántas publicaciones públicas hicieron sus usuarios cada uno de los últimos 7 días y cuándo arrancó el servidor. Solo cuentan las publicaciones públicas de los usuarios de este servidor; las cifras se actualizan cada pocos minutos. Con `false`, la API las omite |
 | `featured_accounts` | nombres de usuario de hasta 20 cuentas locales, separados por espacios o comas (vacío = ninguna) | vacío | Las cuentas que las sugerencias de personas a las que seguir muestran primero, en este orden, antes de las personas de este servidor que publicaron recientemente. Una cuenta cuyo propietario desactivó «Sugerir mi cuenta y permitir encontrarla por parte de su nombre» no se sugiere. Consulta [sugerencias](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | Si el registro y el inicio de sesión se limitan a los proveedores de inicio de sesión mientras haya al menos uno activado: las contraseñas y las claves de acceso (passkeys) ya no inician sesión, y los usuarios sin un proveedor vinculado no pueden volver a iniciar sesión cuando terminen sus sesiones. Sin ningún proveedor activado no se aplica. `my instance set` imprime cuántos usuarios activos no tienen vínculo con un proveedor activado. Consulta [limitar el inicio de sesión a los proveedores de inicio de sesión](login-providers.md#limit-sign-in-to-login-providers). |
@@ -106,6 +114,7 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 | `translation_server_monthly_characters` | entero 0-1000000000000 | `500000` | Cuántos caracteres puede enviar todo el servidor a los proveedores de traducción en un mes UTC. Con `0` no se envía nada. No hay un valor ilimitado: define un número grande |
 | `translation_retention_days` | entero 1-3650 (días) | `30` | Cuántos días se conserva una traducción después de hacerse. Leerla no lo prolonga, y desaparece con la publicación |
 | `translation_reports_to_server` | booleano | `false` | Si los moderadores pueden enviar el texto de una denuncia, las publicaciones denunciadas y el comentario de quien denuncia, a los proveedores del servidor. Cada proveedor sigue recibiendo solo las visibilidades que `translation_provider_visibilities` le permite, quienquiera que lo pida: una publicación directa denunciada va solo a un proveedor con `direct` permitido, y el comentario cuenta como `private`. La traducción del comentario no se conserva nunca, ni tampoco la de una publicación eliminada, y los caracteres cuentan solo contra `translation_server_monthly_characters`. Con `false`, nada de una denuncia llega a un proveedor |
+| `event_records_retention_days` | entero 30-3650 (días) | `90` | Cuántos días después de que un evento terminara o se cancelara se conserva quién lo respondió, quién fue aprobado, quién fue invitado y quién votó sus fechas candidatas. Un evento cuya fecha nunca se fijó termina con su última fecha candidata. El evento en sí (sus ajustes, lugares, fecha y fechas candidatas, y cancelación) se conserva. Los registros de un evento denunciado se conservan mientras dure la denuncia, y las retenciones se aplican como a los demás registros ([conservación de registros](moderation.md#record-retention-and-holds)) |
 | `voice_participants_retention_days` | entero 30-3650 (días) | `90` | Cuántos días después de que terminó una sala de chat de voz se conservan los registros de quién participó: las participaciones, los oradores y oyentes, las manos levantadas, las invitaciones y las expulsiones. La sala en sí (su nombre, descripción, anfitriones y cómo terminó) se conserva. Los registros de una sala denunciada se conservan mientras dure la denuncia, y las retenciones se aplican como a los demás registros |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | Hasta dónde actúa cada [hook de decisión](decision-hooks.md#modes) mientras tiene un plugin. `off` pasa a `enforce` solo a través de `observe`. |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | Qué hace el hook cuando aplica la decisión y su plugin falla ([detalles](decision-hooks.md#when-the-plugin-fails)). |
@@ -116,6 +125,14 @@ idioma predeterminado, quién puede ver las líneas de tiempo, el nombre de la i
 | `hook_local_profile_account_age_days` | entero 0-3650 (días) | `7` | `local.profile` [revisa los cambios de perfil](decision-hooks.md#local-profiles) de las cuentas más jóvenes que esto; `0` revisa todas las cuentas. La página de información (`/about`) lo indica mientras el hook está en uso. |
 | `hook_decisions_retention_days` | entero 30-3650 (días) | `90` | Cuántos días se conservan las [decisiones de los hooks](decision-hooks.md#the-decisions). |
 | `single_user` | booleano | `false` | Si el servidor es un [servidor de una sola persona](#one-person-server). Solo puede activarse mientras el servidor tiene exactamente una cuenta local, y puede desactivarse en cualquier momento |
+| `max_drafts` | entero 1-10000 | `100` | Cuántos borradores no programados puede conservar un usuario en el servidor. Reducirlo no elimina ningún borrador: un usuario que lo supera no guarda ninguno nuevo |
+| `max_scheduled_posts` | entero 1-10000 | `300` | Cuántas publicaciones programadas de un usuario pueden esperar. Reducirlo no cancela ninguna programación |
+| `max_scheduled_posts_per_day` | entero 1-10000 | `25` | Cuántas publicaciones programadas de un usuario pueden esperar para un mismo día UTC |
+| `scheduled_post_min_lead_minutes` | entero 1-1440 (minutos) | `5` | Con cuántos minutos de antelación, como mínimo, se puede programar una publicación |
+| `scheduled_post_max_lead_days` | entero 1-3660 (días) | `366` | Con cuántos días de antelación, como máximo, se puede programar una publicación |
+| `article_authoring` | `everyone` / `permission` | `everyone` | Quién puede escribir [artículos](#articles) nuevos: todos los usuarios locales, o solo los usuarios cuyos roles tienen el permiso `create_articles` |
+| `max_article_bytes` | entero 1000-100000 (bytes) | `100000` | El máximo de bytes del HTML que genera el cuerpo de un artículo |
+| `max_article_images` | entero 0-100 | `20` | El máximo de imágenes subidas por el propio autor en el cuerpo de un artículo, además de su portada |
 
 - Los valores se normalizan antes de guardarse (`TRUE` pasa a `true`, `0750` pasa a `750`, `ja_jp` pasa a `ja-JP`, los IDs de medios se pasan a minúsculas).
   Un valor no válido se rechaza y no se escribe nada.
@@ -140,12 +157,12 @@ Las cuentas nuevas se sugieren y pueden encontrarse por parte de su nombre en la
 cuenta y encontrarla por parte de su nombre» en la configuración del perfil queda fuera de ambas: la búsqueda encuentra entonces la cuenta solo por su
 nombre de usuario completo, o para las personas que la siguen.
 
-<!-- source: automatic-deletion-of-old-posts f0cf962c9de0 -->
+<!-- source: automatic-deletion-of-old-posts 9eb8a72df28e -->
 ### Eliminación automática de publicaciones antiguas
 
 Los usuarios pueden hacer que sus propias publicaciones se eliminen automáticamente unos días después de publicarlas (Configuración, «Eliminar publicaciones antiguas»).
 La política de cada usuario es suya: si está activada, después de cuántos días y qué publicaciones conserva (las publicaciones fijadas, marcadas y
-marcadas como favoritas, las publicaciones con medios o con una encuesta, las publicaciones de ciertas visibilidades y las publicaciones con al menos cierto número de impulsos o
+marcadas como favoritas, las publicaciones con medios o con una encuesta, los artículos, las publicaciones de ciertas visibilidades y las publicaciones con al menos cierto número de impulsos o
 favoritos). Eliminar una publicación de este modo equivale a que su autor la elimine: los servidores a los que llegó reciben un `Delete`.
 De este modo solo se eliminan las publicaciones de cuentas locales, nunca los impulsos.
 
@@ -153,7 +170,7 @@ Las claves `auto_delete_default_*` son la política con la que empieza cada cuen
 (el formulario de registro, un proveedor de inicio de sesión externo, una invitación o `my admin`). La cuenta la recibe al crearse y
 pasa a ser suya: cambiar las claves más adelante no cambia ni las cuentas existentes ni las que recibieron un valor anterior.
 La pantalla de configuración muestra los valores como propios del usuario. Con las claves sin definir, una cuenta nueva empieza con la eliminación
-automática desactivada, a los 30 días, conservando las publicaciones fijadas, marcadas y marcadas como favoritas, y las publicaciones directas. El valor predeterminado no se muestra
+automática desactivada, a los 30 días, conservando las publicaciones fijadas, marcadas y marcadas como favoritas, los artículos y las publicaciones directas. El valor predeterminado no se muestra
 a las personas ajenas a la instancia. Cuando hay un máximo definido, una cuenta nueva recibe el valor predeterminado recortado al máximo, como se
 describe más abajo, de modo que empieza dentro de él.
 
@@ -190,6 +207,87 @@ El máximo es público: `GET /api/v1/instance` lo devuelve en `auto_delete_limit
 la gente lo sepa antes de registrarse. Los cambios de estas claves requieren `manage_settings` y se registran en el registro de auditoría como cualquier otro
 configuración. En el cliente web están en la página «Eliminación de publicaciones» de «Configuración del servidor», que pregunta antes de guardar un
 máximo que se activa o se endurece.
+
+<!-- source: drafts-and-scheduled-posts 240f795223ab -->
+### Borradores y publicaciones programadas
+
+Los usuarios guardan borradores de publicaciones en el servidor, siguen escribiéndolos en otro dispositivo y los publican de inmediato o a la hora que elijan. Solo su autor lee
+un borrador; los borradores nunca se federan, no están en la exportación de los datos de una cuenta y desaparecen con la cuenta cuando se borra. Los cinco ajustes `max_drafts` y `scheduled_post_*` de arriba los
+acotan; un guardado o una programación que supera un límite se rechaza con un mensaje que lo nombra.
+
+- Una publicación programada la publica el trabajo `content.publish_scheduled_draft` a su hora o poco después, también cuando la
+  hora está más lejos que el límite de retraso del servicio de colas: el trabajo vuelve y espera de nuevo. Defínelos con
+  `my instance set`, por ejemplo `my instance set max_scheduled_posts 100`.
+- La publicación se comprueba cuando se publica, no solo cuando se programa: un usuario al que una medida de moderación impide
+  publicar para entonces, o cuya publicación responde a una publicación que ya no existe o la cita, no obtiene ninguna publicación. El borrador permanece, y el usuario
+  recibe una notificación que explica el motivo (`scheduled_status_failed`, que los usuarios pueden desactivar en sus ajustes de
+  notificaciones y que nunca se envía por correo). La revisión automática de las publicaciones locales, mientras está en uso, revisa la publicación
+  cuando se publica.
+- Una publicación se sella con la hora en que se publica, y la eliminación automática de publicaciones antiguas cuenta desde entonces.
+- Los archivos multimedia que adjunta un borrador se conservan mientras exista el borrador; eliminar el borrador los deja sin asociar, y desaparecen
+  con la limpieza de las subidas sin asociar. La portada del borrador de un artículo y las subidas que muestra su cuerpo se conservan del mismo
+  modo.
+- Los borradores y las publicaciones programadas incluyen los [artículos](#articles), que se programan y se cuentan como las publicaciones. El borrador
+  de un artículo puede carecer de título mientras su autor escribe; se comprueba como un artículo nuevo cuando se publica, y un usuario
+  que para entonces ya no puede escribir artículos nuevos no obtiene ningún artículo.
+
+<!-- source: articles fbbf778b92f0 -->
+### Artículos
+
+Un artículo es una publicación larga con un título, un resumen y una imagen de portada, cuyo cuerpo escribe su autor en Markdown. Los artículos
+son publicaciones en todo lo demás: tienen una visibilidad, se pueden editar conservando su historial, impulsar, marcar como favoritos, citar,
+responder, denunciar y eliminar, y la moderación actúa sobre ellos como sobre las publicaciones. El servidor renderiza el cuerpo una sola vez, cuando se
+escribe: el HTML sin procesar que contenga no se renderiza, y solo las imágenes subidas por el propio autor se muestran como imágenes; cualquier otra imagen
+se convierte en un enlace, de modo que los lectores nunca cargan imágenes de otros sitios. Las cronologías, las notificaciones y la búsqueda muestran el título,
+el resumen y la portada; el cuerpo se muestra donde se abre el artículo.
+
+- De forma predeterminada, todos los usuarios locales pueden escribir artículos. Con `article_authoring` en `permission`, solo los usuarios cuyos
+  roles tienen el permiso `create_articles` pueden escribir otros nuevos; los artículos ya escritos permanecen, y sus autores
+  todavía pueden editarlos. Una medida de moderación que impide publicar a una cuenta le impide también escribir y editar artículos. Un [plan de mecenas](supporters.md) puede dar `create_articles` como ventaja.
+- `max_article_bytes` acota el HTML de un cuerpo, no el Markdown: los servidores que reciben artículos cuentan el HTML, y
+  100 000 bytes, lo máximo que puede ser, es lo que conservan por completo. Cabe un cuerpo en japonés de unos 30 000 caracteres.
+  `max_article_images` acota las imágenes de un cuerpo. El editor muestra ambos antes de publicar el artículo.
+- Un artículo nunca es una publicación directa, y no tiene encuesta, ni más archivos adjuntos que sus imágenes, ni advertencia de contenido: un
+  artículo sensible muestra su título y su resumen y pliega el cuerpo y la portada.
+- La eliminación automática de publicaciones antiguas conserva los artículos salvo que el usuario lo desactive (`auto_delete_default_keep_articles`
+  para las cuentas nuevas, `auto_delete_max_allow_articles` bajo un máximo).
+- `GET /api/v1/instance` devuelve los límites en `limits.articles` y el ajuste de autoría en `article_authoring`. Defínelos
+  con `my instance set`, por ejemplo `my instance set article_authoring permission`.
+
+<!-- source: events 07dccecf6936 -->
+### Eventos
+
+Los usuarios locales organizan eventos con una fecha, una zona horaria y hasta tres lugares: una sala de chat de voz de este servidor, un lugar de
+encuentro presencial y un enlace. En lugar de una fecha, un organizador puede ofrecer hasta 20 fechas candidatas: los usuarios que ven el
+evento responden a cada una sí, quizá o no, y después el organizador o un coorganizador confirma una, lo que fija la fecha.
+Hasta entonces, nadie responde si asistirá. Los eventos son solo para los usuarios de este servidor: nunca se federan, y los usuarios remotos
+y los visitantes sin sesión iniciada no ven ninguno.
+
+- Quién puede crear uno lo decide `event_creators`. Un organizador también debe poder abrir salas de chat de voz (`voice_room_starters`
+  y la configuración `voice`) para celebrar un evento en una.
+- La sala de chat de voz de un evento se abre al empezar este, con el organizador como anfitrión, y espera hasta 30 minutos al primer
+  participante. Toma el título del evento y la visibilidad del evento (todos los usuarios locales, los seguidores, las personas a las que sigue el
+  organizador, los seguimientos mutuos o los invitados). Los coorganizadores, quienes respondieron que asistirán o quizá, y los
+  invitados que no han respondido son invitados a la sala, de modo que siguen viéndola cuando un coanfitrión la asume.
+  La sala no crea ninguna publicación de inicio, y la notificación de inicio del evento es su única notificación.
+- Una sala que no puede abrirse (el chat de voz está desactivado, el organizador ya no puede abrir salas o está siendo anfitrión de otra, o
+  hay abiertas tantas salas como permite la configuración `voice_max_open_rooms`) deja el evento como está: se notifica al organizador,
+  y la página del evento indica que la sala no pudo abrirse. El servidor lo comprueba cuando se fija o se cambia la fecha y también un día antes del inicio, y notifica al organizador de lo que mantendría cerrada la sala. También se
+  notifica al organizador cuando nadie llegó a la sala. Cancelar el evento, o quitar su sala de chat de voz, termina la sala
+  y conserva el evento.
+- El organizador elige quién ve el evento: todos los usuarios locales, los seguidores del organizador, las personas a las que sigue el organizador,
+  los seguimientos mutuos o solo los invitados. Los invitados y quienes lo respondieron, o respondieron sus fechas candidatas, siempre lo ven, y un bloqueo entre
+  un usuario y el organizador o un coorganizador se lo oculta a ese usuario.
+- La dirección y el enlace de un evento solo se muestran a los asistentes que el organizador o un coorganizador aprobó,
+  salvo que el organizador los muestre a todos los que ven el evento. Los enlaces deben ser `http` o `https`, y el servidor nunca
+  los abre.
+- Un usuario que ve un evento puede guardarlo como un archivo iCalendar (`.ics`) para añadirlo a su propio calendario. El archivo nombra solo
+  los lugares que ese usuario ve, así que una dirección reservada a los asistentes aprobados nunca aparece en él. No hay ninguna
+  dirección de suscripción al calendario.
+- Un usuario crea como máximo 10 eventos por hora, y un evento envía como máximo 100 invitaciones por hora.
+- Los usuarios pueden denunciar un evento y los moderadores pueden cancelar uno; suspender o eliminar a un organizador cancela los eventos
+  del organizador que no han empezado ([moderación](moderation.md#events)). Quién respondió y quién fue invitado se conserva durante
+  `event_records_retention_days` después del evento, y también los votos sobre sus fechas candidatas.
 
 <!-- source: texts-one-key-one-value c639fc7dfe23 -->
 ### Textos (una clave, un valor)
@@ -369,7 +467,7 @@ my admin federation sever -direction both
   no lo hace (como `off`), el seguimiento termina solo en el lado local y no se avisa al lado remoto.
 - Es seguro ejecutarlo repetidamente. Imprime en la salida estándar el número de seguimientos que terminó.
 
-<!-- source: admin-screens-and-the-client-api 6a747f50af97 -->
+<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
 ## Pantallas de administración y API de cliente
 
 Toda configuración que puede cambiar la CLI puede cambiarse también en las pantallas de administración del cliente web y con la API de cliente. Ambas necesitan
@@ -388,7 +486,7 @@ registro de auditoría en la pantalla de moderación («Registro de auditoría»
   | Registro (`/admin/settings/registration`) | Registro (`registration_mode`, `login_providers_only`); Invitaciones de miembros (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Aplicaciones (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
   | Contenido (`/admin/settings/content`) | Idioma (`default_locale`, elegido entre los idiomas que tiene la aplicación); Líneas de tiempo (`local_timeline_visibility`, `federated_timeline_visibility`); Publicaciones (`require_media_description`); Página de inicio (`public_counts`); Cuentas sugeridas (`featured_accounts`) |
   | Eliminación de publicaciones (`/admin/settings/auto-delete`) | Valor predeterminado para las cuentas nuevas (las configuraciones `auto_delete_default_*`); Máximo (`auto_delete_max_age_days`, las configuraciones `auto_delete_max_allow_*`, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Guardar un máximo que se activa o se endurece (menos días, menos excepciones o publicaciones fijadas) pregunta antes, ya que avisa a las cuentas a las que afecta por primera vez ([Un máximo para conservar publicaciones](#a-maximum-for-keeping-posts)) |
-  | Federación (`/admin/settings/federation`) | Federación (`federation_mode`, `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (elige entre 1 hora, 1 día, 7 días, 30 días o 365 días), `link_cards`, `link_cards_ignore_robots_txt`); Servidores limitados y suspendidos (`domain_actions_visibility`, `domain_actions_rationale_visibility`); Revisión externa (las configuraciones `hook_*`, consulta [Hooks de decisión](decision-hooks.md)) |
+  | Federación (`/admin/settings/federation`) | Federación (`federation_mode`, `federation_scope` (al guardar `allowlist`, primero se muestran los seguimientos que terminaría el cambio y se pide confirmación; consulta [federar solo con servidores permitidos](moderation.md#federating-only-with-allowed-servers)), `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (elige entre 1 hora, 1 día, 7 días, 30 días o 365 días), `link_cards`, `link_cards_ignore_robots_txt`); Servidores limitados y suspendidos (`domain_actions_visibility`, `domain_actions_rationale_visibility`); Revisión externa (las configuraciones `hook_*`, consulta [Hooks de decisión](decision-hooks.md)) |
   | Búsqueda y rastreadores (`/admin/settings/discovery`) | Buscadores e IA (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Búsqueda de publicaciones (`search_visibilities`, solo mientras el servidor tiene búsqueda de texto completo) |
   | Chat de voz (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; la página aparece en la lista solo mientras el servidor ofrece chat de voz |
 

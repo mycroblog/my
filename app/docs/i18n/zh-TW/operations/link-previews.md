@@ -3,72 +3,86 @@
 
 本頁說明其他服務為這台伺服器的頁面顯示的預覽、伺服器為此回傳的內容，以及手動檢查的步驟。這台伺服器為自己貼文中的連結顯示的卡片，請參閱下方的[貼文中連結的卡片](#cards-of-links-in-posts)；如何停止從某個網域擷取卡片，請參閱[實例設定](instance-settings.md#link-card-domains)。
 
-<!-- source: what-the-server-returns bb9326f9729a -->
-## 伺服器回傳的內容
+<!-- source: what-the-server-returns fe60560f1b91 -->
+## 伺服器會回傳什麼
 
-`my serve` 會把 meta 標籤嵌入網頁用戶端的外殼（shell），回傳以下頁面的 HTML：首頁（`https://<host>/`）、實例資訊頁面（`https://<host>/about`）、已公開文件的頁面（`/about/terms`、`/about/privacy`、`/about/commerce`）、連結卡片爬蟲的說明頁面（`/about/crawler`）、個人檔案（`https://<host>/@alice`）以及貼文（`https://<host>/@alice/status/<post ID>`）。對 HTML 的請求一律被視為未登入，因此預覽只會顯示未登入的訪客能看到的內容。
+`my serve` 會將 meta 標籤嵌入網頁用戶端的外殼中，來回傳首頁（`https://<host>/`）、實例資訊頁面（`https://<host>/about`）、已發布文件的頁面（`/about/terms`、`/about/privacy`、`/about/commerce`）、連結卡片爬蟲的頁面（`/about/crawler`）、個人檔案（`https://<host>/@alice`）和貼文（`https://<host>/@alice/status/<post ID>`）的 HTML。
+對 HTML 的請求一律視為未登入，所以預覽只會顯示未登入的訪客能看到的內容。
 
 | 頁面 | 回應 |
 | --- | --- |
-| 首頁（`/`）和實例資訊頁面（`/about`） | 200。帶有介紹實例的 meta 標籤的外殼（見下方「首頁」） |
-| 連結卡片爬蟲的說明頁面（`/about/crawler`） | 200。帶有介紹實例的 meta 標籤的外殼，標題為「連結卡片爬蟲 \| 實例名稱」 |
-| 已公開文件的頁面（`/about/terms`、`/about/privacy`、`/about/commerce`） | 200。帶有介紹實例的 meta 標籤的外殼，標題為「文件名稱 \| 實例名稱」。未公開文件的頁面會得到通用的外殼 |
-| `public` 貼文、有效的本站帳號的個人檔案 | 200。帶有 meta 標籤的外殼 |
-| `unlisted` 貼文 | 200。帶有 meta 標籤的外殼，並加上 `<meta name="robots" content="noindex, noarchive">` 和 `X-Robots-Tag: noindex, noarchive` |
-| `local`、`private`、`direct`、已刪除或不存在的貼文，以及被停權、已停用、已刪除或受限帳號的個人檔案和貼文 | 404。通用的外殼和 `X-Robots-Tag: noindex, noarchive`。不論原因為何，內文和標頭都相同 |
+| 首頁（`/`）和實例資訊頁面（`/about`） | 200。帶有介紹實例的 meta 標籤的外殼（請見下方的「首頁」） |
+| 連結卡片爬蟲的頁面（`/about/crawler`） | 200。帶有介紹實例的 meta 標籤的外殼，標題為「Link card crawler \| 實例名稱」 |
+| 已發布文件的頁面（`/about/terms`、`/about/privacy`、`/about/commerce`） | 200。帶有介紹實例的 meta 標籤的外殼，標題為「文件名稱 \| 實例名稱」。未發布文件的頁面會得到通用外殼 |
+| `public` 貼文、運作中本地帳號的個人檔案 | 200。帶有 meta 標籤的外殼 |
+| `unlisted` 貼文 | 200。帶有 meta 標籤的外殼，另加 `<meta name="robots" content="noindex, noarchive">` 和 `X-Robots-Tag: noindex, noarchive` |
+| `local`、`private`、`direct`、已刪除或不存在的貼文，以及被停權、停用、刪除或受限的帳號的個人檔案與貼文 | 404。通用外殼和 `X-Robots-Tag: noindex, noarchive`。不論原因為何，內容與標頭都相同 |
 | `/@<old username>/status/<post ID>` | 301，導向使用目前使用者名稱的 URL |
+| 主題標籤的頁面（`/tags/<tag>`） | 200。通用外殼，帶有指向該主題標籤 Atom 摘要訂閱源的連結（請見下方的「通用外殼」） |
+| 網頁用戶端的其他每個頁面（探索、公開的費用與支持者頁面、登入等） | 200。通用外殼，帶有實例的 meta 標籤（請見下方的「通用外殼」） |
 
-每個頁面也會依實例設定和擁有者的設定，帶有對搜尋引擎和 AI 爬蟲的聲明（`noindex` 和 `noai` 等 meta 標籤，以及 `X-Robots-Tag`、`Content-Usage` 和 `tdm-reservation`）（[搜尋引擎與 AI 爬蟲](crawlers.md)）。上表中的 `noindex` 不論設定為何都一定會加上。`noindex` 不會阻止連結預覽。
+每個頁面也都帶有對搜尋引擎與 AI 爬蟲的聲明（`noindex` 和 `noai` 等 meta 標籤，以及 `X-Robots-Tag`、`Content-Usage` 和 `tdm-reservation`），依實例設定與擁有者的設定而定（[搜尋引擎與 AI 爬蟲](crawlers.md)）。上表中的 `noindex` 不論設定為何，一律會加上。
+`noindex` 不會阻止連結預覽。
 
-帶有 ActivityPub `Accept` 的請求不會得到外殼；而是由 ActivityPub 端回應（個人檔案以行為者的 `id` 回應，未登入訪客能看到的貼文則以 302 導向它的 `id`）。所有回應都帶有 `Vary: Accept`。
+帶有 ActivityPub `Accept` 的請求不會得到外殼；它由 ActivityPub 端回應（個人檔案回應 actor 的 `id`，而未登入的訪客能看到的貼文，則以 302 導向它的 `id`）。每個回應都帶有 `Vary: Accept`。
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### Meta 標籤
 
 | 標籤 | 內容 |
 | --- | --- |
-| `og:title`、`<title>` | 「顯示名稱（@使用者名稱@帳號網域）」。顯示名稱為空時使用使用者名稱 |
-| `og:type` | 個人檔案為 `profile`，貼文為 `article` |
-| `og:url`、`<link rel="canonical">` | 標準 URL（使用目前使用者名稱的 URL） |
-| `og:description` | 去除標籤後的貼文內文純文字（個人檔案為自我介紹），截斷為 200 個字素。有內容警告的貼文只使用內容警告的文字 |
-| `og:image`、`og:image:alt` / `width` / `height` | 依下方順序選出的圖片 |
-| `og:site_name` | 實例名稱（文字 `name`，所有語言都相同；沒有時使用 `host`；[名稱與網域](instance-settings.md#name-and-domain)） |
-| `og:locale`、`<html lang dir>` | 貼文的語言。未設定（`und`）時使用作者的預設發文語言，再沒有則使用實例的 `default_locale`。不會隨 `Accept-Language` 改變 |
-| `article:published_time`、`article:author` | 僅限貼文。貼文的時間（UTC）和作者的個人檔案 URL |
-| `profile:username` | 僅限個人檔案。`username@account domain` |
-| `twitter:card` | 圖片寬於約 2:1（寬 / 高 >= 1.7）且至少為 300x157 時為 `summary_large_image`，否則為 `summary` |
-| `fediverse:creator` | `@username@account domain`。Mastodon 會把它顯示為「作者」 |
-| `<link rel="alternate" type="application/activity+json">` | AP `id`（行為者或貼文的物件） |
+| `og:title`、`<title>` | 「顯示名稱（@username@account domain）」。顯示名稱為空時則為使用者名稱。對於文章，則是它的標題 |
+| `og:type` | 個人檔案為 `profile`，貼文和文章為 `article` |
+| `og:url`、`<link rel="canonical">` | 正規 URL（使用目前使用者名稱的 URL） |
+| `og:description` | 貼文內文的純文字（個人檔案則為自我介紹），不含標籤，截斷為 200 個字素。對於有內容警告的貼文，只有內容警告的文字。對於文章，則是它的摘要，即使它被標示為敏感內容也一樣；文章的內文絕不會出現在頁面中 |
+| `og:image`、`og:image:alt` / `width` / `height` | 依下列順序選出的圖片 |
+| `og:site_name` | 實例名稱（文字 `name`，所有語言都相同；沒有時為 `host`；[名稱與網域](instance-settings.md#name-and-domain)） |
+| `og:locale`、`<html lang dir>` | 貼文的語言。未設定（`und`）時，為作者預設的發文語言，再沒有則為實例的 `default_locale`。它不會隨 `Accept-Language` 改變。`og:locale` 的形式是 `language_TERRITORY`：沒有地區的語言會取得它慣用的地區（`ja` → `ja_JP`、`en` → `en_US`、`pt` → `pt_BR`），而 `<html lang>` 則保持語言標籤原樣 |
+| `article:published_time`、`article:author` | 只有貼文。貼文的時間（UTC）和作者的個人檔案 URL |
+| `profile:username` | 只有個人檔案。`username@account domain` |
+| `twitter:card` | 當圖片寬於約 2:1（寬 / 高 >= 1.7）且至少為 300x157 時為 `summary_large_image`，否則為 `summary` |
+| `fediverse:creator` | `@username@account domain`。Mastodon 會將它顯示為「作者」 |
+| `<link rel="alternate" type="application/activity+json">` | AP 的 `id`（actor 或貼文的物件） |
+| `<link rel="alternate" type="application/atom+xml">` | 只有擁有 Atom 摘要訂閱源的個人檔案：摘要訂閱源的位址（`https://<host>/@<username>.atom`），標題與 `og:title` 相同。擁有者關閉了摘要訂閱源的個人檔案，以及受限或已搬遷的帳號，則沒有 |
 
 首頁的 meta 標籤介紹的是實例本身。
 
-- `og:type` 為 `website`，`og:title`、`<title>` 和 `og:site_name` 為實例名稱，`og:url` 和 `<link rel="canonical">` 為 `https://<host>/`。
-- `og:description` 是截斷為 200 個字素的實例文字 `short_description`。沒有時則省略。
-- 語言（`og:locale`、`<html lang dir>`）是實例的 `default_locale`。名稱和說明在所有語言中都是相同的值。
-- `og:image` 是下方的第 3 項（實例預覽圖片），沒有時為第 4 或第 5 項。
-- 它不屬於任何帳號，因此不會輸出 `fediverse:creator` 和 ActivityPub 的 `alternate`。
-- 實例資訊頁面（`/about`）有相同的 meta 標籤。`og:title` 和 `<title>` 為「關於 {instance name}」（`server:preview.about_title`），`og:url` 和 `<link rel="canonical">` 為 `https://<host>/about`。
-- 已公開文件的頁面（`/about/terms`、`/about/privacy`、`/about/commerce`）也有相同的 meta 標籤。`og:title` 和 `<title>` 為「{document name} | {instance name}」（`server:preview.document_title`），`og:url` 和 `<link rel="canonical">` 為該頁面的網址。未公開文件的頁面會得到通用的外殼。
-- 連結卡片爬蟲的說明頁面（`/about/crawler`）有相同的 meta 標籤，標題和網址的形式也相同。
+- `og:type` 是 `website`，`og:title`、`<title>` 和 `og:site_name` 是實例名稱，而 `og:url` 和 `<link rel="canonical">` 是 `https://<host>/`。
+- `og:description` 是實例文字 `short_description`，截斷為 200 個字素。沒有時則省略。
+- 語言（`og:locale`、`<html lang dir>`）是實例的 `default_locale`。名稱與說明在所有語言中都是同一個值。
+- `og:image` 是實例圖片：下方的第 3 項，沒有時則為第 4、5 或 6 項。
+- 它不屬於任何帳號，所以不會輸出 `fediverse:creator` 和 ActivityPub 的 `alternate`。
+- 實例資訊頁面（`/about`）有相同的 meta 標籤。`og:title` 和 `<title>` 是「關於 {實例名稱}」（`server:preview.about_title`），而 `og:url` 和 `<link rel="canonical">` 是 `https://<host>/about`。
+- 已發布文件的頁面（`/about/terms`、`/about/privacy`、`/about/commerce`）也有相同的 meta 標籤。`og:title` 和 `<title>` 是「{文件名稱} | {實例名稱}」（`server:preview.document_title`），而 `og:url` 和 `<link rel="canonical">` 是該頁面的位址。未發布文件的頁面會得到通用外殼。
+- 連結卡片爬蟲的頁面（`/about/crawler`）有相同的 meta 標籤，標題與位址的形式也相同。
 
-`og:image` 依以下順序選擇。
+通用外殼由其他每個頁面與被隱藏貼文的 404 回傳，帶有與首頁相同的標籤，但沒有自己的位址：`og:type` 為 `website`，實例名稱作為 `og:site_name` 和 `og:title`，`short_description` 作為 `og:description`，另有 `og:locale`、實例圖片和 `twitter:card`。它沒有 `og:url`，也沒有 `<link rel="canonical">`，所以同一份副本可以服務每個路徑，而被隱藏貼文的 404 也會與任何其他頁面完全相同。
+主題標籤的頁面只多加一個指向該主題標籤摘要訂閱源（`https://<host>/tags/<tag>.atom`）的 `<link rel="alternate" type="application/atom+xml">`，標題為「#tag on 實例名稱」（`server:feed.tag_title`），不論是否已有貼文使用過該主題標籤。分享主題標籤或公開費用頁面的連結，會顯示實例的卡片。
 
-1. 貼文附加的第一張圖片（其替代文字會放入 `og:image:alt`）。標示為敏感內容或有內容警告的貼文不會使用。
-2. 個人檔案的封面圖片，沒有則使用大頭貼（`og:image:alt` 為「{name} 的封面圖片」或「{name} 的大頭貼」）。
-3. 實例預覽圖片（實例設定 `preview_image`；`og:image:alt` 為文字 `preview_image_alt`，沒有時為「{instance name} 的圖片」）。
-4. 實例自己標誌的連結預覽版本（[標誌與圖示](instance-settings.md#logo-and-icon)），位於 `https://<host>/brand/<revision>/preview-1200x630.png` 的 1200x630 PNG（`og:image:alt` 為「{instance name} 的圖片」）。
-5. 內建的預設圖片（`https://<host>/preview-image.png`，1200x630 的 PNG。它是不含實例名稱的通用圖片，`og:image:alt` 描述這張圖片）。
+摘要訂閱源本身是 Atom 1.0 文件，內含最新 20 則不是回覆或轉發的本地公開貼文，並帶有 `ETag`、`Last-Modified` 和 `Cache-Control: public, max-age=60`。文章的項目是它的標題與摘要，並附上文章的連結；內文留在文章的頁面上。每個擁有摘要訂閱源的個人檔案也有只含文章的摘要訂閱源 `https://<host>/@<username>/articles.atom`，標題為「Articles by name (@handle)」（`server:feed.articles_title`），遵循相同的規則；個人檔案的頁面只連結它的主要摘要訂閱源。伺服器會將每個轉譯後的摘要訂閱源在它的鍵值儲存中保留一分鐘，所以變更會在約一分鐘內傳到摘要訂閱源。摘要訂閱源帶有與其個人檔案相同的 `X-Robots-Tag` 和 AI 聲明；主題標籤的摘要訂閱源一律為 `noindex`，並會表明其任何作者的 AI 拒絕。沒有摘要訂閱源的個人檔案，以及沒有貼文使用過的主題標籤，都回應 404。
 
-因此，會顯示預覽的頁面一定有 `og:image` 和 `og:image:alt`。第 1 到第 3 項的圖片是處理後媒體的 `full` 變體，寬度和高度是處理時得到的值。如果 `preview_image` 仍在處理中、處理失敗或不是圖片，則使用第 4 項（沒有標誌時為第 5 項）。實例設定在每次請求時都會讀取，因此 `my instance set preview_image ...` 不需重新啟動即可生效（步驟請參閱[實例設定](instance-settings.md)）。
+`og:image` 依下列順序選出。
 
-預設圖片會在啟動後的第一次請求時以標準函式庫繪製，並保存在處理程序中（約 10 KB）。它會帶著 `Cache-Control: no-cache` 和 ETag 提供。
+1. 貼文所附的第一張圖片，或文章的封面（它的替代文字會放入 `og:image:alt`）。被標示為敏感內容的貼文或文章，以及有內容警告的貼文，不會使用它。
+2. 個人檔案的封面圖片，沒有則用大頭貼（`og:image:alt` 是「{name} 的封面圖片」或「{name} 的大頭貼」）。
+3. 實例預覽圖片（實例設定 `preview_image`，在管理的「設定 → 一般」中的「連結預覽」之下；`og:image:alt` 是文字 `preview_image_alt`，沒有時則為「{實例名稱} 的圖片」）。
+4. 實例縮圖（實例設定 `thumbnail`，「設定 → 一般」頁面的圖片；`og:image:alt` 是文字 `thumbnail_alt`，沒有時則為「{實例名稱} 的圖片」）。
+5. 實例自己標誌的連結預覽版本（[標誌與圖示](instance-settings.md#logo-and-icon)），位於 `https://<host>/brand/<revision>/preview-1200x630.png` 的 1200x630 PNG（`og:image:alt` 是「{實例名稱} 的圖片」）。
+6. 內建的預設圖片（`https://<host>/preview-image.png`，白底的 mycroblog 字標 1200x630 PNG，不含實例名稱；`og:image:alt` 是「mycroblog 標誌」）。
 
-<!-- source: caching 5bc906452b10 -->
+第 3 到 6 項是實例圖片。所以顯示預覽的頁面一定有 `og:image` 和 `og:image:alt`。
+第 1 到 4 項的圖片是處理後媒體的 `large` 版本，寬度與高度是處理時得到的值。
+如果 `preview_image` 未設定、仍在處理、處理失敗，或不是圖片，就會使用縮圖，然後是標誌，再然後是內建圖片。實例設定會在每次請求時讀取，所以 `my instance set preview_image ...` 不需重新啟動就會生效（做法請見[實例設定](instance-settings.md)）。
+
+內建圖片是二進位檔的一部分（約 20 KB）。它以 `Cache-Control: no-cache` 和 ETag 提供。
+
+<!-- source: caching e6ace7ad3fd0 -->
 ### 快取
 
-- 回應帶有 `Cache-Control: public, max-age=60, stale-while-revalidate=300`。刪除、可見範圍的變更，或文件的公開與取消公開，最多會在共用快取中保留這麼久。
-- ETag 由範本、資源檔和實例設定的版本、語言、貼文的版本（revision）、實際的可見範圍、個人檔案的版本，以及選出的圖片組成（首頁、資訊頁面、文件頁面和爬蟲說明頁面則是：頁面的網址、標題、實例說明和選出的圖片）。`If-None-Match` 會得到 `304`。
-- 如果你在前方放置 CDN，請把 `Accept` 加入快取鍵（以免 AP JSON 和 HTML 混在一起）。
+- 回應帶有 `Cache-Control: public, max-age=60, stale-while-revalidate=300`。刪除、可見範圍的變更，或發布與取消發布文件，最多會在共用快取中停留那麼久。
+- ETag 由範本、資源與實例設定的版本、語言、貼文的版本（修訂）、有效的可見範圍、個人檔案的版本，以及所選圖片組成（對於首頁、資訊頁面、文件頁面和爬蟲的頁面：頁面的位址、它的標題、實例的說明和所選圖片；對於通用外殼：實例名稱、它的說明和實例圖片）。
+  `If-None-Match` 會得到 `304`。
+- 如果你在前面放了 CDN，請將 `Accept` 納入快取鍵（這樣 AP JSON 和 HTML 才不會混在一起）。
 
 <!-- source: manual-check bf2c7a86a5de -->
 ## 手動檢查

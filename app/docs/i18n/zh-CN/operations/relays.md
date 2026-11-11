@@ -31,16 +31,16 @@ my admin relay delete <relay id>                                  # delete a rel
 - 公开帖子的文档带有 Linked Data Signature（`RsaSignature2017`），因此 Mastodon 和 Misskey 能接受中继原样转交的帖子。
 - 投递次数会增加“已加入的中继数 × 公开帖子数”（发往同一中继的投递会合并为一次）。
 
-<!-- source: what-the-server-receives ff962150d1a7 -->
-## 服务器接收的内容
+<!-- source: what-the-server-receives fa99c4ec4217 -->
+## 服务器会接收什么
 
-- 已加入的中继带来的公开帖子，会先从其来源服务器重新获取并检查，然后才会收录。之后它会出现在联邦时间线和话题标签时间线中。它不会出现在主页时间线中，也不会产生通知。
-- 每个中继每小时最多收录 `relay_max_activities_per_hour` 条帖子（默认 1,000）。超出限制的部分不会获取，直接丢弃。管理区域中该中继的页面和 `my admin relay list` 会显示最近 24 小时内收录了多少条、因超出限制丢弃了多少条。如果丢弃很多，请提高限制或重新考虑是否使用该中继。
-- 如果帖子的域名或账号受到 `suspend`（联邦限制）或 `limit`（从公开场所移除的限制），该帖子不会被收录。
-- 只通过中继到达的帖子，会在实例设置 `relay_status_retention_days`（默认 7）之后从公开视图中移除。本站用户回复、转发、喜欢或加入书签的帖子，以及本站用户关注的作者的帖子，与其他远程帖子的保留期相同（`remote_status_retention_days`）。
-- 每收录一条帖子，需要从来源服务器获取一次（作者未知时还要获取一次 actor）。在每小时 1,000 条的限制下，每天最多获取 24,000 次。
+- 已加入的中继所携带的公开帖子，会先从它的源处重新获取并检查，然后才被收录。之后它会显示在联邦时间线和话题标签时间线中，以及关注了其中某个话题标签的人的主页时间线中。它不会显示在任何其他主页时间线中，也不会产生通知。
+- 每个中继每小时最多收录 `relay_max_activities_per_hour` 条帖子（默认 1,000）。超出限制的内容会被直接丢弃，不会被获取。管理区域中该中继的页面和 `my admin relay list` 会显示最近 24 小时收录了多少条，以及因超出限制而丢弃了多少条。如果丢弃了很多，请提高限制，或者重新考虑这个中继。
+- 当帖子的域名或账号被设为 `suspend`（联邦限制）或 `limit`（使其从公开位置移除的限制）时，该帖子不会被收录。
+- 仅通过中继到达的帖子，会在实例设置 `relay_status_retention_days`（默认 7）之后从公开视图中移除。本站用户回复、转发、喜欢或加了书签的帖子，以及本站用户所关注作者的帖子，与其他远程帖子的保留时间相同（`remote_status_retention_days`）。
+- 每收录一条帖子，就要从源处获取一次（对于未知的作者，还要再获取一次 actor）。在每小时 1,000 条的限制下，每天最多获取 24,000 次。
 
-这些设置见[配置参考](../reference/configuration.md#relay_max_activities_per_hour)。收录的结果也会以指标 `my.relay.activities` 导出（见[运行服务器](running.md)）。
+这些设置在[配置参考](../reference/configuration.md#relay_max_activities_per_hour)中。收录的结果也会作为指标 `my.relay.activities` 导出（请参阅[运行服务器](running.md)）。
 
 <!-- source: leave-join-again-and-delete ea12da94f940 -->
 ## 退出、重新加入和删除

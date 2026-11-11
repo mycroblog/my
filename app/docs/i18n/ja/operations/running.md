@@ -3,7 +3,7 @@
 
 サーバーの起動と停止、イメージの入手、そして稼働中の監視 (メトリクス、トレース、ジョブキュー、ヘルスチェック) の方法を説明します。
 
-<!-- source: start-the-server 0d5f8898a2f5 -->
+<!-- source: start-the-server ea157fe28b0d -->
 ## サーバーを起動する
 
 ```sh
@@ -17,12 +17,12 @@ my version        # print the version of the binary
 そこでは TLS なしの素の HTTP/1.1 を話します。前段に、HTTPS (クライアント向けには HTTP/2 や HTTP/3 も) を終端して HTTP/1.1 で転送するリバースプロキシかロードバランサーを置いてください。
 リアルタイム更新 (`GET /api/v1/streaming`、ローカルタイムラインと連合タイムラインのストリーム、通話のルームのストリーム) は長く続くレスポンスで、30 秒ごと (通話のルームは 15 秒ごと) にハートビートのコメントを送り、何もない間も開いたままです。
 プロキシはこれらのレスポンスをバッファリングしてはいけません (nginx の場合、サーバーが `X-Accel-Buffering: no` を送ります)。また、プロキシのアイドルタイムアウトや読み取りタイムアウトはハートビートの間隔より長くしてください。
-スキーマは適用しません。起動する前に `my schema apply` で適用してください ([データベース](database.md)を参照。アップグレードでは[アップグレード](database.md#upgrading)の手順の中で実行します)。
-Docker Compose の構成 (`deploy/docker/compose.yaml`。[Docker Compose でのデプロイ](deploy-docker-compose.md)を参照) では、一度だけ動く `schema` サービスが、サーバーの起動前に `my schema apply` を実行します。
+スキーマの適用とデータのアップグレードの手順は実行しません。起動する前に `my schema apply` を、続けて `my db upgrade` を実行してください ([データベース](database.md)を参照。アップグレードでは[アップグレード](database.md#upgrading)の手順の中で両方を実行します)。`my db upgrade` がそのリリースのすべての手順を記録するまで、`/readyz` は `503` を返します。
+Docker Compose の構成 (`deploy/docker/compose.yaml`。[Docker Compose でのデプロイ](deploy-docker-compose.md)を参照) では、一度だけ動く `schema` と `upgrade` のサービスが、サーバーの起動前に `my schema apply` と `my db upgrade` を実行します。
 スキーマが適用されていなくてもプロセスは起動しますが、readiness は 503 を返し、スキーマができるまでほかには何も提供しません。
 
 データベースを使う最初の `my serve` や `my` のコマンドが、`host` と `account_domain` をデータベースに記録します。設定が記録された値と異なると、`my serve` は両方の値の組を添えて `start failed` をログに出し、終了コード 1 で終わります。コマンドも同じエラーを表示します。例外は、確認しない `my schema apply` と `my db backup`、そしてデータベースを読まないメンテナンスモードです。`my config check -instance` と `my db upgrade -check` は確認しますが、何も記録しません。
-起動時にデータベースを読めなかったプロセスは、読めるようになるまで ready になりません。それまではジョブを実行せず、下の 3 つのヘルスチェック (`/healthz`、`/readyz`、`/api/v1/instance/health`) を除くすべてのリクエストに `503` (`Retry-After` 付き) で応えます。`my schema apply` の前に起動したサーバーも同じように動きます。そのあと異なる値を見つけると、同じエラーで停止します。
+起動時にデータベースを読めなかったプロセスは、読めるようになるまで ready になりません。それまではジョブを実行せず、ヘルスチェック (`/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health`) を除くすべてのリクエストに `503` (`Retry-After` 付き) で応えます。`my schema apply` の前に起動したサーバーも同じように動きます。そのあと異なる値を見つけると、同じエラーで停止します。
 
 `production` プロファイルでは、`my config check` は有効な設定が本番のインスタンスに向いているかも確認します。ほかのサーバーから届かない `host` や、ランダムでない KEK などのエラーは終了コード 1 になり、`mail = none` などの警告はそうなりません。
 `my serve` は起動時に両方を警告としてログに出しますが、そのまま起動します。そのため、`my config check` はデプロイの手順の 1 つとして実行してください。
@@ -48,7 +48,7 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 | `job` (`INFO`: 成功と `postponed`、`WARN`: `retry`、`ERROR`: `dead`) | `my.job.type` と `my.outcome` は `my.job.duration` のラベルと同じ値です。ほかに `duration_seconds` (`my.job.duration`)、`wait_seconds` (`my.job.wait`)、`job_id`、`attempt`、失敗時の `error` があります |
 | `error report` (`ERROR`。プロセスを止める失敗は `CRITICAL`) | 報告するエラー 1 件につき 1 行 ([エラーの報告](#error-reports)) |
 
-<!-- source: error-reports 3d780744461c -->
+<!-- source: error-reports a81ecfe83871 -->
 ### エラーの報告
 
 各プラットフォームでこれらの行をどこで読むか、「エラー」画面、通知、エラートラッカーへの送信は、[エラーの報告](error-reporting.md)のガイドで説明しています。
@@ -74,6 +74,7 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 | `my.error.where` | 起きた場所。リクエストなら `<surface> <method> <route>` (`client_api GET /api/v1/statuses/{id}` など)、ジョブならジョブの種類、バックグラウンドのタスクならタスクの名前、起動の失敗なら `startup` |
 | `my.role`、`deployment.environment.name` | プロセスの `role` と `errors_environment` |
 | `request_id`、`job_id`、`attempt`、`trace_id`、`span_id` | 同じエラーのリクエストやジョブの行を見つけるための ID (ある場合) |
+| `context.httpRequest` | リクエストのエラーの場合: `method`、`url` (`/api/v1/statuses/{id}` のようなルートで、クライアントが要求したパスではありません)、応答したステータスである `responseStatusCode` (500) |
 | `message` | 行の最後にあり、`<type>: <message>`、改行、Go のスタック |
 
 報告がプロセスを出る前に、メッセージの中の URL、メールアドレス、`@user@host` のハンドル、IP アドレス、UUID と ULID、10 桁以上の数は、それぞれ `<url>`、`<email>`、`<acct>`、`<ip>`、`<id>`、`<n>` に置き換えられ、1 KiB に切り詰められます。
@@ -137,7 +138,7 @@ cp example.env .env
 一度だけ動くサービス `garage-init` が、`up` のたびにストアを準備します。サーバーがメディアを自分で配信するので、ストアは Compose のネットワークの
 中にとどまります。1 ノードは 1 台のディスクです。ボリューム `garage` かバケットをバックアップしてください ([バックアップ](backup.md#media-in-a-bucket))。
 
-<!-- source: get-the-image 238d00ea9826 -->
+<!-- source: get-the-image 5a210413433f -->
 ## イメージを入手する
 
 サーバーのイメージは `ghcr.io/mycroblog/my` です。公開されていて、`linux/amd64` と `linux/arm64` に対応し、すべてのアダプターを含みます。
@@ -147,6 +148,7 @@ cp example.env .env
 | `0.1.0` | そのバージョン (変わりません) | バージョンを指定するとき |
 | `0.1` | `v0.1` の最新のパッチ | `up` のたびにスキーマを適用する Docker Compose |
 | `0.1.0-rc.1` | そのプレリリース | リリース前に試すとき |
+| `nightly` | ナイトリーのテストに通った `main` の最新のコミット。変更があった夜ごとに動きます | プレリリースの前に変更を試すとき (捨てても構わないインスタンスで) |
 
 `latest` と `0` はありません。どちらもマイナーバージョンをまたいでしまいますが、新しいマイナーバージョンへのアップグレードは毎回[一つ前のバージョンを経由](database.md#skipping-releases)しなければならないからです。どのコマンドでもバージョンを指定してください。`docker pull ghcr.io/mycroblog/my` だけでは `manifest unknown` で失敗します。
 パッチリリースでも `my schema apply` と `my db upgrade` が必要なことがあるので、Docker Compose 以外では、バージョンごとに[アップグレード](database.md#upgrading)の手順に従ってください。本番では、リリースノートにあるダイジェストで固定します。
@@ -154,6 +156,8 @@ cp example.env .env
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
 ```
+
+**`nightly` にはアップグレードの道筋がありません。** アップグレードを約束するのはリリースされたバージョンの間だけです。ある `nightly` のイメージから次のイメージへ、あるいは `nightly` からリリースへ移るとき、スキーマと `my db upgrade` のデータの手順は、どのリリースも通らない形で変わることがあるので、データベースは作り直すものと考えてください。本番では決して動かさないでください。`my version` はそれがどのコミットかを表示します (`v0.1.0-rc.5.0.20261109182600.g7a789720a1b2` のように)。最新のリリース (`v0.1.0-rc.5`) より後のバージョン、UTC のコミットの時刻、そして `g` の後にコミットの最初の 12 文字が続きます。1 つのビルドを使い続けるには、そのダイジェストで固定してください (`ghcr.io/mycroblog/my:nightly@sha256:...`)。古いビルドはタグを失いますが、ダイジェストなら引き続き pull できます。
 
 動かす場所:
 
@@ -163,7 +167,7 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 - **AWS (ECS、EKS)**: イメージを Amazon ECR にコピーするか、ECR のプルスルーキャッシュを使います。プルスルーキャッシュには ghcr.io の認証情報が必要です。
 - **小さいイメージ**: チェックアウトで `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` を実行すると、アダプターを減らしたイメージをビルドできます ([ビルドタグ](../reference/build-tags.md))。自分のビルドなので、下の検証の対象にはなりません。
 
-<!-- source: verify-an-image b696c257662d -->
+<!-- source: verify-an-image 76b9a1293edb -->
 ### イメージを検証する
 
 リリースされたイメージにはそれぞれ、Sigstore で署名された来歴 (provenance) と SBOM があります。来歴は、ダイジェストとそれをビルドしたワークフローおよびコミットを結び付けます。[GitHub CLI](https://cli.github.com/) を使い、コマンドが求めるなら `ghcr.io` にログインして、次を実行します。
@@ -174,7 +178,7 @@ gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
 docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
 ```
 
-最初のコマンドは、イメージがこのリポジトリのリリースのワークフローでビルドされたものでなければ失敗します。表示されるコミットはそのバージョンのタグのコミットで、イメージのラベル `org.opencontainers.image.revision` も同じコミットを指しています。
+最初のコマンドは、イメージがこのリポジトリのリリースのワークフローでビルドされたものでなければ失敗します。`nightly` のイメージは、代わりに `--signer-workflow mycroblog/my/.github/workflows/nightly.yml` で検証してください。表示されるコミットはそのバージョンのタグのコミットで、イメージのラベル `org.opencontainers.image.revision` も同じコミットを指しています。
 
 <!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
 ## ソースコードを公開する (AGPL-3.0)
@@ -214,14 +218,14 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 請求がスパムフィルタで落ちないようにしてください。
 - 公開してよいアドレスを使ってください。情報のページ、ランディングページ、NodeInfo で誰でも見られます。
 
-<!-- source: metrics 2dea3a7f8f83 -->
+<!-- source: metrics 77e2cbc5a0f6 -->
 ## メトリクス
 
 設定 `metrics_exporter` (既定値 `none`) で、サービスのメトリクスを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
 
 | `metrics_exporter` | 出力先 | 向いている環境 |
 | --- | --- | --- |
-| `none` | 何も出力しません。計測のコストはほとんどかかりません | Cloud Run (代わりにプラットフォームのメトリクスとログベースの指標を使います) |
+| `none` | 何も出力しません。計測のコストはほとんどかかりません。インスタンス全体の値は、15 分ごとに `metrics snapshot` のログ 1 行として出力されます | Cloud Run (代わりにプラットフォームのメトリクスとログベースの指標を使います) |
 | `prometheus` | `metrics_listen` (既定値 `127.0.0.1:9464`) の `GET /metrics`。公開の `listen` とは別のリスナーで、認証はなく、どの `role` でも動きます | セルフホスト (Prometheus 互換のサーバーや KEDA が収集します) |
 | `otlp` | OTLP/HTTP で OpenTelemetry Collector に送ります。送り先は `OTEL_EXPORTER_OTLP_ENDPOINT` などの OTel の標準の環境変数で決まります | Collector を動かせる構成 |
 | `emf` | CloudWatch Embedded Metric Format の JSON の行。リクエストとジョブのメトリクスは上の終了時のログ行に載り、ほかのものはリクエストやジョブが終わったときに、ラベルの組ごとに 1 行ずつ標準出力に書かれます | AWS ECS |
@@ -252,6 +256,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.accounts.registered` | カウンター | なし |
 | `my.statuses.created` | カウンター | `my.visibility` |
 | `my.billing.imports` | カウンター | `my.billing.source` (`aws` / `gcp` / `plugin`)、`my.outcome` (`success` / `failed`)、`error.type` (`failed` のときだけ。失敗の種類で、[クラウドの利用料金の取り込み](billing-import.md)のとおり)。再試行や、翌日の取り込みを待つ失敗も含め、すべての試行を数えます |
+| `my.supporter.tip_checkouts` | カウンター | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`)。プロバイダーのページを得た投げ銭の開始ごと、上限によって拒否された開始ごと、支払われたか支払われずに終わった投げ銭ごとに 1。対応するアラートは[投げ銭](supporters.md#tips)を参照 |
 | `my.voice.turn.credentials` | カウンター | `my.voice.turn` (`coturn` / `cloudflare`)、`my.outcome` (`issued` / `reused` / `failed`)。通話の参加者がルームに参加するときや接続を更新するときに求めた TURN の認証情報 1 件ごとに 1。`reused` は同じ接続に以前発行した Cloudflare の認証情報をもう一度返したこと、`failed` は Cloudflare に届かないか拒否されたため、参加者がエラーを受け取って接続できなかったことを表します |
 | `my.errors.exported` | カウンター | `my.outcome` (`success` / `dropped` / `failed`: `errors_exporter` のサービスへのエラーの報告 1 件ごとに 1。`dropped` は、すでに 1,000 件の報告が待っていたか、サービスがサーバーに送る速度を落とすよう求めたために、報告を送らなかったことを表します。サーバーは、もう一度送るまでサービスが求めるだけ待ちます。`failed` は、サービスに届かないか、サービスが報告を拒否したことを表します。報告は一度だけ送り、再試行はしません。停止の開始から 2 秒たってもまだ待っている報告は失われます) |
 | `my.queue.ready` | ゲージ | `my.job.type` (データベースのキューにある、実行できるジョブの数) |
@@ -265,10 +270,10 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.metrics.snapshot.age` | ゲージ、秒 | `my.metrics.snapshot.part` (`queue` / `totals`) |
 | `my.errors.reported` | カウンター | `my.error.source` (`server` / `web`)、`my.error.kind` (`panic` / `error`)。[エラーの報告](#error-reports) 1 件ごとに 1 |
 
-ヘルスチェック (`/healthz`、`/readyz`) は計測しません。リモートのドメイン、アカウント、URL、クライアントの IP を含むラベルはありません。
+ヘルスチェック (`/healthz`、`/readyz`、`/health/live`、`/health/ready`) は計測しません。リモートのドメイン、アカウント、URL、クライアントの IP を含むラベルはありません。
 `my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances`、`my.billing.import.failing` はインスタンス全体の値です。どのプロセスも、キーバリューストアに保存された 1 つのスナップショットから同じ値を報告します。
 
-<!-- source: system-metrics 8b5d40a4eb98 -->
+<!-- source: system-metrics dad53f84ee0a -->
 ### システムのメトリクス
 
 プロセス、Go のランタイム、リソースへの接続についてのメトリクスも、同じ `metrics_exporter` で出力します。
@@ -292,7 +297,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.adapter.operation.duration` | ヒストグラム、秒 | `my.adapter` (`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`)、`my.operation`、`my.outcome` (`success` / `error`) |
 | `my.adapter.connections` | UpDownCounter | `my.adapter` (`valkey` の接続と、`stream.<stream>` の購読者) |
 | `my.adapter.reconnects` | カウンター | `my.adapter` |
-| `http.client.request.duration` | ヒストグラム、秒 | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots`)、`http.request.method`、`my.http.status_class` (`2xx` など)、`error.type` (`forbidden_destination` は SSRF ガードによる拒否) |
+| `http.client.request.duration` | ヒストグラム、秒 | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`)、`http.request.method`、`my.http.status_class` (`2xx` など)、`error.type` (`forbidden_destination` は SSRF ガードによる拒否) |
 | `http.client.open_connections` | UpDownCounter | なし |
 | `my.readiness.failures` | カウンター | なし |
 | `my.http.origin_refused` | カウンター | なし。CDN を通らずに来たために拒否したリクエスト 1 件ごとに 1 ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn))。オリジンのアドレスへの探査ではゆっくり増えます。トラフィックが止まるのと同時に跳ね上がったら、CDN がヘッダーを送らなくなっています。メンテナンスモードは何も計測しないので、そのときはアクセスログにしか表れません |
@@ -312,7 +317,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 コンテナにメモリの上限がある構成 (Cloud Run、ECS、Kubernetes) では、その上限の 90% ほどに設定してください (たとえば 512 MiB のコンテナなら `GOMEMLIMIT=460MiB`)。
 `GOMAXPROCS` は設定しないでください。Go の既定値がコンテナの CPU の上限に従います。
 
-<!-- source: traces e274793f5885 -->
+<!-- source: traces 8dfd96f79f54 -->
 ## トレース
 
 設定 `traces_exporter` (既定値 `none`) で、分散トレースを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
@@ -322,7 +327,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | HTTP リクエスト (サーバー) | `<method> <http.route>` (ルートに届かなかったリクエストは `<method>`) | `http.request.method`、`http.route`、`http.response.status_code`、`my.surface`。5xx は失敗です |
 | ジョブの実行 (コンシューマー) | ジョブの種類 (`my.job.type`) | `my.job.type`、`my.job.attempt`、`my.outcome`。再試行はそれぞれ別のスパンです |
 | トランザクション | `my.db.transaction` | `db.system.name`。再試行はそれぞれ別のスパンです |
-| クエリ (クライアント) | sqlc のクエリ名 (`InsertJob` など。それ以外は `BEGIN` など SQL の最初の単語) | `db.system.name`、`db.operation.name` |
+| クエリ (クライアント) | sqlc のクエリ名 (`InsertJobs` など。それ以外は `BEGIN` など SQL の最初の単語) | `db.system.name`、`db.operation.name` |
 | 配送 (`my.delivery`) | `my.delivery` | `activity.type`、`my.outcome` |
 | 外向きの HTTP (クライアント) | `<method>` | `http.request.method`、`server.address` (送り先のホスト名だけ)、`http.response.status_code`。4xx と 5xx は失敗です |
 
@@ -510,7 +515,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
   - Cloud Run では、サービスは既定でインスタンスあたり 80 件のリクエストを同時に受けます。プールが 4 だと、遅いリクエストが集中したときここで列ができるので、`pool_max_conns` を上げるか、サービスの同時実行数を下げるか、その両方をしてください。
 - **`503` や `db.client.connection.timeouts` が頻繁に出る**なら、プールが小さすぎるか、クエリが遅くなっています。タイムアウトを長くしても、それを隠すだけです。[`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated) に従ってください。
 
-<!-- source: cloud-tasks ef3f7d7cc896 -->
+<!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
 [Cloud Run へのデプロイ](deploy-cloud-run.md)では、以下のすべてを OpenTofu のモジュールで準備します。
@@ -527,11 +532,26 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
   `queue_cloudtasks_audience` のオーディエンス付き) で、`POST {queue_cloudtasks_url}/_internal/tick` を毎分 (`* * * * *`) 呼ぶ Cloud Scheduler のジョブを作ってください。tick のたびに、周期が来た定期的なジョブを、インスタンス全体で 1 回だけキューに入れます (周期は KV で確保するので、
   `kv` は `db` か `valkey` でなければなりません)。また、期限から 2 分を超えても実行されていないジョブをもう一度通知し、失われた通知を回復します。
 - `/_internal/jobs` と `/_internal/tick` は `role = all` か `worker` のプロセスが提供し、`queue_cloudtasks_service_account` のために Google が署名し、
-  確認済みのメールアドレスを持ち、オーディエンスが `queue_cloudtasks_audience` (既定では呼ばれた URL) であるトークンだけを受け付けます。それ以外のリクエストは `401` です。
+  確認済みのメールアドレスを持ち、唯一のオーディエンスが `queue_cloudtasks_audience` (既定では呼ばれた URL) であるトークンだけを受け付けます。それ以外のリクエストは `401` です。
 - 1 回の配信で 1 つのジョブを、最大で 5 分のリースの間実行します。`queue_cloudtasks_dispatch_deadline` (既定値 10 分) と、Cloud Run のサービスのリクエストのタイムアウトは、
   それより長くしておいてください。
 - サーバー自身のサービスアカウントには、キューに対する `roles/cloudtasks.enqueuer` と、`queue_cloudtasks_service_account` に対する `roles/iam.serviceAccountUser` が必要です。
   認証にはアプリケーションのデフォルト認証情報 (Application Default Credentials) を使います。
+
+<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+### 定期的なジョブが遅れる時間
+
+定期的なジョブは、トリガーの周期 1 回分までと、プラットフォームが起動するのにかかる時間だけ、予定の時刻より遅れて実行されます。イベントのリマインダーと開始の通知がどれだけ遅れて届くか、そしてイベントの通話のルームがいつ開くかは、これで決まります。`gathering.tick` がそれらを開始するからです。リマインダーは、表にある間隔の分まで遅れます。値はスケジューラーのコードと各プラットフォームのトリガーから導いたもので、動いているサーバーで測ったものではありません。
+
+| プラットフォーム | 定期的なジョブを起動するもの | イベントのリマインダーや開始の想定される遅れ |
+| --- | --- | --- |
+| セルフホストと Docker Compose (`queue = db`) | `role = all` か `worker` の各プロセスにあるスケジューラーが、プロセスの起動時から 1 分ごとに確認し、サーバー全体で周期ごとに 1 回ずつジョブをキューに入れます | 最大 1 分と、ワーカーがジョブを取るまでの約 1 秒 |
+| AWS ECS Fargate (`queue = db`) | 同じスケジューラーが、ワーカーのタスクで動きます | 最大 1 分と、約 1 秒 |
+| Cloud Run (`queue = cloudtasks`) | Cloud Scheduler がそのスケジュール (既定では `* * * * *`、毎分) で `/_internal/tick` を呼び、そのあと Cloud Tasks がジョブごとにサーバーを起こします | 最大 1 分と、動いているインスタンスがないときはインスタンスの起動 (コールドスタート。たいてい数秒)。`*/10 * * * *` のように `tick_schedule` を長くすると、その間隔まで |
+| AWS Lambda | `my` には Lambda 向けのデプロイはありません。AWS では ECS Fargate で動かしてください | — |
+
+イベントが始まった後に届くことになるリマインダーは送られず、イベントが終わった後の開始の通知も送られません。
+そのため、tick が 5 分より長いと、いちばん短いリマインダーが失われることがあります。
 
 <!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
 ### ジョブの種類を専用のキューに振り分ける
@@ -589,19 +609,20 @@ tick が必要なのは既定のキューだけです。
 3. キューを取り除くには、まずすべての場所で振り分けからそのキューを外し、空になるのを待ってから削除します。削除したキューにある通知は失われますが、ジョブは失われません。ジョブが期限から 2 分たつと、掃き出しがもう一度通知します。
    Cloud Tasks のタスクは 30 日先までのジョブの通知を保持できるので、待つ期間より後に期限が来るジョブは、その時が来たときに掃き出しが通知するだけです。
 
-<!-- source: health-checks 06a8834ade0d -->
+<!-- source: health-checks e268d13fe7f2 -->
 ## ヘルスチェック
 
 | パス | 種類 | 200 を返すとき |
 | --- | --- | --- |
-| `GET /healthz` | liveness | プロセスが HTTP に応えられるとき。データベースなどの依存先は見ません (そのため、データベースが遅くてもプロセスは再起動されません) |
-| `GET /readyz` | readiness | データベースに届き、スキーマが適用されているとき |
+| `GET /healthz`、`GET /health/live` | liveness | プロセスが HTTP に応えられるとき。データベースなどの依存先は見ません (そのため、データベースが遅くてもプロセスは再起動されません) |
+| `GET /readyz`、`GET /health/ready` | readiness | データベースに届き、スキーマが適用されているとき |
 | `GET /api/v1/instance/health` | 死活監視、ステータスページ、クライアント (`web` の役割が提供します) | readiness と同じです。結果はプロセスの中に 60 秒キャッシュされます |
 
-- `/healthz` と `/readyz` の 200 の本文は `{"status":"ok"}` です。
+- Cloud Run は `z` で終わるパスのいくつか (`/healthz` を含む) を予約していて、自分で `404` を返します。その背後では、同じ応答を返す `/health/live` と `/health/ready` を呼んでください。
+- どれでも 200 の本文は `{"status":"ok"}` です。
 - `/readyz` はリクエストのたびにデータベースを確認し、同時に来たリクエストは 1 回の確認を共有します。
 - `/api/v1/instance/health` は、正常なら 200 と `{"status":"ok","checked_at":"<RFC 3339>"}` を、失敗なら 503 と `{"status":"unavailable","checked_at":...}` を返します (`Cache-Control: no-store`)。
-  どれだけ頻繁に監視されたり要求されたりしても、各プロセスがデータベースに触れるのは最大で 1 分に 1 回で、アクセストークンもレート制限も見ません。死活監視はプローブ (`/readyz`) ではなく、このエンドポイントに向けてください。
+  どれだけ頻繁に監視されたり要求されたりしても、各プロセスがデータベースに触れるのは最大で 1 分に 1 回で、アクセストークンもレート制限も見ません。死活監視はプローブ (`/readyz` や `/health/ready`) ではなく、このエンドポイントに向けてください。
   サービスごとの設定、監視の間隔と費用、メンテナンスの扱いは、[死活監視のガイド](monitoring.md)を参照してください。
 - 3 つとも、アクセスログには Debug レベルで書き、トレースのスパンは作りません。
 - readiness を満たさないときは、RFC 9457 の `application/problem+json` の本文を持つ 503 を返します。

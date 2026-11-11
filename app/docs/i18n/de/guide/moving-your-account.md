@@ -3,7 +3,7 @@
 
 Du kannst dein Konto auf ein anderes Konto umziehen, auf demselben oder auf einem anderen Server. Deine Follower folgen dem neuen Konto, und das alte Konto weist darauf hin, dass es umgezogen ist. Dasselbe funktioniert in die andere Richtung, wenn du von einem anderen Server auf diesen Server umziehst.
 
-<!-- source: what-moves-and-what-stays 4ea7b64d67bd -->
+<!-- source: what-moves-and-what-stays 321714556a43 -->
 ## Was umzieht und was bleibt
 
 | Zieht um | Bleibt auf dem alten Konto |
@@ -12,12 +12,12 @@ Du kannst dein Konto auf ein anderes Konto umziehen, auf demselben oder auf eine
 
 ![Links das alte Konto, rechts das neue Konto: ein Alias, der Umzug, deine Follower, die zum neuen Konto wechseln, und was auf dem alten Konto bleibt. Die Liste unten sagt dasselbe.](images/account-move.svg)
 
-Vom oberen Rand des Diagramms nach unten:
+Von oben nach unten im Diagramm:
 
 1. **Alias hinzufügen.** Füge auf dem neuen Konto das alte Konto unter „Aliase“ hinzu.
-2. **Konto umziehen.** Wähle auf dem alten Konto „Konto umziehen“ und gib das neue Konto an.
+2. **Konto umziehen.** Wähle auf dem alten Konto „Konto umziehen“ und nenne das neue Konto.
 3. **Was umzieht.** Deine Follower folgen dem neuen Konto. Das alte Konto zeigt „Dein Konto ist umgezogen“: Du kannst dich dort weiterhin anmelden, lesen und deine Daten exportieren.
-4. **Was hier bleibt.** Deine Beiträge, die Konten, denen du folgst, sowie deine Blockierungen, Stummschaltungen und Lesezeichen bleiben auf dem alten Konto. Deine Beiträge ziehen nicht um. Den Rest nimmst du selbst mit: Exportiere deine Follows, Blockierungen, Stummschaltungen und Lesezeichen als CSV-Dateien über „Import und Export“ auf dem alten Konto und importiere sie auf dem neuen ([Follows mitnehmen](#taking-your-follows-with-you)).
+4. **Was hier bleibt.** Deine Beiträge, die Konten und Hashtags, denen du folgst, sowie deine Blockierungen, Stummschaltungen und Lesezeichen bleiben auf dem alten Konto. Deine Beiträge ziehen nicht um. Den Rest nimmst du selbst mit: Exportiere deine Follows, gefolgten Hashtags, Blockierungen, Stummschaltungen und Lesezeichen mit „Import und Export“ auf dem alten Konto als CSV-Dateien und importiere sie auf dem neuen ([Follows mitnehmen](#taking-your-follows-with-you)).
 
 <!-- source: moving-from-this-account 7836944c7996 -->
 ## Von diesem Konto umziehen
@@ -39,12 +39,12 @@ Nach dem Umzug gilt für das alte Konto:
 
 Füge das Konto, von dem du umziehst, unter „Aliase“ in den Einstellungen dieses Kontos als Alias hinzu („Alias hinzufügen“). Ein Alias allein ändert nichts; er erlaubt dem anderen Konto lediglich, seine Follower zu dir umzuziehen. Du kannst nur wenige Aliase haben, und „Entfernen“ löscht einen.
 
-<!-- source: taking-your-follows-with-you ab2475388452 -->
+<!-- source: taking-your-follows-with-you 8109773a2d6a -->
 ## Follows mitnehmen
 
-„Import und Export“ unter „Konto und Daten“ in den Einstellungen exportiert und importiert CSV-Dateien in dem Format, das Mastodon verwendet. Du kannst „Follows“, „Blockierte Konten“, „Stummgeschaltete Konten“, „Stummgeschaltete Domains“ und „Lesezeichen“ exportieren und auf dem neuen Konto importieren. „Zusammenführen“ behält, was du hast, und fügt hinzu, was die Datei auflistet; „Überschreiben“ macht die Liste genau zu dem, was die Datei auflistet. Konten und Beiträge auf anderen Servern werden im Hintergrund nachgeschlagen, was eine Weile dauern kann.
+„Import und Export“ unter „Konto und Daten“ in den Einstellungen exportiert und importiert CSV-Dateien in dem Format, das Mastodon verwendet. Du kannst „Follows“, „Gefolgte Hashtags“, „Blockierte Konten“, „Stummgeschaltete Konten“, „Stummgeschaltete Domains“ und „Lesezeichen“ exportieren und auf dem neuen Konto importieren. Mastodon kennt keine Datei mit gefolgten Hashtags, deshalb importiert diese Datei nur ein Server, auf dem dieselbe Software läuft wie auf diesem. „Zusammenführen“ behält, was du hast, und fügt hinzu, was die Datei auflistet; „Überschreiben“ macht die Liste genau zu dem, was die Datei auflistet. Konten und Beiträge auf anderen Servern werden im Hintergrund nachgeschlagen, was eine Weile dauern kann.
 
-„Archiv und Löschung“ erstellt ein ZIP-Archiv deiner Beiträge, deines Profils sowie deiner Follows, Blockierungen, Stummschaltungen und Lesezeichen.
+„Archiv und Löschung“ erstellt ein ZIP-Archiv deiner Beiträge, deines Profils, deiner Stichwortfilter sowie deiner Follows, gefolgten Hashtags, Blockierungen, Stummschaltungen, stummgeschalteten Domains und Lesezeichen.
 
 <!-- source: when-an-account-you-follow-moves 81ab63afe43d -->
 ## Wenn ein Konto, dem du folgst, umzieht

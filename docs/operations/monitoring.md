@@ -16,7 +16,7 @@ Third-party facts below carry the date they were confirmed and their source. Ser
 
 Point the external monitor at **`/api/v1/instance/health`**, not at `/readyz` (`/health/ready`): it queries the database on every request,
 so a monitor with a short interval keeps a scale-to-zero database awake. The probes are for your platform.
-The modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) and [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) check `/health/live` (`monitoring-gcp`) or `/health/ready` (`monitoring-aws` checks `/readyz`) from the platform's own monitor at a long interval, and their READMEs say what that costs.
+The modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) and [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) check `/health/live` (`monitoring-gcp`) or `/readyz` (`monitoring-aws`) from the platform's own monitor at a long interval, and their READMEs say what that costs.
 
 Responses of `/api/v1/instance/health` (no authentication, `Cache-Control: no-store`):
 

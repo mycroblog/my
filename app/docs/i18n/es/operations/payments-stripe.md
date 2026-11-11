@@ -1,13 +1,13 @@
-<!-- source: supporter-payments-with-stripe f12ff4a0af71 -->
+<!-- source: supporter-payments-with-stripe e517db9d077d -->
 # Pagos de mecenas con Stripe
 
-Con `payments = stripe`, los usuarios locales se suscriben a planes mensuales o anuales en la página de pago alojada de Stripe (Checkout), y el rol del plan se concede y se retira según cambia el estado del pago.
+Con `payments = stripe`, los usuarios locales se suscriben a planes mensuales o anuales en la página de pago alojada de Stripe (Checkout), y el rol del plan se concede y se retira según cambia el estado del pago. Cuando un administrador las activa, los usuarios también pueden enviar [propinas](#tips) únicas en la misma página.
 Las claves de despliegue se describen en la [referencia de configuración](../reference/configuration.md#payments). Para el programa en conjunto (planes, roles, la lista de miembros), consulta [supporters.md](supporters.md).
 Un administrador habilita el programa y crea los planes en la administración. Esta configuración solo permite que el servidor hable con Stripe.
 
 Un servidor solo puede usar un proveedor. Para cambiar más adelante a otro proveedor, pide a los suscriptores existentes que se suscriban de nuevo con el nuevo.
 
-<!-- source: what-the-server-does-at-stripe ca3e0d4f59f3 -->
+<!-- source: what-the-server-does-at-stripe 17a592e3f643 -->
 ## Qué hace el servidor en Stripe
 
 [Cómo funciona una suscripción](supporters.md#how-a-subscription-works) muestra en un diagrama cómo encajan la página de pago, el webhook, la conciliación, el rol del plan y los ingresos.
@@ -33,6 +33,7 @@ Un servidor solo puede usar un proveedor. Para cambiar más adelante a otro prov
   Además, una conciliación cada `payments_reconcile_interval` (6 horas por defecto) lee la lista de eventos, las sesiones de Checkout sin terminar, las transacciones de saldo y un barrido de todas las suscripciones, y repara cualquier webhook que el servidor perdió.
 - **Ingresos**: el servidor registra el importe bruto, la comisión y el neto de cada transacción de saldo. Las comisiones como el 0,7 % de Billing aparecen como transacciones `stripe_fee` separadas y se restan de los ingresos.
   `stripe_fee` abarca las comisiones de toda la cuenta, así que **usa una cuenta de Stripe dedicada a este servidor**. En una cuenta que se usa para otras ventas, esas comisiones también se restan de los ingresos.
+- **Propinas**: consulta [Propinas](#tips).
 - **Fechas**: las fechas de los ingresos se cuentan en la zona horaria de la cuenta de Stripe (la zona horaria de «Settings > Business > Account details» en el panel, `settings.dashboard.timezone` en la API). Cuando no se puede leer, el servidor cuenta en UTC y la vuelve a leer cada hora.
 
 Cada proceso del servidor envía como máximo 20 solicitudes por segundo (10 en modo de prueba). [Los límites de Stripe](https://docs.stripe.com/rate-limits) son por cuenta: 100 solicitudes por segundo en modo real, 25 en un sandbox, y 25 por segundo para cada endpoint. Los procesos de un mismo servidor los comparten, igual que cualquier otra cosa que use la cuenta.
@@ -41,11 +42,25 @@ Cuando Stripe devuelve `429`, el servidor espera lo que diga `Retry-After` si so
 Stripe también asigna las solicitudes de lectura por cuenta: una media de 500 por transacción en 30 días, y al menos 10 000 al mes sea cual sea el número de transacciones. Con el intervalo predeterminado, la conciliación queda muy por debajo de eso en un servidor pequeño. Una conciliación que no encuentra nada aun así lee unas cuantas páginas, así que el intervalo más corto, de 15 minutos (2880 ejecuciones en 30 días), se acerca a los 10 000 en una cuenta con pocas transacciones.
 Stripe limita cada suscripción a 10 facturas nuevas por minuto y 20 al día, y un cambio de plan facturado de inmediato genera una factura nueva.
 
-<!-- source: card-data-and-pci-dss f45a3c7d1846 -->
+<!-- source: tips 5c0435583f71 -->
+## Propinas
+
+Una propina (consulta [propinas](supporters.md#tips) para saber qué son y cómo activarlas) es una sesión de Checkout con `mode=payment` que el servidor crea para el pago único:
+
+- **La página**: una línea de pedido con el precio indicado en la solicitud, llamada «Propina para <nombre del servidor>» en el idioma del usuario, con el importe y la moneda que eligió el usuario. El servidor no crea ningún Product, Price ni cliente para ella: la dirección de correo del usuario solo rellena la página de antemano. La página admite solo tarjetas, de modo que toda página completada está pagada; no usa Adaptive Pricing, así que el usuario paga en la moneda de tus importes; y su botón dice «Pagar», no «Donar». La página caduca al cabo de una hora, como la de una suscripción.
+- **Nuestros ID**: el ID de propina del servidor va en `client_reference_id`, en `metadata.my_tip_id` y en el `metadata.my_tip_id` del PaymentIntent del pago, que puedes buscar en el panel.
+- **Importes**: una propina puede usar las monedas y los mínimos de los planes (consulta [Qué hace el servidor en Stripe](#what-the-server-does-at-stripe)), hasta el cargo máximo de Stripe de ocho dígitos (999 999,99 dólares estadounidenses, o 99 999 999 yenes).
+- **El resultado**: el servidor vuelve a leer la sesión cuando llega su evento `checkout.session.completed` o `checkout.session.expired`, cuando el usuario regresa de la página y en la conciliación. Una sesión que está completa y cuyo `payment_status` es `paid` es una propina pagada, con su PaymentIntent y el importe que cobró.
+- **Reembolsos y disputas**: reembolsa una propina en el panel. El reembolso, una disputa y una disputa ganada llegan por los eventos y las transacciones de saldo que usan las suscripciones, y nombran el PaymentIntent de la propina, lo que lleva al servidor hasta la propina.
+- **Pruebas**: en modo de prueba, paga la página de una propina con las tarjetas de prueba de [Probar en modo de prueba](#5-try-it-in-test-mode); `4000 0000 0000 0259` genera una disputa.
+
+La clave restringida de [Crear una clave de API](#2-create-an-api-key) no necesita ningún otro permiso para las propinas. Aún no se han ejecutado en un sandbox.
+
+<!-- source: card-data-and-pci-dss 5fd1cd5551e0 -->
 ## Datos de tarjeta y PCI DSS
 
 Los métodos de pago se introducen solo en el Checkout y en el portal del cliente de Stripe, y el cliente web de este servidor no carga ni el script de Stripe ni un iframe.
-El servidor guarda solo IDs de objetos de Stripe (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `txn_`), importes, periodos y estados. No guarda números de tarjeta, últimos cuatro dígitos, fechas de caducidad ni direcciones de facturación. Los cuerpos de los webhooks y las respuestas de Stripe no se guardan ni en los registros ni en la base de datos.
+El servidor guarda solo IDs de objetos de Stripe (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `pi_`, `txn_`), importes, periodos y estados. No guarda números de tarjeta, últimos cuatro dígitos, fechas de caducidad ni direcciones de facturación. Los cuerpos de los webhooks y las respuestas de Stripe no se guardan ni en los registros ni en la base de datos.
 Por eso, se espera que el alcance de PCI DSS del operador sea el de un comercio que usa una página de pago alojada (SAQ A). Comprueba el alcance que se aplica y el tipo de cuestionario de autoevaluación en la guía del panel de Stripe («Settings > Compliance»).
 
 <!-- source: 1-prepare-the-stripe-account 06eefed5779b -->
@@ -85,7 +100,7 @@ Sin el permiso para escribir reembolsos, el servidor igualmente cancela una segu
 Pasa la clave en la variable de entorno `MY_PAYMENTS_STRIPE_SECRET_KEY` (o la ruta de un archivo en `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`). No puede escribirse en el archivo de configuración.
 Si la clave se filtra, rótala en el panel y vuelve a desplegar con la clave nueva.
 
-<!-- source: 3-register-the-webhook-endpoint 1cbc2cf9ace3 -->
+<!-- source: 3-register-the-webhook-endpoint bf645f89a942 -->
 ## 3. Registrar el endpoint del webhook
 
 En «Developers > Webhooks > Add endpoint», registra lo siguiente. El servidor no crea el endpoint mediante la API.
@@ -93,7 +108,7 @@ En «Developers > Webhooks > Add endpoint», registra lo siguiente. El servidor 
 - URL: `https://<server domain>/payments/webhooks/stripe`
 - Eventos de: «Your account» (no las cuentas conectadas)
 - Estilo de carga: snapshot. El servidor lee solo `id`, `type`, `livemode`, `created`, `data.object.id` y `data.object.object` del cuerpo, así que la versión de API del endpoint no importa.
-- Eventos que enviar (16 tipos):
+- Eventos que enviar (16 tipos; las propinas no necesitan ningún otro tipo):
 
   - `checkout.session.completed`, `checkout.session.expired`
   - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`
@@ -151,7 +166,7 @@ Un reloj no puede mostrarlo todo:
 - **El final del periodo de gracia**: el servidor compara el tiempo real con la hora que Stripe indica para el fallo (`finalized_at`), que es simulada y va por delante del tiempo real. La suscripción entra en el periodo de gracia, y avanzar más el reloj no lo termina. El rol se queda hasta que el tiempo real pase 7 días después del fallo simulado, o hasta que Stripe cancele la suscripción cuando se agoten sus reintentos, si la cuenta está configurada para hacerlo.
 - **El barrido de todas las suscripciones**: la lista de suscripciones de Stripe omite las suscripciones de un reloj salvo que la solicitud nombre el reloj o el cliente, y el barrido del servidor no nombra ninguno. Solo los webhooks y la lista de eventos llevan sus cambios al servidor.
 
-<!-- source: 6-try-it-locally-stripe-cli 8a3e87b02ce0 -->
+<!-- source: 6-try-it-locally-stripe-cli 115b10f5518c -->
 ## 6. Probar en local (Stripe CLI)
 
 La [Stripe CLI](https://docs.stripe.com/stripe-cli) (Apache-2.0) reenvía los eventos de Stripe a un servidor de tu equipo. No hace falta una URL pública.
@@ -176,7 +191,7 @@ stripe trigger charge.dispute.created
 stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-Los objetos que crea `stripe trigger` no llevan ningún ID de suscripción de este servidor, así que ninguna suscripción cambia de estado (el servidor los vuelve a leer e ignora lo que no es una suscripción propia). Para comprobar todo el flujo de suscripción, suscríbete desde el cliente web y paga con una tarjeta de prueba.
+Los objetos que crea `stripe trigger` no llevan ningún ID de suscripción ni de propina de este servidor, así que nada cambia de estado (el servidor los vuelve a leer e ignora lo que no es una suscripción o propina propia). Para comprobar todo el flujo de suscripción, o una propina, suscríbete o da una propina desde el cliente web y paga con una tarjeta de prueba.
 
 <!-- source: 7-operation f70cd2967b9f -->
 ## 7. Operación
@@ -187,7 +202,7 @@ Los objetos que crea `stripe trigger` no llevan ningún ID de suscripción de es
 - `duplicate_charge` en las advertencias significa que un usuario pagó dos veces y el servidor no pudo terminar de cancelar y reembolsar la segunda suscripción. La línea de registro `a second subscription could not be canceled and refunded` nombra ambas suscripciones y el tipo de fallo, y aparece de nuevo en cada conciliación, que lo intenta otra vez. Con el tipo `permission`, añade el permiso para escribir reembolsos. De lo contrario, reembolsa el cargo en el panel: el siguiente intento no encuentra nada que reembolsar y borra la advertencia. «Conciliar ahora» lo intenta de inmediato.
 - Los demás reembolsos y contracargos se gestionan en el panel de Stripe. Un reembolso total y un contracargo retiran el rol y cancelan la suscripción de inmediato, y un reembolso parcial no retira el rol. Ganar una disputa no restablece el rol automáticamente.
 
-<!-- source: items-to-verify 8960333fa514 -->
+<!-- source: items-to-verify 19584d53548f -->
 ## Puntos por verificar
 
 Estos puntos no se han probado con Stripe, ni en un sandbox ni en producción, y se basan en la documentación de Stripe.
@@ -206,3 +221,5 @@ Estos puntos no se han probado con Stripe, ni en un sandbox ni en producción, y
 - Que una sesión no pueda pagarse dos veces desde dos pestañas. Una sesión contiene una suscripción y se completa una vez, pero la documentación no lo indica para dos envíos en el mismo instante.
 - Si una autenticación fallida en la página de pago deja una suscripción `incomplete` que nombra la suscripción del servidor. El servidor la vincularía y mantendría al usuario pendiente, y un pago en otra página se reembolsaría como el segundo.
 - Un reembolso de una segunda suscripción, con una clave restringida cuyos permisos «Charges» y «Refunds» son los que indica la tabla, y los movimientos de dinero que lo siguen.
+- Una propina desde su página hasta su reembolso y su disputa, con una clave restringida. En particular: que `allowed_payment_method_types=["card"]` mantiene fuera de la página cualquier otro método, que una sesión creada con Adaptive Pricing desactivado cobra en la moneda pedida y que Stripe admite un cargo único de ocho dígitos en todas las monedas de la tabla.
+- Si Stripe acepta propinas por el funcionamiento de un servicio, y de un empresario individual en Japón. Pregunta a Stripe antes de activarlas.

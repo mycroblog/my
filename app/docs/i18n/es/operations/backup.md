@@ -133,26 +133,30 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 `rsync` al host de copias mantiene pequeña la copia a partir de la segunda vez, ya que los archivos multimedia nunca cambian una vez escritos.
 
-<!-- source: media-in-a-bucket 882f3a0f9a2b -->
-### Archivos multimedia en un bucket
+<!-- source: media-in-a-bucket ff4b1024347c -->
+### Contenido multimedia en un bucket
 
-Los almacenes de blobs `s3` y `gcs` guardan cada archivo como un objeto del bucket `blob_s3_bucket` o `blob_gcs_bucket`, con su clave como nombre: los archivos multimedia procesados bajo `media/`,
-las subidas tal como se recibieron bajo `uploads/` y los archivos remotos en caché bajo `remote/`. El bucket permanece privado: el servidor lee los
-archivos y los sirve bajo `/media/`. Un objeto aparece solo cuando se ha escrito entero, así que una copia hecha mientras el servidor funciona nunca contiene
+Los almacenes de blobs `s3` y `gcs` guardan cada archivo como un objeto del bucket `blob_s3_bucket` o `blob_gcs_bucket`, con su clave como nombre: el contenido multimedia procesado bajo `media/`,
+las subidas tal como se recibieron bajo `uploads/`, y los archivos remotos en caché bajo `remote/`. El bucket permanece privado: el servidor lee los
+archivos y los sirve bajo `/media/`. Un objeto aparece solo cuando se ha escrito entero, así que una copia tomada mientras el servidor funciona nunca contiene
 medio archivo. Protege el bucket en tres capas, de la más barata a la más segura.
 
 **Control de versiones.** Activa el control de versiones de objetos del bucket donde el servicio lo ofrezca (Amazon S3, Google Cloud Storage, MinIO y otros).
-Un objeto eliminado o sobrescrito queda entonces como una versión no actual, y el bucket puede volver al momento de una copia de la base de datos.
+Un objeto eliminado o sobrescrito permanece entonces como una versión no actual, y el bucket puede volver al momento de una copia de seguridad de la base de datos.
 
 ```sh
 aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
 ```
 
-**Reglas de ciclo de vida.** Con el control de versiones, cada archivo eliminado mantiene su costo de almacenamiento hasta que una regla lo quita. Añade una regla que elimine las versiones no actuales
-después de la antigüedad de tu copia de la base de datos más antigua (35 días para las generaciones de [Con qué frecuencia y dónde](#how-often-and-where) sin las mensuales),
-para que cada copia de la base de datos que conserves siga encontrando sus archivos y un archivo que un usuario eliminó no permanezca más tiempo del que dice tu política de privacidad.
-Añade una regla que aborte las subidas multiparte incompletas al cabo de un día: el servidor aborta por sí mismo una subida fallida de un archivo grande, pero un proceso
-que se detiene en medio de una deja sus partes atrás.
+Con los módulos de OpenTofu de Amazon S3 y Google Cloud Storage, define `versioning = true`: activa el control de versiones y añade la regla para las versiones no actuales
+que se describe a continuación, cuya antigüedad es `noncurrent_version_days` (35 de forma predeterminada). Cloudflare R2 no tiene control de versiones de objetos, y el módulo para otro almacén compatible con S3
+no crea el bucket, así que para esos dos usa una copia (más abajo).
+
+**Reglas de ciclo de vida.** Con el control de versiones, cada archivo eliminado conserva su costo de almacenamiento hasta que una regla lo elimina. Añade una regla que elimine las versiones no actuales
+tras la antigüedad de tu copia de seguridad de la base de datos más antigua (35 días para las generaciones de [Con qué frecuencia y dónde](#how-often-and-where) sin las mensuales),
+de modo que cada copia de seguridad de la base de datos que conserves siga encontrando sus archivos y un archivo que un usuario eliminó no permanezca más tiempo del que dice tu política de privacidad.
+Añade una regla que anule las subidas multiparte incompletas tras un día: el servidor anula por sí mismo una subida fallida de un archivo grande, pero un proceso
+que se detiene a mitad de una deja sus partes atrás.
 
 ```json
 {
@@ -172,22 +176,22 @@ que se detiene en medio de una deja sus partes atrás.
 aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-configuration file://lifecycle.json
 ```
 
-**Una copia en otra cuenta o región.** El control de versiones protege contra un error, no contra perder el bucket o la cuenta que lo posee,
+**Una copia en otra cuenta o región.** El control de versiones protege frente a un error, no frente a la pérdida del bucket o de la cuenta que lo posee,
 y las propias credenciales del servidor pueden eliminar objetos. Mantén una copia a la que esas credenciales no lleguen:
 
-- **Replicación.** Amazon S3 replica un bucket con versiones en un bucket de otra región o de otra cuenta (Cross-Region o Same-Region Replication,
+- **Replicación.** Amazon S3 replica un bucket con versiones a un bucket de otra región o de otra cuenta (replicación entre regiones o en la misma región,
   con el destino perteneciente a la otra cuenta). Activa también el control de versiones en el destino y no repliques las eliminaciones
   (deja desactivada la replicación de marcadores de eliminación), para que una eliminación en la instancia no llegue a la copia.
-  Otros servicios tienen su propia replicación, como los buckets birregionales de Cloud Storage y la replicación de buckets de MinIO.
-- **Una copia programada.** Donde no hay replicación, o para copiar a otro proveedor, copia el bucket con el calendario de la copia de la base de datos,
-  justo después de ella, con credenciales que solo puedan leer el bucket de la instancia y solo escribir en el bucket de copias:
+  Otros servicios tienen su propia replicación, como los buckets de doble región de Cloud Storage y la replicación de buckets de MinIO.
+- **Una copia programada.** Donde no hay replicación, o para copiar a otro proveedor, copia el bucket según la programación de la copia de seguridad de la base de datos,
+  justo después de ella, con credenciales que solo puedan leer el bucket de la instancia y solo escribir en el bucket de copia de seguridad:
 
   ```sh
   rclone copy --checksum source:my-media backup:my-media-backup
   ```
 
-  `rclone copy` y `aws s3 sync` sin `--delete` añaden objetos nuevos y nunca quitan uno de la copia. Los archivos nunca cambian una vez escritos,
-  así que después de la primera ejecución cada copia transfiere solo los nuevos. Elimina los objetos antiguos de la copia con el calendario de tu política de retención,
+  `rclone copy` y `aws s3 sync` sin `--delete` añaden objetos nuevos y nunca eliminan uno de la copia. Los archivos nunca cambian una vez escritos,
+  así que tras la primera ejecución cada copia transfiere solo los nuevos. Elimina los objetos antiguos de la copia según la programación de tu política de retención,
   o activa también allí el control de versiones y una regla de ciclo de vida.
 
 Las credenciales se quedan fuera de la copia: el bucket no contiene ningún secreto, pero la configuración nombra la clave en `blob_s3_access_key_id`
@@ -208,6 +212,21 @@ La base de datos nombra los archivos multimedia que usa, y la copia de los archi
 
 El otro orden es peor: todos los archivos subidos entre la copia multimedia y la copia de la base de datos faltarían tras una restauración,
 incluidos los archivos multimedia de las publicaciones nuevas. Hacer ambas copias en el modo de mantenimiento evita cualquiera de los dos desfases.
+
+<!-- source: on-the-opentofu-targets 9862430f808c -->
+### En los destinos de OpenTofu
+
+Los módulos no guardan ninguna copia de seguridad propia más allá de lo que ofrece el proveedor: el PostgreSQL gestionado de Cloud SQL y RDS tiene copias de seguridad automáticas
+con una retención que tú defines, mientras que una base de datos con solo el historial del proveedor (Neon) solo puede retroceder hasta donde llegue ese historial.
+Programa esto tú mismo, con credenciales que la instancia no tenga:
+
+1. **La base de datos, cada día.** Ejecuta `pg_dump` contra el PostgreSQL de la instancia desde una máquina o un trabajo programado fuera del proveedor que aloja la
+   base de datos (consulta [PostgreSQL](#postgresql)), cifra el volcado y escríbelo en un bucket de otra cuenta o proveedor. Conserva las generaciones de
+   [Con qué frecuencia y dónde](#how-often-and-where). El trabajo necesita el `database_url` y nada más; no debe tener la KEK.
+2. **El contenido multimedia, justo después.** Con `versioning = true` en el módulo del bucket, las versiones son la copia durante los últimos `noncurrent_version_days`;
+   para la pérdida de la cuenta, ejecuta también `rclone copy` desde el bucket de la instancia a un bucket en otro lugar, como en
+   [Contenido multimedia en un bucket](#media-in-a-bucket), según la programación del volcado de la base de datos.
+3. **La KEK y la configuración** no forman parte de la programación: haz una copia de ellas cuando cambien ([La KEK y la configuración](#the-kek-and-the-configuration)).
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->
 ### La KEK y la configuración
@@ -329,16 +348,31 @@ Con un motor de búsqueda, ejecuta `my search rebuild` después de la restauraci
 - Busca la KEK cuyo ID de clave nombra el error, ponla como `kek` (o en `kek_previous`) y reinicia. No hay forma de recuperar un secreto sin su KEK;
   si la KEK se pierde para siempre, hay que regenerar las claves de los actores, y otros servidores ven cada actor como una clave nueva para la misma cuenta.
 
-<!-- source: recovery-drill f9adfe0e0d28 -->
+<!-- source: recovery-drill cdd349df0cb8 -->
 ## Simulacro de recuperación
 
-Solo se sabe que una copia funciona cuando se ha restaurado. Ensaya una restauración antes de que la instancia sea pública, y de nuevo tras un cambio en cómo se
-hacen las copias (al menos cada pocos meses):
+Solo se sabe que una copia de seguridad funciona cuando se ha restaurado. Ensaya una restauración antes de que la instancia sea pública, y de nuevo tras un cambio en cómo se
+hacen las copias de seguridad (al menos cada pocos meses):
 
-1. Haz una copia de la instancia en producción como se ha explicado: la base de datos y después los archivos multimedia.
+1. Haz una copia de seguridad de la instancia en producción como se indicó antes: la base de datos y después el contenido multimedia.
 2. En otra máquina o en otro proyecto de Compose, restáurala con la KEK y la configuración de donde las guardes
    (no copiadas del servidor en producción), y con `host` sin cambios para que las URL de los actores coincidan.
-3. No dejes que la copia federe: mantenla fuera de internet, o activa el modo de mantenimiento cuando se superen las comprobaciones de abajo.
-4. Recorre [Arrancar y comprobar](#starting-and-checking): inicio de sesión, publicaciones y archivos multimedia, y el `publicKey` de algunos actores comparado con la instancia en producción.
-5. Arráncala una vez sin la KEK y otra con una distinta, y comprueba que falla como describe [Sin la KEK correcta](#without-the-right-kek).
-6. Anota cuánto tardó cada paso: eso es lo que una restauración real mantiene caída la instancia.
+3. No dejes que la copia federe. Define `role = web`, que no ejecuta ningún worker de trabajos: los trabajos restaurados con la base de datos incluyen entregas que estaban
+   pendientes cuando se hizo la copia de seguridad, y una copia que los ejecuta los firma con las claves de los actores reales y los envía de nuevo a otros servidores.
+   Mantener la copia fuera de internet no basta, ya que es difícil garantizarlo. Activa el modo de mantenimiento cuando pasen las comprobaciones de abajo si la mantienes en funcionamiento.
+4. Fuera de Compose, por ejemplo en una máquina local contra una instancia en la nube, da a la copia estos ajustes para que no toque nada de la instancia en producción:
+
+   | Ajuste | Valor en la copia | Por qué |
+   | --- | --- | --- |
+   | `role` | `web` | No ejecuta ningún trabajo, así que nada de lo restaurado se entrega de nuevo |
+   | `queue` | `db` | Los trabajos encolados en la copia se quedan en su base de datos en lugar de llegar a la cola en producción |
+   | `stream` | `postgres` | No se une al flujo de eventos en producción de la instancia |
+   | `mail` | `none` | No envía correo a usuarios reales |
+   | el almacén de blobs | un bucket nuevo (o directorio) con el contenido multimedia restaurado | Deja intacto el bucket en producción |
+   | `database_url` | la base de datos restaurada | Nunca la de producción |
+   | la KEK (`MY_KEK`, o `key_manager` y `kms_key`) | como en producción, desde donde la guardes | Sin ella la copia no arranca |
+   | `host` | como en producción | Para que las URL de los actores coincidan |
+
+5. Repasa [Arranque y comprobación](#starting-and-checking): inicia sesión, publicaciones y contenido multimedia, y la `publicKey` de unos pocos actores comparada con la instancia en producción.
+6. Arráncala una vez sin la KEK y otra con una distinta, y comprueba que falla como describe [Sin la KEK correcta](#without-the-right-kek).
+7. Anota cuánto tardó cada paso: es lo que mantiene caída la instancia en una restauración real.

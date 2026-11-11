@@ -22,65 +22,66 @@ Der Text hat für jede Sprache denselben Wert. Wenn du Leser in mehreren Sprache
 
 Prüfe die Erklärung, wenn du eine Einstellung unten oder einen Dienst änderst, und nach jedem Upgrade, dessen Release Notes personenbezogene Daten erwähnen.
 
-<!-- source: the-periods-and-their-settings 111d5a4b6af8 -->
-## Die Fristen und ihre Einstellungen
+<!-- source: the-periods-and-their-settings 8313baaa97d8 -->
+## Die Zeiträume und ihre Einstellungen
 
-`my instance list` zeigt jede Servereinstellung und ob sie dem Standard entspricht. Eine Änderung einer Frist wirkt beim nächsten Lauf ihres stündlichen Jobs. Werte außerhalb des Bereichs werden abgelehnt.
+`my instance list` zeigt jede Instanzeinstellung und ob sie der Standard ist. Eine Änderung eines Zeitraums wirkt beim nächsten Lauf seines stündlichen Jobs. Werte außerhalb des Bereichs werden abgelehnt.
 
-| Datensatz | Standard | Servereinstellung | Bereich (Tage) | Beginnt mit |
+| Datensatz | Standard | Instanzeinstellung | Bereich (Tage) | Beginnt mit |
 | --- | --- | --- | --- | --- |
 | IP-Adresse und User-Agent bei der Anmeldung | 180 Tage | `session_origins_retention_days` | 90-3650 | Der Anmeldung |
 | IP-Adresse bei der Registrierung | 180 Tage | `registration_origins_retention_days` | 90-3650 | Der Registrierung |
 | Meldungen | 365 Tage | `reports_retention_days` | 180-3650 | Der letzten Erledigung |
 | Maßnahmen gegen Konten und Einsprüche | 365 Tage | `moderation_actions_retention_days` | 180-3650 | Dem Ende der Maßnahme |
-| Audit-Log | 730 Tage | `audit_log_retention_days` | 365-3650 | Dem Datensatz |
+| Audit-Log | 730 Tage | `audit_log_retention_days` | 365-3650 | Der Aufzeichnung |
 | Wer an einem Sprachchat-Raum teilgenommen hat | 90 Tage | `voice_participants_retention_days` | 30-3650 | Dem Ende des Raums |
+| Wer auf eine Veranstaltung geantwortet, über ihre Termine abgestimmt hat und zu ihr eingeladen wurde | 90 Tage | `event_records_retention_days` | 30-3650 | Dem früheren Zeitpunkt von Ende und Absage der Veranstaltung |
 | Die Entscheidungen einer externen Prüfung, wenn du eine nutzt | 90 Tage | `hook_decisions_retention_days` | 30-3650 | Der Entscheidung |
-| Remote-Beiträge, auf die hier nichts verweist | 90 Tage | `remote_status_retention_days` | 1-3650 | Der Veröffentlichung des Beitrags |
-| Jeder Remote-Beitrag | Kein Limit (`0`) | `remote_status_max_retention_days` | 0-3650 | Der Veröffentlichung des Beitrags |
-| Remote-Beiträge, die nur ein Relay gebracht hat | 7 Tage | `relay_status_retention_days` | 1-3650 | Der Veröffentlichung des Beitrags |
-| Kopien von Remote-Medien | 1 Tag, und keine werden aufbewahrt, solange `remote_media_policy` `none` ist | `remote_media_cache_ttl_seconds`, `remote_media_policy` | 60-31536000 Sekunden | Dem Abruf |
-| Übersetzungen von Beiträgen | 30 Tage | `translation_retention_days` | 1-3650 | Der Übersetzung. Das Lesen verlängert die Frist nicht, und sie verschwindet, wenn der Beitrag gelöscht wird |
+| Entfernte Beiträge, auf die hier nichts verweist | 90 Tage | `remote_status_retention_days` | 1-3650 | Der Veröffentlichung des Beitrags |
+| Jeder entfernte Beitrag | Kein Limit (`0`) | `remote_status_max_retention_days` | 0-3650 | Der Veröffentlichung des Beitrags |
+| Entfernte Beiträge, die nur ein Relay gebracht hat | 7 Tage | `relay_status_retention_days` | 1-3650 | Der Veröffentlichung des Beitrags |
+| Kopien entfernter Medien | 1 Tag, und keine werden behalten, solange `remote_media_policy` `none` ist | `remote_media_cache_ttl_seconds`, `remote_media_policy` | 60-31536000 Sekunden | Dem Abruf |
+| Übersetzungen von Beiträgen | 30 Tage | `translation_retention_days` | 1-3650 | Der Übersetzung. Sie zu lesen verlängert den Zeitraum nicht, und sie verschwindet, wenn der Beitrag gelöscht wird |
 
-Dies sind Einstellungen des Deployments ([Konfigurationsreferenz](../reference/configuration.md)), keine Servereinstellungen:
+Dies sind Einstellungen der Bereitstellung ([Konfigurationsreferenz](../reference/configuration.md)), keine Instanzeinstellungen:
 
 | Datensatz | Standard | Einstellung |
 | --- | --- | --- |
 | Uploads, die an nichts angehängt sind | 24 Stunden | `media_unattached_retention` |
 | Alte Versionen von Bildern, nachdem eine neuere Version sie ersetzt hat | 30 Tage | `media_replaced_retention` |
 | Jobs, die endgültig fehlgeschlagen sind | 30 Tage | `dead_job_retention` |
-| Aufzeichnungen von Job-Läufen, die nicht erfolgreich waren | 30 Tage | `job_attempt_retention` |
+| Datensätze von Job-Läufen, die nicht erfolgreich waren | 30 Tage | `job_attempt_retention` |
 
-Diese Fristen legt die Software fest, und keine Einstellung ändert sie:
+Diese Zeiträume sind durch die Software festgelegt, und keine Einstellung ändert sie:
 
-| Datensatz | Frist |
+| Datensatz | Zeitraum |
 | --- | --- |
-| Ein gelöschtes Konto endgültig löschen | 7 Tage nach der Löschung; bis zu 30 Tage bei einem Remote-Konto, wenn nur ein `410 Gone` von seinem Server das gesagt hat und der Server nicht erneut antwortet |
-| Ein deaktiviertes Konto löschen | 30 Tage nach der Deaktivierung |
-| Registrierungssperren | 30 Tage nach der Aufhebung oder dem Ablauf; ohne beides, solange sie gelten |
-| Sitzungen, Tokens und Autorisierungscodes | 30 Tage nach ihrem Ablauf |
+| Das Löschen eines gelöschten Kontos | 7 Tage nach der Löschung; bis zu 30 Tage bei einem entfernten Konto, wenn nur ein `410 Gone` seines Servers es sagte und der Server nicht erneut antwortet |
+| Das Löschen eines deaktivierten Kontos | 30 Tage nach der Deaktivierung |
+| Registrierungssperren | 30 Tage nach der Aufhebung oder dem Ablauf; ohne beides, solange sie in Kraft sind |
+| Sitzungen, Tokens und Autorisierungscodes | 30 Tage, nachdem sie ablaufen |
 | Archive von Datenexporten und Datenimporte | 7 Tage |
-| Aufzeichnungen von Aktivitäten, die von anderen Servern empfangen wurden | 30 Tage, und das Dokument selbst 7 Tage |
-| Aufzeichnungen von Aktivitäten, die an andere Server zugestellt wurden | 30 Tage; die Zustellung eines Beitrags bis 30 Tage nach dem Löschen des Beitrags oder seines Autors |
-| Prüfungen von Remote-Handles | 90 Tage, wobei die neueste jedes Kontos behalten wird |
+| Datensätze von Aktivitäten, die von anderen Servern empfangen wurden | 30 Tage, und das Dokument selbst 7 Tage |
+| Datensätze von Aktivitäten, die an andere Server ausgeliefert wurden | 30 Tage; die Zustellung eines Beitrags bis 30 Tage, nachdem der Beitrag oder sein Autor gelöscht wird |
+| Prüfungen entfernter Handles | 90 Tage, wobei die neueste jedes Kontos behalten wird |
 | Webhook-Nachrichten und -Zustellungen | 14 Tage |
-| Belege von Zahlungs-Webhooks | 45 Tage |
-| Stündliche Fehlerzählungen und Fehlerhinweise | 90 Tage |
+| Zahlungs-Webhook-Belege | 45 Tage |
+| Stündliche Fehlerzahlen und Fehlerhinweise | 90 Tage |
 
-Eine [Aufbewahrungssperre](moderation.md#holds) stoppt das Löschen für ein Konto, sodass jede der obigen Fristen für ein Konto unter einer Sperre länger laufen kann. Wenn du Sperren nutzt, sage das, wie es die Vorlage tut.
+Eine [Aufbewahrungssperre](moderation.md#holds) stoppt die Löschung für ein Konto, sodass jeder Zeitraum oben für ein Konto unter einer Sperre länger laufen kann. Wenn du Sperren nutzt, sage das, wie es die Vorlage tut.
 
-<!-- source: records-with-no-automatic-end 90a13d1f648e -->
+<!-- source: records-with-no-automatic-end 4ac8f904a3a9 -->
 ## Datensätze ohne automatisches Ende
 
-Der Server entfernt diese nur, wenn ein Konto gelöscht wird, oder nie. Ein Gesetz kann von dir verlangen, ihre Aufbewahrung zu rechtfertigen oder sie auf anderem Weg zu entfernen; entscheide also, was deine Erklärung zu jedem sagt.
+Der Server entfernt diese nur, wenn ein Konto gelöscht wird, oder nie. Ein Gesetz kann verlangen, dass du ihre Aufbewahrung begründest oder sie auf anderem Wege entfernst, entscheide also, was deine Richtlinie zu jedem sagt.
 
-- Die Zeilen eines aktiven Kontos: E-Mail-Adressen, frühere Profilversionen, frühere Beitragsversionen, Benachrichtigungen, Follows und der Registrierungsantrag eines abgelehnten Nutzers. Ein Konto, das niemand löscht, bleibt bestehen.
-- Was nach dem Löschen bleibt: die URI und der Benutzername des Kontos (damit keines von beiden wiederverwendet werden kann), seine Lebenszyklus-Ereignisse, der Vermerk, dass ein Beitrag gelöscht wurde, Moderationsdatensätze bis zum Ende ihrer eigenen Frist, Einladungen und Rollenvergaben, Kontoumzüge, Sprachchat-Räume ohne ihre Namen und Beschreibungen.
-- Unterstützer-Datensätze (Abos, Zustandsänderungen, Zahlungen, Erstattungen, Rückbuchungen), aufbewahrt für die Buchhaltung und den Abgleich mit dem Anbieter. Der Server löscht keinen Kunden beim Zahlungsanbieter: Tu das im Dashboard des Anbieters, wenn deine Pflichten es erlauben.
+- Die Zeilen eines aktiven Kontos: E-Mail-Adressen, frühere Profilversionen, frühere Beitragsversionen, Benachrichtigungen, Follows und der Registrierungsantrag eines abgelehnten Benutzers. Ein Konto, das niemand löscht, bleibt.
+- Was nach der Löschung bleibt: die URI und der Benutzername des Kontos (damit keiner wiederverwendet werden kann), seine Lebenszyklus-Ereignisse, der Datensatz, dass ein Beitrag gelöscht wurde, Moderationsdatensätze bis zum Ende ihres eigenen Zeitraums, Einladungen und Rollenvergaben, Kontoumzüge, Sprachchat-Räume ohne ihre Namen und Beschreibungen, Veranstaltungen ohne die Titel, Beschreibungen und Orte, die ihre Autoren geschrieben haben, sowie die Einladungen und Antworten zu Veranstaltungen und zu ihren Terminvorschlägen.
+- Supporter-Datensätze (Abonnements, Zustandsänderungen, Zahlungen, Erstattungen, Rückbuchungen), für die Buchhaltung und den Abgleich mit dem Anbieter behalten. Der Server löscht keinen Kunden beim Zahlungsanbieter: Tu das im Dashboard des Anbieters, wenn deine Pflichten es erlauben.
 - Eine Maßnahme ohne Ende (ein `ban` oder ein `suspend` ohne Endzeit), bis sie aufgehoben wird. Offene Meldungen.
-- Remote-Konten, bis ihr Server sie löscht.
-- Der jüngste Bericht jeder Fehlergruppe, den der nächste Bericht dieser Gruppe ersetzt. Er wird nach Mustern bereinigt, sodass ein Fragment von Nutzertext bleiben kann.
-- Backups, deine Logs und die Logs deiner Plattform und deines Proxys. Der Server verwaltet diese nicht: [Backup](backup.md#how-often-and-where) beschreibt die aufzubewahrenden Generationen, und ein wiederhergestelltes Backup bringt gelöschte Daten zurück.
+- Entfernte Konten, bis ihr Server sie löscht.
+- Die neueste Meldung jeder Fehlergruppe, die die nächste Meldung dieser Gruppe ersetzt. Sie wird nach Muster bereinigt, sodass ein Fragment von Benutzertext bleiben kann.
+- Backups, deine Logs und die Logs deiner Plattform und deines Proxys. Der Server verwaltet diese nicht: [Backup](backup.md#how-often-and-where) beschreibt die Generationen, die zu behalten sind, und ein wiederhergestelltes Backup bringt gelöschte Daten zurück.
 
 <!-- source: the-services-you-choose 81461216c966 -->
 ## Die Dienste, die du wählst
@@ -123,7 +124,7 @@ Zwei Dinge erreichen Dritte ohne eine Einstellung von dir:
 - **Web Push.** Wenn ein Nutzer es einschaltet, wählt sein Browser den Push-Dienst und gibt dem Server dessen Adresse. Der Nachrichtentext ist für diesen Browser verschlüsselt, der Push-Dienst sollte ihn also nicht lesen können. Er sieht die Subscription-Adresse, die Größe und Zeit jeder Nachricht und den Kontakt (VAPID-Subject) deines Servers, und er hält eine Nachricht bis zu 48 Stunden, während der Browser offline ist.
 - **Föderation.** Siehe Abschnitt 5 der Vorlage. `federation_mode` schaltet sie aus oder begrenzt ihre Richtung, und Relays kannst du selbst hinzufügen ([Relays](relays.md)).
 
-<!-- source: the-template 8b6bd2fc983a -->
+<!-- source: the-template 5a65f2c53778 -->
 ## Die Vorlage
 
 ```markdown
@@ -154,16 +155,16 @@ This policy covers people with an account here, people who read pages here witho
 | --- | --- | --- |
 | Email addresses | Signing in, confirming the address, resetting the password, and the email you choose to get | Until your account is erased |
 | Password hash, two-factor secret (encrypted) and recovery codes (hashed), passkeys, the identifier of an account you linked at a login provider | Signing you in | Until your account is erased |
-| Language, time zone, default post settings, notification settings, and other preferences | Running the service the way you asked | Until your account is erased |
+| Language, time zone, default post settings, notification settings and notification filters, and other preferences | Running the service the way you asked | Until your account is erased |
 | Registration application: the reason you gave, the invite you used, and the decision | Deciding who joins | Until your account is erased |
 | IP address at registration | Preventing abuse | {{180 days}} from registration |
 | IP address and browser name (User-Agent) at each sign-in | Security and preventing abuse | {{180 days}} from the sign-in |
 | Sessions and app access (stored as hashes) | Keeping you signed in | 30 days after they expire. A session lasts 30 days |
 | IP address, and for password-reset requests the email address, in rate limit counters | Protecting the service | Removed automatically, within twice the window of the limit |
-| Profile: display name, bio, extra fields, avatar, header, aliases, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
+| Profile: display name, bio, extra fields, avatar, header, aliases, featured hashtags, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
 | Posts, their earlier versions, and attached media | Publishing what you write | Until you delete them, your automatic deletion policy deletes them, or your account is erased. {{IF you set a maximum for keeping posts}} At most {{N days}} after you publish them, unless your account may keep them longer. Uploads attached to nothing go after {{24 hours}} |
-| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists | Running the features you use | Until you undo them, or your account is erased |
-| Notifications and what you have read | Telling you what happened | Until your account is erased or the post they are about is removed |
+| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, followed hashtags, blocks, mutes, lists, keyword filters, private notes on accounts | Running the features you use | Until you undo them, or your account is erased |
+| Notifications and what you have read, the notification requests you accepted or dismissed | Telling you what happened, and holding back the notifications you chose to filter | Until your account is erased or the post they are about is removed |
 | Web Push subscription: your browser's push address and keys | Sending you push notifications | Until you turn it off, the push service ends it, or your account is erased |
 | Records that an email bounced or was reported as spam | Not sending mail that is unwanted or cannot arrive | Until your account is erased |
 | Data export archives and data imports | Giving you your data, and bringing it in | 7 days |
@@ -174,8 +175,11 @@ This policy covers people with an account here, people who read pages here witho
 | Sign-up blocks: an email domain, a hashed email address, or an IP range | Preventing repeat abuse | While in effect, and 30 days after the lift or expiry |
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
+| Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
+| Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
+| {{IF tips}} Tips: the amount, when you paid, the provider's ID of the payment, refunds and chargebacks. Not your card details | Taking the tip, and accounting | Until your account is erased; the amounts stay in the accounts without you. The provider keeps the payment and the email address of its page: {{ITS PERIOD}} |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |
 | Posts and profiles of people on other servers | Showing them here | Posts: {{90 days}} when nothing here refers to them, {{7 days}} when only a relay brought them, and {{no limit}} otherwise. Profiles: until their server deletes the account. Then erased after 7 days |
 | Copies of remote media | Showing it | {{Not kept, or the period you set}} |
@@ -297,7 +301,7 @@ Passwords are stored as Argon2id hashes. Two-factor secrets and the keys that si
 
 {{ADJUST TO THE RIGHTS OF YOUR JURISDICTION. Under the GDPR these are access, rectification, erasure, restriction, objection, and portability, and the right to withdraw consent.}}
 
-- **See and take your data:** your settings offer a data export (your profile, your posts, and your moderation records) and CSV files of follows, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
+- **See and take your data:** your settings offer a data export (your profile, your posts, your keyword filters, your private notes on accounts, and your moderation records) and CSV files of follows, followed hashtags, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
 - **Correct it:** edit your profile and account settings, or write to us.
 - **Delete it:** delete your account in your settings, or deactivate it first. This is what section 3 and section 5 describe.
 - **Move:** you can move your followers to an account on another server.

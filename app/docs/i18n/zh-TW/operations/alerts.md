@@ -44,19 +44,24 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Grafana 儀表板
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) 是以同一批 Prometheus 指標做成的 Grafana 儀表板：請求速率、狀態碼與延遲；任務執行、每種任務類型的 worker 時間與佇列；傳送、收件匣活動與遠端伺服器；以及每個程序的 CPU 與記憶體。請在 Grafana 中匯入它（**Dashboards** → **New** → **Import**），並選擇你的 Prometheus 資料來源；它的 **Job** 變數用來選擇抓取任務（預設為 `my`）。
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud（Cloud Run）
 
-使用 `metrics_exporter = none` 時，請以 Cloud Run 和 Cloud Logging 既有的資料建立警報：
+當 `metrics_exporter = none` 時，請用 Cloud Run 和 Cloud Logging 已有的資料來建立警示：
 
-- **HTTP 錯誤與延遲**：服務依回應代碼類別區分的 Cloud Run 請求數，以及請求延遲指標。
-- **錯誤**：`error report` 行會進入 Error Reporting，它會將錯誤分組，並可在出現新錯誤和錯誤再次發生時通知你（[錯誤回報](error-reporting.md#google-cloud-cloud-run)）。
-- **任務與請求**：伺服器會為每個 HTTP 請求（`msg` = `http request`）和每次任務執行（`msg` = `job`）寫入一行日誌，帶有與指標相同的標籤。請以它們建立以日誌為基礎的指標，例如以 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 計算失敗任務的計數器，或以 `jsonPayload."my.surface"="client_api"` 篩選 `jsonPayload.duration_seconds` 的分布來衡量延遲。
-- **佇列積壓**：使用 `queue = cloudtasks` 時，任務保存在資料庫中，因此任務畫面和任務執行的日誌行會顯示積壓情況；Cloud Tasks 的佇列深度指標計算的是等待傳送的訊號。
-- **資料庫**：Cloud SQL 的磁碟使用率和連線指標，或你的資料庫服務商的用量警報。
-- **費用**：設有警報門檻的 Cloud Billing 預算（[費用與預算](#cost-and-budget)）。
+- **HTTP 錯誤與延遲**：依回應碼類別區分的 Cloud Run 請求數，以及該服務的請求延遲指標。
+- **錯誤**：`error report` 行會進入 Error Reporting，它會將它們分組，並在出現新的與重複的錯誤時通知你（[錯誤回報](error-reporting.md#google-cloud-cloud-run)）。
+- **任務與請求**：伺服器會為每個 HTTP 請求（`msg` = `http request`）和每次任務執行（`msg` = `job`）寫一行日誌，標籤與指標相同。請以它們建立以日誌為基礎的指標，例如以 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 計算失敗任務的計數器，或是以 `jsonPayload."my.surface"="client_api"` 篩選 `jsonPayload.duration_seconds` 來取得延遲的分布。
+- **佇列積壓與儲存**：任務 `metrics.snapshot` 每 15 分鐘會寫一行（`msg` = `metrics snapshot`），內含整個實例的數值，例如 `my.queue.oldest_ready_age`、`my.queue.dead`、`my.db.size` 和 `my.media.stored_bytes`。請以它的欄位建立以日誌為基礎的指標；這些日誌行出現空缺，表示計時或佇列停了。Cloud Tasks 的佇列深度指標計算的是等待傳送的訊號。
+- **資料庫**：Cloud SQL 的磁碟使用率與連線指標，或你的資料庫供應商的用量警示。
+- **成本**：設有警示門檻的 Cloud Billing 預算（[成本與預算](#cost-and-budget)）。
 
-模組 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 會以下表中的名稱把這些建立為政策，並列出它以不同方式涵蓋或無法表達的每個警報。它從未被實際套用過。只有流量才會產生的指標，在縮減到零的服務上會有空缺，因此針對它不存在而設的警報會誤報；能察覺閒置伺服器已停擺的，是它的運作時間檢查。
+[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 模組會以下表的名稱將這些建立為政策，並列出它以不同方式涵蓋或無法表達的每一項警示。它從未被套用過。只有流量才會產生的指標，在縮減至零的服務上會有空缺，所以針對它缺席的警示會誤報；能察覺閒置伺服器已經停擺的，是它的可用性檢查。
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -108,21 +113,23 @@ promtool test rules alerts.test.yml
 | 費用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 並持續 6 小時 | ticket | 缺少權限、未設定帳單匯出、達到請求上限、服務商無法使用 |
 | 費用 | 超出預算 | – | – | – | 流量、儲存空間或設定錯誤導致費用超出規劃（[見下文](#cost-and-budget)） |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
-## 該查看哪裡
+<!-- source: where-to-look b9e94304077f -->
+## 該去哪裡看
 
-以下工具會在下方大多數的處理手冊項目中反覆出現。
+下方的運作手冊條目大多會用到這些工具。
 
 - **任務畫面**（「管理」→「任務」，`/admin/jobs`，需要 `manage_jobs`）：依狀態（等待中、執行中、重試中、失敗）和類型區分的數量，以及等待最久的任務；它的**任務**頁面（`/admin/jobs/list`）會列出某一種狀態的任務，每個任務的頁面都有它最後的錯誤和未成功的嘗試。只有保存在資料庫中的佇列（`queue = db` 和 `cloudtasks`）才會列出待處理的任務；失敗的任務和嘗試則會在所有佇列中列出。
-- **`my job` 指令**：在擁有伺服器設定的主機上執行（`queue = db` 和 `cloudtasks`）。`my job list` 會列出失敗的任務，最新的在前；`my job retry <id>...` 會把它們放回佇列；`my job delete <id>...` 會捨棄它們。任務可以安全地重新執行。
+- **`my job` 指令**，在擁有伺服器設定的主機上執行（`queue = db` 和 `cloudtasks`）：`my job list` 會列出失敗的任務，最新的在前；`my job retry <id>...` 會將它們放回佇列；`my job delete <id>...` 會捨棄它們。任務可以安全地重新執行。
 - **遠端伺服器畫面**（「審核」→「遠端伺服器」，`/moderation/instances`，需要 `manage_domains`）：傳送失敗的伺服器，以及傳送被暫停的伺服器，附有原因和時間。「恢復傳送」會把伺服器重新標示為可用。
-- **日誌**：寫到標準錯誤輸出的 JSON 行。每個 HTTP 請求都以一行 `msg` 為 `http request` 的日誌結束，每次任務執行都以一行 `msg` 為 `job` 的日誌結束（成功為 `INFO`，重試為 `WARN`，最終失敗的任務為 `ERROR`，並帶有 `error`、`job_id` 和 `my.job.type`）。請求內的日誌行帶有它的 `request_id`，用戶端會以 `X-Request-Id` 看到它。
+- **日誌**：標準錯誤輸出上的 JSON 行。每個 HTTP 請求結束時有一行 `msg` 為 `http request` 的日誌，每次任務執行則有一行 `msg` 為 `job` 的日誌（成功為 `INFO`，重試為 `WARN`，徹底失敗的任務為 `ERROR`，並附有 `error`、`job_id` 和 `my.job.type`）。請求內的日誌行帶有它的 `request_id`，用戶端會將它看成 `X-Request-Id`。
+  - `federation.deliver` 執行的日誌行也會說明傳送去了哪裡以及如何結束：`my.delivery.domain`（遠端伺服器的網域）、`activity.type`（例如 `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure` 或 `skipped`），以及 `http.response.status_code`（收件匣的回應；當它沒有回應或什麼都沒送出時不存在）。`my.outcome` 仍是任務執行的結果。該行從不指出寄件者、活動或收件匣 URL。
+    Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose：`docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights：``filter msg = "job" and `my.outcome` = "dead"``
 - **錯誤回報**：`error report` 行和錯誤畫面（「管理」→「錯誤」，`/admin/errors`，需要 `manage_errors`）（[錯誤回報](error-reporting.md)）。
-- **追蹤**，在 `traces_exporter = otlp` 時：日誌行帶有 `trace_id`；在你的追蹤後端開啟它，就能看到緩慢的請求把時間花在哪裡。
-- **維護模式**（[維護](maintenance.md)）：對每個請求都回應維護頁面，且不使用任何轉接器。在修復資料庫或 KV 儲存時使用它。
+- **追蹤**，當 `traces_exporter = otlp` 時：日誌行帶有 `trace_id`；在你的追蹤後端開啟它，就能看到一個很慢的請求把時間花在哪裡。
+- **維護模式**（[維護](maintenance.md)）：以維護頁面回應每個請求，且不會碰任何 adapter。在你修復資料庫或 KV 儲存時使用它。
 
 <!-- source: runbook e60e811fcff0 -->
 ## 處理手冊

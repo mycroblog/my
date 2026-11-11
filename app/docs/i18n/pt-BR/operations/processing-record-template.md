@@ -97,14 +97,14 @@ Estes nomes são usados nas atividades abaixo. Liste cada um que você usa.
 | Exclusão | Endereços IP de cadastro `{{180 days}}`, origens de login `{{180 days}}`, contadores dentro do dobro da janela do limite, bloqueios de cadastro 30 dias após a revogação ou a expiração. Interrompida por uma retenção legal |
 | Base legal | {{e.g. legitimate interests}} |
 
-<!-- source: 3-publishing-and-social-features 5e271f0279f9 -->
+<!-- source: 3-publishing-and-social-features 33e1e1657705 -->
 ### 3. Publicação e recursos sociais
 
 | | |
 | --- | --- |
 | Finalidades | Publicar perfis e publicações, e as interações que as pessoas pedem |
 | Titulares dos dados | Pessoas com uma conta, pessoas que elas mencionam |
-| Dados pessoais | Perfil e suas versões, publicações e suas versões, mídia, favoritos, reações, impulsos, itens salvos, fixados, votos em enquetes, seguidos, bloqueios, silenciamentos, listas. As publicações podem conter qualquer dado que uma pessoa escreva, inclusive categorias especiais. `{{IF post review}}` O texto de uma publicação recusada que o autor envia com um recurso |
+| Dados pessoais | Perfil e suas versões, hashtags em destaque, publicações e suas versões, mídia, favoritos, reações, impulsos, itens salvos, fixados, votos em enquetes, seguidos, hashtags seguidas, bloqueios, silenciamentos, listas, filtros de palavras-chave, notas privadas sobre contas. As publicações podem conter qualquer dado que uma pessoa escreva, inclusive categorias especiais. `{{IF post review}}` O texto de uma publicação recusada que o autor envia com um recurso |
 | Destinatários | Hospedagem, CDN, serviço de análise de mídia (uma pequena cópia processada de cada upload), outros usuários, a web pública para conteúdo público, servidores federados (atividade 4), mecanismos de busca e crawlers de IA conforme `search_indexing` e `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps que a pessoa autorizou, `{{IF post review}}` o serviço de análise de publicações para as publicações `public`, `local` e `unlisted` de contas novas e suas edições (o texto como digitado e como renderizado, aviso de conteúdo, idioma, marcação de sensível, opções de enquete, descrições de imagens, hashtags e número de menções, o endereço delas e os endereços das publicações a que respondem ou que citam, o endereço e o nome de usuário do autor e quando a conta foi criada; sem mídia), `{{IF profile review}}` o serviço de análise de perfis para as mudanças de perfil de contas novas (o nome de exibição, a bio como digitada e como renderizada, os campos do perfil, se o avatar ou o cabeçalho mudou, o endereço e o nome de usuário da conta e quando a conta foi criada; sem imagens) |
 | Exclusão | Quando a pessoa a exclui, pela sua política de exclusão automática, ou na exclusão da conta. `{{IF auto_delete_max_age_days}}` No máximo `{{auto_delete_max_age_days}}` dias após a publicação, para as contas sem `keep_posts_longer`. Uploads não anexados a nada `{{24 hours}}`. Versões antigas de imagens depois que uma versão mais nova as substitui `{{30 days}}`. O registro da URI de uma publicação excluída permanece. `{{IF post review}}` Um recurso vai embora com a sua decisão (`hook_decisions_retention_days`, mantido enquanto ainda pode ser contestado ou aguarda análise) ou na exclusão da conta |
 | Base legal | {{e.g. contract}} |
@@ -133,14 +133,14 @@ Estes nomes são usados nas atividades abaixo. Liste cada um que você usa.
 | Exclusão | Publicações `{{90 days}}` quando nada aqui se refere a elas, `{{7 days}}` quando só um relay as trouxe, e `{{no limit}}` para qualquer publicação nos demais casos. Cópias de mídia `{{not kept}}`. Verificações de handles 90 dias. Tudo de uma conta 7 dias depois que o servidor dela a exclui, ou até 30 dias quando apenas um `410 Gone` indicou isso e o servidor não responde mais. A URI e o domínio permanecem |
 | Base legal | {{e.g. legitimate interests}} |
 
-<!-- source: 6-notifications ad34beea6ab2 -->
+<!-- source: 6-notifications 3a5f63da6e4b -->
 ### 6. Notificações
 
 | | |
 | --- | --- |
 | Finalidades | Informar as pessoas sobre a atividade e sobre a conta delas, por e-mail e Web Push |
 | Titulares dos dados | Pessoas com uma conta, pessoas citadas em uma notificação |
-| Dados pessoais | Notificações e marcadores de leitura, configurações de notificação, endereço de e-mail, o texto de cada e-mail, registros de devolução e de reclamação, endereço e chaves do Web Push, assinaturas de publicações |
+| Dados pessoais | Notificações e marcadores de leitura, configurações de notificação, a política de notificações com as solicitações de notificação aceitas e dispensadas, endereço de e-mail, o texto de cada e-mail, registros de devolução e de reclamação, endereço e chaves do Web Push, assinaturas de publicações |
 | Destinatários | Hospedagem, provedor de e-mail, serviços de push (o corpo da mensagem é criptografado, e eles o retêm por até 48 horas) |
 | Exclusão | Na exclusão da conta, ou junto com a publicação a que se referem. Web Push: também quando a pessoa ou o serviço de push o encerra. O provedor de e-mail: {{ITS PERIOD}} |
 | Base legal | {{e.g. contract, legitimate interests}} |
@@ -185,18 +185,18 @@ Exclua esta atividade quando `voice = off`.
 | Exclusão | Participantes `{{90 days}}` a partir do fim da sala, ou enquanto durar uma denúncia sobre ela. As salas permanecem, com o nome e a descrição apagados na exclusão do autor. Nos serviços: {{THEIR PERIOD}} |
 | Base legal | {{e.g. contract, legitimate interests}} |
 
-<!-- source: 10-supporter-payments 99d64d001780 -->
+<!-- source: 10-supporter-payments 66328ed833a1 -->
 ### 10. Pagamentos de apoiadores
 
 Exclua esta atividade quando `payments = none`.
 
 | | |
 | --- | --- |
-| Finalidades | Receber assinaturas, conceder funções, contabilidade |
-| Titulares dos dados | Assinantes |
-| Dados pessoais | IDs de objetos do provedor, valores, períodos, estados, reembolsos, estornos, a escolha de ser listado. Endereço de e-mail enviado ao provedor. Sem números de cartão, quatro últimos dígitos nem datas de validade |
+| Finalidades | Receber assinaturas e gorjetas, conceder funções, contabilidade |
+| Titulares dos dados | Assinantes, usuários que dão gorjetas |
+| Dados pessoais | IDs de objetos do provedor, valores, períodos, estados, reembolsos, estornos, a escolha de ser listado, as gorjetas e os pagamentos delas. Endereço de e-mail enviado ao provedor. Sem números de cartão, quatro últimos dígitos nem datas de validade |
 | Destinatários | Hospedagem, provedor de pagamento, pessoas que podem ver a lista de apoiadores, equipe com a permissão correspondente |
-| Exclusão | Recibos de webhook 45 dias. O vínculo com o cliente e a inclusão na lista na exclusão da conta. Os registros de assinatura e de pagamento não têm fim automático: {{PERIOD AND THE LAW THAT REQUIRES IT}}. No provedor: {{ITS PERIOD, AND WHETHER YOU DELETE THE CUSTOMER}} |
+| Exclusão | Recibos de webhook 45 dias. O vínculo com o cliente, a inclusão na lista e as gorjetas na exclusão da conta (a receita delas permanece sem o usuário). Os registros de assinatura e de pagamento não têm fim automático: {{PERIOD AND THE LAW THAT REQUIRES IT}}. No provedor: {{ITS PERIOD, AND WHETHER YOU DELETE THE CUSTOMER}} |
 | Base legal | {{e.g. contract, legal obligation}} |
 
 <!-- source: 11-running-the-service 9c89577f9cee -->
@@ -224,6 +224,18 @@ Exclua esta atividade quando `translation_providers` estiver vazio.
 | Destinatários | Provedores de tradução, como seus operadores (processors): publicações `public`, `local` e `unlisted` por padrão. {{IF translation to private and direct}} Também publicações `private` e `direct`, para {{THE PROVIDERS YOU ALLOWED}}. {{IF translation of reports}} Os comentários de denúncias, para os provedores autorizados a receber publicações `private`, e as publicações que as denúncias citam, quando um moderador pede |
 | Exclusão | Traduções `{{30 days}}` a partir da tradução, e junto com a publicação quando ela é excluída. Caracteres por conta até o fim do mês seguinte, ou na exclusão da conta. Nos provedores: o que foi enviado não pode ser recolhido. {{THEIR PERIODS}} |
 | Base legal | {{e.g. legitimate interests}} |
+
+<!-- source: 13-events 3f83323d2455 -->
+### 13. Eventos
+
+| | |
+| --- | --- |
+| Finalidades | Planejar eventos dos usuários locais, com as datas, as datas candidatas, os lugares, os convites e as respostas deles, e avisar as pessoas envolvidas das mudanças e do início |
+| Titulares dos dados | Organizadores, coorganizadores, usuários convidados e participantes |
+| Dados pessoais | Título, descrição, data, fuso horário e lugares (o endereço de um local de encontro, um link) de cada versão de um evento; organizadores e coorganizadores; datas candidatas e a resposta de cada usuário a elas; convites; respostas e a aprovação delas; cancelamentos com o motivo; com quanto tempo de antecedência cada usuário é lembrado de um evento. Os eventos não são federados |
+| Destinatários | Hospedagem, os usuários locais que veem o evento (o endereço e o link apenas para os participantes aprovados, a menos que o organizador os mostre a todos) e o provedor de e-mail para os e-mails de notificação, que informam o título, o início e os organizadores e nunca os lugares |
+| Exclusão | O título, a descrição e os lugares das versões que uma conta escreveu, e os horários de lembrete dela, na exclusão dela. Convites, respostas, a aprovação delas e votos nas datas candidatas {{90 days}} depois que o evento terminou ou foi cancelado (`event_records_retention_days`), mais tempo enquanto uma denúncia aponta para o evento ou uma retenção cobre uma conta que eles nomeiam. Os eventos, as datas deles e as datas candidatas não têm fim automático: {{PERIOD}} |
+| Base legal | {{e.g. contract, legitimate interests}} |
 
 <!-- source: security-measures-article-301g 756bb9e562e3 -->
 ### Medidas de segurança (artigo 30(1)(g))

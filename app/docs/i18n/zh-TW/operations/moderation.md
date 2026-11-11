@@ -1,7 +1,7 @@
-<!-- source: account-and-domain-actions-and-handling-reports 59d39b2e3f37 -->
+<!-- source: account-and-domain-actions-and-handling-reports 7f21d5c6c925 -->
 # 帳號與網域處置，以及處理檢舉
 
-說明營運者與版主如何對帳號與網域採取處置、決定申訴、處理檢舉，以及閱讀稽核記錄。除了帳號管理（僅限管理 API）之外，這裡的所有操作都可以透過管理 API（`/api/v1/admin/...`，範圍 `admin:read` / `admin:write`）與 CLI（`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`）進行。管理 API 需要角色權限：帳號管理、處置與申訴需要 `manage_accounts`，網域處置需要 `manage_domains`，檢舉則需要 `manage_reports`。CLI 會以與伺服器相同的設定（`-config` 或環境變數）直接連線到資料庫，不會記錄是哪位使用者操作的（`issued_by_user_id` 等欄位為 NULL，[稽核記錄](#audit-log)中的執行者為 `cli`）。
+說明營運者與版主如何對帳號與網域採取處置、決定申訴、處理檢舉、檢查傳到了遠端伺服器的內容，以及閱讀稽核記錄。除了帳號管理與檢查傳送（僅限管理 API）之外，這裡的所有操作都可以透過管理 API（`/api/v1/admin/...`，範圍 `admin:read` / `admin:write`）與 CLI（`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`）進行。管理 API 需要角色權限：帳號管理、處置與申訴需要 `manage_accounts`，網域處置需要 `manage_domains`，檢舉則需要 `manage_reports`。CLI 會以與伺服器相同的設定（`-config` 或環境變數）直接連線到資料庫，不會記錄是哪位使用者操作的（`issued_by_user_id` 等欄位為 NULL，[稽核記錄](#audit-log)中的執行者為 `cli`）。
 
 <!-- source: from-a-report-to-an-action-and-an-appeal dabd0eabc7c7 -->
 ## 從檢舉到處置與申訴
@@ -17,7 +17,7 @@
 
 指派、筆記、通知與申訴都留在這個伺服器上；只有右欄中的活動會離開伺服器。
 
-<!-- source: moderation-and-server-administration-in-the-web-client 3beb1c9760a0 -->
+<!-- source: moderation-and-server-administration-in-the-web-client d7c65fc5b3d0 -->
 ## Web 用戶端中的審核與伺服器管理
 
 Web 用戶端把工作人員的畫面分成兩組。導覽列只會對角色至少擁有該組一項權限的人顯示「審核」與「管理」。每個畫面對沒有權限的人只會顯示原因，伺服器也會拒絕他們的請求。
@@ -31,7 +31,22 @@ Web 用戶端把工作人員的畫面分成兩組。導覽列只會對角色至�
 - 每個群組都會先開啟概覽；畫面本身位於旁邊的選單中。審核概覽中，你的角色會計算的每個佇列（待處理檢舉、等待核准的註冊申請、等待決定的申訴）各有一個方塊，分別連結到該佇列；另有一個方塊顯示最舊的待處理檢舉已等待多久（連結到依最舊排序的檢舉清單），並從整個佇列中列出應優先處理的待處理檢舉：先是違法內容，再來是等待最久的檢舉，並顯示每件已等待多久與由誰處理。檢舉清單可以依狀態、類別與負責人（你自己或無人）篩選，並依最新或最舊排序；篩選條件會保留在頁面的網址中。管理概覽會顯示伺服器的健康狀態：失敗的任務、任務佇列中最舊的任務已等待多久，以及未處理的錯誤；每個方塊都連結到對應的畫面，需要注意時會加上標示。
 - 內建的 `moderator` 只有 `manage_reports`、`manage_accounts` 與 `view_audit`，看不到「管理」。它也看不到網域處置與遠端伺服器畫面（`manage_domains`），因此若要委派這些任務，請建立具有該權限的角色並授予它（[授予與撤銷角色](admin-cli.md#granting-and-revoking-roles)）。
 - 不論屬於哪個群組，管理 API 的路徑都是 `/api/v1/admin/...`，範圍也都是同一組 `admin:read` / `admin:write`。在 API 參考中，群組以標籤區分（`admin-moderation`、`admin-server`）。
-- 還有第三組權限「使用者功能」（`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`），它位於工作人員畫面之外。只有這些權限的人既看不到「審核」也看不到「管理」；擁有 `view_finance` 的人，導覽列會在「設定」之後顯示「財務」（`/finance`）。它的 API 位於使用者命名空間（`GET /api/v1/finance/cost_totals` 與 `GET /api/v1/finance/income_totals`，範圍 `read:finance`），不需要 `admin:*` 範圍。它顯示的內容由[實例設定](instance-settings.md)中的 `finance_viewer_*` 決定。
+  伺服器外部的服務，可以改用權限範圍來呼叫單一權限的操作（[讓其他服務使用管理 API](#letting-another-service-use-the-admin-api)）。
+- 還有第三組權限「使用者功能」（`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`、`create_articles`、`create_events`），它位於工作人員畫面之外。只有這些權限的人既看不到「審核」也看不到「管理」；擁有 `view_finance` 的人，導覽列會在「設定」之後顯示「財務」（`/finance`）。它的 API 位於使用者命名空間（`GET /api/v1/finance/cost_totals` 與 `GET /api/v1/finance/income_totals`，範圍 `read:finance`），不需要 `admin:*` 範圍。它顯示的內容由[實例設定](instance-settings.md)中的 `finance_viewer_*` 決定。
+
+<!-- source: letting-another-service-use-the-admin-api 6c266c1e1111 -->
+### 讓其他服務使用管理 API
+
+你在伺服器旁邊執行的服務，例如發放邀請或記錄費用的服務，不需要外掛，就能以單一權限呼叫管理 API。
+
+1. 為該服務註冊一個帳號，並授予它一個只有該服務所需權限的角色（發放邀請時，是具有 `manage_invites` 的角色；[授予與撤銷角色](admin-cli.md#granting-and-revoking-roles)）。
+2. 以該帳號登入，在**設定 → 你的應用程式**中註冊一個應用程式，其範圍包含權限範圍，也就是 `admin:` 加上權限：`admin:manage_invites`。
+3. 從該應用程式為帳號發出一個帶有該範圍的權杖，並將存取權杖與更新權杖交給該服務。
+
+- 權杖只能存取其範圍所指名的權限的操作，而且只在帳號的角色仍擁有這些權限期間有效；稽核記錄會將它的行為記錄為該帳號的行為。
+- 存取權杖的有效期間為一小時。服務會以更新權杖更新它，並且每次都保留新的更新權杖：再次使用舊的更新權杖會撤銷該權杖。
+- `manage_roles`、`manage_oauth_apps`、`manage_login_recovery`、`manage_login_providers` 和 `manage_service_closure` 沒有權限範圍，任何應用程式都無法在同意畫面上向工作人員要求它們。
+- 若要停止該服務，請撤銷應用程式的權杖或刪除應用程式、取消該角色，或是在「管理」→「OAuth 應用程式」中停用該應用程式。
 
 <!-- source: account-actions a61dac7c5921 -->
 ## 帳號處置
@@ -201,6 +216,46 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 - 匯入的處置會持續「直到解除」，並帶有該列的公開註解與模糊化設定，以及你提供的私人筆記。它們會像逐一發出的處置一樣出現在稽核記錄中（透過 API 時執行者為操作者本人，透過 CLI 時為 `cli`）。
 - 匯出會為生效中的處置每個網域寫出一列。有 `suspend` 的網域得到 `suspend`，有 `limit` 的得到 `silence`，兩者都沒有的得到 `noop`。只有 `force_sensitive`（Mastodon 的網域封鎖沒有這種類型）的網域不會被匯出。私人筆記與結束時間不會被匯出。
 
+<!-- source: subscribing-to-blocklists d49a93c3c44f -->
+### 訂閱封鎖清單
+
+除了手動匯入 CSV，你也可以訂閱另一個伺服器或個人在 `https` URL 發布的網域封鎖清單。伺服器會在你訂閱之後立即擷取該清單，之後每天擷取一次，並在你要求時擷取，然後將其中的每一列轉為網域處置：可以是由版主接受或拒絕的草稿（`draft` 模式，預設），也可以在每次擷取時直接套用（`automatic` 模式）。
+
+```sh
+my admin domain subscription add -format mastodon_csv -title "Shared blocklist" https://lists.example/blocklist.csv
+my admin domain subscription list
+my admin domain subscription drafts <subscription id>
+my admin domain subscription accept -keys issue:suspend:spam.example <subscription id>
+my admin domain subscription reject -all <subscription id>
+my admin domain subscription update -mode automatic <subscription id>
+my admin domain subscription fetch <subscription id>               # fetch now and print the outcome
+my admin domain subscription fetches <subscription id>
+my admin domain subscription remove [-lift-actions] <subscription id>
+```
+
+在管理 API 中：`GET` 和 `POST /api/v1/admin/domain_list_subscriptions`、`GET`、`PATCH` 和 `DELETE .../{id}`（`lift_actions=true` 會解除該訂閱的處置）、`POST .../{id}/fetch`、`GET .../{id}/fetches`、`GET .../{id}/drafts`，以及 `POST .../{id}/drafts/accept` 和 `.../drafts/reject`（內容帶有 `keys`，若沒有則表示每個草稿）。這些都需要 `manage_domains`。
+
+在網頁用戶端中，開啟「審核」→「網域處置」並選擇「封鎖清單訂閱」（`/moderation/domain-actions/subscriptions`）。清單會顯示每個訂閱的模式與上次擷取，並連續列出失敗；「新增訂閱」會開啟包含名稱、URL、格式與下列設定的表單，訂閱後會開啟該訂閱的頁面。該頁面有四個區段：草稿，你可以逐一或全部一起接受或拒絕（接受會停權某個網域的草稿時會先詢問）；擷取，附有「立即擷取」以及每次擷取的結果；設定；以及「停止訂閱」，它會詢問是否要解除該訂閱所發出的處置。通知 `admin_domain_list_failing` 會連結到清單。
+
+| 格式 | 清單是什麼 |
+| --- | --- |
+| `mastodon_csv` | Mastodon 的網域封鎖 CSV，讀取方式與匯入相同 |
+| `mastodon_json` | 公布其網域封鎖的 Mastodon 伺服器的 `GET /api/v1/instance/domain_blocks` 的回應。被它混淆（以 `*`）的網域會被略過，而沒有公布清單的伺服器（`401`、`403`、`404`）會使擷取失敗 |
+| `plain_text` | 每行一個網域，每個都是 `suspend` |
+
+一列會發出什麼，遵循與匯入相同的表格，並依該訂閱的設定而改變：`suspend_as`（`suspend`、`limit` 或 `ignore`；預設 `suspend`）、`silence_as`（`limit` 或 `ignore`；預設 `limit`）、該列的 `reject_media` 和 `reject_reports` 是否適用（預設都適用），以及處置是否複製該列的公開註解（預設不複製）。
+
+- 擷取會經過與擷取其他伺服器相同的防護：指向私有位址的 URL 或重新導向會失敗。它最多讀取 2 MiB 和 5,000 列；較大的清單會使擷取失敗。伺服器會將清單的 `ETag` 和 `Last-Modified` 送回去，所以沒有變動的清單成本很低，而與上次讀取的清單相同的清單不會改變任何東西。
+- 失敗的擷取不會改變任何處置。它會連同失敗的原因（`http_status`、`network`、`forbidden_destination`、`too_large`、`too_many_entries` 或 `malformed`）一起記錄，並顯示在訂閱清單與它的擷取紀錄中。連續失敗 3 次之後，角色具有 `manage_domains` 的人會收到通知 `admin_domain_list_failing`。
+- 訂閱絕不會解除或取代不是它所發出的處置。如果同一種類的處置已經涵蓋該網域（在它本身或在父網域上），不論是誰發出的，訂閱就不會在那裡發出任何東西。當兩個訂閱列出同一個網域時，先發出它的那個訂閱的處置生效；如果那個訂閱將它解除，下一個訂閱就會發出它自己的處置。
+- 當清單移除了某個網域時，自動模式會在下一次擷取時，解除該訂閱在它上面所發出的處置。如果一次擷取會解除超過 10 個處置，而且超過該訂閱處置的一半，這些解除就會改為以草稿等待，因為損壞或空白的清單看起來就是這樣。
+- 伺服器不認得的嚴重程度（不是 `suspend`、`silence` 也不是 `noop`），一律以草稿等待，依訂閱的設定視為 `suspend`。
+- 草稿會列出清單將新增（`issue`）與移除（`lift`）的內容，每個都附有鍵，例如 `issue:suspend:spam.example`。被拒絕的草稿，在清單變更該網域的那一列（`issue`）或處置結束（`lift`）之前，不會再回來。
+- 如果版主解除了訂閱所發出的處置，在清單變更該網域的那一列之前，訂閱不會再次發出它。
+- 變更設定時，會在該變更所啟動的擷取中套用。URL 與格式無法變更；要變更它們，請重新訂閱。
+- 移除訂閱會保留它所發出的處置，這些處置之後算作版主的處置，除非你在移除時一併解除它們。
+- 稽核記錄會記錄訂閱、變更、移除、被接受與被拒絕的草稿，以及手動要求的擷取。自動模式的處置，與其他網域處置一樣記錄，執行者為 `system`，並以 `domain_moderation_action.created` 和 `.lifted` 傳送給 webhook，其 `data` 帶有 `subscription_id`。
+
 <!-- source: severed-follows 51be435d8635 -->
 ### 被切斷的追蹤
 
@@ -211,6 +266,47 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 - 每位失去已核准追蹤的使用者都會收到一則通知（`relationships_severed`），說明失去了多少追蹤者與追蹤中的帳號。只失去追蹤請求的使用者不會收到通知。
 - 解除處置不會恢復被切斷的追蹤。使用者要重新追蹤。
 - 再次處理同一個處置（例如任務重新執行時）不會再新增被切斷關係的紀錄或通知。
+
+<!-- source: federating-only-with-allowed-servers 042f518cd527 -->
+### 只與被允許的伺服器聯邦
+
+實例設定 `federation_scope` 決定這台伺服器與哪些伺服器聯邦：`open`（預設）與每個沒有被網域處置停權的伺服器聯邦，而 `allowlist` 則只與允許清單上的網域及其子網域聯邦，適用於只與它認識的伺服器往來的組織或個人伺服器。
+
+當 `federation_scope` 為 `allowlist` 時：
+
+- 沒有被允許的伺服器會被視為已停權的網域：它的傳送在簽章被檢查之前就會得到 `403`，不會有任何東西傳送給它或從它取得，中繼也不會從它帶來任何東西。
+- 允許涵蓋它的子網域：允許 `friend.example` 也會允許 `social.friend.example`。
+- 網域處置仍然適用於被允許的伺服器：被允許但帶有 `suspend` 的網域仍然是停權，帶有 `limit` 或 `reject_media` 的則仍然受限。
+- 不論 `authorized_fetch` 怎麼設定，ActivityPub 的 GET 都需要來自被允許伺服器的簽章，這樣沒有被允許的伺服器就無法讀取公開貼文。沒有簽署其 GET 的伺服器與爬蟲會得到 `401`。
+- NodeInfo 會標明 `metadata.federationScope`，讓其他伺服器能夠分辨。
+
+當它是 `open` 時，允許清單不會改變任何東西，並會保留到你下次切換時使用。
+
+```sh
+my admin domain allow add -comment "partner" friend.example
+my admin domain allow list
+my admin domain allow remove friend.example
+my admin federation scope                   # prints the setting
+my admin federation scope allowlist         # shows what the switch would end, and changes nothing
+my admin federation scope -apply allowlist  # switches
+my admin federation scope open
+```
+
+在管理 API 中：`GET /api/v1/admin/domain_allows`、`POST /api/v1/admin/domain_allows`（內容帶有 `domain` 和 `comment`；已被允許的網域會回應 `200` 並保留它的允許），以及 `DELETE /api/v1/admin/domain_allows/{domain}`，需要權限 `manage_domains`。
+`GET /api/v1/admin/settings/federation_scope/impact` 會計算這次切換將結束的內容，需要權限 `manage_settings`，而 `PATCH /api/v1/admin/settings` 會像任何其他設定一樣變更 `federation_scope`。
+允許清單最多保存 5,000 個網域，而註解（絕不會公開）最多 5,000 個字元。這台伺服器自己的網域無法被允許。
+
+切換到 `allowlist`，以及在它開啟時移除允許，會永久結束追蹤：
+
+- 在切換之前，請先閱讀這次切換將結束本站使用者與沒有被允許的伺服器之間多少已核准的追蹤、有多少本站使用者會失去其中一個，以及這類追蹤最多的伺服器（上述的影響，或不帶 `-apply` 的 `my admin federation scope allowlist`）。
+- 切換會切斷與允許清單沒有允許的每個伺服器之間雙向的追蹤，而且不會通知那些伺服器，與網域的 `suspend` 相同：一個任務（`moderation.sever_allowlist`）會一次切斷一位本站使用者的追蹤，而每位失去已核准追蹤的使用者會收到一則附有數量的通知（`relationships_severed`）。
+- 當 `federation_scope` 為 `allowlist` 時移除允許，會以同樣的方式，切斷與該網域及其沒有被其他允許涵蓋的子網域的帳號之間的追蹤。移除父網域已被允許的子網域的允許，不會切斷任何東西。
+- 切換回 `open`，或再次允許該網域，不會恢復被切斷的追蹤。使用者需要重新追蹤。
+- 在已經是 `allowlist` 時再設定 `allowlist`，不會再切斷任何東西。
+
+在網頁用戶端中，開啟「審核」→「網域處置」並選擇「已允許的網域」（`/moderation/domain-actions/allowed`），即可閱讀、新增和移除允許；移除時會先詢問，因為當 `federation_scope` 為 `allowlist` 時，它會將該網域切斷。設定本身是伺服器設定的聯邦頁面（`/admin/settings/federation`，需要權限 `manage_settings`）上的「聯邦範圍」：選擇「僅限允許的網域」並儲存，會顯示這次切換將結束的追蹤、會失去其中一個的本站使用者，以及這類追蹤最多的伺服器，並且只有在你確認之後才會儲存。
+
+新增與移除允許會記錄在稽核記錄中（`domain_allow_added` 和 `domain_allow_removed`），而切換則是 `federation_scope` 的 `setting_changed`。
 
 <!-- source: publishing-the-domains-you-act-on b647d2c8c84c -->
 ### 公開你處置的網域
@@ -247,7 +343,40 @@ my admin refetch domain remote.example
 - 不會從設有 `suspend` 的網域，或因傳送失敗而處於 `unavailable` 的網域擷取。同一個 URI 的擷取失敗會被記住 1 小時，在這段時間內重新擷取時不會擷取它。
 - 你的要求會以 `status_refetch_queued`、`account_statuses_refetch_queued` 或 `domain_statuses_refetch_queued` 記錄在稽核記錄中。
 
-<!-- source: reports e8a3f112b323 -->
+<!-- source: checking-what-reached-a-remote-server b659a7421ff9 -->
+## 檢查傳到了遠端伺服器的內容
+
+當使用者詢問某則貼文、某個追蹤或某個接受是否已傳到另一個伺服器時，請用管理 API 列出傳送給該伺服器的傳送。
+它會依最新順序，顯示活動傳送到該伺服器收件匣的每一次傳送，附有每次嘗試以及該伺服器的回應，成功的傳送也包含在內。
+它需要 `manage_domains` 權限。
+在網頁用戶端中，遠端伺服器畫面（`/moderation/instances/{domain}`）的**傳送**區段會顯示同一份清單，附有依**活動 ID** 和**本站帳號**的篩選，並在每個被遮蔽的傳送上提供**顯示被遮蔽的欄位**；畫面會在它們執行之前，說明其中哪些會記錄在稽核記錄中。
+
+```sh
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://example.com/api/v1/admin/instances/misskey.io/deliveries"
+```
+
+- 每個傳送都有活動類型（`Create`、`Follow`、`Accept` 等）、活動被記錄的時間與收件匣被加入的時間，以及它的 `attempts`（依最舊順序）。
+  每次嘗試都有它的 `outcome`（`succeeded`、`retryable_failure`、`permanent_failure`、`skipped`）、回應的 `signature_scheme` 和 `status_code`、沒有回應的失敗的 `error` 或什麼都沒送出的原因，以及時間。
+  帶有 `202` 的 `succeeded` 嘗試，表示對方伺服器接受了該活動；它之後是否顯示它，則由該伺服器決定。
+- 嘗試會保留 30 天，所以歷史可以回溯 30 天。
+- 若要縮小清單範圍，請加上 `activity_uri=<the activity's ID>`，或以 `account_id=<a local account's ID>` 查看單一帳號的傳送。
+  帶有 `account_id` 的查詢會以 `account_deliveries_viewed` 記錄在稽核記錄中，附上該帳號與伺服器；其他查詢不會記錄。
+- 活動的內容絕不會顯示。
+
+有些傳送會被遮蔽：它們的寄件者、活動 URI 與收件匣會被省略，並由 `mask` 說明原因。
+
+| `mask` | 該活動關於 |
+| --- | --- |
+| `private`、`direct`、`local` | 具有該可見範圍的貼文 |
+| `approves_followers` | 會審核追蹤者的本站帳號的追蹤、它的取消、接受或拒絕 |
+| `unknown` | 已不存在的貼文或帳號，所以已經不知道它是什麼 |
+
+共用收件匣不指名收件者，一律會顯示；嘗試的錯誤中被遮蔽的個人收件匣會寫成 `[masked]`。
+被遮蔽傳送的類型、時間與每次嘗試都會顯示，所以你仍然能看到它是否到達了該伺服器。
+若要查看某個傳送被遮蔽的欄位，請使用 `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal`；每次呼叫都會在顯示任何東西之前，以 `delivery_revealed` 記錄在稽核記錄中。
+
+<!-- source: reports 8b0684a0561c -->
 ## 檢舉
 
 從其他伺服器收到的檢舉（`Flag`）會以待處理（`open`）狀態進入檢舉清單。
@@ -270,7 +399,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 從檢舉發出處置時（處置的 `report_id` / `-report`），檢舉會在同一個操作中以 `actioned` 解決。
 - 筆記（`note`）是只有版主看得到的內部筆記，最多 2,000 個字元。目標與檢舉者都看不到它。筆記無法編輯或刪除。
 - 重新開啟（`reopen`）會讓已解決的檢舉回到 `open`（指派會保留）。待處理的檢舉無法重新開啟（在管理 API 中為 `409`）。
-- 轉送（`forward`，檢舉詳細資料中的按鈕**轉送到對方伺服器**）會把關於其他伺服器上帳號的檢舉，以你的實例 actor 發出的 `Flag` 傳送給該伺服器，附上該帳號與仍然存在的被檢舉貼文。它唯一攜帶的文字，是你轉送時寫給該伺服器版主的內容（`-comment`、管理 API 中的 `comment`，或檢舉頁面上的**給對方版主的文字**；最多 1,000 個字元，預設為無）。檢舉者的留言與[外部審查](#reports-that-an-external-review-filed)的筆記絕不會以這種方式離開你的伺服器，也不會傳送任何關於檢舉者的資訊。檢舉者在提出檢舉時選擇轉送的檢舉，已經附上檢舉者的留言立即送出。轉送適用於在這個伺服器上由人或[外部審查](#reports-that-an-external-review-filed)提出、待處理或已解決、尚未轉送過的檢舉；從其他伺服器收到的檢舉，或關於語音聊天聊天室的檢舉無法轉送（在管理 API 中為 `409` `report-not-forwardable`，檢舉詳細資料也不會顯示按鈕）。檢舉只會傳送一次：再次轉送（無論附上什麼文字），或轉送檢舉者提出時已轉送過的檢舉，都不會有任何變更。管理 API 中的 `forwarded` 表示是否已傳送，`forwardable` 則表示現在是否可以傳送。
+- 轉送（`forward`，檢舉詳細資料中的按鈕**轉送到對方伺服器**）會把關於其他伺服器上帳號的檢舉，以你的實例 actor 發出的 `Flag` 傳送給該伺服器，附上該帳號與仍然存在的被檢舉貼文。它唯一攜帶的文字，是你轉送時寫給該伺服器版主的內容（`-comment`、管理 API 中的 `comment`，或檢舉頁面上的**給對方版主的文字**；最多 1,000 個字元，預設為無）。檢舉者的留言與[外部審查](#reports-that-an-external-review-filed)的筆記絕不會以這種方式離開你的伺服器，也不會傳送任何關於檢舉者的資訊。檢舉者在提出檢舉時選擇轉送的檢舉，已經附上檢舉者的留言立即送出。轉送適用於在這個伺服器上由人或[外部審查](#reports-that-an-external-review-filed)提出、待處理或已解決、尚未轉送過的檢舉；從其他伺服器收到的檢舉，或關於語音聊天室或活動的檢舉無法轉送（在管理 API 中為 `409` `report-not-forwardable`，檢舉詳細資料也不會顯示按鈕）。檢舉只會傳送一次：再次轉送（無論附上什麼文字），或轉送檢舉者提出時已轉送過的檢舉，都不會有任何變更。管理 API 中的 `forwarded` 表示是否已傳送，`forwardable` 則表示現在是否可以傳送。
 - 檢舉詳細資料（`show`、`GET .../{id}`）會依最舊排序回傳筆記，以及關於該目標的其他檢舉數量與對該目標的處置數量（包括已解除與已到期的處置）。清單不會回傳筆記。
 - 指派、解決、重新開啟、筆記與轉送都會保存為事件（`report_assignments`、`report_resolutions`、`report_reopenings`、`report_notes`、`report_forwards`），`report_states` 則保存目前的狀態。
 - 版主可以在檢舉頁面上翻譯被檢舉的貼文與檢舉者的留言，或使用 `POST .../{id}/statuses/{status_id}/translation` 與 `POST .../{id}/comment/translation`（本文 `{"target_language": "en"}`）。只有在[實例設定](instance-settings.md) `translation_reports_to_server` 開啟時，文字才會送到翻譯服務，而且只會送到獲准處理該貼文可見範圍的服務：版主的存取權限不會擴大任何範圍，因此私訊貼文只會送到獲准處理 `direct` 的服務，留言則視為 `private`。留言的翻譯不會保留，已刪除貼文的翻譯也不會保留，字元數只計入伺服器的每月上限。開啟 `translation_browser` 時，瀏覽器內建的翻譯功能不論 `translation_reports_to_server` 為何，都能用於檢舉。
@@ -289,7 +418,19 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 檢舉詳細資料（`GET /api/v1/admin/reports/{id}`）會顯示聊天室（`voice_room`）：其設定的每次變更、誰參與過以及何時離開、誰被移出，以及聊天室如何結束。參與者的紀錄會在聊天室結束後保留 90 天（`voice_participants_retention_days`），只要有檢舉指向該聊天室就會一直保留（[紀錄保留](#record-retention-and-holds)）。沒有錄音也沒有文字聊天，因此這些紀錄是唯一的證據。
 - 擁有 `manage_reports` 的人可以用 `POST /api/v1/admin/voice_rooms/{id}/end`（本文 `{"reason": "..."}`，可省略，最多 500 個字元）為所有參與者結束開放中的聊天室。理由只給版主看；參與者只會看到聊天室已結束。語音聊天關閉時也能使用，稽核記錄會記下 `voice_room_ended`。
 
-<!-- source: notifications-for-moderators-and-the-pending-counts 7b83fa4097b2 -->
+<!-- source: events d37a09a66811 -->
+### 活動
+
+- 本站使用者可以檢舉自己看得到的活動，包括已取消的活動（`POST /api/v1/reports`，帶有 `event_id`，並將 `account_id` 設為活動的主辦人）。
+  該檢舉的對象是主辦人，並指向檢舉者所看到的活動設定（標題、說明與地點）。仍在以投票挑選日期的活動，可以像任何其他活動一樣被檢舉與取消。它不指向任何貼文，也絕不會轉送給其他伺服器。
+- 檢舉詳細資料（`GET /api/v1/admin/reports/{id}`）會顯示活動（`event`）：它的日期、是否以及如何被取消，以及它設定的每一次變更（依最舊順序），附有它所有的地點，包括只有已核准的參加者才看得到的地點。
+  `reported_revision_id` 是檢舉者所看到的版本，所以在檢舉之後被變更的標題或地址，仍然會呈現在你面前。
+- 持有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活動（內容為 `{"reason": "..."}`，可省略，最多 500 個字元）。
+  原因會連同取消一起顯示給所有看得到該活動的人。回覆要參加或可能參加的使用者與受邀的使用者會收到通知，與主辦人自己取消時相同，而稽核記錄會記錄 `event_cancelled`。
+  已經取消的活動會回應 `409` `event-closed`。
+- 停權或刪除主辦人，會取消該主辦人尚未開始的活動，包括仍在以投票挑選日期的活動（`gathering.cancel_organized`），並通知它們的參加者。這些取消不會指名任何人是取消者，而解除停權也不會恢復它們。已經開始的活動不會被取消。
+
+<!-- source: notifications-for-moderators-and-the-pending-counts a9a32ea8cccb -->
 ## 給版主的通知與待處理數量
 
 新的檢舉、等待核准的註冊申請與申訴，會以應用程式內通知送達擁有權限的人。
@@ -301,6 +442,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `admin_appeal` | 有人對處置提出申訴時 | 角色擁有 `manage_accounts` 的人，提出申訴者除外 |
 | `admin_custom_emoji_request` | 有人申請建立自訂表情符號或替換其圖片時 | 角色擁有 `manage_custom_emojis` 的人，申請者除外 |
 | `admin_error_group` | 伺服器或 Web 用戶端回報新種類的錯誤時，或已解決的錯誤群組在另一個伺服器版本上再次發生時 | 角色擁有 `manage_errors` 的人 |
+| `admin_domain_list_failing` | 當訂閱的封鎖清單連續第三次擷取失敗時 | 角色具有 `manage_domains` 的人 |
 
 - `admin_error_group` 整個伺服器每小時最多送達 10 次。該小時內其餘的會合併成一則通知，說明還有多少個錯誤群組。已靜音的群組絕不會通知。Web 用戶端為未登入訪客回報的錯誤，只有在已登入使用者的瀏覽器也回報時才會通知，而其再次發生不會通知任何人。錯誤群組可以透過 `GET /api/v1/admin/error_groups` 與 `POST /api/v1/admin/error_groups/{id}/resolve`（`/mute`、`/unmute`）讀取並解決、靜音或取消靜音，這些需要 `manage_errors`。
 - 誰會收到通知，取決於通知建立時的權限。之後失去權限的人，在通知清單與未讀數量中不會再看到該類型。若權限恢復，就會再次看到。
@@ -308,16 +450,16 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 
 `GET /api/v1/admin/counts` 會回傳待處理檢舉的數量（`open_reports`，需要 `manage_reports`）、等待核准的註冊申請數量（`pending_registrations`）與等待審查的申訴數量（`pending_appeals`）（兩者都需要 `manage_accounts`）。你沒有權限的項目不會回傳。
 
-<!-- source: audit-log 86955f4182c0 -->
+<!-- source: audit-log e8f33b4d2da4 -->
 ## 稽核記錄
 
 版主與管理員的操作會在與操作相同的交易中，每次一列記錄在稽核記錄（`audit_log_entries`）中。失敗的操作與沒有任何變更的操作不會被記錄：解除已解除的處置、解決已解決的檢舉、指派給同一位負責人、停用已停用的規則、移動到相同位置、授予使用者已擁有的角色，以及撤銷使用者沒有的角色。
 
 | 目標類型 | 操作 |
 | --- | --- |
-| `account` | `account_action_issued` 與 `account_action_lifted`（發出與解除對帳號的處置）、`account_deletion_canceled`（因對 `ban` 的申訴被推翻而取消刪除）、`revealed_private_data`（顯示 IP 位址與電子郵件地址）、`two_factor_disabled`（移除兩步驟驗證）、`password_reset_link_issued`（核發密碼重設連結）、`email_suppression_lifted`（解除郵件停止寄送）、`account_moved`（受限制的本站帳號搬到另一個本站帳號；限制不會帶到目的地，因此由你決定是否要在那裡套用）、`account_statuses_refetch_queued`（重新擷取遠端帳號的貼文） |
+| `account` | `account_action_issued` 與 `account_action_lifted`（發出與解除對帳號的處置）、`account_deletion_canceled`（因對 `ban` 的申訴被推翻而取消刪除）、`revealed_private_data`（顯示 IP 位址與電子郵件地址）、`two_factor_disabled`（移除兩步驟驗證）、`password_reset_link_issued`（核發密碼重設連結）、`email_suppression_lifted`（解除郵件停止寄送）、`account_moved`（受限制的本站帳號搬到另一個本站帳號；限制不會帶到目的地，因此由你決定是否要在那裡套用）、`account_statuses_refetch_queued`（重新擷取遠端帳號的貼文）、`account_deliveries_viewed`（列出了本站帳號對某個伺服器的傳送；目標名稱是帳號識別與該伺服器） |
 | `status` | `status_refetch_queued`（重新擷取遠端貼文；目標名稱為貼文 URI） |
-| `domain` | `domain_action_issued` 與 `domain_action_lifted`（發出與解除網域處置）、`domain_statuses_refetch_queued`（重新擷取該網域帳號的貼文）、`instance_marked_available`（清除某個伺服器的失敗紀錄） |
+| `domain` | `domain_action_issued` 與 `domain_action_lifted`（發出與解除網域處置）、`domain_statuses_refetch_queued`（重新擷取該網域帳號的貼文）、`instance_marked_available`（清除某個伺服器的失敗紀錄）、`delivery_revealed`（顯示了傳送給該伺服器的傳送中被遮蔽的寄件者、活動 URI 與收件匣） |
 | `report` | `report_assigned`、`report_unassigned`、`report_resolved`、`report_reopened`、`report_note_added`、`report_forwarded`（指派、取消指派、解決與重新開啟檢舉、新增筆記，以及轉送檢舉） |
 | `user` | `registration_approved`、`registration_rejected`（註冊審查） |
 | `setting` | `setting_changed`（實例設定）、`text_changed`（實例文字） |
@@ -332,7 +474,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `invite` | `invite_created`、`invite_revoked`（建立與撤銷邀請；目標名稱為邀請碼的前 4 個字元） |
 | `billing_source` | `billing_import_queued`（手動開始帳單匯入；目標名稱為供應商名稱） |
 | `cost_item` | `cost_item_created`、`cost_item_relabeled`、`cost_item_price_revised`、`cost_item_end_changed`、`cost_item_deleted`（登記支出、變更其名稱等、修訂其金額、變更其結束日期，以及刪除；目標名稱為項目名稱） |
-| `supporter_program` | `supporter_program_enabled`、`supporter_program_disabled`（啟用與停用收費；目標名稱為金流服務名稱） |
+| `supporter_program` | `supporter_program_enabled`、`supporter_program_disabled`（啟用與停用收費；目標名稱為金流服務名稱），以及 `supporter_tips_enabled`、`supporter_tips_revised`、`supporter_tips_disabled`（啟用小費、變更其金額，以及停用它們；目標名稱是貨幣與以最小單位表示的金額） |
 | `supporter_plan` | `supporter_plan_created`、`supporter_plan_revised`、`supporter_plan_retired`（建立、變更與停用支持者方案；目標名稱為方案名稱） |
 | `supporter_subscription` | `supporter_subscription_ended`（管理員立即結束訂閱；目標名稱為方案名稱與使用者帳號） |
 | `custom_emoji_request` | `custom_emoji_request_submitted`、`custom_emoji_request_withdrawn`、`custom_emoji_request_approved`、`custom_emoji_request_rejected`（提出、撤回、核准與拒絕自訂表情符號申請；目標名稱為 `:shortcode:`） |
@@ -341,10 +483,13 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒絕與撤銷拒絕 Client ID Metadata Document 的主機；拒絕會撤銷該主機用戶端的權杖；目標名稱為主機） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告服務關閉或變更日期、撤回公告、關閉，以及完成關閉通知的傳送；目標名稱為 `service_closure`） |
 | `voice_room` | `voice_room_ended`（版主結束了開放中的語音聊天聊天室；由於撰寫名稱的帳號被清除時名稱也會消失，目標名稱為聊天室 ID；檢舉詳細資料會顯示名稱） |
+| `event` | `event_cancelled`（版主取消了一個活動；由於撰寫標題的帳號被清除時標題也會消失，所以目標名稱是活動 ID；檢舉詳細資料會顯示標題） |
+| `domain_allow` | `domain_allow_added`、`domain_allow_removed`（將網域加入聯邦的允許清單與移除它；請參閱[只與被允許的伺服器聯邦](#federating-only-with-allowed-servers)；目標名稱是該網域） |
 | `link_card_domain` | `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`（為網域設定連結卡片爬蟲的規則，以及移除規則；請參閱[連結卡片網域](instance-settings.md#link-card-domains)） |
 | `login_provider` | `login_provider_created`、`login_provider_updated`、`login_provider_deleted`、`login_provider_enabled`、`login_provider_disabled`、`login_provider_secret_rotated`（新增、變更、刪除、啟用與停用外部登入服務，以及替換其用戶端密鑰；目標名稱為服務的顯示名稱） |
+| `domain_list_subscription` | `domain_list_subscription_created`、`domain_list_subscription_updated`、`domain_list_subscription_deleted`（訂閱封鎖清單、變更其設定，以及移除它）、`domain_list_draft_accepted` 和 `domain_list_draft_rejected`（接受草稿，這也會記錄網域處置，以及拒絕草稿）、`domain_list_fetch_queued`（手動要求的擷取）；目標名稱是該訂閱的標題；請參閱[訂閱封鎖清單](#subscribing-to-blocklists) |
 
-清單會顯示目標是否仍然存在。在保留期間後消失的帳號、檢舉、申訴與註冊封鎖，以及已刪除的角色、自訂表情符號與 webhook，只會顯示記錄時的名稱，沒有連到畫面的連結。
+清單會顯示目標是否仍然存在。在保留期間後消失的帳號、檢舉、申訴與註冊封鎖、已移除的允許，以及已刪除的角色、自訂表情符號與 webhook，只會顯示記錄時的名稱，沒有連到畫面的連結。
 
 ```sh
 my admin audit list
@@ -360,10 +505,10 @@ my admin audit list -target-kind domain -target-id spam.example
 - 清單依最新排序，使用 keyset 分頁（CLI 中為 `-before <entry id>`）。
 - 沒有更新或刪除稽核記錄的 API 或 CLI。舊的列會在[保留期間](#record-retention-and-holds)過後移除。
 
-<!-- source: record-retention-and-holds bd806b3bbda7 -->
+<!-- source: record-retention-and-holds 9861d8570a91 -->
 ## 紀錄保留與保全
 
-每種紀錄的保留期間過後，每小時執行的任務（`moderation.purge_records`、`identity.purge_origins` 與 `voice.purge_records`）會移除審核紀錄。你可以在實例設定中變更期間，但不能低於下限（[實例設定](instance-settings.md)）。變更後的期間從下一次執行開始生效。已解除的保留保全連同其理由，會在解除後經過審核處置的保留期間時移除。
+每種紀錄的保留期間過後，每小時執行的任務（`moderation.purge_records`、`identity.purge_origins`、`voice.purge_records` 與 `gathering.purge_records`）會移除審核紀錄。你可以在實例設定中變更期間，但不能低於下限（[實例設定](instance-settings.md)）。變更後的期間從下一次執行開始生效。已解除的保留保全連同其理由，會在解除後經過審核處置的保留期間時移除。
 
 | 紀錄 | 設定 | 預設 | 下限 | 起算點 |
 | --- | --- | --- | --- | --- |
@@ -375,12 +520,14 @@ my admin audit list -target-kind domain -target-id spam.example
 | 註冊封鎖 | 無（無法變更） | 30 天 | 不適用 | 解除與到期中較早者 |
 | 語音聊天聊天室的參與者（參與、發言者與聽眾、舉手、邀請、移出） | `voice_participants_retention_days` | 90 天 | 30 天 | 聊天室結束時 |
 | [決策 hook](decision-hooks.md#the-decisions) 的決策 | `hook_decisions_retention_days` | 90 天 | 30 天 | 決策時 |
+| 活動的回覆、核准、邀請，以及對候選日期的投票 | `event_records_retention_days` | 90 天 | 30 天 | 活動結束（日期從未確定的活動，則為它最後一個候選日期結束）與活動取消兩者中較早的時間 |
 
 - 待處理的檢舉絕不會被移除。處置所引用的檢舉（處置的 `report_id`）會保留到該處置被移除為止。
 - 處置的結束是解除與到期中較早者。對於已申訴的處置，若審查比那更晚，則結束時間為審查時間，而申訴等待審查期間處置會被保留。`warn` 與 `delete_statuses` 沒有持續的效果，因此結束時間就是發出的時間。沒有結束的處置（`ban`、沒有結束時間的 `suspend` 等）在解除前不會被移除。
 - 檢舉或處置所指向的貼文，即使作者已刪除（從畫面上消失），在該檢舉或處置被移除之前，清除任務也不會連同附加的媒體實際刪除它們。遠端貼文也會保留超過保留期間（包括實例設定 `remote_status_max_retention_days`）。
 - 既沒有解除也沒有結束時間的註冊封鎖，在生效期間會一直保留。
 - 檢舉所指向的語音聊天聊天室的參與者紀錄，會保留到該檢舉被移除為止。聊天室本身（名稱、說明、主持人以及如何結束）絕不會被移除。
+- 檢舉所指向的活動的回覆、投票與邀請，會保留到該檢舉被移除為止，指名處於保全之下的帳號的那些也一樣。活動本身（它的設定與地點、它的日期與候選日期、它的共同主辦人，以及它的取消）絕不會被移除；一旦它的回覆被移除，它就不再算有任何人要參加。
 - 一次任務執行每種紀錄只會移除有上限的列數（處置、檢舉與註冊封鎖為每次 100 列、共 20 次；稽核記錄為每次 1,000 列、共 20 次）。其餘的由下一次執行移除。
 
 <!-- source: holds f3bf57c2c258 -->

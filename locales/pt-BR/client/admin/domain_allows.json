@@ -1,0 +1,122 @@
+{
+  "admin.domain_allows.add_failed": {
+    "defaultMessage": "Não foi possível permitir o domínio: {reason}",
+    "description": "Error under the form when allowing a domain failed. {reason} is why."
+  },
+  "admin.domain_allows.added": {
+    "defaultMessage": "{domain} foi permitido.",
+    "description": "Result after a domain was added to the allowlist. {domain} is the domain."
+  },
+  "admin.domain_allows.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "Button of the confirmation of removing an allow that closes it without removing."
+  },
+  "admin.domain_allows.characters_left": {
+    "defaultMessage": "{count, plural, one {Resta # caractere} other {Restam # caracteres}}",
+    "description": "Character count under the comment of an allowed domain while it is within the limit."
+  },
+  "admin.domain_allows.characters_over": {
+    "defaultMessage": "{count, plural, one {# caractere a mais} other {# caracteres a mais}}",
+    "description": "Character count under the comment of an allowed domain when it is longer than the limit."
+  },
+  "admin.domain_allows.column.comment": {
+    "defaultMessage": "Comentário",
+    "description": "Header of the column of the moderators' comment on an allowed domain."
+  },
+  "admin.domain_allows.column.created_at": {
+    "defaultMessage": "Permitido",
+    "description": "Header of the column of when a domain was allowed."
+  },
+  "admin.domain_allows.column.domain": {
+    "defaultMessage": "Domínio",
+    "description": "Header of the column of the allowed domain."
+  },
+  "admin.domain_allows.comment": {
+    "defaultMessage": "Comentário",
+    "description": "Label of the comment field of the form that allows a domain."
+  },
+  "admin.domain_allows.comment.description": {
+    "defaultMessage": "Por que o domínio é permitido, para os moderadores. Nunca é publicado.",
+    "description": "Description of the comment field of the form that allows a domain."
+  },
+  "admin.domain_allows.comment.too_long": {
+    "defaultMessage": "O comentário pode ter até {max, number} caracteres.",
+    "description": "Error of the comment of an allowed domain when it is longer than the limit. {max} is the limit."
+  },
+  "admin.domain_allows.description": {
+    "defaultMessage": "Estes domínios e seus subdomínios são os únicos servidores com os quais este servidor se federa enquanto o escopo de federação for “Somente domínios permitidos”. Enquanto for “Todos os servidores”, esta lista não muda nada. Uma ação de domínio sobre um domínio permitido continua valendo.",
+    "description": "Description of the allowlist of federation: when it applies, that it covers subdomains, and that domain actions still apply."
+  },
+  "admin.domain_allows.domain": {
+    "defaultMessage": "Domínio",
+    "description": "Label of the domain field of the form that allows a domain."
+  },
+  "admin.domain_allows.domain.description": {
+    "defaultMessage": "Um host sem “https://”, como amigo.example. Os subdomínios dele também são permitidos.",
+    "description": "Description of the domain field of the form that allows a domain."
+  },
+  "admin.domain_allows.domain.required": {
+    "defaultMessage": "Informe um domínio.",
+    "description": "Error of the domain field of the form that allows a domain when it is empty."
+  },
+  "admin.domain_allows.empty": {
+    "defaultMessage": "Nenhum domínio permitido",
+    "description": "Heading of the empty state of the allowlist of federation."
+  },
+  "admin.domain_allows.empty.description": {
+    "defaultMessage": "Enquanto o escopo de federação for “Somente domínios permitidos”, este servidor não se federa com nenhum servidor até você permitir um.",
+    "description": "Description of the empty state of the allowlist of federation."
+  },
+  "admin.domain_allows.exists": {
+    "defaultMessage": "{domain} já estava permitido; a permissão e o comentário não mudaram.",
+    "description": "Result after allowing a domain that was already allowed. {domain} is the domain."
+  },
+  "admin.domain_allows.list.title": {
+    "defaultMessage": "Domínios permitidos",
+    "description": "Heading of the section and caption of the table of the domains on the allowlist of federation."
+  },
+  "admin.domain_allows.new.title": {
+    "defaultMessage": "Permitir um domínio",
+    "description": "Heading of the form that adds a domain to the allowlist of federation."
+  },
+  "admin.domain_allows.no_comment": {
+    "defaultMessage": "Nenhum",
+    "description": "Shown in the comment column of an allowed domain that has no comment."
+  },
+  "admin.domain_allows.remove": {
+    "defaultMessage": "Remover permissão",
+    "description": "Button of a row of the allowlist, and of its confirmation, that removes the domain from the allowlist."
+  },
+  "admin.domain_allows.remove.description": {
+    "defaultMessage": "Enquanto o escopo de federação for “Somente domínios permitidos”, este servidor deixa de se federar na hora com este domínio e seus subdomínios que nenhuma outra permissão cobre, e os seguimentos entre as pessoas daqui e as contas deles terminam de vez, como uma suspensão os termina. Enquanto o escopo for “Todos os servidores”, nada muda agora.",
+    "description": "Text of the confirmation before removing a domain from the allowlist: what it cuts off under each federation scope."
+  },
+  "admin.domain_allows.remove.title": {
+    "defaultMessage": "Remover a permissão de {domain}?",
+    "description": "Title of the confirmation before removing a domain from the allowlist. {domain} is the domain."
+  },
+  "admin.domain_allows.remove_domain": {
+    "defaultMessage": "Remover permissão de {domain}",
+    "description": "Accessible name of the button that removes a domain from the allowlist. {domain} is the domain."
+  },
+  "admin.domain_allows.remove_failed": {
+    "defaultMessage": "Não foi possível remover a permissão: {reason}",
+    "description": "Error in the confirmation when removing an allow failed. {reason} is why."
+  },
+  "admin.domain_allows.removed": {
+    "defaultMessage": "A permissão de {domain} foi removida.",
+    "description": "Result after a domain was removed from the allowlist. {domain} is the domain."
+  },
+  "admin.domain_allows.scope_link": {
+    "defaultMessage": "Alterar o escopo de federação",
+    "description": "Link from the allowlist to the federation settings, where the federation scope is switched; shown to people who may change settings."
+  },
+  "admin.domain_allows.submit": {
+    "defaultMessage": "Permitir",
+    "description": "Button that adds the domain of the form to the allowlist of federation."
+  },
+  "admin.domain_allows.title": {
+    "defaultMessage": "Domínios permitidos",
+    "description": "Name of the page of the allowlist of federation, in the navigation between the pages of the domain actions screen and as its title."
+  }
+}

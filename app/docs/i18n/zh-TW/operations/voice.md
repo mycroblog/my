@@ -3,44 +3,45 @@
 
 語音聊天讓已登入的使用者開設聊天室、邀請其他人並交談。在你選擇音訊的傳輸方式之前，它都是關閉的。本指南說明這個選擇、每種方式所需的 STUN 和 TURN 伺服器或媒體伺服器，以及部署、隱私和審核方面需要知道的事。這裡提到的每個設定都說明於[設定參考](../reference/configuration.md#voice)中。
 
-<!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
+<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
 ## 選擇音訊的傳輸方式
 
-`voice` 為整個實例選擇一種方式；所有聊天室都使用它。
+`voice` 為整個實例選擇一種方式；每個聊天室都使用它。
 
-| `voice` | 由誰傳送音訊 | 適合的情況 |
+| `voice` | 由什麼傳送音訊 | 適合 |
 | --- | --- | --- |
-| `off` | 無。語音聊天 API 回應 `404`，網頁用戶端不顯示語音聊天，啟動時也不會檢查其他 `voice_*` 設定。 | 預設值。 |
-| `p2p` | 參與者的瀏覽器直接把音訊傳給彼此。伺服器只轉送建立連線用的訊息。 | 小型聊天室，以及最便宜的配置：除了選用的 STUN 或 TURN 伺服器之外，不需要額外的伺服器。 |
-| `livekit` | LiveKit 伺服器，自行架設或使用 LiveKit Cloud。 | 較大的聊天室，以及嚴格控制誰可以發言。 |
-| `sora` | Sora 伺服器，自行架設或使用 Sora Cloud。 | 同上，適合你已經在運作 Sora 的情況。 |
+| `off` | 什麼都沒有。語音聊天 API 回應 `404`，網頁用戶端不顯示語音聊天，其他 `voice_*` 設定在啟動時也不會被檢查。 | 預設值。 |
+| `p2p` | 參與者的瀏覽器直接互相傳送音訊。伺服器只中繼建立連線所需的訊息。 | 小型聊天室與最便宜的設置：除了選用的 STUN 或 TURN 伺服器，不需要額外的伺服器。 |
+| `livekit` | LiveKit 伺服器，可以自行架設或使用 LiveKit Cloud。 | 較大的聊天室，以及嚴格控制誰可以發言。 |
+| `sora` | Sora 伺服器，可以自行架設或使用 Sora Cloud。 | 同上，適合你已經在執行 Sora 的情況。 |
 
-![三種方式並列。使用 p2p 時，伺服器轉送訊號，瀏覽器直接或經由 TURN 伺服器把音訊傳給彼此。使用 livekit 和 sora 時，瀏覽器把訊號和音訊傳給媒體伺服器，伺服器則透過 API 和 webhook 與該媒體伺服器溝通。下方列表會說明每種方式。](images/voice-methods.svg)
+![三種方式並排比較。使用 p2p 時，伺服器中繼訊號，瀏覽器彼此傳送音訊，或透過 TURN 伺服器傳送。使用 livekit 和 sora 時，瀏覽器將訊號與音訊傳送給媒體伺服器，而伺服器透過其 API 與 webhook 與該媒體伺服器溝通。下方的清單說明每一種方式。](images/voice-methods.svg)
 
-不論哪種方式，伺服器（`my serve`）都負責保存聊天室、參與者及其工作階段，並發給每位參與者一份授權：也就是瀏覽器連線所需的資訊。它從不傳送音訊。不同之處在於信令（建立連線用的訊息）和音訊流向哪裡：
+不論哪種方式，伺服器（`my serve`）都負責保管聊天室、誰參與其中及其工作階段，並交給每位參與者一份授權：瀏覽器連線所需的內容。它從不傳送音訊。不同的是訊號（建立連線的訊息）與音訊走哪裡：
 
-- **`p2p`**。瀏覽器把它的訊號（offer、answer 和 ICE candidate）傳給伺服器，伺服器再透過聊天室的事件串流轉給另一個瀏覽器；訊號最多在鍵值儲存中等待 30 秒。音訊直接從瀏覽器傳到瀏覽器。授權中列出 `voice_stun_urls` 的 STUN 伺服器和 `voice_turn`（`coturn` 或 `cloudflare`）的 TURN 伺服器，以及短期有效的憑證。瀏覽器透過 STUN 得知自己的公開位址，當兩個瀏覽器找不到直接路徑時，則由 TURN 伺服器轉送音訊。
-- **`livekit`**。授權中包含 `voice_livekit_url` 和一個 60 秒有效的存取權杖。瀏覽器把訊號和音訊傳給 LiveKit 伺服器，LiveKit 自備 STUN 和 TURN，並把音訊轉送給其他參與者（選擇性轉送單元，SFU）。伺服器透過 LiveKit 的 API 建立 LiveKit 聊天室並變更誰可以發言，LiveKit 則透過 webhook 向伺服器回報加入與離開。
-- **`sora`**。授權中包含 `voice_sora_signaling_urls` 和一個已簽署的加入值。瀏覽器把訊號和音訊傳給 Sora 伺服器，Sora 自備 STUN 和 TURN。Sora 在每次連線之前都會詢問伺服器的驗證 webhook，伺服器透過 Sora 的 API 控制聊天室，Sora 則透過 webhook 回報連線狀況。
+- **`p2p`。** 瀏覽器將它的訊號（offer、answer 和 ICE candidate）傳送給伺服器，伺服器透過聊天室的事件串流轉交給另一個瀏覽器；訊號最多會在鍵值儲存中等待 30 秒。音訊直接從瀏覽器傳到瀏覽器。授權中會列出 `voice_stun_urls` 的 STUN 伺服器，以及 `voice_turn`（`coturn` 或 `cloudflare`）的 TURN 伺服器與短期有效的憑證。瀏覽器從 STUN 得知自己的公開位址，而當兩個瀏覽器找不到直接的路徑時，TURN 伺服器會中繼音訊。
+- **`livekit`。** 授權中包含 `voice_livekit_url` 和一個 60 秒有效的存取權杖。瀏覽器將它的訊號與音訊傳送給 LiveKit 伺服器，該伺服器自備 STUN 和 TURN，並將音訊轉發給其他參與者（選擇性轉發單元，或 SFU）。
+  伺服器建立 LiveKit 的聊天室，並透過 LiveKit 的 API 變更誰可以發言，而 LiveKit 則以 webhook 向伺服器回報加入與離開。
+- **`sora`。** 授權中包含 `voice_sora_signaling_urls` 和一個簽署過的加入值。瀏覽器將它的訊號與音訊傳送給 Sora 伺服器，該伺服器自備 STUN 和 TURN。Sora 在每次連線之前都會詢問伺服器的驗證 webhook，伺服器透過 Sora 的 API 控制聊天室，而 Sora 以 webhook 回報連線。
 
-選擇時的注意事項：
+關於選擇的說明：
 
-- 使用 `p2p` 時，音訊從不經過這個伺服器（有使用 TURN 伺服器時會經過 TURN 伺服器）。伺服器的負載只有聊天室訊息、心跳和串流。
-- 小型實例最適合使用 `p2p`，或 LiveKit Cloud 的免費 Build 方案（請參閱 [LiveKit Cloud](#livekit-cloud)）。
-- 使用 `livekit` 或 `sora` 時，不會使用下方的 STUN 和 TURN 設定以及 ICE 政策（如果你設定了，伺服器會在啟動時發出警告），因為媒體伺服器自備這些伺服器。這時參與者的 IP 位址只有媒體伺服器看得到，其他參與者看不到。
-- 建置標籤 `no_voice_livekit` 和 `no_voice_sora` 可以把這兩種媒體伺服器方式從執行檔中排除（[建置標籤](../reference/build-tags.md)）。
-- 請以 HTTPS 提供實例：瀏覽器只允許安全的頁面存取麥克風。
+- 使用 `p2p` 時，音訊從不經過這個伺服器（有使用 TURN 伺服器時，則會經過它）。伺服器的負載只有聊天室訊息、心跳和串流。
+- 小型實例最適合使用 `p2p`，或使用 LiveKit Cloud 免費的 Build 方案（請參閱 [LiveKit Cloud](#livekit-cloud)）。
+- 使用 `livekit` 或 `sora` 時，STUN 和 TURN 設定與下方的 ICE 政策都不會用到（如果你設定了，伺服器會在啟動時警告），因為媒體伺服器自備伺服器。這時參與者的 IP 位址只有媒體伺服器看得到，其他參與者看不到。
+- 建置標籤 `no_voice_livekit` 和 `no_voice_sora` 可以將這兩種媒體伺服器方式從二進位檔中排除（[建置標籤](../reference/build-tags.md)）。
+- 請以 HTTPS 提供實例：瀏覽器只允許在安全的頁面上使用麥克風。
 
-這些限制讓付費媒體伺服器的費用維持在一定範圍內。除了最後一項之外，設為 `0` 即可取消任一限制：
+這些上限讓付費媒體伺服器的成本維持在可控範圍內。除了最後一項之外，`0` 都會移除該項上限：
 
 | 設定 | 預設值 | 意義 |
 | --- | --- | --- |
-| `voice_max_room_duration` | `4h` | 聊天室最長的開啟時間。達到時聊天室會結束。 |
-| `voice_max_open_rooms` | `10` | 這個伺服器上可以同時開啟的聊天室數。 |
-| `voice_sfu_max_participants` | `10` | `livekit` 和 `sora` 的聊天室人數上限。 |
-| `voice_p2p_max_participants` | `10` | `p2p` 的聊天室人數上限，從 2 到 50。 |
+| `voice_max_room_duration` | `4h` | 聊天室最長開放多久。達到時間的聊天室會被結束。 |
+| `voice_max_open_rooms` | `10` | 這個伺服器上同時最多可以開放多少個聊天室。為排定時間而開啟的聊天室，從它開啟起就開始計算，包括它等待第一位參與者的時間。 |
+| `voice_sfu_max_participants` | `10` | `livekit` 和 `sora` 的聊天室大小。 |
+| `voice_p2p_max_participants` | `10` | `p2p` 的聊天室大小，範圍為 2 到 50。 |
 
-誰可以開設聊天室由實例設定 `voice_room_starters` 決定（[實例設定](instance-settings.md)）：預設只有擁有 `start_voice_rooms` 權限的人（內建的 `admin` 角色具有此權限）；`everyone` 則讓每個沒有被停權或限制、已登入的本站使用者都能開設聊天室。
+誰可以開設聊天室，由實例設定 `voice_room_starters` 決定（[實例設定](instance-settings.md)）：預設只有擁有 `start_voice_rooms` 權限的人（內建的 `admin` 角色有這項權限）；`everyone` 則讓每位未被停權或限制的已登入本地使用者都能開設聊天室。
 
 <!-- source: peer-to-peer-rooms 2199ca9a427c -->
 ## 點對點聊天室

@@ -319,6 +319,38 @@
     "defaultMessage": "Tu suscripción ya tiene este plan y este intervalo.",
     "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
+  "errors.supporters.tip_amount": {
+    "defaultMessage": "La propina debe ser uno de los importes del servidor.",
+    "description": "API error title for HTTP 422 when a user starts a tip of an amount that is not one of the operator's choices (ADR-0162 §6)."
+  },
+  "errors.supporters.tip_amount_detail": {
+    "defaultMessage": "Elige uno de los importes que ofrece el servidor.",
+    "description": "API error detail for HTTP 422 when a tip is not of one of the server's amounts."
+  },
+  "errors.supporters.tip_pending": {
+    "defaultMessage": "Otra propina tuya se está iniciando.",
+    "description": "API error title for HTTP 409 when two starts of a tip of one user run at the same time (ADR-0162 §13)."
+  },
+  "errors.supporters.tip_pending_detail": {
+    "defaultMessage": "Inténtalo de nuevo en un momento.",
+    "description": "API error detail for HTTP 409 when another start of a tip of the user runs."
+  },
+  "errors.supporters.tips_unavailable": {
+    "defaultMessage": "Las propinas no están disponibles en este servidor.",
+    "description": "API error title for HTTP 409 when an administrator enables the tips while the supporter program is disabled or the payment provider takes no one-time payments (ADR-0162 §3)."
+  },
+  "errors.supporters.tips_unavailable_detail": {
+    "defaultMessage": "Primero activa el programa de mecenas en un proveedor de pagos que admita pagos únicos.",
+    "description": "API error detail for HTTP 409 when the tips cannot be enabled."
+  },
+  "errors.supporters.tip_amounts_invalid": {
+    "defaultMessage": "No se pueden guardar los importes de las propinas.",
+    "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
+  },
+  "errors.supporters.tip_amounts_invalid_detail": {
+    "defaultMessage": "{reason, select, count {Elige de 1 a 6 importes distintos en una sola moneda.} currency {Las propinas admiten yenes o dólares estadounidenses, y el proveedor de pagos debe admitir la moneda.} range {Cada importe debe estar entre 100 y 100 000 yenes o entre 1 y 1000 dólares estadounidenses, y ser al menos el cargo mínimo del proveedor de pagos.} other {Los importes incumplen una regla.}}",
+    "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
+  },
   "errors.supporters.payment_failed": {
     "defaultMessage": "Ha fallado el pago de este cambio, así que tu plan no ha cambiado.",
     "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."
@@ -351,9 +383,45 @@
     "defaultMessage": "La publicación creada con esta Idempotency-Key se ha eliminado.",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
   },
+  "errors.status.article_direct": {
+    "defaultMessage": "Un artículo no puede ser una publicación directa.",
+    "description": "Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have."
+  },
+  "errors.status.article_edited_as_post": {
+    "defaultMessage": "Un artículo se edita como artículo.",
+    "description": "Detail of the HTTP 422 API error when the user edits an article as a short post."
+  },
+  "errors.status.article_summary_invalid": {
+    "defaultMessage": "{max, plural, one {El resumen de un artículo debe tener como máximo # carácter.} other {El resumen de un artículo debe tener como máximo # caracteres.}}",
+    "description": "Detail of the HTTP 422 API error when the summary of an article is too long. {max} is the maximum number of characters."
+  },
+  "errors.status.article_title_invalid": {
+    "defaultMessage": "{max, plural, one {El título de un artículo debe tener 1 carácter.} other {El título de un artículo debe tener de 1 a # caracteres.}}",
+    "description": "Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters."
+  },
+  "errors.status.article_too_long": {
+    "defaultMessage": "{max, plural, one {El cuerpo de un artículo debe generar como máximo # byte de HTML.} other {El cuerpo de un artículo debe generar como máximo # bytes de HTML.}}",
+    "description": "Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes."
+  },
+  "errors.status.article_too_many_images": {
+    "defaultMessage": "{max, plural, one {El cuerpo de un artículo puede mostrar como máximo # imagen.} other {El cuerpo de un artículo puede mostrar como máximo # imágenes.}}",
+    "description": "Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images."
+  },
+  "errors.status.article_too_many_tags": {
+    "defaultMessage": "{max, plural, one {Un artículo puede tener como máximo # etiqueta.} other {Un artículo puede tener como máximo # etiquetas.}}",
+    "description": "Detail of the HTTP 422 API error when an article is given more hashtags than allowed. {max} is the maximum number of hashtags."
+  },
+  "errors.status.boost_not_allowed": {
+    "defaultMessage": "El autor de esta publicación no te permite impulsarla.",
+    "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
+  },
   "errors.status.empty_text": {
     "defaultMessage": "La publicación no tiene texto.",
     "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
+  },
+  "errors.status.invalid_hashtag": {
+    "defaultMessage": "Una etiqueta del artículo no es una etiqueta válida.",
+    "description": "Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have."
   },
   "errors.status.invalid_language": {
     "defaultMessage": "El idioma no es una etiqueta de idioma válida.",
@@ -382,6 +450,10 @@
   "errors.status.missing_media_description": {
     "defaultMessage": "Este servidor exige una descripción (texto alternativo) para cada imagen. Añade una a cada imagen antes de publicar.",
     "description": "Detail of the HTTP 422 API error when an attached image has no alternative text while the server requires one for every image (the instance setting require_media_description)."
+  },
+  "errors.status.not_article": {
+    "defaultMessage": "Esta publicación no es un artículo.",
+    "description": "Detail of the HTTP 422 API error when the user edits a post as an article."
   },
   "errors.status.not_author": {
     "defaultMessage": "Solo el autor puede cambiar esta publicación.",
@@ -450,6 +522,10 @@
   "errors.status.reply_not_found": {
     "defaultMessage": "No se encontró la publicación a la que respondes.",
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."
+  },
+  "errors.status.reply_not_allowed": {
+    "defaultMessage": "El autor de esta publicación no te permite responderle.",
+    "description": "Detail of the HTTP 422 API error when the author of a post chose who may reply to it and the user is not among them."
   },
   "errors.status.text_too_long": {
     "defaultMessage": "{max, plural, one {El texto y la advertencia de contenido pueden tener como máximo # carácter.} other {El texto y la advertencia de contenido pueden tener como máximo # caracteres.}}",
@@ -618,6 +694,26 @@
   "errors.last_administrator": {
     "defaultMessage": "Este es el único administrador del servidor. Nombra primero administrador a otro usuario.",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
+  },
+  "errors.featured_tags.too_many": {
+    "defaultMessage": "Puedes destacar como máximo 10 etiquetas en tu perfil.",
+    "description": "API error title for HTTP 422 when the user asks to feature more hashtags on their profile than the limit."
+  },
+  "errors.followed_tags.too_many": {
+    "defaultMessage": "Ya sigues el máximo de etiquetas permitido. Primero deja de seguir una.",
+    "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
+  },
+  "errors.follows_hidden": {
+    "defaultMessage": "Esta cuenta se reserva a quién sigue y quién la sigue.",
+    "description": "API error title for HTTP 403 when the viewer reads the follows or followers list of an account whose owner shows the lists only to approved followers or to nobody (follows_visibility)."
+  },
+  "errors.keyword_filters.too_many": {
+    "defaultMessage": "Ya tienes el máximo de filtros de palabras clave permitido. Primero elimina uno.",
+    "description": "API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters."
+  },
+  "errors.keyword_filters.too_many_words": {
+    "defaultMessage": "Un filtro de palabras clave tiene como máximo 100 palabras, y todos tus filtros como máximo 1000. Primero quita algunas.",
+    "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
   },
   "errors.list_members.not_followed": {
     "defaultMessage": "Solo se pueden añadir a una lista las cuentas que sigues.",
@@ -834,5 +930,109 @@
   "errors.status.local_unavailable": {
     "defaultMessage": "Las publicaciones de un servidor de una sola persona no pueden ser locales.",
     "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
+  },
+  "errors.interaction_request.answered": {
+    "defaultMessage": "Esta solicitud ya está respondida.",
+    "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
+  },
+  "errors.precondition_failed": {
+    "defaultMessage": "El recurso cambió desde que lo leíste.",
+    "description": "API error title for HTTP 412 when the If-Match of a request names an older version of the resource."
+  },
+  "errors.precondition_required": {
+    "defaultMessage": "Esta solicitud necesita la versión que leíste.",
+    "description": "API error title for HTTP 428 when a request that replaces a resource has no If-Match header."
+  },
+  "errors.draft.changed": {
+    "defaultMessage": "El borrador se guardó en otro lugar desde que lo abriste. Ábrelo de nuevo para ver la última versión.",
+    "description": "Detail of the HTTP 412 API error when a draft was saved on another device or tab after the client read it."
+  },
+  "errors.draft.if_match_required": {
+    "defaultMessage": "Envía el encabezado If-Match con el ETag del borrador que leíste.",
+    "description": "Detail of the HTTP 428 API error when a save of a draft has no If-Match header."
+  },
+  "errors.draft.invalid": {
+    "defaultMessage": "No se puede guardar el borrador: el texto, un archivo multimedia o la encuesta superan lo que conserva un borrador.",
+    "description": "Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range."
+  },
+  "errors.draft.not_scheduled": {
+    "defaultMessage": "El borrador no está programado.",
+    "description": "Detail of the HTTP 409 API error when the user cancels the schedule of a draft that has none."
+  },
+  "errors.draft.max_drafts": {
+    "defaultMessage": "{max, plural, one {Puedes conservar como máximo # borrador no programado. Primero elimina o publica uno.} other {Puedes conservar como máximo # borradores no programados. Primero elimina o publica uno.}}",
+    "description": "Detail of the HTTP 422 API error when the user saves a new draft while at the limit. {max} is the number of drafts without a schedule a user may keep."
+  },
+  "errors.draft.max_scheduled_posts": {
+    "defaultMessage": "{max, plural, one {Puedes tener como máximo # publicación programada en espera.} other {Puedes tener como máximo # publicaciones programadas en espera.}}",
+    "description": "Detail of the HTTP 422 API error when the user schedules a post while at the limit. {max} is the number of scheduled posts a user may have waiting."
+  },
+  "errors.draft.max_scheduled_posts_per_day": {
+    "defaultMessage": "{max, plural, one {Puedes programar como máximo # publicación para un día (UTC).} other {Puedes programar como máximo # publicaciones para un día (UTC).}}",
+    "description": "Detail of the HTTP 422 API error when the user schedules a post on a UTC day that already has as many scheduled posts as allowed. {max} is that number."
+  },
+  "errors.draft.schedule_too_soon": {
+    "defaultMessage": "{minutes, plural, one {Programa la publicación con al menos # minuto de antelación.} other {Programa la publicación con al menos # minutos de antelación.}}",
+    "description": "Detail of the HTTP 422 API error when the time of a schedule is too soon. {minutes} is how many minutes ahead a post must be scheduled at least."
+  },
+  "errors.draft.schedule_too_far": {
+    "defaultMessage": "{days, plural, one {Programa la publicación con como máximo # día de antelación.} other {Programa la publicación con como máximo # días de antelación.}}",
+    "description": "Detail of the HTTP 422 API error when the time of a schedule is too far ahead. {days} is how many days ahead a post may be scheduled at most."
+  },
+  "errors.event.not_eligible": {
+    "defaultMessage": "No puedes crear eventos.",
+    "description": "API error title for HTTP 403 when a user who may not organize events creates or revises one (ADR-0161 §3: a local, unrestricted account, with the create_events permission unless everyone may create events)."
+  },
+  "errors.event.not_organizer": {
+    "defaultMessage": "Solo el organizador o un coorganizador del evento puede hacer esto.",
+    "description": "API error title for HTTP 403 when someone who neither organizes nor co-organizes an event revises it, invites to it, or approves its attendees."
+  },
+  "errors.event.organizer_only": {
+    "defaultMessage": "Solo el organizador del evento puede hacer esto.",
+    "description": "API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it."
+  },
+  "errors.event.closed": {
+    "defaultMessage": "El evento ya no admite cambios.",
+    "description": "API error title for HTTP 409 when an event was cancelled, or an answer comes after it started."
+  },
+  "errors.event.full": {
+    "defaultMessage": "El evento está completo.",
+    "description": "API error title for HTTP 409 when a user answers going to an event whose attendees who answer going reached its capacity."
+  },
+  "errors.event.voice_unavailable": {
+    "defaultMessage": "El evento no se puede celebrar en una sala de chat de voz.",
+    "description": "API error title for HTTP 422 when an event gets a voice chat room as a place while voice chat is off or its organizer may not host rooms."
+  },
+  "errors.event.already_invited": {
+    "defaultMessage": "Ese usuario ya está invitado al evento.",
+    "description": "API error title for HTTP 409 when an organizer invites a user to an event a second time (a user is invited once, even after a revocation)."
+  },
+  "errors.event.invalid_invitee": {
+    "defaultMessage": "Ese usuario no puede ser invitado al evento.",
+    "description": "API error title for HTTP 422 when the invited user is not a local, active user, organizes the event, or is in a block relation with an organizer."
+  },
+  "errors.event.invalid_coorganizer": {
+    "defaultMessage": "Ese usuario no puede ser coorganizador del evento.",
+    "description": "API error title for HTTP 422 when the named co-organizer is not a local, active user, is the organizer, or is in a block relation with an organizer."
+  },
+  "errors.event.too_many_coorganizers": {
+    "defaultMessage": "El evento tiene ya todos los coorganizadores permitidos.",
+    "description": "API error title for HTTP 409 when the organizer names a co-organizer past the limit of three."
+  },
+  "errors.event.not_attending": {
+    "defaultMessage": "Ese usuario no ha respondido que asistirá ni que quizá.",
+    "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
+  },
+  "errors.event.unscheduled": {
+    "defaultMessage": "Ese evento aún no tiene fecha.",
+    "description": "API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll."
+  },
+  "errors.event.scheduled": {
+    "defaultMessage": "La fecha de ese evento ya está confirmada.",
+    "description": "API error title for HTTP 409 when a user adds, withdraws, answers, or confirms a candidate date of an event whose date its organizers already confirmed."
+  },
+  "errors.event.last_candidate": {
+    "defaultMessage": "La encuesta de fecha necesita al menos una fecha candidata.",
+    "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
   }
 }

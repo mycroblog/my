@@ -1,4 +1,4 @@
-<!-- source: importing-cloud-usage-costs db52fcd17ff9 -->
+<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
 # クラウドの利用料金の取り込み
 
 サーバーは、設定 [`billing_sources`](../reference/configuration.md#billing_sources) に並べた事業者の利用料金を、またはアダプターを持たない事業者については [プラグイン](#a-plugin-billing_sources--plugin) の利用料金を、24 時間ごとに取り込み、インスタンスの費用に加えます。既定値は空で、何も取り込みません。
@@ -8,9 +8,10 @@
 メトリクスは、すべての試行を取り込み元・結果・失敗の種類ごとに数え（`my.billing.imports`）、最新の試行が失敗した取り込み元を報告します（`my.billing.import.failing`）。
 これらに対するアラートは [アラートとランブック](alerts.md#mybillingimportfailing) にあります。
 
-このサーバーの設定には認証情報を保持しません。各事業者の SDK の既定の認証情報チェーンが読み取るものを実行環境に与えてください（AWS では実行ロール、環境変数、または共有の認証情報ファイル。Google Cloud では Application Default Credentials）。
+AWS と Google Cloud では、このサーバーの設定に認証情報を保持しません。各事業者の SDK の既定の認証情報チェーンが読み取るものを実行環境に与えてください（AWS では実行ロール、環境変数、または共有の認証情報ファイル。Google Cloud では Application Default Credentials）。
+Cloudflare にはそのようなチェーンがないので、Cloudflare の取り込みは [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare) から API トークンを読み取ります。
 
-<!-- source: with-the-opentofu-modules 51ec4f78f058 -->
+<!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## OpenTofu のモジュールを使う
 
 モジュール [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) と [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) は、`billing_sources` を設定し、このガイドの手順のうち事業者の API で行える部分を行います。`billing-gcp` は Google Cloud のアプリのモジュールとだけ組み合わせられるため、AWS ではモジュールが取り込むのは AWS の費用だけです。`billing-aws` は AWS のアプリのモジュールとも Cloud Run のアプリのモジュールとも組み合わせられ、Cloud Run では両方を `backends` に置けます。どちらのモジュールも、実際のアカウントにはまだ適用されていません。
@@ -24,6 +25,7 @@
 | 予算のトピックと pull サブスクリプション、およびサブスクライバーのロール | `method = "budget"` を指定した `billing-gcp` |
 | 予算を作成してトピックにつなぐ | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
 | BigQuery または Pub/Sub の API を有効にする | 手作業で、[Cloud Run へのデプロイ](deploy-cloud-run.md#1-enable-the-apis) のとおりに |
+| Cloudflare | これらのモジュールでは行いません。プラグインの場合と同じように、`MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID`、`MY_BILLING_CLOUDFLARE_API_TOKEN`（シークレットから）を設定します |
 | プラグイン | これらのモジュールでは行いません。`backends` に利用料金のモジュールがないときは、アプリのモジュールの `env` に `MY_BILLING_SOURCES = plugin` と [プラグイン](#a-plugin-billing_sources--plugin) の設定を指定します。利用料金のモジュールと並べるときは、アプリのモジュールが `env` の `MY_BILLING_SOURCES` を拒否するため、`billing_sources = ["plugin"]` を返す独自のバックエンドを追加します（[バックエンドのフィールド](../../deploy/opentofu/README.md)） |
 
 <!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
@@ -304,6 +306,56 @@ push ではなく pull を使うため、通知がサーバー（たとえば Cl
 | `unavailable` | `UNAVAILABLE`、`INTERNAL` など、ネットワークの障害 | ジョブが間を置いて再試行します |
 | `invalid_response` | 予算の通知として読めないメッセージ、月次でない予算、表示名が同じ 2 つの予算 | 予算を月次にし、予算ごとに別の表示名を付け、トピックにほかのメッセージを送らないようにします |
 
+<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+## Cloudflare (`billing_sources = cloudflare`)
+
+サーバーは、Cloudflare アカウントの課金対象の利用量を読み取ります。従量課金の製品（R2、Workers、D1 など）の利用料金で、指標と日ごとに 1 件の記録です。
+これを製品（`R2`、`Workers`、`D1`）ごとに UTC の暦月へ合計するので、各製品は 1 か月に利用の 1 行になります。無料枠の範囲内の利用も、0 として取り込みます。
+このデータがあるのは、従量課金のアカウントだけです。Enterprise の契約のアカウントでは `not_enabled` で失敗します。
+ビルドタグ `no_billing_cloudflare` を付けてビルドしたバイナリは `cloudflare` を拒否します（[build-tags.md](../reference/build-tags.md) を参照してください）。
+
+<!-- source: what-it-does-not-import 2028c00feb4d -->
+### 取り込まないもの
+
+Cloudflare の課金対象の利用量に含まれるのは、利用料金だけです。固定料金のプランとアドオン（Pro、Business、Workers Paid など）、税、クレジットは含まれないので、費用に表示されるのは請求書のうち利用の部分だけです。
+固定料金は、費用のページで自分の費用として加えるか、[プラグイン](#a-plugin-billing_sources--plugin) から取り込んでください。
+
+<!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
+### 請求サイクルと確定した月
+
+Cloudflare は、毎月同じ日（アカウントの最初の購入の日）に始まるサイクルで、UTC で請求します（31 日に始まるはずのサイクルは、短い月ではその月の最終日に始まります）。
+サイクルの請求書はサイクルが終わるときに届くので、暦月は 2 つのサイクルの一部にまたがります。サーバーは、取り込む月と重なる各サイクルを読み、日ごとの記録をそれぞれの日の暦月に置くので、1 か月の行は、1 つの請求書ではなく、その月自身の日の料金です。
+月が確定するのは、その月の最終日を含むサイクルが 2 日前に終わったとき、または次の月が終わったときの、早いほうです。それまでは、月の初めからデータのある最後の日までの見積もりです。Cloudflare のデータは 1 日か 2 日遅れて届きます。
+
+<!-- source: cost-and-limits-2 085888f73215 -->
+### 費用と上限
+
+Cloudflare は API を課金しないので、サーバーはリクエストに上限を設けません。取り込みは、アカウントの subscription に 1 回、読み取る請求サイクルごとに 1 回リクエストします。2 か月分で最大 4 回です。
+API の上限は、ユーザーごとに 5 分あたり 1,200 リクエストで、ダッシュボードや、トークンの持ち主のほかの利用と共有されます。
+
+<!-- source: create-the-api-token 343e937f28d4 -->
+### API トークンを作る
+
+1. Cloudflare のダッシュボードでアカウントを開き、アカウントの概要でアカウント ID（16 進数 32 桁）を控えます。
+2. 「Manage Account」→「Account API Tokens」（または「My Profile」→「API Tokens」）で、このアカウントだけに対して、**Account** → **Billing** → **Read** の権限 1 つだけを持つカスタムトークンを作ります。
+3. `MY_BILLING_SOURCES=cloudflare`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID=<account ID>`、`MY_BILLING_CLOUDFLARE_API_TOKEN=<token>` を設定します。トークンはシークレットストアから渡します（または `MY_BILLING_CLOUDFLARE_API_TOKEN_FILE`）。
+
+取り込みには専用のトークンを使ってください。サーバーは、Wrangler と OpenTofu のプロバイダーが使う `CLOUDFLARE_API_TOKEN` を読まないので、DNS や Workers を編集できるトークンを誤って拾うことはありません。
+
+<!-- source: kinds-of-failure-2 b0cd3fd7b5c3 -->
+### 失敗の種類
+
+| 種類 | Cloudflare の応答 | 対処 |
+| --- | --- | --- |
+| `permission` | コード 9106 の `400`（無効なトークン）、`401`、`403`（トークンに Billing Read の権限がない、またはアカウント ID が誤っている。Cloudflare はどちらにもコード 10000 で答えます） | トークンの権限と `billing_cloudflare_account_id` を確認します |
+| `not_enabled` | アカウントの課金対象の利用量が対象外 | アカウントが従量課金ではない（Enterprise の契約）ので、取り込むものがありません |
+| `not_found` | `404` | `billing_cloudflare_account_id` を確認します |
+| `throttled` | `429` | ジョブが間を置いて再試行します |
+| `unavailable` | 5xx、ネットワークの障害 | ジョブが間を置いて再試行します |
+| `invalid_response` | 読み取れない応答、2 日以上にまたがる記録、1 か月に 2 つの通貨 | Cloudflare が応答を変えました。報告してください |
+
+`throttled` と `unavailable` 以外の失敗は再試行しても直らないため、サーバーは記録して止まり、翌日の定期の取り込みがもう一度試みます。
+
 <!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
 ## プラグイン (`billing_sources = plugin`)
 
@@ -371,7 +423,7 @@ Content-Type: application/json
 
 `maxRequests` が 0 のときは、請求されるリクエストをすべて禁じます。サーバーは 0 を送ることになるときは呼び出しませんが、`my plugin test --kind billing` は proto3 のマッピングが許すとおりフィールドを省いて呼び出し、行もリクエストもない `OUTCOME_REQUEST_CAP` を期待します。
 
-<!-- source: kinds-of-failure-2 205a6c0ecdd9 -->
+<!-- source: kinds-of-failure-3 205a6c0ecdd9 -->
 ### 失敗の種類
 
 プラグインは失敗を `outcome` で報告します。ほかの取り込み元と同じく、サーバーは失敗の `requests` を記録し、その行を無視し、それまでの取り込みはそのままにします。

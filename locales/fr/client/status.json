@@ -351,6 +351,14 @@
     "defaultMessage": "Ce n’est pas une traduction automatique : il s’agit du texte de l’auteur.",
     "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
   },
+  "status.translation.browser": {
+    "defaultMessage": "Votre navigateur ({browser})",
+    "description": "On the line under a translated post: who translated it, the reader's own browser. {browser} is the browser's product name."
+  },
+  "status.translation.browser_unnamed": {
+    "defaultMessage": "Votre navigateur",
+    "description": "On the line under a translated post: who translated it, the reader's own browser, whose name is not known."
+  },
   "status.translation.browser_failed": {
     "defaultMessage": "Votre navigateur n’a pas pu traduire cette publication. Réessayez.",
     "description": "Next to the translate button: the translator built into the browser failed, or lost a mention or a link of the post on the way. The original stays in view."
@@ -399,9 +407,17 @@
     "defaultMessage": "Cette publication n’a pas pu être traduite : {reason}",
     "description": "Next to the translate button: the request failed for another reason, such as no connection. {reason} is the localized reason."
   },
+  "status.translation.from": {
+    "defaultMessage": "Traduit depuis {language}",
+    "description": "Start of the line under a translated post: what happened. {language} is the name of the language the post was written in, in the UI's language (\"English\")."
+  },
   "status.translation.limit": {
     "defaultMessage": "La limite mensuelle de traduction est atteinte, cette publication n’a donc pas été traduite. Vous pourrez traduire de nouveau le mois prochain.",
     "description": "Next to the translate button: the limit of the reader or of the server on translated characters is used up until the next month. The original stays in view."
+  },
+  "status.translation.machine": {
+    "defaultMessage": "Traduction automatique",
+    "description": "Start of the line under a translated post when the language it was written in is not known."
   },
   "status.translation.original_shown": {
     "defaultMessage": "Publication d’origine affichée.",
@@ -558,5 +574,65 @@
   "status.focused.replies": {
     "defaultMessage": "{count, plural, one {# réponse} other {# réponses}}",
     "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
+  },
+  "status.interaction_policy.action": {
+    "defaultMessage": "Changer qui peut répondre, booster et citer",
+    "description": "Item of the menu of the user's own post that opens the dialog choosing who may reply to, boost, and quote it."
+  },
+  "status.interaction_policy.title": {
+    "defaultMessage": "Qui peut répondre à cette publication, la booster et la citer",
+    "description": "Title of the dialog that chooses who may reply to, boost, and quote one of the user's posts."
+  },
+  "status.interaction_policy.close": {
+    "defaultMessage": "Fermer",
+    "description": "Accessible name of the close button of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.description": {
+    "defaultMessage": "Chaque choix est enregistré immédiatement. Les réponses, boosts et citations déjà approuvés restent ; les demandes que le nouveau choix admet sont approuvées.",
+    "description": "Description of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.done": {
+    "defaultMessage": "Les interactions possibles avec la publication ont été modifiées",
+    "description": "Toast after the user changed who may reply to, boost, or quote one of their posts."
+  },
+  "status.interaction_policy.failed": {
+    "defaultMessage": "Impossible de modifier qui peut interagir avec la publication : {reason}",
+    "description": "Toast when the change of who may reply to, boost, or quote a post failed. {reason} is the server's reason."
+  },
+  "status.boost.pending": {
+    "defaultMessage": "Demande d’approbation de votre boost envoyée à l’auteur",
+    "description": "Announced after the user boosted a post whose author approves boosts: the boost waits for the approval."
+  },
+  "status.boost.approval.pending": {
+    "defaultMessage": "Votre boost attend l’approbation de l’auteur.",
+    "description": "At the end of the actions of a post that the user boosted while its author approves boosts, until the author answers."
+  },
+  "status.boost.approval.rejected": {
+    "defaultMessage": "L’auteur a refusé votre boost.",
+    "description": "At the end of the actions of a post whose author refused the user's boost."
+  },
+  "status.approval.pending": {
+    "defaultMessage": "En attente d’approbation : vous seul voyez cette réponse",
+    "description": "Under the user's own reply while the author of the post it replies to has not approved it; nobody else sees it until then."
+  },
+  "status.approval.rejected": {
+    "defaultMessage": "Refusée : vous seul voyez cette réponse",
+    "description": "Under the user's own reply that the author of the post it replies to refused; nobody else sees it."
+  },
+  "status.article.kind": {
+    "defaultMessage": "Article",
+    "description": "Line above the title of an article (a long post with a title) in a list, saying what the card is."
+  },
+  "status.article.sensitive": {
+    "defaultMessage": "L’auteur a marqué cet article comme sensible.",
+    "description": "On the page of an article the author marked sensitive, above the button that shows its cover and body; its title and summary are shown."
+  },
+  "status.article.show": {
+    "defaultMessage": "Afficher l’article",
+    "description": "Button on the page of a sensitive article that shows or hides its cover and body. The same text is used in both states."
+  },
+  "status.article.untitled": {
+    "defaultMessage": "Article sans titre",
+    "description": "Stands for the title of an article from another server that has none: the link of its card, and the heading of its page."
   }
 }

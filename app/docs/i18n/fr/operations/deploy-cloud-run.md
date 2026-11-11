@@ -122,10 +122,10 @@ La KEK parvient au serveur sous la forme d’un fichier monté, nommé par `MY_K
 
 Pour conserver la KEK dans Cloud KMS dès le départ, remplacez le bloc `kek` dans `main.tf` comme son commentaire l’indique, et activez `cloudkms.googleapis.com`. Pour apporter votre propre KEK ou clé VAPID, définissez `create = false` sur le module `kek`, ou retirez la clé de `generate_p256_keys`, avant cette étape. Un secret créé ailleurs n’a besoin que de son ID : passez-le à `secret_env` du module app, ou au module qui l’utilise.
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
 ### 5. Créer ce dont la migration a besoin
 
-La sonde de démarrage du service attend `/readyz`, qui répond `503` tant que le schéma n’existe pas, donc le schéma doit venir en premier. Créez le job de migration et ce dont il dépend, ce qui comprend l’adresse du répartiteur de charge, puisque les paramètres du serveur la nomment :
+La sonde de démarrage du service attend `/health/ready`, qui répond `503` tant que le schéma n’existe pas ; le schéma doit donc venir en premier. Créez la tâche de migration et ce dont elle dépend, ce qui inclut l’adresse du répartiteur de charge, puisque les réglages du serveur la nomment :
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,7 +189,7 @@ tofu apply -var console_enabled=false
 
 La commande n’a ni entrée standard ni terminal, donc une commande qui y lit un mot de passe ou un fichier ne peut pas s’exécuter ainsi. Ce qu’elle affiche reste dans les journaux, n’exécutez donc pas une commande dont vous n’écririez pas la sortie à cet endroit.
 
-<!-- source: upgrading 1a1e204c5173 -->
+<!-- source: upgrading 31acbd137681 -->
 ## Mise à niveau
 
 Lisez d’abord [Mise à niveau](database.md#upgrading) et les notes de version, et avancez d’une version mineure à la fois.
@@ -208,16 +208,16 @@ pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 
 Le script fait ceci, et s’arrête à la première étape qui échoue :
 
-1. Il bascule le service en [mode maintenance](maintenance.md) avec `--maintenance`.
-2. Il donne la nouvelle image au job de migration.
-3. Il exécute `my config check`, `my db upgrade -check`, `my schema apply` et `my db upgrade`, chacun attendant le précédent.
-4. Il déploie la nouvelle révision, sans le mode maintenance. Elle ne reçoit du trafic que lorsque sa sonde de démarrage réussit sur `/readyz`.
+1. Bascule le service en [mode de maintenance](maintenance.md) avec `--maintenance`.
+2. Donne à la tâche de migration la nouvelle image.
+3. Exécute `my config check`, `my db upgrade -check`, `my schema apply` et `my db upgrade`, chacun attendant le précédent.
+4. Déploie la nouvelle révision, sans le mode de maintenance. Elle ne reçoit du trafic que lorsque sa sonde de démarrage réussit sur `/health/ready`.
 
-Sans `--maintenance`, l’ancienne révision continue de servir pendant les étapes 2 et 3, ce qui [n’est pas garanti de fonctionner](database.md#the-server-during-an-upgrade). Ajoutez `--allow-destructive` lorsque les notes de version l’exigent. Épinglez une empreinte avec `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, ce que recommande la [liste de contrôle de production](production-checklist.md#operations).
+Sans `--maintenance`, l’ancienne révision continue de servir pendant les étapes 2 et 3, ce qui [n’est pas garanti de fonctionner](database.md#the-server-during-an-upgrade). Ajoutez `--allow-destructive` lorsque les notes de version l’exigent. Épinglez un condensat avec `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, ce que recommande la [liste de contrôle de production](production-checklist.md#operations).
 
-Définissez ensuite `image` dans `terraform.tfvars` à la même valeur, et `ref` dans `main.tf` à la même version, puis exécutez `tofu init` et `tofu plan`. Lisez ce plan avant de l’appliquer : les modules d’une nouvelle version peuvent modifier des ressources. `tofu apply` ne change jamais l’image d’un service ou d’un job existant, donc un `image` oublié ne fait aucun mal, mais cette valeur est celle dont partirait un nouveau job ou un service recréé.
+Définissez ensuite `image` dans `terraform.tfvars` à la même valeur, et `ref` dans `main.tf` à la même version, puis exécutez `tofu init` et `tofu plan`. Lisez ce plan avant de l’appliquer : les modules d’une nouvelle version peuvent modifier des ressources. `tofu apply` ne change jamais l’image d’un service ou d’une tâche qui existe, de sorte qu’un `image` oublié ne cause aucun dommage, mais cette valeur est celle à partir de laquelle démarrerait une nouvelle tâche ou un service recréé.
 
-**Lorsqu’une étape échoue**, le service reste sur sa révision, en mode maintenance si vous l’avez demandé. Corrigez la cause et exécutez à nouveau le script : les étapes peuvent être répétées sans danger. Pour quitter le mode maintenance sans mise à niveau, lorsque `my schema apply` n’a pas été exécuté :
+**Lorsqu’une étape échoue**, le service reste sur sa révision, en mode de maintenance si vous l’avez demandé. Corrigez la cause et relancez le script : les étapes peuvent être répétées sans risque. Pour quitter le mode de maintenance sans mise à niveau, lorsque `my schema apply` n’a pas été exécuté :
 
 ```sh
 gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
@@ -225,10 +225,10 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --re
 
 Pour revenir en arrière après que le schéma a changé, restaurez la sauvegarde : voir [Retour en arrière](database.md#rolling-back).
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## Surveillance et alertes
 
-Le module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) ajoute un contrôle de disponibilité de `/readyz`, des politiques d’alerte portant les noms de [la procédure d’exploitation](alerts.md), et des notifications par e-mail. Il n’a jamais été appliqué, essayez-le donc une fois en faisant échouer un contrôle. Activez d’abord `monitoring.googleapis.com`, et lisez dans son README ce que coûte le contrôle : chaque exécution réveille une instance, et, via `/readyz`, la base de données, ce qui s’ajoute au [compromis du tick](#costs).
+Le module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) ajoute une vérification de disponibilité de `/health/live`, des politiques d’alerte portant les noms du [guide d’exploitation](alerts.md) et des notifications par e-mail. Il n’a jamais été appliqué ; essayez-le donc une fois en faisant échouer une vérification. Activez d’abord `monitoring.googleapis.com`, et lisez dans son README ce que coûte la vérification : chaque exécution réveille une instance, et la base de données aussi si vous la faites pointer vers `/health/ready`, ce qui s’ajoute au [compromis du tick](#costs).
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## Changer de backend
@@ -334,22 +334,23 @@ Cloud Tasks et Cloud Scheduler n’arrivent ni par l’un ni par l’autre : i
 
 Pour utiliser l’URL propre du service ou autre chose devant, comme un CDN, supprimez le bloc `ingress` et sa ligne dans `backends`, et gardez `service_ingress` à ce dont vous avez besoin : c’est toujours votre choix explicite, et `all` laisse l’URL `run.app` ouverte à tous. Définissez `MY_TRUSTED_PROXIES` dans `env` à ce qui se connecte au serveur. Ce que vous placez devant doit toujours répondre à `https://{host}`.
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
 `ingress-cloudflare-app` place Cloudflare devant `host`, avec le cache contourné pour tout, et `ingress-cloudflare-media` ajoute un hôte de médias mis en cache à côté de n’importe quel ingress. Lisez d’abord le README de chaque module ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). Le jeton va dans `CLOUDFLARE_API_TOKEN`. Ces modules n’ont fonctionné que sur des fournisseurs simulés.
 
-- **Votre offre détermine l’origine.** Cloud Run route selon `Host`, et Cloudflare ne propose le remplacement de l’en-tête Host que dans l’offre Enterprise. Sur toute autre offre, une origine `*.run.app` fait échouer le plan, donc l’origine doit accepter elle-même votre hôte : gardez un `ingress-gcp-domain-mapping` de cet hôte, hors de `backends`, et définissez `origin_host = "ghs.googlehosted.com"`. Chaque hôte a besoin de son propre mappage. Le fait que son certificat soit émis et renouvelé derrière le proxy n’est pas vérifié, commencez donc avec `proxied = false`.
-- **Un en-tête ferme l’origine.** `ingress-cloudflare-app` ajoute une règle de transformation d’en-tête de requête, et le serveur refuse avec un `403` une requête sans l’en-tête, à l’exception des contrôles de santé et des `POST` propres aux tâches, qui vérifient leurs jetons. Ainsi, personne ne contourne Cloudflare via l’URL `run.app`, et un Cloudflare Worker appartenant à un tiers ne peut pas choisir l’adresse client que voient les limites de débit.
-- **La valeur se retrouve dans l’état.** Le fournisseur Cloudflare n’a pas de forme en écriture seule pour la valeur d’en-tête d’une règle. Générez-en une avec `openssl rand -hex 32`, ajoutez-la à un secret avec `gcloud secrets versions add`, passez la même valeur avec `TF_VAR_origin_secret`, et gardez l’état privé. [Le guide du CDN](cdn.md#rotate-the-value) explique comment la renouveler.
-- **Rien n’ajoute l’en-tête tant qu’un enregistrement n’est pas proxifié**, donc le serveur refuse tout sauf ses contrôles de santé : avec `proxied = false` pour le certificat d’un mappage de domaine, configurez le secret après cela.
-- **Désactivez Bot Fight Mode** dans le tableau de bord. Il couvre toute la zone et aucune règle ne peut l’ignorer, et un défi sur `/ap/`, `/.well-known/` ou `/api/` casse la fédération, car les autres serveurs ne sont pas des navigateurs. Les tâches ne passent pas par Cloudflare. Les modules n’ajoutent aucun défi et désactivent Browser Integrity Check, mais ils ne gèrent pas Bot Fight Mode. N’activez pas « I’m Under Attack » pour la même raison.
-- **Activez Always Use HTTPS** dans le tableau de bord si vous voulez que `http://` soit redirigé. Il couvre toute la zone, donc les modules vous le laissent.
+- **Votre formule détermine l’origine.** Cloud Run route selon `Host`, et Cloudflare ne propose le remplacement de l’en-tête Host que sur la formule Enterprise. Sur toute autre formule, une origine `*.run.app` fait échouer le plan ; l’origine doit donc accepter elle-même votre hôte : conservez un `ingress-gcp-domain-mapping` de cet hôte, hors de `backends`, et définissez `origin_host = "ghs.googlehosted.com"`. Chaque hôte a besoin de sa propre association. Le fait que son certificat soit émis et renouvelé derrière le proxy n’est pas vérifié ; commencez donc avec `proxied = false`.
+- **Un en-tête ferme l’origine.** `ingress-cloudflare-app` ajoute une règle de transformation d’en-tête de requête, et le serveur refuse avec un `403` une requête sans l’en-tête, hormis les vérifications d’état et les `POST` propres aux tâches, qui vérifient leurs jetons. Ainsi, personne ne contourne Cloudflare par l’URL `run.app`, et le Cloudflare Worker d’un appelant ne peut pas choisir l’adresse cliente que voient les limites de débit.
+- **La valeur atterrit dans l’état.** Le fournisseur Cloudflare n’a pas de forme en écriture seule de la valeur d’en-tête d’une règle. Générez-en une avec `openssl rand -hex 32`, ajoutez-la à un secret avec `gcloud secrets versions add`, passez la même valeur avec `TF_VAR_origin_secret`, et gardez l’état privé. [Le guide du CDN](cdn.md#rotate-the-value) explique comment la renouveler.
+- **Rien n’ajoute l’en-tête tant qu’un enregistrement n’est pas proxifié**, de sorte que le serveur refuse tout sauf ses vérifications d’état : avec `proxied = false` pour le certificat d’une association de domaine, configurez le secret après cela.
+- **Désactivez Bot Fight Mode** dans le tableau de bord. Il couvre toute la zone et aucune règle ne peut le contourner, et un défi sur `/ap/`, `/.well-known/` ou `/api/` casse la fédération, car les autres serveurs ne sont pas des navigateurs. Les tâches ne passent pas par Cloudflare. Les modules n’ajoutent aucun défi et désactivent Browser Integrity Check, mais ils ne gèrent pas Bot Fight Mode. N’activez pas « I’m Under Attack » pour la même raison.
+- **Email Address Obfuscation peut rester activé.** Il réécrit les adresses e-mail du HTML en `[email protected]` et ajoute un script pour les restaurer, que la Content-Security-Policy du serveur refuse. Les pages propres au serveur, comme celle qui indique où est allé l’e-mail de confirmation, marquent leur contenu pour qu’il laisse les adresses tranquilles.
+- **Activez Always Use HTTPS** dans le tableau de bord si vous voulez que `http://` soit redirigé. Il couvre toute la zone ; les modules vous le laissent donc.
 - **Délais d’attente** : Cloudflare répond `524` lorsque l’origine n’envoie rien pendant 125 secondes. Les tâches ne sont pas concernées, puisqu’elles appellent directement l’URL `run.app`. Les flux envoient un signal de présence toutes les 30 secondes, sous la limite d’inactivité de 900 secondes. Le fait qu’il mette ou non les flux en mémoire tampon sur un hôte proxifié ordinaire n’est pas vérifié.
 - **Téléversements** : 100 Mo sur Free et Pro, au-dessus des 32 MiB de Cloud Run, qui reste la limite.
-- **Vidéo** : les conditions de Cloudflare restreignent la diffusion de vidéo et d’une quantité disproportionnée de gros fichiers sur Free, Pro et Business, et il peut rediriger le contenu ou prendre d’autres mesures. Décidez-en avant de mettre de la vidéo en cache sur l’hôte de médias.
+- **Vidéo** : les conditions de Cloudflare restreignent la diffusion de vidéos et d’une quantité disproportionnée de gros fichiers sur Free, Pro et Business, et il peut rediriger le contenu ou prendre d’autres mesures. Décidez-le avant de mettre des vidéos en cache sur l’hôte de médias.
 
-**Un fichier supprimé reste en cache.** L’hôte de médias suit le `Cache-Control` du serveur, donc un fichier local supprimé peut rester visible jusqu’à un an, et un fichier distant pendant `remote_media_cache_ttl_seconds`. Le serveur ne le purge pas. Lorsque quelque chose doit disparaître, purgez-le à la main, sous **Caching > Configuration > Custom Purge** dans le tableau de bord, ou :
+**Un fichier supprimé reste en cache.** L’hôte de médias suit le `Cache-Control` du serveur ; un fichier local supprimé peut donc rester visible jusqu’à un an, et un fichier distant pendant `remote_media_cache_ttl_seconds`. Le serveur ne le purge pas. Lorsque quelque chose doit disparaître, purgez-le à la main, sous **Caching > Configuration > Custom Purge** dans le tableau de bord, ou :
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -358,7 +359,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-Une URL de proxy contient son `sig` dans la chaîne de requête, qui fait partie de ce qui est mis en cache, donnez donc l’URL entière.
+L’URL d’un proxy contient son `sig` dans la chaîne de requête, qui fait partie de ce qui est mis en cache ; indiquez donc l’URL entière.
 
 <!-- source: changing-the-kek-backend c5e918ea5c81 -->
 ## Changer le backend de la KEK

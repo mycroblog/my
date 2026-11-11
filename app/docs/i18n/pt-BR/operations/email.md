@@ -24,7 +24,7 @@ redefinição: o usuário é informado de que “enviamos um e-mail de confirma�
 
 Os e-mails de notificação para apoiadores (`notification.supporter_email`) passam pela mesma fila de jobs.
 
-<!-- source: which-notifications-are-emailed 76c2b871762c -->
+<!-- source: which-notifications-are-emailed a19ef61af242 -->
 ### Quais notificações são enviadas por e-mail
 
 Cada usuário escolhe, por tipo de notificação, se ela chega no app e por e-mail, na página **Notificações** das
@@ -34,6 +34,7 @@ e-mail. Um tipo desativado no app nem chega a ser criado, portanto também não 
 | Tipo | E-mail por padrão | Quando é enviado |
 | --- | --- | --- |
 | Notificações de outros usuários (menções, novos seguidores, solicitações para seguir, solicitações para seguir aceitas, impulsos, favoritos, reações com emoji, citações, enquetes encerradas, contas que você segue mudando de servidor, chats de voz) | Desativado | 15 minutos após a notificação, somente se ela ainda estiver não lida (não marcada como lida, não dispensada) e ainda visível, e se o usuário ainda recebe esse tipo por e-mail. Um e-mail por notificação |
+| Eventos (convites, datas confirmadas, mudanças de data ou de lugar, cancelamentos, lembretes e inícios de eventos neste servidor) | Desativado | O mesmo que acima, exceto os lembretes, que são enviados na hora. O e-mail informa o título, o início e os organizadores do evento, e nunca onde ele acontece |
 | Avisos dos moderadores (uma ação de moderação na conta, uma denúncia resolvida, um recurso decidido, seguidos perdidos por causa de uma suspensão, uma solicitação de emoji personalizado decidida) | Desativado | O mesmo que acima |
 | Avisos aos moderadores (novas denúncias, cadastros aguardando aprovação, recursos, webhooks desativados, solicitações de emoji personalizado, contas limitadas mudando de servidor, a data de encerramento chegando, erros novos e recorrentes), para as pessoas cuja função tem a permissão | Ativado | Imediatamente, sem esperar a leitura |
 | Encerramento do serviço e avisos dos planos de apoiador | Sempre | Imediatamente; não podem ser desativados |

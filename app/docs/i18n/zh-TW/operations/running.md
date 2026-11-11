@@ -3,7 +3,7 @@
 
 本頁說明如何啟動和停止伺服器、取得其映像檔，以及在執行期間監看它：指標、追蹤、任務佇列和健康檢查。
 
-<!-- source: start-the-server 0d5f8898a2f5 -->
+<!-- source: start-the-server ea157fe28b0d -->
 ## 啟動伺服器
 
 ```sh
@@ -13,9 +13,9 @@ my serve          # start according to the configured role (-config <file> reads
 my version        # print the version of the binary
 ```
 
-`my serve` 會驗證設定，建立資料庫、任務佇列和金鑰管理的轉接器，並在 `listen` 上接受 HTTP。它在那裡使用不含 TLS 的純 HTTP/1.1：請在前端放置反向代理或負載平衡器，由它終止 HTTPS（並為用戶端提供 HTTP/2 或 HTTP/3），再以 HTTP/1.1 轉送。即時更新（`GET /api/v1/streaming`、本站與聯邦時間軸的串流，以及語音聊天室的串流）是長時間持續的回應，每 30 秒（語音聊天室為 15 秒）傳送一次心跳註解，並在閒置時保持開啟。代理不得緩衝這些回應（nginx：伺服器會傳送 `X-Accel-Buffering: no`），而且它的閒置或讀取逾時必須比心跳間隔長。它不會套用結構描述：請在啟動前以 `my schema apply` 套用（請參閱[資料庫](database.md)；升級時會在[升級](database.md#upgrading)的流程中執行）。在 Docker Compose 配置中（`deploy/docker/compose.yaml`；請參閱[用 Docker Compose 部署](deploy-docker-compose.md)），一次性的 `schema` 服務會在伺服器啟動前執行 `my schema apply`。如果尚未套用結構描述，程序仍會啟動，但就緒檢查會回傳 503，在結構描述就緒之前，它不會提供其他任何服務。
+`my serve` 會驗證設定，建立資料庫、任務佇列和金鑰管理的轉接器，並在 `listen` 上接受 HTTP。它在那裡使用不含 TLS 的純 HTTP/1.1：請在前端放置反向代理或負載平衡器，由它終止 HTTPS（並為用戶端提供 HTTP/2 或 HTTP/3），再以 HTTP/1.1 轉送。即時更新（`GET /api/v1/streaming`、本站與聯邦時間軸的串流，以及語音聊天室的串流）是長時間持續的回應，每 30 秒（語音聊天室為 15 秒）傳送一次心跳註解，並在閒置時保持開啟。代理不得緩衝這些回應（nginx：伺服器會傳送 `X-Accel-Buffering: no`），而且它的閒置或讀取逾時必須比心跳間隔長。它不會套用結構描述，也不會執行資料升級步驟：請在啟動前依序執行 `my schema apply` 和 `my db upgrade`（請參閱[資料庫](database.md)；升級時會在[升級](database.md#upgrading)的流程中執行這兩者）。在 `my db upgrade` 記錄該版本的每個步驟之前，`/readyz` 都會回應 `503`。在 Docker Compose 配置中（`deploy/docker/compose.yaml`；請參閱[用 Docker Compose 部署](deploy-docker-compose.md)），一次性的 `schema` 和 `upgrade` 服務會在伺服器啟動前分別執行 `my schema apply` 和 `my db upgrade`。如果尚未套用結構描述，程序仍會啟動，但就緒檢查會回傳 503，在結構描述就緒之前，它不會提供其他任何服務。
 
-第一個使用資料庫的 `my serve` 或 `my` 指令會把 `host` 和 `account_domain` 記錄到資料庫中。當設定與記錄的值不同時，`my serve` 會以兩組值記錄 `start failed`，並以代碼 1 結束，其他指令也會顯示相同的錯誤。例外是不做檢查的 `my schema apply` 和 `my db backup`，以及不讀取資料庫的維護模式。`my config check -instance` 和 `my db upgrade -check` 會檢查，但不會記錄任何東西。啟動時無法讀取資料庫的程序，在能夠讀取之前都不會就緒；在那之前，它不會執行任何任務，並對下列三個健康檢查（`/healthz`、`/readyz`、`/api/v1/instance/health`）以外的所有請求以 `503` 附 `Retry-After` 回應。在 `my schema apply` 之前啟動的伺服器也是如此。如果它之後發現值不同，就會以相同的錯誤停止。
+第一個使用資料庫的 `my serve` 或 `my` 指令會把 `host` 和 `account_domain` 記錄到資料庫中。當設定與記錄的值不同時，`my serve` 會以兩組值記錄 `start failed`，並以代碼 1 結束，其他指令也會顯示相同的錯誤。例外是不做檢查的 `my schema apply` 和 `my db backup`，以及不讀取資料庫的維護模式。`my config check -instance` 和 `my db upgrade -check` 會檢查，但不會記錄任何東西。啟動時無法讀取資料庫的程序，在能夠讀取之前都不會就緒；在那之前，它不會執行任何任務，並對健康檢查（`/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health`）以外的所有請求以 `503` 附 `Retry-After` 回應。在 `my schema apply` 之前啟動的伺服器也是如此。如果它之後發現值不同，就會以相同的錯誤停止。
 
 在 `production` 設定檔中，`my config check` 還會檢查有效的設定是否適合正式環境的實例：錯誤（例如其他伺服器無法連線的 `host`，或不是隨機的 KEK）會讓它以 1 結束，而警告（例如 `mail = none`）則不會。`my serve` 啟動時會把兩者都記錄為警告，但仍會啟動，所以請把 `my config check` 當作部署的一個步驟來執行。[正式環境檢查清單](production-checklist.md)列出了這些檢查，以及上線前需要手動確認的事項。
 
@@ -35,7 +35,7 @@ my version        # print the version of the binary
 | `job`（成功和 `postponed` 時為 `INFO`，`retry` 時為 `WARN`，`dead` 時為 `ERROR`） | `my.job.type` 和 `my.outcome` 的值與 `my.job.duration` 的標籤相同。另外還有 `duration_seconds`（`my.job.duration`）、`wait_seconds`（`my.job.wait`）、`job_id`、`attempt`，以及失敗時的 `error` |
 | `error report`（`ERROR`；讓程序停止的失敗為 `CRITICAL`） | 每個回報的錯誤一行（[錯誤回報](#error-reports)） |
 
-<!-- source: error-reports 3d780744461c -->
+<!-- source: error-reports a81ecfe83871 -->
 ### 錯誤回報
 
 [錯誤回報](error-reporting.md)指南說明在各平台上去哪裡閱讀這些行、「錯誤」畫面、通知，以及把回報傳送到錯誤追蹤服務。
@@ -61,6 +61,7 @@ my version        # print the version of the binary
 | `my.error.where` | 發生的位置：請求為 `<surface> <method> <route>`（例如 `client_api GET /api/v1/statuses/{id}`），任務為任務類型，背景作業為作業名稱，啟動失敗為 `startup` |
 | `my.role`、`deployment.environment.name` | 程序的 `role` 和 `errors_environment` |
 | `request_id`、`job_id`、`attempt`、`trace_id`、`span_id` | 用來找出同一個錯誤的請求行或任務行的 ID（如果有的話） |
+| `context.httpRequest` | 對於請求的錯誤：`method`、`url`（路由，例如 `/api/v1/statuses/{id}`，絕不是用戶端所請求的路徑），以及 `responseStatusCode`，也就是回應的狀態（500） |
 | `message` | 位於行的最後：`<type>: <message>`、換行，以及 Go 的堆疊 |
 
 回報離開程序之前，訊息中的 URL、電子郵件地址、`@user@host` 帳號代稱、IP 位址、UUID 和 ULID，以及 10 位數以上的數字，會分別被替換為 `<url>`、`<email>`、`<acct>`、`<ip>`、`<id>` 和 `<n>`，並截斷為 1 KiB。堆疊會保留檔案位置，但不保留函式行的引數值（顯示為 `(...)`），並截斷為 16 KiB。任何回報都不會包含請求內文、標頭、查詢、cookie、帳號、使用者名稱、IP 位址或 User-Agent。其他任何行都不帶堆疊，所以 Error Reporting 只會在這些行中找到堆疊。
@@ -106,7 +107,7 @@ cp example.env .env
 
 **內附的 Garage**。搭配 `COMPOSE_PROFILES=garage` 的 `compose.s3.yaml` 需要 `example.env` 開頭所列的值。一次性的服務 `garage-init` 會在每次 `up` 時準備儲存空間。它只在 Compose 網路內部運作，因為媒體由伺服器自己提供。一個節點就是一顆硬碟：請備份磁碟區 `garage` 或儲存貯體（[備份](backup.md#media-in-a-bucket)）。
 
-<!-- source: get-the-image 238d00ea9826 -->
+<!-- source: get-the-image 5a210413433f -->
 ## 取得映像檔
 
 伺服器映像檔是 `ghcr.io/mycroblog/my`，公開提供，支援 `linux/amd64` 和 `linux/arm64`，並包含所有轉接器。
@@ -116,12 +117,15 @@ cp example.env .env
 | `0.1.0` | 該版本，永久不變 | 指定版本 |
 | `0.1` | `v0.1` 的最新修補版本 | Docker Compose，它會在每次 `up` 時套用結構描述 |
 | `0.1.0-rc.1` | 該預發布版本 | 在正式發布前試用某個版本 |
+| `nightly` | 通過夜間測試的 `main` 最新提交，每個有變動的夜晚都會移動 | 在預發布版本之前試用變更，用在你可以隨時丟棄的實例上 |
 
 沒有 `latest` 和 `0`：兩者都會跨越次要版本，而每次升級到新的次要版本都必須[經過前一個版本](database.md#skipping-releases)。請在每個指令中指定版本；只執行 `docker pull ghcr.io/mycroblog/my` 會以 `manifest unknown` 失敗。修補版本也可能需要 `my schema apply` 和 `my db upgrade`，所以在 Docker Compose 以外的環境，請針對每個版本依照[升級](database.md#upgrading)的說明進行。在正式環境中，請固定使用版本發布說明中提供的摘要值：
 
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
 ```
+
+**`nightly` 沒有升級路徑。** 只保證已發行版本之間的升級：從一個 `nightly` 映像檔到下一個，或從 `nightly` 到某個正式版本，結構描述與 `my db upgrade` 的資料步驟可能會有任何正式版本都不會經過的變動，所以請預期要重建它的資料庫。絕不要在正式環境中執行它。`my version` 會印出它是哪個提交，例如 `v0.1.0-rc.5.0.20261109182600.g7a789720a1b2`：最新正式版本（`v0.1.0-rc.5`）之後的版本、提交的時間（UTC），以及 `g` 之後提交的前 12 個字元。若要保留某一個建置，請固定它的 digest（`ghcr.io/mycroblog/my:nightly@sha256:...`）：較舊的建置會失去標籤，但仍可用它的 digest 拉取。
 
 執行的位置：
 
@@ -131,7 +135,7 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 - **AWS（ECS、EKS）**：把映像檔複製到 Amazon ECR，或使用 ECR 提取快取（需要 ghcr.io 的憑證）。
 - **較小的映像檔**：在簽出的原始碼中執行 `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .`，可以建置包含較少轉接器的映像檔（[建置標籤](../reference/build-tags.md)）。這是你自己的建置，所以不在下列驗證的範圍內。
 
-<!-- source: verify-an-image b696c257662d -->
+<!-- source: verify-an-image 76b9a1293edb -->
 ### 驗證映像檔
 
 每個發布的映像檔都附有透過 Sigstore 簽署的來源證明（provenance），它把摘要值與建置它的工作流程和提交綁定在一起，另外還附有 SBOM。使用 [GitHub CLI](https://cli.github.com/)，並在指令要求時登入 `ghcr.io`：
@@ -142,7 +146,7 @@ gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
 docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
 ```
 
-除非映像檔是由這個儲存庫的發布工作流程建置，否則第一個指令會失敗。它會顯示提交，也就是該版本標籤的提交；映像檔的標籤 `org.opencontainers.image.revision` 也會指出同一個提交。
+除非映像檔是由這個儲存庫的發布工作流程建置，否則第一個指令會失敗。若是 `nightly` 映像檔，請改用 `--signer-workflow mycroblog/my/.github/workflows/nightly.yml` 驗證。它會顯示提交，也就是該版本標籤的提交；映像檔的標籤 `org.opencontainers.image.revision` 也會指出同一個提交。
 
 <!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
 ## 公開原始碼（AGPL-3.0）
@@ -178,14 +182,14 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 確認垃圾郵件過濾不會擋掉索取請求。
 - 使用你願意公開的地址：任何人都能在資訊頁面、入口頁面和 NodeInfo 中看到它。
 
-<!-- source: metrics 2dea3a7f8f83 -->
+<!-- source: metrics 77e2cbc5a0f6 -->
 ## 指標
 
 設定 `metrics_exporter`（預設 `none`）會匯出服務指標。相關設定請參閱[設定參考](../reference/configuration.md)。
 
 | `metrics_exporter` | 輸出路徑 | 適用於 |
 | --- | --- | --- |
-| `none` | 不匯出任何內容。量測幾乎不產生成本 | Cloud Run（改用平台的指標和記錄型指標） |
+| `none` | 不匯出任何內容。量測幾乎不產生成本。整個實例的值仍會每 15 分鐘寫成一行 `metrics snapshot` 日誌 | Cloud Run（改用平台的指標和記錄型指標） |
 | `prometheus` | `metrics_listen`（預設 `127.0.0.1:9464`）上的 `GET /metrics`。這是與公開的 `listen` 分開的監聽器，不需驗證，在每種 `role` 下都會執行 | 自行架設（由相容 Prometheus 的伺服器或 KEDA 擷取） |
 | `otlp` | 透過 OTLP/HTTP 傳送到 OpenTelemetry Collector。目的地取自 `OTEL_EXPORTER_OTLP_ENDPOINT` 等標準 OTel 環境變數 | 可以執行收集器的環境 |
 | `emf` | CloudWatch Embedded Metric Format 的 JSON 行。請求和任務的指標附在上述結束時的日誌行上；其他指標會在請求或任務結束時寫到標準輸出，每組標籤一行 | AWS ECS |
@@ -216,6 +220,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.accounts.registered` | 計數器 | 無 |
 | `my.statuses.created` | 計數器 | `my.visibility` |
 | `my.billing.imports` | 計數器 | `my.billing.source`（`aws` / `gcp` / `plugin`）、`my.outcome`（`success` / `failed`）、`error.type`（僅在 `failed` 時：失敗的種類，如[匯入雲端使用費用](billing-import.md)所述）。每次嘗試都會計入，包括重試和等待下一次每日匯入的失敗 |
+| `my.supporter.tip_checkouts` | 計數器 | `my.outcome`（`started` / `rate_limited` / `paid` / `expired`）。每次取得服務提供者頁面的小費發起計一次，每次被限制拒絕的發起計一次，以及每筆已付款或未付款即結束的小費計一次；它所支援的警示請參閱[小費](supporters.md#tips) |
 | `my.voice.turn.credentials` | 計數器 | `my.voice.turn`（`coturn` / `cloudflare`）、`my.outcome`（`issued` / `reused` / `failed`）。語音聊天參與者在加入聊天室或更新連線時要求的每個 TURN 憑證計一次：`reused` 表示再次傳回先前為同一個連線發出的 Cloudflare 憑證，`failed` 表示無法連線到 Cloudflare 或遭到拒絕，參與者因此收到錯誤而無法連線 |
 | `my.errors.exported` | 計數器 | `my.outcome`（`success` / `dropped` / `failed`：傳給 `errors_exporter` 服務的每份錯誤回報計一次。`dropped` 表示因為已有 1,000 份回報在等待，或服務要求伺服器放慢速度而沒有傳送，伺服器會依服務要求的時間等待後才再次傳送；`failed` 表示無法連線到服務或服務拒絕了回報。回報只會傳送一次，絕不重試，而關機開始 2 秒後仍在等待的回報會遺失） |
 | `my.queue.ready` | 量測計 | `my.job.type`（資料庫佇列中可執行的任務數） |
@@ -229,9 +234,9 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.metrics.snapshot.age` | 量測計，秒 | `my.metrics.snapshot.part`（`queue` / `totals`） |
 | `my.errors.reported` | 計數器 | `my.error.source`（`server` / `web`）、`my.error.kind`（`panic` / `error`）。每份[錯誤回報](#error-reports)計一次 |
 
-健康檢查（`/healthz`、`/readyz`）不會被量測。任何標籤都不包含遠端網域、帳號、URL 或用戶端 IP。`my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances` 和 `my.billing.import.failing` 是整個實例的值：每個程序都會從保存在鍵值儲存中的同一份快照回報相同的值。
+健康檢查（`/healthz`、`/readyz`、`/health/live`、`/health/ready`）不會被量測。任何標籤都不包含遠端網域、帳號、URL 或用戶端 IP。`my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances` 和 `my.billing.import.failing` 是整個實例的值：每個程序都會從保存在鍵值儲存中的同一份快照回報相同的值。
 
-<!-- source: system-metrics 8b5d40a4eb98 -->
+<!-- source: system-metrics dad53f84ee0a -->
 ### 系統指標
 
 關於程序、Go 執行階段以及與資源之連線的指標，會透過同一個 `metrics_exporter` 匯出。容器的 CPU、記憶體、執行個體數和輸入請求交給平台的指標；這些指標涵蓋的是平台看不到的程序內部飽和狀態。不要用它們來觸發擴展；請把它們用於警示和估算執行個體數上限。
@@ -253,7 +258,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.adapter.operation.duration` | 直方圖，秒 | `my.adapter`（`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`）、`my.operation`、`my.outcome`（`success` / `error`） |
 | `my.adapter.connections` | UpDownCounter | `my.adapter`（`valkey` 連線，以及 `stream.<stream>` 訂閱者） |
 | `my.adapter.reconnects` | 計數器 | `my.adapter` |
-| `http.client.request.duration` | 直方圖，秒 | `my.http.purpose`（`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots`）、`http.request.method`、`my.http.status_class`（`2xx` 等）、`error.type`（`forbidden_destination` 表示被 SSRF 防護拒絕） |
+| `http.client.request.duration` | 直方圖，秒 | `my.http.purpose`（`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`）、`http.request.method`、`my.http.status_class`（`2xx` 等）、`error.type`（`forbidden_destination` 表示被 SSRF 防護拒絕） |
 | `http.client.open_connections` | UpDownCounter | 無 |
 | `my.readiness.failures` | 計數器 | 無 |
 | `my.http.origin_refused` | 計數器 | 無。每個因為沒有經過 CDN 而被拒絕的請求計一次（[`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)）。對來源位址的探測會讓它緩慢增加；如果在流量停止的同時它突然跳升，就表示 CDN 不再傳送該標頭。維護模式不會量測任何東西，所以只有它的存取日誌會顯示這些請求 |
@@ -269,7 +274,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 `GOMEMLIMIT` 是由營運者設定的 Go 執行階段環境變數；應用程式不會自行決定。沒有設定時，Go 以其預設值（無上限）執行，堆積在接近容器記憶體上限時也不會積極回收。在有容器記憶體上限的環境中（Cloud Run、ECS、Kubernetes），請把它設為該上限的約 90%（例如 512 MiB 的容器設為 `GOMEMLIMIT=460MiB`）。不要設定 `GOMAXPROCS`：Go 的預設值會依循容器的 CPU 上限。
 
-<!-- source: traces e274793f5885 -->
+<!-- source: traces 8dfd96f79f54 -->
 ## 追蹤
 
 設定 `traces_exporter`（預設 `none`）會匯出分散式追蹤。相關設定請參閱[設定參考](../reference/configuration.md)。
@@ -279,7 +284,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | HTTP 請求（伺服器） | `<method> <http.route>`（沒有到達路由的請求為 `<method>`） | `http.request.method`、`http.route`、`http.response.status_code`、`my.surface`。5xx 視為失敗 |
 | 任務執行（消費者） | 任務類型（`my.job.type`） | `my.job.type`、`my.job.attempt`、`my.outcome`。每次重試都是獨立的 span |
 | 交易 | `my.db.transaction` | `db.system.name`。每次重試都是獨立的 span |
-| 查詢（用戶端） | sqlc 的查詢名稱（例如 `InsertJob`；否則為 SQL 的第一個字，例如 `BEGIN`） | `db.system.name`、`db.operation.name` |
+| 查詢（用戶端） | sqlc 的查詢名稱（例如 `InsertJobs`；否則為 SQL 的第一個字，例如 `BEGIN`） | `db.system.name`、`db.operation.name` |
 | 傳送（`my.delivery`） | `my.delivery` | `activity.type`、`my.outcome` |
 | 對外 HTTP（用戶端） | `<method>` | `http.request.method`、`server.address`（只有目的地的主機名稱）、`http.response.status_code`。4xx 或 5xx 視為失敗 |
 
@@ -453,7 +458,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
   - 在 Cloud Run 上，服務預設每個執行個體接受 80 個同時請求。連線池為 4 時，一波緩慢的請求會在這裡排隊，所以請調高 `pool_max_conns`、降低服務的並行數，或兩者都做。
 - **頻繁出現 `503` 或 `db.client.connection.timeouts`** 表示連線池太小或查詢變慢了；更長的逾時只會掩蓋問題。請依照 [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated) 處理。
 
-<!-- source: cloud-tasks ef3f7d7cc896 -->
+<!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
 [在 Cloud Run 上部署](deploy-cloud-run.md)會以 OpenTofu 模組設定以下所有項目。
@@ -463,9 +468,23 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - 對於伺服器儲存、重試或放回的每個任務，伺服器會在交易提交後於 `queue_cloudtasks_queue` 中建立一個 Cloud Tasks 任務。這個任務會在任務到期時，以任務的 ID 為內文，帶著 `queue_cloudtasks_service_account` 的 OIDC ID 權杖呼叫 `POST {queue_cloudtasks_url}/_internal/jobs`。到期時間在 30 天以後的任務，會在 30 天時發出訊號，並在該任務送達時再次發出訊號。
 - 收到任務的程序會執行任務，並在記錄其結果後回應 `204`，即使任務已經執行過或尚未到期也一樣。失敗的任務會由伺服器在下一次嘗試時間重試，而不是由 Cloud Tasks 重試。Cloud Tasks 只在回應為 `5xx`（無法連線到資料庫）或 `401`（伺服器拒絕的權杖）時才會重試任務，所以它的 `retryConfig` 不需要調整。
 - 沒有程序會輪詢資料表，也沒有程序會自行執行定期任務。請建立一個 Cloud Scheduler 任務，每分鐘（`* * * * *`）以同一個服務帳號的 OIDC 權杖（設定了 `queue_cloudtasks_audience` 時，並帶有該對象）呼叫 `POST {queue_cloudtasks_url}/_internal/tick`。每次 tick 都會把已到週期的定期任務放入佇列，整個實例只放一次（週期會在 KV 中被佔用，所以 `kv` 必須是 `db` 或 `valkey`），並再次為已到期超過 2 分鐘仍未執行的任務發出訊號，以補救遺失的訊號。
-- `/_internal/jobs` 和 `/_internal/tick` 由 `role = all` 或 `worker` 的程序提供，只接受由 Google 為 `queue_cloudtasks_service_account` 簽署、電子郵件已驗證，且對象為 `queue_cloudtasks_audience`（預設為被呼叫的 URL）的權杖。其他任何請求都是 `401`。
+- `/_internal/jobs` 和 `/_internal/tick` 由 `role = all` 或 `worker` 的程序提供，只接受由 Google 為 `queue_cloudtasks_service_account` 簽署、電子郵件已驗證，且唯一的對象為 `queue_cloudtasks_audience`（預設為被呼叫的 URL）的權杖。其他任何請求都是 `401`。
 - 一次投遞執行一個任務，最多持續 5 分鐘的租約。請讓 `queue_cloudtasks_dispatch_deadline`（預設 10 分鐘）和 Cloud Run 服務的請求逾時比這更長。
 - 伺服器自己的服務帳號需要佇列上的 `roles/cloudtasks.enqueuer`，以及 `queue_cloudtasks_service_account` 上的 `roles/iam.serviceAccountUser`。它以 Application Default Credentials 進行驗證。
+
+<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+### 週期性任務會晚多久執行
+
+週期性任務會在它的時間之後，最多晚一個觸發週期執行，再加上平台啟動它所需的時間。這決定了活動的提醒與開始通知會晚多久送達，以及它們的語音聊天室會晚多久開啟，因為 `gathering.tick` 會啟動它們：提醒最多會晚表中的間隔那麼久。這些值是排程器程式碼與各平台觸發器所給定的值；它們並未在運作中的伺服器上量測過。
+
+| 平台 | 由什麼啟動週期性任務 | 活動提醒或開始的預期延遲 |
+| --- | --- | --- |
+| 自行架設與 Docker Compose（`queue = db`） | 每個 `role = all` 或 `worker` 的程序中的排程器，從程序啟動起每分鐘檢查一次，並讓每個任務在整台伺服器每個週期只加入佇列一次 | 最多 1 分鐘，再加上 worker 取走任務的約一秒 |
+| AWS ECS Fargate（`queue = db`） | 同一個排程器，在 worker 工作中 | 最多 1 分鐘，再加上約一秒 |
+| Cloud Run（`queue = cloudtasks`） | Cloud Scheduler 依它的排程呼叫 `/_internal/tick`，預設為 `* * * * *`（每分鐘）；然後 Cloud Tasks 為每個任務喚醒伺服器 | 最多 1 分鐘，再加上在沒有實例執行時啟動實例的時間（冷啟動，通常是幾秒）。使用較長的 `tick_schedule`（例如 `*/10 * * * *`）時，最多是該間隔 |
+| AWS Lambda | `my` 沒有 Lambda 部署；在 AWS 上，請在 ECS Fargate 上執行它 | — |
+
+如果提醒會在活動開始之後才送達，就不會送出，活動結束後的開始通知也一樣。所以當觸發間隔超過 5 分鐘時，最短的提醒可能會遺失。
 
 <!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
 ### 把任務類型路由到各自的佇列
@@ -509,18 +528,19 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 2. 在每個程序上變更路由。在路由不一致的期間，訊號會送到任一個佇列，任務會在兩個地方執行。
 3. 要移除佇列，請先從每個地方的路由中拿掉它，並等它清空後再刪除。被刪除之佇列中的訊號會遺失，但任務不會：一旦任務到期滿 2 分鐘，清查就會再次為它發出訊號。Cloud Tasks 的任務可以為最多 30 天後才到期的任務保存訊號，所以到期時間晚於等待時間的任務，只會在時候到了時由清查發出訊號。
 
-<!-- source: health-checks 06a8834ade0d -->
+<!-- source: health-checks e268d13fe7f2 -->
 ## 健康檢查
 
 | 路徑 | 種類 | 回傳 200 的條件 |
 | --- | --- | --- |
-| `GET /healthz` | 存活 | 程序能回應 HTTP。它不會檢查資料庫等相依項目（所以緩慢的資料庫不會讓程序重新啟動） |
-| `GET /readyz` | 就緒 | 能連線到資料庫，且已套用結構描述 |
+| `GET /healthz`、`GET /health/live` | 存活 | 程序能回應 HTTP。它不會檢查資料庫等相依項目（所以緩慢的資料庫不會讓程序重新啟動） |
+| `GET /readyz`、`GET /health/ready` | 就緒 | 能連線到資料庫，且已套用結構描述 |
 | `GET /api/v1/instance/health` | 運作時間監控、狀態頁面和用戶端（由 `web` 角色提供） | 與就緒相同。結果會在程序中快取 60 秒 |
 
-- `/healthz` 或 `/readyz` 回傳 200 時，內文為 `{"status":"ok"}`。
+- Cloud Run 保留了一些以 `z` 結尾的路徑（`/healthz` 就是其中之一），並自己以 `404` 回應它們；在它後面，請呼叫 `/health/live` 和 `/health/ready`，它們的回應相同。
+- 其中任何一個回傳 200 時，內文為 `{"status":"ok"}`。
 - `/readyz` 每次請求都會檢查資料庫，同時的請求共用一次檢查。
-- `/api/v1/instance/health` 正常時回傳 200 和 `{"status":"ok","checked_at":"<RFC 3339>"}`，失敗時回傳 503 和 `{"status":"unavailable","checked_at":...}`（`Cache-Control: no-store`）。無論被監控或請求的頻率多高，每個程序每分鐘最多存取資料庫一次，而且它既不檢查存取權杖，也不檢查速率限制。請讓運作時間監控指向這個端點，而不是探測用的端點（`/readyz`）。各服務的設定方式、監控間隔與費用，以及維護的處理方式，請參閱[運作時間監控指南](monitoring.md)。
+- `/api/v1/instance/health` 正常時回傳 200 和 `{"status":"ok","checked_at":"<RFC 3339>"}`，失敗時回傳 503 和 `{"status":"unavailable","checked_at":...}`（`Cache-Control: no-store`）。無論被監控或請求的頻率多高，每個程序每分鐘最多存取資料庫一次，而且它既不檢查存取權杖，也不檢查速率限制。請讓運作時間監控指向這個端點，而不是探測用的端點（`/readyz` 或 `/health/ready`）。各服務的設定方式、監控間隔與費用，以及維護的處理方式，請參閱[運作時間監控指南](monitoring.md)。
 - 這三者在存取日誌中都以 Debug 等級記錄，也不會建立追蹤 span。
 - 未達就緒時，回應為 503，內文為 RFC 9457 的 `application/problem+json`。其 `title` 會依 `Accept-Language` 翻譯，不包含任何內部細節。原因（連線錯誤，或缺少的資料表名稱）會記錄在日誌中。
 - 一次就緒檢查會在 3 秒後中斷。

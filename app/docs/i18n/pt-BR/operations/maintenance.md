@@ -8,7 +8,7 @@ Há duas ferramentas:
 - **O modo de manutenção** (`maintenance = true`, `MY_MAINTENANCE=true` ou `my serve -maintenance`). O `my serve` inicia sem abrir nenhum adaptador e responde a cada requisição com um `503`, um `Retry-After` e uma resposta que cada cliente entende. Use-o sempre que o próprio `my serve` puder rodar.
 - **A página exportada** (`my maintenance export`). HTML estático do mesmo template, para um balanceador de carga, uma CDN ou um proxy reverso servir quando o `my serve` não consegue rodar de jeito nenhum (uma imagem sendo substituída, uma revisão que não inicia). Veja [Exportando a página de manutenção](admin-cli.md#exporting-the-maintenance-page).
 
-<!-- source: what-the-maintenance-mode-answers 05dd30158a8e -->
+<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
 ## O que o modo de manutenção responde
 
 O processo lê apenas o endereço de escuta, `host`, `account_domain`, `web_origin`, os proxies (`trusted_proxies`, `trusted_proxy_header`),
@@ -21,7 +21,7 @@ Com [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 
 
 | Requisição | Status | Corpo |
 | --- | --- | --- |
-| `GET /healthz`, `GET /readyz` | `200` | `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /readyz`, `GET /health/live`, `GET /health/ready` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
 | O restante da API do cliente (`/api/*`) e os endpoints OAuth que respondem JSON | `503` | `application/problem+json` do tipo `/api/v1/problems/maintenance`, com `message`, `until` e `status_page_url` quando definido |
 | ActivityPub (pelo caminho, `Accept` ou `Content-Type`), WebFinger, host-meta, NodeInfo, os webhooks de pagamento, as chamadas do Cloud Tasks e do Cloud Scheduler (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
@@ -55,7 +55,7 @@ pelos seus cronogramas de nova tentativa).
 Os buscadores tratam um `503` curto como uma indisponibilidade temporária, mas o Google recomenda não servir `503` para o `robots.txt` por mais de um ou dois dias.
 Uma parada mais longa que um ou dois dias não é uma manutenção: encerre o serviço em vez disso ([Encerrando o serviço](service-closure.md)).
 
-<!-- source: steps 1427d2c6d499 -->
+<!-- source: steps 9377fd324cdc -->
 ## Passos
 
 1. **Avise.** Publique a janela na página de status (`status_page_url`) e como um anúncio (Administração → Anúncios) com antecedência.
@@ -65,17 +65,17 @@ Uma parada mais longa que um ou dois dias não é uma manutenção: encerre o se
 3. **Mude para o modo de manutenção**: reimplante com `MY_MAINTENANCE=true` (conforme o alvo abaixo). Cada réplica reinicia no modo de manutenção;
    o balanceador de carga as mantém porque `/readyz` responde `200`.
 4. **Faça o trabalho.**
-5. **Volte ao normal**: reimplante sem `MY_MAINTENANCE` (ou com `false`), confirme que `/readyz` e `/api/v1/instance/health` respondem `{"status":"ok"}`,
+5. **Volte ao normal**: reimplante sem `MY_MAINTENANCE` (ou com `false`), confirme que `/health/ready` e `/api/v1/instance/health` respondem `{"status":"ok"}`,
    e então retome a fila de push e feche o anúncio.
 
-![O que o servidor responde antes, durante e depois do modo de manutenção, por tipo de requisição: como de costume antes e depois, e 503 com Retry-After durante ele, exceto /healthz e /readyz, que continuam em 200. A lista abaixo diz o mesmo.](images/maintenance.svg)
+![O que o servidor responde antes, durante e depois do modo de manutenção, por tipo de requisição: como de costume antes e depois, e 503 com Retry-After durante ele, exceto as verificações de saúde (/healthz, /readyz, /health/live, /health/ready), que continuam em 200. A lista abaixo diz o mesmo.](images/maintenance.svg)
 
 Da esquerda para a direita:
 
 - **Antes**, enquanto você anuncia a manutenção, toda requisição é respondida como de costume: `/healthz`, `/readyz` e
   `/api/v1/instance/health` respondem `200` com `{"status":"ok"}`.
 - **No modo de manutenção** (`MY_MAINTENANCE=true`):
-  - `/healthz` e `/readyz` respondem `200` com `{"status":"maintenance"}`.
+  - `/healthz`, `/readyz`, `/health/live` e `/health/ready` respondem `200` com `{"status":"maintenance"}`.
   - `/api/v1/instance/health` responde `503` com `{"status":"maintenance"}`.
   - O restante da API do cliente e os endpoints OAuth que respondem JSON recebem `503` com o problema de manutenção.
   - ActivityPub, WebFinger e NodeInfo respondem `503` com `{"error":"maintenance"}`.
@@ -223,9 +223,9 @@ metadata:
     nginx.ingress.kubernetes.io/default-backend: my-maintenance   # a Service in the same namespace
 ```
 
-<!-- source: monitoring-during-the-maintenance 91e64028447e -->
+<!-- source: monitoring-during-the-maintenance 76cf0bd38c93 -->
 ## Monitoramento durante a manutenção
 
-- `/healthz` e `/readyz` continuam em `200` com `{"status":"maintenance"}`: balanceadores de carga e o Kubernetes mantêm as instâncias.
+- `/healthz`, `/readyz`, `/health/live` e `/health/ready` continuam em `200` com `{"status":"maintenance"}`: balanceadores de carga e o Kubernetes mantêm as instâncias.
 - `/api/v1/instance/health` responde `503` com `{"status":"maintenance"}` ([Monitoramento](monitoring.md)).
   Monitores de disponibilidade veem o servidor como fora do ar, a menos que comparem o corpo ou tenham uma janela de manutenção; pause-os ou defina a janela.

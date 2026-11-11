@@ -39,10 +39,10 @@ Você não pode registrar o relay de um servidor sob uma ação de domínio (`su
 - Os documentos das publicações públicas trazem uma Linked Data Signature (`RsaSignature2017`), para que Mastodon e Misskey aceitem publicações que um relay repassa sem alterações.
 - O número de entregas cresce pelo número de relays dos quais você participa vezes o número de publicações públicas (as entregas a um relay são unidas em uma só).
 
-<!-- source: what-the-server-receives ff962150d1a7 -->
+<!-- source: what-the-server-receives fa99c4ec4217 -->
 ## O que o servidor recebe
 
-- Uma publicação pública trazida por um relay do qual você participa é buscada de novo na origem e verificada antes de ser ingerida. Depois ela aparece na linha do tempo federada e nas linhas do tempo de hashtags. Ela não aparece nas linhas do tempo de início e não cria notificações.
+- Uma publicação pública trazida por um relay do qual você participa é buscada de novo na origem e verificada antes de ser ingerida. Depois ela aparece na linha do tempo federada e nas linhas do tempo de hashtags, e nas linhas do tempo de início das pessoas que seguem uma de suas hashtags. Ela não aparece em nenhuma outra linha do tempo de início e não cria notificações.
 - No máximo `relay_max_activities_per_hour` publicações por hora (padrão 1.000) são ingeridas por relay. O que passar do limite é descartado sem ser buscado.
   A página do relay na área de administração e `my admin relay list` mostram quantas foram ingeridas nas últimas 24 horas e quantas foram descartadas por passar do limite. Se muitas forem descartadas, aumente o limite ou reconsidere o relay.
 - Uma publicação não é ingerida quando seu domínio ou sua conta tem um `suspend` (uma restrição de federação) ou um `limit` (uma restrição que a retira dos espaços públicos).

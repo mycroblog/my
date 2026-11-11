@@ -28,18 +28,20 @@ Un fallo de un servicio externo (correo, almacenamiento, pagos, voz) solo se inf
 
 Un pánico en una tarea en segundo plano detiene el proceso después de informarse, de modo que el servidor nunca sigue funcionando en un estado roto. Tu plataforma lo reinicia.
 
-<!-- source: the-log-line 6b570d0bfd09 -->
+<!-- source: the-log-line ef6f03400831 -->
 ## La línea de registro
 
 La línea tiene `msg` = `error report` y `level` `ERROR` (`severity` es `CRITICAL` cuando el fallo detiene el proceso).
-Sus campos, y lo que hace la depuración de datos con ellos, están en [Ejecutar el servidor](running.md#error-reports). En resumen:
+Sus campos, y lo que hace la depuración de datos sensibles con ellos, están en [Ejecutar el servidor](running.md#error-reports). En resumen:
 
-- `my.error.fingerprint` es igual en todas las apariciones del mismo error. Busca o agrupa por él.
+- `my.error.fingerprint` es el mismo para cada aparición del mismo error. Busca o agrupa por él.
 - `my.error.where` indica dónde ocurrió, por ejemplo `client_api GET /api/v1/statuses/{id}`.
-- `request_id`, `job_id`, `trace_id` y `span_id` permiten encontrar las demás líneas de la misma solicitud o trabajo.
-- `message` es lo último de la línea: el tipo y el mensaje del error, un salto de línea y la traza de pila de Go.
+- `request_id`, `job_id`, `trace_id` y `span_id` encuentran las demás líneas de la misma solicitud o trabajo.
+- La línea de un error de una solicitud tiene `context.httpRequest`: el método, la ruta como URL (`/api/v1/statuses/{id}`, nunca la ruta que pidió el cliente) y el estado devuelto. Error Reporting los muestra en el grupo y puede filtrar por ellos.
+- `message` es lo último de la línea: el tipo y el mensaje del error, un salto de línea y la pila de Go.
+- La pila empieza donde se originó el error, no donde se informó: para un error de base de datos, la función del servidor que ejecutó la consulta. Por tanto, los errores de lugares distintos caen en grupos distintos, tanto en Error Reporting como en la pantalla de administración.
 
-Ninguna otra línea lleva una traza de pila.
+Ninguna otra línea lleva una pila.
 
 <!-- source: google-cloud-cloud-run 925c99683713 -->
 ### Google Cloud (Cloud Run)

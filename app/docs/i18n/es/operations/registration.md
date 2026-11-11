@@ -127,7 +127,7 @@ Mientras se aplica el ajuste de instancia `login_providers_only`, se rechazan lo
   Un inicio de sesión que espera su código de dos factores y una autorización de aplicación sin completar también dejan de funcionar: el usuario los empieza de nuevo.
   Con `mail = smtp`, el servidor también envía al usuario un correo que avisa del cambio de contraseña.
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## Códigos de invitación
 
 Las invitaciones funcionan en los modos `open`, `approval` e `invite`. El personal crea invitaciones con la CLI, las pantallas de moderación y la API de administración que se describen abajo; los miembros también pueden crear las suyas ([invitaciones de miembros](#member-invites)).
@@ -148,6 +148,7 @@ my invite revoke <code>
 - Además de la CLI, puedes crear, listar y revocar invitaciones en las pantallas de moderación del cliente web («Invitaciones», `/moderation/invites`) y mediante la API de clientes
   (`GET` / `POST /api/v1/admin/invites` y `POST /api/v1/admin/invites/{id}/revoke`). Ambas necesitan el permiso de rol `manage_invites`
   (el rol integrado `moderator` no lo tiene, así que para delegarlo crea un rol con ese permiso y concédelo).
+  Un servicio que reparte invitaciones por sí mismo llama a la misma API con un token del ámbito `admin:manage_invites` ([permitir que otro servicio use la API de administración](moderation.md#letting-another-service-use-the-admin-api)).
   «Crear una invitación» en la lista abre el formulario (`/moderation/invites/new`), que muestra el código y el enlace de registro de la invitación nueva.
   La lista permite copiar el enlace de una invitación válida y revocarla.
 - La lista muestra todas las invitaciones, las del personal y las de los miembros, con quién la creó (`created_by`) y cómo (`creator_kind`: `staff` o `member`). Quienes tienen `manage_invites` pueden revocar cualquiera de ellas.

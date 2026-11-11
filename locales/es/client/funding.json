@@ -1,0 +1,38 @@
+{
+  "funding.meter.label": {
+    "defaultMessage": "Apoyo de {month}",
+    "description": "Label of the funding meter: how far this month's income from the supporters goes toward the server's monthly goal. month is the month and year, such as November 2026."
+  },
+  "funding.meter.percent": {
+    "defaultMessage": "{estimated, select, true {{percent} cubierto, estimado} other {{percent} cubierto}}",
+    "description": "The value of the funding meter in words, shown beside the bar and read by screen readers, while the server publishes only the percentage. percent is formatted, such as 72%, rounded down. estimated is true when the goal includes estimated costs."
+  },
+  "funding.meter.amounts": {
+    "defaultMessage": "{estimated, select, true {{income} de {target} ({percent}), estimado} other {{income} de {target} ({percent})}}",
+    "description": "The value of the funding meter in words, shown beside the bar and read by screen readers, while the server publishes the amounts: this month's income after fees, the monthly goal, and the percentage (rounded down). estimated is true when the goal includes estimated costs."
+  },
+  "funding.meter.covered": {
+    "defaultMessage": "{estimated, select, true {Cubierto este mes, estimado} other {Cubierto este mes}}",
+    "description": "The value of the funding meter in words once this month's income reaches the goal. It never says a percentage above 100. estimated is true when the goal includes estimated costs."
+  },
+  "funding.meter.target.costs": {
+    "defaultMessage": "La meta son los costos de funcionamiento de este mes.",
+    "description": "Under the funding meter, while the server publishes the amounts: the monthly goal is what running the server costs this month."
+  },
+  "funding.meter.target.amount": {
+    "defaultMessage": "La meta es de {target} al mes, fijada por los operadores.",
+    "description": "Under the funding meter, while the server publishes the amounts: the monthly goal the operators set. target is a formatted amount, such as ¥5,000."
+  },
+  "funding.meter.estimated": {
+    "defaultMessage": "Los costos incluyen cargos por uso de un mes que el proveedor aún no ha cerrado, así que esto todavía puede cambiar.",
+    "description": "Under the funding meter when its goal includes estimated costs: why the value is an estimate."
+  },
+  "funding.panel.title": {
+    "defaultMessage": "Apoyar este servidor",
+    "description": "Heading of the funding meter's panel in the third column of wide screens, which the operators turn on."
+  },
+  "funding.panel.more": {
+    "defaultMessage": "Más sobre los costos de funcionamiento",
+    "description": "Link from the funding meter's panel in the third column to the server's information page."
+  }
+}

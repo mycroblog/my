@@ -11,6 +11,14 @@
     "defaultMessage": "还没有帖子",
     "description": "Shown instead of the posts of a profile's tab when it has none."
   },
+  "timeline.empty.account.articles.heading": {
+    "defaultMessage": "还没有文章",
+    "description": "Shown instead of the articles of the articles tab of a profile when it has none."
+  },
+  "timeline.empty.account.tagged.heading": {
+    "defaultMessage": "还没有带有 #{tag} 的帖子",
+    "description": "Shown instead of the posts of an account that carry a hashtag when it has none. {tag} is the hashtag without the #."
+  },
   "timeline.empty.bookmarks.description": {
     "defaultMessage": "你添加书签的帖子会显示在这里。只有你能看到你的书签。",
     "description": "Text under the heading of the empty list of bookmarks."

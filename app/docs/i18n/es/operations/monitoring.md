@@ -7,18 +7,18 @@ y cómo distinguir el modo de mantenimiento ([Mantenimiento](maintenance.md)) de
 
 Los datos de terceros que aparecen abajo llevan la fecha en que se confirmaron y su fuente. Los servicios cambian sus planes y sus pantallas; comprueba la página enlazada antes de fiarte de un límite.
 
-<!-- source: which-url-to-monitor 50bdaa5c9f31 -->
+<!-- source: which-url-to-monitor 1c5761757c52 -->
 ## Qué URL monitorizar
 
 | Ruta | Para | Toca la base de datos | En modo de mantenimiento |
 | --- | --- | --- | --- |
 | `GET /api/v1/instance/health` | Monitores de disponibilidad, páginas de estado, el cliente web | Como máximo una vez cada 60 s por proceso | `503` con `Retry-After` y `{"status":"maintenance"}` |
-| `GET /healthz` | La sonda de vida (liveness) de la plataforma | Nunca | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | La sonda de disponibilidad (readiness) del balanceador de carga o de Kubernetes | En cada petición (las peticiones simultáneas comparten una comprobación) | `200` `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /health/live` | La sonda de vida (liveness) de la plataforma | Nunca | `200` `{"status":"maintenance"}` |
+| `GET /readyz`, `GET /health/ready` | La sonda de disponibilidad (readiness) del balanceador de carga o de Kubernetes | En cada petición (las peticiones simultáneas comparten una comprobación) | `200` `{"status":"maintenance"}` |
 
-Apunta el monitor externo a **`/api/v1/instance/health`**, no a `/readyz`: `/readyz` consulta la base de datos en cada petición,
+Apunta el monitor externo a **`/api/v1/instance/health`**, no a `/readyz` (`/health/ready`): consulta la base de datos en cada petición,
 así que un monitor con un intervalo corto mantiene despierta una base de datos que escala a cero. Las sondas son para tu plataforma.
-Los módulos [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) y [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) comprueban `/readyz` desde el monitor propio de la plataforma con un intervalo largo, y sus README indican cuánto cuesta.
+Los módulos [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) y [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) comprueban `/health/live` (`monitoring-gcp`) o `/readyz` (`monitoring-aws`) desde el monitor propio de la plataforma con un intervalo largo, y sus README indican cuánto cuesta.
 
 Respuestas de `/api/v1/instance/health` (sin autenticación, `Cache-Control: no-store`):
 
@@ -28,7 +28,9 @@ Respuestas de `/api/v1/instance/health` (sin autenticación, `Cache-Control: no-
 | No disponible (la base de datos no es alcanzable o no se ha aplicado el esquema) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
 | Modo de mantenimiento | `503` con `Retry-After` | `{"status":"maintenance"}` |
 
-`/healthz` y `/readyz` responden `200` con `{"status":"ok"}` cuando todo está sano, y `/readyz` responde `503` con un documento de problema cuando la base de datos no está lista.
+`/healthz` y `/readyz` responden `200` con `{"status":"ok"}` cuando todo está sano, y `/readyz` responde `503` con un documento de problema cuando la base de datos no está lista. `/health/live` y `/health/ready` son las mismas comprobaciones con otros nombres.
+
+**En Cloud Run, llama a las rutas que no terminan en `z`.** Cloud Run reserva algunas rutas que terminan en `z` y las responde con su propio `404` antes de que una solicitud llegue al contenedor: `/healthz` es una de ellas, y nada garantiza que `/readyz` siga respondiendo. Desde fuera de un despliegue de Cloud Run (un monitor de disponibilidad, `curl`), usa `/health/live`, `/health/ready` o `/api/v1/instance/health`. Las sondas del propio contenedor no se ven afectadas.
 El cuerpo nunca incluye un motivo, un nombre de host ni una versión. La causa está en el registro del servidor.
 
 `checked_at` es el momento de la comprobación en la que se basa la respuesta. El servidor ejecuta la comprobación de la base de datos como máximo una vez por minuto y por proceso y reutiliza el resultado,
@@ -36,7 +38,7 @@ así que un monitor que consulta con más frecuencia que cada 60 s ve el mismo `
 
 Con [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, estas tres rutas siguen respondiendo sin el encabezado, así que no muestran que la CDN lo haya perdido. Monitoriza también una página a través de la CDN, como `https://<host>/about`, si un monitor es tu primera señal de problemas.
 
-<!-- source: keep-the-monitoring-cheap 29d1da3d6dc2 -->
+<!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## Mantener barata la monitorización
 
 - **Bases de datos que escalan a cero.** Si el intervalo del monitor es más corto que el tiempo que la base de datos espera antes de detenerse, la base de datos nunca se detiene.
@@ -45,7 +47,7 @@ Con [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 
   Como regla general, un intervalo de 5 minutos o más deja que una base de datos inactiva se detenga entre comprobaciones, y cada comprobación la despierta durante la comprobación más el tiempo de inactividad.
   Un servidor federado recibe entregas de otros servidores a todas horas, así que su base de datos está despierta buena parte del día de todos modos;
   el costo adicional se limita a las horas tranquilas.
-- **Prefiere una división más barata si lo que más importa es el costo en reposo.** Monitoriza `/healthz` (nunca toca la base de datos) con un intervalo corto, y `/api/v1/instance/health`, que usa la base de datos, con uno largo (15 minutos o más). `/healthz` también responde `200` durante el modo de mantenimiento, así que busca `"status":"ok"` en el cuerpo.
+- **Prefiere una división más barata si lo que más importa es el costo en reposo.** Monitoriza `/health/live` (nunca toca la base de datos) con un intervalo corto, y `/api/v1/instance/health`, que usa la base de datos, con uno largo (15 minutos o más). `/health/live` también responde `200` durante el modo de mantenimiento, así que busca `"status":"ok"` en el cuerpo.
 - **Las peticiones en sí son pequeñas.** Una comprobación cada 5 minutos son unas 8640 peticiones al mes, una cada minuto unas 43 200. Cabe en el nivel gratuito
   de Cloud Run (2 millones de peticiones, 180 000 vCPU-segundos y 360 000 GiB-segundos al mes; tiempo redondeado hacia arriba a 100 ms; confirmado el 2026-10-23, [precios de Cloud Run](https://cloud.google.com/run/pricing)).
 

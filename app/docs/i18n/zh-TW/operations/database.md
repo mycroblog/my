@@ -74,20 +74,21 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 4996c9dc9019 -->
+<!-- source: upgrading 3882f4bb0751 -->
 ## 升級
 
-升級到新版本時，一律以**新**版本的伺服器映像檔，依下列順序執行這些步驟：
+升級到新版本時，一律使用**新**版本的伺服器映像檔，依下列順序執行這些步驟：
 
-1. **備份**資料庫（使用檔案系統 blob 儲存區時，也包括媒體）。請參閱[備份](#backing-up)。
-2. **`my db upgrade -check`**。它不會變更任何東西。當新的結構描述會刪除資料庫尚未轉移的資料時，它會以 `1` 結束，並指出必須先經過哪個版本升級；這時請停下來，依照[跳過版本](#skipping-releases)進行。空的資料庫會通過。
-3. **`my schema apply`**，與[初始化](#initializing-applying-the-schema)相同。請先用 `-dry-run` 檢查 SQL。
-4. **`my db upgrade`**。它會執行該版本中資料庫尚未記錄的每個資料升級步驟，重建這些步驟指定的投影（projection），並記錄每個步驟。再次執行時什麼也不做。若某個步驟失敗，它會以 `1` 結束；已完成的步驟仍會保持記錄，再次執行時會從失敗的步驟繼續。
-5. **啟動新的伺服器**。在該版本的每個資料升級步驟都被記錄之前，它會在 `/readyz` 回應 `503`，並在日誌中記錄缺少的步驟。
+1. **備份**資料庫（使用檔案系統 blob 儲存時，也要備份媒體）。請參閱[備份](#backing-up)。
+2. **`my db upgrade -check`**。它不會變更任何東西。當新的結構會刪除資料庫尚未轉移的資料時，它會以 `1` 結束，並指出要先升級到哪個版本；這時請停下來，依照[跳過版本](#skipping-releases)處理。空的資料庫會通過。
+3. **`my schema apply`**，做法同[初始化](#initializing-applying-the-schema)。請先用 `-dry-run` 檢查 SQL。
+4. **`my db upgrade`**。它會執行該版本中資料庫尚未記錄的每個資料升級步驟，重建這些步驟所指名的投影，並記錄每個步驟。再次執行時它不會做任何事。如果某個步驟失敗，它會以 `1` 結束；已完成的步驟仍保持記錄，再次執行會從失敗的那一步繼續。
+5. **啟動新的伺服器。** 在該版本的每個資料升級步驟都被記錄之前，它會在 `/readyz` 回應 `503`，並記錄缺少的步驟。
 
-`my serve` 絕不會執行 `my db upgrade -check`、`my schema apply` 或 `my db upgrade`；它們都是一次性任務。對同一個資料庫一次只執行其中一個。
+`my serve` 從不執行 `my db upgrade -check`、`my schema apply` 或 `my db upgrade`；它們都是一次性的任務。對同一個資料庫一次只能執行其中一個。
 
-大多數版本沒有資料升級步驟：`my db upgrade -check` 會印出 `ok: the database can be upgraded to this release`，`my db upgrade` 則印出 `ok: no data upgrade step to run`。即便如此仍請兩者都執行，這樣程序就不必依賴閱讀每一份版本說明。版本說明的 **Upgrading** 一節會列出每個版本的步驟。
+大多數版本不會新增資料升級步驟：`my db upgrade -check` 會輸出 `ok: the database can be upgraded to this release`，而在已記錄先前版本步驟的資料庫上，`my db upgrade` 會輸出 `ok: no data upgrade step to run`。新的資料庫會在第一次 `my db upgrade` 時記錄該版本的所有步驟，沒有任何東西需要改寫。兩者還是都要執行，這樣流程就不必仰賴閱讀每一份版本說明。
+版本說明的**升級**一節會列出每個版本的步驟。
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->
 ### 升級期間的伺服器

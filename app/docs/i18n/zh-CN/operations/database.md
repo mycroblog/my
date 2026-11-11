@@ -1,11 +1,11 @@
-<!-- source: database-initializing-upgrading-and-recreating 50ea4fb561eb -->
+<!-- source: database-initializing-upgrading-and-recreating b4189f003273 -->
 # 数据库：初始化、升级和重建
 
-本文说明运营者如何创建数据库、将其升级到新版本，以及在仅限开发和测试的实例上清空它。
+运维人员如何创建数据库、把它升级到新版本，以及仅限开发和测试实例的清空操作。
 
-schema 位于 `schema/<dialect>/`（每个模块一个文件）。服务器二进制文件包含其版本的 schema，由 `my schema apply` 应用：每种部署方式都会在服务器之前，以服务器镜像和服务器的数据库设置把它作为一次性任务运行，因此一个实例只需要服务器镜像这一个镜像。`my serve` 从不应用 schema。如果在没有 schema 的数据库上启动，服务器会在 `/readyz` 上返回 `503`（参见[启动服务器](running.md#start-the-server)）。
+schema 位于 `schema/`，每个模块一个目录，每种数据库一个文件（`schema/<NN>-<module>/sqlite.sql` 和 `postgres.sql`）。服务器二进制文件内含其版本的 schema，由 `my schema apply` 应用：每种部署都会在服务器之前，用服务器镜像和服务器的数据库设置，把它作为一次性任务运行，因此服务器镜像是一个实例所需要的唯一镜像。`my serve` 从不应用 schema。在没有 schema 的数据库上启动时，服务器会在 `/readyz` 上返回 `503`（请参阅[启动服务器](running.md#start-the-server)）。
 
-schema 变更需要迁移的数据（一列拆分为两列、某个值移到新表）由服务器镜像自带的 `my db upgrade` 重写，它在每个版本中于应用 schema 之后运行一次。完整的顺序见[升级](#upgrading)。
+schema 变更需要带过去的数据（一列拆成两列，一个值移到新表）会由服务器镜像自带的 `my db upgrade` 重写，它在 schema 应用之后，每个版本运行一次。完整的顺序见[升级](#upgrading)。
 
 <!-- source: initializing-applying-the-schema 3b0a5f0defa1 -->
 ## 初始化（应用 schema）
@@ -74,21 +74,20 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 4996c9dc9019 -->
+<!-- source: upgrading 3882f4bb0751 -->
 ## 升级
 
-升级到新版本时，始终使用**新**版本的服务器镜像，按以下顺序运行这些步骤：
+升级到新版本时，始终按以下顺序执行这些步骤，并使用**新**版本的服务器镜像：
 
-1. **备份**数据库（使用文件系统 blob 存储时还要备份媒体）。参见[备份](#backing-up)。
-2. **`my db upgrade -check`**。它不做任何更改。当新 schema 会删除数据库尚未迁移的数据时，它以 `1` 退出，并指出需要先经过哪个版本升级；此时请停下来，按照[跳过版本](#skipping-releases)操作。空数据库会通过。
-3. **`my schema apply`**，与[初始化](#initializing-applying-the-schema)相同。请先用 `-dry-run` 检查 SQL。
-4. **`my db upgrade`**。它会运行该版本中数据库尚未记录的每个数据升级步骤，重建这些步骤指定的
-   projection，并记录每个步骤。再次运行时什么也不做。如果某个步骤失败，它以 `1` 退出；已完成的步骤仍保持已记录状态，再次运行会从失败的步骤继续。
-5. **启动新服务器。** 在其版本的每个数据升级步骤都被记录之前，它会在 `/readyz` 上返回 `503`，并在日志中记录缺少的步骤。
+1. **备份**数据库（如果使用文件系统 blob 存储，还要备份媒体）。请参阅[备份](#backing-up)。
+2. **`my db upgrade -check`**。它不会改变任何内容。当新的 schema 会丢弃数据库尚未迁移的数据时，它以 `1` 退出，并指出需要先经由哪个版本升级；此时请停下来，并按照[跳过版本](#skipping-releases)操作。空数据库可以通过。
+3. **`my schema apply`**，与[初始化](#initializing-applying-the-schema)中相同。请先用 `-dry-run` 检查 SQL。
+4. **`my db upgrade`**。它会运行该版本中数据库尚未记录的每个数据升级步骤，重建这些步骤所指明的投影，并记录每个步骤。再次运行时，它什么也不做。如果某个步骤失败，它以 `1` 退出；已完成的步骤仍保持已记录，再次运行会从失败的那一步继续。
+5. **启动新的服务器。** 在其版本的每个数据升级步骤都被记录之前，它会在 `/readyz` 上返回 `503`，并记录缺少的步骤。
 
-`my serve` 从不运行 `my db upgrade -check`、`my schema apply` 或 `my db upgrade`；它们是一次性任务。针对同一数据库，一次只运行其中一个。
+`my serve` 从不运行 `my db upgrade -check`、`my schema apply` 或 `my db upgrade`；它们是一次性任务。同一时间对一个数据库只运行其中一个。
 
-大多数版本没有数据升级步骤：`my db upgrade -check` 打印 `ok: the database can be upgraded to this release`，`my db upgrade` 打印 `ok: no data upgrade step to run`。即便如此也请两者都运行，这样操作流程就不依赖于阅读每一份版本说明。版本说明的 **Upgrading** 部分列出了每个版本的步骤。
+大多数版本不添加数据升级步骤：`my db upgrade -check` 会输出 `ok: the database can be upgraded to this release`，而在已经记录了先前版本各步骤的数据库上，`my db upgrade` 会输出 `ok: no data upgrade step to run`。新数据库会在第一次 `my db upgrade` 时记录该版本的每个步骤，没有需要重写的内容。无论如何都请把两者都运行一遍，这样流程就不用依赖阅读每份发布说明。发布说明的 **Upgrading** 部分列出了每个版本的步骤。
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->
 ### 升级期间的服务器

@@ -32,16 +32,17 @@ my admin relay delete <relay id>                                  # delete a rel
 - 公開貼文的文件帶有 Linked Data Signature（`RsaSignature2017`），讓 Mastodon 和 Misskey 能接受由中繼站原封不動轉送的貼文。
 - 傳送次數會增加「已加入的中繼站數量 × 公開貼文數量」（對同一個中繼站的傳送會合併為一次）。
 
-<!-- source: what-the-server-receives ff962150d1a7 -->
-## 伺服器接收的內容
+<!-- source: what-the-server-receives fa99c4ec4217 -->
+## 伺服器會收到什麼
 
-- 已加入的中繼站帶來的公開貼文，會先從原始伺服器重新擷取並檢查，之後才會收錄。收錄後會出現在聯邦時間軸和主題標籤時間軸上。它不會出現在首頁時間軸上，也不會產生通知。
-- 每個中繼站每小時最多收錄 `relay_max_activities_per_hour` 則貼文（預設 1,000）。超過上限的部分會直接捨棄，不會擷取。管理區中該中繼站的頁面和 `my admin relay list` 會顯示過去 24 小時收錄了多少則、因超過上限而捨棄了多少則。如果捨棄的數量很多，請提高上限或重新考慮是否使用這個中繼站。
-- 如果貼文的網域或帳號受到 `suspend`（聯邦限制）或 `limit`（將其從公開場所移除的限制），就不會收錄該貼文。
-- 只經由中繼站送達的貼文，會在實例設定 `relay_status_retention_days`（預設 7）之後從公開檢視中移除。本站有人回覆、轉發、喜歡或加入書籤的貼文，以及本站有人追蹤的作者的貼文，保留期限與其他遠端貼文相同（`remote_status_retention_days`）。
-- 每收錄一則貼文，就要從原始伺服器擷取一次（作者不明時，還要再擷取一次 actor）。以每小時 1,000 則的上限計算，一天最多 24,000 次擷取。
+- 由已加入的中繼所帶來的公開貼文，會先從其來源重新取得並檢查，才會被收進來。之後它會顯示在聯邦時間軸與主題標籤時間軸，以及追蹤其中某個主題標籤的人的首頁時間軸。它不會顯示在任何其他首頁時間軸上，也不會產生通知。
+- 每個中繼每小時最多收進 `relay_max_activities_per_hour` 則貼文（預設 1,000）。超過上限的部分會直接捨棄，不會被取得。
+  管理區域中該中繼的頁面與 `my admin relay list` 會顯示過去 24 小時收進了多少則，以及有多少則因超過上限而被捨棄。如果被捨棄的很多，請提高上限，或重新考慮這個中繼。
+- 當貼文的網域或帳號被設為 `suspend`（聯邦限制）或 `limit`（將它從公開處移除的限制）時，貼文不會被收進來。
+- 只透過中繼收到的貼文，會在實例設定 `relay_status_retention_days`（預設 7）之後從公開檢視中移除。本地使用者回覆、轉發、按喜歡或加入書籤的貼文，以及本地使用者所追蹤的作者的貼文，保留期間與其他遠端貼文相同（`remote_status_retention_days`）。
+- 收進貼文的成本是每則貼文從來源取得一次（未知的作者還要再取得一次 actor）。在每小時 1,000 則的上限下，一天最多是 24,000 次取得。
 
-這些設定請參閱[設定參考](../reference/configuration.md#relay_max_activities_per_hour)。收錄的結果也會以指標 `my.relay.activities` 輸出（請參閱[執行伺服器](running.md)）。
+設定請見[設定參考](../reference/configuration.md#relay_max_activities_per_hour)。收進來的結果也會匯出為指標 `my.relay.activities`（請參閱[執行伺服器](running.md)）。
 
 <!-- source: leave-join-again-and-delete ea12da94f940 -->
 ## 退出、重新加入與刪除

@@ -658,5 +658,113 @@
   "admin.supporters.subscription.no_period": {
     "defaultMessage": "Nenhum",
     "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  },
+  "admin.supporters.tips.title": {
+    "defaultMessage": "Gorjetas",
+    "description": "Heading of the section of the tips on the first page of the supporters screen. A tip is a one-time payment to the server's operation with nothing in return; never word it as a donation."
+  },
+  "admin.supporters.tips.description": {
+    "defaultMessage": "Uma gorjeta é um pagamento único de um usuário deste servidor para o funcionamento dele, sem nada em troca. Usuários com um endereço de e-mail confirmado escolhem um dos seus valores e pagam na página do provedor de pagamento. As gorjetas não precisam de um plano.",
+    "description": "What the tips are, at the top of their section. Never word them as donations, and never suggest a deduction."
+  },
+  "admin.supporters.tips.accepting": {
+    "defaultMessage": "Os usuários podem dar gorjeta agora",
+    "description": "Term of the tips' section: whether users may tip now."
+  },
+  "admin.supporters.tips.accepting.yes": {
+    "defaultMessage": "Sim",
+    "description": "Users may tip now."
+  },
+  "admin.supporters.tips.accepting.no": {
+    "defaultMessage": "Não",
+    "description": "Users may not tip now."
+  },
+  "admin.supporters.tips.changed_at": {
+    "defaultMessage": "Última alteração",
+    "description": "Term of the tips' section: when the tips were last enabled, changed, or disabled."
+  },
+  "admin.supporters.tips.never": {
+    "defaultMessage": "Nunca",
+    "description": "The tips were never enabled."
+  },
+  "admin.supporters.tips.warning.no_one_time": {
+    "defaultMessage": "O provedor de pagamento não aceita pagamentos únicos, então as gorjetas não podem ser ativadas.",
+    "description": "Warning of the tips' section: the configured payment provider cannot take tips."
+  },
+  "admin.supporters.tips.warning.not_accepting": {
+    "defaultMessage": "As gorjetas estão ativadas, mas os usuários não podem dar gorjeta enquanto o programa de apoiadores estiver desativado.",
+    "description": "Warning of the tips' section: the tips are enabled but the supporter program is off."
+  },
+  "admin.supporters.tips.warning.server_limit": {
+    "defaultMessage": "Na última hora, o início de gorjetas atingiu o limite do servidor inteiro. Pode ser teste de cartões, alguém tentando cartões roubados com pagamentos pequenos: confira os pagamentos no painel do provedor.",
+    "description": "Warning of the tips' section: the server-wide rate limit of the starts of tips was reached in the last hour."
+  },
+  "admin.supporters.tips.note.disputes": {
+    "defaultMessage": "Cada contestação custa a taxa de disputa do provedor de pagamento, qualquer que seja o valor da gorjeta: com o Stripe no Japão, ¥1.500 por disputa na data desta escrita. Uma gorjeta pequena pode custar várias vezes o que rendeu.",
+    "description": "Note of the tips' section: the dispute fee of each chargeback."
+  },
+  "admin.supporters.tips.note.refunds": {
+    "defaultMessage": "Os reembolsos e as contestações de gorjetas são subtraídos da receita. Reembolse uma gorjeta no painel do provedor; este servidor não tem uma operação de reembolso.",
+    "description": "Note of the tips' section: refunds and chargebacks subtract from the income."
+  },
+  "admin.supporters.tips.note.breakdown": {
+    "defaultMessage": "Os totais públicos da receita incluem as gorjetas, mas nunca mostram o valor delas nem quantas foram: em um servidor pequeno, um detalhamento revelaria quem pagou. Somente a página de pagamentos e reembolsos da tela de custos mostra cada gorjeta e quem a pagou.",
+    "description": "Note of the tips' section: why the public totals do not break the tips out."
+  },
+  "admin.supporters.tips.note.provider": {
+    "defaultMessage": "Cabe a você verificar se o seu provedor de pagamento aceita gorjetas para o funcionamento de um serviço, de acordo com a análise e os termos dele. Redija suas informações comerciais como uma gorjeta para o funcionamento do serviço, sem nada em troca.",
+    "description": "Note of the tips' section: the operator checks the provider's terms. Never word the tips as donations."
+  },
+  "admin.supporters.tips.guide": {
+    "defaultMessage": "Leia sobre gorjetas na documentação para operadores",
+    "description": "Link from the tips' section to the operator documentation of the tips, which opens in a new tab."
+  },
+  "admin.supporters.tips.switch": {
+    "defaultMessage": "Aceitar gorjetas",
+    "description": "Label of the checkbox of the tips' form that enables or disables them."
+  },
+  "admin.supporters.tips.switch.description": {
+    "defaultMessage": "Um pagamento já aberto continua podendo ser pago até terminar, depois que você desativar as gorjetas.",
+    "description": "Description of the checkbox that enables or disables the tips."
+  },
+  "admin.supporters.tips.currency": {
+    "defaultMessage": "Moeda",
+    "description": "Label of the choice of the currency of the amounts of the tips."
+  },
+  "admin.supporters.tips.amounts": {
+    "defaultMessage": "Valores",
+    "description": "Label of the field of the amounts that users choose from when they tip."
+  },
+  "admin.supporters.tips.amounts.description": {
+    "defaultMessage": "De 1 a {max} valores, separados por vírgulas, como 500, 1000, 3000.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6."
+  },
+  "admin.supporters.tips.amounts.range": {
+    "defaultMessage": "De 1 a {max} valores, separados por vírgulas, como 500, 1000, 3000, cada um de {minimum} a {maximum}.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6; minimum and maximum are formatted amounts, such as ¥100 and ¥100,000."
+  },
+  "admin.supporters.tips.amounts.invalid": {
+    "defaultMessage": "Escreva cada valor como um número, como 500 ou 5.00.",
+    "description": "Error of the field of the amounts of the tips: one is not a number."
+  },
+  "admin.supporters.tips.amounts.count": {
+    "defaultMessage": "Escreva de 1 a {max} valores diferentes.",
+    "description": "Error of the field of the amounts of the tips: none or too many. max is a number, such as 6."
+  },
+  "admin.supporters.tips.save": {
+    "defaultMessage": "Salvar as gorjetas",
+    "description": "Button that saves the tips' form."
+  },
+  "admin.supporters.tips.saved": {
+    "defaultMessage": "Salvo. O registro de auditoria anota cada alteração.",
+    "description": "Shown beside the save button of the tips' form after it is saved."
+  },
+  "admin.supporters.tips.unchanged": {
+    "defaultMessage": "Nada mudou.",
+    "description": "Shown beside the save button of the tips' form when it is saved without a change."
+  },
+  "admin.supporters.tips.failed": {
+    "defaultMessage": "Não foi possível salvar: {reason}",
+    "description": "Shown beside the save button of the tips' form when it could not be saved, with the server's reason."
   }
 }

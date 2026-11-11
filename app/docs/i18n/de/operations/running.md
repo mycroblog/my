@@ -3,7 +3,7 @@
 
 So startest und stoppst du den Server, beziehst sein Image und beobachtest ihn im Betrieb: Metriken, Traces, die Job-Warteschlange und Health-Checks.
 
-<!-- source: start-the-server 0d5f8898a2f5 -->
+<!-- source: start-the-server ea157fe28b0d -->
 ## Den Server starten
 
 ```sh
@@ -13,20 +13,20 @@ my serve          # start according to the configured role (-config <file> reads
 my version        # print the version of the binary
 ```
 
-`my serve` validiert die Konfiguration, baut die Adapter für Datenbank, Job-Warteschlange und Schlüsselverwaltung auf und nimmt HTTP auf `listen` entgegen.
-Dort spricht er reines HTTP/1.1 ohne TLS: Setze einen Reverse-Proxy oder Load Balancer davor, der HTTPS (und für die Clients HTTP/2 oder HTTP/3) terminiert und per HTTP/1.1 weiterleitet.
-Die Echtzeit-Updates (`GET /api/v1/streaming`, die Streams der lokalen und föderierten Timelines und die Streams der Voice-Chat-Räume) sind langlebige Antworten, die alle 30 Sekunden (bei einem Voice-Raum alle 15) einen Heartbeat-Kommentar senden und im Leerlauf offen bleiben.
+`my serve` validiert die Konfiguration, baut die Adapter für Datenbank, Job-Queue und Schlüsselverwaltung auf und nimmt HTTP auf `listen` an.
+Es spricht dort reines HTTP/1.1 ohne TLS: Setze einen Reverse-Proxy oder Load Balancer davor, der HTTPS (und HTTP/2 oder HTTP/3 für die Clients) terminiert und über HTTP/1.1 weiterleitet.
+Die Echtzeit-Updates (`GET /api/v1/streaming`, die Streams der lokalen und der föderierten Timeline und die Streams der Sprachchat-Räume) sind langlebige Antworten, die alle 30 Sekunden einen Heartbeat-Kommentar senden (15 bei einem Sprachchat-Raum) und im Leerlauf offen bleiben.
 Der Proxy darf diese Antworten nicht puffern (nginx: Der Server sendet `X-Accel-Buffering: no`), und sein Idle- oder Read-Timeout muss länger sein als das Heartbeat-Intervall.
-Er wendet das Schema nicht an: Wende es vor dem Start mit `my schema apply` an (siehe [Datenbank](database.md); Upgrades führen es als Teil von [Upgrade](database.md#upgrading) aus).
-Im Docker-Compose-Setup (`deploy/docker/compose.yaml`; siehe [Mit Docker Compose bereitstellen](deploy-docker-compose.md)) führt ein einmaliger Dienst `schema` `my schema apply` aus, bevor der Server startet.
-Ist das Schema nicht angewendet, startet der Prozess trotzdem, und die Readiness liefert 503, und er liefert nichts anderes aus, bis das Schema da ist.
+Er wendet das Schema nicht an und führt die Datenupgrade-Schritte nicht aus: Führe vor dem Start `my schema apply` und dann `my db upgrade` aus (siehe [Datenbank](database.md); Upgrades führen beide als Teil von [Upgrade](database.md#upgrading) aus). Bis `my db upgrade` jeden Schritt des Releases verzeichnet hat, antwortet `/readyz` mit `503`.
+Im Docker-Compose-Setup (`deploy/docker/compose.yaml`; siehe [Mit Docker Compose bereitstellen](deploy-docker-compose.md)) führen die einmaligen Dienste `schema` und `upgrade` `my schema apply` und `my db upgrade` aus, bevor der Server startet.
+Ist das Schema nicht angewendet, startet der Prozess trotzdem und die Readiness liefert 503, und er bedient nichts anderes, bis das Schema da ist.
 
-Der erste `my serve` oder `my`-Befehl, der die Datenbank verwendet, verzeichnet darin `host` und `account_domain`. Weicht die Konfiguration von den verzeichneten Werten ab, protokolliert `my serve` `start failed` mit beiden Wertepaaren und endet mit Exit-Code 1, und die Befehle geben denselben Fehler aus. Die Ausnahmen sind `my schema apply` und `my db backup`, die nicht prüfen, und der Wartungsmodus, der die Datenbank nicht liest. `my config check -instance` und `my db upgrade -check` prüfen, verzeichnen aber nichts.
-Ein Prozess, der die Datenbank beim Start nicht lesen konnte, ist nicht bereit, bis er es kann, und führt bis dahin keine Jobs aus und beantwortet jede Anfrage außer den drei Health-Checks unten (`/healthz`, `/readyz`, `/api/v1/instance/health`) mit `503` und `Retry-After`. Das tut auch ein Server, der vor `my schema apply` gestartet wurde. Findet er dann andere Werte, hält er mit demselben Fehler an.
+Das erste `my serve` oder `my`-Kommando, das die Datenbank nutzt, erfasst `host` und `account_domain` darin. Weicht die Konfiguration von den erfassten Werten ab, loggt `my serve` `start failed` mit beiden Wertepaaren und endet mit Exit-Code 1, und die Befehle geben denselben Fehler aus. Die Ausnahmen sind `my schema apply` und `my db backup`, die nicht prüfen, und der Wartungsmodus, der die Datenbank nicht liest. `my config check -instance` und `my db upgrade -check` prüfen, erfassen aber nichts.
+Ein Prozess, der die Datenbank beim Start nicht lesen konnte, ist nicht bereit, bis er es kann, und führt bis dahin keine Jobs aus und antwortet auf jede Anfrage außer den Health-Checks (`/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health`) mit `503` und `Retry-After`. Das ist auch das, was ein Server tut, der vor `my schema apply` gestartet wurde. Findet er dann abweichende Werte, endet er mit demselben Fehler.
 
-Im Profil `production` prüft `my config check` außerdem, ob die gültigen Einstellungen zu einer Produktionsserver passen: Fehler, etwa ein `host`, den andere Server nicht erreichen können, oder ein KEK, der nicht zufällig ist, lassen ihn mit 1 enden, Warnungen, etwa `mail = none`, nicht.
-`my serve` protokolliert beides beim Start als Warnungen, startet aber trotzdem, führe also `my config check` als Schritt der Bereitstellung aus.
-Die [Produktions-Checkliste](production-checklist.md) listet die Prüfungen auf und was du vor dem Livegang von Hand verifizieren solltest.
+Im Profil `production` prüft `my config check` außerdem, dass die gültigen Einstellungen zu einer Produktionsinstanz passen: Fehler, etwa ein `host`, den andere Server nicht erreichen können, oder ein KEK, der nicht zufällig ist, lassen es mit 1 enden, und Warnungen, etwa `mail = none`, tun es nicht.
+`my serve` loggt beides beim Start als Warnungen, startet aber trotzdem, führe also `my config check` als einen Schritt der Bereitstellung aus.
+Die [Produktions-Checkliste](production-checklist.md) listet die Prüfungen und das, was du vor dem Livegang von Hand prüfen solltest.
 
 | `role` | HTTP | Job-Worker |
 | --- | --- | --- |
@@ -34,9 +34,9 @@ Die [Produktions-Checkliste](production-checklist.md) listet die Prüfungen auf 
 | `web` | Alle Routen | Läuft nicht |
 | `worker` | Nur Health-Checks (für Plattform-Probes) | Läuft |
 
-Logs gehen als JSON Lines auf die Standardfehlerausgabe. Jede Zeile hat `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) und `severity`, dieselbe Stufe in der Form, die Cloud Logging liest (`DEBUG`, `INFO`, `WARNING`, `ERROR` und `CRITICAL` für einen Fehler, der den Prozess anhält).
-Logs, die bei der Bearbeitung einer Anfrage geschrieben werden, tragen eine `request_id`, und dieselbe ID wird im Antwort-Header `X-Request-Id` zurückgegeben.
-Besteht das `X-Request-Id` der Anfrage aus höchstens 128 Zeichen aus Buchstaben, Ziffern und `-_.:`, wird es unverändert verwendet, als die ID, die ein Load Balancer vergeben hat.
+Logs gehen als JSON Lines auf die Standardfehlerausgabe. Jede Zeile hat `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) und `severity`, dieselbe Stufe in der Form, die Cloud Logging liest (`DEBUG`, `INFO`, `WARNING`, `ERROR` und `CRITICAL` bei einem Fehler, der den Prozess beendet).
+Logs, die beim Bearbeiten einer Anfrage geschrieben werden, tragen eine `request_id`, und dieselbe ID wird im Antwort-Header `X-Request-Id` zurückgegeben.
+Besteht der `X-Request-Id` der Anfrage aus höchstens 128 Zeichen aus Buchstaben, Ziffern und `-_.:`, wird er unverändert verwendet, als die ID, die ein Load Balancer vergeben hat.
 Logs innerhalb eines Traces (Anfragen und Jobs) tragen außerdem `trace_id` und `span_id` (siehe [Traces](#traces)).
 
 Jede HTTP-Anfrage und jede Job-Ausführung schreibt am Ende eine Zeile. Die Zeile hat dieselben Namen und Werte wie die Labels der [Metriken](#metrics) unten,
@@ -44,48 +44,49 @@ sodass du auf Cloud Run mit `metrics_exporter = none` aus diesen Zeilen logbasie
 
 | Zeile (`msg`) | Felder |
 | --- | --- |
-| `http request` (`INFO`; Health-Checks verwenden `DEBUG`) | `http.request.method`, `http.route`, `my.surface` und `http.response.status_code` (eine Zahl) haben dieselben Werte wie die Labels von `http.server.request.duration`. Außerdem `duration_seconds` (eine Sekundenzahl), `url.path` (der Pfad ohne Query-String), `http.response.body.size` und `request_id`. `http.route` und `my.surface` fehlen bei Anfragen, die keine Route erreicht haben (Health-Checks, vor dem Routing abgelehnte Anfragen), und die Metrik zählt sie nicht. Eine Anfrage, deren Client ging, bevor der Server antworten konnte, hat den Status `499` statt eines 5xx, es sei denn, ein Handler hat einen Panic ausgelöst; der Client hat nichts erhalten, sie zählt also nicht als Serverfehler |
-| `job` (`INFO` bei Erfolg und bei `postponed`, `WARN` bei `retry`, `ERROR` bei `dead`) | `my.job.type` und `my.outcome` haben dieselben Werte wie die Labels von `my.job.duration`. Außerdem `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt` und bei Fehlschlag `error` |
-| `error report` (`ERROR`; `CRITICAL` bei einem Fehlschlag, der den Prozess anhält) | Eine Zeile pro gemeldetem Fehler ([Fehlerberichte](#error-reports)) |
+| `http request` (`INFO`; Health-Checks nutzen `DEBUG`) | `http.request.method`, `http.route`, `my.surface` und `http.response.status_code` (eine Zahl) haben dieselben Werte wie die Labels von `http.server.request.duration`. Außerdem `duration_seconds` (eine Zahl von Sekunden), `url.path` (der Pfad ohne den Query-String), `http.response.body.size` und `request_id`. `http.route` und `my.surface` fehlen bei Anfragen, die keine Route erreichten (Health-Checks, vor dem Routing abgelehnte Anfragen), und die Metrik zählt sie nicht. Eine Anfrage, deren Client ging, bevor der Server antworten konnte, hat den Status `499` statt eines 5xx, es sei denn, ein Handler hat eine Panic ausgelöst; der Client hat nichts erhalten, daher zählt es nicht als Serverfehler |
+| `job` (`INFO` bei Erfolg und bei `postponed`, `WARN` bei `retry`, `ERROR` bei `dead`) | `my.job.type` und `my.outcome` haben dieselben Werte wie die Labels von `my.job.duration`. Außerdem `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt` und bei einem Fehler `error` |
+| `error report` (`ERROR`; `CRITICAL` bei einem Fehler, der den Prozess beendet) | Eine Zeile pro gemeldetem Fehler ([Fehlerberichte](#error-reports)) |
 
-<!-- source: error-reports 3d780744461c -->
+<!-- source: error-reports a81ecfe83871 -->
 ### Fehlerberichte
 
-Die Anleitung [Fehlerberichte](error-reporting.md) behandelt, wo du diese Zeilen auf jeder Plattform liest, den Bildschirm „Errors“, Benachrichtigungen und das Senden von Berichten an einen Error-Tracker.
+Die Anleitung [Fehlerberichte](error-reporting.md) behandelt, wo du diese Zeilen auf jeder Plattform liest, den Fehler-Bildschirm, Benachrichtigungen und das Senden von Berichten an einen Error-Tracker.
 
 Der Server meldet die Fehler, die die Aufmerksamkeit des Betreibers brauchen, als je eine `error report`-Zeile:
 
-- ein Panic in einem HTTP-Handler, einem Job oder einer Hintergrundaufgabe;
+- eine Panic in einem HTTP-Handler, einem Job oder einer Hintergrundaufgabe;
 - ein Fehler hinter einer 5xx-Antwort der Client-API, der Admin-API, der Anmeldeseiten, von ActivityPub, OAuth oder Medien;
-- ein Job, der endgültig fehlschlägt (`dead`): Ihm gingen die Wiederholungen aus, oder er weigerte sich, erneut zu laufen. Zustellungen, die aufgegeben wurden, weil der andere Server ständig fehlschlug, werden nicht gemeldet;
-- ein Fehlschlag beim Start: eine ungültige Konfiguration oder eine Datenbank oder ein Adapter, der sich nicht einrichten lässt.
+- ein Job, der endgültig fehlschlägt (`dead`): Ihm gingen die Wiederholungen aus, oder er weigerte sich, erneut zu laufen. Zustellungen, die aufgaben, weil der andere Server weiter fehlschlug, werden nicht gemeldet;
+- ein Fehler beim Start: eine ungültige Konfiguration oder eine Datenbank oder ein Adapter, der sich nicht einrichten lässt.
 
-4xx-Antworten, Job-Wiederholungen, der Wartungsmodus, fehlgeschlagene Readiness-Prüfungen, Anfragen, deren Client gegangen ist, und durch andere Server verursachte Fehler werden nicht gemeldet; die Metriken und die übrigen Logzeilen decken sie ab.
+4xx-Antworten, Job-Wiederholungen, der Wartungsmodus, fehlgeschlagene Readiness-Prüfungen, Anfragen, deren Client wegging, und Fehler, die andere Server verursachen, werden nicht gemeldet; die Metriken und die anderen Logzeilen decken sie ab.
 
-Wenn der Client einer Anfrage geht, werden die anderen Fehlerzeilen des Servers zu dieser Anfrage auf `INFO` statt `ERROR` geschrieben, da die meisten nur besagen, dass die Anfrage abgebrochen wurde.
+Geht der Client einer Anfrage weg, werden die anderen Fehlerzeilen des Servers für diese Anfrage mit `INFO` statt `ERROR` geschrieben, da die meisten von ihnen nur sagen, dass die Anfrage abgebrochen wurde.
 
-Die Zeile hat die Form, die Google Cloud Error Reporting liest: Auf Cloud Run erscheinen die Berichte ohne Einrichtung als Fehler gruppiert in Error Reporting. Auf anderen Plattformen ist sie eine einfache JSON-Zeile:
+Die Zeile hat die Form, die Google Cloud Error Reporting liest: Auf Cloud Run erscheinen die Berichte ohne jede Einrichtung als Fehler gruppiert in Error Reporting. Auf anderen Plattformen ist sie eine einfache JSON-Zeile:
 
 | Feld | Wert |
 | --- | --- |
 | `@type`, `serviceContext` | Der Ereignistyp von Error Reporting und `{"service": "my", "version": "<version>"}` |
-| `my.error.fingerprint` | 32 Hexadezimalziffern, die für jedes Auftreten desselben Fehlers gleich sind: gebildet aus der Quelle, dem Ort, dem Fehlertyp und den Funktionen des Servers im Stack, ohne Zeilennummern |
-| `my.error.source`, `my.error.kind` | `server` (oder `web`) und `panic` oder `error` |
-| `my.error.where` | Wo es geschah: `<surface> <method> <route>` bei einer Anfrage (etwa `client_api GET /api/v1/statuses/{id}`), der Job-Typ bei einem Job, der Aufgabenname bei einer Hintergrundaufgabe, `startup` bei einem Fehlschlag beim Start |
+| `my.error.fingerprint` | 32 Hexadezimalziffern, die bei jedem Auftreten desselben Fehlers gleich sind: gebildet aus der Quelle, der Stelle, dem Fehlertyp und den Funktionen des Servers im Stack, ohne Zeilennummern |
+| `my.error.source`, `my.error.kind` | `server` (oder `web`) sowie `panic` oder `error` |
+| `my.error.where` | Wo es geschah: `<surface> <method> <route>` bei einer Anfrage (etwa `client_api GET /api/v1/statuses/{id}`), der Job-Typ bei einem Job, der Aufgabenname bei einer Hintergrundaufgabe, `startup` bei einem Fehler beim Start |
 | `my.role`, `deployment.environment.name` | Die `role` des Prozesses und `errors_environment` |
 | `request_id`, `job_id`, `attempt`, `trace_id`, `span_id` | Die IDs, um die Anfrage- oder Job-Zeilen desselben Fehlers zu finden, wenn er sie hat |
+| `context.httpRequest` | Bei einem Fehler einer Anfrage: `method`, `url` (die Route, etwa `/api/v1/statuses/{id}`, nie der Pfad, den der Client angefragt hat) und `responseStatusCode`, der beantwortete Status (500) |
 | `message` | Zuletzt in der Zeile: `<type>: <message>`, ein Zeilenumbruch und der Go-Stack |
 
-Bevor ein Bericht den Prozess verlässt, werden in der Meldung URLs, E-Mail-Adressen, `@user@host`-Handles, IP-Adressen, UUIDs und ULIDs sowie Zahlen ab 10 Stellen durch `<url>`, `<email>`, `<acct>`, `<ip>`, `<id>` und `<n>` ersetzt, und sie wird auf 1 KiB gekürzt.
-Der Stack behält seine Dateipositionen, aber nicht die Argumentwerte seiner Funktionszeilen (sie erscheinen als `(...)`), und wird auf 16 KiB gekürzt. Kein Bericht trägt einen Request-Body, Header, eine Query, einen Cookie, ein Konto, einen Nutzernamen, eine IP-Adresse oder einen User-Agent.
-Keine andere Zeile trägt einen Stack, daher findet Error Reporting die Stacks nur in diesen Zeilen.
+Bevor ein Bericht den Prozess verlässt, werden in der Meldung URLs, E-Mail-Adressen, `@user@host`-Handles, IP-Adressen, UUIDs und ULIDs sowie Zahlen mit 10 oder mehr Ziffern durch `<url>`, `<email>`, `<acct>`, `<ip>`, `<id>` und `<n>` ersetzt, und sie wird auf 1 KiB gekürzt.
+Der Stack behält seine Dateipositionen, aber nicht die Argumentwerte seiner Funktionszeilen (sie werden als `(...)` gezeigt), und wird auf 16 KiB gekürzt. Kein Bericht trägt einen Request-Body, Header, Query, Cookie, ein Konto, einen Benutzernamen, eine IP-Adresse oder einen User-Agent.
+Keine andere Zeile trägt einen Stack, daher findet Error Reporting die Stacks nur dieser Zeilen.
 
-Ein Feldname ist ein einzelner Schlüssel, der `.` enthält; er ist nicht verschachtelt. Setze ihn in Cloud-Logging-Filtern und -Extraktionen in Anführungszeichen (zum Beispiel `jsonPayload."http.route"` und `EXTRACT(jsonPayload.duration_seconds)` für einen Verteilungswert).
+Ein Feldname ist ein einzelner Schlüssel, der `.` enthält; er ist nicht verschachtelt. Setze ihn in Cloud-Logging-Filtern und -Extraktionen in Anführungszeichen (zum Beispiel `jsonPayload."http.route"` und `EXTRACT(jsonPayload.duration_seconds)` für den Wert einer Verteilung).
 Felder, die als Labels verwendet werden, nehmen nur Werte aus einer endlichen Menge an; `url.path`, `request_id` und `job_id` sind nie Labels.
 
 Mit `metrics_exporter = emf` sind diese beiden Zeilen selbst die EMF-Zeilen. Die Zeile `http request` trägt den Wert von `http.server.request.duration`, und die Zeile `job` trägt die Werte von `my.job.duration` und `my.job.wait` (Schlüssel nach den Metriken benannt),
 dazu die Direktive `_aws`, `service.name`, `service.version` und `my.role`. Diese drei Metriken werden in keiner anderen Zeile geschrieben. Felder, die du in `metrics_emf_dimensions` wählst, werden als Strings geschrieben, wie EMF es verlangt (zum Beispiel ist die Dimension `http.response.status_code` `"200"`).
-Logs gehen auf die Standardfehlerausgabe und die übrigen EMF-Zeilen auf die Standardausgabe. Der Log-Treiber `awslogs` von ECS sendet beide an CloudWatch Logs, sodass Metriken aus beiden extrahiert werden.
+Logs gehen auf die Standardfehlerausgabe und die anderen EMF-Zeilen auf die Standardausgabe. Der Log-Treiber `awslogs` von ECS sendet beide an CloudWatch Logs, sodass Metriken aus beiden extrahiert werden.
 
 <!-- source: docker-compose-files df45a902f45b -->
 ## Docker-Compose-Dateien
@@ -137,36 +138,44 @@ Der Server vertraut dem `X-Forwarded-For` der Standard-Adresspools von Docker; s
 Der einmalige Dienst `garage-init` bereitet den Speicher bei jedem `up` vor. Er bleibt innerhalb des Compose-Netzwerks, da der Server
 die Medien selbst ausliefert. Ein Knoten ist eine Platte: Sichere das Volume `garage` oder den Bucket ([Sicherung](backup.md#media-in-a-bucket)).
 
-<!-- source: get-the-image 238d00ea9826 -->
+<!-- source: get-the-image 5a210413433f -->
 ## Das Image beziehen
 
 Das Server-Image ist `ghcr.io/mycroblog/my`, öffentlich, für `linux/amd64` und `linux/arm64`, mit jedem Adapter.
 
-| Tag | Zeigt auf | Nutze es für |
+| Tag | Zeigt auf | Verwende es für |
 | --- | --- | --- |
-| `0.1.0` | Genau diese Version, für immer | Eine Version benennen |
+| `0.1.0` | Diese Version, für immer | Eine Version benennen |
 | `0.1` | Den neuesten Patch von `v0.1` | Docker Compose, das bei jedem `up` das Schema anwendet |
 | `0.1.0-rc.1` | Dieses Prerelease | Ein Release ausprobieren, bevor es erscheint |
+| `nightly` | Den neuesten Commit von `main`, der die nächtlichen Tests bestanden hat, jede Nacht verschoben, in der er sich ändert | Änderungen vor einem Prerelease ausprobieren, auf einer Instanz, die du wegwerfen kannst |
 
-Es gibt kein `latest` und kein `0`: Beide würden eine Minor-Version überschreiten, und jedes Upgrade auf eine neue Minor-Version muss [über die vorherige](database.md#skipping-releases) gehen. Nenne in jedem Befehl eine Version; `docker pull ghcr.io/mycroblog/my` allein scheitert mit `manifest unknown`.
-Ein Patch-Release kann ebenfalls `my schema apply` und `my db upgrade` erfordern, folge also außerhalb von Docker Compose für jede Version [Upgrade](database.md#upgrading). Fixiere in der Produktion den Digest, den die Release Notes nennen:
+Es gibt kein `latest` und kein `0`: Beide würden eine Minor-Version überschreiten, und jedes Upgrade auf eine neue Minor-Version muss [über die vorige](database.md#skipping-releases) laufen. Nenne in jedem Befehl eine Version; `docker pull ghcr.io/mycroblog/my` allein schlägt mit `manifest unknown` fehl.
+Auch ein Patch-Release kann `my schema apply` und `my db upgrade` brauchen, folge also außerhalb von Docker Compose für jede Version [Upgrade](database.md#upgrading). Hefte in der Produktion den Digest an, den die Notizen des Releases nennen:
 
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
 ```
 
+**`nightly` hat keinen Upgrade-Pfad.** Upgrades werden nur zwischen veröffentlichten Versionen versprochen: Von einem `nightly`-Image
+zum nächsten oder von `nightly` zu einem Release können sich das Schema und die Datenschritte von `my db upgrade` auf eine Weise ändern, die kein
+Release durchläuft, rechne also damit, seine Datenbank neu anzulegen. Betreibe es nie in der Produktion. `my version` gibt aus, welcher Commit es ist, wie in
+`v0.1.0-rc.5.0.20261109182600.g7a789720a1b2`: eine Version nach dem neuesten Release (`v0.1.0-rc.5`), die Zeit des Commits in UTC und die
+ersten 12 Zeichen des Commits nach `g`. Um einen Build zu behalten, hefte seinen Digest an (`ghcr.io/mycroblog/my:nightly@sha256:...`): Ein älterer Build verliert
+das Tag, bleibt aber über seinen Digest abrufbar.
+
 Wo du es betreibst:
 
-- **Docker Compose**: `deploy/docker/compose.yaml` betreibt das Image aus `MY_VERSION` in `.env` ([Docker-Compose-Dateien](#docker-compose-files)). Um es stattdessen aus einem Checkout zu bauen, füge die Überschreibung `compose.build.yaml` hinzu (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`) und setze `MY_VERSION` auf einen eigenen Namen, da er dein lokales Image benennt und das ist, was `my version` ausgibt.
+- **Docker Compose**: `deploy/docker/compose.yaml` betreibt das Image von `MY_VERSION` in `.env` ([Docker-Compose-Dateien](#docker-compose-files)). Um es stattdessen aus einem Checkout zu bauen, füge die Überschreibung `compose.build.yaml` hinzu (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`) und setze `MY_VERSION` auf einen eigenen Namen, da er dein lokales Image benennt und das ist, was `my version` ausgibt.
 - **Kubernetes**: Beziehe es unverändert von `ghcr.io`.
-- **Cloud Run**: Nutze das `ghcr.io`-Image direkt. Eine Bereitstellung löst den Tag in einen Digest auf.
-- **AWS (ECS, EKS)**: Kopiere das Image nach Amazon ECR oder nutze einen ECR Pull-Through-Cache, der ghcr.io-Zugangsdaten braucht.
-- **Ein kleineres Image**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` in einem Checkout baut eines mit weniger Adaptern ([Build-Tags](../reference/build-tags.md)). Es ist dein eigener Build und wird daher von den Prüfungen unten nicht abgedeckt.
+- **Cloud Run**: Nutze das Image von `ghcr.io` direkt. Eine Bereitstellung löst das Tag zu einem Digest auf.
+- **AWS (ECS, EKS)**: Kopiere das Image nach Amazon ECR oder nutze einen ECR-Pull-Through-Cache, der Zugangsdaten für ghcr.io braucht.
+- **Ein kleineres Image**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` in einem Checkout baut eines mit weniger Adaptern ([Build-Tags](../reference/build-tags.md)). Es ist dein eigener Build, daher wird er von den Prüfungen unten nicht abgedeckt.
 
-<!-- source: verify-an-image b696c257662d -->
+<!-- source: verify-an-image 76b9a1293edb -->
 ### Ein Image verifizieren
 
-Jedes veröffentlichte Image hat eine über Sigstore signierte Provenance, die den Digest an den Workflow und den Commit bindet, der es gebaut hat, sowie eine SBOM. Mit der [GitHub CLI](https://cli.github.com/), und bei `ghcr.io` angemeldet, falls der Befehl danach fragt:
+Jedes veröffentlichte Image hat eine über Sigstore signierte Provenienz, die den Digest an den Workflow und den Commit bindet, der es gebaut hat, sowie eine SBOM. Mit der [GitHub CLI](https://cli.github.com/), und bei `ghcr.io` angemeldet, wenn der Befehl danach fragt:
 
 ```sh
 gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
@@ -174,7 +183,8 @@ gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
 docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
 ```
 
-Der erste Befehl scheitert, es sei denn, das Image wurde vom Release-Workflow dieses Repositorys gebaut. Er gibt den Commit aus, der der Commit des Tags der Version ist; das Label `org.opencontainers.image.revision` des Images nennt denselben.
+Der erste Befehl schlägt fehl, es sei denn, das Image wurde vom Release-Workflow dieses Repositorys gebaut. Verifiziere ein `nightly`-Image stattdessen mit
+`--signer-workflow mycroblog/my/.github/workflows/nightly.yml`. Er gibt den Commit aus, der der Commit des Tags der Version ist; das Label `org.opencontainers.image.revision` des Images nennt denselben.
 
 <!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
 ## Den Quellcode veröffentlichen (AGPL-3.0)
@@ -214,73 +224,74 @@ Betreibst du ein unverändertes offizielles Release, behalte den Standard.
 - Stelle sicher, dass der Spamfilter Anfragen nicht verwirft.
 - Verwende eine Adresse, die du gern öffentlich machst: Jeder kann sie auf der Informationsseite, der Startseite und in NodeInfo sehen.
 
-<!-- source: metrics 2dea3a7f8f83 -->
+<!-- source: metrics 77e2cbc5a0f6 -->
 ## Metriken
 
 Die Einstellung `metrics_exporter` (Standard `none`) exportiert Dienstmetriken. Die zugehörigen Einstellungen stehen in der [Konfigurationsreferenz](../reference/configuration.md).
 
 | `metrics_exporter` | Pfad | Geeignet für |
 | --- | --- | --- |
-| `none` | Es wird nichts exportiert. Die Instrumentierung kostet fast nichts | Cloud Run (nutze stattdessen die Metriken der Plattform und logbasierte Metriken) |
-| `prometheus` | `GET /metrics` auf `metrics_listen` (Standard `127.0.0.1:9464`). Es ist ein vom öffentlichen `listen` getrennter Listener, ohne Authentifizierung, und läuft für jede `role` | Selbst gehostet (abgefragt von einem Prometheus-kompatiblen Server oder KEDA) |
-| `otlp` | Wird per OTLP/HTTP an einen OpenTelemetry Collector gesendet. Das Ziel stammt aus den Standard-OTel-Umgebungsvariablen wie `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups, in denen du einen Collector betreiben kannst |
-| `emf` | JSON-Zeilen im CloudWatch Embedded Metric Format. Anfrage- und Job-Metriken fahren auf den abschließenden Logzeilen oben mit; die übrigen werden auf die Standardausgabe geschrieben, eine Zeile pro Label-Satz, wenn eine Anfrage oder ein Job endet | AWS ECS |
+| `none` | Nichts wird exportiert. Die Instrumentierung kostet fast nichts. Die instanzweiten Werte gehen weiterhin alle 15 Minuten in eine Logzeile `metrics snapshot` | Cloud Run (nutze stattdessen die Metriken der Plattform und logbasierte Metriken) |
+| `prometheus` | `GET /metrics` auf `metrics_listen` (Standard `127.0.0.1:9464`). Es ist ein vom öffentlichen `listen` getrennter Listener, ohne Authentifizierung, und läuft bei jeder `role` | Selbst gehostet (von einem Prometheus-kompatiblen Server oder KEDA abgerufen) |
+| `otlp` | Über OTLP/HTTP an einen OpenTelemetry Collector gesendet. Das Ziel stammt aus den üblichen OTel-Umgebungsvariablen wie `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups, in denen du einen Collector betreiben kannst |
+| `emf` | CloudWatch-Embedded-Metric-Format-JSON-Zeilen. Anfrage- und Job-Metriken reiten auf den obigen abschließenden Logzeilen; die anderen werden auf die Standardausgabe geschrieben, eine Zeile pro Label-Menge, wenn eine Anfrage oder ein Job endet | AWS ECS |
 
-Die Metriken sind unten aufgeführt. In Prometheus wird `.` in einem Namen zu `_`, und ein Einheitensuffix (`_seconds` und `_total` für einen Zähler) wird angehängt.
+Die Metriken stehen unten. In Prometheus wird `.` in einem Namen zu `_`, und ein Einheiten-Suffix (`_seconds` und `_total` bei einem Zähler) wird hinzugefügt.
 
 | Metrik | Art | Labels |
 | --- | --- | --- |
 | `http.server.request.duration` | Histogramm, Sekunden | `http.request.method`, `http.route` (der Pfad des Routenmusters; `other`, wenn keines passt), `http.response.status_code`, `my.surface` (`client_api` / `admin` / `activitypub` / `oauth` / `media` / `web` / `payments` / `voice` / `queue`) |
 | `http.server.active_requests` | UpDownCounter | `my.surface` |
-| `my.inbox.activities` | Zähler | `activity.type` (ein bekannter Activity-Typ oder `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`), `my.inbox.rejection` (nur mit `rejected`: `signature` für eine Signatur oder einen Integritätsnachweis, der fehlt, ungültig ist oder nicht verifiziert, oder dessen Schlüssel nicht abgerufen werden konnte; `suspended` für eine gesperrte Domain; `federation_off`; `rate_limited`; `invalid` für eine Aktivität ohne gültige `id`, `type`, `actor` oder `object`) |
-| `my.relay.activities` | Zähler | `my.outcome` (`admitted` / `over_limit` / `restricted` / `not_receiving`: ob eine von einem Relay getragene Aktivität aufgenommen wurde und warum sie verworfen wurde; siehe [Föderations-Relays](relays.md)) |
-| `my.move.activities` | Zähler | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`: ob ein empfangenes `Move` verzeichnet wurde und warum es verworfen wurde) |
-| `my.delivery.attempts` | Zähler | `my.outcome` (`success` / `retry` / `gone` / `failed`; `gone` umfasst ein 410 und Zustellungen, die übersprungen wurden, weil der Server nicht verfügbar oder gesperrt ist) |
+| `my.inbox.activities` | Zähler | `activity.type` (ein bekannter Activity-Typ oder `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`), `my.inbox.rejection` (nur bei `rejected`: `signature` bei einer Signatur oder einem Integritätsnachweis, die fehlen, ungültig sind oder nicht verifiziert werden oder deren Schlüssel nicht abgerufen werden konnte; `suspended` bei einer gesperrten Domain; `federation_off`; `rate_limited`; `invalid` bei einer Aktivität ohne gültige `id`, `type`, `actor` oder `object`) |
+| `my.relay.activities` | Zähler | `my.outcome` (`admitted` / `over_limit` / `restricted` / `not_receiving`: ob eine von einem Relay weitergereichte Aktivität aufgenommen wurde und warum sie verworfen wurde; siehe [Föderations-Relays](relays.md)) |
+| `my.move.activities` | Zähler | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`: ob ein empfangenes `Move` erfasst wurde und warum es verworfen wurde) |
+| `my.delivery.attempts` | Zähler | `my.outcome` (`success` / `retry` / `gone` / `failed`; `gone` deckt ein 410 und Zustellungen ab, die übersprungen wurden, weil der Server nicht verfügbar oder gesperrt ist) |
 | `my.delivery.duration` | Histogramm, Sekunden | `my.outcome` |
-| `my.plugin.failures` | Zähler | `my.plugin.kind` (eine Art von [Plugin](plugins.md)), `my.plugin.code` (der Connect-Code des Fehlschlags) |
-| `my.plugin.slot_wait` | Histogramm, Sekunden | `my.plugin.kind` (wie lange ein Aufruf auf seinen Platz unter den gleichzeitig laufenden Aufrufen dieser Art wartete) |
-| `my.hook.decisions` | Zähler | `hook`, `mode`, `outcome` (die Entscheidungen, die ein [Decision Hook](decision-hooks.md) verzeichnet hat) |
+| `my.plugin.failures` | Zähler | `my.plugin.kind` (eine Art von [Plugin](plugins.md)), `my.plugin.code` (der Connect-Code des Fehlers) |
+| `my.plugin.slot_wait` | Histogramm, Sekunden | `my.plugin.kind` (wie lange ein Aufruf unter den gleichzeitig laufenden Aufrufen dieser Art auf seinen Zug wartete) |
+| `my.hook.decisions` | Zähler | `hook`, `mode`, `outcome` (die Entscheidungen, die ein [Entscheidungs-Hook](decision-hooks.md) erfasst hat) |
 | `my.hook.failures` | Zähler | `hook`, `outcome` (`timeout`, `error`, `invalid` oder `breaker_open`) |
 | `my.hook.duration` | Histogramm | `hook` (Sekunden pro Aufruf des Plugins) |
-| `my.job.duration` | Histogramm, Sekunden | `my.job.type` (ein registrierter Job-Typ oder `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed`: `postponed` ist ein Lauf, der keine Arbeit getan hat und keinen der Versuche des Jobs verbraucht, etwa ein Abruf einer Link-Karte, der auf seinen Host wartet) |
+| `my.job.duration` | Histogramm, Sekunden | `my.job.type` (ein registrierter Job-Typ oder `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed`: `postponed` ist ein Lauf, der keine Arbeit tat und keinen der Versuche des Jobs verbraucht, etwa ein Abruf einer Link-Karte, der auf seinen Host wartet) |
 | `my.job.wait` | Histogramm, Sekunden | `my.job.type` |
-| `my.link_card.host_pauses` | Zähler | `http.response.status_code` (`429` / `503`). Einer pro Pause der Link-Karten-Abrufe von einem Host; siehe [Link-Vorschauen](link-previews.md#limits-per-host) |
-| `my.translation.requests` | Zähler | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). Einer pro Anfrage, einen Beitrag zu übersetzen, den der Betrachter sehen darf, oder den Beitrag oder Kommentar einer Meldung, den ein Moderator anfordert: beantwortet aus den eigenen Worten des Autors, aus einer aufbewahrten Übersetzung oder durch einen Anbieter, oder abgelehnt, weil kein Anbieter den Beitrag erhalten darf, ein Monatslimit erreicht ist, kein Anbieter die Sprache übersetzt oder kein Anbieter eine brauchbare Übersetzung geliefert hat. |
-| `my.translation.characters` | Zähler | `my.provider` (die ID eines Übersetzungsanbieters). Die Zeichen von Beiträgen und Meldungskommentaren, die an den Anbieter gesendet wurden, ohne Markierungen, einschließlich fehlgeschlagener Aufrufe. Das ist es, was die [Monatslimits](instance-settings.md#admin-screens-and-the-client-api) zählen, und es kann von dem abweichen, was der Anbieter abrechnet |
-| `my.timeline.delivery.lag` | Histogramm, Sekunden | Keine (von der Erstellung eines lokalen Beitrags bis zu seinem Schreiben in die Home-Timelinen und der Benachrichtigung an Streams) |
-| `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` für die Streams der lokalen und föderierten Timelines, `voice` für die Streams der Voice-Chat-Räume) |
+| `my.link_card.host_pauses` | Zähler | `http.response.status_code` (`429` / `503`). Eine pro Pause der Link-Karten-Abrufe von einem Host; siehe [Link-Vorschauen](link-previews.md#limits-per-host) |
+| `my.translation.requests` | Zähler | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). Eine pro Anfrage, einen Beitrag zu übersetzen, den der Betrachter sehen darf, oder den Beitrag oder Kommentar einer Meldung, den ein Moderator anfragt: beantwortet aus den eigenen Worten des Autors, aus einer behaltenen Übersetzung oder durch einen Anbieter, oder abgelehnt, weil kein Anbieter den Beitrag erhalten darf, ein Monatslimit erreicht ist, kein Anbieter die Sprache übersetzt oder kein Anbieter eine brauchbare Übersetzung zurückgab. |
+| `my.translation.characters` | Zähler | `my.provider` (die ID eines Übersetzungsanbieters). Die Zeichen von Beiträgen und Meldungskommentaren, die an den Anbieter gesendet wurden, ohne Marker, einschließlich fehlgeschlagener Aufrufe. Das ist es, was die [Monatslimits](instance-settings.md#admin-screens-and-the-client-api) zählen, und es kann von dem abweichen, was der Anbieter berechnet |
+| `my.timeline.delivery.lag` | Histogramm, Sekunden | Keine (von der Erstellung eines lokalen Beitrags bis zu seinem Schreiben in die Home-Timelines und der Benachrichtigung an die Streams) |
+| `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` für die Streams der lokalen und der föderierten Timeline, `voice` für die Streams der Sprachchat-Räume) |
 | `my.accounts.registered` | Zähler | Keine |
 | `my.statuses.created` | Zähler | `my.visibility` |
-| `my.billing.imports` | Zähler | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (nur mit `failed`: die Art des Fehlschlags, wie in [Cloud-Nutzungskosten importieren](billing-import.md)). Jeder Versuch zählt, einschließlich der Wiederholungen und der Fehlschläge, die auf den nächsten täglichen Import warten |
-| `my.voice.turn.credentials` | Zähler | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Eines pro TURN-Zugangsdatum, das ein Voice-Chat-Teilnehmer beim Betreten eines Raums oder beim Erneuern seiner Verbindung angefordert hat: `reused` heißt, früher für dieselbe Verbindung ausgestellte Cloudflare-Zugangsdaten wurden erneut zurückgegeben, und `failed` heißt, Cloudflare war nicht erreichbar oder lehnte ab, sodass der Teilnehmer einen Fehler erhielt und sich nicht verbinden konnte |
-| `my.errors.exported` | Zähler | `my.outcome` (`success` / `dropped` / `failed`: einer pro Fehlerbericht für den Dienst von `errors_exporter`. `dropped` heißt, der Bericht wurde nicht gesendet, weil bereits 1.000 Berichte warteten oder der Dienst den Server zum Drosseln aufforderte, und der Server wartet so lange, wie der Dienst es verlangt, bevor er wieder sendet; `failed` heißt, der Dienst war nicht erreichbar oder lehnte den Bericht ab. Ein Bericht wird einmal gesendet und nie wiederholt, und die Berichte, die 2 Sekunden nach Beginn eines Shutdowns noch warten, gehen verloren) |
-| `my.queue.ready` | Gauge | `my.job.type` (die Zahl der ausführbaren Jobs in der Datenbank-Warteschlange) |
-| `my.queue.oldest_ready_age` | Gauge, Sekunden | `my.job.type` (wie lange der älteste ausführbare Job jeder Art in der Datenbank-Warteschlange gewartet hat; eine Art ohne ausführbaren Job hat keinen Wert) |
+| `my.billing.imports` | Zähler | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (nur bei `failed`: die Art des Fehlers, wie unter [Cloud-Nutzungsentgelte importieren](billing-import.md)). Jeder Versuch zählt, einschließlich der Wiederholungen und der Fehler, die auf den nächsten täglichen Import warten |
+| `my.supporter.tip_checkouts` | Zähler | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`). Eine pro Start eines Trinkgelds, das die Seite des Anbieters erhielt, pro Start, den die Limits ablehnten, und pro Trinkgeld, das bezahlt wurde oder unbezahlt endete; siehe [Trinkgelder](supporters.md#tips) für die Alarme, denen sie dient |
+| `my.voice.turn.credentials` | Zähler | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Eine pro TURN-Zugangsdaten, die ein Sprachchat-Teilnehmer beim Betreten eines Raums oder beim Erneuern seiner Verbindung anfragte: `reused` bedeutet, dass früher für dieselbe Verbindung ausgestellte Cloudflare-Zugangsdaten erneut zurückgegeben wurden, und `failed` bedeutet, dass Cloudflare nicht erreichbar war oder ablehnte, sodass der Teilnehmer einen Fehler erhielt und sich nicht verbinden konnte |
+| `my.errors.exported` | Zähler | `my.outcome` (`success` / `dropped` / `failed`: eine pro Fehlerbericht an den Dienst von `errors_exporter`. `dropped` bedeutet, dass der Bericht nicht gesendet wurde, weil bereits 1.000 Berichte warteten oder der Dienst den Server bat, langsamer zu werden, und der Server so lange wartet, wie der Dienst verlangt, bevor er erneut sendet; `failed` bedeutet, dass der Dienst nicht erreichbar war oder den Bericht ablehnte. Ein Bericht wird einmal gesendet und nie wiederholt, und die Berichte, die 2 Sekunden nach Beginn eines Herunterfahrens noch warten, gehen verloren) |
+| `my.queue.ready` | Gauge | `my.job.type` (die Zahl der ausführbaren Jobs in der Datenbank-Queue) |
+| `my.queue.oldest_ready_age` | Gauge, Sekunden | `my.job.type` (wie lange der älteste ausführbare Job jedes Typs in der Datenbank-Queue gewartet hat; ein Typ ohne ausführbaren Job hat keinen Wert) |
 | `my.queue.dead` | Gauge | Keine |
-| `my.instance.users`, `my.instance.statuses` | Gauge | Keine (die Zahlen lokaler Nutzer und Beiträge, wie in NodeInfo) |
+| `my.instance.users`, `my.instance.statuses` | Gauge | Keine (die Zahl lokaler Benutzer und Beiträge, wie in NodeInfo) |
 | `my.media.stored_bytes` | Gauge, Bytes | `my.media.origin` (`local` / `remote_cache`) |
 | `my.db.size` | Gauge, Bytes | Keine (die Größe der Datenbank: `pg_database_size` bei PostgreSQL; die Datenbankdatei ohne ihr Write-Ahead-Log bei SQLite) |
-| `my.billing.import.failing` | Gauge | `my.billing.source` (1, wenn der neueste Import der Quelle fehlschlug, sonst 0) |
-| `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: Server, an die Zustellungen weiter gehen, die aber an mindestens einem Tag seit ihrer letzten Antwort fehlschlugen; `unavailable`: Server, deren Zustellungen pausiert sind) |
+| `my.billing.import.failing` | Gauge | `my.billing.source` (1, wenn der neueste Import der Quelle fehlgeschlagen ist, sonst 0) |
+| `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: Server, an die Zustellungen noch gehen, die aber an mindestens einem Tag fehlschlugen, seit sie zuletzt antworteten; `unavailable`: Server, deren Zustellungen pausiert sind) |
 | `my.metrics.snapshot.age` | Gauge, Sekunden | `my.metrics.snapshot.part` (`queue` / `totals`) |
-| `my.errors.reported` | Zähler | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). Einer pro [Fehlerbericht](#error-reports) |
+| `my.errors.reported` | Zähler | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). Eine pro [Fehlerbericht](#error-reports) |
 
-Health-Checks (`/healthz`, `/readyz`) werden nicht gemessen. Kein Label enthält eine entfernte Domain, ein Konto, eine URL oder eine Client-IP.
-`my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` und `my.billing.import.failing` sind Werte für die ganzen Server: Jeder Prozess meldet denselben Wert aus einem Snapshot, der im Key-Value-Speicher liegt.
+Health-Checks (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) werden nicht gemessen. Kein Label enthält eine entfernte Domain, ein Konto, eine URL oder eine Client-IP.
+`my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` und `my.billing.import.failing` sind Werte für die ganze Instanz: Jeder Prozess meldet denselben Wert aus einem Snapshot, der im Key-Value-Speicher liegt.
 
-<!-- source: system-metrics 8b5d40a4eb98 -->
+<!-- source: system-metrics dad53f84ee0a -->
 ### Systemmetriken
 
-Metriken zum Prozess, zur Go-Runtime und zu Verbindungen zu Ressourcen werden über denselben `metrics_exporter` exportiert.
-CPU, Speicher, Zahl der Instanzen und Ingress-Anfragen des Containers bleiben den Metriken der Plattform überlassen; diese hier decken die Sättigung innerhalb des Prozesses ab, die die Plattform nicht sehen kann.
-Nutze sie nicht, um Skalierung auszulösen; nutze sie für Alarme und zur Abschätzung der Server-Obergrenze.
+Metriken über den Prozess, die Go-Runtime und Verbindungen zu Ressourcen werden über denselben `metrics_exporter` exportiert.
+CPU, Speicher, Instanzzahl und eingehende Anfragen des Containers bleiben den Metriken der Plattform überlassen; diese hier decken die Sättigung innerhalb des Prozesses ab, die die Plattform nicht sehen kann.
+Nutze sie nicht, um Skalierung auszulösen; nutze sie für Alarme und zur Abschätzung der Instanzobergrenze.
 
 | Metrik | Art | Labels |
 | --- | --- | --- |
 | `go.memory.used`, `go.memory.limit`, `go.memory.gc.goal` | Gauge, Bytes | Nur `go.memory.used` hat `go.memory.type` (`stack` / `other`). `go.memory.limit` erscheint nur, wenn `GOMEMLIMIT` gesetzt ist |
 | `go.memory.allocated`, `go.memory.allocations` | Zähler | Keine |
 | `go.goroutine.count`, `go.processor.limit`, `go.config.gogc` | Gauge | Keine |
-| `go.schedule.duration`, `go.memory.gc.pause.duration` | Histogramm, Sekunden | Keine (das Warten von „lauffähig“ bis „läuft“ und GC-Pausen) |
+| `go.schedule.duration`, `go.memory.gc.pause.duration` | Histogramm, Sekunden | Keine (die Wartezeit vom Lauffähigwerden bis zum Laufen und GC-Pausen) |
 | `go.memory.gc.cycles` | Zähler | Keine |
 | `process.cpu.time` | Observable Counter, Sekunden (Summe seit dem Start) | `cpu.mode` (`user` / `system`) |
 | `process.memory.usage` | Gauge, Bytes | Keine (residenter Speicher, RSS) |
@@ -292,16 +303,16 @@ Nutze sie nicht, um Skalierung auszulösen; nutze sie für Alarme und zur Absch�
 | `my.adapter.operation.duration` | Histogramm, Sekunden | `my.adapter` (`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`), `my.operation`, `my.outcome` (`success` / `error`) |
 | `my.adapter.connections` | UpDownCounter | `my.adapter` (`valkey`-Verbindungen und `stream.<stream>`-Abonnenten) |
 | `my.adapter.reconnects` | Zähler | `my.adapter` |
-| `http.client.request.duration` | Histogramm, Sekunden | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots`), `http.request.method`, `my.http.status_class` (`2xx` und so weiter), `error.type` (`forbidden_destination` ist eine Ablehnung durch den SSRF-Schutz) |
+| `http.client.request.duration` | Histogramm, Sekunden | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`), `http.request.method`, `my.http.status_class` (`2xx` und so weiter), `error.type` (`forbidden_destination` ist eine Ablehnung durch den SSRF-Schutz) |
 | `http.client.open_connections` | UpDownCounter | Keine |
 | `my.readiness.failures` | Zähler | Keine |
-| `my.http.origin_refused` | Zähler | Keine. Einer pro Anfrage, die abgelehnt wurde, weil sie nicht über das CDN kam ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Probes der Adresse der Origin erhöhen ihn langsam; ein Sprung, während der Verkehr ausbleibt, heißt, das CDN sendet den Header nicht mehr. Der Wartungsmodus misst nichts, nur sein Access-Log zeigt sie |
+| `my.http.origin_refused` | Zähler | Keine. Eine pro Anfrage, die abgelehnt wurde, weil sie nicht über das CDN kam ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Probes der Adresse des Origins erhöhen sie langsam; ein Sprung, während der Traffic aufhört, bedeutet, dass das CDN den Header nicht mehr sendet. Der Wartungsmodus misst nichts, daher zeigt nur sein Access-Log sie |
 
-- Go-Runtime-Metriken (`go.*`) werden nur von `prometheus` und `otlp` exportiert. Mit `emf` schreibt ein periodischer Snapshot-Job die Gauges und Observable Counters von Prozess und Verbindungspool.
-- Pool-Wartezeiten und CPU-Zeit sind Observable Counters: Der Pool und der Kernel führen Summen seit dem Start, und sie werden zum Zeitpunkt der Erfassung gelesen. In Prometheus sind sie `_total`-Zähler (etwa `process_cpu_time_seconds_total`), in OTLP monotone Summen, und ihr Wachstum siehst du mit PromQL `rate()`.
-  `emf` hat keine Summenzähler, es schreibt daher den Zuwachs seit dem vorherigen Schreiben (addiere sie mit der CloudWatch-Statistik Sum).
-- Das `claim` der Warteschlange wird nur gemessen, wenn es einen Job nimmt oder fehlschlägt. Das Polling eines wartenden Workers verzeichnet nichts.
-- `db.client.connection.pending_requests` wird nicht exportiert: Die Statistiken von pgx und `database/sql` melden nicht, wie viele warten, daher stehen Anzahl und Dauer der Wartezeiten stellvertretend dafür.
+- Go-Runtime-Metriken (`go.*`) werden nur von `prometheus` und `otlp` exportiert. Bei `emf` schreibt ein periodischer Snapshot-Job die Gauges und Observable Counter von Prozess und Verbindungspool.
+- Pool-Wartezeiten und CPU-Zeit sind Observable Counter: Der Pool und der Kernel halten Summen seit dem Start, und sie werden beim Erfassen gelesen. In Prometheus sind sie `_total`-Zähler (etwa `process_cpu_time_seconds_total`), in OTLP monotone Summen, und du siehst ihr Wachstum mit PromQL `rate()`.
+  `emf` hat keine Summenzähler, daher schreibt es den Zuwachs seit dem vorigen Schreiben (addiere sie mit der CloudWatch-Statistik Sum).
+- Das `claim` der Queue wird nur gemessen, wenn es einen Job nimmt oder fehlschlägt. Das Abfragen eines wartenden Workers erfasst nichts.
+- `db.client.connection.pending_requests` wird nicht exportiert: Die Statistiken von pgx und `database/sql` melden nicht, wie viele warten, daher stehen die Zahl und die Dauer der Wartezeiten stellvertretend dafür.
 - Alarmiere auf das Verhältnis der Summe von `go.memory.used` zu `go.memory.limit` und auf das Wachstum von `db.client.connection.wait_time` (das Pool-Limit wird erreicht).
 
 <!-- source: memory-limit-gomemlimit 8ea44722eefd -->
@@ -312,31 +323,31 @@ Ohne sie läuft Go mit seinem Standard (kein Limit), und der Heap sammelt nicht 
 Setze sie bei Setups mit einem Container-Speicherlimit (Cloud Run, ECS, Kubernetes) auf etwa 90 % dieses Limits (zum Beispiel `GOMEMLIMIT=460MiB` für einen Container mit 512 MiB).
 Setze `GOMAXPROCS` nicht: Der Standard von Go folgt dem CPU-Limit des Containers.
 
-<!-- source: traces e274793f5885 -->
+<!-- source: traces 8dfd96f79f54 -->
 ## Traces
 
 Die Einstellung `traces_exporter` (Standard `none`) exportiert verteilte Traces. Die zugehörigen Einstellungen stehen in der [Konfigurationsreferenz](../reference/configuration.md).
 
 | Span | Name | Attribute |
 | --- | --- | --- |
-| HTTP-Anfrage (Server) | `<method> <http.route>` (`<method>` bei einer Anfrage, die keine Route erreicht hat) | `http.request.method`, `http.route`, `http.response.status_code`, `my.surface`. Ein 5xx ist ein Fehlschlag |
+| HTTP-Anfrage (Server) | `<method> <http.route>` (`<method>` bei einer Anfrage, die keine Route erreichte) | `http.request.method`, `http.route`, `http.response.status_code`, `my.surface`. Ein 5xx ist ein Fehler |
 | Job-Ausführung (Consumer) | Der Job-Typ (`my.job.type`) | `my.job.type`, `my.job.attempt`, `my.outcome`. Jede Wiederholung ist ein eigener Span |
 | Transaktion | `my.db.transaction` | `db.system.name`. Jede Wiederholung ist ein eigener Span |
-| Query (Client) | Der sqlc-Query-Name (etwa `InsertJob`; sonst das erste Wort des SQL, etwa `BEGIN`) | `db.system.name`, `db.operation.name` |
+| Abfrage (Client) | Der sqlc-Abfragename (etwa `InsertJobs`; sonst das erste Wort des SQL, etwa `BEGIN`) | `db.system.name`, `db.operation.name` |
 | Zustellung (`my.delivery`) | `my.delivery` | `activity.type`, `my.outcome` |
-| Ausgehendes HTTP (Client) | `<method>` | `http.request.method`, `server.address` (nur der Ziel-Hostname), `http.response.status_code`. Ein 4xx oder 5xx ist ein Fehlschlag |
+| Ausgehendes HTTP (Client) | `<method>` | `http.request.method`, `server.address` (nur der Hostname des Ziels), `http.response.status_code`. Ein 4xx oder 5xx ist ein Fehler |
 
 Ein fehlgeschlagener Span hat `error.type` (ein endlicher Name wie `timeout` oder ein Statuscode). Attribute enthalten nie Konto-, Beitrags- oder Job-IDs, URLs, Pfade oder Queries, Client-IPs, User-Agent-Werte, SQL-Text oder Fehlerstrings.
-`server.address` überlässt die Hostnamen entfernter Server dem Empfänger, du entscheidest also, wie lange der Empfänger sie aufbewahrt und wer sie einsehen kann. Health-Checks und die durch `origin_secret` abgelehnten Anfragen erzeugen keinen Span.
+`server.address` überlässt die Hostnamen entfernter Server dem Empfänger, sodass du entscheidest, wie lange der Empfänger sie behält und wer sie sehen kann. Health-Checks und die von `origin_secret` abgelehnten Anfragen erzeugen keinen Span.
 
-- Eine Job-Ausführung ist kein Kind des Spans, der sie in die Warteschlange gestellt hat (meist eine HTTP-Anfrage). Sie ist die **Wurzel eines neuen Traces** mit einem Link auf den einreihenden Span. Folge in einem Viewer dem Link aus dem Trace der Anfrage.
-- Ein eingehendes `traceparent` wird nur dann zum Parent, wenn die verbindende Gegenstelle in `trusted_proxies` steht und, mit [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), die Anfrage das Geheimnis trägt. Andernfalls wird es verworfen, und ein neuer Trace beginnt. `tracestate` wird immer verworfen. Ausgehendes HTTP (Föderation, WebFinger, Medien, Web Push und so weiter) trägt kein `traceparent`.
-- Sampling: Eine Anfrage wird aufgezeichnet, wenn ihr Trusted-Proxy-Parent aufgezeichnet wurde oder wenn das Link-Ziel eines Jobs aufgezeichnet wurde; sonst wird sie im Verhältnis `traces_sample_ratio` aufgezeichnet (Standard 0,01). Ein Senken des Verhältnisses lässt die Jobs, die eine aufgezeichnete Anfrage fortsetzen, nie ohne ihren Trace.
+- Eine Job-Ausführung ist kein Kind des Spans, der sie eingereiht hat (meist eine HTTP-Anfrage). Sie ist die **Wurzel eines neuen Traces** mit einem Link zum einreihenden Span. Folge in einem Viewer dem Link vom Trace der Anfrage.
+- Ein eingehendes `traceparent` wird nur zum Parent, wenn der verbindende Peer in `trusted_proxies` steht und, bei [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), die Anfrage das Geheimnis trägt. Andernfalls wird es verworfen und ein neuer Trace beginnt. `tracestate` wird immer verworfen. Ausgehendes HTTP (Föderation, WebFinger, Medien, Web Push und so weiter) trägt kein `traceparent`.
+- Sampling: Eine Anfrage wird aufgezeichnet, wenn ihr Parent über einen vertrauenswürdigen Proxy aufgezeichnet wurde oder wenn das Link-Ziel eines Jobs aufgezeichnet wurde; sonst wird sie im Verhältnis `traces_sample_ratio` (Standard 0,01) aufgezeichnet. Das Senken des Verhältnisses lässt nie Jobs, die eine aufgezeichnete Anfrage fortsetzen, ohne ihren Trace zurück.
 
 | Ziel | Einstellungen | Pfad |
 | --- | --- | --- |
-| Standard, kleines Self-Hosting | `traces_exporter = none` | Es werden keine Spans exportiert. Folge `request_id` und `job_id` in den Logs. Liefert ein Trusted Proxy ein `traceparent`, werden dessen `trace_id` und `span_id` zu den Logs hinzugefügt |
-| Selbst gehostet (Jaeger, Tempo, ein OpenTelemetry Collector und so weiter) | `traces_exporter = otlp`, `traces_flush = batch` | Per OTLP/HTTP an den Empfänger unter `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` gesendet (oder `OTEL_EXPORTER_OTLP_ENDPOINT`, Standard `http://localhost:4318`). Authentifizierungs-Header gehören in `OTEL_EXPORTER_OTLP_HEADERS`. Um Fehler und langsame Traces zuverlässig zu behalten, nutze das Tail Sampling des Collectors |
+| Standard, kleines Self-Hosting | `traces_exporter = none` | Es werden keine Spans exportiert. Folge `request_id` und `job_id` in den Logs. Liefert ein vertrauenswürdiger Proxy ein `traceparent`, werden dessen `trace_id` und `span_id` zu den Logs hinzugefügt |
+| Self-Hosting (Jaeger, Tempo, ein OpenTelemetry Collector und so weiter) | `traces_exporter = otlp`, `traces_flush = batch` | Über OTLP/HTTP an den Empfänger unter `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (oder `OTEL_EXPORTER_OTLP_ENDPOINT`, Standard `http://localhost:4318`) gesendet. Authentifizierungs-Header gehören in `OTEL_EXPORTER_OTLP_HEADERS`. Um Fehler und langsame Traces zuverlässig zu behalten, nutze das Tail-Sampling des Collectors |
 | Google Cloud (Cloud Run) | `none` oder `otlp` mit `unit`, um Traces zu aktivieren | Siehe unten |
 | AWS (ECS) | `none` oder `otlp` mit `batch`, um Traces zu aktivieren | Siehe unten |
 
@@ -510,29 +521,47 @@ Wähle einen Wert danach, wie dein Server läuft:
   - Auf Cloud Run nimmt ein Dienst standardmäßig 80 gleichzeitige Anfragen pro Server-Instanz an. Bei einem Pool von 4 staut sich hier ein Schwall langsamer Anfragen, erhöhe also `pool_max_conns`, senke die Nebenläufigkeit des Dienstes oder beides.
 - **Häufige `503` oder `db.client.connection.timeouts`** bedeuten, dass der Pool zu klein ist oder Queries langsamer wurden; ein längeres Timeout verbirgt das nur. Folge [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated).
 
-<!-- source: cloud-tasks ef3f7d7cc896 -->
+<!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
 [Auf Cloud Run bereitstellen](deploy-cloud-run.md) richtet alles Folgende mit OpenTofu-Modulen ein.
 
 Mit `queue = cloudtasks` bleiben die Jobs in der Datenbank (`database = postgres`), und Google Cloud Tasks weckt den Server nur für jeden von ihnen auf:
 
-- Für jeden Job, den er speichert, wiederholt oder zurückstellt, erstellt der Server nach dem Commit der Transaktion einen Task in `queue_cloudtasks_queue`. Der Task ruft
-  `POST {queue_cloudtasks_url}/_internal/jobs` zu dem Zeitpunkt auf, zu dem der Job fällig ist, mit der ID des Jobs als Body und einem OIDC-ID-Token von
-  `queue_cloudtasks_service_account`. Ein Job, der mehr als 30 Tage im Voraus fällig ist, wird bei 30 Tagen signalisiert und erneut, wenn dieser Task eintrifft.
-- Der Prozess, der den Task erhält, führt den Job aus und antwortet mit `204`, sobald sein Ergebnis verzeichnet ist, auch wenn der Job schon lief oder nicht fällig ist.
-  Ein Job, der fehlschlägt, wird vom Server zu seinem nächsten Versuchszeitpunkt wiederholt, nicht von Cloud Tasks. Cloud Tasks wiederholt einen Task nur, wenn die
-  Antwort `5xx` ist (die Datenbank war nicht erreichbar) oder `401` (ein Token, das der Server abgelehnt hat), sein `retryConfig` braucht also keine Feinabstimmung.
+- Für jeden Job, den er speichert, wiederholt oder zurücklegt, erstellt der Server eine Task in `queue_cloudtasks_queue`, sobald die Transaktion committet. Die Task ruft
+  `POST {queue_cloudtasks_url}/_internal/jobs` zu dem Zeitpunkt auf, an dem der Job fällig ist, mit der ID des Jobs als Body und einem OIDC-ID-Token von
+  `queue_cloudtasks_service_account`. Ein Job, der mehr als 30 Tage im Voraus fällig ist, wird bei 30 Tagen signalisiert und erneut, wenn diese Task eintrifft.
+- Der Prozess, der die Task empfängt, führt den Job aus und antwortet mit `204`, sobald sein Ergebnis erfasst ist, auch wenn der Job bereits lief oder nicht fällig ist.
+  Ein Job, der fehlschlägt, wird vom Server zu seinem nächsten Versuchszeitpunkt wiederholt, nicht von Cloud Tasks. Cloud Tasks wiederholt eine Task nur, wenn die
+  Antwort `5xx` ist (die Datenbank war nicht erreichbar) oder `401` (ein Token, das der Server ablehnte), daher braucht sein `retryConfig` keine Feinabstimmung.
 - Kein Prozess fragt die Tabelle ab, und kein Prozess führt die periodischen Jobs von selbst aus. Erstelle einen Cloud-Scheduler-Job, der
-  `POST {queue_cloudtasks_url}/_internal/tick` jede Minute aufruft (`* * * * *`), mit einem OIDC-Token desselben Service-Kontos (und der Audience von
-  `queue_cloudtasks_audience`, wenn gesetzt). Jeder Tick stellt die periodischen Jobs, deren Periode gekommen ist, einmal für die ganzen Server in die Warteschlange (die Perioden werden im KV beansprucht,
-  daher muss `kv` `db` oder `valkey` sein) und signalisiert die Jobs erneut, die seit über 2 Minuten fällig sind, ohne zu laufen, was ein verlorenes Signal behebt.
-- `/_internal/jobs` und `/_internal/tick` werden von den Prozessen mit `role = all` oder `worker` bedient und akzeptieren nur ein von Google für
-  `queue_cloudtasks_service_account` signiertes Token mit verifizierter E-Mail, dessen Audience `queue_cloudtasks_audience` ist oder, standardmäßig, die aufgerufene URL. Jede andere Anfrage ist ein `401`.
-- Eine Zustellung führt einen Job aus, höchstens für das 5-Minuten-Lease. Halte `queue_cloudtasks_dispatch_deadline` (Standard 10 Minuten) und das Request-Timeout
-  des Cloud-Run-Dienstes länger als das.
-- Das eigene Service-Konto des Servers braucht `roles/cloudtasks.enqueuer` auf der Queue und `roles/iam.serviceAccountUser` auf `queue_cloudtasks_service_account`.
+  `POST {queue_cloudtasks_url}/_internal/tick` jede Minute (`* * * * *`) mit einem OIDC-Token desselben Dienstkontos aufruft (und mit der Audience von
+  `queue_cloudtasks_audience`, wenn gesetzt). Jeder Tick reiht die periodischen Jobs ein, deren Zeitraum gekommen ist, einmal für die ganze Instanz (die Zeiträume werden im KV beansprucht,
+  daher muss `kv` `db` oder `valkey` sein), und signalisiert erneut die Jobs, die seit über 2 Minuten fällig sind, ohne gelaufen zu sein, was ein verlorenes Signal behebt.
+- `/_internal/jobs` und `/_internal/tick` werden von den Prozessen mit `role = all` oder `worker` bedient und akzeptieren nur ein von Google signiertes Token für
+  `queue_cloudtasks_service_account` mit einer verifizierten E-Mail, dessen einzige Audience `queue_cloudtasks_audience` oder, standardmäßig, die aufgerufene URL ist. Jede andere Anfrage ist ein `401`.
+- Eine Zustellung führt einen Job aus, höchstens für die 5-Minuten-Lease. Halte `queue_cloudtasks_dispatch_deadline` (Standard 10 Minuten) und das Anfrage-Timeout des
+  Cloud-Run-Dienstes länger als das.
+- Das eigene Dienstkonto des Servers braucht `roles/cloudtasks.enqueuer` auf der Queue und `roles/iam.serviceAccountUser` auf `queue_cloudtasks_service_account`.
   Es authentifiziert sich mit Application Default Credentials.
+
+<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+### Wie spät periodische Jobs laufen
+
+Ein periodischer Job läuft bis zu einen Zeitraum seines Triggers nach seiner Zeit, plus die Zeit, die die Plattform zum Starten braucht. Das
+bestimmt, wie spät die Erinnerungen und Beginn-Benachrichtigungen von Veranstaltungen ankommen und ihre Sprachchat-Räume öffnen, da `gathering.tick` sie startet: Eine Erinnerung
+kommt bis zum Intervall der Tabelle zu spät. Die Werte sind das, was der Scheduler-Code und der Trigger jeder Plattform ergeben; sie wurden
+nicht auf einem laufenden Server gemessen.
+
+| Plattform | Was die periodischen Jobs startet | Erwartete Verzögerung einer Erinnerung oder eines Beginns einer Veranstaltung |
+| --- | --- | --- |
+| Self-Hosting und Docker Compose (`queue = db`) | Der Scheduler in jedem Prozess mit `role = all` oder `worker` prüft einmal pro Minute, ab dem Start des Prozesses, und reiht jeden Job einmal pro Zeitraum für den ganzen Server ein | Bis zu 1 Minute, plus etwa eine Sekunde, bis ein Worker den Job aufnimmt |
+| AWS ECS Fargate (`queue = db`) | Derselbe Scheduler, in den Worker-Tasks | Bis zu 1 Minute, plus etwa eine Sekunde |
+| Cloud Run (`queue = cloudtasks`) | Cloud Scheduler ruft `/_internal/tick` nach seinem Zeitplan auf, standardmäßig `* * * * *` (jede Minute); Cloud Tasks weckt dann den Server für jeden Job | Bis zu 1 Minute, plus der Start einer Instanz, wenn keine läuft (ein Kaltstart, meist einige Sekunden). Bei einem längeren `tick_schedule`, etwa `*/10 * * * *`, bis zu diesem Intervall |
+| AWS Lambda | `my` hat keine Lambda-Bereitstellung; betreibe es auf AWS auf ECS Fargate | — |
+
+Eine Erinnerung, die ankäme, nachdem ihre Veranstaltung begonnen hat, wird nicht gesendet, ebenso wenig eine Beginn-Benachrichtigung, nachdem die Veranstaltung endete.
+Bei einem Tick, der länger als 5 Minuten ist, können daher die kürzesten Erinnerungen verloren gehen.
 
 <!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
 ### Job-Typen auf eigene Queues leiten
@@ -590,27 +619,28 @@ Eine Queue, die nicht mithalten kann, erhält also bis zu 500 doppelte Signale p
 3. Um eine Queue zu entfernen, nimm sie zuerst überall aus den Routen und warte, bis sie leer ist, bevor du sie löschst. Ein Signal in einer gelöschten Queue geht verloren, nicht sein Job: Der Durchlauf signalisiert den Job erneut, sobald er seit 2 Minuten fällig ist.
    Ein Cloud-Tasks-Task kann ein Signal für einen Job bis zu 30 Tage im Voraus halten, ein Job, der später als die Wartezeit fällig ist, wird also einfach vom Durchlauf signalisiert, wenn seine Zeit kommt.
 
-<!-- source: health-checks 06a8834ade0d -->
+<!-- source: health-checks e268d13fe7f2 -->
 ## Health-Checks
 
-| Pfad | Art | Wann er 200 liefert |
+| Pfad | Art | Wann er 200 zurückgibt |
 | --- | --- | --- |
-| `GET /healthz` | Liveness | Der Prozess kann HTTP beantworten. Er schaut nicht auf Abhängigkeiten wie die Datenbank (damit eine langsame Datenbank den Prozess nicht neu startet) |
-| `GET /readyz` | Readiness | Die Datenbank ist erreichbar und das Schema ist angewendet |
-| `GET /api/v1/instance/health` | Uptime-Monitoring, Statusseiten und Clients (bedient von der Rolle `web`) | Wie die Readiness. Das Ergebnis wird 60 Sekunden im Prozess zwischengespeichert |
+| `GET /healthz`, `GET /health/live` | Liveness | Der Prozess kann HTTP beantworten. Er schaut nicht auf Abhängigkeiten wie die Datenbank (damit eine langsame Datenbank den Prozess nicht neu startet) |
+| `GET /readyz`, `GET /health/ready` | Readiness | Die Datenbank ist erreichbar und das Schema ist angewendet |
+| `GET /api/v1/instance/health` | Uptime-Monitoring, Statusseiten und Clients (von der `web`-Rolle bedient) | Dasselbe wie die Readiness. Das Ergebnis wird 60 Sekunden im Prozess zwischengespeichert |
 
-- Ein 200 von `/healthz` oder `/readyz` hat den Body `{"status":"ok"}`.
+- Cloud Run reserviert einige Pfade, die auf `z` enden, darunter `/healthz`, und beantwortet sie selbst mit einem `404`; rufe dahinter `/health/live` und `/health/ready` auf, die dasselbe beantworten.
+- Ein 200 von jedem von ihnen hat den Body `{"status":"ok"}`.
 - `/readyz` prüft die Datenbank bei jeder Anfrage, und gleichzeitige Anfragen teilen sich eine Prüfung.
-- `/api/v1/instance/health` liefert bei Gesundheit 200 und `{"status":"ok","checked_at":"<RFC 3339>"}` und bei einem Fehlschlag 503 und `{"status":"unavailable","checked_at":...}` (`Cache-Control: no-store`).
-  Jeder Prozess berührt die Datenbank höchstens einmal pro Minute, egal wie oft er überwacht oder angefragt wird, und er schaut weder auf das Access-Token noch auf das Rate Limit. Richte Uptime-Monitore auf diesen Endpunkt, nicht auf die Probe (`/readyz`).
-  Zur Einrichtung pro Dienst, zum Überwachungsintervall und zu den Kosten und dazu, wie Wartung behandelt wird, siehe die [Anleitung zum Uptime-Monitoring](monitoring.md).
+- `/api/v1/instance/health` gibt bei Gesundheit 200 und `{"status":"ok","checked_at":"<RFC 3339>"}` zurück und bei einem Fehler 503 und `{"status":"unavailable","checked_at":...}` (`Cache-Control: no-store`).
+  Jeder Prozess berührt die Datenbank höchstens einmal pro Minute, wie oft er auch überwacht oder angefragt wird, und er schaut weder auf das Zugriffstoken noch auf das Ratenlimit. Richte Uptime-Monitore auf diesen Endpunkt, nicht auf den Probe (`/readyz` oder `/health/ready`).
+  Zu Einrichtung pro Dienst, Monitoring-Intervall und Kosten und dazu, wie Wartung behandelt wird, siehe die [Anleitung zum Uptime-Monitoring](monitoring.md).
 - Alle drei loggen im Access-Log auf Debug-Stufe und erzeugen keinen Trace-Span.
 - Ist die Readiness nicht erfüllt, ist die Antwort 503 mit einem RFC-9457-Body `application/problem+json`.
-  Sein `title` wird gemäß `Accept-Language` übersetzt und enthält kein internes Detail. Die Ursache (ein Verbindungsfehler oder die Namen fehlender Tabellen) geht ins Log.
+  Sein `title` wird gemäß `Accept-Language` übersetzt und enthält keine internen Details. Die Ursache (ein Verbindungsfehler oder die Namen fehlender Tabellen) geht ins Log.
 - Eine Readiness-Prüfung wird nach 3 Sekunden abgebrochen.
-- Die Readiness verlangt außerdem, dass die Datenbank den konfigurierten `host` und `account_domain` enthält oder dass der Prozess sie verzeichnen konnte.
-- **Schema angewendet** heißt, jede Tabelle, die die Schema-Dateien der Datenbank (`schema/<NN>-<module>/<dialect>.sql`) mit `CREATE TABLE` deklarieren, existiert
-  (SQLite wird über `sqlite_schema` geprüft, PostgreSQL über das `current_schema()` der Verbindung). `my schema apply` wendet das ganze Schema an, eine fehlende Tabelle bedeutet also, dass das Schema nicht angewendet oder älter als die Binärdatei ist.
+- Die Readiness verlangt außerdem, dass die Datenbank den konfigurierten `host` und die `account_domain` enthält oder dass der Prozess sie erfassen konnte.
+- **Schema angewendet** bedeutet, dass jede Tabelle, die die Schemadateien der Datenbank (`schema/<NN>-<module>/<dialect>.sql`) mit `CREATE TABLE` deklarieren, existiert
+  (SQLite wird über `sqlite_schema` geprüft, PostgreSQL über das `current_schema()` der Verbindung). `my schema apply` wendet das ganze Schema an, daher bedeutet eine fehlende Tabelle, dass das Schema nicht angewendet oder älter als das Binary ist.
   Unterschiede bei Spalten und Indizes werden nicht geprüft; `my schema apply -dry-run` gibt aus, was sich ändern würde.
 
 <!-- source: requests-that-bypass-the-cdn 2cca4127af07 -->

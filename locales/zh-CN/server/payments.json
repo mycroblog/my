@@ -83,6 +83,10 @@
     "defaultMessage": "每月 {amount} {currency}",
     "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
   },
+  "payments.fake.price_once": {
+    "defaultMessage": "{amount} {currency}，一次性",
+    "description": "Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
   "payments.fake.price_year": {
     "defaultMessage": "每年 {amount} {currency}",
     "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
@@ -158,5 +162,9 @@
   "payments.test_mode": {
     "defaultMessage": "测试模式：不会收取任何费用。",
     "description": "Banner of the PAY.JP checkout and card pages with test keys."
+  },
+  "payments.tip_description": {
+    "defaultMessage": "为 {server} 打赏",
+    "description": "Line item of the payment provider's checkout of a tip, a one-time payment to the server's operation with nothing in return (ADR-0162 §1). {server} is the name of the server. Never word it as a donation."
   }
 }

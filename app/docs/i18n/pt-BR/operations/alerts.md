@@ -55,7 +55,15 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Painel do Grafana
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) é um painel do Grafana com as mesmas métricas do Prometheus:
+a taxa de requisições, os códigos de status e a latência; as execuções de jobs, o tempo de worker de cada tipo de job e a fila; as entregas, as atividades da caixa de entrada
+e os servidores remotos; e a CPU e a memória de cada processo. Importe-o no Grafana (**Dashboards** → **New** → **Import**) e escolha a sua
+fonte de dados do Prometheus; a variável **Job** dele seleciona o job de coleta (`my` por padrão).
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud (Cloud Run)
 
 Com `metrics_exporter = none`, monte os alertas a partir do que o Cloud Run e o Cloud Logging já têm:
@@ -65,8 +73,9 @@ Com `metrics_exporter = none`, monte os alertas a partir do que o Cloud Run e o 
 - **Jobs e requisições**: o servidor grava uma linha de log por requisição HTTP (`msg` = `http request`) e por execução de job (`msg` = `job`), com os
   mesmos rótulos das métricas. Crie métricas baseadas em logs a partir delas, por exemplo um contador de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   para jobs com falha, ou uma distribuição de `jsonPayload.duration_seconds` filtrada por `jsonPayload."my.surface"="client_api"` para a latência.
-- **Fila acumulada**: com `queue = cloudtasks`, os jobs ficam no banco de dados, então a tela de jobs e as linhas de log das execuções mostram o acúmulo;
-  a métrica de profundidade de fila do Cloud Tasks conta os sinais que aguardam entrega.
+- **Fila acumulada e armazenamento**: a cada 15 minutos o job `metrics.snapshot` grava uma linha (`msg` = `metrics snapshot`) com os valores de toda a instância,
+  como `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` e `my.media.stored_bytes`. Crie métricas baseadas em logs a partir dos campos dela;
+  uma lacuna nessas linhas significa que o tick ou a fila parou. A métrica de profundidade de fila do Cloud Tasks conta os sinais que aguardam entrega.
 - **Banco de dados**: as métricas de utilização de disco e de conexões do Cloud SQL, ou os alertas de uso do seu provedor de banco de dados.
 - **Custo**: um orçamento do Cloud Billing com limites de alerta ([Custo e orçamento](#cost-and-budget)).
 
@@ -126,7 +135,7 @@ Severidade: **page** = agir agora, **ticket** = durante o horário comercial. �
 | Custo | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 por 6 h | ticket | Permissões ausentes, a exportação de cobrança não configurada, o limite de requisições atingido, o provedor indisponível |
 | Custo | Orçamento excedido | – | – | – | Tráfego, armazenamento ou uma configuração incorreta custando mais que o planejado ([abaixo](#cost-and-budget)) |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
+<!-- source: where-to-look b9e94304077f -->
 ## Onde procurar
 
 Estas ferramentas aparecem em quase todas as entradas do runbook abaixo.
@@ -142,6 +151,11 @@ Estas ferramentas aparecem em quase todas as entradas do runbook abaixo.
 - **Os logs**: linhas JSON na saída de erro padrão. Cada requisição HTTP termina com uma linha cujo `msg` é `http request`, e cada execução de job com uma linha cujo `msg` é `job`
   (`INFO` para sucesso, `WARN` para nova tentativa, `ERROR` para um job que falhou em definitivo, com `error`, `job_id` e `my.job.type`).
   As linhas dentro de uma requisição trazem seu `request_id`, que o cliente vê como `X-Request-Id`.
+  - A linha de uma execução de `federation.deliver` também diz para onde a entrega foi e como terminou: `my.delivery.domain` (o domínio do servidor remoto),
+    `activity.type` (por exemplo `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure` ou `skipped`) e
+    `http.response.status_code` (a resposta da caixa de entrada, ausente quando ela não deu nenhuma ou nada foi enviado). `my.outcome` continua sendo o resultado da execução do job.
+    A linha nunca nomeia o remetente, a atividade nem a URL da caixa de entrada.
+    Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``

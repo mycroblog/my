@@ -3,7 +3,7 @@
 
 Como iniciar e parar o servidor, obter a imagem dele e acompanhá-lo enquanto roda: métricas, traces, a fila de jobs e verificações de saúde.
 
-<!-- source: start-the-server 0d5f8898a2f5 -->
+<!-- source: start-the-server ea157fe28b0d -->
 ## Iniciar o servidor
 
 ```sh
@@ -17,12 +17,12 @@ my version        # print the version of the binary
 Ele fala HTTP/1.1 puro ali, sem TLS: coloque na frente um proxy reverso ou balanceador de carga que encerre o HTTPS (e o HTTP/2 ou HTTP/3 para os clientes) e encaminhe por HTTP/1.1.
 As atualizações em tempo real (`GET /api/v1/streaming`, os streams das linhas do tempo local e federada e os streams das salas de chat de voz) são respostas de longa duração que enviam um comentário de heartbeat a cada 30 segundos (15 em uma sala de voz) e permanecem abertas enquanto ociosas.
 O proxy não deve armazenar essas respostas em buffer (nginx: o servidor envia `X-Accel-Buffering: no`), e o timeout de ociosidade ou de leitura dele deve ser maior que o intervalo do heartbeat.
-Ele não aplica o schema: aplique-o com `my schema apply` antes de iniciar (veja [Banco de dados](database.md); as atualizações o executam como parte de [Atualizando](database.md#upgrading)).
-Na configuração do Docker Compose (`deploy/docker/compose.yaml`; veja [Implantando com Docker Compose](deploy-docker-compose.md)), um serviço `schema` de execução única roda `my schema apply` antes de o servidor iniciar.
+Ele não aplica o schema nem executa os passos de atualização de dados: execute `my schema apply` e depois `my db upgrade` antes de iniciar (veja [Banco de dados](database.md); as atualizações executam os dois como parte de [Atualizando](database.md#upgrading)). Até que `my db upgrade` tenha registrado todos os passos da versão, `/readyz` responde `503`.
+Na configuração do Docker Compose (`deploy/docker/compose.yaml`; veja [Implantando com Docker Compose](deploy-docker-compose.md)), os serviços de execução única `schema` e `upgrade` rodam `my schema apply` e `my db upgrade` antes de o servidor iniciar.
 Se o schema não foi aplicado, o processo ainda inicia e a verificação de prontidão retorna 503, e ele não serve mais nada até o schema existir.
 
 O primeiro `my serve`, ou comando `my` que usa o banco de dados, registra nele `host` e `account_domain`. Quando a configuração difere dos valores registrados, `my serve` registra no log `start failed` com os dois pares de valores e termina com código 1, e os comandos exibem o mesmo erro. As exceções são `my schema apply` e `my db backup`, que não verificam, e o modo de manutenção, que não lê o banco de dados. `my config check -instance` e `my db upgrade -check` verificam, mas não registram nada.
-Um processo que não conseguiu ler o banco de dados quando iniciou não fica pronto até conseguir e, até lá, não executa jobs e responde `503` com `Retry-After` a toda requisição, exceto as três verificações de saúde abaixo (`/healthz`, `/readyz`, `/api/v1/instance/health`). É o que acontece também com um servidor iniciado antes de `my schema apply`. Se depois ele encontrar valores diferentes, para com o mesmo erro.
+Um processo que não conseguiu ler o banco de dados quando iniciou não fica pronto até conseguir e, até lá, não executa jobs e responde `503` com `Retry-After` a toda requisição, exceto as verificações de saúde (`/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health`). É o que acontece também com um servidor iniciado antes de `my schema apply`. Se depois ele encontrar valores diferentes, para com o mesmo erro.
 
 No perfil `production`, `my config check` também verifica se as configurações válidas servem a uma instância de produção: erros, como um `host` que outros servidores não conseguem alcançar ou uma KEK que não é aleatória, fazem-no terminar com código 1, e avisos, como `mail = none`, não.
 `my serve` registra ambos como avisos ao iniciar, mas inicia mesmo assim; portanto, execute `my config check` como uma etapa da implantação.
@@ -48,7 +48,7 @@ de modo que, no Cloud Run com `metrics_exporter = none`, você pode criar métri
 | `job` (`INFO` em caso de sucesso e para `postponed`, `WARN` para `retry`, `ERROR` para `dead`) | `my.job.type` e `my.outcome` têm os mesmos valores dos rótulos de `my.job.duration`. Também `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt` e `error` em caso de falha |
 | `error report` (`ERROR`; `CRITICAL` para uma falha que encerra o processo) | Uma linha por erro reportado ([Relatórios de erro](#error-reports)) |
 
-<!-- source: error-reports 3d780744461c -->
+<!-- source: error-reports a81ecfe83871 -->
 ### Relatórios de erro
 
 O guia [Relatório de erros](error-reporting.md) explica onde ler essas linhas em cada plataforma, a tela Erros, as notificações e o envio de relatórios a um rastreador de erros.
@@ -72,6 +72,7 @@ A linha está na forma que o Google Cloud Error Reporting lê: no Cloud Run, os 
 | `my.error.fingerprint` | 32 dígitos hexadecimais que são os mesmos para toda ocorrência do mesmo erro: montados a partir da origem, do local, do tipo do erro e das funções do servidor na pilha, sem números de linha |
 | `my.error.source`, `my.error.kind` | `server` (ou `web`), e `panic` ou `error` |
 | `my.error.where` | Onde aconteceu: `<surface> <method> <route>` para uma requisição (como `client_api GET /api/v1/statuses/{id}`), o tipo do job para um job, o nome da tarefa para uma tarefa em segundo plano, `startup` para uma falha ao iniciar |
+| `context.httpRequest` | Para um erro de uma requisição: `method`, `url` (a rota, como `/api/v1/statuses/{id}`, nunca o caminho que o cliente pediu) e `responseStatusCode`, o status respondido (500) |
 | `my.role`, `deployment.environment.name` | O `role` do processo e `errors_environment` |
 | `request_id`, `job_id`, `attempt`, `trace_id`, `span_id` | Os IDs para encontrar as linhas de requisição ou de job do mesmo erro, quando ele os tem |
 | `message` | Por último na linha: `<type>: <message>`, uma quebra de linha e a pilha do Go |
@@ -137,7 +138,7 @@ O servidor confia no `X-Forwarded-For` dos pools de endereços padrão do Docker
 O serviço de execução única `garage-init` prepara o armazenamento a cada `up`. Ele fica dentro da rede do Compose, já que o servidor
 serve a mídia por conta própria. Um nó é um disco: faça backup do volume `garage` ou do bucket ([Backup](backup.md#media-in-a-bucket)).
 
-<!-- source: get-the-image 238d00ea9826 -->
+<!-- source: get-the-image 5a210413433f -->
 ## Obter a imagem
 
 A imagem do servidor é `ghcr.io/mycroblog/my`, pública, para `linux/amd64` e `linux/arm64`, com todos os adaptadores.
@@ -147,6 +148,7 @@ A imagem do servidor é `ghcr.io/mycroblog/my`, pública, para `linux/amd64` e `
 | `0.1.0` | Essa versão, para sempre | Nomear uma versão |
 | `0.1` | O patch mais recente da `v0.1` | Docker Compose, que aplica o schema a cada `up` |
 | `0.1.0-rc.1` | Essa pré-versão | Testar uma versão antes de ela sair |
+| `nightly` | O commit mais recente de `main` que passou nos testes noturnos, movido a cada noite em que muda | Experimentar mudanças antes de uma pré-versão, em uma instância que você possa descartar |
 
 Não há `latest` nem `0`: ambos atravessariam uma versão menor, e cada atualização para uma nova versão menor precisa passar [pela anterior](database.md#skipping-releases). Nomeie uma versão em todo comando; `docker pull ghcr.io/mycroblog/my` sozinho falha com `manifest unknown`.
 Uma versão de patch também pode precisar de `my schema apply` e `my db upgrade`; portanto, fora do Docker Compose, siga [Atualizando](database.md#upgrading) para cada versão. Em produção, fixe o digest que as notas da versão informam:
@@ -154,6 +156,13 @@ Uma versão de patch também pode precisar de `my schema apply` e `my db upgrade
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
 ```
+
+**`nightly` não tem caminho de atualização.** As atualizações são prometidas apenas entre versões publicadas: de uma imagem `nightly` para a
+seguinte, ou de `nightly` para uma versão, o schema e os passos de dados de `my db upgrade` podem mudar de formas pelas quais nenhuma
+versão passa, então espere recriar o banco de dados dela. Nunca a execute em produção. `my version` exibe qual commit ela é, como em
+`v0.1.0-rc.5.0.20261109182600.g7a789720a1b2`: uma versão posterior à última versão publicada (`v0.1.0-rc.5`), o horário do commit em UTC e os
+12 primeiros caracteres do commit depois de `g`. Para manter uma compilação, fixe o digest dela (`ghcr.io/mycroblog/my:nightly@sha256:...`): uma compilação mais antiga perde
+a tag, mas continua disponível para pull pelo digest.
 
 Onde executá-la:
 
@@ -163,7 +172,7 @@ Onde executá-la:
 - **AWS (ECS, EKS)**: copie a imagem para o Amazon ECR, ou use um pull through cache do ECR, que precisa de credenciais do ghcr.io.
 - **Uma imagem menor**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` em um checkout compila uma com menos adaptadores ([build tags](../reference/build-tags.md)). É uma compilação sua, portanto não é coberta pelas verificações abaixo.
 
-<!-- source: verify-an-image b696c257662d -->
+<!-- source: verify-an-image 76b9a1293edb -->
 ### Verificar uma imagem
 
 Cada imagem publicada tem uma proveniência assinada pelo Sigstore, que liga o digest ao workflow e ao commit que a compilaram, e um SBOM. Com a [GitHub CLI](https://cli.github.com/), e com login no `ghcr.io` se o comando pedir:
@@ -174,7 +183,8 @@ gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
 docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
 ```
 
-O primeiro comando falha, a menos que a imagem tenha sido compilada pelo workflow de release deste repositório. Ele exibe o commit, que é o commit da tag da versão; o rótulo `org.opencontainers.image.revision` da imagem nomeia o mesmo.
+O primeiro comando falha, a menos que a imagem tenha sido compilada pelo workflow de release deste repositório. Para uma imagem `nightly`, verifique-a com
+`--signer-workflow mycroblog/my/.github/workflows/nightly.yml`. Ele exibe o commit, que é o commit da tag da versão; o rótulo `org.opencontainers.image.revision` da imagem nomeia o mesmo.
 
 <!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
 ## Publicar o código-fonte (AGPL-3.0)
@@ -214,14 +224,14 @@ Se você executa uma versão oficial sem modificações, mantenha o padrão.
 - Garanta que o filtro de spam não descarte os pedidos.
 - Use um endereço que você aceite tornar público: qualquer pessoa pode vê-lo na página de informações, na página de apresentação e no NodeInfo.
 
-<!-- source: metrics 2dea3a7f8f83 -->
+<!-- source: metrics 77e2cbc5a0f6 -->
 ## Métricas
 
 A configuração `metrics_exporter` (padrão `none`) exporta métricas do serviço. As configurações relacionadas estão na [referência de configuração](../reference/configuration.md).
 
 | `metrics_exporter` | Caminho | Indicado para |
 | --- | --- | --- |
-| `none` | Nada é exportado. A instrumentação custa quase nada | Cloud Run (use as métricas da plataforma e as métricas baseadas em logs) |
+| `none` | Nada é exportado. A instrumentação custa quase nada. Os valores de toda a instância ainda vão para uma linha de log `metrics snapshot` a cada 15 minutos | Cloud Run (use as métricas da plataforma e as métricas baseadas em logs) |
 | `prometheus` | `GET /metrics` em `metrics_listen` (padrão `127.0.0.1:9464`). É um listener separado do `listen` público, sem autenticação, e roda para todo `role` | Auto-hospedagem (coletado por um servidor compatível com Prometheus ou pelo KEDA) |
 | `otlp` | Enviado a um OpenTelemetry Collector por OTLP/HTTP. O destino vem das variáveis de ambiente padrão do OTel, como `OTEL_EXPORTER_OTLP_ENDPOINT` | Configurações em que você pode executar um collector |
 | `emf` | Linhas JSON do CloudWatch Embedded Metric Format. As métricas de requisição e de job vão nas linhas de encerramento acima; as demais são escritas na saída padrão, uma linha por conjunto de rótulos, quando uma requisição ou job termina | AWS ECS |
@@ -252,6 +262,7 @@ As métricas estão listadas abaixo. No Prometheus, `.` em um nome vira `_` e um
 | `my.accounts.registered` | Contador | Nenhum |
 | `my.statuses.created` | Contador | `my.visibility` |
 | `my.billing.imports` | Contador | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (somente com `failed`: o tipo de falha, como em [Importando cobranças de uso da nuvem](billing-import.md)). Toda tentativa conta, incluindo as novas tentativas e as falhas que esperam a próxima importação diária |
+| `my.supporter.tip_checkouts` | Contador | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`). Um por início de uma gorjeta que recebeu a página do provedor, por início que os limites recusaram e por gorjeta que foi paga ou terminou sem pagamento; veja [gorjetas](supporters.md#tips) para os alertas a que ela serve |
 | `my.voice.turn.credentials` | Contador | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Uma por credencial TURN que um participante do chat de voz pediu ao entrar em uma sala ou renovar a conexão: `reused` significa que credenciais da Cloudflare emitidas antes para a mesma conexão foram devolvidas de novo, e `failed` significa que a Cloudflare não pôde ser alcançada ou recusou, de modo que o participante recebeu um erro e não conseguiu se conectar |
 | `my.errors.exported` | Contador | `my.outcome` (`success` / `dropped` / `failed`: uma por relatório de erro para o serviço de `errors_exporter`. `dropped` significa que o relatório não foi enviado porque já havia 1.000 relatórios esperando ou o serviço pediu ao servidor que desacelerasse, e o servidor espera o tempo que o serviço pedir antes de enviar de novo; `failed` significa que o serviço não pôde ser alcançado ou recusou o relatório. Um relatório é enviado uma vez e nunca repetido, e os relatórios que ainda esperam 2 segundos após o início de um desligamento são perdidos) |
 | `my.queue.ready` | Gauge | `my.job.type` (o número de jobs executáveis na fila do banco de dados) |
@@ -265,10 +276,10 @@ As métricas estão listadas abaixo. No Prometheus, `.` em um nome vira `_` e um
 | `my.metrics.snapshot.age` | Gauge, segundos | `my.metrics.snapshot.part` (`queue` / `totals`) |
 | `my.errors.reported` | Contador | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). Uma por [relatório de erro](#error-reports) |
 
-As verificações de saúde (`/healthz`, `/readyz`) não são medidas. Nenhum rótulo contém um domínio remoto, conta, URL ou IP de cliente.
+As verificações de saúde (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) não são medidas. Nenhum rótulo contém um domínio remoto, conta, URL ou IP de cliente.
 `my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` e `my.billing.import.failing` são valores da instância inteira: todo processo reporta o mesmo valor a partir de um único snapshot guardado no armazenamento chave-valor.
 
-<!-- source: system-metrics 8b5d40a4eb98 -->
+<!-- source: system-metrics dad53f84ee0a -->
 ### Métricas do sistema
 
 As métricas sobre o processo, o runtime do Go e as conexões com recursos são exportadas pelo mesmo `metrics_exporter`.
@@ -292,7 +303,7 @@ Não as use para disparar o escalonamento; use-as para alertas e para estimar o 
 | `my.adapter.operation.duration` | Histograma, segundos | `my.adapter` (`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`), `my.operation`, `my.outcome` (`success` / `error`) |
 | `my.adapter.connections` | UpDownCounter | `my.adapter` (conexões `valkey` e assinantes de `stream.<stream>`) |
 | `my.adapter.reconnects` | Contador | `my.adapter` |
-| `http.client.request.duration` | Histograma, segundos | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots`), `http.request.method`, `my.http.status_class` (`2xx` e assim por diante), `error.type` (`forbidden_destination` é uma recusa da proteção SSRF) |
+| `http.client.request.duration` | Histograma, segundos | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`), `http.request.method`, `my.http.status_class` (`2xx` e assim por diante), `error.type` (`forbidden_destination` é uma recusa da proteção SSRF) |
 | `http.client.open_connections` | UpDownCounter | Nenhum |
 | `my.readiness.failures` | Contador | Nenhum |
 | `my.http.origin_refused` | Contador | Nenhum. Uma por requisição recusada por não ter passado pela CDN ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Sondagens do endereço da origem a aumentam devagar; um salto enquanto o tráfego para significa que a CDN deixou de enviar o cabeçalho. O modo de manutenção não mede nada, então só o seu log de acesso as mostra |
@@ -312,7 +323,7 @@ Sem ela, o Go roda com o padrão (sem limite), e o heap não é coletado com ant
 Em configurações com limite de memória do contêiner (Cloud Run, ECS, Kubernetes), defina-a para cerca de 90% desse limite (por exemplo `GOMEMLIMIT=460MiB` para um contêiner de 512 MiB).
 Não defina `GOMAXPROCS`: o padrão do Go acompanha o limite de CPU do contêiner.
 
-<!-- source: traces e274793f5885 -->
+<!-- source: traces 8dfd96f79f54 -->
 ## Traces
 
 A configuração `traces_exporter` (padrão `none`) exporta traces distribuídos. As configurações relacionadas estão na [referência de configuração](../reference/configuration.md).
@@ -322,7 +333,7 @@ A configuração `traces_exporter` (padrão `none`) exporta traces distribuídos
 | Requisição HTTP (servidor) | `<method> <http.route>` (`<method>` para uma requisição que não chegou a uma rota) | `http.request.method`, `http.route`, `http.response.status_code`, `my.surface`. Um 5xx é uma falha |
 | Execução de job (consumidor) | O tipo do job (`my.job.type`) | `my.job.type`, `my.job.attempt`, `my.outcome`. Cada nova tentativa é um span separado |
 | Transação | `my.db.transaction` | `db.system.name`. Cada nova tentativa é um span separado |
-| Query (cliente) | O nome da query do sqlc (como `InsertJob`; caso contrário, a primeira palavra do SQL, como `BEGIN`) | `db.system.name`, `db.operation.name` |
+| Query (cliente) | O nome da query do sqlc (como `InsertJobs`; caso contrário, a primeira palavra do SQL, como `BEGIN`) | `db.system.name`, `db.operation.name` |
 | Entrega (`my.delivery`) | `my.delivery` | `activity.type`, `my.outcome` |
 | HTTP de saída (cliente) | `<method>` | `http.request.method`, `server.address` (somente o nome do host de destino), `http.response.status_code`. Um 4xx ou 5xx é uma falha |
 
@@ -510,7 +521,7 @@ Escolha um valor conforme o funcionamento da sua instância:
   - No Cloud Run, um serviço aceita 80 requisições simultâneas por instância por padrão. Com um pool de 4, uma rajada de requisições lentas forma fila aqui; portanto, aumente `pool_max_conns`, reduza a concorrência do serviço, ou ambos.
 - **`503` frequentes ou `db.client.connection.timeouts`** significam que o pool é pequeno demais ou que as consultas ficaram mais lentas; um timeout maior apenas esconde isso. Siga [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated).
 
-<!-- source: cloud-tasks ef3f7d7cc896 -->
+<!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
 [Implantando no Cloud Run](deploy-cloud-run.md) configura tudo o que está abaixo com módulos do OpenTofu.
@@ -528,11 +539,29 @@ Com `queue = cloudtasks`, os jobs permanecem no banco de dados (`database = post
   `queue_cloudtasks_audience`, quando definida). Cada tick enfileira os jobs periódicos cujo período chegou, uma vez para a instância inteira (os períodos são reivindicados no KV,
   então `kv` deve ser `db` ou `valkey`), e sinaliza de novo os jobs que estão vencidos há mais de 2 minutos sem executar, o que recupera um sinal perdido.
 - `/_internal/jobs` e `/_internal/tick` são servidos pelos processos com `role = all` ou `worker`, e aceitam apenas um token assinado pelo Google para
-  `queue_cloudtasks_service_account` com um e-mail verificado, cuja audiência é `queue_cloudtasks_audience` ou, por padrão, a URL chamada. Qualquer outra requisição recebe `401`.
+  `queue_cloudtasks_service_account` com um e-mail verificado, cuja única audiência é `queue_cloudtasks_audience` ou, por padrão, a URL chamada. Qualquer outra requisição recebe `401`.
 - Uma entrega executa um job, por no máximo o lease de 5 minutos. Mantenha `queue_cloudtasks_dispatch_deadline` (padrão 10 minutos) e o timeout de requisição do
   serviço do Cloud Run maiores que isso.
 - A própria conta de serviço do servidor precisa de `roles/cloudtasks.enqueuer` na fila e de `roles/iam.serviceAccountUser` em `queue_cloudtasks_service_account`.
   Ela se autentica com as Application Default Credentials.
+
+<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+### Com que atraso os jobs periódicos executam
+
+Um job periódico executa até um período do seu gatilho depois do horário dele, mais o tempo que a plataforma leva para iniciá-lo. É isso que
+decide com que atraso chegam os lembretes e as notificações de início dos eventos e abrem as salas de chat de voz deles, já que `gathering.tick` os inicia: um lembrete
+se atrasa em até o intervalo da tabela. Os valores são os que o código do agendador e o gatilho de cada plataforma dão; eles
+não foram medidos em um servidor em execução.
+
+| Plataforma | O que inicia os jobs periódicos | Atraso esperado de um lembrete ou início de evento |
+| --- | --- | --- |
+| Hospedagem própria e Docker Compose (`queue = db`) | O agendador em cada processo com `role = all` ou `worker` verifica uma vez por minuto, a partir de quando o processo iniciou, e enfileira cada job uma vez por período para o servidor inteiro | Até 1 minuto, mais cerca de um segundo para um worker pegar o job |
+| AWS ECS Fargate (`queue = db`) | O mesmo agendador, nas tasks de worker | Até 1 minuto, mais cerca de um segundo |
+| Cloud Run (`queue = cloudtasks`) | O Cloud Scheduler chama `/_internal/tick` no horário dele, `* * * * *` (a cada minuto) por padrão; o Cloud Tasks então acorda o servidor para cada job | Até 1 minuto, mais o início de uma instância quando nenhuma está em execução (um cold start, em geral alguns segundos). Com um `tick_schedule` mais longo, como `*/10 * * * *`, até esse intervalo |
+| AWS Lambda | O `my` não tem implantação no Lambda; na AWS, execute-o no ECS Fargate | — |
+
+Um lembrete que chegaria depois de o evento começar não é enviado, e uma notificação de início também não depois de o evento terminar.
+Então, com um tick maior que 5 minutos, os lembretes mais curtos podem se perder.
 
 <!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
 ### Direcionando tipos de job para filas próprias
@@ -590,19 +619,20 @@ Assim, uma fila que não dá conta recebe até 500 sinais duplicados por minuto.
 3. Para remover uma fila, tire-a das rotas em todos os lugares primeiro, e espere até que esteja vazia antes de excluí-la. Um sinal em uma fila excluída se perde, mas não o job: a varredura sinaliza o job de novo quando ele estiver vencido há 2 minutos.
    Uma task do Cloud Tasks pode guardar o sinal de um job com até 30 dias de antecedência, então um job que vence depois da espera é simplesmente sinalizado pela varredura quando chega a hora dele.
 
-<!-- source: health-checks 06a8834ade0d -->
+<!-- source: health-checks e268d13fe7f2 -->
 ## Verificações de saúde
 
 | Caminho | Tipo | Quando retorna 200 |
 | --- | --- | --- |
-| `GET /healthz` | liveness | O processo consegue responder HTTP. Ele não olha dependências como o banco de dados (para que um banco de dados lento não reinicie o processo) |
-| `GET /readyz` | readiness | O banco de dados está acessível e o schema foi aplicado |
+| `GET /healthz`, `GET /health/live` | liveness | O processo consegue responder HTTP. Ele não olha dependências como o banco de dados (para que um banco de dados lento não reinicie o processo) |
+| `GET /readyz`, `GET /health/ready` | readiness | O banco de dados está acessível e o schema foi aplicado |
 | `GET /api/v1/instance/health` | Monitoramento de disponibilidade, páginas de status e clientes (servido pela função `web`) | O mesmo que a readiness. O resultado fica em cache no processo por 60 segundos |
 
-- Um 200 de `/healthz` ou `/readyz` tem o corpo `{"status":"ok"}`.
+- O Cloud Run reserva alguns caminhos que terminam em `z`, `/healthz` entre eles, e os responde por conta própria com um `404`; atrás dele, chame `/health/live` e `/health/ready`, que respondem o mesmo.
+- Um 200 de qualquer um deles tem o corpo `{"status":"ok"}`.
 - `/readyz` verifica o banco de dados a cada requisição, e as requisições simultâneas compartilham uma verificação.
 - `/api/v1/instance/health` retorna 200 e `{"status":"ok","checked_at":"<RFC 3339>"}` quando saudável, e 503 e `{"status":"unavailable","checked_at":...}` em caso de falha (`Cache-Control: no-store`).
-  Cada processo toca o banco de dados no máximo uma vez por minuto, não importa com que frequência seja monitorado ou requisitado, e não olha nem o token de acesso nem o limite de requisições. Aponte os monitores de disponibilidade para este endpoint, não para a probe (`/readyz`).
+  Cada processo toca o banco de dados no máximo uma vez por minuto, não importa com que frequência seja monitorado ou requisitado, e não olha nem o token de acesso nem o limite de requisições. Aponte os monitores de disponibilidade para este endpoint, não para a probe (`/readyz` ou `/health/ready`).
   Para a configuração por serviço, o intervalo de monitoramento e o custo, e como a manutenção é tratada, veja o [guia de monitoramento de disponibilidade](monitoring.md).
 - Os três registram no nível Debug no log de acesso e não criam span de trace.
 - Quando a readiness não é atendida, a resposta é 503 com um corpo RFC 9457 `application/problem+json`.

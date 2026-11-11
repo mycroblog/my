@@ -72,23 +72,23 @@ por ejemplo como un paso del despliegue antes de que la nueva versión reciba tr
 - **Detalles**: [ejecutar el servidor](running.md) (los endpoints de federación y cómo servir los identificadores desde otro dominio),
   [`host`](../reference/configuration.md#host) y [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### Accesible por `https`
 
 - **Por qué**: otros servidores obtienen los ids en `https://<host>/` por el puerto 443, y los navegadores envían las cookies de inicio de sesión solo por `https`.
-- **Verifica**: `curl -sI https://<host>/healthz` responde `200` desde fuera de tu red con un certificado válido para `host`,
+- **Verifica**: `curl -sI https://<host>/health/live` responde `200` desde fuera de tu red con un certificado válido para `host`,
   y `my config check` no informa de ningún error sobre `web_origin`. `http://<host>/` redirige a `https`, algo que hace el proxy inverso,
   balanceador de carga o CDN delante del servidor (con Docker Compose, la capa `compose.caddy.yaml` es un proxy así).
 - **Detalles**: [ejecutar el servidor](running.md), [`web_origin`](../reference/configuration.md#web_origin).
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Inaccesible esquivando el CDN
 
 - **Por qué**: con un CDN delante y la dirección propia del servidor todavía pública (`*.run.app` en Cloud Run), cualquiera puede llamar al servidor esquivando el WAF y la caché,
   y quien llame desde la propia plataforma del CDN puede elegir la IP de cliente que ven los límites de frecuencia. Solo hace falta en ese caso: no cuando un cortafuegos o la plataforma ya limitan quién puede conectarse,
   y sin un CDN no hay nada que esquivar.
 - **Verifica**: `origin_secret` y `origin_secret_header` están establecidos y el CDN establece la cabecera en todos los nombres de host. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
-  responde `403`, su `/healthz` responde `200` y `https://<host>/` responde `200`.
+  responde `403`, su `/health/live` responde `200` y `https://<host>/` responde `200`.
 - **Detalles**: [Rechazar solicitudes que no han pasado por el CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), incluido cómo recuperarse cuando deja a todos fuera.
 
 <!-- source: secrets ec71f1f20574 -->
@@ -178,7 +178,7 @@ o con `my instance set`. `my config check -instance` avisa de los textos, contac
     Enuméralos con `my admin role` y revísalos en las pantallas de administración.
 - **Detalles**: [administradores y roles](admin-cli.md), [moderación](moderation.md) (permisos y recuperación de inicio de sesión).
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## Operaciones
 
 - **Copias de seguridad y recuperación**: la base de datos, el almacén de blobs (`blob_fs_dir` o el bucket) y la KEK tienen copias de seguridad programadas,
@@ -186,7 +186,7 @@ o con `my instance set`. `my config check -instance` avisa de los textos, contac
   pueden iniciar sesión y publicar. Una copia de seguridad que nunca se ha restaurado no se sabe si funciona. La base de datos y los archivos multimedia no deben estar en un
   directorio temporal; `my config check` avisa cuando lo están.
   Consulta [gestión de claves](key-management.md) (copia de seguridad de la KEK) y [base de datos](database.md).
-- **Monitorización y alertas**: un monitor externo comprueba `/healthz` y avisa a alguien que pueda actuar, y se vigilan los trabajos fallidos (dead) de la cola de trabajos.
+- **Monitorización y alertas**: un monitor externo comprueba `/health/live` y avisa a alguien que pueda actuar, y se vigilan los trabajos fallidos (dead) de la cola de trabajos.
   Consulta [monitorización](monitoring.md) y [ejecutar el servidor](running.md) (comprobaciones de salud, métricas y la cola de trabajos).
 - **La imagen**: la instancia ejecuta una imagen publicada fijada por digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, de las notas de la versión), no una
   que cambia al reiniciar, y [se ha verificado su procedencia](running.md#verify-an-image). No existe la etiqueta `latest`.

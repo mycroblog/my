@@ -37,7 +37,7 @@ my admin create -username alice -email alice@example.com
 - 失敗した実行は何も書き込まないので、原因を直して同じコマンドをもう一度実行できます。
 - 終了コード 2 は使い方の誤りを意味します。
 
-<!-- source: granting-and-revoking-roles b87e1adb131e -->
+<!-- source: granting-and-revoking-roles a8783994c097 -->
 ## ロールの付与と取り消し
 
 ロールは権限を持ちます。組み込みのロールは `admin`（`position` 1000、すべての権限）と
@@ -56,7 +56,7 @@ my admin role revoke alice moderator
 - 権限は 3 つのグループのいずれかに属します。
   - モデレーション: `manage_reports`、`manage_accounts`、`manage_domains`、`manage_invites`、`view_audit`。
   - サーバーの管理: `manage_settings`、`manage_rules`、`manage_roles`、`manage_jobs`、`manage_login_recovery`、`manage_custom_emojis`、`manage_webhooks`、`manage_announcements`、`manage_finance`、`manage_supporters`、`manage_oauth_apps`、`manage_service_closure`、`manage_errors`、`manage_login_providers`。
-  - メンバーの機能: `view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`。
+  - メンバーの機能: `view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`、`create_articles`、`create_events`。
 
   `list` はグループごとに 1 列を出力します（`MODERATION`、`SERVER`、`MEMBER`）。Web クライアントは最初の 2 つのグループを「モデレーション」と「管理」として表示し、メンバーの機能はどちらにも数えません（[moderation.md](moderation.md) を参照してください）。
 - 変更は、そのユーザーの次のリクエストから有効になります。モデレーター向けの通知は、通知が作られた時点でその権限を持つ人に届きます。

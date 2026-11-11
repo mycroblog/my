@@ -3,7 +3,7 @@
 
 本页说明其他服务为本服务器的页面显示的预览、服务器为此返回的内容，以及手动检查的步骤。本服务器为自己帖子中的链接显示的卡片，见下文的[帖子中链接的卡片](#cards-of-links-in-posts)；如何停止从某个域名获取卡片，见[实例设置](instance-settings.md#link-card-domains)。
 
-<!-- source: what-the-server-returns bb9326f9729a -->
+<!-- source: what-the-server-returns fe60560f1b91 -->
 ## 服务器返回的内容
 
 `my serve` 会把 meta 标签嵌入 Web 客户端的外壳，返回以下页面的 HTML：首页（`https://<host>/`）、实例信息页面（`https://<host>/about`）、已发布文档的页面（`/about/terms`、`/about/privacy`、`/about/commerce`）、链接卡片爬虫的说明页面（`/about/crawler`）、个人资料（`https://<host>/@alice`）和帖子（`https://<host>/@alice/status/<post ID>`）。对 HTML 的请求一律视为未登录，因此预览只显示未登录访客能看到的内容。
@@ -16,59 +16,67 @@
 | `public` 帖子、活跃的本站账号的个人资料 | 200。带有 meta 标签的外壳 |
 | `unlisted` 帖子 | 200。带有 meta 标签的外壳，另加 `<meta name="robots" content="noindex, noarchive">` 和 `X-Robots-Tag: noindex, noarchive` |
 | `local`、`private`、`direct`、已删除或不存在的帖子，以及被暂停、已停用、已删除或受限账号的个人资料和帖子 | 404。通用外壳和 `X-Robots-Tag: noindex, noarchive`。无论原因如何，正文和响应头都相同 |
-| `/@<old username>/status/<post ID>` | 301，重定向到使用当前用户名的 URL |
+| `/@<old username>/status/<post ID>` | 301，重定向到带有当前用户名的 URL |
+| 话题标签的页面（`/tags/<tag>`） | 200。通用外壳，带有指向该话题标签 Atom 订阅源的链接（见下文“通用外壳”） |
+| Web 客户端的其他所有页面（探索、公开的费用和支持者页面、登录等） | 200。通用外壳，带有实例的 meta 标签（见下文“通用外壳”） |
 
-每个页面还会根据实例设置和所有者的设置，带上对搜索引擎和 AI 爬虫的声明（`noindex`、`noai` 等 meta 标签，以及 `X-Robots-Tag`、`Content-Usage` 和 `tdm-reservation`）（[搜索引擎和 AI 爬虫](crawlers.md)）。上表中的 `noindex` 无论设置如何都会添加。`noindex` 不会阻止链接预览。
+每个页面还会带有面向搜索引擎和 AI 爬虫的声明（`noindex` 和 `noai` 等 meta 标签，以及 `X-Robots-Tag`、`Content-Usage` 和 `tdm-reservation`），依据实例设置和所有者的设置（[搜索引擎和 AI 爬虫](crawlers.md)）。上表中的 `noindex` 无论设置如何都会添加。`noindex` 不会阻止链接预览。
 
 带有 ActivityPub `Accept` 的请求不会得到外壳，而是由 ActivityPub 一侧响应（个人资料以 actor 的 `id` 响应，未登录访客能看到的帖子以 302 重定向到它的 `id`）。每个响应都带有 `Vary: Accept`。
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### meta 标签
 
 | 标签 | 内容 |
 | --- | --- |
-| `og:title`、`<title>` | “昵称（@用户名@账号域名）”。昵称为空时使用用户名 |
-| `og:type` | 个人资料为 `profile`，帖子为 `article` |
-| `og:url`、`<link rel="canonical">` | 规范 URL（使用当前用户名的 URL） |
-| `og:description` | 去掉标签的帖子正文纯文本（个人资料为简介），截断为 200 个字形。带有内容警告的帖子只使用内容警告文字 |
-| `og:image`、`og:image:alt` / `width` / `height` | 按下面的顺序选出的图片 |
-| `og:site_name` | 实例名称（文本 `name`，所有语言相同；没有时使用 `host`；[名称和域名](instance-settings.md#name-and-domain)） |
-| `og:locale`、`<html lang dir>` | 帖子的语言。未设置（`und`）时使用作者的默认发帖语言，再没有则使用实例的 `default_locale`。它不随 `Accept-Language` 改变 |
-| `article:published_time`、`article:author` | 仅帖子。帖子的时间（UTC）和作者的个人资料 URL |
-| `profile:username` | 仅个人资料。`username@account domain` |
-| `twitter:card` | 图片宽于约 2:1（宽 / 高 >= 1.7）且至少为 300x157 时为 `summary_large_image`，否则为 `summary` |
-| `fediverse:creator` | `@username@account domain`。Mastodon 把它显示为“作者” |
-| `<link rel="alternate" type="application/activity+json">` | AP `id`（actor 或帖子的对象） |
+| `og:title`、`<title>` | “显示名称（@username@account domain）”。显示名称为空时使用用户名。对于文章，则是它的标题 |
+| `og:type` | 个人资料为 `profile`，帖子和文章为 `article` |
+| `og:url`、`<link rel="canonical">` | 规范 URL（带有当前用户名的 URL） |
+| `og:description` | 帖子正文的纯文本（个人资料则是简介），不含标签，截取到 200 个字素。带有内容警告的帖子，只取内容警告的文字。对于文章，则是它的摘要，即使它被标为敏感内容也是如此；文章的正文绝不会出现在页面中 |
+| `og:image`、`og:image:alt` / `width` / `height` | 按下面的顺序选定的图片 |
+| `og:site_name` | 实例名称（文本 `name`，在所有语言中都相同；没有时为 `host`；[名称和域名](instance-settings.md#name-and-domain)） |
+| `og:locale`、`<html lang dir>` | 帖子的语言。未设置（`und`）时，使用作者默认的发帖语言，再没有则使用实例的 `default_locale`。它不会随 `Accept-Language` 而变化。`og:locale` 的形式为 `language_TERRITORY`：不带地区的语言会得到它通常的地区（`ja` → `ja_JP`，`en` → `en_US`，`pt` → `pt_BR`），而 `<html lang>` 保持语言标签原样 |
+| `article:published_time`、`article:author` | 仅限帖子。帖子的时间（UTC）和作者的个人资料 URL |
+| `profile:username` | 仅限个人资料。`username@account domain` |
+| `twitter:card` | 当图片宽于大约 2:1（宽 / 高 >= 1.7）且至少为 300x157 时为 `summary_large_image`，否则为 `summary` |
+| `fediverse:creator` | `@username@account domain`。Mastodon 将它显示为“作者” |
+| `<link rel="alternate" type="application/activity+json">` | AP 的 `id`（actor 或帖子的对象） |
+| `<link rel="alternate" type="application/atom+xml">` | 仅限有 Atom 订阅源的个人资料：订阅源的地址（`https://<host>/@<username>.atom`），标题与 `og:title` 相同。所有者关闭了订阅源的个人资料，以及受限或已迁移的账号，都没有它 |
 
 首页的 meta 标签介绍的是实例本身。
 
-- `og:type` 为 `website`，`og:title`、`<title>` 和 `og:site_name` 为实例名称，`og:url` 和 `<link rel="canonical">` 为 `https://<host>/`。
-- `og:description` 是截断为 200 个字形的实例文本 `short_description`。没有时省略。
-- 语言（`og:locale`、`<html lang dir>`）为实例的 `default_locale`。名称和描述在所有语言中都是同一个值。
-- `og:image` 为下面的第 3 项（实例预览图片），没有时为第 4 或第 5 项。
-- 首页不属于任何账号，因此不输出 `fediverse:creator` 和 ActivityPub 的 `alternate`。
-- 实例信息页面（`/about`）具有相同的 meta 标签。`og:title` 和 `<title>` 为“关于 {instance name}”（`server:preview.about_title`），`og:url` 和 `<link rel="canonical">` 为 `https://<host>/about`。
-- 已发布文档的页面（`/about/terms`、`/about/privacy`、`/about/commerce`）也具有相同的 meta 标签。`og:title` 和 `<title>` 为“{document name} | {instance name}”（`server:preview.document_title`），`og:url` 和 `<link rel="canonical">` 为该页面的地址。未发布的文档的页面得到通用外壳。
-- 链接卡片爬虫的说明页面（`/about/crawler`）也具有相同的 meta 标签，标题和地址的形式相同。
+- `og:type` 为 `website`，`og:title`、`<title>` 和 `og:site_name` 是实例名称，`og:url` 和 `<link rel="canonical">` 是 `https://<host>/`。
+- `og:description` 是实例文本 `short_description`，截取到 200 个字素。没有时则省略。
+- 语言（`og:locale`、`<html lang dir>`）是实例的 `default_locale`。名称和描述在所有语言中都是同一个值。
+- `og:image` 是实例图片：下面的第 3 项，如果没有，则是第 4、5 或 6 项。
+- 它不属于任何账号，因此不输出 `fediverse:creator` 和 ActivityPub 的 `alternate`。
+- 实例信息页面（`/about`）有相同的 meta 标签。`og:title` 和 `<title>` 是“关于 {实例名称}”（`server:preview.about_title`），`og:url` 和 `<link rel="canonical">` 是 `https://<host>/about`。
+- 已发布文档的页面（`/about/terms`、`/about/privacy`、`/about/commerce`）也有相同的 meta 标签。`og:title` 和 `<title>` 是“{文档名称} | {实例名称}”（`server:preview.document_title`），`og:url` 和 `<link rel="canonical">` 是该页面的地址。未发布的文档的页面得到通用外壳。
+- 链接卡片爬虫的说明页面（`/about/crawler`）有相同的 meta 标签，标题和地址的形式也相同。
 
-`og:image` 按以下顺序选择。
+通用外壳由其他所有页面以及被隐藏帖子的 404 返回，它带有与首页相同的标签，只是没有自己的地址：`og:type` 为 `website`，实例名称作为 `og:site_name` 和 `og:title`，`short_description` 作为 `og:description`，以及 `og:locale`、实例图片和 `twitter:card`。它没有 `og:url` 和 `<link rel="canonical">`，因此同一份副本可以用于每个路径，被隐藏帖子的 404 也与其他任何页面保持一致。话题标签的页面只会额外添加指向该话题标签订阅源（`https://<host>/tags/<tag>.atom`）的 `<link rel="alternate" type="application/atom+xml">`，标题为“实例名称上的 #tag”（`server:feed.tag_title`），无论是否已有帖子使用过该话题标签。分享的话题标签链接或公开费用页面的链接，显示的是实例的卡片。
 
-1. 帖子附带的第一张图片（其替代文本放入 `og:image:alt`）。被标记为敏感或带有内容警告的帖子不使用它。
-2. 个人资料的封面图片，没有时使用头像（`og:image:alt` 为“{name} 的封面图片”或“{name} 的头像”）。
-3. 实例预览图片（实例设置 `preview_image`；`og:image:alt` 为文本 `preview_image_alt`，没有时为“{instance name} 的图片”）。
-4. 实例自身徽标的链接预览版本（[徽标和图标](instance-settings.md#logo-and-icon)），即位于 `https://<host>/brand/<revision>/preview-1200x630.png` 的 1200x630 PNG（`og:image:alt` 为“{instance name} 的图片”）。
-5. 内置的默认图片（`https://<host>/preview-image.png`，1200x630 PNG。它是一张不含实例名称的通用图片，`og:image:alt` 描述这张图片）。
+这些订阅源本身是 Atom 1.0 文档，包含最新的 20 条不是回复也不是转发的本站公开帖子，并带有 `ETag`、`Last-Modified` 和 `Cache-Control: public, max-age=60`。文章的条目是它的标题和摘要，以及指向文章的链接；它的正文留在文章自己的页面上。每个有订阅源的个人资料还有一个仅含文章的订阅源 `https://<host>/@<username>/articles.atom`，标题为“name（@handle）的文章”（`server:feed.articles_title`），遵循相同的规则；个人资料页面只链接它的主订阅源。服务器会把渲染好的每个订阅源在它的键值存储中保存一分钟，因此变更大约在一分钟内就会反映到订阅源中。订阅源带有与其个人资料相同的 `X-Robots-Tag` 和 AI 声明；话题标签的订阅源始终是 `noindex`，并声明它的任一作者的 AI 拒绝。没有订阅源的个人资料，以及没有帖子使用过的话题标签，都会返回 404。
 
-因此，显示预览的页面总是带有 `og:image` 和 `og:image:alt`。第 1 至 3 项的图片是处理后媒体的 `full` 变体，宽度和高度是处理得出的值。如果 `preview_image` 仍在处理中、处理失败或不是图片，则使用第 4 项（没有徽标时为第 5 项）。每次请求都会读取实例设置，因此 `my instance set preview_image ...` 无需重启即可生效（步骤见[实例设置](instance-settings.md)）。
+`og:image` 按以下顺序选定。
 
-默认图片在启动后的第一次请求时用标准库绘制，并保存在进程中（约 10 KB）。它以 `Cache-Control: no-cache` 和 ETag 提供。
+1. 帖子附带的第一张图片，或文章的封面（它的替代文字会写入 `og:image:alt`）。对于被标为敏感内容的帖子或文章，或带有内容警告的帖子，则不使用它。
+2. 个人资料的封面图片，否则是头像（`og:image:alt` 为“{name} 的封面图片”或“{name} 的头像”）。
+3. 实例预览图片（实例设置 `preview_image`，位于管理界面设置 → 常规中的“链接预览”下；`og:image:alt` 是文本 `preview_image_alt`，没有时为“{实例名称} 的图片”）。
+4. 实例缩略图（实例设置 `thumbnail`，即设置 → 常规页面的图片；`og:image:alt` 是文本 `thumbnail_alt`，没有时为“{实例名称} 的图片”）。
+5. 实例自己的标志的链接预览版本（[标志和图标](instance-settings.md#logo-and-icon)），即位于 `https://<host>/brand/<revision>/preview-1200x630.png` 的 1200x630 PNG（`og:image:alt` 为“{实例名称} 的图片”）。
+6. 内置的默认图片（`https://<host>/preview-image.png`，白底的 mycroblog 字标的 1200x630 PNG，不含实例名称；`og:image:alt` 为“mycroblog 的标志”）。
 
-<!-- source: caching 5bc906452b10 -->
+第 3 到第 6 项都是实例图片。因此显示预览的页面始终有 `og:image` 和 `og:image:alt`。第 1 到第 4 项的图片是处理后媒体的 `large` 变体，宽度和高度取自处理时的数值。如果 `preview_image` 未设置、仍在处理、处理失败或不是图片，则使用缩略图，再是标志，再是内置图片。实例设置在每个请求时读取，因此 `my instance set preview_image ...` 无需重启即可生效（操作步骤见[实例设置](instance-settings.md)）。
+
+内置图片是二进制文件的一部分（约 20 KB）。它以 `Cache-Control: no-cache` 和 ETag 提供。
+
+<!-- source: caching e6ace7ad3fd0 -->
 ### 缓存
 
-- 响应带有 `Cache-Control: public, max-age=60, stale-while-revalidate=300`。删除、可见范围的更改，或文档的发布与取消发布，最多会在共享缓存中保留这么长时间。
-- ETag 由模板、资源和实例设置的版本、语言、帖子的版本（revision）、实际生效的可见范围、个人资料的版本以及选中的图片构成（对首页、信息页面、文档页面和爬虫说明页面而言：页面的地址、标题、实例描述和选中的图片）。`If-None-Match` 会得到 `304`。
-- 如果在前面放置 CDN，请把 `Accept` 包含在缓存键中（以免混淆 AP JSON 和 HTML）。
+- 响应带有 `Cache-Control: public, max-age=60, stale-while-revalidate=300`。删除、可见范围的变更，或者发布或取消发布文档，在共享缓存中最多保留这么长时间。
+- ETag 由以下内容的版本构成：模板、资源和实例设置，语言，帖子的版本（修订），实际可见范围，个人资料的版本，以及选定的图片（对于首页、信息页面、文档页面和爬虫说明页面：页面的地址、标题、实例描述和选定的图片；对于通用外壳：实例名称、描述和实例图片）。`If-None-Match` 会得到 `304`。
+- 如果你在前面放了 CDN，请把 `Accept` 加入缓存键（这样 AP JSON 和 HTML 不会混淆）。
 
 <!-- source: manual-check bf2c7a86a5de -->
 ## 手动检查

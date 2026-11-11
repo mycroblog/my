@@ -147,6 +147,10 @@
     "defaultMessage": "主持人的关注者",
     "description": "Visibility of a voice chat room: the followers of its host."
   },
+  "voice.visibility.following": {
+    "defaultMessage": "主持人关注的人",
+    "description": "Visibility of a voice chat room: those whom the host follows."
+  },
   "voice.visibility.mutuals": {
     "defaultMessage": "与主持人互相关注的人",
     "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
@@ -162,6 +166,10 @@
   "voice.speakers.followers": {
     "defaultMessage": "主持人的关注者",
     "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.following": {
+    "defaultMessage": "主持人关注的人",
+    "description": "Who may speak in a voice chat room without asking: those whom the host follows."
   },
   "voice.speakers.mutuals": {
     "defaultMessage": "与主持人互相关注的人",

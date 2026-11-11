@@ -44,19 +44,24 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Grafana 仪表盘
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) 是基于同一组 Prometheus 指标的 Grafana 仪表盘：请求速率、状态码和延迟；任务运行次数、各任务类型的 worker 耗时和队列；投递、收件箱活动和远程服务器；以及每个进程的 CPU 和内存。在 Grafana 中导入它（**Dashboards** → **New** → **Import**），并选择你的 Prometheus 数据源；它的 **Job** 变量用于选择抓取任务（默认是 `my`）。
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud（Cloud Run）
 
-使用 `metrics_exporter = none` 时，请利用 Cloud Run 和 Cloud Logging 已有的数据构建告警：
+在 `metrics_exporter = none` 时，请用 Cloud Run 和 Cloud Logging 已有的数据来构建告警：
 
-- **HTTP 错误和延迟**：服务的按响应码类别统计的 Cloud Run 请求数，以及请求延迟指标。
-- **错误**：`error report` 行会进入 Error Reporting，它会对错误分组，并可以在出现新错误和重复错误时通知你（[错误报告](error-reporting.md#google-cloud-cloud-run)）。
-- **任务和请求**：服务器为每个 HTTP 请求（`msg` = `http request`）和每次任务运行（`msg` = `job`）写一行日志，标签与指标相同。可以据此创建基于日志的指标，例如用 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 的计数器统计失败的任务，或用按 `jsonPayload."my.surface"="client_api"` 过滤的 `jsonPayload.duration_seconds` 分布衡量延迟。
-- **队列积压**：使用 `queue = cloudtasks` 时，任务存放在数据库中，因此任务页面和任务运行的日志行会显示积压情况；Cloud Tasks 的队列深度指标统计的是等待投递的信号。
-- **数据库**：Cloud SQL 的磁盘使用率和连接指标，或你的数据库服务商的用量告警。
-- **费用**：带有告警阈值的 Cloud Billing 预算（[费用和预算](#cost-and-budget)）。
+- **HTTP 错误和延迟**：Cloud Run 按响应码类别统计的请求数，以及该服务的请求延迟指标。
+- **错误**：`error report` 日志行会进入 Error Reporting，它会对错误分组，并可在出现新错误和重复错误时通知你（[错误报告](error-reporting.md#google-cloud-cloud-run)）。
+- **任务和请求**：服务器为每个 HTTP 请求（`msg` = `http request`）和每次任务运行（`msg` = `job`）写一行日志，标签与指标相同。可以据此创建基于日志的指标，例如用 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 对失败的任务计数，或者对按 `jsonPayload."my.surface"="client_api"` 过滤的 `jsonPayload.duration_seconds` 做分布统计来得到延迟。
+- **队列积压和存储**：任务 `metrics.snapshot` 每 15 分钟写一行日志（`msg` = `metrics snapshot`），其中是整个实例范围的值，例如 `my.queue.oldest_ready_age`、`my.queue.dead`、`my.db.size` 和 `my.media.stored_bytes`。请根据它的字段创建基于日志的指标；这些日志行出现间隔，说明定时触发或队列已停止。Cloud Tasks 的队列深度指标统计的是等待投递的信号。
+- **数据库**：Cloud SQL 的磁盘使用率和连接数指标，或你的数据库提供商的用量告警。
+- **成本**：带有告警阈值的 Cloud Billing 预算（[成本和预算](#cost-and-budget)）。
 
-模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 会以下表中的名称把这些创建为策略，并列出它以不同方式覆盖或无法表达的每个告警。该模块从未实际应用过。只有流量才会产生的指标在缩容到零的服务上会出现空缺，因此针对其缺失的告警会误报；能发现闲置服务器宕机的是它的可用性检查。
+模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 会以下表中的名称把它们创建为策略，并列出它以不同方式覆盖或无法表达的每一项告警。它从未被应用过。只有流量才会产生的指标，在缩容到零的服务上会有空缺，因此针对其缺失的告警会误报；能发现空闲状态下服务器已挂掉的，是它的可用性检查。
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -108,21 +113,22 @@ promtool test rules alerts.test.yml
 | 费用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 为 1，持续 6 小时 | ticket | 缺少权限、未设置账单导出、达到请求上限、服务商不可用 |
 | 费用 | 超出预算 | – | – | – | 流量、存储或配置错误导致费用超出计划（[见下文](#cost-and-budget)） |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
-## 在哪里查看
+<!-- source: where-to-look b9e94304077f -->
+## 查看哪里
 
-以下工具会在下面的大多数运行手册条目中反复出现。
+下面的运维手册条目中，大多会再次用到这些工具。
 
-- **任务页面**（管理 → 任务，`/admin/jobs`，需要 `manage_jobs`）：按状态（排队中、运行中、重试中、失败）和类型统计的数量，以及等待最久的任务；其**任务**页面（`/admin/jobs/list`）列出某一状态的任务，每个任务的页面显示其最后一次错误和未成功的尝试。只有保存在数据库中的队列（`queue = db` 和 `cloudtasks`）才会列出待处理的任务；失败的任务和尝试则对所有队列都会列出。
-- **`my job` 命令**，在拥有服务器配置的主机上运行（`queue = db` 和 `cloudtasks`）：`my job list` 按从新到旧的顺序列出失败的任务；`my job retry <id>...` 把它们放回队列；`my job delete <id>...` 丢弃它们。任务可以安全地重新运行。
-- **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：投递失败的服务器，以及投递已暂停的服务器，并附有原因和时间。“恢复投递”会把服务器重新标记为可用。
-- **日志**：标准错误上的 JSON 行。每个 HTTP 请求以一行 `msg` 为 `http request` 的日志结束，每次任务运行以一行 `msg` 为 `job` 的日志结束（成功为 `INFO`，重试为 `WARN`，永久失败的任务为 `ERROR`，并附带 `error`、`job_id` 和 `my.job.type`）。请求内的日志行携带其 `request_id`，客户端看到的是 `X-Request-Id`。
+- **任务页面**（管理 → 任务，`/admin/jobs`，需要 `manage_jobs`）：按状态（排队中、运行中、重试中、失败）和类型统计的数量，以及等待最久的任务；它的 **任务** 页面（`/admin/jobs/list`）列出某一状态的任务，每个任务的页面有它最近的错误和未成功的尝试。待处理的任务只会列出保存在数据库中的队列的（`queue = db` 和 `cloudtasks`）；失败的任务和尝试则会列出所有队列的。
+- **`my job` 命令**，在具有服务器配置的主机上运行（`queue = db` 和 `cloudtasks`）：`my job list` 按最新在前列出失败的任务；`my job retry <id>...` 把它们放回队列；`my job delete <id>...` 丢弃它们。任务可以安全地重新运行。
+- **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：投递未能到达的服务器，以及投递已暂停的服务器，并附有原因和时间。“恢复投递”会把服务器重新标为可用。
+- **日志**：标准错误上的 JSON 行。每个 HTTP 请求以一行 `msg` 为 `http request` 的日志结束，每次任务运行以一行 `msg` 为 `job` 的日志结束（成功为 `INFO`，重试为 `WARN`，彻底失败的任务为 `ERROR`，并带有 `error`、`job_id` 和 `my.job.type`）。请求内部的日志行带有它的 `request_id`，客户端看到的是 `X-Request-Id`。
+  - `federation.deliver` 一次运行的日志行还会说明投递去了哪里以及结果如何：`my.delivery.domain`（远程服务器的域名）、`activity.type`（例如 `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure` 或 `skipped`），以及 `http.response.status_code`（收件箱的响应，在它没有响应或没有发送任何内容时不存在）。`my.outcome` 仍是这次任务运行的结果。该日志行从不写出发送者、活动或收件箱 URL。Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose：`docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights：``filter msg = "job" and `my.outcome` = "dead"``
-- **错误报告**：`error report` 行和错误页面（管理 → 错误，`/admin/errors`，需要 `manage_errors`）（[错误报告](error-reporting.md)）。
-- **追踪**，当 `traces_exporter = otlp` 时：日志行携带 `trace_id`；在你的追踪后端中打开它，即可查看慢请求的时间花在了哪里。
-- **维护模式**（[维护](maintenance.md)）：对每个请求都返回维护页面，不访问任何适配器。在修复数据库或 KV 存储时使用它。
+- **错误报告**：`error report` 日志行和 错误页面（管理 → 错误，`/admin/errors`，需要 `manage_errors`）（[错误报告](error-reporting.md)）。
+- **追踪**，在 `traces_exporter = otlp` 时：日志行带有 `trace_id`；在你的追踪后端中打开它，可以看到慢请求的时间花在了哪里。
+- **维护模式**（[维护](maintenance.md)）：以维护页面应答每个请求，并且不触碰任何适配器。在你修复数据库或 KV 存储时使用它。
 
 <!-- source: runbook e60e811fcff0 -->
 ## 运行手册

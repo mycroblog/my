@@ -20,7 +20,7 @@
 
 給支持者的通知郵件（`notification.supporter_email`）也透過同一個任務佇列寄送。
 
-<!-- source: which-notifications-are-emailed 76c2b871762c -->
+<!-- source: which-notifications-are-emailed a19ef61af242 -->
 ### 哪些通知會寄送電子郵件
 
 每位使用者可以在設定的 **通知** 頁面（網頁用戶端的 `/settings/notifications`），依通知種類選擇是否要在應用程式中接收，以及是否要以電子郵件接收。只有在伺服器會寄送電子郵件時，那裡才會出現「電子郵件」欄。在應用程式中關閉的種類根本不會建立，因此也不會寄送電子郵件或推播。
@@ -28,24 +28,31 @@
 | 種類 | 預設寄送電子郵件 | 寄送時機 |
 | --- | --- | --- |
 | 其他使用者的通知（提及、新追蹤者、追蹤請求、追蹤請求被接受、轉發、喜歡、表情符號回應、引用、投票結束、你追蹤的帳號搬家、語音聊天） | 關閉 | 通知發生 15 分鐘後，僅在它仍未讀（未標為已讀、未關閉）且仍可看到，而使用者仍設定以電子郵件接收該種類時才寄送。每則通知一封郵件 |
-| 版主的通知（對帳號的審核處置、檢舉處理完畢、申訴有了決定、因停權而失去的追蹤、自訂表情符號申請有了決定） | 關閉 | 同上 |
-| 給版主的通知（新的檢舉、等待核准的註冊、申訴、已停用的 webhook、自訂表情符號申請、受限帳號搬家、關閉日已過、新的與重複發生的錯誤），寄給角色具備相應權限的人 | 開啟 | 立即寄送，不等待已讀 |
-| 服務終止，以及支持者方案的通知 | 一律 | 立即寄送；無法關閉 |
+| 活動（邀請、確定的日期、日期或地點的變更、取消、提醒，以及這個伺服器上活動的開始） | 關閉 | 與上述相同，但提醒除外，提醒會立即寄出。郵件會寫出活動的標題、開始時間與主辦人，絕不會寫出舉辦地點 |
+| 版主的通知（對帳號採取的審核動作、已處理的檢舉、已裁決的申訴、因停權而失去的追蹤、已裁決的自訂表情符號申請） | 關閉 | 與上述相同 |
+| 給版主的通知（新的檢舉、等待核准的註冊、申訴、被停用的 webhook、自訂表情符號申請、受限帳號搬家、關閉日期已過、新的與重複出現的錯誤），寄給其角色擁有該權限的人 | 開啟 | 立即寄出，不等它被讀過 |
+| 服務終止，以及支持者方案的通知 | 一律 | 立即寄出；這些無法關閉 |
 
-通知郵件只會寄到使用者已確認的主要地址，且永遠不會寄到郵件已被停止的地址（見下文）。其他使用者通知的郵件主旨與其 Web Push 訊息的文字相同，郵件會連結到貼文、個人檔案或通知頁面。
+通知郵件只會寄到使用者已確認的主要地址，而且絕不會寄到已停止寄信的地址（請見下文）。來自其他使用者的通知，其郵件主旨與它的 Web Push 訊息相同，郵件則連結到貼文、個人檔案或通知。
 
-服務終止郵件會寄給每一位主要地址已確認的使用者。漏收一封可能導致資料遺失，因此它們以交易型郵件寄送，不帶取消訂閱連結，也不會因垃圾郵件投訴而停止（硬退信則會停止）。公告、日期變更、取消和關閉，各自會在其紀錄所在的同一個交易中將 `identity.closure_email_fanout` 加入佇列。每小時執行的 `identity.queue_closure_reminders` 會決定何時寄送關閉日前 7 天、前 1 天，以及匯出期限前 7 天的提醒。公告服務終止時已經過了時間的提醒不會寄送，因為公告郵件已寫明這些日期。分送任務會為每位使用者在 `service_closure_emails` 記錄一列，並且只為成功記錄的使用者將 `identity.closure_email` 加入佇列，因此不論這個任務執行幾次，每位使用者每封郵件都只會收到一次。寄送之前，任務會確認郵件仍然有效（不是已取消的公告，也不是之後已變更的日期）。
+服務終止的郵件會寄給主要地址已確認的每位使用者。漏掉一封可能意味著資料遺失，所以它們以交易型郵件寄出，沒有取消訂閱的連結，也不會因為投訴而停止（硬退信則會讓它停止）。
+公告、日期變更、取消與關閉，各自會在與其紀錄相同的交易中將 `identity.closure_email_fanout` 加入佇列。每小時執行的 `identity.queue_closure_reminders` 會決定何時寄出關閉日前 7 天與前 1 天，以及匯出期限前 7 天的提醒。如果在宣布終止時，某個提醒的時間已經過了，就不會寄出，因為公告郵件已經寫明了日期。
+fan-out 任務會為每位使用者記錄 `service_closure_emails` 的一列，並且只為它能記錄的使用者將 `identity.closure_email` 加入佇列，所以不論該任務執行多少次，每位使用者每封郵件都只會收到一次。寄送之前，任務會檢查郵件是否仍然有效（它不是為已取消的公告，或是為後來已變更的日期而寄的）。
 
-設定 `mail` 決定電子郵件的寄送方式。
+設定 `mail` 決定郵件的寄送方式。
 
 | `mail` | 行為 |
 | --- | --- |
-| `none`（預設） | 不寄送任何郵件，並將 `mail not sent (mail = none)` 連同訊息類別寫入伺服器日誌。使用 `profile = development` 時，這一行還會包含地址、主旨和內文（含連結）。適用於不使用電子郵件的架構，以及開發 |
-| `smtp` | 以 SMTP submission 寄送。必須使用 STARTTLS，並在驗證身分和寄送前驗證憑證 |
-| `ses` | 以 Amazon SES v2 API（使用原始內容的 `SendEmail`）寄送。透過 AWS SDK 的預設憑證鏈（例如 IAM 角色）驗證身分，不保存 SMTP 密碼 |
-| `plugin` | 將每則訊息交給你執行的[外掛](#a-plugin-mail--plugin)，適用於只提供 HTTP API 的郵件服務 |
+| `none`（預設） | 什麼都不寄，並將 `mail not sent (mail = none)` 連同郵件的類別寫入伺服器日誌。在 `profile = development` 下，該行還會包含地址、主旨與內文（含連結）。適用於不使用電子郵件的部署與開發 |
+| `smtp` | 以 SMTP submission 寄送。它要求 STARTTLS，並在驗證與寄送之前先驗證憑證 |
+| `ses` | 使用 Amazon SES v2 API 寄送（含原始內容的 `SendEmail`）。它透過 AWS SDK 預設的憑證鏈（例如 IAM 角色）驗證，不持有 SMTP 密碼 |
+| `plugin` | 將每封郵件交給你執行的[外掛](#a-plugin-mail--plugin)，適用於只提供 HTTP API 的郵件服務 |
 
-`smtp` 的設定為 `mail_from`、`mail_smtp_host`、`mail_smtp_port`（預設 587）、`mail_smtp_username` 和 `mail_smtp_password`。`ses` 的設定為 `mail_from`、`mail_ses_region` 和 `mail_ses_configuration_set`。`plugin` 的設定為 `mail_from` 和 `plugin_mailer_address`，以及[其目的地](plugins.md#the-destination)的其餘設定。`mail_from` 是單純的地址，例如 `noreply@social.example`。`From` 會成為 `"<server name>" <mail_from>`，而 `mail_from` 的網域也是 `Message-ID` 的網域，以及 SPF、DKIM 和 DMARC 所套用的網域（見下文）。設定了實例設定 `contact_email` 時，`Reply-To` 就是它（[實例設定](instance-settings.md)）。每封郵件都帶有 `Auto-Submitted: auto-generated`。`smtp` 和 `ses` 會建立相同的訊息。不使用 SMTPUTF8，因此地址以 ASCII 寄送，國際化網域會轉換為 Punycode。本地部分（`@` 之前）不是 ASCII 的地址無法寄送，其任務會失敗。
+`smtp` 的設定是 `mail_from`、`mail_smtp_host`、`mail_smtp_port`（預設 587）、`mail_smtp_username` 和 `mail_smtp_password`。`ses` 的設定是 `mail_from`、`mail_ses_region` 和 `mail_ses_configuration_set`。`plugin` 的設定是 `mail_from` 和 `plugin_mailer_address`，以及[其目的地](plugins.md#the-destination)的其餘設定。
+`mail_from` 是單純的地址，例如 `noreply@social.example`。`From` 會變成 `"<server name>" <mail_from>`，而 `mail_from` 的網域同時也是 `Message-ID` 的網域，以及 SPF、DKIM 和 DMARC 所適用的網域（請見下文）。
+設定了實例設定 `contact_email` 時，`Reply-To` 就是它（[實例設定](instance-settings.md)）。
+每封郵件都帶有 `Auto-Submitted: auto-generated`。
+`smtp` 和 `ses` 組出相同的郵件。不使用 SMTPUTF8，所以地址以 ASCII 傳送，國際化網域會轉換為 Punycode。本地部分（`@` 之前）不是 ASCII 的地址無法寄送，其任務會失敗。
 
 <!-- source: examples-by-provider 7ab129a02c43 -->
 ## 各服務供應商的範例

@@ -10,7 +10,7 @@
 - **書き出したページ**（`my maintenance export`）。同じテンプレートから作る静的な HTML で、`my serve` がまったく動かせないとき
   （イメージを入れ替えている途中、起動しないリビジョン）に、ロードバランサー、CDN、リバースプロキシが配信します。[メンテナンスのページを書き出す](admin-cli.md#exporting-the-maintenance-page)を参照してください。
 
-<!-- source: what-the-maintenance-mode-answers 05dd30158a8e -->
+<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
 ## メンテナンスモードが返すもの
 
 プロセスが読むのは、待ち受けるアドレス、`host`、`account_domain`、`web_origin`、プロキシ（`trusted_proxies`、`trusted_proxy_header`）、
@@ -23,7 +23,7 @@
 
 | リクエスト | ステータス | 本文 |
 | --- | --- | --- |
-| `GET /healthz`、`GET /readyz` | `200` | `{"status":"maintenance"}` |
+| `GET /healthz`、`GET /readyz`、`GET /health/live`、`GET /health/ready` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
 | クライアント API（`/api/*`）の残りと、JSON を返す OAuth のエンドポイント | `503` | 型が `/api/v1/problems/maintenance` の `application/problem+json`。`message`、`until`、設定されていれば `status_page_url` を含みます |
 | ActivityPub（パス、`Accept`、`Content-Type` で判定）、WebFinger、host-meta、NodeInfo、決済の Webhook、Cloud Tasks と Cloud Scheduler からの呼び出し（`/_internal/*`） | `503` | `{"error":"maintenance"}` |
@@ -56,7 +56,7 @@ Web クライアントは、API がメンテナンスの problem を返すと全
 検索エンジンは短い `503` を一時的な停止として扱いますが、Google は `robots.txt` に 1～2 日を超えて `503` を返さないよう勧めています。
 1～2 日より長い停止はメンテナンスではありません。代わりにサービスを閉鎖してください（[サービスの閉鎖](service-closure.md)）。
 
-<!-- source: steps 1427d2c6d499 -->
+<!-- source: steps 9377fd324cdc -->
 ## 手順
 
 1. **告知する。** 前もって、ステータスページ（`status_page_url`）とお知らせ（「管理」→「お知らせ」）で作業の時間帯を告知します。
@@ -67,17 +67,17 @@ Web クライアントは、API がメンテナンスの problem を返すと全
 3. **メンテナンスモードに切り替える。** `MY_MAINTENANCE=true` で再デプロイします（対象ごとの方法は下にあります）。すべてのレプリカがメンテナンスモードで再起動します。
    `/readyz` が `200` を返すので、ロードバランサーはレプリカを外しません。
 4. **作業をする。**
-5. **元に戻す。** `MY_MAINTENANCE` なしで（または `false` で）再デプロイし、`/readyz` と `/api/v1/instance/health` が `{"status":"ok"}` を返すことを確認してから、
+5. **元に戻す。** `MY_MAINTENANCE` なしで（または `false` で）再デプロイし、`/health/ready` と `/api/v1/instance/health` が `{"status":"ok"}` を返すことを確認してから、
    プッシュキューを再開し、お知らせを終えます。
 
-![メンテナンスモードの前、その間、その後にサーバーが返すものを、リクエストの種類ごとに示した図。前と後は通常どおりで、その間は 503 と Retry-After を返します。ただし /healthz と /readyz は 200 のままです。下の一覧が同じ内容を説明しています。](images/maintenance.svg)
+![メンテナンスモードの前、その間、その後にサーバーが返すものを、リクエストの種類ごとに示した図。前と後は通常どおりで、その間は 503 と Retry-After を返します。ただしヘルスチェック（/healthz、/readyz、/health/live、/health/ready）は 200 のままです。下の一覧が同じ内容を説明しています。](images/maintenance.svg)
 
 左から順に説明します。
 
 - **前**: メンテナンスを告知している間、すべてのリクエストに通常どおり応答します。`/healthz`、`/readyz`、
   `/api/v1/instance/health` は `{"status":"ok"}` で `200` を返します。
 - **メンテナンスモードの間**（`MY_MAINTENANCE=true`）:
-  - `/healthz` と `/readyz` は `{"status":"maintenance"}` で `200` を返します。
+  - `/healthz`、`/readyz`、`/health/live`、`/health/ready` は `{"status":"maintenance"}` で `200` を返します。
   - `/api/v1/instance/health` は `{"status":"maintenance"}` で `503` を返します。
   - クライアント API の残りと、JSON を返す OAuth のエンドポイントには、メンテナンスの problem で `503` が返ります。
   - ActivityPub、WebFinger、NodeInfo は `{"error":"maintenance"}` で `503` を返します。
@@ -225,9 +225,9 @@ metadata:
     nginx.ingress.kubernetes.io/default-backend: my-maintenance   # a Service in the same namespace
 ```
 
-<!-- source: monitoring-during-the-maintenance 91e64028447e -->
+<!-- source: monitoring-during-the-maintenance 76cf0bd38c93 -->
 ## メンテナンス中の監視
 
-- `/healthz` と `/readyz` は `{"status":"maintenance"}` で `200` のままです。ロードバランサーと Kubernetes はインスタンスを外しません。
+- `/healthz`、`/readyz`、`/health/live`、`/health/ready` は `{"status":"maintenance"}` で `200` のままです。ロードバランサーと Kubernetes はインスタンスを外しません。
 - `/api/v1/instance/health` は `{"status":"maintenance"}` で `503` を返します（[監視](monitoring.md)）。
   死活監視は、本文を照合するかメンテナンスの時間帯を設定していない限り、サーバーが停止していると判断します。死活監視を一時停止するか、時間帯を設定してください。

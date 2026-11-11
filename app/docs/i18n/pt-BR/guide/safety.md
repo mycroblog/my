@@ -1,7 +1,7 @@
-<!-- source: blocking-muting-and-reporting 579ef248db11 -->
+<!-- source: blocking-muting-and-reporting 0cd495fa1cdf -->
 # Bloquear, silenciar e denunciar
 
-Você decide o que lê e quem pode alcançá-lo. Bloquear e silenciar são decisões somente suas; uma denúncia vai para os moderadores do servidor.
+Você decide o que lê e quem pode alcançá-lo. Bloquear, silenciar e os filtros de palavras-chave são decisões somente suas; uma denúncia vai para os moderadores do servidor.
 
 <!-- source: blocking-an-account 2804abdbd6d1 -->
 ## Bloquear uma conta
@@ -12,15 +12,22 @@ Um bloqueio também oculta as publicações de vocês dois um para o outro.
 
 “Contas bloqueadas”, em “Relacionamentos” nas configurações, lista as contas que você bloqueou e permite “Desbloquear” cada uma delas.
 
-<!-- source: muting-an-account 6e2f59e6e3ca -->
+<!-- source: muting-an-account a1cd044e5bfd -->
 ## Silenciar uma conta
 
 “Silenciar”, no mesmo menu, oculta de você as publicações da conta e as notificações dela. Isso não muda quem segue quem. “Contas silenciadas”, em “Relacionamentos” nas configurações, lista essas contas, mostra quando um silêncio termina (“Até …”) e se as “Notificações também ocultas”, e permite “Remover silêncio”.
+
+Para interromper apenas as notificações de uma conversa e continuar lendo as publicações dela, silencie a conversa (veja [Silenciar uma conversa](notifications.md#muting-a-thread)). Para reter as notificações de pessoas que você não conhece até aceitá-las, use a política de notificações (veja [Reter notificações de pessoas que você não conhece](notifications.md#holding-notifications-from-people-you-dont-know)).
 
 <!-- source: muting-a-server 71b077a8504c -->
 ## Silenciar um servidor
 
 “Domínios silenciados”, em “Relacionamentos” nas configurações, silencia um servidor inteiro (por exemplo `mastodon.example`; os subdomínios também são silenciados). Isso oculta de suas linhas do tempo, exceto a Início, as publicações das contas desse servidor, oculta da sua linha do tempo Início os impulsos dessas contas e oculta as notificações delas. As contas desse servidor que você segue continuam na sua linha do tempo Início. Somente você é afetado, e o servidor não é avisado.
+
+<!-- source: filtering-posts-by-keyword e09ea3dbfb6c -->
+## Filtrar publicações por palavra-chave
+
+“Filtros de palavras-chave”, em “Exibição e notificações” nas configurações, recolhe ou oculta as publicações que contêm palavras que você escolhe, seja quem for o autor. [Filtros de palavras-chave](keyword-filters.md) explica como configurá-los e como as palavras correspondem.
 
 <!-- source: reporting-an-account-or-a-post 9218da02d103 -->
 ## Denunciar uma conta ou uma publicação

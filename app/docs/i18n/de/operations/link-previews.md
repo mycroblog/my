@@ -4,98 +4,120 @@
 Die Vorschauen, die andere Dienste von den Seiten dieses Servers zeigen, was der Server dafür zurückgibt und die Schritte, sie von Hand zu prüfen. Die Karten, die dieser Server für die Links in seinen eigenen Beiträgen zeigt,
 stehen unten unter [Karten für Links in Beiträgen](#cards-of-links-in-posts); wie du das Abrufen von einer Domain stoppst, steht in den [Servereinstellungen](instance-settings.md#link-card-domains).
 
-<!-- source: what-the-server-returns bb9326f9729a -->
+<!-- source: what-the-server-returns fe60560f1b91 -->
 ## Was der Server zurückgibt
 
-`my serve` gibt das HTML der Startseite (`https://<host>/`), der Server-Informationsseite (`https://<host>/about`),
+`my serve` gibt das HTML der Startseite (`https://<host>/`), der Informationsseite der Instanz (`https://<host>/about`),
 der Seiten der veröffentlichten Dokumente (`/about/terms`, `/about/privacy`, `/about/commerce`), der Seite über den Link-Karten-Crawler (`/about/crawler`), von Profilen
-(`https://<host>/@alice`) und Beiträgen (`https://<host>/@alice/status/<post ID>`) zurück, indem er Meta-Tags in die Shell des
-Web-Clients einbettet.
+(`https://<host>/@alice`) und Beiträgen (`https://<host>/@alice/status/<post ID>`) zurück, indem es Meta-Tags in die Shell des
+Webclients einbettet.
 Eine Anfrage nach HTML wird immer als abgemeldet behandelt, sodass eine Vorschau nur zeigt, was ein abgemeldeter Besucher sehen kann.
 
 | Seite | Antwort |
 | --- | --- |
-| Die Startseite (`/`) und die Server-Informationsseite (`/about`) | 200. Die Shell mit Meta-Tags, die den Server vorstellen (siehe „Die Startseite“ unten) |
-| Die Seite über den Link-Karten-Crawler (`/about/crawler`) | 200. Die Shell mit Meta-Tags, die den Server vorstellen, mit dem Titel „Link card crawler \| Servername“ |
-| Die Seiten veröffentlichter Dokumente (`/about/terms`, `/about/privacy`, `/about/commerce`) | 200. Die Shell mit Meta-Tags, die den Server vorstellen, mit dem Titel „Dokumentname \| Servername“. Die Seite eines nicht veröffentlichten Dokuments bekommt die generische Shell |
+| Die Startseite (`/`) und die Informationsseite der Instanz (`/about`) | 200. Die Shell mit Meta-Tags, die die Instanz vorstellen (siehe „Die Startseite“ unten) |
+| Die Seite über den Link-Karten-Crawler (`/about/crawler`) | 200. Die Shell mit Meta-Tags, die die Instanz vorstellen, mit dem Titel „Link-Karten-Crawler \| Instanzname“ |
+| Die Seiten veröffentlichter Dokumente (`/about/terms`, `/about/privacy`, `/about/commerce`) | 200. Die Shell mit Meta-Tags, die die Instanz vorstellen, mit dem Titel „Dokumentname \| Instanzname“. Die Seite eines Dokuments, das nicht veröffentlicht ist, erhält die generische Shell |
 | Ein `public`-Beitrag, das Profil eines aktiven lokalen Kontos | 200. Die Shell mit Meta-Tags |
-| Ein `unlisted`-Beitrag | 200. Die Shell mit Meta-Tags sowie `<meta name="robots" content="noindex, noarchive">` und `X-Robots-Tag: noindex, noarchive` |
-| Ein `local`-, `private`-, `direct`-, gelöschter oder nicht existierender Beitrag sowie das Profil und die Beiträge eines gesperrten, deaktivierten, gelöschten oder eingeschränkten Kontos | 404. Die generische Shell und `X-Robots-Tag: noindex, noarchive`. Body und Header sind unabhängig vom Grund gleich |
+| Ein `unlisted`-Beitrag | 200. Die Shell mit Meta-Tags, dazu `<meta name="robots" content="noindex, noarchive">` und `X-Robots-Tag: noindex, noarchive` |
+| Ein `local`-, `private`-, `direct`-, gelöschter oder nicht vorhandener Beitrag sowie das Profil und die Beiträge eines gesperrten, deaktivierten, gelöschten oder eingeschränkten Kontos | 404. Die generische Shell und `X-Robots-Tag: noindex, noarchive`. Body und Header sind unabhängig vom Grund gleich |
 | `/@<old username>/status/<post ID>` | 301, auf die URL mit dem aktuellen Benutzernamen |
+| Die Seite eines Hashtags (`/tags/<tag>`) | 200. Die generische Shell, mit dem Link zum Atom-Feed des Hashtags (siehe „Die generische Shell“ unten) |
+| Jede andere Seite des Webclients (Entdecken, die öffentlichen Seiten zu Kosten und Unterstützern, Anmeldung und so weiter) | 200. Die generische Shell, mit den Meta-Tags der Instanz (siehe „Die generische Shell“ unten) |
 
-Jede Seite trägt außerdem die Angaben für Suchmaschinen und KI-Crawler (Meta-Tags wie `noindex` und `noai` sowie
-`X-Robots-Tag`, `Content-Usage` und `tdm-reservation`), gemäß den Servereinstellungen und den Einstellungen des Eigentümers
-([Suchmaschinen und KI-Crawler](crawlers.md)). Das `noindex` in der Tabelle oben wird immer hinzugefügt, egal wie die Einstellungen sind.
-`noindex` stoppt keine Linkvorschauen.
+Jede Seite trägt außerdem die Erklärungen an Suchmaschinen und KI-Crawler (Meta-Tags wie `noindex` und `noai` sowie
+`X-Robots-Tag`, `Content-Usage` und `tdm-reservation`), gemäß den Instanzeinstellungen und den Einstellungen der Inhaberin oder des Inhabers
+([Suchmaschinen und KI-Crawler](crawlers.md)). Das `noindex` in der Tabelle oben wird immer hinzugefügt, was auch immer die Einstellungen sind.
+`noindex` stoppt keine Link-Vorschauen.
 
-Eine Anfrage mit einem ActivityPub-`Accept` bekommt nicht die Shell; die ActivityPub-Seite beantwortet sie (ein Profil antwortet mit der
-`id` des Actors, und ein Beitrag, den ein abgemeldeter Besucher sehen kann, antwortet mit einem 302 auf seine `id`). Jede Antwort trägt `Vary: Accept`.
+Eine Anfrage mit einem ActivityPub-`Accept` erhält nicht die Shell; die ActivityPub-Seite beantwortet sie (ein Profil antwortet mit der
+`id` des Akteurs, und ein Beitrag, den ein abgemeldeter Besucher sehen kann, antwortet mit einem 302 auf seine `id`). Jede Antwort trägt `Vary: Accept`.
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### Meta-Tags
 
 | Tag | Inhalt |
 | --- | --- |
-| `og:title`, `<title>` | „Anzeigename (@Benutzername@Konto-Domain)“. Der Benutzername, wenn der Anzeigename leer ist |
-| `og:type` | `profile` für ein Profil, `article` für einen Beitrag |
+| `og:title`, `<title>` | „Anzeigename (@Benutzername@Kontodomain)“. Der Benutzername, wenn der Anzeigename leer ist. Bei einem Artikel sein Titel |
+| `og:type` | `profile` bei einem Profil, `article` bei einem Beitrag und einem Artikel |
 | `og:url`, `<link rel="canonical">` | Die kanonische URL (die URL mit dem aktuellen Benutzernamen) |
-| `og:description` | Der reine Text des Beitrags (die Bio bei einem Profil) ohne Tags, auf 200 Grapheme gekürzt. Bei einem Beitrag mit Inhaltswarnung nur der Text der Inhaltswarnung |
+| `og:description` | Der reine Text des Beitragstextes (die Bio bei einem Profil) ohne Tags, auf 200 Grapheme gekürzt. Bei einem Beitrag mit Inhaltswarnung nur der Text der Inhaltswarnung. Bei einem Artikel seine Zusammenfassung, auch wenn er als sensibel markiert ist; der Text eines Artikels steht nie in der Seite |
 | `og:image`, `og:image:alt` / `width` / `height` | Das Bild, das in der Reihenfolge unten gewählt wird |
-| `og:site_name` | Der Servername (der Text `name`, in jeder Sprache gleich; `host`, wenn es keinen gibt; [Name und Domain](instance-settings.md#name-and-domain)) |
-| `og:locale`, `<html lang dir>` | Die Sprache des Beitrags. Wenn sie nicht gesetzt ist (`und`), die Standard-Beitragssprache der Autorin oder des Autors, und andernfalls das `default_locale` des Servers. Sie ändert sich nicht mit `Accept-Language` |
-| `article:published_time`, `article:author` | Nur bei Beiträgen. Der Zeitpunkt des Beitrags (UTC) und die Profil-URL der Autorin oder des Autors |
-| `profile:username` | Nur bei Profilen. `username@account domain` |
-| `twitter:card` | `summary_large_image`, wenn das Bild breiter als etwa 2:1 ist (Breite / Höhe >= 1,7) und mindestens 300x157, sonst `summary` |
+| `og:site_name` | Der Name der Instanz (der Text `name`, in jeder Sprache derselbe; `host`, wenn es keinen gibt; [Name und Domain](instance-settings.md#name-and-domain)) |
+| `og:locale`, `<html lang dir>` | Die Sprache des Beitrags. Ist sie nicht gesetzt (`und`), die Standard-Beitragssprache des Autors und, falls auch die fehlt, das `default_locale` der Instanz. Sie ändert sich nicht mit `Accept-Language`. `og:locale` hat die Form `language_TERRITORY`: Eine Sprache ohne Region erhält ihre übliche (`ja` → `ja_JP`, `en` → `en_US`, `pt` → `pt_BR`), und `<html lang>` behält den Sprachtag, wie er ist |
+| `article:published_time`, `article:author` | Nur Beiträge. Die Zeit des Beitrags (UTC) und die Profil-URL des Autors |
+| `profile:username` | Nur Profile. `username@account domain` |
+| `twitter:card` | `summary_large_image`, wenn das Bild breiter als etwa 2:1 ist (Breite / Höhe >= 1.7) und mindestens 300x157, sonst `summary` |
 | `fediverse:creator` | `@username@account domain`. Mastodon zeigt es als „Autor“ |
-| `<link rel="alternate" type="application/activity+json">` | Die AP-`id` (der Actor oder das Objekt des Beitrags) |
+| `<link rel="alternate" type="application/activity+json">` | Die AP-`id` (der Akteur oder das Objekt des Beitrags) |
+| `<link rel="alternate" type="application/atom+xml">` | Nur Profile, die einen Atom-Feed haben: die Adresse des Feeds (`https://<host>/@<username>.atom`), betitelt wie `og:title`. Ein Profil, dessen Inhaber den Feed ausgeschaltet hat, und ein eingeschränktes oder umgezogenes Konto haben keinen |
 
-Die Meta-Tags der Startseite stellen den Server selbst vor.
+Die Meta-Tags der Startseite stellen die Instanz selbst vor.
 
-- `og:type` ist `website`, `og:title`, `<title>` und `og:site_name` sind der Servername, und `og:url` und
+- `og:type` ist `website`, `og:title`, `<title>` und `og:site_name` sind der Name der Instanz, und `og:url` und
   `<link rel="canonical">` sind `https://<host>/`.
-- `og:description` ist der Servertext `short_description`, auf 200 Grapheme gekürzt. Er entfällt, wenn es keinen gibt.
-- Die Sprache (`og:locale`, `<html lang dir>`) ist das `default_locale` des Servers. Name und Beschreibung sind in jeder Sprache
-  derselbe Wert.
-- `og:image` ist Nummer 3 unten (das Vorschaubild des Servers) oder Nummer 4 oder 5, wenn es keines gibt.
+- `og:description` ist der Instanztext `short_description`, auf 200 Grapheme gekürzt. Er entfällt, wenn es keinen gibt.
+- Die Sprache (`og:locale`, `<html lang dir>`) ist das `default_locale` der Instanz. Der Name und die Beschreibung sind derselbe Wert
+  in jeder Sprache.
+- `og:image` ist das Instanzbild: Nummer 3 unten oder Nummer 4, 5 oder 6, wenn es keines gibt.
 - Sie gehört zu keinem Konto, daher werden `fediverse:creator` und das ActivityPub-`alternate` nicht ausgegeben.
-- Die Server-Informationsseite (`/about`) hat dieselben Meta-Tags. `og:title` und `<title>` sind „Über {Servername}“
+- Die Informationsseite der Instanz (`/about`) hat dieselben Meta-Tags. `og:title` und `<title>` sind „Über {Instanzname}“
   (`server:preview.about_title`), und `og:url` und `<link rel="canonical">` sind `https://<host>/about`.
-- Auch die Seiten veröffentlichter Dokumente (`/about/terms`, `/about/privacy`, `/about/commerce`) haben dieselben Meta-Tags.
-  `og:title` und `<title>` sind „{Dokumentname} | {Servername}“ (`server:preview.document_title`), und `og:url` und
-  `<link rel="canonical">` sind die Adresse dieser Seite. Die Seite eines nicht veröffentlichten Dokuments bekommt die generische Shell.
+- Die Seiten veröffentlichter Dokumente (`/about/terms`, `/about/privacy`, `/about/commerce`) haben ebenfalls dieselben Meta-Tags.
+  `og:title` und `<title>` sind „{Dokumentname} | {Instanzname}“ (`server:preview.document_title`), und `og:url` und
+  `<link rel="canonical">` sind die Adresse dieser Seite. Die Seite eines Dokuments, das nicht veröffentlicht ist, erhält die generische Shell.
 - Die Seite über den Link-Karten-Crawler (`/about/crawler`) hat dieselben Meta-Tags, mit derselben Form von Titel und Adresse.
+
+Die generische Shell, die jede andere Seite und das 404 eines verborgenen Beitrags zurückgeben, trägt dieselben Tags wie die Startseite
+ohne eine eigene Adresse: `og:type` `website`, den Namen der Instanz als `og:site_name` und `og:title`, `short_description`
+als `og:description`, `og:locale`, das Instanzbild und `twitter:card`. Sie hat kein `og:url` und kein
+`<link rel="canonical">`, sodass eine Kopie jeden Pfad bedient und das 404 eines verborgenen Beitrags mit jeder anderen Seite identisch bleibt.
+Die Seite eines Hashtags fügt nur `<link rel="alternate" type="application/atom+xml">` zum Feed des Hashtags hinzu
+(`https://<host>/tags/<tag>.atom`), betitelt „#tag auf Instanzname“ (`server:feed.tag_title`), unabhängig davon, ob schon ein Beitrag
+den Hashtag verwendet hat. Ein geteilter Link zu einem Hashtag oder zur Seite der öffentlichen Kosten zeigt die Karte der Instanz.
+
+Die Feeds selbst sind Atom-1.0-Dokumente der 20 neuesten lokalen öffentlichen Beiträge, die keine Antworten oder Boosts sind, mit
+`ETag`, `Last-Modified` und `Cache-Control: public, max-age=60`. Der Eintrag eines Artikels ist sein Titel und seine Zusammenfassung, mit dem
+Link zum Artikel; sein Text bleibt auf der Seite des Artikels. Jedes Profil mit einem Feed hat außerdem einen reinen Artikel-Feed,
+`https://<host>/@<username>/articles.atom`, betitelt „Artikel von Name (@Handle)“ (`server:feed.articles_title`), der
+denselben Regeln folgt; die Seite des Profils verlinkt nur seinen Haupt-Feed. Der Server hält jeden gerenderten Feed eine Minute lang in seinem Key-Value-Speicher,
+sodass eine Änderung einen Feed innerhalb von etwa einer Minute erreicht. Ein Feed trägt dasselbe `X-Robots-Tag` und dieselben KI-Erklärungen
+wie sein Profil; der Feed eines Hashtags ist immer `noindex` und gibt die KI-Ablehnung jedes seiner Autoren an. Ein
+Profil ohne Feed und ein Hashtag, den noch kein Beitrag verwendet hat, antworten mit 404.
 
 `og:image` wird in dieser Reihenfolge gewählt.
 
-1. Das erste an den Beitrag angehängte Bild (sein Alt-Text kommt in `og:image:alt`). Es wird nicht für einen als sensibel markierten Beitrag oder
-   einen mit Inhaltswarnung verwendet.
-2. Das Titelbild des Profils oder sonst das Profilbild (`og:image:alt` ist „Titelbild von {name}“ oder „Profilbild von {name}“).
-3. Das Vorschaubild des Servers (die Servereinstellung `preview_image`; `og:image:alt` ist der Text `preview_image_alt` oder „Bild
-   von {Servername}“, wenn es keinen gibt).
-4. Die Linkvorschau-Version des eigenen Logos des Servers ([Logo und Icon](instance-settings.md#logo-and-icon)), ein 1200x630-PNG
-   unter `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` ist „Bild von {Servername}“).
-5. Das mitgelieferte Standardbild (`https://<host>/preview-image.png`, ein 1200x630-PNG. Es ist ein generisches Bild ohne den Servernamen,
-   und `og:image:alt` beschreibt das Bild).
+1. Das erste an den Beitrag angehängte Bild oder das Titelbild eines Artikels (sein Alt-Text geht in `og:image:alt`). Es wird nicht
+   verwendet bei einem Beitrag oder Artikel, der als sensibel markiert ist, oder bei einem Beitrag mit Inhaltswarnung.
+2. Das Header-Bild des Profils oder sonst der Avatar (`og:image:alt` ist „Titelbild von {name}“ oder „Profilbild von {name}“).
+3. Das Link-Vorschaubild der Instanz (die Instanzeinstellung `preview_image`, unter „Link-Vorschauen“ in Einstellungen → Allgemein der
+   Administration; `og:image:alt` ist der Text `preview_image_alt` oder „Bild von {Instanzname}“, wenn es keinen gibt).
+4. Das Thumbnail der Instanz (die Instanzeinstellung `thumbnail`, das Bild der Seite Einstellungen → Allgemein; `og:image:alt` ist der
+   Text `thumbnail_alt` oder „Bild von {Instanzname}“, wenn es keinen gibt).
+5. Die Link-Vorschau-Version des eigenen Logos der Instanz ([Logo und Symbol](instance-settings.md#logo-and-icon)), ein PNG mit 1200x630
+   unter `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` ist „Bild von {Instanzname}“).
+6. Das mitgelieferte Standardbild (`https://<host>/preview-image.png`, ein PNG mit 1200x630 mit dem Schriftzug von mycroblog auf Weiß, ohne
+   den Namen der Instanz; `og:image:alt` ist „Das Logo von mycroblog“).
 
-Eine Seite, die eine Vorschau zeigt, hat also immer `og:image` und `og:image:alt`.
-Die Bilder von 1 bis 3 sind die `full`-Variante der verarbeiteten Medien, und Breite und Höhe sind die Werte aus der Verarbeitung.
-Wenn `preview_image` noch verarbeitet wird, die Verarbeitung fehlgeschlagen ist oder es kein Bild ist, wird Nummer 4 (oder 5 ohne Logo) verwendet.
-Servereinstellungen werden bei jeder Anfrage gelesen, daher wirkt `my instance set preview_image ...` ohne Neustart (das
-Vorgehen steht in den [Servereinstellungen](instance-settings.md)).
+Die Nummern 3 bis 6 sind das Instanzbild. Eine Seite, die eine Vorschau zeigt, hat also immer `og:image` und `og:image:alt`.
+Die Bilder von 1 bis 4 sind die `large`-Variante des verarbeiteten Mediums, und Breite und Höhe sind die Werte aus der Verarbeitung.
+Ist `preview_image` nicht gesetzt, wird noch verarbeitet, ist bei der Verarbeitung fehlgeschlagen oder ist kein Bild, wird das Vorschaubild verwendet, dann das Logo,
+dann das mitgelieferte Bild. Instanzeinstellungen werden bei jeder Anfrage gelesen, sodass `my instance set preview_image ...` ohne Neustart wirkt
+(das Verfahren steht unter [Instanzeinstellungen](instance-settings.md)).
 
-Das Standardbild wird bei der ersten Anfrage nach dem Start mit der Standardbibliothek gezeichnet und im Prozess gehalten (etwa 10 KB).
-Es wird mit `Cache-Control: no-cache` und einem ETag ausgeliefert.
+Das mitgelieferte Bild ist Teil des Binarys (etwa 20 KB). Es wird mit `Cache-Control: no-cache` und einem ETag ausgeliefert.
 
-<!-- source: caching 5bc906452b10 -->
+<!-- source: caching e6ace7ad3fd0 -->
 ### Caching
 
 - Die Antwort trägt `Cache-Control: public, max-age=60, stale-while-revalidate=300`. Eine Löschung, eine Änderung der Sichtbarkeit oder
-  das Veröffentlichen oder Zurückziehen eines Dokuments bleibt höchstens so lange in gemeinsam genutzten Caches.
-- Der ETag wird aus den Versionen des Templates, der Assets und der Servereinstellungen, der Sprache, der Version
-  (Revision) des Beitrags, der effektiven Sichtbarkeit, der Version des Profils und des gewählten Bildes gebildet (bei der Startseite, der
-  Informationsseite, den Dokumentseiten und der Seite über den Crawler: die Adresse der Seite, ihr Titel, die Serverbeschreibung und das gewählte Bild).
-  `If-None-Match` bekommt `304`.
-- Wenn du ein CDN davorsetzt, nimm `Accept` in den Cache-Schlüssel auf (damit AP-JSON und HTML nicht vermischt werden).
+  das Veröffentlichen oder Zurückziehen eines Dokuments bleibt höchstens so lange in geteilten Caches.
+- Der ETag wird aus den Versionen des Templates, der Assets und der Instanzeinstellungen, der Sprache, der Version
+  (Revision) des Beitrags, der wirksamen Sichtbarkeit, der Version des Profils und des gewählten Bildes gebildet (bei der Startseite, der
+  Informationsseite, den Dokumentseiten und der Seite über den Crawler: der Adresse der Seite, ihrem Titel, der Instanzbeschreibung und dem gewählten Bild;
+  bei der generischen Shell: dem Namen der Instanz, ihrer Beschreibung und dem Instanzbild).
+  `If-None-Match` erhält `304`.
+- Wenn du ein CDN davorsetzt, nimm `Accept` in den Cache-Key auf (damit AP-JSON und HTML nicht vermischt werden).
 
 <!-- source: manual-check bf2c7a86a5de -->
 ## Manuelle Prüfung

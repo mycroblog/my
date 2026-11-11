@@ -81,10 +81,11 @@ my instance set registration_mode invite
 - 已登入的使用者可以在設定的「密碼」中輸入目前的密碼來變更密碼（每位使用者每小時最多輸入錯誤 5 次）。
 - 重設或變更會撤銷使用者的其他工作階段和 App 權杖（從設定變更時，只保留進行變更的那個 App）。通行金鑰和兩步驟驗證會保留。正在等待兩步驟驗證代碼的登入，以及尚未完成的 App 授權也會失效：使用者需要重新開始。在 `mail = smtp` 時，伺服器也會寄送電子郵件通知使用者密碼已變更。
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## 邀請碼
 
-邀請在 `open`、`approval` 和 `invite` 模式下可以使用。管理團隊的邀請以 CLI、審核畫面和下方的管理 API 建立；成員也可以建立自己的邀請（[成員邀請](#member-invites)）。在 `closed` 模式下，無法建立任何邀請，所有邀請也都無法使用。
+邀請在 `open`、`approval` 和 `invite` 模式下有效。工作人員的邀請可以用 CLI、審核畫面和下方的管理 API 建立；成員也可以建立自己的邀請（[成員邀請](#member-invites)）。
+在 `closed` 模式下，無法建立任何邀請，也沒有任何邀請有效。
 
 ```sh
 my invite create                          # single use, expires in 7 days
@@ -96,12 +97,18 @@ my invite revoke <code>
 
 - `create` 會輸出邀請碼（16 個字元），以及已填入邀請碼的註冊頁面連結（`https://<host>/auth/sign_up?invite=<code>`）。
 - 比對邀請碼時會忽略大小寫、空格和連字號。
-- 即使多人同時註冊，邀請碼也永遠不會超過使用上限（`invite_redemptions` 上的唯一性限制）。
-- 已撤銷、已過期或已用完的邀請碼都會顯示相同的錯誤（無法使用的邀請）。
-- 除了 CLI 之外，你也可以在網頁用戶端的審核畫面（「邀請」，`/moderation/invites`）以及透過用戶端 API（`GET` / `POST /api/v1/admin/invites` 和 `POST /api/v1/admin/invites/{id}/revoke`）建立、列出和撤銷邀請。兩者都需要角色權限 `manage_invites`（內建的 `moderator` 沒有這項權限，若要委派，請建立擁有該權限的角色並授予）。列表上的「建立邀請」會開啟表單（`/moderation/invites/new`），並顯示新邀請的邀請碼和註冊連結。列表可以讓你複製可用邀請的連結並撤銷它。
-- 列表會顯示所有邀請，包括管理團隊和成員的邀請，以及是誰建立的（`created_by`）和建立方式（`creator_kind`：`staff` 或 `member`）。擁有 `manage_invites` 的人可以撤銷其中任何一個。
-- 審核畫面中帳號的「審查」頁面（`GET /api/v1/admin/accounts/{id}`，權限 `manage_accounts`）會顯示該帳號註冊時使用的邀請及其建立者，也就是邀請該使用者的人。
-- 不論從畫面、API 或 CLI，建立和撤銷邀請都會記錄在稽核日誌中（`invite_created`、`invite_revoked`）。目標名稱是邀請碼的前 4 個字元（`ABCD…`）；完整的邀請碼不會複製到稽核日誌。撤銷已撤銷的邀請不會改變任何事，因此不會被記錄。
+- 即使多人同時註冊，邀請碼也絕不會被使用超過上限（`invite_redemptions` 上的唯一限制）。
+- 已撤銷、已過期或已用完的邀請碼，都會得到相同的錯誤（無法使用的邀請）。
+- 除了 CLI，你也可以在網頁用戶端的審核畫面（「邀請」，`/moderation/invites`）以及透過用戶端 API 建立、列出與撤銷邀請
+  （`GET` / `POST /api/v1/admin/invites` 和 `POST /api/v1/admin/invites/{id}/revoke`）。兩者都需要角色權限 `manage_invites`
+  （內建的 `moderator` 沒有這項權限，所以若要委派，請建立一個具有該權限的角色並授予它）。
+  自行發放邀請的服務，會使用範圍為 `admin:manage_invites` 的權杖呼叫同一個 API（[讓其他服務使用管理 API](moderation.md#letting-another-service-use-the-admin-api)）。
+  清單上的「建立邀請」會開啟表單（`/moderation/invites/new`），其中會顯示新邀請的邀請碼與註冊連結。
+  清單讓你複製仍可使用的邀請的連結，並撤銷它。
+- 清單會顯示每一個邀請，包括工作人員的與成員的，以及是誰建立的（`created_by`）和以什麼方式建立（`creator_kind`：`staff` 或 `member`）。持有 `manage_invites` 的人可以撤銷其中任何一個。
+- 審核畫面中帳號的審查頁面（`GET /api/v1/admin/accounts/{id}`，權限 `manage_accounts`）會顯示該帳號註冊時所用的邀請，以及建立者，也就是邀請該使用者的人。
+- 建立與撤銷邀請會記錄在稽核紀錄中（`invite_created`、`invite_revoked`），不論是從畫面、API 還是 CLI。目標名稱是邀請碼的前 4 個字元（`ABCD…`）；完整的邀請碼不會複製到稽核紀錄中。
+  撤銷已經撤銷的邀請不會改變任何東西，所以不會記錄。
 
 <!-- source: member-invites db3bff74ed69 -->
 ## 成員邀請

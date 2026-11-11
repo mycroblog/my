@@ -26,7 +26,7 @@ Vom oberen Rand des Diagramms nach unten:
 - **Dienste außerhalb des Servers.** CAPTCHA, Sprach-Chat, Zahlungen, Plugins und der Import von Cloud-Kosten bleiben jeweils aus,
   bis du sie einstellst, und der Server ruft dann den Dienst auf, den du nennst.
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
 ## Teile, die du per Konfiguration wählst
 
 Jeder Teil ist eine Einstellung der [Konfigurationsreferenz](../reference/configuration.md), gesetzt in einer TOML-Datei oder als
@@ -37,29 +37,29 @@ Wo ein Teil Daten hält, wähle ihn vor dem ersten Start: Die Daten ziehen nicht
 | --- | --- | --- | --- |
 | Datenbank | [`database`](../reference/configuration.md#database) | `sqlite` (eine Datei), `postgres` (PostgreSQL und kompatible Dienste) | [Datenbank](database.md), [Backup](backup.md) |
 | Job-Queue | [`queue`](../reference/configuration.md#queue) | `db` (eine Tabelle in der Datenbank), `inline` (führt jeden Job sofort im selben Prozess aus, für Tests und Entwicklung), `cloudtasks` (Google Cloud Tasks weckt den Server für jeden Job; braucht PostgreSQL) | [Die Job-Queue](running.md#the-job-queue-and-failed-dead-jobs) |
-| Key-Value-Speicher, für Caches und Ratenbegrenzungen | [`kv`](../reference/configuration.md#kv) | `db` (eine Tabelle in der Datenbank), `memory` (jeder Prozess für sich), `valkey` (Valkey oder ein anderer Server mit Redis-Protokoll, von allen Prozessen geteilt) | [`kv`](../reference/configuration.md#kv) |
-| Medienspeicher | [`blob`](../reference/configuration.md#blob) | `fs` (ein Verzeichnis), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage und andere S3-kompatible Speicher), `gcs` (Google Cloud Storage) | [Docker-Compose-Dateien](running.md#docker-compose-files), [Medien sichern](backup.md#media-in-a-bucket) |
-| Medienverarbeitung | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), je eines für jede Art von Datei | `native` (im Server), `plugin` (ein Plugin von dir konvertiert die Dateien dieser Art) | [Medien konvertieren](plugins.md#converting-media) |
+| Key-Value-Speicher, für Caches und Ratenlimits | [`kv`](../reference/configuration.md#kv) | `db` (eine Tabelle in der Datenbank), `memory` (jeder Prozess für sich), `valkey` (Valkey oder ein anderer Server mit Redis-Protokoll, von jedem Prozess geteilt) | [`kv`](../reference/configuration.md#kv) |
+| Medienspeicher | [`blob`](../reference/configuration.md#blob) | `fs` (ein Verzeichnis), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage und andere S3-kompatible Stores), `gcs` (Google Cloud Storage) | [Docker-Compose-Dateien](running.md#docker-compose-files), [Medien sichern](backup.md#media-in-a-bucket) |
+| Medienverarbeitung | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), je eine für jede Art von Datei | `native` (im Server), `plugin` (ein Plugin von dir wandelt die Dateien dieser Art um) | [Medien umwandeln](plugins.md#converting-media) |
 | Echtzeit-Stream zwischen Prozessen | [`stream`](../reference/configuration.md#stream) | `hub` (innerhalb eines Prozesses), `postgres` (`LISTEN` / `NOTIFY`), `valkey`, `sns` (Amazon SNS und SQS), `pubsub` (Google Cloud Pub/Sub) | [`stream`](../reference/configuration.md#stream) |
-| Key Manager, der die privaten Schlüssel der Konten verschlüsselt | [`key_manager`](../reference/configuration.md#key_manager) | `local` (ein Key Encryption Key, den du aufbewahrst), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Den Schlüssel verwalten](key-management.md) |
-| E-Mail | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [E-Mails versenden](email.md) |
+| Key Manager, der die privaten Schlüssel der Konten verschlüsselt | [`key_manager`](../reference/configuration.md#key_manager) | `local` (ein Key-Encryption-Key, den du aufbewahrst), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Den Schlüssel verwalten](key-management.md) |
+| E-Mail | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [E-Mails senden](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`, `turnstile` (Cloudflare Turnstile), `hcaptcha`, `recaptcha` (Google reCAPTCHA v2) | [CAPTCHA](captcha.md) |
-| Sprach-Chat | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (Browser zu Browser, mit TURN aus `voice_turn`: `none`, `coturn` oder `cloudflare`), `livekit`, `sora` | [Sprach-Chat](voice.md) |
+| Sprachchat | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (Browser zu Browser, mit TURN aus `voice_turn`: `none`, `coturn` oder `cloudflare`), `livekit`, `sora` | [Sprachchat](voice.md) |
 | Zahlungen von Unterstützern | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Unterstützer](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
 | Plugins | `plugin_<kind>_address` | standardmäßig keine; eine Adresse für jede Art: `translator`, `search`, `billing`, `mailer`, `media_image`, `media_video`, `media_audio`, `key_manager` und die Entscheidungs-Hooks `inbound.status`, `local.status`, `inbound.follow`, `signup.check`, `media.check`, `inbound.actor`, `local.profile` | [Plugins](plugins.md), [Entscheidungs-Hooks](decision-hooks.md) |
-| Übersetzung von Beiträgen | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | keine (nur die eigene Übersetzung des Browsers); `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate) oder ein Plugin von dir vor dem Dienst deiner Wahl | [Beiträge übersetzen](translation.md), [ein Übersetzer-Plugin](plugins.md#translating-posts) |
-| Volltextsuche in Beiträgen | [`search`](../reference/configuration.md#search) | `none`; oder `elasticsearch`, `opensearch` oder `meilisearch` ([Suchmaschinen-Backends](search-engines.md)); oder `plugin`, ein Plugin von dir vor einer anderen Engine | [Volltextsuche](search.md), [ein Such-Plugin](plugins.md#searching-posts) |
-| CDN für Medien | [`media_origin`](../reference/configuration.md#media_origin) | nicht gesetzt (der Server liefert Medien von seiner eigenen Origin aus) oder die Origin deines CDN | [Medien über ein CDN ausliefern](cdn.md) |
-| Cloud-Kosten | [`billing_sources`](../reference/configuration.md#billing_sources) | keine oder beliebige von `aws` (AWS Cost Explorer), `gcp` (der Billing-Export oder das Budget von Google Cloud), `plugin` | [Cloud-Kosten importieren](billing-import.md) |
+| Übersetzung von Beiträgen | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | keine (nur die eigene Übersetzung des Browsers); `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate) oder ein Plugin von dir vor dem Dienst, den du wählst | [Beiträge übersetzen](translation.md), [ein Übersetzer-Plugin](plugins.md#translating-posts) |
+| Volltextsuche von Beiträgen | [`search`](../reference/configuration.md#search) | `none`; oder `elasticsearch`, `opensearch` oder `meilisearch` ([Suchmaschinen](search-engines.md)); oder `plugin`, ein Plugin von dir vor einer anderen Engine | [Volltextsuche](search.md), [ein Such-Plugin](plugins.md#searching-posts) |
+| CDN für Medien | [`media_origin`](../reference/configuration.md#media_origin) | nicht gesetzt (der Server liefert Medien von seinem eigenen Origin aus) oder der Origin deines CDN | [Medien über ein CDN ausliefern](cdn.md) |
+| Cloud-Kosten | [`billing_sources`](../reference/configuration.md#billing_sources) | keine oder beliebige von `aws` (AWS Cost Explorer), `gcp` (Billing-Export oder Budget von Google Cloud), `cloudflare` (Nutzungsentgelte von Cloudflare), `plugin` | [Cloud-Kosten importieren](billing-import.md) |
 | Metriken | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Metriken](running.md#metrics), [Alarme](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Fehlerberichte | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (nur die Logzeile und die Fehlergruppen), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Fehlerberichte](error-reporting.md) |
 
-Die veröffentlichte Binary und das Container-Image enthalten jeden Adapter der Tabelle. Eine Binary, die du selbst baust, kann die,
-die du nicht nutzt, mit [Build-Tags](../reference/build-tags.md) weglassen und lehnt ihre Einstellungen dann beim Start ab.
+Das veröffentlichte Binary und das Container-Image enthalten jeden Adapter der Tabelle. Ein Binary, das du selbst baust, kann die
+Adapter, die du nicht nutzt, mit [Build-Tags](../reference/build-tags.md) weglassen und lehnt dann ihre Einstellungen beim Start ab.
 
-`my config check` meldet alle Probleme der Konfiguration auf einmal, bevor du den Server startest
-([Checkliste für den Produktivbetrieb](production-checklist.md)).
+`my config check` meldet jedes Problem der Konfiguration auf einmal, bevor du den Server startest
+([Produktions-Checkliste](production-checklist.md)).
 
 <!-- source: from-a-small-server-to-a-large-one 42bbd3f2a76e -->
 ## Von einem kleinen Server zu einem großen

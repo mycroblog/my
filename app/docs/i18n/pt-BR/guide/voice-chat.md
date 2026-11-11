@@ -25,15 +25,15 @@ que todos falem, e “Sair” para ir embora. Para denunciar uma sala, veja [Blo
 Se sua conexão cair, a chamada mostra “Reconectando…”. Uma chamada também termina quando você entra na mesma sala por
 outro dispositivo, quando um anfitrião remove você, ou quando você e o anfitrião ou um coanfitrião se bloqueiam.
 
-<!-- source: starting-a-room f9578f023829 -->
+<!-- source: starting-a-room 9a2c5bc39c3c -->
 ## Abrindo uma sala
 
 “Abrir uma sala” aparece para as pessoas que os operadores do servidor permitem hospedar salas. O formulário pede:
 
 - **Nome**, e um **Ícone** e uma **Descrição**, opcionais.
 - **Hashtags**: a sala aparece nas páginas das hashtags dela.
-- **Quem pode ver e entrar**: “Todos neste servidor”, “Seguidores do anfitrião”, “Seguidores mútuos do anfitrião” ou “Somente pessoas convidadas”.
-- **Quem pode falar sem pedir**: “Todos que entram”, “Seguidores do anfitrião”, “Seguidores mútuos do anfitrião” ou “Somente pessoas que os anfitriões deixam falar”.
+- **Quem pode ver e entrar**: “Todos neste servidor”, “Seguidores do anfitrião”, “Pessoas que o anfitrião segue”, “Seguidores mútuos do anfitrião” ou “Somente pessoas convidadas”.
+- **Quem pode falar sem pedir**: “Todos que entram”, “Seguidores do anfitrião”, “Pessoas que o anfitrião segue”, “Seguidores mútuos do anfitrião” ou “Somente pessoas que os anfitriões deixam falar”.
 - **Publicar sobre a sala**: uma publicação com o link para a sala, visível para todos neste servidor ou somente para os seus seguidores.
   Em um servidor de uma única pessoa, a publicação sobre uma sala para todos neste servidor é destinada aos seus seguidores.
 

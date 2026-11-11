@@ -16,36 +16,36 @@
 - **你选择的组件。** 图中间的每个组件都有一个选择其适配器的设置，列在[下一节](#parts-you-choose-by-configuration)中。
 - **服务器外部的服务。** CAPTCHA、语音聊天、支付、插件和云费用导入在你设置之前都保持关闭，设置后服务器会调用你指定的服务。
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
-## 通过配置选择的组件
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+## 通过配置选择的部分
 
-每个组件都是[配置参考](../reference/configuration.md)中的一个设置，可以在 TOML 文件中设置，也可以作为环境变量设置（`MY_` 加上大写的键名，例如 `MY_DATABASE`）。每个列表中的第一个选项是默认值。对于保存数据的组件，请在首次启动之前做出选择：更改设置时，数据不会自动迁移。
+每个部分都是[配置参考](../reference/configuration.md)中的一个设置，可以写在 TOML 文件中，也可以作为环境变量设置（`MY_` 加上大写的键，例如 `MY_DATABASE`）。每个列表中的第一个选项是默认值。凡是保存数据的部分，请在第一次启动之前选定：设置改变时，数据不会自己迁移。
 
-| 组件 | 设置 | 选项 | 延伸阅读 |
+| 部分 | 设置 | 选项 | 接着阅读 |
 | --- | --- | --- | --- |
-| 数据库 | [`database`](../reference/configuration.md#database) | `sqlite`（一个文件）、`postgres`（PostgreSQL 及兼容服务） | [数据库](database.md)、[备份](backup.md) |
-| 任务队列 | [`queue`](../reference/configuration.md#queue) | `db`（数据库中的一张表）、`inline`（在同一进程中立即运行每个任务，用于测试和开发）、`cloudtasks`（由 Google Cloud Tasks 为每个任务唤醒服务器；需要 PostgreSQL） | [任务队列](running.md#the-job-queue-and-failed-dead-jobs) |
-| 用于缓存和速率限制的键值存储 | [`kv`](../reference/configuration.md#kv) | `db`（数据库中的一张表）、`memory`（每个进程各自独立）、`valkey`（Valkey 或其他使用 Redis 协议的服务器，由所有进程共享） | [`kv`](../reference/configuration.md#kv) |
-| 媒体存储 | [`blob`](../reference/configuration.md#blob) | `fs`（一个目录）、`s3`（Amazon S3、Cloudflare R2、MinIO、Garage 及其他 S3 兼容存储）、`gcs`（Google Cloud Storage） | [Docker Compose 文件](running.md#docker-compose-files)、[备份媒体](backup.md#media-in-a-bucket) |
-| 媒体处理 | [`media_image`](../reference/configuration.md#media_image)、[`media_video`](../reference/configuration.md#media_video)、[`media_audio`](../reference/configuration.md#media_audio)，每种文件各一个 | `native`（在服务器内）、`plugin`（由你的插件转换该类文件） | [转换媒体](plugins.md#converting-media) |
-| 进程间的实时流 | [`stream`](../reference/configuration.md#stream) | `hub`（单个进程内）、`postgres`（`LISTEN` / `NOTIFY`）、`valkey`、`sns`（Amazon SNS 和 SQS）、`pubsub`（Google Cloud Pub/Sub） | [`stream`](../reference/configuration.md#stream) |
+| 数据库 | [`database`](../reference/configuration.md#database) | `sqlite`（一个文件）、`postgres`（PostgreSQL 及兼容的服务） | [数据库](database.md)、[备份](backup.md) |
+| 任务队列 | [`queue`](../reference/configuration.md#queue) | `db`（数据库中的一张表）、`inline`（在同一进程中立即运行每个任务，用于测试和开发）、`cloudtasks`（Google Cloud Tasks 为每个任务唤醒服务器；需要 PostgreSQL） | [任务队列](running.md#the-job-queue-and-failed-dead-jobs) |
+| 键值存储，用于缓存和速率限制 | [`kv`](../reference/configuration.md#kv) | `db`（数据库中的一张表）、`memory`（每个进程各自独立）、`valkey`（Valkey 或其他 Redis 协议的服务器，由所有进程共享） | [`kv`](../reference/configuration.md#kv) |
+| 媒体存储 | [`blob`](../reference/configuration.md#blob) | `fs`（一个目录）、`s3`（Amazon S3、Cloudflare R2、MinIO、Garage 和其他 S3 兼容的存储）、`gcs`（Google Cloud Storage） | [Docker Compose 文件](running.md#docker-compose-files)、[备份媒体](backup.md#media-in-a-bucket) |
+| 媒体处理 | [`media_image`](../reference/configuration.md#media_image)、[`media_video`](../reference/configuration.md#media_video)、[`media_audio`](../reference/configuration.md#media_audio)，每种文件各一个 | `native`（在服务器内部）、`plugin`（由你的插件转换该类文件） | [转换媒体](plugins.md#converting-media) |
+| 进程之间的实时流 | [`stream`](../reference/configuration.md#stream) | `hub`（在一个进程内部）、`postgres`（`LISTEN` / `NOTIFY`）、`valkey`、`sns`（Amazon SNS 和 SQS）、`pubsub`（Google Cloud Pub/Sub） | [`stream`](../reference/configuration.md#stream) |
 | 密钥管理器，用于加密账号的私钥 | [`key_manager`](../reference/configuration.md#key_manager) | `local`（由你保管的密钥加密密钥）、`gcpkms`（Google Cloud KMS）、`awskms`（AWS KMS）、`plugin` | [管理密钥](key-management.md) |
-| 邮件 | [`mail`](../reference/configuration.md#mail) | `none`、`smtp`、`ses`（Amazon SES）、`plugin` | [发送邮件](email.md) |
+| 电子邮件 | [`mail`](../reference/configuration.md#mail) | `none`、`smtp`、`ses`（Amazon SES）、`plugin` | [发送电子邮件](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`、`turnstile`（Cloudflare Turnstile）、`hcaptcha`、`recaptcha`（Google reCAPTCHA v2） | [CAPTCHA](captcha.md) |
-| 语音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（浏览器到浏览器，TURN 由 `voice_turn` 指定：`none`、`coturn` 或 `cloudflare`）、`livekit`、`sora` | [语音聊天](voice.md) |
+| 语音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（浏览器到浏览器，TURN 由 `voice_turn` 决定：`none`、`coturn` 或 `cloudflare`）、`livekit`、`sora` | [语音聊天](voice.md) |
 | 支持者付款 | [`payments`](../reference/configuration.md#payments) | `none`、`stripe`、`payjp`（PAY.JP） | [支持者](supporters.md)、[Stripe](payments-stripe.md)、[PAY.JP](payments-payjp.md) |
 | 插件 | `plugin_<kind>_address` | 默认没有；每种类型一个地址：`translator`、`search`、`billing`、`mailer`、`media_image`、`media_video`、`media_audio`、`key_manager`，以及决策钩子 `inbound.status`、`local.status`、`inbound.follow`、`signup.check`、`media.check`、`inbound.actor`、`local.profile` | [插件](plugins.md)、[决策钩子](decision-hooks.md) |
-| 帖子翻译 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | 无（仅使用浏览器自带的翻译）；`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate），或放在你所选服务前面的你自己的插件 | [翻译帖子](translation.md)、[翻译插件](plugins.md#translating-posts) |
-| 帖子全文搜索 | [`search`](../reference/configuration.md#search) | `none`；或 `elasticsearch`、`opensearch`、`meilisearch`（[搜索引擎](search-engines.md)）；或 `plugin`，即放在其他引擎前面的你自己的插件 | [全文搜索](search.md)、[搜索插件](plugins.md#searching-posts) |
-| 媒体 CDN | [`media_origin`](../reference/configuration.md#media_origin) | 不设置（服务器从自己的源站提供媒体），或你的 CDN 的源站 | [通过 CDN 提供媒体](cdn.md) |
-| 云费用 | [`billing_sources`](../reference/configuration.md#billing_sources) | 无，或 `aws`（AWS Cost Explorer）、`gcp`（Google Cloud 的账单导出或预算）、`plugin` 中的任意几项 | [导入云费用](billing-import.md) |
+| 帖子翻译 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | 无（只有浏览器自带的翻译）；`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate），或者在你所选服务前面的你自己的插件 | [翻译帖子](translation.md)、[翻译插件](plugins.md#translating-posts) |
+| 帖子的全文搜索 | [`search`](../reference/configuration.md#search) | `none`；或 `elasticsearch`、`opensearch` 或 `meilisearch`（[搜索引擎](search-engines.md)）；或 `plugin`，即在另一个引擎前面的你自己的插件 | [全文搜索](search.md)、[搜索插件](plugins.md#searching-posts) |
+| 媒体的 CDN | [`media_origin`](../reference/configuration.md#media_origin) | 未设置（服务器从它自己的源提供媒体），或你的 CDN 的源 | [通过 CDN 提供媒体](cdn.md) |
+| 云服务成本 | [`billing_sources`](../reference/configuration.md#billing_sources) | 无，或 `aws`（AWS Cost Explorer）、`gcp`（Google Cloud 的账单导出或预算）、`cloudflare`（Cloudflare 的使用费用）、`plugin` 中的任意几个 | [导入云服务成本](billing-import.md) |
 | 指标 | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`、`prometheus`、`otlp`（OpenTelemetry）、`emf`（CloudWatch） | [指标](running.md#metrics)、[告警](alerts.md) |
 | 追踪 | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追踪](running.md#traces) |
-| 错误报告 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（仅日志行和错误分组）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [错误报告](error-reporting.md) |
+| 错误报告 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（只有日志行和错误分组）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [错误报告](error-reporting.md) |
 
-发布的二进制文件和容器镜像包含上表中的所有适配器。你自己构建的二进制文件可以通过[构建标签](../reference/build-tags.md)去掉不使用的适配器，这样在启动时会拒绝相应的设置。
+发布的二进制文件和容器镜像包含表中的每个适配器。你自己构建的二进制文件可以用[构建标签](../reference/build-tags.md)去掉你不用的适配器，之后它会在启动时拒绝这些适配器的设置。
 
-`my config check` 会在你启动服务器之前一次性报告配置中的所有问题（[上线检查清单](production-checklist.md)）。
+`my config check` 会在你启动服务器之前，一次性报告配置的所有问题（[生产检查清单](production-checklist.md)）。
 
 <!-- source: from-a-small-server-to-a-large-one 42bbd3f2a76e -->
 ## 从小型服务器到大型服务器

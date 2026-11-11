@@ -37,7 +37,7 @@ my admin create -username alice -email alice@example.com
 - Una ejecución fallida no escribe nada, así que puedes corregir la causa y ejecutar el mismo comando otra vez.
 - El código de salida 2 indica un error de uso.
 
-<!-- source: granting-and-revoking-roles b87e1adb131e -->
+<!-- source: granting-and-revoking-roles a8783994c097 -->
 ## Conceder y revocar roles
 
 Los roles contienen permisos. Los roles integrados son `admin` (`position` 1000, todos los permisos) y
@@ -56,17 +56,17 @@ my admin role revoke alice moderator
 - Los permisos pertenecen a uno de tres grupos.
   - Moderación: `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
   - Administración del servidor: `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers`.
-  - Funciones para miembros: `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`.
+  - Funciones para miembros: `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`.
 
   `list` imprime una columna por grupo (`MODERATION`, `SERVER`, `MEMBER`). El cliente web muestra «Moderación» y «Administración» para los dos primeros grupos y no cuenta las funciones para miembros en ninguno de los dos (consulta [moderation.md](moderation.md)).
-- Un cambio surte efecto en la siguiente petición del usuario. Las notificaciones para moderadores van a las personas que tienen el permiso en el momento en que se crea la notificación.
-- Las concesiones y las revocaciones se escriben en el registro de auditoría como `role_granted` y `role_revoked` (tipo de destino `role`). El actor de una operación de la CLI es `cli` (`my admin audit list -target-kind role`).
+- Un cambio surte efecto en la siguiente solicitud del usuario. Las notificaciones para moderadores van a las personas que tienen el permiso cuando se crea la notificación.
+- Las concesiones y revocaciones se escriben en el registro de auditoría como `role_granted` y `role_revoked` (tipo de destino `role`). El actor de una operación de la CLI es `cli` (`my admin audit list -target-kind role`).
 - Conceder un rol que el usuario ya tiene, o revocar uno que no tiene, no cambia ni registra nada.
 - El último titular de `admin` no puede perderlo (código de salida 1). Concede antes `admin` a otro usuario.
 - La API de administración es `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` y `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, y requiere el permiso `manage_roles`.
-  A través de la API, no puedes conceder ni revocar un rol por encima del `position` más alto entre tus propios roles (403). Revocar el último `admin` devuelve 409.
-- El personal solo actúa sobre rangos inferiores. A través de la API, las acciones de moderación y su levantamiento, la resolución de apelaciones, el levantamiento de supresiones de correo electrónico, la revelación de los datos privados de una cuenta, la emisión de un enlace de restablecimiento de contraseña y la eliminación de la autenticación en dos pasos exigen que el `position` más alto entre tus roles sea superior al de cada rol del destinatario; un rango superior o igual, incluida tu propia cuenta, devuelve 403. Un moderador no puede actuar sobre un administrador, y un administrador no puede actuar sobre otro. Estos comandos (`my admin account ...`) no tienen ese límite, así que úsalos cuando los administradores discrepen.
-- No se puede bloquear el acceso ni eliminar al único administrador: `disable_login`, `suspend` y `ban` sobre él se rechazan, tanto a través de la API (409) como con estos comandos (código de salida 1), y tampoco puede eliminar su propia cuenta (409). Otro titular de `admin` solo cuenta mientras pueda iniciar sesión: no después de eliminar su cuenta, ni mientras esté suspendido, vetado o con `disable_login`.
+  Mediante la API, no puedes conceder ni revocar un rol por encima de la `position` más alta entre tus propios roles (403). Revocar el último `admin` devuelve 409.
+- El personal solo actúa sobre rangos inferiores. Mediante la API, las acciones de moderación y su levantamiento, la resolución de apelaciones, el levantamiento de supresiones de correo, la revelación de los datos privados de una cuenta, la emisión de un enlace de restablecimiento de contraseña y la eliminación de la autenticación en dos pasos requieren que la `position` más alta entre tus roles esté por encima de la de todos los roles del destinatario; un rango superior o igual, incluida tu propia cuenta, devuelve 403. Un moderador no puede actuar sobre un administrador, y un administrador no puede actuar sobre otro. Estos comandos (`my admin account ...`) no tienen ese límite, así que úsalos cuando los administradores discrepen.
+- El único administrador no puede quedarse sin acceso ni ser retirado: `disable_login`, `suspend` y `ban` sobre él se rechazan, tanto mediante la API (409) como con estos comandos (código de salida 1), y no puede eliminar su propia cuenta (409). Otro titular de `admin` solo cuenta mientras pueda iniciar sesión: no después de eliminar su cuenta, ni mientras esté suspendido, vetado o bajo `disable_login`.
 
 <!-- source: announcing-the-end-of-the-service e1c40ec145f0 -->
 ## Anunciar el cierre del servicio

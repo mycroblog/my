@@ -1,16 +1,17 @@
-<!-- source: supporter-payments-with-payjp 1f782a11b125 -->
+<!-- source: supporter-payments-with-payjp 6d397d24cf93 -->
 # Pagos de mecenas con PAY.JP
 
-Con `payments = payjp`, los usuarios locales se suscriben a planes mensuales o anuales en la página de pago de este servidor, y el rol del plan se concede y se retira según cambia el estado del pago.
+Con `payments = payjp`, los usuarios locales se suscriben a planes mensuales o anuales en la página de pago de este servidor, y el rol del plan se concede y se retira según cambia el estado del pago. Cuando las propinas están activadas, los usuarios también pagan propinas únicas en la página alojada de PAY.JP (consulta [Propinas](#tips)).
 Las claves de despliegue se describen en la [referencia de configuración](../reference/configuration.md#payments). Para el programa en su conjunto (planes, roles, la lista de miembros), consulta [supporters.md](supporters.md).
 Un administrador activa el programa y crea los planes en la administración. Esta configuración solo permite que el servidor hable con PAY.JP.
 
 Un servidor solo puede usar un proveedor. Para cambiar de Stripe a PAY.JP (o a la inversa), pide a los suscriptores existentes que se suscriban de nuevo con el nuevo proveedor.
 
-<!-- source: what-the-server-does-at-payjp a8abbf012e10 -->
+<!-- source: what-the-server-does-at-payjp afde8e828e80 -->
 ## Qué hace el servidor en PAY.JP
 
 PAY.JP tiene las API v1 y v2. La v2 aún no tiene una API de cobro recurrente, así que el servidor usa el cobro recurrente de la **API v1** (Plan y Subscription). La v1 no tiene ni página de pago alojada ni portal de clientes, así que este servidor ofrece páginas en su lugar.
+Las propinas son pagos únicos en la **API v2**, que sí tiene una página de pago alojada; consulta [Propinas](#tips). PAY.JP permite ambas versiones en una misma cuenta con las mismas claves.
 
 [Cómo funciona una suscripción](supporters.md#how-a-subscription-works) muestra en un diagrama cómo encajan la página de pago, el webhook, la conciliación, el rol del plan y los ingresos.
 
@@ -30,18 +31,29 @@ PAY.JP tiene las API v1 y v2. La v2 aún no tiene una API de cobro recurrente, a
 - **Lectura del estado de vuelta**: el servidor trata un webhook como una señal y lee de vuelta la suscripción y los movimientos de dinero desde la API de PAY.JP para decidir el estado.
   Además, una conciliación cada `payments_reconcile_interval` lee la lista de eventos, los movimientos de dinero y un barrido de todas las suscripciones, y repara cualquier webhook que el servidor haya perdido.
 - **Ingresos**: por cada pago el servidor registra el importe bruto, la comisión (calculada a partir del `fee_rate` del cobro, redondeando a la baja por debajo de un yen) y el neto. Un reembolso y un contracargo registran la comisión devuelta como una comisión negativa.
-  Cuando se cierra un período y se emite un extracto, la diferencia entre la comisión del extracto y el cálculo del servidor se registra como un movimiento de comisión (su ID es el ID del extracto), de modo que el total de comisiones del período coincida con el extracto.
+  Cuando se cierra un período y se emite un extracto, la diferencia entre la comisión del extracto y el cálculo del servidor (las comisiones de los cobros de las suscripciones y de las propinas del período) se registra como un movimiento de comisión (su ID es el ID del extracto), de modo que el total de comisiones del período coincida con el extracto.
   Un extracto abarca las comisiones de toda la cuenta, así que **usa una cuenta de PAY.JP dedicada a este servidor**.
 - **Fechas**: las fechas de los ingresos se cuentan en hora de Japón.
 
-El servidor envía como máximo 20 peticiones por segundo (2 en modo de prueba). Eso se mantiene dentro del límite de frecuencia de PAY.JP (para las peticiones con clave secreta, 30 por segundo en modo real y 2 en modo de prueba). Ante un `429` el servidor espera 1 segundo, duplicándolo cada vez, y reintenta hasta 3 veces.
+El servidor envía como máximo 20 peticiones por segundo (2 en modo de prueba), las API v1 y v2 juntas. Eso se mantiene dentro del límite de frecuencia de PAY.JP (para las peticiones con clave secreta, 30 por segundo en modo real y 2 en modo de prueba). Ante un `429` el servidor espera 1 segundo, duplicándolo cada vez, y reintenta hasta 3 veces.
 En modo de prueba una sola conciliación es lenta (unos 8 minutos con el límite de 1.000 peticiones). Un trabajo de continuación toma el relevo, así que no hace falta ninguna acción.
 
-<!-- source: card-data-and-pci-dss e7247e5fea0f -->
+<!-- source: tips b0917978ffa6 -->
+## Propinas
+
+Las propinas (consulta [supporters.md](supporters.md#tips)) usan la API v2 de PAY.JP con las mismas claves y el mismo token de webhook que las suscripciones. PAY.JP cuenta las propinas entre los bienes que le cuesta aprobar: si tu cuenta puede aceptar propinas es algo que debes resolver con PAY.JP según su revisión y sus condiciones.
+
+- **Pagar**: el servidor crea una Checkout Session (`mode=payment`) del importe único, solo con tarjeta, que caduca en una hora, y envía al usuario a su página en PAY.JP (una página `https` en `pay.jp`; el servidor rechaza cualquier otra dirección). El ID de propina del servidor va en el `client_reference_id` de la sesión y en el `metadata.my_tip_id` de la sesión y de su PaymentFlow. La creación lleva un `Idempotency-Key`, así que un reintento obtiene la misma sesión. PAY.JP ejecuta 3-D Secure en la página alojada cuando lo pide la entidad emisora de la tarjeta.
+  Una propina está pagada cuando su sesión está `complete` y su PaymentFlow ha tenido éxito. Cuando un usuario inicia otra propina, el servidor hace caducar primero la sesión abierta (`POST /v2/checkout/sessions/{id}/expire`); si el usuario la pagó entretanto, se registra ese pago.
+- **Ingresos**: el dinero de las propinas procede de las transacciones de pago de la API v2 de la cuenta: un pago (su ID es el del PaymentFlow), un reembolso, un contracargo y la cancelación de un contracargo, cada uno con la comisión que informa PAY.JP. Un reembolso y un contracargo registran la comisión devuelta como una comisión negativa, igual que en las suscripciones.
+- **Disputas**: PAY.JP envía un evento solo cuando se abre una disputa. Cada conciliación lee también las disputas que terminaron a tu favor (estado `cancel`) y registra la cancelación de un contracargo que las transacciones de pago no informan por sí mismas. Una disputa que se cerró sin contracargo (una consulta) no registra nada.
+- **Reembolsos**: reembolsa una propina en el panel de PAY.JP. Un reembolso total y un contracargo se registran con la propina; un reembolso parcial solo en los ingresos.
+
+<!-- source: card-data-and-pci-dss 7be9976efb0b -->
 ## Datos de tarjeta y PCI DSS
 
 Los números de tarjeta, las fechas de caducidad y los códigos de seguridad se introducen solo dentro del iframe de PAY.JP, que muestra payjp.js. La página y el script de este servidor nunca los tocan. El servidor recibe solo el ID del token que creó payjp.js y el nombre del titular y la dirección de correo electrónico que necesita 3-D Secure.
-El servidor guarda solo IDs de objetos de PAY.JP (`cus_`, `sub_`, `ch_`, IDs de Plan, IDs de evento), importes, períodos y estados. No guarda números de tarjeta, últimos cuatro dígitos ni fechas de caducidad (la página de tarjeta solo lee de PAY.JP los últimos cuatro dígitos, la fecha de caducidad y la dirección de correo electrónico del cliente, y los muestra). Los cuerpos de los webhooks y las respuestas de PAY.JP no se conservan ni en los registros ni en la base de datos.
+El servidor guarda solo IDs de objetos de PAY.JP (`cus_`, `sub_`, `ch_`, IDs de Plan, IDs de evento, y las Checkout Sessions, PaymentFlows, reembolsos y disputas de las propinas), importes, períodos y estados. La tarjeta de una propina se introduce en la propia página de PAY.JP, que este servidor nunca sirve. No guarda números de tarjeta, últimos cuatro dígitos ni fechas de caducidad (la página de tarjeta solo lee de PAY.JP los últimos cuatro dígitos, la fecha de caducidad y la dirección de correo electrónico del cliente, y los muestra). Los cuerpos de los webhooks y las respuestas de PAY.JP no se conservan ni en los registros ni en la base de datos.
 
 La página de pago se sirve desde el origen de este servidor, por lo que está construida teniendo en cuenta la gestión de scripts de páginas de pago de PCI DSS v4 (requisito 6.4.3) y la detección de manipulaciones (requisito 11.6.1).
 
@@ -72,7 +84,7 @@ En «API» del panel de PAY.JP, consulta estas dos claves. El prefijo de una cla
 Pasa la clave secreta en la variable de entorno `MY_PAYMENTS_PAYJP_SECRET_KEY` (o la ruta de un archivo en `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE`). No se puede escribir en el archivo de configuración.
 Si la clave secreta se filtra, vuelve a emitirla en el panel y vuelve a desplegar con la nueva clave. Las URL de las páginas de pago y de tarjeta que estaban abiertas antes del nuevo despliegue dejan de funcionar.
 
-<!-- source: 3-register-the-webhook 1afaf50fdaef -->
+<!-- source: 3-register-the-webhook 836afecf8d0c -->
 ## 3. Registrar el webhook
 
 En «Settings > Webhook» del panel de PAY.JP, añade un destino. Registra por separado el modo de prueba y el modo real.
@@ -89,6 +101,9 @@ El servidor usa estos eventos (los otros tipos se aceptan pero no se registran).
 - `charge.succeeded`, `charge.failed`, `charge.refunded`
 - `dispute.created`
 - `statement.created`
+- Para las propinas (API v2): `checkout.session.completed`, `checkout.session.expired`, `payment_flow.succeeded`, `refund.created`, `refund.updated`, `refund.failed` y `dispute.created`
+
+El servidor distingue los eventos de la API v1 y v2 por su forma, así que ambas versiones van a la misma URL con el mismo token.
 
 PAY.JP reenvía una notificación solo cada 3 minutos, como máximo 3 veces, y una notificación pasado ese punto no llega hasta que la reenvías desde el panel. La conciliación repara lo que se perdió, así que **se recomienda establecer `payments_reconcile_interval` en 1 hora**.
 El estado del proveedor (el modo, cuándo llegó el último webhook y el resultado de la última conciliación) se muestra en la sección «Proveedor de pagos» de `/admin/supporters` en la administración.
@@ -135,13 +150,13 @@ Se espera que `payjp listen --forward-to http://localhost:8080/payments/webhooks
 
 Abre las páginas de pago y de tarjeta en el origen de este servidor (también funcionan en `http://localhost:8080`, pero el comportamiento de payjp.js y de 3-D Secure varía según las configuraciones del navegador).
 
-<!-- source: 7-operation fbdd81461f80 -->
+<!-- source: 7-operation fae168baab1c -->
 ## 7. Operación
 
 - Un fallo de conciliación de tipo `permission` significa una clave secreta incorrecta.
 - `duplicate_charge` en las advertencias de la sección «Proveedor de pagos» significa que el servidor no pudo terminar de reembolsar un pago de una suscripción cerrada. La línea de registro `a second subscription could not be canceled and refunded` nombra la suscripción, y cada conciliación lo intenta de nuevo, también después de que se elimine la suscripción. Reembolsa el cobro en el panel si el aviso continúa: el siguiente intento lo encuentra reembolsado y borra la advertencia, siempre que PAY.JP siga listando los cobros de la suscripción eliminada (consulta [Puntos por verificar](#items-to-verify)). Un cobro de más de 180 días no se puede reembolsar: el servidor lo registra y continúa.
 - Los demás reembolsos se gestionan en el panel de PAY.JP. Un reembolso total y un contracargo retiran el rol y eliminan la suscripción de inmediato, y un reembolso parcial no retira el rol.
-- **La cancelación de un contracargo** no se registra automáticamente, porque PAY.JP no emite ni un evento ni una API para ello. Cuando ocurra uno, registra el importe cancelado en la pantalla de ingresos de la página de costos (`finance`). El rol no se restablece automáticamente.
+- **La cancelación de un contracargo** del cobro de una suscripción no se registra automáticamente, porque la API v1 no tiene ni un evento ni una API para ello (la de una propina sí la tiene, consulta [Propinas](#tips)). Cuando ocurra uno, registra el importe cancelado en la pantalla de ingresos de la página de costos (`finance`). El rol no se restablece automáticamente.
 - **Las comisiones del plan de pago de PAY.JP y las comisiones de transferencia** no se restan de los ingresos. Regístralas como costos en `finance`.
 - Cuando las conciliaciones alcancen a menudo el límite de peticiones, aumenta `payments_reconcile_max_requests` o alarga `payments_reconcile_interval`.
 
@@ -150,7 +165,7 @@ Abre las páginas de pago y de tarjeta en el origen de este servidor (también f
 
 Una mejora de plan cobra primero la diferencia prorrateada y mueve el plan solo después de que ese cobro se realice con éxito. Cuando el cobro es rechazado, el plan se mantiene y el usuario ve un error con la forma de actualizar la tarjeta, sin período de gracia ni notificación de pago fallido, y volver a intentarlo con una tarjeta válida cobra una sola vez. Si el plan no se mueve después del cobro, volver a intentarlo no cobra de nuevo. Una diferencia por debajo del mínimo de 50 yenes, y un cambio al precio anual del mismo plan, que no tiene una diferencia positiva, no cobran nada ahora y se mueven de inmediato; el nuevo precio se cobra al final del período, y un fallo entonces es una renovación fallida.
 
-<!-- source: items-to-verify 3c2cbf6ed2b0 -->
+<!-- source: items-to-verify d5fb7fd9927f -->
 ## Puntos por verificar
 
 La documentación de PAY.JP y el modo de prueba no aclaran los siguientes comportamientos.
@@ -162,4 +177,5 @@ La documentación de PAY.JP y el modo de prueba no aclaran los siguientes compor
 - Si importa el informe de CSP al cargar la página de pago: `pay.js` aplica un estilo en línea contra `style-src 'self'`, mientras que los campos de tarjeta y 3-D Secure funcionan en Chromium. No se comprobaron otros navegadores.
 - Si payjp-cli puede reenviar eventos de la v1.
 - Que un cobro de la tarjeta guardada de un cliente no pide 3-D Secure a menos que lo pida la petición. Un cobro rechazado aparece en `GET /v1/charges` con `paid: false`, y el servidor ignora los que no están pagados.
+- Para las propinas en la API v2, que se construyeron a partir de las guías de PAY.JP y de su SDK oficial y aún no se han probado en modo de prueba: que PAY.JP envía los eventos de la v2 al mismo destino con el mismo token que los de la v1; que la página alojada está en `pay.jp` o en uno de sus subdominios; que la creación de una Checkout Session respeta `Idempotency-Key`; que el `resource_id` de una transacción de pago es el PaymentFlow de un pago, el reembolso de un reembolso y la disputa de un contracargo y de su cancelación; que las listas van de la más reciente a la más antigua con `starting_after` y `ending_before`; los signos del importe y de la comisión de una transacción; y que el extracto de un período de la v1 incluye las comisiones de la v2.
 - Que `GET /v1/charges` con `subscription` siga listando los cobros de una suscripción eliminada. El servidor reembolsa antes de eliminar, así que solo un intento posterior a un reembolso que falló definitivamente depende de esto. La referencia de la API documenta el filtro y no dice nada sobre las suscripciones eliminadas. Si la lista vuelve vacía, el servidor informa de un fallo en lugar de un reembolso, y `duplicate_charge` permanece incluso después de reembolsar el cobro a mano.

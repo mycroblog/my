@@ -5,7 +5,7 @@
 このガイドでは、その選び方と、それぞれの方法に必要な STUN サーバーと TURN サーバー、またはメディアサーバー、そしてデプロイ、プライバシー、モデレーションについて知っておくことを説明します。
 ここで名前を挙げる設定は、すべて[設定のリファレンス](../reference/configuration.md#voice)で説明しています。
 
-<!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
+<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
 ## 音声の伝え方を選ぶ
 
 `voice` はインスタンス全体で 1 つの方法を選びます。すべてのルームがその方法を使います。
@@ -49,7 +49,7 @@
 | 設定 | 既定値 | 意味 |
 | --- | --- | --- |
 | `voice_max_room_duration` | `4h` | ルームが開いていられる最長の時間です。これに達したルームは終了します。 |
-| `voice_max_open_rooms` | `10` | このサーバーで同時に開いていられるルームの数です。 |
+| `voice_max_open_rooms` | `10` | このサーバーで同時に開いていられるルームの数です。予定の時刻に向けて開いたルームは、最初の参加者を待っている間も、開いた時点から数えます。 |
 | `voice_sfu_max_participants` | `10` | `livekit` と `sora` のルームの人数です。 |
 | `voice_p2p_max_participants` | `10` | `p2p` のルームの人数です。2 から 50 まで指定できます。 |
 

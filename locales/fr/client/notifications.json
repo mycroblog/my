@@ -91,6 +91,10 @@
     "defaultMessage": "Ouvrir les webhooks",
     "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
   },
+  "notifications.link.domain_list_subscriptions": {
+    "defaultMessage": "Ouvrir les abonnements aux listes de blocage",
+    "description": "Link of an admin_domain_list_failing notification to the list of the subscriptions to domain block lists."
+  },
   "notifications.link.custom_emoji_requests": {
     "defaultMessage": "Examiner les demandes",
     "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
@@ -210,6 +214,10 @@
   "notifications.type.auto_delete_limit": {
     "defaultMessage": "Le maximum de conservation des publications du serveur s’appliquera à vos publications",
     "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
+  "notifications.type.scheduled_status_failed": {
+    "defaultMessage": "Votre publication programmée n’a pas pu être publiée",
+    "description": "Notification sentence: a post that the user scheduled could not be published at its time. The draft stays, to fix and schedule again; the notification says why below."
   },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "Un paiement de votre formule de soutien a échoué",
@@ -371,6 +379,38 @@
     "defaultMessage": "Ouvrir le salon",
     "description": "Link in a voice chat notification to the page of the room."
   },
+  "notifications.type.event_invited": {
+    "defaultMessage": "{name} vous a invité à un événement",
+    "description": "Notification sentence. {name} is the display name of the account that invited the user to an event of the server."
+  },
+  "notifications.type.event_schedule_confirmed": {
+    "defaultMessage": "La date d’un événement de {name} est fixée",
+    "description": "Notification sentence: the organizers fixed the date of an event whose date poll the user answered, or to which the user was invited. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_changed": {
+    "defaultMessage": "La date ou le lieu d’un événement de {name} a changé",
+    "description": "Notification sentence: the organizers changed the date, the places, or the voice chat room of an event that the user is going to, may go to, or was invited to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_cancelled": {
+    "defaultMessage": "Un événement de {name} a été annulé",
+    "description": "Notification sentence: an event that the user is going to, may go to, or was invited to was cancelled. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_reminder": {
+    "defaultMessage": "Un événement de {name} commence bientôt",
+    "description": "Notification sentence: a reminder, at the time the user chose, of an event that the user is going to or may go to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_started": {
+    "defaultMessage": "Un événement de {name} commence",
+    "description": "Notification sentence: an event that the user is going to or may go to starts now. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_room_unavailable": {
+    "defaultMessage": "Le salon vocal de votre événement ne peut pas s’ouvrir",
+    "description": "Notification sentence to the organizer of an event: its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays."
+  },
+  "notifications.link.event": {
+    "defaultMessage": "Ouvrir l’événement",
+    "description": "Link in a notification of an event to the page of the event."
+  },
   "notifications.type.admin_error_group_created": {
     "defaultMessage": "Une nouvelle erreur a été signalée",
     "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."
@@ -399,6 +439,42 @@
     "defaultMessage": "Répondre",
     "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
   },
+  "notifications.follow_request.approve": {
+    "defaultMessage": "Approuver",
+    "description": "Button in the row of a follow request notification that accepts the request, so that the account follows the user."
+  },
+  "notifications.follow_request.decline": {
+    "defaultMessage": "Refuser",
+    "description": "Button in the row of a follow request notification that rejects the request."
+  },
+  "notifications.follow_request.action": {
+    "defaultMessage": "{action} : {name}",
+    "description": "Accessible name of a button of a follow request notification. {action} is its visible text (for example 'Approve'), {name} the display name of the account that asked to follow the user."
+  },
+  "notifications.follow_request.approved": {
+    "defaultMessage": "Approuvée",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, after the user approved the request."
+  },
+  "notifications.follow_request.declined": {
+    "defaultMessage": "Refusée",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, after the user declined the request."
+  },
+  "notifications.follow_request.gone": {
+    "defaultMessage": "Cette demande a déjà reçu une réponse ou a été retirée.",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, and announced, when the user pressed one but the request no longer waits (answered on another device, or withdrawn by the account)."
+  },
+  "notifications.follow_request.accepted": {
+    "defaultMessage": "{name} vous suit désormais.",
+    "description": "Announced after the user approved a follow request from its notification. {name} is the account's display name."
+  },
+  "notifications.follow_request.rejected": {
+    "defaultMessage": "Vous avez refusé la demande d’abonnement de {name}.",
+    "description": "Announced after the user declined a follow request from its notification. {name} is the account's display name."
+  },
+  "notifications.follow_request.failed": {
+    "defaultMessage": "Impossible de répondre à la demande d’abonnement : {reason}",
+    "description": "Toast when approving or declining a follow request from its notification failed. {reason} is the localized reason of the failure."
+  },
   "notifications.announcement.titled": {
     "defaultMessage": "Annonce : {title}",
     "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."
@@ -418,6 +494,10 @@
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "Les appels d’un examen externe échouent sans cesse",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_domain_list_failing": {
+    "defaultMessage": "Les récupérations d’un abonnement à une liste de blocage échouent à répétition",
+    "description": "Notification sentence to a moderator: the server could not fetch a subscribed domain block list three times in a row, so the list changes no domain actions until it works again."
   },
   "notifications.type.admin_hook_appeal": {
     "defaultMessage": "Un utilisateur a contesté une publication que l’examen automatisé a refusée",
@@ -443,8 +523,44 @@
     "defaultMessage": "À partir du {date}, vos publications de plus de {days, plural, one {# jour} other {# jours}} seront supprimées, sauf celles que ce serveur vous laisse conserver. D’ici là, vos propres paramètres s’appliquent.",
     "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
   },
+  "notifications.scheduled_status_failed.detail": {
+    "defaultMessage": "{reason, select, restricted {Votre compte ne peut pas publier pour le moment.} reply_unavailable {La publication à laquelle elle répond n’est plus disponible.} quote_unavailable {La publication qu’elle cite n’est plus disponible.} media_unavailable {Un fichier joint n’est plus disponible.} invalid {Elle ne respecte pas les conditions d’une publication.} rejected {L’examen automatisé du serveur l’a refusée.} other {}} Elle était programmée pour le {date}. Le brouillon est conservé : vous pouvez le corriger et le programmer de nouveau.",
+    "description": "In the notification that a scheduled post could not be published: {reason} says why (restricted: the account may not post now, because of a moderation action, a suspension, or an account that is not active; reply_unavailable: the post it replies to is gone, hidden from the user, or does not take the reply; quote_unavailable: the post it quotes is gone, hidden, or may not be quoted; media_unavailable: an attached file is gone or failed processing; invalid: the post does not pass the checks of a post, such as its length; rejected: the server's automated review refused the post). {date} is the formatted date and time it was to be published."
+  },
   "notifications.link.auto_delete": {
     "defaultMessage": "Voir quelles publications seront supprimées",
     "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
+  },
+  "notifications.type.reply_request": {
+    "defaultMessage": "{name} a demandé à répondre à votre publication",
+    "description": "Notification sentence. {name} is the display name of the account whose reply to the user's post waits for the user's approval."
+  },
+  "notifications.type.boost_request": {
+    "defaultMessage": "{name} a demandé à booster votre publication",
+    "description": "Notification sentence. {name} is the display name of the account whose boost of the user's post waits for the user's approval."
+  },
+  "notifications.type.quote_request": {
+    "defaultMessage": "{name} a demandé à citer votre publication",
+    "description": "Notification sentence. {name} is the display name of the account whose quote of the user's post waits for the user's approval."
+  },
+  "notifications.type.interaction_accepted": {
+    "defaultMessage": "{name} a approuvé votre réponse, boost ou citation",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.type.interaction_rejected": {
+    "defaultMessage": "{name} a refusé votre réponse, boost ou citation",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who declined the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.link.interaction_requests": {
+    "defaultMessage": "Examiner les demandes",
+    "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
+  },
+  "notifications.severed.allowlist": {
+    "defaultMessage": "Ce serveur ne se fédère désormais qu’avec les serveurs qu’il autorise. Vous avez perdu {followers, plural, one {# abonné} other {# abonnés}} et {following, plural, one {# compte que vous suiviez} other {# comptes que vous suiviez}} sur les autres serveurs.",
+    "description": "Notification sentence: the administrators of this server switched it to federate only with the servers it allows, which ended the follows between the user and the accounts of every other server in both directions; they are not restored when the server federates with them again. {followers} is the number of those accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.allowlist_domain": {
+    "defaultMessage": "Ce serveur ne se fédère plus avec {domain}. Vous y avez perdu {followers, plural, one {# abonné} other {# abonnés}} et {following, plural, one {# compte que vous suiviez} other {# comptes que vous suiviez}}.",
+    "description": "Notification sentence: the moderators of this server removed another server from the servers it federates with, which ended the follows between its accounts and the user in both directions; they are not restored when it is allowed again. {domain} is the server's domain name. {followers} is the number of its accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   }
 }

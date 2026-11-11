@@ -24,49 +24,50 @@ Dem Nutzer wird „we sent a confirmation email“ gesagt, und er fordert sie er
 
 Benachrichtigungs-E-Mails für Unterstützer (`notification.supporter_email`) laufen über dieselbe Job-Queue.
 
-<!-- source: which-notifications-are-emailed 76c2b871762c -->
-### Welche Benachrichtigungen per E-Mail gesendet werden
+<!-- source: which-notifications-are-emailed a19ef61af242 -->
+### Welche Benachrichtigungen per E-Mail kommen
 
-Jeder Nutzer wählt pro Art der Benachrichtigung, ob sie in der App und per E-Mail ankommt, auf der Seite **Benachrichtigungen** in
-den Einstellungen (`/settings/notifications` im Web-Client). Die Spalte „E-Mail“ erscheint dort nur, solange der Server
-E-Mails sendet. Eine in der App ausgeschaltete Art wird gar nicht erst erzeugt, also weder per E-Mail noch per Push gesendet.
+Jeder Benutzer wählt pro Art von Benachrichtigung, ob sie in der App und per E-Mail ankommt, auf der Seite **Benachrichtigungen** der Einstellungen
+(`/settings/notifications` im Webclient). Die Spalte E-Mail erscheint dort nur, solange der Server
+E-Mails sendet. Eine Art, die in der App ausgeschaltet ist, wird gar nicht erst erzeugt und daher auch nicht per E-Mail oder Push gesendet.
 
 | Art | E-Mail standardmäßig | Wann sie gesendet wird |
 | --- | --- | --- |
-| Benachrichtigungen von anderen Nutzern (Erwähnungen, neue Follower, Follow-Anfragen, angenommene Follow-Anfragen, Boosts, Favoriten, Emoji-Reaktionen, Zitate, beendete Umfragen, Umzüge von Konten, denen du folgst, Sprach-Chats) | Aus | 15 Minuten nach der Benachrichtigung, nur wenn sie noch ungelesen ist (nicht als gelesen markiert, nicht verworfen) und noch sichtbar ist und der Nutzer diese Art weiterhin per E-Mail erhält. Eine E-Mail pro Benachrichtigung |
-| Hinweise der Moderatoren (eine Moderationsaktion zum Konto, eine gelöste Meldung, ein entschiedener Einspruch, durch eine Sperre verlorene Follows, eine entschiedene Anfrage für ein eigenes Emoji) | Aus | Wie oben |
-| Hinweise an Moderatoren (neue Meldungen, Registrierungen, die auf Genehmigung warten, Einsprüche, deaktivierte Webhooks, Anfragen für eigene Emojis, Umzüge eingeschränkter Konten, das verstrichene Schließungsdatum, neue und wiederkehrende Fehler), an die Personen, deren Rolle die Berechtigung hat | An | Sofort, ohne darauf zu warten, dass sie gelesen wird |
-| Einstellung des Dienstes und die Hinweise der Unterstützungspläne | Immer | Sofort; diese lassen sich nicht ausschalten |
+| Benachrichtigungen von anderen Benutzern (Erwähnungen, neue Follower, Folgeanfragen, angenommene Folgeanfragen, Boosts, Favoriten, Emoji-Reaktionen, Zitate, beendete Umfragen, Umzüge von Konten, denen du folgst, Sprachchats) | Aus | 15 Minuten nach der Benachrichtigung, nur wenn sie noch ungelesen ist (nicht als gelesen markiert, nicht verworfen) und noch sichtbar, und der Benutzer diese Art weiterhin per E-Mail erhält. Eine E-Mail pro Benachrichtigung |
+| Veranstaltungen (Einladungen, bestätigte Termine, Änderungen von Datum oder Ort, Absagen, Erinnerungen und Beginn von Veranstaltungen auf diesem Server) | Aus | Wie oben, außer bei Erinnerungen, die sofort gesendet werden. Die E-Mail nennt Titel, Beginn und Organisatoren der Veranstaltung und nie, wo sie stattfindet |
+| Hinweise der Moderatoren (eine Moderationsmaßnahme gegen das Konto, eine erledigte Meldung, ein entschiedener Einspruch, durch eine Sperrung verlorene Follows, eine entschiedene Anfrage für ein eigenes Emoji) | Aus | Wie oben |
+| Hinweise an Moderatoren (neue Meldungen, auf Genehmigung wartende Registrierungen, Einsprüche, deaktivierte Webhooks, Anfragen für eigene Emojis, Umzüge eingeschränkter Konten, das Verstreichen des Schließungsdatums, neue und wiederkehrende Fehler), an die Leute, deren Rolle die Berechtigung hat | An | Sofort, ohne zu warten, bis sie gelesen wird |
+| Schließung des Dienstes und die Hinweise zu Supporter-Tarifen | Immer | Sofort; sie lassen sich nicht ausschalten |
 
-Benachrichtigungs-E-Mails gehen nur an die primäre Adresse des Nutzers, sobald sie bestätigt ist, und nie an eine Adresse, deren E-Mails
-gestoppt sind (siehe unten). Der Betreff der E-Mail zu einer Benachrichtigung eines anderen Nutzers ist derselbe Text wie seine Web-Push-Nachricht,
+Benachrichtigungs-E-Mails gehen nur an die primäre Adresse des Benutzers, sobald sie bestätigt ist, und nie an eine Adresse, deren E-Mails
+gestoppt sind (siehe unten). Der Betreff der E-Mail einer Benachrichtigung von einem anderen Benutzer ist derselbe Text wie ihre Web-Push-Nachricht,
 und die E-Mail verlinkt auf den Beitrag, das Profil oder die Benachrichtigungen.
 
-E-Mails zur Einstellung des Dienstes gehen an jeden Nutzer mit bestätigter primärer Adresse. Eine zu verpassen kann Datenverlust bedeuten, daher werden sie
-als transaktionale E-Mail gesendet, tragen keinen Abmeldelink und werden nicht durch eine Beschwerde gestoppt (ein Hard Bounce stoppt sie dagegen).
-Die Ankündigung, eine Datumsänderung, eine Absage und die Schließung legen jeweils `identity.closure_email_fanout` in derselben
-Transaktion wie ihren Datensatz an. Das stündliche `identity.queue_closure_reminders` entscheidet, wann die Erinnerungen für 7 Tage und
-1 Tag vor dem Schließungsdatum und 7 Tage vor der Export-Frist gesendet werden. Eine Erinnerung, deren Zeitpunkt schon verstrichen war, als die Einstellung
-angekündigt wurde, wird nicht gesendet, weil die Ankündigungs-E-Mail die Daten nennt.
-Der Fan-out-Job zeichnet pro Nutzer eine Zeile in `service_closure_emails` auf und legt `identity.closure_email` nur für die Nutzer an, die er
-aufzeichnen konnte, sodass jeder Nutzer jede E-Mail einmal erhält, egal wie oft der Job läuft. Vor dem Senden prüft der Job, dass die E-Mail
-noch gültig ist (dass sie nicht zu einer abgesagten Ankündigung oder zu einem inzwischen geänderten Datum gehört).
+E-Mails zur Schließung des Dienstes gehen an jeden Benutzer, dessen primäre Adresse bestätigt ist. Eine zu verpassen, kann Datenverlust bedeuten, daher werden sie
+als Transaktions-E-Mail gesendet, tragen keinen Abmeldelink und werden durch eine Beschwerde nicht gestoppt (ein Hard Bounce stoppt sie dagegen).
+Die Ankündigung, eine Änderung des Datums, eine Absage und die Schließung reihen jeweils `identity.closure_email_fanout` in derselben
+Transaktion wie ihren Datensatz ein. Der stündliche `identity.queue_closure_reminders` entscheidet, wann die Erinnerungen 7 Tage und
+1 Tag vor dem Schließungsdatum und 7 Tage vor der Export-Frist gesendet werden. Eine Erinnerung, deren Zeitpunkt bei der Ankündigung der Schließung
+schon vorbei war, wird nicht gesendet, weil die Ankündigungs-E-Mail die Daten nennt.
+Der Fan-out-Job erfasst eine Zeile von `service_closure_emails` pro Benutzer und reiht `identity.closure_email` nur für die Benutzer ein, die er
+erfassen konnte, sodass jeder Benutzer jede E-Mail einmal erhält, wie oft der Job auch läuft. Vor dem Senden prüft der Job, dass die E-Mail
+noch gültig ist (dass sie nicht zu einer abgesagten Ankündigung oder einem inzwischen geänderten Datum gehört).
 
 Die Einstellung `mail` wählt, wie E-Mails gesendet werden.
 
 | `mail` | Verhalten |
 | --- | --- |
-| `none` (Standard) | Sendet nichts und schreibt `mail not sent (mail = none)` mit der Kategorie der Nachricht ins Server-Log. Mit `profile = development` enthält die Zeile auch die Adressen, den Betreff und den Text samt Links. Für Setups, die keine E-Mails nutzen, und für die Entwicklung |
+| `none` (Standard) | Sendet nichts und schreibt `mail not sent (mail = none)` mit der Kategorie der Nachricht ins Server-Log. Mit `profile = development` enthält die Zeile außerdem die Adressen, den Betreff und den Text, Links eingeschlossen. Für Setups, die keine E-Mail nutzen, und für die Entwicklung |
 | `smtp` | Sendet per SMTP-Submission. Es verlangt STARTTLS und prüft das Zertifikat, bevor es sich authentifiziert und sendet |
-| `ses` | Sendet mit der Amazon-SES-v2-API (`SendEmail` mit Rohinhalt). Es authentifiziert sich über die Standard-Credential-Kette des AWS SDK (zum Beispiel eine IAM-Rolle) und hält kein SMTP-Passwort |
-| `plugin` | Übergibt jede Nachricht an ein [Plugin](#a-plugin-mail--plugin), das du betreibst, für einen Maildienst, der nur eine HTTP-API anbietet |
+| `ses` | Sendet mit der Amazon-SES-v2-API (`SendEmail` mit Rohinhalt). Es authentifiziert sich über die Standard-Credential-Chain des AWS-SDK (zum Beispiel eine IAM-Rolle) und hält kein SMTP-Passwort |
+| `plugin` | Übergibt jede Nachricht an ein [Plugin](#a-plugin-mail--plugin), das du betreibst, für einen Mail-Dienst, der nur eine HTTP-API bietet |
 
 Die Einstellungen von `smtp` sind `mail_from`, `mail_smtp_host`, `mail_smtp_port` (Standard 587), `mail_smtp_username` und `mail_smtp_password`. Die
 Einstellungen von `ses` sind `mail_from`, `mail_ses_region` und `mail_ses_configuration_set`. Die Einstellungen von `plugin` sind `mail_from`
 und `plugin_mailer_address` mit dem Rest von [seinem Ziel](plugins.md#the-destination).
 `mail_from` ist eine reine Adresse wie `noreply@social.example`. `From` wird zu `"<server name>" <mail_from>`, und die Domain
-von `mail_from` ist auch die Domain der `Message-ID` und diejenige, auf die SPF, DKIM und DMARC angewendet werden (siehe unten).
-`Reply-To` ist die Servereinstellung `contact_email`, wenn sie gesetzt ist ([Servereinstellungen](instance-settings.md)).
+von `mail_from` ist auch die Domain von `Message-ID` und die, auf die SPF, DKIM und DMARC wirken (siehe unten).
+`Reply-To` ist die Instanzeinstellung `contact_email`, wenn sie gesetzt ist ([Instanzeinstellungen](instance-settings.md)).
 Jede E-Mail trägt `Auto-Submitted: auto-generated`.
 `smtp` und `ses` bauen dieselbe Nachricht. SMTPUTF8 wird nicht verwendet, daher werden Adressen in ASCII gesendet und internationalisierte Domains
 in Punycode umgewandelt. An eine Adresse, deren lokaler Teil (vor dem `@`) nicht ASCII ist, kann nicht gesendet werden, und ihr Job schlägt fehl.

@@ -50,19 +50,19 @@ my config check -instance  # also the instance settings in the database
 - **確認**：`my config check` 會顯示 `host` 和 `account_domain`，並回報其他伺服器無法連到的網域。當它們與資料庫中的值不同時，`my config check -instance` 也會失敗，而且不會記錄任何東西。使用另外的帳號名稱網域時，`curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"` 會以 `301` 回應，導向 `https://<host>/.well-known/webfinger?...`。
 - **詳細說明**：[執行伺服器](running.md)（聯邦端點，以及從另一個網域提供帳號名稱）、[`host`](../reference/configuration.md#host) 和 [`account_domain`](../reference/configuration.md#account_domain)。
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### 可透過 `https` 連線
 
-- **原因**：其他伺服器會透過連接埠 443 在 `https://<host>/` 擷取 id，而瀏覽器只會透過 `https` 傳送登入用的 Cookie。
-- **確認**：從你的網路外部執行 `curl -sI https://<host>/healthz`，會以對 `host` 有效的憑證回應 `200`，而且 `my config check` 沒有回報關於 `web_origin` 的錯誤。`http://<host>/` 會重新導向到 `https`，這由伺服器前方的反向代理、負載平衡器或 CDN 處理（使用 Docker Compose 時，`compose.caddy.yaml` 層就是這樣的代理）。
+- **原因**：其他伺服器會在 443 埠取得位於 `https://<host>/` 的 id，而瀏覽器只會透過 `https` 傳送登入 cookie。
+- **驗證**：`curl -sI https://<host>/health/live` 從你的網路外部回應 `200`，且憑證對 `host` 有效，而 `my config check` 沒有回報任何關於 `web_origin` 的錯誤。`http://<host>/` 會重新導向到 `https`，這由伺服器前面的反向代理、負載平衡器或 CDN 負責（使用 Docker Compose 時，`compose.caddy.yaml` 這一層就是這樣的代理）。
 - **詳細說明**：[執行伺服器](running.md)、[`web_origin`](../reference/configuration.md#web_origin)。
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### 無法繞過 CDN 連線
 
-- **原因**：前方有 CDN，而伺服器自己的位址仍然公開（Cloud Run 上的 `*.run.app`）時，任何人都可以繞過 WAF 和快取直接呼叫伺服器，而在 CDN 自家平台上的呼叫者還能自行指定速率限制所看到的用戶端 IP。只有在這種情況下才需要：防火牆或平台已經限制誰能連線時不需要，而沒有 CDN 時也就沒有什麼可以繞過。
-- **確認**：已設定 `origin_secret` 和 `origin_secret_header`，而且 CDN 會在每個主機名稱上設定該標頭。`curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/` 回應 `403`，其 `/healthz` 回應 `200`，而 `https://<host>/` 回應 `200`。
-- **詳細說明**：[拒絕未經過 CDN 的請求](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)，包括所有人都被鎖在外面時如何復原。
+- **原因**：前面有 CDN，而伺服器本身的位址仍然是公開的（Cloud Run 上的 `*.run.app`）時，任何人都可以繞過 WAF 和快取直接呼叫伺服器，而且在 CDN 自己平台上的呼叫者可以選擇速率限制所看到的用戶端 IP。只有在這種情況才需要：當防火牆或平台已經限制了誰可以連線時不需要，沒有 CDN 時也沒有東西可以繞過。
+- **驗證**：已設定 `origin_secret` 和 `origin_secret_header`，而且 CDN 在每個主機名稱上都會設定該標頭。`curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/` 回應 `403`，它的 `/health/live` 回應 `200`，而 `https://<host>/` 回應 `200`。
+- **詳細說明**：[拒絕不是經由 CDN 來的請求](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)，包括當它把所有人都鎖在門外時如何復原。
 
 <!-- source: secrets ec71f1f20574 -->
 ## 密鑰
@@ -127,14 +127,16 @@ my config check -instance  # also the instance settings in the database
   - 只有需要的人才擁有 `admin` 角色；版主擁有 `moderator`，或只含他們會用到之權限的角色。請用 `my admin role` 列出，並在管理畫面中檢視。
 - **詳細說明**：[管理員與角色](admin-cli.md)、[審核](moderation.md)（權限和登入復原）。
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## 營運
 
-- **備份與復原**：資料庫、blob 儲存區（`blob_fs_dir` 或 bucket）和 KEK 都依排程備份到與伺服器分開的地方，而且已經演練過還原到全新的伺服器：還原後的伺服器能啟動，帳號也能登入和發文。從未還原過的備份，不能確定它可用。資料庫和媒體不得放在暫存目錄中；放在那裡時 `my config check` 會發出警告。請參閱[金鑰管理](key-management.md)（備份 KEK）和[資料庫](database.md)。
-- **監控與警示**：外部監控會檢查 `/healthz`，並通知能夠處理的人，而且有人在留意任務佇列中的 dead 任務。請參閱[監控](monitoring.md)和[執行伺服器](running.md)（健康檢查、指標和任務佇列）。
-- **映像檔**：實例執行的是以 digest 固定的正式發布映像檔（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，取自該版本的發布說明），而不是重新啟動時會改變的映像檔，而且[已驗證其來源](running.md#verify-an-image)。沒有 `latest` 標籤。升級時會刻意變更該版本，並依照[升級](database.md#upgrading)的步驟，一次升一個次要版本。
-- **原始碼（AGPL-3.0）**：伺服器必須向所有使用者提供其原始碼。未修改的正式版本，請將 [`source_url`](../reference/configuration.md#source_url) 保持預設值；執行分支或修改版本時，請將它指向你自己的原始碼。請在 `/about` 上確認連結。請參閱[執行伺服器](running.md)（公開原始碼）。
-- **維護**：在需要之前，就先了解如何讓伺服器進入維護模式。請參閱[維護](maintenance.md)。
+- **備份與復原**：資料庫、blob 儲存（`blob_fs_dir` 或 bucket）和 KEK 都按排程備份到與伺服器分開的地方，而且已經演練過還原到全新的伺服器：還原後的伺服器能啟動，帳號能登入並發文。從未還原過的備份，無法確定它能用。資料庫和媒體不可放在暫存目錄中；放在那裡時，`my config check` 會發出警告。
+  請參閱[金鑰管理](key-management.md)（備份 KEK）和[資料庫](database.md)。
+- **監控與警示**：外部監控會檢查 `/health/live`，並向能採取行動的人發出警示，而且會監看任務佇列中的失敗任務（dead jobs）。請參閱[監控](monitoring.md)和[執行伺服器](running.md)（健康檢查、指標與任務佇列）。
+- **映像檔**：實例執行的是以 digest 固定的已發行映像檔（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，取自該版本的說明），而不是重新啟動就會變動的映像檔，而且[它的來源已經驗證過](running.md#verify-an-image)。沒有 `latest` 標籤。升級會刻意變更該版本，並遵循[升級](database.md#upgrading)，一次升一個次要版本。
+- **原始碼（AGPL-3.0）**：伺服器必須向每位使用者提供它的原始碼。未修改的發行版請將 [`source_url`](../reference/configuration.md#source_url) 維持預設值；執行分支或修改過的版本時，請將它指向你自己的原始碼。請在 `/about` 驗證該連結。
+  請參閱[執行伺服器](running.md)（公布原始碼）。
+- **維護**：在需要之前，先知道如何將伺服器切換到維護模式。請參閱[維護](maintenance.md)。
 
 <!-- source: federation a5ab186ec04b -->
 ## 聯邦

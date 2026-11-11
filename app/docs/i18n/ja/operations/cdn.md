@@ -101,12 +101,12 @@ Cloud Run のドメインマッピングのように、プラットフォーム�
 
 どれも設定しなければ何も確認されず、サーバーはこの節がないものとして動きます。
 
-<!-- source: what-passes-without-the-header 38e1ceda6e34 -->
+<!-- source: what-passes-without-the-header b79877bb91a3 -->
 ### ヘッダーなしで通るもの
 
 | リクエスト | 理由 |
 | --- | --- |
-| `/healthz`、`/readyz`、`/api/v1/instance/health` への `GET` または `HEAD` | プラットフォームのプローブや死活監視が直接呼び出すため |
+| `/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health` への `GET` または `HEAD` | プラットフォームのプローブや死活監視が直接呼び出すため |
 | `/_internal/` のパスへの `POST` | Cloud Tasks と Cloud Scheduler がサーバー自身の URL で呼び出すため。これらは独自の署名付きトークンを持ちます |
 
 それ以外はすべて、メンテナンスモードの間も含めてヘッダーが必要です。Web クライアントとそのアセット、`/media/`、クライアント API、OAuth、ほかのサーバーからの配送を含む ActivityPub が該当します。
@@ -116,7 +116,7 @@ Cloud Run のドメインマッピングのように、プラットフォーム�
 
 秘密の値を持たないリクエストは、通ったとしても、その後の処理に影響を与えられません。クライアントの IP は `X-Forwarded-For` が何であっても接続の相手になり、`traceparent` と `X-Request-Id` は無視されます。
 
-<!-- source: set-it-up ee0a17ad2d33 -->
+<!-- source: set-it-up 3804d0cc5c18 -->
 ### 設定する
 
 CDN がサーバーに転送するすべてのホスト名にヘッダーが必要です。`host`、`media_origin` のホスト、CDN が配信するなら別の `account_domain` もです。同じ CDN の後ろにあるメディアのホストにも設定します。`/media/` もほかと同じように拒否されるためです。
@@ -138,17 +138,17 @@ CDN がサーバーに転送するすべてのホスト名にヘッダーが必�
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
 CDN のアドレスも [`trusted_proxies`](../reference/configuration.md#trusted_proxies) に並べてください。そうしないと、サーバーからはクライアントが 1 つに見え、すべてのリクエストが CDN のレート制限を共有します。`my config check` はこれを警告します。
 
 拒否されたリクエストには、ヘッダーがどのように間違っていても、ほかの禁止されたリクエストと同じ `403` の problem document が `Cache-Control: no-store` 付きで返ります。応答にヘッダーの名前は一切含まれません。
 
-<!-- source: when-everyone-is-locked-out 47c8f706e5e7 -->
+<!-- source: when-everyone-is-locked-out bd514f7ec98b -->
 ### 全員が締め出されたとき
 
-設定を誤ると、ヘルスチェックは `200` のまま、すべてのリクエストが拒否されます。そのため、プラットフォームからは正常なサーバーに見え、`/healthz` の死活監視も何も検出しません。兆候は次のとおりです。
+設定を誤ると、ヘルスチェックは `200` のまま、すべてのリクエストが拒否されます。そのため、プラットフォームからは正常なサーバーに見え、`/health/live` の死活監視も何も検出しません。兆候は次のとおりです。
 
 - CDN を通したすべてのページが `403` になる。
 - メトリクス `my.http.origin_refused` が増え、`http.server.request.duration` のリクエストが止まる。

@@ -147,6 +147,10 @@
     "defaultMessage": "Seguidores del anfitrión",
     "description": "Visibility of a voice chat room: the followers of its host."
   },
+  "voice.visibility.following": {
+    "defaultMessage": "Personas a las que sigue el anfitrión",
+    "description": "Visibility of a voice chat room: those whom the host follows."
+  },
   "voice.visibility.mutuals": {
     "defaultMessage": "Seguidores mutuos del anfitrión",
     "description": "Visibility of a voice chat room: those who follow the host and whom the host follows."
@@ -162,6 +166,10 @@
   "voice.speakers.followers": {
     "defaultMessage": "Seguidores del anfitrión",
     "description": "Who may speak in a voice chat room without asking: the followers of the host."
+  },
+  "voice.speakers.following": {
+    "defaultMessage": "Personas a las que sigue el anfitrión",
+    "description": "Who may speak in a voice chat room without asking: those whom the host follows."
   },
   "voice.speakers.mutuals": {
     "defaultMessage": "Seguidores mutuos del anfitrión",

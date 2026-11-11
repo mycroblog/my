@@ -55,22 +55,25 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Tableau de bord Grafana
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) est un tableau de bord Grafana des mêmes métriques Prometheus :
+le débit de requêtes, les codes d’état et la latence ; les exécutions de tâches, le temps de travail de chaque type de tâche et la file ; les envois, les activités de la boîte de réception et les serveurs distants ; ainsi que le CPU et la mémoire de chaque processus. Importez-le dans Grafana (**Dashboards** → **New** → **Import**) et choisissez votre source de données Prometheus ; sa variable **Job** sélectionne la tâche de collecte (`my` par défaut).
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud (Cloud Run)
 
-Avec `metrics_exporter = none`, construisez les alertes à partir de ce que Cloud Run et Cloud Logging ont déjà :
+Avec `metrics_exporter = none`, construisez les alertes à partir de ce que Cloud Run et Cloud Logging offrent déjà :
 
 - **Erreurs HTTP et latence** : le nombre de requêtes Cloud Run par classe de code de réponse et la métrique de latence des requêtes du service.
-- **Erreurs** : les lignes `error report` vont dans Error Reporting, qui les regroupe et peut vous notifier des erreurs nouvelles et récurrentes ([Rapports d’erreurs](error-reporting.md#google-cloud-cloud-run)).
-- **Tâches et requêtes** : le serveur écrit une ligne de journal par requête HTTP (`msg` = `http request`) et par exécution de tâche (`msg` = `job`), avec les
-  mêmes étiquettes que les métriques. Faites-en des métriques basées sur les journaux, par exemple un compteur de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
-  pour les tâches en échec, ou une distribution de `jsonPayload.duration_seconds` filtrée sur `jsonPayload."my.surface"="client_api"` pour la latence.
-- **Arriéré de la file** : avec `queue = cloudtasks`, les tâches sont dans la base de données, donc l’écran des tâches et les lignes de journal des exécutions de tâches montrent l’arriéré ;
-  la métrique de profondeur de file de Cloud Tasks compte les signaux en attente de remise.
+- **Erreurs** : les lignes `error report` vont à Error Reporting, qui les regroupe et peut vous notifier des erreurs nouvelles et récurrentes ([Rapports d’erreurs](error-reporting.md#google-cloud-cloud-run)).
+- **Tâches et requêtes** : le serveur écrit une ligne de journal par requête HTTP (`msg` = `http request`) et par exécution de tâche (`msg` = `job`), avec les mêmes libellés que les métriques. Créez-en des métriques basées sur les journaux, par exemple un compteur de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` pour les tâches en échec, ou une distribution de `jsonPayload.duration_seconds` filtrée sur `jsonPayload."my.surface"="client_api"` pour la latence.
+- **Retard de la file et stockage** : toutes les 15 minutes, la tâche `metrics.snapshot` écrit une ligne (`msg` = `metrics snapshot`) avec les valeurs de toute l’instance, telles que `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` et `my.media.stored_bytes`. Créez des métriques basées sur les journaux à partir de ses champs ; un trou dans ces lignes signifie que le tick ou la file s’est arrêté. La métrique de profondeur de file de Cloud Tasks compte les signaux en attente de livraison.
 - **Base de données** : les métriques d’utilisation du disque et de connexions de Cloud SQL, ou les alertes d’utilisation de votre fournisseur de base de données.
 - **Coût** : un budget Cloud Billing avec des seuils d’alerte ([Coût et budget](#cost-and-budget)).
 
-Le module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) les crée sous forme de politiques portant les noms du tableau ci-dessous, et liste chaque alerte qu’il couvre différemment ou qu’il ne peut pas exprimer. Il n’a jamais été appliqué. Une métrique que seul le trafic produit présente des trous sur un service qui descend à zéro : une alerte sur son absence se déclenche donc à tort ; c’est son contrôle de disponibilité qui remarque un serveur inactif mort.
+Le module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) les crée sous forme de politiques portant les noms du tableau ci-dessous, et liste chaque alerte qu’il couvre autrement ou qu’il ne peut pas exprimer. Il n’a jamais été appliqué. Une métrique que seul le trafic produit présente des trous sur un service qui descend à zéro, de sorte qu’une alerte sur son absence se déclenche à tort ; c’est sa vérification de disponibilité qui remarque un serveur inactif mort.
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -126,29 +129,23 @@ Gravité : **page** = agir immédiatement, **ticket** = pendant les heures ouv
 | Coût | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 pendant 6 h | ticket | Permissions manquantes, export de facturation non configuré, plafond de requêtes atteint, fournisseur indisponible |
 | Coût | Budget dépassé | – | – | – | Trafic, stockage ou une mauvaise configuration qui coûte plus que prévu ([ci-dessous](#cost-and-budget)) |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
+<!-- source: where-to-look b9e94304077f -->
 ## Où regarder
 
-Ces outils reviennent dans la plupart des entrées du runbook ci-dessous.
+Ces outils reviennent dans la plupart des entrées du guide d’exploitation ci-dessous.
 
-- **L’écran des tâches** (Administration → Tâches, `/admin/jobs`, exige `manage_jobs`) : les compteurs par état (en file, en cours, en nouvelle tentative, en échec) et par type, ainsi que
-  la plus ancienne tâche en attente ; sa page **Tâches** (`/admin/jobs/list`) liste les tâches d’un état, et la page de chaque tâche montre sa dernière erreur et les tentatives qui n’ont pas abouti. Les tâches en attente ne sont listées que pour les files conservées dans la base de données
-  (`queue = db` et `cloudtasks`) ; les tâches en échec et les tentatives sont listées pour toutes les files.
-- **La commande `my job`** sur un hôte qui dispose de la configuration du serveur (`queue = db` et `cloudtasks`) :
-  `my job list` liste les tâches en échec, de la plus récente à la plus ancienne ; `my job retry <id>...` les remet dans la file ; `my job delete <id>...` les abandonne.
-  Les tâches peuvent être réexécutées sans risque.
-- **L’écran des serveurs distants** (Modération → Serveurs distants, `/moderation/instances`, exige `manage_domains`) : les serveurs que les envois n’ont pas pu atteindre,
-  et ceux dont les envois sont suspendus, avec la raison et le moment. « Reprendre les envois » marque de nouveau un serveur comme disponible.
-- **Les journaux** : des lignes JSON sur l’erreur standard. Chaque requête HTTP se termine par une ligne dont le `msg` est `http request`, chaque exécution de tâche par une ligne dont le `msg` est `job`
-  (`INFO` en cas de succès, `WARN` pour une nouvelle tentative, `ERROR` pour une tâche définitivement en échec, avec `error`, `job_id` et `my.job.type`).
-  Les lignes à l’intérieur d’une requête portent son `request_id`, que le client voit comme `X-Request-Id`.
+- **L’écran des tâches** (Administration → Tâches, `/admin/jobs`, exige `manage_jobs`) : les compteurs par état (en file, en cours, en nouvelle tentative, en échec) et par type, ainsi que la plus ancienne tâche en attente ; sa page **Tâches** (`/admin/jobs/list`) liste les tâches d’un état, et la page de chaque tâche indique sa dernière erreur et les tentatives qui n’ont pas abouti. Les tâches en attente ne sont listées que pour les files conservées dans la base de données (`queue = db` et `cloudtasks`) ; les tâches en échec et les tentatives sont listées pour toutes les files.
+- **La commande `my job`** sur un hôte qui dispose de la configuration du serveur (`queue = db` et `cloudtasks`) : `my job list` liste les tâches en échec, les plus récentes en premier ; `my job retry <id>...` les remet dans la file ; `my job delete <id>...` les abandonne. Les tâches peuvent être relancées sans risque.
+- **L’écran des serveurs distants** (Modération → Serveurs distants, `/moderation/instances`, exige `manage_domains`) : les serveurs que les envois n’ont pas pu atteindre, et ceux dont les envois sont suspendus, avec la raison et la date. « Reprendre les envois » marque de nouveau un serveur comme disponible.
+- **Les journaux** : des lignes JSON sur la sortie d’erreur standard. Chaque requête HTTP se termine par une ligne dont le `msg` est `http request`, chaque exécution de tâche par une ligne dont le `msg` est `job` (`INFO` en cas de succès, `WARN` pour une nouvelle tentative, `ERROR` pour une tâche définitivement en échec, avec `error`, `job_id` et `my.job.type`). Les lignes à l’intérieur d’une requête portent son `request_id`, que le client voit sous la forme `X-Request-Id`.
+  - La ligne d’une exécution de `federation.deliver` indique aussi où l’envoi est allé et comment il s’est terminé : `my.delivery.domain` (le domaine du serveur distant), `activity.type` (par exemple `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure` ou `skipped`) et `http.response.status_code` (la réponse de la boîte de réception, absente lorsqu’elle n’en a donné aucune ou que rien n’a été envoyé). `my.outcome` reste le résultat de l’exécution de la tâche. La ligne ne nomme jamais l’expéditeur, l’activité ni l’URL de la boîte de réception.
+    Cloud Logging : `jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose : `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging : `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights : ``filter msg = "job" and `my.outcome` = "dead"``
 - **Rapports d’erreurs** : les lignes `error report` et l’écran Erreurs (Administration → Erreurs, `/admin/errors`, exige `manage_errors`) ([Rapports d’erreurs](error-reporting.md)).
-- **Traces**, lorsque `traces_exporter = otlp` : les lignes de journal portent `trace_id` ; ouvrez-le dans votre backend de traces pour voir où une requête lente a passé son temps.
-- **Le mode maintenance** ([Maintenance](maintenance.md)) : répond à chaque requête par une page de maintenance et ne touche aucun adaptateur. Utilisez-le pendant que vous réparez la base de données
-  ou le magasin KV.
+- **Traces**, lorsque `traces_exporter = otlp` : les lignes de journal portent `trace_id` ; ouvrez-le dans votre outil de traces pour voir où une requête lente a passé son temps.
+- **Le mode de maintenance** ([Maintenance](maintenance.md)) : répond à chaque requête par une page de maintenance et ne touche aucun adaptateur. Utilisez-le pendant que vous réparez la base de données ou le magasin KV.
 
 <!-- source: runbook e60e811fcff0 -->
 ## Runbook

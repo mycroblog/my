@@ -4,7 +4,7 @@
 Las vistas previas que otros servicios muestran de las páginas de este servidor, lo que el servidor devuelve para ellas y los pasos para comprobarlas a mano. Las tarjetas que este servidor muestra para los enlaces de sus propias publicaciones
 están en [Tarjetas de enlaces en las publicaciones](#cards-of-links-in-posts) más abajo; cómo dejar de obtenerlas de un dominio se explica en la [configuración de la instancia](instance-settings.md#link-card-domains).
 
-<!-- source: what-the-server-returns bb9326f9729a -->
+<!-- source: what-the-server-returns fe60560f1b91 -->
 ## Qué devuelve el servidor
 
 `my serve` devuelve el HTML de la página de inicio (`https://<host>/`), la página de información de la instancia (`https://<host>/about`),
@@ -22,6 +22,8 @@ Una petición de HTML se trata siempre como sin sesión iniciada, de modo que un
 | Una publicación `unlisted` | 200. La estructura base con metaetiquetas, más `<meta name="robots" content="noindex, noarchive">` y `X-Robots-Tag: noindex, noarchive` |
 | Una publicación `local`, `private`, `direct`, eliminada o inexistente, y el perfil y las publicaciones de una cuenta suspendida, desactivada, eliminada o limitada | 404. La estructura base genérica y `X-Robots-Tag: noindex, noarchive`. El cuerpo y las cabeceras son iguales sea cual sea el motivo |
 | `/@<old username>/status/<post ID>` | 301, a la URL con el nombre de usuario actual |
+| La página de una etiqueta (`/tags/<tag>`) | 200. La estructura base genérica, con el enlace al feed Atom de la etiqueta (consulta «La estructura base genérica» más abajo) |
+| Cualquier otra página del cliente web (explorar, las páginas públicas de costos y de mecenas, inicio de sesión, etc.) | 200. La estructura base genérica, con las metaetiquetas de la instancia (consulta «La estructura base genérica» más abajo) |
 
 Cada página lleva además las declaraciones para los motores de búsqueda y los rastreadores de IA (metaetiquetas como `noindex` y `noai`, y
 `X-Robots-Tag`, `Content-Usage` y `tdm-reservation`), según la configuración de la instancia y los de su propietario
@@ -31,23 +33,24 @@ Cada página lleva además las declaraciones para los motores de búsqueda y los
 Una petición con un `Accept` de ActivityPub no recibe la estructura base; la responde la parte de ActivityPub (un perfil responde con el
 `id` del actor, y una publicación que un visitante sin sesión puede ver responde con un 302 a su `id`). Cada respuesta lleva `Vary: Accept`.
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### Metaetiquetas
 
 | Etiqueta | Contenido |
 | --- | --- |
-| `og:title`, `<title>` | «Nombre visible (@usuario@dominio de la cuenta)». El nombre de usuario si el nombre visible está vacío |
-| `og:type` | `profile` para un perfil, `article` para una publicación |
+| `og:title`, `<title>` | «Nombre visible (@usuario@dominio de la cuenta)». El nombre de usuario si el nombre visible está vacío. En un artículo, su título |
+| `og:type` | `profile` para un perfil, `article` para una publicación y un artículo |
 | `og:url`, `<link rel="canonical">` | La URL canónica (la URL con el nombre de usuario actual) |
-| `og:description` | El texto sin formato del cuerpo de la publicación (la biografía en un perfil) sin etiquetas, recortado a 200 grafemas. En una publicación con advertencia de contenido, solo el texto de la advertencia de contenido |
+| `og:description` | El texto sin formato del cuerpo de la publicación (la biografía en un perfil) sin etiquetas, recortado a 200 grafemas. En una publicación con advertencia de contenido, solo el texto de la advertencia de contenido. En un artículo, su resumen, también cuando está marcado como sensible; el cuerpo de un artículo nunca está en la página |
 | `og:image`, `og:image:alt` / `width` / `height` | La imagen elegida en el orden indicado más abajo |
 | `og:site_name` | El nombre de la instancia (el texto `name`, igual en todos los idiomas; `host` si no hay; [nombre y dominio](instance-settings.md#name-and-domain)) |
-| `og:locale`, `<html lang dir>` | El idioma de la publicación. Cuando no está definido (`und`), el idioma de publicación por defecto del autor y, si no lo hay, el `default_locale` de la instancia. No cambia con `Accept-Language` |
+| `og:locale`, `<html lang dir>` | El idioma de la publicación. Cuando no está definido (`und`), el idioma de publicación por defecto del autor y, si no lo hay, el `default_locale` de la instancia. No cambia con `Accept-Language`. `og:locale` tiene la forma `language_TERRITORY`: un idioma sin región recibe la habitual (`ja` → `ja_JP`, `en` → `en_US`, `pt` → `pt_BR`), y `<html lang>` conserva la etiqueta de idioma tal cual |
 | `article:published_time`, `article:author` | Solo publicaciones. La hora de la publicación (UTC) y la URL del perfil del autor |
 | `profile:username` | Solo perfiles. `username@account domain` |
 | `twitter:card` | `summary_large_image` cuando la imagen es más ancha que aproximadamente 2:1 (ancho / alto >= 1.7) y de al menos 300x157; en caso contrario, `summary` |
 | `fediverse:creator` | `@username@account domain`. Mastodon lo muestra como «autor» |
 | `<link rel="alternate" type="application/activity+json">` | El `id` de AP (el actor o el objeto de la publicación) |
+| `<link rel="alternate" type="application/atom+xml">` | Solo los perfiles que tienen un feed Atom: la dirección del feed (`https://<host>/@<username>.atom`), con el mismo título que `og:title`. Un perfil cuyo titular desactivó el feed, y una cuenta limitada o mudada, no tienen ninguno |
 
 Las metaetiquetas de la página de inicio presentan la propia instancia.
 
@@ -56,7 +59,7 @@ Las metaetiquetas de la página de inicio presentan la propia instancia.
 - `og:description` es el texto de la instancia `short_description` recortado a 200 grafemas. Se omite cuando no hay.
 - El idioma (`og:locale`, `<html lang dir>`) es el `default_locale` de la instancia. El nombre y la descripción son el mismo valor
   en todos los idiomas.
-- `og:image` es el número 3 de la lista siguiente (la imagen de vista previa de la instancia), o el número 4 o 5 si no hay.
+- `og:image` es la imagen de la instancia: el número 3 de la lista siguiente, o el número 4, 5 o 6 si no hay.
 - No pertenece a ninguna cuenta, así que `fediverse:creator` y el `alternate` de ActivityPub no se generan.
 - La página de información de la instancia (`/about`) tiene las mismas metaetiquetas. `og:title` y `<title>` son «Acerca de {nombre de la instancia}»
   (`server:preview.about_title`), y `og:url` y `<link rel="canonical">` son `https://<host>/about`.
@@ -65,35 +68,54 @@ Las metaetiquetas de la página de inicio presentan la propia instancia.
   `<link rel="canonical">` son la dirección de esa página. La página de un documento que no está publicado recibe la estructura base genérica.
 - La página sobre el rastreador de tarjetas de enlaces (`/about/crawler`) tiene las mismas metaetiquetas, con la misma forma de título y de dirección.
 
+La estructura base genérica, que devuelven todas las demás páginas y el 404 de una publicación oculta, lleva las mismas etiquetas que la página de inicio
+sin una dirección propia: `og:type` `website`, el nombre de la instancia como `og:site_name` y `og:title`, `short_description`
+como `og:description`, `og:locale`, la imagen de la instancia y `twitter:card`. No tiene `og:url` ni
+`<link rel="canonical">`, de modo que una sola copia sirve para todas las rutas, y el 404 de una publicación oculta sigue siendo idéntico a cualquier otra página.
+La página de una etiqueta solo añade `<link rel="alternate" type="application/atom+xml">` al feed de la etiqueta
+(`https://<host>/tags/<tag>.atom`), con el título «#tag en nombre de la instancia» (`server:feed.tag_title`), haya usado o no una publicación
+la etiqueta todavía. Un enlace compartido a una etiqueta o a la página pública de costos muestra la tarjeta de la instancia.
+
+Los propios feeds son documentos Atom 1.0 con las 20 publicaciones públicas locales más recientes que no son respuestas ni impulsos, con
+`ETag`, `Last-Modified` y `Cache-Control: public, max-age=60`. La entrada de un artículo es su título y su resumen, con el
+enlace al artículo; su cuerpo permanece en la página del artículo. Cada perfil con feed tiene también un feed solo de artículos,
+`https://<host>/@<username>/articles.atom`, con el título «Artículos de nombre (@handle)» (`server:feed.articles_title`), que
+sigue las mismas reglas; la página del perfil enlaza solo su feed principal. El servidor guarda cada feed renderizado en su almacén
+clave-valor durante un minuto, así que un cambio llega a un feed en aproximadamente un minuto. Un feed lleva las mismas declaraciones `X-Robots-Tag` y de IA
+que su perfil; el feed de una etiqueta es siempre `noindex` y declara el rechazo de IA de cualquiera de sus autores. Un
+perfil sin feed, y una etiqueta que ninguna publicación ha usado, responden 404.
+
 `og:image` se elige en este orden.
 
-1. La primera imagen adjunta a la publicación (su texto alternativo va en `og:image:alt`). No se usa en una publicación marcada como sensible ni
-   con advertencia de contenido.
+1. La primera imagen adjunta a la publicación, o la portada de un artículo (su texto alternativo va en `og:image:alt`). No se usa
+   en una publicación o un artículo marcados como sensibles, ni en una publicación con advertencia de contenido.
 2. La imagen de cabecera del perfil o, si no hay, el avatar (`og:image:alt` es «Imagen de cabecera de {name}» o «Avatar de {name}»).
-3. La imagen de vista previa de la instancia (la configuración de la instancia `preview_image`; `og:image:alt` es el texto `preview_image_alt` o, si no hay, «Imagen
-   de {nombre de la instancia}»).
-4. La versión para vista previa de enlaces del logotipo propio de la instancia ([logotipo e icono](instance-settings.md#logo-and-icon)), un PNG de 1200x630
+3. La imagen de vista previa de la instancia (la configuración de la instancia `preview_image`, en «Vistas previas de enlaces» de Configuración → General de la
+   administración; `og:image:alt` es el texto `preview_image_alt` o, si no hay, «Imagen de {nombre de la instancia}»).
+4. La miniatura de la instancia (la configuración de la instancia `thumbnail`, la imagen de la página Configuración → General; `og:image:alt` es el
+   texto `thumbnail_alt` o, si no hay, «Imagen de {nombre de la instancia}»).
+5. La versión para vista previa de enlaces del logotipo propio de la instancia ([logotipo e icono](instance-settings.md#logo-and-icon)), un PNG de 1200x630
    en `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` es «Imagen de {nombre de la instancia}»).
-5. La imagen por defecto incluida (`https://<host>/preview-image.png`, un PNG de 1200x630. Es una imagen genérica sin el nombre
-   de la instancia, y `og:image:alt` describe la imagen).
+6. La imagen predeterminada incluida (`https://<host>/preview-image.png`, un PNG de 1200x630 con el logotipo de mycroblog sobre blanco, sin el nombre
+   de la instancia; `og:image:alt` es «El logotipo de mycroblog»).
 
-Así, una página que muestra una vista previa siempre tiene `og:image` y `og:image:alt`.
-Las imágenes de 1 a 3 son la variante `full` del archivo multimedia procesado, y el ancho y el alto son los valores del procesamiento.
-Si `preview_image` aún se está procesando, falló el procesamiento o no es una imagen, se usa el número 4 (o el 5 si no hay logotipo).
-la configuración de la instancia se leen en cada petición, así que `my instance set preview_image ...` surte efecto sin reiniciar (para el
-procedimiento, consulta la [configuración de la instancia](instance-settings.md)).
+Los números 3 a 6 son la imagen de la instancia. Así, una página que muestra una vista previa siempre tiene `og:image` y `og:image:alt`.
+Las imágenes de 1 a 4 son la variante `large` del archivo multimedia procesado, y el ancho y el alto son los valores del procesamiento.
+Si `preview_image` no está definido, aún se está procesando, falló el procesamiento o no es una imagen, se usa la miniatura, después el logotipo
+y después la imagen incluida. La configuración de la instancia se lee en cada petición, así que `my instance set preview_image ...` surte efecto
+sin reiniciar (para el procedimiento, consulta la [configuración de la instancia](instance-settings.md)).
 
-La imagen por defecto se dibuja con la biblioteca estándar en la primera petición tras el arranque y se mantiene en el proceso (unos 10 KB).
-Se sirve con `Cache-Control: no-cache` y un ETag.
+La imagen incluida forma parte del binario (unos 20 KB). Se sirve con `Cache-Control: no-cache` y un ETag.
 
-<!-- source: caching 5bc906452b10 -->
+<!-- source: caching e6ace7ad3fd0 -->
 ### Caché
 
 - La respuesta lleva `Cache-Control: public, max-age=60, stale-while-revalidate=300`. Una eliminación, un cambio de visibilidad o
   la publicación o retirada de un documento permanece en las cachés compartidas como máximo ese tiempo.
 - El ETag se construye a partir de las versiones de la plantilla, de los recursos y de la configuración de la instancia, el idioma, la versión
   (revisión) de la publicación, la visibilidad efectiva, la versión del perfil y la imagen elegida (para la página de inicio, la página
-  de información, las páginas de documentos y la página sobre el rastreador: la dirección de la página, su título, la descripción de la instancia y la imagen elegida).
+  de información, las páginas de documentos y la página sobre el rastreador: la dirección de la página, su título, la descripción de la instancia y la imagen elegida;
+  para la estructura base genérica: el nombre de la instancia, su descripción y la imagen de la instancia).
   `If-None-Match` recibe `304`.
 - Si pones una CDN delante, incluye `Accept` en la clave de caché (para que el JSON de AP y el HTML no se mezclen).
 
