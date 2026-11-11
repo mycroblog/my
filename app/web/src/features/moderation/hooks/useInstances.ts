@@ -18,6 +18,46 @@ import {
 } from "../api/staff";
 import { type PagedPages, toPagedList } from "./pagedList";
 
+/** The address of a remote server's page. */
+export function instancePath(domain: string): string {
+  return `/moderation/instances/${encodeURIComponent(domain)}`;
+}
+
+/** Whether a text starts with a URL scheme (`https://`). */
+const schemePattern = /^[a-z][a-z\d+.-]*:\/\//iu;
+
+/**
+ * The server a moderator typed or pasted, as the API names servers (IDNA A-labels in lower case without a trailing
+ * dot): from a domain, the domain of a handle (`@alice@mastodon.example`), or a URL on the server. `undefined` when
+ * it names no host. The server, not this code, decides what a host name is.
+ */
+export function instanceDomainOf(input: string): string | undefined {
+  let text = input.trim();
+  if (text === "") return undefined;
+  if (!schemePattern.test(text)) {
+    const slash = text.indexOf("/");
+    const at = text.lastIndexOf("@", slash === -1 ? text.length : slash);
+    text = `https://${text.slice(at + 1)}`;
+  }
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
+  const host = url.hostname.replace(/\.$/u, "");
+  return host === "" ? undefined : host;
+}
+
+/**
+ * The server a remote account lives on, as its page names it: the host of the account's actor, which deliveries to
+ * the account go to, since the domain of its handle may be another (WebFinger on a separate domain).
+ */
+export function accountServer(account: { uri: string; domain: string }): string {
+  return instanceDomainOf(account.uri) ?? account.domain;
+}
+
 /** The remote servers under `filter`, in domain order. */
 export function useInstances(filter: InstanceFilter): PagedPages<InstanceHealth> {
   const api = useApi();

@@ -558,5 +558,9 @@
   "admin.report.forward.comment.too_long": {
     "defaultMessage": "{max, number} 文字以内にしてください",
     "description": "Error of the field of a forwarded report's text when it is too long. {max} is the limit."
+  },
+  "admin.report.target.server": {
+    "defaultMessage": "アカウントのサーバーを開く",
+    "description": "Link from a report to the moderation page of the server of its remote target."
   }
 }

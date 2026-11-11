@@ -698,5 +698,9 @@
   "admin.audit_log.target_kind.event": {
     "defaultMessage": "Event",
     "description": "Kind of target of an audited operation: an event of the local users, shown by its ID."
+  },
+  "admin.audit_log.server": {
+    "defaultMessage": "Open the server's page",
+    "description": "Link in an audit log entry about a domain to the moderation page of that server."
   }
 }

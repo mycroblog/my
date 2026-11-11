@@ -34,5 +34,33 @@
   "admin.instances.column.server": {
     "defaultMessage": "服务器",
     "description": "Header of the column of the remote servers table that names the server and links to it."
+  },
+  "admin.instances.open.title": {
+    "defaultMessage": "打开服务器",
+    "description": "Heading of the form on the remote servers screen that opens the page of any server, listed or not."
+  },
+  "admin.instances.open.description": {
+    "defaultMessage": "从未投递失败的服务器不会出现在列表中。可以通过域名打开任意服务器的页面。",
+    "description": "Text under the heading of the form that opens a server's page: why it is there."
+  },
+  "admin.instances.open.domain": {
+    "defaultMessage": "服务器",
+    "description": "Label of the field of the form that opens a server's page."
+  },
+  "admin.instances.open.domain.description": {
+    "defaultMessage": "例如 mastodon.example 这样的域名、该服务器上的账号名，或该服务器上的 URL。",
+    "description": "Help under the field of the form that opens a server's page: what it takes."
+  },
+  "admin.instances.open.domain.invalid": {
+    "defaultMessage": "请输入域名、账号名或 URL。",
+    "description": "Error of the field of the form that opens a server's page when its text names no server."
+  },
+  "admin.instances.open.domain.required": {
+    "defaultMessage": "请输入服务器的域名。",
+    "description": "Error of the field of the form that opens a server's page when it is empty."
+  },
+  "admin.instances.open.submit": {
+    "defaultMessage": "打开",
+    "description": "Button of the form that opens a server's page."
   }
 }
