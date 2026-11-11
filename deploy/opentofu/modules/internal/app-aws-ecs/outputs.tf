@@ -16,7 +16,7 @@ output "origin_host" {
 }
 
 output "migration_task_definition" {
-  description = "Family of the task definition the upgrade script runs."
+  description = "Family of the task definition that runs the migration."
   value       = aws_ecs_task_definition.task["migrate"].family
 }
 
@@ -88,4 +88,18 @@ output "worker_services" {
 output "worker_env" {
   description = "What each worker's service sets over env, without GOMEMLIMIT."
   value       = { for key, w in local.workers : key => w.env }
+}
+
+output "images" {
+  description = "The image of the service's task definition, of each worker's by its key, and of the migration's, as the apply made them."
+  value = {
+    service   = jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0].image
+    workers   = { for key, w in local.workers : key => jsondecode(aws_ecs_task_definition.task["worker-${key}"].container_definitions)[0].image }
+    migration = jsondecode(aws_ecs_task_definition.task["migrate"].container_definitions)[0].image
+  }
+}
+
+output "migration_id" {
+  description = "The run of the migration for the current image, which a new image replaces, or null without migration."
+  value       = try(terraform_data.migrate.id, null)
 }

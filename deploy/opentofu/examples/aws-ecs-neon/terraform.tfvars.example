@@ -4,7 +4,6 @@
 # secrets; tofu output secrets_to_fill lists what to add after the first apply.
 
 host            = "social.example.org"
-image           = "ghcr.io/mycroblog/my:0.1.0"
 certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000"
 bucket_name     = "social-example-org-media"
 

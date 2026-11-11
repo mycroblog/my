@@ -1,9 +1,24 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 variable "image" {
-  description = "Image at creation. The released image from ghcr.io runs as it is, given a route to the internet; an image in Amazon ECR needs none beyond ECR's endpoints. After creation the upgrade script changes it, and apply follows."
+  description = "Server image, as ghcr.io/mycroblog/my:<version>, optionally with @sha256:<digest>. The released image from ghcr.io runs as it is, given a route to the internet; an image in Amazon ECR needs none beyond ECR's endpoints. Every task definition takes it; with migration, a new one runs the migration before the workers and the service move."
   type        = string
   nullable    = false
+
+  validation {
+    condition     = can(regex("(:[^/:@]+|@sha256:[0-9a-f]{64})$", var.image)) && !can(regex(":latest(@|$)", var.image))
+    error_message = "image must name a version or a digest. There is no latest tag."
+  }
+}
+
+variable "migration" {
+  description = "The migration that a new image runs before the workers and the service take it, on the machine that applies: script, the path of migrate.sh beside the public module; version, the version being applied; and allow_destructive_for, the version for which my upgrade gets -allow-destructive. Null runs none, and every service takes the image at once."
+  type = object({
+    script                = string
+    version               = optional(string, "")
+    allow_destructive_for = optional(string, "")
+  })
+  default = null
 }
 
 variable "architecture" {
@@ -25,7 +40,7 @@ variable "host" {
 }
 
 variable "name" {
-  description = "Name of the cluster, the service, and its task definition family, and the start of every other name. upgrade.sh takes the same value as --name."
+  description = "Name of the cluster, the service, and its task definition family, and the start of every other name."
   type        = string
   default     = "my"
   nullable    = false

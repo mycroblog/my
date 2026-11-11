@@ -11,8 +11,27 @@
 # the output as JSON and the command, and returns the command's exit code (deploy/opentofu/modules/internal/README.md).
 set -euo pipefail
 
-# shellcheck source=/dev/null # Beside this script, at the same release.
-. "$(dirname "${BASH_SOURCE[0]}")/aws-ecs.sh"
+# On Amazon ECS a task definition is an immutable revision that holds the image and every setting, so changing the image means
+# registering a new revision of the family from the latest one.
+
+# ecs_image REGION TASK_DEFINITION prints the image of a family's latest revision, or of one revision.
+ecs_image() {
+  aws ecs describe-task-definition --task-definition "$2" --region "$1" \
+    --query 'taskDefinition.containerDefinitions[0].image' --output text
+}
+
+# ecs_new_revision REGION FAMILY FILTER [JQ ARGUMENT...] registers a revision of the family whose container is what FILTER makes
+# of the latest one's, and prints its ARN. It keeps every other field, leaving out those that ECS sets itself and refuses.
+ecs_new_revision() {
+  local region="$1" family="$2" filter="$3" current input
+  shift 3
+  current="$(aws ecs describe-task-definition --task-definition "$family" --region "$region" --include TAGS --output json)" || return 1
+  input="$(jq -c "$@" "(.taskDefinition + (if (.tags // []) | length > 0 then {tags: .tags} else {} end))
+    | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+    | .containerDefinitions[0] |= ($filter)" <<< "$current")" || return 1
+  aws ecs register-task-definition --region "$region" --cli-input-json "$input" \
+    --query 'taskDefinition.taskDefinitionArn' --output text
+}
 
 usage() {
   echo "usage: tofu output -json console | console.sh <my command>" >&2
@@ -112,8 +131,9 @@ run_aws_ecs() {
   log_prefix="$(jq -er .log_prefix <<< "$console")" || return 1
   service="$(jq -r '.service // empty' <<< "$console")"
 
-  # A command of another release than the service's must not touch the database: apply follows the upgrade script only through
-  # what it reads. Absent when the caller has already chosen the image.
+  # A command of another release than the service's must not touch the database: after an apply that stopped at a failed
+  # migration, the task definitions have the new image and the service the old one. Absent when the caller has already chosen
+  # the image, as migrate.sh has.
   if [ -n "$service" ]; then
     local running_definition running current
     running_definition="$(aws ecs describe-services --cluster "$cluster" --services "$service" --region "$region" --query 'services[0].taskDefinition' --output text)" || return 1

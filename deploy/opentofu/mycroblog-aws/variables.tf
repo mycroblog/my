@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # The inputs of mycroblog-aws. Each section picks a backend by kind, and every section defaults to the recommended setup, so
-# that a deployment names only host, image, network.egress, ingress.certificate_arn, media.bucket_name, mail.from, and
+# that a deployment names only host, network.egress, ingress.certificate_arn, media.bucket_name, mail.from, and
 # monitoring. HCL has no union types: the fields of one kind sit beside the others in the section's object, and the
 # validations below refuse what does not fit together before the plan. NOTHING ON AWS HAS BEEN APPLIED.
 
@@ -27,9 +27,43 @@ variable "host" {
 }
 
 variable "image" {
-  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>. After that upgrade.sh changes it, and an apply leaves the image of what exists alone."
-  type        = string
-  nullable    = false
+  description = "The server image: repository, version, the image tag (0.2.0, or nightly), and digest, sha256:<hex>, which pins the image by its digest. version defaults to the release of this module, so that raising the ref of the source upgrades too. Another image is an upgrade: the apply runs the migration with it, then moves the workers, then the service."
+  type = object({
+    repository = optional(string, "ghcr.io/mycroblog/my")
+    version    = optional(string)
+    digest     = optional(string)
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition     = var.image.version == null || can(regex("^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$", var.image.version))
+    error_message = "image.version must be an image tag, such as 0.2.0."
+  }
+
+  validation {
+    condition     = var.image.version != "latest"
+    error_message = "image.version must name a version. There is no latest tag."
+  }
+
+  validation {
+    condition     = var.image.version == null || !can(regex("^v[0-9]", var.image.version))
+    error_message = "image.version is the image tag, without the v of the release: 0.2.0, not v0.2.0."
+  }
+
+  validation {
+    condition     = var.image.digest == null || can(regex("^sha256:[0-9a-f]{64}$", var.image.digest))
+    error_message = "image.digest must be sha256: and 64 hexadecimal digits."
+  }
+}
+
+variable "upgrade" {
+  description = "How an upgrade runs. allow_destructive_for names the one version, such as 0.3.0, whose migration may drop a table or a column, as the release notes of that version call for: my upgrade gets -allow-destructive only on the apply of that version, so a value left here lets no later release drop data."
+  type = object({
+    allow_destructive_for = optional(string)
+  })
+  default  = {}
+  nullable = false
 }
 
 variable "architecture" {
