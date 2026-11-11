@@ -1,19 +1,19 @@
 # ADR-0163: TLS 証明書の ACME による自動取得と DB への封じた保存
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-11
 - Deciders: @rosylilly
 - Issue: #2823（spike。[報告](https://github.com/mycroblog/my/issues/2823#issuecomment-6786802481)）
 
 ## Decision（決定）
 
-**推奨案: `my` が自分で HTTPS を待ち受ける設定 `tls = off | acme | files`（既定 `off`）を足す。`acme` は `github.com/mholt/acmez/v3` の上に `my` の小さな管理部を書き、証明書・その鍵・ACME のアカウント鍵は `instance` モジュールの表に置き、鍵だけを `Sealer` で封じる。発行の試みと失敗はイベントとして DB に残し、再試行の待ちはそこから導く。KV は発注のリースとチャレンジの値だけに使う。TLS のハンドシェイクはメモリの証明書だけを読み、ほかのプロセスへの更新の知らせは `Bus` で送り、定期の DB の確認で取りこぼしを拾う。**
+**`my` が自分で HTTPS を待ち受ける設定 `tls = off | acme | files`（既定 `off`）を足す。`acme` は `github.com/mholt/acmez/v3` の上に `my` の小さな管理部を書き、証明書・その鍵・ACME のアカウント鍵は `instance` モジュールの表に置き、鍵だけを `Sealer` で封じる。発行の試みと失敗はイベントとして DB に残し、再試行の待ちはそこから導く。KV は発注のリースとチャレンジの値だけに使う。TLS のハンドシェイクはメモリの証明書だけを読み、ほかのプロセスへの更新の知らせは `Bus` で送り、定期の DB の確認で取りこぼしを拾う。**
 
-§1〜§12 は spike（#2823）の結果からの推奨案です。覆る条件は §12 に書きます。
+覆す条件は §12 に書く。
 
 ### 1. 位置づけ
 
-- 小さな VPS で、1 つのバイナリとドメインとポート 80・443 だけで始められるようにする（ADR-0019 §9 が許す 3 つ目の HTTPS 化の手段「`autocert`」を、この ADR の仕組みとする）。
+- 小さな VPS で、1 つのバイナリとドメインとポート 80・443 だけで始められるようにする（ADR-0019 §9 の HTTPS 化の手段の 1 つ）。
 - 既定は `off`。今と同じく平文の HTTP で待ち受け、リバースプロキシ・ロードバランサ・CDN が TLS を終端する。Cloud Run・ALB・Cloudflare の前段があるターゲットは `off` のまま使う。
 - `files` は運営者が用意した証明書と鍵のファイルを読む（certbot など、ほかの仕組みで取る場合）。
 - 証明書を扱うのは `role` が `web` か `all` のプロセスだけ。`worker` は TLS で待ち受けない。
@@ -172,8 +172,7 @@ spike のコードと計測（コミットへのリンク）は [#2823 の報告
 - 良い: ハンドシェイクは DB・KMS に触れないので、KMS の費用と遅延は証明書の読み込みの回数（起動と更新）だけにかかる。
 - 悪い: ACME の管理部（予定、待ち、リース、知らせ）を自分で保守する。CA の振る舞いの変化（プロファイル、上限、ARI）に追従する責任が `my` にある。
 - 悪い: Caddy の HTTP/3・圧縮・アクセスログを失う。`Relay` に内部の購読を足す変更が要る。
-- 後続の作業（この ADR が Accepted になったら Issue にする）: `instance` の表と封じた列（`sealedColumns`）、`internal/adapter/acme` とポート、`internal/platform` の待ち受けと設定（`docs/reference/configuration.md` の生成）、`Relay` の内部の購読と `tls_certificate` の種類、メトリクス、`my tls` のコマンド、`docs/operations/` の更新、Pebble を使う結合テスト（CI では `pebble` を Go のツールとして起動）。
-- ADR-0019 §9 の「`autocert`」は、Accepted になったときにこの ADR を指す書き方に直す（決定者の判断）。
+- 後続の作業: `instance` の表と封じた列（`sealedColumns`）、`internal/adapter/acme` とポート、`internal/platform` の待ち受けと設定（`docs/reference/configuration.md` の生成）、`Relay` の内部の購読と `tls_certificate` の種類、メトリクス、`my tls` のコマンド、`docs/operations/` の更新、Pebble を使う結合テスト（CI では `pebble` を Go のツールとして起動）。
 
 ## Open Questions / 要検証
 

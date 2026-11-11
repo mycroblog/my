@@ -202,7 +202,7 @@ upgrade-insecure-requests
 | `Cross-Origin-Resource-Policy` | Web クライアント・API は `same-site`、公開メディア・ActivityPub の JSON は `cross-origin` |
 | `X-Frame-Options` | `DENY`（`frame-ancestors` 非対応ブラウザ向け） |
 
-- HTTPS 化はリバースプロキシ / ロードバランサ / `autocert` のどれでもよいが、アプリは HSTS を自分で付ける。`http` での提供は開発プロファイルのみ。
+- HTTPS 化はリバースプロキシ / ロードバランサ / `my` 自身の ACME による証明書の取得（ADR-0163）のどれでもよいが、アプリは HSTS を自分で付ける。`http` での提供は開発プロファイルのみ。
 - Tauri アプリは `tauri.conf.json` の CSP に同じポリシーを設定する（`connect-src` はログイン先インスタンスのオリジン）。
 
 ### 10. 依存関係の脆弱性スキャン（NFR-SEC-8）
