@@ -6,10 +6,8 @@ output "platform" {
 }
 
 output "env" {
-  description = "Settings of the server, by variable name."
-  value = {
-    MY_METRICS_EXPORTER = var.metrics_exporter
-  }
+  description = "Settings of the server: none. The exporter is observability-gcp's, which metrics_exporter takes."
+  value       = {}
 }
 
 output "secret_env" {

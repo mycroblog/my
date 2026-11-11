@@ -384,6 +384,76 @@ run "monitoring_and_billing" {
   }
 }
 
+run "observability_to_google_cloud" {
+  command = plan
+
+  assert {
+    condition = (
+      module.observability.env == { MY_METRICS_EXPORTER = "none", MY_TRACES_EXPORTER = "none", MY_ERRORS_EXPORTER = "none" } &&
+      module.monitoring != null
+    )
+    error_message = "every signal must go to Google Cloud's destinations, and the alerts read the metrics there"
+  }
+}
+
+run "errors_to_sentry_through_the_settings" {
+  command = plan
+
+  variables {
+    observability = { errors = "settings" }
+    settings      = { errors_exporter = "sentry" }
+    secrets       = ["errors_sentry_dsn"]
+  }
+
+  assert {
+    condition     = module.app.env["MY_ERRORS_EXPORTER"] == "sentry" && module.app.secret_env["MY_ERRORS_SENTRY_DSN"] == "my-errors-sentry-dsn" && module.app.env["MY_METRICS_EXPORTER"] == "none"
+    error_message = "the settings must carry the exporter that observability leaves to them"
+  }
+
+  assert {
+    condition     = output.secrets_to_fill["my-errors-sentry-dsn"].what == "The value of the setting errors_sentry_dsn."
+    error_message = "the DSN is a secret to fill"
+  }
+}
+
+run "translation_in_the_project" {
+  command = plan
+
+  variables {
+    translation = {}
+  }
+
+  assert {
+    condition = (
+      module.translation.permissions[0].permission == "roles/cloudtranslate.user" && module.translation.permissions[0].resource == null &&
+      module.app.env["MY_TRANSLATOR_GOOGLE_PROJECT"] == "my-project" && module.app.env["MY_TRANSLATOR_GOOGLE_LOCATION"] == "global"
+    )
+    error_message = "the service account must get the role on the project, and the server the provider's settings"
+  }
+}
+
+run "translation_billed_to_another_project" {
+  command = plan
+
+  variables {
+    translation = { project_id = "my-translations" }
+  }
+
+  assert {
+    condition     = module.translation.permissions[0].resource == "my-translations" && module.app.env["MY_TRANSLATOR_GOOGLE_PROJECT"] == "my-translations"
+    error_message = "the role and the API must go to the project that pays for the translations"
+  }
+}
+
+run "no_translation" {
+  command = plan
+
+  assert {
+    condition     = module.translation == null && !contains(keys(module.app.env), "MY_TRANSLATOR_GOOGLE_PROJECT")
+    error_message = "translation = null enables nothing"
+  }
+}
+
 run "settings_and_secrets_reach_the_server" {
   command = plan
 

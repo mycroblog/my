@@ -71,6 +71,13 @@ mock_provider "aws" {
       arn = "arn:aws:kms:ap-northeast-1:111122223333:key/abc"
     }
   }
+  mock_data "aws_opensearch_domain" {
+    defaults = {
+      arn         = "arn:aws:es:ap-northeast-1:111122223333:domain/my-search"
+      endpoint    = "search-my-search-abc123.ap-northeast-1.es.amazonaws.com"
+      vpc_options = []
+    }
+  }
   mock_resource "aws_lb" {
     defaults = {
       arn        = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:loadbalancer/app/my/abc"
@@ -493,8 +500,82 @@ run "no_monitoring" {
   }
 
   assert {
-    condition     = module.monitoring == null && !contains(keys(module.app.env), "MY_METRICS_EXPORTER")
-    error_message = "monitoring = null creates no canary and no alarm"
+    condition     = module.monitoring == null && !contains(keys(module.app.env), "MY_METRICS_EMF_DIMENSIONS") && module.app.env["MY_METRICS_EXPORTER"] == "emf"
+    error_message = "monitoring = null creates no canary and no alarm, and the metrics still go to CloudWatch"
+  }
+}
+
+run "observability_to_cloudwatch" {
+  command = plan
+
+  variables {
+    name = "social"
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_METRICS_EXPORTER"] == "emf" && module.app.env["MY_METRICS_EMF_NAMESPACE"] == "social" &&
+      module.app.env["MY_TRACES_EXPORTER"] == "none" && module.app.env["MY_ERRORS_EXPORTER"] == "none" &&
+      length(module.observability.permissions) == 0
+    )
+    error_message = "the metrics must go to CloudWatch in the deployment's namespace, which the alarms read: ${jsonencode(module.app.env)}"
+  }
+}
+
+run "errors_to_sentry_through_the_settings" {
+  command = plan
+
+  variables {
+    observability = { errors = "settings" }
+    settings      = { errors_exporter = "sentry" }
+    secrets       = ["errors_sentry_dsn"]
+  }
+
+  assert {
+    condition     = module.app.env["MY_ERRORS_EXPORTER"] == "sentry" && contains(keys(module.app.secret_env), "MY_ERRORS_SENTRY_DSN") && module.app.env["MY_METRICS_EXPORTER"] == "emf"
+    error_message = "the settings must carry the exporter that observability leaves to them"
+  }
+}
+
+run "translation_by_amazon_translate" {
+  command = plan
+
+  variables {
+    translation = {}
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_TRANSLATOR_AWS_REGION"] == "ap-northeast-1" &&
+      toset([for p in module.translation.permissions : p.permission]) == toset(["translate:TranslateText", "comprehend:DetectDominantLanguage"])
+    )
+    error_message = "the role must be allowed Amazon Translate, in the deployment's region by default"
+  }
+}
+
+run "search_on_a_domain_of_yours" {
+  command = plan
+
+  variables {
+    search = { domain_name = "my-search" }
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_SEARCH"] == "opensearch" && module.app.env["MY_SEARCH_OPENSEARCH_AWS_SIGNING"] == "es" &&
+      module.app.env["MY_SEARCH_OPENSEARCH_URL"] == "https://search-my-search-abc123.ap-northeast-1.es.amazonaws.com" &&
+      alltrue([for p in module.search.permissions : startswith(p.permission, "es:ESHttp") && p.resource == "arn:aws:es:ap-northeast-1:111122223333:domain/my-search/*"])
+    )
+    error_message = "the server must sign its requests to the domain, which the role may call"
+  }
+}
+
+run "no_translation_and_no_search" {
+  command = plan
+
+  assert {
+    condition     = module.translation == null && module.search == null && !contains(keys(module.app.env), "MY_SEARCH")
+    error_message = "translation and search are null by default, and grant nothing"
   }
 }
 

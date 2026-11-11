@@ -75,7 +75,9 @@ default.
 | `service` | | The Cloud Run service: `min_instances` (0, which scales to zero), `max_instances` (3), `cpu`, `memory_mib`, `concurrency`, `cpu_always_allocated`, `request_timeout_seconds` |
 | `jobs` | | The migration and console jobs: `memory_mib`, `timeout_seconds` |
 | `workers` | | Services that run some job types apart from the default service, by a key that names each: [Workers](#workers) |
-| `monitoring` | | Required: an uptime check, log-based metrics, and alert policies, which notify at least one of `notification_emails` and `notification_channels`. Null creates none. Its fields: `notification_emails`, `notification_channels`, `page_notification_channels`, `uptime_period`, `disabled_alerts`, `metrics_exporter`, and size limits. Each uptime check wakes an instance |
+| `translation` | | Null by default. `{}` turns on Google Cloud Translation, the translation provider `google`: the module enables its API in `project_id` (the deployment's project by default), grants the service account `roles/cloudtranslate.user` there, and sets the provider's settings with `location` (`global`). The instance setting `translation_providers` then enables it. DeepL and LibreTranslate go through `settings` and `secrets` |
+| `observability` | | Where the metrics, the traces, and the error reports go: `metrics = cloud-monitoring`, `traces = cloud-trace`, and `errors = error-reporting` by default, Google Cloud's destinations, which read what Cloud Run sends them. The module enables their APIs, and the server exports nothing. `settings` leaves a signal to `settings` and `secrets`, such as `errors = "settings"` for Sentry |
+| `monitoring` | | Required: an uptime check, log-based metrics, and alert policies, which notify at least one of `notification_emails` and `notification_channels`. Null creates none. Its fields: `notification_emails`, `notification_channels`, `page_notification_channels`, `uptime_period`, `disabled_alerts`, and size limits. It reads the metrics of `observability.metrics = cloud-monitoring`. Each uptime check wakes an instance |
 | `billing` | | Null by default. `billing_account_id`, `method`, and `dataset_location` import the usage cost into the server's dashboard |
 
 `name` (`my` by default) starts every name the module creates, so two deployments can share a project: the service is `<name>`,
@@ -92,7 +94,8 @@ job for as long as you need it, and `deletion_protection` refuses to destroy the
   `cloudflare.account_id`;
 - `media.kind = s3` without `media.endpoint`; `database.pooled` with `cloud-sql`; `network.nat` without `network.kind = vpc`;
   `network.kind = existing` without `network.network` and `network.subnetwork`; `kv.tls_ca` or `kv.key_prefix` without
-  `kv.kind = external`.
+  `kv.kind = external`;
+- `monitoring` with `observability.metrics = settings`, since its alerts read the metrics in Cloud Monitoring.
 
 The modules behind the sections also refuse what they cannot do, such as a split of workers that keeps apart the job types
 that must stay together.
@@ -103,11 +106,20 @@ that must stay together.
 `translator_deepl_url`, and the module passes it to the service, the workers, and the jobs. `secrets` takes the keys of secret
 settings: for each, the module creates an empty secret `<name>-<key>`, with hyphens for underscores, passes it to the server,
 and lists it in `secrets_to_fill`. A key that a section sets or the module fixes fails the plan, and so does a key the
-module does not take, such as `listen`: the error gives the reason.
+module does not take, such as `listen`: the error gives the reason. A section that is null, such as `translation`, and a
+signal of `observability` set to `settings` set nothing, so `settings` may name their keys.
 
 ```hcl
   settings = { translator_deepl_url = "https://api.deepl.com" }
   secrets  = ["translator_deepl_api_key"]
+```
+
+Error reports to Sentry, beside the log line that Error Reporting reads, leave the errors of `observability` to `settings`:
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
 ```
 
 ## Secrets
@@ -233,7 +245,10 @@ names who the alarms notify. Every other field has a default. The first kind of 
 | `service` | | The ECS service: `desired_count` (1), `cpu` (256), `memory_mib` (1024), and `health_check_grace_seconds`. Nothing scales to zero: a task bills for as long as it runs |
 | `jobs` | | The migration and console tasks: `cpu` and `memory_mib` |
 | `workers` | | Services that run some job types apart from the default service, by a key that names each: `job_types`, `instances`, `cpu`, `memory_mib`, and `concurrency` |
-| `monitoring` | | Required: a CloudWatch Synthetics canary, metrics in CloudWatch, and alarms, which notify at least one of `notification_emails` and `notification_topic_arns`. Null creates none. Also `page_notification_topic_arns`, `uptime_period_minutes` (15), `disabled_alerts`, and size limits. Each run of the canary is billed |
+| `translation` | | Null by default. `{}` turns on Amazon Translate, the translation provider `aws`: the module allows the tasks' role `translate:TranslateText` and `comprehend:DetectDominantLanguage`, and sets the provider's `region`, the deployment's by default. The instance setting `translation_providers` then enables it |
+| `search` | | Null by default. `domain_name` names a domain of Amazon OpenSearch Service that you created in the region: the module reads it, allows the tasks' role the HTTP methods the server sends to it, and sets `search = opensearch` with signed requests, and the alias `index`. A domain in the VPC takes `security_group_ids` for the tasks to join. The module never creates the domain. Elasticsearch, Meilisearch, and OpenSearch with a user go through `settings` and `secrets` |
+| `observability` | | Where the metrics, the traces, and the error reports go: `metrics = cloudwatch`, in Embedded Metric Format in the namespace `name`, `errors = cloudwatch`, the error report line in CloudWatch Logs, and `traces = none`, since X-Ray needs a collector beside the server, which the tasks do not run. Nothing needs a grant. `settings` leaves a signal to `settings` and `secrets`, such as `errors = "settings"` for Sentry |
+| `monitoring` | | Required: a CloudWatch Synthetics canary, metrics in CloudWatch, and alarms, which notify at least one of `notification_emails` and `notification_topic_arns`. Null creates none. Also `page_notification_topic_arns`, `uptime_period_minutes` (15), `disabled_alerts`, and size limits. It reads the metrics of `observability.metrics = cloudwatch`. Each run of the canary is billed |
 | `billing` | | Null by default. `{}` imports the usage cost from Cost Explorer into the server's dashboard, with the tasks' own role |
 
 There is no `queue` section: the tasks stay up, so they take the jobs from the database. `name`, `console_enabled`,
@@ -249,7 +264,7 @@ There is no `queue` section: the tasks stay up, so they take the jobs from the d
 - `database.pooled` with `rds`; `media.kind = s3-compatible` without `endpoint`; `r2` without `cloudflare.account_id`;
 - `kv.tls_ca` or `kv.key_prefix` without `kv.kind = external`; `stream.kind = valkey` with `kv.kind = db`;
 - `mail.kind = smtp` without `mail.smtp`, `mail.smtp` with `ses`, and `mail.configuration_set` with `smtp`;
-- `monitoring` that names nobody to notify.
+- `monitoring` that names nobody to notify, or with `observability.metrics = settings`.
 
 ### Outputs of mycroblog-aws
 
@@ -314,8 +329,8 @@ ending in `*` (`plugin_*`) per entry:
 - `generic`: the operator sets it through `settings` or `secrets`;
 - `excluded`, with a reason of a few words: the module does not take it.
 
-The module reads the file: `settings` and `secrets` refuse the keys of `section` (while that section is set), `fixed`, and
-`excluded`. `scripts/task.sh tofu:coverage` fails on a key with no class, a key that two entries match, an entry that matches
+The module reads the file: `settings` and `secrets` refuse the keys of `section` (while that section is set, and for
+`observability` while the signal that starts the key's name is not `settings`), `fixed`, and `excluded`. `scripts/task.sh tofu:coverage` fails on a key with no class, a key that two entries match, an entry that matches
 no key, and a `section` or `fixed` key whose `MY_` name `tests/coverage.tftest.hcl` does not name: that file plans the kind
 that sets each such key on mocked providers and asserts that the service's environment has it.
 

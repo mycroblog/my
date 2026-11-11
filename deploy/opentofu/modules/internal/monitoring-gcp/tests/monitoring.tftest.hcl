@@ -70,8 +70,8 @@ run "the_default_check_is_of_health_live_at_the_longest_period_from_three_checke
   }
 
   assert {
-    condition     = tomap(output.env) == tomap({ MY_METRICS_EXPORTER = "none" })
-    error_message = "the alerts read the log lines of none, and the app fails the plan when another block sets the exporter"
+    condition     = length(output.env) == 0
+    error_message = "the exporter is observability-gcp's, which sets each setting once"
   }
 }
 
@@ -268,14 +268,14 @@ run "the_outputs_fit_the_app" {
     secret_files    = { MY_KEK_FILE = "kek" }
     backends = [
       # What this module returns: run blocks of a plan cannot pass outputs to another module.
-      { platform = "gcp", env = { MY_METRICS_EXPORTER = "none" }, secret_env = {}, permissions = [] },
+      { platform = "gcp", env = {}, secret_env = {}, permissions = [] },
       { platform = "neutral", env = { MY_DATABASE = "postgres", MY_QUEUE = "cloudtasks" }, secret_env = { MY_DATABASE_URL = "db-url" } },
     ]
   }
 
   assert {
-    condition     = output.env["MY_METRICS_EXPORTER"] == "none"
-    error_message = "the app takes the setting"
+    condition     = output.env["MY_DATABASE"] == "postgres"
+    error_message = "the app takes the backends"
   }
 }
 

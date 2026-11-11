@@ -18,7 +18,7 @@ module "monitoring" {
 }
 ```
 
-Add `module.monitoring` to `backends` of the app module, so that a setting of `metrics_exporter` elsewhere fails the plan. Enable `monitoring.googleapis.com` first; `logging.googleapis.com` is in the guide's list already.
+Add `module.monitoring` to `backends` of the app module. It sets no setting: `metrics_exporter` is set by [`observability-gcp`](../observability-gcp/README.md), and this module takes its value to refuse an exporter whose lines its alerts would not see. Enable `monitoring.googleapis.com` first; `logging.googleapis.com` is in the guide's list already.
 
 | Input | Default | Meaning |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ Add `module.monitoring` to `backends` of the app module, so that a setting of `m
 | `uptime_path` | `/health/live` | Or `/health/ready`, or `/api/v1/instance/health`. `/healthz` and `/readyz` are refused: Cloud Run reserves paths that end in `z` and answers them itself |
 | `uptime_timeout` | `30s` | Long enough for a cold start and a database that wakes up |
 | `uptime_regions` | three in the USA | Must hold 3 checkers. Each is one more request per period |
-| `metrics_exporter` | `none` | `none` or `otlp`. Returned in `env` |
+| `metrics_exporter` | `none` | `none` or `otlp`: the value `observability-gcp` sets |
 | `snapshot_stale_after_seconds` | `3600` | When `MyMetricsSnapshotStale` fires. It must exceed 15 minutes plus the longest gap of `tick_schedule` |
 | `database_size_limit_bytes`, `media_size_limit_bytes`, `remote_media_cache_limit_bytes` | null | The limits of the storage alerts. Null leaves the alert out |
 | `billing_sources` | empty | The server's `billing_sources`. Empty leaves `MyBillingImportFailing` out |
@@ -41,8 +41,7 @@ Add `module.monitoring` to `backends` of the app module, so that a setting of `m
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_METRICS_EXPORTER` |
-| `secret_env`, `permissions` | Empty. Cloud Run writes the logs and its own metrics by itself |
+| `env`, `secret_env`, `permissions` | Empty. Cloud Run writes the logs and its own metrics by itself |
 | `uptime_check_id` | The check |
 | `alerts` | `policies`, the alerts this module has, and `not_expressible` |
 | `notification_channels` | The IDs of the channels that get every alert |

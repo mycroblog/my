@@ -39,7 +39,7 @@ variable "host" {
 }
 
 variable "metrics_exporter" {
-  description = "The server's metrics_exporter, returned in env. These alerts read the log lines of none. otlp writes the same lines and sends the metrics to a collector as well, which needs a sidecar the app module does not have. emf replaces the snapshot line with its own, so these alerts would stop seeing it."
+  description = "The server's metrics_exporter, which observability-gcp sets. These alerts read the log lines of none. otlp writes the same lines and sends the metrics to a collector as well, which needs a sidecar the app module does not have. emf replaces the snapshot line with its own, so these alerts would stop seeing it."
   type        = string
   default     = "none"
   nullable    = false

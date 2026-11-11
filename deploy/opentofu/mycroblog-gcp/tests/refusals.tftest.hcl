@@ -285,3 +285,23 @@ run "the_valkey_stream_without_a_valkey" {
 
   expect_failures = [var.stream]
 }
+
+run "an_unknown_destination_of_traces" {
+  command = plan
+
+  variables {
+    observability = { traces = "otlp" }
+  }
+
+  expect_failures = [var.observability]
+}
+
+run "monitoring_without_the_metrics_in_cloud_monitoring" {
+  command = plan
+
+  variables {
+    observability = { metrics = "settings" }
+  }
+
+  expect_failures = [var.monitoring]
+}

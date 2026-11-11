@@ -18,7 +18,8 @@
     "kek": ["kek", "key_manager", "kms_key"],
     "workers": ["worker_*"],
     "billing": ["billing_gcp_budget_subscription", "billing_gcp_method", "billing_gcp_table", "billing_sources"],
-    "monitoring": ["metrics_exporter"]
+    "translation": ["translator_google_*"],
+    "observability": ["errors_exporter", "metrics_exporter", "traces_exporter"]
   },
   "fixed": ["media_max_av_bytes", "profile", "role", "vapid_private_key"],
   "generic": [
@@ -34,7 +35,8 @@
     "database_dev_url",
     "dead_job_retention",
     "dynamic_client_*",
-    "errors_*",
+    "errors_environment",
+    "errors_sentry_dsn",
     "job_attempt_retention",
     "kek_previous",
     "kms_dek_cache_*",
@@ -58,11 +60,19 @@
     "queue_cloudtasks_dispatch_deadline",
     "relay_max_activities_per_hour",
     "remote_custom_emoji_max_bytes",
-    "search*",
+    "search",
+    "search_elasticsearch_*",
+    "search_meilisearch_*",
+    "search_opensearch_index*",
+    "search_opensearch_password",
+    "search_opensearch_url",
+    "search_opensearch_username",
     "source_url",
     "status_page_url",
-    "traces_*",
-    "translator_*",
+    "traces_flush",
+    "traces_sample_ratio",
+    "translator_deepl_*",
+    "translator_libretranslate_*",
     "voice*",
     "web_origin",
     "webhook_allowed_destinations"
@@ -74,6 +84,8 @@
     "http_allow_private_networks": "the SSRF guard stays on",
     "listen": "the container port is fixed",
     "mail_ses_*": "Amazon SES, on AWS",
-    "stream_sns_*": "Amazon SNS, on AWS"
+    "stream_sns_*": "Amazon SNS, on AWS",
+    "search_opensearch_aws_*": "signing needs AWS credentials, which Cloud Run does not have",
+    "translator_aws_region": "Amazon Translate needs AWS credentials, which Cloud Run does not have"
   }
 }

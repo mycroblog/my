@@ -386,7 +386,6 @@ variable "monitoring" {
     notification_emails        = optional(list(string), [])
     notification_channels      = optional(list(string), [])
     page_notification_channels = optional(list(string), [])
-    metrics_exporter           = optional(string, "none")
     uptime_period              = optional(string, "900s")
     disabled_alerts            = optional(set(string), [])
 
@@ -394,6 +393,40 @@ variable "monitoring" {
     media_size_limit_bytes         = optional(number)
     remote_media_cache_limit_bytes = optional(number)
   })
+
+  validation {
+    condition     = var.monitoring == null || var.observability.metrics == "cloud-monitoring"
+    error_message = "monitoring reads the log lines of the metrics in Cloud Monitoring: it needs observability.metrics = cloud-monitoring."
+  }
+}
+
+variable "observability" {
+  description = "Where the metrics, the traces, and the error reports go. The defaults are Google Cloud's own destinations, whose APIs the module enables: metrics = cloud-monitoring (Cloud Run's metrics, and the log-based metrics of monitoring), traces = cloud-trace (the trace Cloud Run records of each request), errors = error-reporting (which reads the error report line). The server exports nothing itself for them. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
+  type = object({
+    metrics = optional(string, "cloud-monitoring")
+    traces  = optional(string, "cloud-trace")
+    errors  = optional(string, "error-reporting")
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = (
+      contains(["cloud-monitoring", "settings"], var.observability.metrics) &&
+      contains(["cloud-trace", "settings"], var.observability.traces) &&
+      contains(["error-reporting", "settings"], var.observability.errors)
+    )
+    error_message = "observability.metrics must be cloud-monitoring or settings, traces cloud-trace or settings, and errors error-reporting or settings."
+  }
+}
+
+variable "translation" {
+  description = "Google Cloud Translation, the translation provider google: the module enables its API in project_id, the deployment's project by default, grants the service account roles/cloudtranslate.user there, and sets the provider's settings, with location (global). The instance setting translation_providers enables the provider. Null, the default, does none of it; DeepL and LibreTranslate go through settings and secrets."
+  type = object({
+    project_id = optional(string)
+    location   = optional(string, "global")
+  })
+  default = null
 }
 
 variable "billing" {

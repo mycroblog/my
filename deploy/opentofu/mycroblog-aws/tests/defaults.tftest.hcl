@@ -154,6 +154,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       "MY_BLOB_S3_BUCKET",
       "MY_BLOB_S3_REGION",
       "MY_DATABASE",
+      "MY_ERRORS_EXPORTER",
       "MY_HOST",
       "MY_MAIL",
       "MY_MAIL_FROM",
@@ -165,6 +166,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       "MY_STREAM",
       "MY_STREAM_SNS_QUEUE_PREFIX",
       "MY_STREAM_SNS_TOPIC_ARN",
+      "MY_TRACES_EXPORTER",
       "MY_TRUSTED_PROXIES",
       "MY_TRUSTED_PROXY_HEADER",
     ])
