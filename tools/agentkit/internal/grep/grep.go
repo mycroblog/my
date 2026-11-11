@@ -349,7 +349,7 @@ func Run(r *repo.Repo, cwd string, o Options, w io.Writer) (bool, error) {
 		return false, err
 	}
 	var ignore []string
-	if m, err := ctxmap.Load(r.Root); err == nil {
+	if m, err := ctxmap.Of(r); err == nil {
 		ignore = m.Ignore
 	}
 	files, missing, err := list(r, cwd, o.Paths)
