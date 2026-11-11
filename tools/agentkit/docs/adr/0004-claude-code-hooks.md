@@ -26,22 +26,14 @@
 
 ## Decision（決定）
 
-選択肢 2。`.claude/settings.json` に次を置く。実体は `scripts/agentkit-hook.sh` を通して `bin/agentkit hook <event>` が処理する。
+選択肢 2。
 
-- SessionStart: `bin/agentkit` をビルドし、索引を最新にする（出力しない）
-- PreToolUse（Bash・Read）。どれも拒否で、理由には代わりに実行するコマンドを、拒否したコマンドのパターンとパスを入れて返す。規則はエージェントの種類を問わない
-  - リポジトリのファイルを対象にした `grep` / `rg` / `ag` / `git grep` → `agentkit grep`（宣言を読むなら `show <Name>`）
-  - リポジトリのファイルへの `sed -n 'A,Bp'`・`head`・`tail`・`awk 'NR>=A'` と `cat <file> |` → Read の offset / limit、`show <path>:A-B`、`outline`
-  - リポジトリのファイルを書き換える `sed -i`・`perl -pi`・`python3` / `node` のスクリプト → Edit（`locales/` は `scripts/i18n.sh add|mv|rm`）
-  - `main` の `git merge` と、`--rebase` も `--ff-only` もない `git pull` → `git fetch origin && git rebase origin/main`、`agentkit regen`、`git push --force-with-lease`
-  - CI のポーリング（`gh pr checks`、`gh run watch`、`--log-failed` のない `gh run view`、`--workflow` のない `gh run list`、check run と workflow run の `gh api`、`statusCheckRollup`）→ バックグラウンドの `agentkit pr wait`
-  - sleep するループと `pgrep`（`bash -c` の中も）→ `run_in_background` と完了の通知
-  - 40KB 以上の Markdown（コードは 80KB 以上）を、範囲を指定せずに Read または `cat` すること → `outline` と `show`
-  - 拒否しないもの: パイプのフィルタとしての grep、作業ツリーの外のファイル、git が無視するファイル（`.tmp/`・`node_modules/`・ログ）、シェルが計算するパス、`grep -q`、リビジョンの検索、`--ff-only` の merge とほかのブランチの merge
-  - 複合コマンドは、引用とヒアドキュメントの外の `;`・`&&`・`||`・`|`・改行で単純コマンドに分け、`cd` とコマンド内の変数代入を追ってから判定する
-- PostToolUse（Bash）: 標準出力と標準エラーの合計が 2 万文字を超える出力を、先頭と末尾だけに切り詰めて `updatedToolOutput` で返し、全体は `.tmp/agentkit/out/` に保存する。agentkit 自身の出力（予算内に収めている）は切り詰めない
-- しきい値は環境変数 `AGENTKIT_BIG_FILE`・`AGENTKIT_MAX_OUTPUT` で変えられる
-- `bin/agentkit` が無いとき、入力が読めないとき、想定外の入力のときは何もしない。`allow` は返さない
+- フックは拒否する。助言はしない。拒否の理由には、拒否したコマンドの引数を入れた、そのまま実行できる代わりのコマンドを書く。
+- 拒否するのは、より楽な代わりの道具があるものだけにする: リポジトリの検索、ファイルの刻み読み、シェルからのファイルの書き換え、main のマージ、CI のポーリング、待つためのループ、大きな文書の全読み。
+- ほかのコマンドの出力へのフィルタと、リポジトリの外のファイルは対象にしない。判定に迷う形は通す。
+- 規則はエージェントの種類を問わない。
+- 長い出力は先頭と末尾に切り詰め、全体をファイルに残す。
+- 道具が無いとき、入力が想定外のときは何もしない。フックが作業を止める原因にならないようにする。
 
 ## 経緯
 
