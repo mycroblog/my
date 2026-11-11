@@ -32,6 +32,59 @@ var tsExts = map[string]bool{".ts": true, ".tsx": true, ".js": true, ".mjs": tru
 // tsRoots are the TypeScript packages `bun fmt` formats.
 var tsRoots = []string{"app/", "pkg/mykit/ts/", "pkg/mybot/ts/", "tools/i18n/"}
 
+// tofuRoot is the directory tofu:fmt-check formats (tasks/tofu.yml), and tofuSuffixes are the files `tofu fmt`
+// reads there.
+const tofuRoot = "deploy/opentofu/"
+
+var tofuSuffixes = []string{".tf", ".tofu", ".tfvars", ".tftest.hcl", ".tofutest.hcl"}
+
+func isTofu(path string) bool {
+	if !strings.HasPrefix(path, tofuRoot) {
+		return false
+	}
+	for _, s := range tofuSuffixes {
+		if strings.HasSuffix(path, s) {
+			return true
+		}
+	}
+	return false
+}
+
+// tofuConsistency are the checks of tofu:check that compare files and run no tofu: the configuration keys, the
+// backend contract, the coverage of the settings, and the module sources against what the modules declare.
+var tofuConsistency = []string{"tofu:env-check", "tofu:backend-fields", "tofu:coverage", "tofu:sources"}
+
+// contextsScript prints the check contexts of a list of changed paths; the merge queue picks its jobs with it.
+const contextsScript = "scripts/changed-contexts.sh"
+
+// tofuContext reports whether the changed files select the tofu context of the merge queue, which more than the
+// files of deploy/opentofu do: the configuration reference, the job types, and the guides are read by its checks.
+func tofuContext(root string, changed []string) bool {
+	script := filepath.Join(root, contextsScript)
+	if _, err := os.Stat(script); err != nil || len(changed) == 0 {
+		return false
+	}
+	list, err := os.CreateTemp("", "agentkit-changed-*")
+	if err != nil {
+		return false
+	}
+	defer os.Remove(list.Name())
+	_, werr := list.WriteString(strings.Join(changed, "\n") + "\n")
+	if cerr := list.Close(); werr != nil || cerr != nil {
+		return false
+	}
+	out, err := exec.Command(script, "--files", list.Name()).Output()
+	if err != nil {
+		return false
+	}
+	for _, c := range strings.Fields(string(out)) {
+		if c == "tofu" {
+			return true
+		}
+	}
+	return false
+}
+
 // stale maps the sources of committed generated files to the quick check that fails when those files are
 // stale; `regen` rewrites them.
 var stale = []struct {
@@ -73,7 +126,7 @@ func fastPlan(root string, changed []string) [][]fastStep {
 		st, err := os.Stat(filepath.Join(root, p))
 		return err == nil && !st.IsDir()
 	}
-	var goFiles, tsFiles, appTS, shFiles []string
+	var goFiles, tsFiles, appTS, shFiles, tofuFiles []string
 	pkgs := map[string]map[string]bool{} // module -> package directories
 	md := false
 	for _, f := range changed {
@@ -114,6 +167,8 @@ func fastPlan(root string, changed []string) [][]fastStep {
 			md = true
 		case ext == ".sh" && exists(f):
 			shFiles = append(shFiles, f)
+		case isTofu(f) && exists(f):
+			tofuFiles = append(tofuFiles, f)
 		}
 	}
 	var plan [][]fastStep
@@ -165,6 +220,17 @@ func fastPlan(root string, changed []string) [][]fastStep {
 	}
 	if len(shFiles) > 0 {
 		plan = append(plan, []fastStep{{name: "shellcheck", argv: append([]string{"shellcheck"}, shFiles...)}})
+	}
+	if len(tofuFiles) > 0 {
+		// As the pull request's tofu-fmt job. Formatting loads no provider, and tofu refuses to start when the
+		// plugin cache directory of the environment does not exist yet.
+		plan = append(plan, []fastStep{{name: "tofu fmt", argv: append([]string{"tofu", "fmt", "-check"}, tofuFiles...), env: []string{"TF_PLUGIN_CACHE_DIR="}}})
+	}
+	if tofuContext(root, changed) {
+		// What init, validate, and the tests of tofu:check decide is the merge queue's.
+		for _, task := range tofuConsistency {
+			plan = append(plan, []fastStep{{name: task, argv: []string{"scripts/task.sh", task}}})
+		}
 	}
 	picked := map[string]bool{}
 	for _, s := range stale {
@@ -224,6 +290,8 @@ func fastFix(name string) string {
 		return "gofmt -w <the files above>"
 	case name == "bun fmt":
 		return "scripts/task.sh web:fmt"
+	case name == "tofu fmt":
+		return "tofu fmt <the files above>"
 	case strings.HasPrefix(name, "generated:"), name == "i18n:lint":
 		return "scripts/agentkit.sh regen"
 	}
@@ -231,7 +299,7 @@ func fastFix(name string) string {
 }
 
 // CheckFast runs the quick checks of the files changed since the merge base with base — formatting, go vet of
-// the changed packages, tsc and Oxlint, the catalogs, Markdown, shellcheck, and that committed generated files
+// the changed packages, tsc and Oxlint, the catalogs, Markdown, shellcheck, the formatting and the consistency of the OpenTofu modules, and that committed generated files
 // are current — and returns one line per check with the failing lines of those that failed. The tests and the
 // rest of the full check are the merge queue's.
 func CheckFast(r *repo.Repo, base string) (bool, []string, error) {

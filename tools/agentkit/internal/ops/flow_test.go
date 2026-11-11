@@ -199,6 +199,78 @@ func TestGateRunsFastCheck(t *testing.T) {
 	}
 }
 
+func TestFastTofuFmt(t *testing.T) {
+	main := sandbox(t)
+	r := addWorktree(t, main, "feat/7-tofu")
+	commit(t, r.Root, "deploy/opentofu/m/main.tf", "locals {\n  a  =  1\n}\n", "feat: m")
+	plan := fastPlan(r.Root, []string{"deploy/opentofu/m/main.tf"})
+	if len(plan) != 1 || len(plan[0]) != 1 {
+		t.Fatalf("want the one step of tofu fmt, got %v", plan)
+	}
+
+	// Without tofu the step is skipped, as every step whose tool is missing: the pull request runs it.
+	t.Run("missing", func(t *testing.T) {
+		t.Setenv("PATH", t.TempDir())
+		if res := runFast(r.Root, plan[0][0]); res.state != "skip" || !strings.Contains(strings.Join(res.lines, "\n"), "tofu is not installed") {
+			t.Errorf("got %+v", res)
+		}
+	})
+
+	if _, err := exec.LookPath("tofu"); err != nil {
+		t.Skip("tofu is not on PATH")
+	}
+	// A version manager's shim picks the version from the .tool-versions above the working directory.
+	linkFromRepo(t, ".tool-versions", r.Root)
+	ok, lines, err := CheckFast(r, "origin/main")
+	if out := strings.Join(lines, "\n"); err != nil || ok || !strings.Contains(out, "FAIL  tofu fmt") ||
+		!strings.Contains(out, "deploy/opentofu/m/main.tf") || !strings.Contains(out, "fix: tofu fmt <the files above>") {
+		t.Errorf("an unformatted file must fail and name the file and the fix, got %v %q %v", ok, lines, err)
+	}
+	commit(t, r.Root, "deploy/opentofu/m/main.tf", "locals {\n  a = 1\n}\n", "feat: m2")
+	if ok, lines, err := CheckFast(r, "origin/main"); err != nil || !ok || len(lines) != 2 {
+		t.Errorf("want tofu fmt and the summary to pass, got %v %q %v", ok, lines, err)
+	}
+}
+
+// linkFromRepo links the file rel of this repository at the same path under root.
+func linkFromRepo(t *testing.T, rel, root string) {
+	t.Helper()
+	src, err := filepath.Abs(filepath.Join("..", "..", "..", "..", rel))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(src, filepath.Join(root, rel)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The consistency checks of the OpenTofu modules follow the tofu context of the merge queue, not the extension:
+// a configuration key added on the server side alone selects them.
+func TestFastPlanTofuContext(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "scripts"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	linkFromRepo(t, contextsScript, root)
+	for _, f := range []string{"docs/reference/configuration.md", "deploy/opentofu/m/main.tf", "app/web/src/a.tsx"} {
+		write(t, filepath.Join(root, f), "x")
+	}
+	cases := []struct {
+		changed []string
+		want    []string
+	}{
+		{[]string{"docs/reference/configuration.md"}, append([]string{"docs:lint", "docs:rules"}, tofuConsistency...)},
+		{[]string{"deploy/opentofu/m/main.tf"}, append([]string{"tofu fmt"}, tofuConsistency...)},
+		{[]string{"deploy/opentofu/m/gone.json"}, tofuConsistency},
+		{[]string{"app/web/src/a.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
+	}
+	for _, c := range cases {
+		if got := names(fastPlan(root, c.changed)); !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%v: got %q, want %q", c.changed, got, c.want)
+		}
+	}
+}
+
 func names(plan [][]fastStep) []string {
 	var out []string
 	for _, g := range plan {
@@ -212,7 +284,8 @@ func names(plan [][]fastStep) []string {
 func TestFastPlan(t *testing.T) {
 	root := t.TempDir()
 	for _, f := range []string{"go.mod", "internal/a/a.go", "internal/a/testdata/t.go", "tools/agentkit/go.mod", "tools/agentkit/x/x.go",
-		"app/web/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json"} {
+		"app/web/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
+		"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/.terraform.lock.hcl", "deploy/other/x.tf"} {
 		write(t, filepath.Join(root, f), "x")
 	}
 	cases := []struct {
@@ -228,7 +301,8 @@ func TestFastPlan(t *testing.T) {
 		{[]string{"locales/en/x.json"}, []string{"i18n:lint"}},
 		{[]string{"schema/sqlite/01-a.sql", "queries/a.sql", "api/spec/a.yaml", "internal/platform/job_types.go"},
 			[]string{"gofmt", "generated: api:generate-check", "generated: go:sqlc-check", "generated: " + workersScript}},
-		{[]string{"deploy/x.yaml"}, nil},
+		{[]string{"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/gone.tf"}, []string{"tofu fmt"}},
+		{[]string{"deploy/x.yaml", "deploy/opentofu/m/.terraform.lock.hcl", "deploy/opentofu/m/gone.tf", "deploy/other/x.tf"}, nil},
 	}
 	for _, c := range cases {
 		if c.changed[len(c.changed)-1] == "internal/platform/job_types.go" {
