@@ -144,10 +144,10 @@ func (m *TLSManager) revoke(ctx context.Context, leaf *x509.Certificate, code AC
 	}
 	err = m.opts.Client.Revoke(ctx, account, leaf, code)
 	var p *ACMEProblem
-	if err != nil && !(errors.As(err, &p) && p.Type == acmeProblemAlreadyRevoked) {
-		return fmt.Errorf("instance: revoke the TLS certificate %s: %w", leaf.SerialNumber.Text(16), err)
+	if err == nil || errors.As(err, &p) && p.Type == acmeProblemAlreadyRevoked {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("instance: revoke the TLS certificate %s: %w", leaf.SerialNumber.Text(16), err)
 }
 
 // acmeRevocationReasons are the reason codes (RFC 5280 §5.3.1) of the reasons of a revocation.
