@@ -459,6 +459,8 @@ other than `MODULE_REF`, and on a source of a public module other than `../modul
 `settings/settings.json` lists every configuration key with its `MY_` name and whether it is a secret.
 `scripts/task.sh go:config-docs` writes it from the configuration schema, and `go:test` fails when it is stale. The module
 `settings` reads it, makes nothing, and refuses a key the configuration does not have, a secret in `settings`, a setting
-that is not secret in `secrets`, and a key that a section sets (`managed`); its tests show each refusal.
+that is not secret in `secrets`, a key that a section sets or the public module fixes (`managed`), and a key the public
+module does not take (`excluded`, with the reason); its tests show each refusal. The public module builds both from its
+`coverage.json`.
 `tofu:aws-plan-test` plans the AWS modules that generate a value, `db-aws-rds` among them, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
 stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh, and scripts/tofu-backend-fields-check.sh against a gcloud
+# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh,
+# scripts/tofu-backend-fields-check.sh, scripts/tofu-workers-check.sh, and scripts/tofu-coverage.sh, the first ones against a gcloud
 # and an aws that record their calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows
 # nothing about Google Cloud or AWS themselves.
 set -euo pipefail
@@ -392,6 +393,55 @@ workers_copy
 sed -i 's/^| `supporters.sync`, `supporters.command` |/| `supporters.sync` |/' "$tmp/w/docs/operations/running.md"
 if TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" 2> "$tmp/workers.err"; then fail "the workers check passed a table that differs"; fi
 grep -qF 'keep_together.json and the table' "$tmp/workers.err" || fail "the workers check did not name the table: $(cat "$tmp/workers.err")"
+
+# tofu-coverage: the real classifications pass, and each mistake fails with its message.
+(cd "$root" && scripts/tofu-coverage.sh) || fail "the coverage check refused the repository"
+coverage_copy() {
+  rm -rf "$tmp/c"
+  mkdir -p "$tmp/c/deploy/opentofu/modules/internal/settings"
+  cp "$root/deploy/opentofu/modules/internal/settings/settings.json" "$tmp/c/deploy/opentofu/modules/internal/settings/"
+  local module
+  for module in "$root"/deploy/opentofu/mycroblog-*/; do
+    module="$(basename "$module")"
+    mkdir -p "$tmp/c/deploy/opentofu/$module/tests"
+    cp "$root/deploy/opentofu/$module/"*.tf "$root/deploy/opentofu/$module/coverage.json" "$tmp/c/deploy/opentofu/$module/"
+    cp "$root/deploy/opentofu/$module/tests/coverage.tftest.hcl" "$tmp/c/deploy/opentofu/$module/tests/"
+  done
+}
+# Runs the check on the copy, which must fail and say $1 ($2 names the mistake), and restores the copy.
+coverage_fails() {
+  if TOFU_COVERAGE_ROOT="$tmp/c" "$root/scripts/tofu-coverage.sh" 2> "$tmp/coverage.err"; then
+    fail "the coverage check passed $2"
+  elif ! grep -qF -- "$1" "$tmp/coverage.err"; then
+    fail "the coverage check did not say '$1' for $2: $(cat "$tmp/coverage.err")"
+  fi
+  coverage_copy
+}
+# Rewrites a JSON file of the copy with a jq filter.
+coverage_jq() {
+  jq "$2" "$1" > "$tmp/c.json" && mv "$tmp/c.json" "$1"
+}
+gcp="$tmp/c/deploy/opentofu/mycroblog-gcp"
+coverage_copy
+TOFU_COVERAGE_ROOT="$tmp/c" "$root/scripts/tofu-coverage.sh" || fail "the coverage check refused a copy"
+coverage_jq "$tmp/c/deploy/opentofu/modules/internal/settings/settings.json" '. + {brand_new: {env: "MY_BRAND_NEW", secret: false}}'
+coverage_fails "brand_new has no class" "a configuration key that no entry classifies"
+coverage_jq "$gcp/coverage.json" '.generic += ["listen"]'
+coverage_fails "listen is in two entries: listen (generic), listen (excluded)" "a key in two entries"
+coverage_jq "$gcp/coverage.json" '.section.media += ["blob_*"]'
+coverage_fails "blob_s3_bucket is in two entries" "a key that a prefix and another entry match"
+coverage_jq "$gcp/coverage.json" '.generic += ["gone_*"]'
+coverage_fails "gone_* (generic) matches no configuration key" "an entry that matches no key"
+coverage_jq "$gcp/coverage.json" '.section.cache = .section.kv | del(.section.kv)'
+coverage_fails "the section cache is no variable of the module" "a section that the module does not have"
+coverage_jq "$gcp/coverage.json" '.excluded.listen = ""'
+coverage_fails "the excluded listen gives no reason" "an exclusion without a reason"
+coverage_jq "$gcp/coverage.json" '.other = []'
+coverage_fails "other is no class" "an unknown class"
+sed -i 's/"MY_KMS_KEY"//' "$gcp/tests/coverage.tftest.hcl"
+coverage_fails "kms_key (section kek) has no wiring test" "a section key that no wiring test names"
+rm "$gcp/coverage.json"
+coverage_fails "mycroblog-gcp has no coverage.json" "a public module without a classification"
 
 if [ "$failures" -gt 0 ]; then
   echo "tofu-scripts-test: $failures failed" >&2

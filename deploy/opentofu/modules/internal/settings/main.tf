@@ -20,9 +20,16 @@ variable "name" {
 }
 
 variable "managed" {
-  description = "The configuration keys that a section of the public module sets, which settings and secrets may not set again."
+  description = "The configuration keys that a section of the public module sets, or that the module fixes, which settings and secrets may not set again."
   type        = set(string)
   default     = []
+  nullable    = false
+}
+
+variable "excluded" {
+  description = "The configuration keys that the public module does not take, each to the reason, which settings and secrets refuse."
+  type        = map(string)
+  default     = {}
   nullable    = false
 }
 
@@ -46,6 +53,11 @@ variable "settings" {
     condition     = length(setintersection(keys(var.settings), var.managed)) == 0
     error_message = "settings has keys that a section of this module sets: ${join(", ", sort(setintersection(keys(var.settings), var.managed)))}. Set them through the section."
   }
+
+  validation {
+    condition     = length(setintersection(keys(var.settings), keys(var.excluded))) == 0
+    error_message = "settings has keys that this module does not take: ${join(", ", [for key in sort(setintersection(keys(var.settings), keys(var.excluded))) : "${key} (${var.excluded[key]})"])}."
+  }
 }
 
 variable "secrets" {
@@ -67,6 +79,11 @@ variable "secrets" {
   validation {
     condition     = length(setintersection(var.secrets, var.managed)) == 0
     error_message = "secrets has keys that a section of this module sets: ${join(", ", sort(setintersection(var.secrets, var.managed)))}. Set them through the section."
+  }
+
+  validation {
+    condition     = length(setintersection(var.secrets, keys(var.excluded))) == 0
+    error_message = "secrets has keys that this module does not take: ${join(", ", [for key in sort(setintersection(var.secrets, keys(var.excluded))) : "${key} (${var.excluded[key]})"])}."
   }
 }
 
