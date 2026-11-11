@@ -117,7 +117,7 @@ func runIssueNew(args []string) error {
 
 func runPR(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: agentkit pr open|land|wait|watch")
+		return fmt.Errorf("usage: agentkit pr open|land|wait|jobs|watch")
 	}
 	switch args[0] {
 	case "open":
@@ -180,6 +180,19 @@ func runPR(r *repo.Repo, args []string) error {
 			return exitError{code, ""}
 		}
 		return nil
+	case "jobs":
+		fs := flag.NewFlagSet("pr jobs", flag.ContinueOnError)
+		run := fs.Int64("run", 0, "the run to read (default: the newest run of each workflow on the pull request's head)")
+		limit := fs.Int("n", 20, "jobs printed per run")
+		pos, err := parse(fs, args[1:])
+		if err != nil || len(pos) != 1 {
+			return fmt.Errorf("usage: agentkit pr jobs <pr> [--run <id>] [-n 20]")
+		}
+		n, err := strconv.Atoi(strings.TrimPrefix(pos[0], "#"))
+		if err != nil {
+			return err
+		}
+		return ops.Jobs(os.Stdout, n, ops.JobsOptions{Run: *run, Limit: *limit})
 	case "land":
 		fs := flag.NewFlagSet("pr land", flag.ContinueOnError)
 		timeout := fs.Duration("timeout", 3*time.Hour, "give up after")

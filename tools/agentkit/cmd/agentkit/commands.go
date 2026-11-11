@@ -59,7 +59,10 @@ Workflow (instead of gh / scripts/task.sh loops):
                                                        (run it in the background; exit 3 on a conflict,
                                                        4 when cancelled with no newer run, 6 when a push
                                                        moved the head while it waited: run it again)
-  pr watch [<pr>...] [--interval 60s]                  one line per event: merged, closed, head-moved, conflicting,
+  pr jobs <pr> [--run <id>] [-n 20]                    where the time of CI goes: per run its wall time, then the
+                                                       jobs that ran, slowest first, with the slowest steps
+                                                       of a job over 3 minutes (reads once, does not wait)
+  pr watch [<pr>...] [--interval 60s]                one line per event: merged, closed, head-moved, conflicting,
                                                        ci-failed, ci-cancelled, ci-green, dequeued (for the
                                                        Monitor tool)
   check [--base origin/main] [--full]                  the quick checks of the changed files, one line each

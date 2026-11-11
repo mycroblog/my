@@ -1010,6 +1010,13 @@ const ciReason = "Polling CI prints its status into your context on every call. 
 	"jobs (exit 3 on a conflict). After it reports a failure, `gh run view <run> --log-failed` reads more of the log. " +
 	"An orchestrator watching many PRs uses `scripts/agentkit.sh pr watch` with the Monitor tool."
 
+const jobsReason = "The jobs of a run as JSON fill your context. Run `scripts/agentkit.sh pr jobs <pr>` (`--run <id>` for one " +
+	"run): it prints each run's wall time and its jobs with their durations and results, slowest first, with the slowest " +
+	"steps of a slow job, reads once, and is bounded. To wait for CI, run `scripts/agentkit.sh pr wait <pr>` in the background."
+
+// reJobsField matches the jobs field of `gh run view --json`.
+var reJobsField = regexp.MustCompile(`--json[ =](\S*,)?jobs(,|\s|$)`)
+
 func ci(pc command) *denial {
 	var pos []string
 	text := ""
@@ -1033,6 +1040,9 @@ func ci(pc command) *denial {
 		return false
 	}
 	deny := &denial{"ci-poll", ciReason}
+	if (pos[0] == "api" && strings.Contains(text, "/jobs")) || (has("--json") && reJobsField.MatchString(text)) {
+		deny = &denial{"ci-poll", jobsReason}
+	}
 	switch pos[0] + " " + pos[1] {
 	case "pr checks", "run watch":
 		return deny
