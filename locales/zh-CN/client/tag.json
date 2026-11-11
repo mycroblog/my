@@ -1,6 +1,154 @@
 {
+  "tag.featured.add": {
+    "defaultMessage": "添加话题标签",
+    "description": "Button in the profile settings that adds a row for one more featured hashtag."
+  },
+  "tag.featured.count": {
+    "defaultMessage": "{count, plural, other {# 条帖子}}",
+    "description": "How many of an account's public and unlisted posts have a featured hashtag, on its profile, when none has a date."
+  },
+  "tag.featured.description": {
+    "defaultMessage": "最多 {max} 个话题标签，按此顺序显示在你的个人资料中，并附上各标签下你的公开帖子和不列出帖子的数量。",
+    "description": "Description of the featured hashtags in the profile settings. {max} is the most, 10."
+  },
+  "tag.featured.field": {
+    "defaultMessage": "话题标签 {number}",
+    "description": "Label of the field of one featured hashtag in the profile settings. {number} is its place, 1 to 10."
+  },
+  "tag.featured.move_down": {
+    "defaultMessage": "将话题标签 {number} 下移",
+    "description": "Icon button and its tooltip that moves a featured hashtag one place down. {number} is its place."
+  },
+  "tag.featured.move_up": {
+    "defaultMessage": "将话题标签 {number} 上移",
+    "description": "Icon button and its tooltip that moves a featured hashtag one place up. {number} is its place."
+  },
+  "tag.featured.moved": {
+    "defaultMessage": "已将 {tag} 移到第 {position} 位。",
+    "description": "Announced once a featured hashtag moved. {tag} is the hashtag with its #; {position} its new place, from 1."
+  },
+  "tag.featured.moved_empty": {
+    "defaultMessage": "已将空的话题标签移到第 {position} 位。",
+    "description": "Announced once an empty row of the featured hashtags moved. {position} is its new place, from 1."
+  },
+  "tag.featured.remove": {
+    "defaultMessage": "移除话题标签 {number}",
+    "description": "Button in the profile settings that removes one featured hashtag. {number} is its place."
+  },
+  "tag.featured.save_failed": {
+    "defaultMessage": "无法保存精选话题标签：{reason}",
+    "description": "Result of saving the profile settings when the featured hashtags were not saved. {reason} says why."
+  },
+  "tag.featured.stats": {
+    "defaultMessage": "{count, plural, other {# 条帖子}}，最近一条发布于 {date}",
+    "description": "How many of an account's public and unlisted posts have a featured hashtag, and when one last had it, on its profile. {date} is a formatted date."
+  },
+  "tag.featured.title": {
+    "defaultMessage": "精选话题标签",
+    "description": "Heading of the hashtags a profile features, on the profile and in the profile settings."
+  },
+  "tag.featured.too_many": {
+    "defaultMessage": "个人资料最多可以精选 {max} 个话题标签。",
+    "description": "Result of saving the profile settings with too many featured hashtags. {max} is the most, 10."
+  },
+  "tag.follow": {
+    "defaultMessage": "关注",
+    "description": "Button on a hashtag's page that follows the hashtag, so that its posts join the user's home timeline."
+  },
+  "tag.follow.description": {
+    "defaultMessage": "其公开帖子会加入你的主页时间线，包括你未关注的人发布的帖子。",
+    "description": "Sentence under the follow button of a hashtag's page, saying what following the hashtag does."
+  },
+  "tag.follow.failed": {
+    "defaultMessage": "无法更改对 {tag} 的关注：{reason}",
+    "description": "Toast when following or unfollowing a hashtag failed. {tag} is the hashtag with its #; {reason} says why."
+  },
+  "tag.follow.too_many": {
+    "defaultMessage": "你关注的话题标签已达上限（{max} 个）。取消关注一个后才能关注新的。",
+    "description": "Shown when the user follows the most hashtags allowed. {max} is that number, 100."
+  },
+  "tag.followed": {
+    "defaultMessage": "你现在关注了 {tag}。",
+    "description": "Announced, and shown above the list of followed hashtags, once the user followed a hashtag. {tag} is the hashtag with its #, for example '#cats'."
+  },
+  "tag.followed_list.count": {
+    "defaultMessage": "{count, plural, other {已关注 # / {max} 个话题标签}}",
+    "description": "What the count beside the list of followed hashtags means, read aloud. {count} is how many the user follows; {max} is the most they can, 100."
+  },
+  "tag.followed_list.description": {
+    "defaultMessage": "带有这些话题标签的公开帖子会加入你的主页时间线，包括你未关注的人发布的帖子，但转发不会。",
+    "description": "Description of the list of followed hashtags in the settings."
+  },
+  "tag.followed_list.empty": {
+    "defaultMessage": "你没有关注任何话题标签",
+    "description": "Heading of the empty list of followed hashtags."
+  },
+  "tag.followed_list.empty.description": {
+    "defaultMessage": "在这里或在话题标签的页面上关注后，即可在主页时间线上阅读其帖子。",
+    "description": "Sentence of the empty list of followed hashtags, which leads to following one."
+  },
+  "tag.followed_list.follow": {
+    "defaultMessage": "关注",
+    "description": "Button that submits the form that follows a hashtag, in the settings."
+  },
+  "tag.followed_list.follow_failed": {
+    "defaultMessage": "无法关注该话题标签：{reason}",
+    "description": "Error of the form that follows a hashtag. {reason} says why."
+  },
+  "tag.followed_list.list.title": {
+    "defaultMessage": "你关注的话题标签",
+    "description": "Heading of the list of the hashtags the user follows, in the settings."
+  },
+  "tag.followed_list.new.title": {
+    "defaultMessage": "关注话题标签",
+    "description": "Button that opens the form that follows a hashtag, and the title of that form, in the settings."
+  },
+  "tag.followed_list.since": {
+    "defaultMessage": "关注于 {date}",
+    "description": "When the user followed a hashtag, on its row in the settings. {date} is a formatted date."
+  },
+  "tag.followed_list.title": {
+    "defaultMessage": "关注的话题标签",
+    "description": "Title of the settings page and menu item that lists the hashtags the user follows."
+  },
+  "tag.followed_list.unfollow": {
+    "defaultMessage": "取消关注",
+    "description": "Button on a row of the list of followed hashtags that unfollows the hashtag."
+  },
+  "tag.followed_list.unfollow_failed": {
+    "defaultMessage": "无法取消关注 {tag}：{reason}",
+    "description": "Shown above the list of followed hashtags when unfollowing one failed. {tag} is the hashtag with its #; {reason} says why."
+  },
+  "tag.followed_mark": {
+    "defaultMessage": "{count, plural, other {关注的话题标签}} {tags}",
+    "description": "Line above a post on the home timeline that is there only because it has a hashtag the user follows, from someone the user does not follow. {tags} is the hashtags with their #, as links, for example '#cats' or '#cats and #dogs'; {count} is how many."
+  },
+  "tag.following": {
+    "defaultMessage": "正在关注",
+    "description": "Button on a hashtag's page while the user follows the hashtag; pressing it unfollows the hashtag."
+  },
+  "tag.name": {
+    "defaultMessage": "话题标签",
+    "description": "Label of the field where the user types a hashtag to follow."
+  },
+  "tag.name.description": {
+    "defaultMessage": "可带或不带 #，例如 #cats。可使用字母、数字和 _。",
+    "description": "Help under the field where the user types a hashtag."
+  },
+  "tag.name.invalid": {
+    "defaultMessage": "话题标签只能包含字母、数字和 _，且至少有一个字母。",
+    "description": "Error of a hashtag field when the text is not a hashtag."
+  },
+  "tag.name.required": {
+    "defaultMessage": "请输入话题标签。",
+    "description": "Error of the hashtag field when it is empty."
+  },
   "tag.title": {
     "defaultMessage": "#{tag}",
     "description": "Heading and document title of the page with the posts of one hashtag. {tag} is the hashtag without the #, for example 'cats'."
+  },
+  "tag.unfollowed": {
+    "defaultMessage": "你已不再关注 {tag}。",
+    "description": "Announced once the user unfollowed a hashtag. {tag} is the hashtag with its #, for example '#cats'."
   }
 }

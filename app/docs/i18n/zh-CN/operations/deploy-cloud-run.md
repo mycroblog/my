@@ -122,10 +122,10 @@ KEK 以挂载文件的形式交给服务器，由 `MY_KEK_FILE` 指定。其他�
 
 如果要从一开始就把 KEK 放在 Cloud KMS 中，请按照 `main.tf` 中 `kek` 块的注释替换它，并启用 `cloudkms.googleapis.com`。如果要使用你自己的 KEK 或 VAPID 密钥，请在这一步之前，在 `kek` 模块上设置 `create = false`，或从 `generate_p256_keys` 中删除该密钥。在其他地方创建的机密只需要它的 ID：把它传给应用模块的 `secret_env`，或传给使用它的模块。
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
 ### 5. 创建迁移所需的资源
 
-服务的启动探测会等待 `/readyz`，而在架构存在之前它都返回 `503`，所以必须先创建架构。创建迁移作业及其依赖的资源，其中包括负载均衡器的地址，因为服务器的设置会用到它：
+服务的启动探测会等待 `/health/ready`，而在架构存在之前它都返回 `503`，所以必须先创建架构。创建迁移作业及其依赖的资源，其中包括负载均衡器的地址，因为服务器的设置会用到它：
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,10 +189,10 @@ tofu apply -var console_enabled=false
 
 该命令没有标准输入和终端，因此需要从中读取密码或文件的命令无法这样运行。它打印的内容会留在日志中，所以不要运行你不愿让输出写进日志的命令。
 
-<!-- source: upgrading 1a1e204c5173 -->
+<!-- source: upgrading 31acbd137681 -->
 ## 升级
 
-请先阅读[升级](database.md#upgrading)和发布说明，并且每次只升级一个次版本。
+请先阅读[升级](database.md#upgrading)和发布说明，并且一次只升一个小版本。
 
 ```sh
 # 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
@@ -206,29 +206,29 @@ pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 "$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
 ```
 
-脚本会执行以下步骤，并在第一个失败的步骤处停止：
+脚本会执行以下操作，并在第一个失败的步骤处停止：
 
-1. 使用 `--maintenance` 时，将服务切换到[维护模式](maintenance.md)。
+1. 使用 `--maintenance` 把服务切换到[维护模式](maintenance.md)。
 2. 给迁移作业换上新镜像。
-3. 依次运行 `my config check`、`my db upgrade -check`、`my schema apply` 和 `my db upgrade`，每个都等待前一个完成。
-4. 部署新修订版本，并退出维护模式。只有当它的启动探测在 `/readyz` 上通过后，才会接收流量。
+3. 运行 `my config check`、`my db upgrade -check`、`my schema apply` 和 `my db upgrade`，每个都等待前一个完成。
+4. 部署新的修订版本，不带维护模式。只有当它的启动探测在 `/health/ready` 上通过后，它才会接收流量。
 
-不使用 `--maintenance` 时，旧修订版本会在第 2 步和第 3 步期间继续提供服务，而这[不保证能正常工作](database.md#the-server-during-an-upgrade)。发布说明要求时，请加上 `--allow-destructive`。用 `--image ghcr.io/mycroblog/my:0.2.0@sha256:...` 固定摘要，这是[生产环境检查清单](production-checklist.md#operations)所推荐的做法。
+不带 `--maintenance` 时，旧修订版本会在第 2 和第 3 步期间继续提供服务，这[不保证能正常工作](database.md#the-server-during-an-upgrade)。当发布说明要求时，请加上 `--allow-destructive`。用 `--image ghcr.io/mycroblog/my:0.2.0@sha256:...` 固定摘要，这也是[生产检查清单](production-checklist.md#operations)所推荐的。
 
 然后将 `terraform.tfvars` 中的 `image` 设为相同的值，将 `main.tf` 中的 `ref` 设为相同的发布版本，再运行 `tofu init` 和 `tofu plan`。应用之前请阅读该计划：新发布版本的模块可能会更改资源。`tofu apply` 从不更改已存在的服务或作业的镜像，因此忘记修改 `image` 不会造成损害，但新作业或重新创建的服务会以这个值启动。
 
-**某个步骤失败时**，服务会停留在原来的修订版本上，如果你要求了维护模式，则仍处于维护模式。修复原因后再次运行脚本即可：这些步骤可以安全地重复执行。在 `my schema apply` 尚未运行的情况下，如果要不升级而退出维护模式：
+**当某个步骤失败时**，服务会保持在它当前的修订版本上，如果你要求过，就仍处于维护模式。请修复原因并再次运行脚本：这些步骤可以安全地重复执行。若要在 `my schema apply` 尚未运行时不升级而退出维护模式：
 
 ```sh
 gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
 ```
 
-架构已经变更后如果要回退，请恢复备份：见[回滚](database.md#rolling-back)。
+若要在架构变更之后回退，请恢复备份：请参阅[回滚](database.md#rolling-back)。
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
-## 监控与告警
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
+## 监控和告警
 
-模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 会添加 `/readyz` 的可用性检查、使用[运行手册](alerts.md)中名称的告警策略，以及邮件通知。它从未被实际应用过，因此请通过让某项检查失败来试一次。请先启用 `monitoring.googleapis.com`，并阅读其 README 中关于检查费用的说明：每次运行都会唤醒一个实例，并通过 `/readyz` 唤醒数据库，这会加重 [tick 的取舍](#costs)。
+模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 会添加对 `/health/live` 的可用性检查、名称与[运行手册](alerts.md)一致的告警策略，以及电子邮件通知。它从未被应用过，所以请通过让一次检查失败来试用一次。请先启用 `monitoring.googleapis.com`，并在它的 README 中了解检查的成本：每次运行都会唤醒一个实例，如果你把它指向 `/health/ready`，还会唤醒数据库，这会加重[tick 的取舍](#costs)。
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## 更换后端
@@ -334,22 +334,23 @@ Cloud Tasks 和 Cloud Scheduler 不经过这两者：它们直接调用默认的
 
 如果要使用服务自己的 URL，或在前面放置其他东西（例如 CDN），请删除 `ingress` 块及其在 `backends` 中的那一行，并把 `service_ingress` 保持为你需要的值：它始终由你明确选择，而 `all` 会让 `run.app` URL 对任何人开放。在 `env` 中将 `MY_TRUSTED_PROXIES` 设为连接到服务器的那些地址。无论你在前面放什么，它都必须仍然在 `https://{host}` 上响应。
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` 把 Cloudflare 放在 `host` 前面，并对所有内容绕过缓存；`ingress-cloudflare-media` 则在任何 ingress 旁边添加一个带缓存的媒体主机。请先阅读每个模块的 README（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。令牌放在 `CLOUDFLARE_API_TOKEN` 中。这些模块只在模拟的 provider 上运行过。
+`ingress-cloudflare-app` 会把 Cloudflare 放在 `host` 前面，并让所有内容绕过缓存；`ingress-cloudflare-media` 则在任何入口旁边添加一个带缓存的媒体主机。请先阅读每个模块的 README（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。令牌放在 `CLOUDFLARE_API_TOKEN` 中。这些模块只在模拟的提供程序上运行过。
 
-- **你的套餐决定源站**。Cloud Run 按 `Host` 路由，而 Cloudflare 只在 Enterprise 套餐中提供 Host 请求头覆盖功能。在其他任何套餐上，`*.run.app` 源站会导致计划失败，因此源站本身必须接受你的主机名：保留该主机的一个 `ingress-gcp-domain-mapping`（不放在 `backends` 中），并设置 `origin_host = "ghs.googlehosted.com"`。每个主机都需要各自的映射。它的证书能否在代理后面签发和续期尚未验证，因此请从 `proxied = false` 开始。
-- **请求头封闭源站**。`ingress-cloudflare-app` 会添加一条请求头转换规则，服务器对不带该请求头的请求返回 `403`，健康检查和任务自己的 `POST`（它们会校验各自的令牌）除外。因此，没有人能通过 `run.app` URL 绕过 Cloudflare，调用方自己的 Cloudflare Worker 也无法决定速率限制看到的客户端地址。
-- **该值会进入状态**。Cloudflare provider 没有规则请求头值的只写形式。用 `openssl rand -hex 32` 生成一个值，用 `gcloud secrets versions add` 将其加入机密，用 `TF_VAR_origin_secret` 传入同一个值，并确保状态不公开。[CDN 指南](cdn.md#rotate-the-value)介绍了如何轮换它。
-- **记录未开启代理时，没有任何东西会添加该请求头**，因此服务器会拒绝除健康检查之外的所有请求：如果为了域名映射的证书而设置了 `proxied = false`，请在那之后再设置机密。
-- 在控制台中**关闭 Bot Fight Mode**。它覆盖整个区域，任何规则都无法跳过它，而对 `/ap/`、`/.well-known/` 或 `/api/` 的质询会破坏联邦，因为其他服务器不是浏览器。任务不经过 Cloudflare。这些模块不添加任何质询，并关闭 Browser Integrity Check，但不管理 Bot Fight Mode。出于同样的原因，不要开启“I'm Under Attack”。
-- 如果你希望重定向 `http://`，请在控制台中**开启 Always Use HTTPS**。它覆盖整个区域，所以模块把它留给你决定。
-- **超时**：源站 125 秒内没有发送任何内容时，Cloudflare 会返回 `524`。任务不受影响，因为它们直接调用 `run.app` URL。流每 30 秒发送一次心跳，低于 900 秒的空闲上限。它在普通的已代理主机上是否会缓冲流尚未验证。
-- **上传**：Free 和 Pro 套餐为 100 MB，高于 Cloud Run 的 32 MiB，因此上限仍是后者。
-- **视频**：Cloudflare 的条款限制在 Free、Pro 和 Business 套餐上提供视频以及不成比例的大量大文件，它可能会重定向这些内容或采取其他措施。在媒体主机上缓存视频之前，请先做好决定。
+- **你的套餐决定源站。** Cloud Run 按 `Host` 路由，而 Cloudflare 只在 Enterprise 套餐中提供 Host 请求头覆盖。在任何其他套餐上，`*.run.app` 源站会使计划失败，因此源站必须自己接受你的主机：请为该主机保留一个 `ingress-gcp-domain-mapping`（放在 `backends` 之外），并设置 `origin_host = "ghs.googlehosted.com"`。每个主机都需要自己的映射。它的证书能否在代理之后签发和续期尚未验证，因此请从 `proxied = false` 开始。
+- **用请求头封闭源站。** `ingress-cloudflare-app` 会添加一条请求头转换规则，服务器会以 `403` 拒绝没有该请求头的请求，但健康检查和任务自己的 `POST`（它们会检查自己的令牌）除外。这样就没有人能通过 `run.app` URL 绕过 Cloudflare，调用方自己的 Cloudflare Worker 也无法选择速率限制所看到的客户端地址。
+- **该值会进入状态。** Cloudflare 提供程序没有规则请求头值的只写形式。请用 `openssl rand -hex 32` 生成一个值，用 `gcloud secrets versions add` 把它加入机密，用 `TF_VAR_origin_secret` 传入同一个值，并让状态保持私有。如何轮换它见 [CDN 指南](cdn.md#rotate-the-value)。
+- **只要记录没有被代理，就没有任何东西会添加该请求头**，所以服务器会拒绝除健康检查之外的一切：在为域名映射的证书使用 `proxied = false` 时，请在那之后再设置机密。
+- **请关闭 Bot Fight Mode**，在控制台中操作。它覆盖整个区域，没有任何规则可以跳过它，而对 `/ap/`、`/.well-known/` 或 `/api/` 的质询会破坏联邦，因为其他服务器不是浏览器。任务不经过 Cloudflare。这些模块不添加任何质询，并会关闭 Browser Integrity Check，但不管理 Bot Fight Mode。出于同样的原因，不要开启“I'm Under Attack”。
+- **Email Address Obfuscation 可以保持开启。** 它会把 HTML 中的电子邮件地址改写成 `[email protected]`，并添加一个用于还原它们的脚本，而服务器的 Content-Security-Policy 会拒绝该脚本。服务器自己的页面，例如说明确认邮件发到哪里的页面，会标记其内容，使其不改动这些地址。
+- 如果你希望 `http://` 被重定向，请在控制台中**开启 Always Use HTTPS**。它覆盖整个区域，所以这些模块把它留给你处理。
+- **超时**：当源站 125 秒内不发送任何内容时，Cloudflare 会返回 `524`。任务不受影响，因为它们直接调用 `run.app` URL。流每 30 秒发送一次心跳，低于 900 秒的空闲上限。在普通的被代理主机上，它是否会缓冲流尚未验证。
+- **上传**：Free 和 Pro 套餐为 100 MB，高于 Cloud Run 的 32 MiB，而后者仍是实际的限制。
+- **视频**：Cloudflare 的条款限制在 Free、Pro 和 Business 套餐上提供视频以及不成比例的大文件，它可能会重定向这些内容或采取其他措施。在把视频缓存到媒体主机之前，请先决定这一点。
 
-**已删除的文件仍会留在缓存中**。媒体主机遵循服务器的 `Cache-Control`，因此已删除的本地文件可能在最长一年内仍然可见，远程文件则为 `remote_media_cache_ttl_seconds`。服务器不会清除它。当某些内容必须消失时，请在控制台的 **Caching > Configuration > Custom Purge** 下手动清除，或者：
+**被删除的文件仍会保留在缓存中。** 媒体主机遵循服务器的 `Cache-Control`，因此被删除的本地文件最长可能继续可见一年，远程文件则是 `remote_media_cache_ttl_seconds`。服务器不会清除它。当某些内容必须消失时，请手动清除，在控制台的 **Caching > Configuration > Custom Purge** 下，或者：
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -358,7 +359,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-代理 URL 的 `sig` 在查询字符串中，而查询字符串是缓存内容的一部分，因此请提供完整的 URL。
+代理 URL 的查询字符串中带有它的 `sig`，它是被缓存内容的一部分，所以请给出完整的 URL。
 
 <!-- source: changing-the-kek-backend c5e918ea5c81 -->
 ## 更换 KEK 后端

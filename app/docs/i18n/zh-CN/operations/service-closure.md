@@ -88,30 +88,30 @@ my admin closure status
 
 即使投递已经完成，服务器也会以关闭状态继续运行到 `export_until`，并继续为用户提供导出。服务器从不自行删除数据，所以过了截止日期也会一直运行，直到你停止它。如果你还没有导出保留义务冻结所涉及的记录（§3），现在就导出。
 
-<!-- source: 6-switching-to-the-static-page 7735b2587738 -->
+<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
 ## 6. 切换到静态页面
 
-导出截止日期过后，导出关闭页面。**此操作会读取数据库，所以请在停止 `my serve` 和销毁数据库之前运行。**
+导出截止日期过后，导出关闭页面。**这一步会读取数据库，因此请在停止 `my serve` 并丢弃数据库之前运行它。**
 
 ```sh
 my admin closure export-html -out ./closure             # all locales; index.html starts from the instance's default locale
 my admin closure export-html -out ./closure -lang ja,en # set the locales and the order in index.html
 ```
 
-- 输出的内容：
-  - `<dir>/<locale>.html`，以及按顺序列出所有语言的 `<dir>/index.html`。它们使用与维护页面（`my maintenance export`）相同的模板和 CSS，显示服务器名称（`maintenance_server_name`，没有时为实例名称，再没有时为主机名）、关闭日期、运营者在公告中写的消息，以及指向状态页面（`status_page_url`）的链接。CSS 仅为内联，没有脚本或外部资源，CSP 写在 `<meta>` 标签中。主题颜色的覆盖设置会被写入页面；自定义 CSS 不包含在内。
-  - 前端配置示例 `nginx.conf`、`Caddyfile` 和 `cloudfront-function.js`。它们对联邦和发现路径（`/ap/*`、`/inbox`、`/.well-known/webfinger`、`/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）以及个人资料（`/@*`）返回不带正文的 `410`，对其他所有路径返回 `Accept-Language` 中第一个语言的页面（没有时返回 `index.html`）。每种语言会得到应用会为它显示的那个语言的页面：`zh`、`zh-SG` 和 `zh-Hans` 得到 `zh-CN.html`，而 `zh-TW` 不会。
-- 如果服务器尚未关闭，该命令会拒绝执行（退出码 1）。在 `delivery_completed` 之前，它会警告投递仍在进行（但仍会输出文件）。
+- 它会写出：
+  - `<dir>/<locale>.html` 和 `<dir>/index.html`，后者按顺序列出所有语言。它们使用与维护页面（`my maintenance export`）相同的模板和 CSS，并显示服务器名称（`maintenance_server_name`，否则是实例名称，再否则是主机名）、关闭日期、公告中运营者的消息，以及指向状态页面的链接（`status_page_url`）。CSS 仅为内联，没有脚本或外部资源，CSP 位于一个 `<meta>` 标签中。主题颜色的覆盖会被一并写入；自定义 CSS 不包含在内。
+  - 前端配置示例 `nginx.conf`、`Caddyfile` 和 `cloudfront-function.js`。对于联邦和发现路径（`/ap/*`、`/inbox`、`/.well-known/webfinger`、`/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）以及个人资料（`/@*`），它们各自返回不带正文的 `410`；对于其他每个路径，则返回 `Accept-Language` 中第一种语言的页面（如果没有，则返回 `index.html`）。某种语言会到达应用会为它显示的语言环境的页面：`zh`、`zh-SG` 和 `zh-Hans` 得到 `zh-CN.html`，而 `zh-Hant`、`zh-HK` 和 `zh-MO` 得到 `zh-TW.html`。
+- 如果服务器尚未关闭，该命令会拒绝执行（退出码 1）。在 `delivery_completed` 之前，它会警告投递仍在继续（并且仍会写出这些文件）。
 
-切换前端。只把页面（`*.html`）放到公开位置，并按你的环境调整示例中的主机名、目录和证书路径。
+切换前端。只把页面（`*.html`）放在公开位置，并根据你的环境调整示例中的主机名、目录和证书路径。
 
-| 前端 | 设置方法 |
+| 前端 | 如何设置 |
 | --- | --- |
-| nginx | 把页面放在 `/srv/closure`，并在 `http` 块中 include `nginx.conf`。页面也以 `410` 返回 |
-| Caddy | 把页面放在 `/srv/closure`，并使用 `Caddyfile`。Caddy 会自动获取证书，页面也以 `410` 返回 |
-| CloudFront | 把页面直接放在 S3 存储桶下，将该存储桶设为默认缓存行为的源，并把 `cloudfront-function.js` 关联为 viewer-request 类型的 CloudFront Function（`cloudfront-js-2.0`）。在缓存策略的缓存键中加入 `Accept-Language`。页面以 `200` 返回（viewer-request 函数无法更改源响应的状态码） |
+| nginx | 把页面放在 `/srv/closure`，并从 `http` 块中引入 `nginx.conf`。这些页面也以 `410` 提供 |
+| Caddy | 把页面放在 `/srv/closure`，并使用 `Caddyfile`。Caddy 会获取证书，这些页面也以 `410` 提供 |
+| CloudFront | 把页面直接放在 S3 存储桶下，让该存储桶成为默认缓存行为的源，并把 `cloudfront-function.js` 关联为查看者请求（viewer-request）CloudFront Function（`cloudfront-js-2.0`）。把 `Accept-Language` 放入缓存策略的缓存键中。这些页面以 `200` 提供（查看者请求函数无法更改源响应的状态） |
 
-切换后，确认 `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` 返回 `410`，并且 `curl -i https://social.example/` 返回关闭页面。然后停止 `my serve` 和 worker。对于可用性监控，要么停止健康检查监控，要么把它们指向关闭页面。
+切换之后，请检查 `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` 是否返回 `410`，以及 `curl -i https://social.example/` 是否返回关闭页面。然后停止 `my serve` 和各个 worker。对于可用性监控，请停止健康检查监控，或者让它们指向关闭页面。
 
 <!-- source: 7-discarding-the-db-blobs-and-backups c7c55aac56e0 -->
 ## 7. 销毁数据库、blob 和备份

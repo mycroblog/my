@@ -27,17 +27,19 @@
 
 后台任务中的 panic 在报告后会停止进程，因此服务器永远不会在损坏的状态下继续运行。你的平台会重启它。
 
-<!-- source: the-log-line 6b570d0bfd09 -->
+<!-- source: the-log-line ef6f03400831 -->
 ## 日志行
 
-这一行的 `msg` 为 `error report`，`level` 为 `ERROR`（当故障导致进程停止时，`severity` 为 `CRITICAL`）。它的字段以及清洗对这些字段的处理，见[运行服务器](running.md#error-reports)。简而言之：
+该行的 `msg` 为 `error report`，`level` 为 `ERROR`（当失败使进程停止时，`severity` 为 `CRITICAL`）。它的字段，以及清理会对它们做什么，见[运行服务器](running.md#error-reports)。简而言之：
 
-- 同一错误的每次出现，`my.error.fingerprint` 都相同。可以按它搜索或分组。
-- `my.error.where` 表示错误发生的位置，例如 `client_api GET /api/v1/statuses/{id}`。
-- 通过 `request_id`、`job_id`、`trace_id` 和 `span_id` 可以找到同一请求或任务的其他日志行。
-- `message` 位于行末：错误类型和消息、一个换行符，以及 Go 调用栈。
+- 同一个错误的每一次出现，`my.error.fingerprint` 都相同。请按它搜索或分组。
+- `my.error.where` 说明错误发生在哪里，例如 `client_api GET /api/v1/statuses/{id}`。
+- `request_id`、`job_id`、`trace_id` 和 `span_id` 可用来找到同一个请求或任务的其他日志行。
+- 请求错误的日志行带有 `context.httpRequest`：方法、作为 URL 的路由（`/api/v1/statuses/{id}`，绝不是客户端请求的路径），以及所返回的状态。Error Reporting 会在分组中显示它们，并可按它们过滤。
+- `message` 在该行的最后：错误类型和消息、一个换行，以及 Go 堆栈。
+- 堆栈从错误的来源处开始，而不是从它被报告的地方开始：对于数据库错误，是执行查询的服务器函数。因此，来自不同位置的错误会落入不同的分组，在 Error Reporting 和管理界面中都是如此。
 
-其他任何日志行都不带调用栈。
+其他任何日志行都不带堆栈。
 
 <!-- source: google-cloud-cloud-run 925c99683713 -->
 ### Google Cloud（Cloud Run）

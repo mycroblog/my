@@ -5,37 +5,39 @@
 
 下文中关于第三方的事实都附有确认日期和来源。各服务会更改其方案和界面；在依赖某项限制之前，请查看链接的页面。
 
-<!-- source: which-url-to-monitor 50bdaa5c9f31 -->
+<!-- source: which-url-to-monitor 1c5761757c52 -->
 ## 监控哪个 URL
 
-| 路径 | 用途 | 是否访问数据库 | 维护模式下 |
+| 路径 | 用途 | 是否访问数据库 | 在维护模式下 |
 | --- | --- | --- | --- |
-| `GET /api/v1/instance/health` | 正常运行时间监控、状态页面、Web 客户端 | 每个进程每 60 秒最多一次 | `503`，带 `Retry-After` 和 `{"status":"maintenance"}` |
-| `GET /healthz` | 平台的存活探测 | 从不 | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | 负载均衡器或 Kubernetes 的就绪探测 | 每个请求都访问（并发请求共享一次检查） | `200` `{"status":"maintenance"}` |
+| `GET /api/v1/instance/health` | 可用性监控、状态页面、Web 客户端 | 每个进程每 60 秒最多一次 | `503`，带有 `Retry-After` 和 `{"status":"maintenance"}` |
+| `GET /healthz`、`GET /health/live` | 平台的存活探测 | 从不 | `200` `{"status":"maintenance"}` |
+| `GET /readyz`、`GET /health/ready` | 负载均衡器或 Kubernetes 的就绪探测 | 每个请求都会访问（并发请求共用一次检查） | `200` `{"status":"maintenance"}` |
 
-请让外部监控指向 **`/api/v1/instance/health`**，而不是 `/readyz`：`/readyz` 每个请求都会查询数据库，因此间隔很短的监控会让可缩容到零的数据库一直保持唤醒。探测是给你的平台用的。模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 会以较长的间隔从平台自己的监控检查 `/readyz`，其 README 说明了相应的费用。
+请让外部监控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：后者每个请求都会查询数据库，因此间隔很短的监控会让缩容到零的数据库一直保持唤醒。这些探测是留给你的平台用的。模块 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 会用平台自带的监控，以较长的间隔检查 `/health/live`（`monitoring-gcp`）或 `/readyz`（`monitoring-aws`），它们的 README 说明了这要花费多少。
 
 `/api/v1/instance/health` 的响应（无需认证，`Cache-Control: no-store`）：
 
 | 状态 | HTTP | 正文 |
 | --- | --- | --- |
 | 健康 | `200` | `{"status":"ok","checked_at":"<RFC 3339>"}` |
-| 不可用（无法连接数据库，或尚未应用 schema） | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
-| 维护模式 | `503`，带 `Retry-After` | `{"status":"maintenance"}` |
+| 不可用（数据库无法访问，或未应用 schema） | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
+| 维护模式 | `503`，带有 `Retry-After` | `{"status":"maintenance"}` |
 
-健康时，`/healthz` 和 `/readyz` 以 `200` 回答 `{"status":"ok"}`；数据库未就绪时，`/readyz` 以 `503` 回答一个 problem 文档。正文从不包含原因、主机名或版本。原因记录在服务器日志中。
+健康时，`/healthz` 和 `/readyz` 返回 `200` 和 `{"status":"ok"}`，而当数据库尚未就绪时，`/readyz` 返回带有问题文档的 `503`。`/health/live` 和 `/health/ready` 是同样的检查，只是名称不同。
 
-`checked_at` 是该响应所依据的检查时间。服务器每个进程每分钟最多运行一次数据库检查，并复用其结果，因此轮询频率高于每 60 秒一次的监控只会看到相同的 `checked_at`，没有任何收益。有多个进程时，每个进程各自运行检查。
+**在 Cloud Run 上，请调用不以 `z` 结尾的路径。** Cloud Run 保留了一些以 `z` 结尾的路径，会在请求到达容器之前用它自己的 `404` 响应：`/healthz` 就是其中之一，也没有任何保证说 `/readyz` 会一直有响应。从 Cloud Run 部署的外部（可用性监控、`curl`）请使用 `/health/live`、`/health/ready` 或 `/api/v1/instance/health`。容器自己的探测不受影响。响应正文从不包含原因、主机名或版本。原因在服务器日志中。
 
-设置了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 时，这三个路径即使没有该请求头也会回答，因此它们无法反映 CDN 丢失了该请求头。如果监控是你发现问题的第一信号，请同时监控一个经过 CDN 的页面，例如 `https://<host>/about`。
+`checked_at` 是该响应所依据的检查的时间。服务器每个进程每分钟最多运行一次数据库检查并重用结果，因此轮询频率高于每 60 秒一次的监控只会看到相同的 `checked_at`，没有任何好处。有多个进程时，每个进程运行自己的检查。
 
-<!-- source: keep-the-monitoring-cheap 29d1da3d6dc2 -->
+设置了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 时，这三个路径在没有该请求头的情况下仍会响应，因此它们不能说明 CDN 丢失了该请求头。如果监控是你发现问题的第一个信号，也请监控一个经过 CDN 的页面，例如 `https://<host>/about`。
+
+<!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## 让监控保持低成本
 
-- **可缩容到零的数据库。** 如果监控的间隔短于数据库停止前的等待时间，数据库就永远不会停止。Neon 会在 5 分钟无活动后挂起计算实例；Free 方案无法关闭这一行为（2026-10-25 确认，[Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)）。一般来说，5 分钟或更长的间隔能让空闲的数据库在两次检查之间停止，而每次检查会唤醒它，持续检查本身的时间加上空闲等待时间。参与联邦的服务器全天候接收来自其他服务器的投递，因此其数据库一天中大部分时间本来就处于唤醒状态；额外的成本仅限于安静的时段。
-- **如果最在意空闲成本，可以选择更便宜的分工方式。** 以较短的间隔监控 `/healthz`（它从不访问数据库），以较长的间隔（15 分钟或更长）监控依赖数据库的 `/api/v1/instance/health`。`/healthz` 在维护模式下也回答 `200`，因此请匹配正文中的 `"status":"ok"`。
-- **请求本身很小。** 每 5 分钟检查一次，每月约 8,640 个请求；每分钟一次约 43,200 个。这在 Cloud Run 的免费额度之内（每月 200 万个请求、180,000 vCPU 秒和 360,000 GiB 秒；时间向上取整到 100 毫秒；2026-10-23 确认，[Cloud Run pricing](https://cloud.google.com/run/pricing)）。
+- **缩容到零的数据库。** 如果监控的间隔短于数据库停止前等待的时间，数据库就永远不会停止。Neon 在 5 分钟没有活动之后挂起计算资源；Free 套餐无法关闭这一点（2026-10-25 确认，[Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)）。作为经验法则，5 分钟或更长的间隔能让空闲的数据库在两次检查之间停止，而每次检查会把它唤醒，持续时间为检查时间加上空闲时间。参与联邦的服务器全天候都会收到其他服务器的投递，所以它的数据库一天中大部分时间本来就是唤醒的；额外的成本仅限于安静的时段。
+- **如果空闲成本最重要，请选择更便宜的拆分方式。** 以较短的间隔监控 `/health/live`（它从不访问数据库），以较长的间隔（15 分钟或更久）监控依赖数据库的 `/api/v1/instance/health`。`/health/live` 在维护模式下也返回 `200`，因此请匹配正文中的 `"status":"ok"`。
+- **请求本身很小。** 每 5 分钟检查一次，每月约 8,640 个请求，每分钟一次则约 43,200 个。这在 Cloud Run 的免费额度之内（每月 200 万个请求、180,000 vCPU 秒和 360,000 GiB 秒；时间向上取整到 100 毫秒；2026-10-23 确认，[Cloud Run 定价](https://cloud.google.com/run/pricing)）。
 
 <!-- source: telling-the-maintenance-mode-from-an-outage 15833e5da3fc -->
 ## 区分维护模式和故障

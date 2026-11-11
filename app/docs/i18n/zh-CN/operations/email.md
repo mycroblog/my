@@ -20,32 +20,33 @@
 
 面向支持者的通知邮件（`notification.supporter_email`）也经过同一个任务队列。
 
-<!-- source: which-notifications-are-emailed 76c2b871762c -->
-### 哪些通知会发送邮件
+<!-- source: which-notifications-are-emailed a19ef61af242 -->
+### 哪些通知会通过电子邮件发送
 
-每个用户都可以在设置的 **通知** 页面（Web 客户端中的 `/settings/notifications`）按通知种类选择是否在应用内接收、是否通过邮件接收。只有在服务器发送邮件时，那里才会显示“邮件”一栏。在应用内关闭的种类根本不会生成通知，因此也不会发送邮件或推送。
+每位用户可以在设置的**通知**页面（Web 客户端中的 `/settings/notifications`）上，按通知类型选择它是否在应用内和通过电子邮件送达。“电子邮件”一列只在服务器发送电子邮件时才会出现。在应用内关闭的通知类型根本不会生成，因此也不会通过电子邮件或推送发送。
 
-| 种类 | 默认发送邮件 | 发送时机 |
+| 类型 | 默认是否发送电子邮件 | 何时发送 |
 | --- | --- | --- |
-| 来自其他用户的通知（提及、新关注者、关注请求、关注请求被接受、转发、喜欢、表情回应、引用、投票结束、你关注的账号迁移、语音聊天） | 关闭 | 通知产生 15 分钟后，仅当它仍未读（未标记为已读、未关闭）且仍然可见，并且用户仍通过邮件接收该种类时发送。每条通知一封邮件 |
-| 来自审核员的通知（对账号的审核操作、举报已处理、申诉已裁定、因封禁而失去的关注、自定义表情请求已裁定） | 关闭 | 同上 |
-| 发给审核员的通知（新举报、待审批的注册、申诉、被停用的 webhook、自定义表情请求、受限账号迁移、关闭日期已过、新出现和再次出现的错误），发给其角色拥有相应权限的人 | 开启 | 立即发送，不等待已读 |
-| 服务关闭，以及支持者方案的通知 | 始终 | 立即发送；无法关闭 |
+| 来自其他用户的通知（提及、新关注者、关注请求、已接受的关注请求、转发、喜欢、表情回应、引用、已结束的投票、你关注的账号迁移、语音聊天） | 关闭 | 通知产生 15 分钟后，仅当它仍未读（没有被标为已读，也没有被忽略）、仍然可见，并且用户仍选择通过电子邮件接收该类型时才发送。每条通知一封邮件 |
+| 活动（本服务器上活动的邀请、已确定的日期、日期或地点的变更、取消、提醒和开始） | 关闭 | 与上一行相同，但提醒除外，提醒会立即发送。邮件会写明活动的标题、开始时间和主办者，从不写明举办地点 |
+| 来自审核员的通知（对账号的审核措施、已处理的举报、已裁定的申诉、因封禁而失去的关注、已裁定的自定义表情请求） | 关闭 | 与上一行相同 |
+| 发给审核员的通知（新的举报、等待批准的注册、申诉、已停用的 webhook、自定义表情请求、受限账号的迁移、关闭日期已过、新出现和反复出现的错误），发给其角色拥有相应权限的人 | 开启 | 立即发送，不等待它被阅读 |
+| 服务关闭，以及支持者计划的通知 | 始终 | 立即发送；这些无法关闭 |
 
-通知邮件只发送到用户已验证的主邮箱地址，并且从不发送到邮件已被停止的地址（见下文）。来自其他用户的通知，其邮件主题与对应的 Web Push 消息文本相同，邮件中会链接到帖子、个人资料或通知页面。
+通知邮件只会发送到用户已确认的主地址，绝不会发送到已停止接收邮件的地址（见下文）。来自其他用户的通知邮件，其主题与对应 Web Push 消息的文字相同，邮件中会链接到帖子、个人资料或通知。
 
-服务关闭邮件会发送给所有主邮箱地址已验证的用户。错过这类邮件可能意味着丢失数据，因此它们作为事务性邮件发送，不带退订链接，也不会因投诉而停止（硬退信会停止它们）。公告、日期变更、取消和关闭各自会在其记录所在的同一事务中把 `identity.closure_email_fanout` 放入队列。每小时运行的 `identity.queue_closure_reminders` 决定何时发送关闭日期前 7 天和前 1 天、以及导出截止日期前 7 天的提醒。如果某个提醒的时间在公告发布时已经过去，就不会发送，因为公告邮件中已写明了这些日期。分发任务会为每个用户记录一行 `service_closure_emails`，并且只为成功记录的用户把 `identity.closure_email` 放入队列，因此无论该任务运行多少次，每个用户每封邮件只会收到一次。发送前，任务会检查这封邮件是否仍然有效（不是针对已取消的公告，也不是针对之后已变更的日期）。
+服务关闭的邮件会发送给每位主地址已确认的用户。错过一封可能意味着丢失数据，所以它们作为事务性邮件发送，不带退订链接，也不会因投诉而停止（硬退信则会让它们停止）。公告、日期变更、取消和关闭，各自都会在与其记录相同的事务中把 `identity.closure_email_fanout` 加入队列。每小时运行的 `identity.queue_closure_reminders` 决定何时发送关闭日期前 7 天和 1 天以及导出截止日期前 7 天的提醒。在宣布关闭时时间已经过去的提醒不会发送，因为公告邮件已经说明了这些日期。扇出任务会为每位用户记录一行 `service_closure_emails`，并且只为它能够记录的用户把 `identity.closure_email` 加入队列，因此无论该任务运行多少次，每位用户的每封邮件都只会收到一次。发送之前，任务会检查这封邮件是否仍然有效（它不是针对已取消的公告，也不是针对此后已更改的日期）。
 
-设置项 `mail` 决定邮件的发送方式。
+设置 `mail` 选择电子邮件的发送方式。
 
 | `mail` | 行为 |
 | --- | --- |
-| `none`（默认） | 不发送任何邮件，并把 `mail not sent (mail = none)` 连同消息类别写入服务器日志。在 `profile = development` 下，这一行还包含地址、主题和正文（含链接）。适用于不使用邮件的部署和开发环境 |
-| `smtp` | 通过 SMTP 提交发送。要求 STARTTLS，并在认证和发送之前验证证书 |
-| `ses` | 通过 Amazon SES v2 API（使用原始内容的 `SendEmail`）发送。通过 AWS SDK 的默认凭证链（例如 IAM 角色）认证，不保存 SMTP 密码 |
-| `plugin` | 把每封消息交给你运行的[插件](#a-plugin-mail--plugin)，适用于只提供 HTTP API 的邮件服务 |
+| `none`（默认） | 不发送任何内容，并在服务器日志中写入 `mail not sent (mail = none)` 以及邮件的类别。在 `profile = development` 时，该行还会包含地址、主题和正文（包括链接）。适用于不使用电子邮件的部署，以及开发 |
+| `smtp` | 通过 SMTP 提交发送。它要求 STARTTLS，并在认证和发送之前验证证书 |
+| `ses` | 使用 Amazon SES v2 API 发送（带原始内容的 `SendEmail`）。它通过 AWS SDK 的默认凭据链（例如 IAM 角色）认证，不保存 SMTP 密码 |
+| `plugin` | 把每封邮件交给你运行的[插件](#a-plugin-mail--plugin)，适用于只提供 HTTP API 的邮件服务 |
 
-`smtp` 的设置项是 `mail_from`、`mail_smtp_host`、`mail_smtp_port`（默认 587）、`mail_smtp_username` 和 `mail_smtp_password`。`ses` 的设置项是 `mail_from`、`mail_ses_region` 和 `mail_ses_configuration_set`。`plugin` 的设置项是 `mail_from` 和 `plugin_mailer_address`，以及[其目标地址](plugins.md#the-destination)的其余设置。`mail_from` 是一个纯地址，例如 `noreply@social.example`。`From` 会变成 `"<server name>" <mail_from>`，`mail_from` 的域名同时也是 `Message-ID` 的域名，以及 SPF、DKIM 和 DMARC 所适用的域名（见下文）。设置了实例设置 `contact_email` 时，`Reply-To` 就是它（[实例设置](instance-settings.md)）。每封邮件都带有 `Auto-Submitted: auto-generated`。`smtp` 和 `ses` 构建的消息相同。不使用 SMTPUTF8，因此地址以 ASCII 发送，国际化域名会转换为 Punycode。本地部分（`@` 之前）不是 ASCII 的地址无法发送，其任务会失败。
+`smtp` 的设置是 `mail_from`、`mail_smtp_host`、`mail_smtp_port`（默认 587）、`mail_smtp_username` 和 `mail_smtp_password`。`ses` 的设置是 `mail_from`、`mail_ses_region` 和 `mail_ses_configuration_set`。`plugin` 的设置是 `mail_from` 和 `plugin_mailer_address`，以及[其目标](plugins.md#the-destination)的其余部分。`mail_from` 是一个不带名称的地址，例如 `noreply@social.example`。`From` 会变成 `"<server name>" <mail_from>`，`mail_from` 的域名同时也是 `Message-ID` 的域名，以及 SPF、DKIM 和 DMARC 所适用的域名（见下文）。设置了实例设置 `contact_email` 时，`Reply-To` 即为它（[实例设置](instance-settings.md)）。每封邮件都带有 `Auto-Submitted: auto-generated`。`smtp` 和 `ses` 构建相同的邮件。不使用 SMTPUTF8，因此地址以 ASCII 发送，国际化域名会转换为 Punycode。本地部分（`@` 之前）不是 ASCII 的地址无法发送，其任务会失败。
 
 <!-- source: examples-by-provider 7ab129a02c43 -->
 ## 各服务商的示例

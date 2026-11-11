@@ -1,11 +1,11 @@
-<!-- source: supporter-payments-with-stripe f12ff4a0af71 -->
+<!-- source: supporter-payments-with-stripe e517db9d077d -->
 # 通过 Stripe 收取支持者付款
 
-使用 `payments = stripe` 时，本站用户在 Stripe 托管的支付页面（Checkout）上订阅按月或按年的方案，方案对应的角色会随付款状态的变化而授予和移除。部署所用的配置项见[配置参考](../reference/configuration.md#payments)。关于整个计划（方案、角色、成员列表），参见 [supporters.md](supporters.md)。管理员在管理后台中启用该计划并创建方案。这个设置只是让服务器能够与 Stripe 通信。
+使用 `payments = stripe` 时，本站用户在 Stripe 托管的支付页面（Checkout）上订阅按月或按年的方案，方案对应的角色会随付款状态的变化而授予和移除。管理员启用后，用户还可以在同一页面上发送一次性的[打赏](#tips)。部署所用的配置项见[配置参考](../reference/configuration.md#payments)。关于整个计划（方案、角色、成员列表），参见 [supporters.md](supporters.md)。管理员在管理后台中启用该计划并创建方案。这个设置只是让服务器能够与 Stripe 通信。
 
 一台服务器只能使用一个支付服务商。以后如果要切换到其他服务商，需要请现有的订阅者用新的服务商重新订阅。
 
-<!-- source: what-the-server-does-at-stripe ca3e0d4f59f3 -->
+<!-- source: what-the-server-does-at-stripe 17a592e3f643 -->
 ## 服务器在 Stripe 上做什么
 
 [订阅的工作方式](supporters.md#how-a-subscription-works)用一张图展示了支付页面、webhook、对账、方案的角色以及收入之间的关系。
@@ -20,16 +20,31 @@
 - **方案变更失败**：变更的付款失败或卡片要求验证时，服务器会作废该账单，从而放弃这次变更，用户会看到错误。订阅保持原方案且有效，没有宽限期，也没有付款失败的通知。用户可以在门户中更新卡片后重试，只会被收费一次。如果付款仍在处理中，服务器不会干预，付款成功后方案就会切换。续订不受影响：续订失败会按下文所述进入宽限期。
 - **回读状态**：服务器把 webhook 视为一个信号，并从 Stripe API 回读订阅、Checkout 会话和资金变动来决定状态。此外，每隔 `payments_reconcile_interval`（默认 6 小时）会进行一次对账，读取事件列表、未完成的 Checkout 会话、余额交易，并全面扫描所有订阅，修复服务器漏掉的任何 webhook。
 - **收入**：服务器记录每笔余额交易的总额、手续费和净额。Billing 的 0.7% 等手续费以单独的 `stripe_fee` 交易出现，并从收入中扣除。`stripe_fee` 涵盖整个账号的手续费，因此**请使用专供本服务器使用的 Stripe 账号**。在同时用于其他销售的账号上，那些手续费也会从收入中扣除。
+- **打赏**：请参阅[打赏](#tips)。
 - **日期**：收入日期按 Stripe 账号的时区计算（控制台中“Settings > Business > Account details”下的时区，API 中的 `settings.dashboard.timezone`）。无法读取时，服务器按 UTC 计算，并每小时重新读取一次。
 
 每个服务器进程每秒最多发送 20 个请求（测试模式下为 10 个）。[Stripe 的限制](https://docs.stripe.com/rate-limits)按账号计算：live 模式下每秒 100 个请求，沙盒中 25 个，每个端点每秒 25 个。同一服务器的各个进程共享这些限额，使用该账号的其他任何程序也一样。Stripe 返回 `429` 时，如果 `Retry-After` 指定的时长不超过 30 秒，服务器就等待该时长（没有该头时等待 1 秒），并最多重试 2 次；超出后交给任务重试。
 
 Stripe 还按账号分配读取请求：30 天内平均每笔交易 500 次，且无论交易数量多少，每月至少 10,000 次。在默认间隔下，小型服务器上的对账远低于这个限额。即使对账没有发现任何问题，也仍会读取几页，因此在交易很少的账号上，最短的 15 分钟间隔（30 天内运行 2,880 次）会接近 10,000 次。Stripe 限制每个订阅每分钟最多 10 张、每天最多 20 张新账单，而立即收费的方案变更会产生一张新账单。
 
-<!-- source: card-data-and-pci-dss f45a3c7d1846 -->
+<!-- source: tips 5c0435583f71 -->
+## 打赏
+
+打赏（它是什么以及如何启用，请参阅[打赏](supporters.md#tips)）是服务器为这一次付款创建的 `mode=payment` 的 Checkout 会话：
+
+- **页面**：一个按请求定价的行项目，以用户的语言命名为“Tip for <server name>”，金额和币种为用户所选。服务器不会为它创建 Product、Price 或客户：用户的电子邮件地址只用于预填页面。页面只接受银行卡，这样每个完成的页面都是已付款的；它不使用 Adaptive Pricing，因此用户以你设定金额的币种付款；它的按钮写的是“Pay”，而不是“Donate”。页面一小时后过期，与订阅的页面相同。
+- **我们的 ID**：服务器的打赏 ID 会写入 `client_reference_id`、`metadata.my_tip_id`，以及该付款的 PaymentIntent 的 `metadata.my_tip_id`，你可以在控制台中搜索它。
+- **金额**：打赏可以使用方案所用的币种及其最低金额（请参阅[服务器在 Stripe 上做什么](#what-the-server-does-at-stripe)），上限为 Stripe 最大的八位数收费（999,999.99 美元，或 99,999,999 日元）。
+- **结果**：当服务器收到它的 `checkout.session.completed` 或 `checkout.session.expired` 事件时、用户从页面返回时，以及在对账中，服务器会回读该会话。已完成且 `payment_status` 为 `paid` 的会话就是一笔已付款的打赏，带有它的 PaymentIntent 和所收的金额。
+- **退款和争议**：请在控制台中为打赏退款。退款、争议和胜诉的争议会通过订阅所用的事件和余额交易到达，并指明该打赏的 PaymentIntent，服务器据此找到该打赏。
+- **测试**：在测试模式下，用[在测试模式下试用](#5-try-it-in-test-mode)中的测试卡为打赏页面付款；`4000 0000 0000 0259` 会对它产生一次争议。
+
+[创建 API 密钥](#2-create-an-api-key)中的受限密钥对打赏不需要其他任何权限。它们尚未在沙盒中运行过。
+
+<!-- source: card-data-and-pci-dss 5fd1cd5551e0 -->
 ## 卡片数据与 PCI DSS
 
-支付方式只在 Stripe 的 Checkout 和客户门户中输入，本服务器的 Web 客户端既不加载 Stripe 的脚本，也不加载 iframe。服务器只保存 Stripe 对象 ID（`cus_`、`sub_`、`price_`、`prod_`、`cs_`、`txn_`）、金额、周期和状态。它不保存卡号、卡号后四位、有效期或账单地址。Webhook 正文和 Stripe 的响应既不保存在日志中，也不保存在数据库中。因此，运营者的 PCI DSS 范围预计相当于使用托管支付页面的商户（SAQ A）。请在 Stripe 控制台的指引（“Settings > Compliance”）中确认适用的范围和自我评估问卷的类型。
+支付方式只在 Stripe 的 Checkout 和客户门户中输入，本服务器的 Web 客户端既不加载 Stripe 的脚本，也不加载 iframe。服务器只保存 Stripe 对象 ID（`cus_`、`sub_`、`price_`、`prod_`、`cs_`、`pi_`、`txn_`）、金额、周期和状态。它不保存卡号、卡号后四位、有效期或账单地址。Webhook 正文和 Stripe 的响应既不保存在日志中，也不保存在数据库中。因此，运营者的 PCI DSS 范围预计相当于使用托管支付页面的商户（SAQ A）。请在 Stripe 控制台的指引（“Settings > Compliance”）中确认适用的范围和自我评估问卷的类型。
 
 <!-- source: 1-prepare-the-stripe-account 06eefed5779b -->
 ## 1. 准备 Stripe 账号
@@ -65,7 +80,7 @@ Stripe 还按账号分配读取请求：30 天内平均每笔交易 500 次，�
 
 通过环境变量 `MY_PAYMENTS_STRIPE_SECRET_KEY`（或在 `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE` 中指定文件路径）传递密钥。它不能写在配置文件中。如果密钥泄露，请在控制台中轮换密钥，并用新密钥重新部署。
 
-<!-- source: 3-register-the-webhook-endpoint 1cbc2cf9ace3 -->
+<!-- source: 3-register-the-webhook-endpoint bf645f89a942 -->
 ## 3. 注册 webhook 端点
 
 在“Developers > Webhooks > Add endpoint”下注册以下内容。服务器不会通过 API 创建端点。
@@ -73,7 +88,7 @@ Stripe 还按账号分配读取请求：30 天内平均每笔交易 500 次，�
 - URL：`https://<server domain>/payments/webhooks/stripe`
 - 事件来源：“Your account”（不是 Connected accounts）
 - 载荷样式：snapshot。服务器只读取正文中的 `id`、`type`、`livemode`、`created`、`data.object.id` 和 `data.object.object`，因此端点的 API 版本无关紧要。
-- 要发送的事件（16 种）：
+- 要发送的事件（16 种；打赏不需要其他类型）：
 
   - `checkout.session.completed`, `checkout.session.expired`
   - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`
@@ -124,7 +139,7 @@ MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 - **宽限期结束**：服务器把真实时间与 Stripe 报告的失败时间（`finalized_at`）进行比较，而后者是模拟的，领先于真实时间。订阅会进入宽限期，进一步推进时钟也不会让它结束。角色会一直保留，直到真实时间超过模拟失败时间之后 7 天，或者在账号设置为如此时，直到 Stripe 在重试用完后取消订阅。
 - **全面扫描所有订阅**：Stripe 的订阅列表会排除使用时钟的订阅，除非请求中指定了时钟或客户，而服务器的扫描两者都不指定。只有 webhook 和事件列表会把它们的变化带给服务器。
 
-<!-- source: 6-try-it-locally-stripe-cli 8a3e87b02ce0 -->
+<!-- source: 6-try-it-locally-stripe-cli 115b10f5518c -->
 ## 6. 在本地试用（Stripe CLI）
 
 [Stripe CLI](https://docs.stripe.com/stripe-cli)（Apache-2.0）会把 Stripe 事件转发到你本机上的服务器。不需要公开的 URL。
@@ -149,7 +164,7 @@ stripe trigger charge.dispute.created
 stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-`stripe trigger` 创建的对象不带本服务器的订阅 ID，因此不会有任何订阅改变状态（服务器会回读它们，并忽略不属于自己订阅的内容）。要检查完整的订阅流程，请在 Web 客户端中订阅，并用测试卡付款。
+`stripe trigger` 创建的对象不带本服务器的订阅 ID 或打赏 ID，因此不会有任何状态改变（服务器会回读它们，并忽略不属于自己订阅或打赏的内容）。要检查完整的订阅流程，或检查一笔打赏，请在 Web 客户端中订阅或打赏，并用测试卡付款。
 
 <!-- source: 7-operation f70cd2967b9f -->
 ## 7. 运营
@@ -160,7 +175,7 @@ stripe events resend evt_...   # send an event you missed again (up to 30 days)
 - 警告中的 `duplicate_charge` 表示有用户付了两次款，而服务器未能完成对第二个订阅的取消和退款。日志行 `a second subscription could not be canceled and refunded` 会列出两个订阅和失败的种类，并在每次对账时再次出现，因为每次对账都会重试。如果种类是 `permission`，请添加写入退款的权限。否则请在控制台中退还该笔收费：下一次重试会发现已没有需要退款的款项，并清除该警告。“立即对账”会立即重试。
 - 其他退款和拒付在 Stripe 控制台中处理。全额退款和拒付会立即移除角色并取消订阅，部分退款不会移除角色。赢得争议不会自动恢复角色。
 
-<!-- source: items-to-verify 8960333fa514 -->
+<!-- source: items-to-verify 19584d53548f -->
 ## 待验证事项
 
 以下各项尚未在 Stripe 上（无论沙盒还是 live）实际试过，依据的是 Stripe 的文档。
@@ -179,3 +194,5 @@ stripe events resend evt_...   # send an event you missed again (up to 30 days)
 - 一个会话无法从两个标签页付款两次。一个会话对应一个订阅且只会完成一次，但文档没有说明两次在同一时刻提交的情况。
 - 支付页面上的验证失败是否会留下一个指向服务器订阅的 `incomplete` 订阅。服务器会关联它并让用户保持待处理状态，而在另一个页面上的付款会作为第二个订阅被退款。
 - 使用“Charges”和“Refunds”权限与上表一致的受限密钥时，第二个订阅的退款以及随后的资金变动。
+- 从页面到退款和争议的整个打赏流程，使用受限密钥。尤其是：`allowed_payment_method_types=["card"]` 是否让页面上不出现任何其他支付方式、关闭 Adaptive Pricing 创建的会话是否按所要求的币种收费，以及 Stripe 是否接受上表中每种币种的八位数一次性收费。
+- Stripe 是否接受为运营服务而收取的打赏，以及对日本的个体经营者是否接受。启用之前请先询问 Stripe。

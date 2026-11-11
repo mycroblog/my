@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 键
 
-<!-- source: settings-one-key-one-value 4f827bf97480 -->
+<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
 ### 设置（一个键对应一个值）
 
 | 键 | 类型 | 默认值 | 说明 |
@@ -35,15 +35,16 @@
 | `default_locale` | BCP 47 语言标签 | `en` | 默认语言区域。它是新用户界面的初始语言区域，也是没有任何语言目录符合用户偏好时的后备语言区域 |
 | `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | 谁能查看本站时间线（`GET /api/v1/timelines/local`）：无人、已登录用户或所有人。`off` 返回 404，`signed_in` 对未登录的访客返回 401；这两种情况下导航中都会隐藏它。除非值为 `everyone`，否则首页不会显示示例帖子。在[个人服务器](#one-person-server)上它按 `off` 处理 |
 | `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | 谁能查看联邦时间线（`GET /api/v1/timelines/federated`）。各个值的含义与本站时间线相同，在个人服务器上同样按 `off` 处理 |
-| `preview_image` | 媒体 ID（留空 = 未设置） | 空 | 没有图片的帖子和个人资料所用的链接预览图（`og:image`）。未设置时使用内置的默认图片（[链接预览](link-previews.md)） |
+| `preview_image` | 媒体 ID（留空 = 未设置） | 空 | 自身没有图片的页面所用的链接预览图（`og:image`），位于设置 → 常规中的“链接预览”下。未设置时，依次使用缩略图、标志、内置图片（[链接预览](link-previews.md)） |
 | `contact_account` | 本站账号的用户名（留空 = 未设置） | 空 | 用于联系运营者的账号。参见[联系方式与缩略图](#contact-and-thumbnail) |
 | `contact_email` | 电子邮件地址（留空 = 未设置） | 空 | 用于联系运营者的电子邮件地址。它也是服务器所发邮件的 `Reply-To` 和签名 |
-| `thumbnail` | 媒体 ID（留空 = 未设置） | 空 | 代表实例的图片（缩略图） |
+| `thumbnail` | 媒体 ID（留空 = 未设置） | 空 | 代表实例的图片（缩略图），用于关于页面和首页，并在 `preview_image` 未设置时用于链接预览 |
 | `remote_media_policy` | `none` / `avatars` / `all` | `none` | 是否保留远程媒体的副本。`none`：媒体代理转发每个请求。`avatars`：头像、横幅和自定义表情会在 blob 存储中缓存 `remote_media_cache_ttl_seconds`。`all`：所有远程媒体都会缓存。缓存的总大小受配置 `remote_media_cache_max_bytes` 限制 |
 | `remote_media_cache_ttl_seconds` | 整数 60-31536000（秒） | `86400` | 已获取的远程媒体最多可以保留多久。它也是媒体代理响应的 `Cache-Control: max-age`，因此 CDN 和浏览器会缓存这么长时间 |
 | `remote_media_cache_max_bytes` | 从 1 起的整数（字节） | `1073741824` | 媒体代理所保留的远程媒体副本的大小上限。每小时的清理会删除过期的副本，然后删除超出此上限的、最久未被访问的副本 |
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch（安全模式）。为 `true` 时，对于没有可验证 HTTP 签名的 ActivityPub GET，对象和集合返回 `401`，用户的 actor 返回一个只带有密钥的最简文档。实例 actor 总是返回完整的文档，因此任何服务器都能获取密钥来验证签名 |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | 联邦的方向。`off`：不联邦。`inbound`：你可以关注并阅读远程账号，但本站的帖子、个人资料和互动不会发送出去，来自外部的关注会被拒绝（`Reject`）。`outbound`：你接受来自外部的关注并投递本站的帖子，但不接收远程的帖子和互动。`both`：双向收发。更改立即生效，并且需要权限 `manage_settings` |
+| `federation_scope` | `open` / `allowlist` | `open` | 本服务器与哪些服务器联邦。`open`：所有没有被域名措施封禁的服务器。`allowlist`：只有允许列表上的域名及其子域名；其他每个服务器都被视为已封禁，并且无论 `authorized_fetch` 如何设置，ActivityPub 的 GET 都需要来自被允许服务器的签名。切换到 `allowlist` 会永久结束与被切断的服务器之间的关注；请参阅[只与被允许的服务器联邦](moderation.md#federating-only-with-allowed-servers)。更改会立即生效，并且需要权限 `manage_settings` |
 | `dynamic_client_registration` | `true` / `false` | `true` | 动态客户端注册（RFC 7591）。为 `true` 时，`POST /oauth/register` 无需认证即可接受公开客户端的注册。为 `false` 时，该端点以 `403`（`access_denied`）拒绝所有请求；已注册的客户端继续可用。一个定期任务会按照配置 `dynamic_client_unredeemed_retention` 和 `dynamic_client_idle_retention` 删除未被使用的动态注册客户端。更改立即生效，并且需要 `manage_settings` |
 | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | `off` | 谁能查看已采取措施的域名列表（`GET /api/v1/instance/domain_actions`）：无人、已登录用户或所有人（[审核](moderation.md#publishing-the-domains-you-act-on)） |
 | `domain_actions_rationale_visibility` | `off` / `signed_in` / `everyone` | `off` | 谁能查看该列表中的公开说明。看不到列表的人永远看不到它们 |
@@ -62,6 +63,7 @@
 | `indexable_default` | `true` / `false` | `false` | 新账号 `indexable` 的默认值。更改它不会改变现有账号 |
 | `auto_delete_default_enabled` | `true` / `false` | `false` | 新账号是否一开始就启用自动删除旧帖子。它与其他 `auto_delete_default_*` 键一起构成新账号获得的策略（[自动删除旧帖子](#automatic-deletion-of-old-posts)） |
 | `auto_delete_default_min_age_days` | 整数 1-3650（天） | `30` | 新账号的策略在帖子发布多少天后删除它 |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | 新账号的策略是否保留[文章](#articles) |
 | `auto_delete_default_keep_pinned`、`auto_delete_default_keep_bookmarked`、`auto_delete_default_keep_favourited` | `true` / `false` | `true` | 新账号的策略是否保留作者置顶、加入书签或喜欢的帖子 |
 | `auto_delete_default_keep_media`、`auto_delete_default_keep_polls` | `true` / `false` | `false` | 新账号的策略是否保留带有媒体或投票的帖子 |
 | `auto_delete_default_keep_public`、`auto_delete_default_keep_local`、`auto_delete_default_keep_unlisted`、`auto_delete_default_keep_private` | `true` / `false` | `false` | 新账号的策略是否保留该可见范围的帖子 |
@@ -70,6 +72,7 @@
 | `auto_delete_max_age_days` | 整数 0-3650（天） | `0` | 任何本站帖子在发布后最多保留的天数（[上限](#a-maximum-for-keeping-posts)）。`0` 表示不设上限 |
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | 在上限之下是否仍可保留置顶的帖子 |
 | `auto_delete_max_kept_pins` | 整数 1-5 | `5` | 在上限之下有多少个置顶可以保留帖子，最近置顶的优先。`5` 是一个账号置顶数的上限，会保留所有置顶的帖子 |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | 在上限之下是否仍可保留文章 |
 | `auto_delete_max_allow_bookmarked`、`auto_delete_max_allow_favourited`、`auto_delete_max_allow_media`、`auto_delete_max_allow_polls` | `true` / `false` | `false` | 在上限之下是否仍可保留作者加入书签或喜欢的帖子，或带有媒体或投票的帖子 |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | 在上限之下是否仍可按可见范围保留帖子 |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | 在上限之下是否仍可按转发数和喜欢数保留帖子 |
@@ -85,10 +88,15 @@
 | `finance_viewer_item_memos` | `true` / `false` | `false` | 拥有 `view_finance` 的用户能否在财务界面上看到成本项目的备注。只要名称或备注的设置之一为 `true`，每个周期就会显示项目行（服务商、类别、该周期的金额，以及已启用的名称和备注）。拥有 `manage_finance` 的人无论如何都能看到全部内容 |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | 拥有 `view_finance` 的用户只能看到收入合计（`totals`），还是还能看到每个方案的订阅人数（`plans`）。每个方案的金额和付款人永远不会显示。如果 `income_visibility` 为 `plans`，无论此值如何都会显示公开的人数。收入可以在 Web 客户端的财务界面（`/finance`）和 `GET /api/v1/finance/income_totals` 中查看 |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | 公开多少支持者收入（扣除支付服务商手续费后的金额）。它与 `finance_visibility` 分开选择。`private`：不公开任何内容（`GET /api/v1/instance/income_totals` 为 404）。`totals`：只公开每个周期和每种货币的收入合计。`plans`：还向所有人显示每个方案当前的订阅人数。对于订阅人数很少的方案，人数可能让人猜出谁在订阅。只有当此值和 `finance_visibility` 都不是 `private` 时才显示结余（收入减去成本）；否则结余会暴露你隐藏的那一方。无论哪个级别，单笔付款、订阅者、每个方案的金额、总额和手续费都不公开。公开截至并包括今天（UTC）所在周期的数据 |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | 募资进度条公开什么：本月的收入（扣除支付服务商手续费后）距离每月目标还有多远，显示在关于页面、支持者列表（`/about/supporters`）和 `GET /api/v1/instance`（`funding_meter`）中。它与目标一起在 `/admin/finance/publication` 中设置，该页面会停用被当前可见性设置排除的选项并说明原因。`off`：什么都不公开。`percent`：只有百分比（向下取整到 1%）、本月是否已经覆盖，以及目标中是否包含估算的成本。只有在 `finance_visibility` 和 `income_visibility` 都是 `private` 时才能选择。`amounts`：还包括收入和目标。只有在两者都不是 `private` 时才能选择。当只公开了其中一个时，无法显示进度条：已公开的金额和百分比会泄露被隐藏的那一方。更改任一可见性而使所选值不再被允许时，进度条会变为 `off`，这一更改会像其他任何更改一样被记录和审计。月份是包含今天（UTC）的日历月，并且只有目标币种的收入才会计入 |
+| `funding_meter_target_amount` | 大于零的小数，或留空 | 空 | 募资进度条的每月目标，以 `funding_meter_target_currency` 的主单位表示（`1650` 日元，`12.50` 美元），小数位数不超过该币种所有的位数。留空：目标是本月的成本，这要求成本使用同一种币种；在成本使用多种币种或为零的月份，不显示进度条 |
+| `funding_meter_target_currency` | ISO 4217 代码，或留空 | 空 | `funding_meter_target_amount` 的币种，例如 `JPY`。留空：本月成本的币种 |
+| `funding_meter_rail` | `true` / `false` | `false` | 当 `funding_meter_visibility` 不是 `off` 时，Web 客户端除了关于页面之外，是否还在宽布局的右栏显示募资进度条 |
 | `supporter_list_visibility` | `off` / `signed_in` / `everyone` | `off` | 谁能查看支持者列表（`GET /api/v1/instance/supporters` 和 `/about/supporters`）。`off`：无人（API 返回 404，`/about` 中没有链接）。`signed_in`：只有已登录本服务器的人（否则 API 返回 401）。`everyone`：所有人。列表只显示选择了公开列出的有效订阅者的账号和方案；金额、按月或按年计费、日期和人数永远不会显示。无论 `search_indexing` 如何，列表页面和 API 响应总是 `noindex, noarchive` |
 | `user_app_registration` | `true` / `false` | `true` | 已登录用户能否通过客户端 API（`POST /api/v1/oauth_apps`）注册自己的 OAuth 应用（公开或机密）。为 `false` 时，注册返回 403。列出、更改和删除已注册的应用、重新签发密钥、为自己签发令牌以及其他用户的授权都继续可用 |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | 在配置 `voice` 不为 `off` 时，谁能开启语音聊天房间（[配置](../reference/configuration.md#voice)）。`everyone`：每个未被封禁或限制的已登录本站用户。`permitted`：只有拥有权限 `start_voice_rooms` 的人；默认只有内置的 `admin` 角色拥有该权限，支持者方案的角色也可以拥有 |
 | `voice_public_summary` | `true` / `false` | `false` | 对于可见范围为 `local` 的语音聊天房间，其页面是否向未登录本服务器的访客和远程用户显示房间的名称、简介、主持人以及是否仍在进行，并在链接预览中显示。参与者永远不会显示。为 `false` 时，这些访客只能看到该房间面向本服务器的本站用户 |
+| `event_creators` | `everyone` / `permitted` | `everyone` | 谁可以创建活动（[活动](#events)）。`everyone`：每位未被封禁或限制的已登录本站用户。`permitted`：只有拥有权限 `create_events` 的人，默认只有内置的 `admin` 角色拥有它，支持者方案的角色也可以拥有它 |
 | `public_counts` | `true` / `false` | `true` | 首页（`/`，未登录时）和 `GET /api/v1/instance/overview` 是否显示服务器有多少成员、其用户在最近 7 天中每天发布了多少公开帖子，以及服务器何时启动。只统计本服务器用户的公开帖子；数字每隔几分钟刷新一次。为 `false` 时，API 会省略它们 |
 | `featured_accounts` | 最多 20 个本站账号的用户名，以空格或逗号分隔（留空 = 无） | 空 | 关注推荐中最先显示的账号，按此顺序排列，排在本服务器最近发帖的人之前。如果账号的所有者关闭了“推荐我的账号，并允许通过部分名称找到它”，该账号不会被推荐。参见[账号推荐](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | 在至少启用了一个登录服务时，是否将注册和登录限制为只能通过登录服务：密码和通行密钥不再能登录，没有关联服务商的用户在会话结束后无法再次登录。没有启用任何服务商时它不生效。`my instance set` 会输出有多少活跃用户没有关联到已启用的服务商。参见[将登录限制为登录服务](login-providers.md#limit-sign-in-to-login-providers)。 |
@@ -103,6 +111,7 @@
 | `translation_server_monthly_characters` | 整数 0-1000000000000 | `500000` | 整个服务器在一个 UTC 月内最多可以向翻译服务商发送多少字符。为 `0` 时不发送任何内容。没有表示无限制的值：请设置一个较大的数字 |
 | `translation_retention_days` | 整数 1-3650（天） | `30` | 翻译在生成后保留的天数。阅读不会延长这一期限，帖子删除时它也随之删除 |
 | `translation_reports_to_server` | 布尔值 | `false` | 审核员能否将举报的文本（被举报的帖子和举报人的说明）发送给服务器端服务商。无论由谁发起，每个服务商仍然只接收 `translation_provider_visibilities` 允许它接收的可见范围：被举报的私信帖子只发送给允许 `direct` 的服务商，说明按 `private` 计。说明的翻译和已删除帖子的翻译永远不会保留，字符数只计入 `translation_server_monthly_characters`。为 `false` 时，举报的任何内容都不会到达服务商 |
+| `event_records_retention_days` | 整数 30-3650（天） | `90` | 在活动结束或被取消之后，保留谁回复了它、谁获得批准、谁受到邀请，以及谁对它的候选日期投了票，保留多少天。日期始终没有确定的活动，以它最后一个候选日期为结束。活动本身（它的设置、地点、日期和候选日期，以及取消）会一直保留。被举报活动的记录会与该举报保留得一样久，保全措施的适用方式与其他记录相同（[记录保留](moderation.md#record-retention-and-holds)） |
 | `voice_participants_retention_days` | 整数 30-3650（天） | `90` | 语音聊天房间结束后，保留参与记录的天数：参与情况、发言者和听众、举手、邀请和移出。房间本身（名称、简介、主持人以及结束方式）会保留。被举报房间的记录与举报保留同样长的时间，保全措施与其他记录一样适用 |
 | `hook_inbound_status_mode`、`hook_inbound_follow_mode`、`hook_signup_check_mode`、`hook_media_check_mode`、`hook_local_status_mode`、`hook_inbound_actor_mode`、`hook_local_profile_mode` | `off`、`observe`、`enforce` | `observe` | 每个[决策钩子](decision-hooks.md#modes)在有插件时作用到什么程度。`off` 只能经由 `observe` 变为 `enforce`。 |
 | `hook_inbound_status_on_failure`、`hook_inbound_follow_on_failure`、`hook_media_check_on_failure`、`hook_inbound_actor_on_failure` | `pass`、`retry` | `pass` | 钩子在强制执行时，其插件出错后如何处理（[详情](decision-hooks.md#when-the-plugin-fails)）。 |
@@ -113,6 +122,14 @@
 | `hook_local_profile_account_age_days` | 整数 0-3650（天） | `7` | `local.profile` [审查个人资料更改](decision-hooks.md#local-profiles)的对象是注册时间短于此天数的账号；`0` 表示审查所有账号。钩子使用期间，信息页面（`/about`）会说明这一点。 |
 | `hook_decisions_retention_days` | 整数 30-3650（天） | `90` | [钩子的决策](decision-hooks.md#the-decisions)保留的天数。 |
 | `single_user` | 布尔值 | `false` | 服务器是否为[个人服务器](#one-person-server)。只有在服务器恰好有一个本站账号时才能开启，随时都可以关闭 |
+| `max_drafts` | 整数 1-10000 | `100` | 一位用户最多可以在服务器上保留多少份未定时的草稿。调低它不会删除任何草稿：超过该数量的用户不能再保存新的草稿 |
+| `max_scheduled_posts` | 整数 1-10000 | `300` | 一位用户最多可以有多少条定时帖子在等待发布。调低它不会取消任何定时 |
+| `max_scheduled_posts_per_day` | 整数 1-10000 | `25` | 一位用户最多可以有多少条定时帖子在等待某一个 UTC 日发布 |
+| `scheduled_post_min_lead_minutes` | 整数 1-1440（分钟） | `5` | 帖子至少要提前多少分钟定时 |
+| `scheduled_post_max_lead_days` | 整数 1-3660（天） | `366` | 帖子最多可以提前多少天定时 |
+| `article_authoring` | `everyone` / `permission` | `everyone` | 谁可以撰写新的[文章](#articles)：每位本站用户，或者只有其角色拥有权限 `create_articles` 的用户 |
+| `max_article_bytes` | 整数 1000-100000（字节） | `100000` | 文章正文生成的 HTML 的最大字节数 |
+| `max_article_images` | 整数 0-100 | `20` | 文章正文中，除封面之外，作者自己上传的图片的最大数量 |
 
 - 值在存储前会被规范化（`TRUE` 变为 `true`，`0750` 变为 `750`，`ja_jp` 变为 `ja-JP`，媒体 ID 转为小写）。无效的值会被拒绝，不会写入任何内容。
 - `preview_image` 和 `thumbnail` 只接受已存在的图片媒体（包括仍在处理中的）。在处理完成之前，以及在处理失败的图片的位置上，`preview_image` 会退回到默认图片。媒体一旦在任何修订版本中被设置过，未关联上传的清理就不会删除它。
@@ -126,12 +143,12 @@
 
 新账号会被推荐，并且可以在账号搜索中通过部分名称找到。在个人资料设置中关闭“推荐我的账号，并允许通过部分名称找到它”的用户会同时退出这两者：此后搜索只能通过完整的用户名找到该账号，或者由关注它的人找到。
 
-<!-- source: automatic-deletion-of-old-posts f0cf962c9de0 -->
+<!-- source: automatic-deletion-of-old-posts 9eb8a72df28e -->
 ### 自动删除旧帖子
 
-用户可以让自己的帖子在发布若干天后被自动删除（设置中的“删除旧帖子”）。每个用户的策略都是自己的：是否启用、多少天后删除，以及保留哪些帖子（置顶、加入书签和喜欢的帖子，带有媒体或投票的帖子，所选可见范围的帖子，以及转发或喜欢达到一定次数的帖子）。以这种方式删除帖子与作者自己删除相同：帖子送达过的服务器会收到 `Delete`。只有本站账号的帖子会以这种方式删除，转发永远不会。
+用户可以让自己的帖子在发布若干天后被自动删除（设置中的“删除旧帖子”）。每个用户的策略都是自己的：是否启用、多少天后删除，以及保留哪些帖子（置顶、加入书签和喜欢的帖子，带有媒体或投票的帖子，文章，所选可见范围的帖子，以及转发或喜欢达到一定次数的帖子）。以这种方式删除帖子与作者自己删除相同：帖子送达过的服务器会收到 `Delete`。只有本站账号的帖子会以这种方式删除，转发永远不会。
 
-`auto_delete_default_*` 键是每个新的本站账号初始拥有的策略，无论账号以何种方式创建（注册表单、外部登录服务、邀请或 `my admin`）。账号在创建时获得该策略，此后由账号自己拥有：之后更改这些键既不会改变已有的账号，也不会改变获得了较早值的账号。设置界面将这些值显示为用户自己的值。这些键未设置时，新账号初始为关闭自动删除、30 天后删除、保留置顶、加入书签和喜欢的帖子以及私信帖子。默认值不会向实例外的人显示。设置了上限时，新账号获得的是按上限截断后的默认值（如下所述），因此一开始就在上限之内。
+`auto_delete_default_*` 键是每个新的本站账号初始拥有的策略，无论账号以何种方式创建（注册表单、外部登录服务、邀请或 `my admin`）。账号在创建时获得该策略，此后由账号自己拥有：之后更改这些键既不会改变已有的账号，也不会改变获得了较早值的账号。设置界面将这些值显示为用户自己的值。这些键未设置时，新账号初始为关闭自动删除、30 天后删除、保留置顶、加入书签和喜欢的帖子、文章以及私信帖子。默认值不会向实例外的人显示。设置了上限时，新账号获得的是按上限截断后的默认值（如下所述），因此一开始就在上限之内。
 
 <!-- source: a-maximum-for-keeping-posts b1d83e01feda -->
 #### 帖子保留的上限
@@ -149,6 +166,42 @@
 `keep_posts_longer` 是一项成员权限：将它授予某个角色，即可让该角色的持有者按自己的意愿长期保留帖子并关闭自动删除。内置的 `admin` 角色拥有该权限。[支持者方案](supporters.md)可以附带它，因此更长期地保留帖子可以成为方案的权益；订阅结束后，宽限期过后上限会再次适用。
 
 上限是公开的：`GET /api/v1/instance` 在 `auto_delete_limit` 中返回它，关于页面也会显示它，因此人们在注册前就能知道。更改这些键需要 `manage_settings`，并且与其他设置一样记录在审计日志中。在 Web 客户端中，它们位于“服务器设置”的“帖子删除”页面，在保存开启或收紧的上限之前会先进行确认。
+
+<!-- source: drafts-and-scheduled-posts 240f795223ab -->
+### 草稿和定时帖子
+
+用户可以把帖子的草稿保存在服务器上，在另一台设备上继续撰写，并立即发布或在选定的时间发布。草稿只有其作者能读取；草稿从不联邦化，不包含在账号数据的导出中，并且会随账号一起被清除。上面的五个 `max_drafts` 和 `scheduled_post_*` 设置对它们设定了界限；超出限制的保存或定时会被拒绝，并附有指明该限制的消息。
+
+- 定时帖子由任务 `content.publish_scheduled_draft` 在它的时间或稍后发布，即使该时间比队列服务的延迟限制更远也是如此：任务会回来再次等待。请用 `my instance set` 设置它们，例如 `my instance set max_scheduled_posts 100`。
+- 帖子在发布时会被检查，而不仅仅是在定时时：到那时已被审核措施禁止发帖的用户，或者其帖子所回复或引用的帖子已不存在的用户，不会得到帖子。草稿会保留，用户会收到一条说明原因的通知（`scheduled_status_failed`，用户可以在通知设置中关闭它，并且它从不通过电子邮件发送）。在使用本站帖子的自动审查期间，它会在帖子发布时审查该帖子。
+- 帖子会标上它被发布的时间，旧帖子的自动删除从那时起计算。
+- 草稿所附的媒体文件会随草稿一起保留；删除草稿会使它们变为未附加状态，并随未附加上传文件的清理一起被清除。文章草稿的封面和其正文所显示的上传文件也以同样的方式保留。
+- 草稿和定时帖子包括[文章](#articles)，文章的定时和计数方式与帖子相同。文章的草稿在作者撰写期间可以没有标题；发布时它会作为新文章被检查，到那时已不再被允许撰写新文章的用户不会得到文章。
+
+<!-- source: articles fbbf778b92f0 -->
+### 文章
+
+文章是带有标题、摘要和封面图片的长帖子，其正文由作者用 Markdown 撰写。文章在其他各方面都是帖子：它们有可见范围，可以编辑并保留历史记录，可以被转发、喜欢、引用、回复、举报和删除，审核对它们的处理也与帖子相同。服务器在正文写入时渲染一次：其中的原始 HTML 不会被渲染，只有作者自己上传的图片才显示为图片；任何其他图片都会变成链接，这样读者永远不会加载来自其他网站的图片。时间线、通知和搜索显示标题、摘要和封面；正文则在打开文章的地方显示。
+
+- 默认情况下，每位本站用户都可以撰写文章。当 `article_authoring` 设为 `permission` 时，只有其角色拥有权限 `create_articles` 的用户才可以撰写新文章；已经写好的文章会保留，它们的作者仍可以编辑。禁止账号发帖的审核措施，也会禁止它撰写和编辑文章。[支持者方案](supporters.md)可以把 `create_articles` 作为福利提供。
+- `max_article_bytes` 限制的是正文的 HTML，而不是 Markdown：接收文章的服务器统计的是 HTML，而 100,000 字节（它允许的最大值）是它们完整保留的上限。大约 30,000 个字符的日文正文可以放得下。`max_article_images` 限制正文中的图片。编辑器会在文章发布之前显示这两项。
+- 文章绝不是私信，没有投票、除图片之外的附件，也没有内容警告：敏感的文章会显示它的标题和摘要，并折叠正文和封面。
+- 旧帖子的自动删除会保留文章，除非用户关闭这一点（新账号用 `auto_delete_default_keep_articles`，在上限之下用 `auto_delete_max_allow_articles`）。
+- `GET /api/v1/instance` 会在 `limits.articles` 中返回这些限制，并在 `article_authoring` 中返回撰写设置。请用 `my instance set` 设置它们，例如 `my instance set article_authoring permission`。
+
+<!-- source: events 07dccecf6936 -->
+### 活动
+
+本站用户可以规划带有日期、时区和最多三个地点的活动：本服务器的语音聊天室、线下见面的地点，以及一个链接。主办者可以不设日期，改为提供最多 20 个候选日期：能看到该活动的用户对每个日期回复能参加、可能参加或不能参加，然后主办者或共同主办者确定其中一个，这就确定了日期。在此之前，没有人回复自己是否会来。活动只面向本服务器的用户：它们从不联邦化，远程用户和未登录的访客都看不到任何活动。
+
+- 谁可以创建活动由 `event_creators` 决定。主办者还必须能够开启语音聊天室（`voice_room_starters` 和配置 `voice`），才能在其中举办活动。
+- 活动的语音聊天室在活动开始时开启，由主办者主持，并最多等待第一位参与者 30 分钟。它采用活动的标题和活动的可见范围（每位本站用户、关注者、主办者关注的人、互相关注的人，或受邀的人）。共同主办者、回复了参加或可能参加的人，以及尚未回复的受邀者都会被邀请进入聊天室，因此当共同主持人接管它时，他们仍能看到它。聊天室不会发布开始的帖子，活动的开始通知是它唯一的通知。
+- 无法开启的聊天室（语音聊天已关闭、主办者已不能再开启聊天室或正在主持另一个聊天室，或者已开启的聊天室数量达到配置 `voice_max_open_rooms` 所允许的上限）会让活动保持原样：主办者会收到通知，活动页面会说明聊天室无法开启。服务器会在设置或更改日期时，以及开始前一天再次检查这一点，并通知主办者什么会让聊天室无法开启。当没有人来到聊天室时，主办者同样会收到通知。取消活动，或移除它的语音聊天室，会结束该聊天室并保留活动。
+- 主办者选择谁能看到活动：每位本站用户、主办者的关注者、主办者关注的人、互相关注的人，或仅受邀的人。受邀的人，以及回复了它或它的候选日期的人始终能看到它，而用户与主办者或共同主办者之间的屏蔽会让该用户看不到它。
+- 活动的地址和链接只显示给主办者或共同主办者批准的参加者，除非主办者向所有能看到该活动的人显示它们。链接必须是 `http` 或 `https`，服务器从不打开它们。
+- 能看到活动的用户可以把它保存为 iCalendar（`.ics`）文件，添加到自己的日历中。该文件只写明该用户能看到的地点，因此留给已获批准的参加者的地址永远不会出现在其中。没有日历订阅地址。
+- 每位用户每小时最多创建 10 个活动，每个活动每小时最多发出 100 份邀请。
+- 用户可以举报活动，审核员可以取消活动；封禁或删除主办者会取消该主办者尚未开始的活动（[审核](moderation.md#events)）。谁回复了、谁受到邀请，会在活动结束后保留 `event_records_retention_days`，对其候选日期的投票也是如此。
 
 <!-- source: texts-one-key-one-value c639fc7dfe23 -->
 ### 文本（一个键对应一个值）
@@ -272,7 +325,7 @@ my admin federation sever -direction both
 - 只有当前模式发送该方向时，才会向远程一方发送 `Reject`（`in`）或 `Undo`（`out`）。在不发送该方向的模式下（例如 `off`），关注只在本站一侧结束，不会通知远程一方。
 - 可以安全地重复运行。它会在标准输出中打印所结束的关注数。
 
-<!-- source: admin-screens-and-the-client-api 6a747f50af97 -->
+<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
 ## 管理界面与客户端 API
 
 CLI 能更改的每项设置，也都可以在 Web 客户端的管理界面上或通过客户端 API 更改。两者都需要角色权限 `manage_settings`（只有内置的 `admin` 角色拥有）。与 CLI 一样，更改会保存为修订版本，并按键记录在审计日志中（`setting_changed`，对象是该设置，操作者是该用户）。可以在审核界面（“审计日志”，`/moderation/audit-log`）查看审计日志。
@@ -286,7 +339,7 @@ CLI 能更改的每项设置，也都可以在 Web 客户端的管理界面上�
   | 注册（`/admin/settings/registration`） | 注册（`registration_mode`、`login_providers_only`）；成员邀请（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`）；应用（`user_app_registration`、`oauth_metadata_document_clients`、`dynamic_client_registration`） |
   | 内容（`/admin/settings/content`） | 语言（`default_locale`，从应用支持的语言中选择）；时间线（`local_timeline_visibility`、`federated_timeline_visibility`）；帖子（`require_media_description`）；落地页（`public_counts`）；推荐账号（`featured_accounts`） |
   | 帖子删除（`/admin/settings/auto-delete`） | 新账号的默认设置（`auto_delete_default_*` 设置）；上限（`auto_delete_max_age_days`、`auto_delete_max_allow_*` 设置、`auto_delete_max_kept_pins`、`auto_delete_grace_days`）。保存开启或收紧（天数更少、例外或置顶更少）的上限之前会先进行确认，因为它会通知新受其约束的账号（[帖子保留的上限](#a-maximum-for-keeping-posts)） |
-  | 联邦（`/admin/settings/federation`） | 联邦（`federation_mode`、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（从 1 小时、1 天、7 天、30 天或 365 天中选择）、`link_cards`、`link_cards_ignore_robots_txt`）；已限制和已封禁的服务器（`domain_actions_visibility`、`domain_actions_rationale_visibility`）；外部审查（`hook_*` 设置，参见[决策钩子](decision-hooks.md)） |
+  | 联邦（`/admin/settings/federation`） | 联邦（`federation_mode`、`federation_scope`（保存 `allowlist` 时会先显示此次切换将结束的关注并要求确认，请参阅[只与被允许的服务器联邦](moderation.md#federating-only-with-allowed-servers)）、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（从 1 小时、1 天、7 天、30 天或 365 天中选择）、`link_cards`、`link_cards_ignore_robots_txt`）；已限制和已封禁的服务器（`domain_actions_visibility`、`domain_actions_rationale_visibility`）；外部审查（`hook_*` 设置，参见[决策钩子](decision-hooks.md)） |
   | 搜索与爬虫（`/admin/settings/discovery`） | 搜索引擎与 AI（`search_indexing`、`indexable_default`、`ai_usage`、`security_contact`）；帖子搜索（`search_visibilities`，仅在服务器具备全文搜索时） |
   | 语音聊天（`/admin/settings/voice`） | `voice_room_starters`、`voice_public_summary`、`voice_participants_retention_days`；只有服务器提供语音聊天时才会列出该页面 |
 

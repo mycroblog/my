@@ -50,19 +50,19 @@ my config check -instance  # also the instance settings in the database
 - **验证**：`my config check` 会显示 `host` 和 `account_domain`，并报告其他服务器无法访问的域名。当它们与数据库中的值不同时，`my config check -instance` 也会失败，并且不记录任何内容。使用单独的用户名域名时，`curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"` 会以 `301` 重定向到 `https://<host>/.well-known/webfinger?...`。
 - **详情**：[运行服务器](running.md)（联邦端点，以及从另一个域名提供用户名），[`host`](../reference/configuration.md#host) 和 [`account_domain`](../reference/configuration.md#account_domain)。
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### 可通过 `https` 访问
 
-- **原因**：其他服务器通过 443 端口获取 `https://<host>/` 上的 id，而浏览器只通过 `https` 发送登录 cookie。
-- **验证**：从你的网络外部访问时，`curl -sI https://<host>/healthz` 返回 `200`，且证书对 `host` 有效；`my config check` 没有报告关于 `web_origin` 的错误。`http://<host>/` 会重定向到 `https`，这由服务器前面的反向代理、负载均衡器或 CDN 完成（使用 Docker Compose 时，叠加文件 `compose.caddy.yaml` 就是这样的代理）。
-- **详情**：[运行服务器](running.md)，[`web_origin`](../reference/configuration.md#web_origin)。
+- **原因**：其他服务器会通过 443 端口在 `https://<host>/` 获取 id，而浏览器只会通过 `https` 发送登录 cookie。
+- **验证**：从你的网络之外执行 `curl -sI https://<host>/health/live` 返回 `200`，且证书对 `host` 有效，并且 `my config check` 没有报告关于 `web_origin` 的错误。`http://<host>/` 会重定向到 `https`，这由服务器前面的反向代理、负载均衡器或 CDN 完成（在 Docker Compose 中，层 `compose.caddy.yaml` 就是这样一个代理）。
+- **详情**：[运行服务器](running.md)、[`web_origin`](../reference/configuration.md#web_origin)。
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### 无法绕过 CDN 访问
 
-- **原因**：当前面有 CDN，而服务器自身的地址仍然公开时（Cloud Run 上的 `*.run.app`），任何人都可以绕过 WAF 和缓存直接调用服务器，而位于 CDN 自身平台上的调用者可以自行选择速率限制所看到的客户端 IP。只有这种情况才需要这一项：如果防火墙或平台已经限制了谁能连接，就不需要；没有 CDN 时也没有可以绕过的东西。
-- **验证**：已设置 `origin_secret` 和 `origin_secret_header`，且 CDN 在每个主机名上都设置该请求头。`curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/` 返回 `403`，它的 `/healthz` 返回 `200`，而 `https://<host>/` 返回 `200`。
-- **详情**：[拒绝不经过 CDN 的请求](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)，其中包括所有人都被拒之门外时如何恢复。
+- **原因**：在前面有 CDN、而服务器自己的地址仍然公开（Cloud Run 上的 `*.run.app`）时，任何人都可以绕过 WAF 和缓存调用服务器，而且 CDN 自己平台上的调用方可以选择速率限制所看到的客户端 IP。只有在这种情况下才需要：如果防火墙或平台已经限制了谁能连接就不需要，没有 CDN 时也没有什么可绕过的。
+- **验证**：`origin_secret` 和 `origin_secret_header` 已设置，并且 CDN 为每个主机名都设置了该请求头。`curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/` 返回 `403`，它的 `/health/live` 返回 `200`，而 `https://<host>/` 返回 `200`。
+- **详情**：[拒绝没有经过 CDN 的请求](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)，包括它把所有人都锁在外面时如何恢复。
 
 <!-- source: secrets ec71f1f20574 -->
 ## 密钥与机密
@@ -127,13 +127,13 @@ my config check -instance  # also the instance settings in the database
   - 只有需要的人才拥有 `admin` 角色；审核员拥有 `moderator` 角色，或者只包含他们所用权限的角色。用 `my admin role` 列出他们，并在管理页面上进行审查。
 - **详情**：[管理员和角色](admin-cli.md)，[审核](moderation.md)（权限和登录恢复）。
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## 运维
 
-- **备份和恢复**：数据库、blob 存储（`blob_fs_dir` 或存储桶）和 KEK 都按计划备份到与服务器分开的地方，并且已经演练过恢复到一台全新的服务器：恢复后的服务器能够启动，账号能够登录并发帖。从未恢复过的备份，无法知道它是否可用。数据库和媒体不能放在临时目录中；如果放在那里，`my config check` 会发出警告。请参阅[密钥管理](key-management.md)（备份 KEK）和[数据库](database.md)。
-- **监控和告警**：由外部监控检查 `/healthz`，并向能够处理问题的人发出告警，同时关注任务队列中的死信任务。请参阅[监控](monitoring.md)和[运行服务器](running.md)（健康检查、指标和任务队列）。
-- **镜像**：实例运行按摘要固定的已发布镜像（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，见版本说明），而不是重启时会变化的镜像，并且[已验证其来源](running.md#verify-an-image)。镜像没有 `latest` 标签。升级时有意地更改该版本，并按照[升级](database.md#upgrading)的步骤，每次升级一个次版本。
-- **源代码（AGPL-3.0）**：服务器必须向所有使用者提供其源代码。运行未经修改的版本时，让 [`source_url`](../reference/configuration.md#source_url) 保持默认值；运行分支或修改版本时，把它指向你自己的源代码。在 `/about` 上验证该链接。请参阅[运行服务器](running.md)（公开源代码）。
+- **备份和恢复**：数据库、blob 存储（`blob_fs_dir` 或存储桶）和 KEK 按计划备份到与服务器分开的地方，并且已经演练过恢复到一台全新的服务器：恢复后的服务器能够启动，账号可以登录和发帖。从未恢复过的备份，无法确定它是否可用。数据库和媒体不能放在临时目录中；放在那里时，`my config check` 会发出警告。请参阅[密钥管理](key-management.md)（备份 KEK）和[数据库](database.md)。
+- **监控和告警**：外部监控检查 `/health/live`，并向能够采取行动的人发出告警，同时监视任务队列中的死任务。请参阅[监控](monitoring.md)和[运行服务器](running.md)（健康检查、指标和任务队列）。
+- **镜像**：实例运行的是按摘要固定的已发布镜像（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，来自该版本的发布说明），而不是重启时会变化的镜像，并且[其来源已经验证](running.md#verify-an-image)。没有 `latest` 标签。升级会有意更改该版本，并遵循[升级](database.md#upgrading)，一次一个小版本。
+- **源代码（AGPL-3.0）**：服务器必须向每一位使用它的人提供它的源代码。对于未修改的发布版本，请保持 [`source_url`](../reference/configuration.md#source_url) 为默认值；当你运行分支或修改过的版本时，请让它指向你自己的源代码。请在 `/about` 上验证该链接。请参阅[运行服务器](running.md)（发布源代码）。
 - **维护**：在需要之前就了解如何让服务器进入维护模式。请参阅[维护](maintenance.md)。
 
 <!-- source: federation a5ab186ec04b -->

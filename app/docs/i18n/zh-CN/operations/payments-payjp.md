@@ -1,14 +1,15 @@
-<!-- source: supporter-payments-with-payjp 1f782a11b125 -->
+<!-- source: supporter-payments-with-payjp 6d397d24cf93 -->
 # 使用 PAY.JP 收取支持者付款
 
-设置 `payments = payjp` 后，本站用户可以在这台服务器的付款页面订阅按月或按年的方案，方案的角色会随付款状态的变化而授予或移除。部署时使用的密钥见[配置参考](../reference/configuration.md#payments)。关于整个计划（方案、角色、成员列表），请参阅 [supporters.md](supporters.md)。启用计划和创建方案由管理员在管理页面中完成。这项设置只是让服务器能够与 PAY.JP 通信。
+设置 `payments = payjp` 后，本站用户可以在这台服务器的付款页面订阅按月或按年的方案，方案的角色会随付款状态的变化而授予或移除。启用打赏后，用户还会在 PAY.JP 的托管页面上支付一次性打赏（请参阅[打赏](#tips)）。部署时使用的密钥见[配置参考](../reference/configuration.md#payments)。关于整个计划（方案、角色、成员列表），请参阅 [supporters.md](supporters.md)。启用计划和创建方案由管理员在管理页面中完成。这项设置只是让服务器能够与 PAY.JP 通信。
 
 一台服务器只能使用一个支付服务商。要从 Stripe 切换到 PAY.JP（或反过来），需要请现有订阅者使用新的支付服务商重新订阅。
 
-<!-- source: what-the-server-does-at-payjp a8abbf012e10 -->
+<!-- source: what-the-server-does-at-payjp afde8e828e80 -->
 ## 服务器在 PAY.JP 上做什么
 
 PAY.JP 有 API v1 和 v2。v2 还没有定期扣款 API，因此服务器使用 **API v1** 的定期扣款（Plan 和 Subscription）。v1 既没有托管付款页面，也没有客户门户，因此由这台服务器提供相应的页面来代替。
+打赏是 **API v2** 上的一次性付款，而 v2 有托管付款页面；请参阅[打赏](#tips)。PAY.JP 允许同一个账户用相同的密钥同时使用两个版本。
 
 [订阅的运作方式](supporters.md#how-a-subscription-works)用一张图说明了付款页面、webhook、对账、方案的角色和收入之间的关系。
 
@@ -18,15 +19,25 @@ PAY.JP 有 API v1 和 v2。v2 还没有定期扣款 API，因此服务器使用 
 - **付款失败**：续订扣款失败时，PAY.JP 会暂停（`paused`）该订阅，并且**不会重试**。服务器把暂停视为逾期付款，从暂停时起保留角色 7 天的宽限期。如果订阅者在此期间更换了银行卡，订阅会恢复；否则 7 天后移除角色（在 PAY.JP 一侧，订阅保持暂停，不会扣款）。
 - **更改方案**：升级时，会把当前周期剩余部分按比例计算的差额作为一次性扣款收取（低于 50 日元不扣款），替换方案，并在周期结束时收取新方案的全额（周期的起点不变）。如果差额扣款被拒绝，方案不会更改。降级以及从按年改为按月，会通过 `next_cycle_plan` 在周期结束时切换。
 - **回读状态**：服务器把 webhook 当作信号，从 PAY.JP API 回读订阅和资金变动来确定状态。此外，每隔 `payments_reconcile_interval` 进行一次的对账会读取事件列表、资金变动并遍历所有订阅，修复服务器漏收的 webhook。
-- **收入**：服务器为每笔付款记录总额、手续费（根据扣款的 `fee_rate` 计算，不足 1 日元的部分舍去）和净额。退款和拒付会把退还的手续费记为负的手续费。当一个结算期结束并出具结算单时，结算单上的手续费与服务器计算结果之间的差额会记为一笔手续费变动（其 ID 为结算单的 ID），使该期的手续费合计与结算单一致。结算单涵盖整个账户的手续费，因此**请使用专供这台服务器使用的 PAY.JP 账户**。
+- **收入**：服务器为每笔付款记录总额、手续费（根据扣款的 `fee_rate` 计算，不足 1 日元的部分舍去）和净额。退款和拒付会把退还的手续费记为负的手续费。当一个结算期结束并出具结算单时，结算单上的手续费与服务器计算结果（订阅扣款的手续费和该期打赏的手续费）之间的差额会记为一笔手续费变动（其 ID 为结算单的 ID），使该期的手续费合计与结算单一致。结算单涵盖整个账户的手续费，因此**请使用专供这台服务器使用的 PAY.JP 账户**。
 - **日期**：收入的日期按日本时间计算。
 
-服务器每秒最多发送 20 个请求（测试模式下为 2 个）。这在 PAY.JP 的速率限制之内（使用私钥的请求，正式模式下每秒 30 个，测试模式下每秒 2 个）。收到 `429` 时，服务器先等待 1 秒，之后每次加倍，最多重试 3 次。在测试模式下，单次对账很慢（达到 1,000 个请求的上限约需 8 分钟）。后续任务会接着处理，无需任何操作。
+服务器每秒最多发送 20 个请求（测试模式下为 2 个），API v1 和 v2 合计。这在 PAY.JP 的速率限制之内（使用私钥的请求，正式模式下每秒 30 个，测试模式下每秒 2 个）。收到 `429` 时，服务器先等待 1 秒，之后每次加倍，最多重试 3 次。在测试模式下，单次对账很慢（达到 1,000 个请求的上限约需 8 分钟）。后续任务会接着处理，无需任何操作。
 
-<!-- source: card-data-and-pci-dss e7247e5fea0f -->
+<!-- source: tips b0917978ffa6 -->
+## 打赏
+
+打赏（请参阅 [supporters.md](supporters.md#tips)）使用 PAY.JP 的 API v2，密钥和 webhook 令牌与订阅相同。PAY.JP 把 tipping 列为它难以批准的商品：你的账户能否收取打赏，需要你根据 PAY.JP 的审核和条款与它自行确定。
+
+- **付款**：服务器为这一笔金额创建一个 Checkout Session（`mode=payment`），仅限银行卡，一小时后过期，并把用户送到它在 PAY.JP 上的页面（`pay.jp` 上的 `https` 页面；服务器会拒绝任何其他地址）。服务器的打赏 ID 位于会话的 `client_reference_id` 中，以及会话及其 PaymentFlow 的 `metadata.my_tip_id` 中。创建请求带有 `Idempotency-Key`，因此重试会得到同一个会话。当发卡公司要求时，PAY.JP 会在托管页面上运行 3-D Secure。当会话为 `complete` 且它的 PaymentFlow 已成功时，打赏即为已付款。当用户发起另一笔打赏时，服务器会先让仍打开的会话过期（`POST /v2/checkout/sessions/{id}/expire`）；如果用户在此期间已经付款，则改为记录该付款。
+- **收入**：打赏的资金来自该账户 API v2 的付款交易：付款（其 ID 是 PaymentFlow 的 ID）、退款、拒付和拒付的撤销，每一项都带有 PAY.JP 报告的手续费。退款和拒付会像订阅那样，把退还的手续费记为负的手续费。
+- **争议**：PAY.JP 只会在争议开始时发送事件。每次对账还会读取以对你有利告终的争议（状态为 `cancel`），并记录付款交易本身没有报告的拒付撤销。未产生拒付而结束的争议（咨询）不会记录任何内容。
+- **退款**：请在 PAY.JP 控制台中为打赏退款。全额退款和拒付会与该打赏一起记录；部分退款只记入收入。
+
+<!-- source: card-data-and-pci-dss 7be9976efb0b -->
 ## 银行卡数据与 PCI DSS
 
-卡号、有效期和安全码只在 payjp.js 显示的 PAY.JP iframe 中输入。这台服务器的页面和脚本从不接触它们。服务器只接收 payjp.js 创建的令牌 ID，以及 3-D Secure 所需的持卡人姓名和电子邮件地址。服务器只保存 PAY.JP 的对象 ID（`cus_`、`sub_`、`ch_`、Plan ID、事件 ID）、金额、周期和状态。它不保存卡号、卡号后四位或有效期（银行卡页面只是从 PAY.JP 读取卡号后四位、有效期和客户的电子邮件地址并显示出来）。webhook 的正文和 PAY.JP 的响应既不保存在日志中，也不保存在数据库中。
+卡号、有效期和安全码只在 payjp.js 显示的 PAY.JP iframe 中输入。这台服务器的页面和脚本从不接触它们。服务器只接收 payjp.js 创建的令牌 ID，以及 3-D Secure 所需的持卡人姓名和电子邮件地址。服务器只保存 PAY.JP 的对象 ID（`cus_`、`sub_`、`ch_`、Plan ID、事件 ID，以及打赏的 Checkout Session、PaymentFlow、退款和争议）、金额、周期和状态。打赏的银行卡在 PAY.JP 自己的页面上输入，这台服务器从不提供该页面。它不保存卡号、卡号后四位或有效期（银行卡页面只是从 PAY.JP 读取卡号后四位、有效期和客户的电子邮件地址并显示出来）。webhook 的正文和 PAY.JP 的响应既不保存在日志中，也不保存在数据库中。
 
 付款页面由这台服务器的源提供，因此在构建时考虑了 PCI DSS v4 对付款页面脚本的管理（要求 6.4.3）和篡改检测（要求 11.6.1）。
 
@@ -55,7 +66,7 @@ PAY.JP 有 API v1 和 v2。v2 还没有定期扣款 API，因此服务器使用 
 
 通过环境变量 `MY_PAYMENTS_PAYJP_SECRET_KEY` 传入私钥（或在 `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE` 中传入文件路径）。私钥不能写在配置文件中。如果私钥泄露，请在控制台中重新签发，并使用新密钥重新部署。重新部署前已打开的付款页面和银行卡页面的 URL 将失效。
 
-<!-- source: 3-register-the-webhook 1afaf50fdaef -->
+<!-- source: 3-register-the-webhook 836afecf8d0c -->
 ## 3. 注册 webhook
 
 在 PAY.JP 控制台的“Settings > Webhook”下添加一个接收地址。测试模式和正式模式需要分别注册。
@@ -71,6 +82,9 @@ PAY.JP 的 webhook 用账户的**来源令牌**（`whook_...`，位于请求头 
 - `charge.succeeded`、`charge.failed`、`charge.refunded`
 - `dispute.created`
 - `statement.created`
+- 对于打赏（API v2）：`checkout.session.completed`、`checkout.session.expired`、`payment_flow.succeeded`、`refund.created`、`refund.updated`、`refund.failed` 和 `dispute.created`
+
+服务器通过事件的形态区分 API v1 和 v2 的事件，因此两个版本使用同一个 URL 和同一个令牌。
 
 PAY.JP 只会每 3 分钟重发一次通知，最多 3 次，超过之后的通知要等你在控制台中重新发送才会送达。对账会修复漏收的通知，因此**建议把 `payments_reconcile_interval` 设为 1 小时**。支付服务商的状态（模式、最后一次收到 webhook 的时间，以及最后一次对账的结果）显示在管理页面 `/admin/supporters` 的“支付服务商”部分。
 
@@ -114,13 +128,13 @@ PAY.JP 的 webhook 会发送到公开的 URL，因此要在你自己机器上的
 
 请在这台服务器的源上打开付款页面和银行卡页面（它们在 `http://localhost:8080` 上也能使用，但 payjp.js 和 3-D Secure 的行为会因浏览器的设置而异）。
 
-<!-- source: 7-operation fbdd81461f80 -->
+<!-- source: 7-operation fae168baab1c -->
 ## 7. 日常运营
 
 - 类型为 `permission` 的对账失败表示私钥有误。
 - “支付服务商”部分的警告中出现 `duplicate_charge`，表示服务器未能完成对已关闭订阅的某笔付款的退款。日志行 `a second subscription could not be canceled and refunded` 会写明该订阅，每次对账都会重试，订阅删除后也是如此。如果这种情况持续，请在控制台中退还该笔扣款：只要 PAY.JP 仍会列出已删除订阅的扣款（参见[待验证事项](#items-to-verify)），下一次重试就会发现它已退款并清除警告。超过 180 天的扣款无法退款：服务器会记录日志并继续。
 - 其他退款在 PAY.JP 控制台中处理。全额退款和拒付会立即移除角色并删除订阅，部分退款不会移除角色。
-- **拒付的撤销**不会自动记录，因为 PAY.JP 既不发出相应的事件，也没有相应的 API。发生撤销时，请在成本页面（`finance`）的收入界面中记录撤销的金额。角色不会自动恢复。
+- 订阅扣款的**拒付撤销**不会自动记录，因为 API v1 既没有相应的事件，也没有相应的 API（打赏的拒付撤销则有，请参阅[打赏](#tips)）。发生撤销时，请在成本页面（`finance`）的收入界面中记录撤销的金额。角色不会自动恢复。
 - **PAY.JP 付费套餐的费用和转账手续费**不会从收入中扣除。请在 `finance` 中把它们记为成本。
 - 如果对账经常达到请求上限，请提高 `payments_reconcile_max_requests` 或延长 `payments_reconcile_interval`。
 
@@ -129,7 +143,7 @@ PAY.JP 的 webhook 会发送到公开的 URL，因此要在你自己机器上的
 
 升级时，先收取按比例计算的差额，扣款成功后才切换方案。扣款被拒绝时，方案保持不变，用户会看到一条错误信息，说明如何更新银行卡，此时没有宽限期，也不会发送付款失败通知，用有效的卡重试只会扣款一次。如果扣款后方案切换失败，重试不会再次扣款。差额低于 50 日元的最低金额时，以及改为同一方案的年付价格（不存在正的差额）时，现在不扣款并立即切换；新价格在周期结束时收取，届时失败则算作续订失败。
 
-<!-- source: items-to-verify 3c2cbf6ed2b0 -->
+<!-- source: items-to-verify d5fb7fd9927f -->
 ## 待验证事项
 
 以下行为无法通过 PAY.JP 的文档或测试模式确定。
@@ -142,3 +156,4 @@ PAY.JP 的 webhook 会发送到公开的 URL，因此要在你自己机器上的
 - payjp-cli 能否转发 v1 事件。
 - 对客户已保存的银行卡扣款时，是否确实只在请求要求时才要求 3-D Secure。被拒绝的扣款会以 `paid: false` 出现在 `GET /v1/charges` 的列表中，服务器会忽略未付款的扣款。
 - 带 `subscription` 的 `GET /v1/charges` 是否仍会列出已删除订阅的扣款。服务器在删除订阅前先退款，因此只有在退款永久失败之后的重试才依赖这一点。API 参考说明了这个筛选条件，但没有提及已删除的订阅。如果列表为空，服务器会报告失败而不是退款，即使手动退还了扣款，`duplicate_charge` 也会保留。
+- 对于 API v2 上的打赏（它们是根据 PAY.JP 的指南和官方 SDK 构建的，尚未在测试模式下试用过）：PAY.JP 是否会把 v2 的事件以与 v1 相同的令牌发送到同一个目标；托管页面是否位于 `pay.jp` 或其子域名上；创建 Checkout Session 时是否遵守 `Idempotency-Key`；付款交易的 `resource_id` 是否对付款是 PaymentFlow、对退款是退款、对拒付及其撤销是争议；列表是否按最新在前并支持 `starting_after` 和 `ending_before`；交易金额和手续费的正负号；以及 v1 某一期的结算单是否包含 v2 的手续费。

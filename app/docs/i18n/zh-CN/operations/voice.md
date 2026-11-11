@@ -3,45 +3,44 @@
 
 语音聊天让已登录的用户开设房间、邀请他人并交谈。在你选择音频的传输方式之前，它处于关闭状态。本指南介绍如何做出这个选择、每种方式所需的 STUN 和 TURN 服务器或媒体服务器，以及部署、隐私和审核方面需要了解的事项。这里提到的每项设置都在[配置参考](../reference/configuration.md#voice)中有说明。
 
-<!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
+<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
 ## 选择音频的传输方式
 
-`voice` 为整个实例选择一种方式，所有房间都使用它。
+`voice` 为整个实例选择一种方式；每个房间都使用它。
 
-| `voice` | 由什么传输音频 | 适用场景 |
+| `voice` | 由什么传输音频 | 适合 |
 | --- | --- | --- |
-| `off` | 无。语音聊天 API 返回 `404`，Web 客户端不显示语音聊天，启动时也不检查其他 `voice_*` 设置。 | 默认值。 |
-| `p2p` | 参与者的浏览器直接互相发送音频。服务器只中转建立连接所需的消息。 | 小型房间和成本最低的配置：除了可选的 STUN 或 TURN 服务器外，无需额外的服务器。 |
-| `livekit` | LiveKit 服务器，自行托管或使用 LiveKit Cloud。 | 较大的房间，以及需要严格控制谁能发言的场合。 |
-| `sora` | Sora 服务器，自行托管或使用 Sora Cloud。 | 同上，适合已经在运行 Sora 的情况。 |
+| `off` | 无。语音聊天 API 返回 `404`，Web 客户端不显示语音聊天，启动时也不会检查其他 `voice_*` 设置。 | 默认值。 |
+| `p2p` | 参与者的浏览器把音频直接发给彼此。服务器只中继用于建立连接的消息。 | 小房间和成本最低的部署：除了可选的 STUN 或 TURN 服务器之外，不需要额外的服务器。 |
+| `livekit` | LiveKit 服务器，自托管或 LiveKit Cloud。 | 较大的房间，以及对谁能发言的严格控制。 |
+| `sora` | Sora 服务器，自托管或 Sora Cloud。 | 同上，适合你已经在运行 Sora 的情况。 |
 
-![三种方式的对比。使用 p2p 时，服务器中转信令，浏览器之间直接或经由 TURN 服务器互相发送音频。使用 livekit 和 sora 时，浏览器把信令和音频发送到媒体服务器，服务器通过 API 和 webhook 与该媒体服务器通信。下面的列表逐一说明各种方式。](images/voice-methods.svg)
+![三种方式并排比较。使用 p2p 时，服务器中继信令，浏览器之间直接发送音频，或者经由 TURN 服务器。使用 livekit 和 sora 时，浏览器把信令和音频发送给媒体服务器，服务器通过它的 API 和 webhook 与该媒体服务器通信。下面的列表介绍了每种方式。](images/voice-methods.svg)
 
-在所有方式中，服务器（`my serve`）都负责管理房间、参与者及其会话，并向每位参与者发放一份授权：浏览器连接所需的信息。它从不传输音频。不同之处在于信令（建立连接的消息）和音频去往哪里：
+无论哪种方式，服务器（`my serve`）都会保存房间、谁参与其中以及它们的会话，并给每位参与者一个授权：浏览器连接所需的内容。它从不传输音频。不同之处在于信令（用于建立连接的消息）和音频走向何处：
 
-- **`p2p`**。浏览器把信令（offer、answer 和 ICE 候选）发送到服务器，服务器通过房间的事件流转交给另一个浏览器；信令最多在键值存储中等待 30 秒。音频直接在浏览器之间传输。授权中列出 `voice_stun_urls` 的 STUN 服务器，以及 `voice_turn`
-  （`coturn` 或 `cloudflare`）的 TURN 服务器和短期凭据。浏览器通过 STUN 获知自己的公网地址，当两个浏览器找不到直接路径时，由 TURN 服务器中转音频。
-- **`livekit`**。授权中包含 `voice_livekit_url` 和有效期 60 秒的访问令牌。浏览器把信令和音频发送到 LiveKit 服务器，LiveKit 自带 STUN 和 TURN，并把音频转发给其他参与者（选择性转发单元，即 SFU）。服务器通过 LiveKit 的 API 创建 LiveKit 房间并更改谁能发言，LiveKit 则通过 webhook 向服务器报告加入和离开。
-- **`sora`**。授权中包含 `voice_sora_signaling_urls` 和签名的加入值。浏览器把信令和音频发送到 Sora 服务器，Sora 自带 STUN 和 TURN。Sora 在每次连接之前询问服务器的认证 webhook，服务器通过 Sora 的 API 控制房间，Sora 则通过 webhook 报告连接情况。
+- **`p2p`。** 浏览器把它的信令（offer、answer 和 ICE 候选）发送给服务器，服务器通过房间的事件流把它们传给另一个浏览器；信令在键值存储中最多等待 30 秒。音频直接从浏览器传到浏览器。授权中列出了 `voice_stun_urls` 的 STUN 服务器，以及 `voice_turn`（`coturn` 或 `cloudflare`）的 TURN 服务器和短期凭据。浏览器通过 STUN 得知自己的公网地址，当两个浏览器找不到直连路径时，TURN 服务器会中继音频。
+- **`livekit`。** 授权中包含 `voice_livekit_url` 和一个 60 秒的访问令牌。浏览器把它的信令和音频发送给 LiveKit 服务器，该服务器自带 STUN 和 TURN，并把音频转发给其他参与者（选择性转发单元，即 SFU）。服务器创建 LiveKit 房间，并通过 LiveKit 的 API 更改谁可以发言，LiveKit 则通过 webhook 向服务器报告加入和离开。
+- **`sora`。** 授权中包含 `voice_sora_signaling_urls` 和一个已签名的加入值。浏览器把它的信令和音频发送给 Sora 服务器，该服务器自带 STUN 和 TURN。Sora 会在每次连接之前询问服务器的认证 webhook，服务器通过 Sora 的 API 控制房间，Sora 则通过 webhook 报告连接。
 
 关于选择的说明：
 
-- 使用 `p2p` 时，音频从不经过本服务器（使用 TURN 服务器时会经过 TURN 服务器）。服务器的负载仅限于房间消息、心跳和事件流。
-- 小型实例最适合使用 `p2p`，或 LiveKit Cloud 的免费 Build 套餐（见 [LiveKit Cloud](#livekit-cloud)）。
-- 使用 `livekit` 或 `sora` 时，下面的 STUN、TURN 设置和 ICE 策略都不会使用（如果设置了，服务器会在启动时发出警告），因为媒体服务器自带这些服务器。此时参与者的 IP 地址只有媒体服务器可见，其他参与者看不到。
-- 构建标签 `no_voice_livekit` 和 `no_voice_sora` 会把这两种媒体服务器方式排除在二进制文件之外（[构建标签](../reference/build-tags.md)）。
-- 请通过 HTTPS 提供实例：浏览器只允许安全页面访问麦克风。
+- 使用 `p2p` 时，音频从不经过本服务器（如果使用了 TURN 服务器，则经过它）。服务器的负载只有房间消息、心跳和流。
+- 小型实例最适合使用 `p2p`，或者 LiveKit Cloud 的免费 Build 套餐（请参阅 [LiveKit Cloud](#livekit-cloud)）。
+- 使用 `livekit` 或 `sora` 时，下面的 STUN 和 TURN 设置以及 ICE 策略不会被使用（如果你设置了它们，服务器会在启动时发出警告），因为媒体服务器自带服务器。此时参与者的 IP 地址只有媒体服务器能看到，其他参与者看不到。
+- 构建标签 `no_voice_livekit` 和 `no_voice_sora` 会把这两种媒体服务器方式从二进制文件中去掉（[构建标签](../reference/build-tags.md)）。
+- 请通过 HTTPS 提供实例服务：浏览器只允许在安全页面上访问麦克风。
 
-以下限制可以控制付费媒体服务器的成本。除最后一项外，设为 `0` 即取消该限制：
+这些限制会让付费媒体服务器的成本保持有界。除最后一项外，都可以设为 `0` 来取消限制：
 
 | 设置 | 默认值 | 含义 |
 | --- | --- | --- |
-| `voice_max_room_duration` | `4h` | 房间保持开放的最长时间。达到该时间的房间会被结束。 |
-| `voice_max_open_rooms` | `10` | 本服务器上同时开放的房间数上限。 |
-| `voice_sfu_max_participants` | `10` | `livekit` 和 `sora` 的房间人数。 |
-| `voice_p2p_max_participants` | `10` | `p2p` 的房间人数，范围为 2 到 50。 |
+| `voice_max_room_duration` | `4h` | 房间保持开启的最长时间。达到该时间的房间会被结束。 |
+| `voice_max_open_rooms` | `10` | 本服务器上同时最多可以开启多少个房间。为预定时间开启的房间，从它开启起计算，即使它在等待第一位参与者。 |
+| `voice_sfu_max_participants` | `10` | `livekit` 和 `sora` 的房间规模。 |
+| `voice_p2p_max_participants` | `10` | `p2p` 的房间规模，从 2 到 50。 |
 
-谁能开设房间由实例设置 `voice_room_starters` 决定（[实例设置](instance-settings.md)）：默认只有持有权限 `start_voice_rooms` 的人可以（内置的 `admin` 角色拥有该权限）；设为 `everyone` 则允许所有未被停用或限制的已登录本站用户开设房间。
+谁可以开启房间由实例设置 `voice_room_starters` 决定（[实例设置](instance-settings.md)）：默认只有拥有权限 `start_voice_rooms` 的人（内置的 `admin` 角色拥有它）；`everyone` 则允许每位未被封禁或限制的已登录本站用户开启房间。
 
 <!-- source: peer-to-peer-rooms 2199ca9a427c -->
 ## 点对点房间

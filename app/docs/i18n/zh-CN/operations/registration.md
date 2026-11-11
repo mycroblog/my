@@ -81,10 +81,10 @@ my instance set registration_mode invite
 - 已登录的用户可以在设置的“密码”中输入当前密码来更改密码（每个用户每小时最多输错 5 次）。
 - 重置或更改密码会撤销该用户的其他会话和应用令牌（在设置中更改时，只保留进行更改的那个应用）。通行密钥和双重验证保持不变。等待输入双重验证码的登录，以及尚未完成的应用授权，也会失效：用户需要重新开始。在 `mail = smtp` 时，服务器还会给用户发邮件，告知密码已更改。
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## 邀请码
 
-邀请在 `open`、`approval` 和 `invite` 模式下有效。员工邀请通过 CLI、审核页面和下文的管理 API 创建；成员也可以创建自己的邀请（[成员邀请](#member-invites)）。在 `closed` 模式下，无法创建邀请，所有邀请也都无效。
+邀请在 `open`、`approval` 和 `invite` 模式下有效。工作人员的邀请通过下面的 CLI、审核界面和管理员 API 创建；成员也可以创建自己的邀请（[成员邀请](#member-invites)）。在 `closed` 模式下，无法创建邀请，也没有任何邀请有效。
 
 ```sh
 my invite create                          # single use, expires in 7 days
@@ -94,16 +94,14 @@ my invite list                            # newest first; states: usable / revok
 my invite revoke <code>
 ```
 
-- `create` 会输出邀请码（16 个字符）以及已填入邀请码的注册页面链接（`https://<host>/auth/sign_up?invite=<code>`）。
-- 匹配邀请码时忽略大小写、空格和连字符。
-- 即使多人同时注册，邀请码的使用次数也绝不会超出限制（`invite_redemptions` 上的唯一约束）。
-- 已撤销、已过期和已用完的邀请码都返回同样的错误（邀请不可用）。
-- 除了 CLI，你还可以在 Web 客户端的审核页面（“邀请”，`/moderation/invites`）中，以及通过客户端 API
-  （`GET` / `POST /api/v1/admin/invites` 和 `POST /api/v1/admin/invites/{id}/revoke`）创建、列出和撤销邀请。两者都需要角色权限 `manage_invites`
-  （内置的 `moderator` 没有该权限，因此要委派这项工作，请创建拥有该权限的角色并授予它）。列表上的“创建邀请”会打开表单（`/moderation/invites/new`），表单会显示新邀请的邀请码和注册链接。在列表中可以复制可用邀请的链接并撤销它。
-- 列表显示所有邀请（员工的和成员的），以及是谁创建的（`created_by`）和以何种方式创建的（`creator_kind`：`staff` 或 `member`）。拥有 `manage_invites` 的人可以撤销其中任何一个。
-- 审核页面中该账号的“审查”页面（`GET /api/v1/admin/accounts/{id}`，权限 `manage_accounts`）会显示该账号注册时使用的邀请及其创建者，也就是邀请该用户的人。
-- 无论是在页面、API 还是 CLI 中，创建和撤销邀请都会记录在审计日志中（`invite_created`、`invite_revoked`）。目标名称是邀请码的前 4 个字符（`ABCD…`）；完整的邀请码不会复制到审计日志中。撤销已撤销的邀请不会改变任何东西，因此不会被记录。
+- `create` 会输出邀请码（16 个字符），以及已填入该邀请码的注册页面链接（`https://<host>/auth/sign_up?invite=<code>`）。
+- 邀请码匹配时忽略大小写、空格和连字符。
+- 即使多人同时注册，邀请码也绝不会被使用超过其限制（`invite_redemptions` 上有唯一约束）。
+- 已撤销、已过期或已用完的邀请码都会给出相同的错误（邀请不可用）。
+- 除了 CLI，你还可以在 Web 客户端的审核界面（“邀请”，`/moderation/invites`）以及通过客户端 API（`GET` / `POST /api/v1/admin/invites` 和 `POST /api/v1/admin/invites/{id}/revoke`）创建、列出和撤销邀请。两者都需要角色权限 `manage_invites`（内置的 `moderator` 没有该权限，所以若要委派这件事，请创建一个带有该权限的角色并授予它）。自行发放邀请的服务会使用范围为 `admin:manage_invites` 的令牌调用同一个 API（[让另一个服务使用管理员 API](moderation.md#letting-another-service-use-the-admin-api)）。列表上的“创建邀请”会打开表单（`/moderation/invites/new`），其中会显示新邀请的邀请码和注册链接。列表可以让你复制可用邀请的链接并撤销它。
+- 列表会显示每一个邀请，包括工作人员的和成员的，以及谁创建了它（`created_by`）和创建方式（`creator_kind`：`staff` 或 `member`）。拥有 `manage_invites` 的人可以撤销其中任何一个。
+- 审核界面中账号的审查页面（`GET /api/v1/admin/accounts/{id}`，权限 `manage_accounts`）会显示该账号注册时使用的邀请，以及谁创建了它，也就是邀请该用户的人。
+- 无论是从界面、API 还是 CLI，创建和撤销邀请都会记录在审计日志中（`invite_created`、`invite_revoked`）。目标名称是邀请码的前 4 个字符（`ABCD…`）；完整的邀请码不会复制到审计日志中。撤销已经撤销的邀请不会改变任何内容，因此不会记录。
 
 <!-- source: member-invites db3bff74ed69 -->
 ## 成员邀请

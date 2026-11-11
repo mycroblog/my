@@ -78,5 +78,37 @@
   "income.rules.balance": {
     "defaultMessage": "结余为每种货币的收入减去费用，两者按相同方式计算。从不换算货币。",
     "description": "Rule of the income totals: what the balance is."
+  },
+  "income.totals.by_source": {
+    "defaultMessage": "按来源",
+    "description": "Column header of the administrators' income totals: the income after fees of the subscriptions, of the tips, and of the other money of the provider's account."
+  },
+  "income.source.subscription": {
+    "defaultMessage": "订阅",
+    "description": "Source of the income: the subscriptions to the supporter plans."
+  },
+  "income.source.one_time": {
+    "defaultMessage": "打赏",
+    "description": "Source of the income: the tips, one-time payments to the server's operation with nothing in return."
+  },
+  "income.source.unknown": {
+    "defaultMessage": "其他",
+    "description": "Source of the income: money of the payment provider's account that is neither a subscription nor a tip, such as a payment taken outside this server or a fee of no subscription."
+  },
+  "income.source.net": {
+    "defaultMessage": "{source}：{net}",
+    "description": "A line of the income of one source in a period. source is the source, such as Tips; net is the formatted income after fees of each currency."
+  },
+  "income.plans.tips": {
+    "defaultMessage": "打赏",
+    "description": "The last row of the members of each plan while the server takes tips: the totals include them."
+  },
+  "income.plans.tips.note": {
+    "defaultMessage": "已计入合计，不含人数",
+    "description": "Beside the row of the tips in the members of each plan: their number and amount are never shown."
+  },
+  "income.rules.tips": {
+    "defaultMessage": "打赏在付款当天按全额计入。其退款或拒付会从发生的期间中扣除。",
+    "description": "Rule of the income totals while the server takes tips."
   }
 }
