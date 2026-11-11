@@ -195,12 +195,15 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
     web のストリーム（ホームと通知、連合のタイムライン）に届くことを、メモリの `Bus`、`stream = postgres`（PR では pgmem）、`stream = pubsub`（プロセス内の Pub/Sub サーバー pstest）で確かめる
 - プロセスをまたぐ配信は `stream.Relay` が行う。`Relay` は `Publisher` / `Subscriber` を実装し、プロセスの中の振り分け・上限・遅い購読者の切断は自分の `Hub` に任せ、
   プロセスの間はポート `stream.Bus`（すべてのプロセスへ同報し、受け取るだけ）で運ぶ
-  - 知らせは JSON `{"v":1,"o":"<process id>","k":"home_entry","e":"<entry id>"}`（通知は `"k":"notifications","a":"<account id>"`、お知らせは `"k":"announcement","n":"<announcement id>"`、公開のタイムラインの新着は `"k":"public_entry","e":"<entry id>","tl":["local","federated"]`）で、1 KiB を超える符号化は失敗させる。知らない `v` の知らせと、知らない種類の知らせは捨てる
+  - 知らせは JSON `{"v":1,"o":"<process id>","k":"home_entry","e":"<entry id>"}`（通知は `"k":"notifications","a":"<account id>"`、お知らせは `"k":"announcement","n":"<announcement id>"`、公開のタイムラインの新着は `"k":"public_entry","e":"<entry id>","tl":["local","federated"]`、TLS の証明書は `"k":"tls_certificate","h":"<host>","c":"<certificate id>"`）で、1 KiB を超える符号化は失敗させる。知らない `v` の知らせと、知らない種類の知らせは捨てる
   - `Publish` は自分の `Hub` にすぐ配り、有限の送信バッファ（1,024 件）に積む。送信の goroutine が `Bus.Send` を呼ぶ。あふれたときと送れなかったときは捨て、件数を `Relay.Stats` とログに出す。
     受けた知らせのうち、自分のプロセス ID のもの（発行時に配り済み）は捨てる
   - listen は遅延させる。ローカルの購読が 0 から 1 になったら `Bus.Listen` し、0 に戻って 60 秒たったら `Listener.Close` する。`Subscribe(ctx, accountID)` は listener の準備を最大 10 秒待ち、
     間に合わなければ `stream.ErrUnavailable`（ストリーミングのエンドポイントは 503 と `Retry-After`）
   - `Listener` が `Broken`（知らせを取りこぼしたかもしれない）になったら、そのプロセスのローカルの購読をすべて終える。クライアントは再接続して読み直す
+  - 内部の購読（`Relay.Watch`）: ストリームの利用者でない、プロセス自身の購読。`tls_certificate` のような内部の種類（`Kind.IsInternal`）の知らせは `Hub` のどの購読にも配らず、内部の購読だけが受ける。
+    内部の購読がある間は listener を閉じず（`tls = acme` の `web`・`all` のプロセスが TLS の証明書のために常に 1 つ持つ。[ADR-0163](../adr/0163-acme-tls.md) §6）、別の listener は開かない。
+    listener が壊れたら購読者を待たずにすぐ聞き直し（始められなければ数秒ごとに試す）、listener の準備ができるたびに内部の購読に読み直しを求める
   - `Bus` は at-least-once で、プロセスをまたぐ順序は保証しない。ストリーミングのハンドラはストリームごとに最近送ったホームの新着の ID を覚えて重複を捨てる
   - 後始末: listen 中の `Relay` は KV（`kernel.KeyValueStore`、名前空間 `stream.alive`）にプロセス ID の生存の印を 1 分ごとに TTL 5 分で書く。
     プロセスごとの資源（キュー・subscription）を作るブローカーは任意のポート `stream.Sweeper` を実装し、定期ジョブ `stream.sweep`（15 分ごと）が、作成から 5 分以上たち印のないプロセスの資源を消す

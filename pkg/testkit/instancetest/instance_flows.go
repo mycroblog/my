@@ -40,7 +40,8 @@ type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 // (instanceThemeCases), the brand images (instanceBrandCases), the announcements
 // (instanceAnnouncementCases), the service closure (instanceClosureCases), the secrets of the
 // instance (instanceSecretCases), its domains (instanceDomainCases), and its TLS certificates
-// (instanceTLSCases). These are the flows of
+// (instanceTLSCases), with their manager (instanceTLSManagerCases) and its renewals
+// (instanceTLSRenewalCases). These are the flows of
 // ADR-0153 §1, which internal/flowtest/instance runs once on SQLite; InstanceRepositoryContract
 // checks the repository's methods on every adapter.
 func InstanceFlows(t *testing.T, newHarness InstanceFactory) {
@@ -72,6 +73,7 @@ func InstanceFlows(t *testing.T, newHarness InstanceFactory) {
 	cases = append(cases, instanceDomainCases...)
 	cases = append(cases, instanceTLSCases...)
 	cases = append(cases, instanceTLSManagerCases...)
+	cases = append(cases, instanceTLSRenewalCases...)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newInstanceEnv(t, newHarness)) })
 	}

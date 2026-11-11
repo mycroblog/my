@@ -19,6 +19,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/internal/platform/tlsserve"
 )
@@ -63,6 +64,7 @@ func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 		Service: a.Instance, Client: client, KV: a.KV, Certificates: a.TLSCertificates, Hosts: a.TLSCertificates.Hosts(),
 		Email: cfg.TLSACMEEmail, Profile: cfg.TLSACMEProfile, Challenges: challenges, Clock: a.Clock, Logger: a.Logger,
 		CheckInterval: opts.TLSCheckInterval, RetryInterval: opts.TLSRetryInterval,
+		Notify: a.notifyTLSCertificate,
 	})
 	if err != nil {
 		return err
@@ -76,16 +78,38 @@ func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 	return nil
 }
 
+// notifyTLSCertificate tells the other processes that this one obtained the certificate id of host
+// (ADR-0163 §6): a signal of the streams' broker, which only a stream.Relay carries to them. With
+// stream = hub there is no other process, and the signal goes nowhere.
+func (a *App) notifyTLSCertificate(host, id string) {
+	if a.Streams != nil {
+		a.Streams.Publish(stream.Event{Kind: stream.KindTLSCertificate, Host: host, CertificateID: id})
+	}
+}
+
+// tlsWatcher is the internal subscription of a stream.Relay.
+type tlsWatcher interface {
+	Watch(ctx context.Context, kind stream.Kind, receive func(stream.Event), resync func()) error
+}
+
 // startACME loads the stored certificates of tls = acme into the holder, so that a restarted
-// server serves them at once, and runs the manager once verified closes, that is once the
-// listeners are up and the database is known to be this server's. Nothing here waits for an
-// order: the first certificates come while the server runs (ADR-0163 §7).
+// server serves them at once, listens for the signals of the certificates that other processes
+// obtain (a Relay's internal subscription, which loads every host again whenever its listener
+// starts anew), and runs the manager once verified closes, that is once the listeners are up and
+// the database is known to be this server's. Nothing here waits for an order: the first
+// certificates come while the server runs (ADR-0163 §6, §7).
 func (a *App) startACME(ctx context.Context, verified <-chan struct{}) {
 	if a.TLSManager == nil {
 		return
 	}
 	if err := a.TLSManager.ReloadAll(ctx); err != nil {
 		a.Logger.WarnContext(ctx, "the stored TLS certificates are not loaded yet", slog.Any("error", err))
+	}
+	if w, ok := a.Streams.(tlsWatcher); ok {
+		m := a.TLSManager
+		if err := w.Watch(ctx, stream.KindTLSCertificate, func(e stream.Event) { m.Notice(e.Host) }, m.NoticeAll); err != nil {
+			a.Logger.WarnContext(ctx, "the TLS certificates of the other processes are loaded only by the periodic check", slog.Any("error", err))
+		}
 	}
 	kernel.Go(ctx, "tls.acme", a.ErrorReporter, func(ctx context.Context) {
 		select {

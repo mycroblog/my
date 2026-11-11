@@ -186,6 +186,13 @@ at `tls_acme_directory` (Let's Encrypt by default).
   certificate, a handshake for it fails; with Let's Encrypt the first certificates usually come within a minute. The log
   says `obtained a TLS certificate` for each host, and `the TLS certificate could not be obtained` with the reason when an
   order fails.
+- **Renewals.** The server renews each certificate at the time the certificate authority suggests for it (ACME Renewal
+  Information): it picks a random time inside the suggested window once, keeps it while the window stays, and asks again
+  as the authority's `Retry-After` says, at least every 12 hours, so that an authority that must replace certificates
+  early can move the window. When the authority offers no such window, the server renews after two thirds of the
+  certificate's lifetime, or after half of it for a certificate valid for less than 10 days. A renewal tells the
+  authority which certificate it replaces, which keeps it outside Let's Encrypt's rate limits. The current certificate
+  stays in service until its renewal comes, and a renewal that fails waits as a first order does.
 - **Failed orders.** After a failed order the server waits before the next one for the same host: 1 minute after the
   first failure, 10 minutes after the second, 100 minutes after the third, then a day, so that it stays within the
   certificate authority's limits. The wait is kept in the database and survives restarts. Fix the cause (DNS, a firewall,
@@ -198,8 +205,14 @@ at `tls_acme_directory` (Let's Encrypt by default).
 - **Several processes.** Processes that share the database and the `kv` store coordinate: one orders the certificate of
   a host while the others wait and then load it, and whichever process the certificate authority connects to answers its
   check. Use `kv = db` or `kv = valkey`; `kv = memory` is refused unless one process runs everything (`role = all`).
+  The process that obtains a certificate tells the others through the [`stream`](../reference/configuration.md#stream) broker, and they serve it within
+  seconds; each `web` process with `tls = acme` therefore keeps listening on the broker. With `stream = hub`, or when a
+  notice is lost, every process still reads the current certificates from the database every 5 minutes, and every
+  minute once its certificate has reached its renewal time, so a renewal reaches them well before the old certificate
+  expires.
 - **Profiles.** `tls_acme_profile` picks a profile that the certificate authority offers, such as `shortlived` at Let's
-  Encrypt. Empty takes its default.
+  Encrypt. Empty takes its default. After a change of profile, the next renewal follows it, and the certificate it brings
+  is served even when it expires before the one it replaces.
 
 To try it without spending the limits of Let's Encrypt's production environment, start with its staging environment,
 which issues certificates that browsers do not trust under much higher limits:

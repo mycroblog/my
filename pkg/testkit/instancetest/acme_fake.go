@@ -54,6 +54,10 @@ type FakeACMEClient struct {
 	// ChallengeType, when the order offers it, is the type of challenge answered; otherwise the
 	// order's first type is.
 	ChallengeType string
+	// RenewalWindow, when set, answers RenewalInfo for the certificates of the fake instead of
+	// the default window: a test moves the window, or returns an error wrapping
+	// instance.ErrACMERenewalInfoUnsupported for a CA without ARI.
+	RenewalWindow func(leaf *x509.Certificate) (appinstance.ACMERenewalInfo, error)
 
 	root     *x509.Certificate
 	rootKey  *ecdsa.PrivateKey
@@ -63,6 +67,7 @@ type FakeACMEClient struct {
 	accounts map[string]string
 	revoked  map[string]bool
 	orders   []string
+	replaces []string
 	serial   int64
 }
 
@@ -113,6 +118,14 @@ func (f *FakeACMEClient) Orders() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return slices.Clone(f.orders)
+}
+
+// Replaces returns the serial numbers of the certificates that the orders of Orders replace, ""
+// for an order that replaces none.
+func (f *FakeACMEClient) Replaces() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.replaces)
 }
 
 // DirectoryURL implements instance.ACMEClient.
@@ -174,6 +187,11 @@ func (f *FakeACMEClient) Order(ctx context.Context, req appinstance.ACMEOrderReq
 	}
 	f.mu.Lock()
 	f.orders = append(f.orders, req.Host)
+	replaces := ""
+	if req.Replaces != nil {
+		replaces = req.Replaces.SerialNumber.String()
+	}
+	f.replaces = append(f.replaces, replaces)
 	fail := f.fail
 	f.mu.Unlock()
 	if err := f.checkAccount(req.Account); err != nil {
@@ -256,11 +274,14 @@ func (f *FakeACMEClient) Revoke(_ context.Context, a appinstance.ACMEAccount, le
 	return nil
 }
 
-// RenewalInfo implements instance.ACMEClient: the window is the last third of the lifetime but
-// its last tenth.
+// RenewalInfo implements instance.ACMEClient: the window is RenewalWindow's, by default the last
+// third of the lifetime but its last tenth, with a Retry-After of 6 hours.
 func (f *FakeACMEClient) RenewalInfo(_ context.Context, leaf *x509.Certificate) (appinstance.ACMERenewalInfo, error) {
 	if err := leaf.CheckSignatureFrom(f.root); err != nil {
 		return appinstance.ACMERenewalInfo{}, &appinstance.ACMEProblem{Type: "urn:ietf:params:acme:error:malformed", Detail: "not issued here"}
+	}
+	if f.RenewalWindow != nil {
+		return f.RenewalWindow(leaf)
 	}
 	life := leaf.NotAfter.Sub(leaf.NotBefore)
 	return appinstance.ACMERenewalInfo{

@@ -43,6 +43,9 @@ const (
 	// dropLogInterval is the least time between two log lines about dropped signals, so that
 	// an unreachable broker does not flood the log; the counts in RelayStats are exact.
 	dropLogInterval = 10 * time.Second
+	// watchRetry is the wait before a Relay with watchers tries to listen again after a start
+	// that failed.
+	watchRetry = 5 * time.Second
 )
 
 // RelayOptions configure a Relay. Zero fields take the defaults above.
@@ -97,6 +100,11 @@ type RelayStats struct {
 //   - When the listener breaks, every subscription of this process ends, since it may have
 //     missed signals; its clients reconnect and read again, and the next Subscribe listens
 //     anew.
+//   - A watcher (Watch) is an internal subscription of the process itself, not of a stream: it
+//     keeps the listener open while it lasts, receives the internal signals of its kind
+//     (Kind.IsInternal) that other processes publish, and resyncs each time a listener is
+//     ready. After a break, a Relay with watchers listens again at once, without waiting
+//     for a Subscribe, and retries every few seconds while the start fails.
 //
 // It is safe for concurrent use.
 type Relay struct {
@@ -126,6 +134,10 @@ type Relay struct {
 	// call from the current one.
 	idle      *time.Timer
 	idleToken *struct{}
+
+	// watchers are the internal subscriptions (Watch); each one also counts in active.
+	watchMu  sync.Mutex
+	watchers map[*watcher]struct{}
 
 	isClosed      atomic.Bool
 	droppedFull   atomic.Uint64
@@ -184,7 +196,7 @@ func NewRelay(bus Bus, o RelayOptions) *Relay {
 	base, cancel := context.WithCancel(context.Background())
 	r := &Relay{
 		o: o, hub: NewHub(o.Hub), bus: bus, log: logger.With(slog.String("process_id", o.ProcessID)),
-		base: base, cancel: cancel,
+		base: base, cancel: cancel, watchers: map[*watcher]struct{}{},
 		sendCh: make(chan []byte, o.SendBuffer), stopSend: make(chan struct{}), sendDone: make(chan struct{}),
 	}
 	kernel.Go(context.Background(), "stream.relay.send", o.Reporter, func(context.Context) { r.send() })
@@ -279,7 +291,82 @@ func (r *Relay) receive(payload []byte) {
 	if origin == r.o.ProcessID {
 		return // published to the Hub already
 	}
+	if e.Kind.IsInternal() {
+		for _, w := range r.watching() {
+			if w.kind == e.Kind {
+				w.receive(e)
+			}
+		}
+		return
+	}
 	r.hub.Publish(e)
+}
+
+// watcher is an internal subscription of a Relay (Watch).
+type watcher struct {
+	kind    Kind
+	receive func(Event)
+	resync  func()
+}
+
+// Watch opens an internal subscription of this process, for the signals that no stream
+// receives (Kind.IsInternal), until ctx ends or the Relay closes: receive gets each signal of
+// kind that another process publishes, and resync runs each time a listener is ready while the
+// subscription lasts, its first start included, since signals may have been missed before
+// it (the listener started anew, or broke). Both are called from the listener's goroutine and
+// must return quickly; neither runs for the signals that this process publishes.
+//
+// The subscription keeps the listener open, so that the process listens without any stream
+// (ADR-0163 §6); it uses the one listener of the Relay, not one of its own. When the listener
+// breaks, the Relay listens again at once and keeps trying while the start fails. Watch does
+// not wait for the listener; it fails only when the Relay is closed.
+func (r *Relay) Watch(ctx context.Context, kind Kind, receive func(Event), resync func()) error {
+	w := &watcher{kind: kind, receive: receive, resync: resync}
+	r.mu.Lock()
+	if r.closed {
+		r.mu.Unlock()
+		return ErrClosed
+	}
+	r.watchMu.Lock()
+	r.watchers[w] = struct{}{}
+	r.watchMu.Unlock()
+	r.active++
+	r.stopIdleLocked()
+	if r.cur == nil {
+		r.startLocked()
+	}
+	r.mu.Unlock()
+	kernel.Go(context.Background(), "stream.relay.watch", r.o.Reporter, func(context.Context) {
+		select {
+		case <-ctx.Done():
+		case <-r.base.Done():
+		}
+		r.watchMu.Lock()
+		delete(r.watchers, w)
+		r.watchMu.Unlock()
+		r.release()
+	})
+	return nil
+}
+
+// watching returns the watchers.
+func (r *Relay) watching() []*watcher {
+	r.watchMu.Lock()
+	defer r.watchMu.Unlock()
+	ws := make([]*watcher, 0, len(r.watchers))
+	for w := range r.watchers {
+		ws = append(ws, w)
+	}
+	return ws
+}
+
+// relistenLocked starts a listener for the watchers when there are some, no listener, and the
+// Relay is open; r.mu is held.
+func (r *Relay) relistenLocked() {
+	if r.closed || r.cur != nil || len(r.watching()) == 0 {
+		return
+	}
+	r.startLocked()
 }
 
 // Subscribe implements Subscriber: it starts the listener when none is open and waits for it,
@@ -403,6 +490,13 @@ func (r *Relay) listen(cur *listening) {
 		cur.halt()
 		close(cur.ready)
 		r.log.Warn("stream relay could not listen", slog.Any("error", err))
+		if len(r.watching()) > 0 {
+			time.AfterFunc(watchRetry, func() {
+				r.mu.Lock()
+				defer r.mu.Unlock()
+				r.relistenLocked()
+			})
+		}
 		return
 	}
 	current := r.cur == cur
@@ -414,6 +508,9 @@ func (r *Relay) listen(cur *listening) {
 	if !current { // the Relay closed meanwhile
 		r.closeListener(cur)
 		return
+	}
+	for _, w := range r.watching() {
+		w.resync()
 	}
 	if r.o.Liveness != nil {
 		kernel.Go(context.Background(), "stream.relay.heartbeat", r.o.Reporter, func(context.Context) { r.heartbeat(cur, wroteAt) })
@@ -444,6 +541,11 @@ func (r *Relay) watch(cur *listening) {
 		r.log.Warn(reason)
 	}
 	r.closeListener(cur)
+	// The watchers keep listening: the Bus holds one listener at a time, so the new one starts
+	// once the broken one is closed.
+	r.mu.Lock()
+	r.relistenLocked()
+	r.mu.Unlock()
 }
 
 // closeListener stops using cur and closes its listener, which deletes its resources.
