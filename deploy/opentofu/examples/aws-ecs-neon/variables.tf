@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 variable "region" {
-  description = "Region of the service, the load balancer, and the bucket."
+  description = "Region of the service, the load balancer, the bucket, and SES."
   type        = string
   default     = "ap-northeast-1"
 }
@@ -12,15 +12,8 @@ variable "host" {
 }
 
 variable "image" {
-  description = "Server image at creation. The released one runs as it is, from ghcr.io over the internet."
+  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>. After that the upgrade script changes it."
   type        = string
-  default     = "ghcr.io/mycroblog/my:0.1.0"
-}
-
-variable "architecture" {
-  description = "Architecture to run: x86_64 or arm64. arm64 costs less on Fargate."
-  type        = string
-  default     = "x86_64"
 }
 
 variable "availability_zones" {
@@ -28,27 +21,9 @@ variable "availability_zones" {
   type        = list(string)
 }
 
-variable "assign_public_ip" {
-  description = "Gives each task a public IPv4 address in a public subnet, billed by the hour. False puts them in private subnets, and the network gets a NAT gateway, billed too. No default: read the costs in the README of app-aws-ecs."
-  type        = bool
-}
-
-variable "cpu" {
-  description = "CPU units of a task."
-  type        = number
-  default     = 256
-}
-
-variable "memory_mib" {
-  description = "Memory of a task in MiB."
-  type        = number
-  default     = 1024
-}
-
-variable "desired_count" {
-  description = "Tasks of the service."
-  type        = number
-  default     = 1
+variable "egress" {
+  description = "How the tasks reach the internet: public-ip gives each task a public IPv4 address, nat puts them behind a NAT gateway. Both bill by the hour, so there is no default."
+  type        = string
 }
 
 variable "certificate_arn" {
@@ -57,58 +32,9 @@ variable "certificate_arn" {
 }
 
 variable "route53_zone_id" {
-  description = "Public Route 53 hosted zone of host, in which the ingress creates alias records. Null leaves the records to you: the output dns_records says what to create."
+  description = "Public Route 53 hosted zone of host, in which the load balancer's records are created. Null leaves them to you: the output dns_records says what to create."
   type        = string
   default     = null
-}
-
-variable "host_is_apex" {
-  description = "Whether host is the apex of its DNS zone, where a plain CNAME cannot be used. It matters only without route53_zone_id."
-  type        = bool
-  default     = false
-}
-
-variable "cloudfront" {
-  description = "Puts CloudFront in front of the load balancer, which then admits CloudFront alone. It needs cloudfront_certificate_arn and origin_secret."
-  type        = bool
-  default     = false
-}
-
-variable "cloudfront_certificate_arn" {
-  description = "With cloudfront, ARN of a validated certificate for host in us-east-1, the only region CloudFront takes one from. In us-east-1 it may be certificate_arn."
-  type        = string
-  default     = null
-}
-
-variable "origin_secret" {
-  description = "With cloudfront, the value of the header that CloudFront sends and the load balancer checks: openssl rand -hex 32. It lands in the state. Pass it with TF_VAR_origin_secret."
-  type        = string
-  default     = null
-  sensitive   = true
-}
-
-variable "database_url_secret_name" {
-  description = "Secret that holds Neon's direct connection URL."
-  type        = string
-  default     = "my-database-url"
-}
-
-variable "vapid_secret_name" {
-  description = "Secret of the VAPID key, which the first apply generates."
-  type        = string
-  default     = "my-vapid-key"
-}
-
-variable "kek_secret_name" {
-  description = "Secret of the KEK, which the first apply generates."
-  type        = string
-  default     = "my-kek"
-}
-
-variable "mail_smtp_password_secret_name" {
-  description = "Secret that holds the SMTP password."
-  type        = string
-  default     = "my-smtp-password"
 }
 
 variable "bucket_name" {
@@ -117,40 +43,52 @@ variable "bucket_name" {
 }
 
 variable "mail_from" {
-  description = "Sender address of emails."
+  description = "Sender address of emails, as a bare address. SES sends from its domain, which the output dns_records verifies."
   type        = string
 }
 
-variable "mail_smtp_host" {
-  description = "Host name of the SMTP server."
-  type        = string
-}
-
-variable "mail_smtp_port" {
-  description = "TCP port of the SMTP server."
-  type        = number
-  default     = 587
-}
-
-variable "mail_smtp_username" {
-  description = "User name for SMTP AUTH."
-  type        = string
+variable "alert_emails" {
+  description = "Addresses the alarms notify. Each must confirm the subscription."
+  type        = list(string)
 }
 
 variable "console_enabled" {
-  description = "Creates the console's task definition. Turn it on for as long as you need it."
+  description = "Creates the console's task definition."
   type        = bool
   default     = false
 }
 
-variable "env" {
-  description = "Other settings by variable name."
-  type        = map(string)
-  default     = {}
+output "secrets_to_fill" {
+  description = "The secrets to fill before the server starts, with the command that adds each."
+  value       = module.mycroblog.secrets_to_fill
 }
 
-variable "secret_env" {
-  description = "Other secret settings: variable name to the ARN of a secret."
-  type        = map(string)
-  default     = {}
+output "kek" {
+  description = "Where the KEK is, and the command that copies it."
+  value       = module.mycroblog.kek
+}
+
+output "dns_records" {
+  description = "The records to add at the DNS provider: host, and the records that verify the domain of mail_from in SES."
+  value       = module.mycroblog.dns_records
+}
+
+output "dns_note" {
+  description = "What dns_records cannot say, or null."
+  value       = module.mycroblog.dns_note
+}
+
+output "domain_name" {
+  description = "Domain name of what host points at."
+  value       = module.mycroblog.domain_name
+}
+
+output "upgrade" {
+  description = "What upgrade.sh takes."
+  value       = module.mycroblog.upgrade
+}
+
+output "console" {
+  description = "Pipe this to console.sh: tofu output -json console | .terraform/modules/mycroblog/deploy/opentofu/console.sh <my command>."
+  value       = module.mycroblog.console
 }

@@ -82,7 +82,7 @@ tasks:
       - scripts/tofu-db-state-test.sh
 
   aws-plan-test:
-    desc: Prove with a plan that makes no call that the AWS modules hold no generated value in the plan
+    desc: Prove with plans of the AWS example that make no call to AWS that the plan holds no generated value
     cmds:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - scripts/tofu-aws-plan-test.sh

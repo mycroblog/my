@@ -460,5 +460,5 @@ other than `MODULE_REF`, and on a source of a public module other than `../modul
 `scripts/task.sh go:config-docs` writes it from the configuration schema, and `go:test` fails when it is stale. The module
 `settings` reads it, makes nothing, and refuses a key the configuration does not have, a secret in `settings`, a setting
 that is not secret in `secrets`, and a key that a section sets (`managed`); its tests show each refusal.
-`tofu:aws-plan-test` plans the AWS modules that generate a value, `db-aws-rds` among them, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
-stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.
+`tofu:aws-plan-test` plans the AWS example, as it is and with `db-aws-rds`, with no credentials and no call to AWS (a local stub
+answers the one read of the caller's identity), and shows that the plan holds no generated value. There is no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.
