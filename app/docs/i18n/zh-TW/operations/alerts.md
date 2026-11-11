@@ -61,7 +61,7 @@ promtool test rules alerts.test.yml
 - **資料庫**：Cloud SQL 的磁碟使用率與連線指標，或你的資料庫供應商的用量警示。
 - **成本**：設有警示門檻的 Cloud Billing 預算（[成本與預算](#cost-and-budget)）。
 
-[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 模組會以下表的名稱將這些建立為政策，並列出它以不同方式涵蓋或無法表達的每一項警示。它從未被套用過。只有流量才會產生的指標，在縮減至零的服務上會有空缺，所以針對它缺席的警示會誤報；能察覺閒置伺服器已經停擺的，是它的可用性檢查。
+[`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 模組會以下表的名稱將這些建立為政策，並列出它以不同方式涵蓋或無法表達的每一項警示。它從未被套用過。只有流量才會產生的指標，在縮減至零的服務上會有空缺，所以針對它缺席的警示會誤報；能察覺閒置伺服器已經停擺的，是它的可用性檢查。
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -74,7 +74,7 @@ promtool test rules alerts.test.yml
 - **電子郵件**（`mail = ses`）：CloudWatch 中的 SES 信譽指標（退信率和投訴率）。
 - **費用**：設有警報的 AWS Budgets 預算（[費用與預算](#cost-and-budget)）。
 
-模組 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 會以下表中的名稱把這些建立為警示，並附有相同的清單。它從未被實際套用過。
+模組 [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 會以下表中的名稱把這些建立為警示，並附有相同的清單。它從未被實際套用過。
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## 警報一覽

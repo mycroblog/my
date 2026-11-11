@@ -56,7 +56,7 @@ func Check(r *repo.Repo, base string) (bool, []string, error) {
 	var workersLines []string
 	if wOut, wErr := workersCheck(r); wErr != nil {
 		ok = false
-		workersLines = append(strings.Split(strings.TrimSpace(string(wOut)), "\n"), "run `agentkit regen` to rewrite deploy/opentofu/modules/workers/job_types.json")
+		workersLines = append(strings.Split(strings.TrimSpace(string(wOut)), "\n"), "run `agentkit regen` to rewrite deploy/opentofu/modules/internal/workers/job_types.json")
 	}
 	if ok {
 		lines = append(lines, fmt.Sprintf("passed in %s (log: %s)", time.Since(start).Round(time.Second), rel))
@@ -91,7 +91,7 @@ func docImpact(r *repo.Repo, base string) []string {
 	return append(lines, docsync.Lines(open)...)
 }
 
-// workersScript keeps the job types of deploy/opentofu/modules/workers in step with internal/platform/job_types.go.
+// workersScript keeps the job types of deploy/opentofu/modules/internal/workers in step with internal/platform/job_types.go.
 const workersScript = "tofu-workers-check.sh"
 
 // workersCheck runs the workers check, which needs no tofu binary. A missing script (an older checkout) passes.

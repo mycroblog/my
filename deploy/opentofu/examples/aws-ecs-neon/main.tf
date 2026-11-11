@@ -2,7 +2,7 @@
 
 # One deployment on AWS: ECS with Fargate behind an Application Load Balancer, the jobs in the database, S3, and SNS, with a
 # database created by hand on Neon and email through an SMTP service, on a VPC of its own. It runs the released image as it is.
-# NOTHING HERE HAS BEEN APPLIED: deploy/opentofu/modules/app-aws-ecs/README.md says what stays unverified and what it costs.
+# NOTHING HERE HAS BEEN APPLIED: deploy/opentofu/modules/internal/app-aws-ecs/README.md says what stays unverified and what it costs.
 
 terraform {
   required_version = ">= 1.11"
@@ -26,9 +26,9 @@ provider "aws" {
 # With public addresses on the tasks there is no NAT gateway to pay for, and without them there must be one, or federation stops.
 #
 # For a VPC that exists already, remove this block and pass network = var.network to the blocks below, an object of the shape in
-# deploy/opentofu/README.md: platform, vpc_id, vpc_cidr, public_subnet_ids, public_subnet_cidrs, private_subnet_ids, and nat.
+# deploy/opentofu/modules/internal/README.md: platform, vpc_id, vpc_cidr, public_subnet_ids, public_subnet_cidrs, private_subnet_ids, and nat.
 module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-aws-vpc?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/network-aws-vpc?ref=v0.1.0&depth=1"
 
   availability_zones = var.availability_zones
   nat                = !var.assign_public_ip
@@ -36,7 +36,7 @@ module "network" {
 
 # The first apply generates the VAPID key. Add the others with aws secretsmanager put-secret-value before the app.
 module "secrets" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/secrets-aws-secrets-manager?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/secrets-aws-secrets-manager?ref=v0.1.0&depth=1"
 
   secrets            = { MY_VAPID_PRIVATE_KEY = var.vapid_secret_name }
   generate_p256_keys = ["MY_VAPID_PRIVATE_KEY"]
@@ -49,17 +49,17 @@ module "secrets" {
 # To keep the KEK in AWS KMS instead, replace this block:
 #
 #   module "kek" {
-#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kek-aws-kms?ref=v0.1.0&depth=1"
+#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kek-aws-kms?ref=v0.1.0&depth=1"
 #   }
 module "kek" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kek-aws-secrets-manager?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kek-aws-secrets-manager?ref=v0.1.0&depth=1"
 
   secret_name = var.kek_secret_name
 }
 
 # The same block as on Google Cloud, with the ARN of a secret in the place of its ID.
 module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = module.secrets.ids["database_url"]
 }
@@ -67,31 +67,31 @@ module "db" {
 # The process stays up, so it polls the queue and runs the periodic jobs itself. The database never gets to rest: read the README
 # of this module before you choose a Neon plan.
 module "queue" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/queue-db?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/queue-db?ref=v0.1.0&depth=1"
 }
 
 module "blob" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/blob-aws-s3?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/blob-aws-s3?ref=v0.1.0&depth=1"
 
   bucket_name = var.bucket_name
 }
 
 # Above one task, and for the moments of an upgrade when two run, streams need a broker that reaches every task.
 module "stream" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/stream-aws-sns?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/stream-aws-sns?ref=v0.1.0&depth=1"
 }
 
 # To send through Amazon SES instead, replace this block, and the secret above is not needed:
 #
 #   module "mail" {
-#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/mail-aws-ses?ref=v0.1.0&depth=1"
+#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/mail-aws-ses?ref=v0.1.0&depth=1"
 #
 #     from = var.mail_from
 #   }
 #
 # The same block as on Google Cloud, with the ARN of a secret in the place of its ID.
 module "mail" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/mail-smtp?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/mail-smtp?ref=v0.1.0&depth=1"
 
   from               = var.mail_from
   host               = var.mail_smtp_host
@@ -103,7 +103,7 @@ module "mail" {
 # The only way in: the tasks admit nothing else, so the server checks no origin secret. With cloudfront, the load balancer admits
 # CloudFront alone and forwards only what carries origin_secret, and the records of host belong to the block below.
 module "ingress" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-aws-alb?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/ingress-aws-alb?ref=v0.1.0&depth=1"
 
   host            = var.host
   network         = module.network
@@ -119,7 +119,7 @@ module "ingress" {
 # CloudFront at host, in front of the load balancer, with /media/ cached. It is no backend: the block above names what the
 # server trusts.
 module "cdn" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-aws-cloudfront?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/ingress-aws-cloudfront?ref=v0.1.0&depth=1"
 
   host            = var.host
   origin          = module.ingress.cloudfront_origin
@@ -134,7 +134,7 @@ module "cdn" {
 }
 
 # To give a kind of job its own service, set the same value on the queue above and on this block, which derive every name from the
-# key. The default takes whatever no worker names. Read "Workers" in deploy/opentofu/README.md.
+# key. The default takes whatever no worker names. Read "Workers" in deploy/opentofu/modules/internal/README.md.
 #
 #   workers = {
 #     delivery = {
@@ -144,7 +144,7 @@ module "cdn" {
 #     }
 #   }
 module "app" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/app-aws-ecs?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/app-aws-ecs?ref=v0.1.0&depth=1"
 
   image            = var.image
   architecture     = var.architecture

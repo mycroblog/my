@@ -52,7 +52,7 @@ gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.google
 有兩種方式，範例使用第一種：
 
 - **手動，使用 `db-external`**。在 Neon 主控台中，於靠近你 Cloud Run 區域的區域建立專案，並複製它的連線字串。密碼不會進入 OpenTofu 的 state。
-- **使用 [`db-neon`](../../deploy/opentofu/modules/db-neon/README.md)**，它會為你建立專案，並把 URL 寫入機密**。這樣資料庫密碼就會進入 state**，而且該 provider 已無人維護：它的 README 說明了這代表什麼，`main.tf` 中 `db` 區塊的註解示範了如何替換。
+- **使用 [`db-neon`](../../deploy/opentofu/modules/internal/db-neon/README.md)**，它會為你建立專案，並把 URL 寫入機密**。這樣資料庫密碼就會進入 state**，而且該 provider 已無人維護：它的 README 說明了這代表什麼，`main.tf` 中 `db` 區塊的註解示範了如何替換。
 
 一個專案有兩種連線字串，部署會在各自適合的地方使用：
 
@@ -228,40 +228,40 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --re
 <!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## 監控與警示
 
-[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 模組會加入 `/health/live` 的可用性檢查、以[運作手冊](alerts.md)的名稱命名的警示政策，以及電子郵件通知。它從未被套用過，所以請讓一項檢查失敗來試用一次。請先啟用 `monitoring.googleapis.com`，並在它的 README 中閱讀這項檢查要花多少成本：每次執行都會喚醒一個實例，如果你把它指向 `/health/ready`，連資料庫也會被喚醒，這會增加[計時的取捨](#costs)。
+[`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 模組會加入 `/health/live` 的可用性檢查、以[運作手冊](alerts.md)的名稱命名的警示政策，以及電子郵件通知。它從未被套用過，所以請讓一項檢查失敗來試用一次。請先啟用 `monitoring.googleapis.com`，並在它的 README 中閱讀這項檢查要花多少成本：每次執行都會喚醒一個實例，如果你把它指向 `/health/ready`，連資料庫也會被喚醒，這會增加[計時的取捨](#costs)。
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## 更換後端
 
-替換 `main.tf` 中該模組的區塊即可。app 模組會接收區塊回傳的任何內容，因此其他部分都不需要變更。更換資料庫也代表要搬移它的資料，因為新的資料庫是空的：步驟請參閱 [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/db-gcp-cloud-sql/README.md#coming-from-db-external)。例如，使用你自己的資料庫：
+替換 `main.tf` 中該模組的區塊即可。app 模組會接收區塊回傳的任何內容，因此其他部分都不需要變更。更換資料庫也代表要搬移它的資料，因為新的資料庫是空的：步驟請參閱 [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/internal/db-gcp-cloud-sql/README.md#coming-from-db-external)。例如，使用你自己的資料庫：
 
 ```hcl
 module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = "another-database-url"
 }
 ```
 
-若要使用 Google Cloud 以外的儲存空間，請把 `blob` 區塊替換為 [`blob-s3`](../../deploy/opentofu/modules/blob-s3/README.md)（適用於任何 S3 相容服務）或 [`blob-cloudflare-r2`](../../deploy/opentofu/modules/blob-cloudflare-r2/README.md)。
+若要使用 Google Cloud 以外的儲存空間，請把 `blob` 區塊替換為 [`blob-s3`](../../deploy/opentofu/modules/internal/blob-s3/README.md)（適用於任何 S3 相容服務）或 [`blob-cloudflare-r2`](../../deploy/opentofu/modules/internal/blob-cloudflare-r2/README.md)。
 
 <!-- source: when-you-need-a-network fb392704a1e7 -->
 ## 需要網路時
 
 本指南不需要網路：Neon、Cloud Tasks、Cloud Storage 和 Pub/Sub 都是以服務自己的身分透過網際網路連線，因此 Cloud Run 不需連接任何網路，也沒有需要付費或照管的東西。
 
-若要在部署中加入只有私人位址的 Memorystore，或要讓 Cloud SQL 使用私人位址取代公開位址，就需要網路。請加入 [`network-gcp-vpc`](../../deploy/opentofu/modules/network-gcp-vpc/README.md)，或把你既有的 VPC 描述為[相同形狀](../../deploy/opentofu/README.md#the-network-on-google-cloud)的物件，再把同一個網路交給 app 和每個接受它的模組：
+若要在部署中加入只有私人位址的 Memorystore，或要讓 Cloud SQL 使用私人位址取代公開位址，就需要網路。請加入 [`network-gcp-vpc`](../../deploy/opentofu/modules/internal/network-gcp-vpc/README.md)，或把你既有的 VPC 描述為[相同形狀](../../deploy/opentofu/README.md#the-network-on-google-cloud)的物件，再把同一個網路交給 app 和每個接受它的模組：
 
 ```hcl
 module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/network-gcp-vpc?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   region     = var.region
 }
 
 module "kv" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kv-gcp-memorystore?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kv-gcp-memorystore?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   region     = var.region
@@ -269,7 +269,7 @@ module "kv" {
 }
 ```
 
-也請為 app 設定 `network = module.network`，並把 `module.kv` 加入它的 `backends`。只有私人範圍會經過該網路，因此服務仍像之前一樣連到網際網路，不需要 Cloud NAT。使用私人位址的後端搭配在其他網路上（或沒有網路）的 app，會使 plan 失敗。請先啟用 Service Networking 和 Network Connectivity API，以及 Compute Engine API。網路會增加執行個體的冷啟動時間：請參閱[私人網路增加了什麼](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds)。
+也請為 app 設定 `network = module.network`，並把 `module.kv` 加入它的 `backends`。只有私人範圍會經過該網路，因此服務仍像之前一樣連到網際網路，不需要 Cloud NAT。使用私人位址的後端搭配在其他網路上（或沒有網路）的 app，會使 plan 失敗。請先啟用 Service Networking 和 Network Connectivity API，以及 Compute Engine API。網路會增加執行個體的冷啟動時間：請參閱[私人網路增加了什麼](../../deploy/opentofu/modules/internal/kv-gcp-memorystore/README.md#what-the-private-network-adds)。
 
 <!-- source: splitting-jobs-into-workers ed661aede0a3 -->
 ## 把任務分到 worker
@@ -337,7 +337,7 @@ Cloud Tasks 和 Cloud Scheduler 不經過其中任何一個：它們直接呼叫
 <!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` 會將 Cloudflare 放在 `host` 前面，並對所有東西繞過快取，而 `ingress-cloudflare-media` 則在任何入口旁加上一個有快取的媒體主機。請先閱讀每個模組的 README（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。權杖放在 `CLOUDFLARE_API_TOKEN` 中。這些模組只在模擬的供應商上執行過。
+`ingress-cloudflare-app` 會將 Cloudflare 放在 `host` 前面，並對所有東西繞過快取，而 `ingress-cloudflare-media` 則在任何入口旁加上一個有快取的媒體主機。請先閱讀每個模組的 README（[app](../../deploy/opentofu/modules/internal/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/internal/ingress-cloudflare-media/README.md)）。權杖放在 `CLOUDFLARE_API_TOKEN` 中。這些模組只在模擬的供應商上執行過。
 
 - **你的方案決定來源。** Cloud Run 依 `Host` 路由，而 Cloudflare 只在 Enterprise 方案提供 Host 標頭覆寫。在任何其他方案上，`*.run.app` 來源會讓計畫失敗，所以來源必須自己接受你的主機：請保留該主機的 `ingress-gcp-domain-mapping`（放在 `backends` 之外），並設定 `origin_host = "ghs.googlehosted.com"`。每個主機都需要自己的對應。它的憑證能否在代理之後簽發與更新，尚未驗證，所以請從 `proxied = false` 開始。
 - **標頭會關閉來源。** `ingress-cloudflare-app` 會加入請求標頭轉換規則，而伺服器會以 `403` 拒絕沒有該標頭的請求，但健康檢查和任務自己的 `POST`（它們會檢查自己的權杖）除外。所以沒有人能透過 `run.app` URL 繞過 Cloudflare，呼叫者自己的 Cloudflare Worker 也無法選擇速率限制所看到的用戶端位址。

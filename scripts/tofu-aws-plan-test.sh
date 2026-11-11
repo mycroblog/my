@@ -25,7 +25,7 @@ fail() {
 cp -r "$root/deploy/opentofu/modules" "$tmp/modules"
 mkdir -p "$tmp/tests"
 cp -r "$root/deploy/opentofu/tests/aws-no-secret-in-plan" "$tmp/tests/run"
-rm -rf "$tmp/tests/run/.terraform" "$tmp"/modules/*/.terraform
+rm -rf "$tmp/tests/run/.terraform" "$tmp"/modules/internal/*/.terraform
 dir="$tmp/tests/run"
 export TF_IN_AUTOMATION=1
 

@@ -15,7 +15,7 @@
 | `GET /readyz`、`GET /health/ready` | 負載平衡器或 Kubernetes 的就緒探測（readiness probe） | 每次請求都會（同時發生的請求共用一次檢查） | `200` `{"status":"maintenance"}` |
 
 請將外部監控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：它每次請求都會查詢資料庫，所以間隔很短的監控會讓縮減至零的資料庫一直醒著。探測是給你的平台用的。
-[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 模組會以很長的間隔，從平台自己的監控檢查 `/health/live`（`monitoring-gcp`）或 `/readyz`（`monitoring-aws`），它們的 README 說明了這會花多少成本。
+[`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 模組會以很長的間隔，從平台自己的監控檢查 `/health/live`（`monitoring-gcp`）或 `/readyz`（`monitoring-aws`），它們的 README 說明了這會花多少成本。
 
 `/api/v1/instance/health` 的回應（不需驗證，`Cache-Control: no-store`）：
 

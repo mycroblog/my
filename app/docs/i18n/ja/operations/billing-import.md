@@ -14,7 +14,7 @@ Cloudflare にはそのようなチェーンがないので、Cloudflare の取�
 <!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## OpenTofu のモジュールを使う
 
-モジュール [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) と [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) は、`billing_sources` を設定し、このガイドの手順のうち事業者の API で行える部分を行います。`billing-gcp` は Google Cloud のアプリのモジュールとだけ組み合わせられるため、AWS ではモジュールが取り込むのは AWS の費用だけです。`billing-aws` は AWS のアプリのモジュールとも Cloud Run のアプリのモジュールとも組み合わせられ、Cloud Run では両方を `backends` に置けます。どちらのモジュールも、実際のアカウントにはまだ適用されていません。
+モジュール [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) と [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) は、`billing_sources` を設定し、このガイドの手順のうち事業者の API で行える部分を行います。`billing-gcp` は Google Cloud のアプリのモジュールとだけ組み合わせられるため、AWS ではモジュールが取り込むのは AWS の費用だけです。`billing-aws` は AWS のアプリのモジュールとも Cloud Run のアプリのモジュールとも組み合わせられ、Cloud Run では両方を `backends` に置けます。どちらのモジュールも、実際のアカウントにはまだ適用されていません。
 
 | このガイドの手順 | モジュールを使う場合 |
 | --- | --- |

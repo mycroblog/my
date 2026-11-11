@@ -97,6 +97,24 @@ An upgrade to a new release always runs these steps in this order, with the **ne
 
 `my serve` never runs `my db upgrade -check`, `my schema apply`, or `my db upgrade`; they are one-off jobs. Run only one of them against a database at a time.
 
+### Running the steps in one job
+
+`my upgrade` runs steps 2 to 4 in one process, after the checks of `my config check`, so that a single one-off job (a Cloud Run job
+execution, an ECS task, a Kubernetes Job) carries the whole migration:
+
+1. `my config check`
+2. `my db upgrade -check`
+3. `my schema apply`, with `-allow-destructive` when `my upgrade` is given it
+4. `my db upgrade`
+
+It stops at the first step that fails and exits with that step's code; the later steps do not run. Each step prints a line that names it,
+such as `==> my schema apply`, and then the output of that command, so the job's log shows where it stopped. After fixing the cause, run
+`my upgrade` again: the steps that completed find nothing left to do. `-config <file>` is passed to every step.
+
+`my upgrade -dry-run` runs `my config check`, `my db upgrade -check`, and `my schema apply -dry-run`, and changes nothing: read the SQL it
+prints before the upgrade. Back up the database before `my upgrade`, as in step 1; it does not switch to the maintenance mode or start
+the server.
+
 Most releases add no data upgrade step: `my db upgrade -check` prints `ok: the database can be upgraded to this release` and, on a
 database that recorded the steps of the earlier releases, `my db upgrade` prints `ok: no data upgrade step to run`. A new database records
 every step of the release in its first `my db upgrade`, with nothing to rewrite. Run both anyway, so the procedure does not depend on reading

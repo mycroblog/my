@@ -15,7 +15,7 @@ vars:
   # TxReads*, UnitOfWorkContract, RejectsForeignTransactions), the planner (AccountSearchUsesTermIndex), the size of a
   # real database (DatabaseSizerContract), SKIP LOCKED and LISTEN/NOTIFY of the queue, the key-value store, and the
   # stream (TestPostgres* of kv/db and queue/db, every test of stream/postgres).
-  POSTGRES_CONTAINER_PACKAGES: ./internal/adapter/db/postgres/... ./internal/adapter/kv/db/ ./internal/adapter/queue/db/ ./internal/adapter/stream/postgres/
+  POSTGRES_CONTAINER_PACKAGES: ./cmd/my/ ./internal/adapter/db/postgres/... ./internal/adapter/kv/db/ ./internal/adapter/queue/db/ ./internal/adapter/stream/postgres/
   POSTGRES_CONTAINER_TESTS: ^Test(Acquire|OpenSQL|Ready|ApplySchema|TransactionsAreReadCommitted|RetriesDeadlocks|AccountRestrictionsLock|TokenGrantsLock|TxReads|UnitOfWorkContract|RejectsForeignTransactions|AccountSearchUsesTermIndex|DatabaseSizerContract|Postgres|Stream|NewRejectsBadOptions|ListenURL)
   # The AI crawlers that /robots.txt names (ADR-0057), from ai-robots-txt/ai.robots.txt (MIT). To
   # update the list, change both to a newer commit, run go:ai-crawlers, and review the diff.
@@ -142,11 +142,11 @@ tasks:
       - go build -trimpath -tags "{{.GO_TAGS}}" -ldflags "-X main.version={{.VERSION}}" -o bin/my ./cmd/my
 
   config-docs:
-    desc: Regenerate docs/reference/configuration.md and deploy/docker/example.env from the config schema (go:test fails when they are stale)
+    desc: Regenerate docs/reference/configuration.md, deploy/docker/example.env, and the settings list of the OpenTofu modules from the config schema (go:test fails when they are stale)
     sources: ["internal/platform/config/**/*.go"]
-    generates: [docs/reference/configuration.md, deploy/docker/example.env]
+    generates: [docs/reference/configuration.md, deploy/docker/example.env, deploy/opentofu/modules/internal/settings/settings.json]
     cmds:
-      - go test ./internal/platform/config -run '^Test(Reference|ExampleEnv)UpToDate$' -update
+      - go test ./internal/platform/config -run '^Test(Reference|ExampleEnv|SettingsJSON)UpToDate$' -update
 
   cli-docs:
     desc: Regenerate docs/reference/cli.md from the commands of cmd/my (go:test fails when it is stale)

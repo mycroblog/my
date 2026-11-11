@@ -52,7 +52,7 @@ Conte com o plano Launch: com o tick padrão, o compute nunca para. O plano Free
 Há duas formas, e o exemplo usa a primeira:
 
 - **Manualmente, com `db-external`.** No console do Neon, crie um projeto em uma região próxima da sua região do Cloud Run e copie as strings de conexão. A senha fica fora do estado do OpenTofu.
-- **Com [`db-neon`](../../deploy/opentofu/modules/db-neon/README.md)**, que cria o projeto e grava as URLs nos segredos para você. **A senha do banco de dados então fica no estado**, e o provider não tem manutenção: o README dele explica o que isso significa, e um comentário no bloco `db` em `main.tf` mostra a troca.
+- **Com [`db-neon`](../../deploy/opentofu/modules/internal/db-neon/README.md)**, que cria o projeto e grava as URLs nos segredos para você. **A senha do banco de dados então fica no estado**, e o provider não tem manutenção: o README dele explica o que isso significa, e um comentário no bloco `db` em `main.tf` mostra a troca.
 
 Um projeto tem duas strings de conexão, e a implantação usa cada uma onde ela cabe:
 
@@ -228,40 +228,40 @@ Para voltar depois que o schema mudou, restaure o backup: veja [Reversão](datab
 <!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## Monitoramento e alertas
 
-O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) adiciona uma verificação de disponibilidade de `/health/live`, políticas de alerta com os nomes do [runbook](alerts.md) e notificações por e-mail. Ele nunca foi aplicado, então teste-o uma vez fazendo uma verificação falhar. Ative `monitoring.googleapis.com` antes e leia no README dele quanto a verificação custa: cada execução acorda uma instância e também o banco de dados, se você a apontar para `/health/ready`, o que se soma ao [compromisso do tick](#costs).
+O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) adiciona uma verificação de disponibilidade de `/health/live`, políticas de alerta com os nomes do [runbook](alerts.md) e notificações por e-mail. Ele nunca foi aplicado, então teste-o uma vez fazendo uma verificação falhar. Ative `monitoring.googleapis.com` antes e leia no README dele quanto a verificação custa: cada execução acorda uma instância e também o banco de dados, se você a apontar para `/health/ready`, o que se soma ao [compromisso do tick](#costs).
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## Trocar um backend
 
-Substitua o bloco do módulo em `main.tf`. O módulo app recebe o que o bloco retornar, então nada mais muda. Trocar o banco de dados também significa mover os dados, já que um novo está vazio: [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/db-gcp-cloud-sql/README.md#coming-from-db-external) traz os passos. Por exemplo, um banco de dados seu:
+Substitua o bloco do módulo em `main.tf`. O módulo app recebe o que o bloco retornar, então nada mais muda. Trocar o banco de dados também significa mover os dados, já que um novo está vazio: [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/internal/db-gcp-cloud-sql/README.md#coming-from-db-external) traz os passos. Por exemplo, um banco de dados seu:
 
 ```hcl
 module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = "another-database-url"
 }
 ```
 
-Para um armazenamento fora do Google Cloud, substitua o bloco `blob` por [`blob-s3`](../../deploy/opentofu/modules/blob-s3/README.md), para qualquer serviço compatível com S3, ou [`blob-cloudflare-r2`](../../deploy/opentofu/modules/blob-cloudflare-r2/README.md).
+Para um armazenamento fora do Google Cloud, substitua o bloco `blob` por [`blob-s3`](../../deploy/opentofu/modules/internal/blob-s3/README.md), para qualquer serviço compatível com S3, ou [`blob-cloudflare-r2`](../../deploy/opentofu/modules/internal/blob-cloudflare-r2/README.md).
 
 <!-- source: when-you-need-a-network fb392704a1e7 -->
 ## Quando você precisa de uma rede
 
 Este guia não precisa de nenhuma: Neon, Cloud Tasks, Cloud Storage e Pub/Sub são todos acessados pela internet com a identidade do próprio serviço, então o Cloud Run não se conecta a nada e não há o que pagar nem o que cuidar.
 
-Você precisa de uma para colocar o Memorystore na implantação, já que ele só tem endereços privados, ou para dar ao Cloud SQL um endereço privado no lugar do público. Adicione [`network-gcp-vpc`](../../deploy/opentofu/modules/network-gcp-vpc/README.md), ou descreva uma VPC que você já tenha como um objeto do [mesmo formato](../../deploy/opentofu/README.md#the-network-on-google-cloud), e passe a mesma ao app e a cada módulo que a recebe:
+Você precisa de uma para colocar o Memorystore na implantação, já que ele só tem endereços privados, ou para dar ao Cloud SQL um endereço privado no lugar do público. Adicione [`network-gcp-vpc`](../../deploy/opentofu/modules/internal/network-gcp-vpc/README.md), ou descreva uma VPC que você já tenha como um objeto do [mesmo formato](../../deploy/opentofu/README.md#the-network-on-google-cloud), e passe a mesma ao app e a cada módulo que a recebe:
 
 ```hcl
 module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/network-gcp-vpc?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   region     = var.region
 }
 
 module "kv" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kv-gcp-memorystore?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kv-gcp-memorystore?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   region     = var.region
@@ -269,7 +269,7 @@ module "kv" {
 }
 ```
 
-Dê também ao app `network = module.network` e adicione `module.kv` aos seus `backends`. Apenas intervalos privados passam pela rede, então o serviço alcança a internet como antes, sem Cloud NAT. Um backend em endereços privados com um app em outra rede, ou em nenhuma, faz o plano falhar. Ative antes as APIs Service Networking e Network Connectivity, e a API Compute Engine. Uma rede aumenta a partida a frio de uma instância: leia [o que a rede privada acrescenta](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds).
+Dê também ao app `network = module.network` e adicione `module.kv` aos seus `backends`. Apenas intervalos privados passam pela rede, então o serviço alcança a internet como antes, sem Cloud NAT. Um backend em endereços privados com um app em outra rede, ou em nenhuma, faz o plano falhar. Ative antes as APIs Service Networking e Network Connectivity, e a API Compute Engine. Uma rede aumenta a partida a frio de uma instância: leia [o que a rede privada acrescenta](../../deploy/opentofu/modules/internal/kv-gcp-memorystore/README.md#what-the-private-network-adds).
 
 <!-- source: splitting-jobs-into-workers ed661aede0a3 -->
 ## Dividir os jobs em workers
@@ -337,7 +337,7 @@ Para usar a URL do próprio serviço ou outra coisa na frente, como uma CDN, rem
 <!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` coloca o Cloudflare na frente de `host`, com o cache ignorado para tudo, e `ingress-cloudflare-media` adiciona um host de mídia com cache ao lado de qualquer ingress. Leia antes o README de cada módulo ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). O token vai em `CLOUDFLARE_API_TOKEN`. Esses módulos só foram executados com providers simulados.
+`ingress-cloudflare-app` coloca o Cloudflare na frente de `host`, com o cache ignorado para tudo, e `ingress-cloudflare-media` adiciona um host de mídia com cache ao lado de qualquer ingress. Leia antes o README de cada módulo ([app](../../deploy/opentofu/modules/internal/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/internal/ingress-cloudflare-media/README.md)). O token vai em `CLOUDFLARE_API_TOKEN`. Esses módulos só foram executados com providers simulados.
 
 - **O seu plano decide a origem.** O Cloud Run roteia por `Host`, e o Cloudflare oferece a substituição do cabeçalho Host apenas no plano Enterprise. Em qualquer outro plano, uma origem `*.run.app` faz o plano falhar, então a origem precisa aceitar o seu host por conta própria: mantenha um `ingress-gcp-domain-mapping` desse host, fora de `backends`, e defina `origin_host = "ghs.googlehosted.com"`. Cada host precisa de um mapeamento próprio. Não foi verificado se o certificado dele é emitido e renovado atrás do proxy, então comece com `proxied = false`.
 - **Um cabeçalho fecha a origem.** `ingress-cloudflare-app` adiciona uma regra de transformação de cabeçalho de requisição, e o servidor recusa com `403` uma requisição sem o cabeçalho, exceto as verificações de integridade e os `POST`s dos próprios jobs, que verificam seus tokens. Assim, ninguém contorna o Cloudflare pela URL `run.app`, e um Cloudflare Worker de quem faz a chamada não pode escolher o endereço de cliente que os limites de taxa enxergam.

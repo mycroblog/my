@@ -102,6 +102,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runSearch(fs.Args()[1:], stdout, stderr)
 	case "serve":
 		return runServe(fs.Args()[1:], stderr)
+	case "upgrade":
+		return runUpgrade(fs.Args()[1:], stdout, stderr)
 	}
 	return 2 // every name of commands has a case
 }
@@ -110,7 +112,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 // docs/reference/cli.md lists these.
 var commands = []string{
 	"admin", "config", "db", "instance", "invite", "job", "kek", "login-provider", "maintenance", "plugin",
-	"projection", "registration", "schema", "search", "serve", "version",
+	"projection", "registration", "schema", "search", "serve", "upgrade", "version",
 }
 
 // testBuildCommands are the commands that only the test builds (build tag e2e_fakes) add, by
@@ -157,6 +159,8 @@ Commands:
   search    Rebuild, clear, and check the index of the full-text search of posts
             (my search rebuild|clear|status)
   serve     Run the server (role web, worker, or all)
+  upgrade   Run the migration of an upgrade to this release: the configuration
+            check, my db upgrade -check, my schema apply, and my db upgrade
   version   Print the version
 `)
 }

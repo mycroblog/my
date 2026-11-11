@@ -29,13 +29,13 @@ variable "mail" {
 }
 
 module "secrets" {
-  source = "../../modules/secrets-aws-secrets-manager"
+  source = "../../modules/internal/secrets-aws-secrets-manager"
 
   referenced = { database_url = "my-database-url", smtp_password = "my-smtp-password" }
 }
 
 module "kek_secrets_manager" {
-  source = "../../modules/kek-aws-secrets-manager"
+  source = "../../modules/internal/kek-aws-secrets-manager"
 
   lifecycle {
     enabled = var.kek == "secrets-manager"
@@ -43,7 +43,7 @@ module "kek_secrets_manager" {
 }
 
 module "kek_kms" {
-  source = "../../modules/kek-aws-kms"
+  source = "../../modules/internal/kek-aws-kms"
 
   lifecycle {
     enabled = var.kek == "kms"
@@ -51,27 +51,27 @@ module "kek_kms" {
 }
 
 module "db" {
-  source = "../../modules/db-external"
+  source = "../../modules/internal/db-external"
 
   url_secret_id = module.secrets.ids["database_url"]
 }
 
 module "queue" {
-  source = "../../modules/queue-db"
+  source = "../../modules/internal/queue-db"
 }
 
 module "blob" {
-  source = "../../modules/blob-aws-s3"
+  source = "../../modules/internal/blob-aws-s3"
 
   bucket_name = "b"
 }
 
 module "stream" {
-  source = "../../modules/stream-aws-sns"
+  source = "../../modules/internal/stream-aws-sns"
 }
 
 module "mail_smtp" {
-  source = "../../modules/mail-smtp"
+  source = "../../modules/internal/mail-smtp"
 
   from               = "noreply@social.example.org"
   host               = "smtp.example.org"
@@ -84,7 +84,7 @@ module "mail_smtp" {
 }
 
 module "mail_ses" {
-  source = "../../modules/mail-aws-ses"
+  source = "../../modules/internal/mail-aws-ses"
 
   from = "noreply@social.example.org"
 
@@ -105,7 +105,7 @@ locals {
 }
 
 module "ingress" {
-  source = "../../modules/ingress-aws-alb"
+  source = "../../modules/internal/ingress-aws-alb"
 
   host            = "social.example.org"
   network         = local.network
@@ -113,7 +113,7 @@ module "ingress" {
 }
 
 module "app" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   image            = "ghcr.io/mycroblog/my:0.1.0"
   host             = "social.example.org"

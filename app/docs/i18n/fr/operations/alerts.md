@@ -73,7 +73,7 @@ Avec `metrics_exporter = none`, construisez les alertes à partir de ce que Clou
 - **Base de données** : les métriques d’utilisation du disque et de connexions de Cloud SQL, ou les alertes d’utilisation de votre fournisseur de base de données.
 - **Coût** : un budget Cloud Billing avec des seuils d’alerte ([Coût et budget](#cost-and-budget)).
 
-Le module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) les crée sous forme de politiques portant les noms du tableau ci-dessous, et liste chaque alerte qu’il couvre autrement ou qu’il ne peut pas exprimer. Il n’a jamais été appliqué. Une métrique que seul le trafic produit présente des trous sur un service qui descend à zéro, de sorte qu’une alerte sur son absence se déclenche à tort ; c’est sa vérification de disponibilité qui remarque un serveur inactif mort.
+Le module [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) les crée sous forme de politiques portant les noms du tableau ci-dessous, et liste chaque alerte qu’il couvre autrement ou qu’il ne peut pas exprimer. Il n’a jamais été appliqué. Une métrique que seul le trafic produit présente des trous sur un service qui descend à zéro, de sorte qu’une alerte sur son absence se déclenche à tort ; c’est sa vérification de disponibilité qui remarque un serveur inactif mort.
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -90,7 +90,7 @@ ne sont pas écrites en EMF ; utilisez à la place les métriques de CPU et de
 - **E-mail** (`mail = ses`) : les métriques de réputation SES (taux de bounce et de plainte) dans CloudWatch.
 - **Coût** : un budget AWS Budgets avec des alertes ([Coût et budget](#cost-and-budget)).
 
-Le module [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) les crée sous forme d’alarmes portant les noms du tableau ci-dessous, avec la même liste. Il n’a jamais été appliqué.
+Le module [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) les crée sous forme d’alarmes portant les noms du tableau ci-dessous, avec la même liste. Il n’a jamais été appliqué.
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## Les alertes

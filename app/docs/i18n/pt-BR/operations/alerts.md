@@ -79,7 +79,7 @@ Com `metrics_exporter = none`, monte os alertas a partir do que o Cloud Run e o 
 - **Banco de dados**: as métricas de utilização de disco e de conexões do Cloud SQL, ou os alertas de uso do seu provedor de banco de dados.
 - **Custo**: um orçamento do Cloud Billing com limites de alerta ([Custo e orçamento](#cost-and-budget)).
 
-O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) cria esses itens como políticas com os nomes da tabela abaixo, e lista cada alerta que cobre de outra forma ou que não consegue expressar. Ele nunca foi aplicado. Uma métrica que só o tráfego produz tem lacunas em um serviço que escala a zero, então um alerta sobre a ausência dela dispara por engano; a verificação de disponibilidade é o que percebe um servidor ocioso que morreu.
+O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) cria esses itens como políticas com os nomes da tabela abaixo, e lista cada alerta que cobre de outra forma ou que não consegue expressar. Ele nunca foi aplicado. Uma métrica que só o tráfego produz tem lacunas em um serviço que escala a zero, então um alerta sobre a ausência dela dispara por engano; a verificação de disponibilidade é o que percebe um servidor ocioso que morreu.
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -96,7 +96,7 @@ não são gravadas em EMF; use no lugar delas as métricas de CPU e memória do 
 - **E-mail** (`mail = ses`): as métricas de reputação do SES (taxas de rejeição e de reclamação) no CloudWatch.
 - **Custo**: um orçamento do AWS Budgets com alertas ([Custo e orçamento](#cost-and-budget)).
 
-O módulo [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) cria esses itens como alarmes com os nomes da tabela abaixo, com a mesma lista. Ele nunca foi aplicado.
+O módulo [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) cria esses itens como alarmes com os nomes da tabela abaixo, com a mesma lista. Ele nunca foi aplicado.
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## Os alertas

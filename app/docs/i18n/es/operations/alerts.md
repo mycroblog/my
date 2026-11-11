@@ -79,7 +79,7 @@ Con `metrics_exporter = none`, construye las alertas a partir de lo que Cloud Ru
 - **Base de datos**: las métricas de utilización de disco y de conexiones de Cloud SQL, o las alertas de uso de tu proveedor de base de datos.
 - **Costo**: un presupuesto de Cloud Billing con umbrales de alerta ([Costo y presupuesto](#cost-and-budget)).
 
-El módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) las crea como políticas con los nombres de la tabla de abajo, y enumera cada alerta que cubre de otra manera o que no puede expresar. Nunca se ha aplicado. Una métrica que solo produce el tráfico tiene huecos en un servicio que escala a cero, así que una alerta por su ausencia se dispara en falso; su comprobación de disponibilidad es lo que detecta un servidor inactivo que ha caído.
+El módulo [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) las crea como políticas con los nombres de la tabla de abajo, y enumera cada alerta que cubre de otra manera o que no puede expresar. Nunca se ha aplicado. Una métrica que solo produce el tráfico tiene huecos en un servicio que escala a cero, así que una alerta por su ausencia se dispara en falso; su comprobación de disponibilidad es lo que detecta un servidor inactivo que ha caído.
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -96,7 +96,7 @@ no se escriben en EMF; usa en su lugar las métricas de CPU y de memoria del ser
 - **Correo electrónico** (`mail = ses`): las métricas de reputación de SES (tasas de rebotes y de quejas) en CloudWatch.
 - **Costos**: un presupuesto de AWS Budgets con alertas ([Costos y presupuesto](#cost-and-budget)).
 
-El módulo [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) las crea como alarmas con los nombres de la tabla de abajo, con la misma lista. Nunca se ha aplicado.
+El módulo [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) las crea como alarmas con los nombres de la tabla de abajo, con la misma lista. Nunca se ha aplicado.
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## Las alertas

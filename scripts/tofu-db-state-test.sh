@@ -34,7 +34,7 @@ fail() {
 cp -r "$root/deploy/opentofu/modules" "$tmp/modules"
 mkdir -p "$tmp/tests"
 cp -r "$root/deploy/opentofu/tests/db-no-secret-in-state" "$tmp/tests/run"
-rm -rf "$tmp/tests/run/.terraform" "$tmp"/modules/*/.terraform
+rm -rf "$tmp/tests/run/.terraform" "$tmp"/modules/internal/*/.terraform
 dir="$tmp/tests/run"
 
 python3 "$root/scripts/tofu-db-state-test.py" "$tmp/port" "$tmp/values" &

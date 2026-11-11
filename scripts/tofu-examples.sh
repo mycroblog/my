@@ -3,10 +3,12 @@
 #
 # The examples of deploy/opentofu name their modules by Git source at a release, so that they work when copied out of the
 # repository and no module changes under an operator. deploy/opentofu/MODULE_REF is that release, the one place it is kept.
+# A public module (mycroblog-*) names the internal modules by relative path, which resolves inside the same Git package.
 #
 #   scripts/tofu-examples.sh check [--release VERSION]
-#       Fails when a source in an example or a document is relative, is not pinned, or has another ref. With --release, also
-#       when a stable VERSION is not MODULE_REF; a prerelease is not checked.
+#       Fails when a source in an example or a document is relative, is not pinned, or has another ref, or when a public
+#       module names anything but an internal module by relative path. With --release, also when a stable VERSION is not
+#       MODULE_REF; a prerelease is not checked.
 #   scripts/tofu-examples.sh bump VERSION
 #       Sets MODULE_REF and every source to VERSION.
 #   scripts/tofu-examples.sh test
@@ -22,7 +24,7 @@ set -euo pipefail
 
 root="${TOFU_EXAMPLES_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 tofu_dir="$root/deploy/opentofu"
-base='git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/'
+base='git::https://github.com/mycroblog/my.git//deploy/opentofu/'
 
 usage() {
   sed -n '/^#   scripts/,/^#$/p' "$0" | sed 's/^# \{0,1\}//' >&2
@@ -31,12 +33,27 @@ usage() {
 
 # documents lists the files whose sources must follow MODULE_REF.
 documents() {
-  find "$tofu_dir/examples" "$tofu_dir/modules" -type f \( -name '*.tf' -o -name '*.md' \) -not -path '*/.terraform/*' \
-    -not -path "$tofu_dir/modules/*/*.tf"
+  find "$tofu_dir/examples" "$tofu_dir/modules" "$tofu_dir"/mycroblog-* -type f \( -name '*.tf' -o -name '*.md' \) \
+    -not -path '*/.terraform/*' -not -path "$tofu_dir/modules/*/*.tf" -not -path "$tofu_dir/mycroblog-*/*.tf"
   find "$tofu_dir" -maxdepth 1 -name '*.md'
   if [ -f "$root/docs/operations/deploy-cloud-run.md" ]; then
     echo "$root/docs/operations/deploy-cloud-run.md"
   fi
+}
+
+# sources prints the lines of FILE that set a source, comments included: a swap shown in a comment is what an operator copies.
+sources() {
+  grep -E '^[[:space:]#]*source[[:space:]]*=[[:space:]]*"' "$1" || true
+}
+
+# source_value prints the quoted value of a line from sources, or nothing for the source of a provider in required_providers.
+source_value() {
+  local value="${1#*\"}"
+  value="${value%%\"*}"
+  if [[ "$value" =~ ^[a-z0-9-]+/[a-z0-9-]+$ ]]; then
+    return 0
+  fi
+  echo "$value"
 }
 
 check() {
@@ -47,31 +64,37 @@ check() {
     return 1
   fi
   while IFS= read -r file; do
-    # Comments count: a swap shown in a comment is what an operator copies.
     while IFS= read -r line; do
-      value="${line#*\"}"
-      value="${value%%\"*}"
-      case "$value" in
-        # The source of a provider, in required_providers.
-        [a-z]*/[a-z]*) if [[ "$value" =~ ^[a-z0-9-]+/[a-z0-9-]+$ ]]; then continue; fi ;;
-      esac
+      value="$(source_value "$line")"
+      [ -n "$value" ] || continue
       found=1
       case "$value" in
         "$base"*'?ref='"$ref"'&depth=1')
           name="${value#"$base"}"
           name="${name%%\?*}"
-          if [ ! -d "$tofu_dir/modules/$name" ]; then
+          if ! [[ "$name" =~ ^(mycroblog-[a-z0-9]+|modules/internal/[a-z0-9-]+)$ ]] || [ ! -d "$tofu_dir/$name" ]; then
             echo "$file: no module named $name: $value" >&2
             status=1
           fi
           ;;
         *)
-          echo "$file: a source must be ${base}<name>?ref=$ref&depth=1, not: $value" >&2
+          echo "$file: a source must be ${base}<module>?ref=$ref&depth=1, not: $value" >&2
           status=1
           ;;
       esac
-    done < <(grep -E '^[[:space:]#]*source[[:space:]]*=[[:space:]]*"' "$file" || true)
+    done < <(sources "$file")
   done < <(documents)
+  # A public module names its internal modules by relative path, which tofu resolves inside the Git package of its ref.
+  while IFS= read -r file; do
+    while IFS= read -r line; do
+      value="$(source_value "$line")"
+      [ -n "$value" ] || continue
+      if ! [[ "$value" =~ ^\.\./modules/internal/[a-z0-9-]+$ ]] || [ ! -d "$(dirname "$file")/$value" ]; then
+        echo "$file: a public module names an internal module as ../modules/internal/<name>, not: $value" >&2
+        status=1
+      fi
+    done < <(sources "$file")
+  done < <(find "$tofu_dir" -path "$tofu_dir/mycroblog-*/*.tf" -not -path '*/.terraform/*')
   if [ -z "${found:-}" ]; then
     echo "tofu-examples: no module source found" >&2
     return 1
@@ -107,7 +130,7 @@ copy() {
   tar -C "$root/deploy" --exclude=.terraform -cf - opentofu | tar -C "$dir/deploy" -xf -
   for example in "$dir"/deploy/opentofu/examples/*/; do
     name="$(basename "$example")"
-    sed -i -E 's#git::https://github\.com/mycroblog/my\.git//deploy/opentofu/modules/([a-z0-9-]+)\?ref=[^"]*#../../modules/\1#' "$example"*.tf
+    sed -i -E 's#git::https://github\.com/mycroblog/my\.git//deploy/opentofu/([a-z0-9/-]+)\?ref=[^"]*#../../\1#' "$example"*.tf
     if [ -d "$dir/deploy/opentofu/tests/examples/$name" ]; then
       mkdir -p "${example}tests"
       cp "$dir/deploy/opentofu/tests/examples/$name/"*.tftest.hcl "${example}tests/"
@@ -171,8 +194,10 @@ git_source_test() {
     tofu -chdir="$tmp/$name" init -backend=false -input=false -lockfile=readonly > /dev/null
     tofu -chdir="$tmp/$name" validate
 
-    # What the guide tells the operator to run.
-    scripts="$tmp/$name/.terraform/modules/app/deploy/opentofu"
+    # What the guide tells the operator to run: under the block of the public module, or of the app where a platform has no
+    # public module yet.
+    scripts="$tmp/$name/.terraform/modules/mycroblog/deploy/opentofu"
+    [ -d "$scripts" ] || scripts="$tmp/$name/.terraform/modules/app/deploy/opentofu"
     code=0
     "$scripts/upgrade.sh" > /dev/null 2>&1 || code=$?
     if [ "$code" != 2 ]; then

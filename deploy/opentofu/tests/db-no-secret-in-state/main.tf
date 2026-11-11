@@ -38,7 +38,7 @@ provider "google" {
 }
 
 module "db" {
-  source = "../../modules/db-gcp-cloud-sql"
+  source = "../../modules/internal/db-gcp-cloud-sql"
 
   project_id       = "p"
   region           = "r"
@@ -52,7 +52,7 @@ resource "random_password" "elsewhere" {
 }
 
 module "secrets" {
-  source = "../../modules/secrets-gcp-secret-manager"
+  source = "../../modules/internal/secrets-gcp-secret-manager"
 
   project_id = "p"
   referenced = { written = "written-url" }

@@ -13,7 +13,7 @@ Cloudflare n’a pas une telle chaîne ; son import lit donc un jeton d’API 
 <!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## Avec les modules OpenTofu
 
-Les modules [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) et [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) définissent `billing_sources` et réalisent les parties de ce guide que l’API d’un fournisseur permet. `billing-gcp` ne fonctionne qu’avec le module d’application de Google Cloud ; sur AWS, les modules n’importent donc que les coûts d’AWS. `billing-aws` fonctionne avec les modules d’application d’AWS et avec celui de Cloud Run, où les deux peuvent figurer dans les `backends`. Aucun des deux n’a encore été appliqué sur un vrai compte.
+Les modules [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) et [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) définissent `billing_sources` et réalisent les parties de ce guide que l’API d’un fournisseur permet. `billing-gcp` ne fonctionne qu’avec le module d’application de Google Cloud ; sur AWS, les modules n’importent donc que les coûts d’AWS. `billing-aws` fonctionne avec les modules d’application d’AWS et avec celui de Cloud Run, où les deux peuvent figurer dans les `backends`. Aucun des deux n’a encore été appliqué sur un vrai compte.
 
 | Étape de ce guide | Avec les modules |
 | --- | --- |

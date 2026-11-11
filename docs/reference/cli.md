@@ -17,7 +17,7 @@ are marked below and fail with a message that names the tag. A test build adds `
 
 ## `my`
 
-Subcommands: [`admin`](#my-admin), [`config`](#my-config), [`db`](#my-db), [`instance`](#my-instance), [`invite`](#my-invite), [`job`](#my-job), [`kek`](#my-kek), [`login-provider`](#my-login-provider), [`maintenance`](#my-maintenance), [`plugin`](#my-plugin), [`projection`](#my-projection), [`registration`](#my-registration), [`schema`](#my-schema), [`search`](#my-search), [`serve`](#my-serve), [`version`](#my-version).
+Subcommands: [`admin`](#my-admin), [`config`](#my-config), [`db`](#my-db), [`instance`](#my-instance), [`invite`](#my-invite), [`job`](#my-job), [`kek`](#my-kek), [`login-provider`](#my-login-provider), [`maintenance`](#my-maintenance), [`plugin`](#my-plugin), [`projection`](#my-projection), [`registration`](#my-registration), [`schema`](#my-schema), [`search`](#my-search), [`serve`](#my-serve), [`upgrade`](#my-upgrade), [`version`](#my-version).
 
 ```text
 Usage: my <command>
@@ -54,6 +54,8 @@ Commands:
   search    Rebuild, clear, and check the index of the full-text search of posts
             (my search rebuild|clear|status)
   serve     Run the server (role web, worker, or all)
+  upgrade   Run the migration of an upgrade to this release: the configuration
+            check, my db upgrade -check, my schema apply, and my db upgrade
   version   Print the version
 ```
 
@@ -2979,6 +2981,49 @@ Vite dev server, such as http://localhost:5173, instead of the build embedded in
 text) and ar-XB (right-to-left) selectable through Accept-Language.
 The E2E of the server-rendered pages uses it.
 ```
+
+## `my upgrade`
+
+```text
+my upgrade [-dry-run] [-allow-destructive] [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-allow-destructive` | `false` | apply a plan that drops a table or a column |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-dry-run` | `false` | run the checks and print the SQL of the schema's plan, and change nothing |
+
+```text
+Usage: my upgrade [-dry-run] [-allow-destructive] [-config <file>]
+
+Runs the migration of an upgrade to this release in one process, in this
+order, and stops at the first step that fails, exiting with its code:
+
+  1. my config check
+  2. my db upgrade -check
+  3. my schema apply, with -allow-destructive when it is given
+  4. my db upgrade
+
+Each step prints a line that names it, such as "==> my db upgrade -check",
+before it starts, and then the output of that command, which ends with
+"configuration OK" or an "ok: ..." line when the step succeeds. The steps after
+a failed one do not run, so the output ends where the upgrade stopped. Back up
+the database before an upgrade, and start the new release's server once this
+exits with 0. "my serve" never runs it, and only one may run against a database
+at a time. A second run after a successful one finds nothing to apply and no
+data upgrade step to run.
+
+With -dry-run it runs steps 1 and 2 and "my schema apply -dry-run", which prints
+the SQL of the plan, and changes nothing.
+
+Flags:
+  -dry-run            run the checks and print the SQL of the plan, and change nothing
+  -allow-destructive  apply a plan that drops a table or a column
+  -config <file>      TOML config file (default: $MY_CONFIG)
+```
+
+Documentation: [docs/operations/database.md](../operations/database.md)
 
 ## `my version`
 

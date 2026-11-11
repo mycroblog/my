@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Copy to terraform.tfvars. Nothing here has been applied: read deploy/opentofu/modules/app-aws-ecs/README.md.
+# Copy to terraform.tfvars. Nothing here has been applied: read deploy/opentofu/modules/internal/app-aws-ecs/README.md.
 
 host            = "social.example.org"
 certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000"
