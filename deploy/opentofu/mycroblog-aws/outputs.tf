@@ -60,15 +60,10 @@ output "console" {
   value       = module.app.console
 }
 
-output "upgrade" {
-  description = "What upgrade.sh takes: --platform aws-ecs, --region, and --name, and the services it moves after the migration task."
+output "version" {
+  description = "The version applied, and the image that the service, the workers, and the one-off tasks run."
   value = {
-    platform                  = "aws-ecs"
-    region                    = local.region
-    name                      = var.name
-    cluster_name              = module.app.cluster_name
-    migration_task_definition = module.app.migration_task_definition
-    service_name              = module.app.service_name
-    worker_services           = module.app.worker_services
+    version = local.version
+    image   = module.app.images.service
   }
 }

@@ -11,11 +11,6 @@ variable "host" {
   type        = string
 }
 
-variable "image" {
-  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>. After that the upgrade script changes it."
-  type        = string
-}
-
 variable "availability_zones" {
   description = "Zones of the network's subnets, at least two, which the load balancer needs."
   type        = list(string)
@@ -83,9 +78,9 @@ output "domain_name" {
   value       = module.mycroblog.domain_name
 }
 
-output "upgrade" {
-  description = "What upgrade.sh takes."
-  value       = module.mycroblog.upgrade
+output "version" {
+  description = "The version applied, and the image the services run."
+  value       = module.mycroblog.version
 }
 
 output "console" {

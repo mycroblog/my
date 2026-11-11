@@ -133,7 +133,6 @@ mock_provider "cloudflare" {
 
 variables {
   host    = "social.example.org"
-  image   = "ghcr.io/mycroblog/my:0.1.0"
   network = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
   ingress = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc" }
   media   = { bucket_name = "social-example-org-media" }
@@ -519,7 +518,7 @@ run "workers_reach_the_service_and_the_queue" {
   }
 
   assert {
-    condition     = module.app.worker_services == { delivery = "my-delivery" } && output.upgrade.worker_services == { delivery = "my-delivery" }
+    condition     = module.app.worker_services == { delivery = "my-delivery" }
     error_message = "one workers value must build the worker's service"
   }
 }

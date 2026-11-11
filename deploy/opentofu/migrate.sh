@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Runs the migration of an upgrade: `my upgrade` as an execution of the migration job, which already has the new image, and
-# waits for it. A public module runs it from an apply, before the workers and the service take the new image, on the machine
-# that applies: it exits non-zero when the migration fails, which stops the apply there and leaves the step to run again on
-# the next apply of the same version.
+# Runs the migration of an upgrade: `my upgrade` as one run of the migration job or task definition, which already has the
+# new image, and waits for it. A public module runs it from an apply, before the workers and the service take the new image,
+# on the machine that applies: it exits non-zero when the migration fails, which stops the apply there and leaves the step to
+# run again on the next apply of the same version.
 #
 #   deploy/opentofu/migrate.sh --version VERSION [--allow-destructive-for VERSION] < migration.json
 #
-# Standard input describes the migration job in the shape of the console output of an app module, without a service
-# (console.sh, which runs the command). `my upgrade` gets -allow-destructive only when --allow-destructive-for names the
-# version being applied, so that a value left in the configuration lets no later release drop data.
+# Standard input describes the migration in the shape of the console output of an app module, without a service (console.sh,
+# which runs the command). `my upgrade` gets -allow-destructive only when --allow-destructive-for names the version being
+# applied, so that a value left in the configuration lets no later release drop data.
 #
-# An interrupted apply leaves its execution running on the platform, and only one migration may run at a time: the script
-# first waits for any execution of the job that has not ended. Each platform is a function wait_<platform> below.
+# An interrupted apply leaves its run going on the platform, and only one migration may run at a time: the script first waits
+# for any run of the migration that has not ended. Each platform is a function wait_<platform> below, and needs the
+# platform's CLI (gcloud or aws) and jq where the apply runs.
 set -euo pipefail
 
 usage() {
@@ -51,10 +52,35 @@ wait_gcp_cloud_run() {
   done
 }
 
+# wait_aws_ecs MIGRATION waits until no task of the migration's family is running. The family runs nothing but the migration,
+# and a task that is still starting counts too, by its desired status.
+wait_aws_ecs() {
+  local region cluster family running waited=0
+  region="$(jq -er .region <<< "$1")" || return 1
+  cluster="$(jq -er .cluster <<< "$1")" || return 1
+  family="$(jq -er .task_definition <<< "$1")" || return 1
+  # An ARN, arn:aws:ecs:<region>:<account>:task-definition/<family>:<revision>, or the family alone.
+  family="${family##*/}"
+  family="${family%%:*}"
+  while :; do
+    running="$(aws ecs list-tasks --cluster "$cluster" --family "$family" --desired-status RUNNING --region "$region" \
+      --query 'taskArns[]' --output text)" || return 1
+    if [ -z "$running" ] || [ "$running" = None ]; then
+      return 0
+    fi
+    if [ "$waited" = 0 ]; then
+      echo "migrate.sh: waiting for $(tr -s '\t ' '\n' <<< "$running" | sed 's#.*/##' | paste -sd' ' -) of $family, which an earlier apply started, to end"
+      waited=1
+    fi
+    sleep "${MIGRATE_POLL_SECONDS:-10}"
+  done
+}
+
 migration="$(cat)"
 platform="$(jq -er .platform <<< "$migration")" || usage
 case "$platform" in
   gcp-cloud-run) wait_gcp_cloud_run "$migration" ;;
+  aws-ecs) wait_aws_ecs "$migration" ;;
   *)
     echo "migrate.sh: this script does not know the platform $platform" >&2
     exit 1

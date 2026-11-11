@@ -11,9 +11,8 @@ deploy/opentofu/
   mycroblog-gcp/                 the public module for Google Cloud
   mycroblog-aws/                 the public module for AWS, never applied: see "AWS" below
   examples/gcp-cloud-run-neon/   the google provider and one block of mycroblog-gcp, to copy
-  migrate.sh                     the migration of an upgrade, which an apply of mycroblog-gcp runs
-  console.sh                     runs one my command through the console job
-  upgrade.sh                     the upgrade of mycroblog-aws: migration job first, then the workers, then the service
+  migrate.sh                     the migration of an upgrade, which an apply of either public module runs
+  console.sh                     runs one my command through the console job or task definition
   examples/aws-ecs-neon/         the aws provider and one block of mycroblog-aws, never applied
   modules/internal/              the modules the public modules compose, with no promise of compatibility
 ```
@@ -172,8 +171,7 @@ execute the job and read its logs. The first apply runs the migration too, befor
 
 ## The scripts
 
-[`upgrade.sh`](upgrade.sh) upgrades the AWS example, whose modules leave the image to it: the migration job first, then each
-worker, then the service, and it stops at the first step that fails.
+[`migrate.sh`](migrate.sh) is what an apply runs for an upgrade, as [Upgrading](#upgrading) says; nothing else calls it.
 
 [`console.sh`](console.sh) runs one `my` command through the console job. It reads the output `console` on standard input and
 takes the command as its arguments, waits for it, prints its output, and exits with its exit code:
@@ -201,7 +199,6 @@ module "mycroblog" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-aws?ref=v0.1.0&depth=1"
 
   host       = "social.example.org"
-  image      = "ghcr.io/mycroblog/my:0.1.0"
   network    = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
   ingress    = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000" }
   media      = { bucket_name = "social-example-org-media" }
@@ -210,7 +207,8 @@ module "mycroblog" {
 }
 ```
 
-`examples/aws-ecs-neon` is this block with its variables, to copy with its lock file. The module takes the region of the `aws`
+Keep `ref` at the release you deploy: the image defaults to the same release, as in `mycroblog-gcp`, and the sections `image`
+and `upgrade` work as there. `examples/aws-ecs-neon` is this block with its variables, to copy with its lock file. The module takes the region of the `aws`
 provider and declares `random`, `archive`, and `cloudflare` itself. It uses no provider alias, so the certificate that
 CloudFront needs in `us-east-1` comes in as an ARN, created by hand in AWS Certificate Manager like the load balancer's.
 
@@ -261,27 +259,41 @@ There is no `queue` section: the tasks stay up, so they take the jobs from the d
 | `kek` | Where the KEK is, and with `secrets-manager` the command that copies it |
 | `domain_name` | What `host` points at: the distribution with `cloudfront`, the load balancer otherwise |
 | `console` | What `console.sh` reads, or null while `console_enabled` is off |
-| `upgrade` | The `region` and `name` that `upgrade.sh --platform aws-ecs` takes, and the services it moves |
+| `version` | The `version` applied, and the `image` of the service's task definition |
 
 ### The first deployment on AWS
 
 `/readyz` fails until the schema exists, so the schema comes first. Create the secrets, fill the ones that `secrets_to_fill`
-lists, create the migration's task definition, run the migration, then apply everything:
+lists, then apply everything:
 
 ```sh
 tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secrets_manager
 tofu output secrets_to_fill   # run each command with its value
-tofu apply -target='module.mycroblog.module.app.aws_ecs_task_definition.task["migrate"]'
-
-SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
-"$SCRIPTS/upgrade.sh" --platform aws-ecs --region ap-northeast-1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
-
 tofu apply
 tofu output dns_records       # add each at your DNS provider
 ```
 
-`upgrade.sh --platform aws-ecs` upgrades later, as on Google Cloud, and `console.sh` runs a command through the console's task
-definition, whose output stays in CloudWatch Logs.
+The second apply creates the migration's task definition with what it depends on, runs `my upgrade` as one task of it through
+[`migrate.sh`](migrate.sh), and creates the services only once it succeeded. If the migration fails, often for a secret without
+a value, fix the cause and apply again. `console.sh` runs a command through the console's task definition, whose output stays
+in CloudWatch Logs.
+
+### Upgrading on AWS
+
+An apply of another image is an upgrade, in the order of [Upgrading](#upgrading):
+
+1. Every task definition gets a new revision with the image. A revision changes nothing that runs until a service takes it.
+2. `migrate.sh` waits for any task of `<name>-migrate` that an interrupted apply left running, then runs `my upgrade` as one
+   task of the new revision and waits for it, with `-allow-destructive` only when `upgrade.allow_destructive_for` names the
+   version being applied. It exits non-zero when the task does, and the apply stops there, with every service on its revision.
+3. Each worker's service takes its new revision, then the default service. The apply waits for each to settle: new tasks must
+   start, and on the default service pass the load balancer's check, before the old ones leave, and the deployment circuit
+   breaker takes a revision whose tasks do not start back to the one before.
+
+The next apply of the same image runs a failed migration again; an apply of the same image runs nothing. The script runs
+where you apply, so that machine, or the CI job that applies, needs the `aws` CLI, `jq`, and credentials that may run the task
+and read its logs: `ecs:RunTask`, `ecs:DescribeTasks`, `ecs:ListTasks`, `iam:PassRole` on the task's two roles, and
+`logs:FilterLogEvents`, beside what the apply itself needs. Back up the database first, as on Google Cloud.
 
 ### What it costs on AWS
 

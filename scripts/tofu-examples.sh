@@ -200,12 +200,6 @@ git_source_test() {
     # public module yet.
     scripts="$tmp/$name/.terraform/modules/mycroblog/deploy/opentofu"
     [ -d "$scripts" ] || scripts="$tmp/$name/.terraform/modules/app/deploy/opentofu"
-    code=0
-    "$scripts/upgrade.sh" > /dev/null 2>&1 || code=$?
-    if [ "$code" != 2 ]; then
-      echo "tofu-examples: $scripts/upgrade.sh without arguments exited $code, want its usage" >&2
-      return 1
-    fi
     # What an apply runs from the same place, by the path of the public module.
     code=0
     "$scripts/migrate.sh" < /dev/null > /dev/null 2>&1 || code=$?

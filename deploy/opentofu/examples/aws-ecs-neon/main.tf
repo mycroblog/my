@@ -23,8 +23,7 @@ provider "aws" {
 module "mycroblog" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-aws?ref=v0.1.0&depth=1"
 
-  host  = var.host
-  image = var.image
+  host = var.host
   # How the tasks reach the internet has no default: both ways bill by the hour.
   network = { egress = var.egress, availability_zones = var.availability_zones }
   ingress = { certificate_arn = var.certificate_arn, route53_zone_id = var.route53_zone_id }
@@ -37,6 +36,11 @@ module "mycroblog" {
 
   console_enabled = var.console_enabled
 
+  # The image is the release in ref, so raising ref upgrades: the apply runs the migration, then moves the services. To pin
+  # the image by its digest, from the release notes:
+  #
+  #   image = { digest = "sha256:..." }
+  #
   # The recommended setup is the default of every section. To put CloudFront in front of the load balancer, with /media/ cached
   # at its edges, with a certificate for host in us-east-1:
   #

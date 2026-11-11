@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/migrate.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh,
+# Tests deploy/opentofu/migrate.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh,
 # scripts/tofu-backend-fields-check.sh, scripts/tofu-workers-check.sh, and scripts/tofu-coverage.sh, the first ones against a gcloud
 # and an aws that record their calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows
 # nothing about Google Cloud or AWS themselves.
@@ -50,12 +50,17 @@ if [ -n "${FAIL_ON:-}" ]; then
   case "$*" in *"$FAIL_ON"*) exit "${FAIL_CODE:-1}" ;; esac
 fi
 case "$*" in
-  "ecs list-services"*) echo "${ECS_SERVICES:-arn:aws:ecs:r:1:service/my/my}" ;;
-  "ecs describe-services"*"taskDefinition"*) echo "arn:service:7" ;;
-  "ecs describe-services"*"deployments"*)
-    state="${ROLLOUT:-COMPLETED}"
-    echo "[{\"taskDefinition\":\"arn:new\",\"rolloutState\":\"$state\"}]"
+  # The tasks of the migration still running: two for the first $RUNNING_POLLS reads, then none, which the CLI prints as None.
+  "ecs list-tasks"*"--desired-status RUNNING"*)
+    polls="$(cat "$CALLS.polls" 2> /dev/null || echo 0)"
+    if [ "$polls" -lt "${RUNNING_POLLS:-0}" ]; then
+      printf 'arn:aws:ecs:r:1:task/my/t0\tarn:aws:ecs:r:1:task/my/t1\n'
+    else
+      echo None
+    fi
+    echo "$((polls + 1))" > "$CALLS.polls"
     ;;
+  "ecs describe-services"*"taskDefinition"*) echo "arn:service:7" ;;
   "ecs describe-task-definition"*"--include TAGS"*)
     echo '{"taskDefinition":{"family":"f","revision":7,"status":"ACTIVE","taskDefinitionArn":"arn:old","containerDefinitions":[{"name":"my","image":"image:old","environment":[{"name":"MY_HOST","value":"h"}]}]},"tags":[]}'
     ;;
@@ -72,82 +77,11 @@ case "$*" in
     echo "${TASK:-$default_task}"
     ;;
   "logs filter-log-events"*) echo "${ECS_LOG:-[\"ok\"]}" ;;
-  "ssm get-parameter"*) echo '{"awsvpcConfiguration":{"subnets":["s"]}}' ;;
 esac
 exit 0
 EOF
 chmod +x "$tmp/bin/aws"
-export PATH="$tmp/bin:$PATH" CALLS="$tmp/calls" CONSOLE_LOG_WAIT_SECONDS=0 CONSOLE_POLL_SECONDS=0 UPGRADE_POLL_SECONDS=0 \
-  MIGRATE_POLL_SECONDS=0
-
-upgrade() {
-  : > "$CALLS"
-  "$root/deploy/opentofu/upgrade.sh" --project p --region r --image image:new "$@" > "$tmp/out" 2>&1
-}
-
-# The verbs of the recorded calls, in order, without the flags that every call has.
-steps() {
-  grep -v '^run services list' "$CALLS" | sed -E 's/ --project=p//; s/ --region=r//; s/ --quiet//; s/ --wait//; s/run jobs (execute|update) my-migrate/job \1/; s/run services update my/service update/'
-}
-
-# upgrade: the order, and the service last.
-upgrade
-want='job update --image=image:new
-job execute --args=config,check
-job execute --args=db,upgrade,-check
-job execute --args=schema,apply
-job execute --args=db,upgrade
-service update --image=image:new'
-[ "$(steps)" = "$want" ] || fail "upgrade ran: $(steps)"
-
-# upgrade: each step that fails stops everything after it, and the service never changes.
-for failing in 'args=config' 'args=db,upgrade,-check' 'args=schema,apply' 'args=db,upgrade --wait'; do
-  if FAIL_ON="$failing" upgrade; then
-    fail "upgrade succeeded although '$failing' failed"
-  fi
-  if grep -q 'services update' "$CALLS"; then
-    fail "the service changed although '$failing' failed"
-  fi
-done
-
-# upgrade: the options.
-upgrade --migrate-only
-if grep -q 'services update' "$CALLS"; then fail "--migrate-only changed the service"; fi
-upgrade --plan
-grep -q -- '--args=schema,apply,-dry-run' "$CALLS" || fail "--plan did not run the dry run"
-if grep -qE 'args=schema,apply --|args=db,upgrade --|services update' "$CALLS"; then fail "--plan changed something"; fi
-upgrade --allow-destructive
-grep -q -- '--args=schema,apply,-allow-destructive' "$CALLS" || fail "--allow-destructive was not passed"
-upgrade --maintenance
-[ "$(grep -v '^run services list' "$CALLS" | head -n 1 | grep -c 'MY_MAINTENANCE=true')" = 1 ] || fail "--maintenance did not come first"
-tail -n 1 "$CALLS" | grep -q -- '--remove-env-vars=MY_MAINTENANCE' || fail "--maintenance did not end with the new revision"
-if "$root/deploy/opentofu/upgrade.sh" --project p > /dev/null 2>&1; then fail "upgrade.sh without --image succeeded"; fi
-
-# upgrade with workers: each moves after the migration and before the default, and only then.
-export WORKER_SERVICES='my-delivery my-email'
-upgrade
-want='job update --image=image:new
-job execute --args=config,check
-job execute --args=db,upgrade,-check
-job execute --args=schema,apply
-job execute --args=db,upgrade
-service update-delivery --image=image:new
-service update-email --image=image:new
-service update --image=image:new'
-[ "$(steps)" = "$want" ] || fail "upgrade with workers ran: $(steps)"
-grep -qF -- '--filter=metadata.labels.my-worker-of=my' "$CALLS" || fail "upgrade did not find the workers by their label: $(cat "$CALLS")"
-if FAIL_ON='args=schema,apply' upgrade; then fail "upgrade with workers went on after a step failed"; fi
-if grep -q 'services update' "$CALLS"; then fail "a worker moved before the migration ended"; fi
-if FAIL_ON='services update my-email' upgrade; then fail "upgrade went on after a worker failed"; fi
-if grep -q 'services update my ' "$CALLS"; then fail "the default moved although a worker failed"; fi
-if FAIL_ON='services list' upgrade; then fail "upgrade went on although it could not find the workers"; fi
-if grep -q 'services update' "$CALLS"; then fail "a service moved although the workers could not be found"; fi
-upgrade --maintenance
-grep -q 'services update my-delivery .*MY_MAINTENANCE=true' "$CALLS" || fail "--maintenance left a worker running: $(cat "$CALLS")"
-grep -q 'services update my-delivery .*--remove-env-vars=MY_MAINTENANCE' "$CALLS" || fail "--maintenance left a worker in the mode: $(cat "$CALLS")"
-upgrade --migrate-only
-if grep -q 'services update' "$CALLS"; then fail "--migrate-only moved a worker"; fi
-unset WORKER_SERVICES
+export PATH="$tmp/bin:$PATH" CALLS="$tmp/calls" CONSOLE_LOG_WAIT_SECONDS=0 CONSOLE_POLL_SECONDS=0 MIGRATE_POLL_SECONDS=0
 
 CONSOLE='{"platform":"gcp-cloud-run","project":"p","region":"r","job":"my-console","service":"my"}'
 
@@ -278,52 +212,50 @@ STARTED='{"tasks":[],"failures":[{"reason":"MISSING"}]}' ecs_console version || 
 [ "$code" = 1 ] || fail "ecs console exited $code on a task that did not start, want 1"
 grep -q 'MISSING' "$tmp/err" || fail "ecs console did not say why the task did not start: $(cat "$tmp/err")"
 
-# upgrade on ECS: the same order, the migration first, and the parameter that apply reads last of all.
-ecs_upgrade() {
+# migrate on ECS: my upgrade as one task of the revision that the apply made, which keeps its image, and no service is read.
+ECS_MIGRATION='{"platform":"aws-ecs","region":"r","cluster":"my","task_definition":"arn:aws:ecs:r:1:task-definition/my-migrate:4","container":"my","network":"{\"awsvpcConfiguration\":{\"subnets\":[\"s\"]}}","log_group":"/ecs/my","log_prefix":"migrate"}'
+
+ecs_migrate() {
   : > "$CALLS"
-  "$root/deploy/opentofu/upgrade.sh" --platform aws-ecs --region r --image image:new "$@" > "$tmp/out" 2>&1
+  rm -f "$CALLS.polls"
+  local code=0
+  "$root/deploy/opentofu/migrate.sh" "$@" <<< "$ECS_MIGRATION" > "$tmp/out" 2>&1 || code=$?
+  return "$code"
 }
 
-ecs_steps() {
-  grep -E '^ecs (run-task|register-task-definition|update-service)|^ssm put-parameter' "$CALLS" | sed -E 's/^ecs run-task .*"command":(\[[^]]*\]).*/task \1/; s/^ecs register-task-definition .*"image":"([^"]*)".*/register \1/; s/^ecs update-service .*--task-definition ([^ ]*).*/update \1/; s/^ssm put-parameter --name ([^ ]*) --value ([^ ]*).*/parameter \1 \2/'
-}
+ecs_migrate --version 0.2.0 --allow-destructive-for '' || fail "ecs migrate failed: $(cat "$tmp/out")"
+grep -qF -- 'ecs run-task --cluster my --task-definition arn:aws:ecs:r:1:task-definition/my-migrate:4 ' "$CALLS" || fail "ecs migrate did not run the revision of the apply: $(cat "$CALLS")"
+grep -qF -- '"command":["upgrade"]' "$CALLS" || fail "ecs migrate did not run my upgrade: $(cat "$CALLS")"
+if grep -q 'register-task-definition\|describe-services' "$CALLS"; then fail "ecs migrate changed the image or read a service: $(cat "$CALLS")"; fi
+grep -qx 'ecs list-tasks --cluster my --family my-migrate --desired-status RUNNING --region r --query taskArns\[\] --output text' "$CALLS" || fail "ecs migrate did not look for a running task of the family: $(cat "$CALLS")"
 
-JOB_IMAGE=image:old ecs_upgrade || fail "ecs upgrade failed: $(cat "$tmp/out")"
-want='register image:new
-task ["config","check"]
-task ["db","upgrade","-check"]
-task ["schema","apply"]
-task ["db","upgrade"]
-register image:new
-update arn:new
-parameter /my/my/image image:new'
-[ "$(ecs_steps)" = "$want" ] || fail "ecs upgrade ran: $(ecs_steps)"
-if TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":1}]}' ecs_upgrade; then fail "ecs upgrade went on after a step failed"; fi
-if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "the service changed although a step failed on ECS"; fi
-if ROLLOUT=FAILED ecs_upgrade; then fail "ecs upgrade passed although the deployment went back"; fi
-if grep -q 'put-parameter' "$CALLS"; then fail "apply would follow an image that the service went back from"; fi
-ecs_upgrade --migrate-only
-if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "--migrate-only changed the service on ECS"; fi
-grep -q 'ssm get-parameter --name /my/my/network' "$CALLS" || fail "--migrate-only must find its network without the service: $(cat "$CALLS")"
-ecs_upgrade --plan
-grep -qF '"command":["schema","apply","-dry-run"]' "$CALLS" || fail "--plan did not run the dry run on ECS"
-if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "--plan changed the service on ECS"; fi
-ecs_upgrade --maintenance
-grep -v '^ecs list-services' "$CALLS" | head -n 2 | grep -q 'register-task-definition .*"MY_MAINTENANCE"' || fail "--maintenance did not come first on ECS: $(head -n 3 "$CALLS")"
-grep 'register-task-definition' "$CALLS" | tail -n 1 | grep -q 'MY_MAINTENANCE' && fail "--maintenance did not end with the new image on ECS: $(cat "$CALLS")"
+# migrate on ECS: it waits for the tasks that an interrupted apply left running, and only then starts its own.
+RUNNING_POLLS=2 ecs_migrate --version 0.2.0 || fail "ecs migrate failed after waiting: $(cat "$tmp/out")"
+[ "$(grep -c '^ecs list-tasks' "$CALLS")" = 3 ] || fail "ecs migrate did not wait until no task ran: $(cat "$CALLS")"
+first_run="$(grep -n '^ecs run-task' "$CALLS" | head -n 1 | cut -d: -f1)"
+last_wait="$(grep -n '^ecs list-tasks' "$CALLS" | tail -n 1 | cut -d: -f1)"
+[ "$last_wait" -lt "$first_run" ] || fail "ecs migrate started a task while another ran: $(cat "$CALLS")"
+grep -q 'waiting for t0 t1 of my-migrate' "$tmp/out" || fail "ecs migrate did not say what it waits for: $(cat "$tmp/out")"
+if FAIL_ON='ecs list-tasks' ecs_migrate --version 0.2.0; then fail "ecs migrate went on although it could not see the running tasks"; fi
+if grep -q '^ecs run-task' "$CALLS"; then fail "ecs migrate started a task without knowing what runs"; fi
 
-# upgrade on ECS with workers: every service in the cluster moves after the migration, the default last, and the parameter after it.
-export ECS_SERVICES='arn:aws:ecs:r:1:service/my/my arn:aws:ecs:r:1:service/my/my-delivery'
-JOB_IMAGE=image:old ecs_upgrade || fail "ecs upgrade with workers failed: $(cat "$tmp/out")"
-grep -E '^ecs update-service' "$CALLS" | sed -E 's/.*--service ([^ ]*).*/\1/' | paste -sd' ' - | grep -qx 'my-delivery my' || fail "ecs upgrade moved the services in the wrong order: $(cat "$CALLS")"
-tail -n 1 "$CALLS" | grep -q 'ssm put-parameter --name /my/my/image' || fail "the parameter that apply reads must come last: $(tail -n 2 "$CALLS")"
-if ROLLOUT=FAILED ecs_upgrade; then fail "ecs upgrade passed although a worker went back"; fi
-if grep -q 'update-service --cluster my --service my \|put-parameter' "$CALLS"; then fail "the default moved although a worker went back"; fi
-if TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":1}]}' ecs_upgrade; then fail "ecs upgrade with workers went on after a step failed"; fi
-if grep -q 'update-service' "$CALLS"; then fail "a worker moved although a step failed on ECS"; fi
-unset ECS_SERVICES
+# migrate on ECS: -allow-destructive only for the version named.
+ecs_migrate --version 0.3.0 --allow-destructive-for 0.3.0 || fail "ecs migrate failed: $(cat "$tmp/out")"
+grep -qF -- '"command":["upgrade","-allow-destructive"]' "$CALLS" || fail "ecs migrate did not pass -allow-destructive for the named version: $(cat "$CALLS")"
+ecs_migrate --version 0.4.0 --allow-destructive-for 0.3.0 || fail "ecs migrate failed: $(cat "$tmp/out")"
+if grep -q -- '-allow-destructive' "$CALLS"; then fail "ecs migrate passed -allow-destructive for another version: $(cat "$CALLS")"; fi
 
-if "$root/deploy/opentofu/upgrade.sh" --platform elsewhere --region r --image i > /dev/null 2>&1; then fail "upgrade.sh took an unknown platform"; fi
+# migrate on ECS: a task that fails fails it, with the command's exit code, so that the apply stops before the services.
+code=0
+TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":3}]}' ecs_migrate --version 0.2.0 || code=$?
+[ "$code" = 3 ] || fail "ecs migrate exited $code on a failed migration, want the command's 3"
+grep -q 'apply again with the same version' "$tmp/out" || fail "ecs migrate did not say what to do: $(cat "$tmp/out")"
+code=0
+TASK='{"lastStatus":"STOPPED","stoppedReason":"CannotPullContainerError","containers":[{"name":"my"}]}' ecs_migrate --version 0.2.0 || code=$?
+[ "$code" = 1 ] || fail "ecs migrate exited $code on a task that could not start, want 1"
+code=0
+STARTED='{"tasks":[],"failures":[{"reason":"MISSING"}]}' ecs_migrate --version 0.2.0 || code=$?
+[ "$code" = 1 ] || fail "ecs migrate exited $code on a task that did not start, want 1"
 
 # tofu-env-check: a setting of the reference passes, its _FILE form only where the reference has it.
 cat > "$tmp/reference.md" << 'EOF'

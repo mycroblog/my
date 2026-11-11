@@ -46,6 +46,12 @@ data "aws_region" "current" {}
 locals {
   region = data.aws_region.current.region
 
+  # The release of this module, which MODULE_REF beside it names at the tag of a stable release, as v0.2.0, and the image of
+  # the same version by default.
+  module_release = trimprefix(trimspace(file("${path.module}/../MODULE_REF")), "v")
+  version        = coalesce(var.image.version, local.module_release)
+  image          = "${var.image.repository}:${local.version}${var.image.digest == null ? "" : "@${var.image.digest}"}"
+
   # Every secret of the deployment, named from var.name.
   secret_ids = {
     kek                     = "${var.name}-kek"
@@ -536,8 +542,14 @@ locals {
 module "app" {
   source = "../modules/internal/app-aws-ecs"
 
-  name             = var.name
-  image            = var.image
+  name  = var.name
+  image = local.image
+  # migrate.sh at the same release, which runs my upgrade with a new image before the workers and the service take it.
+  migration = {
+    script                = abspath("${path.module}/../migrate.sh")
+    version               = local.version
+    allow_destructive_for = var.upgrade.allow_destructive_for
+  }
   architecture     = var.architecture
   host             = var.host
   network          = local.network

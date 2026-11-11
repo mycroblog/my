@@ -99,7 +99,7 @@ locals {
   task_subnet_ids  = var.assign_public_ip ? var.network.public_subnet_ids : var.network.private_subnet_ids
   private_networks = distinct([for b in var.backends : b.private_network if b.private_network != null])
 
-  # upgrade.sh and console.sh read this to start a one-off task, the first time before the service exists.
+  # What migrate.sh and console.sh start a one-off task in, the first time before the service exists.
   network = {
     awsvpcConfiguration = {
       subnets        = local.task_subnet_ids
@@ -109,8 +109,8 @@ locals {
   }
 
   # The same image with other settings: one definition makes every task definition, as one block makes the jobs on Cloud Run.
-  # The family of each is what upgrade.sh and console.sh name, so do not change one here without them. A one-off task always
-  # gets its command from them; "version" is there so that a task started by hand does nothing.
+  # A one-off task always gets its command from migrate.sh or console.sh; "version" is there so that a task started by hand
+  # does nothing. migrate.sh waits for a running task of the migration's family, which nothing else starts.
   long_running = {
     server = {
       family  = var.name
@@ -415,27 +415,6 @@ resource "aws_vpc_security_group_egress_rule" "out" {
   cidr_ipv6         = each.value.cidr_ipv6
 }
 
-# Where the running image lives, since upgrade.sh changes it and apply must not move it back. An ECS task definition is an
-# immutable revision that holds the image and every setting together, so ignore_changes there would also stop settings from
-# reaching the service. Instead upgrade.sh writes this parameter, a refresh reads it, and the task definitions below take it.
-resource "aws_ssm_parameter" "image" {
-  name           = "/my/${var.name}/image"
-  description    = "Image of the service, which upgrade.sh writes."
-  type           = "String"
-  insecure_value = var.image
-
-  lifecycle {
-    ignore_changes = [insecure_value]
-  }
-}
-
-resource "aws_ssm_parameter" "network" {
-  name           = "/my/${var.name}/network"
-  description    = "Network of the one-off tasks, which upgrade.sh reads."
-  type           = "String"
-  insecure_value = jsonencode(local.network)
-}
-
 resource "aws_ecs_cluster" "this" {
   name = var.name
 }
@@ -451,8 +430,8 @@ resource "aws_ecs_task_definition" "task" {
   execution_role_arn       = aws_iam_role.execution.arn
   task_role_arn            = aws_iam_role.task.arn
 
-  # upgrade.sh and console.sh register revisions of their own. With this, a refresh reads the latest revision of the family
-  # rather than the one apply made, so one that only took the image of the parameter above shows no change.
+  # console.sh registers revisions of the console's family, with the image of the service. With this, a refresh reads the
+  # latest revision of the family rather than the one apply made, and the next apply gives it back the image of the input.
   track_latest = true
   # A deregistered revision cannot be rolled back to. The console's stay out: nothing extra stays around while it is off.
   skip_destroy = contains(keys(local.one_off), each.key) == false
@@ -465,7 +444,7 @@ resource "aws_ecs_task_definition" "task" {
   container_definitions = jsonencode([merge(
     {
       name      = local.container_name
-      image     = aws_ssm_parameter.image.insecure_value
+      image     = var.image
       essential = true
       # The server's own shutdown takes under 30 seconds; a task gets 120 at most.
       stopTimeout = 60
@@ -494,7 +473,6 @@ resource "aws_ecs_task_definition" "task" {
     aws_ecs_cluster.this,
     aws_iam_role_policy.execution,
     aws_iam_role_policy.task,
-    aws_ssm_parameter.network,
     aws_vpc_security_group_egress_rule.out,
   ]
 }
@@ -512,10 +490,12 @@ resource "aws_ecs_service" "server" {
   health_check_grace_period_seconds  = local.has_load_balancer ? var.health_check_grace_seconds : null
 
   # What holds a bad image back: a deployment whose tasks do not start, or fail the load balancer's health check, goes back.
+  # The apply waits for the service to settle, on the new revision or back on the old one.
   deployment_circuit_breaker {
     enable   = true
     rollback = true
   }
+  wait_for_steady_state = true
 
   network_configuration {
     subnets          = local.task_subnet_ids
@@ -532,11 +512,16 @@ resource "aws_ecs_service" "server" {
     }
   }
 
-  depends_on = [aws_vpc_security_group_ingress_rule.from_load_balancer, aws_vpc_security_group_egress_rule.out]
+  depends_on = [
+    aws_vpc_security_group_ingress_rule.from_load_balancer,
+    aws_vpc_security_group_egress_rule.out,
+    # A new image reaches the workers before the service, which enqueues for them and takes the traffic.
+    aws_ecs_service.worker,
+  ]
 }
 
 # A service for each worker, with everything of the default service but what local.workers says, no load balancer, and a group
-# that admits nothing. upgrade.sh finds these in the cluster, and moves them with the default after the migration.
+# that admits nothing. A new image reaches them after the migration and before the default service.
 resource "aws_ecs_service" "worker" {
   for_each = local.workers
 
@@ -554,6 +539,7 @@ resource "aws_ecs_service" "worker" {
     enable   = true
     rollback = true
   }
+  wait_for_steady_state = true
 
   network_configuration {
     subnets          = local.task_subnet_ids
@@ -561,5 +547,43 @@ resource "aws_ecs_service" "worker" {
     assign_public_ip = var.assign_public_ip
   }
 
-  depends_on = [aws_vpc_security_group_egress_rule.worker_out]
+  depends_on = [
+    aws_vpc_security_group_egress_rule.worker_out,
+    # A new image runs the migration first.
+    terraform_data.migrate,
+  ]
+}
+
+# The migration of a new image: migrate.sh runs my upgrade as one task of the migration's task definition, which has the image
+# by then, and waits for it; the workers, and after them the service, take the image only once it succeeded. A provisioner,
+# since the aws provider has no resource that runs a task and waits for it: a failed or interrupted run fails the provisioner
+# and taints this resource, and the next apply of the same image runs it again. It runs on the machine that applies, which
+# needs the aws CLI, jq, and credentials that may run the task and read its logs.
+resource "terraform_data" "migrate" {
+  triggers_replace = [var.image]
+
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command     = "\"$MIGRATE_SCRIPT\" --version \"$MIGRATE_VERSION\" --allow-destructive-for \"$MIGRATE_ALLOW_DESTRUCTIVE_FOR\" <<< \"$MIGRATE_TASK\""
+    environment = {
+      MIGRATE_SCRIPT                = try(var.migration.script, "")
+      MIGRATE_VERSION               = try(var.migration.version, "")
+      MIGRATE_ALLOW_DESTRUCTIVE_FOR = try(var.migration.allow_destructive_for, "")
+      # The revision this apply made, by its ARN: the task runs the image of this apply.
+      MIGRATE_TASK = jsonencode({
+        platform        = "aws-ecs"
+        region          = data.aws_region.current.region
+        cluster         = aws_ecs_cluster.this.name
+        task_definition = aws_ecs_task_definition.task["migrate"].arn
+        container       = local.container_name
+        network         = jsonencode(local.network)
+        log_group       = aws_cloudwatch_log_group.tasks.name
+        log_prefix      = "migrate"
+      })
+    }
+  }
+
+  lifecycle {
+    enabled = var.migration != null
+  }
 }
