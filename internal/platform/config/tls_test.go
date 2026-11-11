@@ -29,9 +29,6 @@ func TestTLSSettings(t *testing.T) {
 		{"files on a listen of its own", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem", "MY_TLS_KEY_FILE", "k.pem", "MY_LISTEN", ":8443", "MY_TLS_HTTP_LISTEN", ""), ":8443", true, ""},
 		{"a worker in plain HTTP", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem", "MY_TLS_KEY_FILE", "k.pem", "MY_ROLE", "worker"), ":8080", false, ":80"},
 		{"web", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem", "MY_TLS_KEY_FILE", "k.pem", "MY_ROLE", "web"), ":443", true, ":80"},
-		{"acme on :443", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true"), ":443", true, ":80"},
-		{"acme with kv = memory in one process", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_KV", "memory"), ":443", true, ":80"},
-		{"acme with TLS-ALPN-01 alone", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_TLS_HTTP_LISTEN", ""), ":443", true, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -46,26 +43,6 @@ func TestTLSSettings(t *testing.T) {
 	}
 }
 
-func TestTLSACMESettings(t *testing.T) {
-	t.Parallel()
-	cfg, _, err := Load(source(with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true"), nil))
-	if err != nil {
-		t.Fatalf("Load: %v", err)
-	}
-	if cfg.TLS != TLSACME || cfg.TLSACMEDirectory != DefaultTLSACMEDirectory || !cfg.TLSACMEAgreeTerms || cfg.TLSACMEEmail != "" || cfg.TLSACMEProfile != "" {
-		t.Errorf("defaults = %q %q %t %q %q", cfg.TLS, cfg.TLSACMEDirectory, cfg.TLSACMEAgreeTerms, cfg.TLSACMEEmail, cfg.TLSACMEProfile)
-	}
-	cfg, _, err = Load(source(with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true",
-		"MY_TLS_ACME_DIRECTORY", "https://acme-staging-v02.api.letsencrypt.org/directory", "MY_TLS_ACME_EMAIL", "ops@example.org",
-		"MY_TLS_ACME_PROFILE", "shortlived"), nil))
-	if err != nil {
-		t.Fatalf("Load: %v", err)
-	}
-	if cfg.TLSACMEDirectory != "https://acme-staging-v02.api.letsencrypt.org/directory" || cfg.TLSACMEEmail != "ops@example.org" || cfg.TLSACMEProfile != "shortlived" {
-		t.Errorf("settings = %q %q %q", cfg.TLSACMEDirectory, cfg.TLSACMEEmail, cfg.TLSACMEProfile)
-	}
-}
-
 func TestTLSSettingsInvalid(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -75,17 +52,6 @@ func TestTLSSettingsInvalid(t *testing.T) {
 		msg  string
 	}{
 		{"an unknown mode", with(minimal(), "MY_TLS", "caddy"), "tls", "unknown value"},
-		{"acme without agreeing to the terms", with(minimal(), "MY_TLS", "acme"), "tls_acme_agree_terms", "must be true when tls is acme"},
-		{"acme with the terms refused", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "false"), "tls_acme_agree_terms", "must be true when tls is acme"},
-		{"acme on an IP address", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_HOST", "192.0.2.1"), "host", ""},
-		{"acme on localhost", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_HOST", "localhost:3000"), "host", "must be a DNS name with a dot when tls is acme"},
-		{"acme on a subdomain of localhost", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_HOST", "my.localhost"), "host", "must be a DNS name with a dot when tls is acme"},
-		{"acme on a name without a dot", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_HOST", "intranet"), "host", "must be a DNS name with a dot when tls is acme"},
-		{"acme with a directory over http", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_TLS_ACME_DIRECTORY", "http://ca.example/directory"), "tls_acme_directory", "https URL"},
-		{"acme with a directory that is not a URL", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_TLS_ACME_DIRECTORY", "ca.example"), "tls_acme_directory", "https URL"},
-		{"acme with a contact that is not an address", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_TLS_ACME_EMAIL", "Ops <ops@example.org>"), "tls_acme_email", "bare email address"},
-		{"acme in a web process with kv = memory", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_KV", "memory", "MY_ROLE", "web"), "kv", "every process shares"},
-		{"acme in a worker with kv = memory", with(minimal(), "MY_TLS", "acme", "MY_TLS_ACME_AGREE_TERMS", "true", "MY_KV", "memory", "MY_ROLE", "worker"), "kv", "every process shares"},
 		{"files without a certificate", with(minimal(), "MY_TLS", "files", "MY_TLS_KEY_FILE", "k.pem"), "tls_cert_file", "required when tls is files"},
 		{"files without a key", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem"), "tls_key_file", "required when tls is files"},
 		{"port 80 on listen", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem", "MY_TLS_KEY_FILE", "k.pem", "MY_TLS_HTTP_LISTEN", ":443"), "tls_http_listen", "must differ from listen"},

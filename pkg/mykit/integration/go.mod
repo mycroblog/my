@@ -99,6 +99,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/kaptinlin/messageformat-go/mf1 v0.8.6 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/mholt/acmez/v3 v3.1.7 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect

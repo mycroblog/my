@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"sync"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -45,28 +46,32 @@ func (l tlsOrderLease) hold(ctx context.Context, name string, fn func(ctx contex
 	}
 	held, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
-	done := make(chan struct{})
-	extended := make(chan struct{})
-	go func() {
-		defer close(extended)
-		t := time.NewTicker(l.renewal)
-		defer t.Stop()
-		for {
-			select {
-			case <-done:
-				return
-			case <-t.C:
-				ok, err := l.kv.CompareAndSwap(held, TLSOrderLeaseNamespace, name, token, token, l.ttl)
-				if err != nil || !ok {
-					cancel(errTLSOrderLeaseLost)
-					return
-				}
-			}
+	// The extensions run on a timer that schedules the next one; stop ends them, and waits for
+	// one in progress so that none follows the release.
+	var mu sync.Mutex
+	stopped := false
+	var timer *time.Timer
+	extend := func() {
+		mu.Lock()
+		defer mu.Unlock()
+		if stopped {
+			return
 		}
-	}()
+		ok, err := l.kv.CompareAndSwap(held, TLSOrderLeaseNamespace, name, token, token, l.ttl)
+		if err != nil || !ok {
+			cancel(errTLSOrderLeaseLost)
+			return
+		}
+		timer.Reset(l.renewal)
+	}
+	mu.Lock()
+	timer = time.AfterFunc(l.renewal, extend)
+	mu.Unlock()
 	err = fn(held)
-	close(done)
-	<-extended
+	mu.Lock()
+	stopped = true
+	timer.Stop()
+	mu.Unlock()
 	_, _ = l.kv.CompareAndSwap(context.WithoutCancel(ctx), TLSOrderLeaseNamespace, name, token, nil, 0)
 	return true, err
 }
