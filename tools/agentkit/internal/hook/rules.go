@@ -72,7 +72,7 @@ func (c *checker) rootOf(dir string) string {
 // shell computes, a path outside every working tree, scratch space, a log, or a file git ignores.
 func (c *checker) locate(cwd string, w word) (target, bool) {
 	p := strings.TrimRight(w.text, ")")
-	if w.dyn || p == "" || p == "-" || cwd == "" && !filepath.IsAbs(p) {
+	if w.dyn || p == "" || strings.HasPrefix(p, "-") || cwd == "" && !filepath.IsAbs(p) {
 		return target{}, false
 	}
 	if strings.HasPrefix(p, "~/") {
