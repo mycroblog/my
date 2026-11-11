@@ -14,7 +14,8 @@
 #       [--migrate-only]        stop before the service, for the first deployment, when it does not exist yet
 #
 # The order of the steps is the same on every platform; each platform is the functions gcp_* or ecs_* below. On aws-ecs
-# nothing has run on AWS: read modules/app-aws-ecs.
+# nothing has run on AWS: read modules/app-aws-ecs. mycroblog-gcp upgrades by apply instead (migrate.sh), and an apply puts
+# back the image of its input, so this script is not for it.
 set -euo pipefail
 
 # shellcheck source=/dev/null # Beside this script, at the same release.

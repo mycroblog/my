@@ -469,13 +469,11 @@ resource "google_cloud_run_v2_service" "server" {
     percent = 100
   }
 
-  # The upgrade script changes the image, after the migration. An apply with another image would skip that order, so
-  # apply keeps what runs. gcloud also writes the other fields listed here.
+  # gcloud writes these fields when someone deploys by hand, which an apply would otherwise undo.
   lifecycle {
     ignore_changes = [
       client,
       client_version,
-      template[0].containers[0].image,
       template[0].revision,
       template[0].labels,
       template[0].annotations,
@@ -490,12 +488,14 @@ resource "google_cloud_run_v2_service" "server" {
     google_service_account_iam_member.backend,
     google_kms_crypto_key_iam_member.backend,
     google_secret_manager_secret_iam_member.server,
+    # A new image reaches the workers before the service, which enqueues for them and takes the traffic.
+    google_cloud_run_v2_service.worker,
   ]
 }
 
 # A service for each worker, with everything of the default service but what local.workers says. It takes no public traffic: only
 # what is internal reaches it, which Cloud Tasks is from the same project on this URL, and only the queue's account may invoke it.
-# upgrade.sh finds these by the label, and moves them with the default after the migration.
+# A new image reaches them after the migration and before the default service.
 resource "google_cloud_run_v2_service" "worker" {
   for_each = local.workers
 
@@ -555,9 +555,7 @@ resource "google_cloud_run_v2_service" "worker" {
     }
 
     containers {
-      # What the default service runs now, not var.image, which upgrade.sh leaves behind: a worker added later starts on the
-      # same release.
-      image = google_cloud_run_v2_service.server.template[0].containers[0].image
+      image = var.image
 
       ports {
         container_port = 8080
@@ -644,13 +642,11 @@ resource "google_cloud_run_v2_service" "worker" {
     percent = 100
   }
 
-  # The upgrade script changes the image, after the migration. An apply with another image would skip that order, so
-  # apply keeps what runs. gcloud also writes the other fields listed here.
+  # gcloud writes these fields when someone deploys by hand, which an apply would otherwise undo.
   lifecycle {
     ignore_changes = [
       client,
       client_version,
-      template[0].containers[0].image,
       template[0].revision,
       template[0].labels,
       template[0].annotations,
@@ -665,6 +661,8 @@ resource "google_cloud_run_v2_service" "worker" {
     google_service_account_iam_member.backend,
     google_kms_crypto_key_iam_member.backend,
     google_secret_manager_secret_iam_member.server,
+    # A new image runs the migration first.
+    terraform_data.migrate,
   ]
 }
 
@@ -781,11 +779,12 @@ resource "google_cloud_run_v2_job" "one_off" {
     }
   }
 
+  # gcloud writes these fields when someone updates a job by hand, which an apply would otherwise undo. console.sh may give
+  # the console the image of the service, and the next apply gives it back the image of the input.
   lifecycle {
     ignore_changes = [
       client,
       client_version,
-      template[0].template[0].containers[0].image,
       template[0].labels,
       template[0].annotations,
     ]
@@ -800,6 +799,35 @@ resource "google_cloud_run_v2_job" "one_off" {
     google_kms_crypto_key_iam_member.backend,
     google_secret_manager_secret_iam_member.server,
   ]
+}
+
+# The migration of a new image: migrate.sh runs my upgrade as an execution of the migration job, which has the image by then,
+# and waits for it; the workers, and after them the service, take the image only once it succeeded. A provisioner rather
+# than the job's run_execution_token, which takes the new token even when the execution fails, so that a later apply would
+# move the services anyway: a failed or interrupted run fails the provisioner and taints this resource, and the next apply of
+# the same image runs it again. It runs on the machine that applies, which needs gcloud and its credentials.
+resource "terraform_data" "migrate" {
+  triggers_replace = [var.image]
+
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command     = "\"$MIGRATE_SCRIPT\" --version \"$MIGRATE_VERSION\" --allow-destructive-for \"$MIGRATE_ALLOW_DESTRUCTIVE_FOR\" <<< \"$MIGRATE_JOB\""
+    environment = {
+      MIGRATE_SCRIPT                = try(var.migration.script, "")
+      MIGRATE_VERSION               = try(var.migration.version, "")
+      MIGRATE_ALLOW_DESTRUCTIVE_FOR = try(var.migration.allow_destructive_for, "")
+      MIGRATE_JOB = jsonencode({
+        platform = "gcp-cloud-run"
+        project  = var.project_id
+        region   = var.region
+        job      = google_cloud_run_v2_job.one_off["migrate"].name
+      })
+    }
+  }
+
+  lifecycle {
+    enabled = var.migration != null
+  }
 }
 
 # The server checks the OIDC token of /_internal/* itself, and its other paths are public: federation needs them.

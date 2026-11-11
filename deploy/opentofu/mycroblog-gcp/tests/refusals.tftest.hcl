@@ -14,6 +14,12 @@ mock_provider "google" {
       number = "123456789012"
     }
   }
+  mock_resource "google_service_account" {
+    defaults = {
+      email  = "sa@my-project.iam.gserviceaccount.com"
+      member = "serviceAccount:sa@my-project.iam.gserviceaccount.com"
+    }
+  }
 }
 
 mock_provider "random" {}
@@ -22,11 +28,40 @@ mock_provider "cloudflare" {}
 
 variables {
   host  = "social.example.org"
-  image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
 
   monitoring = { notification_emails = ["ops@social.example.org"] }
+}
+
+run "the_latest_tag" {
+  command = plan
+
+  variables {
+    image = { version = "latest" }
+  }
+
+  expect_failures = [var.image]
+}
+
+run "a_version_with_the_v_of_the_release" {
+  command = plan
+
+  variables {
+    image = { version = "v0.2.0" }
+  }
+
+  expect_failures = [var.image]
+}
+
+run "a_digest_without_its_algorithm" {
+  command = plan
+
+  variables {
+    image = { version = "nightly", digest = "0123456789abcdef" }
+  }
+
+  expect_failures = [var.image]
 }
 
 run "a_name_that_cannot_name_things" {

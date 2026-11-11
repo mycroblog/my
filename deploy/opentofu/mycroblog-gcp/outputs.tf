@@ -51,14 +51,10 @@ output "console" {
   value       = module.app.console
 }
 
-output "upgrade" {
-  description = "What upgrade.sh takes: --project, --region, and --name, and the services it moves after the migration job."
+output "version" {
+  description = "The version applied, and the image that the service, the workers, and the jobs run."
   value = {
-    project         = local.project_id
-    region          = local.region
-    name            = var.name
-    migration_job   = module.app.migration_job
-    service_name    = module.app.service_name
-    worker_services = module.app.worker_services
+    version = local.version
+    image   = module.app.images.service
   }
 }

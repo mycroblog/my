@@ -33,7 +33,6 @@ mock_provider "random" {}
 
 variables {
   host  = "social.example.org"
-  image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
 
@@ -97,8 +96,8 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
   }
 
   assert {
-    condition     = output.upgrade.project == "my-project" && output.upgrade.region == "asia-northeast1" && output.upgrade.name == "my"
-    error_message = "upgrade.sh takes the project, the region, and the name"
+    condition     = output.version.version == trimprefix(trimspace(file("../MODULE_REF")), "v") && module.app.images.migration == "ghcr.io/mycroblog/my:${output.version.version}"
+    error_message = "the version must default to the release of the module, which MODULE_REF names: ${jsonencode(output.version)}"
   }
 
   assert {
@@ -116,7 +115,7 @@ run "takes_the_project_and_the_region_over_the_providers" {
   }
 
   assert {
-    condition     = module.app.env["MY_QUEUE_CLOUDTASKS_QUEUE"] == "projects/other-project/locations/europe-west1/queues/my-jobs" && output.upgrade.region == "europe-west1"
+    condition     = module.app.env["MY_QUEUE_CLOUDTASKS_QUEUE"] == "projects/other-project/locations/europe-west1/queues/my-jobs"
     error_message = "project_id and region must win over the provider's"
   }
 }
@@ -143,11 +142,28 @@ run "the_secrets_can_be_created_first" {
   }
 }
 
-# The first deployment creates this before the service, whose startup probe needs the schema.
-run "the_migration_job_can_be_created_before_the_service" {
+run "takes_a_version_and_a_digest" {
   command = plan
 
-  plan_options {
-    target = [module.app.google_cloud_run_v2_job.one_off["migrate"]]
+  variables {
+    image = { version = "0.2.0-rc.1", digest = "sha256:${join("", [for i in range(64) : "a"])}" }
+  }
+
+  assert {
+    condition     = output.version.version == "0.2.0-rc.1" && module.app.images.migration == "ghcr.io/mycroblog/my:0.2.0-rc.1@sha256:${join("", [for i in range(64) : "a"])}"
+    error_message = "a version and a digest must make the image: ${jsonencode(module.app.images)}"
+  }
+}
+
+run "takes_another_repository" {
+  command = plan
+
+  variables {
+    image = { repository = "asia-northeast1-docker.pkg.dev/my-project/mirror/my", version = "0.2.0" }
+  }
+
+  assert {
+    condition     = module.app.images.migration == "asia-northeast1-docker.pkg.dev/my-project/mirror/my:0.2.0"
+    error_message = "the repository must replace the default"
   }
 }
