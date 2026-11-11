@@ -132,6 +132,9 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # docs:growth compares with the base, the first parent of the merge commit.
+          fetch-depth: 2
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Go
@@ -185,6 +188,23 @@ jobs:
             run: scripts/task.sh web:tokens
           - name: web:lint-css
             run: scripts/task.sh web:lint-css
+          # The pull request's own commits hold no merge commit: a branch is rebased onto main, never merged into.
+          # The checkout is the merge of the two with a depth of 2, so the commits are fetched first, one deeper
+          # than the pull request has, which leaves the commit it branched from without parents. Dependabot rebases
+          # its branches itself.
+          - name: docs:pr-commits
+            env:
+              AUTHOR: ${{ github.event.pull_request.user.login }}
+              COMMITS: ${{ github.event.pull_request.commits }}
+              BASE_SHA: ${{ github.event.pull_request.base.sha }}
+              HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+            run: |
+              if [ "$AUTHOR" = "dependabot[bot]" ]; then
+                echo "A Dependabot update: skipped."
+                exit 0
+              fi
+              git fetch --no-tags --quiet --depth="$((COMMITS + 1))" origin "$HEAD_SHA"
+              scripts/task.sh docs:pr-commits BASE="$BASE_SHA" HEAD="$HEAD_SHA"
 
   ui-test:
     # The @my/ui story tests (ADR-0110), on pull requests alone: a pull request that changes a screenshot fixes its

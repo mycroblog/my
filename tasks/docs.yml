@@ -35,6 +35,21 @@ tasks:
     cmds:
       - scripts/adr-numbers.sh
 
+  # A branch is rebased onto its base, never merged into (agentkit pr open refuses the same commits). The merge
+  # queue's own merge commits are on main, outside BASE..HEAD of a pull request.
+  pr-commits:
+    desc: 'Fail when BASE..HEAD holds a merge commit: scripts/task.sh docs:pr-commits [BASE=origin/main] [HEAD=HEAD]'
+    vars:
+      BASE: '{{.BASE | default "origin/main"}}'
+      HEAD: '{{.HEAD | default "HEAD"}}'
+    cmds:
+      - |
+        merges="$(git log --min-parents=2 --format='%h %s' {{shellQuote .BASE}}..{{shellQuote .HEAD}})"
+        if [ -n "$merges" ]; then
+          printf '%s..%s has merge commits; a branch is rebased, never merged into:\n%s\nfix: git rebase origin/main && scripts/agentkit.sh regen && git push --force-with-lease\n' {{shellQuote .BASE}} {{shellQuote .HEAD}} "$merges" >&2
+          exit 1
+        fi
+
   ci-coverage:
     desc: Fail when a check of `check` runs in no step of .github/workflows and is not excluded with a reason (ADR-0079)
     cmds:
