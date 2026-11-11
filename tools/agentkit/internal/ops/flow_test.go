@@ -69,7 +69,8 @@ func sandbox(t *testing.T) (main string) {
 	git(t, tmp, "clone", "-q", origin, main)
 	git(t, main, "checkout", "-q", "-b", "main")
 	// Open reads the context map for the documents of the changed paths.
-	write(t, filepath.Join(main, "tools/agentkit/context-map.yaml"), "entries: []\n")
+	write(t, filepath.Join(main, "context-map.yaml"), "entries:\n  - paths: [\"*\"]\n")
+	write(t, filepath.Join(main, "tools/agentkit/context-map.yaml"), "docs: [\"tools/agentkit/README.md\"]\nchecks: [agentkit]\n")
 	commit(t, main, "README.md", "# r\n", "chore: start")
 	git(t, main, "push", "-q", "-u", "origin", "main")
 	return main

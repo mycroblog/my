@@ -163,7 +163,7 @@ func runPR(r *repo.Repo, args []string) error {
 		all := fs.Bool("all", false, "wait for every check instead of returning at the first failure")
 		pos, err := parse(fs, args[1:])
 		if err != nil || len(pos) != 1 {
-			return fmt.Errorf("usage: agentkit pr wait <pr> [--timeout 50m] [--all]")
+			return fmt.Errorf("usage: agentkit pr wait <pr> [--timeout 50m] [--all] (exit 1 CI failed or closed, 3 conflict, 4 cancelled, 6 the head moved while waiting, 124 timeout)")
 		}
 		n, err := strconv.Atoi(strings.TrimPrefix(pos[0], "#"))
 		if err != nil {

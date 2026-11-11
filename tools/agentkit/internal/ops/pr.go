@@ -367,14 +367,53 @@ func gatePassed(cs []check) bool {
 	return false
 }
 
-// The exit status of Wait when the timeout passes before CI ends.
-const WaitTimeout = 124
+// The exit statuses of Wait when the pull request's head moves while it waits, and when the timeout passes
+// before CI ends.
+const (
+	WaitMoved   = 6
+	WaitTimeout = 124
+)
+
+// headFollow tells a pull request whose head GitHub has not caught up with from one whose head moved away.
+type headFollow struct {
+	at    string          // the head that is followed; "" until the pull request is read at one
+	been  map[string]bool // the heads the pull request was read at, and the pushes it went past
+	stale string          // the pull request's head while it is behind a push
+}
+
+// observe takes the pull request's head of one poll and the commit the local branch pushed ("" when unknown).
+// behind: GitHub has not seen that push yet, so the checks are an older commit's. from is the head that was
+// followed when the pull request has moved to another one, which is followed from now on.
+func (h *headFollow) observe(cur, pushed string) (behind bool, from string) {
+	if h.been == nil {
+		h.been = map[string]bool{}
+	}
+	if pushed != "" && cur != pushed && !h.been[pushed] {
+		if h.stale == "" || h.stale == cur {
+			h.stale = cur
+			return true, ""
+		}
+		// The head changed and is still not the push: a later push went past it.
+		h.been[pushed] = true
+		if h.at == "" {
+			h.at = pushed
+		}
+	}
+	h.stale = ""
+	h.been[cur] = true
+	if h.at == "" || h.at == cur {
+		h.at = cur
+		return false, ""
+	}
+	from, h.at = h.at, cur
+	return false, from
+}
 
 // WaitOptions are the waits of Wait and what it compares the pull request with.
 type WaitOptions struct {
 	// Branch and Head are the local branch and its commit: when the pull request's branch is Branch, the checks
 	// count only once its head is Head, so that a wait right after a push does not read the previous commit's
-	// results.
+	// results. Once the pull request was read at the head the wait is for, another head ends the wait.
 	Branch, Head string
 	Timeout      time.Duration
 	Interval     time.Duration
@@ -472,8 +511,8 @@ func stillPending(p prState) string {
 // defaultHeartbeat is how often a wait says that it goes on.
 const defaultHeartbeat = 5 * time.Minute
 
-// Wait polls a pull request until its CI ends, it conflicts, it merges, or the timeout passes, and returns the
-// exit status. It prints to w a line when it starts, a line at each heartbeat, and how it ended, each at once, so
+// Wait polls a pull request until its CI ends, it conflicts, it merges, its head moves, or the timeout passes,
+// and returns the exit status. It prints to w a line when it starts, a line at each heartbeat, and how it ended, each at once, so
 // that no output means it never started. Without All it returns at the first failed check instead of waiting for
 // the others. A failure comes with the failing lines of the failed jobs' logs, which are saved under LogDir.
 func Wait(w io.Writer, n int, o WaitOptions) int {
@@ -485,10 +524,18 @@ func Wait(w io.Writer, n int, o WaitOptions) int {
 	deadline := started.Add(o.Timeout)
 	beat := started.Add(o.Heartbeat)
 	var last *prState // the newest state of the pull request's own head
+	var follow headFollow
 	first := true
 	for {
 		p, err := viewPR(n)
-		behind := false
+		behind, from := false, ""
+		if err == nil && p.State != "MERGED" && p.State != "CLOSED" {
+			pushed := ""
+			if p.HeadRefName == o.Branch {
+				pushed = o.Head
+			}
+			behind, from = follow.observe(p.HeadRefOid, pushed)
+		}
 		switch {
 		case err != nil:
 			// gh and the API fail now and then; give up only at the deadline.
@@ -498,9 +545,12 @@ func Wait(w io.Writer, n int, o WaitOptions) int {
 		case p.State == "CLOSED":
 			say("PR #%d is closed", n)
 			return 1
-		case p.HeadRefName == o.Branch && o.Head != "" && p.HeadRefOid != o.Head:
+		case from != "":
+			// The checks of the head the wait is for are cancelled or replaced: its CI can no longer end.
+			say("PR #%d: the head moved from %s to %s while waiting; run pr wait again for the new head", n, shortSHA(from), shortSHA(p.HeadRefOid))
+			return WaitMoved
+		case behind:
 			// GitHub has not seen the push yet.
-			behind = true
 		case p.Mergeable == "CONFLICTING":
 			say("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)
 			return 3
@@ -661,12 +711,21 @@ func rerunCommand(runs map[int64]bool) string {
 type prSnapshot struct {
 	ci, mergeable string
 	failed        []string
-	queued        bool // auto-merge on, or in the merge queue
+	queued        bool   // auto-merge on, or in the merge queue
+	head          string // the commit the checks are of
 }
 
 // transitions returns the events between two snapshots of an open pull request; had is false on its first poll.
+// A new head is an event, and what the previous head's CI was says nothing about it: the state of the new
+// head's CI is reported again even when it is the same.
 func transitions(old prSnapshot, had bool, cur prSnapshot) []string {
 	var out []string
+	dequeued := "dequeued (out of the merge queue without merging: a conflict or a failed merge group)"
+	if had && old.head != cur.head {
+		out = append(out, "head-moved "+shortSHA(cur.head))
+		old = prSnapshot{queued: old.queued}
+		dequeued = "dequeued (the push took it out of the merge queue; queue it again)"
+	}
 	switch {
 	case cur.mergeable == "CONFLICTING" && (!had || old.mergeable != "CONFLICTING"):
 		out = append(out, "conflicting")
@@ -681,7 +740,7 @@ func transitions(old prSnapshot, had bool, cur prSnapshot) []string {
 	case had && !old.queued && cur.queued:
 		out = append(out, "queued")
 	case had && old.queued && !cur.queued:
-		out = append(out, "dequeued (out of the merge queue without merging: a conflict or a failed merge group)")
+		out = append(out, dequeued)
 	}
 	return out
 }
@@ -755,7 +814,7 @@ func queuedPRs() (map[int]bool, error) {
 // openLimit is how many open pull requests Watch lists; a repository with more is reported, not silently cut.
 const openLimit = 1000
 
-// Watch prints one line per event of the watched pull requests — opened, merged, closed, conflicting,
+// Watch prints one line per event of the watched pull requests — opened, merged, closed, head-moved, conflicting,
 // ci-failed, ci-cancelled, ci-green, queued, dequeued (out of the merge queue, or auto-merge off, while open) — until every
 // watched pull request is merged or closed. With no numbers it watches every open pull request, including
 // new ones, forever.
@@ -801,7 +860,7 @@ func Watch(w io.Writer, nums []int, interval time.Duration) error {
 				continue
 			}
 			ci, failed, _ := summarize(p.StatusCheckRollup)
-			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[p.Number]}
+			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[p.Number], p.HeadRefOid}
 			old, had := prev[p.Number]
 			for _, e := range transitions(old, had, cur) {
 				emit(p.Number, p.Title, e)

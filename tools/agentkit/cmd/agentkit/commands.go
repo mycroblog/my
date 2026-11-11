@@ -51,14 +51,17 @@ Workflow (instead of gh / scripts/task.sh loops):
   pr land <pr> [--timeout 3h]                          the only way a PR finishes (run it in the background, in
                                                        the main agent): auto-merge through the merge queue, one
                                                        line per event, then remove the branch and worktree and
-                                                       close finished parent issues; exit 1 CI failed, 3
-                                                       conflict, 5 dropped by the queue (each prints the fix)
+                                                       close finished parent issues; a push while it waits is
+                                                       followed; exit 1 CI failed, 3 conflict, 5 dropped by
+                                                       the queue (each prints the fix)
   tidy [--dry-run]                                     remove the worktrees and branches of merged or closed PRs
   pr wait <pr> [--timeout 50m] [--all]                 block until CI ends; print one line, or the failing lines
                                                        (run it in the background; exit 3 on a conflict,
-                                                       4 when cancelled with no newer run)
-  pr watch [<pr>...] [--interval 60s]                  one line per event: merged, closed, conflicting, ci-failed,
-                                                       ci-cancelled, ci-green, dequeued (for the Monitor tool)
+                                                       4 when cancelled with no newer run, 6 when a push
+                                                       moved the head while it waited: run it again)
+  pr watch [<pr>...] [--interval 60s]                  one line per event: merged, closed, head-moved, conflicting,
+                                                       ci-failed, ci-cancelled, ci-green, dequeued (for the
+                                                       Monitor tool)
   check [--base origin/main] [--full]                  the quick checks of the changed files, one line each
                                                        (pr open runs them); --full: scripts/task.sh check:changed
   regen [--base origin/main] [--dry-run]               run the generators the changed sources need

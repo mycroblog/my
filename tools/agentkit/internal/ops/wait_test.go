@@ -190,6 +190,187 @@ func TestWaitFailedBeforeAnyTest(t *testing.T) {
 	})
 }
 
+const (
+	olderHead = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	newerHead = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+)
+
+// TestWaitEndsWhenTheHeadMoves checks that a push during the wait ends it: the checks of the head it waits for
+// are cancelled, and the new head's are not the ones it was asked about.
+func TestWaitEndsWhenTheHeadMoves(t *testing.T) {
+	running := checkJSON("lint", "", 81)
+	failed := checkJSON("lint", "FAILURE", 91) + "," + checkJSON("check", "FAILURE", 92)
+	cases := []struct {
+		name   string
+		opts   WaitOptions
+		states []string // the pull request from its k-th read on
+		want   []string
+	}{
+		{"in the branch's worktree", WaitOptions{Branch: "feat/12-x", Head: waitHead},
+			[]string{prJSON("OPEN", "MERGEABLE", waitHead, running, false), "", prJSON("OPEN", "MERGEABLE", newerHead, failed, false)},
+			[]string{
+				"waiting for CI of #20 at 012345678: 1 checks pending",
+				"still waiting: 1 pending, 0 passed",
+				"PR #20: the head moved from 012345678 to bbbbbbbbb while waiting; run pr wait again for the new head",
+			}},
+		{"from another checkout", WaitOptions{Branch: "main", Head: "fedcba9876543210"},
+			[]string{prJSON("OPEN", "MERGEABLE", waitHead, running, false), prJSON("OPEN", "MERGEABLE", newerHead, failed, false)},
+			[]string{
+				"waiting for CI of #20 at 012345678: 1 checks pending",
+				"PR #20: the head moved from 012345678 to bbbbbbbbb while waiting; run pr wait again for the new head",
+			}},
+		// GitHub never showed the head the wait started at: a second push went past it.
+		{"before GitHub saw the first push", WaitOptions{Branch: "feat/12-x", Head: waitHead},
+			[]string{prJSON("OPEN", "MERGEABLE", olderHead, failed, false), "", prJSON("OPEN", "MERGEABLE", newerHead, running, false)},
+			[]string{
+				"waiting for CI of #20 at 012345678: GitHub has not seen the push yet",
+				"still waiting: the checks of the pull request's head could not be read yet",
+				"PR #20: the head moved from 012345678 to bbbbbbbbb while waiting; run pr wait again for the new head",
+			}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			state := filepath.Dir(fakeGH(t, ghWait))
+			for i, s := range c.states {
+				if s != "" {
+					write(t, filepath.Join(state, fmt.Sprintf("pr%d", i+1)), s)
+				}
+			}
+			c.opts.Timeout = 5 * time.Second
+			code, lines := wait(t, c.opts)
+			if code != WaitMoved || strings.Join(lines, "\n") != strings.Join(c.want, "\n") {
+				t.Errorf("exit %d, got\n%s\nwant\n%s", code, strings.Join(lines, "\n"), strings.Join(c.want, "\n"))
+			}
+		})
+	}
+}
+
+// TestWaitForThePush checks that the older head GitHub still shows right after a push is not a move: the wait
+// goes on, does not read that head's failure, and reports the pushed head's result.
+func TestWaitForThePush(t *testing.T) {
+	state := filepath.Dir(fakeGH(t, ghWait))
+	write(t, filepath.Join(state, "pr1"), prJSON("OPEN", "MERGEABLE", olderHead, checkJSON("lint", "FAILURE", 91), false))
+	write(t, filepath.Join(state, "pr3"), prJSON("OPEN", "MERGEABLE", waitHead, checkJSON("check", "SUCCESS", 82), false))
+	code, lines := wait(t, WaitOptions{Branch: "feat/12-x", Head: waitHead, Timeout: 5 * time.Second})
+	want := []string{
+		"waiting for CI of #20 at 012345678: GitHub has not seen the push yet",
+		"still waiting: the checks of the pull request's head could not be read yet",
+		"PR #20: CI passed (1 checks, mergeable mergeable)",
+	}
+	if code != 0 || strings.Join(lines, "\n") != strings.Join(want, "\n") {
+		t.Errorf("exit %d, got\n%s\nwant\n%s", code, strings.Join(lines, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// landStates writes the pull request that ghLand answers at each read, the last one from then on.
+func landStates(t *testing.T, state string, prs ...string) {
+	t.Helper()
+	for i, p := range prs[:len(prs)-1] {
+		write(t, filepath.Join(state, fmt.Sprintf("pr%d", i+1)), p)
+	}
+	write(t, filepath.Join(state, "pr"), prs[len(prs)-1])
+}
+
+// TestLandFollowsTheHead checks that a push while Land waits does not end it or leave it waiting for the old
+// head: it says that the head moved, once, and goes on with the new head's checks.
+func TestLandFollowsTheHead(t *testing.T) {
+	failed := checkJSON("lint", "FAILURE", 91)
+	running := checkJSON("lint", "", 81)
+	t.Run("auto-merge stays on", func(t *testing.T) {
+		main, _, state, log, head := landSetup(t)
+		landStates(t, state,
+			prJSON("OPEN", "MERGEABLE", head, running, false),
+			prJSON("OPEN", "MERGEABLE", head, running, true),
+			prJSON("OPEN", "MERGEABLE", newerHead, running, true),
+			prJSON("OPEN", "MERGEABLE", newerHead, running, true),
+			prJSON("OPEN", "MERGEABLE", newerHead, failed, true))
+		code, out := land(t, main)
+		if code != 1 || !strings.Contains(out, "PR #20: CI failed: lint") {
+			t.Errorf("exit %d, want the failure of the new head:\n%s", code, out)
+		}
+		if n := strings.Count(out, "PR #20: the head moved to bbbbbbbbb; following it\n"); n != 1 {
+			t.Errorf("the move is said %d times, want once:\n%s", n, out)
+		}
+		if n := strings.Count(readLog(t, log), "pr merge 20"); n != 1 {
+			t.Errorf("auto-merge was turned on %d times, want once: the push kept it", n)
+		}
+	})
+	t.Run("the push took it out of the merge queue", func(t *testing.T) {
+		main, _, state, log, head := landSetup(t)
+		landStates(t, state,
+			prJSON("OPEN", "MERGEABLE", head, "", false),
+			prJSON("OPEN", "MERGEABLE", head, "", true),
+			prJSON("OPEN", "MERGEABLE", newerHead, running, false),
+			prJSON("OPEN", "MERGEABLE", newerHead, running, true),
+			prJSON("CLOSED", "UNKNOWN", newerHead, "", false))
+		code, out := land(t, main)
+		want := "PR #20: the head moved to bbbbbbbbb; following it (the push turned auto-merge off: turned on again)\n"
+		if code != 1 || strings.Count(out, want) != 1 || !strings.Contains(out, "PR #20 is closed without merging") || strings.Contains(out, "left the merge queue") {
+			t.Errorf("exit %d, got\n%s\nwant once\n%s", code, out, want)
+		}
+		if n := strings.Count(readLog(t, log), "pr merge 20 -R mycroblog/my --auto --merge"); n != 2 {
+			t.Errorf("auto-merge was turned on %d times, want 2", n)
+		}
+	})
+	// GitHub still shows the commit before the push: its failure is not the pushed head's, and catching up is
+	// not a move.
+	t.Run("the push has not arrived", func(t *testing.T) {
+		main, _, state, _, head := landSetup(t)
+		landStates(t, state,
+			prJSON("OPEN", "MERGEABLE", olderHead, failed, true),
+			prJSON("OPEN", "MERGEABLE", olderHead, failed, true),
+			prJSON("OPEN", "MERGEABLE", olderHead, failed, true),
+			prJSON("OPEN", "MERGEABLE", head, running, true),
+			prJSON("CLOSED", "UNKNOWN", head, "", false))
+		code, out := land(t, main)
+		if code != 1 || !strings.Contains(out, "PR #20 is closed without merging") || strings.Contains(out, "moved") || strings.Contains(out, "CI failed") {
+			t.Errorf("exit %d, got\n%s", code, out)
+		}
+	})
+}
+
+// ghWatch answers the calls of Watch: $STATE/list<k> holds the open pull requests from the k-th list on, and
+// $STATE/pr the pull request once it is not among them.
+const ghWatch = `
+case "$1 $2" in
+  "pr list")
+    n=$(cat "$STATE/lists" 2>/dev/null || echo 0); n=$((n+1)); echo "$n" > "$STATE/lists"
+    while [ ! -f "$STATE/list$n" ]; do n=$((n-1)); done
+    cat "$STATE/list$n" ;;
+  "pr view") cat "$STATE/pr" ;;
+  "api graphql") echo '{"data":{"repository":{"pullRequests":{"pageInfo":{"hasNextPage":false},"nodes":[]}}}}' ;;
+  *) echo "unexpected: $*" >&2; exit 1 ;;
+esac`
+
+// TestWatchReportsANewHead checks that a push is an event of Watch, and that the new head's CI is reported
+// although the previous head's had the same result.
+func TestWatchReportsANewHead(t *testing.T) {
+	state := filepath.Dir(fakeGH(t, ghWatch))
+	failed := checkJSON("lint", "FAILURE", 91)
+	write(t, filepath.Join(state, "list1"), "["+prJSON("OPEN", "MERGEABLE", olderHead, failed, false)+"]")
+	write(t, filepath.Join(state, "list3"), "["+prJSON("OPEN", "MERGEABLE", newerHead, failed, false)+"]")
+	write(t, filepath.Join(state, "list5"), "[]")
+	write(t, filepath.Join(state, "pr"), prJSON("MERGED", "UNKNOWN", newerHead, "", false))
+	var out bytes.Buffer
+	if err := Watch(&out, []int{20}, time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	var events []string
+	for _, l := range strings.Split(strings.TrimSpace(out.String()), "\n") {
+		_, e, _ := strings.Cut(l, " ") // the time of day
+		events = append(events, e)
+	}
+	want := []string{
+		"#20 ci-failed lint — feat: x",
+		"#20 head-moved bbbbbbbbb — feat: x",
+		"#20 ci-failed lint — feat: x",
+		"#20 merged — feat: x",
+	}
+	if strings.Join(events, "\n") != strings.Join(want, "\n") {
+		t.Errorf("got\n%s\nwant\n%s", strings.Join(events, "\n"), strings.Join(want, "\n"))
+	}
+}
+
 func TestLandSaysThatItWaits(t *testing.T) {
 	main, _, state, _, head := landSetup(t)
 	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, checkJSON("lint", "", 81)+","+checkJSON("changes", "SUCCESS", 80), true))

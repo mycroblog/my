@@ -40,7 +40,8 @@ type LandOptions struct {
 var settle = 5 * time.Second
 
 // Land takes pull request n to main and leaves nothing behind: it turns on auto-merge (the merge queue, a merge
-// commit), waits until the pull request is merged, printing one line per event and one at each heartbeat, then
+// commit), waits until the pull request is merged, printing one line per event and one at each heartbeat and
+// following the pull request's head when a push moves it, then
 // removes the branch and its worktree, checks that the issues it closes are closed, and closes each parent issue
 // whose sub-issues are all closed. It ends with three lines — merged, cleaned up, remains — and returns the exit
 // status. A failure prints what failed and the fix.
@@ -64,8 +65,14 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 		say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix)
 		return LandConflict
 	}
-	if _, err := gh.Run("pr", "merge", strconv.Itoa(n), "-R", gh.Repo(), "--auto", "--merge"); err != nil {
-		say("PR #%d: could not turn on auto-merge: %v", n, err)
+	autoMerge := func() bool {
+		if _, err := gh.Run("pr", "merge", strconv.Itoa(n), "-R", gh.Repo(), "--auto", "--merge"); err != nil {
+			say("PR #%d: could not turn on auto-merge: %v", n, err)
+			return false
+		}
+		return true
+	}
+	if !autoMerge() {
 		return 1
 	}
 	say("PR #%d: auto-merge on; waiting for its CI and the merge queue", n)
@@ -76,6 +83,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 	last := p // the newest state of the pull request's own head
 	var old prSnapshot
 	had := false
+	var follow headFollow
 	for {
 		p, err := viewPR(n)
 		queue, qerr := queuedPRs()
@@ -90,11 +98,27 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 		case p.Mergeable == "CONFLICTING":
 			say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix)
 			return LandConflict
-		case behindPush(main, p):
-			// GitHub has not seen the last push yet: its checks are the previous commit's.
 		default:
+			behind, from := follow.observe(p.HeadRefOid, pushedHead(main, p.HeadRefName))
+			if behind {
+				// GitHub has not seen the last push yet: its checks are the previous commit's.
+				break
+			}
 			ci, failed, _ := summarize(p.StatusCheckRollup)
-			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[n]}
+			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[n], p.HeadRefOid}
+			if from != "" {
+				// A push by someone who may write keeps auto-merge on; a push to a pull request that is in the
+				// merge queue takes it out, and then nothing would merge it.
+				again := ""
+				if !cur.queued {
+					if !autoMerge() {
+						return 1
+					}
+					cur.queued, again = true, " (the push turned auto-merge off: turned on again)"
+				}
+				say("PR #%d: the head moved to %s; following it%s", n, shortSHA(p.HeadRefOid), again)
+				old, had = prSnapshot{}, false
+			}
 			switch {
 			case ci == "failed":
 				lines, rerun := failureReport(n, p, failed, o.LogDir)
@@ -110,8 +134,13 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 				return LandCancelled
 			case had && old.queued && !cur.queued:
 				// A merge between the two reads above also empties the queue.
-				if again, err := viewPR(n); err == nil && again.State == "MERGED" {
+				again, err := viewPR(n)
+				if err == nil && again.State == "MERGED" {
 					return landed(w, r, again)
+				}
+				if err == nil && again.HeadRefOid != p.HeadRefOid {
+					// A push between the two reads took it out of the queue: the next poll follows the new head.
+					break
 				}
 				say("PR #%d left the merge queue without merging: its merge group failed, or it conflicts with a pull request ahead of it", n)
 				for _, l := range mergeGroupFailure(n, o.LogDir) {
@@ -142,14 +171,18 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 	}
 }
 
-// behindPush reports whether the local branch of p is pushed and GitHub's pull request is not at that commit yet.
-func behindPush(main string, p prState) bool {
-	local, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/heads/"+p.HeadRefName)
+// pushedHead is the commit of the local branch when it is pushed, the commit GitHub's pull request is at once it
+// has seen the push, or "" when the branch is not here or holds commits that are not pushed.
+func pushedHead(main, branch string) string {
+	local, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
 	if err != nil {
-		return false
+		return ""
 	}
-	remote, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+p.HeadRefName)
-	return err == nil && strings.TrimSpace(local) == strings.TrimSpace(remote) && strings.TrimSpace(local) != p.HeadRefOid
+	remote, err := repo.Git(main, "rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+branch)
+	if err != nil || strings.TrimSpace(local) != strings.TrimSpace(remote) {
+		return ""
+	}
+	return strings.TrimSpace(local)
 }
 
 // mergeGroupFailure returns the failing lines of the newest failed run of the merge group of pull request n

@@ -26,6 +26,12 @@ func TestTransitions(t *testing.T) {
 		{"leaves the queue open", queued, true, prSnapshot{ci: "passed", mergeable: "CONFLICTING"}, []string{"conflicting", "dequeued (out of the merge queue without merging: a conflict or a failed merge group)"}},
 		{"stays queued", queued, true, queued, nil},
 		{"first poll, already queued", prSnapshot{}, false, queued, nil},
+		{"a push, CI fails again", prSnapshot{ci: "failed", mergeable: "MERGEABLE", head: "aaa"}, true,
+			prSnapshot{ci: "failed", mergeable: "MERGEABLE", failed: []string{"go"}, head: "bbb"}, []string{"head-moved bbb", "ci-failed go"}},
+		{"a push, CI starts", prSnapshot{ci: "passed", mergeable: "MERGEABLE", queued: true, head: "aaa"}, true,
+			prSnapshot{ci: "pending", mergeable: "MERGEABLE", queued: true, head: "bbb"}, []string{"head-moved bbb"}},
+		{"a push to a queued pull request", prSnapshot{ci: "passed", mergeable: "MERGEABLE", queued: true, head: "aaa"}, true,
+			prSnapshot{ci: "pending", mergeable: "MERGEABLE", head: "bbb"}, []string{"head-moved bbb", "dequeued (the push took it out of the merge queue; queue it again)"}},
 	}
 	for _, c := range cases {
 		if got := transitions(c.old, c.had, c.cur); !reflect.DeepEqual(got, c.want) {
