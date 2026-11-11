@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { composeRenderProps, SwitchButton, SwitchField, type SwitchFieldProps } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { FieldDescription, FieldError, type FieldTextProps } from "./Field";
+import { inputOverTrack } from "./ToggleInput";
 
 const switchStyles = tv({
   slots: {
@@ -10,6 +11,7 @@ const switchStyles = tv({
     button: [
       "group/control flex min-h-6 cursor-pointer items-center gap-3 text-base text-fg",
       "data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11",
+      ...inputOverTrack,
     ],
     // The thumb sits at the start and moves to the end with justify-content, so it follows the direction. The groove is
     // sunk with the inner shadow and the thumb raised (the soft surfaces); the fills keep the track at 3:1 against the

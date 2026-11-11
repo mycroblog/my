@@ -159,8 +159,8 @@ test.describe("the tips", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    // React Aria hides the native radio under its drawing, and the amounts' names change with the locale's format.
-    await amounts.getByRole("radio").nth(2).check({ force: true });
+    // The amounts' names change with the locale's format.
+    await amounts.getByRole("radio").nth(2).check();
     await main.getByRole("button", { name: message("tip.form.submit"), exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog.getByText(message("tip.confirm.return.value"), { exact: true })).toBeVisible();

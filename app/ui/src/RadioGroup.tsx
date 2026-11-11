@@ -10,6 +10,7 @@ import {
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { FieldDescription, FieldError, FieldLabel, type FieldTextProps } from "./Field";
+import { inputOverBox } from "./ToggleInput";
 
 const radioGroup = tv({
   slots: {
@@ -64,6 +65,7 @@ const radio = tv({
     button: [
       "group/control flex min-h-6 cursor-pointer items-center gap-3 text-base text-fg",
       "data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11",
+      ...inputOverBox,
     ],
     circle: [
       "flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-border-strong bg-surface-sunken",
