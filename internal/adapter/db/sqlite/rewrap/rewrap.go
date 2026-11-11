@@ -33,6 +33,7 @@ func NewSealedValueStore(d *sqlite.DB) *SealedValueStore {
 		s.names = append(s.names, c.Name)
 		s.columns[c.Name] = c
 	}
+	slices.Sort(s.names)
 	return s
 }
 

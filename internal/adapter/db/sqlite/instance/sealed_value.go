@@ -33,5 +33,41 @@ func SealedColumns(d *sqlite.DB) []sqlite.SealedColumn {
 				return q.ReplaceSealedInstanceSecrets(ctx, instancegen.ReplaceSealedInstanceSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 			},
 		},
+		{
+			Name: "tls_acme_accounts.sealed_private_key",
+			List: func(ctx context.Context, after string, limit int) ([]rewrap.Value, error) {
+				rows, err := db.reader().ListSealedTLSAccounts(ctx, instancegen.ListSealedTLSAccountsParams{After: after, PageLimit: int64(limit)})
+				var out []rewrap.Value
+				for _, r := range rows {
+					out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
+				}
+				return out, err
+			},
+			Replace: func(ctx context.Context, tx uow.Tx, rowID string, old, sealed []byte) (int64, error) {
+				q, err := db.queries(tx)
+				if err != nil {
+					return 0, err
+				}
+				return q.ReplaceSealedTLSAccounts(ctx, instancegen.ReplaceSealedTLSAccountsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+			},
+		},
+		{
+			Name: "tls_certificates.sealed_private_key",
+			List: func(ctx context.Context, after string, limit int) ([]rewrap.Value, error) {
+				rows, err := db.reader().ListSealedTLSCertificates(ctx, instancegen.ListSealedTLSCertificatesParams{After: after, PageLimit: int64(limit)})
+				var out []rewrap.Value
+				for _, r := range rows {
+					out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
+				}
+				return out, err
+			},
+			Replace: func(ctx context.Context, tx uow.Tx, rowID string, old, sealed []byte) (int64, error) {
+				q, err := db.queries(tx)
+				if err != nil {
+					return 0, err
+				}
+				return q.ReplaceSealedTLSCertificates(ctx, instancegen.ReplaceSealedTLSCertificatesParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+			},
+		},
 	}
 }

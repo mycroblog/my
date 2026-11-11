@@ -19,6 +19,8 @@ var sealedColumns = []rewrap.Column{
 	{Name: "instance_secrets.sealed_secret", AAD: appinstance.SecretAAD},
 	{Name: "local_account_private_keys.private_key_enc", AAD: appaccount.PrivateKeyAAD},
 	{Name: domidentity.LoginProviderSecretColumn, AAD: appidentity.LoginProviderSecretAAD},
+	{Name: "tls_acme_accounts.sealed_private_key", AAD: appinstance.TLSAccountAAD},
+	{Name: "tls_certificates.sealed_private_key", AAD: appinstance.TLSCertificateAAD},
 	{Name: domidentity.TOTPSecretColumn, AAD: appidentity.TOTPSecretAAD},
 	{Name: "webhook_secrets.sealed_secret", AAD: appwebhook.SecretAAD},
 }
