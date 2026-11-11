@@ -98,6 +98,13 @@ tasks:
     cmds:
       - go test -count=1 -run LiveKitServer ./internal/adapter/voice/livekit/
 
+  test-acme:
+    desc: Run the instance.ACMEClient contract of the ACME adapter and the server with tls = acme (-run Pebble in internal/adapter/acme and internal/platform) against Pebble, Let's Encrypt's test CA, run as a Go tool from tools/go.mod (pkg/testkit/pebbletest) (CI with the container contracts and in the slow suite)
+    env:
+      TEST_ACME: pebble
+    cmds:
+      - go test -count=1 -run Pebble ./internal/adapter/acme/ ./internal/platform/
+
   test-search:
     desc: Run the search.Index contract of each search backend (-run SearchServer in internal/adapter/search) on a container of its engine, which go:test skips (needs Docker; CI in the slow suite)
     env:

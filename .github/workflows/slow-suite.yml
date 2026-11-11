@@ -103,6 +103,10 @@ jobs:
     if: inputs.scope == 'all'
     uses: ./.github/workflows/search-contract.yml
 
+  acme-contract:
+    if: inputs.scope == 'all'
+    uses: ./.github/workflows/acme-contract.yml
+
   docker:
     if: inputs.scope == 'all'
     # The docker job of ci.yml, with the linux/arm64 image builds whatever changed.
@@ -244,7 +248,7 @@ jobs:
   # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
   result:
     if: always()
-    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, docker, upgrade, restore-drill, go-static, codeql]
+    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

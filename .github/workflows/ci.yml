@@ -457,7 +457,7 @@ jobs:
 
   contracts:
     # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job,
-    # one after another: a change to tasks/go.yml selects all six, and their containers started at once on one runner
+    # one after another: a change to tasks/go.yml selects all seven, and their containers started at once on one runner
     # left Elasticsearch unable to start in time. The Nightly runs all of them. Each starts its containers on the
     # runner's Docker.
     needs: changes
@@ -490,6 +490,9 @@ jobs:
       - name: go:test-search
         if: contains(env.CONTRACTS, ' search ')
         run: scripts/task.sh go:test-search
+      - name: go:test-acme
+        if: contains(env.CONTRACTS, ' acme ')
+        run: scripts/task.sh go:test-acme
 
   client-static:
     needs: changes

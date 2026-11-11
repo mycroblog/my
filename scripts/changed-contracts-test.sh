@@ -39,7 +39,10 @@ expect "the smtp mailer" "mail" internal/adapter/mail/smtp/smtp.go
 expect "the livekit transport" "voice" internal/adapter/voice/livekit/transport.go
 expect "a search backend" "search" internal/adapter/search/meilisearch/index.go
 expect "a contract workflow" "voice" .github/workflows/voice-contract.yml
-expect "the tasks of the contracts" "postgres stream mail blob voice search" tasks/go.yml
+expect "the acme adapter" "acme" internal/adapter/acme/acme.go
+expect "the TLS manager" "acme" internal/app/instance/tls_manager.go
+expect "the Pebble harness" "acme" pkg/testkit/pebbletest/pebbletest.go
+expect "the tasks of the contracts" "postgres stream mail blob voice search acme" tasks/go.yml
 expect "the sqlite adapter" "" internal/adapter/db/sqlite/account/account.go
 expect "the sqlite schema" "" schema/09-instance/sqlite.sql
 expect "a module of the application" "" internal/app/content/status.go
