@@ -87,9 +87,12 @@ export function isolate(text: string): string {
   return `\u2068${text}\u2069`;
 }
 
-/** Whether an account belongs to another server (its handle has a domain). */
+/**
+ * Whether an account belongs to another server: its handle has a domain, or it has no handle, which only a remote
+ * account without a confirmed one lacks.
+ */
 export function isRemote(account: Pick<Account, "acct">): boolean {
-  return account.acct.includes("@");
+  return account.acct === "" || account.acct.includes("@");
 }
 
 /** The reports that `list` selects, in its order. */

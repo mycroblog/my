@@ -558,5 +558,9 @@
   "admin.report.forward.comment.too_long": {
     "defaultMessage": "最多只能使用 {max, number} 個字元",
     "description": "Error of the field of a forwarded report's text when it is too long. {max} is the limit."
+  },
+  "admin.report.target.server": {
+    "defaultMessage": "開啟這個帳號的伺服器",
+    "description": "Link from a report to the moderation page of the server of its remote target."
   }
 }

@@ -542,5 +542,9 @@
   "admin.account.reports.cap": {
     "defaultMessage": "{count, plural, one {Le signalement le plus récent sur le compte.} other {Les # signalements les plus récents sur le compte.}}",
     "description": "Text above the reports on an account's review page: the API gives only the newest ones; count is how many at most."
+  },
+  "admin.account.server": {
+    "defaultMessage": "Ouvrir le serveur du compte",
+    "description": "Link from a remote account's admin page to the moderation page of its server."
   }
 }

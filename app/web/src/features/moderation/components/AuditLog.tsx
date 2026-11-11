@@ -4,7 +4,7 @@
 // WAI-ARIA APG select-only combobox); one actor and one target are chosen from a row's links. The route keeps the
 // filters and the number of loaded pages in the address (web-client/README.md S3). Each row links to its target's admin
 // screen where that kind of target has one and the target is still there, and shows the label recorded with the
-// operation otherwise.
+// operation otherwise; a domain also links to its server's page, for a viewer with manage_domains.
 import {
   Cluster,
   DescriptionItem,
@@ -35,6 +35,8 @@ import {
   auditTargetKindLabels,
   useAuditLog,
 } from "../hooks/useAuditLog";
+import { instancePath } from "../hooks/useInstances";
+import { useHasPermission } from "../hooks/usePermissions";
 import { DateTime, DomainName, RecordTable, RequirePermission } from "./parts";
 
 /** The option of a select that keeps every kind. */
@@ -107,6 +109,8 @@ function useFocusAfterClearing(filters: RefObject<HTMLElement | null>): () => vo
 function AuditLogView({ filter, onFilterChange, filterHref, onPagesLoaded }: AuditLogProps) {
   const t = useT();
   const log = useAuditLog(filter, onPagesLoaded);
+  // The page of a domain's server is for a viewer with manage_domains.
+  const canSeeServers = useHasPermission("manage_domains");
   const filtered = hasFilter(filter);
   const filtersRef = useRef<HTMLDivElement>(null);
   const cleared = useFocusAfterClearing(filtersRef);
@@ -232,6 +236,11 @@ function AuditLogView({ filter, onFilterChange, filterHref, onPagesLoaded }: Aud
                   {t(auditTargetKindLabels[entry.target_kind])}
                 </Text>
                 <AuditTarget entry={entry} />
+                {entry.target_kind === "domain" && canSeeServers && (
+                  <Link href={instancePath(entry.target_id)} variant="standalone" size="sm">
+                    {t("client:admin.audit_log.server")}
+                  </Link>
+                )}
               </Stack>
             ),
           },

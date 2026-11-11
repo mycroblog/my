@@ -39,6 +39,7 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { ReportCommentText, StatusCard } from "../../status";
 import { type AccountAction, type ReportDetail, reportForwardCommentLimit, reportNoteLimit } from "../api/reports";
 import { hookNameLabels, hookReasonLabels } from "../hooks/useHookDecisions";
+import { accountServer, instancePath } from "../hooks/useInstances";
 import { useHasPermission } from "../hooks/usePermissions";
 import { useRefetch } from "../hooks/useRefetch";
 import {
@@ -79,6 +80,8 @@ function ReportPage({ id }: { id: string }) {
   const report = useReport(id);
   const canAct = useHasPermission("manage_accounts");
   const canAudit = useHasPermission("view_audit");
+  // The page of a remote target's server is for a viewer with manage_domains.
+  const canSeeServers = useHasPermission("manage_domains");
   const posts = reportedStatuses(report);
   // Deleted posts stay to be reviewed, but no action can delete them or mark them sensitive.
   const actionable = posts.flatMap((post) =>
@@ -243,6 +246,13 @@ function ReportPage({ id }: { id: string }) {
                         variant="standalone"
                       >
                         {t("client:admin.report.target.audit")}
+                      </Link>
+                    </li>
+                  )}
+                  {canSeeServers && isRemote(target) && (
+                    <li>
+                      <Link href={instancePath(accountServer(target))} variant="standalone">
+                        {t("client:admin.report.target.server")}
                       </Link>
                     </li>
                   )}

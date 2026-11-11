@@ -2,11 +2,25 @@
 // The remote servers screen below its heading (federation.md §7.3), in the admin mode's table form: a toolbar
 // with the state filter, kept in the URL by the route (web-client/README.md S3), and one page of the servers of the
 // selected filter at a time, previous / next, each with its state, since when, and its failures, linking to
-// the server's page with the reasons.
-import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack } from "@my/ui";
+// the server's page with the reasons. Above them, a form opens the page of any server by its domain, a handle on
+// it or a URL on it: a server whose deliveries never failed is not in the list.
+import {
+  Box,
+  Button,
+  Card,
+  EmptyState,
+  Link,
+  ListToolbar,
+  Section,
+  Select,
+  SelectItem,
+  Stack,
+  TextField,
+} from "@my/ui";
+import { type SubmitEvent, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type InstanceFilter, instanceFilters, type InstanceHealth } from "../api/staff";
-import { useInstances } from "../hooks/useInstances";
+import { instanceDomainOf, instancePath, useInstances } from "../hooks/useInstances";
 import {
   Day,
   DateTime,
@@ -27,27 +41,84 @@ function isFilter(key: unknown): key is InstanceFilter {
   return instanceFilters.some((filter) => filter === key);
 }
 
-/** The address of a server's page. */
-function instancePath(domain: string): string {
-  return `/moderation/instances/${encodeURIComponent(domain)}`;
-}
+/** The longest text the form takes: a URL on the server. */
+const openInputLimit = 2048;
 
 export type InstanceListProps = {
   /** The selected filter, from the URL. */
   filter: InstanceFilter;
   /** Selects another filter: the route puts it into the URL. */
   onFilterChange: (filter: InstanceFilter) => void;
+  /** Opens the page of the server with this domain (IDNA A-labels in lower case). */
+  onOpen: (domain: string) => void;
 };
 
-export function InstanceList(props: InstanceListProps) {
+export function InstanceList({ onOpen, ...props }: InstanceListProps) {
   return (
     <RequirePermission permission="manage_domains">
-      <InstanceTabs {...props} />
+      <Stack gap="6">
+        <Card>
+          <OpenInstance onOpen={onOpen} />
+        </Card>
+        <InstanceTabs {...props} />
+      </Stack>
     </RequirePermission>
   );
 }
 
-function InstanceTabs({ filter, onFilterChange }: InstanceListProps) {
+/** The form that opens the page of any server, listed or not. */
+function OpenInstance({ onOpen }: Pick<InstanceListProps, "onOpen">) {
+  const t = useT();
+  const [input, setInput] = useState("");
+  const submit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const domain = instanceDomainOf(input);
+    if (domain !== undefined) onOpen(domain);
+  };
+  return (
+    <Section
+      surface="card"
+      title={t("client:admin.instances.open.title")}
+      description={t("client:admin.instances.open.description")}
+    >
+      <Stack
+        as="form"
+        role="search"
+        aria-label={t("client:admin.instances.open.title")}
+        onSubmit={submit}
+        container
+        gap="3"
+      >
+        <TextField
+          label={t("client:admin.instances.open.domain")}
+          description={t("client:admin.instances.open.domain.description")}
+          value={input}
+          onChange={setInput}
+          isRequired
+          maxLength={openInputLimit}
+          validate={(value) =>
+            value.trim() === "" || instanceDomainOf(value) !== undefined
+              ? null
+              : t("client:admin.instances.open.domain.invalid")
+          }
+          errorMessage={(validation) =>
+            validation.validationDetails.valueMissing
+              ? t("client:admin.instances.open.domain.required")
+              : validation.validationErrors.join(" ")
+          }
+          autoComplete="off"
+          spellCheck="false"
+          dir="ltr"
+        />
+        <Box>
+          <Button type="submit">{t("client:admin.instances.open.submit")}</Button>
+        </Box>
+      </Stack>
+    </Section>
+  );
+}
+
+function InstanceTabs({ filter, onFilterChange }: Omit<InstanceListProps, "onOpen">) {
   const t = useT();
   return (
     <Stack gap="4">

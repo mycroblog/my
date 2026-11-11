@@ -99,6 +99,41 @@ describe("remote servers", () => {
     ).toBeInTheDocument();
   });
 
+  test("opens the page of an unlisted server by its domain, a handle on it, or a URL on it, by keyboard", async () => {
+    server.use(operatorHandler(["manage_domains"]));
+    const requests = recordAdminRequests();
+    const { user, router } = await renderApp({ path: "/moderation/instances" });
+
+    const form = await screen.findByRole("search", { name: "Open a server" });
+    const field = within(form).getByRole("textbox", { name: "Server" });
+    await user.type(field, "https://Calm.Example./@alice{Enter}");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/moderation/instances/calm.example");
+    });
+    expect(await screen.findByRole("heading", { level: 1, name: "calm.example" })).toBeInTheDocument();
+    expect(requests).toContain("GET /admin/instances/calm.example");
+
+    await router.navigate({ to: "/moderation/instances" });
+    await user.type(await screen.findByRole("textbox", { name: "Server" }), "@bob@例え.jp{Enter}");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/moderation/instances/xn--r8jz45g.jp");
+    });
+  });
+
+  test("the form to open a server says what it needs and stays on the list", async () => {
+    server.use(operatorHandler(["manage_domains"]));
+    const { user, router } = await renderApp({ path: "/moderation/instances" });
+
+    const form = await screen.findByRole("search", { name: "Open a server" });
+    await user.click(within(form).getByRole("button", { name: "Open" }));
+    expect(await within(form).findByText("Enter the server's domain.")).toBeInTheDocument();
+
+    await user.type(within(form).getByRole("textbox", { name: "Server" }), "not a host");
+    await user.click(within(form).getByRole("button", { name: "Open" }));
+    expect(await within(form).findByText("Enter a domain, a handle, or a URL.")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/moderation/instances");
+  });
+
   test("a server's page shows why it is paused and its history, and resumes deliveries", async () => {
     let health = paused;
     let events: Schemas["AdminAvailabilityEvent"][] = [

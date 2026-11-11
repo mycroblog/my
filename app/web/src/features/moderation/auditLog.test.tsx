@@ -146,6 +146,10 @@ describe("the audit log", () => {
       "href",
       "/moderation/domain-actions?filter=all&domain=spam.example",
     );
+    // The page of the domain's server is for a viewer with manage_domains.
+    expect(
+      within(row("Domain action taken")).queryByRole("link", { name: "Open the server's page" }),
+    ).not.toBeInTheDocument();
 
     expect(within(pagination()).getByRole("button", { name: "Previous" })).toBeDisabled();
     await user.click(within(pagination()).getByRole("button", { name: "Next" }));
@@ -165,6 +169,20 @@ describe("the audit log", () => {
     await user.click(within(pagination()).getByRole("button", { name: "Previous" }));
     expect(await screen.findByRole("rowheader", { name: "Account action taken" })).toBeInTheDocument();
     expect(requests).toEqual(["/admin/audit_log?limit=40", `/admin/audit_log?limit=40&cursor=${domainLimit.id}`]);
+  });
+
+  test("links a domain to its server's page for a viewer with manage_domains, and no other target", async () => {
+    server.use(operatorHandler(["view_audit", "manage_domains"]), auditLogHandler);
+    await renderApp({ path: "/moderation/audit-log" });
+
+    expect(await screen.findByRole("rowheader", { name: "Domain action taken" })).toBeInTheDocument();
+    expect(within(row("Domain action taken")).getByRole("link", { name: "Open the server's page" })).toHaveAttribute(
+      "href",
+      "/moderation/instances/spam.example",
+    );
+    expect(
+      within(row("Account action taken")).queryByRole("link", { name: "Open the server's page" }),
+    ).not.toBeInTheDocument();
   });
 
   test("keeps the loaded pages in the URL and loads them all again from it", async () => {

@@ -34,5 +34,33 @@
   "admin.instances.column.server": {
     "defaultMessage": "Servidor",
     "description": "Header of the column of the remote servers table that names the server and links to it."
+  },
+  "admin.instances.open.title": {
+    "defaultMessage": "Abrir un servidor",
+    "description": "Heading of the form on the remote servers screen that opens the page of any server, listed or not."
+  },
+  "admin.instances.open.description": {
+    "defaultMessage": "Los servidores a los que nunca falló una entrega no aparecen en la lista. Abre la página de cualquier servidor por su dominio.",
+    "description": "Text under the heading of the form that opens a server's page: why it is there."
+  },
+  "admin.instances.open.domain": {
+    "defaultMessage": "Servidor",
+    "description": "Label of the field of the form that opens a server's page."
+  },
+  "admin.instances.open.domain.description": {
+    "defaultMessage": "Un dominio como mastodon.example, un identificador en el servidor o una URL en él.",
+    "description": "Help under the field of the form that opens a server's page: what it takes."
+  },
+  "admin.instances.open.domain.invalid": {
+    "defaultMessage": "Escribe un dominio, un identificador o una URL.",
+    "description": "Error of the field of the form that opens a server's page when its text names no server."
+  },
+  "admin.instances.open.domain.required": {
+    "defaultMessage": "Escribe el dominio del servidor.",
+    "description": "Error of the field of the form that opens a server's page when it is empty."
+  },
+  "admin.instances.open.submit": {
+    "defaultMessage": "Abrir",
+    "description": "Button of the form that opens a server's page."
   }
 }

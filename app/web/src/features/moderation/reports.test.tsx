@@ -410,6 +410,8 @@ describe("a report's page", () => {
     expect(
       within(target).getByRole("link", { name: "Show operations on the account in the audit log" }),
     ).toHaveAttribute("href", `/moderation/audit-log?target_kind=account&target=${otherAccountFixture.id}`);
+    // A local target has no server of its own to open.
+    expect(within(target).queryByRole("link", { name: "Open the account's server" })).not.toBeInTheDocument();
     expect(within(target).getByText("2 reports")).toBeInTheDocument();
     expect(within(target).getByText("1 action")).toBeInTheDocument();
 
@@ -814,6 +816,29 @@ describe("a report's page", () => {
     expect(screen.queryByRole("region", { name: "Actions on the account" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open the account's admin page" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dismiss the report" })).toBeInTheDocument();
+  });
+
+  test("a remote target links to its server's page for a moderator with manage_domains", async () => {
+    server.use(operatorHandler(["manage_reports", "manage_domains"]));
+    const remote = reportFixture({ target_account_id: remoteAccountFixture.id, target_account: remoteAccountFixture });
+    reportsServer([remote]);
+    await renderApp({ path: `/moderation/reports/${remote.id}` });
+
+    const target = await screen.findByRole("region", { name: "Reported account" });
+    expect(await within(target).findByRole("link", { name: "Open the account's server" })).toHaveAttribute(
+      "href",
+      "/moderation/instances/remote.example",
+    );
+  });
+
+  test("a remote target has no link to its server's page without manage_domains", async () => {
+    const remote = reportFixture({ target_account_id: remoteAccountFixture.id, target_account: remoteAccountFixture });
+    reportsServer([remote]);
+    await renderApp({ path: `/moderation/reports/${remote.id}` });
+
+    const target = await screen.findByRole("region", { name: "Reported account" });
+    expect(await within(target).findByRole("link", { name: "Open the profile" })).toBeInTheDocument();
+    expect(within(target).queryByRole("link", { name: "Open the account's server" })).not.toBeInTheDocument();
   });
 
   test("an unknown report is not found", async () => {

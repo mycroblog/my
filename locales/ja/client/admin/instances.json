@@ -34,5 +34,33 @@
   "admin.instances.column.server": {
     "defaultMessage": "サーバー",
     "description": "Header of the column of the remote servers table that names the server and links to it."
+  },
+  "admin.instances.open.title": {
+    "defaultMessage": "サーバーを開く",
+    "description": "Heading of the form on the remote servers screen that opens the page of any server, listed or not."
+  },
+  "admin.instances.open.description": {
+    "defaultMessage": "配送に失敗したことのないサーバーは一覧に出ません。どのサーバーのページも、ドメインから開けます。",
+    "description": "Text under the heading of the form that opens a server's page: why it is there."
+  },
+  "admin.instances.open.domain": {
+    "defaultMessage": "サーバー",
+    "description": "Label of the field of the form that opens a server's page."
+  },
+  "admin.instances.open.domain.description": {
+    "defaultMessage": "mastodon.example のようなドメイン、そのサーバーのハンドル、またはそのサーバーの URL。",
+    "description": "Help under the field of the form that opens a server's page: what it takes."
+  },
+  "admin.instances.open.domain.invalid": {
+    "defaultMessage": "ドメイン、ハンドル、または URL を入れてください。",
+    "description": "Error of the field of the form that opens a server's page when its text names no server."
+  },
+  "admin.instances.open.domain.required": {
+    "defaultMessage": "サーバーのドメインを入れてください。",
+    "description": "Error of the field of the form that opens a server's page when it is empty."
+  },
+  "admin.instances.open.submit": {
+    "defaultMessage": "開く",
+    "description": "Button of the form that opens a server's page."
   }
 }

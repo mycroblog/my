@@ -139,7 +139,7 @@ These tools come back in most of the runbook entries below.
   `my job list` lists the failed jobs, newest first; `my job retry <id>...` puts them back in the queue; `my job delete <id>...` drops them.
   Jobs are safe to run again.
 - **The remote servers screen** (Moderation → Remote servers, `/moderation/instances`, needs `manage_domains`): the servers that deliveries failed to reach,
-  and those whose deliveries are paused, with why and when. "Resume deliveries" marks a server available again.
+  and those whose deliveries are paused, with why and when. "Resume deliveries" marks a server available again. "Open a server" opens the page of any server by its domain, listed or not.
 - **The logs**: JSON lines on standard error. Each HTTP request ends with a line whose `msg` is `http request`, each job run with a line whose `msg` is `job`
   (`INFO` for success, `WARN` for a retry, `ERROR` for a job that failed for good, with the `error`, `job_id`, and `my.job.type`).
   Lines inside a request carry its `request_id`, which the client sees as `X-Request-Id`.

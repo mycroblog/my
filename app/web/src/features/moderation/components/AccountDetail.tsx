@@ -50,6 +50,7 @@ import {
   useLiftAccountAction,
 } from "../hooks/useAdminAccounts";
 import type { PagedList } from "../hooks/pagedList";
+import { accountServer, instancePath } from "../hooks/useInstances";
 import { useHasPermission } from "../hooks/usePermissions";
 import { type StartingPost, useStartingPost } from "../hooks/useStartingPost";
 import {
@@ -201,6 +202,8 @@ function AccountReview({ id, statusId }: { id: string; statusId: string | undefi
 function AccountSummary({ account }: { account: AdminAccountDetail }) {
   const t = useT();
   const canAudit = useHasPermission("view_audit");
+  // The page of a remote account's server is for a viewer with manage_domains.
+  const canSeeServer = useHasPermission("manage_domains") && !account.local;
   const { registration } = account;
   return (
     <Stack gap="3">
@@ -225,6 +228,13 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
               variant="standalone"
             >
               {t("client:admin.account.audit")}
+            </Link>
+          </li>
+        )}
+        {canSeeServer && (
+          <li>
+            <Link href={instancePath(accountServer(account.account))} variant="standalone">
+              {t("client:admin.account.server")}
             </Link>
           </li>
         )}

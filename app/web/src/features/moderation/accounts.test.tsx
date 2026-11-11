@@ -511,6 +511,47 @@ describe("an account's admin page", () => {
     ).toBeInTheDocument();
   });
 
+  test("a remote account links to the page of the server its actor is on, for a viewer with manage_domains", async () => {
+    server.use(operatorHandler(["manage_accounts", "manage_domains"]));
+    // The handle's domain hands WebFinger to another host, which holds the actor and gets the deliveries.
+    const carolDetail = adminAccountDetailFixture({
+      ...remoteAccountFixture,
+      uri: "https://social.remote.example/users/carol",
+    });
+    accountServer(carolDetail);
+    await renderApp({ path: `/moderation/accounts/${carolDetail.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    expect(within(region("Account")).getByRole("link", { name: "Open the account's server" })).toHaveAttribute(
+      "href",
+      "/moderation/instances/social.remote.example",
+    );
+  });
+
+  test("a viewer without manage_domains has no link to a remote account's server", async () => {
+    const carolDetail = adminAccountDetailFixture(remoteAccountFixture);
+    accountServer(carolDetail);
+    await renderApp({ path: `/moderation/accounts/${carolDetail.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    expect(within(region("Account")).getByText("remote.example")).toBeInTheDocument();
+    expect(
+      within(region("Account")).queryByRole("link", { name: "Open the account's server" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("a local account has no link to a server's page", async () => {
+    server.use(operatorHandler(["manage_accounts", "manage_domains"]));
+    accountServer(bobDetail);
+    await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    expect(within(region("Account")).getByText("This server")).toBeInTheDocument();
+    expect(
+      within(region("Account")).queryByRole("link", { name: "Open the account's server" }),
+    ).not.toBeInTheDocument();
+  });
+
   test("a local account takes every kind but those on posts, told by default", async () => {
     const api = accountServer(bobDetail);
     const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });

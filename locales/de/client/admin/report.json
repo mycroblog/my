@@ -558,5 +558,9 @@
   "admin.report.forward.comment.too_long": {
     "defaultMessage": "Maximal {max, number} Zeichen",
     "description": "Error of the field of a forwarded report's text when it is too long. {max} is the limit."
+  },
+  "admin.report.target.server": {
+    "defaultMessage": "Server des Kontos öffnen",
+    "description": "Link from a report to the moderation page of the server of its remote target."
   }
 }

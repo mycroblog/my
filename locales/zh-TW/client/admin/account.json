@@ -542,5 +542,9 @@
   "admin.account.reports.cap": {
     "defaultMessage": "{count, plural, other {針對這個帳號最新的 # 則檢舉。}}",
     "description": "Text above the reports on an account's review page: the API gives only the newest ones; count is how many at most."
+  },
+  "admin.account.server": {
+    "defaultMessage": "開啟這個帳號的伺服器",
+    "description": "Link from a remote account's admin page to the moderation page of its server."
   }
 }

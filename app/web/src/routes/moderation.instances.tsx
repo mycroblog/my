@@ -12,7 +12,10 @@ const searchSchema = z.object({
   state: z.enum(instanceFilters).exclude(["all"]).optional().catch(undefined),
 });
 
-/** The health of the remote servers that deliveries failed to reach (federation.md §7.3), for manage_domains. */
+/**
+ * The health of the remote servers that deliveries failed to reach (federation.md §7.3), and the way to open any
+ * server's page by its domain, for manage_domains.
+ */
 export const Route = createFileRoute("/moderation/instances")({
   staticData: { title: "client:admin.instances.title" },
   validateSearch: searchSchema,
@@ -36,7 +39,11 @@ function InstancesPage() {
   return (
     <>
       <PageHeading>{t("client:admin.instances.title")}</PageHeading>
-      <InstanceList filter={filter} onFilterChange={changeFilter} />
+      <InstanceList
+        filter={filter}
+        onFilterChange={changeFilter}
+        onOpen={(domain) => void navigate({ to: "/moderation/instances/$domain", params: { domain } })}
+      />
     </>
   );
 }
