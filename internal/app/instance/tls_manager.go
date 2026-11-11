@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	mathrand "math/rand/v2"
 	"slices"
 	"sync"
 	"time"
@@ -31,6 +32,26 @@ const (
 	// process may be ordering it, or the last round failed before an order was recorded.
 	DefaultTLSRetryInterval = time.Minute
 )
+
+// The waits of the renewal information (ARI, RFC 9773) of the CA (ADR-0163 §7).
+const (
+	// tlsRenewalInfoMinWait and tlsRenewalInfoMaxWait clamp the CA's Retry-After.
+	tlsRenewalInfoMinWait = time.Minute
+	tlsRenewalInfoMaxWait = 24 * time.Hour
+	// tlsRenewalInfoRefresh is the longest time between two reads of the renewal information of
+	// a certificate, and the wait when the CA says nothing, or offers no ARI.
+	tlsRenewalInfoRefresh = 12 * time.Hour
+	// tlsRenewalInfoErrorWait is the wait after a read of the renewal information that failed;
+	// the renewal time meanwhile comes from the lifetime of the certificate.
+	tlsRenewalInfoErrorWait = time.Hour
+	// tlsShortLifetime is the lifetime under which a certificate without ARI is renewed after half
+	// of it, rather than two thirds.
+	tlsShortLifetime = 10 * 24 * time.Hour
+)
+
+// ErrTLSOrderInProgress reports that another process holds the lease of the orders of the host:
+// it is ordering a certificate now.
+var ErrTLSOrderInProgress = errors.New("instance: another process is ordering the TLS certificate of this host")
 
 // errTLSOrderLeaseLost ends the context of an order whose lease could not be extended.
 var errTLSOrderLeaseLost = errors.New("instance: lost the lease of the TLS order")
@@ -73,6 +94,10 @@ type TLSManagerOptions struct {
 	// and DefaultTLSRetryInterval.
 	CheckInterval time.Duration
 	RetryInterval time.Duration
+	// Notify, when set, tells the other processes that this one put a new certificate of host
+	// into the database and into its memory (the tls_certificate signal of ADR-0163 §6). It
+	// must not block.
+	Notify func(host, certificateID string)
 }
 
 // TLSManager obtains the certificates of the hosts that the server serves itself with ACME
@@ -80,24 +105,34 @@ type TLSManagerOptions struct {
 //
 // Each round, for each host, it loads the database's current certificate when it differs from the
 // one in memory (the only time a sealed key is opened), and orders one when the host needs it and
-// the backoff of the failed orders allows. An order runs under the lease acme.order/<host> in the
+// the backoff of the failed orders allows. The other processes learn of a new certificate from
+// Notify, which calls their Notice, and from their own rounds. An order runs under the lease acme.order/<host> in the
 // KeyValueStore, so that the processes sharing the database and the KeyValueStore place one order
 // per host at a time; after taking the lease, it reads the database again, since another process
 // may have finished an order meanwhile. Every attempt, failure, and certificate is recorded, and
 // the backoff is derived from them, so that it survives restarts.
 //
 // A host needs an order when it has no certificate, or only one from another CA than Client's
-// (the operator moved from a staging CA to the production one): that one is served until the new
-// one comes. The renewal of a certificate is decided in needsOrder too, and a notice to the other
-// processes would go out from install.
+// (the operator moved from a staging CA to the production one), or its certificate reached its
+// renewal time (RenewalTime, ADR-0163 §7). The certificate in memory is served until the new one
+// comes, and the new one replaces it (RFC 9773 §5) when the same CA issued both.
 type TLSManager struct {
 	opts       TLSManagerOptions
 	challenges *ACMEChallenges
 	lease      tlsOrderLease
+	// loading serializes, for each host, the reads of its current certificate and the
+	// installs, so that a slow read never installs a certificate over a newer one.
+	loading map[string]*sync.Mutex
 
 	mu sync.Mutex
-	// loaded is the certificate in memory of each host.
-	loaded map[string]tlsLoaded
+	// loaded is the certificate in memory of each host, and renewals its renewal time.
+	loaded   map[string]tlsLoaded
+	renewals map[string]tlsRenewal
+	// notices are the hosts to load again (Notice), all of them when noticeAll is set; wake
+	// tells the goroutine of Run that loads them.
+	notices   map[string]struct{}
+	noticeAll bool
+	wake      chan struct{}
 
 	accountMu sync.Mutex
 	account   *ACMEAccount
@@ -108,6 +143,18 @@ type tlsLoaded struct {
 	id        string
 	directory string
 	leaf      *x509.Certificate
+}
+
+// tlsRenewal is the renewal time of the certificate id of a host (ADR-0163 §7).
+type tlsRenewal struct {
+	id string
+	// start and end are the window that the CA suggested (ARI), zero without one.
+	start, end time.Time
+	// at is the renewal time: picked once in the window, and kept until the window changes,
+	// or derived from the lifetime of the certificate without one.
+	at time.Time
+	// ask is when to read the renewal information again.
+	ask time.Time
 }
 
 // NewTLSManager returns the manager of opts.
@@ -148,11 +195,19 @@ func NewTLSManager(opts TLSManagerOptions) (*TLSManager, error) {
 	if opts.Logger == nil {
 		opts.Logger = slog.New(slog.DiscardHandler)
 	}
+	loading := make(map[string]*sync.Mutex, len(hosts))
+	for _, h := range hosts {
+		loading[h] = &sync.Mutex{}
+	}
 	return &TLSManager{
 		opts:       opts,
 		challenges: NewACMEChallenges(opts.KV),
 		lease:      tlsOrderLease{kv: opts.KV, ttl: opts.LeaseTTL, renewal: opts.LeaseRenewal},
+		loading:    loading,
 		loaded:     map[string]tlsLoaded{},
+		renewals:   map[string]tlsRenewal{},
+		notices:    map[string]struct{}{},
+		wake:       make(chan struct{}, 1),
 	}, nil
 }
 
@@ -180,9 +235,16 @@ func (m *TLSManager) ReloadAll(ctx context.Context) error {
 
 // Reload loads the current certificate of host from the database into memory, unless it is the
 // one there already: it reads only the certificate's ID to compare, and opens the sealed key only
-// for a certificate it installs. A host without a certificate in the database is left as it is.
+// for a certificate it installs. A host without a certificate in the database is left as it is,
+// and so is a host that the manager does not serve.
 func (m *TLSManager) Reload(ctx context.Context, host string) error {
 	host = normalizeChallengeHost(host)
+	lock, ok := m.loading[host]
+	if !ok {
+		return nil
+	}
+	lock.Lock()
+	defer lock.Unlock()
 	id, err := m.opts.Service.CurrentTLSCertificateID(ctx, host)
 	if errors.Is(err, ErrNotFound) {
 		return nil
@@ -200,8 +262,64 @@ func (m *TLSManager) Reload(ctx context.Context, host string) error {
 	return m.install(host, pair.Record.ID, pair.Record.DirectoryURL, pair.Record.ChainPEM, pair.PrivateKey)
 }
 
+// Notice asks the goroutine of Run to load the current certificate of host from the database
+// (Reload): another process told that it changed (the tls_certificate signal, ADR-0163 §6). It
+// never blocks, and the notices that arrive before the load runs make one load. The notice says
+// only that the host changed: the database decides which certificate is current, so that a late
+// or repeated notice never brings an older certificate back.
+func (m *TLSManager) Notice(host string) {
+	m.mu.Lock()
+	m.notices[normalizeChallengeHost(host)] = struct{}{}
+	m.mu.Unlock()
+	m.signal()
+}
+
+// NoticeAll asks for a load of every host as Notice does: the notices may have been missed (the
+// listener of the other processes' signals broke, or listens anew).
+func (m *TLSManager) NoticeAll() {
+	m.mu.Lock()
+	m.noticeAll = true
+	m.mu.Unlock()
+	m.signal()
+}
+
+func (m *TLSManager) signal() {
+	select {
+	case m.wake <- struct{}{}:
+	default:
+	}
+}
+
+// runNotices loads the hosts of the notices until ctx ends.
+func (m *TLSManager) runNotices(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-m.wake:
+		}
+		m.mu.Lock()
+		all, hosts := m.noticeAll, m.notices
+		m.noticeAll, m.notices = false, map[string]struct{}{}
+		m.mu.Unlock()
+		var err error
+		if all {
+			err = m.ReloadAll(ctx)
+		} else {
+			var errs []error
+			for h := range hosts {
+				errs = append(errs, m.Reload(ctx, h))
+			}
+			err = errors.Join(errs...)
+		}
+		if err != nil && ctx.Err() == nil {
+			m.opts.Logger.WarnContext(ctx, "the TLS certificate of a notice could not be loaded; the next round loads it", slog.Any("error", err))
+		}
+	}
+}
+
 // install puts the certificate id, chainPEM with its key (PKCS #8 DER) issued by the CA of
-// directory, into memory for host.
+// directory, into memory for host; the caller holds the loading lock of host.
 func (m *TLSManager) install(host, id, directory, chainPEM string, pkcs8 []byte) error {
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: pkcs8})
 	cert, err := tls.X509KeyPair([]byte(chainPEM), keyPEM)
@@ -217,18 +335,97 @@ func (m *TLSManager) install(host, id, directory, chainPEM string, pkcs8 []byte)
 	return nil
 }
 
-// needsOrder reports whether host needs a new certificate: it has none from the CA of Client.
-func (m *TLSManager) needsOrder(host string) bool {
+// RenewalTime returns the renewal time of the certificate in memory of host (ADR-0163 §7), as the
+// last round computed it: zero when the host has no certificate of the CA of Client, or no round
+// looked at it yet.
+func (m *TLSManager) RenewalTime(host string) time.Time {
+	host = normalizeChallengeHost(host)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	c, ok := m.loaded[host]
-	return !ok || c.directory != m.opts.Client.DirectoryURL()
+	r := m.renewals[host]
+	if !ok || r.id != c.id || c.directory != m.opts.Client.DirectoryURL() {
+		return time.Time{}
+	}
+	return r.at
+}
+
+// due returns when host needs an order: zero, that is now, when it has no certificate of the CA of
+// Client, and otherwise the renewal time of its certificate, and when to look again before then.
+// It reads the CA's renewal information when the last read is due again (ADR-0163 §7).
+func (m *TLSManager) due(ctx context.Context, host string) (at, ask time.Time) {
+	m.mu.Lock()
+	c, ok := m.loaded[host]
+	r := m.renewals[host]
+	m.mu.Unlock()
+	if !ok || c.directory != m.opts.Client.DirectoryURL() {
+		return time.Time{}, time.Time{}
+	}
+	now := m.opts.Clock.Now()
+	if r.id == c.id && now.Before(r.ask) {
+		return r.at, r.ask
+	}
+	if r.id != c.id {
+		r = tlsRenewal{id: c.id}
+	}
+	info, err := m.opts.Client.RenewalInfo(ctx, c.leaf)
+	switch {
+	case err == nil && info.WindowEnd.After(info.WindowStart):
+		// One time in the window, kept while the window stays: picking again at each read would
+		// keep moving it ahead of the clock.
+		if r.at.IsZero() || !r.start.Equal(info.WindowStart) || !r.end.Equal(info.WindowEnd) {
+			r.at = info.WindowStart.Add(mathrand.N(info.WindowEnd.Sub(info.WindowStart))) //nolint:gosec // spreading renewals needs no cryptographic randomness
+		}
+		r.start, r.end = info.WindowStart, info.WindowEnd
+		r.ask = now.Add(renewalInfoWait(now, info.RetryAfter))
+	case err == nil || errors.Is(err, ErrACMERenewalInfoUnsupported):
+		// No window: the CA offers no ARI, or answered an empty window.
+		r.start, r.end = time.Time{}, time.Time{}
+		r.at = lifetimeRenewalTime(c.leaf)
+		r.ask = now.Add(tlsRenewalInfoRefresh)
+	default:
+		m.opts.Logger.WarnContext(ctx, "the renewal information of the TLS certificate could not be read", slog.String("host", host), slog.Any("error", err))
+		if r.at.IsZero() {
+			r.at = lifetimeRenewalTime(c.leaf)
+		}
+		r.ask = now.Add(tlsRenewalInfoErrorWait)
+	}
+	m.mu.Lock()
+	if cur, ok := m.loaded[host]; ok && cur.id == c.id {
+		m.renewals[host] = r
+	}
+	m.mu.Unlock()
+	return r.at, r.ask
+}
+
+// renewalInfoWait returns how long to wait before reading the renewal information again: the CA's
+// retryAfter, clamped to between a minute and a day, and at most 12 hours (ADR-0163 §7).
+func renewalInfoWait(now, retryAfter time.Time) time.Duration {
+	if retryAfter.IsZero() {
+		return tlsRenewalInfoRefresh
+	}
+	wait := min(max(retryAfter.Sub(now), tlsRenewalInfoMinWait), tlsRenewalInfoMaxWait)
+	return min(wait, tlsRenewalInfoRefresh)
+}
+
+// lifetimeRenewalTime returns the renewal time of leaf without ARI: after two thirds of its
+// lifetime, or half of it for a certificate valid under 10 days (ADR-0163 §7).
+func lifetimeRenewalTime(leaf *x509.Certificate) time.Time {
+	life := leaf.NotAfter.Sub(leaf.NotBefore)
+	if life < tlsShortLifetime {
+		return leaf.NotBefore.Add(life / 2)
+	}
+	return leaf.NotBefore.Add(life * 2 / 3)
 }
 
 // Run runs a round (Maintain) for every host, and the next one when the earliest host needs it,
-// until ctx ends. Start it once the listeners are up: the CA validates TLS-ALPN-01 on the TLS
-// listener (ADR-0163 §7).
+// until ctx ends, and loads the certificates of the notices (Notice, NoticeAll) as they come.
+// Start it once the listeners are up: the CA validates TLS-ALPN-01 on the TLS listener
+// (ADR-0163 §7).
 func (m *TLSManager) Run(ctx context.Context) {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	wg.Go(func() { m.runNotices(ctx) })
 	for {
 		next := m.Maintain(ctx)
 		wait := min(max(next.Sub(m.opts.Clock.Now()), time.Second), m.opts.CheckInterval)
@@ -260,22 +457,24 @@ func (m *TLSManager) Maintain(ctx context.Context) time.Time {
 	return slices.MinFunc(nexts, func(a, b time.Time) int { return a.Compare(b) })
 }
 
-// maintain runs the round of host and returns when its next one is due.
+// maintain runs the round of host and returns when its next one is due: after CheckInterval, or
+// at the renewal time when it comes first, and after RetryInterval once the host needs an order
+// that this round did not obtain (ADR-0163 §6), or earlier when the backoff ends first.
 func (m *TLSManager) maintain(ctx context.Context, host string) (time.Time, error) {
 	now := m.opts.Clock.Now()
 	retry := now.Add(m.opts.RetryInterval)
 	if err := m.Reload(ctx, host); err != nil {
 		return retry, err
 	}
-	if !m.needsOrder(host) {
-		return now.Add(m.opts.CheckInterval), nil
+	if next, ok := m.notDue(ctx, host, now); ok {
+		return next, nil
 	}
 	wait, err := m.backoff(ctx, host)
 	if err != nil {
 		return retry, err
 	}
 	if !wait.IsZero() {
-		return wait, nil
+		return earliest(wait, retry), nil
 	}
 	var next time.Time
 	held, err := m.lease.hold(ctx, host, func(ctx context.Context) error {
@@ -283,7 +482,7 @@ func (m *TLSManager) maintain(ctx context.Context, host string) (time.Time, erro
 		if err := m.Reload(ctx, host); err != nil {
 			return err
 		}
-		if !m.needsOrder(host) {
+		if _, ok := m.notDue(ctx, host, m.opts.Clock.Now()); ok {
 			return nil
 		}
 		wait, err := m.backoff(ctx, host)
@@ -300,11 +499,50 @@ func (m *TLSManager) maintain(ctx context.Context, host string) (time.Time, erro
 		// Another process orders it; the next round loads what it obtains.
 		return retry, nil
 	case !next.IsZero():
-		return next, nil
-	case m.needsOrder(host):
-		return retry, nil
+		return earliest(next, retry), nil
 	}
-	return m.opts.Clock.Now().Add(m.opts.CheckInterval), nil
+	now = m.opts.Clock.Now()
+	if next, ok := m.notDue(ctx, host, now); ok {
+		return next, nil
+	}
+	return now.Add(m.opts.RetryInterval), nil
+}
+
+// notDue reports whether host needs no order at now, and if so when its next round is due: after
+// CheckInterval, or at its renewal time or the next read of the renewal information when either
+// comes first.
+func (m *TLSManager) notDue(ctx context.Context, host string, now time.Time) (time.Time, bool) {
+	at, ask := m.due(ctx, host)
+	if !now.Before(at) {
+		return time.Time{}, false
+	}
+	return earliest(now.Add(m.opts.CheckInterval), at, ask), true
+}
+
+// earliest returns the earliest of ts, which are not zero.
+func earliest(ts ...time.Time) time.Time {
+	return slices.MinFunc(ts, func(a, b time.Time) int { return a.Compare(b) })
+}
+
+// OrderNow orders a certificate of host at once, skipping its renewal time and the backoff of the
+// failed orders, for an operator who asks for one (my tls renew): under the lease of the orders
+// of host, as a round orders, and replacing the current certificate when the same CA issued it.
+// It reports ErrTLSOrderInProgress while another process holds the lease.
+func (m *TLSManager) OrderNow(ctx context.Context, host string) error {
+	host = normalizeChallengeHost(host)
+	if !slices.Contains(m.opts.Hosts, host) {
+		return fmt.Errorf("instance: %q is not a host of the TLS certificates", host)
+	}
+	held, err := m.lease.hold(ctx, host, func(ctx context.Context) error {
+		if err := m.Reload(ctx, host); err != nil {
+			return err
+		}
+		return m.order(ctx, host)
+	})
+	if err == nil && !held {
+		return ErrTLSOrderInProgress
+	}
+	return err
 }
 
 // backoff returns when the backoff of the failed orders of host allows the next one, zero when it
@@ -327,9 +565,10 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 	dir := m.opts.Client.DirectoryURL()
 	// A certificate replaces one of the same CA only.
 	var replaces string
+	var replacesLeaf *x509.Certificate
 	m.mu.Lock()
-	if c := m.loaded[host]; c.directory == dir {
-		replaces = c.id
+	if c, ok := m.loaded[host]; ok && c.directory == dir {
+		replaces, replacesLeaf = c.id, c.leaf
 	}
 	m.mu.Unlock()
 	attempt, err := m.opts.Service.RecordTLSOrderAttempt(ctx, TLSOrder{
@@ -339,7 +578,7 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 		return err
 	}
 	m.opts.Logger.InfoContext(ctx, "ordering a TLS certificate", slog.String("host", host), slog.String("directory", attempt.DirectoryURL))
-	chain, key, err := m.obtain(ctx, host)
+	chain, key, err := m.obtain(ctx, host, replacesLeaf)
 	if err != nil {
 		problem, detail := classifyTLSOrderFailure(ctx, err)
 		recErr := m.opts.Service.RecordTLSOrderFailure(context.WithoutCancel(ctx), attempt.ID, problem, detail)
@@ -351,13 +590,23 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 		return err
 	}
 	m.opts.Logger.InfoContext(ctx, "obtained a TLS certificate", slog.String("host", host),
-		slog.String("serial", c.Serial), slog.Time("not_after", c.NotAfter))
-	return m.install(host, c.ID, c.DirectoryURL, c.ChainPEM, key)
+		slog.String("serial", c.Serial), slog.Time("not_after", c.NotAfter), slog.Bool("renewal", replaces != ""))
+	lock := m.loading[host]
+	lock.Lock()
+	err = m.install(host, c.ID, c.DirectoryURL, c.ChainPEM, key)
+	lock.Unlock()
+	if err != nil {
+		return err
+	}
+	if m.opts.Notify != nil {
+		m.opts.Notify(host, c.ID)
+	}
+	return nil
 }
 
-// obtain orders the certificate of host with a new key, and returns its chain and the key in
-// PKCS #8 DER.
-func (m *TLSManager) obtain(ctx context.Context, host string) (string, []byte, error) {
+// obtain orders the certificate of host with a new key, replacing the certificate replaces when
+// not nil, and returns its chain and the key in PKCS #8 DER.
+func (m *TLSManager) obtain(ctx context.Context, host string, replaces *x509.Certificate) (string, []byte, error) {
 	account, err := m.acmeAccount(ctx)
 	if err != nil {
 		return "", nil, err
@@ -371,7 +620,7 @@ func (m *TLSManager) obtain(ctx context.Context, host string) (string, []byte, e
 		return "", nil, err
 	}
 	chain, err := m.opts.Client.Order(ctx, ACMEOrderRequest{
-		Account: account, Host: host, Key: key, Profile: m.opts.Profile,
+		Account: account, Host: host, Key: key, Profile: m.opts.Profile, Replaces: replaces,
 		Challenges: m.opts.Challenges, Solver: m.challenges,
 	})
 	if err != nil {

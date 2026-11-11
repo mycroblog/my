@@ -18,6 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/acme"
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/pkg/testkit/instancetest"
 	"github.com/mycroblog/my/pkg/testkit/pebbletest"
 )
@@ -42,19 +43,31 @@ func listenOn(t *testing.T, port int) net.Listener {
 // client. env adds settings.
 func startACME(t *testing.T, env map[string]string, client instance.ACMEClient, tlsLn, httpLn net.Listener) *server {
 	t.Helper()
+	return startACMEApp(t, acmeConfig(t, env, httpLn != nil),
+		platform.AppOptions{ACMEClient: client, TLSRetryInterval: 100 * time.Millisecond, TLSCheckInterval: 200 * time.Millisecond},
+		tlsLn, httpLn)
+}
+
+// acmeConfig returns the configuration of a server with tls = acme and the settings of env, with
+// port 80 when withHTTP is set.
+func acmeConfig(t *testing.T, env map[string]string, withHTTP bool) *config.Config {
+	t.Helper()
 	env["MY_TLS"] = "acme"
 	env["MY_TLS_ACME_AGREE_TERMS"] = "true"
 	env["MY_WEB_ORIGIN"] = "https://" + acmeWebHost
 	if env["MY_DATABASE_URL"] == "" {
 		env["MY_DATABASE_URL"] = newDatabase(t, true)
 	}
-	if httpLn == nil {
+	if !withHTTP {
 		env["MY_TLS_HTTP_LISTEN"] = ""
 	}
-	cfg := loadConfig(t, env)
-	return startApp(t, cfg,
-		platform.AppOptions{ACMEClient: client, TLSRetryInterval: 100 * time.Millisecond, TLSCheckInterval: 200 * time.Millisecond},
-		platform.ServeOptions{Listener: tlsLn, HTTPListener: httpLn}, nil)
+	return loadConfig(t, env)
+}
+
+// startACMEApp starts a server of cfg, with tls = acme, on tlsLn and, when not nil, httpLn.
+func startACMEApp(t *testing.T, cfg *config.Config, opts platform.AppOptions, tlsLn, httpLn net.Listener) *server {
+	t.Helper()
+	return startApp(t, cfg, opts, platform.ServeOptions{Listener: tlsLn, HTTPListener: httpLn}, nil)
 }
 
 // handshake returns the chain that addr presents for serverName, the leaf first.
