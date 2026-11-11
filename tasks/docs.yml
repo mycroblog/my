@@ -18,7 +18,7 @@ tasks:
       - "{{.MARKDOWNLINT}}"
 
   rules:
-    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, or an operator document points at design records (AGENTS.md "Documentation", docs/lint.yaml)
+    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, or an operator document points at design records (docs/lint.yaml)
     deps: [":agentkit:build"]
     cmds:
       - bin/agentkit docs lint

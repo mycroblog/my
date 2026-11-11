@@ -21,8 +21,7 @@ Coding agents run the workflow steps through agentkit ([tools/agentkit/README.md
   since their last run (kept in `.task/`). `--force` runs a task anyway.
 - Variables are arguments (`scripts/task.sh go:bin VERSION=v1.2.3`) or environment variables.
 - "The slow suite" below is `.github/workflows/slow-suite.yml`: the checks that run as the release gate, nightly, and by hand,
-  never on pull requests or in the merge queue ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md); the table of what runs where is in
-  [workflow.md §5](../agents/workflow.md#what-ci-runs-where)).
+  never on pull requests or in the merge queue ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)).
 
 ## Checks across areas
 

@@ -2,6 +2,7 @@
 
 ## Claude Code specifics
 
-- Project skills live in `.claude/skills/`: use `/adr` to draft or revise an ADR, `/work-on-issue <number>` to run the issue workflow end to end, and `/translate-docs` to translate the documentation site.
-- Use `gh` for all GitHub operations (issues, PRs, labels). The repository is `mycroblog/my`.
 - Reply to the user in Japanese unless they write in another language.
+- Use `gh` for all GitHub operations. The repository is `mycroblog/my`.
+- `/work-on-issue <numbers>` takes issues, an epic, or a milestone to `main`; `/adr` drafts or revises an ADR;
+  `/translate-docs` translates the documentation site.

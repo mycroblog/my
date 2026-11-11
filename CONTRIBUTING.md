@@ -145,21 +145,16 @@ services `postgres` and `mailpit` alone.
 
 1. Pick a GitHub issue. `agent:ready` marks the issues with clear acceptance criteria that are ready to start.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
-3. Commit (Conventional Commits, in English). Running the checks locally is not required: the merge queue's full check
-   is the gate. Run `scripts/task.sh check:changed` or the check of one context (`scripts/task.sh go:check`, ...) to
-   reproduce a CI failure or to iterate on what you write. Format Go with `gofmt` and TypeScript and JavaScript with
-   `scripts/task.sh web:fmt` before you commit, since the preflight checks it ([Formatting](#formatting)).
-4. Open a pull request from the template, with its Documentation section filled (see [Documentation](#documentation)).
-5. When its CI is green, a maintainer or the orchestrator (the role that runs agents in parallel and merges their pull
-   requests) adds it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge`. `main` only receives
-   merges from the merge queue.
-6. If the queue drops the pull request because of a conflict or a failing `check`, its owner fixes it while the rest of
-   the queue proceeds: merge `main` into the branch,
-   regenerate the committed generated files (those Go reads, the output of `scripts/task.sh generate`) instead of
-   resolving their conflicts by hand, run `scripts/task.sh web:fmt` if a TypeScript or JavaScript file conflicted,
-   and push; the person from step 5 queues it
-   again. Merge `main` only when the pull request conflicts or the queue drops it: the queue checks it on top of the
-   latest `main` anyway.
+3. Commit (Conventional Commits, in English), one commit per issue. Before a push, run the fast checks of what you
+   changed (`scripts/agentkit.sh check --fast`); the merge queue's full check is the gate, so the full check is for
+   reproducing a CI failure.
+4. Open a pull request from the template (`scripts/agentkit.sh pr open`). Its commits contain no merge commit: bring
+   the branch up to date with `git rebase origin/main`.
+5. Add it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge` (`scripts/agentkit.sh pr land`
+   also follows it to the merge and cleans up). `main` only receives merges from the merge queue.
+6. If the queue drops the pull request because of a conflict or a failing `check`, fix it while the rest of the queue
+   proceeds: rebase onto `main`, regenerate the committed generated files (`scripts/agentkit.sh regen`) instead of
+   resolving their conflicts by hand, push with `--force-with-lease`, and queue it again.
 
 ## Formatting
 
@@ -194,8 +189,7 @@ step.
 | Release (by hand) | `release.yml` | Runs the slow suite on the given commit and, only when it passes, creates the tag and a draft GitHub Release |
 | Nightly (03:00 JST) | `nightly.yml` | Runs the slow suite on the head of `main`, unless `main` has not moved since the last successful full nightly (a run by hand of some of the jobs, titled like `Nightly (l4)`, does not count) |
 
-- Pull request CI does not compile, type-check, or test; the merge queue does, and it is the only gate. Running
-  `scripts/task.sh check:changed` locally is optional (to reproduce a failure or to iterate).
+- Pull request CI does not compile, type-check, or test; the merge queue does, and it is the only gate.
   To investigate a merge queue failure on the pull request, or to check an outside contribution early, add the label
   `ci:full` to the pull request.
 - Pull requests do not run the web E2E automatically; the merge queue runs it on the primary project (`en`, 1440 px)
@@ -536,12 +530,11 @@ mark an ADR `Accepted`.
 - Every document describes the present state. Write why something changed in the commit message and the pull request.
 - `scripts/task.sh docs:rules` (part of `docs:check`) checks these rules and that relative links and their `#anchors`
   resolve; [docs/lint.yaml](docs/lint.yaml) lists the files each rule covers.
-- A change keeps the user and operator documents that describe it true. The `userdocs` of
-  [tools/agentkit/context-map.yaml](tools/agentkit/context-map.yaml) say which documents describe which paths, and
-  `scripts/agentkit.sh docs impact` lists those of your change. Update each one the change makes wrong; the
-  **Documentation** section of the pull request lists every one as `changed` or as `no change — <reason>`, and the
-  pull request's check fails otherwise. Every command of `my`, metric, webhook event type, build tag, and task appears
-  in its document (`scripts/task.sh agentkit:inventory`).
+- A change keeps the user and operator documents that describe it true: `scripts/agentkit.sh docs impact` lists those
+  of your change. Every command of `my`, metric, webhook event type, build tag, and task appears in its document
+  (`scripts/task.sh agentkit:inventory`).
+- The design documents and the agent instructions do not grow without the decider's `docs:grow` label
+  (`scripts/task.sh docs:growth`): an ADR holds a decision, its reasons, and when to revisit it, not what the code says.
 
 ## Language
 

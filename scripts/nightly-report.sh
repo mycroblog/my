@@ -68,7 +68,7 @@ ${jobs:-$(while read -r job; do echo "- $job"; done <<< "$failed_needs")}
 
 $changes
 
-Fix it before starting more issues (docs/agents/workflow.md, \"Failures on main\"). This issue closes itself when a Nightly passes."
+Fix it before starting more issues (docs/agents/workflow.md, \"Orchestrating\"). This issue closes itself when a Nightly passes."
 
 if [ -n "$open_issue" ]; then
   gh issue comment "$open_issue" --repo "$GH_REPO" --body "$body"
