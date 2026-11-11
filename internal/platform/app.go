@@ -197,6 +197,9 @@ type App struct {
 	// TLSHTTPChallenge answers the ACME HTTP-01 challenges on port 80
 	// (tlsserve.ACMEChallengePrefix); nil leaves those paths to the redirect to https.
 	TLSHTTPChallenge http.Handler
+	// TLSManager obtains the certificates of tls = acme and puts them into TLSCertificates; nil
+	// with another tls or in a process that does not listen with TLS. Serve runs it.
+	TLSManager *instance.TLSManager
 	// LinkCards fetches and presents the cards of the links in statuses (ADR-0062).
 	LinkCards *content.LinkCards
 	// Translation translates posts on a reader's request (ADR-0148).
@@ -451,6 +454,13 @@ type AppOptions struct {
 	// CheckDomainsOnly keeps NewApp from recording host and account_domain on a database that has
 	// none, for the commands that change nothing. A mismatch still fails.
 	CheckDomainsOnly bool
+	// ACMEClient stands in for the adapter of the certificate authority of tls = acme. Tests only,
+	// to order from instancetest.FakeACMEClient or from Pebble through a client that trusts it.
+	ACMEClient instance.ACMEClient
+	// TLSCheckInterval and TLSRetryInterval, when set, replace the waits of the rounds of tls =
+	// acme (instance.TLSManagerOptions). Tests only.
+	TLSCheckInterval time.Duration
+	TLSRetryInterval time.Duration
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -635,7 +645,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpMediaHTTP()
-	a.setUpTLS(cfg)
+	if err := a.setUpTLS(cfg, opts); err != nil {
+		return nil, err
+	}
 	a.setUpClientAPI(cfg, opts.Version, opts.ClientAPIAccountLimit)
 	a.registerMetricsSnapshot()
 	if err := a.setUpWorkerJobTypes(cfg); err != nil {

@@ -222,9 +222,39 @@ var schema = []field{
 		def: TLSOff,
 		choices: []choice{
 			{value: TLSOff, doc: "Plain HTTP on `listen`: a reverse proxy, a load balancer, or a CDN in front terminates TLS."},
+			{value: TLSACME, doc: "HTTPS on `listen` with certificates that the server obtains itself from the ACME certificate authority `tls_acme_directory`, for `host` and, when it differs, the host of `web_origin`. It needs `tls_acme_agree_terms = true`, a `host` that is a DNS name with a dot, and a `kv` that every process shares (`kv = memory` only with `role = all`). The certificates and their keys are kept in the database, the keys sealed. The first certificate is ordered after the server starts listening, and handshakes for a host fail until it has one. The CA validates the order on `listen` (TLS-ALPN-01) or on `tls_http_listen` (HTTP-01), so both must be reachable from the internet on ports 443 and 80, or at least `listen` on port 443. The build tag `no_acme` leaves it out."},
 			{value: TLSFiles, doc: "HTTPS on `listen` with the certificate `tls_cert_file` and its key `tls_key_file`, which another tool such as certbot keeps up to date. The server looks at their modification times every minute and loads them again when they change, without a restart. Port `tls_http_listen` redirects to `https`."},
 		},
 		set: func(c *Config, v string) { c.TLS = v },
+	},
+	{
+		key:   "tls_acme_directory",
+		doc:   "Directory URL of the ACME certificate authority of `tls = acme`, an `https` URL. The default is Let's Encrypt; its staging environment, `https://acme-staging-v02.api.letsencrypt.org/directory`, issues certificates that browsers do not trust, under higher rate limits, for a first try ([serving HTTPS from the server](../operations/running.md#serving-https-from-the-server)). The server reaches it directly and follows no redirect.",
+		def:   DefaultTLSACMEDirectory,
+		check: checkStatusPageURL,
+		set:   func(c *Config, v string) { c.TLSACMEDirectory = v },
+	},
+	{
+		key:          "tls_acme_agree_terms",
+		doc:          "Whether you agree to the terms of service of the certificate authority `tls_acme_directory`, which `tls = acme` requires. Read them first: the directory links them.",
+		def:          "false",
+		requiredWhen: "`tls = acme` (set to `true`)",
+		choices: []choice{
+			{value: "false", doc: "Not agreed: `tls = acme` is refused."},
+			{value: "true", doc: "Agreed: the server registers its account with the certificate authority on its first order."},
+		},
+		set: func(c *Config, v string) { c.TLSACMEAgreeTerms = v == "true" },
+	},
+	{
+		key:   "tls_acme_email",
+		doc:   "Email address that the account of `tls = acme` gives the certificate authority as its contact, such as `ops@example.com`. Empty gives none. Let's Encrypt sends no email about expiring certificates.",
+		check: checkBareAddress,
+		set:   func(c *Config, v string) { c.TLSACMEEmail = v },
+	},
+	{
+		key: "tls_acme_profile",
+		doc: "Profile of the certificates that `tls = acme` orders, among those the certificate authority offers (its directory lists them), such as `shortlived` at Let's Encrypt. Empty takes the authority's default.",
+		set: func(c *Config, v string) { c.TLSACMEProfile = v },
 	},
 	{
 		key:          "tls_cert_file",

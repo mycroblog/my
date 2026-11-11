@@ -116,11 +116,14 @@ func startApp(t *testing.T, cfg *config.Config, appOpts platform.AppOptions, opt
 	if setup != nil {
 		setup(app)
 	}
-	ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
+	ln := opts.Listener
+	if ln == nil {
+		var err error
+		if ln, err = (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0"); err != nil {
+			t.Fatal(err)
+		}
+		opts.Listener = ln
 	}
-	opts.Listener = ln
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &server{app: app, url: "http://" + ln.Addr().String(), logs: logs, stop: cancel, done: make(chan error, 1)}
 	go func() { s.done <- platform.Serve(ctx, app, opts) }()

@@ -4,6 +4,7 @@ package platform
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -16,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/internal/platform/tlsserve"
@@ -31,16 +33,68 @@ const tlsMaxConcurrentStreams = 100
 
 // setUpTLS makes the holder of the certificates when this process listens with TLS: the web and
 // all roles with tls other than off. Its hosts are host and, when it differs, the host of
-// web_origin.
-func (a *App) setUpTLS(cfg *config.Config) {
+// web_origin. With tls = acme it also makes the manager that obtains their certificates, and
+// answers the CA's challenges on both listeners (ADR-0163 §3).
+func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 	if !cfg.ServesTLS() {
-		return
+		return nil
 	}
 	hosts := []string{cfg.Host}
 	if u, err := url.Parse(cfg.WebOrigin); err == nil && u.Host != "" {
 		hosts = append(hosts, u.Host)
 	}
 	a.TLSCertificates = tlsserve.NewHolder(hosts...)
+	if cfg.TLS != config.TLSACME {
+		return nil
+	}
+	client := opts.ACMEClient
+	if client == nil {
+		var err error
+		if client, err = newACMEClient(cfg, a.Logger); err != nil {
+			return err
+		}
+	}
+	// TLS-ALPN-01 needs only the TLS listener; HTTP-01 needs port 80.
+	challenges := []string{instance.ACMEChallengeTLSALPN01}
+	if cfg.TLSHTTPListen != "" {
+		challenges = append(challenges, instance.ACMEChallengeHTTP01)
+	}
+	m, err := instance.NewTLSManager(instance.TLSManagerOptions{
+		Service: a.Instance, Client: client, KV: a.KV, Certificates: a.TLSCertificates, Hosts: a.TLSCertificates.Hosts(),
+		Email: cfg.TLSACMEEmail, Profile: cfg.TLSACMEProfile, Challenges: challenges, Clock: a.Clock, Logger: a.Logger,
+		CheckInterval: opts.TLSCheckInterval, RetryInterval: opts.TLSRetryInterval,
+	})
+	if err != nil {
+		return err
+	}
+	a.TLSManager = m
+	answers := m.Challenges()
+	a.TLSCertificates.SetALPNChallenge(func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+		return answers.TLSALPN01Certificate(hello.Context(), hello.ServerName)
+	})
+	a.TLSHTTPChallenge = tlsserve.HTTP01Handler(answers.HTTP01)
+	return nil
+}
+
+// startACME loads the stored certificates of tls = acme into the holder, so that a restarted
+// server serves them at once, and runs the manager once verified closes, that is once the
+// listeners are up and the database is known to be this server's. Nothing here waits for an
+// order: the first certificates come while the server runs (ADR-0163 §7).
+func (a *App) startACME(ctx context.Context, verified <-chan struct{}) {
+	if a.TLSManager == nil {
+		return
+	}
+	if err := a.TLSManager.ReloadAll(ctx); err != nil {
+		a.Logger.WarnContext(ctx, "the stored TLS certificates are not loaded yet", slog.Any("error", err))
+	}
+	kernel.Go(ctx, "tls.acme", a.ErrorReporter, func(ctx context.Context) {
+		select {
+		case <-ctx.Done():
+			return
+		case <-verified:
+		}
+		a.TLSManager.Run(ctx)
+	})
 }
 
 // tlsListener is what Serve runs besides the HTTPS server with tls other than off: the source of

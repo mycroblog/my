@@ -166,6 +166,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	if tlsLn != nil {
 		kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.ServeTLS(ln, "", "") })
 		tlsLn.run(ctx, a, cmp.Or(opts.TLSFileCheckInterval, tlsserve.FileCheckInterval), serveErr)
+		a.startACME(ctx, verified)
 	} else {
 		kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
 	}

@@ -8,14 +8,20 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"strings"
 	"time"
 )
 
 // The values of the setting tls (ADR-0163 §10).
 const (
 	TLSOff   = "off"
+	TLSACME  = "acme"
 	TLSFiles = "files"
 )
+
+// DefaultTLSACMEDirectory is the default of tls_acme_directory: Let's Encrypt's production
+// environment.
+const DefaultTLSACMEDirectory = "https://acme-v02.api.letsencrypt.org/directory"
 
 // TLSCertificateWarning is how long before its end a certificate of tls = files makes `my config
 // check` warn.
@@ -54,6 +60,9 @@ func tlsChecks(vals map[string]string, present map[string]bool) []Issue {
 			}
 		}
 	}
+	if vals["tls"] == TLSACME {
+		issues = append(issues, acmeChecks(vals)...)
+	}
 	if vals["tls"] != "" && vals["tls"] != TLSOff && vals["role"] != string(RoleWorker) {
 		if l := vals["tls_http_listen"]; l != "" && l == effectiveListen(vals) {
 			issues = append(issues, Issue{Key: "tls_http_listen", Message: "must differ from listen, which serves https"})
@@ -63,6 +72,36 @@ func tlsChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 	}
 	return issues
+}
+
+// acmeChecks checks the settings that tls = acme needs (ADR-0163 §5, §8, §10): the CA's terms
+// agreed to, a host that the CA can validate, and a KeyValueStore that every process shares, for
+// the leases of the orders and the answers of the challenges.
+func acmeChecks(vals map[string]string) []Issue {
+	var issues []Issue
+	if vals["tls_acme_agree_terms"] != "true" {
+		issues = append(issues, Issue{Key: "tls_acme_agree_terms", Missing: true, Message: "must be true when tls is acme: read the terms of service of the certificate authority and agree to them"})
+	}
+	if host := vals["host"]; host != "" && !acmeHostName(host) {
+		issues = append(issues, Issue{Key: "host", Message: "must be a DNS name with a dot when tls is acme, not an IP address or localhost: the certificate authority validates it from the internet"})
+	}
+	if vals["kv"] == "memory" && vals["role"] != string(RoleAll) {
+		issues = append(issues, Issue{Key: "kv", Message: "memory is per process, and tls = acme needs a KV that every process shares to answer the certificate authority: set kv = db or valkey, or role = all"})
+	}
+	return issues
+}
+
+// acmeHostName reports whether host, with an optional port, is a name an ACME CA validates: a
+// DNS name with a dot that is not localhost or under it.
+func acmeHostName(host string) bool {
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	if net.ParseIP(host) != nil || !strings.Contains(host, ".") {
+		return false
+	}
+	return host != "localhost" && !strings.HasSuffix(host, ".localhost")
 }
 
 // TLSFindings checks how the server serves HTTPS, at now, for `my config check` in every

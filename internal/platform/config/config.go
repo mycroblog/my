@@ -59,13 +59,19 @@ type Config struct {
 	Role        Role
 	Listen      string
 	// TLS is how the server serves HTTPS itself (ADR-0163 §1, §10): TLSOff (plain HTTP behind
-	// something that terminates TLS) or TLSFiles (the certificate TLSCertFile and its key
-	// TLSKeyFile). TLSHTTPListen is the address of port 80, which redirects to https; empty
+	// something that terminates TLS), TLSACME (certificates obtained with ACME), or TLSFiles (the
+	// certificate TLSCertFile and its key TLSKeyFile). TLSHTTPListen is the address of port 80, which redirects to https; empty
 	// opens none.
 	TLS           string
 	TLSCertFile   string
 	TLSKeyFile    string
 	TLSHTTPListen string
+	// TLSACMEDirectory, TLSACMEAgreeTerms, TLSACMEEmail, and TLSACMEProfile configure the
+	// certificate authority of tls = acme (ADR-0163 §10).
+	TLSACMEDirectory  string
+	TLSACMEAgreeTerms bool
+	TLSACMEEmail      string
+	TLSACMEProfile    string
 	// TrustedProxies are the peers whose TrustedProxyHeader tells the client IP (ADR-0019 §5);
 	// TrustedProxyHeader is "x-forwarded-for" or "forwarded".
 	TrustedProxies     []netip.Prefix
@@ -414,6 +420,10 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("tls_cert_file", c.TLSCertFile),
 		slog.String("tls_key_file", c.TLSKeyFile),
 		slog.String("tls_http_listen", c.TLSHTTPListen),
+		slog.String("tls_acme_directory", c.TLSACMEDirectory),
+		slog.Bool("tls_acme_agree_terms", c.TLSACMEAgreeTerms),
+		slog.String("tls_acme_email", c.TLSACMEEmail),
+		slog.String("tls_acme_profile", c.TLSACMEProfile),
 		slog.Any("trusted_proxies", c.TrustedProxies),
 		slog.String("trusted_proxy_header", c.TrustedProxyHeader),
 		slog.String("database", c.DB),
