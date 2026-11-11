@@ -29,11 +29,11 @@ provider "aws" {
 }
 
 module "kek" {
-  source = "../../modules/kek-aws-secrets-manager"
+  source = "../../modules/internal/kek-aws-secrets-manager"
 }
 
 module "db" {
-  source = "../../modules/db-aws-rds"
+  source = "../../modules/internal/db-aws-rds"
 
   network = {
     platform           = "aws"
@@ -43,7 +43,7 @@ module "db" {
 }
 
 module "secrets" {
-  source = "../../modules/secrets-aws-secrets-manager"
+  source = "../../modules/internal/secrets-aws-secrets-manager"
 
   secrets            = { MY_VAPID_PRIVATE_KEY = "my-vapid-key" }
   generate_p256_keys = ["MY_VAPID_PRIVATE_KEY"]

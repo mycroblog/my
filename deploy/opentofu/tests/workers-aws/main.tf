@@ -30,13 +30,13 @@ locals {
 }
 
 module "queue" {
-  source = "../../modules/queue-db"
+  source = "../../modules/internal/queue-db"
 
   workers = local.workers
 }
 
 module "ecs" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   image            = "ghcr.io/mycroblog/my:0.1.0"
   host             = "social.example.org"

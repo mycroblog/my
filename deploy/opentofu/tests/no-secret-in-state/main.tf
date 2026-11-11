@@ -27,13 +27,13 @@ provider "google" {
 }
 
 module "kek" {
-  source = "../../modules/kek-gcp-secret-manager"
+  source = "../../modules/internal/kek-gcp-secret-manager"
 
   project_id = "p"
 }
 
 module "secrets" {
-  source = "../../modules/secrets-gcp-secret-manager"
+  source = "../../modules/internal/secrets-gcp-secret-manager"
 
   project_id         = "p"
   secrets            = { MY_VAPID_PRIVATE_KEY = "my-vapid-key" }

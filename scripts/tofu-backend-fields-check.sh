@@ -13,11 +13,11 @@
 #   - every module with an input network, and every app-*, has those same fields in its type: a conversion drops a field that the
 #     type does not name in the same way.
 #
-# Usage: scripts/tofu-backend-fields-check.sh [DIR]   (default: deploy/opentofu)
+# Usage: scripts/tofu-backend-fields-check.sh [DIR]   (default: deploy/opentofu/modules/internal, whose README.md holds the contract)
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-dir="${1:-$root/deploy/opentofu}"
+dir="${1:-$root/deploy/opentofu/modules/internal}"
 
 # Outputs that the operator reads, or hands to another block by name, and that never go through backends. A new output
 # that the app should take goes in the contract instead.
@@ -76,7 +76,7 @@ fi
 
 status=0
 apps=0
-for app in "$dir"/modules/app-*/; do
+for app in "$dir"/app-*/; do
   apps=$((apps + 1))
   name="$(basename "$app")"
   fields="$(backends_fields "$app/variables.tf" | sort -u)"
@@ -96,16 +96,14 @@ for app in "$dir"/modules/app-*/; do
   done <<< "$fields"
 done
 [ "$apps" -gt 0 ] || {
-  echo "tofu-backend-fields-check: no app-* module in $dir/modules" >&2
+  echo "tofu-backend-fields-check: no app-* module in $dir" >&2
   exit 1
 }
 
-for module in "$dir"/modules/*/; do
+for module in "$dir"/*/; do
   name="$(basename "$module")"
-  # What the workers input means, read by the app and queue modules: no block of a deployment, with no settings to compare.
-  [ "$name" != workers ] || continue
-  # modules/internal holds the modules that the public modules call (settings), which are no backends either.
-  [ "$name" != internal ] || continue
+  # What the workers and settings inputs mean, read by the modules that take them: no backend, with no platform to compare.
+  case "$name" in workers | settings) continue ;; esac
   case "$name" in
     *-gcp | *-gcp-*) expected=gcp shape="$network_gcp" ;;
     *-aws | *-aws-*) expected=aws shape="$network_aws" ;;

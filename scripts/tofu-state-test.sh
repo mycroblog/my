@@ -27,7 +27,7 @@ trap cleanup EXIT
 cp -r "$root/deploy/opentofu/modules" "$tmp/modules"
 mkdir -p "$tmp/tests"
 cp -r "$root/deploy/opentofu/tests/no-secret-in-state" "$tmp/tests/run"
-rm -rf "$tmp/tests/run/.terraform" "$tmp"/modules/*/.terraform
+rm -rf "$tmp/tests/run/.terraform" "$tmp"/modules/internal/*/.terraform
 dir="$tmp/tests/run"
 
 python3 "$root/scripts/tofu-state-test.py" "$tmp/port" "$tmp/values" &
@@ -100,7 +100,7 @@ fi
 grep -q 'prevent_destroy' "$tmp/destroy.out" || fail "a destroy failed for another reason: $(tail -5 "$tmp/destroy.out")"
 
 # Nor may turning a module's generation off take the KEK with it.
-sed -i '/^variable "create"/,/^}/s/default     = true/default     = false/' "$tmp/modules/kek-gcp-secret-manager/main.tf"
+sed -i '/^variable "create"/,/^}/s/default     = true/default     = false/' "$tmp/modules/internal/kek-gcp-secret-manager/main.tf"
 if tofu -chdir="$dir" plan -input=false > "$tmp/off.out" 2>&1; then
   fail "turning off create was not refused"
 fi

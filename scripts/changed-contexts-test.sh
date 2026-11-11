@@ -44,6 +44,11 @@ expect "the Nightly" "agentkit" .github/workflows/nightly.yml
 expect "the ignore list of git, which no check reads" "agentkit" .gitignore
 expect "the tasks of web and the web E2E workflow (no tofu, docker, shell, or schema)" "docs go i18n mail api ui web agentkit mykit site" tasks/web.yml .github/workflows/web-e2e.yml
 
+# The OpenTofu modules: the public module and the internal ones select tofu, and their Markdown docs as well.
+expect "the public module" "agentkit tofu" deploy/opentofu/mycroblog-gcp/main.tf
+expect "an internal module" "agentkit tofu" deploy/opentofu/modules/internal/kv-external/main.tf
+expect "the contract of the internal modules" "docs agentkit tofu" deploy/opentofu/modules/internal/README.md
+
 # The documentation site: app/docs selects site and no client context.
 expect "a change under app/docs alone" "agentkit site" app/docs/src/foo.ts
 expect "a Markdown file of app/docs" "docs agentkit site" app/docs/README.md
