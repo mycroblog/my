@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 902" width="760" height="902" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 958" width="760" height="958" role="img" aria-labelledby="title desc">
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
   <title id="title">The key hierarchy of a mycroblog server</title>
-  <desc id="desc">Three layers from top to bottom. The key-encryption key (KEK) is never in the database; key_manager chooses where it is: local, kek and kek_previous from MY_KEK or MY_KEK_FILE, key ID local: and 16 hexadecimal digits; gcpkms, a key in Google Cloud KMS named by kms_key and kms_key_previous, key ID gcpkms: and the resource name; awskms, a key in AWS KMS named by kms_key and kms_key_previous, key ID awskms: and the key ARN; plugin, a program of yours at plugin_key_manager_address, key ID plugin: and the plugin's ID. The KEK wraps and unwraps the data-encryption keys (DEK): each process makes a new random AES-256 DEK for each secret, and with a KMS or a plugin keeps unwrapped DEKs for kms_dek_cache_ttl. The DEK encrypts the secret with AES-256-GCM. The database holds one sealed value per secret: the key ID, the wrapped DEK, and the encrypted secret, bound to its row ID and column name. The sealed columns are local_account_private_keys.private_key_enc (actors' private keys), totp_enrollments.secret_enc (two-factor authentication secrets), login_provider_secrets.sealed_secret (client secrets of sign-in providers), webhook_secrets.sealed_secret (webhook signing secrets), and instance_secrets.sealed_secret (the media proxy signing key). The state of passkey and external sign-ins is sealed the same way but held by the browser, for at most 30 minutes, not stored.</desc>
+  <desc id="desc">Three layers from top to bottom. The key-encryption key (KEK) is never in the database; key_manager chooses where it is: local, kek and kek_previous from MY_KEK or MY_KEK_FILE, key ID local: and 16 hexadecimal digits; gcpkms, a key in Google Cloud KMS named by kms_key and kms_key_previous, key ID gcpkms: and the resource name; awskms, a key in AWS KMS named by kms_key and kms_key_previous, key ID awskms: and the key ARN; plugin, a program of yours at plugin_key_manager_address, key ID plugin: and the plugin's ID. The KEK wraps and unwraps the data-encryption keys (DEK): each process makes a new random AES-256 DEK for each secret, and with a KMS or a plugin keeps unwrapped DEKs for kms_dek_cache_ttl. The DEK encrypts the secret with AES-256-GCM. The database holds one sealed value per secret: the key ID, the wrapped DEK, and the encrypted secret, bound to its row ID and column name. The sealed columns are local_account_private_keys.private_key_enc (actors' private keys), totp_enrollments.secret_enc (two-factor authentication secrets), login_provider_secrets.sealed_secret (client secrets of sign-in providers), webhook_secrets.sealed_secret (webhook signing secrets), instance_secrets.sealed_secret (the media proxy signing key), tls_acme_accounts.sealed_private_key (ACME account keys), and tls_certificates.sealed_private_key (keys of TLS certificates). The state of passkey and external sign-ins is sealed the same way but held by the browser, for at most 30 minutes, not stored.</desc>
 
   <style>
     svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
@@ -69,7 +69,7 @@
   <text class="m" x="380.0" y="421.0" text-anchor="middle">with a KMS or a plugin, unwrapped DEKs stay cached for kms_dek_cache_ttl</text>
   <path class="arrow" d="M 380 442 L 380 482" marker-end="url(#arrowhead)"/>
   <text class="m" x="396" y="467" text-anchor="start">encrypts the secret with AES-256-GCM</text>
-  <rect class="group" x="20" y="486" width="720" height="316" rx="12"/>
+  <rect class="group" x="20" y="486" width="720" height="372" rx="12"/>
   <text class="h" x="40" y="514" text-anchor="start">In the database: one sealed value per secret</text>
   <rect class="port" x="40" y="530" width="160" height="56" rx="8"/>
   <text class="t b" x="120.0" y="563" text-anchor="middle">key ID</text>
@@ -90,7 +90,11 @@
   <text class="m" x="440" y="758" text-anchor="start">webhook signing secrets</text>
   <text class="t" x="40" y="786" text-anchor="start">instance_secrets.sealed_secret</text>
   <text class="m" x="440" y="786" text-anchor="start">the media proxy signing key</text>
-  <rect class="proxy" x="20" y="812" width="720" height="74" rx="8"/>
-  <text class="t b" x="380.0" y="843.0" text-anchor="middle">Sealed the same way, not stored</text>
-  <text class="m" x="380.0" y="865.0" text-anchor="middle">the state of passkey and external sign-ins, held by the browser for at most 30 minutes</text>
+  <text class="t" x="40" y="814" text-anchor="start">tls_acme_accounts.sealed_private_key</text>
+  <text class="m" x="440" y="814" text-anchor="start">ACME account keys</text>
+  <text class="t" x="40" y="842" text-anchor="start">tls_certificates.sealed_private_key</text>
+  <text class="m" x="440" y="842" text-anchor="start">TLS certificate keys</text>
+  <rect class="proxy" x="20" y="868" width="720" height="74" rx="8"/>
+  <text class="t b" x="380.0" y="899.0" text-anchor="middle">Sealed the same way, not stored</text>
+  <text class="m" x="380.0" y="921.0" text-anchor="middle">the state of passkey and external sign-ins, held by the browser for at most 30 minutes</text>
 </svg>

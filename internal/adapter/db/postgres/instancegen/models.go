@@ -92,3 +92,33 @@ type LinkCardDomainRule struct {
 	Note      string
 	UpdatedAt time.Time
 }
+
+type TlsAcmeAccount struct {
+	ID               string
+	DirectoryUrl     string
+	AccountUrl       string
+	SealedPrivateKey []byte
+	CreatedAt        time.Time
+}
+
+type TlsCertificate struct {
+	ID               string
+	AttemptID        string
+	Host             string
+	DirectoryUrl     string
+	Serial           string
+	NotBefore        time.Time
+	NotAfter         time.Time
+	ChainPem         string
+	SealedPrivateKey []byte
+	CreatedAt        time.Time
+}
+
+type TlsOrderAttempt struct {
+	ID                    string
+	Host                  string
+	DirectoryUrl          string
+	Profile               string
+	ReplacesCertificateID *string
+	OccurredAt            time.Time
+}

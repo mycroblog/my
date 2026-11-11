@@ -210,11 +210,40 @@ var schema = []field{
 		set:    func(c *Config, v string) { c.WorkerJobConcurrency, _ = strconv.Atoi(v) },
 	},
 	{
-		key:   "listen",
-		doc:   "TCP address the HTTP server listens on, as `host:port`.",
-		def:   ":8080",
+		key:    "listen",
+		doc:    "TCP address the HTTP server listens on, as `host:port`. With `tls` other than `off`, the `web` and `all` roles serve HTTPS on it; the `worker` role always serves plain HTTP (its health checks).",
+		defDoc: "`:443` with `tls` other than `off` in the `web` and `all` roles, `:8080` otherwise",
+		check:  checkListen,
+		set:    func(c *Config, v string) { c.Listen = v },
+	},
+	{
+		key: "tls",
+		doc: "Whether the server serves HTTPS itself, so that it runs without a reverse proxy ([serving HTTPS from the server](../operations/running.md#serving-https-from-the-server)). Only the `web` and `all` roles listen with TLS.",
+		def: TLSOff,
+		choices: []choice{
+			{value: TLSOff, doc: "Plain HTTP on `listen`: a reverse proxy, a load balancer, or a CDN in front terminates TLS."},
+			{value: TLSFiles, doc: "HTTPS on `listen` with the certificate `tls_cert_file` and its key `tls_key_file`, which another tool such as certbot keeps up to date. The server looks at their modification times every minute and loads them again when they change, without a restart. Port `tls_http_listen` redirects to `https`."},
+		},
+		set: func(c *Config, v string) { c.TLS = v },
+	},
+	{
+		key:          "tls_cert_file",
+		doc:          "Path of the certificate chain in PEM, the server's certificate first and then its intermediates, for `tls = files`. It must cover `host`.",
+		requiredWhen: "`tls = files`",
+		set:          func(c *Config, v string) { c.TLSCertFile = v },
+	},
+	{
+		key:          "tls_key_file",
+		doc:          "Path of the private key of `tls_cert_file` in PEM, for `tls = files`.",
+		requiredWhen: "`tls = files`",
+		set:          func(c *Config, v string) { c.TLSKeyFile = v },
+	},
+	{
+		key:   "tls_http_listen",
+		doc:   "TCP address of the plain HTTP port with `tls` other than `off`, as `host:port`. It sends `GET` and `HEAD` requests to the same path on `https` with `301` and answers `400` to every other method, so that no request body travels in plain text. Empty opens no such port.",
+		def:   ":80",
 		check: checkListen,
-		set:   func(c *Config, v string) { c.Listen = v },
+		set:   func(c *Config, v string) { c.TLSHTTPListen = v },
 	},
 	{
 		key:   "trusted_proxies",
@@ -1665,7 +1694,8 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["push_allowed_destinations"] != "" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "push_allowed_destinations", Message: "is refused in the production profile; set profile = development"})
 	}
-	if vals["metrics_exporter"] == "prometheus" && vals["metrics_listen"] != "" && vals["metrics_listen"] == vals["listen"] {
+	issues = append(issues, tlsChecks(vals, present)...)
+	if vals["metrics_exporter"] == "prometheus" && vals["metrics_listen"] != "" && vals["metrics_listen"] == effectiveListen(vals) {
 		issues = append(issues, Issue{Key: "metrics_listen", Message: "must differ from listen: the metrics are never served on the public listener"})
 	}
 	if vals["queue"] == "inline" && vals["role"] != "" && vals["role"] != string(RoleAll) {

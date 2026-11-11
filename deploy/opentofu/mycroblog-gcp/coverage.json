@@ -70,6 +70,7 @@
   "excluded": {
     "billing_aws_*": "AWS costs, for mycroblog-aws",
     "blob_fs_dir": "no disk on Cloud Run",
+    "tls*": "the platform terminates TLS",
     "http_allow_private_networks": "the SSRF guard stays on",
     "listen": "the container port is fixed",
     "mail_ses_*": "Amazon SES, on AWS",

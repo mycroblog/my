@@ -12,6 +12,7 @@ import (
 	"os"
 	"slices"
 	"text/tabwriter"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/webpush"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -73,6 +74,7 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	findings := append(platform.JobTypeFindings(cfg), config.Readiness(cfg)...)
+	findings = append(findings, config.TLSFindings(cfg, time.Now())...)
 	if *inst {
 		findings = append(findings, instanceFindings(context.Background(), cfg)...)
 	}

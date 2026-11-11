@@ -967,6 +967,22 @@
     "env": "MY_STREAM_SNS_TOPIC_ARN",
     "secret": false
   },
+  "tls": {
+    "env": "MY_TLS",
+    "secret": false
+  },
+  "tls_cert_file": {
+    "env": "MY_TLS_CERT_FILE",
+    "secret": false
+  },
+  "tls_http_listen": {
+    "env": "MY_TLS_HTTP_LISTEN",
+    "secret": false
+  },
+  "tls_key_file": {
+    "env": "MY_TLS_KEY_FILE",
+    "secret": false
+  },
   "traces_exporter": {
     "env": "MY_TRACES_EXPORTER",
     "secret": false

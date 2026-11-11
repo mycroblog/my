@@ -1,0 +1,117 @@
+{
+  "section": {
+    "host": [
+      "host"
+    ],
+    "ingress": [
+      "media_origin",
+      "origin_secret",
+      "origin_secret_header",
+      "trusted_proxies",
+      "trusted_proxy_header"
+    ],
+    "database": [
+      "database",
+      "database_url",
+      "stream_postgres_url"
+    ],
+    "media": [
+      "blob",
+      "blob_s3_*"
+    ],
+    "kv": [
+      "kv",
+      "valkey_*"
+    ],
+    "stream": [
+      "stream",
+      "stream_sns_*"
+    ],
+    "mail": [
+      "mail",
+      "mail_from",
+      "mail_ses_configuration_set",
+      "mail_smtp_*"
+    ],
+    "kek": [
+      "kek",
+      "key_manager",
+      "kms_key"
+    ],
+    "workers": [
+      "worker_*"
+    ],
+    "billing": [
+      "billing_sources"
+    ],
+    "monitoring": [
+      "metrics_emf_*",
+      "metrics_exporter"
+    ]
+  },
+  "fixed": [
+    "profile",
+    "queue",
+    "role",
+    "vapid_private_key"
+  ],
+  "generic": [
+    "account_domain",
+    "billing_aws_filter",
+    "billing_aws_linked_accounts",
+    "billing_aws_max_requests_*",
+    "billing_aws_metric",
+    "billing_aws_tag",
+    "billing_cloudflare_*",
+    "captcha*",
+    "custom_emoji_max_bytes",
+    "database_acquire_timeout",
+    "database_dev_url",
+    "dead_job_retention",
+    "dynamic_client_*",
+    "errors_*",
+    "job_attempt_retention",
+    "kek_previous",
+    "kms_dek_cache_*",
+    "kms_key_previous",
+    "login_provider_allowed_destinations",
+    "mail_ses_sns_topic_arn",
+    "maintenance*",
+    "media_audio",
+    "media_image",
+    "media_max_audio_duration",
+    "media_max_av_bytes",
+    "media_max_image_*",
+    "media_max_video_duration",
+    "media_replaced_retention",
+    "media_unattached_retention",
+    "media_video",
+    "metrics_listen",
+    "origin_secret_previous",
+    "payments*",
+    "plugin_*",
+    "push_allowed_destinations",
+    "relay_max_activities_per_hour",
+    "remote_custom_emoji_max_bytes",
+    "search*",
+    "source_url",
+    "status_page_url",
+    "traces_*",
+    "translator_*",
+    "voice*",
+    "web_origin",
+    "webhook_allowed_destinations"
+  ],
+  "excluded": {
+    "billing_aws_role_arn": "the tasks' own role reads Cost Explorer",
+    "billing_gcp_*": "Google Cloud costs, for mycroblog-gcp",
+    "blob_fs_dir": "no disk on Fargate",
+    "tls*": "the platform terminates TLS",
+    "blob_gcs_bucket": "Cloud Storage, on Google Cloud",
+    "http_allow_private_networks": "the SSRF guard stays on",
+    "listen": "the container port is fixed",
+    "mail_ses_region": "the identity is in the region of the deployment, which AWS_REGION of the tasks names",
+    "queue_cloudtasks_*": "Cloud Tasks, on Google Cloud",
+    "stream_pubsub_*": "Pub/Sub, on Google Cloud"
+  }
+}

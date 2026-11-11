@@ -12,7 +12,8 @@ my version        # print the version of the binary
 ```
 
 `my serve` validates the configuration, builds the database, job queue and key-management adapters, and accepts HTTP on `listen`.
-It speaks plain HTTP/1.1 there, without TLS: put a reverse proxy or load balancer in front that terminates HTTPS (and HTTP/2 or HTTP/3 for the clients) and forwards over HTTP/1.1.
+With `tls = off`, the default, it speaks plain HTTP/1.1 there: put a reverse proxy or load balancer in front that terminates HTTPS (and HTTP/2 or HTTP/3 for the clients) and forwards over HTTP/1.1.
+To serve HTTPS without a proxy, see [Serving HTTPS from the server](#serving-https-from-the-server).
 The real-time updates (`GET /api/v1/streaming`, the streams of the local and federated timelines, and the voice chat room streams) are long-lived responses that send a heartbeat comment every 30 seconds (15 for a voice room) and stay open while idle.
 The proxy must not buffer these responses (nginx: the server sends `X-Accel-Buffering: no`), and its idle or read timeout must be longer than the heartbeat interval.
 It does not apply the schema or run the data upgrade steps: run `my schema apply` and then `my db upgrade` before starting (see [Database](database.md); upgrades run both as part of [Upgrading](database.md#upgrading)). Until `my db upgrade` has recorded every step of the release, `/readyz` answers `503`.
@@ -124,7 +125,8 @@ being set there. The template lists them all, with a sentence on each.
 - The other secrets reach the containers as environment variables. To pass one as a file instead, mount it with a secret
   in a `compose.override.yaml` of your own and set its `<NAME>_FILE`, as `compose.yaml` does for the key.
 - `.env` holds secrets: `chmod 600 .env`, and keep a copy with your backups.
-- `MY_LISTEN` stays `:8080`, since the files connect to that port.
+- `MY_LISTEN` stays `:8080`, since the files connect to that port, unless the server serves HTTPS itself
+  ([Serving HTTPS from the server](#serving-https-from-the-server)).
 
 **TLS with Caddy.** Set `MY_HOST` to a domain whose DNS points at the machine, with ports 80 and 443 reachable from the
 internet, and remove `MY_WEB_ORIGIN` from `.env`. Caddy gets and renews the certificate by itself on the first request.
@@ -133,6 +135,72 @@ The server trusts the `X-Forwarded-For` of Docker's default address pools; set `
 **The bundled Garage.** `compose.s3.yaml` with `COMPOSE_PROFILES=garage` needs the values that `example.env` lists at its top.
 The one-off service `garage-init` prepares the store on each `up`. It stays inside the Compose network, since the server
 serves the media itself. One node is one disk: back up the volume `garage` or the bucket ([Backing up](backup.md#media-in-a-bucket)).
+
+## Serving HTTPS from the server
+
+`my` can serve HTTPS itself, so that a small machine runs the whole server as one binary with a domain and ports 80 and 443,
+without a reverse proxy. With `tls = files`, it serves a certificate and key that you provide and keep up to date with
+another tool, such as certbot.
+
+```sh
+MY_TLS=files
+MY_TLS_CERT_FILE=/etc/letsencrypt/live/social.example/fullchain.pem
+MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
+# MY_LISTEN=:443          the default with tls other than off
+# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
+```
+
+- **Ports.** The server serves HTTPS on `listen` (`:443` by default once `tls` is not `off`). On `tls_http_listen` (`:80`
+  by default) it sends `GET` and `HEAD` requests to the same path on `https` with `301`, and answers `400` to every other
+  method, so that no request body travels in plain text.
+- **Certificate.** `tls_cert_file` holds the server's certificate first, then its intermediates (certbot's
+  `fullchain.pem`); `tls_key_file` holds its key. The certificate must cover `host`, and it also serves the host of
+  `web_origin` when that differs and the certificate covers it. A handshake for any other name fails without a
+  certificate.
+- **Renewal.** The server looks at the modification times of both files every minute and loads them again when either
+  changes, without a restart. A pair that does not match yet (a new certificate before its new key) keeps the previous
+  certificate in service until the next check, and the log says why.
+- **Connections.** TLS 1.2 or later with Go's default cipher suites, HTTP/2 and HTTP/1.1, at most 64 KiB of request
+  headers, and at most 100 concurrent streams on an HTTP/2 connection. The timeouts are those of plain HTTP. The server
+  still adds `Strict-Transport-Security` to every response ([Security headers](#security-headers)).
+- **Roles.** Only the `web` and `all` roles listen with TLS. A `worker` serves its health checks in plain HTTP on
+  `listen` (`:8080` by default) and opens no port 80.
+- **Client addresses.** Without a proxy in front, the connection's peer is the client: leave `trusted_proxies` empty.
+  Set it only when a CDN in front connects to the server over `https`.
+- **Maintenance mode.** `my serve -maintenance` reads neither `tls` nor the certificate files and answers in plain HTTP on
+  `listen` (`:8080` unless you set it), so point `MY_LISTEN` and your firewall at that port while it runs, or keep a
+  reverse proxy for maintenance.
+
+`my config check` reports a certificate or key that cannot be read, a key that does not match the certificate, and a
+certificate that does not cover `host`, has expired, or is not valid yet, as errors. It warns when fewer than 14 days
+are left, and when `trusted_proxies` is set with `tls` other than `off`. With `tls = off` it warns when `listen` is port
+80 or 443 on an address other than loopback, since nothing seems to terminate TLS in front of the server; the server
+logs the same warning once per start when such a server, with `trusted_proxies` empty, gets a plain HTTP request from
+an address other than loopback.
+
+**systemd.** Ports below 1024 need a capability for a user other than root. Give it to the service and nothing else:
+
+```ini
+[Service]
+User=my
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+```
+
+The user also needs to read the certificate files. With certbot, its `live` and `archive` directories are readable only by
+root: grant the group of the service access (`chgrp` and `chmod g+rx` on the directories, `g+r` on the keys), or copy the
+files in a deploy hook to a directory that the service reads.
+
+**Docker.** Docker 20.10 and later let a container open ports below 1024 without a capability, so the image works as it
+is. The image sets `MY_LISTEN=:8080`, so set `MY_LISTEN=:443` in `.env`, publish both ports in a
+`compose.override.yaml` (`ports: ["80:80", "443:443"]`), and mount the certificate files read-only where
+`MY_TLS_CERT_FILE` and `MY_TLS_KEY_FILE` point. The server runs as the user `65532`, which must be able to read them.
+Leave out `compose.caddy.yaml`, which would take the same ports. This does not hold with `network_mode: host`, where
+the container shares the machine's network and needs the same capability as a service outside a container.
+
+**Compared with Caddy.** Serving HTTPS from `my` gives up HTTP/3, compression of responses (the server compresses
+nothing), and an access log of its own (the server's `http request` log lines remain). Caddy also gets and renews the
+certificate by itself. Keep `compose.caddy.yaml`, or another proxy, when you need any of these.
 
 ## Get the image
 

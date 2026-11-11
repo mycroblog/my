@@ -72,9 +72,13 @@ for example as a step of the deployment before the new version takes traffic.
 
 - **Why**: other servers fetch the ids at `https://<host>/` on port 443, and browsers send the sign-in cookies only over `https`.
 - **Verify**: `curl -sI https://<host>/health/live` answers `200` from outside your network with a certificate that is valid for `host`,
-  and `my config check` reports no error about `web_origin`. `http://<host>/` redirects to `https`, which the reverse proxy,
-  load balancer, or CDN in front of the server does (with Docker Compose, the layer `compose.caddy.yaml` is such a proxy).
-- **Details**: [running the server](running.md), [`web_origin`](../reference/configuration.md#web_origin).
+  and `my config check` reports no error about `web_origin`, `tls`, or `tls_cert_file`. `curl -sI http://<host>/` answers `301`
+  to `https://<host>/`. Either the reverse proxy, load balancer, or CDN in front of the server terminates TLS and redirects
+  (with Docker Compose, the layer `compose.caddy.yaml` is such a proxy), or the server does it itself with `tls = files`:
+  then `my config check` warns when fewer than 14 days are left on the certificate, and whatever renews it must keep
+  `tls_cert_file` and `tls_key_file` up to date.
+- **Details**: [running the server](running.md), [serving HTTPS from the server](running.md#serving-https-from-the-server),
+  [`web_origin`](../reference/configuration.md#web_origin), [`tls`](../reference/configuration.md#tls).
 
 ### Not reachable past the CDN
 

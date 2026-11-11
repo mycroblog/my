@@ -1,19 +1,21 @@
 # OpenTofu modules
 
 `mycroblog-gcp` deploys `my` on Google Cloud in one module block: a Cloud Run service and a backend for each role, which you
-pick by the `kind` of a section and which defaults to the recommended setup. It is written for [OpenTofu](https://opentofu.org)
-and needs version 1.11 or later. Terraform is not supported. To deploy, follow
-[Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md).
+pick by the `kind` of a section and which defaults to the recommended setup. `mycroblog-aws` does the same on AWS, with ECS on
+Fargate, and **has never been applied** ([AWS](#aws)). Both are written for [OpenTofu](https://opentofu.org) and need version
+1.11 or later. Terraform is not supported. To deploy on Google Cloud, follow
+[Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md). The sections up to [AWS](#aws) describe `mycroblog-gcp`.
 
 ```text
 deploy/opentofu/
   mycroblog-gcp/                 the public module for Google Cloud
+  mycroblog-aws/                 the public module for AWS, never applied: see "AWS" below
   examples/gcp-cloud-run-neon/   the google provider and one block of mycroblog-gcp, to copy
   migrate.sh                     the migration of an upgrade, which an apply of mycroblog-gcp runs
   console.sh                     runs one my command through the console job
-  upgrade.sh                     the upgrade of the AWS example: migration job first, then the workers, then the service
-  modules/internal/              the modules mycroblog-gcp composes, with no promise of compatibility
-  examples/aws-ecs-neon/         AWS, composed from the internal modules, never applied: see "AWS" below
+  upgrade.sh                     the upgrade of mycroblog-aws: migration job first, then the workers, then the service
+  examples/aws-ecs-neon/         the aws provider and one block of mycroblog-aws, never applied
+  modules/internal/              the modules the public modules compose, with no promise of compatibility
 ```
 
 ## Using the module
@@ -185,14 +187,122 @@ must not take it from there or print it casually.
 
 ## AWS
 
-AWS has no public module yet. `examples/aws-ecs-neon` composes ECS on Fargate from the internal modules, by Git source, and
-**nothing of it has ever been applied**. The contract of those modules is in [modules/internal](modules/internal/README.md).
+`mycroblog-aws` deploys `my` on AWS in one block: an ECS service on Fargate behind an Application Load Balancer, the jobs in
+the database, and a backend for each role, picked by the `kind` of a section as in `mycroblog-gcp`. **Nothing of it has ever
+been applied on AWS**: the checks plan it on mocked providers and with no credentials, which shows that the configuration is
+consistent, not that AWS accepts it or that the server starts. Treat a first deployment as a test.
+
+```hcl
+provider "aws" {
+  region = "ap-northeast-1"
+}
+
+module "mycroblog" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-aws?ref=v0.1.0&depth=1"
+
+  host       = "social.example.org"
+  image      = "ghcr.io/mycroblog/my:0.1.0"
+  network    = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
+  ingress    = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000" }
+  media      = { bucket_name = "social-example-org-media" }
+  mail       = { from = "noreply@social.example.org" }
+  monitoring = { notification_emails = ["ops@social.example.org"] }
+}
+```
+
+`examples/aws-ecs-neon` is this block with its variables, to copy with its lock file. The module takes the region of the `aws`
+provider and declares `random`, `archive`, and `cloudflare` itself. It uses no provider alias, so the certificate that
+CloudFront needs in `us-east-1` comes in as an ARN, created by hand in AWS Certificate Manager like the load balancer's.
+
+### Sections of mycroblog-aws
+
+Required: `network.egress`, `ingress.certificate_arn`, `media.bucket_name`, `mail.from`, and `monitoring`, which is null or
+names who the alarms notify. Every other field has a default. The first kind of each row is the default.
+
+| Section | Kinds | What it does |
+| --- | --- | --- |
+| `network` | `vpc`, `existing` | ECS always needs a VPC. `vpc` creates one over `availability_zones`, at least two, in `cidr_block`. `existing` takes yours: `vpc_id`, `vpc_cidr`, `public_subnet_ids`, `public_subnet_cidrs`, and `private_subnet_ids`. `egress` has no default, since both ways out bill by the hour: `public-ip` gives each task a public IPv4 address in a public subnet, `nat` puts the tasks in private subnets behind a NAT gateway, which `vpc` creates and a VPC of yours must have |
+| `ingress` | `load-balancer`, `cloudfront`, `cloudflare` | The load balancer is always there, with `certificate_arn`, a certificate for `host` in the region. `load-balancer` serves `host` from it, with the records in the Route 53 zone `route53_zone_id` or listed in `dns_records` (`host_is_apex` for an apex without Route 53). `cloudfront` puts CloudFront in front, with `/media/` cached, and the load balancer then admits CloudFront alone: `cloudfront_certificate_arn` (in `us-east-1`) and `cloudfront_price_class`. `cloudflare` puts the zone of `cloudflare` in front, which creates the record, and the server refuses what lacks a secret the module generates. `media_host` adds a cached media host on Cloudflare beside `load-balancer` or `cloudflare`; the certificate must cover it too |
+| `database` | `external`, `rds` | `external` reads the URL of a PostgreSQL you run, such as Neon, from a secret you fill, and `pooled = true` adds a secret for a pooled URL, which the service then uses. `rds` creates an instance and its password in the private subnets, and bills while idle: `instance_class`, `allocated_storage_gb`, `max_allocated_storage_gb`, `backup_retention_days`, `multi_az`, `deletion_protection` |
+| `media` | `s3`, `r2`, `s3-compatible` | `bucket_name` is required. `s3` creates a bucket, with `versioning` and `noncurrent_version_days`. `r2` creates an R2 bucket in `cloudflare.account_id`. `s3-compatible` uses another store at `endpoint`, with `s3_region` and `path_style`. `r2` and `s3-compatible` read their access key from secrets you fill |
+| `kv` | `db`, `elasticache`, `external` | The store of caches and rate limits. `elasticache` creates ElastiCache Serverless for Valkey, which bills while idle. `external` reads a Valkey URL from a secret you fill, and with `tls_ca = true` the CA of its certificate from another |
+| `stream` | `sns`, `postgres`, `valkey` | The broker of real-time updates. `postgres` uses the database's direct connection, and `valkey` the Valkey of `kv` |
+| `mail` | `ses`, `smtp` | `from` is required. `ses` sends through Amazon SES in the region, from the domain of `from`, with an optional `configuration_set`: read [Email through Amazon SES](#email-through-amazon-ses). `smtp` takes `smtp.host`, `smtp.port` (587), and `smtp.username`, whose password goes in a secret you fill |
+| `kek` | `secrets-manager`, `kms` | The key that encrypts the secrets in the database: a generated secret, or a key in AWS KMS that never leaves it |
+| `cloudflare` | | `zone_id` and `account_id`, for the Cloudflare kinds |
+| `service` | | The ECS service: `desired_count` (1), `cpu` (256), `memory_mib` (1024), and `health_check_grace_seconds`. Nothing scales to zero: a task bills for as long as it runs |
+| `jobs` | | The migration and console tasks: `cpu` and `memory_mib` |
+| `workers` | | Services that run some job types apart from the default service, by a key that names each: `job_types`, `instances`, `cpu`, `memory_mib`, and `concurrency` |
+| `monitoring` | | Required: a CloudWatch Synthetics canary, metrics in CloudWatch, and alarms, which notify at least one of `notification_emails` and `notification_topic_arns`. Null creates none. Also `page_notification_topic_arns`, `uptime_period_minutes` (15), `disabled_alerts`, and size limits. Each run of the canary is billed |
+| `billing` | | Null by default. `{}` imports the usage cost from Cost Explorer into the server's dashboard, with the tasks' own role |
+
+There is no `queue` section: the tasks stay up, so they take the jobs from the database. `name`, `console_enabled`,
+`log_retention_days`, `settings`, and `secrets` work as in `mycroblog-gcp`, with the secrets in Secrets Manager.
+
+**What does not fit together fails before the plan**, with a message that names the inputs:
+
+- `network.kind = vpc` without two `availability_zones`, or `availability_zones` with `existing`; `existing` without its five
+  fields;
+- `ingress.kind = cloudfront` without `cloudfront_certificate_arn`, or that certificate with another kind;
+  `ingress.kind = cloudflare` or `media_host` without `cloudflare.zone_id`; `route53_zone_id` with `cloudflare`;
+  `media_host` with `cloudfront`, or equal to `host`;
+- `database.pooled` with `rds`; `media.kind = s3-compatible` without `endpoint`; `r2` without `cloudflare.account_id`;
+- `kv.tls_ca` or `kv.key_prefix` without `kv.kind = external`; `stream.kind = valkey` with `kv.kind = db`;
+- `mail.kind = smtp` without `mail.smtp`, `mail.smtp` with `ses`, and `mail.configuration_set` with `smtp`;
+- `monitoring` that names nobody to notify.
+
+### Outputs of mycroblog-aws
+
+| Output | What it holds |
+| --- | --- |
+| `secrets_to_fill` | Secret name to `what` goes in it and the `aws secretsmanager put-secret-value` command that adds it |
+| `dns_records` | The records to add at your DNS provider: `host`, unless Route 53 or Cloudflare creates it, and with `mail.kind = ses` the DKIM records of the domain of `mail.from` |
+| `dns_note` | What `dns_records` cannot say, or null: at an apex without Route 53, the record of `host` needs an ALIAS or ANAME |
+| `kek` | Where the KEK is, and with `secrets-manager` the command that copies it |
+| `domain_name` | What `host` points at: the distribution with `cloudfront`, the load balancer otherwise |
+| `console` | What `console.sh` reads, or null while `console_enabled` is off |
+| `upgrade` | The `region` and `name` that `upgrade.sh --platform aws-ecs` takes, and the services it moves |
+
+### The first deployment on AWS
+
+`/readyz` fails until the schema exists, so the schema comes first. Create the secrets, fill the ones that `secrets_to_fill`
+lists, create the migration's task definition, run the migration, then apply everything:
+
+```sh
+tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secrets_manager
+tofu output secrets_to_fill   # run each command with its value
+tofu apply -target='module.mycroblog.module.app.aws_ecs_task_definition.task["migrate"]'
+
+SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
+"$SCRIPTS/upgrade.sh" --platform aws-ecs --region ap-northeast-1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
+
+tofu apply
+tofu output dns_records       # add each at your DNS provider
+```
+
+`upgrade.sh --platform aws-ecs` upgrades later, as on Google Cloud, and `console.sh` runs a command through the console's task
+definition, whose output stays in CloudWatch Logs.
+
+### What it costs on AWS
+
+Nothing scales to zero on ECS: the task, the load balancer, and its public addresses bill all month. With one task of 0.25 vCPU
+and 1 GB, expect about $42 a month at idle in Tokyo with `egress = "public-ip"`, and about $75 with `egress = "nat"`, before
+the database, storage, traffic, and the canary. These figures come from AWS's price list and have not been checked against a
+bill.
+
+### Email through Amazon SES
+
+`mail.kind = ses`, the default, sends with the SES API in the region of the deployment, from the domain of `mail.from`. The
+module creates the domain's identity and allows the tasks `ses:SendEmail` on it, so there is no password. Before SES sends to
+your users, add the records that `tofu output dns_records` lists and leave the sandbox:
+[Sending email through Amazon SES](../../docs/operations/email-ses.md) has the steps.
 
 ## Checks
 
-`scripts/task.sh tofu:check` validates the public module, the internal modules, and the examples, and runs their tests on
-mocked providers, which plan each kind of each section and each refused combination. None of the checks reaches a cloud, so
-they show that the configuration is consistent, not that an apply on Google Cloud succeeds.
+`scripts/task.sh tofu:check` validates the public modules, the internal modules, and the examples, and runs their tests on
+mocked providers, which plan each kind of each section and each refused combination. `tofu:aws-plan-test` plans the AWS
+example with no credentials, a local stub answering its one read of the caller's identity. None of the checks reaches a
+cloud, so they show that the configuration is consistent, not that an apply on Google Cloud or AWS succeeds.
 
 ### Every configuration key
 
