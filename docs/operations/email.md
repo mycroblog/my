@@ -83,6 +83,9 @@ ECS, environment variables, the shared configuration file), so there is no secre
 2. Request production access to leave the sandbox. In the sandbox you can only send to verified addresses.
 3. Allow `ses:SendEmail` for the execution role on the identity of `mail_from` (and on the configuration set, if you use one).
 
+[Sending email through Amazon SES](email-ses.md) walks through the records, the sandbox, and the request for production access,
+and what the OpenTofu module for AWS does of them.
+
 ```sh
 MY_MAIL=ses
 MY_MAIL_FROM=noreply@social.example
