@@ -23,8 +23,9 @@ const packageAgentsHolds = "a package's AGENTS.md only points from a task to the
 const packageAgentsItem = "`- <When you do X>: [<name of the documentation>](https://...), search for: <term>, <term>`"
 
 var (
-	reListItem  = regexp.MustCompile(`^[-*+]\s+\S`)
-	reSearchFor = regexp.MustCompile(`\)\s*,\s*search for:\s*(.*)$`)
+	reListItem    = regexp.MustCompile(`^[-*+]\s+\S`)
+	reSearchFor   = regexp.MustCompile(`\)\s*,\s*search for:\s*(.*)$`)
+	reSPDXComment = regexp.MustCompile(`^<!--\s*SPDX-License-Identifier:\s*\S+\s*-->$`)
 )
 
 // isPackageAgents reports whether p is an AGENTS.md below the repository root.
@@ -45,6 +46,8 @@ func packageAgents(p, src string) []Finding {
 		n := i + 1
 		switch {
 		case strings.TrimSpace(s) == "":
+		case !title && reSPDXComment.MatchString(s):
+			// The license line a file of the MIT scope carries (scripts/license-scope-check.sh).
 		case !title:
 			title = true
 			if m := reHeading.FindStringSubmatch(s); m == nil || len(m[1]) != 1 {

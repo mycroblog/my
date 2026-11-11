@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 # Plugin protocol definitions (protobuf, Buf)
 
 - Adding or changing a field or a message without breaking a plugin: [Protocol Buffers documentation](https://protobuf.dev/), search for: Updating A Message Type, `reserved`, Field Presence, Proto Best Practices

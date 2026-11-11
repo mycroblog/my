@@ -17,6 +17,8 @@ func TestPackageAgents(t *testing.T) {
 		"docs/a.md": "# A\n",
 		// The shape: a title, then pointers, the limit itself.
 		"internal/adapter/ok/AGENTS.md": "# Stripe\n\n" + strings.Repeat(item+"\n", PackageAgentsMaxItems),
+		// The license line of the MIT scope may come before the title.
+		"api/plugin/AGENTS.md": "<!-- SPDX-License-Identifier: MIT -->\n# Plugins\n\n" + item + "\n",
 		"internal/adapter/bad/AGENTS.md": strings.Join([]string{
 			"# Stripe",
 			"",
