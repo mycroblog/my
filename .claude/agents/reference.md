@@ -11,7 +11,8 @@ is about to write code against it. Your memory of the document is not a source.
 1. Take the entry link and the search terms from the `AGENTS.md` of the package you were given (Read it), or from the
    question itself.
 2. Fetch the entry. If it is an index (`llms.txt`, a documentation home), follow it to the page that holds the terms.
-   Stay on the official source; a blog post or a forum answer does not count.
+   Stay on the official source; a blog post or a forum answer does not count. Read the English version: the search
+   terms are English.
 3. Read the passage and the ones it depends on: versions, required and optional fields, error cases, ordering and
    retry guarantees, anything marked deprecated.
 
