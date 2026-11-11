@@ -108,6 +108,8 @@ The rest of the bill: each custom metric costs $0.30 a month after the first 10,
 | `MyDBPoolSaturated` | Not expressible | The pool's gauges come only with the snapshot job, from one process every 15 minutes. Its effect shows in `MyHTTPErrorsHigh` and `MyAPILatencyHigh` |
 | `MyDBPoolWaiting` | Not expressible | The same |
 | `MyFileDescriptorsNearLimit` | Not expressible | The same, and Fargate sets the limit |
+| `MyTLSCertificateExpiring` | Not expressible | The load balancer terminates TLS with its own certificates, so the server runs with `tls = off` and has no certificate to measure |
+| `MyTLSOrdersFailing` | Not expressible | The same: the server orders no certificate |
 
 The runbook's budget entry is outside this module: use AWS Budgets.
 

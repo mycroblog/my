@@ -220,6 +220,51 @@ tests:
                 costs screen shows older figures.
               runbook_url: https://mycroblog.dev/latest/operations/alerts/#mybillingimportfailing
 
+  - name: tls certificates
+    interval: 1m
+    input_series:
+      # Process a still serves the old certificate, 7 days and 30 minutes from expiry; process b serves the renewal.
+      - series: my_tls_certificate_expiry_seconds{job="my", instance="a:9464", host="social.example"}
+        values: 606600-60x120
+      - series: my_tls_certificate_expiry_seconds{job="my", instance="b:9464", host="social.example"}
+        values: 7776000-60x120
+      # The orders of app.social.example fail from the 10th minute on, three of them by the 30th.
+      - series: my_tls_order_consecutive_failures{job="my", instance="a:9464", host="app.social.example"}
+        values: 0x10 1x10 2x10 3x90
+      - series: my_tls_order_consecutive_failures{job="my", instance="b:9464", host="app.social.example"}
+        values: 0x10 1x10 2x10 3x90
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: MyTLSCertificateExpiring
+        exp_alerts: []
+      - eval_time: 1h
+        alertname: MyTLSCertificateExpiring
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              job: my
+              instance: a:9464
+              host: social.example
+            exp_annotations:
+              summary: The TLS certificate of social.example expires within 7 days
+              description: a:9464 serves social.example with a certificate that expires in 6d 23h 30m 0s.
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mytlscertificateexpiring
+      - eval_time: 32m
+        alertname: MyTLSOrdersFailing
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: MyTLSOrdersFailing
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              host: app.social.example
+            exp_annotations:
+              summary: The orders of the TLS certificate of app.social.example fail
+              description: >-
+                3 orders in a row of the certificate of app.social.example obtained none; the server now waits 100
+                minutes, then a day, between orders.
+              runbook_url: https://mycroblog.dev/latest/operations/alerts/#mytlsordersfailing
+
   - name: http errors and latency
     interval: 1m
     input_series:

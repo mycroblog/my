@@ -1,6 +1,6 @@
 # Administrators and roles
 
-How to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, rebuild the search index, and export the maintenance page.
+How to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, rebuild the search index, handle the TLS certificates that the server serves itself, and export the maintenance page.
 
 ## Prerequisites
 
@@ -148,6 +148,28 @@ my search status               # the backend and the progress and failures of th
 ```
 
 Run `my search rebuild` again to resume one that stopped. It goes on from the last post handled and does not empty the index again. While one is unfinished, the other mode is refused with exit code 1. [Full-text search of posts](search.md) says when to use each.
+
+## TLS certificates
+
+`my tls` handles the certificates of a server that serves HTTPS itself (`tls = acme` or `tls = files`; see
+[Serving HTTPS from the server](running.md#serving-https-from-the-server)).
+
+```sh
+my tls status                                          # each host: certificate, renewal, failures, latest orders
+my tls renew -host social.example                      # order a certificate now, without waiting
+my tls revoke -host social.example -reason key_compromise  # replace, then revoke the current certificate
+```
+
+- `status` shows, for each host, the current certificate (serial, issuer, expiry), when it is renewed, how many orders
+  in a row obtained no certificate, and the latest orders with their errors. With `tls = files` it shows the
+  certificate of `tls_cert_file`; with `tls = off` it says so.
+- `renew` and `revoke` need `tls = acme`, the running server (it answers the certificate authority's checks), and a
+  `kv` other than `memory`. They exit with code 1 when they fail, when another process is ordering the certificate of
+  the host at that moment, and with `tls = files` or `tls = off`.
+- `-reason` is `key_compromise` when the private key may be known to others, otherwise `superseded` or `operator`.
+  `revoke` exits with code 0 and prints a warning when it revoked the certificate but could not order its replacement.
+
+[Commands and metrics](running.md#commands-and-metrics) explains what each one does to the running processes.
 
 ## Exporting the maintenance page
 

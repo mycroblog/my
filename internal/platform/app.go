@@ -200,6 +200,10 @@ type App struct {
 	// TLSManager obtains the certificates of tls = acme and puts them into TLSCertificates; nil
 	// with another tls or in a process that does not listen with TLS. Serve runs it.
 	TLSManager *instance.TLSManager
+	// acmeClient is the CA of tls = acme once a manager was made, or the one of AppOptions; the
+	// TLS waits are those of AppOptions.
+	acmeClient                         instance.ACMEClient
+	tlsCheckInterval, tlsRetryInterval time.Duration
 	// LinkCards fetches and presents the cards of the links in statuses (ADR-0062).
 	LinkCards *content.LinkCards
 	// Translation translates posts on a reader's request (ADR-0148).

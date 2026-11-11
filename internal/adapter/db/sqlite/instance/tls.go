@@ -126,3 +126,34 @@ func (r *Repository) ListUnresultedTLSOrderAttempts(ctx context.Context, host st
 	}
 	return out, nil
 }
+
+// ListTLSOrderAttempts implements appinstance.TLSRepository.
+func (r *Repository) ListTLSOrderAttempts(ctx context.Context, host string, limit int) ([]instance.TLSOrderAttemptResult, error) {
+	rows, err := r.db.reader().ListTLSOrderAttempts(ctx, instancegen.ListTLSOrderAttemptsParams{Host: host, MaxRows: int64(limit)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list TLS order attempts")
+	}
+	out := make([]instance.TLSOrderAttemptResult, len(rows))
+	for i, row := range rows {
+		out[i] = instance.TLSOrderAttemptResult{
+			Attempt: instance.TLSOrderAttempt{
+				ID: row.ID, Host: row.Host, DirectoryURL: row.DirectoryUrl, Profile: row.Profile,
+				ReplacesCertificateID: row.ReplacesCertificateID.String, OccurredAt: sqlite.FromMillis(row.OccurredAt),
+			},
+			CertificateID: row.CertificateID.String,
+		}
+		if row.ProblemType.Valid {
+			out[i].Failure = &instance.TLSOrderFailure{
+				AttemptID: row.ID, ProblemType: row.ProblemType.String, Detail: row.Detail.String,
+				OccurredAt: sqlite.FromMillis(row.FailedAt.Int64),
+			}
+		}
+	}
+	return out, nil
+}
+
+// TLSCertificateSuperseded implements appinstance.TLSRepository.
+func (r *Repository) TLSCertificateSuperseded(ctx context.Context, certificateID string) (bool, error) {
+	ok, err := r.db.reader().TLSCertificateSuperseded(ctx, certificateID)
+	return ok, sqlite.Wrap(err, "read the TLS certificates")
+}

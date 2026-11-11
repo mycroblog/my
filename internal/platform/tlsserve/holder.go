@@ -77,6 +77,13 @@ func (h *Holder) Set(host string, cert *tls.Certificate) error {
 	return nil
 }
 
+// Remove stops serving host: its handshakes fail until a certificate is Set again.
+func (h *Holder) Remove(host string) {
+	h.mu.Lock()
+	delete(h.certs, normalizeHost(host))
+	h.mu.Unlock()
+}
+
 // Certificate returns the certificate that serves host, or nil.
 func (h *Holder) Certificate(host string) *tls.Certificate {
 	h.mu.RLock()

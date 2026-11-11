@@ -36,6 +36,9 @@ var instanceTLSRenewalCases = []struct {
 	{"ServesARenewalUnderAShorterProfile", tlsManagerRenewsUnderAShorterProfile},
 	{"OrdersNowSkippingTheWait", tlsManagerOrdersNow},
 	{"LoadsTheCertificatesOfNotices", tlsManagerLoadsNotices},
+	{"RevokesAfterOrderingTheReplacement", tlsManagerRevokes},
+	{"RevokesWithoutAReplacement", tlsManagerRevokesWithoutAReplacement},
+	{"CountsTheOrders", tlsManagerCountsTheOrders},
 }
 
 // fakeWindow is the window of RenewalInfo of the FakeACMEClient by default.

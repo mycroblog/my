@@ -122,6 +122,8 @@ The default is `900s` because it is the longest there is, and it means up to abo
 | `MyDBPoolWaiting` | Not expressible | The same |
 | `MyFileDescriptorsNearLimit` | Not expressible | No line carries it, and Cloud Run sets the limit |
 | `MyAdapterErrors` | Not expressible | No line carries it. It needs `otlp` |
+| `MyTLSCertificateExpiring` | Not expressible | Cloud Run terminates TLS with its own certificates, so the server runs with `tls = off` and has no certificate to measure |
+| `MyTLSOrdersFailing` | Not expressible | The same: the server orders no certificate |
 
 The runbook's budget entry is outside this module: use a Cloud Billing budget.
 

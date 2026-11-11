@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -89,6 +90,16 @@ func (s Server) Roots(t testing.TB) *x509.CertPool {
 		t.Fatalf("pebbletest: no root in %q", b)
 	}
 	return pool
+}
+
+// Revoked reports whether the CA revoked the certificate of serial.
+func (s Server) Revoked(t testing.TB, serial *big.Int) bool {
+	t.Helper()
+	var status struct{ Status string }
+	if err := json.Unmarshal(s.get(t, s.mgmt+"/cert-status-by-serial/"+serial.Text(16)), &status); err != nil {
+		t.Fatalf("pebbletest: the status of %s: %v", serial.Text(16), err)
+	}
+	return status.Status == "Revoked"
 }
 
 func (s Server) get(t testing.TB, url string) []byte {

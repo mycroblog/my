@@ -125,6 +125,8 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 | Resources | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | over your planned size (example 50 GiB) for 1 h | ticket | Growth of uploads; time to raise the plan or the budget |
 | Email | [`MyEmailFailing`](#myemailfailing) | `my_job_duration_seconds_count` of the email jobs with `my_outcome="dead"` | any in an hour | ticket | Wrong SMTP or SES settings, an account suspended or out of quota, addresses refused for good |
 | Email | [`MyEmailRetrying`](#myemailretrying) | same, `my_outcome="retry"` | over 50% of runs for 15 min | ticket | The mail server is out of reach or refuses the login, a sending rate limit |
+| TLS | [`MyTLSCertificateExpiring`](#mytlscertificateexpiring) | `my_tls_certificate_expiry_seconds` | under 7 days in any process for 15 min | page | Renewals failing for weeks, a process that does not load the renewed certificate, certificate files that nothing renews |
+| TLS | [`MyTLSOrdersFailing`](#mytlsordersfailing) | `my_tls_order_consecutive_failures` | 3 or more for 5 min | ticket | DNS no longer points at the server, ports 80 and 443 blocked, the certificate authority's rate limits or an outage |
 | Cost | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 for 6 h | ticket | Missing permissions, the billing export not set up, the request cap reached, the provider unavailable |
 | Cost | Budget exceeded | – | – | – | Traffic, storage, or a misconfiguration costing more than planned ([below](#cost-and-budget)) |
 
@@ -532,6 +534,40 @@ Fix:
 - Fix the cause (permissions, the billing export, the request cap), then press "Import now" in Administration → Costs → Billing imports instead of waiting for the next day.
 
 Without Prometheus (Cloud Run with `metrics_exporter = none`), make a log-based alert on the `billing import failed` line instead.
+
+### MyTLSCertificateExpiring
+
+A process serves a certificate that expires within 7 days. With `tls = acme` the server renews a certificate when about a third of its
+lifetime is left, weeks before it expires, so this means the renewals have failed for a long time, or the process did not load the renewed
+certificate. With `tls = files` it means nothing renewed the files.
+
+Check:
+
+- The `instance` label: when other processes serve a later certificate for the same host, only this process kept the old one.
+- `my tls status`: the current certificate of the host, when it is renewed, and the latest orders with their errors.
+- The log lines `the TLS certificate could not be obtained` with the reason.
+
+Fix:
+
+- Fix the cause of the failed orders (see [MyTLSOrdersFailing](#mytlsordersfailing)), then run `my tls renew -host <host>` to order at once
+  instead of waiting for the next order.
+- A process that keeps an old certificate while the database holds a newer one loads it within 5 minutes; restart it if it does not.
+- With `tls = files`, renew the files with the tool that writes them (certbot); the server loads them within a minute.
+
+### MyTLSOrdersFailing
+
+The last 3 or more orders of a host's certificate obtained none. After the third failure the server waits 100 minutes, then a day,
+between orders, so that it stays within the certificate authority's limits. The current certificate stays in service meanwhile.
+
+Check:
+
+- `my tls status`: the failures and the error of each order. A `rejectedIdentifier`, `dns`, `connection`, or `unauthorized` error means the
+  certificate authority could not reach the server under its name; `rateLimited` means its limits were reached.
+- That `host` resolves to the server, and that ports 443 and 80 are reachable from the internet.
+
+Fix:
+
+- Fix the cause, then run `my tls renew -host <host>`: it orders at once without waiting.
 
 ## Telling users about an incident
 

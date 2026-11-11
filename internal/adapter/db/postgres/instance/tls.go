@@ -4,6 +4,7 @@ package instance
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
@@ -125,4 +126,36 @@ func (r *Repository) ListUnresultedTLSOrderAttempts(ctx context.Context, host st
 		}
 	}
 	return out, nil
+}
+
+// ListTLSOrderAttempts implements appinstance.TLSRepository.
+func (r *Repository) ListTLSOrderAttempts(ctx context.Context, host string, limit int) ([]instance.TLSOrderAttemptResult, error) {
+	rows, err := r.db.reader().ListTLSOrderAttempts(ctx, instancegen.ListTLSOrderAttemptsParams{Host: host, MaxRows: int32(min(limit, math.MaxInt32))}) //nolint:gosec // G115: clamped
+	if err != nil {
+		return nil, postgres.Wrap(err, "list TLS order attempts")
+	}
+	out := make([]instance.TLSOrderAttemptResult, len(rows))
+	for i, row := range rows {
+		out[i] = instance.TLSOrderAttemptResult{
+			Attempt: instance.TLSOrderAttempt{
+				ID: row.ID, Host: row.Host, DirectoryURL: row.DirectoryUrl, Profile: row.Profile,
+				ReplacesCertificateID: postgres.FromNullString(row.ReplacesCertificateID), OccurredAt: row.OccurredAt.UTC(),
+			},
+			CertificateID: postgres.FromNullString(row.CertificateID),
+		}
+		if row.ProblemType != nil {
+			f := &instance.TLSOrderFailure{AttemptID: row.ID, ProblemType: *row.ProblemType, Detail: postgres.FromNullString(row.Detail)}
+			if row.FailedAt != nil {
+				f.OccurredAt = row.FailedAt.UTC()
+			}
+			out[i].Failure = f
+		}
+	}
+	return out, nil
+}
+
+// TLSCertificateSuperseded implements appinstance.TLSRepository.
+func (r *Repository) TLSCertificateSuperseded(ctx context.Context, certificateID string) (bool, error) {
+	ok, err := r.db.reader().TLSCertificateSuperseded(ctx, certificateID)
+	return ok, postgres.Wrap(err, "read the TLS certificates")
 }
