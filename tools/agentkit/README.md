@@ -78,6 +78,8 @@ follow a rule yet: a pending entry fails once its file follows the rule, so the 
   more than 8 rows, and no code span that names a path of three segments or more, a source or YAML file, a namespaced
   task, a `pkg.Exported` of a package of the repository, or an `Err...` value. `docs adr-shape` prints the measures of
   each ADR.
+- Package pointers: an `AGENTS.md` below the root is a title and at most 12 list items, each
+  `- <task>: [<documentation>](https://...), search for: <terms>` with one link that has no `#fragment`.
 
 `scripts/task.sh docs:growth` (`scripts/docs-growth.sh`, a step of the pull request's preflight) fails when a group of
 the prose agents maintain is larger than at the merge base, unless the pull request has the `allow:docs-growth` label.

@@ -22,6 +22,7 @@ skip:
 # or the line before.
 english:
   - "*.md"
+  - "**/AGENTS.md"
   - "docs/README.md"
   - "docs/agents/**"
   - "docs/operations/**"
