@@ -5,6 +5,7 @@ package instancetest
 import (
 	"bytes"
 	"errors"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -38,7 +39,7 @@ func instanceRegistersOneTLSAccount(t *testing.T, e *instanceEnv) {
 	var wg sync.WaitGroup
 	for i := range got {
 		wg.Go(func() {
-			got[i], errs[i] = e.service.RegisterTLSAccount(ctx, tlsDirectory, "https://ca.example/acct/"+string(rune('a'+i)), []byte{byte(i)})
+			got[i], errs[i] = e.service.RegisterTLSAccount(ctx, tlsDirectory, "https://ca.example/acct/"+strconv.Itoa(i), []byte(strconv.Itoa(i)))
 		})
 	}
 	wg.Wait()

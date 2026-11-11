@@ -101,7 +101,8 @@ func TestServeTLSFiles(t *testing.T) {
 	})
 
 	t.Run("plain HTTP on listen gets no answer", func(t *testing.T) {
-		resp, err := http.Get(s.url + platform.PathLiveness) //nolint:noctx // a test of the listener
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, s.url+platform.PathLiveness, nil)
+		resp, err := http.DefaultTransport.RoundTrip(req)
 		if err == nil {
 			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
@@ -206,7 +207,7 @@ func TestServeTLSRefusesUnusableFiles(t *testing.T) {
 	certFile, keyFile := cert.WriteFiles(t, t.TempDir(), time.Time{})
 	cfg := loadConfig(t, map[string]string{
 		"MY_DATABASE_URL": newDatabase(t, true),
-		"MY_TLS": "files", "MY_TLS_CERT_FILE": certFile, "MY_TLS_KEY_FILE": keyFile,
+		"MY_TLS":          "files", "MY_TLS_CERT_FILE": certFile, "MY_TLS_KEY_FILE": keyFile,
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: platform.NewLogger(io.Discard, slog.LevelError)})
 	if err != nil {

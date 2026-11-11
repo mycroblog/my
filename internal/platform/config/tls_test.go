@@ -3,6 +3,7 @@
 package config
 
 import (
+	"errors"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -61,8 +62,8 @@ func TestTLSSettingsInvalid(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, _, err := Load(source(tc.env, nil))
-			verr, ok := err.(*ValidationError)
-			if !ok {
+			var verr *ValidationError
+			if !errors.As(err, &verr) {
 				t.Fatalf("Load = %v, want a ValidationError", err)
 			}
 			if !slices.ContainsFunc(verr.Issues, func(i Issue) bool {

@@ -211,7 +211,10 @@ func TestRedirectHandler(t *testing.T) {
 	t.Parallel()
 	h := tlsserve.NewHolder("social.example", "web.example")
 	challenge := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.WriteString(w, "token:"+strings.TrimPrefix(r.URL.Path, tlsserve.ACMEChallengePrefix))
+		w.Header().Set("Content-Type", "text/plain")
+		if strings.TrimPrefix(r.URL.Path, tlsserve.ACMEChallengePrefix) == "abc" {
+			_, _ = io.WriteString(w, "token:abc")
+		}
 	})
 	cases := []struct {
 		name       string
