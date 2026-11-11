@@ -71,6 +71,7 @@ func InstanceFlows(t *testing.T, newHarness InstanceFactory) {
 	cases = append(cases, instanceSecretCases...)
 	cases = append(cases, instanceDomainCases...)
 	cases = append(cases, instanceTLSCases...)
+	cases = append(cases, instanceTLSManagerCases...)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newInstanceEnv(t, newHarness)) })
 	}
@@ -82,7 +83,10 @@ type instanceEnv struct {
 	blobs      *testkit.MemoryBlobStore
 	clock      *testkit.Clock
 	sealer     *kernel.Sealer
-	service    *appinstance.Service
+	// ids is the ID generator of every service of the env, so that services standing for
+	// several processes never make the same ID.
+	ids     kernel.IDGenerator
+	service *appinstance.Service
 	// accounts is how many local accounts the setting single_user counts; it starts at 1.
 	accounts *singleUserAccounts
 }
@@ -106,7 +110,9 @@ func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
 	blobs := testkit.NewMemoryBlobStore(clock)
 	sealer := kernel.NewSealer(testkit.NewKeyManager("testkit:instance"))
 	accounts := &singleUserAccounts{n: 1}
+	ids := testkit.NewIDGenerator(clock)
 	return &instanceEnv{
+		ids:        ids,
 		accounts:   accounts,
 		h:          h,
 		projectors: projectors,
@@ -114,7 +120,7 @@ func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
 		clock:      clock,
 		sealer:     sealer,
 		service: appinstance.NewService(appinstance.Deps{
-			UnitOfWork: h.UnitOfWork, Repository: h.Instance, Clock: clock, IDs: testkit.NewIDGenerator(clock),
+			UnitOfWork: h.UnitOfWork, Repository: h.Instance, Clock: clock, IDs: ids,
 			Blobs: blobs, Sealer: sealer, SingleUserAccounts: accounts,
 		}),
 	}

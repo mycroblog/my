@@ -17,7 +17,7 @@ set -euo pipefail
   exit 2
 }
 
-ALL=(postgres stream mail blob voice search)
+ALL=(postgres stream mail blob voice search acme)
 declare -A selected=()
 
 while IFS= read -r path; do
@@ -49,6 +49,11 @@ while IFS= read -r path; do
     internal/adapter/search/* | pkg/testkit/searchtest/search_index_contract.go | pkg/testkit/elasticsearchtest/* | \
       pkg/testkit/meilisearchtest/* | .github/workflows/search-contract.yml)
       selected[search]=1
+      ;;&
+    internal/adapter/acme/* | pkg/testkit/instancetest/acme_contract.go | pkg/testkit/pebbletest/* | \
+      internal/app/instance/tls_*.go | internal/platform/serve_tls*.go | internal/platform/tls_acme.go | \
+      internal/platform/tlsserve/* | .github/workflows/acme-contract.yml)
+      selected[acme]=1
       ;;
   esac
 done < "$1"

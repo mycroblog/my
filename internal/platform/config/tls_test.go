@@ -51,7 +51,7 @@ func TestTLSSettingsInvalid(t *testing.T) {
 		key  string
 		msg  string
 	}{
-		{"an unknown mode", with(minimal(), "MY_TLS", "acme"), "tls", "unknown value"},
+		{"an unknown mode", with(minimal(), "MY_TLS", "caddy"), "tls", "unknown value"},
 		{"files without a certificate", with(minimal(), "MY_TLS", "files", "MY_TLS_KEY_FILE", "k.pem"), "tls_cert_file", "required when tls is files"},
 		{"files without a key", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem"), "tls_key_file", "required when tls is files"},
 		{"port 80 on listen", with(minimal(), "MY_TLS", "files", "MY_TLS_CERT_FILE", "c.pem", "MY_TLS_KEY_FILE", "k.pem", "MY_TLS_HTTP_LISTEN", ":443"), "tls_http_listen", "must differ from listen"},

@@ -34,6 +34,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.27.0
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/kaptinlin/messageformat-go/mf1 v0.8.6
+	github.com/mholt/acmez/v3 v3.1.7
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/oapi-codegen/runtime v1.8.0
 	github.com/pelletier/go-toml/v2 v2.4.3

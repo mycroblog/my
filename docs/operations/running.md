@@ -139,27 +139,29 @@ serves the media itself. One node is one disk: back up the volume `garage` or th
 ## Serving HTTPS from the server
 
 `my` can serve HTTPS itself, so that a small machine runs the whole server as one binary with a domain and ports 80 and 443,
-without a reverse proxy. With `tls = files`, it serves a certificate and key that you provide and keep up to date with
-another tool, such as certbot.
+without a reverse proxy. With `tls = acme`, it obtains its certificates from an ACME certificate authority such as Let's
+Encrypt. With `tls = files`, it serves a certificate and key that you provide and keep up to date with another tool, such
+as certbot.
+
+```sh
+MY_TLS=acme
+MY_TLS_ACME_AGREE_TERMS=true            # you agree to the terms of service of the certificate authority
+# MY_TLS_ACME_EMAIL=ops@social.example  optional contact of the account
+# MY_LISTEN=:443          the default with tls other than off
+# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
+```
 
 ```sh
 MY_TLS=files
 MY_TLS_CERT_FILE=/etc/letsencrypt/live/social.example/fullchain.pem
 MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
-# MY_LISTEN=:443          the default with tls other than off
-# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
 ```
 
 - **Ports.** The server serves HTTPS on `listen` (`:443` by default once `tls` is not `off`). On `tls_http_listen` (`:80`
   by default) it sends `GET` and `HEAD` requests to the same path on `https` with `301`, and answers `400` to every other
   method, so that no request body travels in plain text.
-- **Certificate.** `tls_cert_file` holds the server's certificate first, then its intermediates (certbot's
-  `fullchain.pem`); `tls_key_file` holds its key. The certificate must cover `host`, and it also serves the host of
-  `web_origin` when that differs and the certificate covers it. A handshake for any other name fails without a
-  certificate.
-- **Renewal.** The server looks at the modification times of both files every minute and loads them again when either
-  changes, without a restart. A pair that does not match yet (a new certificate before its new key) keeps the previous
-  certificate in service until the next check, and the log says why.
+- **Hosts.** The server serves `host`, and the host of `web_origin` when that differs. A handshake for any other name
+  fails without a certificate, and never makes the server order one.
 - **Connections.** TLS 1.2 or later with Go's default cipher suites, HTTP/2 and HTTP/1.1, at most 64 KiB of request
   headers, and at most 100 concurrent streams on an HTTP/2 connection. The timeouts are those of plain HTTP. The server
   still adds `Strict-Transport-Security` to every response ([Security headers](#security-headers)).
@@ -167,16 +169,69 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
   `listen` (`:8080` by default) and opens no port 80.
 - **Client addresses.** Without a proxy in front, the connection's peer is the client: leave `trusted_proxies` empty.
   Set it only when a CDN in front connects to the server over `https`.
-- **Maintenance mode.** `my serve -maintenance` reads neither `tls` nor the certificate files and answers in plain HTTP on
+- **Maintenance mode.** `my serve -maintenance` reads neither `tls` nor the certificates and answers in plain HTTP on
   `listen` (`:8080` unless you set it), so point `MY_LISTEN` and your firewall at that port while it runs, or keep a
   reverse proxy for maintenance.
 
-`my config check` reports a certificate or key that cannot be read, a key that does not match the certificate, and a
-certificate that does not cover `host`, has expired, or is not valid yet, as errors. It warns when fewer than 14 days
-are left, and when `trusted_proxies` is set with `tls` other than `off`. With `tls = off` it warns when `listen` is port
-80 or 443 on an address other than loopback, since nothing seems to terminate TLS in front of the server; the server
-logs the same warning once per start when such a server, with `trusted_proxies` empty, gets a plain HTTP request from
-an address other than loopback.
+### Certificates from an ACME certificate authority
+
+With `tls = acme`, the server orders a certificate for each of its hosts that has none, from the certificate authority
+at `tls_acme_directory` (Let's Encrypt by default).
+
+- **Before you start.** `host` must be a DNS name that points at the server, and ports 443 and 80 must be reachable from
+  the internet: the certificate authority checks that the server controls the name by connecting to it. It answers on
+  `listen` (the TLS-ALPN-01 challenge) or on `tls_http_listen` (the HTTP-01 challenge), so an empty `tls_http_listen`
+  still works with port 443 alone. Wildcard certificates and validation through DNS records are not available.
+- **First start.** The server starts listening without waiting for a certificate, then orders them. Until a host has its
+  certificate, a handshake for it fails; with Let's Encrypt the first certificates usually come within a minute. The log
+  says `obtained a TLS certificate` for each host, and `the TLS certificate could not be obtained` with the reason when an
+  order fails.
+- **Failed orders.** After a failed order the server waits before the next one for the same host: 1 minute after the
+  first failure, 10 minutes after the second, 100 minutes after the third, then a day, so that it stays within the
+  certificate authority's limits. The wait is kept in the database and survives restarts. Fix the cause (DNS, a firewall,
+  a port) and the next order goes out when the wait ends.
+- **Where they are kept.** The account with the certificate authority, the certificates, and the record of every order
+  are kept in the database; the private keys are sealed with the key-encryption key, like the other secrets
+  ([key management](key-management.md)). A backup of the database includes them, and a restarted server serves the
+  stored certificates at once, without ordering. Changing the key-encryption key re-wraps them; it does not order new
+  certificates.
+- **Several processes.** Processes that share the database and the `kv` store coordinate: one orders the certificate of
+  a host while the others wait and then load it, and whichever process the certificate authority connects to answers its
+  check. Use `kv = db` or `kv = valkey`; `kv = memory` is refused unless one process runs everything (`role = all`).
+- **Profiles.** `tls_acme_profile` picks a profile that the certificate authority offers, such as `shortlived` at Let's
+  Encrypt. Empty takes its default.
+
+To try it without spending the limits of Let's Encrypt's production environment, start with its staging environment,
+which issues certificates that browsers do not trust under much higher limits:
+
+```sh
+MY_TLS_ACME_DIRECTORY=https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+Once the log says the certificates were obtained and `curl -kv https://social.example/` shows a certificate from
+`(STAGING)`, remove the setting and restart. The server registers a new account with the production environment and
+orders its certificates there; the staging ones stay in the database and are no longer served.
+
+### Certificates from files
+
+With `tls = files`, `tls_cert_file` holds the server's certificate first, then its intermediates (certbot's
+`fullchain.pem`); `tls_key_file` holds its key. The certificate must cover `host`, and it also serves the host of
+`web_origin` when that differs and the certificate covers it.
+
+The server looks at the modification times of both files every minute and loads them again when either changes, without
+a restart. A pair that does not match yet (a new certificate before its new key) keeps the previous certificate in
+service until the next check, and the log says why.
+
+### Checks and running it
+
+`my config check` reports, with `tls = acme`, terms that are not agreed to, a `host` that is an IP address, `localhost`,
+or a name without a dot, a `tls_acme_directory` that is not an `https` URL, and `kv = memory` with a `role` other than
+`all`, as errors. With `tls = files` it reports a certificate or key that cannot be read, a key that does not match the
+certificate, and a certificate that does not cover `host`, has expired, or is not valid yet, as errors, and warns when
+fewer than 14 days are left. It warns when `trusted_proxies` is set with `tls` other than `off`. With `tls = off` it warns
+when `listen` is port 80 or 443 on an address other than loopback, since nothing seems to terminate TLS in front of the
+server; the server logs the same warning once per start when such a server, with `trusted_proxies` empty, gets a plain
+HTTP request from an address other than loopback.
 
 **systemd.** Ports below 1024 need a capability for a user other than root. Give it to the service and nothing else:
 
@@ -187,20 +242,21 @@ AmbientCapabilities=CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 ```
 
-The user also needs to read the certificate files. With certbot, its `live` and `archive` directories are readable only by
-root: grant the group of the service access (`chgrp` and `chmod g+rx` on the directories, `g+r` on the keys), or copy the
-files in a deploy hook to a directory that the service reads.
+With `tls = files`, the user also needs to read the certificate files. With certbot, its `live` and `archive` directories
+are readable only by root: grant the group of the service access (`chgrp` and `chmod g+rx` on the directories, `g+r` on
+the keys), or copy the files in a deploy hook to a directory that the service reads.
 
 **Docker.** Docker 20.10 and later let a container open ports below 1024 without a capability, so the image works as it
 is. The image sets `MY_LISTEN=:8080`, so set `MY_LISTEN=:443` in `.env`, publish both ports in a
-`compose.override.yaml` (`ports: ["80:80", "443:443"]`), and mount the certificate files read-only where
-`MY_TLS_CERT_FILE` and `MY_TLS_KEY_FILE` point. The server runs as the user `65532`, which must be able to read them.
+`compose.override.yaml` (`ports: ["80:80", "443:443"]`). With `tls = files`, mount the certificate files read-only
+where `MY_TLS_CERT_FILE` and `MY_TLS_KEY_FILE` point; the server runs as the user `65532`, which must be able to read
+them. With `tls = acme` there is nothing to mount: the certificates live in the database.
 Leave out `compose.caddy.yaml`, which would take the same ports. This does not hold with `network_mode: host`, where
 the container shares the machine's network and needs the same capability as a service outside a container.
 
 **Compared with Caddy.** Serving HTTPS from `my` gives up HTTP/3, compression of responses (the server compresses
-nothing), and an access log of its own (the server's `http request` log lines remain). Caddy also gets and renews the
-certificate by itself. Keep `compose.caddy.yaml`, or another proxy, when you need any of these.
+nothing), an access log of its own (the server's `http request` log lines remain), and certificates validated through
+DNS, including wildcard certificates. Keep `compose.caddy.yaml`, or another proxy, when you need any of these.
 
 ## Get the image
 

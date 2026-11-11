@@ -971,6 +971,22 @@
     "env": "MY_TLS",
     "secret": false
   },
+  "tls_acme_agree_terms": {
+    "env": "MY_TLS_ACME_AGREE_TERMS",
+    "secret": false
+  },
+  "tls_acme_directory": {
+    "env": "MY_TLS_ACME_DIRECTORY",
+    "secret": false
+  },
+  "tls_acme_email": {
+    "env": "MY_TLS_ACME_EMAIL",
+    "secret": false
+  },
+  "tls_acme_profile": {
+    "env": "MY_TLS_ACME_PROFILE",
+    "secret": false
+  },
   "tls_cert_file": {
     "env": "MY_TLS_CERT_FILE",
     "secret": false

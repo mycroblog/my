@@ -10,6 +10,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"
@@ -54,7 +55,13 @@ func NewTLSCertificate(t testing.TB, serial int64, notBefore time.Time, validity
 	if len(hosts) > 0 {
 		tmpl.Subject = pkix.Name{CommonName: hosts[0]}
 	}
-	tmpl.DNSNames = append(tmpl.DNSNames, hosts...)
+	for _, h := range hosts {
+		if ip := net.ParseIP(h); ip != nil {
+			tmpl.IPAddresses = append(tmpl.IPAddresses, ip)
+		} else {
+			tmpl.DNSNames = append(tmpl.DNSNames, h)
+		}
+	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
 		t.Fatal(err)

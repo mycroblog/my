@@ -64,6 +64,10 @@ An instance setting that has never been set reads as its default, which is defin
 | [`worker_job_concurrency`](#worker_job_concurrency) | `MY_WORKER_JOB_CONCURRENCY` | `1` | no | no |
 | [`listen`](#listen) | `MY_LISTEN` | `:443` with `tls` other than `off` in the `web` and `all` roles, `:8080` otherwise | no | no |
 | [`tls`](#tls) | `MY_TLS` | `off` | no | no |
+| [`tls_acme_directory`](#tls_acme_directory) | `MY_TLS_ACME_DIRECTORY` | `https://acme-v02.api.letsencrypt.org/directory` | no | no |
+| [`tls_acme_agree_terms`](#tls_acme_agree_terms) | `MY_TLS_ACME_AGREE_TERMS` | `false` | `tls = acme` (set to `true`) | no |
+| [`tls_acme_email`](#tls_acme_email) | `MY_TLS_ACME_EMAIL` | none | no | no |
+| [`tls_acme_profile`](#tls_acme_profile) | `MY_TLS_ACME_PROFILE` | none | no | no |
 | [`tls_cert_file`](#tls_cert_file) | `MY_TLS_CERT_FILE` | none | `tls = files` | no |
 | [`tls_key_file`](#tls_key_file) | `MY_TLS_KEY_FILE` | none | `tls = files` | no |
 | [`tls_http_listen`](#tls_http_listen) | `MY_TLS_HTTP_LISTEN` | `:80` | no | no |
@@ -487,7 +491,45 @@ Whether the server serves HTTPS itself, so that it runs without a reverse proxy 
 | Value | Description |
 | --- | --- |
 | `off` | Plain HTTP on `listen`: a reverse proxy, a load balancer, or a CDN in front terminates TLS. |
+| `acme` | HTTPS on `listen` with certificates that the server obtains itself from the ACME certificate authority `tls_acme_directory`, for `host` and, when it differs, the host of `web_origin`. It needs `tls_acme_agree_terms = true`, a `host` that is a DNS name with a dot, and a `kv` that every process shares (`kv = memory` only with `role = all`). The certificates and their keys are kept in the database, the keys sealed. The first certificate is ordered after the server starts listening, and handshakes for a host fail until it has one. The CA validates the order on `listen` (TLS-ALPN-01) or on `tls_http_listen` (HTTP-01), so both must be reachable from the internet on ports 443 and 80, or at least `listen` on port 443. The build tag `no_acme` leaves it out. |
 | `files` | HTTPS on `listen` with the certificate `tls_cert_file` and its key `tls_key_file`, which another tool such as certbot keeps up to date. The server looks at their modification times every minute and loads them again when they change, without a restart. Port `tls_http_listen` redirects to `https`. |
+
+### `tls_acme_directory`
+
+Directory URL of the ACME certificate authority of `tls = acme`, an `https` URL. The default is Let's Encrypt; its staging environment, `https://acme-staging-v02.api.letsencrypt.org/directory`, issues certificates that browsers do not trust, under higher rate limits, for a first try ([serving HTTPS from the server](../operations/running.md#serving-https-from-the-server)). The server reaches it directly and follows no redirect.
+
+- Environment variable: `MY_TLS_ACME_DIRECTORY`
+- Default: `https://acme-v02.api.letsencrypt.org/directory`
+- Required: no
+
+### `tls_acme_agree_terms`
+
+Whether you agree to the terms of service of the certificate authority `tls_acme_directory`, which `tls = acme` requires. Read them first: the directory links them.
+
+- Environment variable: `MY_TLS_ACME_AGREE_TERMS`
+- Default: `false`
+- Required: `tls = acme` (set to `true`)
+
+| Value | Description |
+| --- | --- |
+| `false` | Not agreed: `tls = acme` is refused. |
+| `true` | Agreed: the server registers its account with the certificate authority on its first order. |
+
+### `tls_acme_email`
+
+Email address that the account of `tls = acme` gives the certificate authority as its contact, such as `ops@example.com`. Empty gives none. Let's Encrypt sends no email about expiring certificates.
+
+- Environment variable: `MY_TLS_ACME_EMAIL`
+- Default: none
+- Required: no
+
+### `tls_acme_profile`
+
+Profile of the certificates that `tls = acme` orders, among those the certificate authority offers (its directory lists them), such as `shortlived` at Let's Encrypt. Empty takes the authority's default.
+
+- Environment variable: `MY_TLS_ACME_PROFILE`
+- Default: none
+- Required: no
 
 ### `tls_cert_file`
 

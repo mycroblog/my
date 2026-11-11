@@ -3,6 +3,8 @@
 package tlsserve
 
 import (
+	"context"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -44,5 +46,30 @@ func RedirectHandler(h *Holder, fallbackHost, httpsPort string, challenge http.H
 		}
 		w.Header().Set("Location", target)
 		w.WriteHeader(http.StatusMovedPermanently)
+	})
+}
+
+// HTTP01Handler answers the ACME HTTP-01 challenges under ACMEChallengePrefix (RFC 8555 §8.3)
+// with the key authorization that answer returns for the token, and 404 when it returns an
+// error. It answers GET and HEAD only, 400 to every other method.
+func HTTP01Handler(answer func(ctx context.Context, token string) (string, error)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			w.Header().Set("Connection", "close")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		token, ok := strings.CutPrefix(r.URL.Path, ACMEChallengePrefix)
+		if !ok || token == "" || strings.Contains(token, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		keyAuth, err := answer(r.Context(), token)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/octet-stream")
+		_, _ = io.WriteString(w, keyAuth)
 	})
 }

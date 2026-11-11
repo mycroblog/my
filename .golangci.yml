@@ -482,6 +482,16 @@ linters:
           deny:
             - pkg: github.com/yuin/goldmark
               desc: render Markdown through instance.DocumentRenderer or content.ArticleRenderer (internal/adapter/markdown)
+        # The ACME client library (ADR-0163 §2) stays inside the adapter of instance.ACMEClient, so that the
+        # orders go through the TLS manager of the instance module, its lease, and its records.
+        acmez:
+          list-mode: lax
+          files:
+            - $all
+            - "!**/internal/adapter/acme/**"
+          deny:
+            - pkg: github.com/mholt/acmez/v3
+              desc: talk to the CA through instance.ACMEClient (internal/adapter/acme)
         # The HTTP signature libraries (ADR-0006) stay inside the adapter of federation.Signer and
         # federation.Verifier, so that every signature goes through the policy of ADR-0006.
         httpsig:

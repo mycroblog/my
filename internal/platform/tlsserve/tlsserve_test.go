@@ -254,3 +254,31 @@ func TestRedirectHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestHTTP01Handler(t *testing.T) {
+	t.Parallel()
+	h := tlsserve.HTTP01Handler(func(_ context.Context, token string) (string, error) {
+		if token == "tok" {
+			return "tok.thumb", nil
+		}
+		return "", errors.New("no such token")
+	})
+	for _, tc := range []struct {
+		method, path string
+		code         int
+		body         string
+	}{
+		{http.MethodGet, "/.well-known/acme-challenge/tok", http.StatusOK, "tok.thumb"},
+		{http.MethodHead, "/.well-known/acme-challenge/tok", http.StatusOK, ""},
+		{http.MethodGet, "/.well-known/acme-challenge/other", http.StatusNotFound, ""},
+		{http.MethodGet, "/.well-known/acme-challenge/", http.StatusNotFound, ""},
+		{http.MethodGet, "/.well-known/acme-challenge/tok/more", http.StatusNotFound, ""},
+		{http.MethodPost, "/.well-known/acme-challenge/tok", http.StatusBadRequest, ""},
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, nil))
+		if rec.Code != tc.code || (tc.body != "" && rec.Body.String() != tc.body) {
+			t.Errorf("%s %s = %d %q, want %d %q", tc.method, tc.path, rec.Code, rec.Body.String(), tc.code, tc.body)
+		}
+	}
+}
