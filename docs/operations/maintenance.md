@@ -136,8 +136,9 @@ defaultCustomErrorResponsePolicy:
 ### AWS ECS
 
 Register a revision of the service's task definition with `MY_MAINTENANCE=true` in the container's environment, update the service to it,
-and do the same without the variable afterwards. With the OpenTofu modules, `deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
-switches the service to the maintenance mode before an upgrade, and back with the new revision.
+and do the same without the variable afterwards. With the OpenTofu module, set it in the block instead, as `settings = { maintenance = "true" }`,
+and apply, since the next apply puts back what the block says: around an upgrade, apply the mode, then the new release, then the block without it,
+as [Deploying on Cloud Run](deploy-cloud-run.md#the-maintenance-mode) does.
 
 **When `my serve` cannot run** behind CloudFront: upload the exported `index.html` to an S3 bucket that is a second origin
 (the error page cannot come from the failing origin), and add custom error responses for `502` and `504` (and `503` only while `my serve` cannot run)
