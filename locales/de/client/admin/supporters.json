@@ -658,5 +658,113 @@
   "admin.supporters.subscription.no_period": {
     "defaultMessage": "Keine",
     "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  },
+  "admin.supporters.tips.title": {
+    "defaultMessage": "Trinkgelder",
+    "description": "Heading of the section of the tips on the first page of the supporters screen. A tip is a one-time payment to the server's operation with nothing in return; never word it as a donation."
+  },
+  "admin.supporters.tips.description": {
+    "defaultMessage": "Ein Trinkgeld ist eine einmalige Zahlung eines Nutzers dieses Servers für dessen Betrieb, ohne Gegenleistung. Nutzer mit bestätigter E-Mail-Adresse wählen einen deiner Beträge und zahlen ihn auf der Seite des Zahlungsanbieters. Trinkgelder brauchen keinen Tarif.",
+    "description": "What the tips are, at the top of their section. Never word them as donations, and never suggest a deduction."
+  },
+  "admin.supporters.tips.accepting": {
+    "defaultMessage": "Nutzer können jetzt Trinkgeld geben",
+    "description": "Term of the tips' section: whether users may tip now."
+  },
+  "admin.supporters.tips.accepting.yes": {
+    "defaultMessage": "Ja",
+    "description": "Users may tip now."
+  },
+  "admin.supporters.tips.accepting.no": {
+    "defaultMessage": "Nein",
+    "description": "Users may not tip now."
+  },
+  "admin.supporters.tips.changed_at": {
+    "defaultMessage": "Zuletzt geändert",
+    "description": "Term of the tips' section: when the tips were last enabled, changed, or disabled."
+  },
+  "admin.supporters.tips.never": {
+    "defaultMessage": "Nie",
+    "description": "The tips were never enabled."
+  },
+  "admin.supporters.tips.warning.no_one_time": {
+    "defaultMessage": "Der Zahlungsanbieter nimmt keine Einmalzahlungen an, daher lassen sich Trinkgelder nicht aktivieren.",
+    "description": "Warning of the tips' section: the configured payment provider cannot take tips."
+  },
+  "admin.supporters.tips.warning.not_accepting": {
+    "defaultMessage": "Trinkgelder sind aktiviert, aber Nutzer können keines geben, solange das Unterstützerprogramm deaktiviert ist.",
+    "description": "Warning of the tips' section: the tips are enabled but the supporter program is off."
+  },
+  "admin.supporters.tips.warning.server_limit": {
+    "defaultMessage": "In der letzten Stunde haben die Starts von Trinkgeldern das Limit des gesamten Servers erreicht. Das kann Card Testing sein, bei dem jemand gestohlene Karten mit kleinen Zahlungen ausprobiert: Prüfe die Zahlungen im Dashboard des Anbieters.",
+    "description": "Warning of the tips' section: the server-wide rate limit of the starts of tips was reached in the last hour."
+  },
+  "admin.supporters.tips.note.disputes": {
+    "defaultMessage": "Jede Rückbuchung kostet die Streitfallgebühr des Zahlungsanbieters, unabhängig vom Betrag des Trinkgelds: bei Stripe in Japan zum Zeitpunkt des Schreibens ¥1.500 pro Streitfall. Ein kleines Trinkgeld kann ein Vielfaches dessen kosten, was es eingebracht hat.",
+    "description": "Note of the tips' section: the dispute fee of each chargeback."
+  },
+  "admin.supporters.tips.note.refunds": {
+    "defaultMessage": "Erstattungen und Rückbuchungen von Trinkgeldern werden von den Einnahmen abgezogen. Erstatte ein Trinkgeld im Dashboard des Anbieters; dieser Server hat keine Erstattungsfunktion.",
+    "description": "Note of the tips' section: refunds and chargebacks subtract from the income."
+  },
+  "admin.supporters.tips.note.breakdown": {
+    "defaultMessage": "Die öffentlichen Summen der Einnahmen enthalten die Trinkgelder, zeigen aber nie deren Betrag oder Anzahl: Auf einem kleinen Server würde eine Aufschlüsselung verraten, wer gezahlt hat. Nur die Seite für Zahlungen und Erstattungen im Kostenbereich zeigt jedes Trinkgeld und wer es gezahlt hat.",
+    "description": "Note of the tips' section: why the public totals do not break the tips out."
+  },
+  "admin.supporters.tips.note.provider": {
+    "defaultMessage": "Ob dein Zahlungsanbieter Trinkgelder für den Betrieb eines Dienstes akzeptiert, musst du anhand seiner Prüfung und seiner Bedingungen selbst klären. Formuliere deine Angaben zum Geschäftsbetrieb als Trinkgeld für den Betrieb des Dienstes, ohne Gegenleistung.",
+    "description": "Note of the tips' section: the operator checks the provider's terms. Never word the tips as donations."
+  },
+  "admin.supporters.tips.guide": {
+    "defaultMessage": "Mehr zu Trinkgeldern in der Dokumentation für Betreibende",
+    "description": "Link from the tips' section to the operator documentation of the tips, which opens in a new tab."
+  },
+  "admin.supporters.tips.switch": {
+    "defaultMessage": "Trinkgelder annehmen",
+    "description": "Label of the checkbox of the tips' form that enables or disables them."
+  },
+  "admin.supporters.tips.switch.description": {
+    "defaultMessage": "Ein bereits geöffneter Checkout bleibt bezahlbar, bis er endet, nachdem du die Trinkgelder deaktiviert hast.",
+    "description": "Description of the checkbox that enables or disables the tips."
+  },
+  "admin.supporters.tips.currency": {
+    "defaultMessage": "Währung",
+    "description": "Label of the choice of the currency of the amounts of the tips."
+  },
+  "admin.supporters.tips.amounts": {
+    "defaultMessage": "Beträge",
+    "description": "Label of the field of the amounts that users choose from when they tip."
+  },
+  "admin.supporters.tips.amounts.description": {
+    "defaultMessage": "1 bis {max} Beträge, durch Kommas getrennt, zum Beispiel 500, 1000, 3000.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6."
+  },
+  "admin.supporters.tips.amounts.range": {
+    "defaultMessage": "1 bis {max} Beträge, durch Kommas getrennt, zum Beispiel 500, 1000, 3000, jeweils von {minimum} bis {maximum}.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6; minimum and maximum are formatted amounts, such as ¥100 and ¥100,000."
+  },
+  "admin.supporters.tips.amounts.invalid": {
+    "defaultMessage": "Schreibe jeden Betrag als Zahl, zum Beispiel 500 oder 5.00.",
+    "description": "Error of the field of the amounts of the tips: one is not a number."
+  },
+  "admin.supporters.tips.amounts.count": {
+    "defaultMessage": "Schreibe 1 bis {max} verschiedene Beträge.",
+    "description": "Error of the field of the amounts of the tips: none or too many. max is a number, such as 6."
+  },
+  "admin.supporters.tips.save": {
+    "defaultMessage": "Trinkgelder speichern",
+    "description": "Button that saves the tips' form."
+  },
+  "admin.supporters.tips.saved": {
+    "defaultMessage": "Gespeichert. Das Audit-Log erfasst jede Änderung.",
+    "description": "Shown beside the save button of the tips' form after it is saved."
+  },
+  "admin.supporters.tips.unchanged": {
+    "defaultMessage": "Nichts hat sich geändert.",
+    "description": "Shown beside the save button of the tips' form when it is saved without a change."
+  },
+  "admin.supporters.tips.failed": {
+    "defaultMessage": "Speichern nicht möglich: {reason}",
+    "description": "Shown beside the save button of the tips' form when it could not be saved, with the server's reason."
   }
 }

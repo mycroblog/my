@@ -102,61 +102,61 @@ Es hilft nicht, wenn eine eigene Funktion der Plattform den Verkehr weiterleitet
 
 Ist keine davon gesetzt, wird nichts geprüft, und der Server verhält sich, als gäbe es diesen Abschnitt nicht.
 
-<!-- source: what-passes-without-the-header 38e1ceda6e34 -->
+<!-- source: what-passes-without-the-header b79877bb91a3 -->
 ### Was ohne den Header durchkommt
 
 | Anfrage | Warum |
 | --- | --- |
-| `GET` oder `HEAD` auf `/healthz`, `/readyz`, `/api/v1/instance/health` | Die Probes der Plattform und Uptime-Monitore rufen sie direkt auf |
-| `POST` auf Pfade unter `/_internal/` | Cloud Tasks und Cloud Scheduler rufen sie unter der eigenen URL des Servers auf. Sie tragen ein eigenes signiertes Token |
+| `GET` oder `HEAD` von `/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health` | Die Probes der Plattform und Uptime-Monitore rufen sie direkt auf |
+| `POST` an Pfade unter `/_internal/` | Cloud Tasks und Cloud Scheduler rufen sie unter der eigenen URL des Servers auf. Sie tragen ihr eigenes signiertes Token |
 
-Alles andere braucht den Header, auch im Wartungsmodus: den Webclient und seine Assets, `/media/`, die Client-API, OAuth und ActivityPub, einschließlich der Zustellungen anderer Server.
-Alles, was den Server direkt unter seiner eigenen Adresse statt über das CDN aufruft, wird also abgelehnt: ein eigener Webhook, ein Voice-Medienserver, ein Skript. Richte es auf den Hostnamen des CDN.
+Alles andere braucht den Header, auch im Wartungsmodus: der Webclient und seine Assets, `/media/`, die Client-API, OAuth und ActivityPub, einschließlich der Zustellungen anderer Server.
+Alles, was den Server direkt unter seiner eigenen Adresse statt über das CDN aufruft, wird daher abgelehnt: ein eigener Webhook, ein Sprach-Medienserver, ein Skript. Richte es auf den Hostnamen des CDN.
 
-Der Metrik-Port (`metrics_listen`) ist ein separater Listener, der nicht öffentlich ist und nicht geprüft wird.
+Der Metriken-Port (`metrics_listen`) ist ein separater Listener, der nicht öffentlich ist und nicht geprüft wird.
 
-Eine Anfrage, die das Geheimnis nicht trägt, hat bei der übrigen Verarbeitung nichts mitzureden, selbst wenn sie durchkommt: Ihre Client-IP ist die Gegenstelle der Verbindung, was auch immer `X-Forwarded-For` sagt, und ihr `traceparent` und `X-Request-Id` werden ignoriert.
+Eine Anfrage, die das Geheimnis nicht trägt, hat beim Rest der Verarbeitung nichts mitzureden, auch wenn sie durchkommt: Ihre Client-IP ist die Gegenstelle der Verbindung, was auch immer `X-Forwarded-For` sagt, und ihre `traceparent` und `X-Request-Id` werden ignoriert.
 
-<!-- source: set-it-up ee0a17ad2d33 -->
+<!-- source: set-it-up 3804d0cc5c18 -->
 ### Einrichten
 
 Jeder Hostname, den das CDN an den Server weiterleitet, braucht den Header: `host`, der Host von `media_origin` und eine separate `account_domain`, wenn das CDN sie ausliefert. Ein Medien-Host hinter demselben CDN setzt ihn ebenfalls, da `/media/` wie alles andere abgelehnt wird.
 
-1. Erzeuge den Wert und wähle einen Namen, den sonst nichts verwendet:
+1. Erzeuge den Wert und wähle einen Namen, den nichts anderes verwendet:
 
    ```sh
    openssl rand -hex 32
    ```
 
 2. **Setze den Header zuerst im CDN.** Der Server ignoriert einen Header, den er nicht kennt, dieser Schritt ändert also noch nichts.
-   - **Cloudflare**: eine Transform Rule für Request-Header (Rules, dann Transform Rules, dann Modify Request Header), in jedem Tarif. Erfasse alle eingehenden Anfragen der Zone und wähle **Set static** mit deinem Namen und Wert. Sie ersetzt einen Wert, den ein Client gesendet hat. Eine Regel nur für einige Hostnamen sperrt die übrigen aus.
-   - **Amazon CloudFront**: ein benutzerdefinierter Origin-Header an der Origin jeder Distribution. Auch er ersetzt den Wert eines Betrachters.
-   - **Google Cloud Load Balancer**: ein benutzerdefinierter Request-Header am Backend-Service.
+   - **Cloudflare**: eine Transform Rule für Anfrage-Header (Rules, dann Transform Rules, dann Modify Request Header), bei jedem Tarif. Wähle alle eingehenden Anfragen der Zone und wähle **Set static** mit deinem Namen und Wert. Sie ersetzt einen Wert, den ein Client gesendet hat. Eine Regel nur für manche Hostnamen sperrt die anderen aus.
+   - **Amazon CloudFront**: ein benutzerdefinierter Origin-Header am Origin jeder Distribution. Er ersetzt ebenfalls den Wert eines Betrachters.
+   - **Google-Cloud-Load-Balancer**: ein benutzerdefinierter Anfrage-Header am Backend-Dienst.
    - Jedes andere CDN oder jeder andere Proxy: Der Header muss bei jeder Anfrage an den Server gesetzt, nicht angehängt werden.
-3. Setze `MY_ORIGIN_SECRET` und `MY_ORIGIN_SECRET_HEADER` und stelle bereit. `my config check` prüft sie und wiederholt, was geprüft wird, kann aber das CDN nicht sehen.
-4. Prüfe von außen mit der Adresse der Origin selbst:
+3. Setze `MY_ORIGIN_SECRET` und `MY_ORIGIN_SECRET_HEADER` und stelle bereit. `my config check` validiert sie und wiederholt, was geprüft wird, kann aber das CDN nicht sehen.
+4. Prüfe von außen, mit der Adresse des Origins selbst:
 
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
-Trage außerdem die Adressen des CDN in [`trusted_proxies`](../reference/configuration.md#trusted_proxies) ein, sonst sieht der Server einen einzigen Client, und alle Anfragen teilen sich die Rate Limits des CDN; `my config check` warnt davor.
+Liste außerdem die Adressen des CDN in [`trusted_proxies`](../reference/configuration.md#trusted_proxies) auf, sonst sieht der Server einen einzigen Client, und alle Anfragen teilen sich die Ratenlimits des CDN; `my config check` warnt davor.
 
 Eine abgelehnte Anfrage erhält dasselbe `403`-Problemdokument wie jede andere verbotene Anfrage, mit `Cache-Control: no-store`, wie auch immer der Header falsch war. Nichts in der Antwort nennt den Header.
 
-<!-- source: when-everyone-is-locked-out 47c8f706e5e7 -->
+<!-- source: when-everyone-is-locked-out bd514f7ec98b -->
 ### Wenn alle ausgesperrt sind
 
-Eine falsche Einrichtung lehnt jede Anfrage ab, während die Health-Checks `200` bleiben; die Plattform sieht also einen gesunden Server, und ein Uptime-Monitor auf `/healthz` merkt nichts. Die Anzeichen sind:
+Eine falsche Einrichtung lehnt jede Anfrage ab, während die Health-Checks `200` bleiben, sodass die Plattform einen gesunden Server sieht und ein Uptime-Monitor von `/health/live` nichts bemerkt. Die Anzeichen sind:
 
 - `403` für jede Seite über das CDN.
-- Die Metrik `my.http.origin_refused` steigt, während die Anfragen von `http.server.request.duration` ausbleiben.
+- Die Metrik `my.http.origin_refused` steigt, während die Anfragen von `http.server.request.duration` aufhören.
 - Zeilen `http request` im Log mit dem Status `403` und ohne `http.route`. Das Log und die Traces enthalten nie den Header, seinen Namen oder seinen Wert. Eine abgelehnte Anfrage erzeugt keinen Trace-Span.
 
-Stelle zur Wiederherstellung ohne die Prüfung bereit: Entferne `MY_ORIGIN_SECRET` und `MY_ORIGIN_SECRET_HEADER`. Andere Server wiederholen ihre Zustellungen, aber Personen konnten den Server in der Zwischenzeit nicht erreichen.
-Vergleiche dann Name und Wert im CDN mit den Einstellungen, prüfe, ob die Regel jeden Hostnamen abdeckt, und setze sie erneut.
+Stelle zur Wiederherstellung ohne die Prüfung bereit: Entferne `MY_ORIGIN_SECRET` und `MY_ORIGIN_SECRET_HEADER`. Andere Server wiederholen ihre Zustellungen, aber die Leute konnten den Server in der Zwischenzeit nicht erreichen.
+Vergleiche dann den Namen und den Wert im CDN mit den Einstellungen, prüfe, dass die Regel jeden Hostnamen abdeckt, und setze sie erneut.
 
 <!-- source: rotate-the-value b88f695fde31 -->
 ### Den Wert rotieren

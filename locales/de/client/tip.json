@@ -1,0 +1,174 @@
+{
+  "tip.title": {
+    "defaultMessage": "Trinkgeld",
+    "description": "Title of the user's page of the tips, one-time payments to the server's operation with nothing in return. Never word a tip as a donation."
+  },
+  "tip.app": {
+    "defaultMessage": "Diese Seite ist in der App nicht verfügbar.",
+    "description": "Shown in the mobile app instead of the page of the tips."
+  },
+  "tip.disabled": {
+    "defaultMessage": "Dieser Server nimmt keine Trinkgelder an.",
+    "description": "Shown on the page of the tips when the server takes none."
+  },
+  "tip.loading": {
+    "defaultMessage": "Trinkgelder werden geladen",
+    "description": "Label of the spinner while the page of the tips loads."
+  },
+  "tip.failed": {
+    "defaultMessage": "Die Trinkgelder konnten nicht geladen werden",
+    "description": "Heading of the error when the page of the tips could not load."
+  },
+  "tip.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the page of the tips again after an error."
+  },
+  "tip.return.confirming": {
+    "defaultMessage": "Deine Zahlung wird beim Zahlungsanbieter bestätigt. Das dauert einige Sekunden.",
+    "description": "Shown back from the payment provider's page while the server confirms the payment of the tip."
+  },
+  "tip.return.canceled": {
+    "defaultMessage": "Du hast die Zahlungsseite verlassen. Es wurde nichts abgebucht.",
+    "description": "Shown back from the payment provider's page when the user left it or it ended unpaid."
+  },
+  "tip.return.unconfirmed": {
+    "defaultMessage": "Der Zahlungsanbieter hat die Zahlung noch nicht bestätigt. Wenn du bezahlt hast, wird sie erfasst, sobald der Anbieter sie bestätigt, und du musst nicht erneut zahlen.",
+    "description": "Shown back from the payment provider's page when the payment of the tip is still not confirmed after the page asked many times."
+  },
+  "tip.thanks.status": {
+    "defaultMessage": "Dein Trinkgeld wurde bezahlt.",
+    "description": "Announced when the tip that the user returned from paying is paid."
+  },
+  "tip.thanks.title": {
+    "defaultMessage": "Danke",
+    "description": "Heading of the thanks after a tip is paid."
+  },
+  "tip.thanks.description": {
+    "defaultMessage": "Dein Trinkgeld von {amount} fließt in den Betrieb von {server}.",
+    "description": "Under the thanks after a tip is paid. amount is a formatted amount, such as ¥500; server is the name of the server. Say nothing of a donation or a deduction."
+  },
+  "tip.form.title": {
+    "defaultMessage": "Trinkgeld für den Betrieb von {server}",
+    "description": "Heading of the form of a tip. server is the name of the server."
+  },
+  "tip.form.description": {
+    "defaultMessage": "Ein Trinkgeld ist eine einmalige Zahlung an die Betreiber dieses Servers für dessen Betrieb. Dafür gibt es nichts als Gegenleistung: kein Abzeichen, keine Rolle, keinen anderen Vorteil.",
+    "description": "What a tip is, above the choice of its amount. Never word it as a donation, and never suggest a deduction."
+  },
+  "tip.form.amount": {
+    "defaultMessage": "Betrag",
+    "description": "Label of the choice of the amount of a tip, among the operators' amounts."
+  },
+  "tip.form.submit": {
+    "defaultMessage": "Trinkgeld geben",
+    "description": "Button that opens the final confirmation of a tip."
+  },
+  "tip.ineligible.not_local": {
+    "defaultMessage": "Nur Nutzer dieses Servers können Trinkgeld geben.",
+    "description": "Why the user cannot tip: the account is not of this server."
+  },
+  "tip.ineligible.email_unverified": {
+    "defaultMessage": "Um Trinkgeld zu geben, bestätige zuerst deine E-Mail-Adresse mit dem Link in der E-Mail, die der Server dir gesendet hat.",
+    "description": "Why the user cannot tip, and how to become able to: their primary email address is not verified."
+  },
+  "tip.ineligible.restricted": {
+    "defaultMessage": "Dein Konto kann kein Trinkgeld geben, solange es gesperrt ist oder gelöscht wird.",
+    "description": "Why the user cannot tip: the account is suspended or being deleted."
+  },
+  "tip.confirm.title": {
+    "defaultMessage": "{amount} Trinkgeld für den Betrieb von {server} geben?",
+    "description": "Title of the final confirmation before the payment provider's page. amount is a formatted amount, such as ¥500; server is the name of the server."
+  },
+  "tip.confirm.description": {
+    "defaultMessage": "Prüfe die Bedingungen unten. Deine Zahlungsdaten gibst du auf der Seite des Zahlungsanbieters ein, nicht auf diesem Server.",
+    "description": "Under the title of the final confirmation of a tip."
+  },
+  "tip.confirm.amount": {
+    "defaultMessage": "Betrag",
+    "description": "Term of the final confirmation of a tip: its amount."
+  },
+  "tip.confirm.payment": {
+    "defaultMessage": "Zahlung",
+    "description": "Term of the final confirmation of a tip: when it is paid."
+  },
+  "tip.confirm.payment.value": {
+    "defaultMessage": "Einmalig, jetzt sofort. Sie verlängert sich nicht.",
+    "description": "When a tip is paid: once, at once, never again."
+  },
+  "tip.confirm.return": {
+    "defaultMessage": "Gegenleistung",
+    "description": "Term of the final confirmation of a tip: what the user gets for it."
+  },
+  "tip.confirm.return.value": {
+    "defaultMessage": "Keine. Ein Trinkgeld gibt keinen Vorteil, keine Rolle und kein Abzeichen.",
+    "description": "What a tip gives: nothing."
+  },
+  "tip.confirm.go": {
+    "defaultMessage": "Zur Zahlung",
+    "description": "Button of the final confirmation of a tip that opens the payment provider's page."
+  },
+  "tip.confirm.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "Button that closes the final confirmation of a tip."
+  },
+  "tip.confirm.failed": {
+    "defaultMessage": "Die Zahlungsseite konnte nicht geöffnet werden: {reason}",
+    "description": "Error in the final confirmation of a tip. reason is why, localized."
+  },
+  "tip.commerce": {
+    "defaultMessage": "Angaben zum Geschäftsbetrieb",
+    "description": "Link in the final confirmation of a tip to the server's commerce disclosures."
+  },
+  "tip.error.rate_limited": {
+    "defaultMessage": "Es wurden zu viele Trinkgelder gestartet. Versuche es später erneut.",
+    "description": "Problem: the server limits how many tips are started."
+  },
+  "tip.error.rate_limited_until": {
+    "defaultMessage": "Es wurden zu viele Trinkgelder gestartet. Versuche es nach {time} erneut.",
+    "description": "Problem: the server limits how many tips are started. time is a formatted time, such as 3:15 PM."
+  },
+  "tip.error.disabled": {
+    "defaultMessage": "Dieser Server nimmt keine Trinkgelder mehr an.",
+    "description": "Problem: the server stopped taking tips."
+  },
+  "tip.error.ineligible": {
+    "defaultMessage": "Dein Konto kann kein Trinkgeld geben.",
+    "description": "Problem: the user cannot tip."
+  },
+  "tip.error.amount": {
+    "defaultMessage": "Dieser Betrag wird nicht mehr angeboten. Lade die Seite neu und wähle erneut.",
+    "description": "Problem: the amount is not one of the operators' amounts any more."
+  },
+  "tip.error.pending": {
+    "defaultMessage": "Ein anderes Trinkgeld von dir wird gerade gestartet. Warte einen Moment und versuche es erneut.",
+    "description": "Problem: another start of the user's tip runs at the same time."
+  },
+  "tip.error.closing": {
+    "defaultMessage": "Der Dienst wird eingestellt und nimmt daher keine Trinkgelder mehr an.",
+    "description": "Problem: the closure of the service was announced."
+  },
+  "tip.entry.go": {
+    "defaultMessage": "Trinkgeld geben",
+    "description": "Link to the page of the tips, on the about page, the funding meter's panel and the page of the supporter plans."
+  },
+  "tip.entry.sign_in": {
+    "defaultMessage": "Melde dich an, um Trinkgeld zu geben",
+    "description": "Link for a visitor who is not signed in to sign in and then reach the page of the tips."
+  },
+  "tip.entry.eligibility": {
+    "defaultMessage": "Nutzer dieses Servers mit bestätigter E-Mail-Adresse können Trinkgeld geben.",
+    "description": "Who may tip, on the about page for a visitor who is not signed in."
+  },
+  "tip.about.title": {
+    "defaultMessage": "Trinkgelder",
+    "description": "Heading of the section of the tips on the about page and the page of the supporter plans."
+  },
+  "tip.about.description": {
+    "defaultMessage": "Du kannst ein einmaliges Trinkgeld für den Betrieb von {server} geben. Dafür gibt es nichts als Gegenleistung.",
+    "description": "What a tip is, on the about page. server is the name of the server. Never word it as a donation."
+  },
+  "tip.settings.description": {
+    "defaultMessage": "Neben den Tarifen kannst du ein einmaliges Trinkgeld für den Betrieb dieses Servers geben, ohne Gegenleistung.",
+    "description": "The tips on the page of the supporter plans."
+  }
+}

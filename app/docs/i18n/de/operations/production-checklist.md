@@ -72,24 +72,24 @@ zum Beispiel als Schritt der Bereitstellung, bevor die neue Version Traffic anni
 - **Details**: [den Server betreiben](running.md) (die Föderations-Endpunkte und die Auslieferung der Handles von einer anderen Domain),
   [`host`](../reference/configuration.md#host) und [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### Über `https` erreichbar
 
 - **Warum**: Andere Server rufen die IDs unter `https://<host>/` auf Port 443 ab, und Browser senden die Anmelde-Cookies nur über `https`.
-- **Prüfe**: `curl -sI https://<host>/healthz` antwortet von außerhalb deines Netzwerks mit `200` und einem für `host` gültigen Zertifikat,
+- **Prüfen**: `curl -sI https://<host>/health/live` antwortet von außerhalb deines Netzwerks mit `200` und einem Zertifikat, das für `host` gültig ist,
   und `my config check` meldet keinen Fehler zu `web_origin`. `http://<host>/` leitet auf `https` um, was der Reverse-Proxy,
-  Load Balancer oder das CDN vor dem Server übernimmt (bei Docker Compose ist die Schicht `compose.caddy.yaml` ein solcher Proxy).
+  Load Balancer oder das CDN vor dem Server erledigt (bei Docker Compose ist die Schicht `compose.caddy.yaml` ein solcher Proxy).
 - **Details**: [den Server betreiben](running.md), [`web_origin`](../reference/configuration.md#web_origin).
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Nicht am CDN vorbei erreichbar
 
-- **Warum**: Mit einem CDN davor und der eigenen Adresse des Servers weiterhin öffentlich (`*.run.app` auf Cloud Run) kann jeder den Server an WAF und Cache vorbei aufrufen,
-  und ein Aufrufer auf der eigenen Plattform des CDN kann die Client-IP wählen, die die Ratenbegrenzungen sehen. Nur in diesem Fall nötig: nicht, wenn eine Firewall oder die Plattform schon einschränkt, wer sich verbinden kann,
+- **Warum**: Mit einem CDN davor und der weiterhin öffentlichen eigenen Adresse des Servers (`*.run.app` auf Cloud Run) kann jeder den Server an der WAF und am Cache vorbei aufrufen,
+  und ein Aufrufer auf der eigenen Plattform des CDN kann die Client-IP wählen, die die Ratenlimits sehen. Nur in diesem Fall nötig: nicht, wenn eine Firewall oder die Plattform bereits einschränkt, wer sich verbinden kann,
   und ohne CDN gibt es nichts zu umgehen.
-- **Prüfe**: `origin_secret` und `origin_secret_header` sind gesetzt, und das CDN setzt den Header bei jedem Hostnamen. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
-  antwortet `403`, sein `/healthz` antwortet `200`, und `https://<host>/` antwortet `200`.
-- **Details**: [Anfragen abweisen, die nicht über das CDN kamen](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), einschließlich der Wiederherstellung, wenn es alle aussperrt.
+- **Prüfen**: `origin_secret` und `origin_secret_header` sind gesetzt, und das CDN setzt den Header bei jedem Hostnamen. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
+  antwortet `403`, sein `/health/live` antwortet `200`, und `https://<host>/` antwortet `200`.
+- **Details**: [Anfragen ablehnen, die nicht über das CDN kamen](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), einschließlich der Wiederherstellung, wenn es alle aussperrt.
 
 <!-- source: secrets ec71f1f20574 -->
 ## Secrets
@@ -178,21 +178,21 @@ oder mit `my instance set`. `my config check -instance` warnt vor den Texten, Ko
     Liste sie mit `my admin role` auf und überprüfe sie in den Administrations-Screens.
 - **Details**: [Administratoren und Rollen](admin-cli.md), [Moderation](moderation.md) (Berechtigungen und Anmelde-Wiederherstellung).
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## Betrieb
 
-- **Backups und Wiederherstellung**: Die Datenbank, der Blob-Store (`blob_fs_dir` oder der Bucket) und der KEK werden nach Zeitplan gesichert,
-  an einen Ort abseits des Servers, und eine Wiederherstellung auf einem frischen Server wurde geübt: Der wiederhergestellte Server startet, und die Konten
-  können sich anmelden und posten. Von einem Backup, das nie wiederhergestellt wurde, weiß man nicht, ob es funktioniert. Die Datenbank und die Medien dürfen nicht in einem
+- **Backups und Wiederherstellung**: Die Datenbank, der Blob-Store (`blob_fs_dir` oder der Bucket) und der KEK werden nach einem Zeitplan gesichert,
+  an einem Ort abseits des Servers, und eine Wiederherstellung auf einem frischen Server wurde geübt: Der wiederhergestellte Server startet, und die Konten
+  können sich anmelden und posten. Von einem Backup, das nie wiederhergestellt wurde, weißt du nicht, ob es funktioniert. Die Datenbank und die Medien dürfen nicht in einem
   temporären Verzeichnis liegen; `my config check` warnt, wenn sie es tun.
   Siehe [Schlüsselverwaltung](key-management.md) (den KEK sichern) und [Datenbank](database.md).
-- **Überwachung und Alarme**: Ein externer Monitor prüft `/healthz` und alarmiert jemanden, der handeln kann, und die toten Jobs der Job-Queue
-  werden beobachtet. Siehe [Überwachung](monitoring.md) und [den Server betreiben](running.md) (Health-Checks, Metriken und die Job-Queue).
-- **Das Image**: Der Server führt ein veröffentlichtes Image aus, das per Digest festgelegt ist (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, aus den Release Notes), nicht eines,
-  das sich bei einem Neustart ändert, und [seine Herkunft wurde geprüft](running.md#verify-an-image). Es gibt kein `latest`-Tag.
-  Ein Upgrade ändert diese Version absichtlich und folgt [Aktualisieren](database.md#upgrading), jeweils eine Minor-Version.
-- **Quellcode (AGPL-3.0)**: Der Server muss jedem, der ihn nutzt, seinen Quellcode anbieten. Lass
-  [`source_url`](../reference/configuration.md#source_url) bei einem unveränderten Release auf seinem Standard; richte ihn auf deinen eigenen
+- **Monitoring und Alarme**: Ein externer Monitor prüft `/health/live` und alarmiert jemanden, der handeln kann, und die toten Jobs der Job-Queue
+  werden beobachtet. Siehe [Monitoring](monitoring.md) und [den Server betreiben](running.md) (Health-Checks, Metriken und die Job-Queue).
+- **Das Image**: Die Instanz betreibt ein veröffentlichtes Image, das per Digest festgelegt ist (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, aus den Notizen des Releases), keines,
+  das sich bei einem Neustart ändert, und [seine Provenienz wurde geprüft](running.md#verify-an-image). Es gibt kein Tag `latest`.
+  Ein Upgrade ändert diese Version mit Absicht und folgt [Upgrade](database.md#upgrading), jeweils eine Minor-Version.
+- **Quellcode (AGPL-3.0)**: Der Server muss seinen Quellcode allen anbieten, die ihn nutzen. Lass
+  [`source_url`](../reference/configuration.md#source_url) bei einem unveränderten Release auf seinem Standard; richte sie auf deinen eigenen
   Quellcode, wenn du einen Fork oder eine veränderte Version betreibst. Prüfe den Link auf `/about`.
   Siehe [den Server betreiben](running.md) (den Quellcode veröffentlichen).
 - **Wartung**: Wisse, wie du den Server in den Wartungsmodus versetzt, bevor du es brauchst. Siehe [Wartung](maintenance.md).

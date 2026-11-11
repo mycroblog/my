@@ -114,5 +114,177 @@
   "admin.instance.column.occurred_at": {
     "defaultMessage": "Zeitpunkt",
     "description": "Header of the column of a remote server's availability history that holds when it happened."
+  },
+  "admin.instance.deliveries.title": {
+    "defaultMessage": "Zustellungen",
+    "description": "Heading of the section of a remote server's page with what this server delivered to it and what it answered."
+  },
+  "admin.instance.deliveries.description": {
+    "defaultMessage": "Was dieser Server an den Server gesendet hat und was er geantwortet hat, neueste zuerst, mit jedem Versuch. Versuche werden 30 Tage lang aufbewahrt. Was eine Aktivität aussagt, wird nie angezeigt.",
+    "description": "Description under the heading of the deliveries of a remote server."
+  },
+  "admin.instance.deliveries.filter.label": {
+    "defaultMessage": "Zustellungen filtern",
+    "description": "Accessible name of the form that filters the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.filter.activity_uri": {
+    "defaultMessage": "Aktivitäts-ID",
+    "description": "Label of the field that keeps only the deliveries of one activity, by its ID (a URI)."
+  },
+  "admin.instance.deliveries.filter.activity_uri.description": {
+    "defaultMessage": "Die vollständige ID einer Aktivität, eine URL, die mit https:// beginnt.",
+    "description": "Description under the field of the activity ID in the filter of deliveries."
+  },
+  "admin.instance.deliveries.filter.account": {
+    "defaultMessage": "Lokales Konto",
+    "description": "Label of the field that keeps only the deliveries of the activities of one account on this server, by its username."
+  },
+  "admin.instance.deliveries.filter.account.description": {
+    "defaultMessage": "Der Benutzername eines Kontos auf diesem Server. Jeder Filter nach einem Konto wird im Audit-Log festgehalten.",
+    "description": "Description under the field of the local account in the filter of deliveries: says that filtering by an account is recorded in the audit log."
+  },
+  "admin.instance.deliveries.filter.account.not_local": {
+    "defaultMessage": "Gib den Benutzernamen eines Kontos auf diesem Server ein, ohne Domain.",
+    "description": "Error of the local account field in the filter of deliveries when a handle with a domain was typed."
+  },
+  "admin.instance.deliveries.filter.unknown_account": {
+    "defaultMessage": "Auf diesem Server gibt es kein Konto mit dem Namen @{username}.",
+    "description": "Why the deliveries filtered by a local account could not be shown: no account has that username. {username} is what the moderator typed."
+  },
+  "admin.instance.deliveries.filter.submit": {
+    "defaultMessage": "Filtern",
+    "description": "Button that runs the filter of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.filter.clear": {
+    "defaultMessage": "Filter zurücksetzen",
+    "description": "Button that removes the filter of the deliveries to a remote server and shows every delivery."
+  },
+  "admin.instance.deliveries.loading": {
+    "defaultMessage": "Zustellungen werden geladen",
+    "description": "Accessible label of the spinner while the deliveries to a remote server load."
+  },
+  "admin.instance.deliveries.failed": {
+    "defaultMessage": "Die Zustellungen konnten nicht geladen werden",
+    "description": "Heading of the error in place of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "Button that loads the deliveries to a remote server again after a failure."
+  },
+  "admin.instance.deliveries.more_failed": {
+    "defaultMessage": "Weitere Zustellungen konnten nicht geladen werden",
+    "description": "Heading of the error when the next page of the deliveries to a remote server failed to load."
+  },
+  "admin.instance.deliveries.empty": {
+    "defaultMessage": "Keine Zustellungen an diesen Server",
+    "description": "Heading of the empty state of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.empty.description": {
+    "defaultMessage": "In den letzten 30 Tagen wurde nichts an den Server gesendet.",
+    "description": "Description of the empty state of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.empty.filtered": {
+    "defaultMessage": "Keine Zustellungen entsprechen dem Filter",
+    "description": "Heading of the empty state of the deliveries to a remote server under a filter."
+  },
+  "admin.instance.deliveries.sender": {
+    "defaultMessage": "Absender",
+    "description": "Term of a delivery: the account on this server that sent the activity."
+  },
+  "admin.instance.deliveries.sender.gone": {
+    "defaultMessage": "Ein gelöschtes Konto",
+    "description": "Value of the sender of a delivery whose account is gone."
+  },
+  "admin.instance.deliveries.inbox": {
+    "defaultMessage": "Posteingang",
+    "description": "Term of a delivery: the inbox of the remote server it went to."
+  },
+  "admin.instance.deliveries.inbox.shared": {
+    "defaultMessage": "Der gemeinsame Posteingang des Servers",
+    "description": "Note under the inbox of a delivery that went to the shared inbox of the server, which names no recipient."
+  },
+  "admin.instance.deliveries.activity_uri": {
+    "defaultMessage": "Aktivitäts-ID",
+    "description": "Term of a delivery: the ID (URI) of the activity it delivered."
+  },
+  "admin.instance.deliveries.activity_created_at": {
+    "defaultMessage": "Aktivität erfasst",
+    "description": "Term of a delivery: when the activity it delivered was recorded."
+  },
+  "admin.instance.deliveries.masked": {
+    "defaultMessage": "Verborgen",
+    "description": "Value of a field of a delivery that is masked because the activity is not public."
+  },
+  "admin.instance.deliveries.mask.private": {
+    "defaultMessage": "Absender, Aktivitäts-ID und Posteingang sind verborgen: Die Aktivität betrifft einen Beitrag nur für Follower.",
+    "description": "Why the fields of a delivery are masked: the activity is about a followers-only post."
+  },
+  "admin.instance.deliveries.mask.direct": {
+    "defaultMessage": "Absender, Aktivitäts-ID und Posteingang sind verborgen: Die Aktivität betrifft einen Beitrag nur für erwähnte Personen.",
+    "description": "Why the fields of a delivery are masked: the activity is about a post for the mentioned people only."
+  },
+  "admin.instance.deliveries.mask.local": {
+    "defaultMessage": "Absender, Aktivitäts-ID und Posteingang sind verborgen: Die Aktivität betrifft einen Beitrag nur für diesen Server.",
+    "description": "Why the fields of a delivery are masked: the activity is about a post visible on this server only."
+  },
+  "admin.instance.deliveries.mask.approves_followers": {
+    "defaultMessage": "Absender, Aktivitäts-ID und Posteingang sind verborgen: Die Aktivität ist ein Follow oder die Antwort darauf bei einem Konto, das seine Follower bestätigt.",
+    "description": "Why the fields of a delivery are masked: a follow, its undo, an accept or a reject of a local account that approves its followers."
+  },
+  "admin.instance.deliveries.mask.unknown": {
+    "defaultMessage": "Absender, Aktivitäts-ID und Posteingang sind verborgen: Der Beitrag oder das Konto, um das es in der Aktivität geht, existiert nicht mehr, daher ist nicht mehr bekannt, ob er öffentlich war.",
+    "description": "Why the fields of a delivery are masked: what the activity was about is gone."
+  },
+  "admin.instance.deliveries.reveal": {
+    "defaultMessage": "Verborgene Felder anzeigen",
+    "description": "Button of a masked delivery that shows its sender, activity ID and inbox."
+  },
+  "admin.instance.deliveries.reveal.description": {
+    "defaultMessage": "Das Anzeigen wird im Audit-Log festgehalten.",
+    "description": "Description under the button that shows the masked fields of a delivery."
+  },
+  "admin.instance.deliveries.reveal.shown": {
+    "defaultMessage": "Die verborgenen Felder werden angezeigt. Das Ansehen wird im Audit-Log festgehalten.",
+    "description": "Status message after the masked fields of a delivery were shown."
+  },
+  "admin.instance.deliveries.reveal.failed": {
+    "defaultMessage": "Die verborgenen Felder konnten nicht angezeigt werden: {reason}",
+    "description": "Error toast when the masked fields of a delivery could not be shown. {reason} is the server's localized reason."
+  },
+  "admin.instance.deliveries.attempts": {
+    "defaultMessage": "Versuche",
+    "description": "Heading of the attempts of a delivery, oldest first."
+  },
+  "admin.instance.deliveries.attempts.none": {
+    "defaultMessage": "Noch nicht versucht.",
+    "description": "Text of a delivery that has no attempt yet."
+  },
+  "admin.instance.deliveries.outcome.succeeded": {
+    "defaultMessage": "Angenommen",
+    "description": "Outcome of an attempt of a delivery: the remote server accepted the activity."
+  },
+  "admin.instance.deliveries.outcome.retryable_failure": {
+    "defaultMessage": "Fehlgeschlagen, erneut versucht",
+    "description": "Outcome of an attempt of a delivery: it failed in a way that is tried again."
+  },
+  "admin.instance.deliveries.outcome.permanent_failure": {
+    "defaultMessage": "Abgelehnt",
+    "description": "Outcome of an attempt of a delivery: the remote server refused the activity, and it is not sent again."
+  },
+  "admin.instance.deliveries.outcome.skipped": {
+    "defaultMessage": "Nicht gesendet",
+    "description": "Outcome of an attempt of a delivery: nothing was sent, for the reason shown below."
+  },
+  "admin.instance.deliveries.status_code": {
+    "defaultMessage": "HTTP {code}",
+    "description": "The HTTP status code of the response to an attempt of a delivery. {code} is the number, such as 202."
+  },
+  "admin.instance.deliveries.scheme.rfc9421": {
+    "defaultMessage": "Signatur nach RFC 9421",
+    "description": "The signature scheme of the request of an attempt: HTTP Message Signatures (RFC 9421)."
+  },
+  "admin.instance.deliveries.scheme.cavage": {
+    "defaultMessage": "Cavage-Signatur",
+    "description": "The signature scheme of the request of an attempt: the draft-cavage HTTP Signatures."
   }
 }

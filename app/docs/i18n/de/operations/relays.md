@@ -39,18 +39,18 @@ aber an dieses Relay wird nichts gesendet und von ihm nichts empfangen, und der 
 - Die Dokumente öffentlicher Beiträge tragen eine Linked Data Signature (`RsaSignature2017`), damit Mastodon und Misskey Beiträge akzeptieren können, die ein Relay unverändert weitergibt.
 - Die Zahl der Zustellungen wächst um die Zahl der beigetretenen Relays mal die Zahl der öffentlichen Beiträge (Zustellungen an ein Relay werden zu einer zusammengefasst).
 
-<!-- source: what-the-server-receives ff962150d1a7 -->
+<!-- source: what-the-server-receives fa99c4ec4217 -->
 ## Was der Server empfängt
 
-- Ein öffentlicher Beitrag, den ein beigetretenes Relay trägt, wird von seinem Ursprung erneut abgerufen und geprüft, bevor er aufgenommen wird. Er erscheint dann in der föderierten Timeline und den Hashtag-Timelines. In Home-Timelines erscheint er nicht und erzeugt keine Benachrichtigung.
+- Ein öffentlicher Beitrag, den ein beigetretenes Relay weiterreicht, wird von seinem Ursprung erneut abgerufen und geprüft, bevor er aufgenommen wird. Er erscheint dann in der föderierten Timeline und in Hashtag-Timelines sowie in den Home-Timelines der Leute, die einem seiner Hashtags folgen. Er erscheint in keiner anderen Home-Timeline und erzeugt keine Benachrichtigung.
 - Pro Relay werden höchstens `relay_max_activities_per_hour` Beiträge pro Stunde aufgenommen (Standard 1.000). Alles über dem Limit wird verworfen, ohne abgerufen zu werden.
-  Die Seite des Relays im Admin-Bereich und `my admin relay list` zeigen, wie viele in den letzten 24 Stunden aufgenommen und wie viele über dem Limit verworfen wurden. Werden viele verworfen, hebe das Limit an oder überdenke das Relay.
+  Die Seite des Relays im Admin-Bereich und `my admin relay list` zeigen, wie viele in den letzten 24 Stunden aufgenommen und wie viele über dem Limit verworfen wurden. Werden viele verworfen, erhöhe das Limit oder überdenke das Relay.
 - Ein Beitrag wird nicht aufgenommen, wenn seine Domain oder sein Konto ein `suspend` (eine Föderationsbeschränkung) oder ein `limit` (eine Beschränkung, die ihn von öffentlichen Orten entfernt) hat.
-- Ein Beitrag, der nur über ein Relay eintraf, wird nach der Server-Einstellung `relay_status_retention_days` (Standard 7) aus der öffentlichen Ansicht entfernt. Ein Beitrag, auf den eine lokale Person geantwortet hat, den sie geboostet, favorisiert oder mit einem Lesezeichen versehen hat,
+- Ein Beitrag, der nur über ein Relay ankam, wird nach der Instanzeinstellung `relay_status_retention_days` (Standard 7) aus der öffentlichen Ansicht entfernt. Ein Beitrag, auf den eine lokale Person geantwortet, den sie geboostet, favorisiert oder mit einem Lesezeichen versehen hat,
   und die Beiträge von Autoren, denen eine lokale Person folgt, erhalten dieselbe Aufbewahrung wie andere entfernte Beiträge (`remote_status_retention_days`).
-- Das Aufnehmen kostet einen Abruf vom Ursprung pro Beitrag (plus einen Abruf des Actors für einen unbekannten Autor). Beim Limit von 1.000 pro Stunde sind das höchstens 24.000 Abrufe am Tag.
+- Das Aufnehmen kostet einen Abruf vom Ursprung pro Beitrag (plus einen Abruf des Akteurs bei einem unbekannten Autor). Beim Limit von 1.000 pro Stunde sind das höchstens 24.000 Abrufe am Tag.
 
-Die Einstellungen stehen in der [Konfigurationsreferenz](../reference/configuration.md#relay_max_activities_per_hour). Das Ergebnis des Aufnehmens wird außerdem als Metrik `my.relay.activities` exportiert (siehe [Den Server betreiben](running.md)).
+Die Einstellungen stehen in der [Konfigurationsreferenz](../reference/configuration.md#relay_max_activities_per_hour). Das Ergebnis des Aufnehmens wird auch als Metrik `my.relay.activities` exportiert (siehe [Den Server betreiben](running.md)).
 
 <!-- source: leave-join-again-and-delete ea12da94f940 -->
 ## Verlassen, erneut beitreten und löschen

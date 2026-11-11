@@ -28,16 +28,18 @@ Ein Fehler eines externen Dienstes (Mail, Speicher, Zahlungen, Sprache) wird nur
 
 Eine Panic in einem Hintergrundtask beendet den Prozess, nachdem sie gemeldet wurde, damit der Server nie in einem defekten Zustand weiterläuft. Deine Plattform startet ihn neu.
 
-<!-- source: the-log-line 6b570d0bfd09 -->
+<!-- source: the-log-line ef6f03400831 -->
 ## Die Logzeile
 
 Die Zeile hat `msg` = `error report` und `level` `ERROR` (`severity` ist `CRITICAL`, wenn der Fehler den Prozess beendet).
-Ihre Felder und was das Scrubbing mit ihnen macht, stehen in [Den Server betreiben](running.md#error-reports). Kurz gesagt:
+Ihre Felder und was das Bereinigen mit ihnen macht, stehen unter [Den Server betreiben](running.md#error-reports). Kurz gesagt:
 
 - `my.error.fingerprint` ist bei jedem Auftreten desselben Fehlers gleich. Suche oder gruppiere danach.
-- `my.error.where` sagt, wo es passiert ist, zum Beispiel `client_api GET /api/v1/statuses/{id}`.
+- `my.error.where` sagt, wo er auftrat, zum Beispiel `client_api GET /api/v1/statuses/{id}`.
 - `request_id`, `job_id`, `trace_id` und `span_id` finden die anderen Zeilen derselben Anfrage oder desselben Jobs.
-- `message` steht am Ende der Zeile: der Fehlertyp und die Meldung, ein Zeilenumbruch und der Go-Stack.
+- Die Zeile eines Fehlers einer Anfrage hat `context.httpRequest`: die Methode, die Route als URL (`/api/v1/statuses/{id}`, nie der Pfad, den der Client angefragt hat) und den beantworteten Status. Error Reporting zeigt sie an der Gruppe an und kann danach filtern.
+- `message` steht zuletzt in der Zeile: der Fehlertyp und die Meldung, ein Zeilenumbruch und der Go-Stack.
+- Der Stack beginnt dort, wo der Fehler herkam, nicht dort, wo er gemeldet wurde: bei einem Datenbankfehler die Server-Funktion, die die Abfrage ausführte. Fehler von verschiedenen Stellen landen daher in verschiedenen Gruppen, in Error Reporting wie im Administrationsbildschirm.
 
 Keine andere Zeile trägt einen Stack.
 

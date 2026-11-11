@@ -466,5 +466,93 @@
   "compose.rejected.appeal.window_closed": {
     "defaultMessage": "Die Frist für den Einspruch gegen diese Entscheidung ist abgelaufen.",
     "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
+  },
+  "compose.visibility.direct_reply": {
+    "defaultMessage": "Eine Antwort auf eine Direktnachricht bleibt auf „Erwähnte Personen“, damit sie niemanden erreicht, den die Unterhaltung nicht erreicht hat.",
+    "description": "Hint in the choice of visibility of a reply to a direct message, whose other choices are disabled. “Mentioned people” is compose.visibility.direct."
+  },
+  "compose.interaction.title": {
+    "defaultMessage": "Wer antworten, boosten und zitieren darf",
+    "description": "Title of the popover of the new-post form that chooses who may reply to, boost, and quote the post."
+  },
+  "compose.interaction.button": {
+    "defaultMessage": "Wer antworten, boosten und zitieren darf: {summary}",
+    "description": "Accessible name of the button of the new-post form that opens the choice of who may reply to, boost, and quote the post. {summary} is the sentence of compose.interaction.summary."
+  },
+  "compose.interaction.done": {
+    "defaultMessage": "Fertig",
+    "description": "Button that closes the popover choosing who may reply to, boost, and quote the post."
+  },
+  "compose.interaction.summary": {
+    "defaultMessage": "Antworten: {reply}. Boosts: {announce}. Zitate: {quote}.",
+    "description": "Who may reply to, boost, and quote a post, in the new-post form and as the tooltip of its button. Each placeholder is the rule of one kind, such as 'Anyone' or 'Followers and people you mention'."
+  },
+  "compose.interaction.reply.label": {
+    "defaultMessage": "Wer antworten darf",
+    "description": "Label of the select that chooses who may reply to the post at once."
+  },
+  "compose.interaction.announce.label": {
+    "defaultMessage": "Wer boosten darf",
+    "description": "Label of the select that chooses who may boost the post at once."
+  },
+  "compose.interaction.quote.label": {
+    "defaultMessage": "Wer zitieren darf",
+    "description": "Label of the select that chooses who may quote the post at once."
+  },
+  "compose.interaction.reply.description": {
+    "defaultMessage": "Personen, die du erwähnst, können immer antworten.",
+    "description": "Description of the choice of who may reply: the accounts the post mentions may reply whatever is chosen."
+  },
+  "compose.interaction.reply.approval": {
+    "defaultMessage": "Andere können mit deiner Genehmigung antworten",
+    "description": "Checkbox under the choice of who may reply: everyone else's replies wait for the author's approval instead of being refused."
+  },
+  "compose.interaction.announce.approval": {
+    "defaultMessage": "Andere können mit deiner Genehmigung boosten",
+    "description": "Checkbox under the choice of who may boost: everyone else's boosts wait for the author's approval instead of being refused."
+  },
+  "compose.interaction.quote.approval": {
+    "defaultMessage": "Andere können mit deiner Genehmigung zitieren",
+    "description": "Checkbox under the choice of who may quote: everyone else's quotes wait for the author's approval instead of being refused."
+  },
+  "compose.interaction.limit.author": {
+    "defaultMessage": "Ein Beitrag nur für Follower kann nur von dir geboostet und zitiert werden.",
+    "description": "Description of the choices of who may boost and quote while the post is followers-only, which decides them."
+  },
+  "compose.interaction.limit.none": {
+    "defaultMessage": "Eine Direktnachricht kann nicht geboostet oder zitiert werden.",
+    "description": "Description of the choices of who may boost and quote while the post is a direct message, which decides them."
+  },
+  "compose.interaction.audience.everyone": {
+    "defaultMessage": "Alle",
+    "description": "Interaction audience: anyone who can see the post."
+  },
+  "compose.interaction.audience.followers": {
+    "defaultMessage": "Follower und Personen, die du erwähnst",
+    "description": "Interaction audience: the author's followers and the accounts the post mentions."
+  },
+  "compose.interaction.audience.mentioned": {
+    "defaultMessage": "Personen, die du erwähnst",
+    "description": "Interaction audience: the accounts the post mentions."
+  },
+  "compose.interaction.audience.nobody": {
+    "defaultMessage": "Nur du",
+    "description": "Interaction audience: the author alone."
+  },
+  "compose.interaction.audience.none": {
+    "defaultMessage": "Niemand",
+    "description": "What a direct message admits for boosts and quotes, in the summary of who may interact."
+  },
+  "compose.interaction.rule.manual": {
+    "defaultMessage": "{automatic}, und {manual, select, everyone {alle anderen} followers {deine Follower} other {Personen, die du erwähnst}} mit deiner Genehmigung",
+    "description": "A rule with an approval, in the summary of who may interact. {automatic} is the audience approved at once, such as 'Followers and people you mention'; {manual} who else may ask."
+  },
+  "compose.reply.pending": {
+    "defaultMessage": "{name} genehmigt Antworten auf diesen Beitrag: Deine wird für andere sichtbar, sobald sie sie genehmigt haben.",
+    "description": "Under the post being replied to in the new-post form, when the reply will wait for its author's approval. {name} is the display name, or the @handle, of the author."
+  },
+  "compose.quote.pending": {
+    "defaultMessage": "{name} genehmigt Zitate dieses Beitrags: Dein Beitrag zeigt den Beitrag, sobald sie es genehmigt haben.",
+    "description": "Under the post being quoted in the new-post form, when the quote will wait for its author's approval. {name} is the display name, or the @handle, of the author."
   }
 }

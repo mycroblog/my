@@ -86,25 +86,27 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 4996c9dc9019 -->
+<!-- source: upgrading 3882f4bb0751 -->
 ## Upgrade
 
 Ein Upgrade auf ein neues Release führt immer diese Schritte in dieser Reihenfolge aus, mit dem Server-Image des **neuen** Releases:
 
-1. **Sichere** die Datenbank (und, beim Dateisystem-Blob-Speicher, die Medien). Siehe [Backup](#backing-up).
-2. **`my db upgrade -check`**. Es ändert nichts. Es beendet sich mit `1`, wenn das neue Schema Daten löschen würde, die die Datenbank noch nicht
+1. **Sichere** die Datenbank (und beim Dateisystem-Blob-Store die Medien). Siehe [Backup](#backing-up).
+2. **`my db upgrade -check`**. Es ändert nichts. Es endet mit `1`, wenn das neue Schema Daten verwerfen würde, die die Datenbank noch nicht
    übernommen hat, und nennt das Release, über das du zuerst upgraden musst; halte dann an und folge [Releases überspringen](#skipping-releases).
    Eine leere Datenbank besteht die Prüfung.
 3. **`my schema apply`**, wie unter [Initialisieren](#initializing-applying-the-schema). Prüfe das SQL vorher mit `-dry-run`.
-4. **`my db upgrade`**. Es führt jeden Datenupgrade-Schritt des Releases aus, den die Datenbank noch nicht aufgezeichnet hat, baut die
-   Projektionen neu auf, die diese Schritte nennen, und zeichnet jeden Schritt auf. Erneut ausgeführt, tut es nichts. Schlägt ein Schritt fehl, beendet es sich mit `1`; die abgeschlossenen Schritte
-   bleiben aufgezeichnet, und ein erneuter Lauf setzt beim fehlgeschlagenen fort.
-5. **Starte den neuen Server.** Er antwortet auf `/readyz` mit `503` und protokolliert die fehlenden Schritte, bis jeder Datenupgrade-Schritt seines Releases aufgezeichnet ist.
+4. **`my db upgrade`**. Es führt jeden Datenupgrade-Schritt des Releases aus, den die Datenbank noch nicht verzeichnet hat, baut die
+   Projektionen neu auf, die diese Schritte nennen, und verzeichnet jeden Schritt. Erneut ausgeführt, tut es nichts. Schlägt ein Schritt fehl, endet es mit `1`; die abgeschlossenen Schritte
+   bleiben verzeichnet, und ein erneuter Lauf setzt beim fehlgeschlagenen fort.
+5. **Starte den neuen Server.** Er antwortet auf `/readyz` mit `503` und loggt die fehlenden Schritte, bis jeder Datenupgrade-Schritt seines Releases verzeichnet ist.
 
-`my serve` führt `my db upgrade -check`, `my schema apply` oder `my db upgrade` nie aus; das sind einmalige Jobs. Führe immer nur einen davon gleichzeitig gegen eine Datenbank aus.
+`my serve` führt nie `my db upgrade -check`, `my schema apply` oder `my db upgrade` aus; sie sind einmalige Jobs. Führe immer nur einen davon gleichzeitig gegen eine Datenbank aus.
 
-Die meisten Releases haben keinen Datenupgrade-Schritt: `my db upgrade -check` gibt `ok: the database can be upgraded to this release` aus, und
-`my db upgrade` gibt `ok: no data upgrade step to run` aus. Führe trotzdem beide aus, damit das Vorgehen nicht davon abhängt, jede Release Note zu lesen.
+Die meisten Releases fügen keinen Datenupgrade-Schritt hinzu: `my db upgrade -check` gibt `ok: the database can be upgraded to this release` aus und, bei einer
+Datenbank, die die Schritte der früheren Releases verzeichnet hat, gibt `my db upgrade` `ok: no data upgrade step to run` aus. Eine neue Datenbank verzeichnet
+jeden Schritt des Releases beim ersten `my db upgrade`, ohne etwas umzuschreiben. Führe trotzdem beide aus, damit das Verfahren nicht davon abhängt, jede
+Release-Notiz zu lesen.
 Der Abschnitt **Upgrading** der Release Notes listet die Schritte jedes Releases auf.
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->

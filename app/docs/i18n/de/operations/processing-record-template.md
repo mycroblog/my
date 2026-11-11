@@ -97,16 +97,16 @@ Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den 
 | Löschung | IP-Adressen der Registrierung `{{180 days}}`, Anmeldeherkünfte `{{180 days}}`, Zähler innerhalb des Doppelten des Zeitfensters der Begrenzung, Registrierungssperren 30 Tage nach Aufheben oder Ablauf. Durch eine Aufbewahrungssperre gestoppt |
 | Rechtsgrundlage | {{z. B. berechtigte Interessen}} |
 
-<!-- source: 3-publishing-and-social-features 5e271f0279f9 -->
+<!-- source: 3-publishing-and-social-features 33e1e1657705 -->
 ### 3. Veröffentlichen und soziale Funktionen
 
 | | |
 | --- | --- |
-| Zwecke | Profile und Beiträge veröffentlichen und die Interaktionen, um die Leute bitten |
+| Zwecke | Profile und Beiträge veröffentlichen sowie die Interaktionen, um die Leute bitten |
 | Betroffene | Leute mit einem Konto, Leute, die sie erwähnen |
-| Personenbezogene Daten | Profil und seine Versionen, Beiträge und ihre Versionen, Medien, Favoriten, Reaktionen, Boosts, Lesezeichen, angeheftete Beiträge, Umfragestimmen, Follows, Blockierungen, Stummschaltungen, Listen. Beiträge können beliebige Daten enthalten, die eine Person schreibt, auch besondere Kategorien. `{{IF post review}}` Der Text eines abgelehnten Beitrags, den sein Autor mit einem Einspruch sendet |
-| Empfänger | Hosting, CDN, Medien-Prüfdienst (eine kleine verarbeitete Kopie jedes Uploads), andere Nutzer, das öffentliche Web für öffentliche Inhalte, föderierte Server (Tätigkeit 4), Suchmaschinen und KI-Crawler gemäß `search_indexing` und `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, von der Person autorisierte Apps, `{{IF post review}}` der Beitrags-Prüfdienst für die `public`-, `local`- und `unlisted`-Beiträge neuer Konten und ihre Bearbeitungen (ihr Text wie eingegeben und wie gerendert, Inhaltswarnung, Sprache, Sensibel-Markierung, Umfrageoptionen, Bildbeschreibungen, Hashtags und Zahl der Erwähnungen, ihre Adresse und die Adressen der Beiträge, auf die sie antworten oder die sie zitieren, die Adresse und der Nutzername des Autors und wann das Konto angelegt wurde; keine Medien), `{{IF profile review}}` der Profil-Prüfdienst für die Profiländerungen neuer Konten (der Anzeigename, die Bio wie eingegeben und wie gerendert, die Profilfelder, ob Avatar oder Header geändert wurden, die Adresse und der Nutzername des Kontos und wann das Konto angelegt wurde; keine Bilder) |
-| Löschung | Wenn die Person ihn löscht, durch ihre automatische Löschrichtlinie oder bei der Löschung des Kontos. `{{IF auto_delete_max_age_days}}` Höchstens `{{auto_delete_max_age_days}}` Tage nach der Veröffentlichung, bei Konten ohne `keep_posts_longer`. An nichts angehängte Uploads `{{24 hours}}`. Alte Versionen von Bildern, nachdem eine neuere Version sie ersetzt hat, `{{30 days}}`. Der Eintrag der URI eines gelöschten Beitrags bleibt. `{{IF post review}}` Ein Einspruch geht mit seiner Entscheidung (`hook_decisions_retention_days`, behalten, solange gegen ihn Einspruch möglich ist oder er auf Prüfung wartet) oder bei der Löschung des Kontos |
+| Personenbezogene Daten | Profil und seine Versionen, hervorgehobene Hashtags, Beiträge und ihre Versionen, Medien, Favoriten, Reaktionen, Boosts, Lesezeichen, angeheftete Beiträge, Umfragestimmen, Follows, gefolgte Hashtags, Blockierungen, Stummschaltungen, Listen, Stichwortfilter, private Notizen zu Konten. Beiträge können beliebige Daten enthalten, die eine Person schreibt, auch besondere Kategorien. `{{IF post review}}` Der Text eines abgelehnten Beitrags, den sein Autor mit einem Einspruch sendet |
+| Empfänger | Hosting, CDN, Dienst für die Medienprüfung (eine kleine verarbeitete Kopie jedes Uploads), andere Benutzer, das öffentliche Web für öffentliche Inhalte, föderierte Server (Tätigkeit 4), Suchmaschinen und KI-Crawler gemäß `search_indexing` und `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, Apps, die die Person autorisiert hat, `{{IF post review}}` der Dienst für die Beitragsprüfung für die `public`-, `local`- und `unlisted`-Beiträge neuer Konten und ihre Bearbeitungen (ihr Text, wie getippt und wie gerendert, Inhaltswarnung, Sprache, Sensibel-Markierung, Umfrageoptionen, Bildbeschreibungen, Hashtags und Zahl der Erwähnungen, ihre Adresse und die Adressen der Beiträge, auf die sie antworten oder die sie zitieren, die Adresse und der Benutzername des Autors und wann das Konto erstellt wurde; keine Medien), `{{IF profile review}}` der Dienst für die Profilprüfung für die Profiländerungen neuer Konten (der Anzeigename, die Bio, wie getippt und wie gerendert, die Profilfelder, ob sich der Avatar oder der Header geändert hat, die Adresse und der Benutzername des Kontos und wann das Konto erstellt wurde; keine Bilder) |
+| Löschung | Wenn die Person ihn löscht, durch ihre Richtlinie zur automatischen Löschung oder bei der Löschung des Kontos. `{{IF auto_delete_max_age_days}}` Höchstens `{{auto_delete_max_age_days}}` Tage nach der Veröffentlichung, bei den Konten ohne `keep_posts_longer`. An nichts angehängte Uploads `{{24 hours}}`. Alte Versionen von Bildern, nachdem eine neuere Version sie ersetzt hat, `{{30 days}}`. Der Datensatz der URI eines gelöschten Beitrags bleibt. `{{IF post review}}` Ein Einspruch geht mit seiner Entscheidung (`hook_decisions_retention_days`, behalten, solange er angefochten werden kann oder auf Prüfung wartet) oder bei der Löschung des Kontos |
 | Rechtsgrundlage | {{z. B. Vertrag}} |
 
 <!-- source: 4-federation 795a56004c37 -->
@@ -133,16 +133,16 @@ Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den 
 | Löschung | Beiträge `{{90 days}}`, wenn nichts hier auf sie verweist, `{{7 days}}`, wenn nur ein Relay sie gebracht hat, und `{{no limit}}` sonst für jeden Beitrag. Kopien von Medien `{{not kept}}`. Handle-Prüfungen 90 Tage. Alles zu einem Konto 7 Tage nachdem sein Server es löscht, oder bis zu 30 Tage, wenn nur ein `410 Gone` es sagte und der Server nicht erneut antwortet. Seine URI und Domain bleiben |
 | Rechtsgrundlage | {{z. B. berechtigte Interessen}} |
 
-<!-- source: 6-notifications ad34beea6ab2 -->
+<!-- source: 6-notifications 3a5f63da6e4b -->
 ### 6. Benachrichtigungen
 
 | | |
 | --- | --- |
-| Zwecke | Leute per E-Mail und Web-Push über Aktivität und ihr Konto informieren |
+| Zwecke | Leute per E-Mail und Web Push über Aktivitäten und über ihr Konto informieren |
 | Betroffene | Leute mit einem Konto, Leute, die in einer Benachrichtigung genannt werden |
-| Personenbezogene Daten | Benachrichtigungen und Gelesen-Markierungen, Benachrichtigungseinstellungen, E-Mail-Adresse, der Text jeder E-Mail, Bounce- und Complaint-Aufzeichnungen, Web-Push-Adresse und -Schlüssel, Beitragsabonnements |
+| Personenbezogene Daten | Benachrichtigungen und Gelesen-Markierungen, Benachrichtigungseinstellungen, die Benachrichtigungsrichtlinie mit den angenommenen und verworfenen Benachrichtigungsanfragen, E-Mail-Adresse, der Text jeder E-Mail, Bounce- und Beschwerde-Datensätze, Web-Push-Adresse und -Schlüssel, Abonnements von Beiträgen |
 | Empfänger | Hosting, E-Mail-Anbieter, Push-Dienste (der Nachrichtentext ist verschlüsselt, und sie halten ihn bis zu 48 Stunden) |
-| Löschung | Bei der Löschung des Kontos oder mit dem Beitrag, um den es geht. Web-Push: auch, wenn die Person oder der Push-Dienst es beendet. Der E-Mail-Anbieter: {{SEINE FRIST}} |
+| Löschung | Bei der Löschung des Kontos oder mit dem Beitrag, um den es geht. Web Push: auch, wenn die Person oder der Push-Dienst es beendet. Der E-Mail-Anbieter: {{SEIN ZEITRAUM}} |
 | Rechtsgrundlage | {{z. B. Vertrag, berechtigte Interessen}} |
 
 <!-- source: 7-moderation-and-audit d72a42b6312e -->
@@ -185,18 +185,18 @@ Lösche diese Tätigkeit, wenn `voice = off`.
 | Löschung | Teilnehmer `{{90 days}}` ab dem Ende des Raums, oder so lange wie eine Meldung dazu. Räume bleiben, wobei Name und Beschreibung bei der Löschung des Autors geleert werden. Bei den Diensten: {{IHRE FRIST}} |
 | Rechtsgrundlage | {{z. B. Vertrag, berechtigte Interessen}} |
 
-<!-- source: 10-supporter-payments 99d64d001780 -->
+<!-- source: 10-supporter-payments 66328ed833a1 -->
 ### 10. Zahlungen von Unterstützern
 
-Lösche diese Tätigkeit, wenn `payments = none`.
+Lösche diese Tätigkeit, wenn `payments = none` ist.
 
 | | |
 | --- | --- |
-| Zwecke | Abos annehmen, Rollen erteilen, Buchhaltung |
-| Betroffene | Abonnenten |
-| Personenbezogene Daten | Objekt-IDs des Anbieters, Beträge, Zeiträume, Status, Erstattungen, Rückbuchungen, die Entscheidung, aufgelistet zu werden. An den Anbieter gesendete E-Mail-Adresse. Keine Kartennummern, letzten vier Ziffern oder Ablaufdaten |
-| Empfänger | Hosting, Zahlungsanbieter, Leute, die die Liste der Unterstützer sehen können, Team mit der passenden Berechtigung |
-| Löschung | Webhook-Belege 45 Tage. Die Kundenverknüpfung und der Listeneintrag bei der Löschung des Kontos. Abo- und Zahlungsaufzeichnungen haben kein automatisches Ende: {{FRIST UND DAS GESETZ, DAS SIE VERLANGT}}. Beim Anbieter: {{SEINE FRIST, UND OB DU DEN KUNDEN LÖSCHST}} |
+| Zwecke | Abonnements und Trinkgelder annehmen, Rollen vergeben, Buchhaltung |
+| Betroffene | Abonnenten, Benutzer, die Trinkgeld geben |
+| Personenbezogene Daten | Objekt-IDs des Anbieters, Beträge, Zeiträume, Zustände, Erstattungen, Rückbuchungen, die Entscheidung, aufgelistet zu werden, die Trinkgelder und ihre Zahlungen. An den Anbieter gesendete E-Mail-Adresse. Keine Kartennummern, letzten vier Ziffern oder Ablaufdaten |
+| Empfänger | Hosting, Zahlungsanbieter, Leute, die die Unterstützerliste sehen können, Personal mit der passenden Berechtigung |
+| Löschung | Webhook-Belege 45 Tage. Die Kundenverknüpfung, die Auflistung und die Trinkgelder bei der Löschung des Kontos (ihre Einnahmen bleiben ohne den Benutzer). Datensätze zu Abonnements und Zahlungen haben kein automatisches Ende: {{ZEITRAUM UND DAS GESETZ, DAS ES VERLANGT}}. Beim Anbieter: {{SEIN ZEITRAUM UND OB DU DEN KUNDEN LÖSCHST}} |
 | Rechtsgrundlage | {{z. B. Vertrag, rechtliche Verpflichtung}} |
 
 <!-- source: 11-running-the-service 9c89577f9cee -->
@@ -224,6 +224,18 @@ Lösche diese Tätigkeit, wenn `translation_providers` leer ist.
 | Empfänger | Übersetzungsanbieter, als deine Auftragsverarbeiter: standardmäßig `public`-, `local`- und `unlisted`-Beiträge. {{IF translation to private and direct}} Auch `private`- und `direct`-Beiträge, für {{DIE ANBIETER, DIE DU ZUGELASSEN HAST}}. {{IF translation of reports}} Die Kommentare von Meldungen, für die Anbieter, denen `private`-Beiträge erlaubt sind, und die Beiträge, die Meldungen nennen, wenn ein Moderator darum bittet |
 | Löschung | Übersetzungen `{{30 days}}` ab der Übersetzung und mit dem Beitrag, wenn er gelöscht wird. Zeichen pro Konto bis zum Ende des Folgemonats oder bei der Löschung des Kontos. Bei den Anbietern: Was gesendet wurde, lässt sich nicht zurückrufen. {{IHRE FRISTEN}} |
 | Rechtsgrundlage | {{z. B. berechtigte Interessen}} |
+
+<!-- source: 13-events 3f83323d2455 -->
+### 13. Veranstaltungen
+
+| | |
+| --- | --- |
+| Zwecke | Veranstaltungen der lokalen Benutzer planen, mit ihren Daten, Terminvorschlägen, Orten, Einladungen und Antworten, und die betroffenen Leute über ihre Änderungen und ihren Beginn informieren |
+| Betroffene | Organisatoren, Co-Veranstalter, eingeladene Benutzer und Teilnehmer |
+| Personenbezogene Daten | Titel, Beschreibung, Datum, Zeitzone und Orte (die Adresse eines Treffpunkts, ein Link) jeder Version einer Veranstaltung; Organisatoren und Co-Veranstalter; Terminvorschläge und die Antwort jedes Benutzers darauf; Einladungen; Antworten und ihre Genehmigung; Absagen mit ihrem Grund; wie lange vor einer Veranstaltung jeder Benutzer erinnert wird. Veranstaltungen werden nicht föderiert |
+| Empfänger | Hosting, die lokalen Benutzer, die die Veranstaltung sehen (die Adresse und der Link nur den genehmigten Teilnehmern, es sei denn, der Organisator zeigt sie allen), und der E-Mail-Anbieter für die Benachrichtigungs-E-Mails, die Titel, Beginn und Organisatoren nennen und nie die Orte |
+| Löschung | Der Titel, die Beschreibung und die Orte der Versionen, die ein Konto geschrieben hat, und seine Erinnerungszeiten bei seiner Löschung. Einladungen, Antworten, ihre Genehmigung und Stimmen zu Terminvorschlägen {{90 days}} nach dem Ende oder der Absage der Veranstaltung (`event_records_retention_days`), länger, solange eine Meldung auf die Veranstaltung zeigt oder eine Sperre ein Konto erfasst, das sie nennen. Veranstaltungen, ihre Daten und Terminvorschläge haben kein automatisches Ende: {{ZEITRAUM}} |
+| Rechtsgrundlage | {{z. B. Vertrag, berechtigte Interessen}} |
 
 <!-- source: security-measures-article-301g 756bb9e562e3 -->
 ### Sicherheitsmaßnahmen (Artikel 30 Absatz 1 Buchstabe g)

@@ -1,0 +1,74 @@
+{
+  "notification_policy.action.accept": {
+    "defaultMessage": "Annehmen",
+    "description": "Name of the action of the notification policy that lets notifications through, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.accept.description": {
+    "defaultMessage": "Die Benachrichtigung erscheint in deinen Benachrichtigungen und erreicht dich auf die Arten, die du oben gewählt hast.",
+    "description": "What the action 'Accept' of the notification policy does. 'Above' is the table of the notification settings, which chooses how notifications reach the user."
+  },
+  "notification_policy.action.drop": {
+    "defaultMessage": "Verwerfen",
+    "description": "Name of the action of the notification policy that makes no notification, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.drop.description": {
+    "defaultMessage": "Es wird keine Benachrichtigung erzeugt. Was die Person getan hat, geschieht trotzdem: Ein Follow folgt dir weiterhin.",
+    "description": "What the action 'Drop' of the notification policy does."
+  },
+  "notification_policy.action.filter": {
+    "defaultMessage": "Zurückhalten",
+    "description": "Name of the action of the notification policy that holds notifications in a request of their sender, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.filter.description": {
+    "defaultMessage": "Die Benachrichtigung bleibt außerhalb deiner Benachrichtigungen und des Zählers für Ungelesenes und löst keine Push-Benachrichtigung, E-Mail oder keinen Ton aus. Sie wartet in einer Anfrage oben in deinen Benachrichtigungen, wo du sie annimmst oder verwirfst.",
+    "description": "What the action 'Hold' of the notification policy does."
+  },
+  "notification_policy.condition.limited_account": {
+    "defaultMessage": "Von Moderatoren eingeschränkte Konten",
+    "description": "Label of a condition of the notification policy: the moderators of the server limited the sender's account or its server."
+  },
+  "notification_policy.condition.limited_account.description": {
+    "defaultMessage": "Konten, die die Moderatoren dieses Servers eingeschränkt haben, einzeln oder zusammen mit ihrem Server. Das gilt auch für Personen, denen du folgst.",
+    "description": "Explanation of the condition 'Accounts limited by the moderators' of the notification policy."
+  },
+  "notification_policy.condition.new_account": {
+    "defaultMessage": "Neue Konten",
+    "description": "Label of a condition of the notification policy: the sender's account is new."
+  },
+  "notification_policy.condition.new_account.description": {
+    "defaultMessage": "Konten, die vor weniger als 30 Tagen erstellt wurden.",
+    "description": "Explanation of the condition 'New accounts' of the notification policy."
+  },
+  "notification_policy.condition.not_follower": {
+    "defaultMessage": "Personen, die dir nicht folgen",
+    "description": "Label of a condition of the notification policy: the sender does not follow the user."
+  },
+  "notification_policy.condition.not_follower.description": {
+    "defaultMessage": "Auch Personen, deren Follow-Anfrage du nicht genehmigt hast.",
+    "description": "Explanation of the condition 'People who don't follow you' of the notification policy."
+  },
+  "notification_policy.condition.not_following": {
+    "defaultMessage": "Personen, denen du nicht folgst",
+    "description": "Label of a condition of the notification policy: the sender is not followed by the user."
+  },
+  "notification_policy.condition.not_following.description": {
+    "defaultMessage": "Eine Follow-Anfrage von dir, die auf Genehmigung wartet, zählt nicht als Folgen.",
+    "description": "Explanation of the condition 'People you don't follow' of the notification policy."
+  },
+  "notification_policy.condition.unsolicited_private_mention": {
+    "defaultMessage": "Nicht angefragte private Erwähnungen",
+    "description": "Label of a condition of the notification policy: a direct (private) post that mentions the user without the user having started the conversation."
+  },
+  "notification_policy.condition.unsolicited_private_mention.description": {
+    "defaultMessage": "Direkte Beiträge, die dich erwähnen, ohne auf einen direkten Beitrag von dir zu antworten, der den Absender erwähnt hat.",
+    "description": "Explanation of the condition 'Unrequested private mentions' of the notification policy."
+  },
+  "notification_policy.description": {
+    "defaultMessage": "Wähle, was mit den Benachrichtigungen von Personen geschieht, die jeweils eine Bedingung erfüllen. Eine Benachrichtigung, die mehrere Bedingungen erfüllt, erhält die strengste Wahl. Personen, denen du folgst, und Personen, deren Anfragen du angenommen hast, erfüllen keine der Bedingungen außer der letzten. Benachrichtigungen von den Moderatoren und von diesem Server werden nie zurückgehalten oder verworfen. Eine Änderung gilt für die Benachrichtigungen, die danach kommen.",
+    "description": "Description of the notification policy section. 'The last one' is the condition 'Accounts limited by the moderators', which comes last."
+  },
+  "notification_policy.title": {
+    "defaultMessage": "Benachrichtigungsrichtlinie",
+    "description": "Heading of the section of the notification settings where the user chooses, for each condition on who sent a notification, whether such notifications are accepted, held as requests, or dropped."
+  }
+}

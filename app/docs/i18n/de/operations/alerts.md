@@ -54,7 +54,15 @@ promtool check rules alerts.yml
 promtool test rules alerts.test.yml
 ```
 
-<!-- source: google-cloud-cloud-run 72c348585d24 -->
+<!-- source: grafana-dashboard 42687b654de7 -->
+### Grafana-Dashboard
+
+[`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) ist ein Grafana-Dashboard derselben Prometheus-Metriken:
+die Anfragerate, die Statuscodes und die Latenz; die Job-Läufe, die Worker-Zeit jedes Job-Typs und die Queue; Zustellungen, Inbox-Aktivitäten
+und entfernte Server; sowie CPU und Speicher jedes Prozesses. Importiere es in Grafana (**Dashboards** → **New** → **Import**) und wähle deine
+Prometheus-Datenquelle; seine Variable **Job** wählt den Scrape-Job (standardmäßig `my`).
+
+<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
 ### Google Cloud (Cloud Run)
 
 Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud Logging bereits haben:
@@ -64,8 +72,9 @@ Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud L
 - **Jobs und Anfragen**: Der Server schreibt pro HTTP-Anfrage (`msg` = `http request`) und pro Job-Lauf (`msg` = `job`) eine Logzeile mit denselben
   Labels wie die Metriken. Erzeuge daraus logbasierte Metriken, zum Beispiel einen Zähler von `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   für fehlgeschlagene Jobs oder eine Verteilung von `jsonPayload.duration_seconds`, gefiltert auf `jsonPayload."my.surface"="client_api"`, für die Latenz.
-- **Queue-Rückstau**: Mit `queue = cloudtasks` liegen die Jobs in der Datenbank, daher zeigen der Job-Bildschirm und die Logzeilen der Job-Läufe den Rückstau;
-  die Metrik für die Queue-Tiefe von Cloud Tasks zählt die Signale, die auf Zustellung warten.
+- **Queue-Rückstau und Speicher**: Alle 15 Minuten schreibt der Job `metrics.snapshot` eine Zeile (`msg` = `metrics snapshot`) mit den instanzweiten
+  Werten, etwa `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` und `my.media.stored_bytes`. Erzeuge aus ihren Feldern logbasierte Metriken;
+  eine Lücke in diesen Zeilen bedeutet, dass der Tick oder die Queue stehen geblieben ist. Die Metrik für die Queue-Tiefe von Cloud Tasks zählt die Signale, die auf Zustellung warten.
 - **Datenbank**: die Metriken zu Festplattenauslastung und Verbindungen von Cloud SQL oder die Nutzungsalarme deines Datenbankanbieters.
 - **Kosten**: ein Cloud-Billing-Budget mit Alarmschwellen ([Kosten und Budget](#cost-and-budget)).
 
@@ -125,7 +134,7 @@ Schweregrad: **page** = sofort handeln, **ticket** = während der Arbeitszeit. �
 | Kosten | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 für 6 Std. | ticket | Fehlende Berechtigungen, der Billing-Export ist nicht eingerichtet, das Anfragelimit ist erreicht, der Anbieter ist nicht verfügbar |
 | Kosten | Budget überschritten | – | – | – | Traffic, Speicher oder eine Fehlkonfiguration kosten mehr als geplant ([unten](#cost-and-budget)) |
 
-<!-- source: where-to-look 9ef1d37c4f05 -->
+<!-- source: where-to-look b9e94304077f -->
 ## Wo du nachsehen kannst
 
 Diese Werkzeuge kehren in den meisten der folgenden Runbook-Einträge wieder.
@@ -141,6 +150,11 @@ Diese Werkzeuge kehren in den meisten der folgenden Runbook-Einträge wieder.
 - **Die Logs**: JSON-Zeilen auf der Standardfehlerausgabe. Jede HTTP-Anfrage endet mit einer Zeile, deren `msg` `http request` ist, jeder Job-Lauf mit einer Zeile, deren `msg` `job` ist
   (`INFO` bei Erfolg, `WARN` bei einer Wiederholung, `ERROR` bei einem Job, der endgültig fehlgeschlagen ist, mit `error`, `job_id` und `my.job.type`).
   Zeilen innerhalb einer Anfrage tragen deren `request_id`, die der Client als `X-Request-Id` sieht.
+  - Die Zeile eines Laufs von `federation.deliver` sagt außerdem, wohin die Zustellung ging und wie sie endete: `my.delivery.domain` (die Domain des entfernten Servers),
+    `activity.type` (zum Beispiel `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure` oder `skipped`) und
+    `http.response.status_code` (die Antwort der Inbox, nicht vorhanden, wenn sie keine gab oder nichts gesendet wurde). `my.outcome` bleibt das Ergebnis des Job-Laufs.
+    Die Zeile nennt nie den Absender, die Aktivität oder die URL der Inbox.
+    Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``

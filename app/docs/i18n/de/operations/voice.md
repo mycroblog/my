@@ -5,58 +5,56 @@ Mit dem Sprachchat können angemeldete Nutzer einen Raum öffnen, andere einlade
 Dieser Leitfaden behandelt diese Wahl, die STUN- und TURN-Server oder den Medienserver, den jede Wahl braucht, und was du zu Deployment, Datenschutz und Moderation wissen solltest.
 Jede hier genannte Einstellung ist in der [Konfigurationsreferenz](../reference/configuration.md#voice) beschrieben.
 
-<!-- source: choose-how-the-audio-travels 9d60bd0655e9 -->
+<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
 ## Wählen, wie das Audio übertragen wird
 
-`voice` wählt eine Methode für den ganzen Server; jeder Raum nutzt sie.
+`voice` wählt eine Methode für die ganze Instanz; jeder Raum nutzt sie.
 
-| `voice` | Was das Audio trägt | Eignet sich für |
+| `voice` | Was das Audio trägt | Passt für |
 | --- | --- | --- |
-| `off` | Nichts. Die Sprachchat-API antwortet mit `404`, der Web-Client zeigt keinen Sprachchat, und die anderen `voice_*`-Einstellungen werden beim Start nicht geprüft. | Der Standard. |
-| `p2p` | Die Browser der Teilnehmer senden Audio direkt aneinander. Der Server leitet nur die Nachrichten weiter, die die Verbindungen aufbauen. | Kleine Räume und das günstigste Setup: kein zusätzlicher Server außer einem optionalen STUN- oder TURN-Server. |
+| `off` | Nichts. Die Sprachchat-API antwortet `404`, der Webclient zeigt keinen Sprachchat, und die anderen Einstellungen `voice_*` werden beim Start nicht geprüft. | Der Standard. |
+| `p2p` | Die Browser der Teilnehmer senden das Audio direkt aneinander. Der Server leitet nur die Nachrichten weiter, die die Verbindungen aufbauen. | Kleine Räume und das günstigste Setup: kein zusätzlicher Server außer einem optionalen STUN- oder TURN-Server. |
 | `livekit` | Ein LiveKit-Server, selbst gehostet oder LiveKit Cloud. | Größere Räume und strenge Kontrolle darüber, wer sprechen darf. |
-| `sora` | Ein Sora-Server, selbst gehostet oder Sora Cloud. | Dasselbe, wenn du Sora ohnehin betreibst. |
+| `sora` | Ein Sora-Server, selbst gehostet oder Sora Cloud. | Dasselbe, wenn du bereits Sora betreibst. |
 
-![Die drei Methoden nebeneinander. Bei p2p leitet der Server die Signale weiter, und die Browser senden Audio aneinander oder über einen TURN-Server. Bei livekit und sora senden die Browser Signale und Audio an den Medienserver, und der Server spricht über dessen API und Webhooks mit diesem Medienserver. Die Liste unten beschreibt jede Methode.](images/voice-methods.svg)
+![Die drei Methoden nebeneinander. Bei p2p leitet der Server die Signale weiter, und die Browser senden das Audio aneinander oder über einen TURN-Server. Bei livekit und sora senden die Browser Signale und Audio an den Medienserver, und der Server spricht über dessen API und Webhooks mit diesem Medienserver. Die Liste unten beschreibt jede Methode.](images/voice-methods.svg)
 
-Bei jeder Methode hält der Server (`my serve`) die Räume, wer an ihnen teilnimmt und ihre Sitzungen, und gibt jedem
-Teilnehmer ein Grant: was der Browser zum Verbinden braucht. Er trägt nie das Audio. Der Unterschied liegt darin, wohin
-das Signaling (die Nachrichten, die eine Verbindung aufbauen) und das Audio gehen:
+Bei jeder Methode hält der Server (`my serve`) die Räume, wer an ihnen teilnimmt, und ihre Sitzungen und übergibt jedem
+Teilnehmer ein Grant: das, was der Browser zum Verbinden braucht. Er trägt nie das Audio. Der Unterschied ist, wohin das Signaling
+(die Nachrichten, die eine Verbindung aufbauen) und das Audio gehen:
 
-- **`p2p`.** Ein Browser sendet seine Signale (Offers, Answers und ICE-Kandidaten) an den Server, der sie über den
-  Ereignisstrom des Raums an den anderen Browser weitergibt; ein Signal wartet höchstens 30 Sekunden im Key-Value-Store.
-  Das Audio geht direkt von Browser zu Browser. Der Grant listet die STUN-Server aus `voice_stun_urls` und den
-  TURN-Server aus `voice_turn` (`coturn` oder `cloudflare`) mit kurzlebigen Zugangsdaten. Ein Browser erfährt seine
-  öffentliche Adresse über STUN, und der TURN-Server leitet das Audio weiter, wenn die beiden Browser keinen direkten
-  Weg finden.
-- **`livekit`.** Der Grant enthält `voice_livekit_url` und ein Zugriffstoken, das 60 Sekunden gilt. Der Browser sendet
-  seine Signale und sein Audio an den LiveKit-Server, der seine eigenen STUN- und TURN-Dienste mitbringt und das Audio an
-  die anderen Teilnehmer weiterleitet (eine Selective Forwarding Unit, kurz SFU).
-  Der Server legt die LiveKit-Räume an und ändert über die API von LiveKit, wer sprechen darf; LiveKit meldet Beitritte
-  und Austritte per Webhooks an den Server.
-- **`sora`.** Der Grant enthält `voice_sora_signaling_urls` und einen signierten Beitrittswert. Der Browser sendet seine
-  Signale und sein Audio an den Sora-Server, der seine eigenen STUN- und TURN-Dienste mitbringt. Sora fragt vor jeder
-  Verbindung den Auth-Webhook des Servers, der Server steuert die Räume über die API von Sora, und Sora meldet
-  Verbindungen per Webhooks.
+- **`p2p`.** Ein Browser sendet seine Signale (Offers, Answers und ICE-Kandidaten) an den Server, der sie über den Ereignisstrom des Raums an den
+  anderen Browser weitergibt; ein Signal wartet höchstens 30 Sekunden im Key-Value-Speicher. Das Audio
+  geht direkt von Browser zu Browser. Das Grant listet die STUN-Server aus `voice_stun_urls` und den TURN-Server aus
+  `voice_turn` (`coturn` oder `cloudflare`) mit kurzlebigen Zugangsdaten. Ein Browser erfährt seine öffentliche Adresse über STUN,
+  und der TURN-Server leitet das Audio weiter, wenn die beiden Browser keinen direkten Weg finden.
+- **`livekit`.** Das Grant enthält `voice_livekit_url` und ein Zugriffstoken mit 60 Sekunden Gültigkeit. Der Browser sendet seine Signale und sein
+  Audio an den LiveKit-Server, der sein eigenes STUN und TURN mitbringt und das Audio an die anderen Teilnehmer weiterleitet (eine Selective Forwarding Unit,
+  oder SFU).
+  Der Server erstellt die LiveKit-Räume und ändert über die API von LiveKit, wer sprechen darf, und LiveKit meldet Beitritte und
+  Austritte per Webhooks an den Server.
+- **`sora`.** Das Grant enthält `voice_sora_signaling_urls` und einen signierten Beitrittswert. Der Browser sendet seine Signale und sein
+  Audio an den Sora-Server, der sein eigenes STUN und TURN mitbringt. Sora fragt vor jeder Verbindung den Auth-Webhook des Servers,
+  der Server steuert die Räume über die API von Sora, und Sora meldet Verbindungen per Webhooks.
 
 Hinweise zur Wahl:
 
-- Bei `p2p` läuft das Audio nie über diesen Server (es läuft über den TURN-Server, wenn einer genutzt wird). Die Last des Servers sind nur die Raumnachrichten, Heartbeats und Streams.
-- Ein kleiner Server ist mit `p2p` oder mit dem kostenlosen Build-Tarif von LiveKit Cloud am besten bedient (siehe [LiveKit Cloud](#livekit-cloud)).
-- Bei `livekit` oder `sora` werden die STUN- und TURN-Einstellungen und die ICE-Richtlinie unten nicht genutzt (der Server warnt beim Start, wenn du sie setzt), weil der Medienserver seine eigenen Server mitbringt. Die IP-Adressen der Teilnehmer sind dann nur für den Medienserver sichtbar, nicht für die anderen Teilnehmer.
-- Die Build-Tags `no_voice_livekit` und `no_voice_sora` lassen die beiden Medienserver-Methoden aus einer Binärdatei weg ([Build-Tags](../reference/build-tags.md)).
-- Liefere den Server über HTTPS aus: Browser erlauben den Mikrofonzugriff nur auf sicheren Seiten.
+- Bei `p2p` läuft das Audio nie über diesen Server (es läuft über den TURN-Server, wenn einer verwendet wird). Die Last des Servers sind nur die Raumnachrichten, Heartbeats und Streams.
+- Eine kleine Instanz wird am besten mit `p2p` bedient oder mit dem kostenlosen Build-Tarif von LiveKit Cloud (siehe [LiveKit Cloud](#livekit-cloud)).
+- Bei `livekit` oder `sora` werden die STUN- und TURN-Einstellungen und die ICE-Richtlinie unten nicht verwendet (der Server warnt beim Start, wenn du sie setzt), weil der Medienserver seine eigenen Server mitbringt. Die IP-Adressen der Teilnehmer sind dann nur für den Medienserver sichtbar, nicht für die anderen Teilnehmer.
+- Die Build-Tags `no_voice_livekit` und `no_voice_sora` lassen die beiden Medienserver-Methoden aus einem Binary weg ([Build-Tags](../reference/build-tags.md)).
+- Liefere die Instanz über HTTPS aus: Browser erlauben Mikrofonzugriff nur auf sicheren Seiten.
 
-Die Limits halten die Kosten eines bezahlten Medienservers begrenzt. `0` entfernt jedes davon außer dem letzten:
+Die Limits halten die Kosten eines kostenpflichtigen Medienservers begrenzt. `0` hebt jedes davon auf, außer dem letzten:
 
 | Einstellung | Standard | Bedeutung |
 | --- | --- | --- |
-| `voice_max_room_duration` | `4h` | Wie lange ein Raum höchstens offen bleibt. Ein Raum, der sie erreicht, wird beendet. |
-| `voice_max_open_rooms` | `10` | Wie viele Räume auf diesem Server gleichzeitig offen sein dürfen. |
+| `voice_max_room_duration` | `4h` | Die längste Zeit, die ein Raum offen bleibt. Ein Raum, der sie erreicht, wird beendet. |
+| `voice_max_open_rooms` | `10` | Wie viele Räume auf diesem Server gleichzeitig offen sein dürfen. Ein Raum, der für eine geplante Zeit geöffnet wird, zählt ab seiner Öffnung, während er auf seinen ersten Teilnehmer wartet. |
 | `voice_sfu_max_participants` | `10` | Die Raumgröße für `livekit` und `sora`. |
 | `voice_p2p_max_participants` | `10` | Die Raumgröße für `p2p`, von 2 bis 50. |
 
-Wer Räume öffnen darf, bestimmt die Servereinstellung `voice_room_starters` ([Servereinstellungen](instance-settings.md)): Standardmäßig nur Inhaber der Berechtigung `start_voice_rooms` (die eingebaute Rolle `admin` hat sie); `everyone` erlaubt jedem angemeldeten lokalen Nutzer, der nicht gesperrt oder eingeschränkt ist, Räume zu öffnen.
+Wer Räume öffnen darf, ist die Instanzeinstellung `voice_room_starters` ([Instanzeinstellungen](instance-settings.md)): standardmäßig nur die Inhaber der Berechtigung `start_voice_rooms` (die eingebaute Rolle `admin` hat sie); `everyone` lässt jeden angemeldeten lokalen Benutzer, der nicht gesperrt oder eingeschränkt ist, Räume öffnen.
 
 <!-- source: peer-to-peer-rooms 2199ca9a427c -->
 ## Peer-to-Peer-Räume

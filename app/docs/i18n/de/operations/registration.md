@@ -127,11 +127,11 @@ Solange die Server-Einstellung `login_providers_only` gilt, werden Links zum Zur
   Eine Anmeldung, die auf ihren Zwei-Faktor-Code wartet, und eine noch nicht abgeschlossene App-Autorisierung hören ebenfalls auf zu funktionieren: Der Nutzer startet sie erneut.
   Bei `mail = smtp` sendet der Server dem Nutzer außerdem eine E-Mail, dass sich das Passwort geändert hat.
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## Einladungscodes
 
-Einladungen funktionieren in den Modi `open`, `approval` und `invite`. Einladungen des Teams werden mit der CLI, den Moderations-Screens und der Admin-API unten erstellt; Mitglieder können auch eigene Einladungen erstellen ([Einladungen von Mitgliedern](#member-invites)).
-Im Modus `closed` lässt sich keine Einladung erstellen, und keine funktioniert.
+Einladungen funktionieren in den Modi `open`, `approval` und `invite`. Einladungen des Personals werden mit der CLI, den Moderationsbildschirmen und der Admin-API unten erstellt; Mitglieder können auch eigene Einladungen erstellen ([Einladungen von Mitgliedern](#member-invites)).
+Im Modus `closed` kann keine Einladung erstellt werden, und keine funktioniert.
 
 ```sh
 my invite create                          # single use, expires in 7 days
@@ -144,16 +144,17 @@ my invite revoke <code>
 - `create` gibt den Code (16 Zeichen) und den Link zur Registrierungsseite mit eingetragenem Code aus (`https://<host>/auth/sign_up?invite=<code>`).
 - Codes werden ohne Beachtung von Groß- und Kleinschreibung, Leerzeichen und Bindestrichen abgeglichen.
 - Auch wenn sich mehrere Leute gleichzeitig registrieren, wird ein Code nie über sein Limit hinaus verwendet (eine Unique-Constraint auf `invite_redemptions`).
-- Ein widerrufener, abgelaufener oder aufgebrauchter Code ergibt jeweils denselben Fehler (eine nicht verwendbare Einladung).
-- Neben der CLI kannst du Einladungen in den Moderations-Screens des Web-Clients („Einladungen“, `/moderation/invites`) und über die Client-API erstellen, auflisten und widerrufen
-  (`GET` / `POST /api/v1/admin/invites` und `POST /api/v1/admin/invites/{id}/revoke`). Beides braucht die Rollenberechtigung `manage_invites`
-  (der eingebaute `moderator` hat sie nicht; um das zu delegieren, lege also eine Rolle mit dieser Berechtigung an und erteile sie).
+- Ein widerrufener, abgelaufener oder aufgebrauchter Code ergibt jeweils denselben Fehler (eine unbrauchbare Einladung).
+- Neben der CLI kannst du Einladungen in den Moderationsbildschirmen des Webclients („Einladungen“, `/moderation/invites`) und über die Client-API
+  (`GET` / `POST /api/v1/admin/invites` und `POST /api/v1/admin/invites/{id}/revoke`) erstellen, auflisten und widerrufen. Beide brauchen die Rollenberechtigung `manage_invites`
+  (der eingebaute `moderator` hat sie nicht, erstelle also, um das zu delegieren, eine Rolle mit dieser Berechtigung und vergib sie).
+  Ein Dienst, der selbstständig Einladungen verteilt, ruft dieselbe API mit einem Token des Scopes `admin:manage_invites` auf ([einen anderen Dienst die Admin-API nutzen lassen](moderation.md#letting-another-service-use-the-admin-api)).
   „Einladung erstellen“ in der Liste öffnet das Formular (`/moderation/invites/new`), das den Code und den Registrierungslink der neuen Einladung zeigt.
-  Die Liste lässt dich den Link einer verwendbaren Einladung kopieren und sie widerrufen.
-- Die Liste zeigt jede Einladung, die des Teams und die der Mitglieder, mit dem, der sie erstellt hat (`created_by`), und wie (`creator_kind`: `staff` oder `member`). Die Inhaber von `manage_invites` können jede davon widerrufen.
-- Die Prüfseite des Kontos in den Moderations-Screens (`GET /api/v1/admin/accounts/{id}`, Berechtigung `manage_accounts`) zeigt die Einladung, mit der sich das Konto registriert hat, und wer sie erstellt hat, die Person, die den Nutzer eingeladen hat.
-- Das Erstellen und Widerrufen einer Einladung wird im Audit-Log festgehalten (`invite_created`, `invite_revoked`), aus dem Screen, der API und der CLI gleichermaßen. Der Zielname sind die ersten 4 Zeichen des Codes (`ABCD…`); der vollständige Code wird nicht ins Audit-Log kopiert.
-  Das Widerrufen einer schon widerrufenen Einladung ändert nichts und wird daher nicht festgehalten.
+  Die Liste lässt dich den Link einer nutzbaren Einladung kopieren und sie widerrufen.
+- Die Liste zeigt jede Einladung, die des Personals und die der Mitglieder, mit dem, der sie erstellt hat (`created_by`), und wie (`creator_kind`: `staff` oder `member`). Die Inhaber von `manage_invites` können jede davon widerrufen.
+- Die Prüfseite des Kontos in den Moderationsbildschirmen (`GET /api/v1/admin/accounts/{id}`, Berechtigung `manage_accounts`) zeigt die Einladung, mit der sich das Konto registriert hat, und wer sie erstellt hat, die Person, die den Benutzer eingeladen hat.
+- Das Erstellen und Widerrufen einer Einladung wird im Audit-Log erfasst (`invite_created`, `invite_revoked`), vom Bildschirm, der API und der CLI gleichermaßen. Der Zielname sind die ersten 4 Zeichen des Codes (`ABCD…`); der vollständige Code wird nicht ins Audit-Log kopiert.
+  Eine bereits widerrufene Einladung erneut zu widerrufen, ändert nichts und wird deshalb nicht erfasst.
 
 <!-- source: member-invites db3bff74ed69 -->
 ## Einladungen von Mitgliedern

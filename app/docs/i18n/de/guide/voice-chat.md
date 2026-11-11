@@ -14,15 +14,15 @@ In einem Raum sind die Leute „Speakers“ oder „Listeners“, und die Rollen
 
 Wenn deine Verbindung abbricht, zeigt der Anruf „Verbindung wird wiederhergestellt …“. Ein Anruf endet auch, wenn du demselben Raum von einem anderen Gerät aus beitrittst, wenn ein Host dich entfernt oder wenn du und der Host oder ein Co-Host einander blockiert.
 
-<!-- source: starting-a-room f9578f023829 -->
+<!-- source: starting-a-room 9a2c5bc39c3c -->
 ## Einen Raum starten
 
 „Raum starten“ erscheint für die Leute, denen die Betreiber des Servers erlauben, Räume zu hosten. Das Formular fragt nach:
 
 - **Name** sowie optional **Icon** und **Beschreibung**.
 - **Hashtags**: Der Raum erscheint auf den Seiten seiner Hashtags.
-- **Wer den Raum sehen und betreten kann**: „Alle auf diesem Server“, „Follower des Hosts“, „Gegenseitige Follower des Hosts“ oder „Nur eingeladene Personen“.
-- **Wer ohne Nachfrage sprechen darf**: „Alle, die beitreten“, „Follower des Hosts“, „Gegenseitige Follower des Hosts“ oder „Nur Personen, denen die Hosts das Sprechen erlauben“.
+- **Wer den Raum sehen und betreten kann**: „Alle auf diesem Server“, „Follower des Hosts“, „Personen, denen der Gastgeber folgt“, „Gegenseitige Follower des Hosts“ oder „Nur eingeladene Personen“.
+- **Wer ohne Nachfrage sprechen darf**: „Alle, die beitreten“, „Follower des Hosts“, „Personen, denen der Gastgeber folgt“, „Gegenseitige Follower des Hosts“ oder „Nur Personen, denen die Hosts das Sprechen erlauben“.
 - **Beitrag über den Raum**: ein Beitrag mit dem Link zum Raum, sichtbar für alle auf diesem Server oder nur für deine Follower.
   Auf einem Server mit nur einer Person geht der Beitrag über einen Raum für alle auf diesem Server an deine Follower.
 

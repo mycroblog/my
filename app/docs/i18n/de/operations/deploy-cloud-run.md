@@ -122,10 +122,10 @@ Der KEK erreicht den Server als eingebundene Datei, benannt durch `MY_KEK_FILE`.
 
 Um den KEK von Anfang an in Cloud KMS zu halten, ersetze den `kek`-Block in `main.tf`, wie sein Kommentar es zeigt, und aktiviere `cloudkms.googleapis.com`. Um einen eigenen KEK oder VAPID-Schlüssel mitzubringen, setze `create = false` am `kek`-Modul oder entferne den Schlüssel aus `generate_p256_keys`, vor diesem Schritt. Ein anderswo angelegtes Secret braucht nur seine ID: Gib sie an `secret_env` des App-Moduls oder an das Modul weiter, das es verwendet.
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
-### 5. Anlegen, was die Migration braucht
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
+### 5. Erstelle, was die Migration braucht
 
-Der Startup-Probe des Dienstes wartet auf `/readyz`, das `503` antwortet, bis das Schema existiert, daher muss das Schema zuerst kommen. Lege den Migrations-Job und alles an, wovon er abhängt, einschließlich der Adresse des Load Balancers, da die Einstellungen des Servers sie nennen:
+Der Startup-Probe des Dienstes wartet auf `/health/ready`, das mit `503` antwortet, bis das Schema existiert, daher muss das Schema zuerst kommen. Erstelle den Migrations-Job und das, wovon er abhängt, wozu die Adresse des Load Balancers gehört, da die Einstellungen des Servers sie nennen:
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,10 +189,10 @@ tofu apply -var console_enabled=false
 
 Der Befehl hat keine Standardeingabe und kein Terminal, daher lässt sich ein Befehl, der ein Passwort oder eine Datei von dort liest, so nicht ausführen. Was er ausgibt, bleibt in den Logs, führe also keinen Befehl aus, dessen Ausgabe du nicht dort hinschreiben würdest.
 
-<!-- source: upgrading 1a1e204c5173 -->
-## Aktualisieren
+<!-- source: upgrading 31acbd137681 -->
+## Upgrade
 
-Lies zuerst [Aktualisieren](database.md#upgrading) und die Release Notes, und gehe jeweils eine Minor-Version weiter.
+Lies zuerst [Upgrade](database.md#upgrading) und die Release Notes und gehe jeweils eine Minor-Version weiter.
 
 ```sh
 # 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
@@ -206,29 +206,29 @@ pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 "$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
 ```
 
-Das Skript tut Folgendes und hält beim ersten Schritt an, der scheitert:
+Das Skript tut Folgendes und hält beim ersten Schritt an, der fehlschlägt:
 
 1. Schaltet den Dienst mit `--maintenance` in den [Wartungsmodus](maintenance.md).
 2. Gibt dem Migrations-Job das neue Image.
-3. Führt `my config check`, `my db upgrade -check`, `my schema apply` und `my db upgrade` aus, jeweils im Anschluss an den vorherigen.
-4. Stellt die neue Revision bereit, ohne den Wartungsmodus. Sie nimmt Traffic erst an, wenn ihr Startup-Probe auf `/readyz` besteht.
+3. Führt `my config check`, `my db upgrade -check`, `my schema apply` und `my db upgrade` aus, jeweils im Warten auf den vorigen.
+4. Stellt die neue Revision ohne Wartungsmodus bereit. Sie nimmt Traffic erst an, wenn ihr Startup-Probe auf `/health/ready` besteht.
 
-Ohne `--maintenance` bedient die alte Revision während der Schritte 2 und 3 weiter Anfragen, was [nicht garantiert funktioniert](database.md#the-server-during-an-upgrade). Füge `--allow-destructive` hinzu, wenn die Release Notes es verlangen. Pinne einen Digest mit `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, was die [Produktions-Checkliste](production-checklist.md#operations) empfiehlt.
+Ohne `--maintenance` bedient die alte Revision während der Schritte 2 und 3 weiter, was [nicht garantiert funktioniert](database.md#the-server-during-an-upgrade). Füge `--allow-destructive` hinzu, wenn die Release Notes es verlangen. Hefte einen Digest mit `--image ghcr.io/mycroblog/my:0.2.0@sha256:...` an, was die [Produktions-Checkliste](production-checklist.md#operations) empfiehlt.
 
-Setze dann `image` in `terraform.tfvars` auf denselben Wert und `ref` in `main.tf` auf dasselbe Release, gefolgt von `tofu init` und `tofu plan`. Lies diesen Plan, bevor du ihn anwendest: Die Module eines neuen Releases können Ressourcen ändern. `tofu apply` ändert nie das Image eines Dienstes oder Jobs, der existiert, ein vergessenes `image` schadet also nicht, aber der Wert ist das, womit ein neuer Job oder ein neu angelegter Dienst starten würde.
+Setze dann `image` in `terraform.tfvars` auf denselben Wert und `ref` in `main.tf` auf dasselbe Release, gefolgt von `tofu init` und `tofu plan`. Lies diesen Plan, bevor du ihn anwendest: Die Module eines neuen Releases können Ressourcen ändern. `tofu apply` ändert nie das Image eines Dienstes oder Jobs, der existiert, ein vergessenes `image` schadet also nicht, aber der Wert ist das, womit ein neuer Job oder ein neu erstellter Dienst starten würde.
 
-**Wenn ein Schritt scheitert**, bleibt der Dienst auf seiner Revision, im Wartungsmodus, wenn du ihn verlangt hast. Behebe die Ursache und führe das Skript erneut aus: Die Schritte lassen sich gefahrlos wiederholen. So verlässt du den Wartungsmodus ohne Aktualisierung, wenn `my schema apply` nicht gelaufen ist:
+**Wenn ein Schritt fehlschlägt**, bleibt der Dienst auf seiner Revision, im Wartungsmodus, wenn du ihn verlangt hast. Behebe die Ursache und führe das Skript erneut aus: Die Schritte lassen sich gefahrlos wiederholen. So verlässt du den Wartungsmodus, ohne zu upgraden, solange `my schema apply` nicht gelaufen ist:
 
 ```sh
 gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
 ```
 
-Um nach einer Schemaänderung zurückzugehen, stelle das Backup wieder her: siehe [Zurückrollen](database.md#rolling-back).
+Um nach einer Schemaänderung zurückzugehen, stelle das Backup wieder her: siehe [Zurückgehen](database.md#rolling-back).
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
-## Überwachung und Alarme
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
+## Monitoring und Alarme
 
-Das Modul [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) fügt einen Uptime-Check von `/readyz`, Alert-Policies mit den Namen [des Runbooks](alerts.md) und E-Mail-Benachrichtigungen hinzu. Es wurde noch nie angewendet, probiere es also einmal aus, indem du einen Check scheitern lässt. Aktiviere zuerst `monitoring.googleapis.com` und lies in seiner README, was der Check kostet: Jeder Lauf weckt eine Instanz und über `/readyz` die Datenbank, was zu [den Abwägungen des Ticks](#costs) hinzukommt.
+Das Modul [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) fügt eine Uptime-Prüfung von `/health/live`, Alarmrichtlinien mit den Namen aus [dem Runbook](alerts.md) und E-Mail-Benachrichtigungen hinzu. Es wurde noch nie angewendet, probiere es also einmal aus, indem du eine Prüfung fehlschlagen lässt. Aktiviere zuerst `monitoring.googleapis.com` und lies in seiner README, was die Prüfung kostet: Jeder Lauf weckt eine Instanz auf, und die Datenbank ebenfalls, wenn du sie auf `/health/ready` richtest, was zu [dem Zielkonflikt beim Tick](#costs) hinzukommt.
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## Ein Backend wechseln
@@ -334,22 +334,23 @@ Cloud Tasks und Cloud Scheduler kommen über keinen von beiden: Sie rufen die St
 
 Um die eigene URL des Dienstes oder etwas anderes davor zu verwenden, etwa ein CDN, entferne den `ingress`-Block und seine Zeile in `backends` und lass `service_ingress` bei dem, was du brauchst: Es ist immer deine ausdrückliche Wahl, und `all` lässt die `run.app`-URL für jeden offen. Setze `MY_TRUSTED_PROXIES` in `env` auf das, was sich mit dem Server verbindet. Was auch immer du davorsetzt, muss weiterhin unter `https://{host}` antworten.
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` setzt Cloudflare vor `host`, wobei der Cache für alles umgangen wird, und `ingress-cloudflare-media` fügt neben jedem Ingress einen zwischengespeicherten Medien-Host hinzu. Lies zuerst die README jedes Moduls ([App](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [Medien](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). Der Token kommt in `CLOUDFLARE_API_TOKEN`. Diese Module sind nur auf gemockten Providern gelaufen.
+`ingress-cloudflare-app` stellt Cloudflare vor `host`, wobei der Cache für alles umgangen wird, und `ingress-cloudflare-media` fügt neben jedem Ingress einen zwischengespeicherten Medien-Host hinzu. Lies zuerst die README jedes Moduls ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). Das Token kommt in `CLOUDFLARE_API_TOKEN`. Diese Module sind nur mit gemockten Providern gelaufen.
 
-- **Dein Tarif bestimmt den Origin.** Cloud Run routet nach `Host`, und Cloudflare bietet das Überschreiben des Host-Headers nur im Enterprise-Tarif an. In jedem anderen Tarif lässt ein `*.run.app`-Origin den Plan scheitern, daher muss der Origin deinen Host selbst akzeptieren: Behalte ein `ingress-gcp-domain-mapping` dieses Hosts, außerhalb von `backends`, und setze `origin_host = "ghs.googlehosted.com"`. Jeder Host braucht ein eigenes Mapping. Ob sein Zertifikat hinter dem Proxy ausgestellt und erneuert wird, ist ungeprüft, beginne also mit `proxied = false`.
-- **Ein Header schließt den Origin.** `ingress-cloudflare-app` fügt eine Transform-Regel für einen Request-Header hinzu, und der Server weist eine Anfrage ohne den Header mit `403` ab, abgesehen von Health-Checks und den eigenen `POST`s der Jobs, die ihre Token prüfen. So geht niemand über die `run.app`-URL an Cloudflare vorbei, und ein eigener Cloudflare Worker eines Aufrufers kann die Client-Adresse, die die Ratenbegrenzungen sehen, nicht wählen.
-- **Der Wert landet im State.** Der Cloudflare-Provider hat keine Write-only-Form für den Header-Wert einer Regel. Generiere einen mit `openssl rand -hex 32`, füge ihn mit `gcloud secrets versions add` zu einem Secret hinzu, gib denselben Wert mit `TF_VAR_origin_secret` mit und halte den State privat. [Der CDN-Leitfaden](cdn.md#rotate-the-value) beschreibt, wie du ihn rotierst.
-- **Nichts fügt den Header hinzu, solange ein Record nicht geproxyt ist**, daher weist der Server alles außer seinen Health-Checks ab: Setze bei `proxied = false` für das Zertifikat eines Domain-Mappings das Secret danach auf.
-- **Schalte Bot Fight Mode aus** im Dashboard. Er gilt für die ganze Zone, keine Regel kann ihn überspringen, und eine Challenge auf `/ap/`, `/.well-known/` oder `/api/` bricht die Föderation, weil andere Server keine Browser sind. Jobs laufen nicht über Cloudflare. Die Module fügen keine Challenge hinzu und schalten Browser Integrity Check aus, verwalten Bot Fight Mode aber nicht. Schalte aus demselben Grund „I'm Under Attack“ nicht ein.
-- **Schalte Always Use HTTPS ein** im Dashboard, wenn `http://` umgeleitet werden soll. Es gilt für die ganze Zone, daher überlassen die Module es dir.
-- **Timeouts**: Cloudflare antwortet mit `524`, wenn der Origin 125 Sekunden lang nichts sendet. Jobs sind nicht betroffen, da sie die `run.app`-URL direkt aufrufen. Streams senden alle 30 Sekunden einen Heartbeat, unter dem Leerlauflimit von 900 Sekunden. Ob es Streams auf einem gewöhnlichen geproxyten Host puffert, ist ungeprüft.
-- **Uploads**: 100 MB in Free und Pro, über den 32 MiB von Cloud Run, die das Limit bleiben.
-- **Video**: Die Bedingungen von Cloudflare schränken das Ausliefern von Video und eines unverhältnismäßig großen Anteils großer Dateien in Free, Pro und Business ein, und es kann die Inhalte umleiten oder andere Maßnahmen ergreifen. Entscheide das, bevor du Video auf dem Medien-Host zwischenspeicherst.
+- **Dein Tarif bestimmt den Origin.** Cloud Run routet nach `Host`, und Cloudflare bietet das Überschreiben des Host-Headers nur im Enterprise-Tarif an. Bei jedem anderen Tarif scheitert ein `*.run.app`-Origin am Plan, daher muss der Origin deinen Host selbst akzeptieren: Behalte ein `ingress-gcp-domain-mapping` dieses Hosts, außerhalb von `backends`, und setze `origin_host = "ghs.googlehosted.com"`. Jeder Host braucht ein eigenes Mapping. Ob sein Zertifikat hinter dem Proxy ausgestellt und erneuert wird, ist ungeprüft, beginne also mit `proxied = false`.
+- **Ein Header schließt den Origin.** `ingress-cloudflare-app` fügt eine Transform Rule für Anfrage-Header hinzu, und der Server lehnt eine Anfrage ohne den Header mit `403` ab, abgesehen von Health-Checks und den eigenen `POST`s der Jobs, die ihre Tokens prüfen. So geht niemand über die `run.app`-URL an Cloudflare vorbei, und ein eigener Cloudflare Worker eines Aufrufers kann die Client-Adresse, die die Ratenlimits sehen, nicht wählen.
+- **Der Wert landet im State.** Der Cloudflare-Provider hat keine Write-only-Form für den Header-Wert einer Regel. Erzeuge einen mit `openssl rand -hex 32`, füge ihn mit `gcloud secrets versions add` einem Secret hinzu, übergib denselben Wert mit `TF_VAR_origin_secret` und halte den State privat. [Die CDN-Anleitung](cdn.md#rotate-the-value) beschreibt, wie du ihn rotierst.
+- **Nichts fügt den Header hinzu, solange ein Record nicht geproxyt ist**, daher lehnt der Server alles außer seinen Health-Checks ab: Richte das Secret bei `proxied = false` für das Zertifikat eines Domain-Mappings erst danach ein.
+- **Schalte Bot Fight Mode aus** im Dashboard. Er gilt für die ganze Zone, und keine Regel kann ihn überspringen, und eine Challenge auf `/ap/`, `/.well-known/` oder `/api/` bricht die Föderation, weil andere Server keine Browser sind. Jobs kommen nicht über Cloudflare. Die Module fügen keine Challenge hinzu und schalten Browser Integrity Check aus, verwalten aber Bot Fight Mode nicht. Schalte aus demselben Grund „I'm Under Attack“ nicht ein.
+- **Email Address Obfuscation kann eingeschaltet bleiben.** Sie schreibt E-Mail-Adressen in HTML in `[email protected]` um und fügt ein Skript hinzu, das sie wiederherstellt, was die Content-Security-Policy des Servers ablehnt. Die eigenen Seiten des Servers, etwa die, die sagt, wohin die Bestätigungs-E-Mail ging, markieren ihren Inhalt so, dass die Adressen in Ruhe gelassen werden.
+- **Schalte Always Use HTTPS ein** im Dashboard, wenn du `http://` umleiten willst. Es gilt für die ganze Zone, daher überlassen die Module es dir.
+- **Timeouts**: Cloudflare antwortet mit `524`, wenn der Origin 125 Sekunden lang nichts sendet. Jobs sind nicht betroffen, da sie die `run.app`-URL direkt aufrufen. Streams senden alle 30 Sekunden einen Heartbeat, unter dem Leerlauf-Limit von 900 Sekunden. Ob es Streams auf einem gewöhnlichen geproxyten Host puffert, ist ungeprüft.
+- **Uploads**: 100 MB bei Free und Pro, über den 32 MiB von Cloud Run, die das Limit bleiben.
+- **Video**: Die Bedingungen von Cloudflare beschränken die Auslieferung von Video und eines unverhältnismäßig großen Anteils großer Dateien bei Free, Pro und Business, und es kann den Inhalt umleiten oder andere Maßnahmen ergreifen. Entscheide das, bevor du Video auf dem Medien-Host zwischenspeicherst.
 
-**Eine gelöschte Datei bleibt im Cache.** Der Medien-Host folgt dem `Cache-Control` des Servers, daher kann eine gelöschte lokale Datei bis zu einem Jahr sichtbar bleiben und eine entfernte für `remote_media_cache_ttl_seconds`. Der Server leert sie nicht. Wenn etwas verschwinden muss, leere sie von Hand, unter **Caching > Configuration > Custom Purge** im Dashboard, oder:
+**Eine gelöschte Datei bleibt zwischengespeichert.** Der Medien-Host folgt dem `Cache-Control` des Servers, sodass eine gelöschte lokale Datei bis zu einem Jahr sichtbar bleiben kann und eine entfernte für `remote_media_cache_ttl_seconds`. Der Server leert sie nicht. Wenn etwas verschwinden muss, leere sie von Hand, im Dashboard unter **Caching > Configuration > Custom Purge**, oder:
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -358,7 +359,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-Eine Proxy-URL trägt ihr `sig` im Query-String, der Teil dessen ist, was zwischengespeichert wird, gib also die ganze URL an.
+Eine Proxy-URL trägt ihr `sig` im Query-String, der zu dem gehört, was zwischengespeichert wird, gib also die ganze URL an.
 
 <!-- source: changing-the-kek-backend c5e918ea5c81 -->
 ## Das KEK-Backend wechseln

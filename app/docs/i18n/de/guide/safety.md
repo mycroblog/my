@@ -1,8 +1,7 @@
-<!-- source: blocking-muting-and-reporting 579ef248db11 -->
-# Blockieren, stummschalten und melden
+<!-- source: blocking-muting-and-reporting 0cd495fa1cdf -->
+# Blockieren, Stummschalten und Melden
 
-Du entscheidest, was du liest und wer dich erreichen kann. Blockieren und Stummschalten betreffen nur dich; eine Meldung
-geht an die Moderatoren des Servers.
+Du entscheidest, was du liest und wer dich erreichen kann. Blockieren, Stummschalten und Stichwortfilter gehören allein dir; eine Meldung geht an die Moderatoren des Servers.
 
 <!-- source: blocking-an-account 2804abdbd6d1 -->
 ## Ein Konto blockieren
@@ -17,13 +16,12 @@ Ein Block blendet außerdem die Beiträge von euch beiden füreinander aus.
 „Blockierte Konten“ unter „Beziehungen“ in den Einstellungen listet die Konten auf, die du blockierst, und lässt dich
 die „Blockierung aufheben“.
 
-<!-- source: muting-an-account 6e2f59e6e3ca -->
+<!-- source: muting-an-account a1cd044e5bfd -->
 ## Ein Konto stummschalten
 
-„Stummschalten“ im selben Menü blendet die Beiträge des Kontos und seine Benachrichtigungen für dich aus. Wer wem folgt,
-ändert sich dadurch nicht. „Stummgeschaltete Konten“ unter „Beziehungen“ in den Einstellungen listet sie auf, zeigt,
-wann eine Stummschaltung endet („Bis …“) und ob die „Benachrichtigungen ebenfalls ausgeblendet“ sind, und lässt dich
-die „Stummschaltung aufheben“.
+„Stummschalten“ im selben Menü blendet die Beiträge des Kontos und seine Benachrichtigungen für dich aus. Es ändert nichts daran, wer wem folgt. „Stummgeschaltete Konten“ unter „Beziehungen“ in den Einstellungen listet sie auf, zeigt, wann eine Stummschaltung endet („Bis …“) und ob „Benachrichtigungen ebenfalls ausgeblendet“ sind, und lässt dich die „Stummschaltung aufheben“.
+
+Um nur die Benachrichtigungen einer Unterhaltung zu stoppen und ihre Beiträge weiter zu lesen, schalte stattdessen den Thread stumm (siehe [Einen Thread stummschalten](notifications.md#muting-a-thread)). Um die Benachrichtigungen von Leuten, die du nicht kennst, zurückzuhalten, bis du sie annimmst, nutze die Benachrichtigungsregel (siehe [Benachrichtigungen von Leuten zurückhalten, die du nicht kennst](notifications.md#holding-notifications-from-people-you-dont-know)).
 
 <!-- source: muting-a-server 71b077a8504c -->
 ## Einen Server stummschalten
@@ -33,6 +31,11 @@ die „Stummschaltung aufheben“.
 Timelines außer der Home-Timeline aus, ihre Boosts in deiner Home-Timeline und ihre Benachrichtigungen. Die Konten
 dieses Servers, denen du folgst, bleiben in deiner Home-Timeline. Es betrifft nur dich, und der Server wird nicht
 informiert.
+
+<!-- source: filtering-posts-by-keyword e09ea3dbfb6c -->
+## Beiträge nach Stichwort filtern
+
+„Stichwortfilter“ unter „Anzeige und Benachrichtigungen“ in den Einstellungen klappt Beiträge ein oder blendet sie aus, die Wörter enthalten, die du wählst, egal wer sie geschrieben hat. [Stichwortfilter](keyword-filters.md) erklärt, wie du sie einrichtest und wie ihre Wörter passen.
 
 <!-- source: reporting-an-account-or-a-post 9218da02d103 -->
 ## Ein Konto oder einen Beitrag melden

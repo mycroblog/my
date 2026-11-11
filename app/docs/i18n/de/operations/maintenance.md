@@ -10,24 +10,24 @@ Es gibt zwei Werkzeuge:
 - **Die exportierte Seite** (`my maintenance export`). Statisches HTML aus demselben Template, das ein Load Balancer, CDN oder Reverse-Proxy ausliefert,
   wenn `my serve` gar nicht laufen kann (ein Image wird ersetzt, eine Revision startet nicht). Siehe [Die Wartungsseite exportieren](admin-cli.md#exporting-the-maintenance-page).
 
-<!-- source: what-the-maintenance-mode-answers 05dd30158a8e -->
+<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
 ## Was der Wartungsmodus antwortet
 
 Der Prozess liest nur die Listen-Adresse, `host`, `account_domain`, `web_origin`, die Proxys (`trusted_proxies`, `trusted_proxy_header`),
-die [Origin-Prüfung](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` und die `maintenance_*`-Einstellungen ([Konfigurationsreferenz](../reference/configuration.md)).
-Die Einstellungen von Datenbank, Queue, Blob-Speicher, KV, Mail und Stream werden nicht gelesen oder geprüft, sodass sie in der Zwischenzeit falsch oder nicht erreichbar sein dürfen.
-Unabhängig von der `role` liefert er nur HTTP: keine Jobs, keine periodischen Jobs, keinen Stream-Broker.
+die [Origin-Prüfung](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` und die Einstellungen `maintenance_*` ([Konfigurationsreferenz](../reference/configuration.md)).
+Die Einstellungen von Datenbank, Queue, Blob-Store, KV, Mail und Stream werden nicht gelesen oder geprüft, sodass sie in der Zwischenzeit falsch oder nicht erreichbar sein dürfen.
+Was auch immer die `role` ist, er bedient nur HTTP: keine Jobs, keine periodischen Jobs, keinen Stream-Broker.
 `my config check -maintenance` prüft genau das, was der Wartungsmodus liest.
 
-Ist [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) gesetzt, bekommt eine Anfrage, die den Header braucht und ihn nicht hat, das `403` dieser Prüfung statt der Tabelle unten.
+Ist [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) gesetzt, erhält eine Anfrage, die den Header braucht und ihn nicht hat, das `403` dieser Prüfung statt der folgenden Tabelle.
 
 | Anfrage | Status | Body |
 | --- | --- | --- |
-| `GET /healthz`, `GET /readyz` | `200` | `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /readyz`, `GET /health/live`, `GET /health/ready` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
-| Der Rest der Client-API (`/api/*`) und die OAuth-Endpunkte, die JSON beantworten | `503` | `application/problem+json` vom Typ `/api/v1/problems/maintenance`, mit `message`, `until` und, wenn gesetzt, `status_page_url` |
+| Der Rest der Client-API (`/api/*`) und die OAuth-Endpunkte, die JSON antworten | `503` | `application/problem+json` vom Typ `/api/v1/problems/maintenance`, mit `message`, `until` und, wenn gesetzt, `status_page_url` |
 | ActivityPub (nach Pfad, `Accept` oder `Content-Type`), WebFinger, host-meta, NodeInfo, die Zahlungs-Webhooks, die Aufrufe von Cloud Tasks und Cloud Scheduler (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
-| Alles andere (Seiten, der Web-Client, seine Assets, Formular-Posts) | `503` | Die Wartungsseite oder das Problem, wenn `Accept` nach JSON fragt |
+| Alles andere (Seiten, der Webclient, seine Assets, Formular-Posts) | `503` | Die Wartungsseite oder das Problem, wenn `Accept` JSON verlangt |
 
 Jede Antwort hat `Retry-After` und `Cache-Control: no-store`. `Retry-After` zählt die Sekunden bis `maintenance_until`, solange es in der Zukunft liegt
 (höchstens 86.400), und ist sonst `maintenance_retry_after` (eine Go-Dauer, Standard `10m`).
@@ -36,16 +36,16 @@ Die Seite und das Problem zeigen:
 
 | Einstellung | Angezeigt als |
 | --- | --- |
-| `maintenance_server_name` | Der Name des Servers. Der Hostname, wenn nicht gesetzt (der eigene Name des Servers steht in der Datenbank) |
-| `maintenance_message` | Ein Hinweis als reiner Text, höchstens 2.000 Zeichen, in jedem Locale gleich |
-| `maintenance_until` | Wann die Arbeiten voraussichtlich enden (RFC 3339). Die Seite zeigt es in UTC; der Web-Client in der Zeitzone des Nutzers |
-| `status_page_url` | Ein Link zur Statusseite ([Überwachung](monitoring.md#a-status-page)) |
+| `maintenance_server_name` | Der Name des Servers. Der Hostname, wenn nicht gesetzt (der eigene Name der Instanz steht in der Datenbank) |
+| `maintenance_message` | Ein Hinweis als reiner Text, höchstens 2.000 Zeichen, in jeder Sprache derselbe |
+| `maintenance_until` | Wann das Ende der Arbeiten erwartet wird (RFC 3339). Die Seite zeigt es in UTC; der Webclient in der Zeitzone des Benutzers |
+| `status_page_url` | Ein Link zur Statusseite ([Monitoring](monitoring.md#a-status-page)) |
 
-Die `maintenance_*`-Einstellungen dürfen im normalen Betrieb gesetzt bleiben: Sie werden nur verwendet, solange `maintenance` wahr ist.
+Die Einstellungen `maintenance_*` dürfen im Normalbetrieb gesetzt bleiben: Sie werden nur verwendet, solange `maintenance` wahr ist.
 Die Texte der Seite folgen `Accept-Language` (sonst Englisch).
 
-Der Web-Client zeigt einen Wartungshinweis im Vollbild, wenn die API mit dem Wartungsproblem antwortet,
-hält den Nutzer angemeldet und versucht es nach `Retry-After` erneut.
+Der Webclient zeigt einen Wartungshinweis im Vollbild, wenn die API mit dem Wartungsproblem antwortet,
+hält den Benutzer angemeldet und versucht es nach `Retry-After` erneut.
 
 <!-- source: how-long a7b6a44f0269 -->
 ## Wie lange
@@ -57,34 +57,34 @@ nach ihren Wiederholungsplänen).
 Suchmaschinen behandeln ein kurzes `503` als vorübergehenden Ausfall, aber Google rät davon ab, für `robots.txt` länger als ein oder zwei Tage `503` auszuliefern.
 Ein Stillstand von mehr als ein oder zwei Tagen ist keine Wartung: Schließe stattdessen den Dienst ([Den Dienst schließen](service-closure.md)).
 
-<!-- source: steps 1427d2c6d499 -->
+<!-- source: steps 9377fd324cdc -->
 ## Schritte
 
-1. **Kündige sie an.** Veröffentliche das Zeitfenster rechtzeitig vorher auf der Statusseite (`status_page_url`) und als Ankündigung (Administration → Ankündigungen).
-   Setze `maintenance_message` und `maintenance_until` in der Konfiguration des Deployments und aktualisiere die exportierten Seiten
+1. **Kündige es an.** Veröffentliche das Zeitfenster eine Weile im Voraus auf der Statusseite (`status_page_url`) und als Ankündigung (Administration → Ankündigungen).
+   Setze `maintenance_message` und `maintenance_until` in der Konfiguration der Bereitstellung und aktualisiere die exportierten Seiten
    (`my maintenance export`), wenn das Frontend sie ausliefert.
-2. **Halte die Push-Queue an** (Cloud Tasks) — siehe [unten](#push-queues). Sonst ist jede Zustellung während des Fensters
-   ein `503`, das einen der Versuche der Aufgabe verbraucht.
-3. **Schalte in den Wartungsmodus**: Führe das Deployment mit `MY_MAINTENANCE=true` erneut aus (je Ziel unten). Jede Replika startet im Wartungsmodus neu;
+2. **Stoppe die Push-Queue** (Cloud Tasks) — siehe [unten](#push-queues). Sonst ist jede Zustellung während des Zeitfensters
+   ein `503`, das einen der Versuche der Task aufbraucht.
+3. **Schalte in den Wartungsmodus**: Stelle mit `MY_MAINTENANCE=true` neu bereit (je Ziel unten). Jedes Replikat startet im Wartungsmodus neu;
    der Load Balancer behält sie, weil `/readyz` mit `200` antwortet.
 4. **Erledige die Arbeit.**
-5. **Schalte zurück**: Führe das Deployment ohne `MY_MAINTENANCE` (oder mit `false`) erneut aus, prüfe, dass `/readyz` und `/api/v1/instance/health` mit `{"status":"ok"}` antworten,
+5. **Schalte zurück**: Stelle ohne `MY_MAINTENANCE` (oder mit `false`) neu bereit, prüfe, dass `/health/ready` und `/api/v1/instance/health` mit `{"status":"ok"}` antworten,
    setze dann die Push-Queue fort und schließe die Ankündigung.
 
-![Was der Server vor, während und nach dem Wartungsmodus je Art der Anfrage antwortet: wie gewohnt davor und danach, und 503 mit Retry-After währenddessen, außer bei /healthz und /readyz, die 200 bleiben. Die Liste unten sagt dasselbe.](images/maintenance.svg)
+![Was der Server vor, während und nach dem Wartungsmodus antwortet, nach Art der Anfrage: davor und danach wie gewohnt und während des Modus 503 mit Retry-After, außer bei den Health-Checks (/healthz, /readyz, /health/live, /health/ready), die 200 bleiben. Die Liste unten sagt dasselbe.](images/maintenance.svg)
 
 Von links nach rechts:
 
 - **Davor**, während du die Wartung ankündigst, wird jede Anfrage wie gewohnt beantwortet: `/healthz`, `/readyz` und
   `/api/v1/instance/health` antworten mit `200` und `{"status":"ok"}`.
 - **Im Wartungsmodus** (`MY_MAINTENANCE=true`):
-  - `/healthz` und `/readyz` antworten mit `200` und `{"status":"maintenance"}`.
+  - `/healthz`, `/readyz`, `/health/live` und `/health/ready` antworten mit `200` und `{"status":"maintenance"}`.
   - `/api/v1/instance/health` antwortet mit `503` und `{"status":"maintenance"}`.
-  - Der Rest der Client-API und die OAuth-Endpunkte, die JSON beantworten, bekommen `503` mit dem Wartungsproblem.
+  - Der Rest der Client-API und die OAuth-Endpunkte, die JSON antworten, erhalten `503` mit dem Wartungsproblem.
   - ActivityPub, WebFinger und NodeInfo antworten mit `503` und `{"error":"maintenance"}`.
-  - Seiten und der Web-Client bekommen `503` mit der Wartungsseite.
+  - Seiten und der Webclient erhalten `503` mit der Wartungsseite.
   - Jede Antwort hat `Retry-After` und `Cache-Control: no-store`.
-- **Danach**, wenn du das Deployment ohne `MY_MAINTENANCE` erneut ausgeführt hast, wird jede Anfrage wieder wie gewohnt beantwortet.
+- **Danach**, wenn du ohne `MY_MAINTENANCE` neu bereitstellst, wird jede Anfrage wieder wie gewohnt beantwortet.
 
 <!-- source: push-queues 0d0d1fc56a29 -->
 ### Push-Queues
@@ -226,9 +226,9 @@ metadata:
     nginx.ingress.kubernetes.io/default-backend: my-maintenance   # a Service in the same namespace
 ```
 
-<!-- source: monitoring-during-the-maintenance 91e64028447e -->
-## Überwachung während der Wartung
+<!-- source: monitoring-during-the-maintenance 76cf0bd38c93 -->
+## Monitoring während der Wartung
 
-- `/healthz` und `/readyz` bleiben `200` mit `{"status":"maintenance"}`: Load Balancer und Kubernetes behalten die Server.
-- `/api/v1/instance/health` antwortet mit `503` und `{"status":"maintenance"}` ([Überwachung](monitoring.md)).
-  Uptime-Monitore sehen den Server als ausgefallen, außer sie prüfen den Body oder haben ein Wartungsfenster; pausiere sie oder lege das Fenster fest.
+- `/healthz`, `/readyz`, `/health/live` und `/health/ready` bleiben `200` mit `{"status":"maintenance"}`: Load Balancer und Kubernetes behalten die Instanzen.
+- `/api/v1/instance/health` antwortet mit `503` und `{"status":"maintenance"}` ([Monitoring](monitoring.md)).
+  Uptime-Monitore sehen den Server als ausgefallen, es sei denn, sie gleichen den Body ab oder haben ein Wartungsfenster; pausiere sie oder setze das Fenster.
