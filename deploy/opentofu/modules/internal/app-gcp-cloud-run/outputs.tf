@@ -75,3 +75,17 @@ output "worker_env" {
   description = "The settings of each worker's service, without GOMEMLIMIT."
   value       = { for key, w in local.workers : key => w.env }
 }
+
+output "images" {
+  description = "The image of the service, of each worker by its key, and of the migration job, as the platform has them after an apply."
+  value = {
+    service   = google_cloud_run_v2_service.server.template[0].containers[0].image
+    workers   = { for key, w in google_cloud_run_v2_service.worker : key => w.template[0].containers[0].image }
+    migration = google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].containers[0].image
+  }
+}
+
+output "migration_id" {
+  description = "The run of the migration for the current image, which a new image replaces, or null without migration."
+  value       = try(terraform_data.migrate.id, null)
+}

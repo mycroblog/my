@@ -20,7 +20,7 @@ variable "name" {
 }
 
 variable "image" {
-  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>, optionally with @sha256:<digest>. After that only the upgrade script changes the image: apply keeps what runs."
+  description = "Server image, as ghcr.io/mycroblog/my:<version>, optionally with @sha256:<digest>. The jobs, the workers, and the service take it; with migration, a new one runs the migration before the workers and the service move."
   type        = string
   nullable    = false
 
@@ -28,6 +28,16 @@ variable "image" {
     condition     = can(regex("(:[^/:@]+|@sha256:[0-9a-f]{64})$", var.image)) && !can(regex(":latest(@|$)", var.image))
     error_message = "image must name a version or a digest. There is no latest tag."
   }
+}
+
+variable "migration" {
+  description = "The migration that a new image runs before the workers and the service take it, on the machine that applies: script, the path of migrate.sh beside the public module; version, the version being applied; and allow_destructive_for, the version for which my upgrade gets -allow-destructive. Null runs none, and every resource takes the image at once."
+  type = object({
+    script                = string
+    version               = optional(string, "")
+    allow_destructive_for = optional(string, "")
+  })
+  default = null
 }
 
 variable "host" {

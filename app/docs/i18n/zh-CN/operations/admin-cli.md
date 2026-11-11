@@ -19,7 +19,7 @@ my admin create -username alice -email alice@example.com
 
 - 在终端中运行时，命令会要求输入两次密码，且不回显。
 - 当标准输入不是终端时，标准输入的第一行就是密码（例如 `my admin create ... < password.txt`）。密码不能作为命令行参数或环境变量传入，因为它们会出现在进程列表和 shell 历史中。
-- 如果一次性命令既没有终端也没有标准输入，例如 [Cloud Run 任务](deploy-cloud-run.md#9-create-the-first-administrator)，请加上 `-password-link`。这时命令不读取密码：它会设置一个无人知晓的随机密码，并在 `created admin` 行之后打印一个链接，该链接可在一小时内设置一次密码，与 `my admin account password-reset-link` 相同（审计日志将其记录为 `password_reset_link_issued`）。任何能读到命令输出的人都可以使用该链接，而在这类平台上，输出会一直保留在平台日志中，直到链接被使用或过期。请立即打开链接。如果链接过期，用 `my admin account password-reset-link @alice` 再签发一个。如果签发链接失败，管理员已经创建：命令会说明这一点并以退出码 1 退出，再运行同一命令即可获得新链接。
+- 如果一次性命令既没有终端也没有标准输入，例如 [Cloud Run 任务](deploy-cloud-run.md#7-create-the-first-administrator)，请加上 `-password-link`。这时命令不读取密码：它会设置一个无人知晓的随机密码，并在 `created admin` 行之后打印一个链接，该链接可在一小时内设置一次密码，与 `my admin account password-reset-link` 相同（审计日志将其记录为 `password_reset_link_issued`）。任何能读到命令输出的人都可以使用该链接，而在这类平台上，输出会一直保留在平台日志中，直到链接被使用或过期。请立即打开链接。如果链接过期，用 `my admin account password-reset-link @alice` 再签发一个。如果签发链接失败，管理员已经创建：命令会说明这一点并以退出码 1 退出，再运行同一命令即可获得新链接。
 - 密码长度为 8 到 128 个字符。密码永远不会出现在输出、日志或错误信息中。
 - 用户、密码、主邮箱地址、本地账号（及其密钥）和 `admin` 角色的授予（没有授予者，表示由 CLI 授予）在同一个事务中创建。如果内置角色不存在，会先创建它们。
 - 成功时，命令打印 `created admin @alice@<account_domain> (user <id>, account <id>)` 并以退出码 0 退出。

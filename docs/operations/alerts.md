@@ -90,7 +90,7 @@ are not written in EMF; use the CPU and memory metrics of the ECS service instea
 - **Email** (`mail = ses`): the SES reputation metrics (bounce and complaint rates) in CloudWatch.
 - **Cost**: an AWS Budgets budget with alerts ([Cost and budget](#cost-and-budget)).
 
-The module [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) makes these as alarms with the names of the table below, with the same list. It has never been applied.
+The `monitoring` section of [`mycroblog-aws`](../../deploy/opentofu/README.md#sections) makes these as alarms with the names of the table below, and [the README of the module behind it](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) has the same list. It has never been applied.
 
 ## The alerts
 

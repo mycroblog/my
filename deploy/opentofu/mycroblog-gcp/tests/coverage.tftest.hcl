@@ -62,7 +62,6 @@ mock_provider "cloudflare" {
 
 variables {
   host  = "social.example.org"
-  image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
 
@@ -91,7 +90,7 @@ run "the_recommended_setup" {
       "MY_MAIL", "MY_MAIL_FROM", "MY_MAIL_SMTP_HOST", "MY_MAIL_SMTP_PORT", "MY_MAIL_SMTP_USERNAME", "MY_MAIL_SMTP_PASSWORD",
       "MY_KEK",
       "MY_BILLING_SOURCES", "MY_BILLING_GCP_METHOD", "MY_BILLING_GCP_TABLE",
-      "MY_METRICS_EXPORTER",
+      "MY_METRICS_EXPORTER", "MY_TRACES_EXPORTER", "MY_ERRORS_EXPORTER",
     ], [for name in concat(keys(module.app.env), keys(module.app.secret_env)) : trimsuffix(name, "_FILE")])) == 0
     error_message = "the recommended setup misses a setting of its sections: ${jsonencode(module.app.env)} ${jsonencode(module.app.secret_env)}"
   }
@@ -204,6 +203,19 @@ run "kek_kms" {
   }
 }
 
+run "translation_by_cloud_translation" {
+  command = plan
+
+  variables {
+    translation = { location = "us-central1" }
+  }
+
+  assert {
+    condition     = module.app.env["MY_TRANSLATOR_GOOGLE_PROJECT"] == "my-project" && module.app.env["MY_TRANSLATOR_GOOGLE_LOCATION"] == "us-central1"
+    error_message = "Cloud Translation must reach the service: ${jsonencode(module.app.env)}"
+  }
+}
+
 # The classification feeds the settings input, which refuses what a section sets, the module fixes, or the module does not
 # take (the tests of modules/internal/settings: a test cannot expect the failure of a variable of a module it calls). A section
 # that is off sets nothing, so its keys are free.
@@ -212,12 +224,30 @@ run "settings_may_set_what_a_section_that_is_off_would" {
   command = plan
 
   variables {
-    monitoring = null
-    settings   = { billing_sources = "cloudflare", metrics_exporter = "prometheus" }
+    settings = { billing_sources = "cloudflare", translator_google_project = "my-translations" }
   }
 
   assert {
-    condition     = module.app.env["MY_BILLING_SOURCES"] == "cloudflare" && module.app.env["MY_METRICS_EXPORTER"] == "prometheus"
-    error_message = "without billing and monitoring, settings may name their keys"
+    condition     = module.app.env["MY_BILLING_SOURCES"] == "cloudflare" && module.app.env["MY_TRANSLATOR_GOOGLE_PROJECT"] == "my-translations"
+    error_message = "without billing and translation, settings may name their keys"
+  }
+}
+
+run "settings_may_set_a_signal_that_observability_leaves_to_them" {
+  command = plan
+
+  variables {
+    monitoring    = null
+    observability = { metrics = "settings", errors = "settings" }
+    settings      = { metrics_exporter = "otlp", errors_exporter = "sentry" }
+    secrets       = ["errors_sentry_dsn"]
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_METRICS_EXPORTER"] == "otlp" && module.app.env["MY_ERRORS_EXPORTER"] == "sentry" &&
+      module.app.env["MY_TRACES_EXPORTER"] == "none" && module.app.secret_env["MY_ERRORS_SENTRY_DSN"] == "my-errors-sentry-dsn"
+    )
+    error_message = "a signal left to the settings takes them, and the others stay the section's: ${jsonencode(module.app.env)}"
   }
 }

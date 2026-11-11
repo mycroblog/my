@@ -19,12 +19,13 @@ module "app" {
 
 | Input | Default | Meaning |
 | --- | --- | --- |
-| `image` | required | Image at creation. After that `upgrade.sh` changes it, and changing this input does nothing |
+| `image` | required | Server image, with a version or a digest. Every task definition takes it, and with `migration` a new one is [an upgrade](#upgrading) |
+| `migration` | null | `script`, the path of `migrate.sh`; `version`, the version applied; and `allow_destructive_for`. Null runs no migration, and the services take a new image at once |
 | `host` | required | Public domain |
 | `network` | required | Where the tasks run: a network from [`network-aws-vpc`](../network-aws-vpc/README.md), or an object of [its shape](../README.md#the-network-on-aws). A backend in a VPC must be on the same one |
 | `assign_public_ip` | required | Whether each task has a public address, in a public subnet, or none, in a private one. Read [The network](#the-network) |
 | `architecture` | `x86_64` | Or `arm64`. The released image has both |
-| `name` | `my` | Name of the cluster, the service, and its family, and the `--name` of `upgrade.sh` |
+| `name` | `my` | Name of the cluster, the service, and its family |
 | `profile` | `production` | `profile` of the server |
 | `backends`, `env`, `secret_env`, `secret_files` | empty | [The backend contract](../README.md#the-backend-contract). `secret_files` is treated as `secret_env`. The module sets `MY_BILLING_SOURCES` from what `backends` returns as `billing_sources` |
 | `cpu`, `memory_mib` | `256`, `1024` | Size of a service task, from [the sizes Fargate offers](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html). A size it does not offer fails the apply. `GOMEMLIMIT` is 90% of the memory |
@@ -40,7 +41,7 @@ module "app" {
 | Output | Value |
 | --- | --- |
 | `service_name`, `cluster_name` | Both are `name` |
-| `migration_task_definition` | The family `upgrade.sh` runs |
+| `migration_task_definition` | The family of the migration |
 | `origin_host` | Always null: read below |
 | `security_group_id` | Of the tasks, for a rule of your own |
 | `task_security_group_ids` | Every group a task joins: that one, and those of the backends |
@@ -50,6 +51,8 @@ module "app" {
 | `log_group` | `/ecs/<name>` |
 | `console` | What `console.sh` reads, or null |
 | `env`, `secret_env`, `one_off_secret_env` | The merged settings: the service's, and those of the one-off tasks |
+| `images` | The image of the service's task definition, of each worker's, and of the migration's |
+| `migration_id` | The run of the migration for the current image, or null without `migration` |
 
 ## How traffic reaches it
 
@@ -78,40 +81,32 @@ The released image runs as it is. Fargate pulls `ghcr.io/mycroblog/my` over the 
 
 ## The first deployment
 
-`/readyz` answers `503` until the schema exists, so the schema comes first, as on Cloud Run. Create the secrets and fill in the ones you bring, then the migration's task definition and what it needs, then run the migration, then everything:
+`/readyz` answers `503` until the schema exists, so the schema comes first, as on Cloud Run. Create the secrets and fill in the ones you bring, then apply everything:
 
 ```sh
 tofu apply -target=module.secrets -target=module.kek
 aws secretsmanager put-secret-value --secret-id my-database-url --secret-string "$DATABASE_URL"   # and the others
-tofu apply -target='module.app.aws_ecs_task_definition.task["migrate"]'
-
-SCRIPTS=.terraform/modules/app/deploy/opentofu
-"$SCRIPTS/upgrade.sh" --platform aws-ecs --region ap-northeast-1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
-
 tofu apply
 ```
 
-The first command that uses the database records `host` and `account_domain` in it. Create the first administrator through [the console](#the-console).
+With `migration`, the second apply creates the migration's task definition and what it needs, runs the migration, and only then creates the services. The first command that uses the database records `host` and `account_domain` in it. Create the first administrator through [the console](#the-console).
 
 ## Upgrading
 
-```sh
-"$SCRIPTS/upgrade.sh" --platform aws-ecs --region ap-northeast-1 --image ghcr.io/mycroblog/my:0.2.0
-```
+With `migration`, an apply of another image runs [the steps of every platform](../README.md#upgrading). Every family gets a new revision with the image, which nothing runs yet. `terraform_data.migrate`, which the new image replaces, runs `migrate.sh` through `local-exec`: it waits for any task of `<name>-migrate` whose desired status is `RUNNING`, then runs `my upgrade` as one task of the new revision, by its ARN, and fails the apply when the task fails, which taints the resource so that the next apply of the same image runs it again. Then each worker's service takes its revision, and the default service after them.
 
-It runs [the steps of every platform](../README.md#upgrading), each as a one-off task, with a new revision of `<name>-migrate` first. Then it registers a revision of the service with the new image and waits for that deployment. New tasks must pass the load balancer's check before the old ones leave, and a deployment that fails goes back to the old revision by itself, which the script reports as a failure, naming the service's events.
+Each service sets `wait_for_steady_state`, so the apply waits for its deployment, and the default service waits for the workers. New tasks must pass the load balancer's check before the old ones leave, and the deployment circuit breaker takes a revision whose tasks do not start back to the one before.
 
-**How apply follows.** A revision holds the image and every setting together, so ignoring the image on it would also stop settings from reaching the service. So `upgrade.sh` writes the image to the parameter `/my/<name>/image` as its last step, a refresh reads that, and the task definitions take it. Changing a setting with `tofu apply` then rolls the service on the upgraded image, and a plan right after an upgrade shows nothing. Do not write that parameter by hand with an image that has not been migrated. While `--maintenance` is on, do not apply: the revision with `MY_MAINTENANCE` is not what the configuration says, and apply would end the maintenance mode.
-
-Whoever runs the scripts needs `ecs:DescribeTaskDefinition`, `ecs:ListTagsForResource`, `ecs:RegisterTaskDefinition`, `ecs:DescribeServices`, `ecs:UpdateService`, `ecs:RunTask`, `ecs:DescribeTasks`, `ssm:GetParameter`, `ssm:PutParameter`, `logs:FilterLogEvents`, and `iam:PassRole` on both roles.
+The apply runs `migrate.sh` where it runs, which needs the `aws` CLI, `jq`, and `ecs:ListTasks`, `ecs:RunTask`, `ecs:DescribeTasks`, `logs:FilterLogEvents`, and `iam:PassRole` on both roles. `console.sh` also needs `ecs:DescribeServices`, `ecs:DescribeTaskDefinition`, `ecs:ListTagsForResource`, and `ecs:RegisterTaskDefinition`.
 
 ## The console
 
 ```sh
+SCRIPTS=.terraform/modules/app/deploy/opentofu
 tofu output -json console | "$SCRIPTS/console.sh" admin create -username alice -email alice@example.com -password-link
 ```
 
-It starts one task with the command in place of the image's, waits for it however long it takes, prints what it wrote to CloudWatch Logs, and exits with its exit code. It first gives the console's family the image of the running service. Turn `console_enabled` off afterwards. The console has no terminal, and the module does not turn on ECS Exec, which would be a way into the server's secrets.
+It starts one task with the command in place of the image's, waits for it however long it takes, prints what it wrote to CloudWatch Logs, and exits with its exit code. It first gives the console's family the image of the running service, which differs after an apply that stopped at a failed migration; the next apply gives the family back the image of the input. Turn `console_enabled` off afterwards. The console has no terminal, and the module does not turn on ECS Exec, which would be a way into the server's secrets.
 
 ## The network
 
@@ -140,7 +135,7 @@ Fixed costs per month (730 hours), from AWS's price list for Tokyo where it says
 | **Total, at idle, public subnets** | **About $42**, plus capacity units | |
 | **Total, at idle, NAT** | **About $75**, plus capacity units and data | Using Ohio's rate for the gateway |
 
-Not read, so not in the total: Secrets Manager per secret, CloudWatch Logs, S3, SNS and SQS, parameters in Parameter Store (the two here are standard ones), data out of AWS, and any free tier. One-off tasks cost their size for the minutes they run, and an upgrade runs a second service task for a few minutes. The database comes on top, and [does not rest](../queue-db/README.md#what-it-needs).
+Not read, so not in the total: Secrets Manager per secret, CloudWatch Logs, S3, SNS and SQS, data out of AWS, and any free tier. One-off tasks cost their size for the minutes they run, and an upgrade runs a second service task for a few minutes. The database comes on top, and [does not rest](../queue-db/README.md#what-it-needs).
 
 ## What differs from the other apps
 
@@ -160,11 +155,12 @@ Not read, so not in the total: Secrets Manager per secret, CloudWatch Logs, S3, 
 
 ## Unverified
 
-- That a worker's deployment means anything beyond its tasks having started: it has no load balancer and no container check, so a worker on a bad image fails only in its logs, and `upgrade.sh` goes on to the default.
+- That a worker's deployment means anything beyond its tasks having started: it has no load balancer and no container check, so a worker on a bad image fails only in its logs, and the apply goes on to the default.
 - Everything against a real account: that ECS accepts the task definitions, and that the service starts.
-- That a plan shows no change after `upgrade.sh`. It rests on what the provider's source does: `track_latest` reads a family's latest revision, a refresh reads `insecure_value` from the parameter, and the provider's comparison of `container_definitions` treats ECS's added defaults as no change. If it does not, the plan shows a replacement of the task definition, which rolls the tasks on the same image.
+- That a plan shows no change after an apply. It rests on what the provider's source does: `track_latest` reads a family's latest revision, and the provider's comparison of `container_definitions` treats ECS's added defaults as no change. If it does not, the plan shows a replacement of the task definition, which rolls the tasks on the same image.
 - What `register-task-definition` accepts from a revision that `describe-task-definition` printed. `scripts/tofu-scripts-test.sh` shows only what is sent.
-- The fields of `rolloutState` during a rollback, on which `upgrade.sh` decides, and which come from what AWS documents.
+- What `wait_for_steady_state` reports when the circuit breaker rolls a deployment back: whether the apply fails, or succeeds with the service back on the old revision while the state holds the new one, which the next apply would deploy again.
+- That `ecs list-tasks --family` with `--desired-status RUNNING` lists a migration task that is still starting, which `migrate.sh` waits for.
 - `stopTimeout` of 60 on Fargate, whose limit of 120 seconds comes from a part of AWS's page that was read only in summary.
 - That everything `my serve` writes fits the task's disk, and that its user can write there.
 - The first start's timing against `health_check_grace_seconds`, and two tasks of `role = all` running the jobs of one instance on Fargate.

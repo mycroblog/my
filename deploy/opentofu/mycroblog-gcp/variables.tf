@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # The inputs of mycroblog-gcp. Each section picks a backend by kind, and every section defaults to the recommended setup, so
-# that a deployment names only host, image, media.bucket_name, and mail. HCL has no union types: the fields of one kind sit
+# that a deployment names only host, media.bucket_name, mail, and monitoring. HCL has no union types: the fields of one kind sit
 # beside the others in the section's object, and the validations below refuse what does not fit together before the plan.
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -38,9 +38,43 @@ variable "host" {
 }
 
 variable "image" {
-  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>. After that upgrade.sh changes it, and an apply leaves the image of what exists alone."
-  type        = string
-  nullable    = false
+  description = "The server image: repository, version, the image tag (0.2.0, or nightly), and digest, sha256:<hex>, which pins the image by its digest. version defaults to the release of this module, so that raising the ref of the source upgrades too. Another image is an upgrade: the apply runs the migration with it, then moves the workers, then the service."
+  type = object({
+    repository = optional(string, "ghcr.io/mycroblog/my")
+    version    = optional(string)
+    digest     = optional(string)
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition     = var.image.version == null || can(regex("^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$", var.image.version))
+    error_message = "image.version must be an image tag, such as 0.2.0."
+  }
+
+  validation {
+    condition     = var.image.version != "latest"
+    error_message = "image.version must name a version. There is no latest tag."
+  }
+
+  validation {
+    condition     = var.image.version == null || !can(regex("^v[0-9]", var.image.version))
+    error_message = "image.version is the image tag, without the v of the release: 0.2.0, not v0.2.0."
+  }
+
+  validation {
+    condition     = var.image.digest == null || can(regex("^sha256:[0-9a-f]{64}$", var.image.digest))
+    error_message = "image.digest must be sha256: and 64 hexadecimal digits."
+  }
+}
+
+variable "upgrade" {
+  description = "How an upgrade runs. allow_destructive_for names the one version, such as 0.3.0, whose migration may drop a table or a column, as the release notes of that version call for: my upgrade gets -allow-destructive only on the apply of that version, so a value left here lets no later release drop data."
+  type = object({
+    allow_destructive_for = optional(string)
+  })
+  default  = {}
+  nullable = false
 }
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -352,7 +386,6 @@ variable "monitoring" {
     notification_emails        = optional(list(string), [])
     notification_channels      = optional(list(string), [])
     page_notification_channels = optional(list(string), [])
-    metrics_exporter           = optional(string, "none")
     uptime_period              = optional(string, "900s")
     disabled_alerts            = optional(set(string), [])
 
@@ -360,6 +393,40 @@ variable "monitoring" {
     media_size_limit_bytes         = optional(number)
     remote_media_cache_limit_bytes = optional(number)
   })
+
+  validation {
+    condition     = var.monitoring == null || var.observability.metrics == "cloud-monitoring"
+    error_message = "monitoring reads the log lines of the metrics in Cloud Monitoring: it needs observability.metrics = cloud-monitoring."
+  }
+}
+
+variable "observability" {
+  description = "Where the metrics, the traces, and the error reports go. The defaults are Google Cloud's own destinations, whose APIs the module enables: metrics = cloud-monitoring (Cloud Run's metrics, and the log-based metrics of monitoring), traces = cloud-trace (the trace Cloud Run records of each request), errors = error-reporting (which reads the error report line). The server exports nothing itself for them. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
+  type = object({
+    metrics = optional(string, "cloud-monitoring")
+    traces  = optional(string, "cloud-trace")
+    errors  = optional(string, "error-reporting")
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = (
+      contains(["cloud-monitoring", "settings"], var.observability.metrics) &&
+      contains(["cloud-trace", "settings"], var.observability.traces) &&
+      contains(["error-reporting", "settings"], var.observability.errors)
+    )
+    error_message = "observability.metrics must be cloud-monitoring or settings, traces cloud-trace or settings, and errors error-reporting or settings."
+  }
+}
+
+variable "translation" {
+  description = "Google Cloud Translation, the translation provider google: the module enables its API in project_id, the deployment's project by default, grants the service account roles/cloudtranslate.user there, and sets the provider's settings, with location (global). The instance setting translation_providers enables the provider. Null, the default, does none of it; DeepL and LibreTranslate go through settings and secrets."
+  type = object({
+    project_id = optional(string)
+    location   = optional(string, "global")
+  })
+  default = null
 }
 
 variable "billing" {

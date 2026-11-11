@@ -16,11 +16,6 @@ variable "host" {
   type        = string
 }
 
-variable "image" {
-  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>. After that the upgrade script changes it."
-  type        = string
-}
-
 variable "bucket_name" {
   description = "Name of the media bucket, unique across Google Cloud."
   type        = string
@@ -67,9 +62,9 @@ output "service_uri" {
   value       = module.mycroblog.service_uri
 }
 
-output "upgrade" {
-  description = "What upgrade.sh takes."
-  value       = module.mycroblog.upgrade
+output "version" {
+  description = "The version applied, and the image the services run."
+  value       = module.mycroblog.version
 }
 
 output "console" {

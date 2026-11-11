@@ -18,7 +18,7 @@ module "monitoring" {
 }
 ```
 
-Add `module.monitoring` to `backends` of the app module: it sets the exporter and the dimensions that the alarms read. Each address gets a mail from SNS to confirm, and gets nothing until it does.
+Add `module.monitoring` to `backends` of the app module: it sets the dimensions that the alarms read, beside `observability-aws`, which sets the exporter and the namespace. Each address gets a mail from SNS to confirm, and gets nothing until it does.
 
 | Input | Default | Meaning |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ Add `module.monitoring` to `backends` of the app module: it sets the exporter an
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_METRICS_EXPORTER`, `MY_METRICS_EMF_NAMESPACE`, `MY_METRICS_EMF_DIMENSIONS` |
+| `env` | `MY_METRICS_EMF_DIMENSIONS`. `MY_METRICS_EXPORTER` and `MY_METRICS_EMF_NAMESPACE` are set by [`observability-aws`](../observability-aws/README.md), whose namespace this module takes |
 | `secret_env`, `permissions` | Empty. The tasks' log driver writes the logs with the execution role, and CloudWatch Logs takes the metrics from them |
 | `canary_name`, `topic_arn` | The canary and the topic |
 | `alerts` | `alarms`, the alerts this module has, and `not_expressible` |

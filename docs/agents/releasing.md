@@ -25,7 +25,7 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    A run by hand of some of the jobs is titled for them, such as `Nightly (l4)`, and does not count, whatever its result.
    A run titled `Nightly` either ran every job, or, on a schedule, skipped them because a full run had already passed on that commit.
 
-2. For a stable version, set the module ref of the OpenTofu examples to it, and merge that first: the first job of the release fails while they differ. A prerelease is not checked, and operators of a prerelease set `ref` themselves.
+2. For a stable version, set the module ref of the OpenTofu examples to it, and merge that first: the first job of the release fails while they differ. The public modules read the same file, `deploy/opentofu/MODULE_REF`, as the default version of the image, so the tag is what lets an operator upgrade by raising `ref` alone. A prerelease is not checked, and operators of a prerelease set `ref` and `image.version` themselves.
 
    ```sh
    scripts/tofu-examples.sh bump v0.1.0

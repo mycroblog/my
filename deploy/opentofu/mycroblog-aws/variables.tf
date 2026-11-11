@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # The inputs of mycroblog-aws. Each section picks a backend by kind, and every section defaults to the recommended setup, so
-# that a deployment names only host, image, network.egress, ingress.certificate_arn, media.bucket_name, mail.from, and
+# that a deployment names only host, network.egress, ingress.certificate_arn, media.bucket_name, mail.from, and
 # monitoring. HCL has no union types: the fields of one kind sit beside the others in the section's object, and the
 # validations below refuse what does not fit together before the plan. NOTHING ON AWS HAS BEEN APPLIED.
 
@@ -27,9 +27,43 @@ variable "host" {
 }
 
 variable "image" {
-  description = "Server image at creation, as ghcr.io/mycroblog/my:<version>. After that upgrade.sh changes it, and an apply leaves the image of what exists alone."
-  type        = string
-  nullable    = false
+  description = "The server image: repository, version, the image tag (0.2.0, or nightly), and digest, sha256:<hex>, which pins the image by its digest. version defaults to the release of this module, so that raising the ref of the source upgrades too. Another image is an upgrade: the apply runs the migration with it, then moves the workers, then the service."
+  type = object({
+    repository = optional(string, "ghcr.io/mycroblog/my")
+    version    = optional(string)
+    digest     = optional(string)
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition     = var.image.version == null || can(regex("^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$", var.image.version))
+    error_message = "image.version must be an image tag, such as 0.2.0."
+  }
+
+  validation {
+    condition     = var.image.version != "latest"
+    error_message = "image.version must name a version. There is no latest tag."
+  }
+
+  validation {
+    condition     = var.image.version == null || !can(regex("^v[0-9]", var.image.version))
+    error_message = "image.version is the image tag, without the v of the release: 0.2.0, not v0.2.0."
+  }
+
+  validation {
+    condition     = var.image.digest == null || can(regex("^sha256:[0-9a-f]{64}$", var.image.digest))
+    error_message = "image.digest must be sha256: and 64 hexadecimal digits."
+  }
+}
+
+variable "upgrade" {
+  description = "How an upgrade runs. allow_destructive_for names the one version, such as 0.3.0, whose migration may drop a table or a column, as the release notes of that version call for: my upgrade gets -allow-destructive only on the apply of that version, so a value left here lets no later release drop data."
+  type = object({
+    allow_destructive_for = optional(string)
+  })
+  default  = {}
+  nullable = false
 }
 
 variable "architecture" {
@@ -388,6 +422,49 @@ variable "monitoring" {
     condition     = var.monitoring == null || length(try(var.monitoring.notification_emails, [])) + length(try(var.monitoring.notification_topic_arns, [])) > 0
     error_message = "monitoring must name at least one of notification_emails and notification_topic_arns, since an alarm that notifies nobody is not an alert, or be null to create none."
   }
+
+  validation {
+    condition     = var.monitoring == null || var.observability.metrics == "cloudwatch"
+    error_message = "monitoring alarms on the metrics in CloudWatch: it needs observability.metrics = cloudwatch."
+  }
+}
+
+variable "observability" {
+  description = "Where the metrics, the traces, and the error reports go. Everything rides on the log lines, which the tasks' log driver sends to CloudWatch Logs, so nothing needs a grant: metrics = cloudwatch writes them in Embedded Metric Format, in the namespace name, which CloudWatch extracts; errors = cloudwatch keeps the error report line, with its stack, in CloudWatch Logs; traces = none records no spans, since X-Ray takes them only through a collector beside the server, which the tasks do not run. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
+  type = object({
+    metrics = optional(string, "cloudwatch")
+    traces  = optional(string, "none")
+    errors  = optional(string, "cloudwatch")
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = (
+      contains(["cloudwatch", "settings"], var.observability.metrics) &&
+      contains(["none", "settings"], var.observability.traces) &&
+      contains(["cloudwatch", "settings"], var.observability.errors)
+    )
+    error_message = "observability.metrics must be cloudwatch or settings, traces none or settings, and errors cloudwatch or settings."
+  }
+}
+
+variable "translation" {
+  description = "Amazon Translate, the translation provider aws: the module allows the tasks' role translate:TranslateText, and comprehend:DetectDominantLanguage for a post whose language is unknown, and sets the provider's region, the deployment's by default. The instance setting translation_providers enables the provider. Null, the default, does none of it; DeepL and LibreTranslate go through settings and secrets."
+  type = object({
+    region = optional(string)
+  })
+  default = null
+}
+
+variable "search" {
+  description = "Search on a domain of Amazon OpenSearch Service that you created, in the region, with an access policy that lets the tasks' role in: domain_name. The module reads the domain, allows the role the HTTP methods the server sends to it, and sets search = opensearch with the requests signed. index names the alias (my-statuses). For a domain in the VPC, security_group_ids are groups the tasks join, which its security group admits. Null, the default, leaves search to the settings: the database, or Elasticsearch, Meilisearch, or OpenSearch with a user and password."
+  type = object({
+    domain_name        = string
+    index              = optional(string)
+    security_group_ids = optional(list(string), [])
+  })
+  default = null
 }
 
 variable "billing" {

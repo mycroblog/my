@@ -109,6 +109,17 @@ other parts that must stay as they are come back in place.
    can name another location of Cloud Translation that serves the general model, such as `us-central1`.
 4. Restart the server, and add `google` to the instance setting `translation_providers`.
 
+On Google Cloud with the OpenTofu module [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections), the section
+`translation` does the first three steps, and the apply restarts the service:
+
+```hcl
+  translation = {}   # or { project_id = "other-project", location = "us-central1" }
+```
+
+It enables the API in the deployment's project, or in `project_id`, grants the service account of the service
+`roles/cloudtranslate.user` there, and sets `translator_google_project` and `translator_google_location`. Then add `google` to
+`translation_providers`.
+
 The server authenticates with Application Default Credentials, like the other Google Cloud services it uses: on
 Cloud Run, the service account of the service; elsewhere, the key file that `GOOGLE_APPLICATION_CREDENTIALS` names. No
 API key is used. The server makes no call at start, so a missing API or role shows only when a reader asks for a
@@ -143,6 +154,10 @@ server's configuration.
    the language needs a region where Amazon Comprehend runs too.
 3. Restart the server, then enable the provider with `translation_providers = aws`, alone or in your order of preference
    among the others ([instance settings](instance-settings.md)).
+
+On AWS with the OpenTofu module [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws), the section
+`translation` does the first two steps: `translation = {}` allows the tasks' role both actions and sets
+`translator_aws_region` to the region of the deployment, or to `region` when you give one. Then enable the provider.
 
 Amazon Translate charges by the character sent, with a free tier for the first 12 months
 ([pricing](https://aws.amazon.com/translate/pricing/)). The server sends only the words of a post: mentions, hashtags,

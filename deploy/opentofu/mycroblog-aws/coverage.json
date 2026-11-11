@@ -45,8 +45,22 @@
       "billing_sources"
     ],
     "monitoring": [
-      "metrics_emf_*",
-      "metrics_exporter"
+      "metrics_emf_dimensions"
+    ],
+    "translation": [
+      "translator_aws_region"
+    ],
+    "search": [
+      "search",
+      "search_opensearch_aws_*",
+      "search_opensearch_index",
+      "search_opensearch_url"
+    ],
+    "observability": [
+      "errors_exporter",
+      "metrics_emf_namespace",
+      "metrics_exporter",
+      "traces_exporter"
     ]
   },
   "fixed": [
@@ -69,7 +83,8 @@
     "database_dev_url",
     "dead_job_retention",
     "dynamic_client_*",
-    "errors_*",
+    "errors_environment",
+    "errors_sentry_dsn",
     "job_attempt_retention",
     "kek_previous",
     "kms_dek_cache_*",
@@ -93,11 +108,17 @@
     "push_allowed_destinations",
     "relay_max_activities_per_hour",
     "remote_custom_emoji_max_bytes",
-    "search*",
+    "search_elasticsearch_*",
+    "search_meilisearch_*",
+    "search_opensearch_index_settings_file",
+    "search_opensearch_password",
+    "search_opensearch_username",
     "source_url",
     "status_page_url",
-    "traces_*",
-    "translator_*",
+    "traces_flush",
+    "traces_sample_ratio",
+    "translator_deepl_*",
+    "translator_libretranslate_*",
     "voice*",
     "web_origin",
     "webhook_allowed_destinations"
@@ -112,6 +133,7 @@
     "listen": "the container port is fixed",
     "mail_ses_region": "the identity is in the region of the deployment, which AWS_REGION of the tasks names",
     "queue_cloudtasks_*": "Cloud Tasks, on Google Cloud",
-    "stream_pubsub_*": "Pub/Sub, on Google Cloud"
+    "stream_pubsub_*": "Pub/Sub, on Google Cloud",
+    "translator_google_*": "Google Cloud Translation needs Google credentials, which the tasks do not have"
   }
 }

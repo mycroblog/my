@@ -126,13 +126,42 @@ mock_provider "cloudflare" {
 
 variables {
   host    = "social.example.org"
-  image   = "ghcr.io/mycroblog/my:0.1.0"
   network = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
   ingress = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc" }
   media   = { bucket_name = "social-example-org-media" }
   mail    = { from = "noreply@social.example.org" }
 
   monitoring = { notification_emails = ["ops@social.example.org"] }
+}
+
+run "the_latest_tag" {
+  command = plan
+
+  variables {
+    image = { version = "latest" }
+  }
+
+  expect_failures = [var.image]
+}
+
+run "a_version_with_the_v_of_the_release" {
+  command = plan
+
+  variables {
+    image = { version = "v0.2.0" }
+  }
+
+  expect_failures = [var.image]
+}
+
+run "a_digest_without_its_algorithm" {
+  command = plan
+
+  variables {
+    image = { version = "nightly", digest = "0123456789abcdef" }
+  }
+
+  expect_failures = [var.image]
 }
 
 run "a_name_that_cannot_name_things" {
@@ -436,6 +465,26 @@ run "an_unknown_kind_of_kek" {
   }
 
   expect_failures = [var.kek]
+}
+
+run "traces_to_x_ray" {
+  command = plan
+
+  variables {
+    observability = { traces = "x-ray" }
+  }
+
+  expect_failures = [var.observability]
+}
+
+run "monitoring_without_the_metrics_in_cloudwatch" {
+  command = plan
+
+  variables {
+    observability = { metrics = "settings" }
+  }
+
+  expect_failures = [var.monitoring]
 }
 
 run "monitoring_that_notifies_nobody" {

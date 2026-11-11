@@ -19,7 +19,7 @@ my admin create -username alice -email alice@example.com
 
 - 從終端機執行時，指令會要求輸入兩次密碼，輸入內容不會顯示在畫面上。
 - 標準輸入不是終端機時，標準輸入的第一行就是密碼（例如 `my admin create ... < password.txt`）。密碼不能以命令列引數或環境變數提供，因為這些會留在行程列表和 shell 歷史記錄中。
-- 在一次性指令既沒有終端機也沒有標準輸入的環境（例如 [Cloud Run job](deploy-cloud-run.md#9-create-the-first-administrator)）中，請加上 `-password-link`。此時指令不會讀取密碼：它會設定一組沒有人知道的隨機密碼，並在 `created admin` 這一行之後印出一個連結。這個連結和 `my admin account password-reset-link` 一樣，可以在一小時內設定一次密碼（稽核記錄會記為 `password_reset_link_issued`）。能讀到指令輸出的人都可以使用這個連結，而在這類平台上，輸出會一直留在平台的日誌中，直到連結被使用或過期為止。請立刻開啟連結。如果連結過期，請用 `my admin account password-reset-link @alice` 再發一個。如果發行連結失敗，管理員已經建立好了：指令會說明這一點並以結束代碼 1 結束，再執行同一個指令就會得到新的連結。
+- 在一次性指令既沒有終端機也沒有標準輸入的環境（例如 [Cloud Run job](deploy-cloud-run.md#7-create-the-first-administrator)）中，請加上 `-password-link`。此時指令不會讀取密碼：它會設定一組沒有人知道的隨機密碼，並在 `created admin` 這一行之後印出一個連結。這個連結和 `my admin account password-reset-link` 一樣，可以在一小時內設定一次密碼（稽核記錄會記為 `password_reset_link_issued`）。能讀到指令輸出的人都可以使用這個連結，而在這類平台上，輸出會一直留在平台的日誌中，直到連結被使用或過期為止。請立刻開啟連結。如果連結過期，請用 `my admin account password-reset-link @alice` 再發一個。如果發行連結失敗，管理員已經建立好了：指令會說明這一點並以結束代碼 1 結束，再執行同一個指令就會得到新的連結。
 - 密碼長度為 8 到 128 個字元。密碼絕不會出現在輸出、日誌或錯誤訊息中。
 - 一個交易會建立使用者、密碼、主要電子郵件地址、本站帳號（含其金鑰），以及 `admin` 角色的授予（沒有授予者，代表由 CLI 授予）。如果內建角色不存在，會先建立它們。
 - 成功時，指令會印出 `created admin @alice@<account_domain> (user <id>, account <id>)`，並以結束代碼 0 結束。

@@ -48,6 +48,8 @@ Cloud Error Reporting reads the line without any setup and lists the errors in t
 - It keeps groups for 30 days, and it notifies you of new errors and of resolved errors that happen again, at most 20 notifications an hour for the project. Set up its notification channel in the Google Cloud console.
 - To find what happened around a report, search Cloud Logging for `jsonPayload."request_id"="<id>"`, or the same with `trace_id`.
 
+With the OpenTofu module [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections), the `observability` section sends the reports here by default (`errors = "error-reporting"`): it enables the Error Reporting API and leaves `errors_exporter` at `none`.
+
 ### AWS
 
 CloudWatch Logs reads the line as plain JSON.
@@ -55,6 +57,8 @@ CloudWatch Logs reads the line as plain JSON.
 - Turn on log anomaly detection for the log group. It flags a line pattern it has never seen before and can alarm to SNS. It reads only the first 1,500 characters of a line, which is why `message` is the last field. It does not keep a resolved state.
 - To count reports, make a metric filter such as `{ $.msg = "error report" }`. Use no dimension taken from `my.error.fingerprint`: every value of a dimension is billed as a metric of its own. `my.error.source` and `my.error.kind` are safe.
 - Find the context with Logs Insights: ``filter `request_id` = "<id>"``.
+
+With the OpenTofu module [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws), the `observability` section keeps the reports in CloudWatch Logs by default (`errors = "cloudwatch"`), with `errors_exporter` at `none`. Log anomaly detection stays a step of yours.
 
 ### Self-hosted
 
@@ -118,6 +122,14 @@ Watch the counter `my.errors.exported`: `my.outcome` is `success`, `dropped` (ov
 ```sh
 MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
+```
+
+With the OpenTofu modules, leave the errors of the `observability` section to the settings, and the module creates the secret of the DSN for you to fill, which its output `secrets_to_fill` lists:
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
 ```
 
 The server speaks the Sentry protocol itself, so no Sentry SDK is involved and no `SENTRY_*` environment variable is read. It sets the fingerprint, so the service groups by it, and the tags `service` (`my`), `my.role`, `my.error.where`, and `error.fingerprint`. The release is the server's version and the environment is `errors_environment`.

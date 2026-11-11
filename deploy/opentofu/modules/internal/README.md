@@ -39,6 +39,11 @@ deploy/opentofu/modules/internal/
   billing-gcp/                 the usage cost import from Google Cloud, never applied
   billing-aws/                 the usage cost import from AWS, never applied
   monitoring-gcp/              uptime check, log-based metrics, and alert policies
+  observability-gcp/           the APIs of Cloud Monitoring, Cloud Trace, and Error Reporting, and the exporters
+  observability-aws/           the exporters to CloudWatch: settings only
+  translation-gcp-cloud-translation/  Cloud Translation's API and role, for the provider google
+  translation-aws-translate/   Amazon Translate's IAM actions, for the provider aws: settings and permissions only
+  search-aws-opensearch/       an Amazon OpenSearch Service domain of yours, with signed requests, never applied
   *-aws-*/                     the same on AWS, never applied: see "AWS: unverified" below
 ```
 
@@ -73,13 +78,16 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `secrets` | Secrets, filled by hand or generated |
 | `kek` | The key that encrypts the secrets in the database |
 | `ingress` | How traffic reaches the app |
+| `translation` | A translation provider that needs an API or a grant on the platform |
+| `search` | A search engine that needs a grant on the platform |
+| `observability` | Where the metrics, the traces, and the error reports go, as the exporter settings |
 | `billing` | What the import of a provider's usage costs reads |
-| `monitoring` | The uptime check, the alerts, and the settings of the metrics that they read |
+| `monitoring` | The uptime check, the alerts, and the dimensions of the metrics that they read |
 | `network` | The private network that the others take as an input. It is no backend |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
-A module that covers a provider's several services for one purpose drops the service (`billing-gcp`).
+A module that covers a provider's several services for one purpose drops the service (`billing-gcp`, `observability-gcp`).
 
 ## Platforms
 
@@ -103,7 +111,7 @@ Mixing them would take identity bridges between clouds, and more combinations th
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `translation-*`, `search-*`, `observability-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
@@ -319,9 +327,27 @@ module, as with an ingress. Its `env` is built from names, so it does not wait f
 
 Neither module has ever been applied, and turning on a billing export or a budget stays a step in the Console: [each README](billing-gcp/README.md#what-stays-manual) says which, and [the guide](../../../../docs/operations/billing-import.md) what the import does with them.
 
+## The modules of the services the server calls
+
+A port of the server gets a module only when choosing it makes the public module do something on the platform: enable an
+API, grant a permission, create a resource, join a network, or generate a value. A provider that takes only a URL and a
+secret, such as DeepL, LibreTranslate, Sentry, Elasticsearch, or Meilisearch, goes through the `settings` and `secrets` of the
+public module and has no module here.
+
+- `translation-gcp-cloud-translation` enables `translate.googleapis.com` in the project that pays for the translations and
+  asks for `roles/cloudtranslate.user` there, on the app's own project by no resource or on another one by its ID.
+- `translation-aws-translate` asks for `translate:TranslateText` and `comprehend:DetectDominantLanguage`, and creates nothing.
+- `search-aws-opensearch` reads a domain the operator created, asks for the HTTP methods the server sends on its indexes, and
+  returns the domain's VPC as `private_network`, so that a domain on another network fails the plan.
+- `observability-gcp` and `observability-aws` set the exporter of each signal, so that one module owns each of
+  `metrics_exporter`, `traces_exporter`, and `errors_exporter` (and `metrics_emf_namespace` on AWS). A signal set to
+  `settings` sets nothing, so that the public module lets `settings` name it. Google Cloud's destinations read what Cloud Run
+  sends them, so `observability-gcp` exports nothing to them and only enables their APIs; on AWS everything rides on the log
+  lines that the log driver sends with the execution role. Neither asks for a permission.
+
 ## The monitoring contract
 
-A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
+A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. The exporter is not one of them: `observability-*` sets it, and a `monitoring-*` module takes the exporter or its namespace as an input. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
 
 ## The app contract
 
@@ -392,7 +418,7 @@ What a worker has of the app: the image, the settings, the secrets with `direct_
 
 **One audience, and one account, across the services of Cloud Tasks.** A process checks a token against `queue_cloudtasks_url` plus the path, unless `queue_cloudtasks_audience` is set. That same URL is where the process sends the tasks of the default queue, so a worker cannot name its own URL there without taking those tasks. So with workers the queue module sets one audience, the default service's URL, for every process and for the tick, and a worker's service accepts it as a custom audience, which Cloud Run's own check of the token needs. There is one invoker account rather than one per service, because the server creates every task with the one `queue_cloudtasks_service_account` and accepts only that, and a route cannot name another.
 
-`upgrade.sh` finds the workers on the platform and moves each after the migration and before the default: by a label on Cloud Run, and by being in the cluster on ECS. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
+An upgrade moves each worker after the migration and before the default, through the dependencies of the apply on both platforms. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
 
 Never applied, like everything here. Unverified: that Cloud Run accepts a token whose audience is a custom one on a service that shares it with no other, on the URL that Cloud Tasks counts as internal, and that the same value of audience on several services is allowed, which Google's page does not say; that `gcloud`'s filter finds a service by that label; and that `role = worker` answers Cloud Run's probes as the configuration reference says it does.
 
@@ -418,10 +444,21 @@ tofu output -json console | deploy/opentofu/console.sh admin create -username al
 
 ### Upgrading
 
-[`upgrade.sh`](../../upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
-`config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
-chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
-gives a revision no traffic until `/readyz` answers, and ECS goes back when a new task fails its load balancer's check.
+An upgrade runs the same steps in the same order on every platform: the one-off migration takes the new image and runs `my upgrade`
+(`config check`, `db upgrade -check`, `schema apply`, `db upgrade`), then the workers move, and only then the service.
+
+Every `app-*` module does it in the apply. With `migration`, a `terraform_data` replaced by each new image runs
+[`migrate.sh`](../../migrate.sh) through `local-exec`, and the workers depend on it, the service on the workers. A failed or
+interrupted migration fails the provisioner and taints it, so the next apply of the same image runs it again. `migrate.sh`
+first waits for a run of the migration still going, and reads a JSON in the shape of `console` without its `service`, which it
+hands to `console.sh`; a new platform adds one function that waits.
+
+- **`app-gcp-cloud-run`** runs an execution of the migration job, and waits for any execution without a completion time.
+- **`app-aws-ecs`** runs one task of the migration's new revision, by its ARN, and waits for any task of the family whose
+  desired status is `RUNNING`. Its services set `wait_for_steady_state`, so that the service waits for the workers to settle.
+
+What holds a bad image back is the platform's: Cloud Run gives a revision no traffic until `/readyz` answers, and ECS goes back
+when a new task fails its load balancer's check.
 
 ## AWS: unverified
 
@@ -442,6 +479,9 @@ The modules for AWS test whether this contract holds on a second platform. **Non
 | `ingress-aws-alb`, and `ingress-aws-cloudfront` in front of it | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 | `billing-aws` | `billing-gcp`, and it also runs on Google Cloud's app: read [The billing modules](#the-billing-modules) |
 | `monitoring-aws` | `monitoring-gcp` |
+| `observability-aws` | `observability-gcp` |
+| `translation-aws-translate` | `translation-gcp-cloud-translation` |
+| `search-aws-opensearch` | Nothing: on Google Cloud a search engine goes through `settings` |
 
 `db-external`, `db-neon`, and `mail-smtp` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
 tests show that a block of one platform fails the plan on the other's app. `mycroblog-aws` composes them, and its tests plan each kind

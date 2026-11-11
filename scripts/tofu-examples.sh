@@ -3,7 +3,9 @@
 #
 # The examples of deploy/opentofu name their modules by Git source at a release, so that they work when copied out of the
 # repository and no module changes under an operator. deploy/opentofu/MODULE_REF is that release, the one place it is kept.
-# A public module (mycroblog-*) names the internal modules by relative path, which resolves inside the same Git package.
+# A public module (mycroblog-*) names the internal modules by relative path, which resolves inside the same Git package, and
+# reads MODULE_REF as the default version of the image, so that raising the ref of a stable release alone upgrades: the tag
+# of a stable release must have it name that release (check --release).
 #
 #   scripts/tofu-examples.sh check [--release VERSION]
 #       Fails when a source in an example or a document is relative, is not pinned, or has another ref, or when a public
@@ -198,10 +200,11 @@ git_source_test() {
     # public module yet.
     scripts="$tmp/$name/.terraform/modules/mycroblog/deploy/opentofu"
     [ -d "$scripts" ] || scripts="$tmp/$name/.terraform/modules/app/deploy/opentofu"
+    # What an apply runs from the same place, by the path of the public module.
     code=0
-    "$scripts/upgrade.sh" > /dev/null 2>&1 || code=$?
+    "$scripts/migrate.sh" < /dev/null > /dev/null 2>&1 || code=$?
     if [ "$code" != 2 ]; then
-      echo "tofu-examples: $scripts/upgrade.sh without arguments exited $code, want its usage" >&2
+      echo "tofu-examples: $scripts/migrate.sh without input exited $code, want its usage" >&2
       return 1
     fi
     code=0

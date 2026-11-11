@@ -120,7 +120,6 @@ mock_provider "archive" {}
 
 variables {
   host    = "social.example.org"
-  image   = "ghcr.io/mycroblog/my:0.1.0"
   network = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
   ingress = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc" }
   media   = { bucket_name = "social-example-org-media" }
@@ -154,6 +153,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       "MY_BLOB_S3_BUCKET",
       "MY_BLOB_S3_REGION",
       "MY_DATABASE",
+      "MY_ERRORS_EXPORTER",
       "MY_HOST",
       "MY_MAIL",
       "MY_MAIL_FROM",
@@ -165,6 +165,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       "MY_STREAM",
       "MY_STREAM_SNS_QUEUE_PREFIX",
       "MY_STREAM_SNS_TOPIC_ARN",
+      "MY_TRACES_EXPORTER",
       "MY_TRUSTED_PROXIES",
       "MY_TRUSTED_PROXY_HEADER",
     ])
@@ -217,13 +218,39 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
   }
 
   assert {
-    condition     = output.upgrade.platform == "aws-ecs" && output.upgrade.region == "ap-northeast-1" && output.upgrade.name == "my"
-    error_message = "upgrade.sh takes the platform, the region, and the name"
+    condition     = output.version.version == trimprefix(trimspace(file("../MODULE_REF")), "v") && module.app.images.migration == "ghcr.io/mycroblog/my:${output.version.version}"
+    error_message = "the version must default to the release of the module, which MODULE_REF names: ${jsonencode(output.version)}"
   }
 
   assert {
     condition     = output.console == null && module.ingress_cloudfront == null && module.ingress_cloudflare == null && module.billing == null
     error_message = "the console, CloudFront, Cloudflare, and the billing import are off by default"
+  }
+}
+
+run "takes_a_version_and_a_digest" {
+  command = plan
+
+  variables {
+    image = { version = "0.2.0-rc.1", digest = "sha256:${join("", [for i in range(64) : "a"])}" }
+  }
+
+  assert {
+    condition     = output.version.version == "0.2.0-rc.1" && module.app.images.migration == "ghcr.io/mycroblog/my:0.2.0-rc.1@sha256:${join("", [for i in range(64) : "a"])}"
+    error_message = "a version and a digest must make the image: ${jsonencode(module.app.images)}"
+  }
+}
+
+run "takes_another_repository" {
+  command = plan
+
+  variables {
+    image = { repository = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my", version = "0.2.0" }
+  }
+
+  assert {
+    condition     = module.app.images.migration == "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.2.0"
+    error_message = "the repository must replace the default"
   }
 }
 
@@ -259,14 +286,5 @@ run "the_secrets_can_be_created_first" {
 
   plan_options {
     target = [module.secrets, module.kek_secrets_manager]
-  }
-}
-
-# The first deployment creates this before the service, whose health check needs the schema.
-run "the_migration_task_can_be_created_before_the_service" {
-  command = plan
-
-  plan_options {
-    target = [module.app.aws_ecs_task_definition.task["migrate"]]
   }
 }

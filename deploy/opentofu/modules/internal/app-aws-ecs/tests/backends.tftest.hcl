@@ -135,13 +135,23 @@ run "the_service_is_one_process_that_stays_up" {
   }
 
   assert {
-    condition     = jsondecode(aws_ssm_parameter.network.insecure_value).awsvpcConfiguration.assignPublicIp == "ENABLED" && aws_ecs_service.server.network_configuration[0].assign_public_ip
-    error_message = "the one-off tasks must get the service's network"
+    condition     = aws_ecs_service.server.network_configuration[0].assign_public_ip
+    error_message = "a task in a public subnet must get a public address"
   }
 
   assert {
     condition     = aws_ecs_task_definition.task["server"].track_latest && aws_ecs_task_definition.task["migrate"].track_latest
-    error_message = "a revision that upgrade.sh registered must not show as a change"
+    error_message = "a revision that console.sh registered must show as a change, which the next apply puts back"
+  }
+
+  assert {
+    condition     = aws_ecs_service.server.wait_for_steady_state && aws_ecs_service.server.deployment_circuit_breaker[0].rollback
+    error_message = "the apply must wait for the service to settle, which goes back from a revision that does not start"
+  }
+
+  assert {
+    condition     = output.migration_id == null
+    error_message = "without migration, the module runs none"
   }
 
   assert {
@@ -150,8 +160,8 @@ run "the_service_is_one_process_that_stays_up" {
   }
 
   assert {
-    condition     = jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0].image == "ghcr.io/mycroblog/my:0.1.0" && aws_ssm_parameter.image.insecure_value == "ghcr.io/mycroblog/my:0.1.0"
-    error_message = "the image goes through the parameter that upgrade.sh writes"
+    condition     = output.images == { service = "ghcr.io/mycroblog/my:0.1.0", workers = {}, migration = "ghcr.io/mycroblog/my:0.1.0" }
+    error_message = "every task definition takes the image of the input"
   }
 
   assert {
@@ -267,7 +277,7 @@ run "the_console_names_its_platform" {
 
   assert {
     condition     = output.migration_task_definition == "my-migrate" && output.service_name == "my"
-    error_message = "the families are the names upgrade.sh takes"
+    error_message = "the families are named after the service"
   }
 }
 
@@ -596,6 +606,7 @@ run "a_task_joins_the_group_of_every_backend" {
   }
 
   variables {
+    console_enabled = true
     backends = [
       { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, security_group_ids = ["sg-db"] },
       { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
@@ -609,7 +620,7 @@ run "a_task_joins_the_group_of_every_backend" {
   }
 
   assert {
-    condition     = toset(jsondecode(aws_ssm_parameter.network.insecure_value).awsvpcConfiguration.securityGroups) == toset(["sg-task", "sg-db", "sg-cache"])
+    condition     = toset(jsondecode(output.console.network).awsvpcConfiguration.securityGroups) == toset(["sg-task", "sg-db", "sg-cache"])
     error_message = "a one-off task must join them too: a migration needs the database"
   }
 }
@@ -677,7 +688,7 @@ run "a_task_with_a_public_address_takes_the_public_subnets" {
   command = plan
 
   assert {
-    condition     = toset(aws_ecs_service.server.network_configuration[0].subnets) == toset(["subnet-1", "subnet-2"]) && toset(jsondecode(aws_ssm_parameter.network.insecure_value).awsvpcConfiguration.subnets) == toset(["subnet-1", "subnet-2"])
+    condition     = toset(aws_ecs_service.server.network_configuration[0].subnets) == toset(["subnet-1", "subnet-2"]) && toset(output.task_subnet_ids) == toset(["subnet-1", "subnet-2"])
     error_message = "the service and the one-off tasks must take the public subnets"
   }
 }
@@ -811,7 +822,7 @@ run "a_worker_is_a_service_with_no_way_in" {
 
   assert {
     condition     = aws_ecs_task_definition.task["worker-delivery"].family == "my-delivery" && aws_ecs_task_definition.task["worker-delivery"].cpu == "512" && aws_ecs_task_definition.task["worker-delivery"].memory == "2048"
-    error_message = "the family must be the service's name, which upgrade.sh takes, with the worker's size"
+    error_message = "the family must be the service's name, with the worker's size"
   }
 
   assert {
