@@ -39,6 +39,12 @@ type TLSRepository interface {
 	// ListUnresultedTLSOrderAttempts returns the attempts of host that occurred after after and
 	// have no certificate, oldest first.
 	ListUnresultedTLSOrderAttempts(ctx context.Context, host string, after time.Time) ([]instance.TLSOrderAttempt, error)
+	// ListTLSOrderAttempts returns the limit latest attempts of host with their results, newest
+	// first.
+	ListTLSOrderAttempts(ctx context.Context, host string, limit int) ([]instance.TLSOrderAttemptResult, error)
+	// TLSCertificateSuperseded reports whether a certificate of the same host was issued after
+	// certificateID, revoked or not; false for an unknown certificate.
+	TLSCertificateSuperseded(ctx context.Context, certificateID string) (bool, error)
 }
 
 // TLSAccountAAD returns the additional authenticated data that binds the sealed key of the ACME
@@ -241,4 +247,22 @@ func (s *Service) TLSOrderBackoff(ctx context.Context, host string) (instance.TL
 		times[i] = a.OccurredAt
 	}
 	return instance.NewTLSOrderBackoff(times), nil
+}
+
+// CurrentTLSCertificateRecord returns the current certificate of host without opening its key,
+// ErrNotFound when there is none: what `my tls status` shows.
+func (s *Service) CurrentTLSCertificateRecord(ctx context.Context, host string) (instance.TLSCertificate, error) {
+	return s.d.Repository.CurrentTLSCertificate(ctx, host)
+}
+
+// RecentTLSOrders returns the limit latest orders of host with their results, newest first.
+func (s *Service) RecentTLSOrders(ctx context.Context, host string, limit int) ([]instance.TLSOrderAttemptResult, error) {
+	return s.d.Repository.ListTLSOrderAttempts(ctx, host, limit)
+}
+
+// TLSCertificateSuperseded reports whether a certificate of the same host was issued after
+// certificateID, revoked or not: a renewal already replaced it (RFC 9773 §5), so that an order
+// must not name it as the certificate it replaces.
+func (s *Service) TLSCertificateSuperseded(ctx context.Context, certificateID string) (bool, error) {
+	return s.d.Repository.TLSCertificateSuperseded(ctx, certificateID)
 }

@@ -325,6 +325,32 @@ groups:
             in the 6 hours since; the costs screen shows older figures.
           runbook_url: https://mycroblog.dev/latest/operations/alerts/#mybillingimportfailing
 
+  - name: my-tls
+    rules:
+      - alert: MyTLSCertificateExpiring
+        # Per process: a process that still serves an old certificate shows on its own. Renewals start a third of the
+        # lifetime before expiry, weeks ahead; with tls = files the renewal is up to the tool that writes the files.
+        expr: my_tls_certificate_expiry_seconds < 7 * 24 * 3600
+        for: 15m
+        labels:
+          severity: page
+        annotations:
+          summary: The TLS certificate of {{ $labels.host }} expires within 7 days
+          description: >-
+            {{ $labels.instance }} serves {{ $labels.host }} with a certificate that expires in {{ $value | humanizeDuration }}.
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mytlscertificateexpiring
+      - alert: MyTLSOrdersFailing
+        expr: max by (host) (my_tls_order_consecutive_failures) >= 3
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: The orders of the TLS certificate of {{ $labels.host }} fail
+          description: >-
+            {{ $value }} orders in a row of the certificate of {{ $labels.host }} obtained none; the server now waits
+            100 minutes, then a day, between orders.
+          runbook_url: https://mycroblog.dev/latest/operations/alerts/#mytlsordersfailing
+
   - name: my-email
     rules:
       - alert: MyEmailFailing

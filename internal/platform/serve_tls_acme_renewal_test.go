@@ -244,8 +244,8 @@ func TestServeTLSACMERenewalWithoutTheBus(t *testing.T) {
 // picked.
 func TestPebbleServeTLSACMERenewsInTheWindow(t *testing.T) {
 	t.Parallel()
-	srv := pebbletest.New(t, pebbletest.Options{TLSPort: pebbletest.FreePort(t)})
-	tlsLn := listenOn(t, srv.TLSPort)
+	tlsLn := listenOn(t, 0)
+	srv := pebbletest.New(t, pebbletest.Options{TLSPort: portOf(tlsLn)})
 	client := &replacesClient{ACMEClient: pebbleClient(t, srv)}
 	clock := testkit.NewClock(time.Now())
 	cfg := acmeConfig(t, map[string]string{}, false)

@@ -179,4 +179,33 @@ func instanceRepoTLSCertificates(t *testing.T, r *instanceRepo) {
 	r.wantUnresulted(t, host, second.CreatedAt, failed, died)
 	r.wantUnresulted(t, host, failed.OccurredAt, died)
 	r.wantUnresulted(t, "media.example", time.Time{})
+
+	// The latest attempts with their results, newest first.
+	got, err := r.i.ListTLSOrderAttempts(ctx, host, 3)
+	if err != nil {
+		t.Fatalf("ListTLSOrderAttempts: %v", err)
+	}
+	want := []instance.TLSOrderAttemptResult{
+		{Attempt: died},
+		{Attempt: failed, Failure: &failure},
+		{Attempt: instance.TLSOrderAttempt{
+			ID: second.AttemptID, Host: host, DirectoryURL: tlsDirectory, Profile: "shortlived", ReplacesCertificateID: first.ID,
+		}, CertificateID: second.ID},
+	}
+	if len(got) == 3 {
+		want[2].Attempt.OccurredAt = got[2].Attempt.OccurredAt
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ListTLSOrderAttempts(%s, 3) = %+v, want %+v", host, got, want)
+	}
+	if got, err := r.i.ListTLSOrderAttempts(ctx, "other.example", 3); err != nil || len(got) != 0 {
+		t.Errorf("ListTLSOrderAttempts of a host without orders = %+v, %v", got, err)
+	}
+
+	// A certificate is superseded once a later one of its host is issued, revoked or not.
+	for id, want := range map[string]bool{first.ID: true, second.ID: false, elsewhere.ID: false, r.ids.NewID(): false} {
+		if got, err := r.i.TLSCertificateSuperseded(ctx, id); err != nil || got != want {
+			t.Errorf("TLSCertificateSuperseded(%s) = %t, %v; want %t", id, got, err, want)
+		}
+	}
 }

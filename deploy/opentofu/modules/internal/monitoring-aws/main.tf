@@ -225,6 +225,8 @@ locals {
     "MyDBPoolSaturated",
     "MyDBPoolWaiting",
     "MyFileDescriptorsNearLimit",
+    "MyTLSCertificateExpiring",
+    "MyTLSOrdersFailing",
   ]
 
   topics      = concat([aws_sns_topic.alerts.arn], var.notification_topic_arns)

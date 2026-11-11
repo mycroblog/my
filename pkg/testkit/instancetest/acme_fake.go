@@ -128,6 +128,13 @@ func (f *FakeACMEClient) Replaces() []string {
 	return slices.Clone(f.replaces)
 }
 
+// Revoked reports whether the fake revoked the certificate of serial (decimal).
+func (f *FakeACMEClient) Revoked(serial string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.revoked[serial]
+}
+
 // DirectoryURL implements instance.ACMEClient.
 func (f *FakeACMEClient) DirectoryURL() string {
 	if f.Directory != "" {

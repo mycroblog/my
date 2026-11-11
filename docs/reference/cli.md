@@ -17,7 +17,7 @@ are marked below and fail with a message that names the tag. A test build adds `
 
 ## `my`
 
-Subcommands: [`admin`](#my-admin), [`config`](#my-config), [`db`](#my-db), [`instance`](#my-instance), [`invite`](#my-invite), [`job`](#my-job), [`kek`](#my-kek), [`login-provider`](#my-login-provider), [`maintenance`](#my-maintenance), [`plugin`](#my-plugin), [`projection`](#my-projection), [`registration`](#my-registration), [`schema`](#my-schema), [`search`](#my-search), [`serve`](#my-serve), [`upgrade`](#my-upgrade), [`version`](#my-version).
+Subcommands: [`admin`](#my-admin), [`config`](#my-config), [`db`](#my-db), [`instance`](#my-instance), [`invite`](#my-invite), [`job`](#my-job), [`kek`](#my-kek), [`login-provider`](#my-login-provider), [`maintenance`](#my-maintenance), [`plugin`](#my-plugin), [`projection`](#my-projection), [`registration`](#my-registration), [`schema`](#my-schema), [`search`](#my-search), [`serve`](#my-serve), [`tls`](#my-tls), [`upgrade`](#my-upgrade), [`version`](#my-version).
 
 ```text
 Usage: my <command>
@@ -54,6 +54,8 @@ Commands:
   search    Rebuild, clear, and check the index of the full-text search of posts
             (my search rebuild|clear|status)
   serve     Run the server (role web, worker, or all)
+  tls       Show, renew, and revoke the certificates that the server serves
+            itself (my tls status|renew|revoke)
   upgrade   Run the migration of an upgrade to this release: the configuration
             check, my db upgrade -check, my schema apply, and my db upgrade
   version   Print the version
@@ -2981,6 +2983,82 @@ Vite dev server, such as http://localhost:5173, instead of the build embedded in
 text) and ar-XB (right-to-left) selectable through Accept-Language.
 The E2E of the server-rendered pages uses it.
 ```
+
+## `my tls`
+
+Subcommands: [`renew`](#my-tls-renew), [`revoke`](#my-tls-revoke), [`status`](#my-tls-status).
+
+```text
+Usage:
+  my tls status [-config <file>]
+  my tls renew -host <host> [-config <file>]
+  my tls revoke -host <host> -reason <key_compromise|superseded|operator> [-config <file>]
+
+Shows and controls the certificates that the server serves itself (tls = acme
+or tls = files).
+
+status shows, for each host, the current certificate (its serial, issuer, and
+expiry), when it is renewed, the orders in a row that obtained no certificate,
+and the latest orders with their results. With tls = files it shows the
+certificate of tls_cert_file.
+
+renew orders a certificate of the host from the certificate authority now,
+skipping its renewal time and the wait after failed orders. The processes that
+serve the host answer the authority's checks, so they must be running, and
+they start serving the new certificate within seconds through the stream
+broker, or within 5 minutes without one.
+
+revoke orders a certificate that replaces the current one of the host, asks the
+certificate authority to revoke the current one, and records the revocation.
+Every process stops serving the revoked certificate: it serves the replacement
+or, when the replacement could not be ordered, the certificate of the host
+issued before it, or none until the server obtains a new one. Use
+key_compromise when the private key may be known to others.
+
+renew and revoke need tls = acme and a kv other than memory. They exit with 1
+when another process is ordering the certificate of the host at that moment.
+```
+
+Documentation: [docs/operations/running.md](../operations/running.md)
+
+### `my tls renew`
+
+```text
+my tls renew -host <host> [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-host <string>` |  | the host whose certificate to renew |
+
+Its help is the help of [`my tls`](#my-tls).
+
+### `my tls revoke`
+
+```text
+my tls revoke -host <host> -reason <key_compromise|superseded|operator> [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-host <string>` |  | the host whose certificate to revoke |
+| `-reason <string>` |  | why: key_compromise, superseded, or operator |
+
+Its help is the help of [`my tls`](#my-tls).
+
+### `my tls status`
+
+```text
+my tls status [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my tls`](#my-tls).
 
 ## `my upgrade`
 

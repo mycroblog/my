@@ -37,35 +37,17 @@ const tlsMaxConcurrentStreams = 100
 // web_origin. With tls = acme it also makes the manager that obtains their certificates, and
 // answers the CA's challenges on both listeners (ADR-0163 §3).
 func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
+	a.acmeClient = opts.ACMEClient
+	a.tlsCheckInterval, a.tlsRetryInterval = opts.TLSCheckInterval, opts.TLSRetryInterval
 	if !cfg.ServesTLS() {
 		return nil
 	}
-	hosts := []string{cfg.Host}
-	if u, err := url.Parse(cfg.WebOrigin); err == nil && u.Host != "" {
-		hosts = append(hosts, u.Host)
-	}
-	a.TLSCertificates = tlsserve.NewHolder(hosts...)
+	a.TLSCertificates = tlsserve.NewHolder(tlsHosts(cfg)...)
+	a.registerTLSExpiry(a.TLSCertificates)
 	if cfg.TLS != config.TLSACME {
 		return nil
 	}
-	client := opts.ACMEClient
-	if client == nil {
-		var err error
-		if client, err = newACMEClient(cfg, a.Logger); err != nil {
-			return err
-		}
-	}
-	// TLS-ALPN-01 needs only the TLS listener; HTTP-01 needs port 80.
-	challenges := []string{instance.ACMEChallengeTLSALPN01}
-	if cfg.TLSHTTPListen != "" {
-		challenges = append(challenges, instance.ACMEChallengeHTTP01)
-	}
-	m, err := instance.NewTLSManager(instance.TLSManagerOptions{
-		Service: a.Instance, Client: client, KV: a.KV, Certificates: a.TLSCertificates, Hosts: a.TLSCertificates.Hosts(),
-		Email: cfg.TLSACMEEmail, Profile: cfg.TLSACMEProfile, Challenges: challenges, Clock: a.Clock, Logger: a.Logger,
-		CheckInterval: opts.TLSCheckInterval, RetryInterval: opts.TLSRetryInterval,
-		Notify: a.notifyTLSCertificate,
-	})
+	m, err := a.newTLSManager(a.TLSCertificates)
 	if err != nil {
 		return err
 	}
@@ -76,6 +58,54 @@ func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 	})
 	a.TLSHTTPChallenge = tlsserve.HTTP01Handler(answers.HTTP01)
 	return nil
+}
+
+// tlsHosts returns the hosts that the server serves with tls other than off: host and, when it
+// differs, the host of web_origin.
+func tlsHosts(cfg *config.Config) []string {
+	hosts := []string{cfg.Host}
+	if u, err := url.Parse(cfg.WebOrigin); err == nil && u.Host != "" {
+		hosts = append(hosts, u.Host)
+	}
+	return hosts
+}
+
+// newTLSManager returns the manager of tls = acme that installs the certificates into holder.
+func (a *App) newTLSManager(holder *tlsserve.Holder) (*instance.TLSManager, error) {
+	cfg := a.Config
+	client := a.acmeClient
+	if client == nil {
+		var err error
+		if client, err = newACMEClient(cfg, a.Logger); err != nil {
+			return nil, err
+		}
+		a.acmeClient = client
+	}
+	// TLS-ALPN-01 needs only the TLS listener; HTTP-01 needs port 80.
+	challenges := []string{instance.ACMEChallengeTLSALPN01}
+	if cfg.TLSHTTPListen != "" {
+		challenges = append(challenges, instance.ACMEChallengeHTTP01)
+	}
+	return instance.NewTLSManager(instance.TLSManagerOptions{
+		Service: a.Instance, Client: client, KV: a.KV, Certificates: holder, Hosts: holder.Hosts(),
+		Email: cfg.TLSACMEEmail, Profile: cfg.TLSACMEProfile, Challenges: challenges, Clock: a.Clock, Logger: a.Logger,
+		CheckInterval: a.tlsCheckInterval, RetryInterval: a.tlsRetryInterval,
+		Notify: a.notifyTLSCertificate, Meter: a.Meter,
+	})
+}
+
+// registerTLSExpiry reports the time left on the certificates in holder, of tls = acme or tls
+// = files (ADR-0163 §11).
+func (a *App) registerTLSExpiry(holder *tlsserve.Holder) {
+	kernel.MeterOrNop(a.Meter).Gauge(instance.TLSCertificateExpiry, func(_ context.Context, o kernel.GaugeObserver) error {
+		now := a.Clock.Now()
+		for _, h := range holder.Hosts() {
+			if c := holder.Certificate(h); c != nil && c.Leaf != nil {
+				o.Observe(c.Leaf.NotAfter.Sub(now).Seconds(), kernel.NewLabels(instance.LabelTLSHost, h))
+			}
+		}
+		return nil
+	})
 }
 
 // notifyTLSCertificate tells the other processes that this one obtained the certificate id of host

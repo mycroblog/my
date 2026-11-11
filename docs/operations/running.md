@@ -235,6 +235,36 @@ The server looks at the modification times of both files every minute and loads 
 a restart. A pair that does not match yet (a new certificate before its new key) keeps the previous certificate in
 service until the next check, and the log says why.
 
+### Commands and metrics
+
+`my tls` shows and controls the certificates with the server's configuration, from any machine that reaches the
+database (the [admin CLI](admin-cli.md#tls-certificates)):
+
+```sh
+my tls status                                          # each host: certificate, renewal, latest orders
+my tls renew -host social.example                      # order now, without waiting
+my tls revoke -host social.example -reason key_compromise
+```
+
+- **`status`** shows, for each host, the current certificate (its serial, issuer, and expiry), when it is renewed (the
+  certificate authority's window, or the time derived from its lifetime), how many orders in a row obtained none, and
+  the latest orders with their errors. With `tls = files` it shows the certificate of `tls_cert_file`.
+- **`renew`** orders a certificate now, skipping the renewal time and the wait after failed orders: run it once you
+  have fixed the cause of failed orders. The running server answers the certificate authority's check, so it must be
+  up, and its processes serve the new certificate within seconds, or within 5 minutes with `stream = hub`.
+- **`revoke`** first orders a certificate that replaces the current one, then asks the certificate authority to revoke
+  the current one and records it; every process stops serving the revoked certificate within seconds, or within 5
+  minutes with `stream = hub`. Use `key_compromise` when the private key may be known to others, `superseded` or
+  `operator` otherwise. When the replacement cannot be ordered, the revocation still goes ahead: the processes serve the
+  host's previous certificate if it is not revoked, or nothing until the server obtains a new one.
+- `renew` and `revoke` need `tls = acme` and a `kv` other than `memory`, since the processes that the certificate
+  authority connects to read the answers to its checks from the `kv` store. With `tls = files` they are refused: renew
+  or revoke the certificate with the tool that writes the files.
+
+With [`metrics_exporter`](#metrics) set, alert on `my.tls.certificate.expiry` under 7 days and on
+`my.tls.order.consecutive_failures` of 3 or more ([alerts](alerts.md#mytlscertificateexpiring)): a failing renewal shows
+weeks before the certificate expires.
+
 ### Checks and running it
 
 `my config check` reports, with `tls = acme`, terms that are not agreed to, a `host` that is an IP address, `localhost`,
@@ -402,6 +432,9 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: servers that deliveries still go to but that failed on at least one day since they last answered; `unavailable`: servers whose deliveries are paused) |
 | `my.metrics.snapshot.age` | Gauge, seconds | `my.metrics.snapshot.part` (`queue` / `totals`) |
 | `my.errors.reported` | Counter | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). One per [error report](#error-reports) |
+| `my.tls.certificate.expiry` | Gauge, seconds | `host` (the time until the certificate that this process serves for one of its hosts expires, with `tls = acme` or `tls = files`; each process reports its own, so a process left with an old certificate shows. See [Commands and metrics](#commands-and-metrics)) |
+| `my.tls.order.attempts` | Counter | `host`, `result` (`issued` / `failed`). One per order of a certificate from the ACME certificate authority, by the process that placed it, `my tls renew` and `my tls revoke` included |
+| `my.tls.order.consecutive_failures` | Gauge | `host` (the orders since the host's current certificate that obtained none: the count that sets the wait before the next order) |
 
 Health checks (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) are not measured. No label contains a remote domain, account, URL or client IP.
 `my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` and `my.billing.import.failing` are values for the whole instance: every process reports the same value from one snapshot kept in the key-value store.

@@ -39,6 +39,9 @@ func listenOn(t *testing.T, port int) net.Listener {
 	return ln
 }
 
+// portOf returns the port of ln.
+func portOf(ln net.Listener) int { return ln.Addr().(*net.TCPAddr).Port }
+
 // startACME starts a server with tls = acme on tlsLn and, when not nil, httpLn, which orders from
 // client. env adds settings.
 func startACME(t *testing.T, env map[string]string, client instance.ACMEClient, tlsLn, httpLn net.Listener) *server {
@@ -222,8 +225,8 @@ func TestPebbleServeTLSACME(t *testing.T) {
 	t.Parallel()
 	t.Run("TLS-ALPN-01", func(t *testing.T) {
 		t.Parallel()
-		srv := pebbletest.New(t, pebbletest.Options{TLSPort: pebbletest.FreePort(t)})
-		tlsLn := listenOn(t, srv.TLSPort)
+		tlsLn := listenOn(t, 0)
+		srv := pebbletest.New(t, pebbletest.Options{TLSPort: portOf(tlsLn)})
 		startACME(t, map[string]string{}, pebbleClient(t, srv), tlsLn, nil)
 		roots := srv.Roots(t)
 		for _, host := range []string{acmeHost, acmeWebHost} {
@@ -235,8 +238,8 @@ func TestPebbleServeTLSACME(t *testing.T) {
 	})
 	t.Run("HTTP-01", func(t *testing.T) {
 		t.Parallel()
-		srv := pebbletest.New(t, pebbletest.Options{HTTPPort: pebbletest.FreePort(t)})
-		tlsLn, httpLn := listenOn(t, 0), listenOn(t, srv.HTTPPort)
+		tlsLn, httpLn := listenOn(t, 0), listenOn(t, 0)
+		srv := pebbletest.New(t, pebbletest.Options{HTTPPort: portOf(httpLn)})
 		client := onlyChallenge{ACMEClient: pebbleClient(t, srv), typ: instance.ACMEChallengeHTTP01}
 		startACME(t, map[string]string{}, client, tlsLn, httpLn)
 		roots := srv.Roots(t)
@@ -251,7 +254,8 @@ func TestPebbleServeTLSACME(t *testing.T) {
 // orders of the second from the KV.
 func TestPebbleServeTLSACMETwoProcesses(t *testing.T) {
 	t.Parallel()
-	srv := pebbletest.New(t, pebbletest.Options{TLSPort: pebbletest.FreePort(t)})
+	first, second := listenOn(t, 0), listenOn(t, 0)
+	srv := pebbletest.New(t, pebbletest.Options{TLSPort: portOf(first)})
 	// The processes share the database and its key-encryption key.
 	db := newDatabase(t, true)
 	kek := make([]byte, 32)
@@ -259,7 +263,6 @@ func TestPebbleServeTLSACMETwoProcesses(t *testing.T) {
 	var mu sync.Mutex
 	orders := map[string]int{}
 	client := countingClient{ACMEClient: pebbleClient(t, srv), mu: &mu, orders: orders}
-	first, second := listenOn(t, srv.TLSPort), listenOn(t, 0)
 	for _, ln := range []net.Listener{first, second} {
 		s := startACME(t, map[string]string{"MY_DATABASE_URL": db, "MY_KV": "db", "MY_KEK": base64.StdEncoding.EncodeToString(kek)}, client, ln, nil)
 		t.Cleanup(func() {

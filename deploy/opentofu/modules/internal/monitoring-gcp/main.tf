@@ -234,6 +234,8 @@ locals {
     "MyDBPoolWaiting",
     "MyFileDescriptorsNearLimit",
     "MyAdapterErrors",
+    "MyTLSCertificateExpiring",
+    "MyTLSOrdersFailing",
   ]
 
   channels      = concat([for channel in google_monitoring_notification_channel.email : channel.id], var.notification_channels)

@@ -215,6 +215,70 @@ func (q *Queries) InsertTLSOrderFailure(ctx context.Context, arg InsertTLSOrderF
 	return err
 }
 
+const listTLSOrderAttempts = `-- name: ListTLSOrderAttempts :many
+SELECT a.id, a.host, a.directory_url, a.profile, a.replaces_certificate_id, a.occurred_at,
+  f.problem_type, f.detail, f.occurred_at AS failed_at, c.id AS certificate_id
+FROM tls_order_attempts a
+LEFT JOIN tls_order_failures f ON f.attempt_id = a.id
+LEFT JOIN tls_certificates c ON c.attempt_id = a.id
+WHERE a.host = ?1
+ORDER BY a.occurred_at DESC, a.id DESC
+LIMIT ?2
+`
+
+type ListTLSOrderAttemptsParams struct {
+	Host    string
+	MaxRows int64
+}
+
+type ListTLSOrderAttemptsRow struct {
+	ID                    string
+	Host                  string
+	DirectoryUrl          string
+	Profile               string
+	ReplacesCertificateID sql.NullString
+	OccurredAt            int64
+	ProblemType           sql.NullString
+	Detail                sql.NullString
+	FailedAt              sql.NullInt64
+	CertificateID         sql.NullString
+}
+
+// ListTLSOrderAttempts returns the latest orders of a host with their results, newest first.
+func (q *Queries) ListTLSOrderAttempts(ctx context.Context, arg ListTLSOrderAttemptsParams) ([]ListTLSOrderAttemptsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTLSOrderAttempts, arg.Host, arg.MaxRows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTLSOrderAttemptsRow{}
+	for rows.Next() {
+		var i ListTLSOrderAttemptsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Host,
+			&i.DirectoryUrl,
+			&i.Profile,
+			&i.ReplacesCertificateID,
+			&i.OccurredAt,
+			&i.ProblemType,
+			&i.Detail,
+			&i.FailedAt,
+			&i.CertificateID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUnresultedTLSOrderAttempts = `-- name: ListUnresultedTLSOrderAttempts :many
 SELECT a.id, a.host, a.directory_url, a.profile, a.replaces_certificate_id, a.occurred_at
 FROM tls_order_attempts a
@@ -257,4 +321,20 @@ func (q *Queries) ListUnresultedTLSOrderAttempts(ctx context.Context, arg ListUn
 		return nil, err
 	}
 	return items, nil
+}
+
+const tLSCertificateSuperseded = `-- name: TLSCertificateSuperseded :one
+SELECT EXISTS (
+  SELECT 1 FROM tls_certificates c
+  JOIN tls_certificates n ON n.host = c.host AND (n.created_at > c.created_at OR (n.created_at = c.created_at AND n.id > c.id))
+  WHERE c.id = ?1
+) AS superseded
+`
+
+// TLSCertificateSuperseded reports whether a later certificate of the same host exists, revoked or not.
+func (q *Queries) TLSCertificateSuperseded(ctx context.Context, id string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, tLSCertificateSuperseded, id)
+	var superseded bool
+	err := row.Scan(&superseded)
+	return superseded, err
 }

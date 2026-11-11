@@ -31,6 +31,16 @@ type TLSOrderAttempt struct {
 	OccurredAt            time.Time
 }
 
+// TLSOrderAttemptResult is an order with its result, as `my tls status` lists them: the
+// certificate it issued, its failure, or neither while it runs or when its process died.
+type TLSOrderAttemptResult struct {
+	Attempt TLSOrderAttempt
+	// CertificateID is the certificate the order issued, empty for none.
+	CertificateID string
+	// Failure is the failure of the order, nil for none.
+	Failure *TLSOrderFailure
+}
+
 // MaxTLSOrderFailureDetail is the longest detail of a failed order that is kept, in characters.
 const MaxTLSOrderFailureDetail = 1000
 

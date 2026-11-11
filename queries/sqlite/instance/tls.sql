@@ -51,3 +51,22 @@ FROM tls_order_attempts a
 WHERE a.host = sqlc.arg(host) AND a.occurred_at > sqlc.arg(after)
   AND NOT EXISTS (SELECT 1 FROM tls_certificates c WHERE c.attempt_id = a.id)
 ORDER BY a.occurred_at, a.id;
+
+-- ListTLSOrderAttempts returns the latest orders of a host with their results, newest first.
+-- name: ListTLSOrderAttempts :many
+SELECT a.id, a.host, a.directory_url, a.profile, a.replaces_certificate_id, a.occurred_at,
+  f.problem_type, f.detail, f.occurred_at AS failed_at, c.id AS certificate_id
+FROM tls_order_attempts a
+LEFT JOIN tls_order_failures f ON f.attempt_id = a.id
+LEFT JOIN tls_certificates c ON c.attempt_id = a.id
+WHERE a.host = sqlc.arg(host)
+ORDER BY a.occurred_at DESC, a.id DESC
+LIMIT sqlc.arg(max_rows);
+
+-- TLSCertificateSuperseded reports whether a later certificate of the same host exists, revoked or not.
+-- name: TLSCertificateSuperseded :one
+SELECT EXISTS (
+  SELECT 1 FROM tls_certificates c
+  JOIN tls_certificates n ON n.host = c.host AND (n.created_at > c.created_at OR (n.created_at = c.created_at AND n.id > c.id))
+  WHERE c.id = sqlc.arg(id)
+) AS superseded;

@@ -58,6 +58,13 @@ func (s *CertificateSink) Set(host string, cert *tls.Certificate) error {
 	return nil
 }
 
+// Remove implements instance.TLSCertificateSink.
+func (s *CertificateSink) Remove(host string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.certs, host)
+}
+
 // Certificate returns the certificate of host, or nil.
 func (s *CertificateSink) Certificate(host string) *tls.Certificate {
 	s.mu.Lock()

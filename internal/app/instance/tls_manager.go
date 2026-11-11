@@ -60,6 +60,8 @@ var errTLSOrderLeaseLost = errors.New("instance: lost the lease of the TLS order
 // certificates in memory that the TLS handshake reads (tlsserve.Holder in internal/platform).
 type TLSCertificateSink interface {
 	Set(host string, cert *tls.Certificate) error
+	// Remove stops serving the certificate of host: every certificate of host was revoked.
+	Remove(host string)
 }
 
 // TLSManagerOptions configure a TLSManager.
@@ -98,6 +100,9 @@ type TLSManagerOptions struct {
 	// into the database and into its memory (the tls_certificate signal of ADR-0163 §6). It
 	// must not block.
 	Notify func(host, certificateID string)
+	// Meter, when set, receives the metrics of the orders (TLSOrderAttempts and
+	// TLSOrderConsecutiveFailures).
+	Meter kernel.Meter
 }
 
 // TLSManager obtains the certificates of the hosts that the server serves itself with ACME
@@ -128,6 +133,10 @@ type TLSManager struct {
 	// loaded is the certificate in memory of each host, and renewals its renewal time.
 	loaded   map[string]tlsLoaded
 	renewals map[string]tlsRenewal
+	// failures is the number of orders of each host since its current certificate that obtained
+	// none, as the last round or order saw it (TLSOrderConsecutiveFailures).
+	failures map[string]int
+	attempts kernel.Counter
 	// notices are the hosts to load again (Notice), all of them when noticeAll is set; wake
 	// tells the goroutine of Run that loads them.
 	notices   map[string]struct{}
@@ -199,16 +208,19 @@ func NewTLSManager(opts TLSManagerOptions) (*TLSManager, error) {
 	for _, h := range hosts {
 		loading[h] = &sync.Mutex{}
 	}
-	return &TLSManager{
+	m := &TLSManager{
 		opts:       opts,
 		challenges: NewACMEChallenges(opts.KV),
 		lease:      tlsOrderLease{kv: opts.KV, ttl: opts.LeaseTTL, renewal: opts.LeaseRenewal},
 		loading:    loading,
 		loaded:     map[string]tlsLoaded{},
 		renewals:   map[string]tlsRenewal{},
+		failures:   map[string]int{},
 		notices:    map[string]struct{}{},
 		wake:       make(chan struct{}, 1),
-	}, nil
+	}
+	m.registerMetrics(kernel.MeterOrNop(opts.Meter))
+	return m, nil
 }
 
 // Hosts returns the hosts of the manager.
@@ -235,8 +247,9 @@ func (m *TLSManager) ReloadAll(ctx context.Context) error {
 
 // Reload loads the current certificate of host from the database into memory, unless it is the
 // one there already: it reads only the certificate's ID to compare, and opens the sealed key only
-// for a certificate it installs. A host without a certificate in the database is left as it is,
-// and so is a host that the manager does not serve.
+// for a certificate it installs. When the database has no current certificate of host, every one
+// was revoked (my tls revoke), and the one in memory stops being served. A host that the manager
+// does not serve is left as it is.
 func (m *TLSManager) Reload(ctx context.Context, host string) error {
 	host = normalizeChallengeHost(host)
 	lock, ok := m.loading[host]
@@ -247,6 +260,7 @@ func (m *TLSManager) Reload(ctx context.Context, host string) error {
 	defer lock.Unlock()
 	id, err := m.opts.Service.CurrentTLSCertificateID(ctx, host)
 	if errors.Is(err, ErrNotFound) {
+		m.drop(ctx, host)
 		return nil
 	}
 	if err != nil {
@@ -333,6 +347,21 @@ func (m *TLSManager) install(host, id, directory, chainPEM string, pkcs8 []byte)
 	m.loaded[host] = tlsLoaded{id: id, directory: directory, leaf: cert.Leaf}
 	m.mu.Unlock()
 	return nil
+}
+
+// drop stops serving the certificate in memory of host, whose certificates were all revoked; the
+// caller holds the loading lock of host.
+func (m *TLSManager) drop(ctx context.Context, host string) {
+	m.mu.Lock()
+	c, ok := m.loaded[host]
+	delete(m.loaded, host)
+	delete(m.renewals, host)
+	m.mu.Unlock()
+	if ok {
+		m.opts.Certificates.Remove(host)
+		m.opts.Logger.WarnContext(ctx, "the TLS certificate was revoked and has no replacement yet; the host is not served until one is obtained",
+			slog.String("host", host), slog.String("certificate", c.id))
+	}
 }
 
 // RenewalTime returns the renewal time of the certificate in memory of host (ADR-0163 §7), as the
@@ -466,12 +495,14 @@ func (m *TLSManager) maintain(ctx context.Context, host string) (time.Time, erro
 	if err := m.Reload(ctx, host); err != nil {
 		return retry, err
 	}
-	if next, ok := m.notDue(ctx, host, now); ok {
-		return next, nil
-	}
+	// The backoff is read at every round, not only when the host is due, so that the failures
+	// it counts stay current (TLSOrderConsecutiveFailures).
 	wait, err := m.backoff(ctx, host)
 	if err != nil {
 		return retry, err
+	}
+	if next, ok := m.notDue(ctx, host, now); ok {
+		return next, nil
 	}
 	if !wait.IsZero() {
 		return earliest(wait, retry), nil
@@ -552,6 +583,9 @@ func (m *TLSManager) backoff(ctx context.Context, host string) (time.Time, error
 	if err != nil {
 		return time.Time{}, fmt.Errorf("instance: read the TLS orders of %s: %w", host, err)
 	}
+	m.mu.Lock()
+	m.failures[host] = b.Failures
+	m.mu.Unlock()
 	if b.Allows(m.opts.Clock.Now()) {
 		return time.Time{}, nil
 	}
@@ -571,6 +605,17 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 		replaces, replacesLeaf = c.id, c.leaf
 	}
 	m.mu.Unlock()
+	if replaces != "" {
+		// A certificate is replaced once (RFC 9773 §5): the one in memory may be an older one
+		// served again because its replacement was revoked.
+		superseded, err := m.opts.Service.TLSCertificateSuperseded(ctx, replaces)
+		if err != nil {
+			return fmt.Errorf("instance: read the TLS certificates of %s: %w", host, err)
+		}
+		if superseded {
+			replaces, replacesLeaf = "", nil
+		}
+	}
 	attempt, err := m.opts.Service.RecordTLSOrderAttempt(ctx, TLSOrder{
 		Host: host, DirectoryURL: dir, Profile: m.opts.Profile, ReplacesCertificateID: replaces,
 	})
@@ -579,6 +624,7 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 	}
 	m.opts.Logger.InfoContext(ctx, "ordering a TLS certificate", slog.String("host", host), slog.String("directory", attempt.DirectoryURL))
 	chain, key, err := m.obtain(ctx, host, replacesLeaf)
+	m.countOrder(ctx, host, err == nil)
 	if err != nil {
 		problem, detail := classifyTLSOrderFailure(ctx, err)
 		recErr := m.opts.Service.RecordTLSOrderFailure(context.WithoutCancel(ctx), attempt.ID, problem, detail)
