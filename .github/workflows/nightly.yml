@@ -328,9 +328,6 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
       options: --ipc=host
     steps:
-      # The image lacks the unzip that setup-bun extracts Bun with.
-      - name: Install unzip
-        run: apt-get update && apt-get install -y --no-install-recommends unzip
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The job runs as root in the container, and the workspace belongs to the runner's user: git refuses the
@@ -339,8 +336,11 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      # The image lacks the unzip that setup-bun extracts Bun with.
       - name: Set up Bun and Node
         uses: ./.github/actions/setup-bun
+        with:
+          npm: "true"
       - name: Set up Go
         uses: ./.github/actions/setup-go
       - name: Start Mailpit
@@ -401,9 +401,6 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
       options: --ipc=host
     steps:
-      # The image lacks the unzip that setup-bun extracts Bun with, and the jq that reads the identity token.
-      - name: Install unzip and jq
-        run: apt-get update && apt-get install -y --no-install-recommends unzip jq
       # The whole history, for the diff since the last successful full run.
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -415,8 +412,11 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      # The image lacks the unzip that setup-bun extracts Bun with.
       - name: Set up Bun and Node
         uses: ./.github/actions/setup-bun
+        with:
+          npm: "true"
       - name: Set up Go
         uses: ./.github/actions/setup-go
       - name: web:install
@@ -448,7 +448,7 @@ jobs:
             fetch_token() {
               curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
                 "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
-                jq -er .value > "$ANTHROPIC_IDENTITY_TOKEN_FILE.next"
+                node -pe 'JSON.parse(fs.readFileSync(0, "utf8")).value || process.exit(1)' > "$ANTHROPIC_IDENTITY_TOKEN_FILE.next"
               mv "$ANTHROPIC_IDENTITY_TOKEN_FILE.next" "$ANTHROPIC_IDENTITY_TOKEN_FILE"
             }
             fetch_token
