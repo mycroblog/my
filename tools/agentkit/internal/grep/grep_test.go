@@ -20,7 +20,7 @@ func fixture(t *testing.T) *repo.Repo {
 	root := t.TempDir()
 	long := strings.Repeat("x", 300) + " needle " + strings.Repeat("y", 300)
 	files := map[string]string{
-		ctxmap.File:                         "ignore:\n  - \"**/*.gen.go\"\n  - \"api/openapi.yaml\"\nentries: []\n",
+		ctxmap.File:                         "generated:\n  - \"**/*.gen.go\"\n  - \"api/openapi.yaml\"\nentries: []\n",
 		".gitignore":                        ".tmp/\nnode_modules/\n",
 		"internal/app/note/service.go":      "package note\n\n// Service creates notes.\ntype Service struct{}\n\n// Create makes a note.\nfunc (s *Service) Create(text string) error {\n\tif text == \"\" {\n\t\treturn errEmpty\n\t}\n\treturn nil\n}\n\nfunc helper() { _ = \"Create\" }\n",
 		"internal/app/note/service_test.go": "package note\n\nfunc TestCreate(t *testing.T) { Create() }\n",
@@ -94,6 +94,82 @@ func TestParseArgs(t *testing.T) {
 		if _, err := ParseArgs(bad); err == nil {
 			t.Errorf("%v: no error", bad)
 		}
+	}
+}
+
+// What git ignores is out of scope wherever the rule is written: a .gitignore below the root and
+// .git/info/exclude hide a file from the search and from the map check, and an untracked file they do not name
+// is searched.
+func TestGitDecidesWhatIsIgnored(t *testing.T) {
+	root := t.TempDir()
+	git := func(args ...string) {
+		t.Helper()
+		if out, err := exec.Command("git", append([]string{"-C", root}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v %s", args, err, out)
+		}
+	}
+	git("init", "-q")
+	for p, body := range map[string]string{
+		ctxmap.File:              "generated: [\"sub/out/**\"]\nentries:\n  - paths: [\"*.txt\"]\n",
+		"sub/" + ctxmap.File:     "checks: [go]\n",
+		"sub/.gitignore":         "out/\n",
+		"sub/out/built.txt":      "needle\n",
+		"sub/tracked.txt":        "needle\n",
+		"sub/new.txt":            "needle\n",
+		"local.txt":              "needle\n",
+		"uncovered/out/x.go":     "needle\n",
+		"uncovered/.gitignore":   "*\n",
+		".git/info/exclude":      "local.txt\n",
+		"sub/deeper/.gitignore":  "*.log\n",
+		"sub/deeper/run.log":     "needle\n",
+		"sub/deeper/visible.txt": "needle\n",
+	} {
+		full := filepath.Join(root, p)
+		if err := os.MkdirAll(filepath.Dir(full), 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	git("add", ctxmap.File, "sub/"+ctxmap.File, "sub/tracked.txt")
+	r, err := repo.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out, _ := grep(t, r, "", "needle", "-l", "--gen", "--tests")
+	for _, want := range []string{"sub/tracked.txt (1)\n", "sub/new.txt (1)\n", "sub/deeper/visible.txt (1)\n"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("grep: no %q in\n%s", want, out)
+		}
+	}
+	for _, not := range []string{"built.txt", "local.txt", "run.log", "uncovered"} {
+		if strings.Contains(out, not) {
+			t.Errorf("grep: a file git ignores, %q, in\n%s", not, out)
+		}
+	}
+
+	m, err := ctxmap.Of(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := r.Files()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paths, problems []string
+	for _, f := range files {
+		paths = append(paths, f.Path)
+	}
+	for _, p := range m.Check(root, paths, []string{"go"}) {
+		problems = append(problems, p.Path+" "+p.Msg)
+	}
+	// The ignored files are under no map and one is not even named by the root's entries: the check does not see
+	// them, so its one problem is the pattern that lists what git ignores.
+	want := []string{`context-map.yaml generated: "sub/out/**" matches no tracked file (git already ignores it, or nothing matches): remove the pattern`}
+	if !reflect.DeepEqual(problems, want) {
+		t.Errorf("map check = %q, want %q", problems, want)
 	}
 }
 

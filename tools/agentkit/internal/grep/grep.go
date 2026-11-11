@@ -303,7 +303,7 @@ var lockFiles = map[string]bool{
 	"pnpm-lock.yaml": true, "yarn.lock": true, "Cargo.lock": true, ".terraform.lock.hcl": true,
 }
 
-func classify(p string, ignore []string) class {
+func classify(p string, listed []string) class {
 	base := path.Base(p)
 	slashed := "/" + p
 	switch {
@@ -314,7 +314,7 @@ func classify(p string, ignore []string) class {
 		strings.Contains(slashed, "/__screenshots__/"):
 		return generated
 	}
-	for _, pat := range ignore {
+	for _, pat := range listed {
 		if ctxmap.Match(pat, p) {
 			return generated
 		}
@@ -348,9 +348,9 @@ func Run(r *repo.Repo, cwd string, o Options, w io.Writer) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	var ignore []string
+	var listed []string // the generated list of the context map
 	if m, err := ctxmap.Of(r); err == nil {
-		ignore = m.Ignore
+		listed = m.Generated
 	}
 	files, missing, err := list(r, cwd, o.Paths)
 	if err != nil {
@@ -370,7 +370,7 @@ func Run(r *repo.Repo, cwd string, o Options, w io.Writer) (bool, error) {
 		if len(o.Include) > 0 && !included(o.Include, f.path) {
 			continue
 		}
-		f.class = classify(f.path, ignore)
+		f.class = classify(f.path, listed)
 		todo = append(todo, f)
 	}
 	keep := max(o.Limit, 1)

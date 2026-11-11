@@ -7,7 +7,8 @@
 # settings of the whole map and, alone, patterns: the entries of the root's files and dot-directories, of which
 # the first that matches a path describes it. `agentkit map check` verifies the map.
 
-ignore:
+# Tracked files the index and search pass over.
+generated:
   - "**/*.gen.go"
   - "**/*.gen.ts"
   - "**/testdata/**"
@@ -15,8 +16,6 @@ ignore:
   - "internal/adapter/db/*/*gen/**"
   - "internal/adapter/queue/db/internal/**"
   - "api/openapi.yaml"
-  - "internal/interface/web/dist/**"
-  - ".tmp/**"
 
 userdocs:
   # The user and operator documents: each is the userdocs of some map.

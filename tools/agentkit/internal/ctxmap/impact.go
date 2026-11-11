@@ -17,7 +17,7 @@ type Impact struct {
 }
 
 // Impact returns the userdocs of the maps of the changed paths, one per document in path order. Map files and
-// paths that match Ignore or Userdocs.Skip (generated files, tests) describe nothing a document says, and are
+// paths that match Generated or Userdocs.Skip (generated files, tests) describe nothing a document says, and are
 // passed over.
 func (m *Map) Impact(changed []string) []Impact {
 	touched := map[string]bool{}
@@ -26,7 +26,7 @@ func (m *Map) Impact(changed []string) []Impact {
 	}
 	byDoc := map[string]*Impact{}
 	for _, p := range changed {
-		if path.Base(p) == File || m.ignored(p) || matchAny(m.Userdocs.Skip, p) {
+		if path.Base(p) == File || m.generated(p) || matchAny(m.Userdocs.Skip, p) {
 			continue
 		}
 		e, _ := m.For(p)

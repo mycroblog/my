@@ -33,8 +33,9 @@ const whole = "a context map describes its directory as a whole (docs, userdocs,
 
 // Map is the parsed context map: the root file's settings and entries, and the map of every directory.
 type Map struct {
-	// Ignore lists paths no map needs to cover (generated files, fixtures).
-	Ignore []string
+	// Generated lists the tracked files the index, the search and the maps pass over: committed generated code,
+	// test data, reference screenshots. What git ignores is never listed: no command sees it.
+	Generated []string
 	// Userdocs governs the userdocs of the maps.
 	Userdocs Userdocs
 	// Root are the entries of the root file, for the root's files and dot-directories: the first whose Paths
@@ -79,9 +80,10 @@ type dirFile struct {
 
 // rootFile is the root map file as written.
 type rootFile struct {
-	Ignore   []string `yaml:"ignore"`
-	Userdocs Userdocs `yaml:"userdocs"`
-	Entries  []Entry  `yaml:"entries"`
+	Generated []string  `yaml:"generated"`
+	Ignore    yaml.Node `yaml:"ignore"` // the name the list does not have, rejected
+	Userdocs  Userdocs  `yaml:"userdocs"`
+	Entries   []Entry   `yaml:"entries"`
 }
 
 // Of reads the map of the repository r from its tracked and untracked files.
@@ -129,7 +131,7 @@ func Load(root string, files []string) (*Map, error) {
 		m.Dirs[dir] = Entry{File: f, Name: dir, Docs: raw.Docs, Userdocs: raw.Userdocs, Checks: raw.Checks, Shared: raw.Shared}
 	}
 	if !hasRoot {
-		return nil, errors.New(File + ": the repository root has no map file (ignore, userdocs, and the entries of the root's files)")
+		return nil, errors.New(File + ": the repository root has no map file (generated, userdocs, and the entries of the root's files)")
 	}
 	return m, nil
 }
@@ -138,9 +140,12 @@ func Load(root string, files []string) (*Map, error) {
 func (m *Map) addRoot(dec *yaml.Decoder) error {
 	var raw rootFile
 	if err := dec.Decode(&raw); err != nil && !errors.Is(err, io.EOF) {
-		return fmt.Errorf("%s: %w (the root file has ignore, userdocs.cover/skip, and entries with paths, docs, userdocs, checks, shared)", File, err)
+		return fmt.Errorf("%s: %w (the root file has generated, userdocs.cover/skip, and entries with paths, docs, userdocs, checks, shared)", File, err)
 	}
-	m.Ignore, m.Userdocs = raw.Ignore, raw.Userdocs
+	if !raw.Ignore.IsZero() {
+		return fmt.Errorf("%s: ignore: the list is named generated: it holds tracked files the index passes over, not what git ignores", File)
+	}
+	m.Generated, m.Userdocs = raw.Generated, raw.Userdocs
 	for i, e := range raw.Entries {
 		if len(e.Paths) == 0 {
 			return fmt.Errorf("%s: entry %d: no paths", File, i+1)
@@ -219,8 +224,8 @@ func (m *Map) For(p string) (Entry, bool) {
 	return out, true
 }
 
-func (m *Map) ignored(p string) bool {
-	return matchAny(m.Ignore, p)
+func (m *Map) generated(p string) bool {
+	return matchAny(m.Generated, p)
 }
 
 // Problem is one failure of Check.
@@ -228,15 +233,15 @@ type Problem struct {
 	Path, Msg string
 }
 
-// Check verifies the map against the tracked files: every file is under a map, matches an entry of the root
-// file, or is ignored; no map repeats what a map above it says; every docs and userdocs reference resolves to
+// Check verifies the map against the files git lists: every file is under a map, matches an entry of the root
+// file, or is generated; every pattern of Generated matches a file; no map repeats what a map above it says; every docs and userdocs reference resolves to
 // an existing file and heading; every check context exists; and every document of Userdocs.Cover is the
 // userdocs of some map.
 func (m *Map) Check(root string, files []string, contexts []string) []Problem {
 	var out []Problem
 	uncovered := map[string][]string{}
 	for _, f := range files {
-		if path.Base(f) == File || m.ignored(f) {
+		if path.Base(f) == File || m.generated(f) {
 			continue
 		}
 		if _, ok := m.For(f); !ok {
@@ -256,6 +261,11 @@ func (m *Map) Check(root string, files []string, contexts []string) []Problem {
 			fix = fmt.Sprintf("add %s/%s with what holds for the whole directory (docs, userdocs, checks, shared)", top, File)
 		}
 		out = append(out, Problem{d + "/", msg + "; " + fix})
+	}
+	for _, pat := range m.Generated {
+		if !slices.ContainsFunc(files, func(f string) bool { return Match(pat, f) }) {
+			out = append(out, Problem{File, fmt.Sprintf("generated: %q matches no tracked file (git already ignores it, or nothing matches): remove the pattern", pat)})
+		}
 	}
 	known := map[string]bool{}
 	for _, c := range contexts {

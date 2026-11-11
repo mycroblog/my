@@ -50,7 +50,7 @@ func write(t *testing.T, files map[string]string) (string, []string) {
 	return root, paths
 }
 
-const rootMap = `ignore: ["**/*.gen.go"]
+const rootMap = `generated: ["**/*.gen.go", "dist/**"]
 userdocs:
   cover: ["ops/*.md"]
 entries:
@@ -114,6 +114,7 @@ func TestCheck(t *testing.T) {
 		"./ no map describes README.txt; name them in an entry of the root context-map.yaml",
 		".hidden/ no map describes x.txt; name them in an entry of the root context-map.yaml",
 		"new/deep/ no map describes x.go; add new/context-map.yaml with what holds for the whole directory",
+		"context-map.yaml generated: \"dist/**\" matches no tracked file (git already ignores it, or nothing matches): remove the pattern",
 		"internal/app/content/context-map.yaml repeats \"doc.md#1-rules\", which a context-map.yaml above it says for this directory too: delete it here",
 		"internal/app/content/context-map.yaml repeats \"go\"",
 		"internal/context-map.yaml internal: unknown check context \"nope\"",
@@ -141,7 +142,8 @@ func TestLoadRejects(t *testing.T) {
 		"entries":      {map[string]string{"context-map.yaml": rootMap, "a/context-map.yaml": "entries:\n  - paths: [\"*\"]\n"}, perFile},
 		"paths":        {map[string]string{"context-map.yaml": rootMap, "a/context-map.yaml": "paths: [\"x.go\"]\nchecks: [go]\n"}, perFile},
 		"notes":        {map[string]string{"context-map.yaml": rootMap, "a/context-map.yaml": "checks: [go]\nnotes: [\"Never do it.\"]\n"}, perFile},
-		"settings":     {map[string]string{"context-map.yaml": rootMap, "a/context-map.yaml": "ignore: [\"*\"]\nchecks: [go]\n"}, "field ignore not found"},
+		"settings":     {map[string]string{"context-map.yaml": rootMap, "a/context-map.yaml": "generated: [\"*\"]\nchecks: [go]\n"}, "field generated not found"},
+		"old name":     {map[string]string{"context-map.yaml": "ignore: [\"**/*.gen.go\"]\n"}, "the list is named generated: it holds tracked files the index passes over, not what git ignores"},
 		"nothing":      {map[string]string{"context-map.yaml": rootMap, "a/context-map.yaml": "# SPDX-License-Identifier: AGPL-3.0-only\n"}, "says nothing: delete the file"},
 		"no root":      {map[string]string{"a/context-map.yaml": "checks: [go]\n"}, "the repository root has no map file"},
 		"root strict":  {map[string]string{"context-map.yaml": "strict: [\"*\"]\n"}, "field strict not found"},
@@ -157,8 +159,8 @@ func TestLoadRejects(t *testing.T) {
 
 func TestImpact(t *testing.T) {
 	m := &Map{
-		Ignore:   []string{"**/*.gen.go"},
-		Userdocs: Userdocs{Skip: []string{"**/*_test.go"}},
+		Generated: []string{"**/*.gen.go"},
+		Userdocs:  Userdocs{Skip: []string{"**/*_test.go"}},
 		Dirs: map[string]Entry{
 			"internal":         {Userdocs: []string{"ops/running.md"}},
 			"internal/mail":    {Userdocs: []string{"ops/email.md#smtp", "ops/email.md#bounces"}},

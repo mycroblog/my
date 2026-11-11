@@ -58,7 +58,7 @@ not resolve, or a file of `userdocs.cover` is no map's `userdocs` ([ADR-0003](do
 ## Documentation that changes with the code
 
 `docs impact [--base origin/main]` lists the `userdocs` of the entries of the paths changed since the merge base,
-passing over the paths of `userdocs.skip` (tests, fixtures) and the map's `ignore` (generated files), and says whether
+passing over the paths of `userdocs.skip` (tests, fixtures) and the map's `generated` (tracked files the index passes over), and says whether
 the change touches each. `check` and `pr open` print the ones it does not touch; nothing fails on them.
 
 ## Documentation rules
