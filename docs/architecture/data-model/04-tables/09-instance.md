@@ -27,7 +27,16 @@
 | `service_closure_heads` | 投影 | `id`（PK。常に 1）, `state`（`enum(announced, closed, delivery_completed)`）, `event_id`（最後のイベント）, `announcement_event_id`（効いている予定の `announced`） | 終了を予告している間とその後に 1 行。行が無い = 予告なし |
 | `instance_secrets` | リソース | `id`, `name`（`string`。`media_proxy_key`）, `sealed_secret`（`Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(name)`。サーバーが最初に使うときに作る秘密（[ADR-0019](../../../adr/0019-security-baseline.md) §12）。名前は `internal/domain/instance` に定義する。`my kek rewrap` の対象 |
 | `instance_domains` | リソース | `id`（PK。常に 1）, `host`（`string`）, `account_domain`（`string`）, `recorded_at` | この DB が属するドメイン。最初に DB を使う `my serve` か `my` コマンドが 1 回だけ書き、以後は設定と比べて、違えば拒否する（[ADR-0018](../../../adr/0018-federated-uris.md)）。`my config check -instance` と `my db upgrade -check` は比べるだけで書かない |
+| `tls_acme_accounts` | リソース | `id`, `directory_url`（`iri`。CA の ACME ディレクトリ）, `account_url`（`iri`）, `sealed_private_key`（アカウント鍵の PKCS #8 を `Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(directory_url)`。CA ごとに 1 つ。同時に登録したら `ON CONFLICT DO NOTHING` のあと読み直して 1 つに揃える（[ADR-0163](../../../adr/0163-acme-tls.md) §4）。`my kek rewrap` の対象 |
+| `tls_order_attempts` | イベント | `id`, `host`（`string`）, `directory_url`（`iri`）, `profile`（`string`。空 = CA の既定）, `replaces_certificate_id`（NULL 可 = 初回の発注。`tls_certificates.id` の任意の論理参照）, `occurred_at` | インデックス `(host, occurred_at)`。発注のリースを持つプロセスが発注する直前に書く。結果は `tls_order_failures` か `tls_certificates` で、発注中にプロセスが死ねばどちらもない |
+| `tls_order_failures` | イベント（試みの結果の部分型） | `attempt_id`（PK）, `problem_type`（`string`。RFC 8555 の problem の `type`、またはクライアント側の失敗の分類）, `detail`（`string(1000)`）, `occurred_at` | |
+| `tls_certificates` | リソース（試みの結果の部分型） | `id`, `attempt_id`, `host`（`string`）, `directory_url`（`iri`）, `serial`（`string`。16 進）, `not_before`, `not_after`, `chain_pem`（`text`。葉から順の PEM。公開の情報なので平文）, `sealed_private_key`（鍵の PKCS #8 を `Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(attempt_id)`、インデックス `(host, created_at)`。INSERT のみ。CHECK `not_after > not_before`。`my kek rewrap` の対象 |
+| `tls_certificate_revocations` | イベント | `id`, `certificate_id`, `reason`（`enum(key_compromise, superseded, operator)`）, `revoked_by_user_id`（NULL 可 = CLI）, `occurred_at` | インデックス `(certificate_id)`。CA に失効を求めたあと書く |
 
+- `my` が自分で HTTPS を待ち受けるときの証明書（`tls_*`、[ADR-0163](../../../adr/0163-acme-tls.md) §4・§7）:
+  - ホストの現在の証明書は、失効していないもののうち `created_at` が最後のもの（同じ時刻なら `id` の大きいもの）です。`not_after` の最大では選びません（短いプロファイルへの更新は、置き換える証明書より先に切れます）。
+    件数はホストあたり年に十数件なので投影は作らず、索引 `(host, created_at)` を引きます。
+  - 発注の再試行の待ちは、現在の証明書の `created_at` より後の試みのうち証明書のないもの（失敗と、結果のないもの）の数 n と最後の時刻から導きます: 1 分（n = 1）・10 分・100 分・以後 1 日（`instance.NewTLSOrderBackoff`）。再起動でも KV の喪失でも戻りません。
 - 設定値は 1 キー 1 スカラーにします。複合的な設定はキーを分けます（JSON にしない）。
   キー・型・既定値・検証は `internal/domain/instance` に定義し、`key` の `CHECK` と一緒に増やします。一度も設定していないキーは既定値として読みます。
 - 現在値の投影は、キーごとに `id` が最大の版を指します。
