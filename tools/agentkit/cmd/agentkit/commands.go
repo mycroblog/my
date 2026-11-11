@@ -103,6 +103,8 @@ func run(args []string) error {
 		return runADR(r, rest)
 	case "docs":
 		return runDocs(r, rest)
+	case "grep":
+		return runGrep(r, rest)
 	}
 	s, err := store.Open(r)
 	if err != nil {
