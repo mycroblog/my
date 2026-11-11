@@ -271,9 +271,10 @@ func issueWithParent(n int) (issueNode, error) {
 
 // followUp checks that the issues pull request n closes are closed, closes each parent issue whose sub-issues
 // are all closed (and that parent's parent, in turn), and returns what is still open: issues the merge did not
-// close, parents with open sub-issues, and the milestones with their counts.
+// close, parents with open sub-issues, the closed issues with neither a parent nor a milestone, and the
+// milestones with their counts. It closes a milestone whose issues are all closed.
 func followUp(n int, issues []int) []string {
-	var remains []string
+	var remains, loose []string
 	milestones := map[int]string{}
 	parents := map[int]bool{}
 	queue := append([]int(nil), issues...)
@@ -298,6 +299,9 @@ func followUp(n int, issues []int) []string {
 			continue
 		}
 		pa := is.Parent
+		if pa == nil && is.Milestone == nil {
+			loose = append(loose, "#"+strconv.Itoa(num))
+		}
 		if pa == nil || parents[pa.Number] {
 			continue
 		}
@@ -327,6 +331,9 @@ func followUp(n int, issues []int) []string {
 			queue = append(queue, pa.Number)
 		}
 	}
+	if len(loose) > 0 {
+		remains = append(remains, strings.Join(loose, ", ")+": no parent issue and no milestone, so nothing tracks what the work was part of")
+	}
 	nums := make([]int, 0, len(milestones))
 	for m := range milestones {
 		nums = append(nums, m)
@@ -343,7 +350,12 @@ func followUp(n int, issues []int) []string {
 		}
 		line := fmt.Sprintf("milestone %s: %d open, %d closed", milestones[m], ms.Open, ms.Closed)
 		if ms.Open == 0 && ms.State == "open" {
-			line += fmt.Sprintf(" (close it: gh api -X PATCH repos/%s/milestones/%d -f state=closed)", gh.Repo(), m)
+			path := fmt.Sprintf("repos/%s/milestones/%d", gh.Repo(), m)
+			if _, err := gh.Run("api", "-X", "PATCH", path, "-f", "state=closed"); err != nil {
+				line += fmt.Sprintf(" (closing it failed: %v; gh api -X PATCH %s -f state=closed)", err, path)
+			} else {
+				line = fmt.Sprintf("closed milestone %s (each of its %d issues is closed)", milestones[m], ms.Closed)
+			}
 		}
 		remains = append(remains, line)
 	}
@@ -365,7 +377,7 @@ func landed(w io.Writer, r *repo.Repo, p prState) int {
 	fmt.Fprintf(w, "cleaned up: %s\n", cleanUp(r, p))
 	remains := followUp(p.Number, issues)
 	if len(remains) == 0 {
-		remains = []string{"nothing (no parent issue, no milestone)"}
+		remains = []string{"nothing (the pull request closes no issue)"}
 	}
 	fmt.Fprintf(w, "remains: %s\n", strings.Join(remains, "; "))
 	return 0

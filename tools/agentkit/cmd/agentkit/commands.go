@@ -33,7 +33,12 @@ Read (instead of grep / cat over the repository):
   adr list [--status Proposed]                         number, status, and title of every ADR
 
 Workflow (instead of gh / scripts/task.sh loops):
-  issue claim <n> [--plan text]                        check status:ready, no assignee, Accepted ADRs; assign; comment
+  issue new --type task|bug|spike|adr|epic --title t --body-file f [--parent epic] [--milestone title]
+       [--area a]... [--priority p0|p1|p2] [--blocked-by n]... [--ready]
+                                                       the only way to create an issue: a sub-issue of --parent with
+                                                       its milestone, or an epic in --milestone; order is --blocked-by
+  issue claim <n> [--plan text]                        check status:ready, no assignee, a milestone, Accepted ADRs,
+                                                       nothing open that blocks it; assign; comment
   issue block <n> --reason text|--reason-file f        comment and add status:blocked
   pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
                                                        the gate: refuses outside a worktree, on a merge or

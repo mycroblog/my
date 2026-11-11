@@ -15,8 +15,11 @@ import (
 )
 
 func runIssue(r *repo.Repo, args []string) error {
+	if len(args) > 0 && args[0] == "new" {
+		return runIssueNew(args[1:])
+	}
 	if len(args) < 2 {
-		return fmt.Errorf("usage: agentkit issue claim <n> [--plan text] | issue block <n> --reason text|--reason-file f")
+		return fmt.Errorf("usage: agentkit issue new --type t --title t --body-file f [--parent n] | issue claim <n> [--plan text] | issue block <n> --reason text|--reason-file f")
 	}
 	fs := flag.NewFlagSet("issue", flag.ContinueOnError)
 	plan := fs.String("plan", "", "one-line plan to comment")
@@ -52,6 +55,56 @@ func runIssue(r *repo.Repo, args []string) error {
 	}
 	fmt.Println(line)
 	return nil
+}
+
+func runIssueNew(args []string) error {
+	fs := flag.NewFlagSet("issue new", flag.ContinueOnError)
+	var o ops.NewOptions
+	number := func(dst *[]int) func(string) error {
+		return func(v string) error {
+			n, err := strconv.Atoi(strings.TrimPrefix(v, "#"))
+			if err != nil || n <= 0 {
+				return fmt.Errorf("an issue number expected")
+			}
+			*dst = append(*dst, n)
+			return nil
+		}
+	}
+	var parents []int
+	fs.StringVar(&o.Type, "type", "", "task, bug, spike, adr, or epic")
+	fs.StringVar(&o.Title, "title", "", "the title, without a [Type] prefix")
+	bodyFile := fs.String("body-file", "", "file with the description")
+	fs.Func("parent", "the epic this is a sub-issue of; the issue gets its milestone", number(&parents))
+	fs.StringVar(&o.Milestone, "milestone", "", "an open milestone's title (an epic, or an issue outside every epic)")
+	fs.Func("area", "an area label, without area: (repeatable)", func(v string) error {
+		o.Areas = append(o.Areas, v)
+		return nil
+	})
+	fs.StringVar(&o.Priority, "priority", "", "p0, p1, or p2")
+	fs.Func("blocked-by", "an issue to finish first (repeatable)", number(&o.BlockedBy))
+	fs.BoolVar(&o.Ready, "ready", false, "mark it ready to take")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 || len(parents) > 1 {
+		return fmt.Errorf("issue new takes flags only, and one --parent (got %q)", pos)
+	}
+	if len(parents) == 1 {
+		o.Parent = parents[0]
+	}
+	if *bodyFile != "" {
+		b, err := os.ReadFile(*bodyFile)
+		if err != nil {
+			return err
+		}
+		o.Body = string(b)
+	}
+	lines, err := ops.New(o)
+	if len(lines) > 0 {
+		fmt.Println(strings.Join(lines, "\n"))
+	}
+	return err
 }
 
 func runPR(r *repo.Repo, args []string) error {

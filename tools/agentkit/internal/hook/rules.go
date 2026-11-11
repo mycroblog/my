@@ -190,6 +190,16 @@ func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 	vars := map[string]string{}
 	for i, seg := range segs {
 		pc := parseCommand(seg.text, vars)
+		// url=$(gh issue create ...) creates the issue just the same.
+		if depth < 3 && strings.Contains(seg.text, "=$(") {
+			for _, w := range words(seg.text) {
+				if _, sub, ok := strings.Cut(w.text, "=$("); ok && reAssign.MatchString(w.text) && strings.HasSuffix(sub, ")") {
+					if d := c.checkIn(cwd, strings.TrimSuffix(sub, ")"), depth+1); d != nil && d.rule == "issue-create" {
+						return d
+					}
+				}
+			}
+		}
 		if (pc.has("until") || pc.has("while")) && pc.tool != "read" {
 			loop = true
 		}
@@ -245,7 +255,9 @@ func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 		case "python3", "python", "node", "bun", "ruby", "deno":
 			d = c.script(cwd, pc, seg)
 		case "gh":
-			d = ci(pc)
+			if d = issueCreate(pc); d == nil {
+				d = ci(pc)
+			}
 		}
 		if d != nil {
 			return d
@@ -967,6 +979,31 @@ func (c *checker) isFile(t target) bool {
 }
 
 // ---- CI --------------------------------------------------------------------------------------------------
+
+// issueCreate denies `gh issue create`: an issue made that way is in no epic and no milestone.
+func issueCreate(pc command) *denial {
+	var pos []string
+	title := "<title>"
+	for i, a := range pc.args {
+		switch {
+		case (a.text == "--title" || a.text == "-t") && i+1 < len(pc.args):
+			title = quote(pc.args[i+1].text)
+		case strings.HasPrefix(a.text, "--title="):
+			title = quote(strings.TrimPrefix(a.text, "--title="))
+		case !strings.HasPrefix(a.text, "-"):
+			pos = append(pos, a.text)
+		}
+	}
+	if len(pos) < 2 || pos[0] != "issue" || (pos[1] != "create" && pos[1] != "new") {
+		return nil
+	}
+	return &denial{"issue-create", "`gh issue create` leaves the issue outside its epic and milestone. Create it with " +
+		"`scripts/agentkit.sh issue new --type task|bug|spike|adr|epic --title " + title + " --body-file <file> --parent <epic>`: " +
+		"it links the issue as a sub-issue of the epic and gives it the epic's milestone. An issue outside every epic takes " +
+		"`--milestone <title>` instead of `--parent`; an epic takes `--type epic --milestone <title>`, and its tasks are " +
+		"sub-issues, not a list in the description. Order between issues is `--blocked-by <n>`; labels are `--area`, " +
+		"`--priority`, `--ready`."}
+}
 
 const ciReason = "Polling CI prints its status into your context on every call. Run `scripts/agentkit.sh pr wait <pr>` " +
 	"in the background (Bash run_in_background): it prints one line when CI passes, or the failing lines of the failed " +

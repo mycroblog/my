@@ -260,6 +260,21 @@ func TestPreBash(t *testing.T) {
 		{"pr wait", `scripts/agentkit.sh pr wait 2309 > .tmp/wait.log 2>&1`, "", nil},
 		{"checks in a document", "cat > .tmp/doc.md <<'EOF'\nnever `gh pr checks --watch`\nEOF", "", nil},
 
+		// Creating issues.
+		{"issue create", `gh issue create -R mycroblog/my --title "Add the thing" --body-file .tmp/b.md --label type:task`, "issue-create",
+			[]string{"scripts/agentkit.sh issue new --type task|bug|spike|adr|epic --title 'Add the thing' --body-file <file> --parent <epic>", "--blocked-by"}},
+		{"issue create -t after cd", `cd docs && gh issue create -t Fix --body x`, "issue-create", []string{"--title Fix "}},
+		{"issue create --title=", `gh issue create --title="A b" -F f`, "issue-create", []string{"--title 'A b'"}},
+		{"issue create without a title", `url=$(gh issue create --body-file f)`, "issue-create", []string{"--title <title>"}},
+		{"issue new", `gh issue new --web`, "issue-create", nil},
+		{"issue edit", `gh issue edit 12 --milestone "M5: v0 Release"`, "", nil},
+		{"issue comment", `gh issue comment 12 --body "create"`, "", nil},
+		{"issue close", `gh issue close 12 -R mycroblog/my`, "", nil},
+		{"issue view", `gh issue view 12 --json title`, "", nil},
+		{"issue list", `gh issue list --search "issue create"`, "", nil},
+		{"agentkit issue new", `scripts/agentkit.sh issue new --type task --title x --body-file f --parent 30`, "", nil},
+		{"issue create in a message", "git commit -q -F - <<'EOF'\nnever `gh issue create`\nEOF", "", nil},
+
 		// Waiting for a background command.
 		{"until pgrep", `until ! pgrep -f "check:changed" >/dev/null; do sleep 10; done; tail -5 .tmp/check.log`, "wait-loop", []string{"run_in_background"}},
 		{"pgrep", `pgrep -f 'go test' && echo running`, "wait-loop", nil},

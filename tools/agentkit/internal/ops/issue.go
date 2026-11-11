@@ -46,7 +46,8 @@ func Me() (string, error) {
 }
 
 // Claim takes issue n by the rules of workflow.md §1: open, status:ready, not status:needs-decision, nobody
-// else assigned, every referenced ADR Accepted, nothing it waits for still open. It assigns the gh user and
+// else assigned, in a milestone, every referenced ADR Accepted, nothing it waits for still open (the issues that
+// block it on GitHub, and those its description names). It assigns the gh user and
 // comments the plan. It returns the line to print.
 func Claim(root string, n int, plan string) (string, error) {
 	is, err := gh.GetIssue(n)
@@ -61,8 +62,8 @@ func Claim(root string, n int, plan string) (string, error) {
 	if is.State != "OPEN" {
 		stop = append(stop, "the issue is "+is.State)
 	}
-	if !is.HasLabel("status:ready") {
-		stop = append(stop, "not labeled status:ready")
+	if !is.IsReady() {
+		stop = append(stop, "not "+gh.ReadyName)
 	}
 	if is.HasLabel("status:needs-decision") {
 		stop = append(stop, "labeled status:needs-decision")
@@ -83,11 +84,23 @@ func Claim(root string, n int, plan string) (string, error) {
 			stop = append(stop, fmt.Sprintf("%s is %s", id, st))
 		}
 	}
+	if is.Milestone == nil {
+		stop = append(stop, fmt.Sprintf("it has no milestone (gh issue edit %d -R %s --milestone \"<title>\"; open milestones: %s)", n, gh.Repo(), milestoneTitles()))
+	}
 	waits, err := openDependencies(text.Dependencies(is.Body))
 	if err != nil {
 		return "", fmt.Errorf("do not take #%d: %w (workflow.md §1)", n, err)
 	}
 	stop = append(stop, waits...)
+	blocked, err := openBlockers(n)
+	if err != nil {
+		return "", fmt.Errorf("do not take #%d: could not read the issues that block it: %w (workflow.md §1)", n, err)
+	}
+	for _, b := range blocked {
+		if line := fmt.Sprintf("waits for #%d, which is open", b); !contains(stop, line) {
+			stop = append(stop, line)
+		}
+	}
 	if len(stop) > 0 {
 		return "", fmt.Errorf("do not take #%d: %s (workflow.md §1)", n, strings.Join(stop, "; "))
 	}

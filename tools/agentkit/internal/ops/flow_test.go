@@ -518,11 +518,12 @@ case "$1 $2" in
         if [ -f "$STATE/queued" ]; then q='{"state":"QUEUED"}'; else q=null; fi
         echo '{"data":{"repository":{"pullRequests":{"pageInfo":{"hasNextPage":false},"nodes":[{"number":20,"mergeQueueEntry":'"$q"'}]}}}}' ;;
       *number=12) echo '{"data":{"repository":{"issue":{"number":12,"title":"First","state":"CLOSED","milestone":{"number":3,"title":"M5"},"parent":{"number":30,"title":"Epic","state":"OPEN","subIssuesSummary":{"total":2,"completed":'"$(cat "$STATE/completed")"'},"subIssues":{"nodes":[{"number":12,"state":"CLOSED"},{"number":14,"state":"'"$(cat "$STATE/sibling")"'"}]}}}}}}' ;;
-      *number=13) echo '{"data":{"repository":{"issue":{"number":13,"title":"Other","state":"OPEN","milestone":null,"parent":null}}}}' ;;
+      *number=13) echo '{"data":{"repository":{"issue":{"number":13,"title":"Other","state":"'"$(cat "$STATE/other" 2>/dev/null || echo OPEN)"'","milestone":null,"parent":null}}}}' ;;
       *number=30) echo '{"data":{"repository":{"issue":{"number":30,"title":"Epic","state":"CLOSED","milestone":{"number":3,"title":"M5"},"parent":null}}}}' ;;
     esac ;;
   "issue close") ;;
-  "api repos/mycroblog/my/milestones/3") echo '{"open_issues":4,"closed_issues":9,"state":"open"}' ;;
+  "api repos/mycroblog/my/milestones/3") cat "$STATE/milestone" 2>/dev/null || echo '{"open_issues":4,"closed_issues":9,"state":"open"}' ;;
+  "api -X") [ "$*" = "api -X PATCH repos/mycroblog/my/milestones/3 -f state=closed" ] || { echo "unexpected: $*" >&2; exit 1; } ;;
   "api repos/mycroblog/my/actions/jobs/81/logs") echo "--- FAIL: TestThing (0.00s)" ;;
   *) echo "unexpected: $*" >&2; exit 1 ;;
 esac`
@@ -623,6 +624,28 @@ func TestLandClosesFinishedParent(t *testing.T) {
 	}
 	if strings.Contains(calls, "pr merge") {
 		t.Errorf("a merged pull request needs no auto-merge:\n%s", calls)
+	}
+}
+
+func TestLandClosesFinishedMilestone(t *testing.T) {
+	main, _, state, log, head := landSetup(t)
+	write(t, filepath.Join(state, "pr"), prJSON("MERGED", "UNKNOWN", head, "", false))
+	write(t, filepath.Join(state, "completed"), "2")
+	write(t, filepath.Join(state, "sibling"), "CLOSED")
+	write(t, filepath.Join(state, "other"), "CLOSED")
+	write(t, filepath.Join(state, "milestone"), `{"open_issues":0,"closed_issues":13,"state":"open"}`)
+	mergeToMain(t, main, "feat/12-x")
+	code, out := land(t, main)
+	if code != 0 {
+		t.Fatalf("exit %d:\n%s", code, out)
+	}
+	want := "remains: closed #30 Epic (every sub-issue is closed); #13: no parent issue and no milestone, so nothing tracks what the work was part of; " +
+		"closed milestone M5 (each of its 13 issues is closed)\n"
+	if !strings.HasSuffix(out, want) {
+		t.Errorf("got\n%s\nwant the last line\n%s", out, want)
+	}
+	if calls := readLog(t, log); !strings.Contains(calls, "api -X PATCH repos/mycroblog/my/milestones/3 -f state=closed") {
+		t.Errorf("the milestone was not closed:\n%s", calls)
 	}
 }
 
