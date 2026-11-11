@@ -58,6 +58,14 @@ type Config struct {
 	MediaOrigin string
 	Role        Role
 	Listen      string
+	// TLS is how the server serves HTTPS itself (ADR-0163 §1, §10): TLSOff (plain HTTP behind
+	// something that terminates TLS) or TLSFiles (the certificate TLSCertFile and its key
+	// TLSKeyFile). TLSHTTPListen is the address of port 80, which redirects to https; empty
+	// opens none.
+	TLS           string
+	TLSCertFile   string
+	TLSKeyFile    string
+	TLSHTTPListen string
 	// TrustedProxies are the peers whose TrustedProxyHeader tells the client IP (ADR-0019 §5);
 	// TrustedProxyHeader is "x-forwarded-for" or "forwarded".
 	TrustedProxies     []netip.Prefix
@@ -402,6 +410,10 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("origin_secret_previous", redact(c.OriginSecretPrevious != "")),
 		slog.String("role", string(c.Role)),
 		slog.String("listen", c.Listen),
+		slog.String("tls", c.TLS),
+		slog.String("tls_cert_file", c.TLSCertFile),
+		slog.String("tls_key_file", c.TLSKeyFile),
+		slog.String("tls_http_listen", c.TLSHTTPListen),
 		slog.Any("trusted_proxies", c.TrustedProxies),
 		slog.String("trusted_proxy_header", c.TrustedProxyHeader),
 		slog.String("database", c.DB),
@@ -812,6 +824,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	}
 	if cfg.AccountDomain == "" {
 		cfg.AccountDomain = cfg.Host
+	}
+	if cfg.Listen == "" {
+		cfg.Listen = defaultListen(cfg.TLS, cfg.Role)
 	}
 	if cfg.ErrorsEnvironment == "" {
 		cfg.ErrorsEnvironment = cfg.Profile

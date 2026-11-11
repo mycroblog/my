@@ -251,6 +251,13 @@ entries:
   - name: server-process
     paths: ["cmd/my/main.go", "cmd/my/serve.go", "cmd/my/job.go", "internal/platform/serve.go", "internal/platform/http.go", "internal/platform/log.go", "internal/platform/health.go"]
     userdocs: ["docs/operations/running.md", "docs/operations/monitoring.md#which-url-to-monitor"]
+  - name: tls
+    paths: ["internal/platform/tlsserve/**", "internal/platform/serve_tls*.go", "internal/platform/config/tls*.go", "internal/domain/instance/tls*.go", "internal/app/instance/tls.go", "internal/adapter/db/*/instance/tls.go", "queries/*/instance/tls.sql", "pkg/testkit/instancetest/instance_tls_*.go", "pkg/testkit/tlscert.go"]
+    docs: ["docs/adr/0163-acme-tls.md", "docs/architecture/data-model/04-tables/09-instance.md#49-instance"]
+    userdocs: ["docs/operations/running.md#serving-https-from-the-server", "docs/operations/production-checklist.md", "docs/operations/key-management.md"]
+    notes:
+      - "The handshake reads only the certificates in memory (tlsserve.Holder, App.TLSCertificates), never the database, a KMS, or a KV; whatever obtains a certificate puts it there with Set. Port 80's ACME HTTP-01 hook is App.TLSHTTPChallenge, TLS-ALPN-01's is Holder.SetALPNChallenge."
+      - "The certificates, ACME accounts, and orders are tables of the instance module (tls_*); the current certificate of a host is the last one issued and not revoked by created_at, and the backoff of orders is derived from the attempts without a certificate (instance.NewTLSOrderBackoff)."
   - name: telemetry
     paths: ["internal/platform/telemetry.go", "internal/platform/tracing.go", "internal/app/metrics/**", "internal/adapter/telemetry/**", "internal/app/queue/metrics.go", "internal/app/federation/metrics.go", "internal/interface/clientapi/streaming.go"]
     docs: ["docs/operations/running.md#metrics"]

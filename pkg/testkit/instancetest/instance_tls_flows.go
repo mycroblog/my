@@ -4,14 +4,7 @@ package instancetest
 
 import (
 	"bytes"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"errors"
-	"math/big"
 	"strings"
 	"sync"
 	"testing"
@@ -20,6 +13,7 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // instanceTLSCases are the cases of InstanceFlows about the TLS certificates that the server
@@ -64,23 +58,8 @@ func instanceRegistersOneTLSAccount(t *testing.T, e *instanceEnv) {
 // PKCS #8 DER.
 func tlsChain(t *testing.T, host string, serial int64, notBefore time.Time, validity time.Duration) (string, []byte) {
 	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(serial), Subject: pkix.Name{CommonName: host}, DNSNames: []string{host},
-		NotBefore: notBefore, NotAfter: notBefore.Add(validity),
-	}
-	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pkcs8, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})), pkcs8
+	c := testkit.NewTLSCertificate(t, serial, notBefore, validity, host)
+	return string(c.CertPEM), c.KeyPKCS8
 }
 
 func instanceSealsTLSKeys(t *testing.T, e *instanceEnv) {
