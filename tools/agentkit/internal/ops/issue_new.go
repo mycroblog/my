@@ -22,42 +22,6 @@ func contains(list []string, s string) bool {
 	return false
 }
 
-const blockedByQuery = `query($owner: String!, $name: String!, $number: Int!) {
-  repository(owner: $owner, name: $name) {
-    issue(number: $number) { blockedBy(first: 100) { nodes { number state } } }
-  }
-}`
-
-// openBlockers returns the open issues that block issue n (GitHub's issue dependencies, which issue new
-// --blocked-by records); a var so that tests replace the gh call.
-var openBlockers = func(n int) ([]int, error) {
-	owner, name, _ := strings.Cut(gh.Repo(), "/")
-	var resp struct {
-		Data struct {
-			Repository struct {
-				Issue struct {
-					BlockedBy struct {
-						Nodes []struct {
-							Number int    `json:"number"`
-							State  string `json:"state"`
-						} `json:"nodes"`
-					} `json:"blockedBy"`
-				} `json:"issue"`
-			} `json:"repository"`
-		} `json:"data"`
-	}
-	if err := gh.JSON(&resp, "api", "graphql", "-f", "query="+blockedByQuery, "-F", "owner="+owner, "-F", "name="+name, "-F", "number="+strconv.Itoa(n)); err != nil {
-		return nil, err
-	}
-	var open []int
-	for _, b := range resp.Data.Repository.Issue.BlockedBy.Nodes {
-		if b.State == "OPEN" {
-			open = append(open, b.Number)
-		}
-	}
-	return open, nil
-}
-
 // milestoneTitles is the open milestones as one quoted list for a message.
 func milestoneTitles() string {
 	var ms []struct {
@@ -81,12 +45,11 @@ type NewOptions struct {
 	Type      string // one of gh.IssueTypes
 	Title     string
 	Body      string
-	Parent    int    // the epic the issue is a sub-issue of; 0 for none
-	Milestone string // a milestone title; with a parent, the parent's
-	Areas     []string
-	Priority  string // one of gh.Priorities, or ""
-	Ready     bool
-	BlockedBy []int // the issues to finish first
+	Parent    int      // the epic the issue is a sub-issue of; 0 for none
+	Milestone string   // a milestone title; with a parent, the parent's
+	Areas     []string // options of the Area field
+	Priority  string   // one of gh.Priorities, or ""
+	BlockedBy []int    // the issues to finish first
 }
 
 // reIssueListLine matches a line of a description that lists an issue: a bullet, a task-list item, a numbered
@@ -131,7 +94,7 @@ func oneOf(list []string, s string) bool { return contains(list, s) }
 
 var reIssueURL = regexp.MustCompile(`/issues/(\d+)\s*$`)
 
-const newUsage = "agentkit issue new --type task|bug|spike|adr|epic --title <t> --body-file <f> [--parent <epic>] [--milestone <title>] [--area <a>]... [--priority p0|p1|p2] [--blocked-by <n>]... [--ready]"
+const newUsage = "agentkit issue new --type task|bug|spike|adr|epic --title <t> --body-file <f> [--parent <epic>] [--milestone <title>] [--area <a>]... [--priority p0|p1|p2] [--blocked-by <n>]..."
 
 // New creates an issue the one way the repository takes: typed, in a milestone, and — unless it is an epic or
 // found outside every epic — a sub-issue of an open epic, whose milestone it gets. It checks everything before
@@ -149,6 +112,14 @@ func New(o NewOptions) ([]string, error) {
 	}
 	if o.Priority != "" && !oneOf(gh.Priorities, o.Priority) {
 		return nil, fmt.Errorf("--priority %q: one of %s", o.Priority, strings.Join(gh.Priorities, ", "))
+	}
+	for i, a := range o.Areas {
+		o.Areas[i] = gh.Area(a)
+	}
+	if len(o.Areas) > 0 {
+		if err := gh.CheckAreas(o.Areas); err != nil {
+			return nil, fmt.Errorf("--area: %w", err)
+		}
 	}
 	epics := fmt.Sprintf("gh issue list -R %s %s", gh.Repo(), gh.EpicFilter())
 	if o.Type == "epic" {
@@ -212,11 +183,8 @@ func New(o NewOptions) ([]string, error) {
 	if err := file.Close(); err != nil {
 		return nil, err
 	}
-	args := []string{"issue", "create", "-R", gh.Repo(), "--title", o.Title, "--body-file", file.Name(), "--milestone", o.Milestone}
-	for _, a := range o.Areas {
-		args = append(args, "--label", "area:"+strings.TrimPrefix(a, "area:"))
-	}
-	out, err := gh.Run(args...)
+	// gh issue create has no flag for the type or an issue field: they are set right after.
+	out, err := gh.Run("issue", "create", "-R", gh.Repo(), "--title", o.Title, "--body-file", file.Name(), "--milestone", o.Milestone)
 	if err != nil {
 		return nil, err
 	}
@@ -238,6 +206,11 @@ func New(o NewOptions) ([]string, error) {
 			left = append(left, fmt.Sprintf("set the priority %s: %v", o.Priority, err))
 		}
 	}
+	if len(o.Areas) > 0 {
+		if err := gh.SetAreas(n, o.Areas); err != nil {
+			left = append(left, fmt.Sprintf("set the areas %s: %v", strings.Join(o.Areas, ", "), err))
+		}
+	}
 	if o.Parent != 0 {
 		if pa, err := linkSubIssue(o.Parent, n); err != nil {
 			left = append(left, fmt.Sprintf("link it as a sub-issue of #%d: gh api -X POST repos/%s/issues/%d/sub_issues -F sub_issue_id=$(gh api repos/%s/issues/%d --jq .id) (%v)",
@@ -247,19 +220,11 @@ func New(o NewOptions) ([]string, error) {
 		}
 	}
 	for _, b := range blockers {
-		if _, err := gh.Run("api", "-X", "POST", fmt.Sprintf("repos/%s/issues/%d/dependencies/blocked_by", gh.Repo(), n), "-F", "issue_id="+strconv.FormatInt(b.ID, 10)); err != nil {
-			left = append(left, fmt.Sprintf("record that #%d blocks it: gh api -X POST repos/%s/issues/%d/dependencies/blocked_by -F issue_id=%d (%v)", b.Number, gh.Repo(), n, b.ID, err))
+		if err := addBlocker(n, b); err != nil {
+			left = append(left, err.Error())
 			continue
 		}
 		lines = append(lines, fmt.Sprintf("blocked by #%d (%s)", b.Number, b.State))
-	}
-	// Ready last: an issue is not offered to take before its parent and its blockers are recorded.
-	if o.Ready {
-		if len(left) > 0 {
-			left = append(left, "then mark it ready")
-		} else if err := gh.MarkReady(n); err != nil {
-			left = append(left, fmt.Sprintf("mark it ready: %v", err))
-		}
 	}
 	if len(left) > 0 {
 		return lines, fmt.Errorf("#%d is created (do not create it again); still to do: %s", n, strings.Join(left, "; "))

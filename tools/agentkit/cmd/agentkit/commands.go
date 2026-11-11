@@ -34,12 +34,14 @@ Read (instead of grep / cat over the repository):
 
 Workflow (instead of gh / scripts/task.sh loops):
   issue new --type task|bug|spike|adr|epic --title t --body-file f [--parent epic] [--milestone title]
-       [--area a]... [--priority p0|p1|p2] [--blocked-by n]... [--ready]
+       [--area a]... [--priority p0|p1|p2] [--blocked-by n]...
                                                        the only way to create an issue: a sub-issue of --parent with
                                                        its milestone, or an epic in --milestone; order is --blocked-by
-  issue claim <n> [--plan text]                        check status:ready, no assignee, a milestone, Accepted ADRs,
-                                                       nothing open that blocks it; assign; comment
-  issue block <n> --reason text|--reason-file f        comment and add status:blocked
+  issue claim <n> [--plan text]                        check not an epic or an ADR, no assignee, a milestone, Accepted
+                                                       ADRs, nothing open that blocks it; assign; comment
+  issue block <n> --type adr|spike --title t --reason-file f | --on m
+                                                       make <n> wait for a new decision (adr) or investigation
+                                                       (spike) issue, or for the issue m
   pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
                                                        the gate: refuses outside a worktree, on a merge or
                                                        fixup! commit, a conflict with the base, a failing

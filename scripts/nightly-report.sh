@@ -19,7 +19,7 @@
 # gh must be on PATH with a token that may write issues.
 set -euo pipefail
 
-label="type:nightly-failure"
+label="ci:nightly-failure"
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 run_url="https://github.com/$GH_REPO/actions/runs/$RUN_ID"
 
@@ -70,13 +70,35 @@ $changes
 
 Fix it before starting more issues (docs/agents/workflow.md, \"Orchestrating\"). This issue closes itself when a Nightly passes."
 
+# classify NUMBER: makes the issue a Bug of Priority P1, which are the issue type and an issue field of the
+# organization (gh issue create sets neither); their ids are read by name.
+classify() {
+  local number="$1" issue field option
+  gh api -X PATCH "repos/$GH_REPO/issues/$number" -f type=Bug > /dev/null
+  # shellcheck disable=SC2016 # the $ are GraphQL variables
+  read -r issue field option <<< "$(gh api graphql -F owner="${GH_REPO%/*}" -F name="${GH_REPO#*/}" -F number="$number" -f query='
+    query($owner: String!, $name: String!, $number: Int!) {
+      repository(owner: $owner, name: $name) { issue(number: $number) { id } }
+      organization(login: $owner) { issueFields(first: 100) { nodes { ... on IssueFieldSingleSelect { id name options { id name } } } } }
+    }' --jq '[.data.repository.issue.id, (.data.organization.issueFields.nodes[] | select(.name == "Priority")
+      | .id, (.options[] | select(.name == "P1") | .id))] | @tsv')"
+  [ -n "$option" ] || return 1
+  # shellcheck disable=SC2016
+  gh api graphql -f issue="$issue" -f field="$field" -f option="$option" -f query='
+    mutation($issue: ID!, $field: ID!, $option: ID!) {
+      setIssueFieldValue(input: {issueId: $issue, issueFields: [{fieldId: $field, singleSelectOptionId: $option}]}) { issue { number } }
+    }' > /dev/null
+}
+
 if [ -n "$open_issue" ]; then
   gh issue comment "$open_issue" --repo "$GH_REPO" --body "$body"
   echo "Commented on #$open_issue." >> "$summary"
 else
   gh label create "$label" --repo "$GH_REPO" --color B60205 \
     --description "The Nightly on main fails; closed by the next green Nightly" > /dev/null 2>&1 || true
-  url="$(gh issue create --repo "$GH_REPO" --title "The Nightly fails on main" --label "$label" --label type:bug \
-    --label priority:p1 --body "$body")"
+  url="$(gh issue create --repo "$GH_REPO" --title "The Nightly fails on main" --label "$label" --body "$body")"
   echo "Opened $url." >> "$summary"
+  if ! classify "${url##*/}"; then
+    echo "Its type (Bug) or its Priority (P1) could not be set: set them on the issue." >> "$summary"
+  fi
 fi

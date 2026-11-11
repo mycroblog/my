@@ -80,7 +80,7 @@ func TestArtifactKind(t *testing.T) {
 		"my serve":                     "",
 		"check":                        "",
 		"allow:db-destructive":         "",
-		"type:bug":                     "",
+		"ci:nightly-failure":           "",
 		"GET /api/v1/statuses/{id}":    "",
 		"/internal/app/x":              "",
 		"https://example.com/a/b.js":   "",

@@ -55,8 +55,9 @@ func TestBuild(t *testing.T) {
 	}}}
 	is := &gh.Issue{
 		Number: 916, Title: "create_custom_emojis", State: "OPEN",
-		Body:   "FR-915。ADR-0070 と ADR-0071 に従う。data-model §4.4 の `custom_emojis` と `custom_emoji_requests`。\n\n#929 がマージされるまで着手しない。",
-		Labels: []gh.Label{{Name: "status:ready"}},
+		Body: "FR-915。ADR-0070 と ADR-0071 に従う。data-model §4.4 の `custom_emojis` と `custom_emoji_requests`。\n\n#929 がマージされるまで着手しない。",
+		Type: "Task", Fields: map[string][]string{"Priority": {"P1"}, "Area": {"db", "api"}},
+		BlockedBy: []gh.Blocker{{Number: 7, Title: "Pick a queue", State: "OPEN", Type: "ADR"}, {Number: 8, State: "CLOSED"}},
 	}
 	out, err := Build(&kb.KB{S: s}, &gh.Cache{DB: s.DB}, m, is, Options{Budget: 30000})
 	if err != nil {
@@ -64,6 +65,8 @@ func TestBuild(t *testing.T) {
 	}
 	for _, want := range []string{
 		"# #916 create_custom_emojis",
+		"OPEN · type: Task · priority: P1 · areas: db, api · milestone: -",
+		"waits for the decision #7: Pick a queue: do not take it",
 		"ADR-0071 is Proposed, not Accepted",
 		"| FR-915 | 絵文字の作成の権限 | S |",
 		"申請を別のリソースにする",
@@ -111,7 +114,7 @@ func TestBuildFollowsADRAliases(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = s.Close() }()
-	is := &gh.Issue{Number: 1, Title: "t", State: "OPEN", Body: "ADR-0124 と ADR-0070。", Labels: []gh.Label{{Name: "status:ready"}}}
+	is := &gh.Issue{Number: 1, Title: "t", State: "OPEN", Body: "ADR-0124 と ADR-0070。"}
 	out, err := Build(&kb.KB{S: s}, &gh.Cache{DB: s.DB}, &ctxmap.Map{}, is, Options{Budget: 30000})
 	if err != nil {
 		t.Fatal(err)

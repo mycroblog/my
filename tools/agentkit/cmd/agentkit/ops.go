@@ -19,12 +19,16 @@ func runIssue(r *repo.Repo, args []string) error {
 		return runIssueNew(args[1:])
 	}
 	if len(args) < 2 {
-		return fmt.Errorf("usage: agentkit issue new --type t --title t --body-file f [--parent n] | issue claim <n> [--plan text] | issue block <n> --reason text|--reason-file f")
+		return fmt.Errorf("usage: agentkit issue new --type t --title t --body-file f [--parent n] | issue claim <n> [--plan text] | issue block <n> --type adr|spike --title t --reason-file f | issue block <n> --on <issue>")
 	}
 	fs := flag.NewFlagSet("issue", flag.ContinueOnError)
 	plan := fs.String("plan", "", "one-line plan to comment")
-	reason := fs.String("reason", "", "why the work stops")
-	reasonFile := fs.String("reason-file", "", "file with the reason")
+	b := ops.BlockOptions{}
+	fs.StringVar(&b.Type, "type", "", "block: adr (the decider decides) or spike (an investigation comes first)")
+	fs.StringVar(&b.Title, "title", "", "block: the decision or the investigation needed")
+	fs.StringVar(&b.Reason, "reason", "", "block: what was tried, the options, the recommendation")
+	reasonFile := fs.String("reason-file", "", "block: file with the reason")
+	fs.IntVar(&b.On, "on", 0, "block: an existing issue to wait for, instead of a new one")
 	pos, err := parse(fs, args[1:])
 	if err != nil || len(pos) != 1 {
 		return fmt.Errorf("one issue number expected")
@@ -38,15 +42,20 @@ func runIssue(r *repo.Repo, args []string) error {
 	case "claim":
 		line, err = ops.Claim(r.Root, n, *plan)
 	case "block":
-		text := *reason
 		if *reasonFile != "" {
-			b, err := os.ReadFile(*reasonFile)
+			text, err := os.ReadFile(*reasonFile)
 			if err != nil {
 				return err
 			}
-			text = string(b)
+			b.Reason = string(text)
 		}
-		line, err = ops.Block(n, text)
+		b.N = n
+		var lines []string
+		lines, err = ops.Block(b)
+		line = strings.Join(lines, "\n")
+		if err != nil && line != "" {
+			fmt.Println(line)
+		}
 	default:
 		return fmt.Errorf("unknown issue command %q", args[0])
 	}
@@ -76,13 +85,12 @@ func runIssueNew(args []string) error {
 	bodyFile := fs.String("body-file", "", "file with the description")
 	fs.Func("parent", "the epic this is a sub-issue of; the issue gets its milestone", number(&parents))
 	fs.StringVar(&o.Milestone, "milestone", "", "an open milestone's title (an epic, or an issue outside every epic)")
-	fs.Func("area", "an area label, without area: (repeatable)", func(v string) error {
+	fs.Func("area", "an option of the Area field (repeatable)", func(v string) error {
 		o.Areas = append(o.Areas, v)
 		return nil
 	})
 	fs.StringVar(&o.Priority, "priority", "", "p0, p1, or p2")
 	fs.Func("blocked-by", "an issue to finish first (repeatable)", number(&o.BlockedBy))
-	fs.BoolVar(&o.Ready, "ready", false, "mark it ready to take")
 	pos, err := parse(fs, args)
 	if err != nil {
 		return err

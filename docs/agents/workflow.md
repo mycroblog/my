@@ -8,7 +8,7 @@ this page only says what to do in which order and where judgment is needed.
 
 The unit of delivery is a goal: an epic, a phase of one, or a milestone. One issue is the small case.
 
-- Take only issues labeled `status:ready`: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`.
+- Take only issues that nothing blocks, created with `scripts/agentkit.sh issue new`: `issue claim <n>`.
 - One branch per goal, in a worktree, named `<type>/<issue>-<slug>` after its epic or first issue. One commit per issue.
 - Issues that change the same shared files (`scripts/agentkit.sh map show <path>` says `shared`) go into the same
   branch. A goal too large for one pull request is cut where its shared files allow, server before client.
@@ -43,12 +43,12 @@ once, on the merged state; do not run the full check or the web E2E locally exce
   Subagents do not open pull requests and do not wait for CI: the orchestrator rebases their commits onto the goal
   branch, opens the pull request, and lands it.
 - Use the agent definitions of `.claude/agents/`, which fix the model, the worktree, and the report of each kind of work.
-- A red Nightly stops the line: fix it before starting more issues (`gh issue list --label type:nightly-failure`).
+- A red Nightly stops the line: fix it before starting more issues (`gh issue list --label ci:nightly-failure`).
 - When the decider answers a question, state the conclusion in the ADR that owns the topic, or on the issue.
 
 ## When a decision is needed
 
 Decide what is cheap to undo and state it in the pull request. Stop only for a decision that no Accepted ADR covers
 and that is expensive to undo: a public contract, a schema that loses data, a paid service, a new setting users see.
-Then comment on the issue with the options and your recommendation (`scripts/agentkit.sh issue block <n>`), draft a
-Proposed ADR if it is architectural, and go on with the work that does not depend on the answer.
+Then `scripts/agentkit.sh issue block <n> --type adr` with the options and your recommendation (the decider reads
+`gh issue list --search 'type:ADR is:open'`), draft a Proposed ADR if it is architectural, and go on with the rest.

@@ -16,5 +16,5 @@ which to revisit it. File, function, task, and setting names, lists of what exis
 - Only the decider sets `Accepted` or `Rejected` or changes an Accepted conclusion; record one the decider has stated
   by rewriting the section, and propose any other in the pull request.
 - Merging an ADR into another retires its number in `docs/adr/aliases.yaml`. Never reuse a number.
-- To ask for a decision, open or update the ADR's `type:adr` issue with the options and your recommendation in five
-  lines, add `status:needs-decision`, and link the pull request.
+- To ask for a decision, open or update the ADR's issue (type ADR) with the options and your recommendation in five
+  lines, and link the pull request.

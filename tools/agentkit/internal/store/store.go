@@ -25,7 +25,7 @@ import (
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-const schemaVersion = "1"
+const schemaVersion = "2"
 
 const schema = `
 CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT NOT NULL);

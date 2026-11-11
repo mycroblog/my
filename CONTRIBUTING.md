@@ -143,7 +143,7 @@ services `postgres` and `mailpit` alone.
 
 ## Workflow
 
-1. Pick a GitHub issue. `status:ready` marks the issues with clear acceptance criteria that are ready to start.
+1. Pick a GitHub issue that no open issue blocks; an issue of type ADR waits for the maintainer's decision.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
 3. Commit (Conventional Commits, in English), one commit per issue. Before a push, run the fast checks of what you
    changed (`scripts/agentkit.sh check`); the merge queue's full check is the gate, so the full check is for

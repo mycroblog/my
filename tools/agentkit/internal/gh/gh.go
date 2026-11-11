@@ -71,17 +71,22 @@ type Comment struct {
 	CreatedAt string `json:"createdAt"`
 }
 
-// Issue is an issue with what the context pack needs.
+// Issue is an issue with what the context pack needs. Type, Fields and BlockedBy are GitHub's issue type, the
+// options of the organization's select issue fields by field name, and the issues that block it.
 type Issue struct {
-	Number    int       `json:"number"`
-	Title     string    `json:"title"`
-	Body      string    `json:"body"`
-	State     string    `json:"state"`
-	URL       string    `json:"url"`
-	UpdatedAt string    `json:"updatedAt"`
-	Labels    []Label   `json:"labels"`
-	Assignees []Login   `json:"assignees"`
-	Comments  []Comment `json:"comments"`
+	ID        string              `json:"id"`
+	Type      string              `json:"type"`
+	Fields    map[string][]string `json:"fields,omitempty"`
+	BlockedBy []Blocker           `json:"blockedBy,omitempty"`
+	Number    int                 `json:"number"`
+	Title     string              `json:"title"`
+	Body      string              `json:"body"`
+	State     string              `json:"state"`
+	URL       string              `json:"url"`
+	UpdatedAt string              `json:"updatedAt"`
+	Labels    []Label             `json:"labels"`
+	Assignees []Login             `json:"assignees"`
+	Comments  []Comment           `json:"comments"`
 	Milestone *struct {
 		Title string `json:"title"`
 	} `json:"milestone"`
@@ -97,11 +102,13 @@ func (i *Issue) HasLabel(l string) bool {
 	return false
 }
 
-// GetIssue fetches an issue with its comments.
+// GetIssue fetches an issue with its comments, its type, its field values, and the issues that block it.
 func GetIssue(n int) (*Issue, error) {
 	var i Issue
-	err := JSON(&i, "issue", "view", strconv.Itoa(n), "-R", Repo(), "--json", "number,title,body,state,url,updatedAt,labels,assignees,comments,milestone")
-	return &i, err
+	if err := JSON(&i, "issue", "view", strconv.Itoa(n), "-R", Repo(), "--json", "number,title,body,state,url,updatedAt,labels,assignees,comments,milestone"); err != nil {
+		return &i, err
+	}
+	return &i, readNative(n, &i)
 }
 
 // File is a file a pull request changed.
@@ -137,16 +144,67 @@ func (c *Cache) Synced() time.Time {
 	return t
 }
 
-// issueLimit is the most issues one `gh issue list` call returns here.
-const issueLimit = 5000
+const issuesQuery = `query($owner: String!, $name: String!, $cursor: String, $since: DateTime) {
+  repository(owner: $owner, name: $name) {
+    issues(first: 100, after: $cursor, orderBy: {field: UPDATED_AT, direction: DESC}, filterBy: {since: $since}) {
+      pageInfo { hasNextPage endCursor }
+      nodes { number title body state updatedAt labels(first: 50) { nodes { name } } ` + nativeSelection + ` }
+    }
+  }
+}`
 
-// notTruncated fails when a listing returned exactly its limit: gh cuts a longer list silently, so the cache
-// would miss the rest.
-func notTruncated(what string, n, limit int) error {
-	if n >= limit {
-		return fmt.Errorf("gh returned %d %s, the limit of one call: the list may be cut and the cache incomplete", n, what)
+// issuesPage is one page of issuesQuery.
+type issuesPage struct {
+	PageInfo pageInfo `json:"pageInfo"`
+	Nodes    []struct {
+		native
+		Number    int    `json:"number"`
+		Title     string `json:"title"`
+		Body      string `json:"body"`
+		State     string `json:"state"`
+		UpdatedAt string `json:"updatedAt"`
+		Labels    struct {
+			Nodes []Label `json:"nodes"`
+		} `json:"labels"`
+	} `json:"nodes"`
+}
+
+// issuesSince pages through the issues updated since (all of them when it is zero), with their type and field
+// values.
+func issuesSince(since time.Time) ([]Issue, error) {
+	owner, name, _ := strings.Cut(Repo(), "/")
+	var out []Issue
+	cursor := ""
+	for {
+		args := []string{"api", "graphql", "-f", "query=" + issuesQuery, "-F", "owner=" + owner, "-F", "name=" + name}
+		if cursor != "" {
+			args = append(args, "-f", "cursor="+cursor)
+		}
+		if !since.IsZero() {
+			args = append(args, "-f", "since="+since.Format(time.RFC3339))
+		}
+		var resp struct {
+			Data struct {
+				Repository struct {
+					Issues issuesPage `json:"issues"`
+				} `json:"repository"`
+			} `json:"data"`
+		}
+		if err := JSON(&resp, args...); err != nil {
+			return nil, err
+		}
+		page := resp.Data.Repository.Issues
+		for i := range page.Nodes {
+			n := &page.Nodes[i]
+			is := Issue{Number: n.Number, Title: n.Title, Body: n.Body, State: n.State, UpdatedAt: n.UpdatedAt, Labels: n.Labels.Nodes}
+			n.apply(&is)
+			out = append(out, is)
+		}
+		if !page.PageInfo.HasNextPage {
+			return out, nil
+		}
+		cursor = page.PageInfo.EndCursor
 	}
-	return nil
 }
 
 // Sync refreshes the issues and the merged pull requests updated since the last sync (all of them the first
@@ -154,16 +212,12 @@ func notTruncated(what string, n, limit int) error {
 func (c *Cache) Sync() (int, error) {
 	since := c.Synced()
 	started := time.Now().UTC()
-	search := []string{}
-	if !since.IsZero() {
-		search = []string{"--search", "updated:>=" + since.Add(-time.Hour).Format("2006-01-02T15:04:05Z")}
+	from := since
+	if !from.IsZero() {
+		from = from.Add(-time.Hour)
 	}
-	var issues []Issue
-	args := append([]string{"issue", "list", "-R", Repo(), "--state", "all", "--limit", strconv.Itoa(issueLimit), "--json", "number,title,body,state,updatedAt,labels"}, search...)
-	if err := JSON(&issues, args...); err != nil {
-		return 0, err
-	}
-	if err := notTruncated("issues", len(issues), issueLimit); err != nil {
+	issues, err := issuesSince(from)
+	if err != nil {
 		return 0, err
 	}
 	prs, err := mergedPRs(since)

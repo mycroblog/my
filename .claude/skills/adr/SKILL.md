@@ -12,5 +12,5 @@ description: Draft a new Architecture Decision Record or revise an existing one 
    procedures: the code holds those.
 3. Never set the status to Accepted or Rejected, and change the conclusion of an Accepted ADR only as the decider stated it.
 4. Mark unverified third-party facts as 要検証, with the source and the date for the ones you verified.
-5. `scripts/task.sh docs:check`. If the ADR needs the decider, open or update a `type:adr` issue with
-   `status:needs-decision` and a five-line summary.
+5. `scripts/task.sh docs:check`. If the ADR needs the decider, open or update an issue of type ADR
+   with a five-line summary.

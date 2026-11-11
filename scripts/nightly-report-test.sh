@@ -11,8 +11,8 @@ script="$root/scripts/nightly-report.sh"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-# The fake gh appends each call to $work/calls. `issue list` prints $OPEN_ISSUE, `api` prints $FAILED_JOBS, and
-# `issue create` prints a URL.
+# The fake gh appends each call to $work/calls. `issue list` prints $OPEN_ISSUE, `api` prints $FAILED_JOBS,
+# `issue create` prints a URL, and the query of the ids prints $IDS.
 mkdir -p "$work/bin"
 cat > "$work/bin/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -20,6 +20,8 @@ printf '%s\n' "$*" >> "$CALLS"
 case "$1 $2" in
   "issue list") printf '%s\n' "$OPEN_ISSUE" ;;
   "issue create") echo "https://github.com/o/r/issues/99" ;;
+  "api -X") ;;
+  "api graphql") case "$*" in *mutation*) ;; *) printf '%s\n' "$IDS" ;; esac ;;
   "api "*) printf '%s' "$FAILED_JOBS" ;;
 esac
 EOF
@@ -38,7 +40,7 @@ run() {
   : > "$work/summary"
   if ! PATH="$work/bin:$PATH" CALLS="$work/calls" RESULTS="$2" OPEN_ISSUE="$3" \
     FAILED_JOBS=$'- [slow-suite / web-e2e / shard 1/8](https://example.test/j/1)\n' \
-    RUN_ID=7 SHA=abc SINCE=def GH_REPO=o/r FLAKY="${FLAKY:-}" GITHUB_STEP_SUMMARY="$work/summary" \
+    IDS="${IDS-I_99	F_prio	O_p1}" RUN_ID=7 SHA=abc SINCE=def GH_REPO=o/r FLAKY="${FLAKY:-}" GITHUB_STEP_SUMMARY="$work/summary" \
     bash "$script" > "$work/stdout" 2>&1; then
     fail "$name: the script failed: $(cat "$work/stdout")"
   fi
@@ -66,8 +68,14 @@ red='{"slow-suite":{"result":"failure"},"demo-e2e":{"result":"success"}}'
 green='{"slow-suite":{"result":"success"},"demo-e2e":{"result":"success"}}'
 
 run "a first failure" "$red" ""
-expect_has "a first failure" "$calls" "issue create" "--label type:nightly-failure" "shard 1/8" "compare/def...abc" "actions/runs/7"
-expect_not "a first failure" "$calls" "issue comment" "issue close "
+expect_has "a first failure" "$calls" "issue create" "--label ci:nightly-failure" "shard 1/8" "compare/def...abc" "actions/runs/7" \
+  "api -X PATCH repos/o/r/issues/99 -f type=Bug" "-F owner=o -F name=r -F number=99" "-f issue=I_99 -f field=F_prio -f option=O_p1"
+expect_not "a first failure" "$calls" "issue comment" "issue close " "--label type:" "--label priority:"
+expect_not "a first failure" "$out" "could not be set"
+
+IDS="" run "a failure in an organization without the Priority field" "$red" ""
+expect_has "a failure in an organization without the Priority field" "$out" "Opened https://github.com/o/r/issues/99." "could not be set"
+expect_not "a failure in an organization without the Priority field" "$calls" "mutation"
 
 run "a failure that goes on" "$red" "12"
 expect_has "a failure that goes on" "$calls" "issue comment 12" "shard 1/8"

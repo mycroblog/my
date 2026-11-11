@@ -261,7 +261,7 @@ func TestPreBash(t *testing.T) {
 		{"checks in a document", "cat > .tmp/doc.md <<'EOF'\nnever `gh pr checks --watch`\nEOF", "", nil},
 
 		// Creating issues.
-		{"issue create", `gh issue create -R mycroblog/my --title "Add the thing" --body-file .tmp/b.md --label type:task`, "issue-create",
+		{"issue create", `gh issue create -R mycroblog/my --title "Add the thing" --body-file .tmp/b.md --milestone M6`, "issue-create",
 			[]string{"scripts/agentkit.sh issue new --type task|bug|spike|adr|epic --title 'Add the thing' --body-file <file> --parent <epic>", "--blocked-by"}},
 		{"issue create -t after cd", `cd docs && gh issue create -t Fix --body x`, "issue-create", []string{"--title Fix "}},
 		{"issue create --title=", `gh issue create --title="A b" -F f`, "issue-create", []string{"--title 'A b'"}},

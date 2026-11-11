@@ -36,7 +36,7 @@ UI の PR は、次の 4 観点で点検する。各観点は、画面の要件�
 
 | 層 | 中身 | 効かせ方 |
 | --- | --- | --- |
-| L1 画面の要件 | [screens/](screens/README.md) の画面ごとの文書 | UI の issue を `status:ready` にする条件 |
+| L1 画面の要件 | [screens/](screens/README.md) の画面ごとの文書 | UI の issue に着手する条件 |
 | L2 パターンの部品 | 判断を型で強制する `@my/ui` の部品 | 画面（`app/web`）は L2 の部品で組む。足りなければ `@my/ui` に足す |
 | L3 機械検査 | ARIA スナップショット・部品のテスト・lint・文言のカタログ | E2E・部品のテスト・Oxlint・`i18n:check` |
 | L4 課題テスト | L1 の作業を ARIA のツリーだけで行い、手数と lostness を測る | nightly が main に対して行い、0.4 を超えた作業を画面ごとの issue にする（ADR-0015）。PR は作業ごとの最短の手順を書く |

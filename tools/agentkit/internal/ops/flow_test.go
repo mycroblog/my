@@ -336,6 +336,7 @@ case "$1 $2" in
       99) echo '{"number":99,"title":"A PR","body":"","state":"MERGED","url":"https://github.com/o/r/pull/99"}' ;;
       *) echo "not found" >&2; exit 1 ;;
     esac ;;
+  "api graphql") echo '{"data":{"repository":{"issueOrPullRequest":{}}}}' ;;
   "pr create") cat > "$STATE/body"; echo "https://github.com/o/r/pull/20" ;;
   "issue comment") ;;
   *) echo "unexpected: $*" >&2; exit 1 ;;

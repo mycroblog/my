@@ -80,10 +80,6 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	}
 
 	// Header and the issue itself: always in full, it is the task.
-	var labels []string
-	for _, l := range is.Labels {
-		labels = append(labels, l.Name)
-	}
 	var assignees []string
 	for _, a := range is.Assignees {
 		assignees = append(assignees, "@"+a.Login)
@@ -92,8 +88,8 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	if is.Milestone != nil {
 		milestone = is.Milestone.Title
 	}
-	w.addf("# #%d %s\n\n%s · labels: %s · milestone: %s · assignees: %s\n%s\n\n",
-		is.Number, is.Title, is.State, orNone(labels), milestone, orNone(assignees), is.URL)
+	w.addf("# #%d %s\n\n%s · type: %s · priority: %s · areas: %s · milestone: %s · assignees: %s\n%s\n\n",
+		is.Number, is.Title, is.State, orNone(strings.Fields(is.Type)), orNone(strings.Fields(is.Priority())), orNone(is.Areas()), milestone, orNone(assignees), is.URL)
 	w.addf("## Issue\n\n%s\n\n%s\n\n", untrustedNote, untrusted(strings.TrimSpace(is.Body)))
 	var comments []gh.Comment
 	for _, c := range is.Comments {
@@ -110,14 +106,11 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 
 	// Warnings: the workflow's stop conditions, checked here so that the agent does not have to.
 	var warn []string
-	if is.HasLabel("status:needs-decision") {
-		warn = append(warn, "labeled status:needs-decision: do not take it (workflow.md §1)")
+	if why := is.Unclaimable(); why != "" {
+		warn = append(warn, why)
 	}
-	if is.HasLabel("status:blocked") {
-		warn = append(warn, "labeled status:blocked: read the last comments before doing anything")
-	}
-	if !is.HasLabel("status:ready") {
-		warn = append(warn, "not labeled status:ready")
+	for _, b := range is.OpenBlockers() {
+		warn = append(warn, b.Waits()+": do not take it (workflow.md §1)")
 	}
 	aliases, err := k.Aliases()
 	if err != nil {

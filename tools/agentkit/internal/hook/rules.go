@@ -1001,8 +1001,8 @@ func issueCreate(pc command) *denial {
 		"`scripts/agentkit.sh issue new --type task|bug|spike|adr|epic --title " + title + " --body-file <file> --parent <epic>`: " +
 		"it links the issue as a sub-issue of the epic and gives it the epic's milestone. An issue outside every epic takes " +
 		"`--milestone <title>` instead of `--parent`; an epic takes `--type epic --milestone <title>`, and its tasks are " +
-		"sub-issues, not a list in the description. Order between issues is `--blocked-by <n>`; labels are `--area`, " +
-		"`--priority`, `--ready`."}
+		"sub-issues, not a list in the description. Order between issues is `--blocked-by <n>`; the Area and Priority fields are " +
+		"`--area` and `--priority`."}
 }
 
 const ciReason = "Polling CI prints its status into your context on every call. Run `scripts/agentkit.sh pr wait <pr>` " +

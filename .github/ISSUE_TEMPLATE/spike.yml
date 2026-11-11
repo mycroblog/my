@@ -1,6 +1,6 @@
 name: Spike
 description: Time-boxed investigation to answer a question before deciding or implementing
-labels: ["type:spike"]
+type: Spike
 body:
   - type: textarea
     id: question
