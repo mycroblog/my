@@ -3,8 +3,9 @@
 # The checks of the settings and secrets inputs. The module makes nothing, so these run on no provider at all.
 
 variables {
-  name    = "my"
-  managed = ["database_url", "queue", "blob_gcs_bucket"]
+  name     = "my"
+  managed  = ["database_url", "queue", "blob_gcs_bucket"]
+  excluded = { listen = "the port is fixed", blob_fs_dir = "no disk" }
 }
 
 run "nothing_is_nothing" {
@@ -74,6 +75,16 @@ run "settings_refuses_what_a_section_sets" {
   expect_failures = [var.settings]
 }
 
+run "settings_refuses_what_the_module_does_not_take" {
+  command = plan
+
+  variables {
+    settings = { listen = ":9090" }
+  }
+
+  expect_failures = [var.settings]
+}
+
 run "secrets_refuses_an_unknown_key" {
   command = plan
 
@@ -99,6 +110,17 @@ run "secrets_refuses_what_a_section_sets" {
 
   variables {
     secrets = ["database_url"]
+  }
+
+  expect_failures = [var.secrets]
+}
+
+run "secrets_refuses_what_the_module_does_not_take" {
+  command = plan
+
+  variables {
+    secrets  = ["kek_previous"]
+    excluded = { kek_previous = "rotated by hand" }
   }
 
   expect_failures = [var.secrets]
