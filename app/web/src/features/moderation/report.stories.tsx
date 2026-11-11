@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A report's page (/moderation/reports/{id}; web-client/screens/moderation.md): the report, its posts, its target
-// and the target's history, the notes, and the action form, in the states of ADR-0079 §13
+// and the target's history, the notes, and the action form, in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 import { accountActionFixture } from "./test/handlers";

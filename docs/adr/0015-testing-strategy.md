@@ -19,7 +19,7 @@
 | API conformance | OpenAPI スキーマとサーバー実装・生成クライアントの一致 | CI | 本検査 |
 | Federation fixtures | 実サーバー由来の JSON を入力にした受信・生成の回帰テスト | CI | 本検査 |
 | Federation live | docker compose で Mastodon / GoToSocial 等と実際に連合 | CI | 遅い検査 |
-| E2E (web) | Playwright。操作の流れの spec は `en` の 1 プロジェクト。ロケールで結果が変わる挙動（言語の選択、`dir="rtl"`、日付と数値の書式、サーバーが描くページの翻訳、欠けた翻訳）と幅で振る舞いが変わる挙動は、専用の spec をそのロケール・幅でだけ回す。ロケールと幅による見た目と axe は画面のストーリー（ADR-0079 §13）が受け持つ | CI | 流れの spec は client が変わったときの本検査。ロケールと幅の spec は遅い検査。PR と main への push では回さない |
+| E2E (web) | Playwright。操作の流れの spec は `en` の 1 プロジェクト。ロケールで結果が変わる挙動（言語の選択、`dir="rtl"`、日付と数値の書式、サーバーが描くページの翻訳、欠けた翻訳）と幅で振る舞いが変わる挙動は、専用の spec をそのロケール・幅でだけ回す。ロケールと幅による見た目と axe は画面のストーリー（ADR-0165 §1）が受け持つ | CI | 流れの spec は client が変わったときの本検査。ロケールと幅の spec は遅い検査。PR と main への push では回さない |
 | Deploy smoke | 各ターゲットへデプロイしてヘルスチェック + 投稿 | 実クラウド | nightly / リリース前 |
 
 ### 2. 検査の原則

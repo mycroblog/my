@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // One rule (/admin/rules/$id; web-client/screens/admin-rule.md) and a new one (/admin/rules/new;
-// web-client/screens/admin-rule-new.md) in the states of ADR-0079 §13
+// web-client/screens/admin-rule-new.md) in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

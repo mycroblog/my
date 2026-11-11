@@ -3,7 +3,7 @@
 // (/moderation/domain-actions/allowed and /moderation/domain-actions/subscriptions; web-client/screens/
 // moderation-domain-allows.md, moderation-domain-list-subscriptions.md, moderation-domain-list-subscription-new.md,
 // moderation-domain-list-subscription.md): the allowed domains, the subscriptions, the form of a new one, and the page
-// of one with its drafts and fetches, in the states of ADR-0079 §13.
+// of one with its drafts and fetches, in the states of ADR-0165 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { longDomainAccountFixture } from "../../test/fixtures";

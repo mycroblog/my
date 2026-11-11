@@ -194,7 +194,7 @@ jobs:
     uses: ./.github/workflows/ui-test.yml
 
   web-story-test:
-    # The app/web screen stories (ADR-0079 §13): their play functions and axe, on pull requests alone, like ui-test. They
+    # The app/web screen stories (ADR-0165 §1): their play functions and axe, on pull requests alone, like ui-test. They
     # render the whole app with the features' MSW handlers, so any change to the client can break them.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'

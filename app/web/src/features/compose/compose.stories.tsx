@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The new-post form (a dialog from lg, a sheet below; FR-101) in the states of ADR-0079 §13: empty, written with a
+// The new-post form (a dialog from lg, a sheet below; FR-101) in the states of ADR-0165 §1: empty, written with a
 // content warning and a poll, too long, sent empty with Ctrl+Enter, with files dragged over it, a reply, a quote, a
 // post the server failed to take, a post its automated review refused, with the appeal, the schedule popover, and a
 // save with nothing written.

@@ -75,7 +75,7 @@
 
 ### 7. 配信
 
-- 配信先は Cloudflare Workers の静的アセットとする。UI Preview（`ui-preview-deploy.yml`、ADR-0079 §14〜§16）がすでに同じアカウントと仕組みを使っており、
+- 配信先は Cloudflare Workers の静的アセットとする。UI Preview（`ui-preview-deploy.yml`、ADR-0165 §2〜§3）がすでに同じアカウントと仕組みを使っており、
   シークレットと運用の手順を増やさない。PR ごとの Preview も同じ仕組みで出せる。サーバーの配信先として Cloudflare Workers を対象にしないこと（AGENTS.md）とは別の話である
 - PR が §3 の原稿か `app/docs` を変えたとき、UI Preview と同じ形で `/next/` だけのビルドを PR の Preview に置く。PR のビルドは信頼しないデータとして扱い、配信の側では実行しない（`ui-preview-deploy.yml` と同じ）
 - 独自ドメインは §11 の `mycroblog.dev` とする

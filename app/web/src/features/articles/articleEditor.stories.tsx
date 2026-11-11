@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The article editor (/articles/new; web-client/screens/article-editor.md) in the states of ADR-0079 §13: a draft
+// The article editor (/articles/new; web-client/screens/article-editor.md) in the states of ADR-0165 §1: a draft
 // being written with its preview, a new article, the preview on its way, a draft that failed to load, a conflict
 // with another device's save, Japanese, and narrow.
 import type { Meta, StoryObj } from "@storybook/react-vite";

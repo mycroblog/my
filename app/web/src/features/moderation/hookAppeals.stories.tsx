@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The appeals page of the automated reviews (/moderation/hook-decisions/appeals;
 // web-client/screens/moderation-hook-appeals.md): the authors' appeals of refused posts, in the states of
-// ADR-0079 §13.
+// ADR-0165 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { answering, failingOn, inLocale, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 import { hookReviewsApi, storyHookAppeals, storyHookDecisions } from "./test/hookStories";

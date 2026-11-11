@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notifications (/notifications; FR-205) in the states of ADR-0079 §13, with every kind of notification: from
+// The notifications (/notifications; FR-205) in the states of ADR-0165 §1, with every kind of notification: from
 // other people, from the server to the user, and from the server to its staff.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

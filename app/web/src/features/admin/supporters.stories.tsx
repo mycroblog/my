@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The first page of the supporters screen, the program (/admin/supporters; web-client/screens/admin-supporters.md), in
-// the states of ADR-0079 §13. The plans' and the subscriptions' pages are in supporterPages.stories.tsx.
+// the states of ADR-0165 §1. The plans' and the subscriptions' pages are in supporterPages.stories.tsx.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { apiBase, withViewer } from "../../test/msw/http";

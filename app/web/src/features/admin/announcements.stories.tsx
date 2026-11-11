@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The list of the server's announcements (/admin/announcements; web-client/screens/admin-announcements.md) in the
-// states of ADR-0079 §13; the page of one and the page that writes one have their own stories
+// states of ADR-0165 §1; the page of one and the page that writes one have their own stories
 // (announcementDetail.stories.tsx, newAnnouncement.stories.tsx).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The domain actions (/moderation/domain-actions; web-client/screens/moderation-domain-actions.md): the list of the
 // actions on remote servers, an action's page, the form that takes one, and the import and export of domain blocks,
-// in the states of ADR-0079 §13
+// in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { longDomainAccountFixture } from "../../test/fixtures";

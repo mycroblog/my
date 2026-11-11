@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // One remote server's page (/moderation/instances/{domain}; web-client/screens/moderation.md): its health, the
 // deliveries to it with their attempts, the history of its availability, and the refetch of its posts, in the states
-// of ADR-0079 §13
+// of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 import { longDomainAccountFixture } from "../../test/fixtures";
