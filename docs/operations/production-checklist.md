@@ -75,8 +75,9 @@ for example as a step of the deployment before the new version takes traffic.
   and `my config check` reports no error about `web_origin`, `tls`, `tls_acme_agree_terms`, or `tls_cert_file`. `curl -sI http://<host>/` answers `301`
   to `https://<host>/`. Either the reverse proxy, load balancer, or CDN in front of the server terminates TLS and redirects
   (with Docker Compose, the layer `compose.caddy.yaml` is such a proxy), or the server does it itself. With `tls = acme`,
-  the log says `obtained a TLS certificate` for `host` (and for the host of `web_origin` when it differs), and the
-  certificate's issuer is not a staging one: `tls_acme_directory` is unset or names a production directory. With
+  `my tls status` shows a certificate for `host` (and for the host of `web_origin` when it differs) whose issuer is not
+  a staging one: `tls_acme_directory` is unset or names a production directory. Alert on its expiry and on failed
+  orders ([alerts](alerts.md#mytlscertificateexpiring)). With
   `tls = files`, `my config check` warns when fewer than 14 days are left on the certificate, and whatever renews it must
   keep `tls_cert_file` and `tls_key_file` up to date.
 - **Details**: [running the server](running.md), [serving HTTPS from the server](running.md#serving-https-from-the-server),
