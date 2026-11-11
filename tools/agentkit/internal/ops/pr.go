@@ -367,10 +367,20 @@ func gatePassed(cs []check) bool {
 	return false
 }
 
-// WaitResult is how Wait ended: the exit status and the lines to print.
-type WaitResult struct {
-	Code  int
-	Lines []string
+// The exit status of Wait when the timeout passes before CI ends.
+const WaitTimeout = 124
+
+// WaitOptions are the waits of Wait and what it compares the pull request with.
+type WaitOptions struct {
+	// Branch and Head are the local branch and its commit: when the pull request's branch is Branch, the checks
+	// count only once its head is Head, so that a wait right after a push does not read the previous commit's
+	// results.
+	Branch, Head string
+	Timeout      time.Duration
+	Interval     time.Duration
+	Heartbeat    time.Duration // how often a line says that the wait goes on; 0 is every 5 minutes
+	All          bool          // wait for every check instead of returning at the first failure
+	LogDir       string        // where the logs of failed jobs are saved
 }
 
 var (
@@ -378,75 +388,273 @@ var (
 	reRun = regexp.MustCompile(`/actions/runs/(\d+)`)
 )
 
-// Wait polls a pull request until its CI ends, it conflicts, it merges, or the timeout passes. With all false
-// it returns at the first failed check instead of waiting for the others. A failure comes with the failing
-// lines of the failed jobs' logs, which are saved under logDir. When the pull request's branch is branch, the
-// checks count only once its head is head, so that a wait right after a push does not read the previous
-// commit's results.
-func Wait(n int, branch, head string, timeout, interval time.Duration, all bool, logDir string) WaitResult {
-	deadline := time.Now().Add(timeout)
+// sayTo returns the function that prints one line to w at once, so that a wait that is killed leaves what it
+// printed.
+func sayTo(w io.Writer) func(format string, args ...any) {
+	return func(format string, args ...any) {
+		fmt.Fprintf(w, format+"\n", args...)
+		if f, ok := w.(*os.File); ok {
+			_ = f.Sync()
+		}
+	}
+}
+
+// tally is the names of the pending and the failed checks of the latest runs, sorted, and the number that passed.
+func tally(cs []check) (pending, failed []string, passed int) {
+	for _, c := range latest(cs) {
+		switch c.result() {
+		case "pending":
+			pending = append(pending, c.name())
+		case "failed":
+			failed = append(failed, c.name())
+		case "passed":
+			passed++
+		}
+	}
+	sort.Strings(pending)
+	sort.Strings(failed)
+	return pending, failed, passed
+}
+
+// shortSHA is the first characters of a commit.
+func shortSHA(sha string) string {
+	if len(sha) > 9 {
+		return sha[:9]
+	}
+	return sha
+}
+
+// firstLine is the first line of an error's text.
+func firstLine(err error) string {
+	s, _, _ := strings.Cut(strings.TrimSpace(err.Error()), "\n")
+	return s
+}
+
+// waitingLine is the line a wait prints when it starts.
+func waitingLine(n int, p prState) string {
+	if len(p.StatusCheckRollup) == 0 {
+		return fmt.Sprintf("waiting for CI of #%d at %s: no check has started yet", n, shortSHA(p.HeadRefOid))
+	}
+	pending, _, _ := tally(p.StatusCheckRollup)
+	return fmt.Sprintf("waiting for CI of #%d at %s: %d checks pending", n, shortSHA(p.HeadRefOid), len(pending))
+}
+
+// stillWaiting is the line a wait prints at each heartbeat.
+func stillWaiting(p prState) string {
+	pending, failed, passed := tally(p.StatusCheckRollup)
+	line := fmt.Sprintf("still waiting: %d pending, %d passed", len(pending), passed)
+	if len(failed) > 0 {
+		line += fmt.Sprintf(", %d failed", len(failed))
+	}
+	return line
+}
+
+// stillPending names what a wait that reached its timeout was waiting for.
+func stillPending(p prState) string {
+	pending, failed, _ := tally(p.StatusCheckRollup)
+	var out string
+	switch {
+	case len(p.StatusCheckRollup) == 0:
+		out = "no check has started"
+	case len(pending) > 0:
+		out = "still pending: " + short(pending, 8)
+	case !gatePassed(p.StatusCheckRollup):
+		out = "the required check `" + gateName + "` has not reported"
+	default:
+		out = "no check is pending"
+	}
+	if len(failed) > 0 {
+		out += "; failed: " + short(failed, 8)
+	}
+	return out
+}
+
+// defaultHeartbeat is how often a wait says that it goes on.
+const defaultHeartbeat = 5 * time.Minute
+
+// Wait polls a pull request until its CI ends, it conflicts, it merges, or the timeout passes, and returns the
+// exit status. It prints to w a line when it starts, a line at each heartbeat, and how it ended, each at once, so
+// that no output means it never started. Without All it returns at the first failed check instead of waiting for
+// the others. A failure comes with the failing lines of the failed jobs' logs, which are saved under LogDir.
+func Wait(w io.Writer, n int, o WaitOptions) int {
+	say := sayTo(w)
+	if o.Heartbeat <= 0 {
+		o.Heartbeat = defaultHeartbeat
+	}
 	started := time.Now()
+	deadline := started.Add(o.Timeout)
+	beat := started.Add(o.Heartbeat)
+	var last *prState // the newest state of the pull request's own head
+	first := true
 	for {
 		p, err := viewPR(n)
+		behind := false
 		switch {
 		case err != nil:
 			// gh and the API fail now and then; give up only at the deadline.
 		case p.State == "MERGED":
-			return WaitResult{0, []string{fmt.Sprintf("PR #%d is merged", n)}}
+			say("PR #%d is merged", n)
+			return 0
 		case p.State == "CLOSED":
-			return WaitResult{1, []string{fmt.Sprintf("PR #%d is closed", n)}}
-		case p.HeadRefName == branch && head != "" && p.HeadRefOid != head:
+			say("PR #%d is closed", n)
+			return 1
+		case p.HeadRefName == o.Branch && o.Head != "" && p.HeadRefOid != o.Head:
 			// GitHub has not seen the push yet.
+			behind = true
 		case p.Mergeable == "CONFLICTING":
-			return WaitResult{3, []string{fmt.Sprintf("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)}}
+			say("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)
+			return 3
 		default:
+			last = &p
 			res, failed, pending := summarize(p.StatusCheckRollup)
-			if res == "failed" && (!all || !pending) {
-				return WaitResult{1, failureReport(n, p, failed, logDir)}
+			if res == "failed" && (!o.All || !pending) {
+				lines, _ := failureReport(n, p, failed, o.LogDir)
+				say("%s", strings.Join(lines, "\n"))
+				return 1
 			}
 			if res == "cancelled" {
-				return WaitResult{4, []string{fmt.Sprintf("PR #%d: CI cancelled, not failed: %s; no newer run replaced them. Rerun the workflow (gh run rerun) or push", n, strings.Join(failed, ", "))}}
+				say("PR #%d: CI cancelled, not failed: %s; no newer run replaced them. Rerun the workflow (gh run rerun) or push", n, strings.Join(failed, ", "))
+				return 4
 			}
 			if res == "passed" {
-				return WaitResult{0, []string{fmt.Sprintf("PR #%d: CI passed (%d checks, mergeable %s)", n, len(latest(p.StatusCheckRollup)), strings.ToLower(p.Mergeable))}}
+				say("PR #%d: CI passed (%d checks, mergeable %s)", n, len(latest(p.StatusCheckRollup)), strings.ToLower(p.Mergeable))
+				return 0
 			}
 			if res == "none" && time.Since(started) > 10*time.Minute {
-				return WaitResult{2, []string{fmt.Sprintf("PR #%d: no check started in 10 minutes (mergeable %s); check the PR page %s", n, strings.ToLower(p.Mergeable), p.URL)}}
+				say("PR #%d: no check started in 10 minutes (mergeable %s); check the PR page %s", n, strings.ToLower(p.Mergeable), p.URL)
+				return 2
 			}
 		}
-		if time.Now().After(deadline) {
-			return WaitResult{124, []string{fmt.Sprintf("PR #%d: CI still running after %s", n, timeout)}}
+		now := time.Now()
+		switch {
+		case first && err != nil:
+			say("waiting for CI of #%d: gh could not read it yet (%s)", n, firstLine(err))
+		case first && behind:
+			say("waiting for CI of #%d at %s: GitHub has not seen the push yet", n, shortSHA(o.Head))
+		case first:
+			say("%s", waitingLine(n, p))
+		case now.After(beat) && last != nil:
+			say("%s", stillWaiting(*last))
+		case now.After(beat):
+			say("still waiting: the checks of the pull request's head could not be read yet")
 		}
-		time.Sleep(interval)
+		if first || now.After(beat) {
+			first, beat = false, now.Add(o.Heartbeat)
+		}
+		if now.After(deadline) {
+			what := "the pull request was never read at its head"
+			if last != nil {
+				what = stillPending(*last)
+			}
+			say("PR #%d: timed out after %s, CI has not ended: %s", n, o.Timeout, what)
+			return WaitTimeout
+		}
+		time.Sleep(o.Interval)
 	}
 }
 
-func failureReport(n int, p prState, failed []string, logDir string) []string {
-	lines := []string{fmt.Sprintf("PR #%d: CI failed: %s", n, strings.Join(failed, ", "))}
-	shown := 0
+// maxFailureLogs is how many failed jobs' logs failureReport reads to tell whether each failed in the same way;
+// it prints the failing lines of the first shownFailures.
+const (
+	maxFailureLogs = 12
+	shownFailures  = 3
+)
+
+// failureReport returns the lines that say which checks of p failed and why — the failing lines of the failed
+// jobs' logs, which it saves under logDir — and the command that runs the failed jobs again when the logs show
+// that every failed job stopped on the same unreachable host before any test ran (the first line says so),
+// or "" when they do not.
+func failureReport(n int, p prState, failed []string, logDir string) (lines []string, rerun string) {
+	shown, read := 0, 0
+	infra := true
+	var hosts map[string]int // the hosts every failed job read so far could not reach
+	runs := map[int64]bool{}
 	for _, c := range latest(p.StatusCheckRollup) {
 		// `check` only collects the other jobs' results; its log says nothing new.
-		if c.result() != "failed" || c.name() == "check" || shown == 3 {
+		if c.result() != "failed" || c.name() == gateName {
+			continue
+		}
+		show := shown < shownFailures
+		if !show && (!infra || read == maxFailureLogs) {
+			infra = false
 			continue
 		}
 		m := reJob.FindStringSubmatch(c.DetailsURL + c.TargetURL)
 		if m == nil {
-			lines = append(lines, fmt.Sprintf("== %s: %s", c.name(), c.DetailsURL+c.TargetURL))
+			infra = false
+			if show {
+				lines = append(lines, fmt.Sprintf("== %s: %s", c.name(), c.DetailsURL+c.TargetURL))
+			}
 			continue
 		}
-		shown++
+		if show {
+			shown++
+		}
+		read++
 		// The job's own log is readable as soon as the job ends; `gh run view --log` waits for the whole run.
 		out, err := gh.Run("api", "repos/"+gh.Repo()+"/actions/jobs/"+m[1]+"/logs")
 		if err != nil {
-			lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", c.name(), err))
+			infra = false
+			if show {
+				lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", c.name(), err))
+			}
 			continue
 		}
 		file := filepath.Join(logDir, fmt.Sprintf("pr-%d-%s.log", n, m[1]))
 		_ = os.WriteFile(file, out, 0o600)
-		lines = append(lines, fmt.Sprintf("== %s (full log: %s)", c.name(), file))
-		lines = append(lines, Failures(string(out), 40)...)
+		if show {
+			lines = append(lines, fmt.Sprintf("== %s (full log: %s)", c.name(), file))
+			lines = append(lines, JobFailures(string(out), 40)...)
+		}
+		hosts = common(hosts, Unreachable(string(out)))
+		infra = infra && len(hosts) > 0
+		runs[c.runID()] = true
 	}
-	return lines
+	head := fmt.Sprintf("PR #%d: CI failed: %s", n, strings.Join(failed, ", "))
+	if infra && len(hosts) > 0 {
+		rerun = rerunCommand(runs)
+		head += fmt.Sprintf("; failed before any test ran: the runner could not reach %s (rerun: %s)", most(hosts), rerun)
+	}
+	return append([]string{head}, lines...), rerun
+}
+
+// common adds the counts of next to those of the hosts that are in both; a nil all takes next as it is.
+func common(all, next map[string]int) map[string]int {
+	if all == nil {
+		return next
+	}
+	out := map[string]int{}
+	for h, c := range all {
+		if next[h] > 0 {
+			out[h] = c + next[h]
+		}
+	}
+	return out
+}
+
+// most returns the host with the highest count, the first by name among equals.
+func most(hosts map[string]int) string {
+	best := ""
+	for h, c := range hosts {
+		if best == "" || c > hosts[best] || (c == hosts[best] && h < best) {
+			best = h
+		}
+	}
+	return best
+}
+
+// rerunCommand is the command that runs the failed jobs of the Actions runs again.
+func rerunCommand(runs map[int64]bool) string {
+	ids := make([]int64, 0, len(runs))
+	for id := range runs {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	cmds := make([]string, len(ids))
+	for i, id := range ids {
+		cmds[i] = fmt.Sprintf("gh run rerun %d --failed", id)
+	}
+	return strings.Join(cmds, " && ")
 }
 
 // prSnapshot is what Watch compares between polls.

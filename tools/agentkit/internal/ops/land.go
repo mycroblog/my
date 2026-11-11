@@ -30,25 +30,24 @@ const rebaseFix = "in the branch's worktree: git fetch origin && git rebase orig
 
 // LandOptions are the waits of Land.
 type LandOptions struct {
-	Timeout  time.Duration
-	Interval time.Duration
-	LogDir   string // where the logs of failed jobs are saved
+	Timeout   time.Duration
+	Interval  time.Duration
+	Heartbeat time.Duration // how often a line says that the wait goes on; 0 is every 5 minutes
+	LogDir    string        // where the logs of failed jobs are saved
 }
 
 // settle is how long Land waits for GitHub to close the issues of a merged pull request, in steps.
 var settle = 5 * time.Second
 
 // Land takes pull request n to main and leaves nothing behind: it turns on auto-merge (the merge queue, a merge
-// commit), waits until the pull request is merged, printing one line per event, then removes the branch and its
-// worktree, checks that the issues it closes are closed, and closes each parent issue whose sub-issues are all
-// closed. It ends with three lines — merged, cleaned up, remains — and returns the exit status. A failure
-// prints what failed and the fix.
+// commit), waits until the pull request is merged, printing one line per event and one at each heartbeat, then
+// removes the branch and its worktree, checks that the issues it closes are closed, and closes each parent issue
+// whose sub-issues are all closed. It ends with three lines — merged, cleaned up, remains — and returns the exit
+// status. A failure prints what failed and the fix.
 func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
-	say := func(format string, args ...any) {
-		fmt.Fprintf(w, format+"\n", args...)
-		if f, ok := w.(*os.File); ok {
-			_ = f.Sync()
-		}
+	say := sayTo(w)
+	if o.Heartbeat <= 0 {
+		o.Heartbeat = defaultHeartbeat
 	}
 	p, err := viewPR(n)
 	if err != nil {
@@ -70,8 +69,11 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 		return 1
 	}
 	say("PR #%d: auto-merge on; waiting for its CI and the merge queue", n)
+	say("%s", waitingLine(n, p))
 	main := mainCheckout(r)
 	deadline := time.Now().Add(o.Timeout)
+	beat := time.Now().Add(o.Heartbeat)
+	last := p // the newest state of the pull request's own head
 	var old prSnapshot
 	had := false
 	for {
@@ -95,8 +97,13 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[n]}
 			switch {
 			case ci == "failed":
-				say("%s", strings.Join(failureReport(n, p, failed, o.LogDir), "\n"))
-				say("fix: repair it in the branch's worktree, commit, push; then run pr land again")
+				lines, rerun := failureReport(n, p, failed, o.LogDir)
+				say("%s", strings.Join(lines, "\n"))
+				if rerun != "" {
+					say("fix: %s; then run pr land again", rerun)
+				} else {
+					say("fix: repair it in the branch's worktree, commit, push; then run pr land again")
+				}
 				return 1
 			case ci == "cancelled":
 				say("PR #%d: CI cancelled, not failed: %s; no newer run replaced them\nfix: gh run rerun <run> --failed, or push; then run pr land again", n, strings.Join(failed, ", "))
@@ -116,10 +123,19 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 			for _, e := range transitions(old, had, cur) {
 				say("%s PR #%d %s", time.Now().Format("15:04"), n, e)
 			}
-			old, had = cur, true
+			old, had, last = cur, true, p
 		}
-		if time.Now().After(deadline) {
-			say("PR #%d: not merged after %s; run pr land again to keep waiting", n, o.Timeout)
+		now := time.Now()
+		where := ""
+		if had && old.queued && old.ci == "passed" {
+			where = ", in the merge queue"
+		}
+		if now.After(beat) {
+			say("%s%s", stillWaiting(last), where)
+			beat = now.Add(o.Heartbeat)
+		}
+		if now.After(deadline) {
+			say("PR #%d: timed out after %s, not merged: %s%s; run pr land again to keep waiting", n, o.Timeout, stillPending(last), where)
 			return LandTimeout
 		}
 		time.Sleep(o.Interval)
@@ -176,7 +192,7 @@ func mergeGroupFailure(n int, logDir string) []string {
 			file := filepath.Join(logDir, fmt.Sprintf("pr-%d-%d.log", n, j.ID))
 			_ = os.WriteFile(file, out, 0o600)
 			lines = append(lines, fmt.Sprintf("== %s (merge group; full log: %s)", j.Name, file))
-			lines = append(lines, Failures(string(out), 40)...)
+			lines = append(lines, JobFailures(string(out), 40)...)
 		}
 		return lines
 	}

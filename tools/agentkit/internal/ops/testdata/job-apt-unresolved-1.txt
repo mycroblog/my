@@ -1,0 +1,42 @@
+2026-11-11T14:03:25.3879747Z ##[start-action display=Build bin/task;id=__self.__run]
+2026-11-11T14:03:25.3884174Z ##[end-action id=__self.__run;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-11-11T14:03:25.3929373Z ##[group]Run apt-get update && apt-get install -y --no-install-recommends unzip
+2026-11-11T14:03:25.3929912Z [36;1mapt-get update && apt-get install -y --no-install-recommends unzip[0m
+2026-11-11T14:03:25.3933230Z shell: sh -e {0}
+2026-11-11T14:03:25.3933435Z ##[endgroup]
+2026-11-11T14:03:26.0633790Z Get:1 https://deb.nodesource.com/node_26.x nodistro InRelease [12.1 kB]
+2026-11-11T14:03:26.3104418Z Get:2 https://deb.nodesource.com/node_26.x nodistro/main amd64 Packages [4865 B]
+2026-11-11T14:03:47.5150825Z Ign:3 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-11T14:03:49.2316701Z Ign:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+2026-11-11T14:03:55.5170493Z Ign:5 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease
+2026-11-11T14:03:58.2343560Z Ign:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+2026-11-11T14:04:01.4035773Z Ign:6 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease
+2026-11-11T14:04:05.3908066Z Ign:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+2026-11-11T14:04:09.4054422Z Ign:3 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-11T14:04:13.5527825Z Err:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+2026-11-11T14:04:13.5528288Z   Could not resolve 'security.ubuntu.com'
+2026-11-11T14:04:17.1794211Z Ign:5 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease
+2026-11-11T14:04:25.1823523Z Ign:6 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease
+2026-11-11T14:04:31.6606503Z Ign:3 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-11T14:04:39.2258298Z Ign:5 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease
+2026-11-11T14:04:47.2286431Z Ign:6 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease
+2026-11-11T14:04:54.2560360Z Err:3 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-11T14:04:54.2560921Z   Could not resolve 'azure.archive.ubuntu.com'
+2026-11-11T14:05:00.6296610Z Err:5 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease
+2026-11-11T14:05:00.6297360Z   Could not resolve 'azure.archive.ubuntu.com'
+2026-11-11T14:05:08.6334373Z Err:6 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease
+2026-11-11T14:05:08.6334801Z   Could not resolve 'azure.archive.ubuntu.com'
+2026-11-11T14:05:08.6392609Z Fetched 17.0 kB in 1min 43s (165 B/s)
+2026-11-11T14:05:08.6501832Z Reading package lists...
+2026-11-11T14:05:08.6523745Z W: Failed to fetch http://azure.archive.ubuntu.com/ubuntu/dists/noble/InRelease  Could not resolve 'azure.archive.ubuntu.com'
+2026-11-11T14:05:08.6524871Z W: Failed to fetch http://azure.archive.ubuntu.com/ubuntu/dists/noble-updates/InRelease  Could not resolve 'azure.archive.ubuntu.com'
+2026-11-11T14:05:08.6525986Z W: Failed to fetch http://azure.archive.ubuntu.com/ubuntu/dists/noble-backports/InRelease  Could not resolve 'azure.archive.ubuntu.com'
+2026-11-11T14:05:08.6526871Z W: Failed to fetch http://security.ubuntu.com/ubuntu/dists/noble-security/InRelease  Could not resolve 'security.ubuntu.com'
+2026-11-11T14:05:08.6527796Z W: Some index files failed to download. They have been ignored, or old ones used instead.
+2026-11-11T14:05:08.6660415Z Reading package lists...
+2026-11-11T14:05:08.6692458Z Building dependency tree...
+2026-11-11T14:05:08.6694796Z Reading state information...
+2026-11-11T14:05:08.6711937Z E: Unable to locate package unzip
+2026-11-11T14:05:08.6759374Z ##[error]Process completed with exit code 100.
+2026-11-11T14:05:08.6836314Z ##[group]Run actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+2026-11-11T14:05:08.6836649Z with:

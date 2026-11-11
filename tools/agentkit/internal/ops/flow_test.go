@@ -525,7 +525,9 @@ case "$1 $2" in
   "issue close") ;;
   "api repos/mycroblog/my/milestones/3") cat "$STATE/milestone" 2>/dev/null || echo '{"open_issues":4,"closed_issues":9,"state":"open"}' ;;
   "api -X") [ "$*" = "api -X PATCH repos/mycroblog/my/milestones/3 -f state=closed" ] || { echo "unexpected: $*" >&2; exit 1; } ;;
-  "api repos/mycroblog/my/actions/jobs/81/logs") echo "--- FAIL: TestThing (0.00s)" ;;
+  "api repos/mycroblog/my/actions/jobs/"*)
+    id=${2#repos/mycroblog/my/actions/jobs/}; id=${id%/logs}
+    if [ -f "$STATE/job$id" ]; then cat "$STATE/job$id"; else echo "--- FAIL: TestThing (0.00s)"; fi ;;
   *) echo "unexpected: $*" >&2; exit 1 ;;
 esac`
 
@@ -663,7 +665,14 @@ func TestLandFailures(t *testing.T) {
 		}, LandConflict, []string{"PR #20 conflicts with its base", "fix: in the branch's worktree: git fetch origin && git rebase origin/main"}},
 		{"ci failed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, failed, true))
-		}, 1, []string{"PR #20: CI failed: preflight", "--- FAIL: TestThing", "fix: repair it in the branch's worktree"}},
+		}, 1, []string{"PR #20: CI failed: preflight\n", "--- FAIL: TestThing", "fix: repair it in the branch's worktree"}},
+		{"ci failed before any test ran", func(state, head string) {
+			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, failed, true))
+			write(t, filepath.Join(state, "job81"), fixture(t, "job-apt-unresolved-1.txt"))
+		}, 1, []string{
+			"PR #20: CI failed: preflight; failed before any test ran: the runner could not reach azure.archive.ubuntu.com (rerun: gh run rerun 1 --failed)\n",
+			"E: Unable to locate package unzip", "fix: gh run rerun 1 --failed; then run pr land again",
+		}},
 		{"dropped by the queue", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, "", false))
 			write(t, filepath.Join(state, "pr2"), prJSON("OPEN", "MERGEABLE", head, "", true))

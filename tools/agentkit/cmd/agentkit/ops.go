@@ -175,10 +175,9 @@ func runPR(r *repo.Repo, args []string) error {
 		}
 		branch, _ := r.Branch()
 		head, _ := repo.Git(r.Root, "rev-parse", "HEAD")
-		res := ops.Wait(n, branch, strings.TrimSpace(head), *timeout, *interval, *all, dir)
-		fmt.Println(strings.Join(res.Lines, "\n"))
-		if res.Code != 0 {
-			return exitError{res.Code, ""}
+		if code := ops.Wait(os.Stdout, n, ops.WaitOptions{Branch: branch, Head: strings.TrimSpace(head), Timeout: *timeout,
+			Interval: *interval, All: *all, LogDir: dir}); code != 0 {
+			return exitError{code, ""}
 		}
 		return nil
 	case "land":
