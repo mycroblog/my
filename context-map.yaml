@@ -32,6 +32,8 @@ userdocs:
     - "**/*.test.ts"
     - "**/*.test.tsx"
     - "**/*.stories.tsx"
+    - "**/AGENTS.md"
+    - "**/context-map.yaml"
     - "**/testdata/**"
     - "**/e2e/**"
     - "pkg/testkit/**"
