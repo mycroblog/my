@@ -351,6 +351,14 @@
     "defaultMessage": "這不是機器翻譯，而是作者自己撰寫的文字。",
     "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
   },
+  "status.translation.browser": {
+    "defaultMessage": "你的瀏覽器（{browser}）",
+    "description": "On the line under a translated post: who translated it, the reader's own browser. {browser} is the browser's product name."
+  },
+  "status.translation.browser_unnamed": {
+    "defaultMessage": "你的瀏覽器",
+    "description": "On the line under a translated post: who translated it, the reader's own browser, whose name is not known."
+  },
   "status.translation.browser_failed": {
     "defaultMessage": "你的瀏覽器無法翻譯這則貼文。請再試一次。",
     "description": "Next to the translate button: the translator built into the browser failed, or lost a mention or a link of the post on the way. The original stays in view."
@@ -399,9 +407,17 @@
     "defaultMessage": "無法翻譯這則貼文：{reason}",
     "description": "Next to the translate button: the request failed for another reason, such as no connection. {reason} is the localized reason."
   },
+  "status.translation.from": {
+    "defaultMessage": "翻譯自{language}",
+    "description": "Start of the line under a translated post: what happened. {language} is the name of the language the post was written in, in the UI's language (\"English\")."
+  },
   "status.translation.limit": {
     "defaultMessage": "已達每月翻譯上限，因此沒有翻譯這則貼文。你可以在下個月再次翻譯。",
     "description": "Next to the translate button: the limit of the reader or of the server on translated characters is used up until the next month. The original stays in view."
+  },
+  "status.translation.machine": {
+    "defaultMessage": "機器翻譯",
+    "description": "Start of the line under a translated post when the language it was written in is not known."
   },
   "status.translation.original_shown": {
     "defaultMessage": "正在顯示原始貼文。",
@@ -558,5 +574,65 @@
   "status.focused.replies": {
     "defaultMessage": "{count, plural, other {# 則回覆}}",
     "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
+  },
+  "status.interaction_policy.action": {
+    "defaultMessage": "變更誰可以回覆、轉發和引用",
+    "description": "Item of the menu of the user's own post that opens the dialog choosing who may reply to, boost, and quote it."
+  },
+  "status.interaction_policy.title": {
+    "defaultMessage": "誰可以回覆、轉發和引用這則貼文",
+    "description": "Title of the dialog that chooses who may reply to, boost, and quote one of the user's posts."
+  },
+  "status.interaction_policy.close": {
+    "defaultMessage": "關閉",
+    "description": "Accessible name of the close button of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.description": {
+    "defaultMessage": "每項選擇都會立即儲存。先前已核准的回覆、轉發和引用會保留；新選擇允許的請求會被核准。",
+    "description": "Description of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.done": {
+    "defaultMessage": "已變更誰可以與這則貼文互動",
+    "description": "Toast after the user changed who may reply to, boost, or quote one of their posts."
+  },
+  "status.interaction_policy.failed": {
+    "defaultMessage": "無法變更誰可以與這則貼文互動：{reason}",
+    "description": "Toast when the change of who may reply to, boost, or quote a post failed. {reason} is the server's reason."
+  },
+  "status.boost.pending": {
+    "defaultMessage": "已請作者核准你的轉發",
+    "description": "Announced after the user boosted a post whose author approves boosts: the boost waits for the approval."
+  },
+  "status.boost.approval.pending": {
+    "defaultMessage": "你的轉發正在等待作者核准。",
+    "description": "At the end of the actions of a post that the user boosted while its author approves boosts, until the author answers."
+  },
+  "status.boost.approval.rejected": {
+    "defaultMessage": "作者拒絕了你的轉發。",
+    "description": "At the end of the actions of a post whose author refused the user's boost."
+  },
+  "status.approval.pending": {
+    "defaultMessage": "等待核准：只有你看得到這則回覆",
+    "description": "Under the user's own reply while the author of the post it replies to has not approved it; nobody else sees it until then."
+  },
+  "status.approval.rejected": {
+    "defaultMessage": "已拒絕：只有你看得到這則回覆",
+    "description": "Under the user's own reply that the author of the post it replies to refused; nobody else sees it."
+  },
+  "status.article.kind": {
+    "defaultMessage": "文章",
+    "description": "Line above the title of an article (a long post with a title) in a list, saying what the card is."
+  },
+  "status.article.sensitive": {
+    "defaultMessage": "作者將這篇文章標示為敏感內容。",
+    "description": "On the page of an article the author marked sensitive, above the button that shows its cover and body; its title and summary are shown."
+  },
+  "status.article.show": {
+    "defaultMessage": "顯示文章",
+    "description": "Button on the page of a sensitive article that shows or hides its cover and body. The same text is used in both states."
+  },
+  "status.article.untitled": {
+    "defaultMessage": "未命名的文章",
+    "description": "Stands for the title of an article from another server that has none: the link of its card, and the heading of its page."
   }
 }

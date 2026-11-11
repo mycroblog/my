@@ -1,5 +1,5 @@
 ---
-# source: 0579b8a800fd
+# source: b4ce098ad39e
 title: mycroblog
 description: 從小規模起步、隨著社群一起成長的聯邦宇宙微網誌。
 template: splash
@@ -45,7 +45,7 @@ import Screenshot from "../../components/Screenshot.astro";
     追蹤、貼文、引用貼文與自訂表情符號回應，都能與 Mastodon、Misskey、GoToSocial 等伺服器互相往來。「本站」可見範圍讓貼文只留在你的伺服器與你的追蹤者之間。
   </Card>
   <Card title="支持者與公開帳目" icon="heart">
-    透過 Stripe 或 PAY.JP 提供付費方案，授予角色、徽章以及新增自訂表情符號的權限。記錄伺服器的花費，自動匯入 AWS 與 Google Cloud 的帳單，並向社群公開支出與收入。
+    透過 Stripe 或 PAY.JP 提供付費方案，授予角色、徽章以及新增自訂表情符號的權限。記錄伺服器的花費，自動匯入 AWS、Google Cloud 與 Cloudflare 的費用，並向社群公開支出與收入。
   </Card>
   <Card title="語音聊天室" icon="comment">
     為你伺服器上的人提供即時語音聊天室，具備主持人、發言者、邀請與回應。小聊天室採用點對點連線，大聊天室則使用 LiveKit 或 Sora。
@@ -131,6 +131,14 @@ import Screenshot from "../../components/Screenshot.astro";
 </CardGrid>
 
 **狀態：開發中，尚未發布第一個版本（v0）**。在 `v0.1.0` 之前，升級後資料可能無法保留：資料庫可能需要重新建立。從 `v0.1.0` 開始，版本之間的每次升級都會保留你的資料。
+
+## 贊助者
+
+mycroblog 由它的贊助者支持。若要加入他們，請參閱 [GitHub Sponsors](https://github.com/sponsors/mycroblog)。
+
+<a href="https://github.com/sponsors/mycroblog">
+  <img src="https://sponsors.mycroblog.dev/canopy.svg" alt="mycroblog 的 Canopy 贊助者" width="800" height="160" />
+</a>
 
 ## 授權條款
 

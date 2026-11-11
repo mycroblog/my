@@ -84,59 +84,61 @@ CDN 只能保護伺服器免受經過它的請求影響。當 origin 也能透�
 
 這些都未設定時，不會進行任何檢查，伺服器的行為就如同這一節不存在。
 
-<!-- source: what-passes-without-the-header 38e1ceda6e34 -->
-### 不帶標頭也能通過的請求
+<!-- source: what-passes-without-the-header b79877bb91a3 -->
+### 沒有標頭也能通過的請求
 
 | 請求 | 原因 |
 | --- | --- |
-| `/healthz`、`/readyz`、`/api/v1/instance/health` 的 `GET` 或 `HEAD` | 平台的探測和運作時間監控會直接呼叫它們 |
-| 送往 `/_internal/` 路徑的 `POST` | Cloud Tasks 和 Cloud Scheduler 會透過伺服器自己的 URL 呼叫它們。它們帶有自己的簽章權杖 |
+| `GET` 或 `HEAD` 對 `/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health` | 平台的探測與可用性監控會直接呼叫它們 |
+| `POST` 到 `/_internal/` 路徑 | Cloud Tasks 和 Cloud Scheduler 會以伺服器自己的 URL 呼叫它們。它們帶有自己簽署的權杖 |
 
-其他所有請求都需要這個標頭，維護模式下也一樣：網頁用戶端及其資源、`/media/`、用戶端 API、OAuth 和 ActivityPub，包括其他伺服器的投遞。因此，任何不經過 CDN、直接以伺服器自己的位址呼叫它的東西都會被拒絕：你自己的 webhook、語音媒體伺服器、腳本。請讓它們指向 CDN 的主機名稱。
+其他所有請求都需要標頭，維護模式下也一樣：網頁用戶端及其資源、`/media/`、用戶端 API、OAuth 和 ActivityPub，包括其他伺服器的傳送。
+所以任何不經過 CDN、直接以伺服器自己的位址呼叫它的東西都會被拒絕：你自己的 webhook、語音媒體伺服器、腳本。請將它指向 CDN 的主機名稱。
 
-指標連接埠（`metrics_listen`）是不公開的獨立 listener，不會受到檢查。
+指標埠（`metrics_listen`）是另一個不公開的監聽器，不會被檢查。
 
-不帶祕密的請求即使通過了，也無法影響後續的處理：不論 `X-Forwarded-For` 寫了什麼，它的用戶端 IP 都是連線的對端，而它的 `traceparent` 和 `X-Request-Id` 會被忽略。
+沒有帶著密鑰的請求，即使通過了，對其餘的處理也沒有發言權：它的用戶端 IP 是連線的對端，不論 `X-Forwarded-For` 怎麼說，而它的 `traceparent` 和 `X-Request-Id` 會被忽略。
 
-<!-- source: set-it-up ee0a17ad2d33 -->
-### 設定步驟
+<!-- source: set-it-up 3804d0cc5c18 -->
+### 設定方式
 
-CDN 轉送給伺服器的每個主機名稱都需要這個標頭：`host`、`media_origin` 的主機，以及 CDN 有提供的獨立 `account_domain`。由同一個 CDN 代理的媒體主機也要設定，因為 `/media/` 和其他請求一樣會被拒絕。
+CDN 轉送到伺服器的每個主機名稱都需要這個標頭：`host`、`media_origin` 的主機，以及（如果 CDN 提供服務的話）另外的 `account_domain`。由同一個 CDN 代理的媒體主機也要設定它，因為 `/media/` 和其他所有東西一樣會被拒絕。
 
-1. 產生值，並選擇一個沒有其他用途的名稱：
+1. 產生這個值，並選擇一個沒有其他東西使用的名稱：
 
    ```sh
    openssl rand -hex 32
    ```
 
-2. **先在 CDN 設定標頭**。伺服器會忽略它不認識的標頭，因此這個步驟還不會改變任何事。
-   - **Cloudflare**：請求標頭轉換規則（Rules → Transform Rules → Modify Request Header），所有方案都可使用。比對該 zone 的所有傳入請求，並以你的名稱和值選擇 **Set static**。它會取代用戶端送來的值。只針對部分主機名稱的規則，會讓其他主機名稱被擋在外面。
-   - **Amazon CloudFront**：在每個 distribution 的 origin 上設定 origin custom header。它同樣會取代瀏覽者送來的值。
+2. **先在 CDN 設定標頭。** 伺服器會忽略它不認得的標頭，所以這一步還不會改變任何東西。
+   - **Cloudflare**：請求標頭轉換規則（Rules，然後 Transform Rules，然後 Modify Request Header），所有方案都有。比對這個 zone 的所有傳入請求，並選擇 **Set static**，填入你的名稱與值。它會取代用戶端傳來的值。只涵蓋部分主機名稱的規則，會讓其他主機名稱被鎖在門外。
+   - **Amazon CloudFront**：在每個 distribution 的來源上設定來源自訂標頭。它同樣會取代檢視者傳來的值。
    - **Google Cloud 負載平衡器**：在後端服務上設定自訂請求標頭。
-   - 其他任何 CDN 或代理：必須在送往伺服器的每個請求上設定（而不是附加）這個標頭。
-3. 設定 `MY_ORIGIN_SECRET` 和 `MY_ORIGIN_SECRET_HEADER` 後部署。`my config check` 會驗證它們並重述檢查的內容，但它看不到 CDN。
-4. 從外部以 origin 本身的位址確認：
+   - 任何其他 CDN 或代理：必須對每個送到伺服器的請求設定（而不是附加）這個標頭。
+3. 設定 `MY_ORIGIN_SECRET` 和 `MY_ORIGIN_SECRET_HEADER` 並部署。`my config check` 會驗證它們並重述所檢查的內容，但它看不到 CDN。
+4. 從外部，以來源本身的位址檢查：
 
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
-也請在 [`trusted_proxies`](../reference/configuration.md#trusted_proxies) 中列出 CDN 的位址，否則伺服器只會看到一個用戶端，所有請求都會共用 CDN 的速率限制；`my config check` 會對此發出警告。
+也請將 CDN 的位址列入 [`trusted_proxies`](../reference/configuration.md#trusted_proxies)，否則伺服器只會看到一個用戶端，每個請求都共用 CDN 的速率限制；`my config check` 會對此發出警告。
 
-被拒絕的請求不論標頭錯在哪裡，都會和其他被禁止的請求一樣收到相同的 `403` problem document，並帶有 `Cache-Control: no-store`。回應中不會提到這個標頭。
+被拒絕的請求會得到與其他任何被禁止的請求相同的 `403` problem 文件，並帶有 `Cache-Control: no-store`，不論標頭是哪裡錯了。回應中沒有任何東西指出標頭的名稱。
 
-<!-- source: when-everyone-is-locked-out 47c8f706e5e7 -->
-### 所有人都被擋在外面時
+<!-- source: when-everyone-is-locked-out bd514f7ec98b -->
+### 當所有人都被鎖在門外
 
-設定錯誤時，所有請求都會被拒絕，但健康檢查仍然是 `200`，因此平台看到的是健康的伺服器，監控 `/healthz` 的運作時間監控也察覺不到。徵兆如下：
+錯誤的設定會拒絕每個請求，而健康檢查仍然是 `200`，所以平台看到的是健康的伺服器，監控 `/health/live` 的可用性監控也什麼都看不到。徵兆有：
 
-- 經過 CDN 的每個頁面都是 `403`。
+- 透過 CDN 的每個頁面都是 `403`。
 - 指標 `my.http.origin_refused` 上升，而 `http.server.request.duration` 的請求停止。
-- 日誌中出現狀態為 `403` 且沒有 `http.route` 的 `http request` 行。日誌和追蹤永遠不會記錄這個標頭、它的名稱或值。被拒絕的請求不會建立追蹤 span。
+- 日誌中有狀態為 `403`、且沒有 `http.route` 的 `http request` 行。日誌與追蹤中從不包含標頭、它的名稱或它的值。被拒絕的請求不會建立追蹤 span。
 
-要復原，請在不啟用檢查的情況下部署：取消設定 `MY_ORIGIN_SECRET` 和 `MY_ORIGIN_SECRET_HEADER`。其他伺服器會重試它們的投遞，但在這段期間使用者無法連到伺服器。接著比對 CDN 上的名稱和值與設定是否一致，確認規則涵蓋了每個主機名稱，然後再重新設定。
+要復原，請在不做這項檢查的情況下部署：取消設定 `MY_ORIGIN_SECRET` 和 `MY_ORIGIN_SECRET_HEADER`。其他伺服器會重試它們的傳送，但這段期間使用者無法連到伺服器。
+接著比對 CDN 上的名稱與值和設定，確認規則涵蓋每個主機名稱，然後再次設定它們。
 
 <!-- source: rotate-the-value b88f695fde31 -->
 ### 輪替值

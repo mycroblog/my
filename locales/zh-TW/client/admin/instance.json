@@ -114,5 +114,177 @@
   "admin.instance.column.occurred_at": {
     "defaultMessage": "時間",
     "description": "Header of the column of a remote server's availability history that holds when it happened."
+  },
+  "admin.instance.deliveries.title": {
+    "defaultMessage": "傳送紀錄",
+    "description": "Heading of the section of a remote server's page with what this server delivered to it and what it answered."
+  },
+  "admin.instance.deliveries.description": {
+    "defaultMessage": "本站傳送給這個伺服器的內容及其回應，由新到舊排列，並列出每次嘗試。嘗試紀錄會保留 30 天，不會顯示活動的內容。",
+    "description": "Description under the heading of the deliveries of a remote server."
+  },
+  "admin.instance.deliveries.filter.label": {
+    "defaultMessage": "篩選傳送紀錄",
+    "description": "Accessible name of the form that filters the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.filter.activity_uri": {
+    "defaultMessage": "活動 ID",
+    "description": "Label of the field that keeps only the deliveries of one activity, by its ID (a URI)."
+  },
+  "admin.instance.deliveries.filter.activity_uri.description": {
+    "defaultMessage": "單一活動的完整 ID，以 https:// 開頭的網址。",
+    "description": "Description under the field of the activity ID in the filter of deliveries."
+  },
+  "admin.instance.deliveries.filter.account": {
+    "defaultMessage": "本站帳號",
+    "description": "Label of the field that keeps only the deliveries of the activities of one account on this server, by its username."
+  },
+  "admin.instance.deliveries.filter.account.description": {
+    "defaultMessage": "本站帳號的使用者名稱。每次依帳號篩選都會記錄在稽核紀錄中。",
+    "description": "Description under the field of the local account in the filter of deliveries: says that filtering by an account is recorded in the audit log."
+  },
+  "admin.instance.deliveries.filter.account.not_local": {
+    "defaultMessage": "請輸入本站帳號的使用者名稱，不含網域。",
+    "description": "Error of the local account field in the filter of deliveries when a handle with a domain was typed."
+  },
+  "admin.instance.deliveries.filter.unknown_account": {
+    "defaultMessage": "本站沒有名為 @{username} 的帳號。",
+    "description": "Why the deliveries filtered by a local account could not be shown: no account has that username. {username} is what the moderator typed."
+  },
+  "admin.instance.deliveries.filter.submit": {
+    "defaultMessage": "篩選",
+    "description": "Button that runs the filter of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.filter.clear": {
+    "defaultMessage": "清除篩選",
+    "description": "Button that removes the filter of the deliveries to a remote server and shows every delivery."
+  },
+  "admin.instance.deliveries.loading": {
+    "defaultMessage": "正在載入傳送紀錄",
+    "description": "Accessible label of the spinner while the deliveries to a remote server load."
+  },
+  "admin.instance.deliveries.failed": {
+    "defaultMessage": "無法載入傳送紀錄",
+    "description": "Heading of the error in place of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.retry": {
+    "defaultMessage": "再試一次",
+    "description": "Button that loads the deliveries to a remote server again after a failure."
+  },
+  "admin.instance.deliveries.more_failed": {
+    "defaultMessage": "無法載入更多傳送紀錄",
+    "description": "Heading of the error when the next page of the deliveries to a remote server failed to load."
+  },
+  "admin.instance.deliveries.empty": {
+    "defaultMessage": "沒有傳送給這個伺服器的紀錄",
+    "description": "Heading of the empty state of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.empty.description": {
+    "defaultMessage": "最近 30 天內沒有傳送任何內容給這個伺服器。",
+    "description": "Description of the empty state of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.empty.filtered": {
+    "defaultMessage": "沒有符合篩選條件的傳送紀錄",
+    "description": "Heading of the empty state of the deliveries to a remote server under a filter."
+  },
+  "admin.instance.deliveries.sender": {
+    "defaultMessage": "傳送者",
+    "description": "Term of a delivery: the account on this server that sent the activity."
+  },
+  "admin.instance.deliveries.sender.gone": {
+    "defaultMessage": "已刪除的帳號",
+    "description": "Value of the sender of a delivery whose account is gone."
+  },
+  "admin.instance.deliveries.inbox": {
+    "defaultMessage": "收件匣",
+    "description": "Term of a delivery: the inbox of the remote server it went to."
+  },
+  "admin.instance.deliveries.inbox.shared": {
+    "defaultMessage": "伺服器的共用收件匣",
+    "description": "Note under the inbox of a delivery that went to the shared inbox of the server, which names no recipient."
+  },
+  "admin.instance.deliveries.activity_uri": {
+    "defaultMessage": "活動 ID",
+    "description": "Term of a delivery: the ID (URI) of the activity it delivered."
+  },
+  "admin.instance.deliveries.activity_created_at": {
+    "defaultMessage": "活動記錄時間",
+    "description": "Term of a delivery: when the activity it delivered was recorded."
+  },
+  "admin.instance.deliveries.masked": {
+    "defaultMessage": "已遮蔽",
+    "description": "Value of a field of a delivery that is masked because the activity is not public."
+  },
+  "admin.instance.deliveries.mask.private": {
+    "defaultMessage": "傳送者、活動 ID 和收件匣已遮蔽：這項活動與僅限追蹤者的貼文有關。",
+    "description": "Why the fields of a delivery are masked: the activity is about a followers-only post."
+  },
+  "admin.instance.deliveries.mask.direct": {
+    "defaultMessage": "傳送者、活動 ID 和收件匣已遮蔽：這項活動與僅限被提及者的貼文有關。",
+    "description": "Why the fields of a delivery are masked: the activity is about a post for the mentioned people only."
+  },
+  "admin.instance.deliveries.mask.local": {
+    "defaultMessage": "傳送者、活動 ID 和收件匣已遮蔽：這項活動與僅限本站的貼文有關。",
+    "description": "Why the fields of a delivery are masked: the activity is about a post visible on this server only."
+  },
+  "admin.instance.deliveries.mask.approves_followers": {
+    "defaultMessage": "傳送者、活動 ID 和收件匣已遮蔽：這項活動是對需要核准追蹤者的帳號的追蹤，或是對追蹤的回應。",
+    "description": "Why the fields of a delivery are masked: a follow, its undo, an accept or a reject of a local account that approves its followers."
+  },
+  "admin.instance.deliveries.mask.unknown": {
+    "defaultMessage": "傳送者、活動 ID 和收件匣已遮蔽：這項活動所屬的貼文或帳號已不存在，因此無法得知是否曾公開。",
+    "description": "Why the fields of a delivery are masked: what the activity was about is gone."
+  },
+  "admin.instance.deliveries.reveal": {
+    "defaultMessage": "顯示已遮蔽的欄位",
+    "description": "Button of a masked delivery that shows its sender, activity ID and inbox."
+  },
+  "admin.instance.deliveries.reveal.description": {
+    "defaultMessage": "顯示這些欄位會記錄在稽核紀錄中。",
+    "description": "Description under the button that shows the masked fields of a delivery."
+  },
+  "admin.instance.deliveries.reveal.shown": {
+    "defaultMessage": "已顯示被遮蔽的欄位。查看這些欄位已記錄在稽核紀錄中。",
+    "description": "Status message after the masked fields of a delivery were shown."
+  },
+  "admin.instance.deliveries.reveal.failed": {
+    "defaultMessage": "無法顯示已遮蔽的欄位：{reason}",
+    "description": "Error toast when the masked fields of a delivery could not be shown. {reason} is the server's localized reason."
+  },
+  "admin.instance.deliveries.attempts": {
+    "defaultMessage": "嘗試紀錄",
+    "description": "Heading of the attempts of a delivery, oldest first."
+  },
+  "admin.instance.deliveries.attempts.none": {
+    "defaultMessage": "尚未嘗試。",
+    "description": "Text of a delivery that has no attempt yet."
+  },
+  "admin.instance.deliveries.outcome.succeeded": {
+    "defaultMessage": "已接受",
+    "description": "Outcome of an attempt of a delivery: the remote server accepted the activity."
+  },
+  "admin.instance.deliveries.outcome.retryable_failure": {
+    "defaultMessage": "失敗，已重試",
+    "description": "Outcome of an attempt of a delivery: it failed in a way that is tried again."
+  },
+  "admin.instance.deliveries.outcome.permanent_failure": {
+    "defaultMessage": "已拒絕",
+    "description": "Outcome of an attempt of a delivery: the remote server refused the activity, and it is not sent again."
+  },
+  "admin.instance.deliveries.outcome.skipped": {
+    "defaultMessage": "未傳送",
+    "description": "Outcome of an attempt of a delivery: nothing was sent, for the reason shown below."
+  },
+  "admin.instance.deliveries.status_code": {
+    "defaultMessage": "HTTP {code}",
+    "description": "The HTTP status code of the response to an attempt of a delivery. {code} is the number, such as 202."
+  },
+  "admin.instance.deliveries.scheme.rfc9421": {
+    "defaultMessage": "RFC 9421 簽章",
+    "description": "The signature scheme of the request of an attempt: HTTP Message Signatures (RFC 9421)."
+  },
+  "admin.instance.deliveries.scheme.cavage": {
+    "defaultMessage": "Cavage 簽章",
+    "description": "The signature scheme of the request of an attempt: the draft-cavage HTTP Signatures."
   }
 }

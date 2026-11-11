@@ -71,6 +71,22 @@
     "defaultMessage": "聯絡資訊與縮圖",
     "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
   },
+  "admin.settings.preview.title": {
+    "defaultMessage": "連結預覽",
+    "description": "Heading of the section of the server settings' general page that sets the image of link previews (preview_image)."
+  },
+  "admin.settings.preview.description": {
+    "defaultMessage": "連結到本站的網址在 X、Mastodon、Slack 等其他服務上顯示的圖片，用於沒有自己圖片的頁面。未設定時會依序使用縮圖、標誌，最後是 mycroblog 的標誌。",
+    "description": "Explains the link preview section: which pages use the image and what is used when it is not set, in order."
+  },
+  "admin.settings.preview.image": {
+    "defaultMessage": "預覽圖片",
+    "description": "Heading of the image field of link previews (preview_image)."
+  },
+  "admin.settings.preview.image.description": {
+    "defaultMessage": "1200 × 630 像素的寬幅圖片會顯示為大型卡片。",
+    "description": "Hint under the heading of the preview image: the recommended size."
+  },
   "admin.settings.descriptions.description": {
     "defaultMessage": "簡短說明是一段文字，會在關於頁面和其他應用程式中顯示在伺服器名稱旁邊；完整說明則在關於頁面中提供更多資訊。以任何語言撰寫一次即可：無論應用程式使用哪種語言，所有人看到的都是原文。",
     "description": "Description of the server's descriptions."
@@ -206,6 +222,78 @@
   "admin.settings.income.plans.description": {
     "defaultMessage": "所有人也看得到各方案目前的成員數，但絕不包含金額。成員較少的方案，可能會讓人猜出成員是誰。",
     "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.funding.title": {
+    "defaultMessage": "資金進度條",
+    "description": "Heading of the part of the costs screen's publication form about the funding meter, which shows how far this month's income goes toward a monthly goal."
+  },
+  "admin.settings.funding.description": {
+    "defaultMessage": "關於頁面可以顯示本月扣除支付服務商手續費後的收入距離每月目標有多遠。它不會傳送任何通知。",
+    "description": "Description of the funding meter in the costs screen's publication form."
+  },
+  "admin.settings.funding.visibility": {
+    "defaultMessage": "進度條顯示的內容",
+    "description": "Label of the choice of what the funding meter publishes (server setting funding_meter_visibility)."
+  },
+  "admin.settings.funding.off": {
+    "defaultMessage": "不顯示",
+    "description": "Choice of not showing the funding meter."
+  },
+  "admin.settings.funding.off.description": {
+    "defaultMessage": "關於頁面沒有進度條。",
+    "description": "Description of not showing the funding meter."
+  },
+  "admin.settings.funding.percent": {
+    "defaultMessage": "只顯示百分比",
+    "description": "Choice of showing only the percentage of the monthly goal that this month's income covers."
+  },
+  "admin.settings.funding.percent.description": {
+    "defaultMessage": "所有人都能看到本月收入達成目標的百分比（無條件捨去到 1%），以及本月是否已達標，但不會顯示金額。",
+    "description": "Description of showing only the percentage of the funding meter."
+  },
+  "admin.settings.funding.amounts": {
+    "defaultMessage": "百分比和金額",
+    "description": "Choice of showing the percentage, this month's income, and the goal."
+  },
+  "admin.settings.funding.amounts.description": {
+    "defaultMessage": "所有人也能看到本月的收入和目標。",
+    "description": "Description of showing the amounts of the funding meter too."
+  },
+  "admin.settings.funding.unavailable": {
+    "defaultMessage": "{reason, select, needs_private {只有在成本和收入都未公開時才能使用：只要公開其中一項，百分比就會洩漏隱藏的金額。} other {只有在成本和收入都已公開時才能使用：否則金額會洩漏隱藏的一方。}}",
+    "description": "Description of a choice of the funding meter that cannot be chosen with the costs and the income published as they are in the form, and why. reason is needs_private (the percentage alone) or needs_public (the amounts)."
+  },
+  "admin.settings.funding.turns_off": {
+    "defaultMessage": "{reason, select, needs_private {儲存後會關閉進度條：只有在成本和收入都未公開時，才能只顯示百分比。} other {儲存後會關閉進度條：只有在成本和收入都已公開時，才能顯示金額。}}",
+    "description": "Note in the publication form when the costs or the income published as changed in the form rule out the funding meter's choice, which the server then turns off. reason is needs_private or needs_public."
+  },
+  "admin.settings.funding.target.description": {
+    "defaultMessage": "目標留空時會採用本月的營運成本，這需要成本使用同一種貨幣。沒有目標的月份不會顯示進度條。",
+    "description": "Description of the monthly goal of the funding meter in the publication form."
+  },
+  "admin.settings.funding.target.amount": {
+    "defaultMessage": "每月目標",
+    "description": "Label of the field of the funding meter's monthly goal (server setting funding_meter_target_amount)."
+  },
+  "admin.settings.funding.target.amount.description": {
+    "defaultMessage": "以貨幣的主要單位填寫，例如 1650 或 12.50。",
+    "description": "Description of the field of the funding meter's monthly goal."
+  },
+  "admin.settings.funding.target.currency": {
+    "defaultMessage": "目標的貨幣",
+    "description": "Label of the field of the currency of the funding meter's goal (server setting funding_meter_target_currency)."
+  },
+  "admin.settings.funding.target.currency.description": {
+    "defaultMessage": "ISO 4217 代碼，例如 JPY。留空時使用本月成本的貨幣。",
+    "description": "Description of the field of the currency of the funding meter's goal."
+  },
+  "admin.settings.funding.rail": {
+    "defaultMessage": "也顯示在側邊欄",
+    "description": "Label of the switch that also shows the funding meter in the third column of wide screens (server setting funding_meter_rail)."
+  },
+  "admin.settings.funding.rail.description": {
+    "defaultMessage": "已登入的使用者除了在關於頁面，也會在寬螢幕的頁面旁欄看到進度條。",
+    "description": "Description of showing the funding meter in the third column of wide screens too."
   },
   "admin.settings.supporter_list.title": {
     "defaultMessage": "支持者列表",
@@ -1278,5 +1366,85 @@
   "admin.settings.auto_delete.confirm.confirm": {
     "defaultMessage": "儲存並通知",
     "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  },
+  "admin.settings.federation.scope": {
+    "defaultMessage": "聯邦範圍",
+    "description": "Label of the radio buttons of the federation scope setting (federation_scope): which servers this server federates with."
+  },
+  "admin.settings.federation.scope.description": {
+    "defaultMessage": "本站與哪些伺服器聯邦。",
+    "description": "Description of the federation scope setting."
+  },
+  "admin.settings.federation.scope.open": {
+    "defaultMessage": "所有伺服器",
+    "description": "Choice of the federation scope: every server that no domain action suspends."
+  },
+  "admin.settings.federation.scope.open.description": {
+    "defaultMessage": "與所有未被網域處置停權的伺服器聯邦。",
+    "description": "Description of the federation scope All servers."
+  },
+  "admin.settings.federation.scope.allowlist": {
+    "defaultMessage": "僅限允許的網域",
+    "description": "Choice of the federation scope: only the domains on the allowlist."
+  },
+  "admin.settings.federation.scope.allowlist.description": {
+    "defaultMessage": "只與已允許的網域及其子網域聯邦；其他伺服器都視為已停權，ActivityPub 擷取也需要已允許伺服器的簽章。",
+    "description": "Description of the federation scope Allowed domains only."
+  },
+  "admin.settings.federation.scope.allowlist_link": {
+    "defaultMessage": "已允許的網域",
+    "description": "Link from the federation scope to the allowlist; shown to people who manage domain actions."
+  },
+  "admin.settings.federation.scope.confirm.title": {
+    "defaultMessage": "要改為只與已允許的網域聯邦嗎？",
+    "description": "Title of the confirmation before limiting the federation to the allowlist."
+  },
+  "admin.settings.federation.scope.confirm.loading": {
+    "defaultMessage": "正在計算切換後會終止的追蹤關係…",
+    "description": "Shown in the confirmation of limiting the federation while the count loads."
+  },
+  "admin.settings.federation.scope.confirm.failed": {
+    "defaultMessage": "無法計算切換後會終止的追蹤關係。",
+    "description": "Shown in the confirmation of limiting the federation when the count failed."
+  },
+  "admin.settings.federation.scope.confirm.count_again": {
+    "defaultMessage": "重新計算",
+    "description": "Button that counts again the follows the switch would end after a failure."
+  },
+  "admin.settings.federation.scope.confirm.none": {
+    "defaultMessage": "不會有追蹤關係終止：本站使用者追蹤或被追蹤的每個伺服器都已允許。",
+    "description": "Shown in the confirmation of limiting the federation when no follow ends."
+  },
+  "admin.settings.federation.scope.confirm.count": {
+    "defaultMessage": "{follows, plural, other {# 個追蹤關係}}將終止，涉及 {accounts, plural, other {# 個本站帳號}}和 {servers, plural, other {# 個伺服器}}。",
+    "description": "How many follows the switch to the allowlist ends, how many local accounts lose one, and with how many servers."
+  },
+  "admin.settings.federation.scope.confirm.top": {
+    "defaultMessage": "終止的追蹤關係最多的伺服器：",
+    "description": "Heading of the list of the servers with the most follows the switch ends."
+  },
+  "admin.settings.federation.scope.confirm.domain": {
+    "defaultMessage": "{domain}：{count, plural, other {# 個追蹤關係}}",
+    "description": "One server of the list of the servers with the most follows the switch ends. {domain} is the domain; {count} how many."
+  },
+  "admin.settings.federation.scope.confirm.permanent": {
+    "defaultMessage": "追蹤關係會永久終止：之後切換回「所有伺服器」或允許伺服器，都不會恢復。",
+    "description": "Bullet of the confirmation of limiting the federation: the follows do not come back."
+  },
+  "admin.settings.federation.scope.confirm.notified": {
+    "defaultMessage": "本站每位失去追蹤關係的使用者都會收到失去數量的通知。",
+    "description": "Bullet of the confirmation of limiting the federation: the users are notified."
+  },
+  "admin.settings.federation.scope.confirm.signatures": {
+    "defaultMessage": "沒有已允許伺服器簽章的 ActivityPub 擷取會被拒絕，因此不簽章的伺服器和爬蟲將無法再看到公開貼文。",
+    "description": "Bullet of the confirmation of limiting the federation: unsigned fetches are refused."
+  },
+  "admin.settings.federation.scope.confirm.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button of the confirmation of limiting the federation that closes it without saving."
+  },
+  "admin.settings.federation.scope.confirm.confirm": {
+    "defaultMessage": "切換並儲存",
+    "description": "Button of the confirmation of limiting the federation that saves the settings."
   }
 }

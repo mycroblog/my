@@ -1,35 +1,67 @@
-<!-- source: supporter-payments-with-stripe f12ff4a0af71 -->
-# 使用 Stripe 收取支持者付款
+<!-- source: supporter-payments-with-stripe e517db9d077d -->
+# 使用 Stripe 的支持者付款
 
-設定 `payments = stripe` 後，本站使用者可以在 Stripe 代管的付款頁面（Checkout）上訂閱月付或年付方案，方案的角色會隨著付款狀態的變化而授予或移除。部署用的設定鍵請參閱[設定參考](../reference/configuration.md#payments)。關於整個支持者計畫（方案、角色、成員列表），請參閱 [supporters.md](supporters.md)。由管理員在管理介面中啟用計畫並建立方案。這項設定只是讓伺服器能與 Stripe 通訊。
+設定 `payments = stripe` 後，本站使用者可以在 Stripe 的代管付款頁面（Checkout）訂閱月繳或年繳方案，而方案的角色會隨付款狀態的變化而授予與移除。管理員啟用後，使用者也可以在同一個頁面送出一次性的[小費](#tips)。
+部署設定鍵說明在[設定參考](../reference/configuration.md#payments)中。關於整個計畫（方案、角色、成員清單），請參閱 [supporters.md](supporters.md)。
+管理員在管理介面中啟用計畫並建立方案。這項設定只是讓伺服器能夠與 Stripe 通訊。
 
-一個伺服器只能使用一個付款服務提供者。若之後要改用其他提供者，需要請現有的訂閱者透過新的提供者重新訂閱。
+一台伺服器只能使用一個服務提供者。若之後要改用另一個服務提供者，請請現有的訂閱者改用新的服務提供者重新訂閱。
 
-<!-- source: what-the-server-does-at-stripe ca3e0d4f59f3 -->
+<!-- source: what-the-server-does-at-stripe 17a592e3f643 -->
 ## 伺服器在 Stripe 上做的事
 
-[訂閱如何運作](supporters.md#how-a-subscription-works)以圖表說明付款頁面、webhook、對帳、方案的角色和收入如何互相配合。
+[訂閱的運作方式](supporters.md#how-a-subscription-works)以圖表說明付款頁面、Webhook、對帳、方案的角色和收入如何互相配合。
 
-- **方案與價格**：伺服器會透過 API 為每個方案建立一個 Product（ID 為 `my_plan_<plan ID>`，帶有 `metadata.my_plan_id`），並為每種週期和幣別各建立一個 Price（`lookup_key` 為 `my_<plan ID>_<month|year>_<currency>`）。Stripe 的 Price 無法變更金額，因此變更金額時會建立新的 Price 並封存舊的 Price。使用舊 Price 的訂閱會以舊金額續訂。年付的折扣直接反映在年付 Price 的金額上；不使用優惠券。請不要在儀表板中編輯或刪除這些 Product 和 Price。方案可以使用 [Stripe 最低收費金額列表](https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts)中的幣別，而且月付和年付金額都必須達到該最低金額：USD、AED、ARS、AUD、BRL、CAD、CHF、COP、CZK、DKK、EUR、GBP、HKD、HUF、IDR、ILS、INR、JPY、KRW、MXN、MYR、NOK、NZD、PHP、PLN、RON、RUB、SEK、SGD、THB 和 ZAR。伺服器會拒絕其他幣別。這份列表適用於以帳號結算幣別收費的情況。由 Stripe 換匯的收費，換匯後的金額必須達到結算幣別的最低金額，而伺服器不會檢查這一點，因此當方案的幣別與你銀行帳戶的幣別不同時，請把方案金額訂得遠高於最低金額。
-- **訂閱**：伺服器會以 `mode=subscription` 建立 Checkout 工作階段，並把使用者的瀏覽器導向它的 URL（`checkout.stripe.com`）。付款頁面會在一小時後失效。伺服器的訂閱 ID 會放進 `client_reference_id`、`metadata.my_subscription_id`，以及 Stripe 訂閱的 `metadata.my_subscription_id`。不會啟用自動稅額計算（Stripe Tax）。
-- **重新開始**：一筆待處理的訂閱最多只有一個頁面可以收款。使用者以相同方案和週期重新開始時，會回到仍然開啟的頁面（頁面會重新以空白狀態開啟），除非它剩下不到 15 分鐘。其他情況的重新開始都會得到新的頁面，伺服器則會讓先前的頁面失效，該頁面隨後會顯示 Stripe 的失效訊息。如果先前的頁面已經付款，使用者就不會得到頁面：他會被帶到返回畫面，畫面上會顯示該訂閱。如果伺服器無法讓先前的頁面失效，這次開始就會失敗，使用者可以再試一次。已關閉的待處理訂閱（方案已停用、帳號已刪除）也會以同樣的方式讓它的頁面失效。
-- **第二筆訂閱**：兩個頁面在同一瞬間送出時，仍然可能產生兩筆付款。最先到達伺服器的訂閱就是使用者的訂閱。伺服器會立即取消另一筆，並全額退還它所有已付款的發票（包括續訂），因為它沒有為任何期間提供服務，退款原因為 `duplicate`，並記錄 `a second subscription was canceled and refunded`。已關閉的待處理訂閱收到的付款也會以同樣的方式處理，即使付款是在關閉前一刻到達伺服器的也一樣。使用者會收到 Stripe 的退款，並只看到一筆訂閱。Stripe 不會退還已退款收費的手續費，該手續費會顯示在收入中。處於爭議中的收費不會退款，伺服器查看時尚未結清的付款（例如扣帳類付款方式）也不會。已經有人在儀表板中取消的訂閱會保持原狀，連同它的收費，而且它永遠不會成為使用者的訂閱。**從沒有這項功能的版本升級伺服器之前**，請在 Stripe 中尋找擁有兩筆 `metadata.my_subscription_id` 相同之訂閱的客戶。第一次對帳會取消沒有在使用的那一筆，並退還它收取的所有款項。若有你寧可手動處理的訂閱，請在儀表板中取消它，伺服器就不會碰它。
-- **客戶入口**：第一次使用時，伺服器會透過 API 建立一個入口設定（`metadata.my=1`），只啟用更新付款方式、發票紀錄，以及在期間結束時取消。方案變更在這個伺服器的畫面上進行，而不是在入口中。在入口中取消時，這個伺服器上會顯示為預定取消，使用者可以從伺服器的畫面撤銷取消。在撤銷之前，方案變更會被拒絕。
-- **手動設定的取消日期**：入口設定的是訂閱的 `cancel_at`，而不是 `cancel_at_period_end`，伺服器兩者都會讀取。你在儀表板或透過 API 設定的 `cancel_at`，只要不晚於目前期間的結束，也會被同樣看待。若早於該結束時間，伺服器會把該日期顯示為訂閱的結束日，使用者會保有角色直到那時。較晚的 `cancel_at` 還不算取消：訂閱會維持有效，直到包含該日期的期間為止。
-- **方案變更**：升級以及從月付改為年付，會立即按比例收取差額（`proration_behavior=always_invoice`），並且只在該發票付款後才切換（`payment_behavior=pending_if_incomplete`）。降級以及從年付改為月付，會透過 Subscription Schedule 在期間結束時切換。
-- **方案變更失敗**：當變更的付款失敗或信用卡要求驗證時，伺服器會讓該發票作廢，藉此捨棄這次變更，使用者會看到錯誤。訂閱會維持原方案並保持有效，不會進入寬限期，也不會發送付款失敗通知。使用者可以在入口中更新信用卡後再試一次，只會被收費一次。如果付款仍在處理中，伺服器會放著不動，付款成功時方案就會切換。續訂不受影響：續訂失敗會如下文所述進入寬限期。
-- **讀回狀態**：伺服器把 webhook 當作訊號，並從 Stripe API 讀回訂閱、Checkout 工作階段和資金異動來決定狀態。此外，每隔 `payments_reconcile_interval`（預設 6 小時）會進行一次對帳，讀取事件列表、尚未完成的 Checkout 工作階段、餘額交易，並掃描所有訂閱，修復伺服器漏收的 webhook。
-- **收入**：伺服器會記錄每筆餘額交易的總額、手續費和淨額。像 Billing 的 0.7% 這類費用會以獨立的 `stripe_fee` 交易出現，並從收入中扣除。`stripe_fee` 涵蓋整個帳號的費用，因此**請使用這個伺服器專用的 Stripe 帳號**。如果帳號也用於其他銷售，那些費用也會從收入中扣除。
-- **日期**：收入的日期以 Stripe 帳號的時區計算（儀表板中「Settings > Business > Account details」底下的時區，API 中的 `settings.dashboard.timezone`）。無法讀取時，伺服器會以 UTC 計算，並每小時重新讀取一次。
+- **方案與價格**：伺服器會透過 API 為每個方案建立一個 Product（ID 為 `my_plan_<plan ID>`，帶有 `metadata.my_plan_id`），並為每個週期與貨幣建立一個 Price（`lookup_key` 為 `my_<plan ID>_<month|year>_<currency>`）。
+  Stripe 的 Price 無法變更金額，所以變更金額時會建立新的 Price 並封存舊的。舊 Price 上的訂閱會以舊金額續約。年繳的折扣表現在年繳 Price 的金額中；不使用優惠券。
+  不要在儀表板中編輯或刪除這些 Product 和 Price。
+  方案可以使用 [Stripe 最低收費金額清單](https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts)中的貨幣，而且它的月繳與年繳金額都必須達到該最低金額：USD、AED、ARS、AUD、BRL、CAD、CHF、COP、CZK、DKK、EUR、GBP、HKD、HUF、IDR、ILS、INR、JPY、KRW、MXN、MYR、NOK、NZD、PHP、PLN、RON、RUB、SEK、SGD、THB 和 ZAR。伺服器會拒絕任何其他貨幣。
+  這份清單適用於以帳號結算貨幣進行的收費。經 Stripe 轉換的收費，必須在轉換後達到結算貨幣的最低金額，而伺服器不會檢查這一點，所以當方案的貨幣與你的銀行帳戶不同時，請把方案的金額設得遠高於最低金額。
+- **訂閱**：伺服器會建立 `mode=subscription` 的 Checkout session，並將使用者的瀏覽器導向它的 URL（`checkout.stripe.com`）。付款頁面在一小時後過期。
+  伺服器的訂閱 ID 會放入 `client_reference_id`、`metadata.my_subscription_id`，以及 Stripe 訂閱的 `metadata.my_subscription_id`。不啟用自動稅額計算（Stripe Tax）。
+- **重新開始**：待處理的訂閱最多只有一個頁面可以收款。針對相同的方案與週期再次開始的使用者，會回到仍開啟的頁面，該頁面會重新以空白開啟，除非它的剩餘時間不到 15 分鐘。任何其他的開始都會得到新的頁面，而伺服器會讓先前的頁面過期，之後它會顯示 Stripe 的過期訊息。如果先前的頁面已經付款，使用者不會得到頁面：他們會前往顯示該訂閱的返回畫面。如果伺服器無法讓先前的頁面過期，這次開始會失敗，使用者可以再試一次。
+  關閉的待處理訂閱（它的方案已下架、它的帳號已刪除）會以同樣的方式讓它的頁面過期。
+- **第二個訂閱**：當兩個頁面在同一時刻送出時，兩筆付款仍可能相遇。先到達伺服器的訂閱就是使用者的訂閱。伺服器會立即取消另一個，並以 `duplicate` 為原因，將它所有已付款的發票全額退還（包括續約），因為它沒有提供任何期間的服務，並記錄 `a second subscription was canceled and refunded`。已關閉的待處理訂閱的付款，也以同樣方式處理，即使它是在關閉前不久才到達伺服器。使用者會收到 Stripe 的退款，並看到一個訂閱。Stripe 不會退還已退款扣款的手續費，這筆手續費會顯示在收入中。
+  處於爭議中的扣款不會退款，伺服器查看時尚未結清的付款（例如轉帳扣款方式）也不會。已經有人在儀表板中取消的訂閱，會連同它的扣款維持原樣，而且絕不會成為使用者的訂閱。
+  **從沒有此功能的版本升級伺服器之前**，請先在 Stripe 中尋找有兩個訂閱、且它們的 `metadata.my_subscription_id` 相同的客戶。第一次對帳會取消沒在使用的那一個，並退還它所收的全部款項。你若想手動處理其中的任何一個，請在儀表板中取消它，伺服器就不會動它。
+- **客戶入口網站**：第一次使用時，伺服器會透過 API 建立一個入口網站設定（`metadata.my=1`），只啟用更新付款方式、發票歷史，以及在週期結束時取消。方案變更在這台伺服器的畫面中進行，而不是在入口網站。
+  在入口網站中取消，在這台伺服器上會顯示為已排定取消，使用者可以從伺服器的畫面復原。在復原之前，方案變更會被拒絕。
+- **手動設定的取消日期**：入口網站設定的是訂閱的 `cancel_at`，而不是 `cancel_at_period_end`，伺服器兩者都會讀取。你在儀表板或透過 API 設定的 `cancel_at`，只要不晚於目前週期的結束，就同樣算數。當它早於該結束時，伺服器會把那個日期顯示為訂閱的結束，使用者在那之前保有角色。較晚的 `cancel_at` 還不是取消：訂閱會維持有效，直到包含該日期的週期為止。
+- **方案變更**：升級，以及從月繳改為年繳，會立即按比例計算差額開立帳單（`proration_behavior=always_invoice`），而且只有在該發票付款後才切換（`payment_behavior=pending_if_incomplete`）。降級，以及從年繳改為月繳，會透過 Subscription Schedule 在週期結束時切換。
+- **方案變更失敗**：當變更的付款失敗，或信用卡要求驗證時，伺服器會作廢該發票（這會捨棄該變更），使用者會看到錯誤。訂閱會維持在它的方案並保持有效，沒有寬限期，也沒有付款失敗的通知。使用者可以在入口網站更新信用卡後再試一次，且只會被收費一次。如果付款仍在處理中，伺服器會保持不動，而方案會在它成功時切換。續約不受影響：續約失敗會如下所述進入寬限期。
+- **讀回狀態**：伺服器把 Webhook 視為一個訊號，並從 Stripe API 讀回訂閱、Checkout session 和金流來決定狀態。
+  此外，每隔 `payments_reconcile_interval`（預設 6 小時）執行一次的對帳會讀取事件清單、未完成的 Checkout session、balance transaction，並掃描所有訂閱，修補伺服器漏接的 Webhook。
+- **收入**：伺服器會為每筆 balance transaction 記錄總額、手續費和淨額。像 Billing 的 0.7% 這類手續費，會以獨立的 `stripe_fee` 交易出現，並從收入中扣除。
+  `stripe_fee` 涵蓋整個帳號的手續費，所以**請使用專供這台伺服器使用的 Stripe 帳號**。在也用於其他銷售的帳號上，這些手續費同樣會從收入中扣除。
+- **小費**：請參閱[小費](#tips)。
+- **日期**：收入的日期以 Stripe 帳號的時區計算（儀表板「Settings > Business > Account details」下的時區，在 API 中是 `settings.dashboard.timezone`）。當無法讀取時，伺服器會以 UTC 計算，並每小時重新讀取一次。
 
-每個伺服器程序每秒最多送出 20 個請求（測試模式為 10 個）。[Stripe 的限制](https://docs.stripe.com/rate-limits)是以帳號為單位：正式模式每秒 100 個請求，沙盒為 25 個，每個端點則是每秒 25 個。同一個伺服器的各程序會共用這些額度，其他使用該帳號的程式也一樣。當 Stripe 回傳 `429` 時，如果 `Retry-After` 指示的時間在 30 秒以內（沒有該標頭時為 1 秒），伺服器會等待該時間並最多重試 2 次；超過的部分則交給任務重試。
+每個伺服器程序每秒最多送出 20 個請求（測試模式為 10 個）。[Stripe 的限制](https://docs.stripe.com/rate-limits)是以帳號為單位：正式模式每秒 100 個請求，sandbox 為 25 個，每個端點每秒 25 個。同一台伺服器的各個程序共用這些限制，使用該帳號的任何其他東西也是。
+當 Stripe 回傳 `429` 時，伺服器會依 `Retry-After` 所說的時間等待（若在 30 秒以內；沒有該標頭時為 1 秒），並最多重試 2 次；超過之後，就交給任務去重試。
 
-Stripe 也會依帳號分配讀取請求的額度：以 30 天計算，平均每筆交易 500 個，且不論交易數量，每月至少 10,000 個。以預設間隔而言，小型伺服器的對帳遠低於這個額度。即使沒有發現任何變化，對帳仍然會讀取幾頁資料，因此在交易很少的帳號上，最短的 15 分鐘間隔（30 天 2,880 次）會接近 10,000 的額度。Stripe 限制每筆訂閱每分鐘最多 10 張、每天最多 20 張新發票，而立即收費的方案變更會產生一張新發票。
+Stripe 也會依帳號配置讀取請求：30 天內平均每筆交易 500 個，且不論交易筆數，每月至少 10,000 個。在預設的間隔下，小型伺服器的對帳遠低於這個數字。什麼都沒發現的對帳仍然會讀取幾頁，所以最短的 15 分鐘間隔（30 天內 2,880 次執行），在交易很少的帳號上會接近 10,000。
+Stripe 限制每個訂閱每分鐘最多開立 10 張新發票、每天 20 張，而立即計費的方案變更會產生一張新發票。
 
-<!-- source: card-data-and-pci-dss f45a3c7d1846 -->
+<!-- source: tips 5c0435583f71 -->
+## 小費
+
+小費（它們是什麼以及如何啟用，請參閱[小費](supporters.md#tips)）是伺服器為這一次付款所建立的 `mode=payment` Checkout session：
+
+- **頁面**：一個在請求中訂價的品項，以使用者的語言命名為「Tip for <server name>」，金額與貨幣就是使用者選擇的。伺服器不會為它建立任何 Product、Price 或客戶：使用者的電子郵件地址只用來預先填入頁面。頁面只接受信用卡，讓每個完成的頁面都是已付款；它不使用 Adaptive Pricing，所以使用者以你所設定金額的貨幣付款；而它的按鈕寫的是「Pay」，不是「Donate」。頁面與訂閱的頁面一樣，在一小時後過期。
+- **我們的 ID**：伺服器的小費 ID 會放入 `client_reference_id`、`metadata.my_tip_id`，以及該筆付款的 PaymentIntent 的 `metadata.my_tip_id`，你可以在儀表板中搜尋它。
+- **金額**：小費可以使用方案的貨幣及其最低金額（請參閱[伺服器在 Stripe 上做的事](#what-the-server-does-at-stripe)），最高為 Stripe 最大的八位數收費（999,999.99 美元，或 99,999,999 日圓）。
+- **結果**：當它的 `checkout.session.completed` 或 `checkout.session.expired` 事件到達時、當使用者從頁面返回時，以及在對帳中，伺服器會讀回 session。已完成且 `payment_status` 為 `paid` 的 session，就是已付款的小費，並附有它的 PaymentIntent 和它所收取的金額。
+- **退款與爭議**：請在儀表板中退還小費。退款、爭議和勝訴的爭議，會透過訂閱所使用的事件和 balance transaction 到達，並指名小費的 PaymentIntent，伺服器據此找到小費。
+- **測試**：在測試模式下，請以[在測試模式下試用](#5-try-it-in-test-mode)的測試卡支付小費的頁面；`4000 0000 0000 0259` 會對它造成爭議。
+
+[建立 API 金鑰](#2-create-an-api-key)的受限金鑰，不需要為小費另外加上任何權限。它們尚未在 sandbox 中執行過。
+
+<!-- source: card-data-and-pci-dss 5fd1cd5551e0 -->
 ## 信用卡資料與 PCI DSS
 
-付款方式只會在 Stripe 的 Checkout 和客戶入口中輸入，這個伺服器的網頁用戶端既不載入 Stripe 的指令碼，也不使用 iframe。伺服器只會儲存 Stripe 物件 ID（`cus_`、`sub_`、`price_`、`prod_`、`cs_`、`txn_`）、金額、期間和狀態。它不會儲存卡號、末四碼、有效期限或帳單地址。webhook 的內容和 Stripe 的回應既不會保存在日誌中，也不會保存在資料庫中。因此，營運者的 PCI DSS 範圍預期會是使用代管付款頁面的商家範圍（SAQ A）。請在 Stripe 儀表板的說明（「Settings > Compliance」）中確認適用的範圍和自我評估問卷的類型。
+付款方式只會在 Stripe 的 Checkout 和客戶入口網站上輸入，這台伺服器的網頁用戶端既不載入 Stripe 的指令碼，也不載入 iframe。
+伺服器只儲存 Stripe 的物件 ID（`cus_`、`sub_`、`price_`、`prod_`、`cs_`、`pi_`、`txn_`）、金額、期間和狀態。它不儲存卡號、末四碼、有效期限或帳單地址。Webhook 的內容和 Stripe 的回應，不會保存在日誌或資料庫中。
+因此，營運者的 PCI DSS 適用範圍預期是使用代管付款頁面的商家（SAQ A）。請在 Stripe 儀表板的指引（「Settings > Compliance」）中，確認適用的範圍和自我評估問卷的類型。
 
 <!-- source: 1-prepare-the-stripe-account 06eefed5779b -->
 ## 1. 準備 Stripe 帳號
@@ -65,15 +97,15 @@ Stripe 也會依帳號分配讀取請求的額度：以 30 天計算，平均每
 
 請以環境變數 `MY_PAYMENTS_STRIPE_SECRET_KEY` 傳入金鑰（或在 `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE` 中指定檔案路徑）。它不能寫在設定檔中。如果金鑰外洩，請在儀表板中輪替金鑰，並以新的金鑰重新部署。
 
-<!-- source: 3-register-the-webhook-endpoint 1cbc2cf9ace3 -->
-## 3. 登錄 webhook 端點
+<!-- source: 3-register-the-webhook-endpoint bf645f89a942 -->
+## 3. 註冊 Webhook 端點
 
-在「Developers > Webhooks > Add endpoint」底下登錄以下內容。伺服器不會透過 API 建立端點。
+在「Developers > Webhooks > Add endpoint」下，註冊以下內容。伺服器不會透過 API 建立端點。
 
 - URL：`https://<server domain>/payments/webhooks/stripe`
 - 事件來源：「Your account」（不是 Connected accounts）
-- Payload 樣式：snapshot。伺服器只會讀取內容中的 `id`、`type`、`livemode`、`created`、`data.object.id` 和 `data.object.object`，因此端點的 API 版本不影響運作。
-- 要傳送的事件（16 種）：
+- 內容樣式：snapshot。伺服器只會讀取內容中的 `id`、`type`、`livemode`、`created`、`data.object.id` 和 `data.object.object`，所以端點的 API 版本沒有影響。
+- 要傳送的事件（16 種；小費不需要其他類型）：
 
   - `checkout.session.completed`、`checkout.session.expired`
   - `customer.subscription.created`、`customer.subscription.updated`、`customer.subscription.deleted`、`customer.subscription.paused`、`customer.subscription.resumed`
@@ -81,11 +113,16 @@ Stripe 也會依帳號分配讀取請求的額度：以 30 天計算，平均每
   - `charge.refunded`、`refund.created`、`refund.updated`
   - `charge.dispute.created`、`charge.dispute.closed`、`charge.dispute.funds_withdrawn`、`charge.dispute.funds_reinstated`
 
-請以環境變數 `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET`（或 `_FILE`）傳入端點的簽署密鑰（`whsec_...`）。
+請將端點的簽署密鑰（`whsec_...`）放在環境變數 `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET`（或 `_FILE`）中。
 
-端點會驗證簽章（`Stripe-Signature` 中的 HMAC-SHA256）和時間戳記（前後 5 分鐘以內），並以 `400` 拒絕用正式金鑰收到的測試事件（反之亦然）。它會依 ID 記錄每個事件一次，把任務排入佇列，然後回傳 `2xx`。無法寫入資料庫時，它會回傳 `503`，Stripe 就會再次傳送該事件。內容的上限為 1 MiB。輪替簽署密鑰期間，Stripe 會同時以舊的和新的密鑰簽署，因此只要把新的密鑰放進設定即可。
+端點會驗證簽章（`Stripe-Signature` 中的 HMAC-SHA256）和時間戳記（前後 5 分鐘內），並以 `400` 拒絕以正式金鑰收到的測試事件（反之亦然）。
+它會依 ID 將每個事件記錄一次、將任務加入佇列，並回傳 `2xx`。當它無法寫入資料庫時會回傳 `503`，而 Stripe 會再次傳送該事件。內容限制為 1 MiB。
+在你輪換簽署密鑰期間，Stripe 會同時以舊的與新的簽署，所以只要將新的密鑰放進設定就夠了。
 
-付款服務提供者的狀態（模式、最後一次收到 webhook 的時間，以及最後一次對帳的結果和失敗類型），會顯示在管理介面 `/admin/supporters` 的「金流服務商」區塊中，也可以透過管理 API `GET /api/v1/admin/payment_status`（權限 `manage_supporters`）取得。該區塊會說明如何修正各種對帳失敗。`warnings` 會列出 `no_webhook`（從未記錄過任何 webhook）和 `reconciliation_corrected`（最後一次對帳修復了某筆訂閱）。出現其中任何一項時，請懷疑 webhook 的設定有誤。它也會列出 `duplicate_charge`：第二筆訂閱尚未被取消並退款。請參閱[營運](#7-operation)。該區塊中的「立即對帳」（`POST /api/v1/admin/payment_reconciliation/runs`）會立即對帳，而不必等待排程的執行。它每個 UTC 小時只能執行一次（同一小時內的第二次呼叫會回傳 `429`），稽核日誌會記錄 `payment_reconcile_queued`。
+服務提供者的狀態（模式、上次收到 Webhook 的時間，以及上次對帳的結果與失敗種類）會顯示在管理介面 `/admin/supporters` 的「付款服務提供者」區段，也可以透過管理 API `GET /api/v1/admin/payment_status`（權限 `manage_supporters`）取得。該區段說明了如何修正每一種對帳失敗。
+`warnings` 會列出 `no_webhook`（從未記錄過任何 Webhook）和 `reconciliation_corrected`（上次對帳修補了一個訂閱）。當其中任一個出現時，請懷疑 Webhook 設定有誤。
+它也會列出 `duplicate_charge`：第二個訂閱尚未被取消與退款。請參閱[營運](#7-operation)。
+該區段中的「Reconcile now」（`POST /api/v1/admin/payment_reconciliation/runs`）會立即對帳，而不是等待排程的執行。它限制為每個 UTC 小時一次（同一小時內第二次呼叫會回傳 `429`），而稽核紀錄會記錄 `payment_reconcile_queued`。
 
 <!-- source: 4-configure-the-server 7b3f7d01839f -->
 ## 4. 設定伺服器
@@ -124,10 +161,10 @@ MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 - **寬限期的結束**：伺服器會比較真實時間與 Stripe 回報的失敗時間（`finalized_at`），而後者是模擬的、比真實時間超前的時間。訂閱會進入寬限期，但繼續推進時鐘並不會讓它結束。角色會保留到真實時間超過模擬失敗時間後 7 天，或者在帳號設定為重試用完時取消訂閱的情況下，保留到 Stripe 取消訂閱為止。
 - **掃描所有訂閱**：除非請求指定了時鐘或客戶，否則 Stripe 的訂閱列表不會包含掛在時鐘上的訂閱，而伺服器的掃描兩者都沒有指定。只有 webhook 和事件列表會把它們的變化帶給伺服器。
 
-<!-- source: 6-try-it-locally-stripe-cli 8a3e87b02ce0 -->
+<!-- source: 6-try-it-locally-stripe-cli 115b10f5518c -->
 ## 6. 在本機試用（Stripe CLI）
 
-[Stripe CLI](https://docs.stripe.com/stripe-cli)（Apache-2.0）會把 Stripe 事件轉送到你電腦上的伺服器。不需要公開的 URL。
+[Stripe CLI](https://docs.stripe.com/stripe-cli)（Apache-2.0）會將 Stripe 事件轉送到你機器上的伺服器。不需要公開的 URL。
 
 ```sh
 stripe login
@@ -135,11 +172,11 @@ stripe listen --forward-to http://localhost:8080/payments/webhooks/stripe \
   --events checkout.session.completed,checkout.session.expired,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed,invoice.paid,invoice.payment_failed,charge.refunded,refund.created,refund.updated,charge.dispute.created,charge.dispute.closed,charge.dispute.funds_withdrawn,charge.dispute.funds_reinstated
 ```
 
-把 `stripe listen` 輸出的 `whsec_...` 放進 `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET`，然後啟動伺服器（連接埠請配合你的 `listen` 設定）。
+將 `stripe listen` 印出的 `whsec_...` 放入 `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET`，然後啟動伺服器（請讓埠號與你的 `listen` 設定一致）。
 
 使用 Docker Compose 時，請在 `deploy/docker/.env` 中設定 `MY_PAYMENTS=stripe`、`MY_PAYMENTS_STRIPE_SECRET_KEY` 和 `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET`，然後執行 `docker compose up -d`。
 
-你可以在另一個終端機中觸發單一事件。
+在另一個終端機中，你可以觸發單一事件。
 
 ```sh
 stripe trigger checkout.session.completed
@@ -149,7 +186,7 @@ stripe trigger charge.dispute.created
 stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-`stripe trigger` 建立的物件不帶有這個伺服器的訂閱 ID，因此不會有任何訂閱改變狀態（伺服器會讀回它們，並忽略不屬於自己訂閱的內容）。若要確認完整的訂閱流程，請從網頁用戶端訂閱，並以測試卡付款。
+`stripe trigger` 建立的物件不帶有這台伺服器的任何訂閱或小費 ID，所以不會有任何狀態改變（伺服器會讀回它們，並忽略不是它自己的訂閱或小費的東西）。若要檢查完整的訂閱流程或小費，請從網頁用戶端訂閱或給小費，並以測試卡付款。
 
 <!-- source: 7-operation f70cd2967b9f -->
 ## 7. 營運
@@ -160,22 +197,24 @@ stripe events resend evt_...   # send an event you missed again (up to 30 days)
 - 警告中的 `duplicate_charge` 表示有使用者付了兩次款，而伺服器無法完成第二筆訂閱的取消和退款。日誌行 `a second subscription could not be canceled and refunded` 會指出兩筆訂閱和失敗的類型，並在每次對帳時再次出現，因為對帳會再試一次。若類型是 `permission`，請補上寫入退款的權限。否則請在儀表板中退還該筆收費：下一次嘗試會發現沒有需要退款的款項，並清除警告。「立即對帳」會立即再試一次。
 - 其他退款和退單（chargeback）在 Stripe 的儀表板中處理。全額退款和退單會移除角色並立即取消訂閱，部分退款則不會移除角色。贏得爭議並不會自動恢復角色。
 
-<!-- source: items-to-verify 8960333fa514 -->
-## 待驗證項目
+<!-- source: items-to-verify 19584d53548f -->
+## 待驗證的項目
 
-以下項目尚未在 Stripe 的沙盒或正式環境中實際試過，是依據 Stripe 的文件而來。
+這些都尚未對 Stripe 試過（不論是 sandbox 或正式環境），而是依據 Stripe 的文件。
 
-- 使用已封存 Price 的訂閱續訂時，應該會維持使用該 Price。
-- 實際續訂時的 `status_transitions.finalized_at`。伺服器把它當作付款第一次失敗的時間，並從這個時間開始計算寬限期。
-- `stripe_fee` 交易是否能歸屬到某筆訂閱。伺服器不會嘗試這麼做：它會把這些費用從整體收入中扣除。
-- 能否以受限金鑰讀取 `GET /v1/account` 的 `settings.dashboard.timezone`。讀取失敗不會讓伺服器停止，它會以 UTC 計算，因此正常運作的伺服器不會顯示這個問題。請確認收入的日期落在帳號的時區中。
-- `GET /v1/invoice_payments` 能依 `payment[payment_intent]` 篩選，這是把付款連結到其訂閱的方式。
-- 全額與部分退款以及退單，從儀表板操作到伺服器上的狀態。
-- 掃描所有訂閱能修復伺服器漏掉狀態的訂閱。
-- 對於以待處理更新（pending updates）未列出的付款方式（ACH、SEPA 和 Bacs 直接扣款）付款的訂閱，升級時會發生什麼事。在確認之前，請在儀表板中關閉這些付款方式。
-- `cancel_at_period_end=true` 會取代設在之後期間的 `cancel_at`。
-- 回到仍然開啟的頁面。伺服器會比較 `GET /v1/checkout/sessions/{id}` 回傳的內容（`line_items`、`success_url`、`cancel_url`、`customer`、`customer_email`）與新的請求，只要有任何差異就會建立新的頁面。如果 Stripe 在儲存 `success_url` 或 `customer_email` 時改寫了它們，使用者每次都會得到新的頁面並失去已輸入的內容，但只會付款一次。
-- 在付款完成的同時讓工作階段失效。Stripe 的文件說，不處於開啟狀態的工作階段會回傳錯誤，伺服器接著會讀取該工作階段。錯誤的確切代碼，以及信用卡驗證進行中時的狀態，文件中都沒有說明。
-- 同一個工作階段無法從兩個分頁付款兩次。一個工作階段只包含一筆訂閱且只會完成一次，但文件沒有說明在同一瞬間送出兩次的情況。
-- 付款頁面上的驗證失敗，是否會留下一筆指向伺服器訂閱的 `incomplete` 訂閱。伺服器會連結它並讓使用者維持在待處理狀態，而在另一個頁面上的付款則會被當作第二筆訂閱退款。
-- 以「Charges」和「Refunds」權限如本表所示的受限金鑰退還第二筆訂閱，以及隨後的資金異動。
+- 已封存 Price 上的訂閱續約，它應該會停留在該 Price 上。
+- 真實續約時的 `status_transitions.finalized_at`。伺服器把它當作付款第一次失敗的時間，並從它起算寬限期。
+- `stripe_fee` 交易是否能指派給某個訂閱。伺服器不會嘗試：它是將這些手續費整體從收入中扣除。
+- `GET /v1/account` 的 `settings.dashboard.timezone` 能否以受限金鑰讀取。讀取失敗不會讓伺服器停止，它會以 UTC 計算，所以運作正常的伺服器看不出這一點。請檢查收入的日期是否落在帳號的時區。
+- `GET /v1/invoice_payments` 是否能以 `payment[payment_intent]` 篩選，它將付款連結到它的訂閱。
+- 全額與部分退款以及退單，從儀表板到伺服器上的狀態。
+- 掃描所有訂閱，是否能修補伺服器漏掉狀態的訂閱。
+- 對於以待處理更新未列出的付款方式（ACH、SEPA 和 Bacs 直接扣款）付款的訂閱，升級會怎麼處理。在確認這一點之前，請在儀表板中保持這些方式關閉。
+- `cancel_at_period_end=true` 是否會取代較晚週期中的 `cancel_at`。
+- 回到仍開啟的頁面。伺服器會將 `GET /v1/checkout/sessions/{id}` 回傳的內容（`line_items`、`success_url`、`cancel_url`、`customer`、`customer_email`）與新的請求比較，任何差異都會產生新的頁面。如果 Stripe 在儲存 `success_url` 或 `customer_email` 時改寫了它們，使用者每次都會得到新的頁面並失去已輸入的內容，但只會付款一次。
+- 在付款完成的同時讓 session 過期。Stripe 的文件說明，不是開啟狀態的 session 會回傳錯誤，而伺服器接著會讀取該 session。錯誤的確切代碼，以及信用卡驗證進行中的狀態，文件中都沒有說明。
+- 同一個 session 無法從兩個分頁付款兩次。一個 session 只有一個訂閱且只會完成一次，但文件並未說明兩次同一時刻送出的情況。
+- 付款頁面上驗證失敗，是否會留下一個指名伺服器訂閱的 `incomplete` 訂閱。伺服器會將它連結起來並讓使用者保持待處理，而在另一個頁面上的付款會被當作第二個而退款。
+- 第二個訂閱的退款，使用「Charges」和「Refunds」權限如表中所述的受限金鑰，以及隨後的金流。
+- 小費從它的頁面到它的退款與爭議，使用受限金鑰。特別是：`allowed_payment_method_types=["card"]` 會讓其他所有方式都不出現在頁面上、關閉 Adaptive Pricing 所建立的 session 會以所要求的貨幣收費，以及 Stripe 對表中的每一種貨幣都接受八位數的一次性收費。
+- Stripe 是否接受為營運服務而收的小費，以及對日本的獨資經營者是否接受。在啟用之前，請先詢問 Stripe。

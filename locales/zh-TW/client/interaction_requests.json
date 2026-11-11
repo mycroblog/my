@@ -1,0 +1,70 @@
+{
+  "interaction_requests.title": {
+    "defaultMessage": "核准請求",
+    "description": "Title of the settings page, and its menu item, that lists the replies, boosts, and quotes of the user's posts that wait for the user's approval."
+  },
+  "interaction_requests.empty": {
+    "defaultMessage": "沒有請求",
+    "description": "Heading of the empty list of approval requests."
+  },
+  "interaction_requests.empty.description": {
+    "defaultMessage": "等待你核准的、對你貼文的回覆、轉發和引用會顯示在這裡。",
+    "description": "Description of the empty list of approval requests."
+  },
+  "interaction_requests.kind.reply": {
+    "defaultMessage": "想回覆你的貼文",
+    "description": "Under the account in an approval request for a reply."
+  },
+  "interaction_requests.kind.announce": {
+    "defaultMessage": "想轉發你的貼文",
+    "description": "Under the account in an approval request for a boost."
+  },
+  "interaction_requests.kind.quote": {
+    "defaultMessage": "想引用你的貼文",
+    "description": "Under the account in an approval request for a quote."
+  },
+  "interaction_requests.interacting.reply": {
+    "defaultMessage": "對方的回覆",
+    "description": "Accessible name of the box of the reply that waits for the user's approval."
+  },
+  "interaction_requests.interacting.quote": {
+    "defaultMessage": "對方的貼文",
+    "description": "Accessible name of the box of the post that quotes the user's post and waits for the approval."
+  },
+  "interaction_requests.own_post": {
+    "defaultMessage": "你的貼文",
+    "description": "Accessible name of the box of the user's post that an approval request is about."
+  },
+  "interaction_requests.accept": {
+    "defaultMessage": "核准",
+    "description": "Button of an approval request that approves the reply, boost, or quote."
+  },
+  "interaction_requests.reject": {
+    "defaultMessage": "拒絕",
+    "description": "Button of an approval request that refuses the reply, boost, or quote."
+  },
+  "interaction_requests.accepted.reply": {
+    "defaultMessage": "已核准 {name} 的回覆",
+    "description": "Announced after the user approved a reply. {name} is the display name, or the username, of its author."
+  },
+  "interaction_requests.accepted.announce": {
+    "defaultMessage": "已核准 {name} 的轉發",
+    "description": "Announced after the user approved a boost. {name} is the display name, or the username, of the booster."
+  },
+  "interaction_requests.accepted.quote": {
+    "defaultMessage": "已核准 {name} 的引用",
+    "description": "Announced after the user approved a quote. {name} is the display name, or the username, of the quoting author."
+  },
+  "interaction_requests.rejected.reply": {
+    "defaultMessage": "已拒絕 {name} 的回覆",
+    "description": "Announced after the user refused a reply. {name} is the display name, or the username, of its author."
+  },
+  "interaction_requests.rejected.announce": {
+    "defaultMessage": "已拒絕 {name} 的轉發",
+    "description": "Announced after the user refused a boost. {name} is the display name, or the username, of the booster."
+  },
+  "interaction_requests.rejected.quote": {
+    "defaultMessage": "已拒絕 {name} 的引用",
+    "description": "Announced after the user refused a quote. {name} is the display name, or the username, of the quoting author."
+  }
+}

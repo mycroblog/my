@@ -8,63 +8,68 @@
 - **維護模式**（`maintenance = true`、`MY_MAINTENANCE=true` 或 `my serve -maintenance`）。`my serve` 啟動時不開啟任何轉接器，並以 `503`、`Retry-After`，以及每種用戶端都能理解的回應來回答所有請求。只要 `my serve` 本身能執行，就使用這種方式。
 - **匯出的頁面**（`my maintenance export`）。以相同範本產生的靜態 HTML，在 `my serve` 完全無法執行時（例如正在替換映像檔，或修訂版本無法啟動），交由負載平衡器、CDN 或反向代理提供。請參閱[匯出維護頁面](admin-cli.md#exporting-the-maintenance-page)。
 
-<!-- source: what-the-maintenance-mode-answers 05dd30158a8e -->
+<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
 ## 維護模式的回應
 
-程序只會讀取監聽位址、`host`、`account_domain`、`web_origin`、代理設定（`trusted_proxies`、`trusted_proxy_header`）、[來源檢查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url`，以及 `maintenance_*` 設定（[設定參考](../reference/configuration.md)）。資料庫、佇列、blob 儲存、KV、郵件和串流的設定不會被讀取或檢查，因此這段期間它們即使有誤或無法連線也沒關係。不論 `role` 為何，它都只提供 HTTP：不執行任務、不執行定期任務，也不使用串流代理。`my config check -maintenance` 檢查的正好是維護模式會讀取的內容。
+程序只會讀取監聽位址、`host`、`account_domain`、`web_origin`、代理（`trusted_proxies`、`trusted_proxy_header`）、[來源檢查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url`，以及 `maintenance_*` 設定（[設定參考](../reference/configuration.md)）。
+資料庫、佇列、blob 儲存、KV、郵件和串流的設定不會被讀取或檢查，所以在這段期間它們可以是錯的或無法連線。
+不論 `role` 為何，它都只提供 HTTP：沒有任務、沒有週期性任務、沒有串流 broker。
+`my config check -maintenance` 會檢查維護模式所讀取的內容，不多也不少。
 
-設定了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 時，需要該標頭卻沒有附上的請求，會收到該檢查的 `403`，而不是下表的回應。
+設定了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 時，需要標頭但沒有帶標頭的請求，會得到該項檢查的 `403`，而不是下表的回應。
 
 | 請求 | 狀態 | 內容 |
 | --- | --- | --- |
-| `GET /healthz`、`GET /readyz` | `200` | `{"status":"maintenance"}` |
+| `GET /healthz`、`GET /readyz`、`GET /health/live`、`GET /health/ready` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
-| 用戶端 API 的其他部分（`/api/*`）以及回應 JSON 的 OAuth 端點 | `503` | 類型為 `/api/v1/problems/maintenance` 的 `application/problem+json`，帶有 `message`、`until`，以及有設定時的 `status_page_url` |
-| ActivityPub（依路徑、`Accept` 或 `Content-Type` 判斷）、WebFinger、host-meta、NodeInfo、付款 webhook、Cloud Tasks 和 Cloud Scheduler 的呼叫（`/_internal/*`） | `503` | `{"error":"maintenance"}` |
-| 其他所有請求（頁面、網頁用戶端及其資源、表單送出） | `503` | 維護頁面；`Accept` 要求 JSON 時則為 problem |
+| 用戶端 API 的其餘部分（`/api/*`）和回應 JSON 的 OAuth 端點 | `503` | 類型為 `/api/v1/problems/maintenance` 的 `application/problem+json`，帶有 `message`、`until`，以及設定了時的 `status_page_url` |
+| ActivityPub（依路徑、`Accept` 或 `Content-Type`）、WebFinger、host-meta、NodeInfo、付款 webhook、Cloud Tasks 和 Cloud Scheduler 的呼叫（`/_internal/*`） | `503` | `{"error":"maintenance"}` |
+| 其他所有請求（頁面、網頁用戶端、它的資源、表單送出） | `503` | 維護頁面，或在 `Accept` 要求 JSON 時回應 problem |
 
-每個回應都帶有 `Retry-After` 和 `Cache-Control: no-store`。在 `maintenance_until` 尚未到達時，`Retry-After` 是距離該時間的秒數（最多 86,400），否則為 `maintenance_retry_after`（Go 的 duration，預設 `10m`）。
+每個回應都有 `Retry-After` 和 `Cache-Control: no-store`。`Retry-After` 在 `maintenance_until` 還在未來時，是距離它的秒數（最多 86,400），否則是 `maintenance_retry_after`（Go duration，預設 `10m`）。
 
-頁面和 problem 會顯示：
+頁面與 problem 會顯示：
 
-| 設定 | 顯示方式 |
+| 設定 | 顯示為 |
 | --- | --- |
-| `maintenance_server_name` | 伺服器的名稱。未設定時為主機名稱（實例本身的名稱存放在資料庫中） |
+| `maintenance_server_name` | 伺服器的名稱。未設定時是主機名稱（實例自己的名稱在資料庫中） |
 | `maintenance_message` | 純文字的公告，最多 2,000 個字元，所有語言都相同 |
-| `maintenance_until` | 預計結束作業的時間（RFC 3339）。頁面以 UTC 顯示；網頁用戶端則以使用者的時區顯示 |
+| `maintenance_until` | 預計何時結束工作（RFC 3339）。頁面以 UTC 顯示；網頁用戶端以使用者的時區顯示 |
 | `status_page_url` | 狀態頁面的連結（[監控](monitoring.md#a-status-page)） |
 
-`maintenance_*` 設定在平常運作時也可以保留：只有在 `maintenance` 為 true 時才會使用。頁面的文字依照 `Accept-Language` 顯示（否則為英文）。
+`maintenance_*` 設定在正常運作期間可以維持設定：它們只在 `maintenance` 為 true 時才會使用。
+頁面的文字依 `Accept-Language` 而定（否則是英文）。
 
-當 API 以維護 problem 回應時，網頁用戶端會顯示全螢幕的維護通知，保持使用者的登入狀態，並在 `Retry-After` 之後重試。
+當 API 以維護 problem 回應時，網頁用戶端會顯示全螢幕的維護公告，讓使用者維持登入，並在 `Retry-After` 之後重試。
 
 <!-- source: how-long a7b6a44f0269 -->
 ## 維護多久
 
 請把維護控制在**幾個小時以內**。其他伺服器遇到 `503` 時會重試傳送，但沒有一個會讀取 `Retry-After`；當它們的重試次數用完，這段期間送來的活動對這個伺服器而言就遺失了。依據各主要實作的重試排程，最短的重試期間大約是一天（Akkoma 約 1 天、Misskey 約 1.5 天、Mastodon 約 2–3 天、Pleroma 約 7 天）。搜尋引擎會把短暫的 `503` 視為暫時性停機，但 Google 建議不要對 `robots.txt` 回應 `503` 超過一兩天。停止超過一兩天就不算維護了：請改為結束服務（[結束服務](service-closure.md)）。
 
-<!-- source: steps 1427d2c6d499 -->
+<!-- source: steps 9377fd324cdc -->
 ## 步驟
 
-1. **事先公告**。提前一段時間，在狀態頁面（`status_page_url`）和公告（管理 → 公告）中公布維護時段。在部署的設定中設定 `maintenance_message` 和 `maintenance_until`，如果前端會提供匯出的頁面，也要重新產生它們（`my maintenance export`）。
-2. **停止推送佇列**（Cloud Tasks）——請參閱[下方](#push-queues)。否則維護期間的每次傳送都會是 `503`，並用掉任務的一次嘗試機會。
-3. **切換到維護模式**：以 `MY_MAINTENANCE=true` 重新部署（各部署目標的做法見下文）。每個副本都會以維護模式重新啟動；因為 `/readyz` 回應 `200`，負載平衡器會繼續保留它們。
-4. **進行作業**。
-5. **切換回來**：不帶 `MY_MAINTENANCE`（或設為 `false`）重新部署，確認 `/readyz` 和 `/api/v1/instance/health` 回應 `{"status":"ok"}`，然後恢復推送佇列並結束公告。
+1. **事先公告。** 提前在狀態頁面（`status_page_url`）和公告（管理 → 公告）中發布維護時段。
+   在部署的設定中設定 `maintenance_message` 和 `maintenance_until`，如果前端提供匯出的頁面，也請更新它們（`my maintenance export`）。
+2. **停止推送佇列**（Cloud Tasks）——請參閱[下方](#push-queues)。否則時段內的每次傳送都會是 `503`，並用掉任務的一次嘗試。
+3. **切換到維護模式**：以 `MY_MAINTENANCE=true` 重新部署（依下方各目標）。每個副本都會以維護模式重新啟動；負載平衡器會保留它們，因為 `/readyz` 回應 `200`。
+4. **進行作業。**
+5. **切換回來**：不帶 `MY_MAINTENANCE`（或設為 `false`）重新部署，確認 `/health/ready` 和 `/api/v1/instance/health` 回應 `{"status":"ok"}`，然後恢復推送佇列並關閉公告。
 
-![維護模式之前、期間與之後，伺服器對各類請求的回應：之前和之後照常回應，期間則回應帶有 Retry-After 的 503，只有 /healthz 和 /readyz 維持 200。下方列表說明相同的內容。](images/maintenance.svg)
+![伺服器在維護模式之前、期間與之後，依請求種類的回應：前後一如往常，期間則是附帶 Retry-After 的 503，只有健康檢查（/healthz、/readyz、/health/live、/health/ready）維持 200。下方的清單說的是同樣的內容。](images/maintenance.svg)
 
 由左至右：
 
-- **之前**，在你公告維護的期間，所有請求都照常回應：`/healthz`、`/readyz` 和 `/api/v1/instance/health` 以 `{"status":"ok"}` 回應 `200`。
+- **之前**，也就是你公告維護的期間，每個請求都照常回應：`/healthz`、`/readyz` 和 `/api/v1/instance/health` 以 `{"status":"ok"}` 回應 `200`。
 - **維護模式中**（`MY_MAINTENANCE=true`）：
-  - `/healthz` 和 `/readyz` 以 `{"status":"maintenance"}` 回應 `200`。
+  - `/healthz`、`/readyz`、`/health/live` 和 `/health/ready` 以 `{"status":"maintenance"}` 回應 `200`。
   - `/api/v1/instance/health` 以 `{"status":"maintenance"}` 回應 `503`。
-  - 用戶端 API 的其他部分和回應 JSON 的 OAuth 端點，會收到帶有維護 problem 的 `503`。
+  - 用戶端 API 的其餘部分和回應 JSON 的 OAuth 端點，會得到帶有維護 problem 的 `503`。
   - ActivityPub、WebFinger 和 NodeInfo 以 `{"error":"maintenance"}` 回應 `503`。
-  - 頁面和網頁用戶端會收到帶有維護頁面的 `503`。
-  - 每個回應都帶有 `Retry-After` 和 `Cache-Control: no-store`。
-- **之後**，不帶 `MY_MAINTENANCE` 重新部署，所有請求就會再次照常回應。
+  - 頁面和網頁用戶端會得到帶有維護頁面的 `503`。
+  - 每個回應都有 `Retry-After` 和 `Cache-Control: no-store`。
+- 你不帶 `MY_MAINTENANCE` 重新部署**之後**，每個請求又照常回應。
 
 <!-- source: push-queues 0d0d1fc56a29 -->
 ### 推送佇列
@@ -185,8 +190,8 @@ metadata:
     nginx.ingress.kubernetes.io/default-backend: my-maintenance   # a Service in the same namespace
 ```
 
-<!-- source: monitoring-during-the-maintenance 91e64028447e -->
+<!-- source: monitoring-during-the-maintenance 76cf0bd38c93 -->
 ## 維護期間的監控
 
-- `/healthz` 和 `/readyz` 維持以 `{"status":"maintenance"}` 回應 `200`：負載平衡器和 Kubernetes 會繼續保留這些執行個體。
-- `/api/v1/instance/health` 以 `{"status":"maintenance"}` 回應 `503`（[監控](monitoring.md)）。除非運作時間監控會比對回應內容或設有維護時段，否則它會把伺服器視為停機；請暫停監控或設定維護時段。
+- `/healthz`、`/readyz`、`/health/live` 和 `/health/ready` 維持 `200` 與 `{"status":"maintenance"}`：負載平衡器和 Kubernetes 會保留這些實例。
+- `/api/v1/instance/health` 以 `{"status":"maintenance"}` 回應 `503`（[監控](monitoring.md)）。除非可用性監控比對內容，或設有維護時段，否則它們會將伺服器視為停擺；請暫停它們或設定時段。

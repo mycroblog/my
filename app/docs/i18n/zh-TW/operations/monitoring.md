@@ -5,37 +5,41 @@
 
 下文中關於第三方服務的資訊都附有確認日期和出處。各服務會變更方案和畫面，在依賴某項限制之前，請先查看連結的頁面。
 
-<!-- source: which-url-to-monitor 50bdaa5c9f31 -->
-## 要監控哪個 URL
+<!-- source: which-url-to-monitor 1c5761757c52 -->
+## 該監控哪個 URL
 
-| 路徑 | 用途 | 是否存取資料庫 | 維護模式時 |
+| 路徑 | 用途 | 是否存取資料庫 | 維護模式下 |
 | --- | --- | --- | --- |
-| `GET /api/v1/instance/health` | 運作時間監控、狀態頁面、網頁用戶端 | 每個程序每 60 秒最多一次 | `503`，附 `Retry-After` 和 `{"status":"maintenance"}` |
-| `GET /healthz` | 平台的存活探測 | 從不 | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | 負載平衡器或 Kubernetes 的就緒探測 | 每次請求（同時的請求共用一次檢查） | `200` `{"status":"maintenance"}` |
+| `GET /api/v1/instance/health` | 可用性監控、狀態頁面、網頁用戶端 | 每個程序每 60 秒最多一次 | `503`，附帶 `Retry-After` 和 `{"status":"maintenance"}` |
+| `GET /healthz`、`GET /health/live` | 平台的存活探測（liveness probe） | 從不 | `200` `{"status":"maintenance"}` |
+| `GET /readyz`、`GET /health/ready` | 負載平衡器或 Kubernetes 的就緒探測（readiness probe） | 每次請求都會（同時發生的請求共用一次檢查） | `200` `{"status":"maintenance"}` |
 
-請讓外部監控指向 **`/api/v1/instance/health`**，而不是 `/readyz`：`/readyz` 每次請求都會查詢資料庫，所以間隔短的監控會讓可縮減到零的資料庫一直保持喚醒。探測是給你的平台用的。[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 模組會從平台本身的監控以較長的間隔檢查 `/readyz`，它們的 README 說明了這樣做的費用。
+請將外部監控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：它每次請求都會查詢資料庫，所以間隔很短的監控會讓縮減至零的資料庫一直醒著。探測是給你的平台用的。
+[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 和 [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) 模組會以很長的間隔，從平台自己的監控檢查 `/health/live`（`monitoring-gcp`）或 `/readyz`（`monitoring-aws`），它們的 README 說明了這會花多少成本。
 
 `/api/v1/instance/health` 的回應（不需驗證，`Cache-Control: no-store`）：
 
-| 狀態 | HTTP | 內文 |
+| 狀態 | HTTP | 內容 |
 | --- | --- | --- |
 | 正常 | `200` | `{"status":"ok","checked_at":"<RFC 3339>"}` |
-| 無法使用（無法連線到資料庫，或尚未套用結構描述） | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
-| 維護模式 | `503`，附 `Retry-After` | `{"status":"maintenance"}` |
+| 無法使用（資料庫無法連線，或尚未套用結構） | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
+| 維護模式 | `503`，附帶 `Retry-After` | `{"status":"maintenance"}` |
 
-正常時，`/healthz` 和 `/readyz` 會以 `{"status":"ok"}` 回答 `200`；資料庫尚未就緒時，`/readyz` 會以問題文件回答 `503`。內文絕不會包含原因、主機名稱或版本。原因記錄在伺服器日誌中。
+`/healthz` 和 `/readyz` 在正常時回應 `200` 與 `{"status":"ok"}`，而當資料庫尚未就緒時，`/readyz` 會回應 `503` 與一份 problem 文件。`/health/live` 和 `/health/ready` 是同樣的檢查，只是名稱不同。
 
-`checked_at` 是回答所依據的檢查時間。伺服器每個程序每分鐘最多執行一次資料庫檢查，並重複使用結果，所以輪詢間隔短於 60 秒的監控只會看到相同的 `checked_at`，沒有任何好處。有多個程序時，每個程序各自執行檢查。
+**在 Cloud Run 上，請呼叫不以 `z` 結尾的路徑。** Cloud Run 保留了一些以 `z` 結尾的路徑，並在請求到達容器之前就以它自己的 `404` 回應：`/healthz` 就是其中之一，而且沒有任何保證 `/readyz` 會一直有回應。從 Cloud Run 部署的外部（可用性監控、`curl`），請使用 `/health/live`、`/health/ready` 或 `/api/v1/instance/health`。容器自己的探測不受影響。
+內容中從不帶有原因、主機名稱或版本。原因在伺服器日誌中。
 
-設定了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 時，這三個路徑即使沒有該標頭也會回答，所以它們無法顯示 CDN 遺失了標頭。如果監控是你發現問題的第一個訊號，也請透過 CDN 監控一個頁面，例如 `https://<host>/about`。
+`checked_at` 是這個回應所依據的檢查的時間。伺服器每個程序每分鐘最多執行一次資料庫檢查並重複使用結果，所以輪詢頻率高於每 60 秒一次的監控會看到相同的 `checked_at`，不會有任何好處。有多個程序時，各自執行自己的檢查。
 
-<!-- source: keep-the-monitoring-cheap 29d1da3d6dc2 -->
-## 壓低監控的成本
+設定了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 時，這三個路徑在沒有標頭的情況下仍會回應，所以它們無法顯示 CDN 遺失了標頭。如果監控是你察覺問題的第一個徵兆，請也透過 CDN 監控一個頁面，例如 `https://<host>/about`。
 
-- **可縮減到零的資料庫**。如果監控的間隔短於資料庫停止前的等待時間，資料庫就永遠不會停止。Neon 會在沒有活動 5 分鐘後暫停運算資源；Free 方案無法關閉這項功能（2026-10-25 確認，[Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)）。依經驗法則，5 分鐘以上的間隔可以讓閒置的資料庫在兩次檢查之間停止，而每次檢查會喚醒它，時間為檢查本身加上閒置等待時間。參與聯邦的伺服器全天候都會收到其他伺服器的傳送，所以它的資料庫一天中大部分時間本來就是喚醒的；額外的成本只限於安靜的時段。
-- **如果最在意閒置成本，就選擇更便宜的分工**。以短間隔監控 `/healthz`（它從不存取資料庫），並以長間隔（15 分鐘以上）監控會存取資料庫的 `/api/v1/instance/health`。`/healthz` 在維護模式時也會回答 `200`，所以請比對內文中的 `"status":"ok"`。
-- **請求本身很少**。每 5 分鐘檢查一次，每月約 8,640 次請求；每分鐘一次約 43,200 次。這在 Cloud Run 的免費額度之內（每月 200 萬次請求、180,000 vCPU 秒和 360,000 GiB 秒；時間以 100 毫秒為單位無條件進位；2026-10-23 確認，[Cloud Run 定價](https://cloud.google.com/run/pricing)）。
+<!-- source: keep-the-monitoring-cheap d7956dee97ca -->
+## 讓監控保持低成本
+
+- **縮減至零的資料庫。** 如果監控的間隔比資料庫停止前等待的時間還短，資料庫就永遠不會停止。Neon 在 5 分鐘沒有活動後會暫停運算資源；Free 方案無法關閉這一點（2026-10-25 確認，[Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)）。經驗法則是，5 分鐘以上的間隔可以讓閒置的資料庫在兩次檢查之間停止，而每次檢查會讓它醒來，時間是檢查本身加上閒置等待的時間。聯邦宇宙的伺服器全天候都會收到其他伺服器的傳送，所以它的資料庫一天中本來就有大半時間是醒著的；額外的成本只限於安靜的時段。
+- **如果最在意閒置成本，請選擇更便宜的分工。** 以較短的間隔監控 `/health/live`（它從不存取資料庫），並以很長的間隔（15 分鐘以上）監控會用到資料庫的 `/api/v1/instance/health`。`/health/live` 在維護模式下也會回應 `200`，所以請比對內容中的 `"status":"ok"`。
+- **請求本身很小。** 每 5 分鐘檢查一次，一個月約 8,640 個請求，每分鐘一次則約 43,200 個。這在 Cloud Run 的免費額度內（每月 200 萬個請求、180,000 vCPU 秒和 360,000 GiB 秒；時間以 100 毫秒進位；2026-10-23 確認，[Cloud Run 定價](https://cloud.google.com/run/pricing)）。
 
 <!-- source: telling-the-maintenance-mode-from-an-outage 15833e5da3fc -->
 ## 區分維護模式與服務中斷

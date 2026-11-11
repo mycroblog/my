@@ -466,5 +466,93 @@
   "compose.rejected.appeal.window_closed": {
     "defaultMessage": "這項決定的申訴期限已經結束。",
     "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
+  },
+  "compose.visibility.direct_reply": {
+    "defaultMessage": "回覆私訊時，可見範圍會維持為「私訊」，這樣就不會送到對話以外的人。",
+    "description": "Hint in the choice of visibility of a reply to a direct message, whose other choices are disabled. “Mentioned people” is compose.visibility.direct."
+  },
+  "compose.interaction.title": {
+    "defaultMessage": "誰可以回覆、轉發和引用",
+    "description": "Title of the popover of the new-post form that chooses who may reply to, boost, and quote the post."
+  },
+  "compose.interaction.button": {
+    "defaultMessage": "誰可以回覆、轉發和引用：{summary}",
+    "description": "Accessible name of the button of the new-post form that opens the choice of who may reply to, boost, and quote the post. {summary} is the sentence of compose.interaction.summary."
+  },
+  "compose.interaction.done": {
+    "defaultMessage": "完成",
+    "description": "Button that closes the popover choosing who may reply to, boost, and quote the post."
+  },
+  "compose.interaction.summary": {
+    "defaultMessage": "回覆：{reply}。轉發：{announce}。引用：{quote}。",
+    "description": "Who may reply to, boost, and quote a post, in the new-post form and as the tooltip of its button. Each placeholder is the rule of one kind, such as 'Anyone' or 'Followers and people you mention'."
+  },
+  "compose.interaction.reply.label": {
+    "defaultMessage": "誰可以回覆",
+    "description": "Label of the select that chooses who may reply to the post at once."
+  },
+  "compose.interaction.announce.label": {
+    "defaultMessage": "誰可以轉發",
+    "description": "Label of the select that chooses who may boost the post at once."
+  },
+  "compose.interaction.quote.label": {
+    "defaultMessage": "誰可以引用",
+    "description": "Label of the select that chooses who may quote the post at once."
+  },
+  "compose.interaction.reply.description": {
+    "defaultMessage": "你提及的人一律可以回覆。",
+    "description": "Description of the choice of who may reply: the accounts the post mentions may reply whatever is chosen."
+  },
+  "compose.interaction.reply.approval": {
+    "defaultMessage": "其他人經你核准後可以回覆",
+    "description": "Checkbox under the choice of who may reply: everyone else's replies wait for the author's approval instead of being refused."
+  },
+  "compose.interaction.announce.approval": {
+    "defaultMessage": "其他人經你核准後可以轉發",
+    "description": "Checkbox under the choice of who may boost: everyone else's boosts wait for the author's approval instead of being refused."
+  },
+  "compose.interaction.quote.approval": {
+    "defaultMessage": "其他人經你核准後可以引用",
+    "description": "Checkbox under the choice of who may quote: everyone else's quotes wait for the author's approval instead of being refused."
+  },
+  "compose.interaction.limit.author": {
+    "defaultMessage": "僅限追蹤者的貼文只有你自己可以轉發和引用。",
+    "description": "Description of the choices of who may boost and quote while the post is followers-only, which decides them."
+  },
+  "compose.interaction.limit.none": {
+    "defaultMessage": "私訊無法轉發或引用。",
+    "description": "Description of the choices of who may boost and quote while the post is a direct message, which decides them."
+  },
+  "compose.interaction.audience.everyone": {
+    "defaultMessage": "任何人",
+    "description": "Interaction audience: anyone who can see the post."
+  },
+  "compose.interaction.audience.followers": {
+    "defaultMessage": "追蹤者和你提及的人",
+    "description": "Interaction audience: the author's followers and the accounts the post mentions."
+  },
+  "compose.interaction.audience.mentioned": {
+    "defaultMessage": "你提及的人",
+    "description": "Interaction audience: the accounts the post mentions."
+  },
+  "compose.interaction.audience.nobody": {
+    "defaultMessage": "只有你",
+    "description": "Interaction audience: the author alone."
+  },
+  "compose.interaction.audience.none": {
+    "defaultMessage": "沒有人",
+    "description": "What a direct message admits for boosts and quotes, in the summary of who may interact."
+  },
+  "compose.interaction.rule.manual": {
+    "defaultMessage": "{automatic}，另外經你核准後，{manual, select, everyone {其他任何人} followers {你的追蹤者} other {你提及的人}}也可以",
+    "description": "A rule with an approval, in the summary of who may interact. {automatic} is the audience approved at once, such as 'Followers and people you mention'; {manual} who else may ask."
+  },
+  "compose.reply.pending": {
+    "defaultMessage": "{name} 會審核對這則貼文的回覆：你的回覆要等對方核准後才會顯示給其他人。",
+    "description": "Under the post being replied to in the new-post form, when the reply will wait for its author's approval. {name} is the display name, or the @handle, of the author."
+  },
+  "compose.quote.pending": {
+    "defaultMessage": "{name} 會審核對這則貼文的引用：你的引用要等對方核准後才會顯示貼文。",
+    "description": "Under the post being quoted in the new-post form, when the quote will wait for its author's approval. {name} is the display name, or the @handle, of the author."
   }
 }

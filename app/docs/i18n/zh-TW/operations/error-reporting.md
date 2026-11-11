@@ -27,17 +27,19 @@
 
 背景作業中的 panic 在回報之後會讓處理程序停止，因此伺服器永遠不會在損壞的狀態下繼續執行。你的平台會重新啟動它。
 
-<!-- source: the-log-line 6b570d0bfd09 -->
+<!-- source: the-log-line ef6f03400831 -->
 ## 日誌行
 
-這一行的 `msg` = `error report`，`level` 為 `ERROR`（當故障導致處理程序停止時，`severity` 為 `CRITICAL`）。它的欄位，以及清除敏感資訊對它們的影響，請參閱[執行伺服器](running.md#error-reports)。簡單來說：
+該行的 `msg` 為 `error report`，`level` 為 `ERROR`（當失敗使程序停止時，`severity` 為 `CRITICAL`）。它的欄位，以及清理對它們做了什麼，請見[執行伺服器](running.md#error-reports)。簡單來說：
 
-- 同一個錯誤每次發生時，`my.error.fingerprint` 都相同。請依它搜尋或分組。
-- `my.error.where` 說明錯誤發生的位置，例如 `client_api GET /api/v1/statuses/{id}`。
-- `request_id`、`job_id`、`trace_id` 和 `span_id` 可以找出同一個請求或任務的其他日誌行。
-- `message` 位於這一行的最後：錯誤類型與訊息、一個換行，以及 Go 的堆疊追蹤。
+- `my.error.fingerprint` 對於同一個錯誤的每次發生都相同。請以它搜尋或分組。
+- `my.error.where` 說明它發生在哪裡，例如 `client_api GET /api/v1/statuses/{id}`。
+- `request_id`、`job_id`、`trace_id` 和 `span_id` 可以找到同一個請求或任務的其他日誌行。
+- 請求錯誤的日誌行帶有 `context.httpRequest`：方法、以 URL 表示的路由（`/api/v1/statuses/{id}`，絕不是用戶端所請求的路徑），以及回應的狀態。Error Reporting 會在群組上顯示它們，也可以依它們篩選。
+- `message` 在該行的最後：錯誤的類型與訊息、一個換行，以及 Go 的堆疊。
+- 堆疊從錯誤的來源開始，而不是從回報的地方開始：對於資料庫錯誤，就是執行查詢的伺服器函式。因此不同位置的錯誤會歸入不同的群組，不論是在 Error Reporting 還是在管理畫面中。
 
-其他日誌行都不帶堆疊追蹤。
+其他日誌行都不帶堆疊。
 
 <!-- source: google-cloud-cloud-run 925c99683713 -->
 ### Google Cloud（Cloud Run）

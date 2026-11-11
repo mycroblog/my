@@ -131,6 +131,10 @@
     "defaultMessage": "還沒有追蹤者",
     "description": "Shown instead of the list of followers when there are none."
   },
+  "profile.followers.hidden": {
+    "defaultMessage": "{name} 不顯示追蹤者",
+    "description": "Shown instead of the list of followers when the account's owner keeps the list from the viewer. {name} is the account's display name."
+  },
   "profile.followers.title": {
     "defaultMessage": "{name} 的追蹤者",
     "description": "Heading and document title of the list of an account's followers. {name} is the account's display name."
@@ -142,6 +146,10 @@
   "profile.following.empty": {
     "defaultMessage": "還沒有追蹤任何人",
     "description": "Shown instead of the list of followed accounts when there are none."
+  },
+  "profile.following.hidden": {
+    "defaultMessage": "{name} 不顯示追蹤對象",
+    "description": "Shown instead of the list of followed accounts when the account's owner keeps the list from the viewer. {name} is the account's display name."
   },
   "profile.following.title": {
     "defaultMessage": "{name} 追蹤中的帳號",
@@ -162,6 +170,10 @@
   "profile.list.back": {
     "defaultMessage": "返回 {name} 的個人檔案",
     "description": "Link from a follow list to the account's profile. {name} is the account's display name."
+  },
+  "profile.list.hidden.description": {
+    "defaultMessage": "個人檔案仍會顯示數量。",
+    "description": "Under the message that a follow list is hidden: its count stays on the profile."
   },
   "profile.list.load_more": {
     "defaultMessage": "顯示更多",
@@ -243,6 +255,10 @@
     "defaultMessage": "不含轉發",
     "description": "Tab of a profile: only the posts the account wrote itself, without replies and boosts."
   },
+  "profile.tab.articles": {
+    "defaultMessage": "文章",
+    "description": "Tab of a profile: only the account's articles (long posts with a title), newest first."
+  },
   "profile.tab.posts": {
     "defaultMessage": "貼文",
     "description": "Tab of a profile: the account's posts and boosts, without its replies."
@@ -254,6 +270,14 @@
   "profile.tabs": {
     "defaultMessage": "{name} 的貼文",
     "description": "Accessible name of the tab list that switches between the posts of a profile. {name} is the account's display name."
+  },
+  "profile.tagged.all": {
+    "defaultMessage": "所有含 #{tag} 的貼文",
+    "description": "Link from the page with an account's posts that carry a hashtag to the page with every post that carries it. {tag} is the hashtag without the #."
+  },
+  "profile.tagged.title": {
+    "defaultMessage": "{name} 含 #{tag} 的貼文",
+    "description": "Heading and document title of the page with an account's posts that carry one hashtag. {name} is the account's display name; {tag} is the hashtag without the #."
   },
   "profile.tag.bot": {
     "defaultMessage": "機器人",
@@ -278,5 +302,69 @@
   "profile.title": {
     "defaultMessage": "個人檔案",
     "description": "Heading and document title of the signed-in user's own profile page."
+  },
+  "profile.note.title": {
+    "defaultMessage": "私人備註",
+    "description": "Heading of the region of a profile with the user's private note on the account, which only the user sees."
+  },
+  "profile.note.description": {
+    "defaultMessage": "只有你看得到。",
+    "description": "Note under the heading of the private note on a profile: the account is not told."
+  },
+  "profile.note.empty": {
+    "defaultMessage": "你沒有 {name} 的備註。",
+    "description": "Shown in the private note region of a profile while the user has no note on the account. {name} is the account's display name."
+  },
+  "profile.note.add": {
+    "defaultMessage": "新增備註",
+    "description": "Button in the private note region of a profile that opens the dialog to write a note on the account."
+  },
+  "profile.note.edit": {
+    "defaultMessage": "編輯備註",
+    "description": "Button in the private note region of a profile that opens the dialog to change the note on the account."
+  },
+  "profile.note.dialog_title": {
+    "defaultMessage": "{name} 的私人備註",
+    "description": "Title of the dialog where the user writes a private note on an account. {name} is the account's display name."
+  },
+  "profile.note.field": {
+    "defaultMessage": "備註",
+    "description": "Label of the text area of the private note dialog."
+  },
+  "profile.note.field_description": {
+    "defaultMessage": "只有你看得到，{name} 不會收到通知。留空即可移除備註。",
+    "description": "Description of the text area of the private note dialog. {name} is the account's display name."
+  },
+  "profile.note.characters_left": {
+    "defaultMessage": "{count, plural, other {還剩 # 個字元}}",
+    "description": "How many more characters the private note on an account takes."
+  },
+  "profile.note.characters_over": {
+    "defaultMessage": "{count, plural, other {超過 # 個字元}}",
+    "description": "How many characters the private note on an account is over its limit."
+  },
+  "profile.note.cancel": {
+    "defaultMessage": "取消",
+    "description": "Button that closes the private note dialog without saving."
+  },
+  "profile.note.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves the private note on an account."
+  },
+  "profile.note.close": {
+    "defaultMessage": "關閉",
+    "description": "Accessible name of the close button of the private note dialog."
+  },
+  "profile.note.save_failed": {
+    "defaultMessage": "無法儲存備註：{reason}",
+    "description": "Error in the private note dialog when the note could not be saved. {reason} is the server's explanation."
+  },
+  "profile.note.saved": {
+    "defaultMessage": "已儲存你對 {name} 的備註。",
+    "description": "Toast when the private note on an account was saved. {name} is the account's display name."
+  },
+  "profile.note.removed": {
+    "defaultMessage": "已移除你對 {name} 的備註。",
+    "description": "Toast when the private note on an account was removed by saving it empty. {name} is the account's display name."
   }
 }

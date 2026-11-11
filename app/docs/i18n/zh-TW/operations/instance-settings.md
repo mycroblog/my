@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 鍵
 
-<!-- source: settings-one-key-one-value 4f827bf97480 -->
+<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
 ### 設定（一個鍵，一個值）
 
 | 鍵 | 型別 | 預設值 | 說明 |
@@ -35,15 +35,16 @@
 | `default_locale` | BCP 47 語言標籤 | `en` | 預設語系。它是新使用者的初始介面語系，也是沒有任何語言目錄符合使用者偏好時的備用語系 |
 | `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | 誰能看到本站時間軸（`GET /api/v1/timelines/local`）：沒有人、已登入的使用者，或所有人。`off` 會回應 404，`signed_in` 則對未登入的訪客回應 401；兩種情況下導覽列都會隱藏它。除非值為 `everyone`，否則首頁不會顯示範例貼文。在[單人伺服器](#one-person-server)上，它會被視為 `off` |
 | `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | 誰能看到聯邦時間軸（`GET /api/v1/timelines/federated`）。各值的意義與本站時間軸相同，在單人伺服器上也會被視為 `off` |
-| `preview_image` | 媒體 ID（空白 = 未設定） | 空白 | 沒有圖片的貼文和個人檔案所使用的連結預覽圖片（`og:image`）。未設定時，會使用內建的預設圖片（[連結預覽](link-previews.md)） |
+| `preview_image` | 媒體 ID（空白 = 未設定） | 空白 | 沒有自己圖片的頁面所使用的連結預覽圖片（`og:image`），在「設定 → 一般」的「連結預覽」之下。未設定時，會依序使用縮圖、標誌，再使用內建圖片（[連結預覽](link-previews.md)） |
 | `contact_account` | 本站帳號的使用者名稱（空白 = 未設定） | 空白 | 用來聯絡營運者的帳號。請參閱[聯絡方式與縮圖](#contact-and-thumbnail) |
 | `contact_email` | 電子郵件地址（空白 = 未設定） | 空白 | 用來聯絡營運者的電子郵件地址。它也是伺服器寄出郵件的 `Reply-To` 和署名 |
-| `thumbnail` | 媒體 ID（空白 = 未設定） | 空白 | 代表實例的圖片（縮圖） |
+| `thumbnail` | 媒體 ID（空白 = 未設定） | 空白 | 代表這個實例的圖片（縮圖），用於關於頁面與首頁，並在 `preview_image` 未設定時用於連結預覽 |
 | `remote_media_policy` | `none` / `avatars` / `all` | `none` | 是否保留遠端媒體的副本。`none`：媒體代理會轉送每個請求。`avatars`：大頭貼、頁首圖片和自訂表情符號會在 blob 儲存區中快取 `remote_media_cache_ttl_seconds` 的時間。`all`：所有遠端媒體都會快取。快取的總大小受設定 `remote_media_cache_max_bytes` 限制 |
 | `remote_media_cache_ttl_seconds` | 整數 60-31536000（秒） | `86400` | 擷取的遠端媒體可以保留多久。它也是媒體代理回應的 `Cache-Control: max-age`，所以 CDN 和瀏覽器會快取這麼久 |
 | `remote_media_cache_max_bytes` | 1 以上的整數（位元組） | `1073741824` | 媒體代理保留的遠端媒體副本的大小上限。每小時的清理會刪除過期的副本，接著刪除超過此上限、最久未被存取的副本 |
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch（安全模式）。為 `true` 時，沒有可驗證 HTTP 簽章的 ActivityPub GET，對物件和集合會回應 `401`，對使用者的 actor 則回應一份只帶有金鑰的最小文件。實例 actor 一律回傳完整文件，讓任何伺服器都能擷取金鑰來驗證簽章 |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | 聯邦的方向。`off`：不聯邦。`inbound`：你可以追蹤並閱讀遠端帳號，但本站的貼文、個人檔案和回應不會送出，來自外部的追蹤會被拒絕（`Reject`）。`outbound`：接受來自外部的追蹤並遞送本站貼文，但不接收遠端的貼文和回應。`both`：雙向收送。變更會立即生效，需要 `manage_settings` 權限 |
+| `federation_scope` | `open` / `allowlist` | `open` | 這台伺服器與哪些伺服器聯邦。`open`：所有沒有被網域處置停權的伺服器。`allowlist`：只有允許清單上的網域及其子網域；其他每個伺服器都被視為已停權，而且不論 `authorized_fetch` 怎麼設定，ActivityPub 的 GET 都需要來自被允許伺服器的簽章。切換到 `allowlist` 會永久結束與被切斷的伺服器之間的追蹤；請參閱[只與被允許的伺服器聯邦](moderation.md#federating-only-with-allowed-servers)。變更會立即生效，並需要權限 `manage_settings` |
 | `dynamic_client_registration` | `true` / `false` | `true` | 動態用戶端註冊（RFC 7591）。為 `true` 時，`POST /oauth/register` 不需驗證即可接受公開用戶端的註冊。為 `false` 時，該端點會以 `403`（`access_denied`）拒絕所有請求；已註冊的用戶端仍可繼續使用。定期任務會依照設定 `dynamic_client_unredeemed_retention` 和 `dynamic_client_idle_retention`，刪除未使用的動態註冊用戶端。變更會立即生效，需要 `manage_settings` |
 | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | `off` | 誰能看到已採取處置的網域列表（`GET /api/v1/instance/domain_actions`）：沒有人、已登入的使用者，或所有人（[審核](moderation.md#publishing-the-domains-you-act-on)） |
 | `domain_actions_rationale_visibility` | `off` / `signed_in` / `everyone` | `off` | 誰能看到該列表的公開說明。看不到列表的人永遠看不到它們 |
@@ -64,6 +65,7 @@
 | `auto_delete_default_min_age_days` | 整數 1-3650（天） | `30` | 新帳號的規則在貼文發布幾天後刪除它 |
 | `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | 新帳號的規則是否保留作者釘選、加入書籤或按喜歡的貼文 |
 | `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | 新帳號的規則是否保留含有媒體或投票的貼文 |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | 新帳號的規則是否保留[文章](#articles) |
 | `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | 新帳號的規則是否保留該可見範圍的貼文 |
 | `auto_delete_default_keep_direct` | `true` / `false` | `true` | 新帳號的規則是否保留私訊貼文 |
 | `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | 整數 0-1000000 | `0` | 新帳號的規則會保留被轉發或按喜歡至少這麼多次的貼文。`0` 表示不設門檻 |
@@ -71,6 +73,7 @@
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | 在上限之下，釘選的貼文是否仍可保留 |
 | `auto_delete_max_kept_pins` | 整數 1-5 | `5` | 在上限之下，有幾個釘選可以保留貼文，從最近釘選的開始算。`5` 是帳號可釘選的最大數量，會保留所有釘選的貼文 |
 | `auto_delete_max_allow_bookmarked`, `auto_delete_max_allow_favourited`, `auto_delete_max_allow_media`, `auto_delete_max_allow_polls` | `true` / `false` | `false` | 在上限之下，作者加入書籤或按喜歡的貼文，或含有媒體或投票的貼文，是否仍可保留 |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | 在上限之下，是否仍可保留文章 |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | 在上限之下，是否仍可依可見範圍保留貼文 |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | 在上限之下，是否仍可依轉發和喜歡的次數保留貼文 |
 | `auto_delete_grace_days` | 整數 0-365（天） | `30` | 新適用上限的帳號，在收到通知後還能保留自己設定的天數。變更它不會移動已通知帳號的日期 |
@@ -85,10 +88,15 @@
 | `finance_viewer_item_memos` | `true` / `false` | `false` | 擁有 `view_finance` 的使用者，是否能在財務畫面上看到成本項目的備註。只要名稱或備註的設定其中之一為 `true`，每個期間就會顯示項目列（服務商、類別和該期間的金額，以及已啟用的名稱和備註）。擁有 `manage_finance` 的人不論如何都能看到全部 |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | 擁有 `view_finance` 的使用者，只能看到收入總額（`totals`），還是也能看到每個方案的訂閱者人數（`plans`）。每個方案的金額以及誰付了款永遠不會顯示。如果 `income_visibility` 為 `plans`，不論此值為何都會顯示公開的人數。收入可在網頁用戶端的財務畫面（`/finance`）和 `GET /api/v1/finance/income_totals` 中查看 |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | 要公開多少支持者收入（扣除付款服務商手續費後的金額）。它與 `finance_visibility` 分開選擇。`private`：不公開任何東西（`GET /api/v1/instance/income_totals` 為 404）。`totals`：只公開每個期間和幣別的收入總額。`plans`：還會向所有人顯示目前每個方案的訂閱者人數。對於訂閱者很少的方案，人數可能讓人猜出是誰在訂閱。只有在此值和 `finance_visibility` 都不是 `private` 時才會顯示收支（收入減去成本）；否則收支會透露你隱藏的那一方。不論哪個層級，個別付款、訂閱者、每個方案的金額、總金額和手續費都保持不公開。公開的期間到包含今天（UTC）的期間為止 |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | 資金進度條所公開的內容：本月的收入（扣除付款服務提供者的手續費後）距離每月目標有多遠，顯示在關於頁面、支持者清單（`/about/supporters`）以及 `GET /api/v1/instance`（`funding_meter`）中。它與目標一起在 `/admin/finance/publication` 設定，該頁面會停用目前的可見範圍所排除的選項，並說明原因。`off`：什麼都不公開。`percent`：只有百分比（捨去到 1%）、該月是否已涵蓋，以及目標中是否包含估計的費用。只有在 `finance_visibility` 和 `income_visibility` 都是 `private` 時才能選擇。`amounts`：另外還有收入與目標。只有在兩者都不是 `private` 時才能選擇。當兩者之中只公開了一個時，進度條無法顯示：公開的金額與百分比會洩漏被隱藏的那一邊。變更任一可見範圍，使所選的值不再被允許時，進度條會變成 `off`，而這項變更會和其他任何變更一樣被記錄與稽核。該月是包含今天（UTC）的日曆月，而且只有目標貨幣的收入才會計入 |
+| `funding_meter_target_amount` | 大於零的小數，或空白 | 空白 | 資金進度條的每月目標，以 `funding_meter_target_currency` 的主要單位表示（`1650` 日圓、`12.50` 美元），小數位數不得超過該貨幣所具有的位數。空白：目標是本月的費用，這需要費用都是同一種貨幣；在費用有多種貨幣或為零的月份，不顯示進度條 |
+| `funding_meter_target_currency` | ISO 4217 代碼，或空白 | 空白 | `funding_meter_target_amount` 的貨幣，例如 `JPY`。空白：本月費用的貨幣 |
+| `funding_meter_rail` | `true` / `false` | `false` | 當 `funding_meter_visibility` 不是 `off` 時，網頁用戶端除了關於頁面之外，是否也在寬版版面的右欄顯示資金進度條 |
 | `supporter_list_visibility` | `off` / `signed_in` / `everyone` | `off` | 誰能看到支持者列表（`GET /api/v1/instance/supporters` 和 `/about/supporters`）。`off`：沒有人（API 回應 404，`/about` 上沒有連結）。`signed_in`：只有登入這台伺服器的人（否則 API 回應 401）。`everyone`：所有人。列表只會顯示選擇公開的有效訂閱者的帳號和方案；金額、按月或按年計費、日期和人數永遠不會顯示。不論 `search_indexing` 為何，列表頁面和 API 回應一律為 `noindex, noarchive` |
 | `user_app_registration` | `true` / `false` | `true` | 已登入的使用者是否能透過用戶端 API（`POST /api/v1/oauth_apps`）註冊自己的 OAuth 應用程式（公開或機密）。為 `false` 時，註冊會回應 403。列出、變更和刪除已註冊的應用程式、重新發行密鑰、為自己發行 token，以及其他使用者的授權仍可繼續使用 |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | 在設定 `voice` 不是 `off` 時，誰能開設語音聊天室（[設定](../reference/configuration.md#voice)）。`everyone`：所有已登入、未被停權或限制的本站使用者。`permitted`：只有 `start_voice_rooms` 權限的持有者；預設只有內建的 `admin` 角色擁有此權限，支持者方案的角色也可以擁有 |
 | `voice_public_summary` | `true` / `false` | `false` | 可見範圍為 `local` 的語音聊天室頁面，是否向未登入這台伺服器的訪客和遠端使用者顯示其名稱、說明、主持人以及是否仍開放中，並顯示在其連結預覽中。參與者永遠不會顯示。為 `false` 時，這些訪客只會看到這是給這台伺服器本站使用者的聊天室 |
+| `event_creators` | `everyone` / `permitted` | `everyone` | 誰能建立活動（[活動](#events)）。`everyone`：所有已登入、未被停權或限制的本站使用者。`permitted`：只有 `create_events` 權限的持有者；預設只有內建的 `admin` 角色擁有它，支持者方案的角色也可以擁有它 |
 | `public_counts` | `true` / `false` | `true` | 首頁（`/`，未登入時）和 `GET /api/v1/instance/overview` 是否顯示伺服器有多少成員、使用者在過去 7 天中每天發了多少公開貼文，以及伺服器何時開始運作。只計算這台伺服器使用者的公開貼文；數字每幾分鐘更新一次。為 `false` 時，API 會省略它們 |
 | `featured_accounts` | 最多 20 個本站帳號的使用者名稱，以空白或逗號分隔（空白 = 無） | 空白 | 追蹤對象推薦中優先顯示的帳號，依此順序排在這台伺服器最近發文的人之前。擁有者關閉了「推薦我的帳號，並允許用部分名稱找到它」的帳號不會被推薦。請參閱[推薦](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | 在至少啟用一個登入提供者時，註冊和登入是否限定使用登入提供者：密碼和通行金鑰不再能登入，沒有連結提供者的使用者在其工作階段結束後就無法再登入。沒有啟用任何提供者時不適用。`my instance set` 會印出有多少活躍使用者沒有連結到已啟用的提供者。請參閱[登入限定使用登入提供者](login-providers.md#limit-sign-in-to-login-providers)。 |
@@ -103,6 +111,7 @@
 | `translation_server_monthly_characters` | 整數 0-1000000000000 | `500000` | 整台伺服器在一個 UTC 月內可以送給翻譯提供者的字元數。為 `0` 時不會送出任何東西。沒有無上限的值：請設定一個很大的數字 |
 | `translation_retention_days` | 整數 1-3650（天） | `30` | 翻譯在產生後保留的天數。閱讀它不會延長期限，而且它會隨貼文一起刪除 |
 | `translation_reports_to_server` | 布林值 | `false` | 版主是否可以將檢舉的文字（被檢舉的貼文和檢舉者的留言）送給伺服器端提供者。不論是誰提出請求，每個提供者仍只會收到 `translation_provider_visibilities` 允許它的可見範圍：被檢舉的私訊貼文只會送給允許 `direct` 的提供者，而留言視為 `private`。留言的翻譯永遠不會保留，已刪除貼文的翻譯也不會，而且字元數只計入 `translation_server_monthly_characters`。為 `false` 時，檢舉的任何內容都不會送到提供者 |
+| `event_records_retention_days` | 整數 30-3650（天） | `90` | 活動結束或被取消後，要保留多少天誰回覆了它、誰獲准、誰受邀，以及誰對它的候選日期投了票。日期從未確定的活動，會在它最後一個候選日期時結束。活動本身（它的設定、地點、日期與候選日期，以及取消）會保留。被檢舉活動的紀錄會保留到檢舉結束，保存保留的適用方式與其他紀錄相同（[紀錄保留](moderation.md#record-retention-and-holds)） |
 | `voice_participants_retention_days` | 整數 30-3650（天） | `90` | 語音聊天室結束後，保留參與者紀錄的天數：參與、發言者和聽眾、舉手、邀請和移除。聊天室本身（名稱、說明、主持人和結束方式）會保留。被檢舉聊天室的紀錄會與檢舉保留一樣久，保留措施也如同其他紀錄一樣適用 |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | 每個[決策掛鉤](decision-hooks.md#modes)在有外掛時作用到什麼程度。`off` 只能經由 `observe` 才能變成 `enforce`。 |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | 掛鉤在強制執行時，其外掛失敗時要怎麼做（[詳細說明](decision-hooks.md#when-the-plugin-fails)）。 |
@@ -113,6 +122,14 @@
 | `hook_local_profile_account_age_days` | 整數 0-3650（天） | `7` | `local.profile` 會[審查個人檔案變更](decision-hooks.md#local-profiles)的帳號，其帳號年齡須小於此天數；`0` 表示審查所有帳號。使用此掛鉤時，資訊頁面（`/about`）會載明這一點。 |
 | `hook_decisions_retention_days` | 整數 30-3650（天） | `90` | [掛鉤的決策](decision-hooks.md#the-decisions)保留的天數。 |
 | `single_user` | 布林值 | `false` | 伺服器是否為[單人伺服器](#one-person-server)。只有在伺服器恰好只有一個本站帳號時才能開啟，隨時都可以關閉 |
+| `max_drafts` | 整數 1-10000 | `100` | 一位使用者最多可以在伺服器上保留多少份未排程的草稿。調低它不會刪除任何草稿：超過上限的使用者無法再儲存新的草稿 |
+| `max_scheduled_posts` | 整數 1-10000 | `300` | 一位使用者最多可以有多少則排程貼文在等待。調低它不會取消任何排程 |
+| `max_scheduled_posts_per_day` | 整數 1-10000 | `25` | 一位使用者最多可以有多少則排程貼文等待在同一個 UTC 日期發布 |
+| `scheduled_post_min_lead_minutes` | 整數 1-1440（分鐘） | `5` | 貼文至少要提前多少分鐘排程 |
+| `scheduled_post_max_lead_days` | 整數 1-3660（天） | `366` | 貼文最多可以提前多少天排程 |
+| `article_authoring` | `everyone` / `permission` | `everyone` | 誰能撰寫新的[文章](#articles)：所有本站使用者，或只有角色具有 `create_articles` 權限的使用者 |
+| `max_article_bytes` | 整數 1000-100000（位元組） | `100000` | 文章內文所產生的 HTML 最多有多少位元組 |
+| `max_article_images` | 整數 0-100 | `20` | 文章內文中，除了封面之外，作者自己上傳的圖片最多有幾張 |
 
 - 值在儲存前會先正規化（`TRUE` 變成 `true`，`0750` 變成 `750`，`ja_jp` 變成 `ja-JP`，媒體 ID 轉為小寫）。無效的值會被拒絕，不會寫入任何東西。
 - `preview_image` 和 `thumbnail` 只接受存在的圖片媒體（包括仍在處理中的）。在處理完成之前，以及取代處理失敗的圖片時，`preview_image` 會改用預設圖片。媒體一旦在任何修訂版本中被設定過，未附加上傳檔案的清理就不會刪除它。
@@ -126,12 +143,12 @@
 
 新帳號會被推薦，也能在帳號搜尋中用名稱的一部分找到。在個人檔案設定中關閉「推薦我的帳號，並允許用部分名稱找到它」的使用者，兩者都會退出：此時搜尋只能用完整的使用者名稱找到該帳號，或者只有追蹤它的人才找得到。
 
-<!-- source: automatic-deletion-of-old-posts f0cf962c9de0 -->
+<!-- source: automatic-deletion-of-old-posts 9eb8a72df28e -->
 ### 自動刪除舊貼文
 
-使用者可以讓自己的貼文在發布幾天後自動刪除（「設定」→「刪除舊貼文」）。每位使用者的規則都是自己的：是否開啟、幾天後刪除，以及要保留哪些貼文（釘選、加入書籤和按喜歡的貼文、含有媒體或投票的貼文、所選可見範圍的貼文，以及轉發或喜歡達到一定次數的貼文）。以這種方式刪除貼文，與作者自己刪除相同：貼文曾送達的伺服器會收到 `Delete`。只有本站帳號的貼文會以這種方式刪除，轉發永遠不會。
+使用者可以讓自己的貼文在發布幾天後自動刪除（「設定」→「刪除舊貼文」）。每位使用者的規則都是自己的：是否開啟、幾天後刪除，以及要保留哪些貼文（釘選、加入書籤和按喜歡的貼文、含有媒體或投票的貼文、文章、所選可見範圍的貼文，以及轉發或喜歡達到一定次數的貼文）。以這種方式刪除貼文，與作者自己刪除相同：貼文曾送達的伺服器會收到 `Delete`。只有本站帳號的貼文會以這種方式刪除，轉發永遠不會。
 
-`auto_delete_default_*` 鍵是每個新的本站帳號一開始的規則，不論帳號以何種方式建立（註冊表單、外部登入提供者、邀請或 `my admin`）。帳號在建立時取得這份規則，之後就歸帳號所有：之後變更這些鍵，既不會改變現有的帳號，也不會改變取得較早值的帳號。設定畫面會將這些值顯示為使用者自己的設定。未設定這些鍵時，新帳號一開始會關閉自動刪除、設為 30 天後，並保留釘選、加入書籤和按喜歡的貼文以及私訊貼文。預設值不會向實例外部的人顯示。設定了上限時，新帳號會取得依下述方式裁切到上限的預設值，讓它一開始就在上限之內。
+`auto_delete_default_*` 鍵是每個新的本站帳號一開始的規則，不論帳號以何種方式建立（註冊表單、外部登入提供者、邀請或 `my admin`）。帳號在建立時取得這份規則，之後就歸帳號所有：之後變更這些鍵，既不會改變現有的帳號，也不會改變取得較早值的帳號。設定畫面會將這些值顯示為使用者自己的設定。未設定這些鍵時，新帳號一開始會關閉自動刪除、設為 30 天後，並保留釘選、加入書籤和按喜歡的貼文、文章以及私訊貼文。預設值不會向實例外部的人顯示。設定了上限時，新帳號會取得依下述方式裁切到上限的預設值，讓它一開始就在上限之內。
 
 <!-- source: a-maximum-for-keeping-posts b1d83e01feda -->
 #### 貼文保留的上限
@@ -149,6 +166,42 @@
 `keep_posts_longer` 是一項會員權限：將它賦予某個角色，就能讓其持有者自行決定貼文保留多久，並關閉自動刪除。內建的 `admin` 角色擁有此權限。[支持者方案](supporters.md)可以帶有它，所以保留貼文更久可以成為方案的福利；訂閱結束時，上限會在寬限期後再次適用。
 
 上限是公開的：`GET /api/v1/instance` 會在 `auto_delete_limit` 中回傳它，關於頁面也會顯示它，讓人們在註冊前就知道。變更這些鍵需要 `manage_settings`，而且和其他設定一樣會記錄在稽核記錄中。在網頁用戶端中，它們位於「伺服器設定」的「貼文刪除」頁面，在儲存開啟或更嚴格的上限之前會先詢問。
+
+<!-- source: drafts-and-scheduled-posts 240f795223ab -->
+### 草稿與排程貼文
+
+使用者會將貼文的草稿儲存在伺服器上，在另一部裝置上繼續撰寫，並立即或在所選的時間發布。只有作者能讀取自己的草稿；草稿永遠不會進行聯邦、不包含在帳號資料的匯出中，並會在帳號被清除時一併消失。上表中的五項 `max_drafts` 和 `scheduled_post_*` 設定限制了它們；超過上限的儲存或排程，會被拒絕，並附上指出該上限的訊息。
+
+- 排程貼文由任務 `content.publish_scheduled_draft` 在它的時間或稍後不久發布，即使該時間比佇列服務的延遲上限還要遠：任務會回來並再次等待。請以 `my instance set` 設定它們，例如 `my instance set max_scheduled_posts 100`。
+- 貼文是在發布時檢查，而不只是在排程時：到了那時，被審核處置禁止發文的使用者，或是其貼文回覆或引用的貼文已不存在的使用者，不會有貼文發出。草稿會保留，使用者會收到一則說明原因的通知（`scheduled_status_failed`，使用者可以在通知設定中關閉它，而且絕不會以電子郵件寄出）。本地貼文的自動審核在使用期間，會在貼文發布時審核該貼文。
+- 貼文會蓋上它發布的時間，而舊貼文的自動刪除就從那時開始計算。
+- 草稿所附的媒體檔案會在草稿存在期間保留；刪除草稿會讓它們變成未附加，並隨未附加上傳檔案的清理一併移除。文章草稿的封面，以及它的內文所顯示的上傳檔案，也以同樣方式保留。
+- 草稿與排程貼文包含[文章](#articles)，它們與貼文一樣被排程與計數。文章草稿在作者撰寫期間可以沒有標題；它在發布時會當作新文章來檢查，而到了那時已不能再撰寫新文章的使用者，不會有文章發出。
+
+<!-- source: articles fbbf778b92f0 -->
+### 文章
+
+文章是有標題、摘要與封面圖片的長篇貼文，它的內文由作者以 Markdown 撰寫。文章在其他各方面都是貼文：它們有可見範圍，可以編輯（並保留歷史）、轉發、按喜歡、引用、回覆、檢舉與刪除，而審核對它們的作用與對貼文相同。伺服器在內文寫成時只轉譯一次：其中的原始 HTML 不會被轉譯，而且只有作者自己上傳的圖片會顯示為圖片；任何其他圖片會變成連結，讓讀者絕不會載入其他網站的圖片。時間軸、通知與搜尋會顯示標題、摘要與封面；內文則顯示在開啟文章的地方。
+
+- 預設所有本站使用者都可以撰寫文章。當 `article_authoring` 設為 `permission` 時，只有角色具有 `create_articles` 權限的使用者可以撰寫新文章；已經寫好的文章會保留，它們的作者仍然可以編輯。禁止帳號發文的審核處置，也會禁止它撰寫和編輯文章。[支持者方案](supporters.md)可以將 `create_articles` 作為福利。
+- `max_article_bytes` 限制的是內文的 HTML，而不是 Markdown：接收文章的伺服器計算的是 HTML，而 100,000 位元組（上限）是它們完整保留的大小。一篇約 30,000 字的日文內文放得下。`max_article_images` 限制內文中的圖片。編輯器會在文章發布之前顯示這兩者。
+- 文章絕不是私訊貼文，也沒有投票、除了它的圖片之外沒有其他附件，也沒有內容警告：敏感的文章會顯示它的標題與摘要，並摺疊內文與封面。
+- 舊貼文的自動刪除會保留文章，除非使用者將它關閉（新帳號為 `auto_delete_default_keep_articles`，在上限之下為 `auto_delete_max_allow_articles`）。
+- `GET /api/v1/instance` 會在 `limits.articles` 中回傳上限，並在 `article_authoring` 中回傳撰寫設定。請以 `my instance set` 設定它們，例如 `my instance set article_authoring permission`。
+
+<!-- source: events 07dccecf6936 -->
+### 活動
+
+本站使用者可以規劃活動，包含日期、時區，以及最多三個地點：這台伺服器的語音聊天室、實體聚會的地點，以及一個連結。主辦人可以改為提供最多 20 個候選日期：看得到活動的使用者對每一個回答可以、可能或不行，然後由主辦人或共同主辦人確認其中一個，這就確定了日期。在那之前，沒有人回答自己是否會來。活動只屬於這台伺服器的使用者：它們永遠不會進行聯邦，遠端使用者和未登入的訪客完全看不到它們。
+
+- 誰可以建立活動由 `event_creators` 決定。主辦人還必須能開設語音聊天室（`voice_room_starters` 和設定 `voice`），才能在其中舉辦活動。
+- 活動的語音聊天室會在活動開始時開啟，由主辦人主持，並最多等待 30 分鐘等第一位參與者。它採用活動的標題，以及活動的可見範圍（所有本站使用者、追蹤者、主辦人追蹤的人、互相追蹤的人，或受邀者）。共同主辦人、回答要參加或可能參加的人，以及尚未回答的受邀者，都會受邀加入聊天室，所以當共同主持人接手時，他們仍能看到它。聊天室不會發出開始的貼文，而活動的開始通知是它唯一的通知。
+- 無法開啟的聊天室（語音聊天已關閉、主辦人已不能再開設聊天室或正在主持另一個，或是已開啟的聊天室數量達到設定 `voice_max_open_rooms` 所允許的上限），會讓活動維持原樣：主辦人會收到通知，而活動頁面會說明聊天室無法開啟。伺服器在日期設定或變更時，以及開始前一天，都會檢查這一點，並通知主辦人有什麼會讓聊天室打不開。當沒有人來到聊天室時，主辦人也會收到通知。取消活動，或移除它的語音聊天室，會結束聊天室並保留活動。
+- 主辦人選擇誰能看到活動：所有本站使用者、主辦人的追蹤者、主辦人追蹤的人、互相追蹤的人，或只有受邀者。受邀者，以及回覆了活動或它的候選日期的人，一律看得到它，而使用者與主辦人或共同主辦人之間的封鎖，會對該使用者隱藏它。
+- 活動的地址與連結，只會顯示給主辦人或共同主辦人核准的參加者，除非主辦人將它們顯示給所有看得到活動的人。連結必須是 `http` 或 `https`，而伺服器從不開啟它們。
+- 看得到活動的使用者可以將它儲存為 iCalendar（`.ics`）檔案，加入自己的行事曆。檔案只會指名該使用者看得到的地點，所以保留給已核准參加者的地址絕不會出現在其中。沒有行事曆訂閱位址。
+- 使用者每小時最多建立 10 個活動，一個活動每小時最多送出 100 個邀請。
+- 使用者可以檢舉活動，版主可以取消活動；停權或刪除主辦人，會取消該主辦人尚未開始的活動（[審核](moderation.md#events)）。誰回覆了以及誰受邀，會在活動之後保留 `event_records_retention_days`，對其候選日期的投票也一樣。
 
 <!-- source: texts-one-key-one-value c639fc7dfe23 -->
 ### 文字（一個鍵，一個值）
@@ -272,7 +325,7 @@ my admin federation sever -direction both
 - 只有在目前的模式會送出該方向時，才會將 `Reject`（`in`）或 `Undo`（`out`）送到遠端那一側。在不送出的模式（例如 `off`）下，追蹤只會在本站這一側結束，遠端那一側不會被告知。
 - 重複執行是安全的。它會將結束的追蹤數印到標準輸出。
 
-<!-- source: admin-screens-and-the-client-api 6a747f50af97 -->
+<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
 ## 管理畫面與用戶端 API
 
 CLI 能變更的每項設定，也都能在網頁用戶端的管理畫面和透過用戶端 API 變更。兩者都需要角色權限 `manage_settings`（只有內建的 `admin` 角色擁有）。和 CLI 一樣，變更會保留為修訂版本，並按鍵記錄在稽核記錄中（`setting_changed`，目標為該設定，執行者為該使用者）。請在審核畫面（「稽核日誌」，`/moderation/audit-log`）查看稽核記錄。
@@ -286,7 +339,7 @@ CLI 能變更的每項設定，也都能在網頁用戶端的管理畫面和透�
   | 註冊（`/admin/settings/registration`） | 註冊（`registration_mode`、`login_providers_only`）；成員邀請（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`）；應用程式（`user_app_registration`、`oauth_metadata_document_clients`、`dynamic_client_registration`） |
   | 內容（`/admin/settings/content`） | 語言（`default_locale`，從應用程式支援的語言中選擇）；時間軸（`local_timeline_visibility`、`federated_timeline_visibility`）；貼文（`require_media_description`）；首頁（`public_counts`）；推薦帳號（`featured_accounts`） |
   | 貼文刪除（`/admin/settings/auto-delete`） | 新帳號的預設值（`auto_delete_default_*` 設定）；上限（`auto_delete_max_age_days`、`auto_delete_max_allow_*` 設定、`auto_delete_max_kept_pins`、`auto_delete_grace_days`）。儲存開啟或更嚴格（更少天數、更少例外或釘選）的上限時會先詢問，因為它會通知新受其約束的帳號（[貼文保留的上限](#a-maximum-for-keeping-posts)） |
-  | 聯邦（`/admin/settings/federation`） | 聯邦（`federation_mode`、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（從 1 小時、1 天、7 天、30 天或 365 天中選擇）、`link_cards`、`link_cards_ignore_robots_txt`）；受限制與停權的伺服器（`domain_actions_visibility`、`domain_actions_rationale_visibility`）；外部審核（`hook_*` 設定，請參閱[決策掛鉤](decision-hooks.md)） |
+  | 聯邦（`/admin/settings/federation`） | 聯邦（`federation_mode`、`federation_scope`（儲存 `allowlist` 時，會先顯示這次切換將結束的追蹤並詢問，請參閱[只與被允許的伺服器聯邦](moderation.md#federating-only-with-allowed-servers)）、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（從 1 小時、1 天、7 天、30 天或 365 天中選擇）、`link_cards`、`link_cards_ignore_robots_txt`）；受限制與停權的伺服器（`domain_actions_visibility`、`domain_actions_rationale_visibility`）；外部審核（`hook_*` 設定，請參閱[決策掛鉤](decision-hooks.md)） |
   | 搜尋與爬蟲（`/admin/settings/discovery`） | 搜尋引擎與 AI（`search_indexing`、`indexable_default`、`ai_usage`、`security_contact`）；貼文搜尋（`search_visibilities`，僅限伺服器有全文搜尋時） |
   | 語音聊天（`/admin/settings/voice`） | `voice_room_starters`、`voice_public_summary`、`voice_participants_retention_days`；只有在伺服器提供語音聊天時才會列出這個頁面 |
 

@@ -1,0 +1,86 @@
+{
+  "notification_requests.accept": {
+    "defaultMessage": "接受",
+    "description": "Button of a notification request that accepts it: its notifications move into the user's notifications, and the account's later notifications are let through."
+  },
+  "notification_requests.accepted": {
+    "defaultMessage": "你已接受 {name} 的通知",
+    "description": "Announced, or shown as a toast, after the user accepted a notification request. {name} is the display name of the account that sent the notifications."
+  },
+  "notification_requests.action": {
+    "defaultMessage": "{action}：{name}",
+    "description": "Accessible name of a button or a link of a notification request. {action} is its visible text (for example 'Accept'), {name} the display name of the account that sent the held notifications."
+  },
+  "notification_requests.answers.description": {
+    "defaultMessage": "「接受」會將這些通知移到你的通知中，並讓 {name} 之後的通知通過。「忽略」則會移除它們。",
+    "description": "Above the buttons Accept and Dismiss on the page of one notification request. {name} is the display name of the account that sent the held notifications."
+  },
+  "notification_requests.count": {
+    "defaultMessage": "{count, plural, other {# 則保留的通知}}",
+    "description": "Under the account of a notification request: how many notifications it holds. {count} is at least 1."
+  },
+  "notification_requests.dismiss": {
+    "defaultMessage": "忽略",
+    "description": "Button of a notification request that dismisses it: its notifications are removed, and the account is not accepted."
+  },
+  "notification_requests.dismissed": {
+    "defaultMessage": "你已忽略 {name} 的通知請求",
+    "description": "Announced, or shown as a toast, after the user dismissed a notification request. {name} is the display name of the account that sent the notifications."
+  },
+  "notification_requests.empty": {
+    "defaultMessage": "沒有請求",
+    "description": "Heading of the empty list of notification requests."
+  },
+  "notification_requests.empty.description": {
+    "defaultMessage": "當你的通知政策保留了通知時，傳送這些通知的人會顯示在這裡。",
+    "description": "Description of the empty list of notification requests."
+  },
+  "notification_requests.intro": {
+    "defaultMessage": "被你的通知政策保留的通知，依傳送者整理。「接受」會將通知移到你的通知中，並讓對方之後的通知通過。「忽略」則會移除它們；之後再有保留的通知，會產生新的請求。",
+    "description": "Paragraph at the top of the page of the notification requests, which says what the page lists and what its two answers do."
+  },
+  "notification_requests.link": {
+    "defaultMessage": "{count, plural, other {來自 # 人的通知請求}}",
+    "description": "Link at the top of the notifications page to the page of the notification requests. {count} is the number of accounts whose notifications the notification policy held (at least 1)."
+  },
+  "notification_requests.link.description": {
+    "defaultMessage": "{count, plural, other {你的通知政策保留了 # 則通知。}}在你接受或忽略之前，它們不會出現在這個列表中。",
+    "description": "Under the link to the notification requests at the top of the notifications page. {count} is the number of held notifications (at least 1)."
+  },
+  "notification_requests.load_more": {
+    "defaultMessage": "載入更多請求",
+    "description": "Button at the end of the list of notification requests that loads more of them."
+  },
+  "notification_requests.not_found.back": {
+    "defaultMessage": "返回通知請求",
+    "description": "Link from the page of a missing notification request to the list of requests."
+  },
+  "notification_requests.not_found.body": {
+    "defaultMessage": "這項請求已回覆，或這個帳號沒有保留的通知。",
+    "description": "Text of the page of a notification request that does not exist."
+  },
+  "notification_requests.not_found.title": {
+    "defaultMessage": "找不到請求",
+    "description": "Heading of the page of a notification request that does not exist: it was answered, or the account sent no held notifications."
+  },
+  "notification_requests.notifications.empty": {
+    "defaultMessage": "這些通知已無法顯示",
+    "description": "On the page of a notification request whose held notifications can no longer be shown (their posts were deleted)."
+  },
+  "notification_requests.request.title": {
+    "defaultMessage": "保留的通知",
+    "description": "Title of the page that shows the notifications held in the notification request of one account."
+  },
+  "notification_requests.settings_link": {
+    "defaultMessage": "變更通知政策",
+    "description": "Link on the page of the notification requests to the notification settings, where the notification policy is chosen."
+  },
+  "notification_requests.title": {
+    "defaultMessage": "通知請求",
+    "description": "Title of the page that lists the notification requests: the notifications that the user's notification policy held, grouped by the account that sent them, which wait for the user to accept or dismiss them. Also the name of the list on that page."
+  },
+  "notification_requests.view": {
+    "defaultMessage": "查看通知",
+    "description": "Link of a notification request to the page that shows the notifications it holds."
+  }
+}

@@ -103,18 +103,20 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 由於媒體檔案一旦寫入就不會再變更，以 `rsync` 備份到備份主機時，第一次之後的複製量都會很小。
 
-<!-- source: media-in-a-bucket 882f3a0f9a2b -->
-### bucket 中的媒體
+<!-- source: media-in-a-bucket ff4b1024347c -->
+### 存放在 bucket 中的媒體
 
-`s3` 和 `gcs` blob 儲存區將每個檔案存成 bucket `blob_s3_bucket` 或 `blob_gcs_bucket` 中的物件，以其鍵值命名：處理後的媒體在 `media/` 之下，原樣收到的上傳檔案在 `uploads/` 之下，快取的遠端檔案在 `remote/` 之下。bucket 保持私有：由伺服器讀取檔案，並在 `/media/` 之下提供。物件只有在完整寫入後才會出現，所以在伺服器執行期間取得的副本絕不會有寫到一半的檔案。請以三層保護 bucket，從成本最低到最安全依序如下。
+`s3` 和 `gcs` blob 儲存會將每個檔案當作 bucket（`blob_s3_bucket` 或 `blob_gcs_bucket`）中的一個物件，以它的鍵命名：處理過的媒體在 `media/` 之下，收到的原始上傳檔案在 `uploads/` 之下，快取的遠端檔案在 `remote/` 之下。bucket 保持私有：伺服器讀取檔案，並在 `/media/` 之下提供它們。物件只有在完整寫入後才會出現，所以在伺服器執行期間取得的副本，絕不會含有只寫了一半的檔案。請從最便宜到最安全，分三層保護 bucket。
 
-**版本控制**。 在服務有提供的地方（Amazon S3、Google Cloud Storage、MinIO 等），請開啟 bucket 的物件版本控制。這樣被刪除或覆寫的物件會以非目前版本保留下來，bucket 就能回到資料庫備份當時的狀態。
+**版本控制。** 在服務提供的地方，開啟 bucket 的物件版本控制（Amazon S3、Google Cloud Storage、MinIO 等）。這樣被刪除或被覆寫的物件會以非目前版本的形式留下，bucket 就能回到資料庫備份的那個時間點。
 
 ```sh
 aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
 ```
 
-**生命週期規則**。 開啟版本控制後，每個被刪除的檔案在被規則移除之前都會持續產生儲存費用。請新增一條規則，在超過你最舊的資料庫備份的保存天數後刪除非目前版本（以[頻率與存放位置](#how-often-and-where)中不含每月備份的世代來說是 35 天），讓你保留的每一份資料庫備份都還能找到它的檔案，而使用者刪除的檔案也不會保留得比隱私權政策所述更久。也請新增一條規則，在一天後中止未完成的分段上傳：伺服器會自行中止失敗的大型檔案上傳，但在上傳途中停止的行程會留下它的分段。
+使用 Amazon S3 和 Google Cloud Storage 的 OpenTofu 模組時，請設定 `versioning = true`：它會開啟版本控制，並加入下方針對非目前版本的規則，其期限是 `noncurrent_version_days`（預設 35）。Cloudflare R2 沒有物件版本控制，而其他與 S3 相容的儲存所用的模組不會建立 bucket，所以這兩種請使用副本（見下文）。
+
+**生命週期規則。** 有了版本控制，每個被刪除的檔案在規則將它移除之前，都會持續產生儲存成本。請加入一條規則，在你最舊的資料庫備份的期限之後刪除非目前版本（若[多久備份一次、存在哪裡](#how-often-and-where)的各個世代不含每月的備份，就是 35 天），這樣你保留的每一份資料庫備份都還找得到它的檔案，而使用者刪除的檔案也不會留得比你的隱私權政策所說的更久。再加入一條規則，在一天後中止未完成的分段上傳：伺服器會自己中止大型檔案失敗的上傳，但是在上傳途中停止的程序會留下它的片段。
 
 ```json
 {
@@ -134,18 +136,18 @@ aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Sta
 aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-configuration file://lifecycle.json
 ```
 
-**另一個帳號或區域中的副本**。 版本控制能防範失誤，卻無法防範失去 bucket 或擁有它的帳號，而且伺服器自己的憑證就能刪除物件。請保留一份這些憑證無法觸及的副本：
+**在另一個帳號或區域中的副本。** 版本控制能防範的是失誤，而不是失去 bucket 或擁有它的帳號，而且伺服器自己的憑證可以刪除物件。請保留一份那些憑證碰不到的副本：
 
-- **複寫**。 Amazon S3 可以將有版本控制的 bucket 複寫到另一個區域或另一個帳號中的 bucket（跨區域或同區域複寫，目的地由另一個帳號擁有）。目的地也請開啟版本控制，並且不要複寫刪除（關閉刪除標記的複寫），讓實例上的刪除不會影響到副本。其他服務有各自的複寫功能，例如 Cloud Storage 的雙區域 bucket 和 MinIO 的 bucket 複寫。
-- **排程複製**。 在沒有複寫功能的情況下，或要複製到另一個服務商時，請依照資料庫備份的排程，在其之後立即複製 bucket，並使用只能讀取實例 bucket、只能寫入備份 bucket 的憑證：
+- **複寫。** Amazon S3 可以將啟用版本控制的 bucket 複寫到另一個區域或另一個帳號的 bucket（跨區域或同區域複寫，目的地由另一個帳號擁有）。請也為目的地開啟版本控制，而且不要複寫刪除（保持 delete marker 複寫關閉），這樣實例上的刪除就不會影響到副本。其他服務有各自的複寫，例如 Cloud Storage 的雙區域 bucket 和 MinIO 的 bucket 複寫。
+- **排程複製。** 在沒有複寫的地方，或要複製到另一個供應商時，請依資料庫備份的排程，在它之後立即複製 bucket，並使用只能讀取實例 bucket、且只能寫入備份 bucket 的憑證：
 
   ```sh
   rclone copy --checksum source:my-media backup:my-media-backup
   ```
 
-  不加 `--delete` 的 `rclone copy` 和 `aws s3 sync` 只會新增物件，絕不會從副本中移除物件。檔案一旦寫入就不會再變更，所以第一次執行之後，每次複製只會傳輸新的檔案。請依照你的保留政策排程從副本中刪除舊物件，或在那裡也開啟版本控制和生命週期規則。
+  不帶 `--delete` 的 `rclone copy` 和 `aws s3 sync` 會新增物件，且絕不會從副本中移除任何物件。檔案寫入之後就不會再變，所以第一次執行之後，每次複製只會傳輸新的檔案。請依你的保留政策的排程，從副本中刪除舊物件，或是在那裡也開啟版本控制與生命週期規則。
 
-憑證不要放進副本：bucket 本身不含任何密鑰，但設定在 `blob_s3_access_key_id` 和 `blob_s3_secret_access_key` 中指定了金鑰，它們應該和設定放在一起。`gcs` blob 儲存區不保存任何金鑰：它使用機器或 Cloud Run 的服務帳號。
+憑證不要放進副本：bucket 不含任何密鑰，但設定中會指名 `blob_s3_access_key_id` 和 `blob_s3_secret_access_key` 的金鑰，它們應與設定放在一起。`gcs` blob 儲存不保管金鑰：它使用機器或 Cloud Run 的服務帳號。
 
 <!-- source: the-order-of-the-database-and-the-media 52b56171d6d9 -->
 ### 資料庫與媒體的順序
@@ -158,6 +160,15 @@ aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-confi
 - 在資料庫備份之後才刪除的檔案（已刪除貼文的媒體、從未附加的上傳檔案）在資料庫副本中有記錄，但不在媒體副本中。還原後，該檔案會回應 `404`，原本顯示它的貼文會顯示一張遺失的圖片。
 
 另一種順序更糟：在媒體備份與資料庫備份之間上傳的每個檔案，還原後都會遺失，包括新貼文的媒體。在維護模式下同時進行兩者備份，就能避免任何一種落差。
+
+<!-- source: on-the-opentofu-targets 9862430f808c -->
+### 在 OpenTofu 目標上
+
+除了供應商所提供的之外，這些模組不會自己保留任何備份：Cloud SQL 和 RDS 的託管 PostgreSQL 有自動備份，保留期間由你設定，而只有供應商歷史紀錄的資料庫（Neon）只能回到該歷史紀錄所及的時間。請自己排程這些工作，並使用實例沒有的憑證：
+
+1. **資料庫，每天一次。** 從託管資料庫的供應商之外的機器或排程任務，對實例的 PostgreSQL 執行 `pg_dump`（請參閱 [PostgreSQL](#postgresql)），將傾印檔加密，並寫入另一個帳號或供應商的 bucket。保留[多久備份一次、存在哪裡](#how-often-and-where)的各個世代。該任務只需要 `database_url`，不需要別的；它不能持有 KEK。
+2. **媒體，緊接在它之後。** 在 bucket 模組上設定 `versioning = true` 時，這些版本就是最近 `noncurrent_version_days` 天的副本；為了防範帳號遺失，也請依資料庫傾印的排程，如[存放在 bucket 中的媒體](#media-in-a-bucket)所示，執行 `rclone copy`，將實例的 bucket 複製到別處的 bucket。
+3. **KEK 與設定**不在排程之中：它們變更時再備份（[KEK 與設定](#the-kek-and-the-configuration)）。
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->
 ### KEK 與設定
@@ -262,14 +273,27 @@ docker compose up -d
 - **另一把 KEK**：伺服器會啟動並回應 `/readyz`，但凡是讀取以舊 KEK 加密的密鑰的操作，都會以 `unknown key-encryption key` 和舊 KEK 的金鑰 ID（`local key manager: key "local:…" is not configured`）失敗：包括遞送到其他伺服器和帶簽章的擷取（actor 的私密金鑰）、使用兩步驟驗證的登入、webhook 簽章，以及外部登入提供者。先前發行的媒體代理 URL 也會失效。密碼和貼文並未以 KEK 加密，所以用密碼登入和閱讀貼文仍然可行，這可能一開始會讓問題不易察覺：請留意日誌中的這個錯誤。
 - 找出錯誤中所指金鑰 ID 的 KEK，將其設定為 `kek`（或加入 `kek_previous`），然後重新啟動。沒有 KEK 就無法復原密鑰；如果 KEK 永久遺失，就必須重新產生 actor 的金鑰，而其他伺服器會把每個 actor 視為同一個帳號的新金鑰。
 
-<!-- source: recovery-drill f9adfe0e0d28 -->
+<!-- source: recovery-drill cdd349df0cb8 -->
 ## 復原演練
 
-備份只有在實際還原過之後，才能確定它可用。請在實例公開之前演練一次還原，並在備份方式變更之後再演練一次（至少每幾個月一次）：
+備份只有在被還原過之後，才能確定它可用。請在實例公開之前演練一次還原，並在備份方式有變動之後再演練一次（至少每隔幾個月一次）：
 
-1. 依上述方式備份正式運作中的實例：先資料庫，再媒體。
-2. 在另一台機器上或另一個 Compose 專案中，使用從你保管之處取得的 KEK 和設定（而不是從正式伺服器複製）進行還原，並保持 `host` 不變，讓 actor 的 URL 一致。
-3. 不要讓這份副本參與聯邦：讓它與網際網路隔離，或在下列檢查通過後開啟維護模式。
-4. 依照[啟動與檢查](#starting-and-checking)逐項確認：登入、貼文和媒體，以及將幾個 actor 的 `publicKey` 與正式實例比較。
-5. 分別在沒有 KEK 和使用不同 KEK 的情況下各啟動一次，確認它會如[沒有正確的 KEK 時](#without-the-right-kek)所述那樣失敗。
-6. 記下每個步驟花了多久：這就是真正還原時實例會停擺的時間。
+1. 如上所述，備份正在運作的實例：先是資料庫，然後是媒體。
+2. 在另一台機器上或另一個 Compose 專案中，用你保管的地方的 KEK 與設定（不是從運作中的伺服器複製來的）來還原它，並保持 `host` 不變，讓 actor 的 URL 相符。
+3. 不要讓副本進行聯邦。請設定 `role = web`，它不執行任何任務 worker：隨資料庫還原的任務，包含備份時已到期的傳送，而執行它們的副本會以真正 actor 的金鑰簽署它們，並再次傳送給其他伺服器。只讓副本不連上網際網路並不夠，因為很難保證。如果你讓它持續執行，請在下方檢查通過後開啟維護模式。
+4. 在 Compose 之外，例如在本機上對雲端實例進行時，請為副本設定下列設定，讓它不碰運作中實例的任何東西：
+
+   | 設定 | 副本中的值 | 原因 |
+   | --- | --- | --- |
+   | `role` | `web` | 不執行任何任務，所以還原的東西不會再次被傳送 |
+   | `queue` | `db` | 在副本中加入佇列的任務會留在它自己的資料庫，而不是進入運作中的佇列 |
+   | `stream` | `postgres` | 不加入實例運作中的事件串流 |
+   | `mail` | `none` | 不寄信給真實的使用者 |
+   | blob 儲存 | 存放還原媒體的新 bucket（或目錄） | 不動運作中的 bucket |
+   | `database_url` | 還原的資料庫 | 絕不能是運作中的那個 |
+   | KEK（`MY_KEK`，或 `key_manager` 和 `kms_key`） | 與運作中的相同，取自你保管它的地方 | 沒有它，副本無法啟動 |
+   | `host` | 與運作中的相同 | 讓 actor 的 URL 相符 |
+
+5. 逐一完成[啟動與檢查](#starting-and-checking)：登入、貼文與媒體，以及將幾個 actor 的 `publicKey` 與運作中的實例比對。
+6. 在沒有 KEK 的情況下啟動一次，並以不同的 KEK 啟動一次，確認它會如[沒有正確的 KEK 時](#without-the-right-kek)所述而失敗。
+7. 記下每個步驟花了多久：那就是真正還原時，實例會停擺的時間。

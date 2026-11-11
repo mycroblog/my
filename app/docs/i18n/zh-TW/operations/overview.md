@@ -16,36 +16,37 @@
 - **你選擇的元件**。圖中間的每個元件都有一個用來選擇其轉接器的設定，列在[下一節](#parts-you-choose-by-configuration)。
 - **伺服器外部的服務**。CAPTCHA、語音聊天、付款、外掛和雲端費用匯入，在你設定之前都保持關閉；設定之後，伺服器會呼叫你指定的服務。
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
-## 透過設定選擇的元件
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+## 透過設定選擇的組成部分
 
-每個元件都是[設定參考](../reference/configuration.md)中的一個設定，可以寫在 TOML 檔案中，或以環境變數設定（`MY_` 加上大寫的鍵名，例如 `MY_DATABASE`）。各列表中的第一個選項是預設值。會保存資料的元件，請在第一次啟動前選好：設定改變時，資料不會自動搬移。
+每個組成部分都是[設定參考](../reference/configuration.md)中的一項設定，可以在 TOML 檔案中設定，或用環境變數設定（`MY_` 加上大寫的鍵，例如 `MY_DATABASE`）。每個清單的第一個選項就是預設值。
+儲存資料的部分，請在第一次啟動之前選好：設定改變時，資料不會自動搬移。
 
-| 元件 | 設定 | 選項 | 延伸閱讀 |
+| 組成部分 | 設定 | 選項 | 接著閱讀 |
 | --- | --- | --- | --- |
-| 資料庫 | [`database`](../reference/configuration.md#database) | `sqlite`（一個檔案）、`postgres`（PostgreSQL 及相容服務） | [資料庫](database.md)、[備份](backup.md) |
-| 任務佇列 | [`queue`](../reference/configuration.md#queue) | `db`（資料庫中的一個資料表）、`inline`（在同一個程序中立即執行每個任務，用於測試和開發）、`cloudtasks`（由 Google Cloud Tasks 為每個任務喚醒伺服器；需要 PostgreSQL） | [任務佇列](running.md#the-job-queue-and-failed-dead-jobs) |
-| 鍵值儲存，用於快取和速率限制 | [`kv`](../reference/configuration.md#kv) | `db`（資料庫中的一個資料表）、`memory`（每個程序各自獨立）、`valkey`（Valkey 或其他使用 Redis 協定的伺服器，由所有程序共用） | [`kv`](../reference/configuration.md#kv) |
-| 媒體儲存 | [`blob`](../reference/configuration.md#blob) | `fs`（一個目錄）、`s3`（Amazon S3、Cloudflare R2、MinIO、Garage 及其他 S3 相容儲存）、`gcs`（Google Cloud Storage） | [Docker Compose 檔案](running.md#docker-compose-files)、[備份媒體](backup.md#media-in-a-bucket) |
-| 媒體處理 | [`media_image`](../reference/configuration.md#media_image)、[`media_video`](../reference/configuration.md#media_video)、[`media_audio`](../reference/configuration.md#media_audio)，每種檔案各一個 | `native`（在伺服器內處理）、`plugin`（由你的外掛轉換該類檔案） | [轉換媒體](plugins.md#converting-media) |
-| 程序之間的即時串流 | [`stream`](../reference/configuration.md#stream) | `hub`（在單一程序內）、`postgres`（`LISTEN` / `NOTIFY`）、`valkey`、`sns`（Amazon SNS 與 SQS）、`pubsub`（Google Cloud Pub/Sub） | [`stream`](../reference/configuration.md#stream) |
+| 資料庫 | [`database`](../reference/configuration.md#database) | `sqlite`（一個檔案）、`postgres`（PostgreSQL 及相容的服務） | [資料庫](database.md)、[備份](backup.md) |
+| 任務佇列 | [`queue`](../reference/configuration.md#queue) | `db`（資料庫中的一張資料表）、`inline`（在同一個程序中立即執行每個任務，用於測試與開發）、`cloudtasks`（Google Cloud Tasks 為每個任務喚醒伺服器；需要 PostgreSQL） | [任務佇列](running.md#the-job-queue-and-failed-dead-jobs) |
+| 鍵值儲存，用於快取與速率限制 | [`kv`](../reference/configuration.md#kv) | `db`（資料庫中的一張資料表）、`memory`（每個程序各自獨立）、`valkey`（Valkey 或其他 Redis 協定的伺服器，由所有程序共用） | [`kv`](../reference/configuration.md#kv) |
+| 媒體儲存 | [`blob`](../reference/configuration.md#blob) | `fs`（一個目錄）、`s3`（Amazon S3、Cloudflare R2、MinIO、Garage 及其他與 S3 相容的儲存）、`gcs`（Google Cloud Storage） | [Docker Compose 檔案](running.md#docker-compose-files)、[備份媒體](backup.md#media-in-a-bucket) |
+| 媒體處理 | [`media_image`](../reference/configuration.md#media_image)、[`media_video`](../reference/configuration.md#media_video)、[`media_audio`](../reference/configuration.md#media_audio)，每種檔案各一個 | `native`（在伺服器內）、`plugin`（由你的外掛轉換該種類的檔案） | [轉換媒體](plugins.md#converting-media) |
+| 程序之間的即時串流 | [`stream`](../reference/configuration.md#stream) | `hub`（在單一程序內）、`postgres`（`LISTEN` / `NOTIFY`）、`valkey`、`sns`（Amazon SNS 和 SQS）、`pubsub`（Google Cloud Pub/Sub） | [`stream`](../reference/configuration.md#stream) |
 | 金鑰管理器，用來加密帳號的私密金鑰 | [`key_manager`](../reference/configuration.md#key_manager) | `local`（由你保管的金鑰加密金鑰）、`gcpkms`（Google Cloud KMS）、`awskms`（AWS KMS）、`plugin` | [管理金鑰](key-management.md) |
 | 電子郵件 | [`mail`](../reference/configuration.md#mail) | `none`、`smtp`、`ses`（Amazon SES）、`plugin` | [寄送電子郵件](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`、`turnstile`（Cloudflare Turnstile）、`hcaptcha`、`recaptcha`（Google reCAPTCHA v2） | [CAPTCHA](captcha.md) |
-| 語音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（瀏覽器對瀏覽器，TURN 由 `voice_turn` 提供：`none`、`coturn` 或 `cloudflare`）、`livekit`、`sora` | [語音聊天](voice.md) |
+| 語音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（瀏覽器對瀏覽器，TURN 來自 `voice_turn`：`none`、`coturn` 或 `cloudflare`）、`livekit`、`sora` | [語音聊天](voice.md) |
 | 支持者付款 | [`payments`](../reference/configuration.md#payments) | `none`、`stripe`、`payjp`（PAY.JP） | [支持者](supporters.md)、[Stripe](payments-stripe.md)、[PAY.JP](payments-payjp.md) |
-| 外掛 | `plugin_<kind>_address` | 預設沒有；每種類型一個位址：`translator`、`search`、`billing`、`mailer`、`media_image`、`media_video`、`media_audio`、`key_manager`，以及決策掛鉤 `inbound.status`、`local.status`、`inbound.follow`、`signup.check`、`media.check`、`inbound.actor`、`local.profile` | [外掛](plugins.md)、[決策掛鉤](decision-hooks.md) |
-| 貼文翻譯 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | 無（只有瀏覽器本身的翻譯）；`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate），或是放在你所選服務前面的自製外掛 | [翻譯貼文](translation.md)、[翻譯外掛](plugins.md#translating-posts) |
-| 貼文全文搜尋 | [`search`](../reference/configuration.md#search) | `none`；或 `elasticsearch`、`opensearch`、`meilisearch`（[搜尋引擎](search-engines.md)）；或 `plugin`，放在其他引擎前面的自製外掛 | [全文搜尋](search.md)、[搜尋外掛](plugins.md#searching-posts) |
-| 媒體 CDN | [`media_origin`](../reference/configuration.md#media_origin) | 不設定（伺服器從自己的來源提供媒體），或你的 CDN 的來源 | [透過 CDN 提供媒體](cdn.md) |
-| 雲端費用 | [`billing_sources`](../reference/configuration.md#billing_sources) | 無，或 `aws`（AWS Cost Explorer）、`gcp`（Google Cloud 的帳單匯出或預算）、`plugin` 中的任意幾項 | [匯入雲端費用](billing-import.md) |
+| 外掛 | `plugin_<kind>_address` | 預設沒有；每種各一個位址：`translator`、`search`、`billing`、`mailer`、`media_image`、`media_video`、`media_audio`、`key_manager`，以及決策掛鉤 `inbound.status`、`local.status`、`inbound.follow`、`signup.check`、`media.check`、`inbound.actor`、`local.profile` | [外掛](plugins.md)、[決策掛鉤](decision-hooks.md) |
+| 貼文翻譯 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | 無（只有瀏覽器自己的翻譯）；`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate），或是放在你所選服務前面的你自己的外掛 | [翻譯貼文](translation.md)、[翻譯外掛](plugins.md#translating-posts) |
+| 貼文全文搜尋 | [`search`](../reference/configuration.md#search) | `none`；或 `elasticsearch`、`opensearch` 或 `meilisearch`（[搜尋引擎](search-engines.md)）；或 `plugin`，也就是放在另一個引擎前面的你自己的外掛 | [全文搜尋](search.md)、[搜尋外掛](plugins.md#searching-posts) |
+| 媒體用的 CDN | [`media_origin`](../reference/configuration.md#media_origin) | 未設定（伺服器從自己的來源提供媒體），或你的 CDN 的來源 | [透過 CDN 提供媒體](cdn.md) |
+| 雲端費用 | [`billing_sources`](../reference/configuration.md#billing_sources) | 無，或 `aws`（AWS Cost Explorer）、`gcp`（Google Cloud 的帳單匯出或預算）、`cloudflare`（Cloudflare 的用量費用）、`plugin` 的任意組合 | [匯入雲端費用](billing-import.md) |
 | 指標 | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`、`prometheus`、`otlp`（OpenTelemetry）、`emf`（CloudWatch） | [指標](running.md#metrics)、[警示](alerts.md) |
-| 追蹤（traces） | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追蹤](running.md#traces) |
+| 追蹤 | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追蹤](running.md#traces) |
 | 錯誤回報 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（只有日誌行和錯誤群組）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [錯誤回報](error-reporting.md) |
 
-發行的執行檔和容器映像檔包含表中所有的轉接器。自行建置的執行檔可以用[建置標籤](../reference/build-tags.md)排除不使用的轉接器，這時啟動時會拒絕它們的設定。
+發行的二進位檔與容器映像檔包含表中的每個 adapter。你自己建置的二進位檔可以用[建置標籤](../reference/build-tags.md)排除你不使用的 adapter，這時它在啟動時會拒絕那些設定。
 
-`my config check` 會在你啟動伺服器之前，一次回報設定中的所有問題（[正式環境檢查清單](production-checklist.md)）。
+`my config check` 會在你啟動伺服器之前，一次回報設定中的所有問題（[上線檢查清單](production-checklist.md)）。
 
 <!-- source: from-a-small-server-to-a-large-one 42bbd3f2a76e -->
 ## 從小型伺服器到大型伺服器

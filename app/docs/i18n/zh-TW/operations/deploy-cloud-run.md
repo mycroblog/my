@@ -122,10 +122,10 @@ KEK 以掛載檔案的形式交給伺服器，由 `MY_KEK_FILE` 指定。其他�
 
 若要從一開始就把 KEK 保存在 Cloud KMS 中，請依照 `main.tf` 中 `kek` 區塊的註解替換它，並啟用 `cloudkms.googleapis.com`。若要使用你自己的 KEK 或 VAPID 金鑰，請在這一步之前，於 `kek` 模組設定 `create = false`，或從 `generate_p256_keys` 移除該金鑰。在其他地方建立的機密只需要它的 ID：把它交給 app 模組的 `secret_env`，或交給使用它的模組。
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
 ### 5. 建立遷移所需的資源
 
-服務的啟動探測會等待 `/readyz`，而它在結構描述（schema）存在之前都會回應 `503`，因此必須先建立結構描述。請建立遷移任務及其相依的資源，其中包括負載平衡器的位址，因為伺服器的設定會用到它：
+服務的啟動探測會等待 `/health/ready`，而它在結構建立之前會回應 `503`，所以結構必須先建立。請建立遷移任務以及它所依賴的資源，其中包括負載平衡器的位址，因為伺服器的設定會指名它：
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,10 +189,10 @@ tofu apply -var console_enabled=false
 
 指令沒有標準輸入也沒有終端機，因此需要從它們讀取密碼或檔案的指令無法以這種方式執行。指令輸出的內容會留在日誌中，因此請不要執行你不願寫進日誌的指令。
 
-<!-- source: upgrading 1a1e204c5173 -->
+<!-- source: upgrading 31acbd137681 -->
 ## 升級
 
-請先閱讀[升級](database.md#upgrading)和發行說明，並且一次只升級一個次要版本。
+請先閱讀[升級](database.md#upgrading)和版本說明，並且一次只升一個次要版本。
 
 ```sh
 # 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
@@ -206,29 +206,29 @@ pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 "$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
 ```
 
-這個指令碼會執行以下步驟，並在第一個失敗的步驟處停止：
+這個腳本會做下列事情，並在第一個失敗的步驟停下：
 
-1. 使用 `--maintenance` 時，把服務切換到[維護模式](maintenance.md)。
-2. 把新的映像檔交給遷移任務。
-3. 執行 `my config check`、`my db upgrade -check`、`my schema apply` 和 `my db upgrade`，每一個都會等待前一個完成。
-4. 部署不含維護模式的新 revision。只有在它的啟動探測通過 `/readyz` 時，才會接收流量。
+1. 以 `--maintenance` 將服務切換到[維護模式](maintenance.md)。
+2. 為遷移任務指定新的映像檔。
+3. 執行 `my config check`、`my db upgrade -check`、`my schema apply` 和 `my db upgrade`，每一個都等前一個完成。
+4. 部署新的修訂版本，不帶維護模式。只有當它的啟動探測在 `/health/ready` 通過時，它才會接收流量。
 
-不使用 `--maintenance` 時，舊的 revision 會在步驟 2 和 3 期間繼續提供服務，而這[不保證能正常運作](database.md#the-server-during-an-upgrade)。當發行說明要求時，請加上 `--allow-destructive`。請以 `--image ghcr.io/mycroblog/my:0.2.0@sha256:...` 固定 digest，這是[正式環境檢查清單](production-checklist.md#operations)所建議的。
+不帶 `--maintenance` 時，舊的修訂版本會在步驟 2 和 3 期間繼續提供服務，這[不保證能正常運作](database.md#the-server-during-an-upgrade)。當版本說明要求時，請加上 `--allow-destructive`。請以 `--image ghcr.io/mycroblog/my:0.2.0@sha256:...` 固定 digest，這也是[上線檢查清單](production-checklist.md#operations)所建議的。
 
-接著把 `terraform.tfvars` 中的 `image` 設為相同的值，`main.tf` 中的 `ref` 設為相同的發行版本，然後執行 `tofu init` 和 `tofu plan`。套用之前請先閱讀該 plan：新發行版本的模組可能會變更資源。`tofu apply` 永遠不會變更既有服務或任務的映像檔，因此忘了更新 `image` 並不會造成傷害，但新任務或重新建立的服務會從這個值啟動。
+接著將 `terraform.tfvars` 中的 `image` 設為相同的值，並將 `main.tf` 中的 `ref` 設為相同的版本，再執行 `tofu init` 和 `tofu plan`。套用之前請先閱讀那份計畫：新版本的模組可能會變更資源。`tofu apply` 絕不會變更已存在的服務或任務的映像檔，所以忘了設定 `image` 不會造成損害，但新的任務或重建的服務就是從這個值開始的。
 
-**某個步驟失敗時**，服務會停留在它原本的 revision 上，若你有要求，則維持在維護模式。排除原因後再執行一次指令碼：這些步驟可以安全地重複執行。在 `my schema apply` 尚未執行時，若要不升級就離開維護模式：
+**當某個步驟失敗時**，服務會停留在它的修訂版本，若你要求了維護模式，就會停在維護模式中。請修正原因並再次執行腳本：這些步驟重複執行是安全的。若 `my schema apply` 還沒有執行，而你想在不升級的情況下離開維護模式：
 
 ```sh
 gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
 ```
 
-若要在結構描述變更之後回復，請還原備份：請參閱[回復](database.md#rolling-back)。
+若結構已經改變而要回復，請還原備份：請參閱[回復](database.md#rolling-back)。
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
-## 監控與警報
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
+## 監控與警示
 
-模組 [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 會加入 `/readyz` 的運作時間檢查、以[處理手冊](alerts.md)中的名稱命名的警報政策，以及電子郵件通知。它從未被實際套用過，因此請讓檢查失敗一次來試試看。請先啟用 `monitoring.googleapis.com`，並閱讀它 README 中關於檢查費用的說明：每次執行都會喚醒一個執行個體，並透過 `/readyz` 喚醒資料庫，這會加重 [tick 的取捨](#costs)。
+[`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) 模組會加入 `/health/live` 的可用性檢查、以[運作手冊](alerts.md)的名稱命名的警示政策，以及電子郵件通知。它從未被套用過，所以請讓一項檢查失敗來試用一次。請先啟用 `monitoring.googleapis.com`，並在它的 README 中閱讀這項檢查要花多少成本：每次執行都會喚醒一個實例，如果你把它指向 `/health/ready`，連資料庫也會被喚醒，這會增加[計時的取捨](#costs)。
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## 更換後端
@@ -334,22 +334,23 @@ Cloud Tasks 和 Cloud Scheduler 不經過其中任何一個：它們直接呼叫
 
 若要使用服務自己的 URL，或在前方放置其他東西（例如 CDN），請移除 `ingress` 區塊及其在 `backends` 中的那一行，並把 `service_ingress` 保持為你需要的值：這一律是你明確的選擇，而 `all` 會讓 `run.app` URL 對任何人開放。在 `env` 中把 `MY_TRUSTED_PROXIES` 設為連線到伺服器的對象。不論你在前方放了什麼，都必須能在 `https://{host}` 回應。
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` 會把 Cloudflare 放在 `host` 前方，並對所有內容略過快取；`ingress-cloudflare-media` 則會在任何 ingress 旁加入一個有快取的媒體主機。請先閱讀各模組的 README（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。權杖放在 `CLOUDFLARE_API_TOKEN` 中。這些模組只在模擬的 provider 上執行過。
+`ingress-cloudflare-app` 會將 Cloudflare 放在 `host` 前面，並對所有東西繞過快取，而 `ingress-cloudflare-media` 則在任何入口旁加上一個有快取的媒體主機。請先閱讀每個模組的 README（[app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)）。權杖放在 `CLOUDFLARE_API_TOKEN` 中。這些模組只在模擬的供應商上執行過。
 
-- **你的方案決定來源**。Cloud Run 依 `Host` 進行路由，而 Cloudflare 只在 Enterprise 方案提供 Host 標頭覆寫。在其他任何方案上，`*.run.app` 來源會使 plan 失敗，因此來源本身必須接受你的主機：請保留該主機的 `ingress-gcp-domain-mapping`（不放入 `backends`），並設定 `origin_host = "ghs.googlehosted.com"`。每個主機都需要自己的對應。它的憑證在代理之後能否發行和更新尚未驗證，因此請從 `proxied = false` 開始。
-- **標頭會封閉來源**。`ingress-cloudflare-app` 會加入一條請求標頭轉換規則，伺服器會以 `403` 拒絕沒有該標頭的請求，但健康檢查和任務自己的 `POST` 除外，它們會檢查各自的權杖。因此沒有人能透過 `run.app` URL 繞過 Cloudflare，呼叫者自己的 Cloudflare Worker 也無法選擇速率限制所看到的用戶端位址。
-- **這個值會進入 state**。Cloudflare provider 沒有規則標頭值的唯寫形式。請用 `openssl rand -hex 32` 產生一個值，以 `gcloud secrets versions add` 加入機密，用 `TF_VAR_origin_secret` 傳入相同的值，並把 state 保持私密。如何輪替它，請參閱 [CDN 指南](cdn.md#rotate-the-value)。
-- **記錄未經代理時，沒有任何東西會加上標頭**，因此伺服器會拒絕健康檢查以外的所有請求：為了網域對應的憑證而設定 `proxied = false` 時，請在那之後再設定機密。
-- **在儀表板中關閉 Bot Fight Mode**。它涵蓋整個區域（zone），沒有任何規則能略過它，而對 `/ap/`、`/.well-known/` 或 `/api/` 的驗證挑戰會破壞聯邦，因為其他伺服器不是瀏覽器。任務不會經過 Cloudflare。這些模組不會加入任何驗證挑戰，並會關閉 Browser Integrity Check，但不會管理 Bot Fight Mode。基於相同的理由，請不要開啟「I'm Under Attack」。
-- **如果你希望 `http://` 被重新導向，請在儀表板中開啟 Always Use HTTPS**。它涵蓋整個區域，因此模組把它留給你決定。
-- **逾時**：當來源 125 秒沒有傳送任何東西時，Cloudflare 會回應 `524`。任務不受影響，因為它們直接呼叫 `run.app` URL。串流每 30 秒傳送一次心跳，低於 900 秒的閒置上限。在一般經過代理的主機上，它是否會緩衝串流尚未驗證。
-- **上傳**：Free 和 Pro 方案為 100 MB，高於 Cloud Run 的 32 MiB，因此上限仍是後者。
-- **影片**：Cloudflare 的條款限制在 Free、Pro 和 Business 方案上提供影片及不成比例的大量大型檔案，它可能會重新導向這些內容或採取其他措施。在媒體主機上快取影片之前，請先決定這件事。
+- **你的方案決定來源。** Cloud Run 依 `Host` 路由，而 Cloudflare 只在 Enterprise 方案提供 Host 標頭覆寫。在任何其他方案上，`*.run.app` 來源會讓計畫失敗，所以來源必須自己接受你的主機：請保留該主機的 `ingress-gcp-domain-mapping`（放在 `backends` 之外），並設定 `origin_host = "ghs.googlehosted.com"`。每個主機都需要自己的對應。它的憑證能否在代理之後簽發與更新，尚未驗證，所以請從 `proxied = false` 開始。
+- **標頭會關閉來源。** `ingress-cloudflare-app` 會加入請求標頭轉換規則，而伺服器會以 `403` 拒絕沒有該標頭的請求，但健康檢查和任務自己的 `POST`（它們會檢查自己的權杖）除外。所以沒有人能透過 `run.app` URL 繞過 Cloudflare，呼叫者自己的 Cloudflare Worker 也無法選擇速率限制所看到的用戶端位址。
+- **這個值會落在狀態中。** Cloudflare 供應商沒有規則標頭值的唯寫形式。請用 `openssl rand -hex 32` 產生一個，以 `gcloud secrets versions add` 加到一個 secret，再用 `TF_VAR_origin_secret` 傳入相同的值，並保持狀態私有。如何輪換它請見 [CDN 指南](cdn.md#rotate-the-value)。
+- **在記錄沒有被代理時，沒有東西會加上標頭**，所以伺服器會拒絕除了健康檢查之外的所有東西：為了網域對應的憑證而設定 `proxied = false` 時，請在那之後再設定 secret。
+- **請關閉 Bot Fight Mode**（在儀表板中）。它涵蓋整個 zone，沒有任何規則能跳過它，而且對 `/ap/`、`/.well-known/` 或 `/api/` 的挑戰會破壞聯邦，因為其他伺服器不是瀏覽器。任務不會經過 Cloudflare。這些模組不會加入任何挑戰，並會關閉 Browser Integrity Check，但不管理 Bot Fight Mode。基於同樣的理由，請不要開啟「I'm Under Attack」。
+- **Email Address Obfuscation 可以維持開啟。** 它會將 HTML 中的電子郵件地址改寫成 `[email protected]`，並加入一段腳本來還原，而伺服器的 Content-Security-Policy 會拒絕這段腳本。伺服器自己的頁面，例如說明確認郵件寄去哪裡的頁面，會標記它們的內容，讓它不去動這些地址。
+- **如果你想讓 `http://` 被重新導向，請在儀表板中開啟 Always Use HTTPS。** 它涵蓋整個 zone，所以模組將它留給你處理。
+- **逾時**：當來源 125 秒沒有送出任何東西時，Cloudflare 會回應 `524`。任務不受影響，因為它們直接呼叫 `run.app` URL。串流每 30 秒送出一次心跳，低於 900 秒的閒置上限。在一般被代理的主機上，它是否會緩衝串流，尚未驗證。
+- **上傳**：Free 和 Pro 為 100 MB，高於 Cloud Run 的 32 MiB，而後者仍然是上限。
+- **影片**：Cloudflare 的條款限制在 Free、Pro 和 Business 方案上提供影片，以及不成比例的大量大型檔案，它可能會將內容重新導向或採取其他行動。請在你將影片快取在媒體主機上之前，先決定這一點。
 
-**已刪除的檔案會留在快取中**。媒體主機遵循伺服器的 `Cache-Control`，因此已刪除的本站檔案最多可能在一年內仍然可見，遠端檔案則為 `remote_media_cache_ttl_seconds`。伺服器不會清除快取。當某些內容必須消失時，請在儀表板的 **Caching > Configuration > Custom Purge** 下手動清除，或執行：
+**被刪除的檔案仍會留在快取中。** 媒體主機會遵循伺服器的 `Cache-Control`，所以被刪除的本地檔案最長可能會持續可見一年，遠端檔案則為 `remote_media_cache_ttl_seconds`。伺服器不會清除它。當某些東西必須消失時，請手動清除，在儀表板的 **Caching > Configuration > Custom Purge** 下進行，或是：
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -358,7 +359,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-代理 URL 的查詢字串中帶有它的 `sig`，而查詢字串也是快取內容的一部分，因此請提供完整的 URL。
+代理 URL 的查詢字串中帶有它的 `sig`，這是被快取內容的一部分，所以請提供完整的 URL。
 
 <!-- source: changing-the-kek-backend c5e918ea5c81 -->
 ## 更換 KEK 後端

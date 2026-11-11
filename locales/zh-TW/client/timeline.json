@@ -11,6 +11,14 @@
     "defaultMessage": "目前還沒有貼文",
     "description": "Shown instead of the posts of a profile's tab when it has none."
   },
+  "timeline.empty.account.articles.heading": {
+    "defaultMessage": "還沒有文章",
+    "description": "Shown instead of the articles of the articles tab of a profile when it has none."
+  },
+  "timeline.empty.account.tagged.heading": {
+    "defaultMessage": "還沒有含 #{tag} 的貼文",
+    "description": "Shown instead of the posts of an account that carry a hashtag when it has none. {tag} is the hashtag without the #."
+  },
   "timeline.empty.bookmarks.description": {
     "defaultMessage": "你加入書籤的貼文會顯示在這裡。只有你看得到你的書籤。",
     "description": "Text under the heading of the empty list of bookmarks."

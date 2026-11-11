@@ -22,65 +22,66 @@
 
 當你變更下方的設定或服務時，以及在每次版本說明提到個人資料的升級之後，請重新檢視這份政策。
 
-<!-- source: the-periods-and-their-settings 111d5a4b6af8 -->
-## 期間與對應的設定
+<!-- source: the-periods-and-their-settings 8313baaa97d8 -->
+## 期間與它們的設定
 
-`my instance list` 會顯示每一項實例設定，以及它是否為預設值。期間的變更會在其每小時任務的下一次執行時生效。超出範圍的值會被拒絕。
+`my instance list` 會顯示每個實例設定，以及它是否為預設值。期間的變更會在其每小時任務的下一次執行時生效。超出範圍的值會被拒絕。
 
 | 紀錄 | 預設值 | 實例設定 | 範圍（天） | 起算點 |
 | --- | --- | --- | --- | --- |
-| 登入時的 IP 位址和 User-Agent | 180 天 | `session_origins_retention_days` | 90-3650 | 登入時 |
-| 註冊時的 IP 位址 | 180 天 | `registration_origins_retention_days` | 90-3650 | 註冊時 |
-| 檢舉 | 365 天 | `reports_retention_days` | 180-3650 | 最後一次處理完成時 |
-| 對帳號的處置及申訴 | 365 天 | `moderation_actions_retention_days` | 180-3650 | 處置結束時 |
-| 稽核日誌 | 730 天 | `audit_log_retention_days` | 365-3650 | 記錄時 |
-| 誰參與了語音聊天聊天室 | 90 天 | `voice_participants_retention_days` | 30-3650 | 聊天室結束時 |
-| 外部審查的決定（有使用時） | 90 天 | `hook_decisions_retention_days` | 30-3650 | 決定時 |
-| 本站沒有任何內容參照的遠端貼文 | 90 天 | `remote_status_retention_days` | 1-3650 | 貼文發布時 |
-| 任何遠端貼文 | 無限制（`0`） | `remote_status_max_retention_days` | 0-3650 | 貼文發布時 |
-| 只經由中繼站送達的遠端貼文 | 7 天 | `relay_status_retention_days` | 1-3650 | 貼文發布時 |
-| 遠端媒體的副本 | 1 天；`remote_media_policy` 為 `none` 時不保存 | `remote_media_cache_ttl_seconds`、`remote_media_policy` | 60-31536000 秒 | 擷取時 |
-| 貼文的翻譯 | 30 天 | `translation_retention_days` | 1-3650 | 翻譯時。閱讀翻譯不會延長期間，貼文刪除時翻譯也會一併刪除 |
+| 登入的 IP 位址與 User-Agent | 180 天 | `session_origins_retention_days` | 90-3650 | 登入 |
+| 註冊的 IP 位址 | 180 天 | `registration_origins_retention_days` | 90-3650 | 註冊 |
+| 檢舉 | 365 天 | `reports_retention_days` | 180-3650 | 最後一次處理 |
+| 對帳號的處置與申訴 | 365 天 | `moderation_actions_retention_days` | 180-3650 | 處置結束 |
+| 稽核紀錄 | 730 天 | `audit_log_retention_days` | 365-3650 | 該筆紀錄 |
+| 誰參與了語音聊天室 | 90 天 | `voice_participants_retention_days` | 30-3650 | 聊天室結束 |
+| 誰回覆了活動、對活動的日期投票，以及誰受邀參加活動 | 90 天 | `event_records_retention_days` | 30-3650 | 活動結束與活動取消兩者中較早的時間 |
+| 外部審核的決定（如果你使用的話） | 90 天 | `hook_decisions_retention_days` | 30-3650 | 該決定 |
+| 此處沒有任何東西參照的遠端貼文 | 90 天 | `remote_status_retention_days` | 1-3650 | 貼文的發布 |
+| 任何遠端貼文 | 無上限（`0`） | `remote_status_max_retention_days` | 0-3650 | 貼文的發布 |
+| 只由中繼帶來的遠端貼文 | 7 天 | `relay_status_retention_days` | 1-3650 | 貼文的發布 |
+| 遠端媒體的副本 | 1 天；當 `remote_media_policy` 為 `none` 時不保留 | `remote_media_cache_ttl_seconds`、`remote_media_policy` | 60-31536000 秒 | 取得 |
+| 貼文的翻譯 | 30 天 | `translation_retention_days` | 1-3650 | 該翻譯。閱讀它不會延長期間，而且貼文被刪除時它也會一併消失 |
 
-以下是部署的設定（[設定參考](../reference/configuration.md)），而不是實例設定：
+以下是部署的設定（[設定參考](../reference/configuration.md)），不是實例設定：
 
 | 紀錄 | 預設值 | 設定 |
 | --- | --- | --- |
-| 沒有附加到任何內容的上傳檔案 | 24 小時 | `media_unattached_retention` |
-| 被新版本取代之後的舊版圖片 | 30 天 | `media_replaced_retention` |
-| 最終失敗的任務 | 30 天 | `dead_job_retention` |
+| 未附加到任何內容的上傳檔案 | 24 小時 | `media_unattached_retention` |
+| 圖片被新版本取代後的舊版本 | 30 天 | `media_replaced_retention` |
+| 徹底失敗的任務 | 30 天 | `dead_job_retention` |
 | 未成功的任務執行紀錄 | 30 天 | `job_attempt_retention` |
 
 以下期間由軟體固定，沒有任何設定可以變更：
 
 | 紀錄 | 期間 |
 | --- | --- |
-| 抹除已刪除的帳號 | 刪除後 7 天；遠端帳號若只有其伺服器回傳的 `410 Gone` 表示已刪除，而該伺服器之後不再回應，最長為 30 天 |
+| 清除已刪除的帳號 | 刪除後 7 天；對於遠端帳號，當只有其伺服器回應的 `410 Gone` 這樣表示、而且該伺服器不再回應時，最長 30 天 |
 | 刪除已停用的帳號 | 停用後 30 天 |
-| 註冊封鎖 | 解除或到期後 30 天；兩者皆無時，在生效期間一直保留 |
+| 註冊封鎖 | 解除或到期後 30 天；兩者皆無時，則在其生效期間一直保留 |
 | 工作階段、權杖和授權碼 | 到期後 30 天 |
 | 資料匯出的封存檔，以及資料匯入 | 7 天 |
-| 從其他伺服器收到的活動紀錄 | 30 天，文件本身為 7 天 |
-| 傳送到其他伺服器的活動紀錄 | 30 天；貼文的傳送紀錄保留到該貼文或其作者刪除後 30 天 |
-| 遠端帳號代稱的檢查 | 90 天，每個帳號保留最新的一筆 |
-| webhook 訊息與傳送 | 14 天 |
-| 付款 webhook 的收件紀錄 | 45 天 |
+| 從其他伺服器接收的活動紀錄 | 30 天，文件本身 7 天 |
+| 傳送給其他伺服器的活動紀錄 | 30 天；貼文的傳送則保留到貼文或其作者被刪除後 30 天 |
+| 遠端帳號識別的檢查 | 90 天，每個帳號保留最新的一筆 |
+| Webhook 訊息與傳送 | 14 天 |
+| 付款 Webhook 收據 | 45 天 |
 | 每小時的錯誤計數與錯誤通知 | 90 天 |
 
-[保留凍結](moderation.md#holds)會暫停對單一帳號的抹除，因此對於受到凍結的帳號，上述每個期間都可能更長。如果你會使用保留凍結，請像範本一樣說明這一點。
+[保存保留](moderation.md#holds)會停止單一帳號的清除，所以上述每個期間，對處於保留之下的帳號都可能延續更久。如果你使用保存保留，請如範本那樣加以說明。
 
-<!-- source: records-with-no-automatic-end 90a13d1f648e -->
+<!-- source: records-with-no-automatic-end 4ac8f904a3a9 -->
 ## 沒有自動結束的紀錄
 
-伺服器只有在帳號被抹除時才會移除這些紀錄，或者從不移除。法律可能會要求你說明保留它們的理由，或以其他方式移除它們，因此請決定你的政策要如何描述每一項。
+伺服器只會在帳號被清除時才移除這些紀錄，或是永不移除。法律可能要求你說明保留它們的理由，或以其他方式移除它們，所以請決定你的政策對每一項怎麼說。
 
-- 有效帳號的資料列：電子郵件地址、過去的個人檔案版本、過去的貼文版本、通知、追蹤關係，以及被拒絕之使用者的註冊申請。沒有人刪除的帳號會一直保留。
-- 抹除之後仍然保留的內容：帳號的 URI 和使用者名稱（以免兩者被重複使用）、帳號的生命週期事件、貼文已被刪除的紀錄、審核紀錄（直到其各自的期間結束）、邀請與角色授予、帳號搬家紀錄、已移除名稱與說明的語音聊天聊天室。
-- 支持者紀錄（訂閱、狀態變化、付款、退款、退單），為了會計以及與付款服務提供者對帳而保存。伺服器不會刪除付款服務提供者那邊的客戶：如果你的義務允許，請在提供者的儀表板中刪除。
-- 沒有結束時間的處置（`ban`，或沒有結束時間的 `suspend`），直到解除為止。尚未處理完的檢舉。
-- 遠端帳號，直到其伺服器刪除它們為止。
-- 每個錯誤群組的最新報告，會被該群組的下一份報告取代。它是依模式清理的，因此可能會殘留部分使用者文字。
-- 備份、你的日誌，以及你的平台和代理的日誌。伺服器不會管理這些：[備份](backup.md#how-often-and-where)說明了要保留的世代，而還原備份會讓已抹除的資料回來。
+- 運作中帳號的資料列：電子郵件地址、過去的個人檔案版本、過去的貼文版本、通知、追蹤，以及被拒絕使用者的註冊申請。沒有人刪除的帳號會一直保留。
+- 清除之後留下的：帳號的 URI 和使用者名稱（讓兩者都不能被重複使用）、它的生命週期事件、貼文已被刪除的紀錄、審核紀錄（直到它們自己的期間結束）、邀請與角色授予、帳號搬遷、沒有名稱與說明的語音聊天室、沒有作者所寫的標題、說明與地點的活動，以及對活動及其候選日期的邀請與回覆。
+- 支持者紀錄（訂閱、狀態變更、付款、退款、退單），為了會計與和服務提供者對帳而保留。伺服器不會刪除付款服務提供者處的客戶：如果你的義務允許，請在服務提供者的儀表板中進行。
+- 沒有結束時間的處置（`ban`，或沒有結束時間的 `suspend`），直到它被解除。未處理的檢舉。
+- 遠端帳號，直到其伺服器刪除它們。
+- 每個錯誤群組的最新一份回報，它會被該群組的下一份回報取代。它是依樣式清理的，所以使用者文字的片段可能會留下。
+- 備份、你的日誌，以及你的平台與代理的日誌。伺服器不管理這些：[備份](backup.md#how-often-and-where)說明了要保留的世代，而還原的備份會把已清除的資料帶回來。
 
 <!-- source: the-services-you-choose 81461216c966 -->
 ## 你選擇的服務
@@ -123,7 +124,7 @@
 - **Web Push**。使用者開啟它時，他們的瀏覽器會選擇推播服務，並把它的位址交給伺服器。訊息內文是針對該瀏覽器加密的，因此推播服務應該無法讀取它。推播服務看得到訂閱位址、每則訊息的大小和時間，以及你伺服器的聯絡資訊（VAPID subject），並會在瀏覽器離線時保存訊息最多 48 小時。
 - **聯邦**。請參閱範本的第 5 節。`federation_mode` 可以關閉聯邦或限制其方向，而中繼站則由你自行加入（[中繼站](relays.md)）。
 
-<!-- source: the-template 8b6bd2fc983a -->
+<!-- source: the-template 5a65f2c53778 -->
 ## 範本
 
 ```markdown
@@ -154,16 +155,16 @@ This policy covers people with an account here, people who read pages here witho
 | --- | --- | --- |
 | Email addresses | Signing in, confirming the address, resetting the password, and the email you choose to get | Until your account is erased |
 | Password hash, two-factor secret (encrypted) and recovery codes (hashed), passkeys, the identifier of an account you linked at a login provider | Signing you in | Until your account is erased |
-| Language, time zone, default post settings, notification settings, and other preferences | Running the service the way you asked | Until your account is erased |
+| Language, time zone, default post settings, notification settings and notification filters, and other preferences | Running the service the way you asked | Until your account is erased |
 | Registration application: the reason you gave, the invite you used, and the decision | Deciding who joins | Until your account is erased |
 | IP address at registration | Preventing abuse | {{180 days}} from registration |
 | IP address and browser name (User-Agent) at each sign-in | Security and preventing abuse | {{180 days}} from the sign-in |
 | Sessions and app access (stored as hashes) | Keeping you signed in | 30 days after they expire. A session lasts 30 days |
 | IP address, and for password-reset requests the email address, in rate limit counters | Protecting the service | Removed automatically, within twice the window of the limit |
-| Profile: display name, bio, extra fields, avatar, header, aliases, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
+| Profile: display name, bio, extra fields, avatar, header, aliases, featured hashtags, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
 | Posts, their earlier versions, and attached media | Publishing what you write | Until you delete them, your automatic deletion policy deletes them, or your account is erased. {{IF you set a maximum for keeping posts}} At most {{N days}} after you publish them, unless your account may keep them longer. Uploads attached to nothing go after {{24 hours}} |
-| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists | Running the features you use | Until you undo them, or your account is erased |
-| Notifications and what you have read | Telling you what happened | Until your account is erased or the post they are about is removed |
+| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, followed hashtags, blocks, mutes, lists, keyword filters, private notes on accounts | Running the features you use | Until you undo them, or your account is erased |
+| Notifications and what you have read, the notification requests you accepted or dismissed | Telling you what happened, and holding back the notifications you chose to filter | Until your account is erased or the post they are about is removed |
 | Web Push subscription: your browser's push address and keys | Sending you push notifications | Until you turn it off, the push service ends it, or your account is erased |
 | Records that an email bounced or was reported as spam | Not sending mail that is unwanted or cannot arrive | Until your account is erased |
 | Data export archives and data imports | Giving you your data, and bringing it in | 7 days |
@@ -174,8 +175,11 @@ This policy covers people with an account here, people who read pages here witho
 | Sign-up blocks: an email domain, a hashed email address, or an IP range | Preventing repeat abuse | While in effect, and 30 days after the lift or expiry |
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
+| Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
+| Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
+| {{IF tips}} Tips: the amount, when you paid, the provider's ID of the payment, refunds and chargebacks. Not your card details | Taking the tip, and accounting | Until your account is erased; the amounts stay in the accounts without you. The provider keeps the payment and the email address of its page: {{ITS PERIOD}} |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |
 | Posts and profiles of people on other servers | Showing them here | Posts: {{90 days}} when nothing here refers to them, {{7 days}} when only a relay brought them, and {{no limit}} otherwise. Profiles: until their server deletes the account. Then erased after 7 days |
 | Copies of remote media | Showing it | {{Not kept, or the period you set}} |
@@ -297,7 +301,7 @@ Passwords are stored as Argon2id hashes. Two-factor secrets and the keys that si
 
 {{ADJUST TO THE RIGHTS OF YOUR JURISDICTION. Under the GDPR these are access, rectification, erasure, restriction, objection, and portability, and the right to withdraw consent.}}
 
-- **See and take your data:** your settings offer a data export (your profile, your posts, and your moderation records) and CSV files of follows, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
+- **See and take your data:** your settings offer a data export (your profile, your posts, your keyword filters, your private notes on accounts, and your moderation records) and CSV files of follows, followed hashtags, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
 - **Correct it:** edit your profile and account settings, or write to us.
 - **Delete it:** delete your account in your settings, or deactivate it first. This is what section 3 and section 5 describe.
 - **Move:** you can move your followers to an account on another server.
