@@ -75,7 +75,7 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	for i, f := range files {
 		paths[i] = f.Path
 	}
-	run, what := docslint.Lint, "the rules are in AGENTS.md#documentation, the files each covers in "+docslint.File
+	run, what := docslint.Lint, "each finding says the fix; the files each rule covers are in "+docslint.File
 	if cmd == "inventory" {
 		run, what = docslint.Inventory, "describe each name in its document, or exclude it with the reason in "+docslint.File
 	}

@@ -69,8 +69,7 @@ than a document that every change of a wide area flags.
 
 ## Documentation rules
 
-`docs lint` (`scripts/task.sh docs:rules`, part of `docs:check`) checks the rules of
-[AGENTS.md "Documentation"](../../AGENTS.md#documentation) that a machine can check; each finding says the fix.
+`docs lint` (`scripts/task.sh docs:rules`, part of `docs:check`) checks the documentation rules; each finding says the fix.
 [docs/lint.yaml](../../docs/lint.yaml) names the files each rule covers and, under `pending`, the files that do not
 follow a rule yet: a pending entry fails once its file follows the rule, so the lists only shrink.
 

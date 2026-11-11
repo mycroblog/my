@@ -121,7 +121,6 @@ pending:
   # ADRs that transcribe the implementation: longer than an ADR may be, a table of more rows than one may have, or a
   # code span that names a path, a file, a task, or a Go identifier. `bin/agentkit docs adr-shape` lists them.
   adr-shape:
-    - docs/adr/0000-record-architecture-decisions.md
     - docs/adr/0003-database-abstraction.md
     - docs/adr/0004-job-queue-abstraction.md
     - docs/adr/0005-blob-storage-and-media.md
@@ -152,7 +151,6 @@ pending:
     - docs/adr/0070-permission-split-emoji-finance.md
     - docs/adr/0072-supporter-plans-and-roles.md
     - docs/adr/0074-payment-provider-port.md
-    - docs/adr/0079-ci-single-gate-merge-queue.md
     - docs/adr/0081-generated-files-policy.md
     - docs/adr/0086-email-delivery.md
     - docs/adr/0088-service-shutdown-modes.md
