@@ -54,6 +54,14 @@ const (
 	KindVoiceReaction Kind = "voice_reaction"
 	// KindVoiceMute carries the session SessionID muted by the account By.
 	KindVoiceMute Kind = "voice_mute"
+
+	// KindTLSCertificate signals that the TLS certificate of Host changed in the database
+	// (ADR-0163 §6): a process renewed, replaced, or revoked it. It goes to no stream: a Relay
+	// hands it to its watchers (Relay.Watch), which read the current certificate of the host
+	// from the database again. CertificateID names the certificate the sender installed, but
+	// the receivers do not install it: a late or repeated signal never brings an older one
+	// back.
+	KindTLSCertificate Kind = "tls_certificate"
 )
 
 // Timeline names a public timeline whose new posts a timeline subscription receives (ADR-0013).
@@ -82,6 +90,10 @@ func (k Kind) IsVoice() bool {
 	}
 	return false
 }
+
+// IsInternal reports whether k is a signal of the processes themselves rather than of the
+// streams: a Hub delivers it to no subscription, and a Relay hands it to its watchers.
+func (k Kind) IsInternal() bool { return k == KindTLSCertificate }
 
 // Event is one signal.
 type Event struct {
@@ -118,6 +130,11 @@ type Event struct {
 	// SessionID is the muted session of KindVoiceMute, and By the account that muted it.
 	SessionID string
 	By        string
+
+	// Host is the host of KindTLSCertificate, and CertificateID the certificate that its sender
+	// installed.
+	Host          string
+	CertificateID string
 }
 
 // Publisher publishes signals. Publish never blocks on subscribers or brokers and never fails

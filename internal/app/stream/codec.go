@@ -31,7 +31,8 @@ var (
 // {"v":1,"o":…,"k":"voice_signal","r":…,"m":"<message id>","t":"<session>"},
 // {"v":1,"o":…,"k":"voice_mic","r":…,"p":"<participant>","on":true},
 // {"v":1,"o":…,"k":"voice_reaction","r":…,"p":…,"e":"<emoji>"}, and
-// {"v":1,"o":…,"k":"voice_mute","r":…,"s":"<session>","b":"<by>"}.
+// {"v":1,"o":…,"k":"voice_mute","r":…,"s":"<session>","b":"<by>"}, and the internal signal
+// of a TLS certificate (ADR-0163 §6): {"v":1,"o":…,"k":"tls_certificate","h":"<host>","c":"<certificate id>"}.
 type signal struct {
 	Version   int    `json:"v"`
 	Origin    string `json:"o"`
@@ -53,6 +54,9 @@ type signal struct {
 	Timelines []Timeline `json:"tl,omitempty"`
 	SessionID string     `json:"s,omitempty"`
 	By        string     `json:"b,omitempty"`
+	// Host and CertificateID are the "h" and the "c" of a tls_certificate signal.
+	Host          string `json:"h,omitempty"`
+	CertificateID string `json:"c,omitempty"`
 }
 
 // encodeSignal encodes e as published by the process origin. It fails for a payload over
@@ -61,6 +65,7 @@ func encodeSignal(origin string, e Event) ([]byte, error) {
 	s := signal{
 		Version: signalVersion, Origin: origin, Kind: e.Kind, AccountID: e.AccountID, E: e.EntryID, Author: e.AuthorAccountID, AnnouncementID: e.AnnouncementID,
 		RoomID: e.RoomID, MessageID: e.MessageID, To: e.To, ParticipantID: e.ParticipantID, SessionID: e.SessionID, By: e.By,
+		Host: e.Host, CertificateID: e.CertificateID,
 	}
 	switch e.Kind {
 	case KindPublicEntry:
@@ -112,6 +117,8 @@ func decodeSignal(payload []byte) (origin string, e Event, err error) {
 		return s.Origin, Event{Kind: KindNotifications, AccountID: s.AccountID}, nil
 	case s.Kind == KindConversation && s.AccountID != "" && s.E != "":
 		return s.Origin, Event{Kind: KindConversation, AccountID: s.AccountID, ConversationID: s.E}, nil
+	case s.Kind == KindTLSCertificate && s.Host != "" && s.CertificateID != "":
+		return s.Origin, Event{Kind: KindTLSCertificate, Host: s.Host, CertificateID: s.CertificateID}, nil
 	case s.Kind == KindAnnouncement && s.AnnouncementID != "":
 		return s.Origin, Event{Kind: KindAnnouncement, AnnouncementID: s.AnnouncementID}, nil
 	case s.Kind == KindPublicEntry && s.E != "":

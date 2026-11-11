@@ -151,8 +151,12 @@ func remove(m map[string]map[*subscription]struct{}, key string, s *subscription
 // Publish implements Publisher. A signal of KindNotifications or KindConversation goes to the
 // account subscriptions of its account, one of KindHomeEntry or KindAnnouncement to every account
 // subscription, one of KindPublicEntry to the timeline subscriptions of the timelines it names,
-// and a voice signal to the subscriptions of its room.
+// and a voice signal to the subscriptions of its room. An internal signal (Kind.IsInternal) goes
+// to none.
 func (h *Hub) Publish(e Event) {
+	if e.Kind.IsInternal() {
+		return
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	switch {

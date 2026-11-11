@@ -24,6 +24,7 @@ func TestSignalRoundTrips(t *testing.T) {
 		{Kind: KindVoiceMic, RoomID: "r1", ParticipantID: "a1", On: false},
 		{Kind: KindVoiceReaction, RoomID: "r1", ParticipantID: "a1", Emoji: ":blobcat:"},
 		{Kind: KindVoiceMute, RoomID: "r1", SessionID: "s1", By: "a2"},
+		{Kind: KindTLSCertificate, Host: "social.example", CertificateID: "0199f0a8-0000-7000-8000-000000000006"},
 	} {
 		b, err := encodeSignal("p1", e)
 		if err != nil {
@@ -60,6 +61,7 @@ func TestSignalRoundTrips(t *testing.T) {
 		{Kind: KindVoiceMic, RoomID: "r1", ParticipantID: "a1"}:                  `{"v":1,"o":"p1","k":"voice_mic","r":"r1","p":"a1","on":false}`,
 		{Kind: KindVoiceReaction, RoomID: "r1", ParticipantID: "a1", Emoji: "👏"}: `{"v":1,"o":"p1","k":"voice_reaction","e":"👏","r":"r1","p":"a1"}`,
 		{Kind: KindVoiceMute, RoomID: "r1", SessionID: "s1", By: "a2"}:           `{"v":1,"o":"p1","k":"voice_mute","r":"r1","s":"s1","b":"a2"}`,
+		{Kind: KindTLSCertificate, Host: "social.example", CertificateID: "c1"}:  `{"v":1,"o":"p1","k":"tls_certificate","h":"social.example","c":"c1"}`,
 	} {
 		if b, _ := encodeSignal("p1", e); string(b) != want {
 			t.Errorf("payload = %s, want %s", b, want)
@@ -91,6 +93,8 @@ func TestSignalDecodeRejects(t *testing.T) {
 		`{"v":1,"o":"p1","k":"voice_reaction","r":"r1","p":"a1"}`:                                       errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_reaction","r":"r1","p":"a1","e":"` + strings.Repeat("x", 65) + `"}`: errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_mute","r":"r1","s":"s1"}`:                                           errMalformedSignal,
+		`{"v":1,"o":"p1","k":"tls_certificate","h":"social.example"}`:                                   errMalformedSignal,
+		`{"v":1,"o":"p1","k":"tls_certificate","c":"c1"}`:                                               errMalformedSignal,
 		`not json`: errMalformedSignal,
 	} {
 		if _, _, err := decodeSignal([]byte(payload)); !errors.Is(err, want) {

@@ -488,3 +488,111 @@ func TestSweepJob(t *testing.T) {
 		t.Errorf("a failed sweep = %+v, want retry", res)
 	}
 }
+
+// A watcher keeps the listener open without any stream, receives the internal signals of its kind
+// from the other processes (and none of this process), and resyncs at each start of a listener:
+// the first, and the one that follows a break at once. No stream receives an internal signal.
+func TestRelayWatch(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		broker := stream.NewMemoryBroker()
+		r := stream.NewRelay(broker.Bus(), stream.RelayOptions{})
+		defer closeRelay(t, r)
+		other := stream.NewRelay(broker.Bus(), stream.RelayOptions{})
+		defer closeRelay(t, other)
+
+		var mu sync.Mutex
+		var received []stream.Event
+		resyncs := 0
+		ctx, cancel := context.WithCancel(t.Context())
+		err := r.Watch(ctx, stream.KindTLSCertificate, func(e stream.Event) {
+			mu.Lock()
+			defer mu.Unlock()
+			received = append(received, e)
+		}, func() {
+			mu.Lock()
+			defer mu.Unlock()
+			resyncs++
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		synctest.Wait()
+		check := func(wantEvents, wantResyncs int) {
+			t.Helper()
+			mu.Lock()
+			defer mu.Unlock()
+			if len(received) != wantEvents || resyncs != wantResyncs {
+				t.Fatalf("received %v and %d resyncs, want %d and %d", received, resyncs, wantEvents, wantResyncs)
+			}
+		}
+		if got := broker.Listeners(); got != 1 {
+			t.Fatalf("listeners with a watcher = %d, want 1", got)
+		}
+		check(0, 1)
+
+		s, err := r.Subscribe(t.Context(), aliceID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.Close()
+		tlsSignal := stream.Event{Kind: stream.KindTLSCertificate, Host: "social.example", CertificateID: "c2"}
+		other.Publish(tlsSignal)
+		r.Publish(stream.Event{Kind: stream.KindTLSCertificate, Host: "social.example", CertificateID: "mine"})
+		synctest.Wait()
+		check(1, 1)
+		mu.Lock()
+		if received[0] != tlsSignal {
+			t.Errorf("received %+v, want %+v", received[0], tlsSignal)
+		}
+		mu.Unlock()
+		select {
+		case e := <-s.Events():
+			t.Errorf("a stream received the internal signal %+v", e)
+		default:
+		}
+
+		// The listener breaks: the streams end, and the watcher listens again and resyncs.
+		broker.Break()
+		synctest.Wait()
+		select {
+		case <-s.Done():
+		default:
+			t.Error("the stream outlived the broken listener")
+		}
+		if got := broker.Listeners(); got != 1 {
+			t.Fatalf("listeners after the break = %d, want 1", got)
+		}
+		check(1, 2)
+		other.Publish(tlsSignal)
+		synctest.Wait()
+		check(2, 2)
+
+		// A start that fails is tried again.
+		broker.SetUnreachable(true)
+		broker.Break()
+		time.Sleep(stream.DefaultReadyTimeout + time.Second)
+		synctest.Wait()
+		broker.SetUnreachable(false)
+		time.Sleep(stream.DefaultReadyTimeout)
+		synctest.Wait()
+		if got := broker.Listeners(); got != 1 {
+			t.Fatalf("listeners once the broker is back = %d, want 1", got)
+		}
+		check(2, 3)
+
+		// Without the watcher and the stream, the listener closes after the idle timeout.
+		s.Close()
+		cancel()
+		time.Sleep(stream.DefaultIdleTimeout + time.Second)
+		synctest.Wait()
+		if got := broker.Listeners(); got != 0 {
+			t.Fatalf("listeners after the watcher = %d, want 0", got)
+		}
+		if err := r.Close(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Watch(t.Context(), stream.KindTLSCertificate, func(stream.Event) {}, func() {}); !errors.Is(err, stream.ErrClosed) {
+			t.Errorf("Watch on a closed Relay: %v, want ErrClosed", err)
+		}
+	})
+}
