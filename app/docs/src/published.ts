@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 export const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 /**
- * The directories under docs/ whose Markdown is published. docs/adr, docs/architecture, docs/requirements and
- * docs/agents are never published: a directory missing here is not published, and one that does not exist yet
+ * The directories under docs/ whose Markdown is published. docs/adr, docs/architecture and docs/requirements are
+ * never published: a directory missing here is not published, and one that does not exist yet
  * (docs/guide before its first page) is skipped.
  */
 export const publishedDirs = ["operations", "reference", "guide", "developers", "plugins"] as const;

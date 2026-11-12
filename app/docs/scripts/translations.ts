@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The command an agent translates the documents with (ADR-0150 §9, docs/agents/translating-docs.md), run as
+// The command an agent translates the documents with (ADR-0150 §9, .claude/skills/translate-docs), run as
 // `scripts/task.sh docs:site-translations -- <command>`:
 //
 //   status [--locale ja] [source...]   what each source still needs in a locale: no translation file, or the sections

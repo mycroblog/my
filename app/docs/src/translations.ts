@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The translations of the published documents (ADR-0150 §9): an agent translates them by hand, section by section,
-// into app/docs/i18n/<locale>/, following docs/agents/translating-docs.md. A source document is split into sections at
+// into app/docs/i18n/<locale>/, following .claude/skills/translate-docs. A source document is split into sections at
 // each heading; each translated section starts with a marker that names the section (the anchor of its English
 // heading) and the hash of the English text it was translated from:
 //

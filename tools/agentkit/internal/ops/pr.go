@@ -69,7 +69,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		return "", err
 	}
 	if branch == "main" || branch == "HEAD" {
-		return "", fmt.Errorf("on %s: work on a <type>/<issue>-<slug> branch (workflow.md §3)", branch)
+		return "", fmt.Errorf("on %s: work on a <type>/<issue>-<slug> branch (/work-on-issue)", branch)
 	}
 	if o.Base == "" {
 		o.Base = "main"
@@ -552,7 +552,7 @@ func Wait(w io.Writer, n int, o WaitOptions) int {
 		case behind:
 			// GitHub has not seen the push yet.
 		case p.Mergeable == "CONFLICTING":
-			say("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)
+			say("PR #%d conflicts with its base: CI does not run. Rebase onto origin/main, regenerate generated files (agentkit regen), push with --force-with-lease", n)
 			return 3
 		default:
 			last = &p

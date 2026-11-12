@@ -6,9 +6,16 @@ name: Release image
 # A failure before the tagging leaves no tag; the last check, the anonymous pull, fails until the package is public.
 #
 # Run it again by hand after a failure, which changes nothing that is already right, or to move X.Y back to an earlier
-# patch when the latest one proved faulty (docs/agents/releasing.md, "The container image"):
+# patch when the latest one proved faulty (the /release skill, .claude/skills/release/SKILL.md):
 #
 #   gh workflow run release-image.yml --ref main -f version=v0.1.4 [-f roll_back=true]
+#
+# Set up once by the decider, before the first release. The first image job of release.yml creates the package
+# private; on its settings page (https://github.com/orgs/mycroblog/packages/container/my/settings) link it to this
+# repository, give mycroblog/my the Admin role under "Manage Actions access", and make it public, which cannot be undone.
+# In the repository's settings, under General, turn on Immutable releases: a published Release's tag and assets
+# (image-digest.txt) are then frozen, a draft's are not, and a published v0.0.0-test.N keeps its tag, so number each
+# trial anew.
 on:
   release:
     types: [published]
@@ -102,7 +109,7 @@ jobs:
           mkdir -p "$DOCKER_CONFIG"
           for tag in $TAGS; do
             if ! docker pull -q "ghcr.io/mycroblog/my:$tag" > /dev/null; then
-              echo "::error::Anonymous pull of ghcr.io/mycroblog/my:$tag failed. Make the package public (docs/agents/releasing.md) and run this workflow again."
+              echo "::error::Anonymous pull of ghcr.io/mycroblog/my:$tag failed. Make the package public (https://github.com/orgs/mycroblog/packages/container/my/settings) and run this workflow again."
               exit 1
             fi
             have="$(scripts/release-image.sh digest "ghcr.io/mycroblog/my:$tag")"

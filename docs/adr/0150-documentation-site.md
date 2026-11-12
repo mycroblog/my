@@ -38,7 +38,7 @@
 | 利用者向けガイド | 新設の `docs/guide/`（§8） | 載せる |
 | API を使う開発者向け | `api/openapi.yaml`、`pkg/mykit`・`pkg/mybot` の README、新設の `docs/developers/` | 載せる（§5） |
 | プラグインの作者向け | 新設の `docs/plugins/`。`overview.md` のほかは `api/plugin/` の `.proto` のコメントから生成する（`tools/protodoc`） | 載せる。API の開発者向けとは別の章にする |
-| 貢献者向け | `CONTRIBUTING.md`、`docs/agents/`、`docs/reference/commands.md` | 載せない。GitHub で読む |
+| 貢献者向け | `CONTRIBUTING.md`、`.claude/`、`docs/reference/commands.md` | 載せない。GitHub で読む |
 | 設計文書 | `docs/adr/`、`docs/architecture/`、`docs/requirements/` | 載せない。v0 の間は日本語であり、利用者と運営者の文書は設計文書を引用しない規則（AGENTS.md）と揃える |
 
 - サイトに載せる文書は、`docs/lint.yaml` で利用者・運営者向けの規則（設計文書と Issue を引用しない、`maintainer-terms` を含まない）が掛かるものに限る。
@@ -79,7 +79,7 @@
   シークレットと運用の手順を増やさない。PR ごとの Preview も同じ仕組みで出せる。サーバーの配信先として Cloudflare Workers を対象にしないこと（AGENTS.md）とは別の話である
 - PR が §3 の原稿か `app/docs` を変えたとき、UI Preview と同じ形で `/next/` だけのビルドを PR の Preview に置く。PR のビルドは信頼しないデータとして扱い、配信の側では実行しない（`ui-preview-deploy.yml` と同じ）
 - 独自ドメインは §11 の `mycroblog.dev` とする
-- `main` への push で `/next/` を更新し、リリース（`release.yml`）で `/latest/` とそのマイナー版を更新する。リリースの手順は `docs/agents/releasing.md` に足す
+- `main` への push で `/next/` を更新し、リリース（`release.yml`）で `/latest/` とそのマイナー版を更新する。リリースの手順は `.claude/skills/release/SKILL.md` に足す
 - Merge Queue の `check` は、`app/docs` か §3 の原稿が変わったときにサイトをビルドし、ビルドが通ることを検査する（ADR-0079 の変更の文脈に足す）
 - 検索は Starlight の組み込み（Pagefind）を使い、外部の検索サービスを使わない
 - 解析は Cloudflare Web Analytics を、ダッシュボードが出す手動のスニペット（`static.cloudflareinsights.com/beacon.min.js` の `<script defer>`）で、本番のサイトにだけ置く
@@ -123,9 +123,9 @@
 - 見出しのアンカー: 訳したページの見出しには、英語の見出しのアンカーを付ける（Markdown の見出しの属性 `{#id}`）。原稿のリンクと `#anchor` は訳でもそのまま使え、
   リンクの検査（`starlight-links-validator`）もロケールのページで同じに効く
 - 誰がいつ訳すか
-  - エージェントが手順書（`docs/agents/translating-docs.md`）に従って訳す。手順書はエージェントの種類を問わない。Claude Code にはこれを包むスキルを置く
+  - エージェントが翻訳のスキルに従って訳す
   - 訳す作業は手で始める。CI・ワークフロー・ビルドから翻訳の API を呼ばない。シークレットを増やさず、ビルドを再現できるままにするためである
-  - リリースの手順（`docs/agents/releasing.md`）に、タグの前にすべてのロケールを訳し直す手順を置く。ただしリリースの関門にはしない。版ごとのサイトはタグの作業ツリーからビルドするので（§6）、タグの時点の訳がその版で公開される
+  - リリースの手順に、タグの前にすべてのロケールを訳し直す手順を置く。ただしリリースの関門にはしない。版ごとのサイトはタグの作業ツリーからビルドするので（§6）、タグの時点の訳がその版で公開される
 - 道具: `app/docs/scripts/translations.ts`（`scripts/task.sh docs:site-translations`）が、訳すべき節の一覧（`status`）、節ごとの英語の本文と印（`todo`）、
   原稿が引用する UI の用語とロケールのカタログ（`locales/<locale>/`）での訳（`glossary`）、訳の検査（`check`）を出す。
   §4 の写しの手順と同じモジュール（`app/docs/src/translations.ts`）で節を読むので、両者の節の分け方は一致する

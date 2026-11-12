@@ -110,7 +110,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		warn = append(warn, why)
 	}
 	for _, b := range is.OpenBlockers() {
-		warn = append(warn, b.Waits()+": do not take it (workflow.md §1)")
+		warn = append(warn, b.Waits()+": do not take it (ADR-0000 §5)")
 	}
 	aliases, err := k.Aliases()
 	if err != nil {
@@ -133,7 +133,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		}
 		st := ns[0].Meta
 		if st != "Accepted" {
-			warn = append(warn, fmt.Sprintf("%s is %s, not Accepted: do not implement what depends on it (workflow.md §1)", id, st))
+			warn = append(warn, fmt.Sprintf("%s is %s, not Accepted: do not implement what depends on it (ADR-0000 §5)", id, st))
 		}
 		adrList = append(adrList, adrInfo{ns[0], st})
 	}

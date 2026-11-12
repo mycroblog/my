@@ -16,7 +16,7 @@ Prose says mycroblog for the project and the service and `my` for the server sof
 | Scope, requirements (`FR-xxx`, `NFR-xxx`) | [docs/requirements/](docs/requirements/00-vision.md) |
 | Architecture | [docs/architecture/](docs/architecture/overview.md) |
 | Tasks | GitHub issues and milestones of `mycroblog/my` |
-| The procedure | [docs/agents/workflow.md](docs/agents/workflow.md) |
+| The procedure | [/work-on-issue](.claude/skills/work-on-issue/SKILL.md) |
 
 ## The path
 
@@ -36,7 +36,7 @@ One path takes a change from an issue to `main`; each step is a command that ref
   documents may not grow without the decider's `allow:docs-growth` label: say it in fewer words, or delete what the change
   makes obsolete.
 - **Decide what is cheap to undo, and say so in the pull request. Ask only for what is expensive to undo** and that no
-  Accepted ADR covers ([workflow.md](docs/agents/workflow.md#when-a-decision-is-needed)). Silence is not approval.
+  Accepted ADR covers (`/work-on-issue`). Silence is not approval.
 - **Only the decider sets an ADR to `Accepted` or `Rejected`, or changes an Accepted conclusion.** Record a decision
   the decider has stated in the ADR that owns the topic, as the decision, its reasons, and when to revisit it.
 - **Every file describes the present.** Why something changed goes in the commit message and the pull request.

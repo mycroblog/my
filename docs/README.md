@@ -112,12 +112,8 @@ The protocol between the server and the plugins that do a job in its place, gene
 
 - [Contributing guide](../CONTRIBUTING.md)
 - [Instructions for coding agents](../AGENTS.md)
-- [Working on an issue (playbook)](agents/workflow.md)
-- [Writing an ADR (playbook)](agents/writing-adrs.md)
-- [Releasing (playbook)](agents/releasing.md)
-- [Drawing a diagram (playbook)](agents/diagrams.md)
-- [Translating the documentation site (playbook)](agents/translating-docs.md)
-- [Translating the UI catalogs (playbook)](agents/translating-catalogs.md)
+- [Skills for coding agents](../.claude/skills/): working on an issue, writing an ADR, releasing, drawing a diagram,
+  translating
 
 ## Design (in Japanese)
 

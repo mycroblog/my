@@ -1,7 +1,7 @@
 # agentkit
 
 Context and workflow tools for coding agents working in mycroblog/my. Agents get the parts of the documents,
-code, and issues a task needs, and run the workflow steps of [docs/agents/workflow.md](../../docs/agents/workflow.md),
+code, and issues a task needs, and run the workflow steps of [/work-on-issue](../../.claude/skills/work-on-issue/SKILL.md),
 at a fraction of the tokens that grep, cat, and polling cost. Decisions: [docs/adr/](docs/adr/README.md).
 
 Run it through `scripts/agentkit.sh <command>`, which builds `bin/agentkit` when it is missing or stale.

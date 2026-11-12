@@ -103,7 +103,7 @@ func workersCheck(r *repo.Repo) ([]byte, error) {
 	return runScript(r, workersScript)
 }
 
-// generators maps the sources of generated code to the task that regenerates it (workflow.md §7).
+// generators maps the sources of generated code to the task that regenerates it.
 var generators = []struct {
 	prefix, target string
 	// script, when set, is run as `scripts/<script> args...` in place of the task.
