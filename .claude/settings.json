@@ -30,7 +30,6 @@
       "Bash(scripts/agentkit.sh *)",
       "Bash(bin/agentkit *)",
       "Bash(scripts/i18n.sh *)",
-      "Bash(scripts/task.sh web:shot *)",
       "Bash(scripts/task.sh agentkit:build)",
       "Bash(scripts/task.sh agentkit:check)"
     ],

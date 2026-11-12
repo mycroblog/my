@@ -5,7 +5,7 @@ check, tool, or code can tell you. The rules of an area reach you from the check
 them ([ADR-0000](docs/adr/0000-record-architecture-decisions.md) §6).
 
 **mycroblog** is the project and the service, a microblog for the fediverse that starts small and grows with its
-community. This repository builds **`my`**, its ActivityPub server in Go, with a TypeScript web client under `app/`.
+community. This repository builds **`my`**, its ActivityPub server in Go, with a TypeScript web client under `web/`.
 Prose says mycroblog for the project and the service and `my` for the server software; technical names keep `my`.
 
 ## Where the truth is
@@ -25,7 +25,7 @@ One path takes a change from an issue to `main`; each step is a command that ref
 1. `scripts/agentkit.sh ctx <issue>` gives the issue, its decisions, and the code to start from. Read more with
    `agentkit grep`, `show`, `outline`, `refs`, `trace`; a hook refuses the shell forms they replace.
 2. Work in a worktree, on one branch per goal (an epic, a phase, a milestone), one commit per issue.
-3. Change messages with `scripts/i18n.sh`; look at a changed screen with `scripts/task.sh web:shot`.
+3. Change messages with `scripts/i18n.sh`.
 4. `scripts/agentkit.sh pr open` runs the fast checks and opens the pull request.
 5. `scripts/agentkit.sh pr land <pr>` queues it, follows it to the merge, cleans up, and closes what it completes.
 
