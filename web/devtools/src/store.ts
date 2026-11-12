@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The batches of the dev server: one JSON file per batch in .tmp/feedback, which `scripts/agentkit.sh feedback`
-// reads and answers in place.
+// reads and answers in place, and the URL of the dev server beside them.
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Batch, BatchInput } from "./note";
 
@@ -70,12 +70,29 @@ export function writeBatch(root: string, input: BatchInput, now = new Date()): B
   return batch;
 }
 
+/** The file of the feedback directory in which the dev server records its URL while it listens; not a batch. */
+const serverFile = "server.json";
+
+/** Records the URL of the dev server, which `scripts/agentkit.sh feedback url` prints. */
+export function writeServer(root: string, url: string): void {
+  const dir = feedbackDir(root);
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, serverFile);
+  writeFileSync(`${path}.tmp`, `${JSON.stringify({ url })}\n`);
+  renameSync(`${path}.tmp`, path);
+}
+
+/** Removes the record of the dev server. */
+export function removeServer(root: string): void {
+  rmSync(join(feedbackDir(root), serverFile), { force: true });
+}
+
 /** Every batch, oldest first. */
 export function readBatches(root: string): Batch[] {
   const dir = feedbackDir(root);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
+    .filter((f) => f.endsWith(".json") && f !== serverFile)
     .sort()
     .flatMap((f) => {
       try {

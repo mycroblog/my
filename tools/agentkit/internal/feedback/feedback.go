@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Dir is the directory of the batches of the working tree at root.
+// Dir is the directory of the batches, and of the ServerFile, of the working tree at root.
 func Dir(root string) string { return filepath.Join(root, ".tmp", "feedback") }
 
 // Rect is a box in page coordinates.
@@ -106,7 +106,7 @@ func IDs(dir string) ([]string, error) {
 	}
 	var ids []string
 	for _, e := range entries {
-		if name := e.Name(); !e.IsDir() && strings.HasSuffix(name, ".json") {
+		if name := e.Name(); !e.IsDir() && strings.HasSuffix(name, ".json") && name != ServerFile {
 			ids = append(ids, strings.TrimSuffix(name, ".json"))
 		}
 	}
