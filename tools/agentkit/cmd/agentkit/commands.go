@@ -45,9 +45,9 @@ Workflow (instead of gh / scripts/task.sh loops):
   pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
                                                        the gate: refuses outside a worktree, on a merge or
                                                        fixup! commit, a conflict with the base, a failing
-                                                       check, or UI screens not looked at; then pushes, opens
-                                                       the PR from the template, links it on each issue;
-                                                       prints the unchanged documents of docs impact
+                                                       check; then pushes, opens the PR from the template
+                                                       (or rewrites the open one's description), links it on
+                                                       each issue; prints the unchanged documents of docs impact
   pr land <pr> [--timeout 3h]                          the only way a PR finishes (run it in the background, in
                                                        the main agent): auto-merge through the merge queue, one
                                                        line per event, then remove the branch and worktree and

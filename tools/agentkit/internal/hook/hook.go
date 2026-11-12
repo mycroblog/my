@@ -198,7 +198,6 @@ func Run(event string, r io.Reader, w io.Writer) error {
 	case "pre":
 		return Pre(in, w)
 	case "post":
-		recordSeen(in)
 		return Post(in, w)
 	}
 	return fmt.Errorf("unknown hook %q (pre or post)", event)

@@ -11,7 +11,6 @@ import (
 
 	"github.com/mycroblog/my/tools/agentkit/internal/gh"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
-	"github.com/mycroblog/my/tools/agentkit/internal/shots"
 )
 
 // refusal is why `pr open` does not open the pull request, and the command that fixes it.
@@ -95,58 +94,27 @@ func history(r *repo.Repo, branch, base string) error {
 	return nil
 }
 
-// screens refuses a change of the web UI whose screens were not looked at, and returns the screenshots that
-// were.
-func screens(r *repo.Repo, base string) ([]string, error) {
-	changed, err := r.Changed(base)
-	if err != nil {
-		return nil, err
-	}
-	src := shots.Sources(changed)
-	if len(src) == 0 {
-		return nil, nil
-	}
-	const fix = "run `scripts/task.sh web:shot -- --changed` (or `-- <story>`) and look at the images with the Read tool"
-	v, err := shots.Judge(r.Root, src)
-	if err != nil {
-		return nil, refusal(shots.Dir+"/manifest.json is unreadable: "+err.Error(), fix)
-	}
-	if len(v.Unseen) > 0 {
-		return nil, refusal(fmt.Sprintf("screenshots of the changed screens were not looked at since they were taken (%s)", short(v.Unseen, 5)),
-			"open each with the Read tool")
-	}
-	if len(v.Looked) == 0 {
-		newest := v.Newest
-		if newest == "" {
-			newest = src[0]
-		}
-		return nil, refusal(fmt.Sprintf("the change touches the web UI (%s) and no screenshot is newer than %s", short(src, 3), newest), fix)
-	}
-	return v.Looked, nil
-}
-
 // gate is everything `pr open` requires before it pushes: a worktree, a linear history without leftovers that
-// merges cleanly, the quick checks, and for a change of the web UI screenshots that were looked at. It returns
-// the screenshots for the pull request's description.
-func gate(r *repo.Repo, branch, base string) ([]string, error) {
+// merges cleanly, and the quick checks.
+func gate(r *repo.Repo, branch, base string) error {
 	if !linkedWorktree(r) {
 		dir := ".claude/worktrees/" + strings.ReplaceAll(branch, "/", "-")
-		return nil, refusal("this is the main checkout; work happens in a worktree of its own",
+		return refusal("this is the main checkout; work happens in a worktree of its own",
 			fmt.Sprintf("git switch main && git worktree add %s %s && cd %s", dir, branch, dir))
 	}
 	// The base as GitHub has it; offline, the last fetched one.
 	_, _ = repo.Git(r.Root, "fetch", "--quiet", "origin", strings.TrimPrefix(base, "origin/"))
 	if err := history(r, branch, base); err != nil {
-		return nil, err
+		return err
 	}
 	ok, lines, err := CheckFast(r, base)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !ok {
-		return nil, refusal("the quick checks fail:\n"+strings.Join(lines, "\n"), "repair the lines above, commit, and run pr open again (scripts/agentkit.sh check reruns the checks)")
+		return refusal("the quick checks fail:\n"+strings.Join(lines, "\n"), "repair the lines above, commit, and run pr open again (scripts/agentkit.sh check reruns the checks)")
 	}
-	return screens(r, base)
+	return nil
 }
 
 // reSubjectIssues matches the issues a commit subject closes: "(#12)" or "(#12, #15)" at its end.

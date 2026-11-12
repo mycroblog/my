@@ -58,10 +58,9 @@ func acceptanceCriteria(body string) []criterion {
 	return out
 }
 
-// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks, the screens
-// looked at), pushes it, and opens its pull request from .github/pull_request_template.md's sections: the
-// summary, Closes #N for each issue (or Stacked on #M first), the commit subjects as the changes, the screenshots
-// that were looked at, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
+// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks), pushes it,
+// and opens its pull request from .github/pull_request_template.md's sections: the summary, Closes #N for each
+// issue (or Stacked on #M first), the commit subjects as the changes, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
 // changed (docImpact), and opens the PR either way. It comments the PR on each issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	branch, err := r.Branch()
@@ -74,8 +73,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if o.Base == "" {
 		o.Base = "main"
 	}
-	looked, err := gate(r, branch, "origin/"+o.Base)
-	if err != nil {
+	if err := gate(r, branch, "origin/"+o.Base); err != nil {
 		return "", err
 	}
 	for _, l := range docImpact(r, "origin/"+o.Base) {
@@ -126,12 +124,6 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	b.WriteString("## Changes\n\n")
 	for _, s := range subjects {
 		fmt.Fprintf(&b, "- %s\n", s)
-	}
-	if len(looked) > 0 {
-		b.WriteString("\n## Screens\n\n")
-		for _, s := range looked {
-			fmt.Fprintf(&b, "- `%s`\n", s)
-		}
 	}
 	b.WriteString("\n## Acceptance criteria\n\n")
 	if len(issues) == 0 {

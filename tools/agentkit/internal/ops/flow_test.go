@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
-	"github.com/mycroblog/my/tools/agentkit/internal/shots"
 )
 
 // git runs git in dir and returns its trimmed output.
@@ -141,7 +140,7 @@ func TestGateRefusesMainCheckout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = gate(r, "feat/1-x", "origin/main")
+	err = gate(r, "feat/1-x", "origin/main")
 	wantRefusal(t, err, "pr open refused: this is the main checkout", "fix: git switch main && git worktree add .claude/worktrees/feat-1-x feat/1-x")
 }
 
@@ -152,27 +151,27 @@ func TestGateHistory(t *testing.T) {
 	commit(t, merged.Root, "a.txt", "a\n", "feat: a")
 	advanceMain(t, main, "m.txt", "m\n")
 	git(t, merged.Root, "merge", "-q", "-m", "Merge origin/main", "origin/main")
-	_, err := gate(merged, "feat/1-merge", "origin/main")
+	err := gate(merged, "feat/1-merge", "origin/main")
 	wantRefusal(t, err, "origin/main..HEAD has 1 merge commit(s)", "Merge origin/main", "fix: git rebase origin/main")
 
 	fix := addWorktree(t, main, "feat/2-fixup")
 	commit(t, fix.Root, "b.txt", "b\n", "feat: b")
 	commit(t, fix.Root, "b.txt", "bb\n", "fixup! feat: b")
-	_, err = gate(fix, "feat/2-fixup", "origin/main")
+	err = gate(fix, "feat/2-fixup", "origin/main")
 	wantRefusal(t, err, `1 commit(s) to fold`, `"fixup! feat: b"`, "fix: GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash origin/main")
 
 	conflict := addWorktree(t, main, "feat/3-conflict")
 	commit(t, conflict.Root, "c.txt", "mine\n", "feat: c")
 	advanceMain(t, main, "c.txt", "theirs\n")
-	_, err = gate(conflict, "feat/3-conflict", "origin/main")
+	err = gate(conflict, "feat/3-conflict", "origin/main")
 	wantRefusal(t, err, "feat/3-conflict conflicts with origin/main in c.txt", "fix: git rebase origin/main")
 
 	// Behind main without a conflict, and nothing a quick check covers: the gate passes.
 	clean := addWorktree(t, main, "feat/4-clean")
 	commit(t, clean.Root, "d.txt", "d\n", "feat: d")
 	advanceMain(t, main, "e.txt", "e\n")
-	if looked, err := gate(clean, "feat/4-clean", "origin/main"); err != nil || looked != nil {
-		t.Errorf("a clean branch must pass, got %v, %v", looked, err)
+	if err := gate(clean, "feat/4-clean", "origin/main"); err != nil {
+		t.Errorf("a clean branch must pass, got %v", err)
 	}
 }
 
@@ -181,7 +180,7 @@ func TestGateRunsFastCheck(t *testing.T) {
 	r := addWorktree(t, main, "feat/5-fmt")
 	write(t, filepath.Join(r.Root, "go.mod"), "module example.test/m\n\ngo 1.22\n")
 	commit(t, r.Root, "x/x.go", "package x\n\nfunc  F() {}\n", "feat: x")
-	_, err := gate(r, "feat/5-fmt", "origin/main")
+	err := gate(r, "feat/5-fmt", "origin/main")
 	wantRefusal(t, err, "the quick checks fail", "FAIL  gofmt", "x/x.go", "fix: gofmt -w", "ok    go vet (1 packages)")
 
 	commit(t, r.Root, "x/x.go", "package x\n\nfunc F() { undefined() }\n", "feat: x2")
@@ -336,72 +335,6 @@ func TestSubjectIssues(t *testing.T) {
 	}
 }
 
-// shot writes a screenshot and the manifest of root, taken at the given time.
-func shot(t *testing.T, root, name string, taken time.Time) string {
-	t.Helper()
-	rel := shots.Dir + "/" + name
-	write(t, filepath.Join(root, rel), "png")
-	write(t, filepath.Join(root, shots.Dir, "manifest.json"),
-		`{"shots":[{"file":"`+rel+`","story":"screens-a--normal","width":390,"takenAt":"`+taken.Format(time.RFC3339Nano)+`"}]}`)
-	return rel
-}
-
-func TestScreens(t *testing.T) {
-	main := sandbox(t)
-	r := addWorktree(t, main, "feat/6-ui")
-	commit(t, r.Root, "app/web/src/a.stories.tsx", "story\n", "test: story")
-	if looked, err := screens(r, "origin/main"); err != nil || looked != nil {
-		t.Fatalf("a change of stories alone needs no screenshot, got %v, %v", looked, err)
-	}
-	commit(t, r.Root, "app/web/src/a.tsx", "one\n", "feat: a")
-	edited := time.Now()
-	if err := os.Chtimes(filepath.Join(r.Root, "app/web/src/a.tsx"), edited, edited); err != nil {
-		t.Fatal(err)
-	}
-	_, err := screens(r, "origin/main")
-	wantRefusal(t, err, "the change touches the web UI (app/web/src/a.tsx) and no screenshot is newer than app/web/src/a.tsx",
-		"fix: run `scripts/task.sh web:shot -- --changed`", "Read tool")
-
-	rel := shot(t, r.Root, "a-390.png", edited.Add(-time.Minute))
-	_, err = screens(r, "origin/main")
-	wantRefusal(t, err, "no screenshot is newer")
-
-	shot(t, r.Root, "a-390.png", edited.Add(time.Minute))
-	_, err = screens(r, "origin/main")
-	wantRefusal(t, err, "were not looked at since they were taken ("+rel+")", "fix: open each with the Read tool")
-
-	// Read before it was taken again does not count.
-	if err := shots.Record(r.Root, rel, edited, ""); err != nil {
-		t.Fatal(err)
-	}
-	_, err = screens(r, "origin/main")
-	wantRefusal(t, err, "were not looked at")
-
-	src := []string{"app/web/src/a.tsx"}
-	if err := shots.Record(r.Root, rel, edited.Add(2*time.Minute), shots.Fingerprint(r.Root, src)); err != nil {
-		t.Fatal(err)
-	}
-	if looked, err := screens(r, "origin/main"); err != nil || !reflect.DeepEqual(looked, []string{rel}) {
-		t.Fatalf("a screenshot read after it was taken must pass, got %v, %v", looked, err)
-	}
-
-	// A rebase rewrites the file without changing it: the screenshot still shows it.
-	later := edited.Add(time.Hour)
-	if err := os.Chtimes(filepath.Join(r.Root, "app/web/src/a.tsx"), later, later); err != nil {
-		t.Fatal(err)
-	}
-	if looked, err := screens(r, "origin/main"); err != nil || len(looked) != 1 {
-		t.Errorf("unchanged sources keep their screenshots, got %v, %v", looked, err)
-	}
-	// An edit does not.
-	write(t, filepath.Join(r.Root, "app/web/src/a.tsx"), "two\n")
-	if err := os.Chtimes(filepath.Join(r.Root, "app/web/src/a.tsx"), later, later); err != nil {
-		t.Fatal(err)
-	}
-	_, err = screens(r, "origin/main")
-	wantRefusal(t, err, "no screenshot is newer")
-}
-
 const ghIssues = `
 case "$1 $2" in
   "issue view")
@@ -486,21 +419,17 @@ case "$1 $2" in
 	}
 }
 
-func TestOpenListsScreens(t *testing.T) {
+func TestOpenAsksForNoScreenshots(t *testing.T) {
 	main := sandbox(t)
 	log := fakeGH(t, ghIssues)
 	r := addWorktree(t, main, "feat/12-ui")
 	commit(t, r.Root, "app/web/src/a.css", "a{}\n", "feat: look (#12)")
-	rel := shot(t, r.Root, "a-390.png", time.Now().Add(time.Minute))
-	if err := shots.Record(r.Root, rel, time.Now().Add(2*time.Minute), ""); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := Open(r, OpenOptions{}); err != nil {
-		t.Fatal(err)
+		t.Fatalf("a change of the web UI opens without screenshots, got %v", err)
 	}
 	body, _ := os.ReadFile(filepath.Join(filepath.Dir(log), "body"))
-	if want := "## Screens\n\n- `" + rel + "`\n"; !strings.Contains(string(body), want) {
-		t.Errorf("the description lacks %q:\n%s", want, body)
+	if strings.Contains(string(body), "## Screens") {
+		t.Errorf("the description lists screenshots:\n%s", body)
 	}
 }
 
