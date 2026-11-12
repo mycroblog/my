@@ -68,7 +68,7 @@ ${jobs:-$(while read -r job; do echo "- $job"; done <<< "$failed_needs")}
 
 $changes
 
-Fix it before starting more issues (docs/agents/workflow.md, \"Orchestrating\"). This issue closes itself when a Nightly passes."
+Fix it before starting more issues (/work-on-issue). This issue closes itself when a Nightly passes."
 
 # classify NUMBER: makes the issue a Bug of Priority P1, which are the issue type and an issue field of the
 # organization (gh issue create sets neither); their ids are read by name.

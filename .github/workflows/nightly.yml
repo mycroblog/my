@@ -2,7 +2,7 @@ name: Nightly
 
 # A run of some of the jobs is titled for them, as `Nightly (l4)`. A run titled just `Nightly` is a full one: it ran every
 # job, or, on a schedule, skipped them because a full run had already passed on this commit. The `changes` job and the
-# check before a release (docs/agents/releasing.md) read this title.
+# check before a release (.claude/skills/release/SKILL.md) read this title.
 run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inputs.jobs) || 'Nightly' }}
 
 # Every night on the head of main: the slow suite (slow-suite.yml, ADR-0079), so that a regression in the checks too

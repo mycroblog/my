@@ -240,11 +240,11 @@ func TestNewReportsWhatIsLeft(t *testing.T) {
 
 func TestClaimRefusals(t *testing.T) {
 	for n, want := range map[int][]string{
-		41: {"do not take #41: it has no milestone (gh issue edit 41 -R mycroblog/my --milestone \"<title>\"; open milestones: \"M5: v0\", \"M6\") (workflow.md §1)"},
+		41: {"do not take #41: it has no milestone (gh issue edit 41 -R mycroblog/my --milestone \"<title>\"; open milestones: \"M5: v0\", \"M6\") (ADR-0000 §5)"},
 		// The dependency issue new --blocked-by records stops the claim while the blocker is open.
-		40: {"do not take #40: waits for #7, which is open (workflow.md §1)"},
+		40: {"do not take #40: waits for #7, which is open (ADR-0000 §5)"},
 		// What issue block records: a decision and an investigation; the description naming #50 adds no line.
-		42: {"do not take #42: waits for the decision #50: Pick a queue; waits for the investigation #51: Measure it (workflow.md §1)"},
+		42: {"do not take #42: waits for the decision #50: Pick a queue; waits for the investigation #51: Measure it (ADR-0000 §5)"},
 		44: {"do not take #44: an ADR issue is decided by the decider; draft the ADR in a pull request and link it ("},
 		30: {"do not take #30: an epic is done through its sub-issues ("},
 	} {

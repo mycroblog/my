@@ -24,7 +24,7 @@ tasks:
       - bin/agentkit docs lint
 
   growth:
-    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the allow:docs-growth label in CI, reports without failing"
+    desc: "Fail when the ADRs, the architecture, agentkit's ADRs, the context maps, or AGENTS.md / CLAUDE.md grew since the merge base with BASE (default origin/main), or a .claude document or the requirements are over their budget (ADR-0000 §6); ALLOW_GROWTH=true, the allow:docs-growth label in CI, lets the growth pass but not a budget"
     vars:
       BASE: '{{.BASE | default "origin/main"}}'
     cmds:
@@ -88,7 +88,7 @@ tasks:
     cmds:
       - bun run dev
 
-  # The translations of the site (app/docs/i18n/, ADR-0150 §9; docs/agents/translating-docs.md). An agent writes them;
+  # The translations of the site (app/docs/i18n/, ADR-0150 §9; .claude/skills/translate-docs). An agent writes them;
   # this command lists what to translate and checks what it wrote.
   site-translations:
     desc: "Work on the translations of the documentation site (app/docs/i18n/<locale>/): `-- status [source...]` lists the sources and sections to translate, `-- todo <source>` prints the sections to translate with their markers, `-- glossary <source>` the UI terms it quotes in the locale's catalog, `-- check` checks the translations (--locale ja by default)"

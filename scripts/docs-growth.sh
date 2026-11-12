@@ -15,7 +15,6 @@
 #   group            files                                     may grow by
 #   docs/adr         docs/adr/**                               256 bytes
 #   architecture     docs/architecture/**                      256
-#   docs/agents      docs/agents/**                            256
 #   agentkit docs    tools/agentkit/docs/**                    256
 #   context map      context-map.yaml, in any directory        256
 #   instructions     AGENTS.md and CLAUDE.md, in any directory 0
@@ -70,7 +69,7 @@ trap 'rm -rf "$work"' EXIT
 git -C "$root" -c core.quotePath=false ls-tree -r -l "$base" |
   awk -F '\t' '{ n = split($1, f, " "); if (f[n] != "-") printf "%s\t%s\n", f[n], $2 }' > "$work/before"
 git -C "$root" -c core.quotePath=false ls-files -co --exclude-standard |
-  grep -E '(^|/)(AGENTS\.md|CLAUDE\.md|context-map\.yaml)$|^(docs/(adr|architecture|requirements|agents)|tools/agentkit/docs)/|^\.claude/.*\.md$' |
+  grep -E '(^|/)(AGENTS\.md|CLAUDE\.md|context-map\.yaml)$|^(docs/(adr|architecture|requirements)|tools/agentkit/docs)/|^\.claude/.*\.md$' |
   while IFS= read -r f; do
     if [ -f "$root/$f" ]; then printf '%s\t%s\n' "$(wc -c < "$root/$f" | tr -d ' ')" "$f"; fi
   done > "$work/after"
@@ -85,12 +84,11 @@ awk -F '\t' '
     if (b == "context-map.yaml") return "context map"
     if (p ~ /^docs\/adr\//) return "docs/adr"
     if (p ~ /^docs\/architecture\//) return "architecture"
-    if (p ~ /^docs\/agents\//) return "docs/agents"
     if (p ~ /^tools\/agentkit\/docs\//) return "agentkit docs"
     return ""
   }
   BEGIN {
-    n = split("docs/adr,architecture,docs/agents,agentkit docs,context map,instructions", order, ",")
+    n = split("docs/adr,architecture,agentkit docs,context map,instructions", order, ",")
     for (i = 1; i <= n; i++) allowed[order[i]] = 256
     allowed["instructions"] = 0
   }

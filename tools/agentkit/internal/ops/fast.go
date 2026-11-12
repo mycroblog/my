@@ -219,7 +219,9 @@ func fastPlan(root string, changed []string) [][]fastStep {
 			[]fastStep{{name: "docs:rules", argv: []string{"scripts/task.sh", "docs:rules"}}})
 	}
 	if len(shFiles) > 0 {
-		plan = append(plan, []fastStep{{name: "shellcheck", argv: append([]string{"shellcheck"}, shFiles...)}})
+		// Only the changed scripts are inputs, so a script that sources another would report SC1091 (not followed),
+		// which shell:lint, given every script, does not; the merge queue's shell:lint still checks the sourcing.
+		plan = append(plan, []fastStep{{name: "shellcheck", argv: append([]string{"shellcheck", "-e", "SC1091"}, shFiles...)}})
 	}
 	if len(tofuFiles) > 0 {
 		// As the pull request's tofu-fmt job. Formatting loads no provider, and tofu refuses to start when the

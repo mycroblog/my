@@ -19,7 +19,7 @@ g() { git -C "$repo" -c user.name=test -c user.email=test@example.com -c commit.
 bytes() { head -c "$1" /dev/zero | tr '\0' 'x'; }
 
 # reset puts the repository back at its base: one file of 1,000 bytes in each group, and a guide outside them.
-files=(docs/adr/0001-a.md docs/architecture/a.md docs/requirements/a.md docs/agents/a.md tools/agentkit/docs/a.md
+files=(docs/adr/0001-a.md docs/architecture/a.md docs/requirements/a.md tools/agentkit/docs/a.md
   tools/agentkit/context-map.yaml AGENTS.md .claude/skills/a/SKILL.md docs/guide/a.md)
 reset() {
   rm -rf "$repo"

@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/agents/writing-adrs.md"]
+docs: [".claude/skills/adr/SKILL.md"]
 shared: true

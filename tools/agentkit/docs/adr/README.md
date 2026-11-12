@@ -1,7 +1,7 @@
 # agentkit の ADR
 
 agentkit（`tools/agentkit`）の決定記録。本体の `docs/adr/` とは別に管理し、本体の ADR の索引には載せない（[ADR-0001](0001-agentkit.md)）。
-書き方は本体の [テンプレート](../../../../docs/adr/template.md) と [writing-adrs.md](../../../../docs/agents/writing-adrs.md) に従う。Status を Accepted / Rejected にするのは決定者だけ。
+書き方は本体の [テンプレート](../../../../docs/adr/template.md) と [`/adr` スキル](../../../../.claude/skills/adr/SKILL.md) に従う。Status を Accepted / Rejected にするのは決定者だけ。
 
 | ADR | タイトル | Status |
 | --- | --- | --- |

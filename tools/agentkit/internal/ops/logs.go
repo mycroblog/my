@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package ops wraps the workflow steps of docs/agents/workflow.md — claiming and blocking issues, opening pull
+// Package ops wraps the workflow steps of /work-on-issue — claiming and blocking issues, opening pull
 // requests, waiting for CI, running the checks and the generators — so that each prints what the agent needs
 // to act on and nothing else.
 package ops

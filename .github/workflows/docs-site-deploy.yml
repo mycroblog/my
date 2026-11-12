@@ -9,8 +9,10 @@ name: Docs site deploy
 # Both jobs run main's checkout of this script and the Worker config, whatever the event. The build job holds no
 # secret; the deploy job runs in the environment `doc-site` (deployment refs: main and the tags v*), the only holder of
 # the secret CLOUDFLARE_API_TOKEN (Workers Scripts: Edit) and the variable CLOUDFLARE_ACCOUNT_ID. The domain
-# mycroblog.dev is bound to the Worker outside this repository; nothing here declares routes or domains.
-# docs/agents/releasing.md describes the steps of a release.
+# mycroblog.dev is bound to the Worker, with its DNS records, in the repository mycroblog/infra, after a first deploy
+# made the Worker on workers.dev; nothing here declares routes or domains. The sitemap is submitted to search engines
+# (Search Console) outside the repository too. The /release skill (.claude/skills/release/SKILL.md) has the steps of a
+# release.
 
 on:
   push:
@@ -69,7 +71,8 @@ jobs:
           DOCS_SITE_WORK: ${{ runner.temp }}/docs-site
           # The site token of Cloudflare Web Analytics (ADR-0150 §7): a repository variable, not a secret, since every
           # page carries it. Only this build of the production site gets it; local builds, the merge queue and the
-          # previews of pull requests have no beacon.
+          # previews of pull requests have no beacon. Keep the dashboard's automatic injection off for the site, or
+          # every page is counted twice.
           DOCS_SITE_CF_BEACON_TOKEN: ${{ vars.DOCS_SITE_CF_BEACON_TOKEN }}
         run: scripts/docs-site.sh build "$RUNNER_TEMP/docs-site/site"
       - name: Upload the site

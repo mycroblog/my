@@ -67,7 +67,7 @@ type Entry struct {
 	// area (Impact).
 	Userdocs []string `yaml:"userdocs"`
 	Checks   []string `yaml:"checks"` // contexts of `scripts/task.sh check`
-	Shared   bool     `yaml:"shared"` // sources many changes edit; never two parallel agents at once (workflow.md §9)
+	Shared   bool     `yaml:"shared"` // sources many changes edit; never two parallel agents at once (/work-on-issue)
 }
 
 // dirFile is the map file of a directory as written.

@@ -38,7 +38,7 @@
 # <releases> is a file with the tag of each published release, one per line; without it `resolve` reads them from the
 # GitHub API (GH_TOKEN, GITHUB_REPOSITORY). Drafts and prereleases never count. A minor version listed in versions.json
 # with no release yet is left out; a stable release of a minor version versions.json does not list fails, since
-# releasing.md adds the entry before the release. <changed files> lists the repository paths a pull request changes,
+# the release adds the entry first (.claude/skills/release/SKILL.md). <changed files> lists the repository paths a pull request changes,
 # one per line; the comment links the pages of the published documents among them.
 #
 # Environment: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (deploy, deploy-pr, and the Cloudflare API of cleanup);
@@ -118,7 +118,7 @@ resolve() {
   while IFS= read -r tag; do
     [[ -n "$tag" ]] || continue
     minor="${tag%.*}"
-    grep -qxF "$minor" <<<"$minors" || die "the release $tag is of $minor, which $file does not list (docs/agents/releasing.md)"
+    grep -qxF "$minor" <<<"$minors" || die "the release $tag is of $minor, which $file does not list (.claude/skills/release/SKILL.md)"
   done <<<"$tags"
   jq -n --argjson v "$entries" '{latest: ($v[0].minor // null), versions: $v}'
 }

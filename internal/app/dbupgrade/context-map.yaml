@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/job-system.md", "docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル", "docs/adr/0023-declarative-schema-management.md", "docs/architecture/data-model/04-tables/10-infrastructure.md#410-基盤アダプタ所有", "docs/agents/releasing.md"]
+docs: ["docs/architecture/job-system.md", "docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル", "docs/adr/0023-declarative-schema-management.md", "docs/architecture/data-model/04-tables/10-infrastructure.md#410-基盤アダプタ所有", ".claude/skills/release/SKILL.md#when-a-job-fails"]
 userdocs: ["docs/operations/database.md#upgrading", "docs/operations/backup.md#sqlite"]

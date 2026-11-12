@@ -6,6 +6,7 @@ description: Take an issue, several issues, an epic, or a milestone of mycroblog
 # Work on a goal
 
 Arguments: issue numbers, an epic, or a milestone. Without one, take the next issue nothing blocks of the earliest milestone.
+The commands refuse what must not pass and say the fix; this says the order and where judgment is needed.
 
 ## Plan an epic or a milestone
 
@@ -23,11 +24,25 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 
 ## Build and land
 
-1. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is blocked.
-2. One worktree and one branch per pull request, one commit per issue.
-3. Build: yourself for one small issue; otherwise up to four subagents at once, `builder` for implementation,
-   `routine` for mechanical work, `ui-designer` before any change to a screen. Hand each
-   `scripts/agentkit.sh ctx <n> --quiet`'s file. Rebase their commits onto the branch, one commit per issue.
-4. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background.
-5. When `pr land` reports a failure or a conflict, fix it at once (a `routine` agent for a rebase).
-6. Finish when the goal is merged and closed. Report what is merged, what is not and why, and what needs a decision.
+1. A red Nightly stops the line: fix it before starting more (`gh issue list --label ci:nightly-failure`).
+2. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is blocked.
+3. One worktree and one branch per pull request, `<type>/<issue>-<slug>`, one commit per issue. A spike's report
+   is a comment on its issue; its code stays on an unmerged `spike/<issue>-<slug>` branch.
+4. Build: yourself for one small issue; otherwise up to four subagents at once, `builder` for implementation,
+   `routine` for mechanical work, the roles of ADR-0169 for a UI change, which starts with the design, not the code.
+   Hand each `scripts/agentkit.sh ctx <n> --quiet`'s file. Rebase their commits onto the branch.
+5. Keep the branch on `origin/main` by rebase (`scripts/agentkit.sh regen` after a conflict in generated files).
+   Fold a correction into its commit (`git commit --fixup`, `git rebase --autosquash origin/main`) and push with
+   `--force-with-lease`. `scripts/agentkit.sh check` is the local check; the merge queue runs the rest, so run the
+   full check or the web E2E only to reproduce a failure.
+6. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background. When it reports a
+   failure or a conflict, fix it at once (a `routine` agent for a rebase).
+7. Finish when the goal is merged and closed. Report what is merged, what is not and why, and what needs a decision.
+
+## When a decision is needed
+
+Decide what is cheap to undo and say so in the pull request. Stop only for one that no Accepted ADR covers and that is
+expensive to undo: a public contract, a schema that loses data, a paid service, a setting users see. Then
+`scripts/agentkit.sh issue block <n> --type adr` with the options and your recommendation, draft a Proposed ADR if it
+is architectural, and go on with the rest. When the decider answers, state the conclusion in the ADR that owns the
+topic, or on the issue.

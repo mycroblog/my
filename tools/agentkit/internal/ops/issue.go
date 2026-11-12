@@ -45,7 +45,7 @@ func Me() (string, error) {
 	return strings.TrimSpace(string(out)), err
 }
 
-// Claim takes issue n by the rules of workflow.md §1: open, of a type that is taken as work, nobody else
+// Claim takes issue n by the rules of ADR-0000 §5: open, of a type that is taken as work, nobody else
 // assigned, in a milestone, every referenced ADR Accepted, nothing it waits for still open (the issues that
 // block it on GitHub — a decision, an investigation, or other work — and those its description names). It
 // assigns the gh user and comments the plan. It returns the line to print.
@@ -97,11 +97,11 @@ func Claim(root string, n int, plan string) (string, error) {
 	}
 	waits, err := openDependencies(named)
 	if err != nil {
-		return "", fmt.Errorf("do not take #%d: %w (workflow.md §1)", n, err)
+		return "", fmt.Errorf("do not take #%d: %w (ADR-0000 §5)", n, err)
 	}
 	stop = append(stop, waits...)
 	if len(stop) > 0 {
-		return "", fmt.Errorf("do not take #%d: %s (workflow.md §1)", n, strings.Join(stop, "; "))
+		return "", fmt.Errorf("do not take #%d: %s (ADR-0000 §5)", n, strings.Join(stop, "; "))
 	}
 	did := []string{}
 	if !mine {
@@ -166,7 +166,7 @@ type BlockOptions struct {
 
 const blockUsage = "agentkit issue block <n> --type adr|spike --title <what is needed> --reason-file <f>, or issue block <n> --on <issue>"
 
-// Block records what stops the work on issue o.N (workflow.md §8) as an issue that blocks it: the existing
+// Block records what stops the work on issue o.N (/work-on-issue) as an issue that blocks it: the existing
 // issue o.On, or a new one of o.Type in the milestone of o.N, whose description is the reason and which it
 // links in a comment. It returns the lines to print.
 func Block(o BlockOptions) ([]string, error) {
