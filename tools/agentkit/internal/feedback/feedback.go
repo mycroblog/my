@@ -44,6 +44,8 @@ type Pick struct {
 	Options  string   `json:"options"`
 	Variant  string   `json:"variant"`
 	Variants []string `json:"variants"`
+	// Reason is why the decider picked it, in one line; "" when they gave none.
+	Reason string `json:"reason,omitempty"`
 }
 
 // Note is one note of a batch.
@@ -274,6 +276,7 @@ func PrintNote(w io.Writer, n *Note) {
 	if n.Pick != nil {
 		p("  pick: %s of the options %s (%s): keep it, remove the <Options> and the other variants",
 			n.Pick.Variant, n.Pick.Options, strings.Join(n.Pick.Variants, ", "))
+		p("  reason: %s", or(&n.Pick.Reason, "none given"))
 	}
 	p("  source: %s (layer %s)", or(n.Source, "none: no data-source on the element or its ancestors"), or(n.Layer, "unknown"))
 	t := n.Target

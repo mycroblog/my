@@ -49,7 +49,7 @@ function serve(): Plugin {
       server.httpServer?.on("listening", () => {
         const url = server.resolvedUrls?.local[0];
         if (url === undefined) return;
-        writeServer(root, url);
+        writeServer(root, url, process.pid);
         server.config.logger.info(`${basename(server.config.root)}: ${url}`);
       });
       server.httpServer?.on("close", () => {

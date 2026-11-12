@@ -73,12 +73,15 @@ export function writeBatch(root: string, input: BatchInput, now = new Date()): B
 /** The file of the feedback directory in which the dev server records its URL while it listens; not a batch. */
 const serverFile = "server.json";
 
-/** Records the URL of the dev server, which `scripts/agentkit.sh feedback url` prints. */
-export function writeServer(root: string, url: string): void {
+/**
+ * Records the URL of the dev server, which `scripts/agentkit.sh feedback url` prints, and the pid of its process,
+ * which `scripts/agentkit.sh tidy` stops before it removes the worktree.
+ */
+export function writeServer(root: string, url: string, pid: number): void {
   const dir = feedbackDir(root);
   mkdirSync(dir, { recursive: true });
   const path = join(dir, serverFile);
-  writeFileSync(`${path}.tmp`, `${JSON.stringify({ url })}\n`);
+  writeFileSync(`${path}.tmp`, `${JSON.stringify({ url, pid })}\n`);
   renameSync(`${path}.tmp`, path);
 }
 

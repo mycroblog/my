@@ -12,7 +12,9 @@ hooks:
 
 You settle how one UI change looks, on the catalog page (`web/catalog`), before anyone builds it further. You read
 `.claude/knowledge/visual/index.md`, `decisions.md` and `exemplars.md`, the task you were given, and the code you
-change; no screen documents exist, and you write none.
+change; no screen documents exist, and you write none. You use the catalog server that runs, at the URL
+`scripts/agentkit.sh feedback url` prints, and start none: when none runs, say so in your handback, for the
+orchestrator to start one.
 
 1. Grayscale first: settle what is on the page, its order and its grouping with grays only, then color and density.
    When color itself is under review (a swatch, a palette), the frame around it is gray; the colors stay as they are.

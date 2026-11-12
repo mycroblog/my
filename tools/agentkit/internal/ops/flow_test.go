@@ -4,6 +4,7 @@ package ops
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -450,6 +451,24 @@ esac`)
 	done := addWorktree(t, main, "feat/1-merged")
 	commit(t, done.Root, "a.txt", "a\n", "feat: a")
 	mergeToMain(t, main, "feat/1-merged")
+	// Its dev server runs, recorded in the ignored .tmp/feedback/server.json, as the plugin of @my/devtools records it.
+	write(t, filepath.Join(main, ".git", "info", "exclude"), "/.tmp/\n")
+	server := exec.Command("sleep", "30")
+	server.Dir = done.Root
+	if err := server.Start(); err != nil {
+		t.Fatal(err)
+	}
+	stopped := make(chan struct{})
+	go func() {
+		_ = server.Wait()
+		close(stopped)
+	}()
+	t.Cleanup(func() {
+		_ = server.Process.Kill()
+		<-stopped
+	})
+	pid := server.Process.Pid
+	write(t, filepath.Join(done.Root, ".tmp", "feedback", "server.json"), fmt.Sprintf(`{"url":"http://localhost:5173/","pid":%d}`, pid))
 
 	dirty := addWorktree(t, main, "feat/2-dirty")
 	commit(t, dirty.Root, "b.txt", "b\n", "feat: b")
@@ -487,13 +506,18 @@ esac`)
 	if _, err := os.Stat(done.Root); err != nil {
 		t.Fatal("a dry run removed a worktree")
 	}
+	select {
+	case <-stopped:
+		t.Fatal("a dry run stopped a dev server")
+	default:
+	}
 	lines, err := Tidy(r, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
-		"removed worktree " + done.Root + " and branch feat/1-merged (merged into origin/main)",
+		fmt.Sprintf("removed worktree %s with its dev server (pid %d) and branch feat/1-merged (merged into origin/main)", done.Root, pid),
 		"kept feat/2-dirty: 1 uncommitted files in " + dirty.Root,
 		"removed worktree " + closed.Root + " and branch feat/3-closed (PR #30 closed)",
 		"kept feat/4-ahead: it has commits that PR #40 closed does not hold",
@@ -502,6 +526,11 @@ esac`)
 		if !strings.Contains(out, want) {
 			t.Errorf("tidy lacks %q:\n%s", want, out)
 		}
+	}
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Error("tidy left the dev server of the worktree it removed running")
 	}
 	if strings.Contains(out, "feat/5-open") || strings.Contains(out, "feat/6-fresh") {
 		t.Errorf("a branch with an open pull request or none is not tidied:\n%s", out)

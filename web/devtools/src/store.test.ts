@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { NoteInput } from "./note";
+import { pickNote, type NoteInput } from "./note";
 import { batchId, feedbackDir, layerOf, readBatches, writeBatch } from "./store";
 
 let root = "";
@@ -56,5 +56,24 @@ describe("store", () => {
     expect(JSON.parse(readFileSync(file, "utf8"))).toEqual(batch);
     writeFileSync(join(feedbackDir(root), "broken.json"), "{");
     expect(readBatches(root)).toEqual([batch]);
+  });
+
+  test("a pick carries the decider's reason into the batch, and an empty reason still picks", () => {
+    const variants = { options: "swatch", variant: "round", variants: ["square", "round"] };
+    const why = pickNote(variants, "  softer next to\nthe avatars ");
+    const none = pickNote(variants, " ");
+    expect(none).toEqual({ text: "Pick round of swatch.", pick: variants });
+    const batch = writeBatch(root, {
+      page: "/",
+      notes: [
+        { ...note(null), ...why },
+        { ...note(null), ...none },
+      ],
+    });
+    expect(readBatches(root)[0]?.notes.map((n) => [n.text, n.pick?.reason])).toEqual([
+      ["Pick round of swatch: softer next to the avatars", "softer next to the avatars"],
+      ["Pick round of swatch.", undefined],
+    ]);
+    expect(batch.notes[0]?.pick?.reason).toBe("softer next to the avatars");
   });
 });

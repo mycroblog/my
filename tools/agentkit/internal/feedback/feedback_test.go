@@ -133,8 +133,15 @@ func TestPrintPick(t *testing.T) {
 	n := Note{ID: "b.1", Text: "Pick round of swatch.", Pick: &Pick{Options: "swatch", Variant: "round", Variants: []string{"square", "round"}}}
 	var out bytes.Buffer
 	PrintNote(&out, &n)
-	if !strings.Contains(out.String(), "pick: round of the options swatch (square, round)") {
+	if !strings.Contains(out.String(), "pick: round of the options swatch (square, round)") ||
+		!strings.Contains(out.String(), "\n  reason: none given\n") {
 		t.Fatalf("PrintNote:\n%s", out.String())
+	}
+	n.Pick.Reason = "softer next to the avatars"
+	out.Reset()
+	PrintNote(&out, &n)
+	if !strings.Contains(out.String(), "and the other variants\n  reason: softer next to the avatars\n") {
+		t.Fatalf("PrintNote lacks the reason next to the pick:\n%s", out.String())
 	}
 }
 
