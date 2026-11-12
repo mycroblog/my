@@ -10,6 +10,13 @@
       "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}", "scripts/**/*.ts", "worker/**/*.ts"],
       "ignoreDependencies": ["satteri", "starlight-openapi-sources"]
     },
+    "web/devtools": {
+      "entry": ["src/overlay.tsx", "src/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "web/catalog": {
+      "project": ["src/**/*.{ts,tsx}"]
+    },
     "tools/i18n": {
       "entry": ["src/cli.ts", "src/licenses.ts", "src/**/*.test.ts"],
       "project": ["src/**/*.ts"]

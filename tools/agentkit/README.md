@@ -46,6 +46,17 @@ prints the directory's `README.md`.
 | Watch many PRs (§9) | `pr watch [<pr>...]` with the Monitor tool: one line per opened, merged, closed, conflicting, ci-failed, ci-cancelled, ci-green, dequeued |
 | Stop (§8) | `issue block <n> --type adr\|spike --title t --reason-file f`, or `--on <m>` |
 
+## On-screen feedback
+
+The decider writes notes on the catalog page (`scripts/task.sh web:catalog`, [ADR-0168](../../docs/adr/0168-on-screen-feedback.md))
+and sends them as one batch, which the dev server writes to `.tmp/feedback/<batch>.json`.
+
+| Step | Run |
+| --- | --- |
+| Receive | `feedback wait` **in the background**: returns with the oldest batch no wait has delivered, so a send notifies the session; run it again after each batch |
+| Read | `feedback show [<batch>\|<note>]`: each note with its source (`file:line`), layer (the package), page and state, and an outline of its accessibility tree. A page without a router or an E2E scenario records the page instead; open it with Playwright at the note's viewport |
+| Answer | `feedback reply <note> [--kind fixed\|question] <text>`: the overlay shows the answer next to the note at once |
+
 ## The context map
 
 A `context-map.yaml` describes its directory as a whole, down to the next one below: the document sections that

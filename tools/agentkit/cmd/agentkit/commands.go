@@ -69,6 +69,9 @@ Workflow (instead of gh / scripts/task.sh loops):
                                                        (pr open runs them); --full: scripts/task.sh check:changed
   regen [--base REF] [--dry-run]                       run the generators the changed sources need
   gh sync                                              refresh the local cache of issues and pull requests
+  feedback wait|show|reply                             the notes the decider sends from the dev server's page:
+                                                       wait in the background, show, answer next to the note
+                                                       (agentkit feedback for the flags)
 
 Maintenance:
   docs lint                                            links and anchors resolve, English-only documents have no
@@ -123,6 +126,8 @@ func run(args []string) error {
 		return runDocs(r, rest)
 	case "grep":
 		return runGrep(r, rest)
+	case "feedback":
+		return runFeedback(r, rest)
 	}
 	s, err := store.Open(r)
 	if err != nil {

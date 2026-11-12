@@ -59,6 +59,7 @@ jobs:
       schema: ${{ steps.select.outputs.schema }}
       tofu: ${{ steps.select.outputs.tofu }}
       site: ${{ steps.select.outputs.site }}
+      web: ${{ steps.select.outputs.web }}
       contracts: ${{ steps.select.outputs.contracts }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
@@ -109,6 +110,7 @@ jobs:
           touches schema schema
           touches tofu tofu
           touches site site
+          touches web web
           # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
           # sides, so that a job's `if` finds a name with contains().
           contracts=" $(scripts/changed-contracts.sh "$RUNNER_TEMP/changed" | tr '\n' ' ')"
@@ -531,7 +533,7 @@ jobs:
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
-        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true'
+        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true' || needs.changes.outputs.web == 'true'
         run: scripts/task.sh web:install
       # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
       - parallel:
@@ -559,6 +561,23 @@ jobs:
           # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
+          # The development packages web/devtools and web/catalog (ADR-0168), and that no production build contains
+          # @my/devtools.
+          - name: web:typecheck
+            if: needs.changes.outputs.web == 'true'
+            run: scripts/task.sh web:typecheck
+          - name: web:lint
+            if: needs.changes.outputs.web == 'true'
+            run: scripts/task.sh web:lint
+          - name: web:knip
+            if: needs.changes.outputs.web == 'true'
+            run: scripts/task.sh web:knip
+          - name: web:test
+            if: needs.changes.outputs.web == 'true'
+            run: scripts/task.sh web:test
+          - name: web:devtools-absent
+            if: needs.changes.outputs.web == 'true'
+            run: scripts/task.sh web:devtools-absent
           - name: i18n:lint
             if: needs.changes.outputs.i18n == 'true'
             run: scripts/task.sh i18n:lint
