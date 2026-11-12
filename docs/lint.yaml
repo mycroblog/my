@@ -163,7 +163,6 @@ pending:
     - docs/adr/0103-error-reporting.md
     - docs/adr/0106-external-login-providers.md
     - docs/adr/0110-web-experience-principles.md
-    - docs/adr/0125-announcement-title-notification-list.md
     - docs/adr/0146-plugin-protocol.md
     - docs/adr/0147-decision-hooks.md
     - docs/adr/0148-post-translation.md
