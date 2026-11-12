@@ -40,7 +40,7 @@ tasks:
 
   # What the visual evaluator sees (ADR-0169 §2): web/catalog/shot.ts prints the path of each shot.
   shot:
-    desc: Screenshot the running catalog page at mobile, tablet and PC widths, once per variant with --options <id>
+    desc: Screenshot the running catalog page at the mobile, tablet and PC viewports (--landscape rotates them), once per variant with --options <id>
     deps: [install]
     dir: web/catalog
     cmds:

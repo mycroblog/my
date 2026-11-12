@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Screenshots of the catalog page for the visual evaluator (ADR-0169 §2), which sees the rendered page and nothing of
-// its source: `scripts/task.sh web:shot -- [--options <id>] [--out <dir>] [<url>]`. Each shot is a full page at the
-// mobile, tablet and PC widths (ADR-0169 §1), without the overlay of @my/devtools. With --options, it takes one set
+// its source: `scripts/task.sh web:shot -- [--options <id>] [--landscape] [--out <dir>] [<url>]`. Each shot is a full
+// page at the device viewports of @my/devtools/sizes (ADR-0169 §1), which the overlay's viewport control shows,
+// without the overlay. They are as listed, portrait but for PC; with --landscape, each is in landscape (mobile
+// 812×375). With --options, it takes one set
 // per variant of that <Options>, so the evaluator can answer before the decider picks. The shots go to
 // .tmp/visual/<id> of the main checkout, which outlives the worktree, for the agreement check to replay
 // (scripts/visual-agreement.sh). It prints the path of each shot.
@@ -10,9 +12,9 @@
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { sizes } from "@my/devtools/sizes";
 import { chromium, type Page } from "playwright";
 
-const widths = { mobile: 375, tablet: 768, pc: 1280 } as const;
 const optionsAttribute = "data-my-devtools-options";
 
 const run = (cmd: string[]) => {
@@ -26,7 +28,7 @@ const main = dirname(run(["git", "rev-parse", "--path-format=absolute", "--git-c
 
 const { values, positionals } = parseArgs({
   args: Bun.argv.slice(2),
-  options: { options: { type: "string" }, out: { type: "string" } },
+  options: { options: { type: "string" }, landscape: { type: "boolean" }, out: { type: "string" } },
   allowPositionals: true,
 });
 const url = positionals[0] ?? run([join(repo, "scripts/agentkit.sh"), "feedback", "url"]);
@@ -34,10 +36,13 @@ const out = resolve(values.out ?? join(main, ".tmp/visual", values.options ?? "p
 await mkdir(out, { recursive: true });
 
 async function shoot(page: Page, name: string) {
-  for (const [size, width] of Object.entries(widths)) {
-    await page.setViewportSize({ width, height: 900 });
+  for (const [size, { width, height }] of Object.entries(sizes)) {
+    const viewport = values.landscape
+      ? { width: Math.max(width, height), height: Math.min(width, height) }
+      : { width, height };
+    await page.setViewportSize(viewport);
     await page.addStyleTag({ content: "[data-my-devtools] { display: none !important; }" });
-    const path = join(out, `${name}-${size}.png`);
+    const path = join(out, `${name}-${size}${values.landscape ? "-landscape" : ""}.png`);
     await page.screenshot({ path, fullPage: true, animations: "disabled" });
     console.log(path);
   }

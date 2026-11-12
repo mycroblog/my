@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What a note carries about the page (ADR-0168 §2), read from the DOM in the browser.
+// What a note carries about the page (ADR-0168 §2), read from the DOM in the browser. An element in a same-origin
+// iframe (the page at a device size) is read in its own document: its selector, its page coordinates and the state,
+// whose viewport is the iframe's.
 
 import type { NoteInput, Rect, State } from "./note";
 
-const pageRect = (r: DOMRect): Rect => ({
-  x: Math.round(r.left + window.scrollX),
-  y: Math.round(r.top + window.scrollY),
+const pageRect = (win: Window, r: DOMRect): Rect => ({
+  x: Math.round(r.left + win.scrollX),
+  y: Math.round(r.top + win.scrollY),
   width: Math.round(r.width),
   height: Math.round(r.height),
 });
 
 /** A CSS selector that finds the element again after a reload: tag:nth-of-type steps up to an id or the body. */
 function selectorOf(el: Element): string {
+  const doc = el.ownerDocument;
   const steps: string[] = [];
   let node: Element | null = el;
-  while (node && node !== document.body && node !== document.documentElement) {
+  while (node && node !== doc.body && node !== doc.documentElement) {
     if (node.id) {
       steps.unshift(`#${CSS.escape(node.id)}`);
       break;
@@ -29,19 +32,27 @@ function selectorOf(el: Element): string {
   return steps.length === 0 ? "body" : steps.join(" > ");
 }
 
-function stateOf(): State {
-  const html = document.documentElement;
+// In an iframe, screen.orientation tells of the real screen, so the orientation is the iframe viewport's, as the
+// orientation media query reads it.
+function orientationOf(win: Window): string | null {
+  if (win !== win.top) return win.matchMedia("(orientation: portrait)").matches ? "portrait" : "landscape";
+  return typeof screen.orientation === "undefined" ? null : screen.orientation.type;
+}
+
+function stateOf(win: Window): State {
+  const html = win.document.documentElement;
+  const { location } = win;
   return {
     page: location.pathname + location.search + location.hash,
     route: null,
-    viewport: { width: window.innerWidth, height: window.innerHeight, devicePixelRatio: window.devicePixelRatio },
+    viewport: { width: win.innerWidth, height: win.innerHeight, devicePixelRatio: win.devicePixelRatio },
     theme: {
       page: html.getAttribute("data-theme"),
-      system: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+      system: win.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
     },
     locale: html.lang || navigator.language,
-    direction: getComputedStyle(html).direction,
-    orientation: typeof screen.orientation === "undefined" ? null : screen.orientation.type,
+    direction: win.getComputedStyle(html).direction,
+    orientation: orientationOf(win),
     account: null,
   };
 }
@@ -99,7 +110,7 @@ function nameOf(el: Element): string {
   if (labelledBy) {
     return labelledBy
       .split(/\s+/)
-      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .map((id) => el.ownerDocument.getElementById(id)?.textContent ?? "")
       .join(" ");
   }
   return el.getAttribute("alt") ?? el.getAttribute("title") ?? "";
@@ -114,11 +125,11 @@ const namedByContent = new Set(["button", "checkbox", "heading", "link", "radio"
  */
 function accessibilityOf(roots: Element[], limit = 40): string {
   const lines: string[] = [];
-  const walk = (node: Node, depth: number) => {
+  const walk = (child: Node, depth: number) => {
     if (lines.length >= limit) return;
     const indent = "  ".repeat(depth);
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = clip(node.textContent ?? "");
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = clip(child.textContent ?? "");
       if (!text) return;
       // Runs of text side by side (a label and its value) make one line.
       const last = lines.at(-1);
@@ -126,10 +137,13 @@ function accessibilityOf(roots: Element[], limit = 40): string {
       else lines.push(`${indent}text "${text}"`);
       return;
     }
-    if (!(node instanceof Element) || node.getAttribute("aria-hidden") === "true") return;
+    // Not instanceof Element: an element of an iframe belongs to the iframe's realm.
+    if (child.nodeType !== Node.ELEMENT_NODE) return;
+    const node = child as Element;
+    if (node.getAttribute("aria-hidden") === "true") return;
     const role = roleOf(node);
     if (!role) {
-      for (const child of Array.from(node.childNodes)) walk(child, depth);
+      for (const c of Array.from(node.childNodes)) walk(c, depth);
       return;
     }
     const byContent = namedByContent.has(role);
@@ -137,7 +151,7 @@ function accessibilityOf(roots: Element[], limit = 40): string {
     const level = /^h[1-6]$/i.test(node.tagName) ? ` [level=${node.tagName.slice(1)}]` : "";
     lines.push(`${indent}${role}${name ? ` "${name}"` : ""}${level}`);
     if (byContent) return;
-    for (const child of Array.from(node.childNodes)) walk(child, depth + 1);
+    for (const c of Array.from(node.childNodes)) walk(c, depth + 1);
   };
   for (const root of roots) walk(root, 0);
   return lines.join("\n");
@@ -148,12 +162,17 @@ const overlaps = (a: DOMRect, b: Rect) =>
 const covers = (a: DOMRect, b: Rect) =>
   a.left <= b.x && a.right >= b.x + b.width && a.top <= b.y && a.bottom >= b.y + b.height;
 
-/** The note on an element, or on an area (client coordinates) whose centre is on the element. */
+/**
+ * The note on an element, or on an area whose centre is on the element; the area is in the client coordinates of the
+ * element's document.
+ */
 export function noteOf(text: string, el: Element, area: Rect | null): NoteInput {
+  const doc = el.ownerDocument;
+  const win = doc.defaultView ?? window;
   // The elements the area touches, without those around the whole area: an area over two swatches is about them,
   // not about the page that holds them.
   const inArea = area
-    ? Array.from(document.querySelectorAll("[data-source]")).filter((e) => {
+    ? Array.from(doc.querySelectorAll("[data-source]")).filter((e) => {
         const r = e.getBoundingClientRect();
         return overlaps(r, area) && !covers(r, area);
       })
@@ -167,12 +186,12 @@ export function noteOf(text: string, el: Element, area: Rect | null): NoteInput 
       tag: el.tagName.toLowerCase(),
       selector: selectorOf(el),
       text: clip(el.textContent),
-      rect: pageRect(el.getBoundingClientRect()),
-      area: area ? pageRect(new DOMRect(area.x, area.y, area.width, area.height)) : null,
+      rect: pageRect(win, el.getBoundingClientRect()),
+      area: area ? pageRect(win, new DOMRect(area.x, area.y, area.width, area.height)) : null,
     },
     source: el.closest("[data-source]")?.getAttribute("data-source") ?? null,
     sources,
-    state: stateOf(),
+    state: stateOf(win),
     reproduction: { scenario: null, step: null },
     accessibility: accessibilityOf(area && tops.length > 0 ? tops : [el]),
   };
