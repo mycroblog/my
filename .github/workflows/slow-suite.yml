@@ -9,7 +9,7 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 # LiveKit transport contract on livekit-server --dev (ADR-0101), the blob = s3 contract on Garage, the search.Index contracts on the
 # search engines (ADR-0149), the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0023 §7), the restore drill, golangci-lint over everything with the build tag sets,
-# and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
+# the OpenTofu modules (tofu validate and the tofu tests), and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
 # `gh workflow run slow-suite.yml --ref <branch>`. release.yml calls it as the release gate: the whole suite, or, when a
 # run of it already passed on the commit, `scope: release`, which runs only the jobs that check the commit's images
 # against a release (upgrade, restore-drill), or `scope: none`, which runs nothing, for a pre-release released without
@@ -224,6 +224,42 @@ jobs:
           - name: go:build-tags
             run: scripts/task.sh go:build-tags
 
+  tofu:
+    if: inputs.scope == 'all'
+    # The checks of deploy/opentofu (ADR-0010) that run tofu: the modules call each other and the examples call the
+    # modules. The steps are those of tofu:check after its formatting check and its script checks (both in ci.yml's
+    # pull request jobs), in its order and one after another: validate and the tests already run 4 modules at a time,
+    # and each init writes the plugin cache the others read. Nothing reaches a cloud: the tests mock the providers or
+    # call a local stub.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Read the OpenTofu version
+        id: tofu
+        run: echo "version=$(awk '$1 == "opentofu" { print $2 }' .tool-versions)" >> "$GITHUB_OUTPUT"
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ steps.tofu.outputs.version }}
+          tofu_wrapper: false
+      - name: tofu:validate
+        run: scripts/task.sh tofu:validate
+      - name: tofu:test
+        run: scripts/task.sh tofu:test
+      - name: tofu:example-test
+        run: scripts/task.sh tofu:example-test
+      - name: tofu:git-source-test
+        run: scripts/task.sh tofu:git-source-test
+      - name: tofu:state-test
+        run: scripts/task.sh tofu:state-test
+      - name: tofu:db-state-test
+        run: scripts/task.sh tofu:db-state-test
+      - name: tofu:aws-plan-test
+        run: scripts/task.sh tofu:aws-plan-test
+
   codeql:
     if: inputs.scope == 'all'
     uses: ./.github/workflows/codeql.yml
@@ -238,7 +274,7 @@ jobs:
   # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
   result:
     if: always()
-    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, codeql]
+    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results
