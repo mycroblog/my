@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The highlight layer of the text fields (ADR-0092 §4): the backgrounds of mentions, hashtags, URLs, `:shortcode:`s and
 // the text over the limit, painted on the aria-hidden mirror behind the transparent textarea or input, which draws the
-// text. The screenshots (3 widths × light / dark × LTR / RTL) show the backgrounds under the textarea's own glyphs, and
-// the play functions check what a screenshot cannot: the layer is hidden from assistive technology, copies the
-// control's line height and scroll, and its marks are the ranges given.
+// text. The play functions check that the layer is hidden from assistive technology, copies the control's line height
+// and scroll, and that its marks are the ranges given.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { Button } from "./Button";
@@ -164,9 +163,8 @@ export const RightToLeftText: Story = {
   },
 };
 
-/** In forced-colors mode the backgrounds are gone, so the ranges are underlined (dashed over the limit); captured so. */
+/** In forced-colors mode the backgrounds are gone, so the ranges are underlined (dashed over the limit); seen with forced-colors emulation on. */
 export const ForcedColors: Story = {
-  tags: ["forced-colors"],
   args: { defaultValue: post, highlights: postHighlights, characterLimit: postLimit, formatRemaining },
   play: async ({ canvas }) => {
     // Outside forced colors, the marks have backgrounds and no line under them.

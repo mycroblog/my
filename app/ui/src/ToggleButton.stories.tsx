@@ -44,7 +44,7 @@ export const Default: Story = {
     await userEvent.click(button);
     await expect(button).toHaveAttribute("aria-pressed", "true");
     await expect(args.onChange).toHaveBeenCalledWith(true);
-    // The screenshot follows the play function: leave no hover state behind, which would make it vary.
+    // Leave no hover state behind.
     await userEvent.unhover(button);
     await userEvent.keyboard(" ");
     await expect(button).toHaveAttribute("aria-pressed", "false");
@@ -75,7 +75,7 @@ export const Celebrate: Story = {
       await userEvent.click(button);
       await expect(button).not.toHaveAttribute("data-celebrating");
       await expect(button).toHaveAttribute("aria-pressed", "false");
-      // End on, as the moment leaves it; the screenshot follows, with no hover state behind.
+      // End on, as the moment leaves it, with no hover state behind.
       await userEvent.click(button);
       await waitFor(() => expect(button).not.toHaveAttribute("data-celebrating"), { timeout: 2000 });
       await userEvent.unhover(button);
@@ -83,9 +83,8 @@ export const Celebrate: Story = {
   },
 };
 
-/** A toggle that is already on when it appears does not celebrate (it looks like Selected, which has the screenshots). */
+/** A toggle that is already on when it appears does not celebrate (it looks like Selected). */
 export const CelebrateAlreadySelected: Story = {
-  tags: ["no-screenshot"],
   args: { celebrate: true, defaultSelected: true },
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("button", { name: "Favourite" })).not.toHaveAttribute("data-celebrating");

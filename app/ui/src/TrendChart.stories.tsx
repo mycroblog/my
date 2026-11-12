@@ -126,9 +126,8 @@ export const Table: Story = {
   },
 };
 
-/** Forced colors draw every series in CanvasText with its dash and the newest values in Highlight; captured so. */
+/** Forced colors draw every series in CanvasText with its dash and the newest values in Highlight; seen with forced-colors emulation on. */
 export const ForcedColors: Story = {
-  tags: ["forced-colors"],
   args: {
     series: [
       { id: "local", name: "Local posts", values: [40, 62, 75, 120, 96, 75, 84] },
@@ -140,7 +139,6 @@ export const ForcedColors: Story = {
 
 /** Bars in forced colors: the first series filled, the others outlined with their dash. */
 export const ForcedColorsBars: Story = {
-  tags: ["forced-colors"],
   args: {
     ...ForcedColors.args,
     kind: "bar",

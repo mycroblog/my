@@ -46,7 +46,6 @@ export const Stopped: Story = {
 
 /** Play and pause with the keyboard: the button's name and icon follow the state of the audio. */
 export const Playing: Story = {
-  tags: ["no-screenshot"],
   play: async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByRole("button", { name: "Play" })).toHaveFocus();
@@ -62,7 +61,6 @@ export const Playing: Story = {
 
 /** The seek slider is disabled until the length of the file is known. */
 export const Seek: Story = {
-  tags: ["no-screenshot"],
   play: async ({ canvas }) => {
     await waitFor(() => expect(canvas.getByRole("slider", { name: "Position in the audio" })).toBeInTheDocument());
   },

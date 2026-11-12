@@ -8,7 +8,6 @@ import { NoticeBanner } from "./NoticeBanner";
 const meta = {
   title: "Feedback/NoticeBanner",
   component: NoticeBanner,
-  tags: ["no-screenshot"],
   args: { label: "Notice of the server's closure", headline: "This server closes on 1 Nov 2026." },
 } satisfies Meta<typeof NoticeBanner>;
 

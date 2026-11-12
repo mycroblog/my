@@ -67,7 +67,7 @@ export const AfterAChange: Story = {
     await expect(canvas.getByText("Saving…")).toBeInTheDocument();
     await waitFor(() => expect(canvas.getByText("Saving…")).toBeVisible());
     await waitFor(() => expect(canvas.getByText("Saved")).toBeVisible());
-    // The screenshot waits for the end of the entrance.
+    // The story waits for the end of the entrance.
     await waitFor(() =>
       expect(getComputedStyle(canvas.getByText("Saved").parentElement ?? document.body).opacity).toBe("1"),
     );

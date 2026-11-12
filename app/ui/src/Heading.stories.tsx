@@ -85,7 +85,7 @@ export const Focusable: Story = {
     const button = canvas.getByRole("button", { name: "Lift the suspension" });
     await userEvent.click(button);
     await expect(heading).toHaveFocus();
-    // The button keeps no hover in the screenshots.
+    // Back to the resting state.
     await userEvent.unhover(button);
   },
 };

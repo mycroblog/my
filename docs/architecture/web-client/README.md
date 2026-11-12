@@ -226,27 +226,21 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 - `@my/ui` のストーリーは `app/ui/src/*.stories.tsx` に置く（CSF 3、`satisfies Meta`）。Storybook は `scripts/task.sh ui:storybook` で開く（`app/ui/.storybook`）。
   - ツールバーでロケール（`en` / `ja` / `en-XA` / `ar-XB`）とテーマ（ライト / ダーク）とサーバー単位のテーマ（既定 / 見本）を切り替える。ロケールは `<html>` の `lang` / `dir` と React Aria の `I18nProvider` に、テーマは `<html>` の `data-theme` に反映する。
     見本のテーマ（`.storybook/sampleTheme.ts`、ADR-0059）は、サーバーのスタイルシートと同じ `@layer` の外の `:root` の規則にして、構築できるスタイルシートで当てる。
-    `Foundations/Theme sample`（`src/ThemeSample.stories.tsx`）だけが見本のテーマを固定し、代表的な部品のスクリーンショットを残す。ほかのストーリーは既定のトークンで検査する。
+    `Foundations/Theme sample`（`src/ThemeSample.stories.tsx`）だけが見本のテーマを固定し、代表的な部品を見本のテーマで描く。ほかのストーリーは既定のトークンで検査する。
   - ストーリーは `scripts/task.sh ui:test` で実ブラウザのテストになる（`app/ui/vitest.config.ts`、Storybook の Vitest アドオンと Vitest のブラウザモード、Playwright の Chromium）。
     - プロジェクトは方向 × テーマの 4 つ（`en` / `ar-XB` × ライト / ダーク）。すべてのストーリーを 4 つすべてで動かす。
     - axe の違反が 1 つでもあれば失敗する（`parameters.a11y.test: 'error'`、Y1 のタグ）。
-    - テストの間（スクリーンショットの段階を含む）に `console.error` / `console.warn` が出れば、そのテストが失敗し、メッセージが失敗に載る（`app/ui/test/consoleGuard.ts`）。
+    - テストの間（`.storybook/vitest.setup.ts` の段階を含む）に `console.error` / `console.warn` が出れば、そのテストが失敗し、メッセージが失敗に載る（`app/ui/test/consoleGuard.ts`）。
       jsdom の部品のテスト（`unit` のプロジェクト）も同じ規則で、警告を期待するテストは自分で console を spy する。
       無害と分かっているメッセージだけを理由つきで許可リストに置く（React Aria のオーバーレイの位置合わせと TanStack Virtual が ResizeObserver の中で寸法を変える `ResizeObserver loop completed with undelivered notifications`）。
     - `@my/ui` の部品の振る舞いのテスト（フォーカスの閉じ込めと復帰、Esc、矢印キー）は、ストーリーの `play` 関数に `storybook/test` の `expect` と文脈の `userEvent` / `canvas` で書く。
       すべてのプロジェクトで動くので、RTL の矢印キーは `document.documentElement.dir` で向きを決めて同じ `play` で検査する。
-    - ダイアログ・ポップオーバー・トーストなどのオーバーレイは、`<body>` ではなくストーリーの枠に portal する（`UNSAFE_PortalProvider`）。枠は `contain: layout` なので、`position: fixed` のオーバーレイも枠を覆い、スクリーンショットに写る。
+    - ダイアログ・ポップオーバー・トーストなどのオーバーレイは、`<body>` ではなくストーリーの枠に portal する（`UNSAFE_PortalProvider`）。枠は `contain: layout` なので、`position: fixed` のオーバーレイも枠を覆う。
       オーバーレイのストーリーは、デコレーターで枠に高さを与える。
-    - 描画と axe のあと、ストーリーの枠（コンテナクエリの基準）を幅 320 / 640 / 1024 px にして `toMatchScreenshot` で比較する（`.storybook/vitest.setup.ts`）。
-      `play` 関数のためだけにある長いストーリー（仮想化した `Feed`）は `no-screenshot` のタグで比較を外す。同じ部品のほかのストーリーが見た目を検査する。
-    - スクリーンショットは `prefers-reduced-motion: reduce` を模擬して撮る。その状態で枠の中に動いているアニメーションが 1 つでもあれば失敗する（D6）。ストーリーの描画と `play` 関数は模擬なしで動く。
-      `forced-colors` のタグのストーリーは、強制カラーモード（`forced-colors: active`）も模擬して撮る（強調表示の層の下線）。
+    - 描画と axe のあと、ポインタを枠の外に動かし、`prefers-reduced-motion: reduce` を模擬する。その状態で枠の中に動いているアニメーションが 1 つでもあれば失敗する（D6、`.storybook/vitest.setup.ts`）。ストーリーの描画と `play` 関数は模擬なしで動く。
     - `play` 関数（`storybook/test`）で、部品をロールとアクセシブルネームで探して検査する（Y2）。
-  - 基準画像は `app/ui/src/__screenshots__/` にあり、固定した Playwright のイメージ（`Taskfile.yml` の `PLAYWRIGHT_IMAGE`）の中でだけ作る。
-    手元の OS のフォントや描画では一致しないので、手元で作った画像はコミットしない。
-    - 見た目を変えたら `scripts/task.sh ui:snapshots-update`（Docker でそのイメージを使う）で作り直し、差分の画像を確かめてからコミットする。
-    - 同じ比較を手元でするときは `scripts/task.sh ui:test-docker` を使う。`scripts/task.sh ui:test` を手元で動かす（`scripts/task.sh ui:test-install` でブラウザを入れる）と、axe は信用できるが、スクリーンショットは一致しない。
-  - `scripts/task.sh check` はブラウザなしで動く検査だけを集める。`scripts/task.sh ui:test` は CI の `ui-test` ジョブがそのイメージの中で、`app/ui` を変える PR で動かす（Merge Queue では動かさない、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md) §2）。失敗したときの実際の画像と差分は成果物 `ui-test-screenshots` にある。
+  - スクリーンショットの比較と基準画像は持たない（ADR-0110 §9）。`scripts/task.sh ui:test` を手元で動かすときは、`scripts/task.sh ui:test-install` でブラウザを入れる。
+  - `scripts/task.sh check` はブラウザなしで動く検査だけを集める。`scripts/task.sh ui:test` は CI の `ui-test` ジョブが固定した Playwright のイメージ（`Taskfile.yml` の `PLAYWRIGHT_IMAGE`）の中で、`app/ui` を変える PR で動かす（Merge Queue では動かさない、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md) §2）。
   - ワークフローのイメージと `PLAYWRIGHT_IMAGE`、`playwright` / `@playwright/test` の版が食い違うと、`scripts/task.sh web:playwright-image-check`（`scripts/task.sh check` の一部）が失敗する。
 - 画面のストーリー（[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md) §13）は、その画面の機能の `features/<x>/<画面>.stories.tsx` に置く。Storybook は `app/web/.storybook` で、`scripts/task.sh web:storybook`（ポート 6007）で開き、
   `app/ui` の Storybook を composition（`refs`）で取り込む（開発では `scripts/task.sh ui:storybook` のポート 6006、静的なビルド `scripts/task.sh web:storybook-build` では `storybook-static/ui/` に置いた `@my/ui` のビルド）。
@@ -254,7 +248,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
     統合テストと同じ既定のハンドラ（`src/test/msw/defaultHandlers.ts`、各機能の `test/handlers.ts`）とストーリーのハンドラ（`parameters.screen.handlers`）で答える。MSW の Service Worker は、インストールした `msw` のものを Storybook の Vite のプラグインが配る。
     ハンドラのない API の要求があれば、ストーリーは失敗する。
   - 画面ごとに、通常（`play` で主な操作）・空・読み込み中・エラー・`ja`・`en-XA`・`ar-XB`・320 px のストーリーを持つ。ロケールはツールバーの `locale` で、ページはそのロケールで始まり、ログインした閲覧者の設定のロケールも同じにする。
-  - `scripts/task.sh web:story-test`（`app/web/vitest.stories.config.ts`）で実ブラウザのテストになり、`play` と axe（Y1）を動かす。スクリーンショットは比べない（画面は E2E が受け持つ）。
+  - `scripts/task.sh web:story-test`（`app/web/vitest.stories.config.ts`）で実ブラウザのテストになり、`play` と axe（Y1）を動かす。
     `findBy` / `waitFor` の上限は部品のテストと同じ 10 秒（`.storybook/preview.tsx` の `asyncUtilTimeout`）、1 つのテストの上限は 30 秒にする（T7）。
     メタの `play` は画面が読み込み終わる（`main h1` があり、スピナーがない）まで待つので、axe は読み込み中ではなく画面を検査する。CI の `web-story-test` ジョブが、クライアントを変える PR で `ui-test` と同じイメージの中で動かす。
   - ストーリーは、テストと同じく `src/test` と自分の機能の `test/` を import できる（境界の lint）。

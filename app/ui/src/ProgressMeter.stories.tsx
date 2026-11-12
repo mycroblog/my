@@ -68,16 +68,11 @@ export const Pending: Story = {
   },
 };
 
-/** Forced colors draw the fill in Highlight inside a CanvasText border; captured so. */
-export const ForcedColors: Story = {
-  tags: ["forced-colors"],
-};
+/** Forced colors draw the fill in Highlight inside a CanvasText border; seen with forced-colors emulation on. */
+export const ForcedColors: Story = {};
 
-/** Forced colors draw the pending part in GrayText after the Highlight fill; captured so. */
-export const PendingForcedColors: Story = {
-  ...Pending,
-  tags: ["forced-colors"],
-};
+/** Forced colors draw the pending part in GrayText after the Highlight fill; seen with forced-colors emulation on. */
+export const PendingForcedColors: Story = { ...Pending };
 
 /** Nothing done yet: an empty track. */
 export const Empty: Story = {

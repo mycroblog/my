@@ -156,7 +156,6 @@ export const WithNewItems: Story = {
  * the page scrolls away from it. Page Down from there reaches the next article even though it was not mounted.
  */
 export const Virtualized: Story = {
-  tags: ["no-screenshot"],
   args: { items: makePosts(300), hasMore: false, overscan: 2 },
   play: async ({ canvas, canvasElement, userEvent }) => {
     const feed = canvas.getByRole("feed", { name: "Home" });

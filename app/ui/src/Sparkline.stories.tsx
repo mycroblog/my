@@ -39,10 +39,8 @@ export const Series: Story = {
   ),
 };
 
-/** Forced colors draw the line in CanvasText and the newest point in Highlight; captured so. */
-export const ForcedColors: Story = {
-  tags: ["forced-colors"],
-};
+/** Forced colors draw the line in CanvasText and the newest point in Highlight; seen with forced-colors emulation on. */
+export const ForcedColors: Story = {};
 
 /** Without a value the box stays empty and keeps its room in the row. */
 export const Empty: Story = {

@@ -102,7 +102,7 @@
     層を持つ入力欄の行の高さは整数の px（`round(calc(var(--text-base--line-height) * 1em), 1px)`）にする。小数の px だと、スクロールした層が Chromium と WebKit で 1 px ずれる（#1152 の spike、決定者の決定）。
   - **見た目**: 色は種類ごとのトークン `highlight-mention`・`highlight-hashtag`・`highlight-url`・`highlight-shortcode`・`highlight-over`（ライトとダークの組。上の文字の `fg` と WCAG AA のコントラスト）。
     強制カラーモードでは背景が消えるので、区間の下に `CanvasText` の線（上限を超えた部分は破線）を引く。層は強制カラーから外れ（`forced-color-adjust: none`。透明の文字を透明のまま保つ）、強制カラーのときだけ入力欄の前に出る（Chromium が入力欄の文字の行の後ろに `Canvas` の色の板を塗り、後ろの線を隠すため）。
-  - **テスト**: `lib/textHighlights.test.ts` が共通のテストベクタで区間が `textTokens` と一致することを、`compose.test.tsx` が本文の層の区間と `aria-hidden` を検査する。`@my/ui` の `TextHighlight` のストーリーが、折り返し・スクロール・RTL・1 行の欄の位置をスクリーンショット（3 幅 × ライト / ダーク × LTR / RTL）で、強制カラーモードの線を `forced-colors` のタグのスクリーンショットで確かめる。
+  - **テスト**: `lib/textHighlights.test.ts` が共通のテストベクタで区間が `textTokens` と一致することを、`compose.test.tsx` が本文の層の区間と `aria-hidden` を検査する。`@my/ui` の `TextHighlight` のストーリーの `play` が、層が支援技術から隠れ、欄の行の高さとスクロールに従い、区間が渡したとおりであることを確かめる。
 - **画像・動画・音声**: 1 投稿 4 件まで。画像は JPEG・PNG・GIF・WebP、動画は MP4・QuickTime・WebM、音声は MP3・Ogg・M4A・WebM（申告された型で選び、ほかは知らせて外す）。選んだファイルは `prepareMedia` が用意する。
   画像は `prepareImage` が `createImageBitmap`（EXIF の向きを適用）と `OffscreenCanvas` で 3840 × 2160 ピクセルの面積以内に縮め、描き直して EXIF などのメタデータを捨ててから送る。
   GIF はアニメーションを保つためそのまま送る（GIF に EXIF はなく、残りはサーバーが除く）。

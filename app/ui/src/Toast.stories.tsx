@@ -102,7 +102,7 @@ export const Stack: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Delete post" }));
     await userEvent.click(canvas.getByRole("button", { name: "Send" }));
     await expect(await canvas.findAllByRole("listitem")).toHaveLength(3);
-    // Leave no hover or focus state in the screenshot.
+    // Back to the resting state, with no hover or focus.
     await userEvent.unhover(canvas.getByRole("button", { name: "Send" }));
     canvas.getByRole("button", { name: "Send" }).blur();
   },
@@ -156,7 +156,6 @@ export const AutoDismissPausesOnHover: Story = {
  * quiet.
  */
 export const Celebrate: Story = {
-  tags: ["no-screenshot"],
   args: { celebrate: true },
   play: async ({ canvas, userEvent, step }) => {
     await step("the toast celebrates as it appears", async () => {

@@ -65,9 +65,8 @@ export const Summary: Story = {
   },
 };
 
-/** Forced colors keep the arrow, the text and an outline around the state; captured so. */
+/** Forced colors keep the arrow, the text and an outline around the state; seen with forced-colors emulation on. */
 export const ForcedColors: Story = {
-  tags: ["forced-colors"],
   args: { status: "warning", statusLabel: "Needs review" },
 };
 

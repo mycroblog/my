@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # @my/ui in app/ui (ADR-0110; the ui context of scripts/changed-contexts.sh): its checks, Storybook, and the story
-# tests. The story tests run every story in Chromium (Vitest browser mode, Playwright): axe must find no violation
-# and each story must match its screenshots at 3 container widths × light / dark × LTR / RTL. They need a browser,
-# so they are not part of `check`; CI runs ui:test in PLAYWRIGHT_IMAGE on every PR. Baselines
-# (app/ui/src/__screenshots__/) come only from that image: ui:snapshots-update. Its dependent app/web is web:check.
+# tests. The story tests run every story in Chromium (Vitest browser mode, Playwright) in light / dark × LTR / RTL:
+# axe must find no violation and nothing may still animate under reduced motion. They need a browser, so they are not
+# part of `check`; CI runs ui:test in PLAYWRIGHT_IMAGE on every PR. Its dependent app/web is web:check.
 # The tasks that read app/ui/src/themeTokens.gen.ts, which is not committed (ADR-0081), generate it first.
 version: "3"
 
@@ -42,7 +41,7 @@ tasks:
       - bun run build-storybook
 
   test:
-    desc: Run the @my/ui story tests (axe + screenshots) in Chromium; screenshots match only in PLAYWRIGHT_IMAGE; SHARD=1/2 runs one of two shards
+    desc: Run the @my/ui story tests (play functions + axe) in Chromium (ui:test-install installs it); SHARD=1/2 runs one of two shards
     deps: [":web:tokens-gen-ts"]
     dir: app/ui
     cmds:
@@ -54,19 +53,3 @@ tasks:
     dir: app/ui
     cmds:
       - bun run playwright install chromium
-
-  test-docker:
-    desc: Run the @my/ui story tests in PLAYWRIGHT_IMAGE, as CI does (needs Docker)
-    deps: [":web:tokens-gen-ts"]
-    env:
-      PLAYWRIGHT_IMAGE: "{{.PLAYWRIGHT_IMAGE}}"
-    cmds:
-      - scripts/ui-test-docker.sh
-
-  snapshots-update:
-    desc: Regenerate the @my/ui screenshot baselines in PLAYWRIGHT_IMAGE (needs Docker); review and commit them
-    deps: [":web:tokens-gen-ts"]
-    env:
-      PLAYWRIGHT_IMAGE: "{{.PLAYWRIGHT_IMAGE}}"
-    cmds:
-      - scripts/ui-test-docker.sh --update

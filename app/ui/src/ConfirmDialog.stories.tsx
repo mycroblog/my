@@ -141,7 +141,7 @@ export const WithFields: Story = {
   },
 };
 
-/** The fields open, for the screenshots and axe of the filled-in dialog. */
+/** The fields open, for axe on the filled-in dialog. */
 export const WithFieldsOpen: Story = {
   args: { title: "Suspend @alice?", description: "Alice can no longer sign in. You can lift the suspension later." },
   render: (args) => <SuspendWithFields {...args} open />,

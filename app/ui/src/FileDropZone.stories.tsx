@@ -35,7 +35,7 @@ export const Dragging: Story = {
     field.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer }));
     await waitFor(() => expect(canvas.getByText("Drop to attach")).toBeVisible());
     await expect(field.closest("[data-drop-target]")).not.toBeNull();
-    // Dropped and dragged again, the area takes the files and shows the target once more for the screenshot.
+    // Dropped and dragged again, the area takes the files and shows the target once more.
     field.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer }));
     await waitFor(() => expect(args.onDropFiles).toHaveBeenCalledTimes(1));
     field.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer }));

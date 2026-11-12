@@ -115,7 +115,7 @@ export const Sensitive: Story = {
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await expect(toggle).toHaveFocus();
     await expect(canvas.getAllByRole("img")).toHaveLength(2);
-    // Back to concealed, so the screenshots show the concealed state.
+    // Pressed again, it conceals the media once more.
     await userEvent.keyboard("{Enter}");
     await expect(canvas.queryByRole("img")).not.toBeInTheDocument();
   },
@@ -136,7 +136,7 @@ export const SensitiveRevealed: Story = {
 /**
  * Pressing a picture opens it at its original size in the viewer (a modal dialog), whose buttons and arrow keys step
  * through the post's pictures, going round at either end. Esc closes it and returns focus to the picture; the story
- * opens it again on the second picture for the screenshots.
+ * ends with it open on the second picture.
  */
 export const Viewer: Story = {
   args: {
@@ -217,12 +217,10 @@ const playables: readonly MediaItem[] = [
 
 /**
  * A video plays in its cell with the browser's controls under a play disc, an audio file in an AudioPlayer, and neither starts by itself; each player
- * is named by its description. These stories take no screenshots: the browser's media controls draw the time once the
- * file has loaded, which a screenshot cannot wait for.
+ * is named by its description.
  */
 export const Video: Story = {
   args: { items: playables.slice(0, 1) },
-  tags: ["no-screenshot"],
   play: async ({ canvasElement }) => {
     // A <video> has no ARIA role to query by.
     const video = canvasElement.querySelector("video");
@@ -235,7 +233,6 @@ export const Video: Story = {
 /** An audio file plays in an AudioPlayer, not the browser's controls, and never starts by itself. */
 export const Audio: Story = {
   args: { items: playables.slice(1, 3) },
-  tags: ["no-screenshot"],
   play: async ({ canvas, canvasElement }) => {
     await expect(canvasElement.querySelector("audio[controls]")).toBeNull();
     await expect(canvas.getAllByRole("button", { name: "Play" })).toHaveLength(2);
@@ -243,9 +240,8 @@ export const Audio: Story = {
 };
 
 /** A gifv loops by itself without controls, unless animations do not play by themselves or motion is reduced. */
-export const Gifv: Story = { args: { items: playables.slice(3) }, tags: ["no-screenshot"] };
+export const Gifv: Story = { args: { items: playables.slice(3) } };
 
 export const Mixed: Story = {
   args: { items: [...pictures.slice(0, 1), ...playables.slice(0, 2), ...playables.slice(3)] },
-  tags: ["no-screenshot"],
 };

@@ -21,7 +21,6 @@ TypeScript は `bun fmt` で整形する。依存は Dependabot で検知し更�
 | `emoji_table.gen.go`、`ai_crawlers.gen.go` | コミットする（外のデータを固定した版で取り込む。入力がリポジトリにない） | 手動 |
 | `docs/reference/configuration.md` | コミットする（Go のテストが生成する人向けの文書。衝突は少ない） | `task go:config-docs` |
 | `docs/reference/cli.md` | コミットする（Go のテストが生成する人向けの文書。衝突は少ない） | `task go:cli-docs` |
-| `@my/ui` のスクリーンショットの基準画像 | コミットする（派生物ではなく期待値。ADR-0110） | CI のコンテナ |
 | `tools/i18n/src/runtime/messages.gen.ts` | **コミットしない** | 型検査・ビルド・テストの前（`deps`） |
 | `pkg/mykit/ts/src/schema.gen.ts` | コミットする（TS だけが読むが、配るパッケージの一部。ADR-0093） | `task api:generate` |
 | `app/web/src/routeTree.gen.ts` | **コミットしない** | 同上 |

@@ -54,7 +54,6 @@ export const Disabled: Story = { args: { isDisabled: true } };
 
 /** The native input lies over the circle, so that a press on the radio itself reaches it (src/ToggleInput.ts). */
 export const InputOverCircle: Story = {
-  tags: ["no-screenshot"],
   play: async ({ canvas, userEvent }) => {
     const input = canvas.getByRole("radio", { name: "Unlisted" });
     const circle = input.closest("label")?.querySelector(":scope > span:not(:has(input))")?.getBoundingClientRect();

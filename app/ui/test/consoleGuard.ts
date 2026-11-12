@@ -2,7 +2,7 @@
 // Fails a test of @my/ui that logs a warning: every console.error and console.warn during a test (from React, React
 // Aria, the browser or jsdom) fails it, with the messages in the failure. Both projects of ../vitest.config.ts list
 // this file first among their setup files, so its afterEach runs after every other one (Vitest runs afterEach hooks
-// in the reverse order of registration), and the screenshot step of ../.storybook/vitest.setup.ts is covered too.
+// in the reverse order of registration), and the step of ../.storybook/vitest.setup.ts is covered too.
 // The messages are not printed: the failure carries them. A message logged between tests fails the next one.
 // A test that expects a warning spies on the console itself (vi.spyOn(console, "error").mockImplementation(...));
 // restoreMocks puts this guard back after it.
@@ -16,9 +16,9 @@ const allowed: readonly { text: string; reason: string }[] = [
   {
     text: "ResizeObserver loop completed with undelivered notifications",
     // React Aria's overlay positioning (useOverlayPosition) moves an open popover or tooltip in its ResizeObserver
-    // callback, which resizes the overlay, during the screenshot step's resizes; TanStack Virtual's ResizeObserver
-    // flushSyncs the Feed "Virtualized" story's items by design, which grows the observed <body>. The browser delivers
-    // the notification one frame later and the layout settles: nothing loops, and the screenshots are stable.
+    // callback, which resizes the overlay; TanStack Virtual's ResizeObserver flushSyncs the Feed "Virtualized" story's
+    // items by design, which grows the observed <body>. The browser delivers the notification one frame later and the
+    // layout settles: nothing loops.
     reason:
       "an overlay or the virtualized feed resizes in a library's ResizeObserver callback and settles one frame later",
   },

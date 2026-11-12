@@ -83,7 +83,5 @@ export const Disabled: Story = {
   },
 };
 
-/** Forced colors fill the selected segment with Highlight and its text with HighlightText; captured so. */
-export const ForcedColors: Story = {
-  tags: ["forced-colors"],
-};
+/** Forced colors fill the selected segment with Highlight and its text with HighlightText; seen with forced-colors emulation on. */
+export const ForcedColors: Story = {};

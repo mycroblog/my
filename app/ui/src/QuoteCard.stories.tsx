@@ -58,7 +58,7 @@ export const Concealed: Story = {
     await expect(canvas.queryByRole("link")).not.toBeInTheDocument();
     await userEvent.click(toggle);
     await expect(canvas.getByRole("link", { name: "2h" })).toBeVisible();
-    // Back to concealed, so the screenshots show the concealed state.
+    // Pressed again, it conceals the quote once more.
     await userEvent.click(toggle);
   },
 };

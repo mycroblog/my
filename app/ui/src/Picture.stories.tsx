@@ -21,7 +21,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Waits until the image has decoded, so the screenshot shows it. */
+/** Waits until the image has decoded. */
 async function loaded(root: HTMLElement) {
   await waitFor(() => {
     const img = root.querySelector("img");
@@ -39,7 +39,7 @@ export const Still: Story = {
 
 /**
  * An animation that plays by itself: the moving rendition (red here) applies only without a reduced-motion
- * preference, so the screenshots, taken with reduced motion, show the still one.
+ * preference; with reduced motion the still one shows.
  */
 export const Animated: Story = {
   args: { sources: { still, animated } },
