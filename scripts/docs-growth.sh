@@ -1,38 +1,44 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Fails when the prose that agents read and maintain grew since a base: `scripts/task.sh docs:growth` runs it. A net
-# increase needs the owner's approval, the allow:docs-growth label on the pull request, as a destructive schema change needs
-# allow:db-destructive (scripts/db-lint.sh).
+# Holds the prose that agents read and maintain to its kind (ADR-0000 §6): `scripts/task.sh docs:growth` runs it.
 #
 #   scripts/docs-growth.sh [options]
 #     --base REF       compare with the merge base of REF and HEAD (default: origin/main)
 #     --allow-growth   report the growth but do not fail on it
 #     --root DIR       the repository (default: the one this script is in)
 #
-# It adds up the bytes of each group of files at the base and in the working tree (untracked files included):
+# Decisions and the instructions every session loads need the owner's approval to grow, the allow:docs-growth label
+# on the pull request, as a destructive schema change needs allow:db-destructive (scripts/db-lint.sh). It adds up the
+# bytes of each group at the base and in the working tree (untracked files included):
 #
 #   group            files                                     may grow by
 #   docs/adr         docs/adr/**                               256 bytes
 #   architecture     docs/architecture/**                      256
-#   requirements     docs/requirements/**                      256
 #   docs/agents      docs/agents/**                            256
 #   agentkit docs    tools/agentkit/docs/**                    256
 #   context map      context-map.yaml, in any directory        256
 #   instructions     AGENTS.md and CLAUDE.md, in any directory 0
-#   .claude          .claude/**/*.md                           0
 #
-# 256 bytes is a sentence of Japanese or a corrected link, so a fix passes and a new paragraph does not; the
-# instructions every session loads get no allowance. The documents for users and operators are in no group: a feature
-# adds to them.
+# 256 bytes is a sentence of Japanese or a corrected link, so a fix passes and a new paragraph does not.
 #
-# Exit status: 0 when no group grew beyond its allowance (or with --allow-growth), 1 when one did, 2 on a usage error.
+# What is loaded only when needed, and the requirements, grow without approval within a budget, which the label does
+# not lift:
+#
+#   budget           files                                     at most
+#   .claude          each .claude/**/*.md                      4096 bytes per file
+#   requirements     docs/requirements/**                      98304 bytes in all
+#
+# The documents for users, operators, developers and plugin authors are in neither: their growth informs the reader.
+#
+# Exit status: 0 when no group grew beyond its allowance (or with --allow-growth) and no budget is exceeded, 1
+# otherwise, 2 on a usage error.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
 usage() {
-  sed -n '8,11p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '6,9p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -79,16 +85,14 @@ awk -F '\t' '
     if (b == "context-map.yaml") return "context map"
     if (p ~ /^docs\/adr\//) return "docs/adr"
     if (p ~ /^docs\/architecture\//) return "architecture"
-    if (p ~ /^docs\/requirements\//) return "requirements"
     if (p ~ /^docs\/agents\//) return "docs/agents"
     if (p ~ /^tools\/agentkit\/docs\//) return "agentkit docs"
-    if (p ~ /^\.claude\/.*\.md$/) return ".claude"
     return ""
   }
   BEGIN {
-    n = split("docs/adr,architecture,requirements,docs/agents,agentkit docs,context map,instructions,.claude", order, ",")
+    n = split("docs/adr,architecture,docs/agents,agentkit docs,context map,instructions", order, ",")
     for (i = 1; i <= n; i++) allowed[order[i]] = 256
-    allowed["instructions"] = allowed[".claude"] = 0
+    allowed["instructions"] = 0
   }
   { g = group($2) }
   g == "" { next }
@@ -117,12 +121,28 @@ awk -F '\t' '
 # The files that grew most follow their group, indented.
 sed -E $'s/^([0-9]+)\t(.*)$/    +\\1  \\2/' "$work/report"
 
-if [ "$status" = 0 ]; then
-  exit 0
+# The budgets, which no label lifts.
+over=0
+awk -F '\t' '
+  $2 ~ /^\.claude\/.*\.md$/ && $1 > 4096 { printf "budget .claude: %s is %d bytes, over 4096\n", $2, $1; over = 1 }
+  $2 ~ /^docs\/requirements\// { req += $1 }
+  END {
+    if (req > 98304) { printf "budget requirements: %d bytes in all, over 98304\n", req; over = 1 }
+    exit over
+  }
+' "$work/after" || over=1
+if [ "$over" = 1 ]; then
+  cat >&2 << 'EOF'
+docs:growth: over a budget. Say it in fewer words, split a skill into what it always needs and a file it reads when
+needed, or delete what the change makes obsolete. A budget changes only with the owner, in this script.
+EOF
 fi
-if [ "$allow" = 1 ]; then
-  echo "docs:growth: growth allowed (--allow-growth, the allow:docs-growth label)"
-  exit 0
+
+if [ "$status" = 0 ] || [ "$allow" = 1 ]; then
+  if [ "$status" = 1 ]; then
+    echo "docs:growth: growth allowed (--allow-growth, the allow:docs-growth label)"
+  fi
+  exit "$over"
 fi
 cat >&2 << 'EOF'
 docs:growth: the prose grew. Shorten what you touched, or delete what the change makes obsolete, until no group grows.
