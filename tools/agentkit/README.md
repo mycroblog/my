@@ -15,7 +15,7 @@ Run it through `scripts/agentkit.sh <command>`, which builds `bin/agentkit` when
 | `grep` / `rg` / `git grep` over the repository | `grep <pattern> [path\|glob ...] [-i] [-w] [-F] [-l] [-o] [-C N] [--kind go,ts,md,sql,yaml,json]`: a regular expression (or `-F` string) over the tracked files, without generated files, lock files, snapshots, and tests (`--tests`, `--only-tests`, `--gen`); at most 40 matches (`-n`) and 6,000 characters (`--max`), grouped by file, each with its declaration or section and line range, and a last line that counts what was left out |
 | `grep "func X" -A 40`, `sed -n 'A,Bp'`, `head`, `tail` | `show <Name>` (also `Recv.Name`, `pkg.Name`, `<path>:<Name>`, `'func (s *Service) Create'`): the whole declaration; `show <path>:<from>-<to>`: the lines. The path may be relative to the working directory or any ending that names one file |
 | Looking for where a topic lives | `find <words> [--kind adr,section,go,ts,op,table,query,...] [--under <path>]`: ranked locations with sizes |
-| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'web-client§14.2'`, `show 'ADR-0070#decision'`, `show FR-915` |
+| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'federation.md§1'`, `show 'ADR-0070#decision'`, `show FR-915` |
 | Following a request through the layers by hand | `trace op:<operationId>` or `trace <GoName>`: handler → app → adapter → query → table |
 | Grepping for the users of a name | `refs <ref>`: what points at it (documents, code, queries, client calls) and what it points at |
 | Listing `docs/adr/` and opening every ADR | `adr list [--status Proposed]`: number, status (the first word of its `- Status:` line), and title |
@@ -25,10 +25,9 @@ range there, and lists the candidates of a name that several declarations share 
 is shown, the test helpers of its name counted).
 References: node ids (`ADR-0070`, `FR-915`, `op:<id>`, `table:<name>`, `query:<Name>`, `schema:<Name>`,
 `sym:<dir>.<Recv>.<Name>`, `ts:<path>:<Name>`), short names (`SubmitRequest`, `custom_emojis`), sections by number or
-anchor of any unique path suffix (`web-client§14.2`, `web-client#5-アクセシビリティ`), and line ranges.
-A document split into one file per section (`docs/architecture/web-client/`) is
-looked up by its directory: `web-client§14` finds the section in whichever file holds it, and `show web-client`
-prints the directory's `README.md`.
+anchor of any unique path suffix (`federation.md§1`, `federation#1-モデレーションとの連携`), and line ranges.
+A document split into one file per section, a directory with a `README.md`, is looked up by its directory:
+`<dir>§14` finds the section in whichever file holds it, and `show <dir>` prints the directory's `README.md`.
 
 ## Workflow
 

@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "//": "The page (src/, in the browser) and its Vite configuration (on Bun).",
+  "//": "The page (src/, in the browser), its Vite configuration and its screenshots (on Bun).",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["bun", "vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "shot.ts"]
 }

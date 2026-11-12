@@ -133,7 +133,7 @@
 - 悪い: 下書きを持つ添付は未添付の掃除から外れるので、下書きの上限の分だけ Blob が残る。
 - 後続の作業:
   - #2576: §4 のテーブル（`schema/<dialect>/` の content のファイル）、`media.purge_unattached` が `draft_attachments` の参照を添付として数えること（下書きを消すと、そのファイルは次の実行で消える）、公開のジョブと結果、通知、上限の設定、API と `pkg/mykit`、`docs/reference/jobs.md` と設定の文書。
-  - #2577: コンポーザーの下書き一覧・自動保存・予約の UI（web-client の画面の L1 を先に書く）。
+  - #2577: コンポーザーの下書き一覧・自動保存・予約の UI。
   - #2594: 記事の子テーブルを `drafts` に足す。
   - 下書きと予約の FR を `docs/requirements/01-functional.md` に加える。
 

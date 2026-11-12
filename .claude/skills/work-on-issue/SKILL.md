@@ -28,17 +28,17 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 2. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is blocked.
 3. One worktree and one branch per pull request, `<type>/<issue>-<slug>`, one commit per issue. A spike's report
    is a comment on its issue; its code stays on an unmerged `spike/<issue>-<slug>` branch.
-4. Build: yourself for one small issue; otherwise up to four subagents at once, `builder` for implementation,
-   `routine` for mechanical work, the roles of ADR-0169 for a UI change, design first; a role reads
-   `.claude/knowledge/<role>/index.md` first.
-   Hand each `scripts/agentkit.sh ctx <n> --quiet`'s file. Rebase their commits onto the branch.
+4. Build: yourself for one small issue; otherwise up to four subagents at once: `builder` for implementation,
+   `routine` for mechanical work; for a UI change, `visual` first on the catalog page (ADR-0169 §9), `copy` for
+   its strings, and a fresh `visual-evaluator` given only `web:shot`'s shots, the task and the constraints, before
+   the decider picks. Hand each its `ctx <n> --quiet` file; rebase their commits onto the branch.
 5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` after a conflict in generated files).
    Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/redesign-web`), push
-   `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; the merge queue runs the rest, so run the
-   full check only to reproduce a failure.
+   `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; run the full
+   one only to reproduce a failure.
 6. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background. An epic is one pull
-   request: `pr open -draft` with its first commit, `pr open` again after each later one (it rewrites the open pull
-   request's description), and `gh pr ready` before `pr land` once the last is in. When `pr land` reports a failure
+   request: `pr open -draft` with its first commit, `pr open` again after each later one, and
+   `gh pr ready` before `pr land` once the last is in. When `pr land` reports a failure
    or a conflict, fix it at once (a `routine` agent for a rebase).
 7. Finish when the goal is merged and closed. Report what is merged, what is not and why, and what needs a decision.
 

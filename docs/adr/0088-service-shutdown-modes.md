@@ -267,7 +267,7 @@
   - `GET /api/v1/instance` の `status_page_url`（未設定なら出さない）
   - サーバーの情報のページ（`/about`）と、サーバーが描画するサインインの画面
   - Web クライアント: 設定の画面のヘルプの区画と、エラー・オフラインの表示（G16・G17）。サーバーが答えないときは `GET /instance` を読めないので、
-    **Web クライアントは最後に読んだ `status_page_url` をアプリが残し（Service Worker は API に答えないので、オフラインのホームのタイムラインと同じくアプリが残す。web-client §11、ADR-0028）、そこから URL を出す**
+    **Web クライアントは最後に読んだ `status_page_url` をアプリが残し（Service Worker は API に答えないので、オフラインのホームのタイムラインと同じくアプリが残す。ADR-0028）、そこから URL を出す**
   - メンテナンスモードの応答と書き出したメンテナンスのページ（§10・§12）
   - DB の障害で返す HTML のエラーページ
 - NodeInfo の `metadata` には v0 では足さない。Mastodon の NodeInfo の `metadata` にはステータスページのキーがなく（[node_info/serializer.rb](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/serializers/node_info/serializer.rb#L40-L47)、2026-10-23 確認）、

@@ -3,7 +3,7 @@
     {
       "use": "你",
       "avoid": ["您"],
-      "note": "How the copy addresses the user: the plain 你, as mainland Chinese apps do (web-client G19)."
+      "note": "How the copy addresses the user: the plain 你, as mainland Chinese apps do."
     },
     {
       "use": "帖子",
@@ -55,7 +55,7 @@
     {
       "use": "你",
       "avoid": ["您"],
-      "note": "How the copy addresses the user: the plain 你, as Taiwanese apps with a casual tone do (web-client G19)."
+      "note": "How the copy addresses the user: the plain 你, as Taiwanese apps with a casual tone do."
     },
     {
       "use": "貼文",
@@ -177,7 +177,7 @@
     {
       "use": "tú",
       "avoid": ["\\b[Uu]sted(?:es)?\\b", "\\b[Vv]osotr[oa]s\\b", "\\b[Vv]uestr[oa]s?\\b"],
-      "note": "How the copy addresses the user: tú, as neutral Spanish apps do in Spain and Latin America; never usted, vosotros or voseo (web-client G19)."
+      "note": "How the copy addresses the user: tú, as neutral Spanish apps do in Spain and Latin America; never usted, vosotros or voseo."
     },
     {
       "use": "publicación",
@@ -284,7 +284,7 @@
     {
       "use": "você",
       "avoid": ["\\b[Tt]u\\b", "\\b[Tt]eus?\\b", "\\b[Tt]uas?\\b", "\\b[Vv]ós\\b", "\\b[Vv]oss[oa]s?\\b"],
-      "note": "How the copy addresses the user: você, as Brazilian apps do; never tu, vós or their possessives (teu, vosso), which read as European Portuguese (web-client G19)."
+      "note": "How the copy addresses the user: você, as Brazilian apps do; never tu, vós or their possessives (teu, vosso), which read as European Portuguese."
     },
     {
       "use": "publicação",

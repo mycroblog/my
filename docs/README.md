@@ -128,5 +128,4 @@ The requirements, the architecture, and the decision records are written in Japa
 - [Federation design (ActivityPub server-to-server)](architecture/federation.md)
 - [Job system: components and fan-out](architecture/job-system.md)
 - [Deployment targets and low-cost setups](architecture/deployment-targets.md)
-- [Web client conventions](architecture/web-client/README.md)
 - [Architecture Decision Records](adr/README.md)

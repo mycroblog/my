@@ -153,7 +153,7 @@ func TestShellCSP(t *testing.T) {
 	rec := get(mux, "/", nil)
 	csp := rec.Header().Get("Content-Security-Policy")
 	for _, want := range []string{"default-src 'none'", "script-src 'self';", "style-src 'self';", "object-src 'none'", "base-uri 'none'", "frame-ancestors 'none'", "require-trusted-types-for 'script'",
-		// Only the client's own Trusted Types policies, each created once (web-client/09-app-shell.md §9).
+		// Only the client's own Trusted Types policies, each created once.
 		"trusted-types my-server-sanitized-html my-service-worker;"} {
 		if !strings.Contains(csp, want) {
 			t.Errorf("CSP %q lacks %s", csp, want)

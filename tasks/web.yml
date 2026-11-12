@@ -38,6 +38,14 @@ tasks:
     cmds:
       - bun --bun vite {{.CLI_ARGS}}
 
+  # What the visual evaluator sees (ADR-0169 §2): web/catalog/shot.ts prints the path of each shot.
+  shot:
+    desc: Screenshot the running catalog page at mobile, tablet and PC widths, once per variant with --options <id>
+    deps: [install]
+    dir: web/catalog
+    cmds:
+      - bun --bun shot.ts {{.CLI_ARGS}}
+
   typecheck:
     desc: Type-check web/devtools and web/catalog with tsc
     deps: [install]
