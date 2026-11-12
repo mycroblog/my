@@ -367,7 +367,7 @@ the tasks that read `src/themeTokens.gen.ts` (type checks, tests, builds, Storyb
 | `transition-duration-*`, `default-transition-duration` | duration | ms / s, 0 to 1000ms |
 | `ease-*`, `default-transition-timing-function` | easing | `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, or `cubic-bezier()` with x in 0..1 |
 
-The quality gates (axe, screenshots, horizontal scroll) check the default theme; one story shows representative components under a
+The quality gates (axe, horizontal scroll) check the default theme; one story shows representative components under a
 sample theme (see "Stories"). A theme's color tokens keep AA because the server checks them; the other overrides and the custom CSS can still break layout, tap targets, or right-to-left text, which is the administrator's
 responsibility. `themeContrast` computes what the server checks, with the same formulas as [src/color.ts](src/color.ts) and the Go domain.
 
@@ -750,23 +750,19 @@ theme: the default tokens, or the sample server theme of [.storybook/sampleTheme
 surfaces, a looser spacing step, and rounder corners). The preview renders the sample's overrides as the server renders a theme's stylesheet
 (a `:root` rule outside any cascade layer, colors as `light-dark()`) and adopts it as a constructed stylesheet, as the Tauri app applies a
 theme (ADR-0059 §6). [src/ThemeSample.stories.tsx](src/ThemeSample.stories.tsx) (`Foundations/Theme sample`) fixes the sample theme
-for its own story, which shows buttons, a toggle, a card with form controls, links, muted text and badges, so its screenshots catch a
-component that stops following the overrides; every other story is tested with the default tokens only.
+for its own story, which shows buttons, a toggle, a card with form controls, links, muted text and badges under the overrides; every
+other story is tested with the default tokens only.
 [src/Tokens.stories.tsx](src/Tokens.stories.tsx) shows the color pairs, the type scale in English, Japanese and Arabic, radius,
 shadow and the focus ring. [src/storybook.css](src/storybook.css) is the Storybook preview stylesheet.
 
 Stories are also the kit's browser tests ([vitest.config.ts](vitest.config.ts)). `scripts/task.sh ui:test` runs each story in Chromium in
-`en` and `ar-XB`, light and dark (four projects); a story fails on any axe violation or when it differs from its screenshots at 320, 640 and
-1024 px container widths. A story of the app shell sets a viewport instead (`globals: atViewport("phone")` with
-`parameters: shellParameters`, [src/storyViewports.ts](src/storyViewports.ts)), since the shell answers to the viewport, and is captured
-once at it; its content stays within the viewport's height. The screenshots are taken with `prefers-reduced-motion: reduce` emulated, and a story fails when
-anything in it still animates then; stories render and run their `play` functions (which find elements by role, with
-`storybook/test`) without it. The screenshots in `src/__screenshots__/` come only from the pinned Playwright image: regenerate
-them with `scripts/task.sh ui:snapshots-update`, and compare like CI with `scripts/task.sh ui:test-docker` (both need Docker).
-A story's `play` function also tests behaviour in the real browser (focus trap and return, Esc, arrow keys in RTL, announcements that
-keep focus); it runs before axe and the screenshots, in every project. The overlay components' jsdom tests cover the same
-behaviour in `scripts/task.sh check`. Overlays portal into the story frame, which has layout
-containment, so a modal covers the frame and appears in its screenshots.
+`en` and `ar-XB`, light and dark (four projects); a story fails on any axe violation. A story of the app shell sets a viewport
+(`globals: atViewport("phone")` with `parameters: shellParameters`, [src/storyViewports.ts](src/storyViewports.ts)), since the shell
+answers to the viewport; its content stays within the viewport's height. After a story, `prefers-reduced-motion: reduce` is emulated, and
+the story fails when anything in it still animates then; stories render and run their `play` functions (which find elements by role,
+with `storybook/test`) without it. A story's `play` function also tests behaviour in the real browser (focus trap and return, Esc, arrow
+keys in RTL, announcements that keep focus); it runs before axe, in every project. The overlay components' jsdom tests cover the same
+behaviour in `scripts/task.sh check`. Overlays portal into the story frame, which has layout containment, so a modal covers the frame.
 The test procedure is in [web-client/README.md §7](../../docs/architecture/web-client/README.md#7-テスト).
 
 ## Parts for the slots of PostCard and QuoteCard

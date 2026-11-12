@@ -34,10 +34,8 @@ export const Default: Story = {
   },
 };
 
-/** Forced colors keep the borders between the segments; captured so. */
-export const ForcedColors: Story = {
-  tags: ["forced-colors"],
-};
+/** Forced colors keep the borders between the segments; seen with forced-colors emulation on. */
+export const ForcedColors: Story = {};
 
 /** Without an amount, the bar is an empty track and every share is 0%. */
 export const Empty: Story = {

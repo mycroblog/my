@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Story tests of @my/ui (ADR-0110): every story runs in Chromium through Vitest browser mode and the
 // Storybook Vitest addon. A story fails on any axe violation (parameters.a11y.test = 'error' in
-// .storybook/preview.tsx) and on a visual difference from its screenshots (.storybook/vitest.setup.ts).
-// There is one project per direction × theme, so contrast is checked in both themes and layout in RTL.
-// Screenshot baselines are generated only in the pinned Playwright image (`scripts/task.sh ui:snapshots-update`).
+// .storybook/preview.tsx) and when anything in it still animates under reduced motion (.storybook/vitest.setup.ts).
+// There is one project per direction × theme, so contrast is checked in both themes and every story runs in RTL.
 // A test of either project also fails on a console.error or console.warn (test/consoleGuard.ts).
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig, mergeConfig } from "vitest/config";
 import viteConfig from "./vite.config.ts";
 
-/** en runs left to right and ar-XB right to left; ja and en-XA add nothing a snapshot would show. */
+/** en runs left to right and ar-XB right to left; ja and en-XA add nothing a story test would catch. */
 const locales = ["en", "ar-XB"] as const;
 const themes = ["light", "dark"] as const;
 

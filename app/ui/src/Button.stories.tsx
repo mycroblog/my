@@ -145,7 +145,6 @@ export const InToolbar: Story = {
  * toggle, not-allowed over a disabled one and wait over a pending one, and a look that changes under the pointer.
  */
 export const PointerStates: Story = {
-  tags: ["no-screenshot"],
   render: () => (
     <div className="flex flex-wrap gap-2">
       {variants.map((variant) => (

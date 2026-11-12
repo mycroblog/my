@@ -133,11 +133,9 @@ export const WithMedia: Story = {
 
 /**
  * With animations off, the card plays its animations while it is hovered, has keyboard focus inside, or after a tap on
- * it. The moving renditions stay behind the reduced-motion query, so this story only checks that they come and go; the
- * other stories carry the card's screenshots.
+ * it. The moving renditions stay behind the reduced-motion query, so this story only checks that they come and go.
  */
 export const AutoplayOff: Story = {
-  tags: ["no-screenshot"],
   args: {
     avatar: (
       <PostCardAvatarLink href="#profile">

@@ -19,7 +19,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Waits until every image in the story has decoded, so the screenshot shows it. */
+/** Waits until every image in the story has decoded. */
 async function imagesLoaded(root: HTMLElement) {
   await waitFor(() => {
     for (const img of root.querySelectorAll("img")) {

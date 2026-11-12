@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Representative components under the sample server theme (ADR-0059, .storybook/sampleTheme.ts). The story
-// fixes the `instanceTheme` global, so its screenshots, taken in every story project like any other story's,
-// show the overrides of colors, spacing and radius, while the other stories keep the default tokens.
+// fixes the `instanceTheme` global, so it shows the overrides of colors, spacing and radius, and axe checks them in
+// every story project, while the other stories keep the default tokens.
 // The toolbar applies the same theme to any story by hand.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";

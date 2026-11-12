@@ -384,9 +384,7 @@ export const InPopover: Story = {
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole("button", { name: "Add emoji" }));
     await waitFor(() => expect(canvas.getByRole("searchbox", { name: "Search emoji" })).toHaveFocus());
-    // Esc closes it and focus returns to the trigger. The screenshot is of the closed state: an open popover with
-    // a blinking caret and its entering animation does not render the same twice (the other stories show the
-    // picker itself).
+    // Esc closes it and focus returns to the trigger.
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(canvas.queryByRole("searchbox")).not.toBeInTheDocument());
     await waitFor(() => expect(canvas.getByRole("button", { name: "Add emoji" })).toHaveFocus());
@@ -453,11 +451,9 @@ async function loadFullSet(): Promise<EmojiPickerSection[]> {
 /**
  * Every Unicode emoji (about 1,900 without the skin tone variants), virtualized (ADR-0091): only the rows in view and
  * four on each side are rendered, the grid tells its whole size, and the keys, the section buttons and focus work
- * across rows that were not rendered. It has no screenshots, since the emoji fonts load as rows scroll into view; the
- * other stories carry the picker's screenshots.
+ * across rows that were not rendered.
  */
 export const FullSet: Story = {
-  tags: ["no-screenshot"],
   loaders: [async () => ({ fullSet: await loadFullSet() })],
   render: (args, { loaded }) => <TonedPicker {...args} sections={loaded["fullSet"] as EmojiPickerSection[]} />,
   play: async ({ canvas, userEvent }) => {

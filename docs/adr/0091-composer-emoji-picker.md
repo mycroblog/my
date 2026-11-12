@@ -68,7 +68,7 @@
 
 - 各絵文字の名前は、Unicode 絵文字は表示中のロケールの CLDR の短い名前（肌の色の付いたものは CLDR の annotationsDerived の名前）、カスタム絵文字は `:shortcode:`。
 - グリッドは APG の grid の操作（Tab の順、矢印キーは書字方向に沿う、Home / End、Enter・Space・押下で選ぶ）を §17 のとおり持つ。
-- ADR-0110 の層（Testing Library のキー操作、Storybook の axe、3 幅 × ライト / ダーク × LTR / RTL のスクリーンショット、E2E の 320 px と 4 ロケール）を通す。
+- ADR-0110 の層（Testing Library のキー操作、Storybook の axe、E2E の 320 px と 4 ロケール）を通す。
 
 ### 7. リアクション
 
@@ -107,7 +107,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 - **道具**: fontTools（MIT）、brotli（MIT）、SVG の部分集合に要る lxml（BSD-3-Clause）を、生成のときだけ使う。どれも AGPL-3.0 と両立する。
   リポジトリの道具に Python は無い（`.tool-versions`）。そこで、`scripts/emoji-fonts` を `uv` のロックファイルで版を固定した使い捨ての環境で動かす。
   生成した WOFF2 と `@font-face` の CSS はコミットする。`scripts/task.sh check` とビルドに Python は要らない。サーバーには何も足さない。
-- 置き場所は `@my/ui`（`app/ui/src/fonts/emoji/` と `app/ui/src/emoji.css`、`@my/ui/emoji.css` として公開）にする。タイポグラフィは `@my/ui` が持ち、Storybook のスクリーンショットも同じフォントで撮れる。
+- 置き場所は `@my/ui`（`app/ui/src/fonts/emoji/` と `app/ui/src/emoji.css`、`@my/ui/emoji.css` として公開）にする。タイポグラフィは `@my/ui` が持ち、Storybook も同じフォントで描ける。
   Vite が URL にハッシュを付けて `dist/assets/` に出す。
 - **`emoji.css` を読み込む場所**: Web クライアントの `app/web/src/index.css` と Storybook の `app/ui/src/storybook.css` が、`theme.css` の後に `emoji.css` を読み込む。
   - `theme.css` は `emoji.css` を読み込まない。`--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置くのは `theme.css` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
@@ -270,7 +270,7 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
   - サーバーとクライアントの絵文字の集合が 1 つの版でそろい、版の更新が 1 つの手順になる。
   - 新しい npm の依存を足さない。ADR-0092 の補完が同じデータと検索を使える。
   - 端末・OS の版に関わらず、絵文字が同じ形になる。古い OS でも `EMOJI_VERSION` の絵文字が豆腐にならない（`tech()` に対応するブラウザーでは）。
-  - Storybook と E2E のスクリーンショット（ADR-0110）が、CI のコンテナの OS の絵文字に左右されない。第三者のオリジンに閲覧を知らせない。
+  - Storybook と E2E が、CI のコンテナの OS の絵文字に左右されない。第三者のオリジンに閲覧を知らせない。
   - サーバーが描画する画面は、絵文字のフォントを読み込まず、見た目も変わらない。トークンとフォントの並びは `theme.css` 1 か所で済む。
   - 開いたピッカーの要素の数が、全集合の大きさに依らず、見える行と前後の数行の分（百数十のセル）になる。描いていない行があっても、総数と位置が支援技術に伝わる。
 - 悪い影響・トレードオフ

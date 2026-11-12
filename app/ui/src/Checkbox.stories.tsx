@@ -30,7 +30,6 @@ export const InvalidChecked: Story = {
  * and a halo of the selection tint around the box under the pointer.
  */
 export const PointerStates: Story = {
-  tags: ["no-screenshot"],
   play: async ({ canvas, userEvent }) => {
     // The control is a label: the visually hidden input, the box, then the text.
     const label = canvas.getByText("Mark media as sensitive");
@@ -45,7 +44,6 @@ export const PointerStates: Story = {
 
 /** The native input lies over the box, so that a press on the checkbox itself reaches it (src/ToggleInput.ts). */
 export const InputOverBox: Story = {
-  tags: ["no-screenshot"],
   play: async ({ canvas, userEvent }) => {
     const input = canvas.getByRole("checkbox");
     const box = input.closest("label")?.querySelector(":scope > span:not(:has(input))")?.getBoundingClientRect();

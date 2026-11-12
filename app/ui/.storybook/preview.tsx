@@ -46,9 +46,9 @@ type PreviewRootProps = { locale: Locale; theme: Theme; instanceTheme: InstanceT
  * the React Aria locale. A server theme is applied the way the Tauri app applies one (ADR-0059 §6): its
  * stylesheet as a constructed stylesheet, which, like the server's stylesheet, is outside any cascade layer.
  * The frame is a size container, so components answer to its width
- * (web-client/README.md D2); the visual tests set its inline size.
- * Overlays (dialogs, popovers, toasts) are portalled into the frame instead of <body>, so its screenshots
- * show them. Layout containment makes the frame the containing block of fixed-position descendants too,
+ * (web-client/README.md D2).
+ * Overlays (dialogs, popovers, toasts) are portalled into the frame instead of <body>, so the story's canvas
+ * holds them. Layout containment makes the frame the containing block of fixed-position descendants too,
  * so a modal covers the frame rather than the page.
  */
 function PreviewRoot({ locale, theme, instanceTheme, children }: PreviewRootProps) {

@@ -40,11 +40,9 @@ export const LongLabels: Story = {
 };
 
 /**
- * In a dialog's form, under the fields and the error of the last attempt. The modal renders outside the story frame,
- * so this story takes no screenshots; the other stories carry the look of the row.
+ * In a dialog's form, under the fields and the error of the last attempt.
  */
 export const InDialog: Story = {
-  tags: ["no-screenshot"],
   render: () => (
     <Dialog title="Edit the role" closeLabel="Close" defaultOpen isDismissable={false}>
       {({ close }) => (

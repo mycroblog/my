@@ -20,8 +20,7 @@ export const Waiting: Story = {
     const button = canvas.getByRole("button", { name: "3 new posts" });
     await userEvent.click(button);
     await expect(args.onPress).toHaveBeenCalledOnce();
-    // Leave no hover or focus state in the screenshot: the hover would otherwise end at an arbitrary
-    // point while the screenshots are taken, when Chromium moves the real pointer after a resize.
+    // Back to the resting state, with no hover or focus.
     await userEvent.unhover(button);
     button.blur();
   },

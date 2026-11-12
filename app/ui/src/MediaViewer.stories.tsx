@@ -128,7 +128,6 @@ export const Animated: Story = {
  * around a corner button under the pointer, which shrinks a little while pressed, and the sunken fill of the pager.
  */
 export const PointerStates: Story = {
-  tags: ["no-screenshot"],
   args: { items: [sunset, meadow], index: 0 },
   // The story's own userEvent keeps the button held between the press and the release.
   play: async ({ canvasElement, userEvent }) => {

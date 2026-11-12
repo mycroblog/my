@@ -9,7 +9,7 @@
 export type ThemeOverride = { token: string; light: string; dark: string } | { token: string; value: string };
 
 /**
- * A teal theme on warm surfaces with a looser spacing step and rounder corners, so that a screenshot shows
+ * A teal theme on warm surfaces with a looser spacing step and rounder corners, so that a story shows
  * colors, spacing and radius all following the overrides.
  */
 export const sampleTheme: readonly ThemeOverride[] = [

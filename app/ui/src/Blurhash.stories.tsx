@@ -18,7 +18,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Waits until the blur has been drawn, so the screenshot shows it. */
+/** Waits until the blur has been drawn. */
 async function drawn(root: HTMLElement) {
   await waitFor(() => {
     const canvas = root.querySelector("canvas");

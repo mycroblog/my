@@ -211,8 +211,7 @@ jobs:
               scripts/task.sh docs:pr-commits BASE="$BASE_SHA" HEAD="$HEAD_SHA"
 
   ui-test:
-    # The @my/ui story tests (ADR-0110), on pull requests alone: a pull request that changes a screenshot fixes its
-    # baselines itself, and a change from stacking two of them is rare.
+    # The @my/ui story tests (ADR-0110), on pull requests alone: a break from stacking two pull requests is rare.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.ui == 'true'
     uses: ./.github/workflows/ui-test.yml

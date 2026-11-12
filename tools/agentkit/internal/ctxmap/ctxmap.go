@@ -34,7 +34,7 @@ const whole = "a context map describes its directory as a whole (docs, userdocs,
 // Map is the parsed context map: the root file's settings and entries, and the map of every directory.
 type Map struct {
 	// Generated lists the tracked files the index, the search and the maps pass over: committed generated code,
-	// test data, reference screenshots. What git ignores is never listed: no command sees it.
+	// test data. What git ignores is never listed: no command sees it.
 	Generated []string
 	// Userdocs governs the userdocs of the maps.
 	Userdocs Userdocs

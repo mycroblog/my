@@ -19,7 +19,7 @@ export const Labelled: Story = {
     const button = within(canvasElement).getByRole("button", { name: "New post" });
     await userEvent.click(button);
     await expect(args.onPress).toHaveBeenCalled();
-    // Back to the resting state, so the screenshots do not catch the hover.
+    // Back to the resting state.
     await userEvent.unhover(button);
     button.blur();
   },

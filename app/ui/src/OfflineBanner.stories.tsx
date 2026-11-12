@@ -39,9 +39,8 @@ export const WithAction: Story = {
   },
 };
 
-/** Online, the region is empty and takes no space; an empty frame has no screenshot, and InAPage shows it in a page. */
+/** Online, the region is empty and takes no space; InAPage shows it in a page. */
 export const Online: Story = {
-  tags: ["no-screenshot"],
   args: { isOffline: false },
   play: async ({ canvas }) => {
     const status = canvas.getByRole("status");
@@ -77,7 +76,7 @@ export const InAPage: Story = {
   play: async ({ canvas, userEvent }) => {
     const status = canvas.getByRole("status");
     await expect(status).toBeEmptyDOMElement();
-    // From the keyboard, so that no pointer hovers the button while the screenshots resize the frame.
+    // From the keyboard, so that no pointer hovers the button.
     const toggle = canvas.getByRole("button", { name: "Toggle the connection" });
     toggle.focus();
     await userEvent.keyboard("{Enter}");
@@ -87,7 +86,7 @@ export const InAPage: Story = {
     await userEvent.keyboard("{Enter}");
     await expect(status).toBeEmptyDOMElement();
     await expect(toggle).toHaveFocus();
-    // The screenshot shows the bar.
+    // The story ends with the bar shown.
     await userEvent.keyboard("{Enter}");
   },
 };

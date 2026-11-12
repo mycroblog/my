@@ -1,10 +1,9 @@
 name: UI story tests
 
 # The story tests in the pinned Playwright image, called by ci.yml on pull requests (ADR-0079): the @my/ui stories
-# (ui:test, ADR-0110: axe on every story and the screenshots at 3 container widths × light / dark × LTR / RTL) when the
-# ui context changes, and the app/web screen stories (web:story-test, ADR-0165 §1: their play functions and axe, no
-# screenshots) when the client changes. Each runs as two Vitest shards in two jobs, which halves the wait of a pull
-# request.
+# (ui:test, ADR-0110: play functions and axe on every story in light / dark × LTR / RTL) when the ui context changes,
+# and the app/web screen stories (web:story-test, ADR-0165 §1: their play functions and axe) when the client changes.
+# Each runs as two Vitest shards in two jobs, which halves the wait of a pull request.
 
 on:
   workflow_call:
@@ -23,7 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1/2, 2/2]
-    # The baselines were generated in this same image (`scripts/task.sh ui:snapshots-update`).
     runs-on: ubuntu-latest
     # Must equal PLAYWRIGHT_IMAGE in Taskfile.yml (`scripts/task.sh web:playwright-image-check`).
     container:
@@ -54,11 +52,3 @@ jobs:
         env:
           TASK: ${{ inputs.task }}
           SHARD: ${{ matrix.shard }}
-      # On a visual difference, the actual and diff images are under app/ui/.vitest/attachments/.
-      - name: Upload the screenshot diffs
-        if: failure() && inputs.task == 'ui:test'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ui-test-screenshots-${{ strategy.job-index }}
-          path: app/ui/.vitest/
-          retention-days: 7

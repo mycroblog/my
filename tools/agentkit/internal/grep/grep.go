@@ -310,8 +310,7 @@ func classify(p string, listed []string) class {
 	case lockFiles[base], strings.HasSuffix(base, ".lock"), strings.HasSuffix(base, ".snap"), strings.HasSuffix(base, ".min.js"),
 		strings.HasSuffix(base, ".gen.go"), strings.HasSuffix(base, "_gen.go"), strings.HasSuffix(base, ".pb.go"),
 		strings.HasSuffix(base, ".gen.ts"), strings.HasSuffix(base, ".svg"),
-		strings.Contains(slashed, "/node_modules/"), strings.Contains(slashed, "/__snapshots__/"),
-		strings.Contains(slashed, "/__screenshots__/"):
+		strings.Contains(slashed, "/node_modules/"), strings.Contains(slashed, "/__snapshots__/"):
 		return generated
 	}
 	for _, pat := range listed {

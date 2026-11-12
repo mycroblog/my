@@ -29,7 +29,6 @@ export const Disabled: Story = {
 
 /** The native input lies over the track, so that a press on the switch itself reaches it (src/ToggleInput.ts). */
 export const InputOverTrack: Story = {
-  tags: ["no-screenshot"],
   play: async ({ canvas, userEvent }) => {
     const input = canvas.getByRole("switch");
     const track = input.closest("label")?.querySelector(":scope > span:not(:has(input))")?.getBoundingClientRect();

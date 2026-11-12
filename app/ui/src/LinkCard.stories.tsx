@@ -55,7 +55,7 @@ export const Sensitive: Story = {
     await userEvent.click(toggle);
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await expect(canvas.getByRole("img")).toBeInTheDocument();
-    // Back to concealed, so the screenshots show the concealed state.
+    // Pressed again, it conceals the media once more.
     await userEvent.click(toggle);
     await expect(canvas.queryByRole("img")).not.toBeInTheDocument();
   },

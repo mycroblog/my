@@ -12,7 +12,6 @@ generated:
   - "**/*.gen.go"
   - "**/*.gen.ts"
   - "**/testdata/**"
-  - "**/__screenshots__/**"
   - "internal/adapter/db/*/*gen/**"
   - "internal/adapter/queue/db/internal/**"
   - "api/openapi.yaml"
