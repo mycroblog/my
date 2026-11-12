@@ -29,8 +29,8 @@ tasks:
     desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/devtools and web/catalog in parallel
     deps: [fmt-check, licenses, typecheck, lint, knip, test, devtools-absent]
 
-  # The page where the decider writes notes for an agent (ADR-0168): open the URL it prints. The agent runs
-  # `scripts/agentkit.sh feedback wait` in the background to receive them.
+  # The page where the decider writes notes for an agent (ADR-0168). It prints `catalog: <url>` once it listens;
+  # `scripts/agentkit.sh feedback url` prints the same URL, and `feedback wait` in the background receives the notes.
   catalog:
     desc: Serve the catalog page (web/catalog) on Vite's dev server, with the feedback overlay of @my/devtools
     deps: [install]

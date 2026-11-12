@@ -6,6 +6,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"slices"
 	"strings"
@@ -15,11 +16,14 @@ import (
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-const feedbackUsage = `usage: agentkit feedback wait|show|reply (ADR-0168)
+const feedbackUsage = `usage: agentkit feedback url|wait|show|reply (ADR-0168)
 
-The decider writes notes on the page of the dev server (scripts/task.sh web:catalog) and sends them as one batch,
-which the dev server writes to .tmp/feedback/<batch>.json.
+The decider writes notes on the catalog page and sends them as one batch, which the dev server writes to
+.tmp/feedback/<batch>.json. Start the page (scripts/task.sh web:catalog, in the background), run feedback url, and
+give the decider the URL it prints.
 
+  feedback url
+        print the URL of the running dev server; with none, say the command that starts it and exit 1
   feedback wait [--timeout 0] [--interval 500ms]
         block until a batch arrives that no wait has delivered, print it, and mark it delivered; run it in the
         background, so that a send notifies the session, and again after each batch
@@ -41,6 +45,18 @@ func runFeedback(r *repo.Repo, args []string) error {
 	}
 	dir := feedback.Dir(r.Root)
 	switch args[0] {
+	case "url":
+		if len(args) > 1 {
+			return fmt.Errorf("usage: agentkit feedback url")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		url, err := feedback.URL(ctx, dir, http.DefaultClient)
+		if err != nil {
+			return err
+		}
+		fmt.Println(url)
+		return nil
 	case "wait":
 		fs := flag.NewFlagSet("feedback wait", flag.ContinueOnError)
 		timeout := fs.Duration("timeout", 0, "give up after (0: never)")
@@ -53,6 +69,9 @@ func runFeedback(r *repo.Repo, args []string) error {
 			var cancel context.CancelFunc
 			ctx, cancel = context.WithTimeout(ctx, *timeout)
 			defer cancel()
+		}
+		if url, err := feedback.Recorded(dir); err == nil && url != "" {
+			fmt.Fprintf(os.Stderr, "waiting for notes from %s\n", url)
 		}
 		b, err := feedback.Wait(ctx, dir, *interval, time.Now)
 		if err != nil {

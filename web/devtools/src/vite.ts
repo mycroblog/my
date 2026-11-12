@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The Vite plugin of @my/devtools (ADR-0168 §3). On the dev server it adds data-source to the JSX, loads the
-// overlay, and takes the batches of notes; a production build refuses any import of @my/devtools.
+// overlay, takes the batches of notes, and records its URL; a production build refuses any import of @my/devtools.
 
 import { mkdirSync, watch } from "node:fs";
 import type { IncomingMessage } from "node:http";
-import { relative } from "node:path";
+import { basename, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { searchForWorkspaceRoot, type Plugin } from "vite";
 import { endpoint, updateEvent, type BatchInput } from "./note";
 import { addSources } from "./source";
-import { feedbackDir, readBatches, writeBatch } from "./store";
+import { feedbackDir, readBatches, removeServer, writeBatch, writeServer } from "./store";
 
 const self = fileURLToPath(new URL(".", import.meta.url));
 const overlay = fileURLToPath(new URL("./overlay.tsx", import.meta.url));
@@ -44,8 +44,17 @@ function serve(): Plugin {
       const watcher = watch(dir, () => {
         server.ws.send({ type: "custom", event: updateEvent });
       });
+      // Vite resolves its URLs on "listening" before this listener runs. The page is named after its directory
+      // (web/catalog: "catalog"), on one plain line ahead of Vite's banner.
+      server.httpServer?.on("listening", () => {
+        const url = server.resolvedUrls?.local[0];
+        if (url === undefined) return;
+        writeServer(root, url);
+        server.config.logger.info(`${basename(server.config.root)}: ${url}`);
+      });
       server.httpServer?.on("close", () => {
         watcher.close();
+        removeServer(root);
       });
       server.middlewares.use(`${endpoint}/batches`, (req, res) => {
         const send = (status: number, value: unknown) => {
