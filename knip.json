@@ -14,6 +14,10 @@
       "entry": ["src/overlay.tsx", "src/**/*.test.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"]
     },
+    "web/design-tokens": {
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
     "web/catalog": {
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]

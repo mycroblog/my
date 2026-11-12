@@ -529,7 +529,8 @@ jobs:
           # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
-          # The development packages web/devtools and web/catalog (ADR-0168), and that no production build contains
+          # The tokens of web/design-tokens (ADR-0059), the development packages web/devtools and web/catalog
+          # (ADR-0168), and that no production build contains
           # @my/devtools.
           - name: web:typecheck
             if: needs.changes.outputs.web == 'true'
