@@ -123,7 +123,9 @@ tags:
       is federated. The operations need a `read:events` or `write:events` scope, and answer 404
       for an event that the user does not see.
   - name: client-errors
-    description: The uncaught errors of the web client, which it reports to its own server.
+    description: |
+      The uncaught errors of the web client and the samples of how fast it responds, which it
+      reports to its own server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -548,6 +550,8 @@ paths:
     $ref: ./paths/events_{id}_candidates_{candidate_id}_confirm.yaml
   /client_errors:
     $ref: ./paths/client_errors.yaml
+  /client_measurements:
+    $ref: ./paths/client_measurements.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -620,6 +624,8 @@ paths:
     $ref: ./paths/admin_error_groups_{id}_mute.yaml
   /admin/error_groups/{id}/unmute:
     $ref: ./paths/admin_error_groups_{id}_unmute.yaml
+  /admin/ux_measurements:
+    $ref: ./paths/admin_ux_measurements.yaml
   /admin/domain_actions/{id}/lift:
     $ref: ./paths/admin_domain_actions_{id}_lift.yaml
   /admin/reports:
@@ -1645,6 +1651,10 @@ components:
       $ref: ./components/schemas/AdminServiceClosureProgress.yaml
     ClientErrorReport:
       $ref: ./components/schemas/ClientErrorReport.yaml
+    ClientMeasurement:
+      $ref: ./components/schemas/ClientMeasurement.yaml
+    ClientMeasurementReport:
+      $ref: ./components/schemas/ClientMeasurementReport.yaml
     CloseServiceRequest:
       $ref: ./components/schemas/CloseServiceRequest.yaml
     AnnounceServiceClosureRequest:
@@ -2495,6 +2505,14 @@ components:
       $ref: ./components/schemas/UpdateRoleRequest.yaml
     UpdateWebhookRequest:
       $ref: ./components/schemas/UpdateWebhookRequest.yaml
+    UXMeasurementBucket:
+      $ref: ./components/schemas/UXMeasurementBucket.yaml
+    UXMeasurementList:
+      $ref: ./components/schemas/UXMeasurementList.yaml
+    UXMeasurementSummary:
+      $ref: ./components/schemas/UXMeasurementSummary.yaml
+    UXMetric:
+      $ref: ./components/schemas/UXMetric.yaml
     Visibility:
       $ref: ./components/schemas/Visibility.yaml
     VoiceEndReason:

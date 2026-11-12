@@ -89,3 +89,22 @@ CREATE TABLE error_group_states (
   since INTEGER NOT NULL,
   CHECK (state = 'resolved' OR resolved_version = '')
 ) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
+-- diagnostics: the UX measurements of the web client (ADR-0167 §3). Owned by
+-- internal/app/diagnostics. No column holds an account, a session, an IP address, or a URL.
+-- ---------------------------------------------------------------------------------------------
+
+-- Current value: the samples of a metric and name in the hour that starts at hour_start whose
+-- value falls in the bucket (the index of its bound, diagnostics.UXBounds). name is a route ID, an
+-- interaction kind, an action ID, or a call transport. Every write adds to samples in one
+-- statement outside a transaction; the daily diagnostics.purge_ux_counts deletes the rows older
+-- than 30 days.
+CREATE TABLE ux_measurement_counts (
+  hour_start INTEGER NOT NULL,
+  metric TEXT NOT NULL CHECK (metric IN ('lcp', 'inp', 'long_frame', 'transition', 'press', 'call_rtt', 'call_jitter', 'call_packet_loss')),
+  name TEXT NOT NULL,
+  bucket INTEGER NOT NULL CHECK (bucket >= 0),
+  samples INTEGER NOT NULL CHECK (samples > 0),
+  PRIMARY KEY (hour_start, metric, name, bucket)
+) STRICT;

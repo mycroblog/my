@@ -45,6 +45,32 @@ func (q *Queries) AddErrorGroupCount(ctx context.Context, arg AddErrorGroupCount
 	return err
 }
 
+const addUXCount = `-- name: AddUXCount :exec
+INSERT INTO ux_measurement_counts (hour_start, metric, name, bucket, samples) VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (hour_start, metric, name, bucket) DO UPDATE SET
+  samples = ux_measurement_counts.samples + excluded.samples
+`
+
+type AddUXCountParams struct {
+	HourStart time.Time
+	Metric    string
+	Name      string
+	Bucket    int32
+	Samples   int64
+}
+
+// AddUXCount adds samples to the count of the hour, metric, name, and bucket, in one statement.
+func (q *Queries) AddUXCount(ctx context.Context, arg AddUXCountParams) error {
+	_, err := q.db.Exec(ctx, addUXCount,
+		arg.HourStart,
+		arg.Metric,
+		arg.Name,
+		arg.Bucket,
+		arg.Samples,
+	)
+	return err
+}
+
 const deleteErrorGroupCountsBefore = `-- name: DeleteErrorGroupCountsBefore :execrows
 DELETE FROM error_group_counts WHERE hour_start < $1
 `
@@ -64,6 +90,18 @@ DELETE FROM error_group_states
 func (q *Queries) DeleteErrorGroupStates(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, deleteErrorGroupStates)
 	return err
+}
+
+const deleteUXCountsBefore = `-- name: DeleteUXCountsBefore :execrows
+DELETE FROM ux_measurement_counts WHERE hour_start < $1
+`
+
+func (q *Queries) DeleteUXCountsBefore(ctx context.Context, hourStart time.Time) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUXCountsBefore, hourStart)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getErrorGroup = `-- name: GetErrorGroup :one
@@ -599,6 +637,46 @@ func (q *Queries) ListErrorGroupSummaries(ctx context.Context, arg ListErrorGrou
 			&i.LastVersion,
 			&i.CountDay,
 			&i.CountWeek,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUXCountsSince = `-- name: ListUXCountsSince :many
+SELECT metric, name, bucket, SUM(samples)::bigint AS samples FROM ux_measurement_counts
+WHERE hour_start >= $1
+GROUP BY metric, name, bucket
+`
+
+type ListUXCountsSinceRow struct {
+	Metric  string
+	Name    string
+	Bucket  int32
+	Samples int64
+}
+
+// ListUXCountsSince sums the counts of the hours from since on by metric, name, and bucket: the
+// admin view of the UX measurements.
+func (q *Queries) ListUXCountsSince(ctx context.Context, hourStart time.Time) ([]ListUXCountsSinceRow, error) {
+	rows, err := q.db.Query(ctx, listUXCountsSince, hourStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUXCountsSinceRow{}
+	for rows.Next() {
+		var i ListUXCountsSinceRow
+		if err := rows.Scan(
+			&i.Metric,
+			&i.Name,
+			&i.Bucket,
+			&i.Samples,
 		); err != nil {
 			return nil, err
 		}

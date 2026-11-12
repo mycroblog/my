@@ -10,9 +10,11 @@ output-options:
   skip-prune: true
   # GET /streaming and GET /streaming/timelines/{timeline} are Server-Sent Events streams, which the generated client cannot read (ADR-0093 §6).
   # GET /voice/rooms/{id}/stream and POST /voice/rooms/{id}/signals belong to the WebRTC connection, which mykit does
-  # not have (ADR-0100 §14). POST /client_errors reports the errors of the web client only (ADR-0103 §10).
+  # not have (ADR-0100 §14). POST /client_errors reports the errors of the web client only (ADR-0103 §10), and
+  # POST /client_measurements its UX measurements (ADR-0167 §3).
   exclude-operation-ids:
     - reportClientError
+    - reportClientMeasurements
     - streamEvents
     - streamTimeline
     - streamVoiceRoom

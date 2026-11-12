@@ -2,8 +2,9 @@
 
 // Package diagnostics is the pure domain model of the error groups (ADR-0103 §4 (2), §7): the
 // reported errors grouped by their fingerprint, the states of a group (open, resolved, muted),
-// the events that change them, and the rule that tells a regression from a recurrence. It
-// imports only the standard library.
+// the events that change them, and the rule that tells a regression from a recurrence; and of
+// the UX measurements of the web client (ADR-0167 §3, ux.go): their metrics, names, and buckets.
+// It imports only the standard library.
 package diagnostics
 
 import (

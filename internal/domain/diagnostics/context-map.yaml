@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0103-error-reporting.md"]
+docs: ["docs/adr/0103-error-reporting.md", "docs/adr/0167-ux-measurement.md"]

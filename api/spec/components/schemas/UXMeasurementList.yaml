@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: The UX measurements of a window of hours, by metric and then by most samples.
+type: object
+required: [since, items]
+properties:
+  since:
+    description: The start of the first hour of the window, in UTC.
+    type: string
+    format: date-time
+  items:
+    type: array
+    items:
+      $ref: ./UXMeasurementSummary.yaml

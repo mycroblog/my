@@ -117,6 +117,8 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		DroppedActivities: a.Inbox,
 		// The error groups (ADR-0103 §8).
 		ErrorGroups: a.Diagnostics,
+		// The UX measurements of the web client (ADR-0167 §3).
+		UXMeasurements: a.UXMeasurements,
 		// The relays the instance joins (ADR-0006).
 		Relays: a.Relays,
 		// The refetch of remote posts from their servers (FR-407).
