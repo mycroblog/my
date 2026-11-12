@@ -36,7 +36,7 @@ var hostProfile = idna.New(
 
 // CanonicalHost returns the canonical form of a remote host (without port) or of the domain of a
 // handle or a domain-level moderation action: IDNA A-labels in lower case, without the trailing
-// dot of a fully qualified name (federation.md §1.2). A U-label and an A-label spelling of the
+// dot of a fully qualified name (ADR-0006 §29). A U-label and an A-label spelling of the
 // same host give the same value; an IP address gives its canonical text. It returns
 // ErrInvalidHost for anything else.
 func CanonicalHost(host string) (string, error) {
@@ -77,7 +77,7 @@ func Normalize(raw []byte, now time.Time) (*federation.Document, error) {
 // DisplayHost returns the form of a canonical host to show to people: its U-labels when every
 // label passes the UTS #39 "highly restrictive" profile, otherwise the A-labels, so that a host
 // mixing look-alike scripts (Latin "a" with Cyrillic "а") cannot pass for another one
-// (federation.md §1.2).
+// (ADR-0006 §29).
 func DisplayHost(host string) string {
 	u, err := hostProfile.ToUnicode(host)
 	if err != nil {

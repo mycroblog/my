@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Queries of the database key-value store (internal/adapter/kv/db) for SQLite.
--- Timestamps are Unix milliseconds (see docs/architecture/data-model/README.md, section 1.2); an entry
+-- Timestamps are Unix milliseconds (see schema/README.md); an entry
 -- is live while expires_at is NULL or later than now. Counters are decimal text in value.
 
 -- name: GetEntry :one

@@ -8,7 +8,7 @@ import (
 )
 
 // This file holds the interactions of accounts with statuses (FR-107, FR-113): boosts,
-// favourites, bookmarks, and pins (data-model §4.4).
+// favourites, bookmarks, and pins.
 
 // ActivityURI returns the IRI of an activity of this instance other than Create, such as the
 // Announce of a boost or the Like of a favourite (ADR-0018: /ap/activities/{uuid}).
@@ -103,7 +103,7 @@ func EdgeOf(b Boost) BoostEdge {
 	return BoostEdge{BoosterAccountID: b.BoosterAccountID, StatusID: b.StatusID, BoostID: b.ID}
 }
 
-// Favourite is an account's favourite (Like) of a status, a current value (data-model §4.4).
+// Favourite is an account's favourite (Like) of a status, a current value.
 type Favourite struct {
 	ID        string
 	AccountID string

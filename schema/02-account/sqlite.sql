@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the account module
--- (docs/architecture/data-model/04-tables/02-account.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/domain/account). schema/README.md describes the layout
 -- and the conventions of this directory.
 
--- account (data-model §4.2) ------------------------------------------------------------------
+-- account ------------------------------------------------------------------------------------
 
 -- Resource: a local or remote actor. domain is '' for local actors.
 CREATE TABLE accounts (
@@ -105,7 +105,7 @@ CREATE TABLE local_account_private_keys (
   private_key_enc BLOB NOT NULL
 ) STRICT;
 
--- Event: a lifecycle transition of an account (self and system axis, data-model §5.1).
+-- Event: a lifecycle transition of an account (self and system axis).
 CREATE TABLE account_lifecycle_events (
   id TEXT NOT NULL PRIMARY KEY,
   account_id TEXT NOT NULL,
@@ -200,7 +200,7 @@ CREATE INDEX account_profile_revisions_avatar_media_id ON account_profile_revisi
 CREATE INDEX account_profile_revisions_header_media_id ON account_profile_revisions (header_media_id);
 
 -- ---------------------------------------------------------------------------------------------
--- account: what the owner of a local profile typed (data-model §4.2). Owned by
+-- account: what the owner of a local profile typed. Owned by
 -- internal/app/account; the client API returns it for editing the profile.
 -- ---------------------------------------------------------------------------------------------
 
@@ -221,7 +221,7 @@ CREATE TABLE account_profile_field_sources (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- account: remote actors and key rotation (data-model §4.2, docs/architecture/federation.md).
+-- account: remote actors and key rotation (docs/architecture/federation.md).
 -- Owned by internal/app/account.
 -- ---------------------------------------------------------------------------------------------
 
@@ -303,11 +303,11 @@ CREATE TABLE account_key_revocations (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- account: the erasure of deleted local accounts' data (#397, data-model §4.2, §8). Owned by
+-- account: the erasure of deleted local accounts' data (#397). Owned by
 -- internal/app/account; the indexes serve the erasure's statements in the other modules.
 -- ---------------------------------------------------------------------------------------------
 
--- Event: the erasure job removed the data of a deleted local account (data-model §8). An
+-- Event: the erasure job removed the data of a deleted local account. An
 -- account is erased at most once; one whose statuses the moderation records still keep has no
 -- row until they are erased too.
 CREATE TABLE account_erasures (

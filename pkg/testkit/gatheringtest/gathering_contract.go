@@ -33,7 +33,7 @@ type Harness struct {
 type Factory func(t *testing.T, opts uow.Options) Harness
 
 // GatheringContract verifies the gathering repository of a database adapter through the use cases
-// of appgathering.Service (ADR-0161, data-model §4.19): an event reads back with its settings,
+// of appgathering.Service (ADR-0161): an event reads back with its settings,
 // places, date, and co-organizers; each visibility shows it to exactly the accounts it names, and
 // a block hides it both ways; a physical or URL place reaches only the approved attendees unless
 // the event shows it to every viewer; a place URL other than http or https is refused; a full

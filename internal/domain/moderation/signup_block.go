@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// The sign-up block list (FR-719, data-model §4.3): blocks on sign-ups from the registration page
+// The sign-up block list (FR-719): blocks on sign-ups from the registration page
 // by the domain of the email address, the address itself (kept only as a hash), or the client's
 // IP range. A block in effect either refuses the sign-up or makes it wait for a moderator.
 

@@ -10,7 +10,7 @@ import (
 )
 
 // Eraser empties the titles and descriptions, and deletes the places, of the revisions that a
-// deleted local account wrote (data-model §8, ADR-0161 §14), and forgets the reminders it chose;
+// deleted local account wrote (ADR-0161 §14), and forgets the reminders it chose;
 // the events, the rest of their revisions, their dates, and their answers stay.
 type Eraser struct {
 	uow  uow.UnitOfWork

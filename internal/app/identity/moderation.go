@@ -15,7 +15,7 @@ import (
 )
 
 // LoginPolicy reads whether moderation forbids a local account to log in and use the API (the
-// login restriction, data-model §5.3), and whether a ban is in effect on it, which lets the
+// login restriction), and whether a ban is in effect on it, which lets the
 // account sign in to the server-rendered screens while its deletion is scheduled.
 // *moderation.AccountPolicy implements it.
 type LoginPolicy interface {
@@ -83,7 +83,7 @@ type Accounts interface {
 // RegisterModerationProjectors subscribes the end of a user's sessions and tokens to the
 // moderation module's events: when the restrictions in effect on a local account include login
 // (disable_login, suspend, ban), every session and token of its user is revoked with the reason
-// moderation in the transaction of the action (data-model §5.2), and every token of the clients
+// moderation in the transaction of the action, and every token of the clients
 // the user registered with client_disabled (ADR-0090 §1). Lifting the action revokes
 // nothing and restores nothing; the user signs in again.
 func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts Accounts, clock kernel.Clock) {
@@ -117,7 +117,7 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 
 // RegisterLifecycleProjectors subscribes the end of a user's sessions and tokens to the account
 // module's lifecycle: when a local account is deleted, every session and token of its user is
-// revoked with the reason account_deleted in the transaction of the deletion (data-model §4.1),
+// revoked with the reason account_deleted in the transaction of the deletion,
 // so that a user who signed in while the deletion was scheduled (a ban) is signed out by it. When
 // its owner deactivates it, they end with logout and user, the reasons of what a user does to
 // their own sessions and tokens (ADR-0089 §11). Either way, every token of the clients the user

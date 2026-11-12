@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the finance module
--- (docs/architecture/data-model/04-tables/12-finance.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/app/finance). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- finance: the instance's costs (data-model §4.12, FR-901, FR-902, ADR-0067). Owned by
+-- finance: the instance's costs (FR-901, FR-902, ADR-0067). Owned by
 -- internal/app/finance. Dates are calendar dates (the logical type date).
 -- ---------------------------------------------------------------------------------------------
 

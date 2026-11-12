@@ -24,7 +24,7 @@ func TestParseVisibility(t *testing.T) {
 	}
 }
 
-// Effective visibility = min(original, ceiling) (data-model §5.4).
+// Effective visibility = min(original, ceiling) (ADR-0058 §11).
 func TestEffectiveVisibility(t *testing.T) {
 	silenced := content.AuthorRestrictions{VisibilityCeilingPrivate: true}
 	cases := []struct {

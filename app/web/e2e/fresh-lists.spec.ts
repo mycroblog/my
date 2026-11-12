@@ -198,7 +198,7 @@ test("a change of the timeline languages is on the local timeline from the momen
   await slowDown(page);
 
   // The local timeline has the user's post in English, and its list is cached. The post names its language: one
-  // of undetermined language is on every timeline whatever the timeline languages (data-model/README.md, FR-208).
+  // of undetermined language is on every timeline whatever the timeline languages (FR-208).
   const text = `in English ${username}`;
   const authorized = nextAuthorization(page);
   await openFromNavigation(page, "/profile", touch);

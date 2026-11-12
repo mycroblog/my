@@ -16,7 +16,7 @@ import (
 )
 
 // PreferencesRepositoryContract verifies the user preferences of a database adapter's identity
-// repository (data-model §4.1) through the identity use cases: the defaults written on
+// repository through the identity use cases: the defaults written on
 // registration (with no time zone chosen), replacing preferences and timeline languages with canonical tags, partial
 // updates that keep each other's changes when they run at once, rejecting invalid language tags, time zones, and visibilities without writing
 // anything, and reporting users without preferences. It uses the same harness as AccountRepositoryContract.

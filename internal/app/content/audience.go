@@ -14,7 +14,7 @@ import (
 )
 
 // audience decides who may see one status, through content.CanView in ContextStatus, for the
-// use cases that act on or present a single status (docs/architecture/visibility.md).
+// use cases that act on or present a single status (ADR-0017 §3).
 type audience struct {
 	statuses      Repository
 	interactions  InteractionRepository
@@ -53,7 +53,7 @@ func (a audience) visible(ctx context.Context, viewer content.Viewer, st content
 	case err != nil:
 		return false, appaccount.Actor{}, err
 	default:
-		// A suspended or deleted author is shown to no one else (data-model §5.1).
+		// A suspended or deleted author is shown to no one else.
 		restrictions.ProfileView = restrictions.ProfileView || !author.Lifecycle.Active()
 	}
 

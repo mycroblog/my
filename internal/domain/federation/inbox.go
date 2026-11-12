@@ -11,7 +11,7 @@ import (
 )
 
 // MaxEnvelopeIRIBytes bounds the id, actor, and object id that the inbox reads before verifying
-// a request (federation.md §3.1): they become keys of received_activities and of the inbox job.
+// a request (ADR-0006 §6): they become keys of received_activities and of the inbox job.
 const MaxEnvelopeIRIBytes = 2048
 
 // MaxEnvelopeTypeBytes bounds the type name stored with a received activity.
@@ -20,8 +20,8 @@ const MaxEnvelopeTypeBytes = 255
 // DigestURIPrefix starts the activity URI synthesized for an activity without an id.
 const DigestURIPrefix = "urn:my:digest:"
 
-// Envelope is what the inbox reads from a received activity before verifying it (federation.md
-// §3.1 step 7): the id, the first type name, the actor, and the id of the first object. The
+// Envelope is what the inbox reads from a received activity before verifying it (ADR-0006
+// §6): the id, the first type name, the actor, and the id of the first object. The
 // rest of the document is read later by Normalize.
 type Envelope struct {
 	// ID is the activity's id; "" when the document has none (see ActivityURI).
@@ -79,7 +79,7 @@ func ReadEnvelope(raw []byte, host HostFunc) (Envelope, error) {
 	return e, nil
 }
 
-// ActivityURI returns the key that deduplicates the activity (data-model §2.2): its id, or for an
+// ActivityURI returns the key that deduplicates the activity: its id, or for an
 // activity without one, DigestURIPrefix and the hex SHA-256 of the actor, a line feed, and the
 // body as received.
 func (e Envelope) ActivityURI(body []byte) IRI {
@@ -117,7 +117,7 @@ func (t Trust) Valid() bool { return t == TrustSigned || t == TrustRefetch }
 
 // TrustFor returns the trust of the activity signed by signer (the canonical owner of the key,
 // "" when it is not usable): TrustSigned when the signer is the actor and the id, when the
-// activity has one, is on the actor's host; TrustRefetch otherwise (federation.md §3.1 step 12).
+// activity has one, is on the actor's host; TrustRefetch otherwise (ADR-0006 §8).
 func (e Envelope) TrustFor(signer IRI) Trust {
 	if signer == "" || signer != e.Actor {
 		return TrustRefetch
@@ -142,7 +142,7 @@ type ReceivedActivity struct {
 
 // RemoteObjectTombstone records a Delete of an unknown object, or an Undo of an unknown
 // activity, so that the object or activity arriving later is dropped (remote_object_tombstones,
-// federation.md §3.3).
+// ADR-0006 §9).
 type RemoteObjectTombstone struct {
 	// URI is the deleted object or the undone activity: on the origin of ActorURI.
 	URI         IRI
@@ -168,7 +168,7 @@ func TombstoneFor(act *Activity, activityURI IRI, receivedAt time.Time) (RemoteO
 
 // RemoteFollowTombstone records an Undo of an unknown Follow by the pair that the embedded
 // Follow names, so that the first Follow of the pair arriving later is dropped
-// (remote_follow_tombstones, federation.md §3.3). Misskey's Undo names its Follow by an id other
+// (remote_follow_tombstones, ADR-0006 §9). Misskey's Undo names its Follow by an id other
 // than the one the Follow was sent with, so the URI alone would not stop it.
 type RemoteFollowTombstone struct {
 	// ActivityURI is the Undo.

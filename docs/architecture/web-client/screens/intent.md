@@ -7,7 +7,7 @@ unavailable: {"ほかのサーバーの返信のボタンから来て、投稿�
 
 ## ほかのサーバーから開く（`/intent`）
 
-ほかのサーバーのフォローや返信のボタン（WebFinger の Activity Intents、FEP-3b86、[federation.md §6.5](../../federation.md#65-webfinger-の拡張)）が、このサーバーの利用者を送ってくる画面。
+ほかのサーバーのフォローや返信のボタン（WebFinger の Activity Intents、FEP-3b86、[ADR-0006 §1](../../../adr/0006-federation-protocol-scope.md)）が、このサーバーの利用者を送ってくる画面。
 ボタンが示すアカウント（`?follow=`）か投稿（`?reply=`）のアドレスを見せ、利用者が押すと、フォローのボタンのあるプロフィールか、返信を始めた投稿の画面を開く。
 
 ### 1. 使う人と頻度

@@ -12,7 +12,7 @@ import (
 	"unicode/utf8"
 )
 
-// Mailer sends email (overview §3, the Mailer port). The adapters live in internal/adapter/mail:
+// Mailer sends email (the Mailer port). The adapters live in internal/adapter/mail:
 // mail/none logs messages instead of sending them, mail/smtp sends them over SMTP, mail/ses through
 // the SES API, and mail/plugin through an operator's plugin. Every adapter passes
 // kerneltest.MailerContract.

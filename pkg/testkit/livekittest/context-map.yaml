@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md"]
+docs: ["docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md"]

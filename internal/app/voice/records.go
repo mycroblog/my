@@ -378,7 +378,7 @@ func (s *Service) registerPurgeJob(reg *queue.JobHandlerRegistry, sched *queue.S
 }
 
 // Eraser empties the names and descriptions of the revisions that a deleted local account
-// wrote (data-model §8, ADR-0100 §13); the rooms, the rest of their revisions, and their hosts
+// wrote (ADR-0100 §13); the rooms, the rest of their revisions, and their hosts
 // stay.
 type Eraser struct {
 	uow  uow.UnitOfWork

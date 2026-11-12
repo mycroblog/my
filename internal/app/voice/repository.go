@@ -204,7 +204,7 @@ type RoomRecord struct {
 	Ending *Ending
 }
 
-// Repository is the persistence port of the voice module (data-model §4.14). The writes take the
+// Repository is the persistence port of the voice module. The writes take the
 // transaction of the command; the reads run in tx, or outside any transaction when tx is nil.
 type Repository interface {
 	ProjectionRepository
@@ -315,7 +315,7 @@ type Repository interface {
 	ViewerFactsInRooms(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) (map[string]ViewerFacts, error)
 }
 
-// ProjectionRepository derives the projections of the voice module (data-model §9) from the
+// ProjectionRepository derives the projections of the voice module from the
 // events: voice_room_heads from the rooms, their revisions, host changes, participations, and
 // endings, and voice_room_participants from the participations that have not ended in rooms
 // that have not ended, their role changes and raised hands, the co-host changes of their accounts

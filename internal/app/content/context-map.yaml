@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/data-model/04-tables/04-content.md#44-content", "docs/architecture/visibility.md"]
+docs: ["internal/app/content/doc.go", "docs/adr/0017-visibility-local.md#3-派生ルール"]
 userdocs: ["docs/guide/posting.md"]

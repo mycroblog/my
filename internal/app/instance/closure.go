@@ -16,7 +16,7 @@ import (
 // The service closure (FR-808, ADR-0088 §1): the announcement of the closure, the change of its
 // dates, its withdrawal, and the state that every entry point reads per request and per job.
 
-// ClosureRepository is the part of Repository about the service closure (data-model §4.9).
+// ClosureRepository is the part of Repository about the service closure.
 type ClosureRepository interface {
 	// InsertClosureEvent inserts an event, with its schedule when it is an announcement.
 	InsertClosureEvent(ctx context.Context, tx uow.Tx, e instance.ClosureEvent) error

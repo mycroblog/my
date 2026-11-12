@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-// This file holds the votes of accounts in polls (FR-112, data-model §4.4). A vote with several
+// This file holds the votes of accounts in polls (FR-112). A vote with several
 // choices is one PollVote per choice, and votes are never taken back.
 
 var (
@@ -87,7 +87,7 @@ func NewPoll(id string, in PollInput, now time.Time) (Poll, error) {
 }
 
 // OptionByTitle returns the position of the first choice of p titled title, false when p has
-// none: a remote vote names its choice by its title (federation.md §3.4).
+// none: a remote vote names its choice by its title.
 func (p Poll) OptionByTitle(title string) (int, bool) {
 	title = strings.TrimSpace(title)
 	for _, o := range p.Options {

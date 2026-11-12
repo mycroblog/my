@@ -58,10 +58,9 @@ func acceptanceCriteria(body string) []criterion {
 	return out
 }
 
-// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks, the screens
-// looked at), pushes it, and opens its pull request from .github/pull_request_template.md's sections: the
-// summary, Closes #N for each issue (or Stacked on #M first), the commit subjects as the changes, the screenshots
-// that were looked at, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
+// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks), pushes it,
+// and opens its pull request from .github/pull_request_template.md's sections: the summary, Closes #N for each
+// issue (or Stacked on #M first), the commit subjects as the changes, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
 // changed (docImpact), and opens the PR either way. It comments the PR on each issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	branch, err := r.Branch()
@@ -74,8 +73,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if o.Base == "" {
 		o.Base = "main"
 	}
-	looked, err := gate(r, branch, "origin/"+o.Base)
-	if err != nil {
+	if err := gate(r, branch, "origin/"+o.Base); err != nil {
 		return "", err
 	}
 	for _, l := range docImpact(r, "origin/"+o.Base) {
@@ -127,12 +125,6 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	for _, s := range subjects {
 		fmt.Fprintf(&b, "- %s\n", s)
 	}
-	if len(looked) > 0 {
-		b.WriteString("\n## Screens\n\n")
-		for _, s := range looked {
-			fmt.Fprintf(&b, "- `%s`\n", s)
-		}
-	}
 	b.WriteString("\n## Acceptance criteria\n\n")
 	if len(issues) == 0 {
 		b.WriteString("No issue: nothing to check.\n")
@@ -161,6 +153,32 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	fmt.Fprintf(&b, "- [%s] No secrets, no unrelated changes\n", mark(o.Confirm))
 	if o.Footer != "" {
 		fmt.Fprintf(&b, "\n%s\n", o.Footer)
+	}
+
+	// A branch that already has an open pull request (an epic's draft, which each issue adds a commit to) gets its
+	// description rewritten, and only the issues it did not close yet are told.
+	var existing []struct {
+		Number int    `json:"number"`
+		URL    string `json:"url"`
+		Body   string `json:"body"`
+	}
+	if err := gh.JSON(&existing, "pr", "list", "-R", gh.Repo(), "--head", branch, "--state", "open", "--json", "number,url,body"); err == nil && len(existing) > 0 {
+		pr := existing[0]
+		edit := exec.Command("gh", "pr", "edit", strconv.Itoa(pr.Number), "-R", gh.Repo(), "--title", o.Title, "--body-file", "-")
+		edit.Dir = r.Root
+		edit.Stdin = strings.NewReader(b.String())
+		if out, err := edit.CombinedOutput(); err != nil {
+			return "", fmt.Errorf("gh pr edit %d: %w: %s", pr.Number, err, strings.TrimSpace(string(out)))
+		}
+		for _, is := range issues {
+			if strings.Contains(pr.Body, fmt.Sprintf("Closes #%d\n", is.Number)) {
+				continue
+			}
+			if _, err := gh.Run("issue", "comment", strconv.Itoa(is.Number), "-R", gh.Repo(), "--body", "PR: "+pr.URL); err != nil {
+				return pr.URL, err
+			}
+		}
+		return pr.URL, nil
 	}
 
 	args := []string{"pr", "create", "-R", gh.Repo(), "--base", o.Base, "--head", branch, "--title", o.Title, "--body-file", "-"}

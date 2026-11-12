@@ -14,7 +14,7 @@ import (
 
 // setUpTimeline registers the timeline module's projectors and builds its service. It comes
 // after the content and graph projectors, which reject the commands that must not reach the
-// timelines (data-model §4.6). It also builds the prefix search of hashtags over the tags of
+// timelines. It also builds the prefix search of hashtags over the tags of
 // statuses and the tag_usage projection (ADR-0092 §1). The direct messages by conversation
 // resolve merged conversations, and the followed hashtags find and store their tags, through the
 // content service. The keyword filters judge the statuses of notifications through the status

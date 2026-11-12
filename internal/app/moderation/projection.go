@@ -17,7 +17,7 @@ import (
 )
 
 // ProjectionRepository is the part of Repository that rebuilds the moderation projections and
-// replays the restrictions for the projections of other modules (data-model §9).
+// replays the restrictions for the projections of other modules.
 type ProjectionRepository interface {
 	// ListUnliftedActions returns the actions on accounts without a lift, expired ones
 	// included, by ID, with their ID, target, kind, and end only.
@@ -51,7 +51,7 @@ type ActionStatus struct {
 // RebuildProjections empties account_restrictions, domain_restrictions, report_states, and
 // appeal_states and derives them again, in one transaction, from the actions and their lifts,
 // the reports and their events, and the appeals and their decisions: the rows that the commands
-// write (data-model §9).
+// write.
 //
 // An action that is not lifted imposes its restrictions until it expires. An expired row
 // restricts nothing, and the job moderation.expire_restrictions removes it and tells what expired
@@ -149,7 +149,7 @@ func rowKey(r moderation.RestrictionRow) string {
 }
 
 // ReplayEvents emits inside tx, for the rebuild of the projections that other modules derive
-// from this module's events (data-model §9), the restrictions in effect at now:
+// from this module's events, the restrictions in effect at now:
 // AccountRestrictionsChanged for each account and DomainRestrictionsChanged for each domain that
 // an action without a lift names, in ID order, as the commands emit them after an action or a
 // lift.

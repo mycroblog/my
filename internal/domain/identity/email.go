@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// EmailAddress is an email address a user added (data-model §4.1, user_email_addresses).
+// EmailAddress is an email address a user added (user_email_addresses).
 type EmailAddress struct {
 	ID                string
 	UserID            string
@@ -19,14 +19,14 @@ type EmailAddress struct {
 	AddedAt           time.Time
 }
 
-// MaxEmailLength is the longest email address accepted, in bytes (data-model §4.1, string(320)).
+// MaxEmailLength is the longest email address accepted, in bytes (string(320)).
 const MaxEmailLength = 320
 
 // ErrInvalidEmail reports an email address that ValidateEmail rejects.
 var ErrInvalidEmail = errors.New("invalid email address")
 
 // ValidateEmail accepts a bare addr-spec (local@domain) of at most MaxEmailLength bytes of valid
-// UTF-8 without NUL (data-model §1.2), without a display name, angle brackets, comments, or
+// UTF-8 without NUL, without a display name, angle brackets, comments, or
 // surrounding spaces.
 func ValidateEmail(address string) error {
 	if address == "" || len(address) > MaxEmailLength || !validText(address, MaxEmailLength) {

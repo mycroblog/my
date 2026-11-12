@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the hook module
--- (docs/architecture/data-model/04-tables/16-hook.md). schema/README.md describes the
+-- (internal/app/hook). schema/README.md describes the
 -- layout and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- hook: the decisions of the decision hooks (data-model §4.16, ADR-0147 §6). Owned by
+-- hook: the decisions of the decision hooks (ADR-0147 §6). Owned by
 -- internal/app/hook. No decision holds the text of a post, an email address, or an IP address; an
 -- appeal holds the text its author sends. hook.purge_decisions removes the decisions after
 -- hook_decisions_retention_days, with their appeals.
@@ -76,7 +76,7 @@ CREATE TABLE hook_decision_appeal_decisions (
 );
 
 -- Current value: the hook no longer reviews the account, because a moderator overturned its appeal.
--- The row is the value (data-model §1, rule 5): it does not follow the decision or the appeal, which
+-- The row is the value (ADR-0020 rule 5): it does not follow the decision or the appeal, which
 -- retention removes. Erasing the account removes it.
 CREATE TABLE hook_account_exemptions (
   hook text NOT NULL CHECK (hook IN ('local.status')),

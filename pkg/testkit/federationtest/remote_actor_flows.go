@@ -47,7 +47,7 @@ type RemoteActorHarness struct {
 type RemoteActorFactory func(t *testing.T, opts uow.Options) RemoteActorHarness
 
 // RemoteActorFlows verifies the remote actor use cases of the account and federation modules on a
-// database adapter (federation.md §6), the flows of ADR-0153 §1, which internal/flowtest/federation
+// database adapter (ADR-0006 §12), the flows of ADR-0153 §1, which internal/flowtest/federation
 // runs once on SQLite; RemoteActorContract checks the repositories' methods on every adapter:
 // storing the actor documents of the main
 // implementations (snapshots, sanitized profile revisions, keys, handles, the server seen), key
@@ -55,9 +55,9 @@ type RemoteActorFactory func(t *testing.T, opts uow.Options) RemoteActorHarness
 // another origin, the fetch rules (signed GET, Content-Type, failures remembered, 410 Gone), the
 // periodic refresh of followed stale actors, NodeInfo observations, the public key resolver, that
 // the handle projection equals a rebuild, the resolution of handles and URLs (FR-305), the Update
-// and Delete that remote actors send of themselves (federation.md §3.4), the shared inboxes
-// known to the instance, and documents with NUL in every string (stored as U+FFFD, federation.md
-// §4). The network is an in-memory HTTPClient.
+// and Delete that remote actors send of themselves, the shared inboxes
+// known to the instance, and documents with NUL in every string (stored as U+FFFD).
+// The network is an in-memory HTTPClient.
 func RemoteActorFlows(t *testing.T, newHarness RemoteActorFactory) {
 	t.Helper()
 	cases := []struct {
@@ -1114,7 +1114,7 @@ func remoteReceivesActorUpdates(t *testing.T, e *remoteEnv) {
 }
 
 // remoteStoresStringsWithNUL stores an actor whose every string has a NUL (\u0000), fetched and
-// received in an Update: each NUL is stored as U+FFFD (federation.md §4) the same way in every
+// received in an Update: each NUL is stored as U+FFFD the same way in every
 // dialect, and nothing fails.
 func remoteStoresStringsWithNUL(t *testing.T, e *remoteEnv) {
 	ctx := t.Context()

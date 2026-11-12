@@ -9,7 +9,7 @@
 // registration read the Moderation entry's counts again, the conversations of the direct messages take their new place
 // in the list that the navigation's unread count reads, and the server's announcements join, change, or leave
 // the list above the home timeline. After a reconnect, all of them read again what the
-// gap may have missed, since the server replays nothing (client-api.md §5).
+// gap may have missed, since the server replays nothing.
 import { useQueryClient } from "@tanstack/react-query";
 import { catchUpAnnouncements, receiveAnnouncement, removeAnnouncement } from "../../features/announcements";
 import { catchUpConversations, receiveConversation } from "../../features/direct-messages";

@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// Keyword filters (FR-209, ADR-0157, data-model §4.6): an account keeps up to
+// Keyword filters (FR-209, ADR-0157): an account keeps up to
 // timeline.MaxKeywordFilters filters, each with words, contexts, an action, and an optional
 // expiry. The timeline module owns them: the account's commands write them, and every read that
 // shows statuses in a context of the filters (home and lists, notifications, the public

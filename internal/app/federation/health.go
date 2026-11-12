@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Event types of the health of remote servers (federation.md §7.3).
+// Event types of the health of remote servers (ADR-0006 §3).
 const (
 	// EventDeliveryAttempted is emitted with every delivery_attempts row.
 	EventDeliveryAttempted = "federation.delivery_attempted"
@@ -53,7 +53,7 @@ type HealthProjectorDeps struct {
 }
 
 // RegisterHealthProjectors subscribes the instance_health projector to the delivery attempts and
-// the servers reached otherwise (data-model §4.8, federation.md §7.3). In the transaction that
+// the servers reached otherwise (ADR-0006 §3). In the transaction that
 // records the event, it:
 //
 //   - counts a retryable failure on a new UTC day as one more failure day, and marks the server
@@ -156,8 +156,8 @@ type HealthDeps struct {
 	IDs        kernel.IDGenerator
 }
 
-// Health records that remote servers are up outside deliveries (federation.md §7.3): the inbox
-// calls Reached with ReasonInboundRequest once a signature from a server verifies (§3.1 step
+// Health records that remote servers are up outside deliveries (ADR-0006 §3): the inbox
+// calls Reached with ReasonInboundRequest once a signature from a server verifies (ADR-0006 §6 step
 // 14), and the probe with ReasonProbeSucceeded. The admin API reads the health and availability
 // events of servers through it and clears a server with MarkAvailable.
 type Health struct{ d HealthDeps }
@@ -232,7 +232,7 @@ func (h *Health) Events(ctx context.Context, domain, before string, limit int) (
 	return h.d.Repository.ListAvailabilityEvents(ctx, domain, before, limit)
 }
 
-// MarkAvailable is an operator's clearing of the server domain (federation.md §7.3): its failure
+// MarkAvailable is an operator's clearing of the server domain (ADR-0006 §3): its failure
 // days go back to zero and, when it was unavailable, it is marked available with
 // federation.ReasonOperator, and the operation is audited in the same transaction. A server without
 // failures has nothing to clear: it writes nothing, not even the audit entry. byUserID is the

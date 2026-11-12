@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -227,6 +228,63 @@ func identityRepoPasskeys(t *testing.T, r *identityRepo) {
 	}
 	if list, err := r.h.Identity.ListActivePasskeyCredentials(ctx, alice); err != nil || len(list) != 1 || list[0].ID != a2.ID {
 		t.Errorf("ListActivePasskeyCredentials after the revocation = %+v, %v; want the laptop", list, err)
+	}
+}
+
+// identityRepoLocksSignInMethods removes the password and the only passkey of a user from two
+// transactions at once, each under LockSignInMethods and each only while the other method is
+// left, as RemovePassword and RemovePasskey do: the lock orders them, so one sees what the other
+// removed and the user keeps a way to sign in.
+func identityRepoLocksSignInMethods(t *testing.T, r *identityRepo) {
+	ctx := t.Context()
+	for round := range 5 {
+		alice := r.user(t)
+		pw := r.password(t, alice, "$argon2id$x")
+		pk := r.passkey(t, alice, "phone")
+		now := r.clock.Now()
+		removePassword := func(tx uow.Tx) error {
+			passkeys, err := r.h.Identity.ListActivePasskeyCredentialsTx(ctx, tx, alice)
+			if err != nil || len(passkeys) == 0 {
+				return err
+			}
+			return r.h.Identity.InsertPasswordCredentialRemoval(ctx, tx, identity.PasswordCredentialRemoval{PasswordCredentialID: pw.ID, RemovedAt: now})
+		}
+		removePasskey := func(tx uow.Tx) error {
+			if _, err := r.h.Identity.FindCurrentPasswordCredentialTx(ctx, tx, alice); err != nil {
+				if errors.Is(err, appidentity.ErrNotFound) {
+					return nil
+				}
+				return err
+			}
+			return r.h.Identity.InsertPasskeyCredentialRevocation(ctx, tx, identity.PasskeyCredentialRevocation{PasskeyID: pk.ID, RevokedAt: now})
+		}
+		var wg sync.WaitGroup
+		start := make(chan struct{})
+		errs := make([]error, 2)
+		for i, remove := range []func(uow.Tx) error{removePassword, removePasskey} {
+			wg.Go(func() {
+				<-start
+				errs[i] = r.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+					if err := r.h.Identity.LockSignInMethods(ctx, tx, alice); err != nil {
+						return err
+					}
+					return remove(tx)
+				})
+			})
+		}
+		close(start)
+		wg.Wait()
+		if err := errors.Join(errs...); err != nil {
+			t.Fatalf("round %d: %v", round, err)
+		}
+		_, pwErr := r.h.Identity.FindCurrentPasswordCredential(ctx, alice)
+		passkeys, err := r.h.Identity.ListActivePasskeyCredentials(ctx, alice)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if errors.Is(pwErr, appidentity.ErrNotFound) && len(passkeys) == 0 {
+			t.Fatalf("round %d: both removals went through; the user has no way to sign in", round)
+		}
 	}
 }
 

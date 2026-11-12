@@ -23,7 +23,7 @@ import (
 
 // DueContract verifies the due times, the reminders, and the recipients of the notifications of
 // the gathering repository of a database adapter through appgathering.Service (ADR-0161 §11,
-// §12, data-model §4.19): the creation, the answers, the reminders, a new date, and the
+// §12): the creation, the answers, the reminders, a new date, and the
 // cancellation keep gathering_dues; gathering.tick enqueues what came and moves the due time on;
 // the reminders of an account read back, none included, and its erasure forgets them; the
 // audience of an event lists who answered going or maybe and the invitees, a page at a time; and

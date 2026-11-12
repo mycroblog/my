@@ -129,7 +129,7 @@ var (
 // ADR-0070#decision (the first section of the ADR whose anchor starts with "decision"), the retired number of an
 // ADR merged into another (ADR-0074, ADR-0074§13, which resolve to where it lives now),
 // <file>§4.4 or <file>#<anchor> with any unique suffix of a Markdown path or of a directory of section files
-// (data-model§4.4), short names (DeleteOwnAccount, custom_emojis), a Go name with its receiver or package
+// (web-client§14.2), short names (DeleteOwnAccount, custom_emojis), a Go name with its receiver or package
 // (Service.Create, content.NewService), a declaration of a file (service.go:Create), a declaration as the source
 // writes it (`func (s *Service) Create`), and the name of a directory of section files (web-client), which
 // resolves to its README.md.
@@ -264,8 +264,8 @@ func (k *KB) paths(p string) ([]string, error) {
 }
 
 // section resolves file§num or file#anchor; file may be an ADR id, a path suffix, or a directory holding a
-// document split into one file per section (web-client§14.2 looks through docs/architecture/web-client/, and
-// data-model§4.4 through docs/architecture/data-model/ and its subdirectories).
+// document split into one file per section (web-client§14.2 looks through docs/architecture/web-client/ and
+// its subdirectories).
 func (k *KB) section(file, sec string) ([]store.Node, error) {
 	var paths []string
 	if strings.HasPrefix(file, "ADR-") {

@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// The tips (data-model §4.13, ADR-0162 §12).
+// The tips (ADR-0162 §12).
 
 // InsertTipChange implements supporters.TipRepository.
 func (r *SupporterRepository) InsertTipChange(ctx context.Context, tx uow.Tx, c supporters.TipChange) error {

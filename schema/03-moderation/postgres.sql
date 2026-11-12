@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the moderation module
--- (docs/architecture/data-model/04-tables/03-moderation.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/domain/moderation). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
 -- moderation: actions on accounts and domains, the restrictions they impose, and reports
--- (data-model §4.3, §5.2, docs/architecture/federation.md §11). Owned by internal/app/moderation.
+-- (docs/architecture/federation.md §1). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: a moderation action on an account. A ban never expires.
@@ -55,7 +55,7 @@ CREATE TABLE account_restrictions (
   PRIMARY KEY (account_id, restriction, source_action_id)
 );
 CREATE INDEX account_restrictions_source_action_id ON account_restrictions (source_action_id);
--- The removal of expired rows, which tells the end of expired suspensions (federation.md §11.1).
+-- The removal of expired rows, which tells the end of expired suspensions (ADR-0058 §6).
 CREATE INDEX account_restrictions_effective_until ON account_restrictions (effective_until);
 
 -- Event: a moderation action on a domain and its subdomains. issued_by_user_id is NULL for the
@@ -208,7 +208,7 @@ CREATE TABLE report_forwards (
 );
 CREATE UNIQUE INDEX report_forwards_report_id ON report_forwards (report_id);
 
--- moderation and content: actions on statuses (#364, data-model §4.3, §4.4) -------------------
+-- moderation and content: actions on statuses (#364) ------------------------------------------
 
 -- Event child: a status that an action on statuses (delete_statuses, mark_statuses_sensitive)
 -- acts on. The status is the target account's.
@@ -218,7 +218,7 @@ CREATE TABLE moderation_action_statuses (
   PRIMARY KEY (action_id, status_id)
 );
 
--- moderation: notes on reports and their reopenings (#333, data-model §4.3) --------------------
+-- moderation: notes on reports and their reopenings (#333) -------------------------------------
 
 -- Event: a moderator reopened a resolved report. reopened_by_user_id is NULL for the CLI.
 CREATE TABLE report_reopenings (
@@ -240,7 +240,7 @@ CREATE TABLE report_notes (
 );
 CREATE INDEX report_notes_report_id_id ON report_notes (report_id, id);
 
--- moderation: the audit log (data-model §4.3, ADR-0058). Owned by internal/app/moderation.
+-- moderation: the audit log (ADR-0058). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: one administrative operation, appended in the transaction of the operation by the
@@ -306,7 +306,7 @@ CREATE INDEX audit_log_entries_target_kind_target_id_id ON audit_log_entries (ta
 CREATE INDEX audit_log_entries_actor_user_id_id ON audit_log_entries (actor_user_id, id DESC);
 
 -- ---------------------------------------------------------------------------------------------
--- moderation: the follows that suspensions cut (data-model §4.3, FR-717, ADR-0058). Owned by
+-- moderation: the follows that suspensions cut (FR-717, ADR-0058). Owned by
 -- internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
@@ -333,7 +333,7 @@ CREATE UNIQUE INDEX relationship_severances_action_id_account_id ON relationship
 CREATE UNIQUE INDEX relationship_severances_allowlist_cutoff_id_account_id ON relationship_severances (allowlist_cutoff_id, account_id);
 
 -- ---------------------------------------------------------------------------------------------
--- moderation: appeals of actions on local accounts (#337, data-model §4.3, FR-707, ADR-0058).
+-- moderation: appeals of actions on local accounts (#337, FR-707, ADR-0058).
 -- Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
@@ -366,7 +366,7 @@ CREATE TABLE appeal_states (
 );
 CREATE INDEX appeal_states_state_appeal_id ON appeal_states (state, appeal_id);
 
--- moderation: the sign-up block list (data-model §4.3, FR-719). Owned by internal/app/moderation.
+-- moderation: the sign-up block list (FR-719). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: a block on sign-ups from the registration page. value is an IDNA A-label domain
@@ -398,7 +398,7 @@ CREATE TABLE signup_block_lifts (
 
 -- ---------------------------------------------------------------------------------------------
 -- moderation: retention of the moderation records and the holds that stop it (#349,
--- data-model §4.3, §8, ADR-0058). Owned by internal/app/moderation.
+-- ADR-0058). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: an operator's hold on the erasure of an account's records (a court order to preserve
@@ -424,7 +424,7 @@ CREATE INDEX report_statuses_status_id ON report_statuses (status_id);
 CREATE INDEX moderation_action_statuses_status_id ON moderation_action_statuses (status_id);
 
 -- ---------------------------------------------------------------------------------------------
--- moderation: the allowlist of federation (#2580, data-model §4.3, ADR-0159 §1-§3). Owned by
+-- moderation: the allowlist of federation (#2580, ADR-0159 §1-§3). Owned by
 -- internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
@@ -453,8 +453,8 @@ CREATE TABLE allowlist_cutoffs (
 
 
 -- ---------------------------------------------------------------------------------------------
--- moderation: subscriptions to domain block lists that others publish (data-model §4.3,
--- ADR-0159 §4, §5). Owned by internal/app/moderation.
+-- moderation: subscriptions to domain block lists that others publish
+-- (ADR-0159 §4, §5). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a subscription to a domain block list at url, an https URL fetched through the

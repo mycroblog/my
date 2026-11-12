@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// setUpInbox builds the synchronous part of the inbox (docs/architecture/federation.md §3.1):
+// setUpInbox builds the synchronous part of the inbox (ADR-0006 §6):
 // signatures verified with the HTTP signature adapter and the keys that RemoteActors resolves,
 // the IP and domain rate limits, and the record and job written once per activity. It needs
 // RemoteActors and InstanceHealth.
@@ -33,8 +33,8 @@ func (a *App) setUpInbox(cfg *config.Config, repo federationRepository) {
 	a.setUpInboxProcessor(cfg, repo, outbox)
 }
 
-// setUpInboxProcessor builds the asynchronous part of the inbox (docs/architecture/federation.md
-// §3.2): the federation.inbox job, which resolves actors and fetches documents through
+// setUpInboxProcessor builds the asynchronous part of the inbox (ADR-0006
+// §8): the federation.inbox job, which resolves actors and fetches documents through
 // RemoteActors and dispatches each activity to the handler of its type.
 func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository, outbox queue.Outbox) {
 	a.InboxProcessor = federation.NewInboxProcessor(federation.InboxProcessorDeps{
@@ -53,7 +53,7 @@ func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository,
 	a.RemoteActors.RegisterInboxHandlers(a.InboxProcessor)
 	a.InboxProcessor.RegisterJobs(a.Handlers)
 	a.registerStatusHandlers(repo)
-	// The handlers of each activity type (federation.md §3.4).
+	// The handlers of each activity type.
 	federation.RegisterFollowHandlers(a.InboxProcessor, federation.FollowHandlerDeps{
 		Graph: a.Graph, Accounts: a.Accounts, Relays: a.Relays, Quotes: a.QuoteHandlers, Moves: a.Accounts, Relationships: a.Graph,
 		Hooks: a.Hooks, Reports: a.Moderation, Instance: a.Accounts, UnitOfWork: a.UnitOfWork,

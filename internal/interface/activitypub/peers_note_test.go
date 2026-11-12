@@ -241,7 +241,7 @@ var noteRequired = map[string][]string{
 }
 
 // TestCreateNoteMatchesPeers checks the Create of a local status, as the object GET serves it
-// with the Note builder that the fan-out delivers too (federation.md §7.4, §10), against the
+// with the Note builder that the fan-out delivers too, against the
 // Create that each implementation publishes.
 func TestCreateNoteMatchesPeers(t *testing.T) {
 	s := newNoteServer(t, newNoteWorld(), nil)
@@ -315,7 +315,7 @@ func (noteQuote) FindInteractionAuthorization(context.Context, appcontent.Intera
 }
 
 // TestCollectionsServeTheQuotingNote checks a quoting status in the outbox and featured: the Note
-// is the one its IRI serves (federation.md §7.4), and the collection's context defines its terms.
+// is the one its IRI serves, and the collection's context defines its terms.
 func TestCollectionsServeTheQuotingNote(t *testing.T) {
 	s := newNoteServer(t, newNoteWorld(), noteQuote{})
 	rec := s.get(t, "/ap/objects/"+noteStatusID, acceptMastodon)

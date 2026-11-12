@@ -36,7 +36,7 @@ type TextRevised struct {
 // EventType implements uow.Event.
 func (TextRevised) EventType() string { return EventTextRevised }
 
-// RegisterProjectors registers the instance module's synchronous projectors (data-model §9):
+// RegisterProjectors registers the instance module's synchronous projectors:
 // instance_settings from setting revisions, instance_texts from text revisions,
 // instance_rule_heads from rule revisions and retirements, instance_theme from theme revisions,
 // instance_brands from brand revisions,
@@ -75,7 +75,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 }
 
 // RebuildProjections empties the instance module's projections and derives them again from
-// their revisions (data-model §9), in one transaction per projection.
+// their revisions, in one transaction per projection.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	steps := []struct {
 		name string

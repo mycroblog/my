@@ -157,7 +157,7 @@ type Listener interface {
 
 ## 経緯
 
-リアルタイム更新（`GET /api/v1/streaming`、FR-207、[ADR-0016](0016-client-api-style.md)）は、コミットフックが `stream.Publisher` に知らせを出し、各ストリームが `stream.Subscriber` で購読する（[overview §4.4](../architecture/overview.md#44-リアルタイム更新sse)）。
+リアルタイム更新（`GET /api/v1/streaming`、FR-207、[ADR-0016](0016-client-api-style.md)）は、コミットフックが `stream.Publisher` に知らせを出し、各ストリームが `stream.Subscriber` で購読する（[overview §3](../architecture/overview.md#3-リアルタイム更新sse)）。
 1 つのプロセスの中だけで配る `stream.Hub` では、web のプロセスが複数ある構成（Cloud Run の複数インスタンス、k8s のレプリカ）と、web と worker を分けた構成（Inbox の処理で作られた通知は worker で生まれる）に知らせが届かない（#196）。
 そこで決定者が、AWS の Queue、GCP の類似サービス、Valkey を対象に Pub/Sub のアダプタを増やすよう指示した。
 

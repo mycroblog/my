@@ -2,7 +2,7 @@
 
 //go:build federationlive
 
-// Package federationlive holds the scenarios of the live interoperability test (federation.md §12):
+// Package federationlive holds the scenarios of the live interoperability test (README.md):
 // black-box checks, over HTTPS through the proxy of compose.yaml, that this server federates with
 // Mastodon, GoToSocial, and Misskey. scripts/federation-live.sh starts the stack and runs them; without the
 // FEDERATION_LIVE_* variables that it sets, every test skips.
@@ -300,7 +300,7 @@ func (b *browser) do(ctx context.Context, method, rawURL string, form url.Values
 
 // --- Database of this server ------------------------------------------------------------------
 
-// receivedActivity is a row of received_activities (data-model §4.8).
+// receivedActivity is a row of received_activities.
 type receivedActivity struct {
 	URI, Type, SignatureScheme, Trust string
 }
@@ -334,7 +334,7 @@ func (e *env) receivedActivities(t *testing.T, actorURI string) []receivedActivi
 	return out
 }
 
-// deliveryAttempt is a row of delivery_attempts with the inbox of its delivery (data-model §4.8).
+// deliveryAttempt is a row of delivery_attempts with the inbox of its delivery.
 type deliveryAttempt struct {
 	Inbox, Outcome, SignatureScheme string
 	HTTPStatus                      int

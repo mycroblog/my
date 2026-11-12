@@ -2,12 +2,12 @@
 
 スタッフの画面は、モデレーションとサーバー管理の 2 つの区分に分ける（[ADR-0058](../../adr/0058-moderation-admin-separation.md)）。1 つの画面は 1 つの区分の経路だけを持つ。
 
-- **モデレーション**（`/moderation/*`、`features/moderation`）: 通報・異議申し立ての審査・アカウント・登録の審査・登録の拒否リスト・招待・ドメインへの処分・連合先のサーバーの状態（[federation.md §7.3](../federation.md)）・監査ログ。
+- **モデレーション**（`/moderation/*`、`features/moderation`）: 通報・異議申し立ての審査・アカウント・登録の審査・登録の拒否リスト・招待・ドメインへの処分・連合先のサーバーの状態（[ADR-0006 §3](../../adr/0006-federation-protocol-scope.md)）・監査ログ。
   `features/moderation` は、利用者が自分への処分を確かめる画面（§18）も受け持ち、サーバー管理の画面が使う共通の部品（下の「共通の部品」）と権限の型・一覧のページングも `index.ts` から出す。
 - **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・サービスの終了・webhook・リレー・外部ログインのプロバイダー・費用・ロール・ジョブのキュー・エラー。これから足すサーバー管理の画面（リレー）は、
   `routes/admin.<画面>.tsx` のルートと、`features/admin/components/AdminMenu.tsx` の一覧の 1 行を足してここに置く。
 
-API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) の管理の操作、タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
+API の経路はどちらも `/admin/*` で（タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
 
 - **出し分け**: 閲覧者の `CredentialAccount.permissions` で、ナビゲーションの「モデレーション」と「管理」（§9）・各区分の画面（`/moderation`・`/admin`）・設定の画面の「モデレーション」と「管理」の区画と各画面を出す。`manage_domains` が連合先とドメインへの処分、`manage_jobs` がジョブのキュー、`view_audit` が監査ログ、`manage_accounts` が登録の審査と登録の拒否リストと異議申し立ての審査とアカウント、`manage_invites` が招待、`manage_reports` が通報の画面と自動審査の記録、`manage_rules` がルールの画面、`manage_roles` がロールの画面とアカウントの管理画面の「管理」のページのロールの区画、`manage_settings` が規約とポリシーの画面とサーバーの設定とテーマとリレーの画面、`manage_custom_emojis` がカスタム絵文字の画面、`manage_announcements` がお知らせの画面、`manage_webhooks` が webhook の画面、`manage_login_providers` が外部ログインのプロバイダーの画面、`manage_finance` が費用の画面に、`manage_errors` がエラーの画面に要る。
   利用者の機能の区分の権限はスタッフの画面を出さず、`view_finance` はナビゲーションの「会計」と会計のページ（`/finance`、§9）を、`create_custom_emojis` は設定のメニューの「あなたのカスタム絵文字」と自分のカスタム絵文字の画面（`/settings/custom-emojis`、§9）を出す。
@@ -28,7 +28,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   「配送」の区画は `GET /admin/instances/{domain}/deliveries` の新しい順の一覧（`RecordList` と「さらに表示」）で、配送ごとに種類・日時・送信者・受信箱・アクティビティの ID と、試行（結果・日時・状態コード・署名の方式・エラー）を出す。アクティビティの中身はどこにも出さない。
   公開でない配送は送信者・アクティビティの ID・個人の受信箱を伏せた理由を言い、「伏せた項目を表示」（`POST …/deliveries/{id}/reveal`。監査ログに残ることを説明に書く。答えは mutation にだけ持つ）を置く。
   絞り込みはアクティビティの ID と、このサーバーのアカウント（ユーザー名を `GET /accounts/lookup` で ID に直す。監査ログに残ることを欄の説明で送る前に言う）で、実行のたびに監査ログに残るのでページの state に置き、URL には置かない。
-  データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する。[data-model §4.8](../data-model/04-tables/08-federation.md#48-federation)）ので、「最後の成功」は配送の再開の日時で示す。
+  データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する）ので、「最後の成功」は配送の再開の日時で示す。
   失敗の日数があるか停止中なら「配送を再開する」を出し、成功したら詳細の答えを置き換え、一覧と履歴を無効にして結果を知らせる。失敗はトーストで知らせ、状態とボタンを残す（E2）。
   「モデレーション」の区画から、そのドメインのドメインへの処分の画面（`/moderation/domain-actions?domain=…`）へリンクする。「投稿の取り直し」の区画（下の「投稿の取り直し」）を持つ。
 - **ドメインへの処分**（`/moderation/domain-actions`、FR-702）: 一覧 → 詳細の 4 つのページ（上の「画面の分け方」）。`h1` の下の `LocalNav` は一覧（`/moderation/domain-actions`）・ブロックリストの購読（`/moderation/domain-actions/subscriptions`）・許可したドメイン（`/moderation/domain-actions/allowed`）・Mastodon の CSV（`/moderation/domain-actions/import`）の 4 つで、新しい処分（`/new`）と処分の詳細（`/$id`）・購読の追加と購読のページは `h1` の下に一覧へ戻るリンクを置く。
@@ -413,7 +413,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   各区画は、最後に保存した日時、公開ページへのリンク（公開しているときだけ。同じタブの `DocumentLink`）、本文（Markdown の `TextArea`、100,000 文字）と「保存する」の `form` で、その文書だけを保存する。
   成功したら本文・`GET /instance`（リンク）・監査ログを取り直してから、監査ログに記録したことを区画の `StatusMessage` に出す。失敗はフォームの下（`role="alert"`）に出して入力を残す。保存してある本文を空にして保存すると削除になるので、`ConfirmDialog`（`danger`）で確かめる。
   下書きはページごとに持つ。下書きがあるまま別のページへ移るとき（ほかの文書のページも含む）は、`features/settings` の `useUnsavedChangesGuard` で確かめる（§9 の未保存の変更）。
-- **投稿の取り直し**（FR-407、[federation.md §6.4](../federation.md#64-投稿の取り直し)、`components/RefetchStatuses.tsx`・`hooks/useRefetch.ts`）: 保存したリモートの投稿を相手のサーバーから取り直すよう頼む。
+- **投稿の取り直し**（FR-407、`components/RefetchStatuses.tsx`・`hooks/useRefetch.ts`）: 保存したリモートの投稿を相手のサーバーから取り直すよう頼む。
   連合先の詳細とリモートのアカウントの管理画面は「投稿の取り直し」の区画（`h2` の `section`）に、何をするか（件数の上限と、裏で 1 分ごとに進むこと）の説明を `aria-describedby` にした「投稿を取り直す」を置く。
   押すと `POST /admin/instances/{domain}/refetch_statuses` か `POST /admin/accounts/{id}/refetch_statuses`（通報の投稿は `POST /admin/statuses/{id}/refetch`）を送り、監査ログに無効化の印を付けてから、頼んで監査ログに記録したことを区画の `StatusMessage` に出す。
   ボタンは残るのでフォーカスも残る。投稿は取り直したときに変わるので、投稿の一覧は取り直さない。失敗はトーストで知らせ、ボタンを残す（E2）。

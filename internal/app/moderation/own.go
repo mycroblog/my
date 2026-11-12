@@ -20,7 +20,7 @@ import (
 const EventAccountActionIssued = "moderation.account_action_issued"
 
 // AccountActionIssued carries a new action on an account. The notification module turns one
-// with NotifyTarget into the account's moderation_notice (data-model §4.7).
+// with NotifyTarget into the account's moderation_notice.
 type AccountActionIssued struct{ Action moderation.Action }
 
 // EventType implements uow.Event.

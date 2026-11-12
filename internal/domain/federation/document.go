@@ -11,7 +11,7 @@ import (
 )
 
 // This file holds the shape of the documents this server publishes and delivers: the JSON-LD
-// context and the activity envelope (federation.md §7.4). The parts of an object document that
+// context and the activity envelope. The parts of an object document that
 // depend on its kind are built by the caller and passed as the activity's object.
 
 // LDContext returns the JSON-LD context of the documents this server publishes: ActivityStreams,
@@ -177,7 +177,7 @@ func (d LikeDocument) Embedded() LikeDocument {
 func (d LikeDocument) Marshal() ([]byte, error) { return json.Marshal(d) }
 
 // FlagDocument is the Flag that forwards a report to the server of the reported account
-// (federation.md §11), in the shape that Mastodon sends and reads: the instance actor as its
+// (FR-709), in the shape that Mastodon sends and reads: the instance actor as its
 // actor, the reported actor and statuses as its object, and the comment as plain-text content.
 // It has no audience and names nothing of the reporter.
 type FlagDocument struct {
@@ -236,7 +236,7 @@ func NewPollVote(id, actor, author, question IRI, name string, published time.Ti
 }
 
 // TopLevelObject is an object document served on its own, with its context: the answer to a GET
-// of an object IRI (federation.md §10).
+// of an object IRI (ADR-0018).
 type TopLevelObject struct {
 	Context []any `json:"@context"`
 	ObjectDocument
@@ -247,7 +247,7 @@ func (o ObjectDocument) TopLevel() TopLevelObject {
 	return TopLevelObject{Context: LDContext(), ObjectDocument: o}
 }
 
-// NoteDocument is the Note of a status (federation.md §7.4): the shared part, then the body of
+// NoteDocument is the Note of a status: the shared part, then the body of
 // one revision. Sensitive, Content, Tag, and Attachment are always present, as Mastodon
 // publishes them; Summary and ContentMap are left out when empty.
 type NoteDocument struct {
@@ -519,7 +519,7 @@ func TopLevelEmojiOf(t TagDocument) TopLevelEmoji {
 func TombstoneOf(id IRI) ObjectDocument { return ObjectDocument{ID: id, Type: ObjectTombstone} }
 
 // ActorDocument is a local actor as it is published: the answer to a GET of its id and the
-// object of its Update (federation.md §7.1). It has the shape Mastodon publishes, which Misskey,
+// object of its Update. It has the shape Mastodon publishes, which Misskey,
 // GoToSocial, and Akkoma also read, with the fields in Mastodon's order. Context is set on the
 // top-level document only.
 type ActorDocument struct {
@@ -568,7 +568,7 @@ func (d ActorDocument) Embedded() ActorDocument {
 	return d
 }
 
-// Suspend returns d as a suspended actor is published (federation.md §11.1, ADR-0058): marked
+// Suspend returns d as a suspended actor is published (ADR-0058 §6): marked
 // suspended, with the profile emptied (name, summary, fields, tags, aliases) and nothing that
 // invites following or discovery, while the id, the collections, the inboxes, and the key stay,
 // so that servers can still address the actor and verify its signatures.

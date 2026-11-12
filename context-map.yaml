@@ -44,10 +44,10 @@ entries:
     checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
     shared: true
   - paths: ["go.mod", "go.sum", "go.work", ".golangci.yml"]
-    docs: ["docs/architecture/overview.md#依存ルール"]
+    docs: ["docs/adr/0002-modular-monolith-hexagonal.md#1-モジュラーモノリス--ports--adapters"]
     checks: [go]
   - paths: ["sqlc.yaml"]
-    docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0023-declarative-schema-management.md"]
+    docs: ["docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
     checks: [go, schema]
     shared: true
   - paths: ["bunfig.toml", ".prettierignore"]
@@ -55,7 +55,7 @@ entries:
     checks: [web]
     shared: true
   - paths: ["Dockerfile", "compose.yaml"]
-    docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "CONTRIBUTING.md#local-development"]
+    docs: ["docs/architecture/deployment-targets.md", "CONTRIBUTING.md#local-development"]
     userdocs: ["docs/operations/deploy-docker-compose.md"]
     checks: [docker, shell]
   - paths: ["*.md", "LICENSE", ".*"]

@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// PaymentRepository implements supporters.PaymentRepository (data-model §4.13, ADR-0074 §4).
+// PaymentRepository implements supporters.PaymentRepository (ADR-0074 §4).
 type PaymentRepository struct {
 	db *moduleDB
 }

@@ -119,7 +119,7 @@ const (
 )
 
 // Tombstone reports whether d stops a later Create, Update, or fetch of its URI from bringing
-// the status back (data-model §4.4): every deletion but the purge of an old remote status.
+// the status back: every deletion but the purge of an old remote status.
 func (d Deletion) Tombstone() bool { return d.Origin != DeletedByRetention }
 
 // Deletion is the deletion of a status. It keeps the URI after the status is purged, as the

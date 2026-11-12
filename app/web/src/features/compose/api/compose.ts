@@ -110,7 +110,7 @@ export async function cachePostedStatus(api: Api, queryClient: QueryClient, stat
 }
 
 /**
- * The viewer's own account, for its posting limits (data-model/05-states-and-policies.md §5.4). The key is the session's viewer
+ * The viewer's own account, for its posting limits (ADR-0058 §11). The key is the session's viewer
  * query, so this reads the account already in the cache.
  */
 export function credentialsQueryOptions(api: Api) {
@@ -132,7 +132,7 @@ export function countPostedStatus(api: Api, queryClient: QueryClient): number | 
 
 /**
  * The account a mention names, resolved from its server when the instance does not know it yet
- * (`resolve`), as the server resolves the mentions of a post (data-model/04-tables/04-content.md §4.4). A handle that does not
+ * (`resolve`), as the server resolves the mentions of a post. A handle that does not
  * resolve is a 404 and a spent fetch budget a 429: answers rather than failures to retry, and the server
  * leaves such a mention as text. Without `resolve` (while the instance takes nothing in from other servers,
  * ADR-0006, when the server refuses to resolve), only an account the instance knows is found.

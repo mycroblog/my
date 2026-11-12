@@ -29,7 +29,7 @@ var ErrInvalidSession = errors.New("identity: invalid session")
 const (
 	DefaultSessionTTL = 30 * 24 * time.Hour
 	// SessionActivityInterval is how stale session_activity may get before Authenticate
-	// updates it, so that reads do not turn into a write per request (data-model §4.1).
+	// updates it, so that reads do not turn into a write per request.
 	SessionActivityInterval = time.Hour
 	// SessionTokenPrefix marks session tokens for secret scanners (ADR-0019 §4).
 	SessionTokenPrefix = "my_ses_"
@@ -84,7 +84,7 @@ type SignedIn struct {
 // that a token planted before the sign-in is never promoted (session fixation, ADR-0019 §4).
 //
 // It fails with ErrInvalidCredentials for an unknown address, a wrong password, or a user whose
-// local account is not active (data-model §5.1), after the same amount of password hashing, and with a *kernel.RateLimitedError when too
+// local account is not active, after the same amount of password hashing, and with a *kernel.RateLimitedError when too
 // many attempts failed from the client's IP address or for the email address (ADR-0019 §5).
 //
 // With a HumanVerifier, the CAPTCHA token is checked after the rate limits and before the

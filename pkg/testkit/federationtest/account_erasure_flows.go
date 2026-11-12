@@ -44,7 +44,7 @@ type AccountErasureHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type AccountErasureFactory func(t *testing.T, opts uow.Options) AccountErasureHarness
 
-// AccountErasureFlows verifies the erasure of deleted local accounts (data-model §8) with the real
+// AccountErasureFlows verifies the erasure of deleted local accounts with the real
 // modules, the flows of ADR-0153 §1, which internal/flowtest/federation runs once on SQLite
 // (AccountErasureContract checks the erasure repositories' methods on every adapter): an account deleted longer than the delay ago, without
 // a retention hold, loses its personal data (profile, keys, email addresses, credentials,

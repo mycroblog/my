@@ -18,8 +18,8 @@ import (
 var ErrNotOwnActor = errors.New("federation: the activity is not about its own actor")
 
 // IsOwnActorActivity reports whether act is an Update or a Delete whose object is its own actor
-// (actor == object), the activities ReceiveActorUpdate and ReceiveActorDelete handle
-// (federation.md §3.4). The inbox dispatches every other Update and Delete to the handlers of
+// (actor == object), the activities ReceiveActorUpdate and ReceiveActorDelete handle.
+// The inbox dispatches every other Update and Delete to the handlers of
 // statuses.
 func IsOwnActorActivity(act *federation.Activity) bool {
 	if act == nil || (act.Type != federation.ActivityUpdate && act.Type != federation.ActivityDelete) {
@@ -28,7 +28,7 @@ func IsOwnActorActivity(act *federation.Activity) bool {
 	return act.Actor != "" && act.Object().ID == act.Actor
 }
 
-// ReceiveActorUpdate handles the Update of a remote actor by itself (federation.md §3.4). raw is
+// ReceiveActorUpdate handles the Update of a remote actor by itself. raw is
 // the activity's document as the inbox job read it. An embedded actor document with the
 // activity's origin and the actor's id is stored as if it were fetched: a snapshot when the
 // document changed, a profile revision when the sanitized profile changed, the keys it declares,
@@ -87,7 +87,7 @@ func (r *RemoteActors) ReceiveActorUpdate(ctx context.Context, act *federation.A
 	return err
 }
 
-// ReceiveActorDelete handles the Delete of a remote actor by itself (federation.md §3.4): the
+// ReceiveActorDelete handles the Delete of a remote actor by itself: the
 // account becomes remote_deleted (account.MarkRemoteDeleted), which hides its profile and posts
 // at once; the erasure removes its data after the delay of a local account's (account.Eraser),
 // without asking its server, even when a 410 marked the actor first. The Delete of an actor that is unknown or local, and a
@@ -109,7 +109,7 @@ func (r *RemoteActors) ReceiveActorDelete(ctx context.Context, act *federation.A
 }
 
 // RegisterInboxHandlers registers ReceiveActorUpdate and ReceiveActorDelete as the handlers of
-// the Update and Delete of an actor by itself (federation.md §3.4).
+// the Update and Delete of an actor by itself.
 func (r *RemoteActors) RegisterInboxHandlers(p *InboxProcessor) {
 	p.HandleOwnActor(federation.ActivityUpdate, func(ctx context.Context, a *InboxActivity) error {
 		return inboxError(r.ReceiveActorUpdate(ctx, a.Activity, a.Document))

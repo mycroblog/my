@@ -25,7 +25,7 @@ import (
 )
 
 // TestFederationModeration checks the moderation of federation through the composition root
-// (docs/architecture/federation.md §11): a received Block ends the follows and blocks, a Flag
+// (federation.md §1): a received Block ends the follows and blocks, a Flag
 // files a report unless its domain has reject_reports, and a suspended domain's POSTs get 403 and
 // its actors are not fetched.
 func TestFederationModeration(t *testing.T) {

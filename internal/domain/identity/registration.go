@@ -22,8 +22,8 @@ const (
 	RegistrationClosed   RegistrationMode = "closed"   // nobody may sign up
 )
 
-// RegistrationApplication is a sign-up from the registration page (data-model §4.1,
-// registration_applications). Each user has at most one.
+// RegistrationApplication is a sign-up from the registration page
+// (registration_applications). Each user has at most one.
 type RegistrationApplication struct {
 	ID     string
 	UserID string
@@ -40,7 +40,7 @@ const MaxRegistrationReasonLength = 1000
 // ErrInvalidReason reports a registration reason that ValidateRegistrationReason rejects.
 var ErrInvalidReason = errors.New("invalid registration reason")
 
-// ValidateRegistrationReason accepts valid UTF-8 without NUL (data-model §1.2) of at most
+// ValidateRegistrationReason accepts valid UTF-8 without NUL of at most
 // MaxRegistrationReasonLength characters.
 func ValidateRegistrationReason(reason string) error {
 	if !validText(reason, MaxRegistrationReasonLength) {
@@ -55,7 +55,7 @@ const MaxDecisionNoteLength = 1000
 // ErrInvalidNote reports a decision note that ValidateDecisionNote rejects.
 var ErrInvalidNote = errors.New("invalid registration decision note")
 
-// ValidateDecisionNote accepts valid UTF-8 without NUL (data-model §1.2) of at most
+// ValidateDecisionNote accepts valid UTF-8 without NUL of at most
 // MaxDecisionNoteLength characters.
 func ValidateDecisionNote(note string) error {
 	if !validText(note, MaxDecisionNoteLength) {
@@ -64,7 +64,7 @@ func ValidateDecisionNote(note string) error {
 	return nil
 }
 
-// validText reports whether s is valid UTF-8 without NUL (data-model §1.2) of at most maxLen
+// validText reports whether s is valid UTF-8 without NUL of at most maxLen
 // characters: a moderator's or an applicant's free text that every database dialect stores as
 // it is.
 func validText(s string, maxLen int) bool {
@@ -74,7 +74,7 @@ func validText(s string, maxLen int) bool {
 // Decision is the outcome of a registration review.
 type Decision string
 
-// Decisions (data-model §4.1, registration_decisions.decision).
+// Decisions (registration_decisions.decision).
 const (
 	DecisionApproved Decision = "approved"
 	DecisionRejected Decision = "rejected"
@@ -83,7 +83,7 @@ const (
 // Decider says who decided on an application.
 type Decider string
 
-// Deciders (data-model §4.1, registration_decisions.decided_by).
+// Deciders (registration_decisions.decided_by).
 const (
 	// DecidedByModerator: a moderator, in the admin screens or with the CLI.
 	DecidedByModerator Decider = "moderator"
@@ -95,8 +95,8 @@ const (
 	DecidedByServiceClosure Decider = "service_closure"
 )
 
-// RegistrationDecision records that an application was approved or rejected (data-model §4.1,
-// registration_decisions).
+// RegistrationDecision records that an application was approved or rejected
+// (registration_decisions).
 type RegistrationDecision struct {
 	ID            string
 	ApplicationID string
@@ -112,7 +112,7 @@ type RegistrationDecision struct {
 // RegistrationState is where a user's registration stands.
 type RegistrationState string
 
-// Registration states (data-model §4.1, user_registration_states.state).
+// Registration states (user_registration_states.state).
 const (
 	RegistrationPending  RegistrationState = "pending"
 	RegistrationApproved RegistrationState = "approved"
@@ -137,7 +137,7 @@ type UserRegistrationState struct {
 	Since time.Time
 }
 
-// Invite is an invite code that lets people sign up (data-model §4.1, invites): it is required
+// Invite is an invite code that lets people sign up (invites): it is required
 // in invite mode and optional in open and approval mode (ADR-0106 §17).
 type Invite struct {
 	ID   string
@@ -197,7 +197,7 @@ func NormalizeInviteCode(code string) string {
 // TokenPurpose is what a user token is for.
 type TokenPurpose string
 
-// Token purposes (data-model §4.1, user_tokens.purpose). The verification and reset tokens work
+// Token purposes (user_tokens.purpose). The verification and reset tokens work
 // once; an unsubscribe token works any number of times until it expires (ADR-0086 §4).
 const (
 	PurposeEmailVerification TokenPurpose = "email_verification"

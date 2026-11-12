@@ -4,7 +4,7 @@
 # tasks/api.yml, run by `scripts/task.sh api:lint`).
 # Besides the recommended rules, the custom rules keep the document inside the OpenAPI 3.1
 # subset that oapi-codegen and openapi-typescript support (ADR-0016) and enforce the
-# conventions of ADR-0016. docs/architecture/client-api.md lists the conventions.
+# conventions of ADR-0016.
 extends:
   - recommended
 
@@ -30,7 +30,7 @@ rules:
     assertions:
       ref: /^\.\.\/components\/responses\/Problem\.yaml$/
     message: The `default` response refers to `../components/responses/Problem.yaml` (ADR-0016).
-  # The status of what an operation does (client-api.md section 2.3): 201 for a resource it
+  # The status of what an operation does (ADR-0016 §8): 201 for a resource it
   # created, 202 for work it queued.
   rule/create-answers-201:
     subject:

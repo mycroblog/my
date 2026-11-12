@@ -1141,7 +1141,7 @@ func statusEnsuresTags(t *testing.T, e *StatusEnv) {
 // statusProjectionEqualsRebuild runs random sequences of creations, revisions, and deletions
 // over a fixed pool of URIs, so that replies reach parents that are known, unknown, arrive later,
 // or are deleted, and checks that rebuilding the projections from their sources yields exactly
-// the rows that the synchronous projectors wrote (data-model §9).
+// the rows that the synchronous projectors wrote.
 func statusProjectionEqualsRebuild(t *testing.T, e *StatusEnv) {
 	ctx := t.Context()
 	rng := rand.New(rand.NewPCG(94, 20261016)) //nolint:gosec // deterministic test input, not a secret

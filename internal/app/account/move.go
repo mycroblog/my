@@ -17,7 +17,7 @@ import (
 // The federation module records the Moves of remote accounts that pass its checks; the graph
 // module moves the local followers on account.moved.
 
-// MoveRepository is the part of Repository about moves (data-model §4.2). Lookups that find
+// MoveRepository is the part of Repository about moves. Lookups that find
 // nothing return an error wrapping ErrNotFound.
 type MoveRepository interface {
 	// InsertMove inserts a move and reports false, writing nothing, when the account already

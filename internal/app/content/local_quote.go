@@ -36,7 +36,7 @@ func QuoteAuthorizationURI(host, authorizationID string) string {
 	return content.QuoteAuthorizationURI(host, authorizationID)
 }
 
-// Event of the approvals this server gives (data-model §4.4):
+// Event of the approvals this server gives:
 //   - EventQuoteAuthorizationRevoked: the author of a local status revoked an approval of a quote
 //     of it. The federation module delivers the Delete of the QuoteAuthorization to the quoting
 //     author when that author is remote.

@@ -11,8 +11,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/supporters"
 )
 
-// The records of the supporter program, its plans, and their subscriptions (ADR-0072 §15,
-// data-model §4.13), which Repository keeps.
+// The records of the supporter program, its plans, and their subscriptions (ADR-0072 §15),
+// which Repository keeps.
 
 // ErrRankTaken reports a plan whose rank another plan that is not retired has.
 var ErrRankTaken = errors.New("supporters: another plan has the rank")

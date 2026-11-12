@@ -10,7 +10,7 @@ import (
 // KeyAlgorithm is the signature algorithm of an actor key.
 type KeyAlgorithm string
 
-// Key algorithms (data-model §4.2, account_keys.algorithm).
+// Key algorithms (account_keys.algorithm).
 const (
 	// KeyRSASHA256 is RSASSA-PKCS1-v1_5 with SHA-256 over a 2048-bit RSA key: the key every
 	// implementation verifies with draft-cavage HTTP signatures (ADR-0006, ADR-0019 §6).
@@ -41,7 +41,7 @@ func KeyIRI(actorURI string, alg KeyAlgorithm) string {
 }
 
 // KeyFingerprint returns the fingerprint of a public key: the SHA-256 of its PKIX DER encoding
-// (data-model §4.2, account_keys.fingerprint).
+// (account_keys.fingerprint).
 func KeyFingerprint(pkixDER []byte) []byte {
 	sum := sha256.Sum256(pkixDER)
 	return sum[:]

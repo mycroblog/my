@@ -25,7 +25,7 @@ Read (instead of grep / cat over the repository):
                                                        go go-test ts ts-test op schema table query msg file
   show <ref> [--max 12000]                             the text of a ref: a declaration (<GoName>, Recv.Name,
                                                        pkg.Name, <path>:<Name>), lines (<path>:10-40), ADR-0070#decision,
-                                                       FR-915, data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
+                                                       FR-915, web-client§14.2, web-client#5-アクセシビリティ, op:<id>,
                                                        table:<name>, query:<Name>
   outline <path>                                       headings / declarations with line ranges and sizes
   refs <ref> [-n 40]                                   what points at ref, and what ref points at
@@ -45,9 +45,9 @@ Workflow (instead of gh / scripts/task.sh loops):
   pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
                                                        the gate: refuses outside a worktree, on a merge or
                                                        fixup! commit, a conflict with the base, a failing
-                                                       check, or UI screens not looked at; then pushes, opens
-                                                       the PR from the template, links it on each issue;
-                                                       prints the unchanged documents of docs impact
+                                                       check; then pushes, opens the PR from the template
+                                                       (or rewrites the open one's description), links it on
+                                                       each issue; prints the unchanged documents of docs impact
   pr land <pr> [--timeout 3h]                          the only way a PR finishes (run it in the background, in
                                                        the main agent): auto-merge through the merge queue, one
                                                        line per event, then remove the branch and worktree and

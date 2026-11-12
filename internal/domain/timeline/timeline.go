@@ -30,7 +30,7 @@ const (
 )
 
 // Restriction is a moderation restriction of an account or a domain that bears on timelines
-// (data-model §5.2; feed_author_restrictions and feed_domain_restrictions).
+// (feed_author_restrictions and feed_domain_restrictions).
 type Restriction string
 
 // Restrictions that timelines apply.
@@ -47,14 +47,14 @@ const (
 // always let such entries through (FR-208).
 const UndeterminedLanguage = "und"
 
-// The read window of the home timeline (data-model §6.1, ADR-0013). Fan-out-on-read bounds each
+// The read window of the home timeline (ADR-0013). Fan-out-on-read bounds each
 // home query to the entries newer than the cursor minus a window, so that the rows a page reads
 // stay proportional to recent activity. When a page is not filled within the window, the query
 // runs again with a window HomeWindowGrowth times wider, up to HomeWindowWidenings times, and
 // finally without a bound, so that a quiet home timeline still reaches its oldest entries.
 const (
 	// HomeWindow is the first window. Seven days covers the reading habit of most accounts on a
-	// small instance; the measurement of ADR-0013 may revise it (data-model §11).
+	// small instance; the measurement of ADR-0013 may revise it.
 	HomeWindow = 7 * 24 * time.Hour
 	// HomeWindowGrowth is the factor by which each widening multiplies the window.
 	HomeWindowGrowth = 4

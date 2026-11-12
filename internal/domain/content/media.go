@@ -19,7 +19,7 @@ const (
 	MediaOriginRemote MediaOrigin = "remote"
 )
 
-// MediaFile is a media file: an upload of a local account or a remote file (data-model §4.4).
+// MediaFile is a media file: an upload of a local account or a remote file.
 type MediaFile struct {
 	ID             string
 	OwnerAccountID string

@@ -12,7 +12,7 @@ import (
 // ActionKind is the kind of a moderation action on an account (moderation_actions.kind).
 type ActionKind string
 
-// Kinds of actions on an account (data-model §5.2).
+// Kinds of actions on an account.
 const (
 	ActionWarn                  ActionKind = "warn"
 	ActionMarkStatusesSensitive ActionKind = "mark_statuses_sensitive"
@@ -26,7 +26,7 @@ const (
 	ActionBan                   ActionKind = "ban"
 )
 
-// accountRestrictions is the table of data-model §5.2: the restrictions each kind of action
+// accountRestrictions is the table of the restrictions each kind of action
 // imposes on its account. Changing it requires rebuilding account_restrictions.
 var accountRestrictions = map[ActionKind][]Restriction{
 	ActionWarn:                  nil,
@@ -47,7 +47,7 @@ func (k ActionKind) Valid() bool {
 	return ok
 }
 
-// Restrictions returns the restrictions an action of kind k imposes (data-model §5.2).
+// Restrictions returns the restrictions an action of kind k imposes.
 func (k ActionKind) Restrictions() []Restriction { return accountRestrictions[k] }
 
 // OnStatuses reports whether an action of kind k acts on statuses of its account that it names
@@ -65,7 +65,7 @@ func (k ActionKind) Liftable() bool { return k != ActionBan }
 const MaxActionStatuses = 100
 
 // BanDeletionDelay is how long after a ban its account is deleted: the ban records the
-// account's deletion_scheduled lifecycle event due then (data-model §4.2, §8).
+// account's deletion_scheduled lifecycle event due then.
 const BanDeletionDelay = 30 * 24 * time.Hour
 
 // Category is the reason category of an action or a report.
@@ -244,8 +244,7 @@ const (
 	DomainForceSensitive DomainActionKind = "force_sensitive"
 )
 
-// domainRestrictions maps each kind of domain action to the restrictions it imposes
-// (data-model §5.2).
+// domainRestrictions maps each kind of domain action to the restrictions it imposes.
 var domainRestrictions = map[DomainActionKind][]Restriction{
 	DomainLimit:          {RestrictPublicDiscovery, RestrictUnsolicitedReach},
 	DomainSuspend:        {RestrictProfileView, RestrictFederation},

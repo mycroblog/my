@@ -276,7 +276,7 @@ const maxCheckedFormBytes = 64 << 10
 // rejectInvalidText answers a request with a 400 problem when its path, a query parameter, or
 // a field of its application/x-www-form-urlencoded body is not valid UTF-8 or holds a NUL,
 // before any handler looks it up: PostgreSQL fails on such a parameter where SQLite finds
-// nothing, so that the dialects would answer differently (data-model §1.2). The client API
+// nothing, so that the dialects would answer differently. The client API
 // checks its JSON bodies itself; the other headers and cookies that handlers look up (bearer
 // and session tokens) are hashed first.
 func (a *App) rejectInvalidText(next http.Handler) http.Handler {
@@ -293,7 +293,7 @@ func (a *App) rejectInvalidText(next http.Handler) http.Handler {
 	})
 }
 
-// validText reports whether s is valid UTF-8 without NUL (data-model §1.2).
+// validText reports whether s is valid UTF-8 without NUL.
 func validText(s string) bool { return utf8.ValidString(s) && strings.IndexByte(s, 0) < 0 }
 
 func validValues(values url.Values) bool {

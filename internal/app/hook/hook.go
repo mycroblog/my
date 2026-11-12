@@ -8,6 +8,11 @@
 // Result in, acts on Result.Effect with its own code, and calls LinkStatus and Applied in that
 // transaction. A verdict never does anything here: this module owns no post, follow, or account.
 //
+// A record names its subject by a key and never holds the subject's content. For signup.check the
+// key and the account are the ID that the registration makes for the account before its
+// transaction, with neither the email nor the IP address; when the registration is rejected or
+// fails later, no account row ever has that ID, and the record goes with the retention.
+//
 // The adapters of Plugin live in internal/adapter/hook and pass hooktest.HookPluginContract; those
 // of Repository in internal/adapter/db/* and pass hooktest.HookRepositoryContract.
 package hook

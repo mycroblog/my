@@ -7,7 +7,7 @@ import "time"
 // Permission is a capability that a role grants.
 type Permission string
 
-// Permissions (data-model §4.1, role_permissions.permission).
+// Permissions (role_permissions.permission).
 const (
 	PermManageReports  Permission = "manage_reports"
 	PermManageAccounts Permission = "manage_accounts"
@@ -139,7 +139,7 @@ type Role struct {
 	CreatedAt time.Time
 }
 
-// RoleGrant is a role granted to a user (data-model §4.1, user_role_grants).
+// RoleGrant is a role granted to a user (user_role_grants).
 type RoleGrant struct {
 	ID     string
 	UserID string

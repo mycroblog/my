@@ -29,7 +29,7 @@ type LoginProviderHarness struct {
 type LoginProviderFactory func(t *testing.T) LoginProviderHarness
 
 // LoginProviderRepositoryContract verifies the login provider repository of a database adapter
-// (data-model §4.1, ADR-0106 §2): a provider of each kind keeps its settings with the claims,
+// (ADR-0106 §2): a provider of each kind keeps its settings with the claims,
 // Organizations, guilds, and scopes of its current revision, its newest secret, and its state; a deleted
 // provider is neither found nor listed; an external identity is stored once per provider and
 // subject; it is linked to one user at a time, and a user links one account per provider; an

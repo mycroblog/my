@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/data-model/04-tables/15-diagnostics.md#415-diagnostics", "docs/adr/0103-error-reporting.md"]
+docs: ["docs/adr/0103-error-reporting.md"]

@@ -21,8 +21,8 @@ var (
 	ErrReactionURIUsed = errors.New("content: a reaction with this URI exists")
 )
 
-// InteractionRepository is the persistence port of the interactions of accounts with statuses
-// (data-model §4.4): boosts with their retractions and the boost_edges projection, and the
+// InteractionRepository is the persistence port of the interactions of accounts with statuses:
+// boosts with their retractions and the boost_edges projection, and the
 // current values favourites, bookmarks, and status_pins. The database adapters implement it and
 // pass contenttest.InteractionRepositoryContract; contenttest.InteractionFlows (internal/flowtest/content) drives the
 // Interactions use cases on them.
@@ -54,7 +54,7 @@ type InteractionRepository interface {
 	// DeleteStatusBoostEdgesOf is DeleteStatusBoostEdges of each of statusIDs, with one statement.
 	DeleteStatusBoostEdgesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// RebuildBoostEdges empties boost_edges and derives it again from the boosts that are not
-	// retracted, of statuses that are not deleted (data-model §9).
+	// retracted, of statuses that are not deleted.
 	RebuildBoostEdges(ctx context.Context, tx uow.Tx) error
 	// ListBoostEdges returns boost_edges ordered by booster and status, for verifying it.
 	ListBoostEdges(ctx context.Context) ([]content.BoostEdge, error)
@@ -95,7 +95,7 @@ type InteractionRepository interface {
 
 	// Current values. Each insert does nothing when the account already has the row for the
 	// status and reports whether it inserted; each delete reports whether there was a row.
-	// Only a row actually inserted or deleted changes a counter (data-model §2.3).
+	// Only a row actually inserted or deleted changes a counter.
 
 	// InsertFavourite inserts f. A URI that another favourite has fails with
 	// ErrFavouriteURIUsed.
@@ -140,7 +140,7 @@ type InteractionRepository interface {
 	// DeleteStatusReactionCountsOf is DeleteStatusReactionCounts of each of statusIDs.
 	DeleteStatusReactionCountsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// RebuildReactionCounts empties status_reaction_counts and derives it again from the
-	// reactions to statuses that are not deleted (data-model §9).
+	// reactions to statuses that are not deleted.
 	RebuildReactionCounts(ctx context.Context, tx uow.Tx) error
 	// FindReaction returns the reaction of an account to a status with the emoji whose key
 	// (content.ReactionEmoji.Key) is emojiKey.

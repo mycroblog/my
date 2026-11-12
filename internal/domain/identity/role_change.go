@@ -12,7 +12,7 @@ import (
 // permission they hold (CheckPermissionsHeld); the command line may grant and revoke any role.
 // The admin role always keeps at least one holder.
 
-// RoleRevocation ends a role grant (data-model §4.1, user_role_revocations).
+// RoleRevocation ends a role grant (user_role_revocations).
 type RoleRevocation struct {
 	GrantID string
 	// RevokedByUserID is the user who revoked the role, or "" for a revocation from the CLI.

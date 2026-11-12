@@ -19,7 +19,7 @@ import (
 
 const (
 	// JobPollUpdate records the Update of a local status with a poll, which carries the poll's
-	// counts as they are when the job runs (FR-112, federation.md §7.1). Its payload is
+	// counts as they are when the job runs (FR-112). Its payload is
 	// pollUpdatePayload.
 	JobPollUpdate = "federation.update_poll"
 	// PollUpdateDelay is how long after a vote in a local poll its Update is sent: the votes of
@@ -33,8 +33,8 @@ type pollUpdatePayload struct {
 	PollID   string `json:"poll_id"`
 }
 
-// registerPollVoteProjectors records the votes of a local account in a remote poll (FR-112,
-// federation.md §7.1): one Create of a Note per choice, named after the option and in reply to
+// registerPollVoteProjectors records the votes of a local account in a remote poll (FR-112):
+// one Create of a Note per choice, named after the option and in reply to
 // the Question, to the poll's author alone, as Mastodon sends them. The activity is about the
 // poll's status (ObjectID), whose author the fan-out delivers to (phaseStatusAuthor), and its
 // document is built here from the event and stored with it.

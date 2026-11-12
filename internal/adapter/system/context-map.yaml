@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/operations/captcha.md"]
+docs: ["docs/operations/captcha.md"]

@@ -90,7 +90,7 @@
 - 管理（タグ `admin-server`、`admin:read` / `admin:write` と `manage_custom_emojis`）: `GET /admin/custom_emoji_requests`（審査中を既定にし、状態で絞り込む）、
   `POST /admin/custom_emoji_requests/{id}/approve`、`POST /admin/custom_emoji_requests/{id}/reject`（理由）。`/admin/custom_emojis` の表現に `created_by`（作成者のアカウント、NULL 可）を持つ。
 - 管理の名前空間の `admin:*` のスコープを、スタッフでない利用者のトークンに求めない。`member` の操作を `/admin/*` に置かないのはこのため。
-- CLI: `my admin emoji requests`（一覧・承認・却下）を足す。経路とフィールドの細部は [client-api.md](../architecture/client-api.md) の手順で決める。
+- CLI: `my admin emoji requests`（一覧・承認・却下）を足す。経路とフィールドの細部は [ADR-0016](0016-client-api-style.md) の規約で決める。
 
 ### 7. データモデル（`content` が持つ。ADR-0020）
 
@@ -123,7 +123,7 @@
 ### 10. バッジの属性
 
 - バッジはロールの属性で、1 つのロールに 0 か 1 つ。持つのは**名前**（`label`、1〜32 文字の 1 行）と**色**（`neutral`・`red`・`orange`・`yellow`・`green`・`teal`・`blue`・`purple`・`pink` の 9 色の名前）だけである。
-- 名前は管理者が書く文字列で、どのロケールでも同じ値を出す（インスタンスのルールと同じ扱い、data-model §4.9）。翻訳の機構は持たず、UI の文言ではなく利用者の内容として `dir="auto"` で描く。
+- 名前は管理者が書く文字列で、どのロケールでも同じ値を出す（インスタンスのルールと同じ扱い、ADR-0009 §2）。翻訳の機構は持たず、UI の文言ではなく利用者の内容として `dir="auto"` で描く。
   ロールの `key`（`small-support` など）は管理のための識別子で、利用者には出さない。
 - 色は `@my/ui` のトークン `badge-<色>`（背景）と `badge-<色>-fg`（文字）の組で、ライトとダークの両方で 4.5:1 を `scripts/task.sh web:tokens` が検査する。
   サーバーのテーマ（ADR-0059）はバッジのトークンを上書きしない。色は飾りで、意味は名前が運ぶ（WCAG 1.4.1）。
@@ -156,7 +156,7 @@
 - 本人の掲載: 加入している利用者が、自分を一覧に載せるかを選ぶ。既定は載せない。選択は利用者ごとに 1 つで、プランごとには持たない（同時に加入できるプランは 1 つ）。プランを変えても選択は残り、加入が終わったとき（ロールが外れる時と同じ）に同じトランザクションで消える。
 - 出す項目: プランごとの見出し（プランの名前、プランの並び順）と、各人のアバター・表示名・ハンドル・プロフィールへのリンクだけを出す。
   金額・月払いか年払いか・加入した日・続けた期間・人数の合計は出さない。人数は収入の公開（ADR-0067）の範囲の設定に従う情報で、一覧の行の数を数えても載せた人の数しか分からない。
-- 一覧に出す人は、閲覧者に見せられるアカウント（[visibility.md §6](../architecture/visibility.md#6-アカウントの表示)、`Server.visibleAccount` と同じ規則。凍結・制限されたアカウントと、閲覧者とブロックの関係にあるアカウントを除く）に限る。並びは載せた順（新しい順）で、カーソルでページを送る。
+- 一覧に出す人は、閲覧者に見せられるアカウント（`Server.visibleAccount` と同じ規則。凍結・制限されたアカウントと、閲覧者とブロックの関係にあるアカウントを除く）に限る。並びは載せた順（新しい順）で、カーソルでページを送る。
 - ページは Web の `/about/supporters` で、`/about` から `supporter_list_visibility` が `off` でないときにリンクする。
 - API（タグ `instance`）: `GET /instance/supporters?plan_id=&cursor=`。`public` のときは `security: []`、`signed_in` のときはトークンを要する（`read:accounts`）。`Cache-Control` は `public` のとき `public, max-age=60`、`signed_in` のとき `private, no-store`。
   `GET /instance` は `supporter_list_visibility` を返し、Web はそれで導線を出し分ける。本人の掲載の選択は `GET/PUT /preferences/supporter_listing`（`{listed: bool}`）で、加入していなければ `PUT` は `404`。
@@ -182,7 +182,7 @@
 
 - インスタンス設定は `instance_setting_revisions` のキー `supporter_list_visibility` で、`instance_settings` の投影に入る。
 - 「選んだか」を NULL 許容の列や真偽の列で持たず、行の有無で表す（ADR-0020 規約 4）。本人の選択は履歴を問わない設定で、`user_preferences` と同じく現在値にする。
-- ロールの剥奪（`user_role_revocations` を足す処理）とバッジの削除が `user_role_badge_displays` を、加入が終わる処理が `supporter_listings` を、同じトランザクションで消す。ロールの削除は持っている人がいないときだけできる（data-model §4.1）ので、`role_badges` の行もそのとき消す。
+- ロールの剥奪（`user_role_revocations` を足す処理）とバッジの削除が `user_role_badge_displays` を、加入が終わる処理が `supporter_listings` を、同じトランザクションで消す。ロールの削除は持っている人がいないときだけできるので、`role_badges` の行もそのとき消す。
 - プロフィールのバッジは `user_roles`・`role_badges`・`user_role_badge_displays` の結合 1 回で読み、アカウント自身の取得でだけ行う。
 
 ### この決定を覆す条件

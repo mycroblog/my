@@ -41,22 +41,22 @@ type FederationHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 
-// FederationFlows verifies the outbound use cases of the federation module on a database adapter
-// (federation.md §7), the flows of ADR-0153 §1, which internal/flowtest/federation runs once on
+// FederationFlows verifies the outbound use cases of the federation module on a database adapter,
+// the flows of ADR-0153 §1, which internal/flowtest/federation runs once on
 // SQLite; FederationRepositoryContract checks the repository's methods on every adapter. It
 // covers the outbound activities and their lookups, the first document kept, one delivery per
-// inbox, the state of remote servers, the inboxes each visibility reaches (data-model §7), the Update and Delete that follow
+// inbox, the state of remote servers, the inboxes each visibility reaches, the Update and Delete that follow
 // the Create, a fan-out run again without a delivery twice, the servers left out, the boosts that
 // are not recorded, the Update and Delete of a local actor (to its followers, and for the
 // Delete to every known shared inbox), the Update of a local actor's suspension and of its end
 // (to its followers and every known shared inbox, with the emptied actor marked suspended while
 // the suspension is in effect), the Block and Undo Block of a local block of a remote account,
 // and the Flag of the instance actor that forwards a report to the reported account's inbox.
-// The documents carry the body of the revision they present
-// (federation.md §7.4); a local status leaves the remote accounts that do not follow its author
+// The documents carry the body of the revision they present;
+// a local status leaves the remote accounts that do not follow its author
 // out of tag (ADR-0017); the Delete is stored with the deletion, so that it reaches the
 // inboxes of the Create after the status's rows are gone; and the automatic deletion of an old
-// post (FR-118) sends the same Delete as its author's deletion. It also covers one delivery (federation.md §7.3): the classification of
+// post (FR-118) sends the same Delete as its author's deletion. It also covers one delivery (ADR-0006 §3): the classification of
 // responses, the circuit breaker, the failure days that make a server unavailable and the
 // successes, signed requests, and probes that bring it back, and the dead job after the retry
 // schedule. It covers the admin views too: the servers with a health row by state and page, the
@@ -731,7 +731,7 @@ func fedDeliversEachVisibility(t *testing.T, e *fedEnv) {
 	everyone := append(slices.Clone(followersInboxes), "https://c.example/inbox")
 	slices.Sort(everyone)
 
-	// data-model §7 and federation.md §7.4: who each visibility reaches and how it is addressed.
+	// Who each visibility reaches and how it is addressed.
 	cases := []struct {
 		visibility content.Visibility
 		inboxes    []string

@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// DeliveryRetryPolicy is the retry schedule of JobDeliver (ADR-0004, federation.md §7.3): waits
+// DeliveryRetryPolicy is the retry schedule of JobDeliver (ADR-0004): waits
 // of 1 minute, 5 minutes, 30 minutes, 2 hours, 12 hours, and 24 hours three times, with jitter,
 // for 9 attempts over about 4 days. A job that uses them up becomes a dead job.
 var DeliveryRetryPolicy = queue.RetryPolicy{
@@ -133,7 +133,7 @@ func (k AccountProofKeys) ProofKey(ctx context.Context, accountID string) (Proof
 type DeliverDeps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
-	// Client signs and sends the POST (double-knocking, federation.md §2).
+	// Client signs and sends the POST (double-knocking, ADR-0006 §5).
 	Client *SignedHTTPClient
 	Keys   SigningKeys
 	// Proofs signs the integrity proof of every delivered document (FEP-8b32); nil sends the
@@ -165,7 +165,7 @@ type DeliverDeps struct {
 }
 
 // Deliverer runs JobDeliver: one POST of an outbound activity's document to one inbox
-// (federation.md §7.3).
+// (ADR-0004).
 //
 //  1. When the inbox's server does not get the activity (unavailable, or suspended by a domain
 //     block; federation.Deliverable), or the federation mode at the time does not send it
@@ -314,7 +314,7 @@ func (d *Deliverer) sign(ctx context.Context, act federation.OutboundActivity, d
 }
 
 // withProof returns document with the eddsa-jcs-2022 proof of the actor's Ed25519 key
-// (FEP-8b32, federation.md §7.4), created at the activity's time, so that every delivery and
+// (FEP-8b32, ADR-0006 §30), created at the activity's time, so that every delivery and
 // retry of the activity sends the same bytes. The document goes as it is when there is no
 // ProofKeys, when the actor has no Ed25519 key, and when the document carries a linked data
 // signature: a proof added after that signature would break it, so a document that has both

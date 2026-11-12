@@ -23,7 +23,7 @@ import (
 )
 
 // The cases of RemoteStatusFlows that fetch the recent posts of a remote profile that a user
-// opens (federation.md §6.3, ADR-0006): StatusHandlers.FetchOutbox and federation.fetch_outbox
+// opens (ADR-0006 §14, §15): StatusHandlers.FetchOutbox and federation.fetch_outbox
 // through the real Fetcher over an in-memory network.
 
 // remoteSuspensions is an AccountPolicy that suspends the accounts set in it.

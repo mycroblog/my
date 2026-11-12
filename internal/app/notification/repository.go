@@ -17,7 +17,7 @@ var ErrNotFound = errors.New("notification: not found")
 
 // Repository is the persistence port of the notification module: notifications, their
 // dismissals, read markers, the exclusions projected from the graph module's blocks, mutes, and
-// domain mutes, and the statuses that the content module deleted (data-model §4.7). The database
+// domain mutes, and the statuses that the content module deleted. The database
 // adapters implement it and pass notificationtest.NotificationContract, and the flows of the use cases on
 // them are notificationtest.NotificationFlows (internal/flowtest/notification).
 //

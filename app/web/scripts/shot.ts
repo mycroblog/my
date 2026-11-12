@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Renders stories to PNG files, so that a change to the UI is looked at before its pull request
+// Renders stories to PNG files, so that an agent can look at a change to the UI
 // (`scripts/task.sh web:shot -- <target> ...`). It needs no Docker and no Storybook build: it starts the Storybook
 // dev server of app/web or app/ui on a free port, leaves it running for the next call (it stops itself after 30
 // minutes without one), and opens each story's frame in the Chromium of Playwright.

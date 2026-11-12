@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the content module
--- (docs/architecture/data-model/04-tables/04-content.md). schema/README.md describes the layout
+-- (internal/app/content). schema/README.md describes the layout
 -- and the conventions of this directory.
 
--- content: statuses (data-model §4.4) --------------------------------------------------------
+-- content: statuses --------------------------------------------------------------------------
 
 -- Resource: a status. Visibility, author, reply target, and publication time never change.
 CREATE TABLE statuses (
@@ -209,7 +209,7 @@ CREATE TABLE status_mention_index (
 ) STRICT;
 CREATE INDEX status_mention_index_status_id ON status_mention_index (status_id);
 
--- Projection: the counters of each status that is not deleted (data-model §2.3).
+-- Projection: the counters of each status that is not deleted.
 CREATE TABLE status_counters (
   status_id TEXT NOT NULL PRIMARY KEY,
   replies_count INTEGER NOT NULL CHECK (replies_count >= 0),
@@ -225,7 +225,7 @@ CREATE TABLE account_post_counters (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- content: media files (data-model §4.4, ADR-0005, ADR-0019 §8). Owned by internal/app/content.
+-- content: media files (ADR-0005, ADR-0019 §8). Owned by internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a media file, uploaded by a local account or fetched from a remote server.
@@ -295,7 +295,7 @@ CREATE TABLE media_descriptions (
 CREATE INDEX status_revision_attachments_media_id ON status_revision_attachments (media_id);
 
 -- ---------------------------------------------------------------------------------------------
--- content: boosts, favourites, bookmarks, and pins (data-model §4.4, FR-107, FR-113).
+-- content: boosts, favourites, bookmarks, and pins (FR-107, FR-113).
 -- Owned by internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 
@@ -458,7 +458,7 @@ CREATE TABLE status_auto_delete_limits (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- content: remote statuses and media (data-model §4.4, docs/architecture/federation.md §9).
+-- content: remote statuses and media (ADR-0005 §10).
 -- Owned by internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 
@@ -671,7 +671,7 @@ CREATE TABLE interaction_authorization_revocations (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- content: custom emoji and polls of statuses (data-model §4.4). Owned by internal/app/content.
+-- content: custom emoji and polls of statuses. Owned by internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a custom emoji, unique by its shortcode on a domain ('' for this instance). uri is
@@ -843,7 +843,7 @@ CREATE TABLE poll_tallies (
   PRIMARY KEY (poll_id, position)
 ) STRICT;
 
--- moderation and content: actions on statuses (#364, data-model §4.3, §4.4) -------------------
+-- moderation and content: actions on statuses (#364) ------------------------------------------
 
 -- Projection (content): a status shown as sensitive because of a mark_statuses_sensitive action or
 -- a mark_sensitive decision of a hook, until that source ends (ADR-0147 §8). source_kind names what
@@ -857,12 +857,12 @@ CREATE TABLE status_sensitivity_overrides (
 ) STRICT;
 CREATE INDEX status_sensitivity_overrides_source_kind_source_id ON status_sensitivity_overrides (source_kind, source_id);
 
--- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
+-- The erasure of deleted local accounts' data (account, #397) looks up
 -- the rows of an account.
 CREATE INDEX boosts_booster_account_id ON boosts (booster_account_id);
 
 -- ---------------------------------------------------------------------------------------------
--- content: the local posts that NodeInfo reports (#518, data-model §4.4). Owned by
+-- content: the local posts that NodeInfo reports (#518). Owned by
 -- internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 
@@ -875,7 +875,7 @@ CREATE TABLE local_post_counters (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- content: drafts and scheduled posts (data-model §4.4, ADR-0156). Owned by internal/app/content.
+-- content: drafts and scheduled posts (ADR-0156). Owned by internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a draft of a local post, which only its author reads and writes. Publishing it, and

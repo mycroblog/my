@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Live interoperability test (ADR-0006, ADR-0015, docs/architecture/federation.md §12): start
+# Live interoperability test (ADR-0006, ADR-0015, test/federation-live/README.md): start
 # test/federation-live/compose.yaml (this server, Mastodon, GoToSocial 0.22 and 0.21, Misskey, Akkoma,
 # Bonfire Social, Activity-Relay, a private CA), create
 # the users on each server, and run the scenarios in test/federation-live (go test -tags federationlive).

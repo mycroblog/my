@@ -18,7 +18,7 @@ type Block = graph.Block
 // received Block.
 var ErrLocalAccount = errors.New("graph: the account is local")
 
-// RemoteBlockInput is a Block received from another server (federation.md §3.4).
+// RemoteBlockInput is a Block received from another server.
 type RemoteBlockInput struct {
 	// URI is the id of the Block activity; "" for a Block without one.
 	URI string
@@ -69,7 +69,7 @@ type RemoteUnblockInput struct {
 // RetractRemoteBlock lifts a block that a remote account made, received in an Undo of its Block,
 // and emits Unblocked. The follows that the block ended stay ended. A block that is already
 // lifted changes nothing. It fails with ErrNotFound when the blocker made no such block, so that
-// the federation module records a tombstone of the Block's URI (federation.md §3.3).
+// the federation module records a tombstone of the Block's URI (ADR-0006 §9).
 func (s *Service) RetractRemoteBlock(ctx context.Context, in RemoteUnblockInput) error {
 	now := s.d.Clock.Now()
 	repo := s.d.Repository

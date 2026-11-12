@@ -22,9 +22,10 @@ name: CI
 
 on:
   # labeled / unlabeled rerun the checks when `allow:full-ci` is added or removed, and the concurrency group cancels the
-  # older run, so no result of the other set of jobs is left on the pull request.
+  # older run, so no result of the other set of jobs is left on the pull request. A draft runs nothing (an epic's draft
+  # gets a commit per issue); ready_for_review runs the checks once it leaves draft.
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
   # The merge queue of main runs the same required `check` on each merge group before it merges the group.
   merge_group:
     types: [checks_requested]
@@ -45,6 +46,8 @@ env:
 jobs:
   # Selects the jobs: whether the full check runs, and the contexts of scripts/changed-contexts.sh the change touches.
   changes:
+    # Every other job needs this one, so skipping it on a draft skips them all.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     outputs:
       full: ${{ steps.select.outputs.full }}
@@ -790,8 +793,9 @@ jobs:
     # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when
     # every job above passed, or was skipped because the event or the change does not need it. A job that calls a
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
-    # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
-    if: always()
+    # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it. A draft
+    # reports nothing, rather than a pass that checked nothing.
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, e2e, tofu, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:

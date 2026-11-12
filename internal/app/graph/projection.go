@@ -25,7 +25,7 @@ var (
 	errEdgeChanged = errors.New("graph: the follow changed concurrently")
 )
 
-// RegisterProjectors registers the graph module's synchronous projectors (data-model §9):
+// RegisterProjectors registers the graph module's synchronous projectors:
 // follow_edges and follow_counters from follows and their events, and block_edges from blocks
 // and their retractions. Each projector applies the same rule as RebuildProjections, so
 // updating incrementally and rebuilding agree.
@@ -180,7 +180,7 @@ func countFollow(ctx context.Context, tx uow.Tx, repo Repository, f graph.Follow
 }
 
 // RebuildProjections empties follow_edges, follow_counters, and block_edges and derives them
-// again from the follows, the blocks, and their events (data-model §9), in one transaction.
+// again from the follows, the blocks, and their events, in one transaction.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.DeleteAllEdges(ctx, tx); err != nil {

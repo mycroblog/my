@@ -76,7 +76,7 @@ func keyDocumentOf(doc federation.ActorDocument) keyDocument {
 //
 // A local actor that moderation suspends (suspend, ban) is served, not hidden, until it is
 // deleted: its document is emptied and marked suspended, with its key, so that other servers
-// show the suspension and can verify the actor's Delete (federation.md §11, ADR-0058). So is a
+// show the suspension and can verify the actor's Delete (federation.md §1, ADR-0058). So is a
 // local actor that its owner deactivated, until it comes back or is deleted (ADR-0089 §17).
 //
 // A deleted local actor answers 410 with a Tombstone from its deleted event on, also after the

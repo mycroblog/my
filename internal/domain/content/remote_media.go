@@ -10,7 +10,7 @@ import (
 
 // RemoteMedia is the remote subtype of a media file: a file on another server as the received
 // document declared it (remote_media). The file itself is fetched only by the media proxy
-// (docs/architecture/federation.md §9). Width, Height, and Blurhash are zero when undeclared;
+// (ADR-0005 §10). Width, Height, and Blurhash are zero when undeclared;
 // Focus is nil when undeclared.
 type RemoteMedia struct {
 	MediaID        string

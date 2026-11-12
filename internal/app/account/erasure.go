@@ -17,13 +17,13 @@ import (
 
 const (
 	// JobEraseDeletedAccounts erases the data of the deleted accounts, local and remote
-	// (data-model §8, FR-008). Its payload is the cursor of the run (none for the first job of a run).
+	// (FR-008). Its payload is the cursor of the run (none for the first job of a run).
 	JobEraseDeletedAccounts = "account.erase_deleted"
 	// ErasureInterval is the period of the erasure's schedule.
 	ErasureInterval = time.Hour
 	// ErasureDelay is how long a deleted account's data stays before the erasure: the Delete of
 	// a local actor reaches its followers with the account's key and its follows, and its
-	// delivery retries end within about four days (federation.md §7.3). The retries of a remote
+	// delivery retries end within about four days (ADR-0004). The retries of a remote
 	// actor's server end within such a time too, so no late activity needs its keys.
 	ErasureDelay = 7 * 24 * time.Hour
 	// ErasureBatch is the number of rows (statuses, for the statuses) that one erasure statement
@@ -77,7 +77,7 @@ type ErasureStep struct {
 	Kept bool
 }
 
-// DataEraser erases one module's part of a deleted account's data (data-model §8). Each
+// DataEraser erases one module's part of a deleted account's data. Each
 // call is one short transaction that deletes at most about limit rows, starting from cursor (""
 // for the first batch of a run), and is safe to repeat; external I/O such as blob deletions runs
 // outside that transaction. The content, graph, timeline, notification, and identity modules
@@ -129,7 +129,7 @@ type ErasureDeps struct {
 	Batch int
 }
 
-// Eraser runs JobEraseDeletedAccounts (data-model §8): an account deleted longer than the
+// Eraser runs JobEraseDeletedAccounts: an account deleted longer than the
 // delay ago, local or remote (remote_deleted), that no retention hold preserves, loses its statuses (each recorded as deleted with
 // origin account_deletion first), its favourites, reactions, bookmarks, pins, boosts, follows, blocks, mutes,
 // its timeline and notification rows, its uploads with their blobs, its user's email addresses,

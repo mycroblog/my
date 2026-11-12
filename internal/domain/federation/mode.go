@@ -99,7 +99,7 @@ func Refuses(mode Mode, flow Flow) bool {
 	return mode == ModeInbound && flow == FlowFollowIn
 }
 
-// OutboundFlows returns the flows of an outbound activity a (federation.md §7). The activity goes
+// OutboundFlows returns the flows of an outbound activity a (ADR-0006 §24). The activity goes
 // out when the mode allows one of them, or, for a Reject, refuses one of them (Sends). retracting
 // tells the Update of an actor that carries its suspension (ADR-0058), which takes the actor's
 // profile back, or its movedTo (ADR-0089), which only tells the followers where it went.

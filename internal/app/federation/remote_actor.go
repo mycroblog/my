@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Jobs and schedule of the remote actors (federation.md §6.2).
+// Jobs and schedule of the remote actors (ADR-0006 §12).
 const (
 	// JobRefreshActor fetches one remote actor again.
 	JobRefreshActor = "federation.refresh_actor"
@@ -34,7 +34,7 @@ const (
 	// RefreshActorsBatch is the number of stale actors one JobRefreshActors reads.
 	RefreshActorsBatch = 200
 	// KeyResolveTimeout bounds fetching the actor of an unknown key for an inbound signature
-	// (federation.md §3.1); storing it is not cut.
+	// (ADR-0006 §6); storing it is not cut.
 	KeyResolveTimeout = 5 * time.Second
 )
 
@@ -95,8 +95,8 @@ type RemoteActorsDeps struct {
 	KeyResolveTimeout time.Duration
 }
 
-// RemoteActors fetches remote actors and keeps them in the account module (federation.md
-// §6.2): the document through the Fetcher, the handle through WebFinger, the keys and their
+// RemoteActors fetches remote actors and keeps them in the account module (ADR-0006
+// §12): the document through the Fetcher, the handle through WebFinger, the keys and their
 // rotation, 410 Gone as a remote deletion, the servers seen and their NodeInfo, and the refresh
 // of actors fetched RemoteActorTTL ago. It implements PublicKeyResolver.
 type RemoteActors struct {
@@ -524,7 +524,7 @@ func (r *RemoteActors) followed(ctx context.Context, heads []appaccount.RemoteHe
 }
 
 // handleRefreshAll reads one batch of stale actors, enqueues a refresh of each one that local
-// accounts follow, and enqueues the next batch (federation.md §6.2, ADR-0006).
+// accounts follow, and enqueues the next batch (ADR-0006 §12).
 func (r *RemoteActors) handleRefreshAll(ctx context.Context, j queue.Job) queue.Result {
 	var p refreshAllPayload
 	if len(j.Payload) > 0 && string(j.Payload) != "null" {

@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 )
 
-// The account_search_terms projection (ADR-0092 §1, FR-307, data-model §4.2): the words that
+// The account_search_terms projection (ADR-0092 §1, FR-307): the words that
 // the search of accounts matches by their start. It is synchronous (ADR-0020 rule 7): the projector rewrites the
 // rows of an account from its handle, its profile head, its lifecycle state, and whether the
 // moderation module suspends it, whenever one of them changes.
@@ -148,7 +148,7 @@ func (p *SearchTermProjector) derive(ctx context.Context, tx uow.Tx, accountID s
 }
 
 // Rebuild empties the account_search_terms projection and derives it again for every account
-// with a handle, in one transaction (data-model §9).
+// with a handle, in one transaction.
 func (p *SearchTermProjector) Rebuild(ctx context.Context, u uow.UnitOfWork) error {
 	return u.Tx(ctx, func(tx uow.Tx) error {
 		if err := p.repo.DeleteAllSearchTerms(ctx, tx); err != nil {

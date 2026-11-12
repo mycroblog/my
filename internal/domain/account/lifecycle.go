@@ -7,7 +7,7 @@ import "time"
 // LifecycleKind is the kind of a lifecycle event.
 type LifecycleKind string
 
-// Lifecycle event kinds (data-model §4.2, account_lifecycle_events.kind).
+// Lifecycle event kinds (account_lifecycle_events.kind).
 const (
 	LifecycleDeactivated       LifecycleKind = "deactivated"
 	LifecycleReactivated       LifecycleKind = "reactivated"
@@ -28,7 +28,7 @@ const (
 	InitiatedByRemote    Initiator = "remote"
 )
 
-// LifecycleEvent is one transition on the lifecycle axis of an account (data-model §5.1).
+// LifecycleEvent is one transition on the lifecycle axis of an account.
 type LifecycleEvent struct {
 	ID                 string
 	AccountID          string

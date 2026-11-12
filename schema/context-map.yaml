@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
+docs: ["docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
 userdocs: ["docs/operations/privacy-policy-template.md", "docs/operations/processing-record-template.md"]
 checks: [go, schema]
 shared: true

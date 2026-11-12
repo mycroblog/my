@@ -73,7 +73,7 @@ type QuoteRepository interface {
 	ListQuoteStatesByAuthorization(ctx context.Context, uri string) ([]content.QuoteState, error)
 }
 
-// Event types of the quotes (data-model §4.4):
+// Event types of the quotes:
 //   - EventQuoteRecorded: the quote of a status was recorded with the status, and an FEP-044f
 //     quote with its request (InteractionRequested). The notification module notifies the local
 //     author of the quoted status of a legacy quote, and the federation module sends the

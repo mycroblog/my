@@ -18,7 +18,7 @@ type Session struct {
 func (s Session) Expired(now time.Time) bool { return !now.Before(s.ExpiresAt) }
 
 // SessionOrigin is the client that started a session: its IP address and User-Agent, "" when
-// unknown (data-model §4.1, session_origins). It is kept apart from the session so that it is
+// unknown (session_origins). It is kept apart from the session so that it is
 // erased after its retention (ADR-0058) while the session stays.
 type SessionOrigin struct {
 	SessionID string
@@ -32,7 +32,7 @@ type SessionOrigin struct {
 func (o SessionOrigin) Empty() bool { return o.IP == "" && o.UserAgent == "" }
 
 // RegistrationOrigin is the IP address a user registered from on the registration page
-// (data-model §4.1, registration_origins). It is erased after its retention (ADR-0058).
+// (registration_origins). It is erased after its retention (ADR-0058).
 type RegistrationOrigin struct {
 	UserID     string
 	IP         string
@@ -45,7 +45,7 @@ const MaxUserAgentLength = 512
 // RevocationReason says why a session ended before it expired.
 type RevocationReason string
 
-// Revocation reasons (data-model §4.1, session_revocations.reason).
+// Revocation reasons (session_revocations.reason).
 const (
 	// RevokedLogout: the user signed out.
 	RevokedLogout RevocationReason = "logout"
@@ -77,14 +77,14 @@ type BrowserSessionFamily struct {
 	LastUsedAt *time.Time
 }
 
-// SessionRevocation records that a session ended (data-model §4.1, session_revocations).
+// SessionRevocation records that a session ended (session_revocations).
 type SessionRevocation struct {
 	SessionID string
 	Reason    RevocationReason
 	RevokedAt time.Time
 }
 
-// SessionActivity is when a session was last used (data-model §4.1, session_activity).
+// SessionActivity is when a session was last used (session_activity).
 type SessionActivity struct {
 	SessionID  string
 	LastSeenAt time.Time

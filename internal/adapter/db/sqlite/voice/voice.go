@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
-// Repository implements appvoice.Repository (data-model §4.14, ADR-0100 §12).
+// Repository implements appvoice.Repository (ADR-0100 §12).
 type Repository struct {
 	db *moduleDB
 }

@@ -18,7 +18,7 @@ import (
 
 // The admin operations of the actions on accounts (FR-703, manage_accounts). The moderation
 // module records them; issuing or lifting one changes at once what the account may do and who
-// sees it (data-model §5.2).
+// sees it.
 
 // AccountModeration runs the moderators' use cases on accounts. *appmoderation.Service
 // implements it.

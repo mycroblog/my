@@ -11,7 +11,7 @@ import (
 )
 
 // RemoteRepository is the part of Repository about remote actors: their subtype rows,
-// snapshots, handle checks, and the rotation of their keys (data-model §4.2). Lookups that find
+// snapshots, handle checks, and the rotation of their keys. Lookups that find
 // nothing return an error wrapping ErrNotFound.
 type RemoteRepository interface {
 	// AccountByURI returns the account with an ActivityPub id inside tx.

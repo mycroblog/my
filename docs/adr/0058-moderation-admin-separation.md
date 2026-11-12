@@ -51,7 +51,7 @@
 
 - **監査ログ**はモデレーションに置く。処分の記録が大半で、`view_audit` は既定でモデレーターも持つ。設定とロールの変更も同じログに載り（FR-704）、サーバー管理の画面は自分の変更の行へ絞り込んだ監査ログにリンクする。経路は 1 つにする。
 - **ドメインへの処分**はモデレーションに置く（FR-702 の処分であり、通報からも出す）。サーバーの全員に効くので、既定のモデレーターは `manage_domains` を持たない（§4）。
-- **連合先**（federation.md §7.3 の配送の状態）はモデレーションに置き、`manage_domains` で出す。ドメインへの処分を決める人がそのサーバーの様子を見る画面で、詳細の「モデレーション」の区画からそのドメインへの処分（`/moderation/domain-actions?domain=…`）にリンクする。Mastodon も連合先をモデレーションに置き、配送の再開をそこに持つ。
+- **連合先**（ADR-0006 §3 の配送の状態）はモデレーションに置き、`manage_domains` で出す。ドメインへの処分を決める人がそのサーバーの様子を見る画面で、詳細の「モデレーション」の区画からそのドメインへの処分（`/moderation/domain-actions?domain=…`）にリンクする。Mastodon も連合先をモデレーションに置き、配送の再開をそこに持つ。
 - **招待**はモデレーションに置く。誰がサーバーに参加できるかを個別に決める点で、登録の審査と登録の拒否リストと同じ仕事である。登録モード（承認制・招待制）の切り替えはサーバーの設定に残る。
 - **アカウントのロールの付与と剥奪**（FR-720）は、アカウントの管理画面の「管理」のページ（`/moderation/accounts/{id}/manage`）の「ロール」の区画に置き、`manage_roles` を持つ閲覧者にだけ出す。ロールそのものの一覧（`/admin/roles`）はサーバー管理に置く。
 - **サインインの回復**（二要素認証の解除とパスワードのリセットのリンクの発行、`manage_login_recovery`）はサーバー管理の権限だが、1 つのアカウントへの操作なので、ロールと同じ「管理」のページの区画に置き、`manage_login_recovery` を持つ閲覧者にだけ出す。メールの配信の抑止の解除とメールアドレスと IP アドレスの開示（`manage_accounts`）も同じページに置く。審査のページ（`/moderation/accounts/{id}`）は処分の判断とその証拠だけを持つ（NFR-MOD-4）。
@@ -69,7 +69,7 @@
 ### 3. API
 
 - 経路は `/admin/*` に置く。`/admin` はスタッフの操作の名前空間で、利用者本人の `/moderation/actions` と区別する。スコープは `admin:read` / `admin:write` にする。
-- OpenAPI のタグを `admin-moderation`（上の表のモデレーションの操作と `/admin/counts`）と `admin-server`（サーバー管理の操作）に分け、[client-api.md](../architecture/client-api.md) のリファレンスと生成コードのまとまりを区分に合わせる。
+- OpenAPI のタグを `admin-moderation`（上の表のモデレーションの操作と `/admin/counts`）と `admin-server`（サーバー管理の操作）に分け、API のリファレンスと生成コードのまとまりを区分に合わせる。
 - 新しいサーバー管理の操作は `/admin/<資源>`（`/admin/announcements`・`/admin/webhooks`・`/admin/relays`・`/admin/custom_emojis`・`/admin/settings` など）、新しいモデレーションの操作（`/admin/invites` など）も `/admin/<資源>` に置き、タグで区分を示す。
 - 認可は、スコープの後に操作ごとの権限で決める。経路や名前空間を認可の代わりにしない。
 
@@ -89,10 +89,9 @@
 ### 5. コードの置き場所
 
 - **Go**: サーバー管理の機能は、そのデータを持つモジュールに置く。設定・規約・ルール・テーマ・お知らせは `instance`、ロールと招待は `identity`、リレーと連合先の配送の状態は `federation`、dead job は `queue`、カスタム絵文字と webhook はそれぞれの ADR（ADR-0051・ADR-0060）が決めるモジュールに置く。`internal/app/moderation` はモデレーションだけを持つ。
-  `internal/app/admin` は作らず、`internal/interface/admin` も持たない（[overview §6](../architecture/overview.md#6-リポジトリ構成)）。管理の HTTP の入口は `internal/interface/clientapi` だけにする。
+  `internal/app/admin` は作らず、`internal/interface/admin` も持たない。管理の HTTP の入口は `internal/interface/clientapi` だけにする。
   `clientapi` のハンドラのファイルは、`admin_*.go` の名前で区分ごとにまとめる。
-- **Web**: モデレーションは `features/moderation`、サーバー管理は `features/admin` に置く。両方が使う部品（`RequirePermission`・`RecordList`・`DetailSection`・`useFocusAfterChange`・権限の読み出し）は片方の `index.ts` から出す（web-client.md の規則 A3）。
-  ルートは `routes/moderation.*.tsx` と `routes/admin.*.tsx`、権限の検査（`loadWithPermission`・`AdminError`）は両方の木が使う。
+- **Web**: モデレーションとサーバー管理は、それぞれ別の機能のまとまりとルートの木（§2）に置く。両方が使う部品と権限の検査は、片方の公開する入口から出して、両方の木が使う（web-client.md の規則 A3）。
 
 ### 6. 処分を連合先へ伝える
 
@@ -100,7 +99,7 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 
 | 処分 | 送るもの | 宛先 |
 | --- | --- | --- |
-| ローカルの `suspend` / `ban` | `Update(Actor)`（`suspended: true`、名前・アイコン・自己紹介・プロフィール補足情報を空にした Actor） | 承認済みのリモートのフォロワーの inbox と既知の shared inbox（`Delete(Actor)` と同じ。[data-model §8](../architecture/data-model/08-deletion-and-purge.md#8-削除と消去)） |
+| ローカルの `suspend` / `ban` | `Update(Actor)`（`suspended: true`、名前・アイコン・自己紹介・プロフィール補足情報を空にした Actor） | 承認済みのリモートのフォロワーの inbox と既知の shared inbox（`Delete(Actor)` と同じ） |
 | ローカルの `suspend` の解除・期限切れ | `Update(Actor)`（元のプロフィール） | 同上 |
 | ローカルの `ban` | 上の `Update` に加えて、`deletion_scheduled` の期日に `Delete(Actor)`（アカウント削除と同じ） | 同上 |
 | ローカルの投稿への `delete_statuses` | 投稿ごとの `Delete`（本人の削除と同じ） | 投稿を配送した宛先 |
@@ -160,10 +159,18 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
   - 伏せた値は、配送ごとの表示の操作（`POST /admin/instances/{domain}/deliveries/{id}/reveal`）で返し、IP アドレスとメールアドレスの表示と同じく、監査ログ（`delivery_revealed`）に残す。
   - ローカルのアカウントでの絞り込み（`account_id`）は使える。それを使った問い合わせごとに、操作者・アカウント・サーバーを監査ログ（`account_deliveries_viewed`）に残す。絞り込みのない一覧と、アクティビティの URI での絞り込みは残さない。
   - 送ったアクティビティの本文（`outbound_activity_documents`）は、一覧でも表示の操作でも返さない。
+- 通報の詳細は、その通報が指す投稿を、公開範囲の閲覧判定を通さずに `manage_reports` を持つ人に見せる。作者が削除した投稿も最後の版を削除の時刻とともに見せ、物理削除された投稿は省く。通報を判断する証拠だからである。ほかの画面では、モデレーターにも公開範囲が効く。この閲覧は通報の対応の一部なので、監査ログに残さない。
 
 ### 10. 異議申し立ての期間
 
 - 処分の通知から 180 日（インスタンス設定で 20〜365 日）。Mastodon の 20 日より長いのは、DSA 20 条の 6 か月に合わせ、処分の記録の保持期間の下限と揃えるため。
+- `ban` への異議申し立ては、この期間とアカウントの削除の期日（処分から 30 日）の早いほうまで受け付け、アカウントが削除された後は受け付けない。削除は取り消せないので、覆して元に戻せるのは削除までの 30 日だけだからである（決定者の判断「30 日のあいだは、BAN への異議申し立てを受け付ける」）。
+
+### 11. サイレンスと公開範囲
+
+- サイレンス（`limit`）されたアカウントの投稿は、すべてフォロワー限定になる（オーナーの定義）。
+- 投稿のときは、求められた公開範囲をフォロワー限定に切り詰めて記録する。過去の投稿の記録は書き換えず、閲覧の判定が元の公開範囲と上限の狭いほうを使う。サイレンスの間は過去の投稿もこのサーバーではフォロワー限定として扱い、解除すれば元に戻る。記録を書き換えないのは、解除で元に戻せるようにし、投稿のイベントを不変に保つ（ADR-0020）ため。
+- 公開として配送済みの過去の投稿は、連合先から取り消せない（ActivityPub の制約）。サイレンスの後の投稿はフォロワー限定として配送する。
 
 ### この決定を見直す条件
 
@@ -184,7 +191,7 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 
 監査ログ（FR-704、NFR-MOD-1）: 対象の操作は `moderation`・`identity`・`instance` にまたがり、各イベントテーブルを横断して読むと `moderation` が他のモジュールのテーブルを読むことになる（ADR-0002）。Mastodon は専用の `admin_action_logs`（[`Admin::ActionLog`](https://github.com/mastodon/mastodon/blob/main/app/models/admin/action_log.rb)）、Misskey は `moderation_log`、Pleroma / Akkoma は `ModerationLog` を持つ。GDPR 32 条と個人情報保護法 23 条は処理の記録を検証できる仕組みを求める。
 
-保持期間（FR-008、FR-701、FR-707、FR-714、FR-719、NFR-MOD-5）: [data-model §8](../architecture/data-model/08-deletion-and-purge.md#8-削除と消去) はアカウントを削除しても処分の記録を残すが、いつまでかは決まっていなかった。法令とガイドライン（調査報告 [#327](https://github.com/mycroblog/my/issues/327) §法令。法的助言ではない）:
+保持期間（FR-008、FR-701、FR-707、FR-714、FR-719、NFR-MOD-5）: アカウントの消去は処分の記録を残すが、いつまでかは決まっていなかった。法令とガイドライン（調査報告 [#327](https://github.com/mycroblog/my/issues/327) §法令。法的助言ではない）:
 
 - GDPR は趣味のインスタンスにも及ぶ（2 条 2 項 c の家庭内の例外は、他人に SNS を提供する者には当たらない。[前文 18](https://gdpr-info.eu/recitals/no-18/)）。記録の種類ごとに保持期間を正当化できること（[5 条 1 項 e](https://gdpr-info.eu/art-5-gdpr/)）、本人への開示（[15 条](https://gdpr-info.eu/art-15-gdpr/)。他人の権利を害する部分は伏せられる。15 条 4 項）、IP アドレスは個人データ（CJEU Breyer C-582/14）。
 - 個人情報保護法は非営利・個人の運営者にも及ぶ（16 条 2 項、[通則ガイドライン](https://www.ppc.go.jp/personalinfo/legal/guidelines_tsusoku/) 2-5）。不要になった個人データを遅滞なく消す努力義務（22 条）、開示（33 条。第三者の権利利益を害するおそれがあれば一部を開示しない）。
@@ -221,7 +228,7 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 - 悪い: `suspended` を解釈しない実装では、凍結中もキャッシュした投稿が残る。ドメインの凍結を解除しても関係は戻らず、利用者はフォローし直す必要がある。
 - 悪い: 監査ログは操作ごとに 1 行の書き込みが増える。新しい管理操作を足すとき、`action` の enum と発行を忘れないようにテストで検査する必要がある。`target_label` は個人データ（ハンドル）を含むので、保持期間（§8）の対象になる。
 - 悪い: 365 日より前の処分は再犯の判断に使えない。発信者情報開示の請求が投稿から 180 日を過ぎて届くと、ログイン元の IP は残っていない。
-- `sessions.ip` / `user_agent` は消去の単位を分けるため別の表（`session_origins`）に置き、登録元の IP は `registration_origins` に置く（[data-model §4.1](../architecture/data-model/04-tables/01-identity.md#41-identity)）。
+- `sessions.ip` / `user_agent` は消去の単位を分けるため別の表（`session_origins`）に置き、登録元の IP は `registration_origins` に置く。
 - 運営者向けに、記録の種類・目的・保持期間・提供先（連合先）を書いたプライバシーポリシーと処理の記録（GDPR 30 条）のひな形を `docs/operations/` に置く（#2182）。
 
 ## Open Questions / 要検証

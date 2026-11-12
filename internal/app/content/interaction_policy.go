@@ -114,7 +114,7 @@ func (c InteractionPolicyChange) kinds() []content.InteractionKind {
 	return slices.DeleteFunc(slices.Clone(content.InteractionKinds), func(k content.InteractionKind) bool { return !slices.Contains(keys, k) })
 }
 
-// Event of the interaction policies (data-model §4.4):
+// Event of the interaction policies:
 //   - EventInteractionPolicyChanged: the author of a local status changed who may interact with
 //     it. The federation module delivers an Update of the status when its Note says the policy
 //     of a changed kind.

@@ -61,7 +61,7 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 }
 
 // setUpProjections builds the service of `my projection` and registers the projection.verify
-// job (data-model §2.3, §9). Each projection runs its module's rebuild function; the order is
+// job. Each projection runs its module's rebuild function; the order is
 // the order of `my projection list` and of the job.
 func (a *App) setUpProjections(store projection.Store, r projectionRepositories) {
 	a.Projections = projection.NewService(projection.Options{

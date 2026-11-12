@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The server-wide announcements (FR-726, data-model §4.9). The holders of manage_announcements
+// The server-wide announcements (FR-726). The holders of manage_announcements
 // write an announcement, a plain-text title and a body in Markdown, as a draft, publish it for every local user within an
 // optional window, revise it, and withdraw it for good; each change records an event and its
 // audit log entry in one transaction (ADR-0058). Every local user sees the published

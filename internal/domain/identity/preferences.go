@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Preferences are a user's settings (data-model §4.1, user_preferences; FR-007). Language tags
+// Preferences are a user's settings (user_preferences; FR-007). Language tags
 // are canonical BCP 47 tags and TimeZone is an IANA time zone name.
 type Preferences struct {
 	UserID string
@@ -18,7 +18,7 @@ type Preferences struct {
 	// until the user chooses one.
 	TimeZone string
 	// TimeZoneChosen is whether the user (or a client for them) has chosen TimeZone. A new user
-	// has not, and the web client then offers the browser's zone (data-model §4.1).
+	// has not, and the web client then offers the browser's zone.
 	TimeZoneChosen bool
 	// LocaleFollowsBrowser is whether the web client shows the browser's language, or the
 	// instance's when the browser names none it has, and keeps Locale at what it last detected
@@ -44,7 +44,7 @@ type Preferences struct {
 	UpdatedAt    time.Time
 }
 
-// Defaults of a new user's preferences (data-model §4.1). The locale comes from the registration
+// Defaults of a new user's preferences. The locale comes from the registration
 // or the instance default.
 const (
 	DefaultTimeZone       = "UTC"
@@ -52,7 +52,7 @@ const (
 	// DefaultTimelineAutoInsert inserts new timeline posts without asking (ADR-0013 §22).
 	DefaultTimelineAutoInsert = true
 	DefaultLinkCardSize       = LinkCardLarge
-	UndeterminedLanguage      = "und" // BCP 47 "undetermined" (data-model §1.2, lang)
+	UndeterminedLanguage      = "und" // BCP 47 "undetermined" (lang)
 	MaxLanguageTagLength      = 64    // longer tags are rejected before parsing
 	MaxTimeZoneLength         = 64
 	MaxTimelineLanguageCount  = 64

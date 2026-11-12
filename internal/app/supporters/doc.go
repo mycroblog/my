@@ -12,4 +12,11 @@
 // Syncer, the subscription core that derives our state from it (supporters.sync, ADR-0072 §7).
 // The records of the deliveries and of the reconciliations are the PaymentRepository's, whose
 // database adapters pass supporterstest.PaymentRepositoryContract.
+//
+// Creating a plan, and every change that adds a revision of its terms, queues the job that has
+// the provider create the monthly and yearly prices of the revision and records them (keyed by
+// the revision, so that it runs once). A plan's current price for an interval is the newest
+// unarchived price that the provider returned for the current terms; a return to an earlier
+// amount is a new price too, so a plan always has one to charge. Existing subscriptions keep the
+// price they started with.
 package supporters

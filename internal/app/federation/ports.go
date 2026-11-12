@@ -18,8 +18,8 @@ import (
 var ErrNotFound = errors.New("federation: not found")
 
 // Repository is the persistence port of the federation module's outbound side: outbound
-// activities, their documents, their deliveries, and the health of remote servers
-// (data-model §4.8). The database adapters implement it and pass
+// activities, their documents, their deliveries, and the health of remote servers.
+// The database adapters implement it and pass
 // federationtest.FederationRepositoryContract; the outbound use cases on it are federationtest.FederationFlows
 // (internal/flowtest/federation).
 //
@@ -167,7 +167,7 @@ type Graph interface {
 }
 
 // DomainPolicy says whether a domain block keeps activities from a remote server: the
-// federation restriction (suspend) of a domain or one of its parents (federation.md §11).
+// federation restriction (suspend) of a domain or one of its parents (federation.md §1).
 // *moderation.FederationPolicy implements it.
 type DomainPolicy interface {
 	FederationSuspended(ctx context.Context, domain string) (bool, error)
@@ -183,7 +183,7 @@ func (NoDomainRestrictions) FederationSuspended(context.Context, string) (bool, 
 }
 
 // AccountPolicy says whether a restriction of a remote account keeps its activities: the
-// federation restriction (suspend, ban) of the account (federation.md §11).
+// federation restriction (suspend, ban) of the account (federation.md §1).
 // *moderation.FederationPolicy implements it.
 type AccountPolicy interface {
 	AccountFederationSuspended(ctx context.Context, accountID string) (bool, error)

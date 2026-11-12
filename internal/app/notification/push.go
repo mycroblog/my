@@ -26,7 +26,7 @@ import (
 // uses the SSRF-guarded kernel.HTTPClient (ADR-0019 §1).
 
 // PushRepository is the persistence of the Web Push subscriptions (push_subscriptions and
-// push_subscription_alerts, data-model §4.7). The database adapters' notification repositories
+// push_subscription_alerts). The database adapters' notification repositories
 // implement it and pass notificationtest.PushSubscriptionContract.
 type PushRepository interface {
 	// SavePushSubscription stores s with its alerts, replacing the subscription of the same

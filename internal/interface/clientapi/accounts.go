@@ -284,7 +284,7 @@ func (s *Server) presentedTarget(ctx context.Context, targetID string) (*Account
 }
 
 // ProfileRestrictions reads whether moderation hides an account's profile from everyone but
-// itself (profile_view, data-model §5.2). *moderation.AccountPolicy implements it.
+// itself (profile_view). *moderation.AccountPolicy implements it.
 type ProfileRestrictions interface {
 	ProfileHidden(ctx context.Context, accountID string) (bool, error)
 }

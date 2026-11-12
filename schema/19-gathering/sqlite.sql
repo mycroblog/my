@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the gathering module
--- (docs/architecture/data-model/04-tables/19-gathering.md). schema/README.md describes the layout
+-- (internal/app/gathering). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
 -- gathering: the events of the local users, their settings, places, dates, invitations,
--- answers, approvals, co-organizers, and cancellations (data-model §4.19, ADR-0161 §13). Owned by
+-- answers, approvals, co-organizers, and cancellations (ADR-0161 §13). Owned by
 -- internal/app/gathering.
 -- ---------------------------------------------------------------------------------------------
 

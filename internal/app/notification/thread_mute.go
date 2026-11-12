@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// The thread mutes (ADR-0158 §8, data-model §4.7): a local account mutes the conversation of a
+// The thread mutes (ADR-0158 §8): a local account mutes the conversation of a
 // status it may see (content's conversations, ADR-0154), and the notifications of
 // notification.ThreadMuted types about the statuses of that conversation are not created for it
 // from then on, its own threads included; those created before stay, and unmuting does not bring

@@ -15,14 +15,14 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Boosts, favourites, and emoji reactions across servers (federation.md §3.4, §7.1): the
+// Boosts, favourites, and emoji reactions across servers: the
 // outbound projectors that turn a local account's favourite or emoji reaction of a remote status
 // into Like and Undo Like, their fan-out to the status's author, and the inbox handlers of the Announce, Like,
 // EmojiReact, and their Undo that remote servers send. The Announce and Undo Announce of local boosts are recorded with the
 // other content activities (RegisterOutboundProjectors).
 
-// registerFavouriteProjectors records the Like and Undo Like of a favourite of a remote status
-// (federation.md §7.1). Remote accounts favourite only local statuses, so the favourite of a
+// registerFavouriteProjectors records the Like and Undo Like of a favourite of a remote status.
+// Remote accounts favourite only local statuses, so the favourite of a
 // remote status is a local account's. A favourite is a current value whose row goes when it is
 // taken back, so the activity names the status (object_id) and its actor the account, the pair
 // that identifies the favourite, and its document is built here from the event and stored with
@@ -191,7 +191,7 @@ func (f *FanOut) statusAuthorTargets(ctx context.Context, s subject) ([]target, 
 }
 
 // RemoteInteractions is the part of the content module's public API that records the boosts,
-// favourites, and emoji reactions of remote accounts (federation.md §1.1);
+// favourites, and emoji reactions of remote accounts;
 // *appcontent.Interactions implements it.
 type RemoteInteractions interface {
 	RecordRemoteBoost(ctx context.Context, in appcontent.RemoteBoostInput) (appcontent.Boost, error)
@@ -211,7 +211,7 @@ type InteractionHandlersDeps struct {
 }
 
 // RegisterInteractionHandlers sets the inbox handlers of boosts, favourites, and emoji reactions
-// (federation.md §3.4, ADR-0051 §6):
+// (ADR-0051 §6):
 //
 //   - Announce of a post: content.RecordRemoteBoost. The post is found by its id; a remote post
 //     that is not stored is taken from the Announce when it is embedded from the actor's origin,
@@ -227,7 +227,7 @@ type InteractionHandlersDeps struct {
 //     or EmojiReact: the reaction with the URI of the activity taken back
 //     (content.RemoveRemoteReaction), else the favourite with it (content.RemoveRemoteFavourite),
 //     else what the embedded activity was: the actor's reaction to the post with the same emoji,
-//     or its favourite of the post. An unknown one leaves a tombstone (federation.md §3.3).
+//     or its favourite of the post. An unknown one leaves a tombstone (ADR-0006 §9).
 func RegisterInteractionHandlers(p *InboxProcessor, d InteractionHandlersDeps) {
 	h := interactionHandlers{d: d}
 	p.Handle(federation.ActivityAnnounce, h.announce)
@@ -243,7 +243,7 @@ type interactionHandlers struct{ d InteractionHandlersDeps }
 // interactionError turns the refusals of the content module's remote interaction commands into
 // what the processor makes of them: a post that is missing, deleted, or hidden from the actor,
 // or that the actor may not boost (by its visibility or its boost rules), has nothing to do
-// (federation.md §3.3).
+// (ADR-0006 §9).
 func interactionError(err error) error {
 	switch {
 	case errors.Is(err, appcontent.ErrNotFound), errors.Is(err, appcontent.ErrNotBoostable), errors.Is(err, appcontent.ErrBoostNotAllowed),
@@ -431,7 +431,7 @@ func (h interactionHandlers) undoLike(ctx context.Context, in *InboxActivity) er
 	return interactionError(err)
 }
 
-// boosted returns the post that an Announce boosts (federation.md §3.4, ADR-0006). A local post
+// boosted returns the post that an Announce boosts (ADR-0006 §11). A local post
 // and a stored remote post are found by the object's id. A remote post that is not stored is
 // stored only when a local account follows the booster: from the Announce when it embeds the
 // post from the booster's origin, fetched from the post's origin otherwise. Anything else drops
@@ -473,7 +473,7 @@ func (h *StatusHandlers) boosted(ctx context.Context, in *InboxActivity) (appcon
 	if got.Document.ID() != ref.ID {
 		return appcontent.Status{}, fmt.Errorf("%w: %s is not an object", ErrDropActivity, ref.ID)
 	}
-	// The same rules and storing as any fetched post (federation.md §6.3), its parent fetched one
+	// The same rules and storing as any fetched post (ADR-0006 §11), its parent fetched one
 	// level as on receipt.
 	st, err = h.fetched(ctx, got, true)
 	if errors.Is(err, ErrNotTaken) && !errors.Is(err, ErrFetchFailed) && !errors.Is(err, ErrFetchUnavailable) {

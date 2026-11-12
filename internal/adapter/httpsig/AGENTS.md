@@ -5,3 +5,4 @@
 - Changing the body digest of an RFC 9421 signature: [RFC 9530](https://www.rfc-editor.org/rfc/rfc9530), search for: `Content-Digest`, `sha-256`
 - Changing the `Digest` header of a draft signature (RFC 3230, obsoleted by RFC 9530): [RFC 3230](https://www.rfc-editor.org/rfc/rfc3230), search for: `Digest`, `SHA`
 - Parsing or writing the structured fields of `Signature` and `Signature-Input`: [RFC 9651](https://www.rfc-editor.org/rfc/rfc9651), search for: Dictionaries, Inner Lists, Byte Sequences, Parameters
+- Before changing how this package talks to other servers, ask the `interop-advisor` agent: [interop-advisor](https://github.com/mycroblog/my/blob/main/.claude/agents/interop-advisor.md), search for: Mastodon, Misskey, GoToSocial, Akkoma

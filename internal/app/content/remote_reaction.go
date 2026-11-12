@@ -14,7 +14,7 @@ import (
 
 // This file holds the emoji reactions of remote accounts (FR-116, ADR-0051), which the federation
 // module records from the EmojiReact and Like activities it receives and takes back on their
-// Undo (docs/architecture/federation.md §3.4). Like the remote favourites, they are of local
+// Undo. Like the remote favourites, they are of local
 // statuses only, emit the same events as a local command would, and send nothing.
 
 // The emoji reactions as part of this module's public API, for the federation module, which
@@ -67,7 +67,7 @@ type RemoteReactionInput struct {
 }
 
 // RecordRemoteReaction records the emoji reaction of a remote account (an EmojiReact, or a Like
-// with an emoji, federation.md §3.4) and returns it. The rules are those of RecordRemoteFavourite:
+// with an emoji) and returns it. The rules are those of RecordRemoteFavourite:
 // only a local status takes remote reactions, only one the account can see (content.CanView in
 // ContextObjectFetch, which refuses a block either way), and anything else fails with
 // ErrNotFound; an account under the interact restriction (FR-708) fails with

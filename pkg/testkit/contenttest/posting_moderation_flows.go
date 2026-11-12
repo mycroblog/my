@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// postingModeration checks the effects of the moderation actions on statuses (data-model §5.2):
+// postingModeration checks the effects of the moderation actions on statuses:
 // delete_statuses deletes a status into a tombstone that names the action, like the author's
 // deletion, once; mark_statuses_sensitive marks a status until the action is lifted, and a
 // status marked by two actions stays marked until both are.

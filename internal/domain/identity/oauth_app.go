@@ -99,7 +99,7 @@ func validWebsite(w string) bool {
 }
 
 // OAuthClientRevision records that the user who registered a client changed its name,
-// website, or scope (data-model §4.1, oauth_client_revisions). The newest revision is what the
+// website, or scope (oauth_client_revisions). The newest revision is what the
 // client is now.
 type OAuthClientRevision struct {
 	ID       string

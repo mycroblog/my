@@ -25,11 +25,11 @@ var (
 	// ErrBlocked reports a follow between two accounts when either blocks the other.
 	ErrBlocked = errors.New("graph: one of the accounts blocks the other")
 	// ErrInteractionRestricted reports a follower whose moderation restrictions forbid
-	// following (the interact restriction, data-model §5.2).
+	// following (the interact restriction).
 	ErrInteractionRestricted = errors.New("graph: the account may not interact")
 )
 
-// InteractionPolicy reads whether moderation forbids an account to interact (data-model §5.3).
+// InteractionPolicy reads whether moderation forbids an account to interact.
 // *moderation.AccountPolicy implements it.
 type InteractionPolicy interface {
 	InteractionRestricted(ctx context.Context, accountID string) (bool, error)
@@ -635,7 +635,7 @@ func (s *Service) Followers(ctx context.Context, accountID string, p Page) ([]gr
 const MaxFollowerBatch = 1000
 
 // ActiveFollowerIDs returns a batch of accountID's active followers, local and remote, newest
-// follow first, for the jobs that walk all of them (the delivery fan-out, data-model §2.1). It
+// follow first, for the jobs that walk all of them (the delivery fan-out). It
 // starts after the follow ID before ("" for the newest) and returns at most limit accounts
 // (capped at MaxFollowerBatch), with the cursor of the next batch, "" after the last one.
 func (s *Service) ActiveFollowerIDs(ctx context.Context, accountID, before string, limit int) (ids []string, next string, err error) {

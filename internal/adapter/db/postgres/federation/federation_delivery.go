@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// This file holds the delivery attempts and the health of remote servers (federation.md §7.3).
+// This file holds the delivery attempts and the health of remote servers (ADR-0006 §3).
 
 // InsertDeliveryAttempt implements federation.Repository.
 func (r *Repository) InsertDeliveryAttempt(ctx context.Context, tx uow.Tx, a federation.DeliveryAttempt) error {

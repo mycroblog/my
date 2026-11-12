@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The forwarding of reports to the server of the reported account (FR-709, federation.md §11,
+// The forwarding of reports to the server of the reported account (FR-709,
 // ADR-0058): a Flag of the instance actor, delivered to the reported account's own inbox.
 
 // ReportReader reads the reports that Flags forward; *appmoderation.Service implements it.

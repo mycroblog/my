@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// The admin_error_group notifications (ADR-0103 §8, data-model §4.7): a new error group, or a
+// The admin_error_group notifications (ADR-0103 §8): a new error group, or a
 // resolved one that regressed, tells the holders of manage_errors, at most
 // notification.ErrorGroupHourlyCap times an hour for the whole instance; the rest of the hour
 // fold into one notification of notification.ErrorGroupOthers, whose count the list reads from

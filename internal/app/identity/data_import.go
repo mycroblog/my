@@ -21,7 +21,7 @@ import (
 )
 
 // The CSV exports and imports of a user's follows, blocks, mutes, and bookmarks in Mastodon's
-// formats (FR-008, data-model §4.1). An export is written on request from what the user has
+// formats (FR-008). An export is written on request from what the user has
 // now. An import records its items (the file's entries, and for an overwrite what the user has
 // that the file does not list) in one transaction with its first job; the job carries out a
 // batch of items, resolving remote accounts and posts over the network and sending follows
@@ -484,8 +484,7 @@ func (m *Imports) ExpireImports(ctx context.Context) (int, error) {
 	return len(ids), nil
 }
 
-// EraseAccountData implements account.DataEraser: the deleted account's user loses every import
-// (data-model §8).
+// EraseAccountData implements account.DataEraser: the deleted account's user loses every import.
 func (m *Imports) EraseAccountData(ctx context.Context, t account.ErasureTarget, _ string, limit int) (account.ErasureStep, error) {
 	if t.UserID == "" {
 		return account.ErasureStep{Done: true}, nil

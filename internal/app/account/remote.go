@@ -46,7 +46,7 @@ const (
 )
 
 // RemoteActorInput is a fetched remote actor document, as the federation module read it
-// (federation.md §6.2). The URLs and key IDs are canonical IRIs; the HTML and the display name
+// (ADR-0006 §12). The URLs and key IDs are canonical IRIs; the HTML and the display name
 // are as received, and UpsertRemoteActor sanitizes them.
 type RemoteActorInput struct {
 	// URI is the actor's id; Domain is its canonical host.
@@ -216,7 +216,7 @@ func ActorTypeOf(as2Type string) account.ActorType {
 	return account.ActorPerson
 }
 
-// UpsertRemoteActor stores a fetched remote actor inside tx (federation.md §6.2): the account
+// UpsertRemoteActor stores a fetched remote actor inside tx (ADR-0006 §12): the account
 // and its remote subtype the first time, a snapshot when the document changed, its head, a
 // profile revision when the sanitized profile changed, its keys (a key whose fingerprint changed
 // under the same key ID replaces the old one, which is revoked, and so is a key the document no
@@ -304,7 +304,7 @@ func (s *Service) recordSnapshot(ctx context.Context, tx uow.Tx, accountID strin
 }
 
 // reviseRemoteProfile records a revision when the sanitized profile differs from the current
-// one (data-model §4.2: remote revisions are made only when the content changed). With
+// one (remote revisions are made only when the content changed). With
 // in.KeepProfile, a known actor's revision keeps the reviewed part of the current one and takes
 // only the flags of in.
 func (s *Service) reviseRemoteProfile(ctx context.Context, tx uow.Tx, accountID, snapshotID string, in RemoteActorInput, now time.Time) error {
@@ -375,7 +375,7 @@ func (s *Service) remoteImage(ctx context.Context, tx uow.Tx, accountID, url str
 	return id, nil
 }
 
-// rotateRemoteKeys stores the declared keys of a remote actor (data-model §4.2, ADR-0006): a
+// rotateRemoteKeys stores the declared keys of a remote actor (ADR-0006): a
 // key seen before stays, a new fingerprint under a key ID replaces the current key of that ID,
 // which is revoked in the same transaction, and a key of the actor that the document no longer
 // declares is revoked. A key ID that another account holds is left alone.

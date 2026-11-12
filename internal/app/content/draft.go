@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// This file holds drafts and scheduled posts (data-model §4.4, ADR-0156). A draft is saved on the
+// This file holds drafts and scheduled posts (ADR-0156). A draft is saved on the
 // server, so its author goes on writing it on another device, and is published at once or at a
 // chosen time. Publishing goes through Service.Create, as a new post does, so the checks, the
 // decision hook local.status, federation, and notifications are those of a new post; they judge

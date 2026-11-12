@@ -38,7 +38,7 @@ type ProfileRevised struct {
 func (ProfileRevised) EventType() string { return EventProfileRevised }
 
 // Federates reports whether the revision is sent to the account's remote followers as an
-// Update (federation.md §7.1): a revision of a local profile after the first one, which the
+// Update: a revision of a local profile after the first one, which the
 // account is created with and no one follows yet. Remote revisions come from the actor's own
 // server.
 func (e ProfileRevised) Federates() bool { return e.Revision.Remote == nil && e.Revision.Seq > 1 }
@@ -59,7 +59,7 @@ func (e LifecycleEventRecorded) Deletes() bool {
 }
 
 // DeletesLocalAccount reports whether the event is a local account's deletion, which is sent
-// to the remote servers as a Delete of the actor (federation.md §7.1).
+// to the remote servers as a Delete of the actor.
 func (e LifecycleEventRecorded) DeletesLocalAccount() bool {
 	return e.Event.Kind == account.LifecycleDeleted
 }
@@ -88,7 +88,7 @@ func (e LifecycleEventRecorded) RestoresRemoteActor() bool {
 	return e.Event.Kind == account.LifecycleReactivated && e.Event.InitiatedBy == account.InitiatedBySystem
 }
 
-// RegisterProjectors registers the account module's synchronous projectors (data-model §9):
+// RegisterProjectors registers the account module's synchronous projectors:
 // account_handles from local accounts and the handle checks of remote actors,
 // account_profile_heads from profile revisions, account_lifecycle_states from lifecycle events,
 // remote_account_heads from the fetches of remote actors, and account_move_states from moves. Each projector applies the same rule as
@@ -153,7 +153,7 @@ func localHandle(la account.LocalAccount) account.Handle {
 }
 
 // RebuildProjections empties the account module's projections and derives them again from
-// their sources (data-model §9), in one transaction per projection. remote_account_heads
+// their sources, in one transaction per projection. remote_account_heads
 // points each remote actor at its newest snapshot; the fetch state of the periodic refresh
 // (LastFetchedAt, ConsecutiveFetchFailures) has no events, so an actor's head keeps it, and an
 // actor without a head gets the snapshot's fetch time and no failures.
@@ -284,7 +284,7 @@ func rebuildLifecycleStates(ctx context.Context, tx uow.Tx, repo Repository) err
 // ReplayLifecycle emits inside tx LifecycleEventRecorded for each lifecycle event that deletes an
 // account (LifecycleEventRecorded.Deletes) and for the deactivated event of each account that is
 // deactivated now, in account and event order, for the rebuild of the projections that other
-// modules derive from them (data-model §9). The events of an actor that was restored since are
+// modules derive from them. The events of an actor that was restored since are
 // left out, so these are the accounts that are deleted or deactivated now.
 func ReplayLifecycle(ctx context.Context, tx uow.Tx, repo Repository, emit func(uow.Event) error) error {
 	events, err := repo.ListLifecycleEvents(ctx, tx)

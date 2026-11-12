@@ -14,7 +14,7 @@ import (
 )
 
 // PolicyRepository is the persistence port of the notification policy and the requests of the
-// filtered notifications (ADR-0158, data-model §4.7): the policy choices (current value), the
+// filtered notifications (ADR-0158): the policy choices (current value), the
 // filterings of the notifications (event), the accepted sources (resource), the dismissals of the
 // requests (event), and the requests (projection). Repository embeds it; the database adapters
 // pass notificationtest.NotificationContract.
@@ -363,7 +363,7 @@ func (s *Service) DismissRequest(ctx context.Context, accountID, sourceID string
 }
 
 // RebuildRequests empties notification_requests and derives it again, in one transaction, from
-// the filterings, the accepted sources, and the dismissals of the requests (data-model §9).
+// the filterings, the accepted sources, and the dismissals of the requests.
 func RebuildRequests(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	if err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildRequests(ctx, tx) }); err != nil {
 		return fmt.Errorf("rebuild notification_requests: %w", err)

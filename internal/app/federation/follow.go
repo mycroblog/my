@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Follows with remote accounts (federation.md §3.4, §7.1): the outbound projectors that turn the
+// Follows with remote accounts: the outbound projectors that turn the
 // graph module's follow events between a local and a remote account into Follow, Accept,
 // Reject, and Undo Follow, their fan-out to the other account, and the inbox handlers of the
 // Follow, Accept, Reject, and Undo that remote servers send.
@@ -39,7 +39,7 @@ type FollowReader interface {
 }
 
 // registerFollowProjectors records the activities of follows between a local and a remote
-// account (federation.md §7.1):
+// account:
 //
 //   - graph.followed and graph.follow_requested of a local follower of a remote account: Follow,
 //     whose IRI is the follow's URI, so that the Accept answering it names it.
@@ -309,7 +309,7 @@ func (f *FanOut) counterpartTargets(ctx context.Context, s subject) ([]target, e
 }
 
 // followDocument builds a Follow, or the Accept, Reject, or Undo that embeds it, addressed to
-// the other account of the follow (federation.md §7.4). The Follow's id is the follow's URI, so
+// the other account of the follow. The Follow's id is the follow's URI, so
 // the Accept of a remote follower names the Follow that its server sent; the Accept of a Follow
 // sent again names that one (subject.followURI).
 func (f *FanOut) followDocument(ctx context.Context, s subject) ([]byte, error) {
@@ -432,7 +432,7 @@ type QuoteAnswers interface {
 	ReceiveQuoteAnswer(ctx context.Context, in *InboxActivity, accepted bool) (bool, error)
 }
 
-// RegisterFollowHandlers sets the inbox handlers of the follow activities (federation.md §3.4):
+// RegisterFollowHandlers sets the inbox handlers of the follow activities:
 //
 //   - Follow of a local actor: the inbound.follow hook, then graph.ReceiveFollow.
 //   - Accept and Reject of a Follow a local account sent: graph.AcceptRemote and
@@ -440,7 +440,7 @@ type QuoteAnswers interface {
 //     actor (local) and object (the sender); an Accept or Reject of something other than a
 //     Follow is dropped, and one of no known follow does nothing.
 //   - Undo of a Follow: graph.TerminateRemote, found the same way; an unknown one leaves a
-//     tombstone (federation.md §3.3).
+//     tombstone (ADR-0006 §9).
 //   - Undo of an Accept: graph.RejectRemote, the end of the follow it accepted.
 //   - Accept and Reject of the Follow of a relay, and Follow of the instance actor: Relays
 //     (ADR-0006).
@@ -625,7 +625,7 @@ func (h followHandlers) review(ctx context.Context, in *InboxActivity, followeeI
 
 // newFollow reports whether a Follow from followerID would make a new follow of followeeID, the only
 // Follow that asks the hook. The graph module answers the others itself: a Follow sent again for an
-// active follow gets its Accept again (federation.md §3.3), one sent again for a pending request
+// active follow gets its Accept again (ADR-0006 §9), one sent again for a pending request
 // changes nothing, and one between accounts that block each other gets a Reject. Asking about them
 // would let a drop withhold that Accept or Reject, and a flag report a follower once more per Follow
 // sent again. Without Relationships every Follow asks.

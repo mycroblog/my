@@ -9,8 +9,8 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// ProjectionRepository is the part of Repository that rebuilds the webhook projections
-// (data-model §9). Each method derives one projection again by the rule of the projector that
+// ProjectionRepository is the part of Repository that rebuilds the webhook projections.
+// Each method derives one projection again by the rule of the projector that
 // writes it.
 type ProjectionRepository interface {
 	// RebuildHeads empties webhook_endpoint_heads and derives it from the newest revision,
@@ -24,8 +24,7 @@ type ProjectionRepository interface {
 }
 
 // RebuildProjections derives webhook_endpoint_heads and webhook_endpoint_failures again from
-// the revisions, state changes, secrets, and attempts of the endpoints, in one transaction
-// (data-model §9).
+// the revisions, state changes, secrets, and attempts of the endpoints, in one transaction.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.RebuildHeads(ctx, tx); err != nil {

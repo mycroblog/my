@@ -13,7 +13,7 @@ import (
 )
 
 // validText reports whether s is text that every database dialect holds and compares as it
-// is: valid UTF-8 without NUL (data-model §1.2).
+// is: valid UTF-8 without NUL.
 func validText(s string) bool { return utf8.ValidString(s) && strings.IndexByte(s, 0) < 0 }
 
 // rejectInvalidBodyText is the strict middleware that answers a request whose JSON body holds
@@ -21,7 +21,7 @@ func validText(s string) bool { return utf8.ValidString(s) && strings.IndexByte(
 // names the property, before the handler looks anything up by it or writes it. The platform
 // rejects such text in the request target and form bodies; this covers the client API's JSON
 // bodies, so that no handler passes such a value to a lookup, where PostgreSQL fails on it
-// and SQLite finds nothing (data-model §1.2).
+// and SQLite finds nothing.
 func (s *Server) rejectInvalidBodyText(next StrictHandlerFunc, _ string) StrictHandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
 		v := reflect.ValueOf(request)

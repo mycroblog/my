@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The instance rules (FR-705, data-model §4.9). A rule keeps its ID for life: revising its
+// The instance rules (FR-705). A rule keeps its ID for life: revising its
 // text or moving it records a new revision, and retiring it removes it from the rules in
 // effect while reports that cite it still find it.
 //

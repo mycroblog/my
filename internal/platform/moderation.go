@@ -19,8 +19,8 @@ import (
 )
 
 // setUpModeration builds the moderation use cases, the policy that federation and the media
-// proxy read the domain and account restrictions through (docs/architecture/federation.md §11),
-// and the policy of the accounts' restrictions (data-model §5.3). It needs the account module,
+// proxy read the domain and account restrictions through (docs/architecture/federation.md §1),
+// and the policy of the accounts' restrictions. It needs the account module,
 // and comes before the identity module and everything that federates. It also registers the
 // job that deletes the accounts whose deletion is due, which bans schedule, and
 // the audit log projector. Suspensions cut follows through the graph module (FR-717), which is
@@ -50,7 +50,7 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 	a.ModerationPolicy = moderation.NewFederationPolicy(repo, a.Clock).Scoped(federationScopes{a})
 	a.AccountPolicy = moderation.NewAccountPolicy(repo, a.Accounts, a.Clock)
 	// The removal of expired restrictions, which ends expired suspensions on other servers
-	// (federation.md §11.1).
+	// (ADR-0058 §6).
 	a.Moderation.RegisterJobs(a.Handlers, a.Scheduler)
 	a.Accounts.RegisterDeletionJobs(a.Handlers, a.Scheduler)
 	// The administrative use cases of every module emit their audit log entries; the projector

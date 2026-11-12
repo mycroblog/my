@@ -19,7 +19,7 @@ import (
 )
 
 // RegistrationRepositoryContract verifies the registration persistence of a database adapter's
-// identity repository (data-model §4.1) by its methods alone, the port contract of ADR-0153 §1:
+// identity repository by its methods alone, the port contract of ADR-0153 §1:
 // applications found by user and by ID, with the note of their decision; the registration state
 // set by an upsert and moved from pending once; the registrations of a state listed longest in it
 // first with their email, in pages, and counted; the primary email address, one per normalized

@@ -13,7 +13,7 @@ const searchSchema = z.object({
 });
 
 /**
- * The health of the remote servers that deliveries failed to reach (federation.md §7.3), and the way to open any
+ * The health of the remote servers that deliveries failed to reach (ADR-0006 §3), and the way to open any
  * server's page by its domain, for manage_domains.
  */
 export const Route = createFileRoute("/moderation/instances")({

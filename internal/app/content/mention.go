@@ -11,7 +11,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 )
 
-// mentionResolver resolves the mentions of one text (data-model §4.4, federation.md §6.2):
+// mentionResolver resolves the mentions of one text:
 //
 //   - @user, @user@{account_domain}, and @user@{host} are local, active accounts, linked to
 //     their profile page on host.

@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// FanOutBatch is the number of recipients one JobFanOut reads (federation.md §7.2).
+// FanOutBatch is the number of recipients one JobFanOut reads.
 const FanOutBatch = 500
 
 // FanOutDeps are the ports and settings of the fan-out.
@@ -36,7 +36,7 @@ type FanOutDeps struct {
 	// Domains are the domain blocks; nil means NoDomainRestrictions.
 	Domains DomainPolicy
 	// Suspensions tells the local actors that moderation suspends, whose Update carries the
-	// suspended document (federation.md §11.1); nil means NoAccountRestrictions.
+	// suspended document (ADR-0058 §6); nil means NoAccountRestrictions.
 	Suspensions AccountPolicy
 	Clock       kernel.Clock
 	IDs         kernel.IDGenerator
@@ -83,7 +83,7 @@ type FanOutDeps struct {
 	Logger *slog.Logger
 }
 
-// FanOut computes where outbound activities go and records the deliveries (federation.md §7.2).
+// FanOut computes where outbound activities go and records the deliveries.
 // Each JobFanOut handles one batch of one source of recipients:
 //
 //  1. It builds the activity's document once, on the first batch, and stores it
@@ -400,8 +400,7 @@ type subject struct {
 // the profile: its suspension, or its move (federation.OutboundFlows).
 func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 
-// phases returns the sources of recipients of the activity, in order (data-model §7,
-// federation.md §7.1).
+// phases returns the sources of recipients of the activity, in order.
 //
 //   - Create: the mentioned accounts, then the followers, then, for a public status, the accepted
 //     relays (ADR-0006).
@@ -410,8 +409,8 @@ func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 //     voted in it (FR-112).
 //   - Announce and Undo Announce: the booster's followers, then the boosted status's author.
 //   - Update of an actor: its followers. Delete of an actor, and the Update of a suspension or
-//     of its end: its followers, then every shared inbox known to the instance (data-model §8,
-//     federation.md §11.1).
+//     of its end: its followers, then every shared inbox known to the instance
+//     (ADR-0058 §6).
 //   - Move of an actor: its followers (ADR-0089).
 //   - Follow, Accept, Reject, and Undo Follow: the other account of the follow.
 //   - Like and Undo Like: the author of the favourited status.
@@ -561,9 +560,9 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 // moderation suspends it. The Update of an actor that is no longer active, or no longer local,
 // has nothing to send: a later Delete supersedes it. A suspended actor that is not deleted is
 // the exception: its Update tells that it is suspended, also while a ban schedules its
-// deletion (federation.md §11.1), and so is one that its owner deactivated, which publishes the
+// deletion (ADR-0058 §6), and so is one that its owner deactivated, which publishes the
 // same document (ADR-0089 §17). The Delete of an actor goes out whatever its state, since the
-// account row stays after the purge (data-model §8).
+// account row stays after the purge.
 func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error) {
 	act := s.act
 	if act.ObjectID != act.ActorAccountID || (act.Type != federation.ActivityUpdate && act.Type != federation.ActivityDelete) {
@@ -784,8 +783,8 @@ func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity,
 
 // admits reports whether content.CanView lets the remote account recipient see the object in
 // the context view (ContextDelivery but for the voters of a poll). An active follower is not
-// blocked by either side: a block ends the follows between the two accounts in its transaction
-// (data-model §2.1). Any other recipient's relationship with the actor is rel, which
+// blocked by either side: a block ends the follows between the two accounts in its transaction.
+// Any other recipient's relationship with the actor is rel, which
 // relationsWith read from the graph module.
 func (f *FanOut) admits(s subject, recipient string, follower bool, rel appcontent.Relation, view appcontent.ViewContext) bool {
 	if follower {

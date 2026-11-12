@@ -128,10 +128,12 @@ func fastPlan(root string, changed []string) [][]fastStep {
 	}
 	var goFiles, tsFiles, appTS, shFiles, tofuFiles []string
 	pkgs := map[string]map[string]bool{} // module -> package directories
-	md := false
+	md, maps := false, false
 	for _, f := range changed {
 		ext := filepath.Ext(f)
 		switch {
+		case filepath.Base(f) == "context-map.yaml":
+			maps = true
 		case ext == ".go":
 			mod := goModule(root, f)
 			if mod == "" {
@@ -217,6 +219,11 @@ func fastPlan(root string, changed []string) [][]fastStep {
 		plan = append(plan,
 			[]fastStep{{name: "docs:lint", argv: []string{"scripts/task.sh", "docs:lint"}}},
 			[]fastStep{{name: "docs:rules", argv: []string{"scripts/task.sh", "docs:rules"}}})
+	}
+	// A context map that changed, or a document one of them may point at, is checked as the merge queue's repo job
+	// checks it; it takes about a second.
+	if maps || md {
+		plan = append(plan, []fastStep{{name: "agentkit:map-check", argv: []string{"scripts/task.sh", "agentkit:map-check"}}})
 	}
 	if len(shFiles) > 0 {
 		// Only the changed scripts are inputs, so a script that sources another would report SC1091 (not followed),

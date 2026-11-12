@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/webhook"
 )
 
-// Repository implements appwebhook.Repository (data-model §4.11, ADR-0060).
+// Repository implements appwebhook.Repository (ADR-0060).
 type Repository struct {
 	db *moduleDB
 }

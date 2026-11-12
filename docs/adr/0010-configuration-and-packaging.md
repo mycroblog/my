@@ -13,11 +13,12 @@
 - ソース: 環境変数（`MY_` プレフィックス。ブランドは mycroblog だが、`my` はサーバーソフトウェアの名前として残るので接頭辞も `MY_` のまま）→ 任意の設定ファイル（TOML）→ 既定値。
 - アダプタ選択は明示的なキー（例: `MY_DATABASE=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=cloudtasks`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
 - 秘密情報は環境変数 / シークレットストア（Secret Manager, Secrets Manager / SSM, Kubernetes Secret）から。Docker と Kubernetes の secret をファイルで渡せるよう `<NAME>_FILE`（ファイルのパスから読む）も受け付ける。設定ファイルには書けない。
+- この設定と、DB に持つインスタンス設定は同じキーを持たず、どちらも他方を上書きしない。再起動で反映するデプロイの構成（アダプタ・接続先・ホスト名・秘密情報）はこの設定に、運営者が稼働中に変える方針と文章はインスタンス設定に置く。1 つの値の出どころを 1 つにして、どちらが効いているかを迷わせないため。
 
 ### 2. パッケージング
 
 - モノレポ。サーバーの Go は単一モジュール（`cmd/`, `internal/`, `pkg/testkit`）とする。利用者に配る `pkg/mykit`・`pkg/mybot`（ADR-0093）と開発ツールの `tools` は別のモジュールにする。クライアントアプリは `app/` の下に 1 アプリ 1 ディレクトリで置く（`app/web`。モバイルアプリの `app/mobile` は v0 の範囲の外）。共有パッケージの `app/ui`（ADR-0025）とメールの `app/mail` も同じ場所に置く。
-  `app/*` を Bun ワークスペースのメンバーにし、クライアントのツールチェーン（依存・lint・テスト）をサーバーの Go と分けて扱う（レイアウトは [overview](../architecture/overview.md#6-リポジトリ構成)）。
+  `app/*` を Bun ワークスペースのメンバーにし、クライアントのツールチェーン（依存・lint・テスト）をサーバーの Go と分けて扱う。
 - アダプタはパッケージ単位に分け、ビルドタグで除外できるようにする（NFR-PORT-4）。
 - エントリポイント: `cmd/my`（単一バイナリ: `serve` / `worker` / `cli`。Self-hosted・Cloud Run・ECS Fargate・コンテナ）。
 - コンテナイメージ: multi-arch（amd64 / arm64）、非 root、distroless 系。レジストリは `ghcr.io/mycroblog/my` だけとし、公開（public）にする（§4 から §10）。

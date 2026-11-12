@@ -10,7 +10,7 @@ import (
 )
 
 // ValidText reports whether s is text that every database dialect stores as it is: valid UTF-8
-// without NUL (data-model §1.2). Every local text of the content module passes it before it is
+// without NUL. Every local text of the content module passes it before it is
 // stored: a status's text and content warning, an alt text, and an Idempotency-Key.
 func ValidText(s string) bool { return utf8.ValidString(s) && !strings.ContainsRune(s, 0) }
 

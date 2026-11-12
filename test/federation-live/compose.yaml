@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Live interoperability stack (ADR-0006, ADR-0015, docs/architecture/federation.md §12): this server, Mastodon,
+# Live interoperability stack (ADR-0006, ADR-0015, README.md): this server, Mastodon,
 # GoToSocial (0.22 and 0.21), Misskey, Akkoma, and Bonfire Social federating over HTTPS with a private CA, and an Activity-Relay relay (ADR-0006). scripts/federation-live.sh generates the CA, the
 # certificate, and the secrets, starts this file, creates one user on each server, runs the scenarios, and
 # collects the logs; run it with `scripts/task.sh docker:federation-live` (README.md next to this file).
@@ -35,7 +35,7 @@ x-mastodon: &mastodon
     REDIS_HOST: redis
     REDIS_PORT: "6379"
     # Secure mode: Mastodon requires a signature on every ActivityPub GET, so the scenarios exercise the
-    # signed fetches of this server (federation.md §2).
+    # signed fetches of this server (ADR-0006 §5).
     AUTHORIZED_FETCH: "true"
     # The other servers live on this network's private addresses.
     ALLOWED_PRIVATE_ADDRESSES: ${FEDERATION_LIVE_SUBNET:-172.29.58.0/24}

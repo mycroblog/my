@@ -6,6 +6,16 @@
 // retries them, and disables an endpoint that keeps failing. The adapters of Repository live in
 // internal/adapter/db/*; their contract test suite is webhooktest.WebhookRepositoryContract, and the
 // flows of the use cases on them are webhooktest.WebhookFlows (internal/flowtest/webhook).
+//
+// An endpoint's revisions, secrets, and state changes each project its head, and its attempts
+// project the run of failures since its last success, which keeps the time of the first failure:
+// the automatic disabling still measures the run after that attempt's row is purged. A deletion
+// is a state change that keeps the rows, which the audit log and the delivery history point at.
+//
+// A message is written only when an enabled endpoint subscribes to its event. Its data is the
+// representation that the admin API gives of the same target, built by the Presenter inside the
+// event's transaction, whose reads see the rows that the transaction wrote; its body is kept as
+// sent, a document that nothing interprets.
 package webhook
 
 import (

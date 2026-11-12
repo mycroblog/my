@@ -15,7 +15,7 @@ import (
 // PushSubscription is where the Web Push notifications of a local account go: the push
 // service endpoint and the keys that a browser's PushManager returned, with the notification
 // types the user chose (push_subscriptions and push_subscription_alerts, current values,
-// data-model §4.7, FR-206).
+// FR-206).
 //
 // A subscription belongs to the OAuth grant that registered it (TokenFamilyID, the family of
 // tokens that refreshing the grant issues), so that each signed-in app has at most one and

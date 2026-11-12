@@ -218,7 +218,7 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 - 悪い: `local.status` の異議申し立ては、投稿を拒まれた作者の本文を一時的に保存し、モデレーターの審査の列を増やす。対象から外れたアカウントは以後審査されないので、乗っ取られても `local.status` は働かない。
 - 悪い: `drop` を戻せるのは 7 日だけで、`drop` した投稿が別の経路で入ることがある（§9）。
 - 悪い: `status_sensitivity_overrides` の `source_id` は `source_kind` を見ないと何を指すか分からない。判定を残すために §6 の保持に例外ができる。
-- 後続: data-model §4.4・§5.2・§8・§9、`schema/` の両方言、`docs/operations/`、`tools/agentkit/context-map.yaml` は #2222 以降のタスクで直す。
+- 後続: `schema/` の両方言、`docs/operations/`、`tools/agentkit/context-map.yaml` は #2222 以降のタスクで直す。
 
 ## Open Questions / 要検証
 

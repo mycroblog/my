@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A remote server's page below its heading (federation.md §7.3): its health, why it is in its state, when
+// A remote server's page below its heading (ADR-0006 §3): its health, why it is in its state, when
 // deliveries last resumed, the button that resumes them, what was delivered to it and what it answered (#2748), the
 // way to its moderation actions (FR-702), the refetch of its accounts' posts (FR-407), and the history of its availability, newest first.
 import { Button, Card, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, Link, Stack } from "@my/ui";

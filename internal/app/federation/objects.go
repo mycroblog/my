@@ -27,7 +27,7 @@ const OutboxPageSize = 20
 // followerScanBatch is how many followers one query checks for a requester's domain.
 const followerScanBatch = 1000
 
-// Requester is who fetches an object or a collection (docs/architecture/visibility.md §1): the
+// Requester is who fetches an object or a collection (content.ViewerRemote): the
 // server of a verified signature, or no one for an unsigned request.
 type Requester struct {
 	// Domain is the canonical host of the signer's actor, "" for an anonymous request.
@@ -141,7 +141,7 @@ type ObjectsDeps struct {
 }
 
 // Objects serves the ActivityPub documents of local statuses and the collections made of them
-// (federation.md §10). Who may see a status is decided by appcontent.CanView in
+// (ADR-0018). Who may see a status is decided by appcontent.CanView in
 // ContextObjectFetch alone: the requester is the signer's server, and its relation to the author
 // is aggregated over that domain (an active follower or a mentioned account on it counts).
 type Objects struct {
@@ -163,7 +163,7 @@ func NewObjects(d ObjectsDeps) *Objects {
 	return &Objects{d: d, notes: notes{parts: d.Reader, graph: d.Graph, quotes: d.Quotes, conversations: d.Conversations, host: d.Host, accountDomain: d.AccountDomain}}
 }
 
-// AuthorizedFetch reports whether authorized fetch (FR-408, federation.md §10) is on: GETs of
+// AuthorizedFetch reports whether authorized fetch (FR-408, ADR-0006 §31) is on: GETs of
 // objects, collections, and full actor documents need a verified signature, and no answer that
 // depends on the signature may be cached publicly. It is read per request, so that a change of
 // the setting applies at once.
@@ -177,7 +177,7 @@ func (o *Objects) AuthorizedFetch(ctx context.Context) (bool, error) {
 // Authenticate returns the requester of a GET. A request without a signature, or with one that
 // does not verify, is anonymous: such a request may still read what anyone may read, unless
 // AuthorizedFetch is on and the caller refuses it. A signer on a suspended domain
-// (federation.md §11) or on this server is anonymous too. Only an unexpected failure is an
+// (federation.md §1) or on this server is anonymous too. Only an unexpected failure is an
 // error.
 func (o *Objects) Authenticate(ctx context.Context, r *SignedRequest) (Requester, error) {
 	if o.d.Signatures == nil {
@@ -439,7 +439,7 @@ type OutboxPage struct {
 
 // Outbox returns a page of the outbox of a local account, starting after the cursor before (""
 // for the newest): the Create of each status that an anonymous visitor may see on the profile,
-// which lists only public and unlisted statuses (ADR-0018, federation.md §8). Boosts are not
+// which lists only public and unlisted statuses (ADR-0018, ADR-0017). Boosts are not
 // listed.
 func (o *Objects) Outbox(ctx context.Context, accountID, before string) (OutboxPage, error) {
 	anon := appcontent.Viewer{Kind: appcontent.ViewerAnonymous}

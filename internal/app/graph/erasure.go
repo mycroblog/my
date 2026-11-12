@@ -14,7 +14,7 @@ import (
 )
 
 // ErasureRepository is the part of the graph module's persistence that the erasure of deleted
-// accounts uses (data-model §8). The database adapters' graph repositories implement it and
+// accounts uses. The database adapters' graph repositories implement it and
 // pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// ListEdgesToErase returns up to limit live follows into or out of the account.
@@ -36,7 +36,7 @@ type ErasureRepository interface {
 	EraseCountersOf(ctx context.Context, tx uow.Tx, accountID string) error
 }
 
-// Eraser erases a deleted account's follows, blocks, mutes, and private notes (data-model §8). The live
+// Eraser erases a deleted account's follows, blocks, mutes, and private notes. The live
 // follows end first with the reason account_deleted, which counts them out of the other
 // accounts' counters and tells no server (the Delete of the actor did); then the follows, blocks,
 // and mutes go with their events and projections, and the notes by and on the account go.

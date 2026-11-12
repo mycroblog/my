@@ -51,7 +51,7 @@ func (s *Server) permissions(ctx context.Context, userID string) ([]Permission, 
 	return out, nil
 }
 
-// InstanceHealth reads the health of remote servers and clears it (federation.md §7.3).
+// InstanceHealth reads the health of remote servers and clears it (ADR-0006 §3).
 // *appfederation.Health implements it.
 type InstanceHealth interface {
 	Find(ctx context.Context, domain string) (federation.InstanceHealth, error)

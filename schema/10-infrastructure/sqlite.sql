@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables that adapters own
--- (docs/architecture/data-model/04-tables/10-infrastructure.md). schema/README.md describes the layout
--- and the conventions of this directory.
+-- (the job queue, the key-value store, and the record of the data upgrades). schema/README.md
+-- describes the layout and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- 基盤: job queue (data-model/04-tables/10-infrastructure.md §4.10, ADR-0004).
+-- 基盤: job queue (ADR-0004).
 -- Owned by internal/adapter/queue/db. trace_parent is the W3C traceparent of the span that
 -- enqueued the job, which its run links to (ADR-0055 §14); an attribute of the job, not a state.
 -- ---------------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ CREATE TABLE job_attempts (
 CREATE INDEX job_attempts_finished_at ON job_attempts (finished_at);
 
 -- ---------------------------------------------------------------------------------------------
--- 基盤: key-value store (data-model/04-tables/10-infrastructure.md §4.10). Owned by internal/adapter/kv/db.
+-- 基盤: key-value store. Owned by internal/adapter/kv/db.
 -- ---------------------------------------------------------------------------------------------
 
 -- Current value: entries of the KeyValueStore port. expires_at is NULL for entries that never expire.
@@ -79,7 +79,7 @@ CREATE TABLE kv_entries (
 CREATE INDEX kv_entries_expires_at ON kv_entries (expires_at);
 
 -- ---------------------------------------------------------------------------------------------
--- 基盤: record of the data upgrades (data-model/04-tables/10-infrastructure.md §4.10). Owned by
+-- 基盤: record of the data upgrades. Owned by
 -- internal/adapter/db; written by `my db upgrade` (internal/app/dbupgrade).
 -- ---------------------------------------------------------------------------------------------
 

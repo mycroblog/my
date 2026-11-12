@@ -18,7 +18,7 @@
   - 監査ログは `AuditRecorded` のドメインイベントで `moderation` に渡す（ADR-0067 と同じ）。
   - `identity`・`account`・`content` は `supporters` を呼ばない。`content` の `CustomEmojiQuota` の実装（§11）と、`finance` の `SupporterDirectory` の実装（§12）は、`internal/platform` が `supporters` の公開 API から組み立てる。
   - アカウントの削除・凍結・BAN（§10）は、`account` と `moderation` のドメインイベントを outbox のジョブで受ける。
-- overview §2 のモジュールの表、data-model §4.0 の所有の表、`.golangci.yml` の depguard に `supporters` を足す。
+- `.golangci.yml` の depguard に `supporters` を足す。
 
 ### 2. 権限と有効化
 
@@ -64,20 +64,20 @@
 ### 5. 課金のロールの安全柵
 
 - **お金でスタッフの権限を買えない**: プランのロールは `member` の権限だけを持ち、スタッフのどのロールより下にあり、どの操作の順でもこの不変条件が崩れない（FR-912）。
-- `identity` に現在値の表 `managed_roles`（§15）を足す。プランを作ると、同じトランザクションで結び付くロールを `managed_roles` に入れる（`identity` の公開 API の、トランザクションを受ける操作）。
+- `identity` は、プランが管理するロールを現在値（§15）として持つ。プランを作ると、同じトランザクションで結び付くロールを管理されたロールにする（`identity` の公開 API の、トランザクションを受ける操作）。
 - プランに結び付けられるロールの条件（プランの作成のときに検査し、満たさなければ `422`）:
   - 組み込みのロール（`admin`・`moderator`）でない、ほかのプランに結び付いていない
   - 持っている人がいない（手で付けた付与と混ざらないため）
-  - 権限がすべて区分 `member`（ADR-0070 §1。いまは `create_custom_emojis`・`view_finance`・`start_voice_rooms`・`create_invites`・`keep_posts_longer`・`create_articles`）
+  - 権限がすべて区分 `member`（ADR-0070 §1）
   - `position` が、**スタッフのロール**（区分 `moderation` か `server` の権限を 1 つでも持つロール。`moderator` と `admin` を含む）のいちばん低い `position` より低い
-- `identity` は `managed_roles` に入ったロールについて、次を `409`（`role_managed_by_plan`）で断る:
+- `identity` は管理されたロールについて、次を `409`（`role_managed_by_plan`）で断る:
   - FR-720 の手での付与と剥奪（API・CLI・管理画面）。付け外しは `supporters` が §7 の規則でだけ行う
   - ロールの権限と `position` の直接の変更と、ロールの削除。権限と位置は `/admin/supporters` のプランのフォームから変え、`supporters` が §4 と上の条件を検査してから `identity` の操作を呼ぶ（監査ログは `role_updated`、操作者はフォームを使った人）
 - `identity` は、管理されていないロールの変更が不変条件を壊すときも `409` で断る: スタッフのロールの `position` を管理されたロールのいちばん高い `position` 以下にする変更と、管理されたロールのいちばん高い `position` 以下にあるロールに `member` 以外の権限を足す変更。`identity` は自分の表だけでこれを判定できる。
 - バッジ（ADR-0070 §10）は管理されたロールにもふつうに付けられる。
 - **手で付けたロールとの関係（FR-720）**: プランのロールは手で付けられないので、プランのロールの付与はいつも加入から来る。プランのロールでないロール（たとえば管理者が作った「絵文字の係」に `create_custom_emojis` を持たせて手で付けたもの）は加入と独立に共存し、加入の終わりで外れない。
   スタッフが加入すれば、スタッフのロールとプランのロールの両方を持つ。
-- プランを廃止し（§9）、そのロールを持つ人がいなくなったら、`supporters` がロールを `managed_roles` から外す。ロールはふつうのロールに戻り、管理者は削除できる。
+- プランを廃止し（§9）、そのロールを持つ人がいなくなったら、`supporters` がロールを管理から外す。ロールはふつうのロールに戻り、管理者は削除できる。
 
 ### 6. 加入の条件と開始
 
@@ -209,36 +209,13 @@ ADR-0070 との契約:
 
 ### 15. データモデル（ADR-0020）
 
-`supporters` が持つ（`managed_roles` だけ `identity`）。
+`supporters` が持つ（プランが管理するロールの現在値だけ `identity`。§5）。
 
-| テーブル | 分類 | カラム | 制約・規則 |
-| --- | --- | --- | --- |
-| `supporter_program_changes` | イベント | `id`, `state`（`enum(enabled, disabled)`）, `provider`（`string(32)`。`enabled` のときの事業者）, `changed_by_user_id`（NULL 可 = CLI）, `changed_at` | 最新の行が今の状態。行がなければ無効 |
-| `supporter_plans` | リソース | `id`, `role_id`, `currency`（`string(3)`）, `created_by_user_id`（NULL 可）, `created_at` | 一意 `(role_id)` |
-| `supporter_plan_revisions` | イベント（版） | `id`, `plan_id`, `name`（`string(50)`）, `description`（`string(1000)`）, `rank`（`int`）, `monthly_amount_minor`（`bigint`）, `annual_discount_percent`（`int`、0〜90。`CHECK`）, `emoji_limit`（`int`、0〜10000）, `visibility`（`enum(public, hidden)`）, `revised_by_user_id`（NULL 可）, `revised_at` | インデックス `(plan_id, id DESC)` |
-| `supporter_plan_retirements` | イベント | `plan_id`（PK）, `retired_by_user_id`（NULL 可）, `retired_at` | |
-| `supporter_plan_heads` | 投影 | `plan_id`（PK）, `revision_id`, `rank`, `visibility` | 廃止していないプランだけ。一意 `(rank)` |
-| `supporter_plan_prices` | リソース | `id`, `plan_id`, `interval`（`enum(month, year)`）, `amount_minor`, `currency`, `provider`, `provider_price_id`, `created_at` | 一意 `(provider, provider_price_id)` |
-| `supporter_plan_price_heads` | 投影 | `plan_id`, `interval`, `price_id` | PK `(plan_id, interval)`。新しい加入と変更に使う価格 |
-| `supporter_plan_price_archivals` | イベント | `price_id`（PK）, `archived_at` | 事業者でアーカイブした価格 |
-| `supporter_customers` | リソース | `id`, `user_id`, `provider`, `provider_customer_id`, `created_at` | 一意 `(provider, user_id)`, `(provider, provider_customer_id)` |
-| `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`（開始のときのプラン）, `price_id`, `provider`, `created_at` | インデックス `(user_id, id DESC)` |
-| `supporter_checkouts` | イベント | `id`, `subscription_id`, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | `pending` の加入に始めた決済の画面。開き直すと新しい行。照合は開いている行を読み直す。インデックス `(subscription_id, id DESC)` |
-| `supporter_duplicate_subscriptions` | イベント | `id`, `subscription_id`, `provider`, `provider_subscription_id`, `detected_at` | §6 の、ほかの加入があるか終わった加入に課金した事業者のサブスクリプション。サーバーが解約して返金する。一意 `(provider, provider_subscription_id)` |
-| `supporter_duplicate_cancellations` | イベント | `duplicate_id`（PK）, `decided_at` | サーバーが解約を引き受けた。これ以降は事業者の一覧に出なくてもよい |
-| `supporter_duplicate_settlements` | イベント | `duplicate_id`（PK）, `settled_at` | 解約と返金が済んだか、事業者ですでに終わっていた。行がなければ管理者に警告を出す |
-| `supporter_subscription_links` | イベント | `subscription_id`（PK）, `provider`, `provider_subscription_id`, `linked_at` | 一意 `(provider, provider_subscription_id)`。初めてスナップショットを得たときに 1 回 |
-| `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（`pending`・`abandoned` 以外は値を持つ。`CHECK`）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`。`service_closed` は ADR-0088）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
-| `supporter_grace_periods` | イベント | `transition_id`（PK。`past_due` の遷移）, `failed_at`, `ends_at` | `ends_at = failed_at + 7 日` |
-| `supporter_scheduled_changes` | イベント | `transition_id`（PK）, `price_id`, `effective_at` | その遷移の時点で予約されている下げる変更。行がなければ予約なし |
-| `supporter_subscription_reversals` | イベント | `id`, `subscription_id`, `kind`（`enum(full_refund, partial_refund, chargeback)`）, `provider`, `provider_reversal_id`, `occurred_at` | 一意 `(provider, provider_reversal_id)` |
-| `supporter_subscription_heads` | 投影 | `subscription_id`（PK）, `transition_id`, `user_id`, `plan_id`, `state` | インデックス `(plan_id, state)`、`(user_id)` |
-| `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 状態が終端でない加入だけ。同時に 1 つを一意制約で守る |
-| `supporter_subscription_deadlines` | 投影 | `subscription_id`（PK）, `kind`（`enum(checkout, period_end, grace)`）, `due_at` | インデックス `(due_at)`。Scheduler が期限の来た行に `supporters.sync` を積む |
-| `supporter_subscription_reads` | 現在値 | `subscription_id`（PK）, `read_at` | 当てた最新のスナップショットを読んだ時刻（ADR-0074 §3）。それより前に読んだスナップショットは当てない |
-| `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | ADR-0070 §15 |
-| `managed_roles`（`identity`） | 現在値 | `role_id`（PK）, `manager`（`enum(supporters)`）, `created_at` | 行がある = プランが管理するロール（§5） |
-
+- **イベント**: 有効化と無効化（有効にしたときの事業者と一緒に。最新が今の状態で、記録がなければ無効）、プランの廃止、事業者でアーカイブした価格、`pending` の加入に始めた決済の画面（開き直すと新しく記録する）、事業者のサブスクリプションとの結び付け（初めてスナップショットを得たときに 1 回）、返金とチャージバック、§6 の重複したサブスクリプションと、その解約の引き受けと決着（決着がなければ管理者に警告を出す）。
+- **イベント（版）**: プランの名前・順位・金額・公開の範囲などと、加入の状態の遷移（状態・プラン・価格・期間の終わり・理由）。猶予（最初の失敗 + 7 日）と予約された下げる変更は、遷移に付く子のイベントにする。
+- **リソース**: プラン（ロールと 1 対 1）、間隔ごとの価格、事業者の顧客、加入（事業者に載せるこちらの ID を持つ）。
+- **投影**: 廃止していないプランの現在の版と、新しい加入と変更に使う価格、加入の今の状態、続いている加入（利用者ごとに 1 つを一意制約で守る、§6）、Scheduler が取り直しを積む期限。
+- **現在値**: 当てた最新のスナップショットを読んだ時刻（ADR-0074 §3。それより前に読んだスナップショットは当てない）と、参加者の一覧への掲載（ADR-0070 §15）。
 - 状態・廃止・猶予・予約を NULL 可の時刻の列で表さない（ADR-0020 規約 4）。今の状態は遷移の最新の版と投影、猶予と予約は遷移に付く子のイベントの行の有無で表す。
 - 投影はすべて同期で、イベントの表から再構築できる（`my projection verify`）。
 - 事業者の生のスナップショットとイベントの本文は保存しない。webhook の受信の記録（`(provider, event_id)` の一意）は ADR-0074 が決める。
@@ -279,7 +256,7 @@ ADR-0070 との契約:
 - webhook のジョブと定期の照合のジョブは、取り直したスナップショットをこのモジュールのユースケース（スナップショットを当てる、冪等で順序に依らない）に渡す。それが §7 の `supporters.sync` である。
 - 外向きの HTTP の分類、設定と秘密、webhook の受け口の経路、fake と契約テストは ADR-0074 が決める。
 
-### 18. API の形（[client-api.md](../architecture/client-api.md) の手順で細部を決める）
+### 18. API の形（細部は [ADR-0016](0016-client-api-style.md) の規約で決める）
 
 - 利用者（タグ `supporters`、新しいスコープ `read:supporters` / `write:supporters`。`read` / `write` に含む）:
   `GET /supporter/subscription`（自分の加入: 状態・プラン・間隔・期間の終わり・予約・猶予の終わり）、`POST /supporter/checkout`（`{plan_id, interval}`。条件を満たさなければ `422`、続いている加入があれば `409`）、

@@ -18,7 +18,7 @@ import (
 // transaction) before it adds the alias. Every change emits AliasesChanged, which sends the
 // actor's Update to its followers as a profile change does.
 
-// AliasRepository is the part of Repository about aliases (data-model §4.2).
+// AliasRepository is the part of Repository about aliases.
 type AliasRepository interface {
 	// InsertAlias inserts an alias and reports false, writing nothing, when the account has it
 	// already.

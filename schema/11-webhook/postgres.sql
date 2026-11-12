@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the webhook module
--- (docs/architecture/data-model/04-tables/11-webhook.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/app/webhook). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- webhook: the instance's webhooks (data-model §4.11, FR-722, ADR-0060). Owned by
+-- webhook: the instance's webhooks (FR-722, ADR-0060). Owned by
 -- internal/app/webhook.
 -- ---------------------------------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ CREATE TABLE webhook_endpoint_state_changes (
 CREATE INDEX webhook_endpoint_state_changes_endpoint_id_id ON webhook_endpoint_state_changes (endpoint_id, id DESC);
 
 -- Resource: a message, the body that every endpoint subscribing to its event receives as is (an
--- uninterpreted document, data-model rule 4). id is its webhook-id. Removed with its deliveries
+-- uninterpreted document, ADR-0020 rule 4). id is its webhook-id. Removed with its deliveries
 -- 14 days after created_at (FR-803).
 CREATE TABLE webhook_messages (
   id uuid NOT NULL PRIMARY KEY,

@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
-// The income records (data-model §4.12, ADR-0067 §18).
+// The income records (ADR-0067 §18).
 
 func toNullRange(r *finance.DateRange) (sql.NullString, sql.NullString) {
 	if r == nil {

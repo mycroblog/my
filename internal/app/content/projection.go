@@ -13,8 +13,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// RegisterProjectors registers the synchronous projectors of the content module's statuses
-// (data-model §9). Every status projection covers only statuses that are not deleted:
+// RegisterProjectors registers the synchronous projectors of the content module's statuses.
+// Every status projection covers only statuses that are not deleted:
 //   - status_heads points at the revision with the highest Seq;
 //   - status_mention_index holds the mentions of that revision;
 //   - status_reply_links links a reply to its parent once both are known, unless the reply is
@@ -252,7 +252,7 @@ func linkTo(reply, parent content.Status) content.ReplyLink {
 }
 
 // RebuildProjections empties the projections of the content module's statuses and derives
-// them again from their sources (data-model §9), in one transaction per projection.
+// them again from their sources, in one transaction per projection.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	steps := []struct {
 		name string
@@ -289,7 +289,7 @@ type SensitivitySource struct {
 type SensitivityMarks func(ctx context.Context, tx uow.Tx, mark func(statusID string, source SensitivitySource) error) error
 
 // RebuildSensitivityOverrides empties status_sensitivity_overrides and records again, in one
-// transaction, the statuses that marks names (data-model §9). A status with no row is dropped: its
+// transaction, the statuses that marks names. A status with no row is dropped: its
 // purge removed its rows here, and the records of its sources can outlast it (ADR-0147 §8).
 func RebuildSensitivityOverrides(ctx context.Context, u uow.UnitOfWork, repo Repository, marks SensitivityMarks) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {

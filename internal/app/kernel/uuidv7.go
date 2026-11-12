@@ -14,7 +14,7 @@ const maxUnixMilli = 1<<48 - 1
 // UUIDv7Floor returns the smallest UUIDv7 whose timestamp is the millisecond containing t,
 // in canonical form. Every UUIDv7 generated at or after that millisecond compares greater than
 // or equal to it, both as a UUID and as a string, so `id >= UUIDv7Floor(t)` bounds a keyset scan
-// by time (docs/architecture/data-model/01-conventions.md §1.3).
+// by time (ADR-0003 §6).
 //
 // Times before the Unix epoch map to the floor of the epoch, and times beyond the 48-bit range
 // map to the floor of the last representable millisecond.

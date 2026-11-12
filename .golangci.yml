@@ -23,7 +23,7 @@ linters:
     - revive
     - unconvert
   settings:
-    # Architecture boundaries (ADR-0002, docs/architecture/overview.md §2 and §6).
+    # Architecture boundaries (ADR-0002 §1).
     # A file matched by several rules must satisfy all of them.
     # - domain/<module>: standard library and its own module's domain only.
     # - app/<module>: standard library, its own module's domain, any module's app package
@@ -96,7 +96,7 @@ linters:
             - github.com/mycroblog/my/internal/domain/content
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
-            # NFKC normalization of hashtags (data-model §4.4, tags.name_normalized): pure-Go Unicode data, not an external resource.
+            # NFKC normalization of hashtags (tags.name_normalized): pure-Go Unicode data, not an external resource.
             - golang.org/x/text/unicode/norm
             # Reading the head of linked pages for link cards (ADR-0062 §2): a pure-Go HTML tokenizer and charset decoder, not an external resource.
             - golang.org/x/net/html
@@ -170,7 +170,7 @@ linters:
             - github.com/mycroblog/my/internal/domain/federation
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
-            # IDNA 2008 A-label canonicalization of remote hosts (federation.md §1.2): pure-Go Unicode data, not an external resource.
+            # IDNA 2008 A-label canonicalization of remote hosts (ADR-0006 §29): pure-Go Unicode data, not an external resource.
             - golang.org/x/net/idna
         domain-moderation:
           list-mode: strict
@@ -371,7 +371,7 @@ linters:
             - github.com/mycroblog/my/internal/app/queue
             - github.com/mycroblog/my/internal/app/kernel
             - github.com/mycroblog/my/internal/app/uow
-        # app/projection rebuilds and verifies the projections (data-model §9) through rebuild
+        # app/projection rebuilds and verifies the projections through rebuild
         # functions that the composition root takes from the modules; it owns no tables and
         # depends only on uow and queue.
         app-projection:
@@ -1144,7 +1144,7 @@ linters:
           deny:
             - pkg: github.com/mycroblog/my/internal/adapter/pushservice/fake
               desc: only cmd/my/dev_push_service.go (build tag e2e_fakes) and tests import the fake push service
-        # The live interoperability scenarios are black-box clients of running servers (federation.md §12):
+        # The live interoperability scenarios are black-box clients of running servers (test/federation-live/README.md):
         # HTTP to the client APIs and a read of this server's database (pgx), nothing of this module.
         federation-live:
           list-mode: strict

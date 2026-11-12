@@ -12,7 +12,7 @@ import (
 )
 
 // The use cases of follows with remote accounts, called by the federation module's inbox
-// handlers (federation.md §3.4). Each runs in one short transaction and emits the same events as
+// handlers. Each runs in one short transaction and emits the same events as
 // the local use cases, so that the projectors (and the federation module's outbound projectors,
 // which send Accept, Reject, and Undo) see every change. Every one of them is safe to repeat and
 // to run in any order with the others (NFR-REL-1): a Follow is recorded once per URI, and the
@@ -220,7 +220,7 @@ type RemoteUndo struct {
 // TerminateRemote ends the follow that remote follower in.FollowerID takes back with an Undo,
 // pending or active, as unfollowed. A follow with that URI that has already ended stays so. Without
 // a follow that in names, it fails with ErrNotFound and changes nothing: the federation module
-// then records a tombstone, so that the Follow arriving later is dropped (federation.md §3.3).
+// then records a tombstone, so that the Follow arriving later is dropped (ADR-0006 §9).
 func (s *Service) TerminateRemote(ctx context.Context, in RemoteUndo) error {
 	now := s.d.Clock.Now()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {

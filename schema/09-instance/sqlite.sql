@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the instance module
--- (docs/architecture/data-model/04-tables/09-instance.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/domain/instance). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- instance: settings and texts (data-model §4.9). Owned by internal/app/instance.
+-- instance: settings and texts. Owned by internal/app/instance.
 -- Keys are defined in internal/domain/instance; add a key there and to its CHECK here together.
 -- ---------------------------------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ CREATE TABLE instance_texts (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: theme (data-model §4.9, ADR-0059, FR-605). Owned by internal/app/instance.
+-- instance: theme (ADR-0059, FR-605). Owned by internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event (revision): one version of the instance theme: the administrator's custom CSS, with its
@@ -137,7 +137,7 @@ CREATE TABLE instance_theme (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: brand images (data-model §4.9, ADR-0059). Owned by internal/app/instance.
+-- instance: brand images (ADR-0059). Owned by internal/app/instance.
 -- The files live in the BlobStore under keys the server makes from the revision ID.
 -- ---------------------------------------------------------------------------------------------
 
@@ -180,7 +180,7 @@ CREATE TABLE instance_brands (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: rules (data-model §4.9, FR-705). Owned by internal/app/instance.
+-- instance: rules (FR-705). Owned by internal/app/instance.
 -- A rule keeps its ID across revisions, so reports cite it by rule_id; retired rules stay.
 -- ---------------------------------------------------------------------------------------------
 
@@ -220,7 +220,7 @@ CREATE TABLE instance_rule_heads (
 CREATE INDEX instance_rule_heads_position ON instance_rule_heads (position);
 
 -- ---------------------------------------------------------------------------------------------
--- instance: the rules of the link card crawler (data-model §4.9, FR-117). Owned by
+-- instance: the rules of the link card crawler (FR-117). Owned by
 -- internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
@@ -235,7 +235,7 @@ CREATE TABLE link_card_domain_rules (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: server-wide announcements (data-model §4.9, FR-726). Owned by internal/app/instance.
+-- instance: server-wide announcements (FR-726). Owned by internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: an announcement to every local user.
@@ -291,7 +291,7 @@ CREATE TABLE announcement_reads (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: the service closure (data-model §4.9, FR-808, ADR-0088). Owned by
+-- instance: the service closure (FR-808, ADR-0088). Owned by
 -- internal/app/instance. The transitions are checked in internal/domain/instance (closure.go).
 -- ---------------------------------------------------------------------------------------------
 
@@ -326,7 +326,7 @@ CREATE TABLE service_closure_heads (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: secrets of the instance (data-model §4.9, ADR-0019 §12). Owned by internal/app/instance.
+-- instance: secrets of the instance (ADR-0019 §12). Owned by internal/app/instance.
 -- Names are defined in internal/domain/instance.
 -- ---------------------------------------------------------------------------------------------
 
@@ -341,7 +341,7 @@ CREATE TABLE instance_secrets (
 CREATE UNIQUE INDEX instance_secrets_name ON instance_secrets (name);
 
 -- ---------------------------------------------------------------------------------------------
--- instance: domains of the instance (data-model §4.9, ADR-0018). Owned by internal/app/instance.
+-- instance: domains of the instance (ADR-0018). Owned by internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: the host and account_domain that this database belongs to, one row written once. The
@@ -355,7 +355,7 @@ CREATE TABLE instance_domains (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- instance: TLS certificates that the server serves itself (data-model §4.9, ADR-0163 §4). Owned
+-- instance: TLS certificates that the server serves itself (ADR-0163 §4). Owned
 -- by internal/app/instance. The current certificate of a host is the last one issued that is not
 -- revoked, by created_at; the wait before the next order is derived from the attempts after it.
 -- ---------------------------------------------------------------------------------------------

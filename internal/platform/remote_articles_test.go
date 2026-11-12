@@ -186,6 +186,19 @@ func TestInboxReadsRemoteArticlesInFull(t *testing.T) {
 	if got := getStatus(t); got.Article == nil || got.Article.Title != "A longer read" {
 		t.Errorf("after an Update as a Note: article = %+v, want the article as it was", got.Article)
 	}
+	// Nor does an Update make a post an article.
+	note := func(typ string, updated time.Time) map[string]any {
+		n := article(typ, "A note", updated)
+		n["id"] = actor + "/notes/1"
+		return n
+	}
+	post(t, map[string]any{"id": actor + "/notes/1/create", "type": "Create", "actor": actor, "object": note("Note", published)})
+	post(t, map[string]any{"id": actor + "/notes/1/update", "type": "Update", "actor": actor, "object": note("Article", published.Add(time.Minute))})
+	if ns, err := app.Content.FindStatusByURI(ctx, actor+"/notes/1"); err != nil {
+		t.Errorf("FindStatusByURI(the note) = %v", err)
+	} else if np, err := app.Content.Find(ctx, ns.ID); err != nil || np.Revision.Article != nil || np.Revision.Seq != 1 {
+		t.Errorf("the note after an Update as an Article = %+v, %v; want the note as it was", np.Revision, err)
+	}
 
 	post(t, map[string]any{"id": uri + "#delete", "type": "Delete", "actor": actor, "object": map[string]any{"id": uri, "type": "Tombstone"}})
 	if _, err := app.Content.Find(ctx, st.ID); err == nil {

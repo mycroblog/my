@@ -4,7 +4,7 @@ package content
 
 // This file holds CanView, the single visibility policy function (NFR-SEC-4, ADR-0017).
 // Timelines, search, the client API, delivery, and ActivityPub object fetches all decide who may
-// see a status through it. docs/architecture/visibility.md is the policy table it implements.
+// see a status through it. The tables of view_test.go are the policy it implements.
 
 // ViewerKind says who is looking at a status.
 type ViewerKind int
@@ -59,7 +59,7 @@ type Relation struct {
 }
 
 // AuthorRestrictions are the author's moderation restrictions that bear on viewing
-// (data-model §5.2; lifecycle states such as deleted map to ProfileView).
+// (lifecycle states such as deleted map to ProfileView).
 type AuthorRestrictions struct {
 	ProfileView              bool // only the author and moderators see the profile and posts
 	VisibilityCeilingPrivate bool // every post, past ones included, is followers-only (§5.4)
@@ -97,7 +97,7 @@ const (
 	// ContextObjectFetch is a GET of the status's ActivityPub object IRI (ADR-0018).
 	// A denial is answered with 404 so that existence does not leak.
 	ContextObjectFetch
-	// ContextDelivery is pushing the status to a remote actor's inbox (data-model §7).
+	// ContextDelivery is pushing the status to a remote actor's inbox.
 	ContextDelivery
 	// ContextSearch is a result of the full-text search of statuses (FR-309, ADR-0149 §8). It admits
 	// only signed-in viewers, and nothing but public and local, not even for the author.

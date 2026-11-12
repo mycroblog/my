@@ -53,7 +53,7 @@ type ReaderDeps struct {
 // account's bookmarks, with everything a client shows of them. Every status goes through
 // content.CanView in ContextStatus; a status that the viewer may not see fails with
 // ErrNotFound, the same as a missing or deleted one, and is left out of lists, so that its
-// existence does not leak (docs/architecture/visibility.md).
+// existence does not leak (ADR-0017 §3).
 //
 // The viewer is anonymous or a local account (content.ViewerAnonymous, content.ViewerLocal).
 type Reader struct {
@@ -527,8 +527,8 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 	return out, nil
 }
 
-// forcedSensitive reports whether moderation shows the attachments of st as sensitive
-// (data-model §5.2): a mark_statuses_sensitive action marks the status, or its author is under
+// forcedSensitive reports whether moderation shows the attachments of st as sensitive:
+// a mark_statuses_sensitive action marks the status, or its author is under
 // force_sensitive.
 func (r *Reader) forcedSensitive(ctx context.Context, st content.Status) (bool, error) {
 	marked, err := r.d.Statuses.SensitivityOverridden(ctx, st.ID)
@@ -541,7 +541,7 @@ func (r *Reader) forcedSensitive(ctx context.Context, st content.Status) (bool, 
 
 // Parts resolves what rev refers to. It does not decide who may see the revision; callers
 // that present it to a viewer decide that first. ActivityPub documents of local statuses are
-// built from it (federation.md §7.4).
+// built from it.
 func (r *Reader) Parts(ctx context.Context, rev content.Revision) (RevisionParts, error) {
 	out, err := r.viewParts(ctx, rev)
 	if err != nil {

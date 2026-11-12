@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
--- The search module: the progress of a rebuild of the full-text search index (ADR-0149 section 10,
--- data-model section 4.18). With search = none nothing writes to these tables.
+-- The search module: the progress of a rebuild of the full-text search index (ADR-0149 section 10).
+-- With search = none nothing writes to these tables.
 
 -- Current value: the latest rebuild, one row once a rebuild has started. It is progress, with no
 -- business meaning as history: the next rebuild replaces it, and my search clear deletes it.

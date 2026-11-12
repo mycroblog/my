@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// This file holds the rules of outbound delivery (federation.md §7): the record of an activity
+// This file holds the rules of outbound delivery: the record of an activity
 // a local actor sends, the addressing of its document, the inbox each recipient is reached at,
 // and which remote servers are delivered to.
 
@@ -82,7 +82,7 @@ func ApprovalKindOf(kind string) OutboundObjectKind {
 }
 
 // OutboundActivity is an activity a local actor sends about one of its objects, recorded in the
-// transaction of the local command (federation.md §7.1). Its document is built later, once, by
+// transaction of the local command. Its document is built later, once, by
 // the fan-out.
 type OutboundActivity struct {
 	ID             string
@@ -123,7 +123,7 @@ type Delivery struct {
 func FollowersOf(actor IRI) IRI { return actor + "/followers" }
 
 // Address returns the to and cc of an outbound object of visibility v and of the activity that
-// carries it (federation.md §7.4). followers is the author's followers collection; mentioned are
+// carries it. followers is the author's followers collection; mentioned are
 // the actors the object addresses by name, in order (the mentioned accounts of a status, the
 // author of a boosted status).
 //
@@ -187,7 +187,7 @@ const (
 )
 
 // InstanceHealth is the long-term health of a remote server (the instance_health projection,
-// federation.md §7.3).
+// ADR-0006 §3).
 type InstanceHealth struct {
 	Domain string
 	State  InstanceState
@@ -201,14 +201,14 @@ type InstanceHealth struct {
 // DomainStatus is what decides whether an activity is delivered to a remote server.
 type DomainStatus struct {
 	// Suspended is true when a domain block with the federation restriction (suspend) covers
-	// the server (federation.md §11).
+	// the server (federation.md §1).
 	Suspended bool
-	// State is the server's long-term health (federation.md §7.3).
+	// State is the server's long-term health (ADR-0006 §3).
 	State InstanceState
 }
 
 // Deliverable reports whether an activity of type t is delivered to a server in status s
-// (federation.md §7.2 step 4). A suspended server gets nothing. An unavailable server gets only
+// A suspended server gets nothing. An unavailable server gets only
 // Follow, Accept, and Reject, so that a relationship can still be set up with a server that comes
 // back; everything else waits until it is available again.
 func Deliverable(t ActivityType, s DomainStatus) bool {

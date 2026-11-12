@@ -187,7 +187,7 @@ type OneTimeResult struct {
 - 権限: チップの有効化と金額の候補は `manage_supporters`（ADR-0072 §2）。管理画面 `/admin/supporters` に「チップ」の区画を置き、§4 の案内と、事業者が `OneTimePayments` を実装していないときの理由を出す。
   有効化・候補の変更・無効化は監査ログ（ADR-0058）に `supporter_tips_enabled`・`supporter_tips_revised`・`supporter_tips_disabled` で残す。
 - サポーターの機能を無効にする（ADR-0072 §2）と、チップも受けない。開いているチップの画面は期限まで残り、払われれば記録される。
-- API（[client-api.md](../architecture/client-api.md) の手順で細部を決める）:
+- API（細部は [ADR-0016](0016-client-api-style.md) の規約で決める）:
   - 公開: `GET /instance` に `tips_enabled`、`GET /instance/tip_amounts`（候補の金額と通貨。無効なら `404`）。
   - 利用者（タグ `supporters`、スコープ `write:supporters` / `read:supporters`）: `POST /supporter/tips`（`{amount}`。条件を満たさなければ `422`、レート制限で `429`）がリダイレクトの URL を返す。`GET /supporter/tips/{id}`（本人のチップの状態だけ）。
   - 管理（`admin-server`、`manage_supporters`）: `GET/PUT /admin/supporter_tips`（有効化と候補）。
@@ -198,7 +198,7 @@ type OneTimeResult struct {
 ### 18. アカウントの削除と消去
 
 - アカウントの削除（BAN の削除の予約を含む）では、開いているチップの画面を失効させる。
-- アカウントの消去（ADR-0020 規約 6）は、その利用者のチップの記録（`supporter_tips` と子の行、投影）を消す。収入の行は利用者を持たないので額と `source` だけが残り、集計は変わらない。data-model §8 の消去の表に足す。
+- アカウントの消去（ADR-0020 規約 6）は、その利用者のチップの記録（`supporter_tips` と子の行、投影）を消す。収入の行は利用者を持たないので額と `source` だけが残り、集計は変わらない。
 - 事業者の側には、チップの支払いと決済の画面に入れたメールが残る（事業者の記録で、`my` は消せない）。プライバシーポリシーの例文と運営者向けの docs に書く。
 
 ### 19. 運営者の docs と確認の画面

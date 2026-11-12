@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/diagnostics"
 )
 
-// Repository implements appdiagnostics.Repository (data-model §4.15, ADR-0103 §7).
+// Repository implements appdiagnostics.Repository (ADR-0103 §7).
 type Repository struct {
 	db *moduleDB
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // The part of this module's public API that the federation module reads to deliver local
-// statuses and boosts (docs/architecture/federation.md §7): the statuses, revisions, and boosts
+// statuses and boosts: the statuses, revisions, and boosts
 // that outbound activities refer to, and what the visibility policy needs about their authors.
 type (
 	// Status is content.Status.
@@ -116,7 +116,7 @@ func (s *Service) AuthorSearchableStatusIDs(ctx context.Context, authorAccountID
 
 // AuthorRestrictions returns the restrictions of an author that bear on who sees its statuses,
 // as CanView takes them: the moderation restrictions in effect, and profile_view for an author
-// that is missing, suspended, or deleted (data-model §5.1).
+// that is missing, suspended, or deleted.
 func (s *Service) AuthorRestrictions(ctx context.Context, accountID string) (AuthorRestrictions, error) {
 	r, err := s.d.Restrictions.Restrictions(ctx, accountID)
 	if err != nil {
@@ -157,13 +157,13 @@ func (i *Interactions) FindLiveBoost(ctx context.Context, id string) (Boost, err
 }
 
 // EffectiveVisibility is content.EffectiveVisibility: the visibility a status is judged and
-// addressed by, min(original, the author's ceiling) (data-model §5.4).
+// addressed by, min(original, the author's ceiling) (ADR-0058 §11).
 func EffectiveVisibility(original Visibility, author AuthorRestrictions) Visibility {
 	return content.EffectiveVisibility(original, author)
 }
 
 // ObjectStatus returns a status with the revision its ActivityPub object presents, and whether
-// it is deleted (federation.md §10). The revision of a live status is its current one; that of
+// it is deleted (ADR-0018). The revision of a live status is its current one; that of
 // a deleted status is its last one, which still tells whom the status mentioned, and is the zero
 // Revision once the purge has removed it. It fails with ErrNotFound when there is no status.
 func (s *Service) ObjectStatus(ctx context.Context, id string) (Status, Revision, bool, error) {

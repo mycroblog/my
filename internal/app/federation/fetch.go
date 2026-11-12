@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The fetch rules of federation.md §6.1.
+// The fetch rules of ADR-0006 §12.
 const (
 	// FetchFailureTTL is how long a failed fetch of a URI is remembered, so that the URI is not
 	// fetched again in the meantime.
@@ -41,17 +41,17 @@ var (
 	// ErrFetchFailed reports a fetch that got no usable answer: a network error, a timeout,
 	// 429, or a server error.
 	ErrFetchFailed = errors.New("federation: the remote document could not be fetched")
-	// ErrFetchUnavailable reports a server that is marked unavailable (federation.md §7.3), so
+	// ErrFetchUnavailable reports a server that is marked unavailable (ADR-0006 §3), so
 	// that nothing is fetched from it now.
 	ErrFetchUnavailable = errors.New("federation: the remote server is unavailable")
 	// ErrFetchRefused reports a URI of this instance or of a server whose federation is
-	// suspended (federation.md §11).
+	// suspended (federation.md §1).
 	ErrFetchRefused = errors.New("federation: fetching from this server is refused")
 )
 
 // FetcherDeps are the ports and settings a Fetcher uses.
 type FetcherDeps struct {
-	// Client signs every fetch (federation.md §2).
+	// Client signs every fetch (ADR-0006 §5).
 	Client    *SignedHTTPClient
 	KV        kernel.KeyValueStore
 	Clock     kernel.Clock
@@ -59,14 +59,14 @@ type FetcherDeps struct {
 	Instances InstanceStates
 	// Key returns the key that signs fetches: the RSA key of the instance actor.
 	Key func(ctx context.Context) (SigningKey, error)
-	// Host is this instance's host, whose URIs are never fetched (federation.md §1.2).
+	// Host is this instance's host, whose URIs are never fetched (ADR-0018).
 	Host string
 	// Modes reads the federation mode (ADR-0006): Fetch takes content in (ingest) and FetchActor
 	// fetches actors and their keys (identify). nil federates both ways.
 	Modes ModeSettings
 }
 
-// Fetcher fetches remote ActivityPub documents (federation.md §6.1): a GET signed with the
+// Fetcher fetches remote ActivityPub documents (ADR-0006 §12): a GET signed with the
 // instance actor's key that accepts only ActivityStreams, keeps a document only when its id has
 // the origin it was served from (fetching the id once more when it differs from the requested
 // URI), and remembers failures for FetchFailureTTL.
@@ -157,7 +157,7 @@ func (f *Fetcher) check(ctx context.Context, target federation.IRI) error {
 }
 
 // refuses fails with ErrFetchRefused for host when it is this instance or a suspended server
-// (a domain block of federation, federation.md §6.1).
+// (a domain block of federation, federation.md §1).
 func (f *Fetcher) refuses(ctx context.Context, host string) error {
 	if strings.EqualFold(host, f.d.Host) {
 		return fmt.Errorf("%w: %s is local", ErrFetchRefused, host)

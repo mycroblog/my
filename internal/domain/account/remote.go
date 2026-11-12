@@ -11,7 +11,7 @@ import (
 
 // RemoteActorTTL is how long a fetched remote actor stays fresh. After it, the actor is fetched
 // again the next time it is used, and the periodic refresh fetches the ones that local accounts
-// follow (federation.md §6.2, ADR-0019 §7).
+// follow (ADR-0006 §12, ADR-0019 §7).
 const RemoteActorTTL = 24 * time.Hour
 
 // RemoteAccount is the remote subtype of an account: an actor of another server.
@@ -50,7 +50,7 @@ func (s RemoteSnapshot) SameDocument(digest []byte) bool {
 }
 
 // RemoteHead is the newest snapshot of a remote actor (the remote_account_heads projection):
-// the endpoints delivery reads and the fetch state of the periodic refresh (data-model §4.2).
+// the endpoints delivery reads and the fetch state of the periodic refresh.
 type RemoteHead struct {
 	AccountID  string
 	SnapshotID string

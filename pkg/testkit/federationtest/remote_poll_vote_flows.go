@@ -249,6 +249,155 @@ func remoteVotesInLocalPolls(t *testing.T, e *remoteInteractionEnv) {
 	}
 }
 
+// remoteClosesPolls checks the end of polls (FR-112): posting a local poll, and a local vote in a
+// remote poll, enqueue content.close_poll once per poll to run at its end; the job waits until
+// the end has passed, then notifies the local author and the local voters once, from the poll's
+// author, and leaves alone a poll whose status was deleted.
+func remoteClosesPolls(t *testing.T, e *remoteInteractionEnv) {
+	ctx := t.Context()
+	author := e.user(t, "author")
+	fan := e.user(t, "fan")
+	other := e.user(t, "other")
+	const alice = "https://remote.example/users/alice"
+	aliceID := e.actor(t, alice)
+	e.follow(t, fan, aliceID)
+	e.follow(t, other, aliceID)
+	newLocalPoll := func() (content.Status, content.Poll) {
+		t.Helper()
+		p, err := e.content.Create(ctx, appcontent.CreateInput{
+			AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "which?"}, Visibility: content.VisibilityPublic,
+			Poll: &content.PollInput{Options: []string{"yes", "no"}, Duration: time.Hour},
+		})
+		if err != nil || p.Revision.Poll == nil || p.Revision.Poll.ClosesAt == nil {
+			t.Fatalf("Create with a poll = %+v, %v", p.Revision.Poll, err)
+		}
+		return p.Status, *p.Revision.Poll
+	}
+	// closeJobs takes every pending job and returns the close_poll ones.
+	closeJobs := func() map[string]queue.NewJob {
+		t.Helper()
+		out := map[string]queue.NewJob{}
+		for {
+			j, ok := e.jobs.Pop()
+			if !ok {
+				return out
+			}
+			if j.Type != appcontent.JobClosePoll {
+				continue
+			}
+			var p struct {
+				PollID string `json:"poll_id"`
+			}
+			if err := json.Unmarshal(j.Payload, &p); err != nil {
+				t.Fatal(err)
+			}
+			out[p.PollID] = j
+		}
+	}
+
+	_, local := newLocalPoll()
+	gone, deleted := newLocalPoll()
+	if _, err := e.content.Delete(ctx, author, gone.ID); err != nil {
+		t.Fatalf("Delete = %v", err)
+	}
+	id := alice + "/notes/poll"
+	e.expect(t, remoteActivity(t, "Create", id+"/activity", alice, remoteNote(id, alice, remoteNow.Add(-time.Hour), map[string]any{
+		"type":    "Question",
+		"oneOf":   []any{map[string]any{"type": "Note", "name": "yes"}, map[string]any{"type": "Note", "name": "no"}},
+		"endTime": e.Clock.Now().Add(time.Hour).Format(time.RFC3339),
+	})), appfederation.InboxHandled)
+	p := e.post(t, id)
+	remote := p.Revision.Poll
+	if remote == nil || remote.ClosesAt == nil {
+		t.Fatalf("remote poll = %+v, want one with an end", remote)
+	}
+	for _, voter := range []string{fan, other} {
+		if _, err := e.interactions.VotePoll(ctx, voter, p.Status.ID, remote.ID, []int{0}); err != nil {
+			t.Fatalf("VotePoll = %v", err)
+		}
+	}
+	if _, err := e.interactions.VotePoll(ctx, fan, p.Status.ID, remote.ID, []int{1}); err == nil {
+		t.Fatal("a second vote in a single-choice poll succeeded")
+	}
+	jobs := closeJobs()
+	for _, poll := range []content.Poll{local, deleted, *remote} {
+		j, ok := jobs[poll.ID]
+		if !ok || j.IdempotencyKey != "close_poll:"+poll.ID || !j.RunAt.Equal(*poll.ClosesAt) {
+			t.Errorf("close_poll job of %s = %+v, %v; want one at %s", poll.ID, j, ok, poll.ClosesAt)
+		}
+	}
+	if len(jobs) != 3 {
+		t.Errorf("close_poll jobs = %d, want one per poll", len(jobs))
+	}
+
+	// Before the end, the job waits for the rest of it and notifies no one.
+	if wait, err := e.pollCloser.Close(ctx, local.ID); err != nil || wait != local.ClosesAt.Sub(e.Clock.Now()) {
+		t.Errorf("Close before the end = %s, %v; want the time until %s", wait, err, local.ClosesAt)
+	}
+	if n := e.notified(t, author, "", notification.TypePollClosed); n != 0 {
+		t.Errorf("poll_closed notifications before the end = %d, want 0", n)
+	}
+
+	e.Clock.Advance(2 * time.Hour)
+	for range 2 { // a repeated run notifies no one again
+		for _, poll := range []content.Poll{local, deleted, *remote} {
+			if wait, err := e.pollCloser.Close(ctx, poll.ID); err != nil || wait != 0 {
+				t.Fatalf("Close(%s) = %s, %v", poll.ID, wait, err)
+			}
+		}
+	}
+	if n := e.notified(t, author, "", notification.TypePollClosed); n != 1 {
+		t.Errorf("poll_closed notifications of the author = %d, want 1 (none for the deleted post)", n)
+	}
+	for _, voter := range []string{fan, other} {
+		if n := e.notified(t, voter, aliceID, notification.TypePollClosed); n != 1 {
+			t.Errorf("poll_closed notifications of a voter in the remote poll = %d, want 1 from its author", n)
+		}
+	}
+}
+
+// remoteVotesOnlyInSeenPolls checks the other side of a vote's Note: a vote in a poll that the
+// voter may not see (followers-only, and the voter follows no one) is dropped, and a Note with a
+// name in reply to a post without a poll is a reply, stored as a post.
+func remoteVotesOnlyInSeenPolls(t *testing.T, e *remoteInteractionEnv) {
+	ctx := t.Context()
+	author := e.user(t, "author")
+	const bob = "https://remote.example/users/bob"
+	e.actor(t, bob)
+	vote := func(id, name, inReplyTo string) []byte {
+		return remoteActivity(t, "Create", id+"/activity", bob, map[string]any{
+			"id": id, "type": "Note", "attributedTo": bob, "name": name, "inReplyTo": inReplyTo,
+			"to": []string{e.localIRI(author)}, "published": e.Clock.Now().Format(time.RFC3339),
+		})
+	}
+	private, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "followers, which?"}, Visibility: content.VisibilityPrivate,
+		Poll: &content.PollInput{Options: []string{"yes", "no"}, Duration: time.Hour},
+	})
+	if err != nil {
+		t.Fatalf("Create with a poll = %v", err)
+	}
+	e.expect(t, vote(bob+"/votes/private", "yes", private.Status.URI), appfederation.InboxDropped)
+	view, err := e.reader.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: author}, private.Status.ID)
+	if err != nil {
+		t.Fatalf("View = %v", err)
+	}
+	if v := view.Poll; v == nil || !slices.Equal(v.Votes, []int64{0, 0}) {
+		t.Errorf("poll the voter may not see = %+v, want no votes", view.Poll)
+	}
+
+	plain, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "no poll here"}, Visibility: content.VisibilityPublic,
+	})
+	if err != nil {
+		t.Fatalf("Create = %v", err)
+	}
+	e.expect(t, vote(bob+"/votes/plain", "yes", plain.Status.URI), appfederation.InboxHandled)
+	if !e.stored(t, bob+"/votes/plain") {
+		t.Error("a named Note in reply to a post without a poll is not stored as a post")
+	}
+}
+
 // questionDoc is the object of the Update of a local poll.
 type questionDoc struct {
 	Type        string `json:"type"`

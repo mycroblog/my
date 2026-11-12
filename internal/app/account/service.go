@@ -560,8 +560,7 @@ func (s *Service) RemoteInboxTx(ctx context.Context, tx uow.Tx, accountID string
 
 // KnownSharedInboxes returns at most limit distinct shared inboxes that remote actors not
 // deleted declare in their newest documents, in order, after the shared inbox after ("" for
-// the first batch). A local account's deletion reaches every known server through them
-// (data-model §8).
+// the first batch). A local account's deletion reaches every known server through them.
 func (s *Service) KnownSharedInboxes(ctx context.Context, after string, limit int) ([]string, error) {
 	return s.d.Repository.ListKnownSharedInboxes(ctx, after, limit)
 }
@@ -669,7 +668,7 @@ func (s *Service) FindByURIs(ctx context.Context, uris []string) (map[string]Act
 }
 
 // AnyOnDomain reports whether one of the accounts ids is on domain, for judging what the
-// servers of a domain may see (docs/architecture/visibility.md §1).
+// servers of a domain may see (content.ViewerRemote).
 func (s *Service) AnyOnDomain(ctx context.Context, domain string, ids []string) (bool, error) {
 	return s.d.Repository.AnyAccountOnDomain(ctx, domain, ids)
 }

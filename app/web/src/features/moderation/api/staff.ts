@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the staff's moderation screens (web-client/README.md S1): the health of remote servers
-// (federation.md §7.3) with the history of their availability, the moderation actions on domains (FR-702), and
+// (ADR-0006 §3) with the history of their availability, the moderation actions on domains (FR-702), and
 // the audit log (FR-704), with what the server administration screens share: the permissions and the paging of
 // the lists. The lists follow the API's keyset pagination (each page's `next_cursor` is the `cursor` of the next) as TanStack
 // Query infinite queries on the same client; their keys start like the client's own `[method, path]` and end

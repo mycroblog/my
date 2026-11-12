@@ -53,6 +53,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"UsesTOTPRecoveryCodesOnce", identityRepoTOTP},
 		{"KeepsPasskeys", identityRepoPasskeys},
 		{"ReadsSignInMethodsInATransaction", identityRepoTxReads},
+		{"LocksTheSignInMethodsOfAUser", identityRepoLocksSignInMethods},
 		{"KeepsOAuthClientsAndTokens", oauthRepoClients},
 		{"DisablesOAuthClientsAndRevokesTheirTokens", oauthRepoDisablement},
 		{"KeepsDataExports", dataRepoExports},

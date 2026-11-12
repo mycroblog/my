@@ -13,6 +13,11 @@
 // upgraded across the step, still records it. Readiness then requires every registered step, and
 // every prerequisite is a registered step.
 //
+// The steps are registered in internal/platform/setup_dbupgrade.go. A step is recorded only after
+// it and the rebuild of the projections it names finish, so a step that fails part way runs again
+// at the next `my db upgrade`. A database without the table of the records is new when it has no
+// schema yet, and lacks every prerequisite when its schema is older than the table.
+//
 // The steps run in a one-off job that the operator starts, never when `my serve` starts, so that
 // instances that start together do not run them side by side.
 package dbupgrade

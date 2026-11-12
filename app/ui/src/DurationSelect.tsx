@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // How long an action lasts (a suspension, a silence, a signup block): a `Select` of fixed durations, with
 // "indefinitely" when the action may have no end. The value is a number of seconds, or null for no end, so
-// the caller adds it to the moment of the request to get the end (`expires_at`, data-model/README.md).
+// the caller adds it to the moment of the request to get the end (`expires_at`).
 import { Select, SelectItem, type SelectProps } from "./Select";
 
 /** The option id of "no end"; the other options' ids are their seconds. */

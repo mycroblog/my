@@ -23,7 +23,7 @@ import (
 const streamsCloseTimeout = 10 * time.Second
 
 // Streams is the broker of the streaming endpoint (FR-207): the timeline and notification commit
-// hooks publish to it, and each open stream subscribes (docs/architecture/overview.md §4.4).
+// hooks publish to it, and each open stream subscribes (docs/architecture/overview.md §3).
 type Streams interface {
 	stream.Publisher
 	stream.Subscriber

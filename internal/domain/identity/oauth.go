@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// OAuthClient is an application registered with the authorization server (data-model §4.1,
-// oauth_clients). Other records refer to it by ID; ClientID is the public identifier that the
+// OAuthClient is an application registered with the authorization server
+// (oauth_clients). Other records refer to it by ID; ClientID is the public identifier that the
 // client sends.
 type OAuthClient struct {
 	ID       string
@@ -88,8 +88,8 @@ type OAuthClientListing struct {
 	Disabled bool
 }
 
-// OAuthClientDisablement records that a client was disabled (data-model §4.1,
-// oauth_client_disablements). DisabledByUserID is "" for the CLI.
+// OAuthClientDisablement records that a client was disabled
+// (oauth_client_disablements). DisabledByUserID is "" for the CLI.
 type OAuthClientDisablement struct {
 	ID               string
 	ClientID         string
@@ -100,7 +100,7 @@ type OAuthClientDisablement struct {
 // OAuthClientDeletionReason says who deleted a client.
 type OAuthClientDeletionReason string
 
-// Client deletion reasons (data-model §4.1, oauth_client_deletions.reason).
+// Client deletion reasons (oauth_client_deletions.reason).
 const (
 	// ClientDeletedByOwner: the user who registered the client deleted it.
 	ClientDeletedByOwner OAuthClientDeletionReason = "owner"
@@ -109,8 +109,8 @@ const (
 	ClientDeletedUnused OAuthClientDeletionReason = "unused"
 )
 
-// OAuthClientDeletion records that a client was deleted (data-model §4.1,
-// oauth_client_deletions). DeletedByUserID is "" for the clean-up.
+// OAuthClientDeletion records that a client was deleted
+// (oauth_client_deletions). DeletedByUserID is "" for the clean-up.
 type OAuthClientDeletion struct {
 	ClientID        string
 	Reason          OAuthClientDeletionReason
@@ -139,7 +139,7 @@ type AuthorizationCode struct {
 // Expired reports whether the code has expired at now.
 func (c AuthorizationCode) Expired(now time.Time) bool { return !now.Before(c.ExpiresAt) }
 
-// AuthorizationCodeRedemption records that a code was exchanged (data-model §4.1). TokenID is
+// AuthorizationCodeRedemption records that a code was exchanged. TokenID is
 // the first token of the family that the exchange started.
 type AuthorizationCodeRedemption struct {
 	CodeHash   []byte
@@ -148,7 +148,7 @@ type AuthorizationCodeRedemption struct {
 }
 
 // AccessToken is one issuance of an access token and, optionally, a refresh token
-// (data-model §4.1, oauth_access_tokens). Refreshing issues a new AccessToken in the same
+// (oauth_access_tokens). Refreshing issues a new AccessToken in the same
 // family and revokes the old one; FamilyID is the ID of the family's first token.
 type AccessToken struct {
 	ID       string
@@ -180,7 +180,7 @@ func (t AccessToken) RefreshExpired(now time.Time) bool {
 // TokenRevocationReason says why a token stopped working.
 type TokenRevocationReason string
 
-// Token revocation reasons (data-model §4.1, oauth_token_revocations.reason).
+// Token revocation reasons (oauth_token_revocations.reason).
 const (
 	// TokenRevokedUser: the client or the user revoked the token (RFC 7009).
 	TokenRevokedUser TokenRevocationReason = "user"
@@ -219,7 +219,7 @@ type TokenState struct {
 func (s TokenState) Usable() bool { return !s.Revoked && s.Client.Usable() }
 
 // TokenRevocation records that a token stopped working, both its access token and its refresh
-// token (data-model §4.1, oauth_token_revocations).
+// token (oauth_token_revocations).
 type TokenRevocation struct {
 	TokenID   string
 	Reason    TokenRevocationReason

@@ -86,7 +86,7 @@ code that the web client's authorization page would, for the client to exchange 
 ## Federation fixtures
 
 `fixtures/federation/` holds AS2 documents (activities, objects, actors) that other implementations send, for the
-regression tests of [federation.md §12](../../docs/architecture/federation.md#12-テスト) ([ADR-0006](../../docs/adr/0006-federation-protocol-scope.md)).
+regression tests of [ADR-0006 §3](../../docs/adr/0006-federation-protocol-scope.md).
 `testkit.FederationFixtures()` returns them and `testkit.FederationFixturesFS()` exposes the tree.
 
 ### Layout

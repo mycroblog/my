@@ -8,7 +8,7 @@ budget: {"controls": 8, "helpers": 7, "words": 233}
 
 ## 連合先のサーバー（`/moderation/instances/{domain}`）
 
-`manage_domains` を持つ管理者が、1 つの連合先のサーバーの状態（[federation.md §7.3](../../federation.md)）と、このサーバーがそこへ送ったものとその応答（`GET /admin/instances/{domain}/deliveries`）を読み、
+`manage_domains` を持つ管理者が、1 つの連合先のサーバーの状態（[ADR-0006 §3](../../../adr/0006-federation-protocol-scope.md)）と、このサーバーがそこへ送ったものとその応答（`GET /admin/instances/{domain}/deliveries`）を読み、
 止まった配送を再開するページ（[§14](../14-admin.md)）。
 
 ### 1. 使う人と頻度

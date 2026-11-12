@@ -51,7 +51,7 @@ type InteractionDeps struct {
 // An account may act only on a status it can see: each command except the undoing ones checks
 // the status with content.CanView in ContextStatus, and a status the account cannot see, or a
 // deleted one, fails with ErrNotFound, the same as a missing one, so that its existence does
-// not leak (docs/architecture/visibility.md).
+// not leak (ADR-0090 §4).
 type Interactions struct {
 	d InteractionDeps
 }
@@ -420,8 +420,7 @@ func (s *Interactions) visibleStatus(ctx context.Context, accountID, statusID st
 }
 
 // checkRestrictions fails with ErrInteractionRestricted when the account may not interact and,
-// for a boost, which is also a post, with ErrPostingRestricted when it may not post
-// (data-model §5.2).
+// for a boost, which is also a post, with ErrPostingRestricted when it may not post.
 func (s *Interactions) checkRestrictions(ctx context.Context, accountID string, boost bool) error {
 	r, err := s.d.Restrictions.Restrictions(ctx, accountID)
 	switch {

@@ -42,7 +42,7 @@ type Relationships interface {
 
 // ReachPolicy is the part of the moderation module's public API that the projectors read:
 // whether the source's restrictions, its own and its domain's, include unsolicited_reach, so
-// that it notifies only the accounts that follow it (data-model §5.2).
+// that it notifies only the accounts that follow it.
 // *appmoderation.AccountPolicy implements it.
 type ReachPolicy interface {
 	UnsolicitedReachRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
@@ -75,8 +75,7 @@ type ProjectorDeps struct {
 }
 
 // RegisterProjectors registers the synchronous projectors that create notifications from the
-// graph, content, and moderation events, in the transaction of the command that emits them
-// (data-model §2.1, §4.7):
+// graph, content, and moderation events, in the transaction of the command that emits them:
 //
 //   - graph.followed: follow, to the followee.
 //   - graph.follow_requested: follow_request, to the followee.

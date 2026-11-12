@@ -26,7 +26,7 @@ func TestCanonicalizerContract(t *testing.T) {
 }
 
 // TestCollectionContextDefinesItemTerms canonicalizes the featured collection of a quoting Note, as
-// a JSON-LD consumer reads it: the terms of its embedded items must survive (federation.md §10).
+// a JSON-LD consumer reads it: the terms of its embedded items must survive.
 func TestCollectionContextDefinesItemTerms(t *testing.T) {
 	c, err := jsonld.New()
 	if err != nil {

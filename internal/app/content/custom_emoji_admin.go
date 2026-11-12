@@ -27,7 +27,7 @@ import (
 var ErrShortcodeTaken = errors.New("content: a custom emoji has the shortcode")
 
 // CustomEmojiRepository is the persistence port of the custom emoji that the administrators
-// manage (data-model §4.4). The database adapters implement it and pass
+// manage. The database adapters implement it and pass
 // contenttest.CustomEmojiRepositoryContract; contenttest.CustomEmojiFlows (internal/flowtest/content)
 // drives the custom emoji use cases on them. Lookups that find nothing return an error wrapping
 // ErrNotFound.

@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the supporters module
--- (docs/architecture/data-model/04-tables/13-supporters.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/app/supporters). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- supporters: the supporter program, its plans, and their subscriptions (data-model §4.13,
--- FR-910 to FR-912, ADR-0072 §15). Owned by internal/app/supporters.
+-- supporters: the supporter program, its plans, and their subscriptions
+-- (FR-910 to FR-912, ADR-0072 §15). Owned by internal/app/supporters.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: the supporter program enabled or disabled (ADR-0072 §2); the newest row is the current
@@ -322,7 +322,7 @@ CREATE TABLE payment_checkout_claims (
 CREATE INDEX payment_checkout_claims_expires_at ON payment_checkout_claims (expires_at);
 
 -- ---------------------------------------------------------------------------------------------
--- supporters: the tips, one-time payments to the server's operation (data-model §4.13, FR-918,
+-- supporters: the tips, one-time payments to the server's operation (FR-918,
 -- ADR-0162 §12). Owned by internal/app/supporters. The amounts of the money are the income
 -- records' (income_movements); a tip's state is the rows it has: paid with a payment, expired
 -- with that outcome, open with neither.

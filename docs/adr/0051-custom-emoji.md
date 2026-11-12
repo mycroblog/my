@@ -39,7 +39,7 @@
   GoToSocial は既定で 100 KiB を超えるリモートの絵文字を取得しないので、管理画面は 100 KiB を超える画像に注意を表示する。
 - 派生は ADR-0005 の用途 `emoji` で作る: S / M / L は 64×64 / 128×128 / 256×256 の箱に縦横比を保って収め、アニメーションは静止版（最初のフレーム）と動く版の両方を作る。原本は保存しない。
   形式も ADR-0005 §5, §6 に従う（L は PNG、動く版の L は GIF）。APNG は ADR-0005 §6 のとおり最初のフレームの静止画として扱い、アニメーション WebP は ADR-0005 の spike が通ったときだけ受け付ける。
-- リモートの絵文字の画像はメディアプロキシ（federation.md §9）を通し、静止版はプロキシの `small`（ADR-0005 §10。絵文字の S の 64×64）で返す。プロキシは、`custom_emoji_images` が指すメディアには設定 `remote_custom_emoji_max_bytes`（既定 1 MiB）の上限を当て、超えるものを 404 にする。
+- リモートの絵文字の画像はメディアプロキシ（ADR-0005 §10）を通し、静止版はプロキシの `small`（ADR-0005 §10。絵文字の S の 64×64）で返す。プロキシは、`custom_emoji_images` が指すメディアには設定 `remote_custom_emoji_max_bytes`（既定 1 MiB）の上限を当て、超えるものを 404 にする。
   形式の許可リストは上の 3 つに絞る。
 
 ### 3. 連合（送信・受信）
@@ -83,7 +83,7 @@
 - 返さないもの: 無効（`enabled = false`）の絵文字、削除された絵文字、画像の所有者のドメインか URL のホストに `media_fetch` の制限（`reject_media`）があるリモートの絵文字。返さない絵文字は文字の `:shortcode:` として表示される。
 - ピッカーの一覧 `GET /custom_emojis`: 有効でピッカーに出すローカルの絵文字を、`category`・`aliases` 付きで返す。キャッシュは ADR-0028 の方針に従う。
 - 管理 API `/admin/custom_emojis`: 一覧（ローカル・リモート、shortcode とドメインで絞り込み）、作成（アップロード済みのメディアと shortcode）、画像の差し替え、設定と別名の変更、削除、リモートの絵文字のローカルへの複製（新しい shortcode を指定できる）。申請の審査と表現の `created_by` は ADR-0070 §6 が定める。
-  エンドポイントの細部は [client-api.md](../architecture/client-api.md) の手順で決める。
+  エンドポイントの細部は [ADR-0016](0016-client-api-style.md) の規約で決める。
 - **Web の描画**: サニタイズ済み HTML は DOM のテキストノードを、プレーンテキストのフィールド（表示名・CW・投票の選択肢・補足情報）は文字列を、同じ字句解析で `:shortcode:` に分け、`emojis` にある shortcode だけを
   `<img alt=":shortcode:" title=":shortcode:" draggable="false">` の DOM 要素として差し込む（`innerHTML` は使わない。ADR-0019 §2）。
   高さは周りの文字に合わせる（デザイントークン）。アニメーションは ADR-0005 §6 と同じく `<picture>` の `<source media="(prefers-reduced-motion: no-preference)">` に `url` を、`<img>` に `static_url` を置き、利用者の設定「アニメーションを自動再生しない」が有効なら `<source>` を出さない。
@@ -103,7 +103,7 @@
 
 - リアクションは `content` モジュールの現在値 `reactions` にする（ADR-0020）。行は 1 つのリアクションで、主体・投稿・絵文字・`uri`（`Like` / `EmojiReact` の `id`）・作成時刻を持つ。一意制約は `(account_id, status_id, 絵文字)` と `(uri)`。
   絵文字は「Unicode 絵文字の文字列」か「`custom_emojis` の行」のどちらかで、集計に使う正規化した鍵（Unicode はその文字列、カスタム絵文字は `custom_emojis.id`）を持つ。
-- 取り消しは行の削除と `content.unreacted` イベント（お気に入りと同じく、取り消した後の付け直しは新しい行）。絵文字ごとの件数は `content` が持つ投影（`status_reaction_counts (status_id, 絵文字の鍵, count)`）で、行を実際に挿入・削除したときだけ増減する。表と列の詳細は [data-model.md](../architecture/data-model/README.md) に書く。
+- 取り消しは行の削除と `content.unreacted` イベント（お気に入りと同じく、取り消した後の付け直しは新しい行）。絵文字ごとの件数は `content` が持つ投影（`status_reaction_counts (status_id, 絵文字の鍵, count)`）で、行を実際に挿入・削除したときだけ増減する。表と列の詳細は `schema/04-content/` に書く。
 - `favourites` と `favourites_count` はリアクションと別に残す。お気に入りとリアクションは別の資源で、API でも別に数える。
 - **ローカルの人**は 1 投稿にお気に入りかリアクション 1 つのどちらか一方だけを持つ（`Like` の枠）。リアクションを付けると、同じ投稿へのお気に入りや別の絵文字のリアクションを同じトランザクションで外し、外したものの `Undo` を送ってから新しい `Like` を送る（どちらもアウトボックス経由）。お気に入りを付けたときも同じ。
   Mastodon は `Undo Like` で `id` に関係なくお気に入りを消し、Misskey は 1 人 1 投稿にリアクションを 1 つしか持たないので、枠を 2 つ使うと相手のサーバーでの状態が食い違う。
@@ -132,7 +132,7 @@
 
 ### 8. リアクションの送信の形
 
-- リアクションは、FEP-c0e0 の互換の形として、**作者の inbox へ `content` と `_misskey_reaction` を付けた `Like`** を送る。宛先・署名・配送はお気に入りの `Like` と同じ（[federation.md §4](../architecture/federation.md)）。
+- リアクションは、FEP-c0e0 の互換の形として、**作者の inbox へ `content` と `_misskey_reaction` を付けた `Like`** を送る。宛先・署名・配送はお気に入りの `Like` と同じ。
 - `content` と `_misskey_reaction` は同じ文字列で、Unicode ならその絵文字、カスタム絵文字なら `:shortcode:`。カスタム絵文字は `tag` に `Emoji` を 1 つ付ける。形は §3 に従う（`toot:Emoji`。`id`・`type: "Emoji"`・コロンで囲んだ `name`・`updated`・`icon` の `Image`（`mediaType` と `url`））。`@context` には `toot` と `misskey`（`https://misskey-hub.net/ns#`）の `_misskey_reaction` を足す。
 - 取り消しは `Undo`（`object` に元の `Like` を埋め込む）。
 - この 1 つの形で、Misskey（`_misskey_reaction`）と Pleroma / Akkoma（`content` 付きの `Like` を `EmojiReact` に書き換える）ではリアクション、Mastodon と GoToSocial ではお気に入りとして届く。
@@ -143,12 +143,12 @@
 
 - リアクションを付けられる投稿は、お気に入りと同じ単一のポリシー関数（`canView`。リモートの人は `ContextObjectFetch`）で閲覧できる、削除されていない投稿。ブロックしている・されている相手の投稿には付けられず、受信したものも捨てる。
 - 交流の禁止（FR-708、`account_restrictions` の `interact`）はリアクションも禁止する。
-- 投稿の削除・アカウントの削除・凍結での消し方は `favourites` と同じ扱いにする（[data-model.md](../architecture/data-model/README.md) のアカウント削除の表）。
+- 投稿の削除・アカウントの削除・凍結での消し方は `favourites` と同じ扱いにする。
 
 ### 10. リアクションの通知・クライアント API・Web
 
 - 通知の種類に `reaction` を足す（FR-205）。お気に入りと同じく、ミュート・ブロック・通知の除外の規則に従う。同じ人が別の絵文字で付け直したときは、新しい通知を作る。
-- クライアント API（ADR-0016、パスと名前は [client-api.md](../architecture/client-api.md) の規約に従う）:
+- クライアント API（ADR-0016、パスと名前は [ADR-0016 §8](0016-client-api-style.md#8-パスと命名) に従う）:
   - `Status` に、絵文字ごとの件数と自分が付けたかどうかの集計（件数の多い順に最大 20 種類）と、カスタム絵文字の表示に要る情報（ショートコード・画像の URL・ドメイン）を持たせる。
   - 自分のリアクションを付ける（置き換える）・外す操作。お気に入りの操作も、`Like` の枠を共有するので、リアクションを外す。
   - 投稿に付いたリアクションを、絵文字で絞って付けた人の一覧として引くページ付きの操作。
@@ -171,7 +171,7 @@ M4 は、カスタム絵文字とリアクションが Mastodon / Misskey / Pler
 
 リアクションも同じ日に各実装の既定ブランチのソースで確かめた。Misskey は `Like` に `content` と `_misskey_reaction` を付けて送り、1 人 1 投稿に 1 つで、無い・解釈できない絵文字は ❤ にする（[ReactionService.ts](https://github.com/misskey-dev/misskey/blob/develop/packages/backend/src/core/ReactionService.ts)）。Pleroma / Akkoma は `EmojiReact` を送り、絵文字ごとに複数を持ち、絵文字かショートコードを `content` に持つ `Like` を `EmojiReact` に書き換える（[transmogrifier.ex](https://akkoma.dev/AkkomaGang/akkoma/src/branch/develop/lib/pleroma/web/activity_pub/transmogrifier.ex)）。Mastodon と GoToSocial は `content` を見ず `Like` をお気に入りとして扱い、Mastodon は `EmojiReact` を捨てる（[like.rb](https://github.com/mastodon/mastodon/blob/main/app/lib/activitypub/activity/like.rb)、[federatingdb/like.go](https://codeberg.org/superseriousbusiness/gotosocial/src/branch/main/internal/federation/federatingdb/like.go)）。[FEP-c0e0](https://codeberg.org/fediverse/fep/src/branch/main/fep/c0e0/fep-c0e0.md)（Draft）はこの慣行を文書にしている。そこで、Mastodon と Misskey で状態が食い違わない `Like` の枠と、1 つの送信の形を選んだ。
 
-受信のカスタム絵文字は、当初は第三のサーバーの絵文字もその `Emoji` の `id` で識別して取り込むとしていた。しかしこれだと、ある人のリアクション 1 つで、別のサーバーの絵文字の見た目をこのサーバー全体で差し替えられる。そこで第三のサーバーの絵文字は記録済みのものだけを使う形にし、`content.RecordRemoteReaction` と `testkit.RemoteInteractionContract` と [federation.md §3.4](../architecture/federation.md#34-アクティビティごとのハンドラ) をこの規則にそろえた（#1469）。
+受信のカスタム絵文字は、当初は第三のサーバーの絵文字もその `Emoji` の `id` で識別して取り込むとしていた。しかしこれだと、ある人のリアクション 1 つで、別のサーバーの絵文字の見た目をこのサーバー全体で差し替えられる。そこで第三のサーバーの絵文字は記録済みのものだけを使う形にし、`content.RecordRemoteReaction` と `testkit.RemoteInteractionContract` をこの規則にそろえた（#1469）。
 
 作成の権限は、M4.2 の課金のプランに結び付くロールのために ADR-0070 が分け、`created_by_user_id` を足した。
 

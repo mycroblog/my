@@ -2,7 +2,7 @@
 
 package kernel
 
-// HTMLSanitizer cleans HTML that arrives from other servers (ADR-0019 §2, federation.md §5).
+// HTMLSanitizer cleans HTML that arrives from other servers (ADR-0019 §2).
 // The adapter lives in internal/adapter/htmlsanitizer and passes contenttest.HTMLSanitizerContract.
 //
 // Remote HTML is sanitized once, when it is ingested, and stored together with the
@@ -10,7 +10,7 @@ package kernel
 // changes. The output of SanitizeHTML is the only remote HTML that reaches the web client's
 // my-server-sanitized-html Trusted Types policy (web-client/README.md).
 type HTMLSanitizer interface {
-	// SanitizeHTML returns the HTML fragment s reduced to the allowlist of federation.md §5.
+	// SanitizeHTML returns the HTML fragment s reduced to the allowlist of ADR-0019 §2.
 	// HTML that local statuses are rendered as (internal/app/content, text.go) is returned
 	// unchanged, and sanitizing an output again returns it unchanged.
 	SanitizeHTML(s string) string

@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// The moderator notifications (FR-712, data-model §4.7): admin_report of the first open report
+// The moderator notifications (FR-712): admin_report of the first open report
 // of an account, admin_sign_up of a registration that awaits approval, admin_appeal of an
 // appeal of a moderation action, admin_webhook_disabled of a webhook endpoint that the server
 // disabled, admin_custom_emoji_request of a custom emoji request, and admin_error_group of a
@@ -104,7 +104,7 @@ type ModeratorDeps struct {
 }
 
 // RegisterModeratorProjectors registers the synchronous projectors that create the moderator
-// notifications in the transaction of the event (data-model §4.7):
+// notifications in the transaction of the event:
 //
 //   - moderation.report_filed with FirstOpen: admin_report, to the holders of manage_reports
 //     other than the reporter and the reported account.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The health of remote servers (federation.md §7.3): the list under a state filter, and one server's health
+// The health of remote servers (ADR-0006 §3): the list under a state filter, and one server's health
 // with the history of its availability and marking it available again.
 import { useNotice, useToast } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";

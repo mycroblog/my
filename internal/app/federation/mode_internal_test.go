@@ -186,7 +186,7 @@ func TestReceives(t *testing.T) {
 }
 
 // TestMoveSends checks the federation modes that send the move of a local account (ADR-0089,
-// federation.md §14.1): its Move and the Update of the actor with movedTo are retractions, sent
+// ADR-0006 §24): its Move and the Update of the actor with movedTo are retractions, sent
 // in inbound too, and nothing goes out when the mode is off. The Update of an actor that has not
 // moved is the profile's, which inbound does not send. The Move goes to the followers only.
 func TestMoveSends(t *testing.T) {

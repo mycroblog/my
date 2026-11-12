@@ -35,7 +35,7 @@ func TestPeerResolvesLocal(t *testing.T) {
 }
 
 // TestLocalResolvesPeer: this server finds each peer user through WebFinger and fetches the actor
-// with a GET signed by its instance actor (federation.md §2, §6), which Mastodon's secure mode and
+// with a GET signed by its instance actor (ADR-0006 §5), which Mastodon's secure mode and
 // GoToSocial require.
 func TestLocalResolvesPeer(t *testing.T) {
 	e := stack(t)
@@ -53,7 +53,7 @@ func TestLocalResolvesPeer(t *testing.T) {
 }
 
 // TestFollowFromPeer: a peer user follows alice. The signed Follow reaches the inbox of this
-// server, which verifies and records it (federation.md §3.1); then this server accepts it and the
+// server, which verifies and records it (ADR-0006 §6); then this server accepts it and the
 // peer shows the follow.
 func TestFollowFromPeer(t *testing.T) {
 	e := stack(t)
@@ -798,7 +798,7 @@ func mentionOf(ctx context.Context, p *peerClient, uri string) (notification, bo
 
 // TestReportForwarding: a report of a peer user that alice asks to forward reaches the moderators'
 // list of the peer as a Flag of this server's instance actor, with the comment; one that she does
-// not ask to forward does not (FR-709, federation.md §11).
+// not ask to forward does not (FR-709).
 func TestReportForwarding(t *testing.T) {
 	e := stack(t)
 	for _, p := range e.peers {

@@ -25,7 +25,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
-// AccountMoveFlows verifies the Move of a remote account (ADR-0089, FR-414, federation.md §3.4)
+// AccountMoveFlows verifies the Move of a remote account (ADR-0089, FR-414)
 // through the real account, graph, notification, and federation use cases and projectors, the
 // flows of ADR-0153 §1, which internal/flowtest/federation runs once on SQLite
 // (AccountMoveContract checks the repository methods of moves, aliases, and the migration on every

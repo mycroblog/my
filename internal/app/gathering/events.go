@@ -137,7 +137,7 @@ func RegisterProjectors(r *uow.Projectors, repo ProjectionRepository) {
 }
 
 // RebuildProjections derives gathering_attendees, gathering_heads, and gathering_coorganizers
-// again from the events, in one transaction (data-model §9).
+// again from the events, in one transaction.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo ProjectionRepository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildProjections(ctx, tx) })
 	if err != nil {

@@ -190,8 +190,9 @@ The desired-state schema files of each dialect are the source of truth. `my sche
 
 - The desired state is one directory per module, `schema/<NN>-<module>/`, with a file per dialect, `sqlite.sql` and
   `postgres.sql` ([schema/README.md](schema/README.md)). Edit both files of the module that owns the table in the same
-  pull request. Tables follow the [logical data model](docs/architecture/data-model/README.md), whose
-  [§1.2](docs/architecture/data-model/01-conventions.md#12-論理型) maps the logical types to each dialect's types.
+  pull request. Tables follow the kinds of [ADR-0020](docs/adr/0020-data-modeling-principles.md),
+  [schema/README.md](schema/README.md#conventions) maps the logical types to each dialect's types, and each module's
+  data model is the package comment of its Go packages.
 - What Atlas Community Edition cannot handle (extensions, sequences, views, triggers) stays out of the desired state.
   PostgreSQL extensions go into `schema/ddl/postgres.bootstrap.sql`, an idempotent bootstrap script.
 - `scripts/install-atlas.sh` installs the Atlas CLI into `bin/atlas` with a pinned version and checksum, the version of the
@@ -229,7 +230,7 @@ scripts/task.sh db:down                       # delete the container and its dat
   edit `api/openapi.yaml` by hand.
 - oapi-codegen (pinned in `tools/go.mod`) generates the Go strict server into
   `internal/interface/clientapi/api.gen.go`, which is committed.
-- The conventions and the steps to add an endpoint are in [docs/architecture/client-api.md](docs/architecture/client-api.md).
+- The conventions are in [ADR-0016](docs/adr/0016-client-api-style.md); `api/redocly.yaml` and the tests of `internal/interface/clientapi` enforce them.
 
 ```sh
 scripts/task.sh api:generate  # bundle api/spec into api/openapi.yaml and regenerate from it

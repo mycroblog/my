@@ -55,7 +55,7 @@ type InboxHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type InboxFactory func(t *testing.T, opts uow.Options) InboxHarness
 
-// InboxFlows verifies the synchronous part of the inbox (federation.md §3.1) on a database
+// InboxFlows verifies the synchronous part of the inbox (ADR-0006 §6) on a database
 // adapter, the flows of ADR-0153 §1, which internal/flowtest/federation runs once on SQLite
 // (InboxContract checks the inbox repository's methods on every adapter): an activity recorded
 // once with its document and one federation.inbox job, the URI synthesized for an activity

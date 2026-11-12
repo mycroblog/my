@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The follows that suspensions cut (FR-717, ADR-0058, data-model §4.3). The suspension of a
+// The follows that suspensions cut (FR-717, ADR-0058). The suspension of a
 // remote account ends every follow between it and the local accounts, in both directions, in
 // the transaction of the action, and its server gets a Reject of each of its follows and an
 // Undo of each local follow of it. The suspension of a domain ends every follow between the
@@ -293,7 +293,7 @@ func (s *Service) SeveranceOf(ctx context.Context, accountID, id string) (Severa
 }
 
 // EraseAccountData implements account.DataEraser: it deletes the records of the follows that a
-// deleted local account lost to suspensions (data-model §8). It is safe to repeat.
+// deleted local account lost to suspensions. It is safe to repeat.
 func (s *Service) EraseAccountData(ctx context.Context, t appaccount.ErasureTarget, _ string, _ int) (appaccount.ErasureStep, error) {
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.EraseSeverancesOf(ctx, tx, t.AccountID) })
 	return appaccount.ErasureStep{Done: true}, err

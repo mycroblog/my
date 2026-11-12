@@ -120,7 +120,7 @@ func (h *Handler) resolveResource(r *http.Request, resource string) (appaccount.
 	return h.lookupUsername(r, username)
 }
 
-// sameHost reports whether a domain from a request names the configured host (federation.md §1.2):
+// sameHost reports whether a domain from a request names the configured host (ADR-0006 §29):
 // U-label, A-label, and trailing-dot spellings are the same. A configured host with a port, which
 // local development allows, has no canonical form and compares as it is written.
 func sameHost(domain, host string) bool {

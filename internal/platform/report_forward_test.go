@@ -59,7 +59,7 @@ func (r *inboxRecorder) taken() []recordedPost {
 }
 
 // TestReportForwarding files reports through the client API with the inline queue, whose jobs
-// run before the response (FR-709, federation.md §11): a report of a remote account that asks
+// run before the response (FR-709): a report of a remote account that asks
 // to be forwarded reaches that account's inbox as a Flag signed by the instance actor, about the
 // account and the reported status, with the comment and nothing of the reporter. A report that
 // does not ask, and a report of a local account, send nothing.

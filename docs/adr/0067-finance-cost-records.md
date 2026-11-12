@@ -15,7 +15,7 @@
 - 依存の向き（ADR-0002）: 公開範囲の設定は `internal/interface/clientapi` がインスタンス設定から読む。`internal/app/finance` からの読み取りはポート `SupporterDirectory` にし、監査ログは `AuditRecorded` のドメインイベントで `moderation` に渡す。ほかのモジュールから `finance` を呼ぶ向きは「加入のモジュール → `finance`」で、`RecordIncome`・`KnownIncome` を呼ぶ（§11）。
 - 期間の展開・按分・集計は `internal/domain/finance` の純粋な関数にし、表駆動のテストで確かめる。
 - 集計は読み取りのときに計算し、期間ごとの合計の投影を持たない。項目が数十件の規模では全項目を読んで展開しても軽く、公開の API は 60 秒のキャッシュを持つ。
-- `finance` は overview §2 のモジュールの表、data-model §4.0 の所有の表、`.golangci.yml` の depguard に載せる。
+- `finance` は `.golangci.yml` の depguard に載せる。
 
 ### 2. データモデル（ADR-0020）
 
@@ -30,13 +30,13 @@
 
 - 区分 `category` は `enum(compute, database, storage, network, domain, email, software, other)` の固定の一覧にし、表示名はカタログで翻訳する（ADR-0009）。事業者は自由な文字列で、内訳は `provider_normalized`（NFKC・小文字）でまとめる。各行に出す表記は §20 が決める。
 - 「終了した」「取り消した」を NULL 可の時刻の列で表さない（ADR-0020 規約 4）。終了は `cost_item_end_changes` の最新の行、取り消しは `cost_item_cancellations` の行の有無で表す。
-  `ends_on` の NULL は data-model §1.2 の「無期限」に当たる。
+  `ends_on` の NULL は「無期限」に当たる（ADR-0020 規約 4）。
 - **取り消し**は、記録の誤りや不要になった項目を集計から外す操作で、過去の期間からも消える。**終了**は解約で、終了日より後の支払いだけが消える。取り消しを戻す操作は持たない（作り直す）。
 - 改定（`cost_item_price_revisions`）は値上げ・値下げにも誤記の訂正にも使う。誤記は `effective_on = starts_on` で改定すれば全期間が直る。同じ `effective_on` の改定が複数あれば、最後に記録した行が効く。
   `effective_on` と `revised_at` は、効く日（業務の日付）と記録した時刻で、`moderation_actions` の開始・期限と同じく、イベントの日時属性は `revised_at` の 1 つである。
 - 支払いの周期と開始日は項目の不変の事実にする。周期を変えるときは、項目を終了して新しい項目を作る。1 回だけの支払いを抜く例外（スキップ）は持たない。
 - 取り込んだ費用の行（事業者・請求期間・サービス・見込みと確定・取り込みの世代）のテーブルは ADR-0068 §5 が `finance` の中に決める。ここでは §5 の境界の契約だけを決める。収入の行は §18 にある。
-- 論理型 `date`（暦の日付 `YYYY-MM-DD`）を data-model §1.2 に置く。SQLite は `TEXT` と形の `CHECK`、PostgreSQL は `date`（data-model §1.2）。
+- 論理型 `date`（暦の日付 `YYYY-MM-DD`）を置く。SQLite は `TEXT` と形の `CHECK`、PostgreSQL は `date`。
 
 ### 3. 支払いの周期
 
@@ -95,7 +95,7 @@
   内訳でも事業者と区分は出るので、どのクラウドで動いているかは知られる。設定の画面で `breakdown` を選ぶところにこのことを書く。
 - 公開する場所: 匿名で読める API（§9）と、`/about` の「運営の費用」の区画と、そこからリンクする `/about/costs` のページ。区画は `finance_visibility` か `income_visibility` のどちらかが `private` でなければ出し、収入と収支を含む（§17）。公開するのは今日を含む期間までで、それより後の予定の支払いは出さない。
 
-### 9. API の形（[client-api.md](../architecture/client-api.md)）
+### 9. API の形
 
 - 管理（タグ `admin-server`、スコープ `admin:read` / `admin:write` と `manage_finance`）:
   - `GET /admin/cost_items`（キーセットページング）・`POST /admin/cost_items`・`GET /admin/cost_items/{id}`
@@ -223,7 +223,7 @@ type IncomeMovement struct {
 - 元の支払いより先に返金が来たとき（照合の順序）は、ADR-0074 のジョブが元の支払いを事業者から取り直して先に渡す。`RecordIncome` は元の行がない返金を受けず、ジョブの再試行に任せる。
 - 状態（返金済み・按分中）を列に持たない。返金済みかは子の行の有無と合計で、按分は `covers_*` と見方で決まる（ADR-0020 規約 4）。
 
-### 19. 収入の API の形（[client-api.md](../architecture/client-api.md)）
+### 19. 収入の API の形
 
 §9 と同じ問い合わせ（`granularity`・`from`・`to`・`basis`）と金額の表現（主単位の 10 進の文字列と通貨）、期間の数の上限を使う。
 

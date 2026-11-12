@@ -24,7 +24,7 @@ import (
 // renditions that the admin screen draws from it, kept in the BlobStore under keys the server
 // makes, versioned like the settings.
 
-// BrandRepository is the part of Repository about the brand images (data-model §4.9).
+// BrandRepository is the part of Repository about the brand images.
 type BrandRepository interface {
 	// InsertBrandRevision inserts a revision with its file rows.
 	InsertBrandRevision(ctx context.Context, tx uow.Tx, rev instance.BrandRevision) error

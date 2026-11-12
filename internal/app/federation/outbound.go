@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Job types of outbound delivery (federation.md §7).
+// Job types of outbound delivery.
 const (
 	// JobFanOut computes the inboxes of one outbound activity, one batch at a time, and
 	// enqueues a JobDeliver per new delivery.
@@ -30,7 +30,7 @@ const (
 // recipients the job reads and the position in it, both "" for the first batch.
 type fanOutPayload struct {
 	OutboundActivityID string `json:"outbound_activity_id"`
-	// RevisionID is the revision a Create or Update presents (federation.md §7.1), "" for other
+	// RevisionID is the revision a Create or Update presents, "" for other
 	// activities.
 	RevisionID string `json:"revision_id,omitempty"`
 	// FollowURI is the Follow that an Accept answers when it is not the follow's own: one that
@@ -38,7 +38,7 @@ type fanOutPayload struct {
 	FollowURI string `json:"follow_uri,omitempty"`
 	// SharedInboxes sends the Update of an actor to every known shared inbox after its
 	// followers, as the Delete of an actor goes: the Update of a suspension and of its end
-	// (federation.md §11.1). false for other activities.
+	// (ADR-0058 §6). false for other activities.
 	SharedInboxes bool `json:"shared_inboxes,omitempty"`
 	// Inbox is the only recipient of an activity of the relay membership (ADR-0006), "" for
 	// other activities.
@@ -130,7 +130,7 @@ type ActorHiding interface {
 }
 
 // RegisterOutboundProjectors subscribes the federation module to the domain events of other
-// modules that a local actor's activity follows from (federation.md §7.1). Each projector writes,
+// modules that a local actor's activity follows from. Each projector writes,
 // in the transaction of the local command, an outbound_activities row and the JobFanOut that
 // delivers it, so that an activity is recorded exactly when the command commits.
 //
@@ -221,7 +221,7 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 			return err
 		}
 		// The document is stored with the deletion, so that every delivery of the Delete
-		// sends it whether or not the status's rows are still there (federation.md §7.1).
+		// sends it whether or not the status's rows are still there.
 		doc, err := deleteDocument(act, d.Host, ev.Status)
 		if err != nil {
 			return err

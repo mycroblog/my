@@ -10,7 +10,7 @@ import (
 )
 
 // ReplayEvents passes to emit, inside tx, the events that derive other modules' projections of
-// follows, blocks, and mutes from their current state (data-model §9), so that those modules
+// follows, blocks, and mutes from their current state, so that those modules
 // rebuild their projections without reading this module's tables: for each live follow ordered
 // by follow ID, a Followed when it is active or a FollowRequested when it is pending, with its
 // current preferences; then a Blocked for each block in force, ordered by block ID; then a Muted

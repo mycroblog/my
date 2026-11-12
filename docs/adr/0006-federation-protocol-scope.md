@@ -16,9 +16,11 @@
 | 互換拡張 | Mastodon 拡張（`toot:` 名前空間: `featured`, `discoverable`, `indexable`, `Emoji`, `sensitive`, `Hashtag` 等）、`contentMap`。受信の互換拡張に LitePub の `EmojiReact` と Misskey の `_misskey_reaction`（ADR-0051）、FEP-044f の語彙と `_misskey_quote`・`quoteUrl`・`quoteUri`（ADR-0069） |
 | リレー | Mastodon 方式と LitePub 方式の参加、`public` の投稿の送信と受信（§18〜§22） |
 | アカウントの移転 | `Move` と別名（`alsoKnownAs`）（ADR-0089） |
-| WebFinger の拡張 | Actor の `webfinger`（FEP-2c59。ローカルの Actor に載せ、リモートの Actor の名乗りは WebFinger で確かめてからハンドルにする）、Activity Intents（FEP-3b86 の `Follow` と `Create`。WebFinger に載せ、Web クライアントの `/intent` を開く）。federation.md §6.5 |
-| 任意 | Authorized Fetch（secure mode）、Object Integrity Proofs（FEP-8b32）は C |
+| WebFinger の拡張 | Actor の `webfinger`（FEP-2c59。ローカルの Actor に載せ、リモートの Actor の名乗りは WebFinger で確かめてからハンドルにする）、Activity Intents（FEP-3b86 の `Follow` と `Create`。WebFinger に載せ、Web クライアントの `/intent` を開く） |
+| 任意 | Authorized Fetch（secure mode、§31）、Object Integrity Proofs（FEP-8b32、§30）は C |
 | 非対応 | AP C2S |
+
+NodeInfo の `usage.localPosts` は、ブーストを投稿として持つ Mastodon と GoToSocial に合わせ、削除されていない `direct` 以外のローカルの投稿と、削除されていない投稿へのローカルのブーストを数える。
 
 ### 2. 相互運用テスト対象
 
@@ -70,10 +72,11 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 ### 6. Inbox の同期の部分
 
-本文の上限（1 MiB）→ IP のレート制限 → 署名ヘッダの解析 → 署名者のドメインのブロック判定 → ダイジェストの照合 → 鍵の解決（未知・期限切れなら、署名した Actor をインスタンス Actor の署名付き GET で取得。5 秒で打ち切る）→ 署名の検証（§4）→ 本文の JSON から `id` / `type` / `actor` だけを読む → 署名者と `actor` の照合 → 重複排除の行と原本とジョブを 1 つのトランザクションで記録 → `202`。
+本文の上限（1 MiB）→ IP のレート制限 → 署名ヘッダの解析 → 連合モードと署名者のドメインのブロック判定 → ダイジェストの照合 → 本文の JSON から `id` / `type` / `actor` / `object` だけを読む → 鍵の解決（未知・期限切れなら、署名した Actor をインスタンス Actor の署名付き GET で取得。5 秒で打ち切る）→ 署名の検証（§4）→ 署名者のサーバーのレート制限 → 署名者と `actor` の照合 → 重複排除の行と原本とジョブを 1 つのトランザクションで記録 → `202`。
 
 - 鍵を取得できなければ `401` を返し、送信側のリトライに任せる。
-- 未知の Actor の自分自身の `Delete` は、鍵を取りに行かず `202` で捨てる（ADR-0019 §7）。
+- 本文を鍵の解決より前に読むのは、未知の Actor の自分自身の `Delete` と `Update` を、鍵を取りに行かず `202` で捨てるため（ADR-0019 §7）。
+- サーバーのレート制限は、署名を検証できたサーバーにだけ数える。
 
 ### 7. 重複排除は受信時
 
@@ -90,7 +93,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 - 未知のオブジェクトへの `Delete` は tombstone（`remote_object_tombstones`、保持期間は既定 30 日）を記録し、後から届いた `Create` / `Update` を捨てる。
 - 未知のオブジェクトへの `Update` は、取り込み範囲（§11）に入るなら `Create` と同じく扱う。
-- 版は `updated` が現在版より新しいときだけ作る（[data-model §2.2](../architecture/data-model/02-consistency.md#22-冪等キーと一意制約)）。
+- 版は `updated` が現在版より新しいときだけ作る。
 - 対象が見つからない `Undo` / `Accept` / `Reject` / `Like` / `Announce`（ローカルの投稿宛て）は何もせず完了にする。
 
 ### 10. 未知の型
@@ -111,7 +114,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 `Announce` の対象は、ブーストした人がローカルのアカウントにフォローされているとき、または主体が `accepted` のリレーであるときだけ取得する。
 
-取得した投稿として、次も取り込む。ほかの条件（作者の検証・tombstone・同じオリジン）は、federation.md §6.3 の「取得した投稿」と同じ `StatusHandlers.fetched` を通す。
+取得した投稿として、次も取り込む。ほかの条件（作者の検証・tombstone・同じオリジン）は、ほかの取得した投稿と同じ `StatusHandlers.fetched` を通す。
 
 - ローカルの利用者がプロフィールを開いたリモートのアカウントの、outbox の最初のページにある公開（`public` / `unlisted`）の投稿（§14・§15）
 - 取得したリモートのアカウントの、`featured`（ピン留め）の最初のページにある公開の投稿（5 件まで。§17）
@@ -130,8 +133,8 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - リモートの投稿は、公開から 90 日（設定 `remote_status_retention_days`）を過ぎ、かつローカルからの参照（返信・ブースト・お気に入り・ブックマーク・ピン留め・通知・ローカルの投稿を含むスレッド）がなければ、消去ジョブが消す（FR-803）。
   消すときは `status_deletions`（`origin = retention`）を記録し、URI を tombstone として残す。後から同じ投稿を取得し直すことは妨げない（tombstone は `remote` / `author` の削除だけが復活を拒む）。
 - 運用者は設定 `remote_status_max_retention_days` で、リモートの投稿を保持する期間の上限を決められる。上限を設定すると、公開からその期間を過ぎたリモートの投稿は、ローカルからの参照があっても消去ジョブが消す（`origin = retention`）。既定は上限なし。ローカルの利用者の操作（返信・ブースト・お気に入り・ブックマーク・ピン留め）の行は残し、表示では対象の投稿を「削除済み」として扱う。
-- リレー経由でだけ取り込んだ投稿は、`content` の `relayed_statuses` に記録する。
-  消去ジョブ `content.purge_remote_statuses` は、`relayed_statuses` にあり、ローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、公開から **7 日**（設定 `relay_status_retention_days`）で消す（`origin = retention`）。それ以外は 90 日のまま。
+- リレー経由でだけ取り込んだ投稿は、そのことを記録する。
+  そのうちローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿は、リモートの投稿とは別の消去ジョブが、公開から **7 日**（設定 `relay_status_retention_days`）で消す（`origin = retention`）。それ以外は 90 日のまま。
 - リレーを脱退しても、取り込んだ投稿はすぐには消さない（保持期間で消える）。
 - プロフィールを開いて取り込んだ投稿は、ほかの取得した投稿と同じ保持期間に従う。
 - 受信の原本（`received_activity_documents`）は 7 日、受信の記録（`received_activities`）は 30 日で消す。
@@ -147,8 +150,8 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - そのアカウントについて、直近 24 時間に取得を始めていない（KV の名前空間 `federation.outbox_fetch`、キーは Actor の URI の SHA-256、`IncrBy` で最初の 1 回だけ投入する）
 - 閲覧者が直近 5 分に取得を始めさせたアカウントが 30 件未満（KV の名前空間 `federation.outbox_fetch_user`）。超えたら取得せず、ページは返す
 
-ドメイン単位の `federation` の制限・`instance_health` が `unavailable` のドメイン・自サーバーの URI は、`Fetcher` が取得しない（federation.md §6.1）。
-ドメインの `public_discovery` の制限（`limit`）は取得を止めない。利用者が自分で開いたプロフィールだからで、取り込んだ投稿は連合タイムライン・検索に出ない（federation.md §11 の表のとおり）。
+ドメイン単位の `federation` の制限・`instance_health` が `unavailable` のドメイン・自サーバーの URI は、`Fetcher` が取得しない。
+ドメインの `public_discovery` の制限（`limit`）は取得を止めない。利用者が自分で開いたプロフィールだからで、取り込んだ投稿は連合タイムライン・検索に出ない（federation.md §1 の表のとおり）。
 
 新しいテーブルは作らない（冷却期間と回数は KV の短期の値）。件数（20 件）・冷却期間（24 時間）・利用者ごとの回数（5 分に 30 アカウント）は既定値で、M3.5 以降の計測で見直す。
 
@@ -160,16 +163,16 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - ページの項目のうち、`Create` で、オブジェクトの `attributedTo` がそのアカウントで、宛先に `as:Public` を含むものを、新しい順に最大 20 件取り込む。
   オブジェクトが埋め込みならその文書を、IRI なら取得した文書を使う（取得は 20 件に含む）。保存済みの URI は取得しない
 - `Announce`（ブースト）は取り込まない（第三者のサーバーへの取得を増やすため）
-- 返信先は取得しない（受信時の 1 段の取得をしない）。利用者が投稿を開けば、スレッドの取得（federation.md §6.3）が補う
+- 返信先は取得しない（受信時の 1 段の取得をしない）。利用者が投稿を開けば、スレッドの取得（§12）が補う
 - 2 ページ目以降はたどらない。プロフィールで古い投稿を読み進めても、取得は増えない
 
-1 回の取得の文書は合わせて 22 件まで（コレクション・ページ・投稿 20 件）。取得の失敗は `Fetcher` の 1 時間の記録（federation.md §6.1）に乗り、ジョブは完了にする。ストアの失敗は `Retry` にする。
+1 回の取得の文書は合わせて 22 件まで（コレクション・ページ・投稿 20 件）。取得の失敗は `Fetcher` の 1 時間の記録（§12）に乗り、ジョブは完了にする。ストアの失敗は `Retry` にする。
 
 ### 16. プロフィールを開いたときの表示
 
 - リモートのアカウントのプロフィールには、投稿の一覧の上に「このサーバーが受け取った投稿だけを表示しています」という案内と、
   元のサーバーのプロフィール（`Account.url`）へのリンク「{domain} で見る」を常に出す。リンクは外部リンクとして示す。
-- 取得を始めたことを応答で示し（形は [client-api.md](../architecture/client-api.md) に従ってタスクで決める）、Web クライアントは「元のサーバーから最近の投稿を取得しています」を
+- 取得を始めたことを応答で示し（形は [ADR-0016](0016-client-api-style.md) に従ってタスクで決める）、Web クライアントは「元のサーバーから最近の投稿を取得しています」を
   `role="status"` で示して、数秒後に最初のページを 1 回だけ読み直す。読み直した後は表示を消す。取得の失敗は利用者に伝えない（案内とリンクが残る）。
 - 投稿が 1 件も無いリモートのプロフィールの空の表示も、同じリンクを出す。
 
@@ -189,12 +192,12 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - 取得できないコレクションはピン留めをそのまま残し、ジョブを完了にする。空のコレクションと、`featured` を宣言しなくなった文書は、ピン留めを消す。ストアの失敗は `Retry` にする。
 - **`Add` / `Remove` の受信**: Actor が自分の `featured` への `Add` / `Remove`（Mastodon・Misskey などがピン留めの変化で送る）を送ってきたら、同じジョブ `federation.fetch_featured` を同じ冪等キーで投入してコレクションを取得し直す。
   `object` の投稿だけを足し引きせず取得し直すのは、上の取得と同じ検証・上限・置き換えに乗せ、届かなかった変化も追いつかせるため。
-  `target` は、保存した Actor の文書が宣言する `featured`（Actor と同じオリジン）と一致しなければならず、送り主が Actor であることは inbox の署名の検証（federation.md §3.2）で確かめる。それ以外の `Add` / `Remove` は捨てる。
+  `target` は、保存した Actor の文書が宣言する `featured`（Actor と同じオリジン）と一致しなければならず、送り主が Actor であることは inbox の署名の検証（§8）で確かめる。それ以外の `Add` / `Remove` は捨てる。
   冪等キーにより、そのアカウントのジョブが完了するまで次のジョブは投入されないので、続けて届いた通知で取得は重ならない。
 
 - **注目のハッシュタグ（`featuredTags`）**: プロフィールに、持ち主がよく使うハッシュタグを並べる。ピン留めと同じく、Actor と一緒に同期する。
   - ローカル: 1 人 10 件まで、持ち主が選んで順を決める（Mastodon の `FeaturedTag::LIMIT` と同じ）。超える追加は `422`。タグごとに投稿の数と最後に使った時刻を出し、どちらも作者の `public` / `unlisted` の投稿から数える（Mastodon の `distributable_visibility` と同じ）。`private` / `direct` / `local` の投稿は、数から投稿の存在が漏れるので数えない。
-  - 送信: Actor の `featuredTags` が指す `{actor}/featured-tags`（ADR-0018）を、`Hashtag`（`name` は `#` 付きの名前、`href` はそのプロフィールのタグの URL）を持ち主の順に並べる `Collection` にする（federation.md §10）。注目のハッシュタグが変わったら、プロフィールの変更と同じく Actor の `Update` を配送する。
+  - 送信: Actor の `featuredTags` が指す `{actor}/featured-tags`（ADR-0018）を、`Hashtag`（`name` は `#` 付きの名前、`href` はそのプロフィールのタグの URL）を持ち主の順に並べる `Collection` にする。注目のハッシュタグが変わったら、プロフィールの変更と同じく Actor の `Update` を配送する。
   - 受信: Actor の文書を保存するとき（上のピン留めと同じきっかけ）に、文書が Actor と同じオリジンの `featuredTags` を宣言していれば、ジョブ `federation.fetch_featured_tags`（冪等キー `fetch_featured_tags:<account_id>`）を投入する。
     ジョブはコレクションの項目か `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）から `Hashtag` の名前を 10 件まで読み、そのアカウントの注目のハッシュタグを置き換える。取得できなければ残し、空のコレクションと `featuredTags` を宣言しなくなった文書は消す。投稿は取得しない。
     `featured` への `Add` / `Remove` を受けたときも、このジョブを同じ冪等キーで投入する（Mastodon は注目のハッシュタグの変化を `featured` への `Hashtag` の `Add` で送る）。
@@ -212,12 +215,12 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - 脱退は `Undo(Follow)` を送り、状態を `left` にする。`rejected` と `left` のリレーは、同じ登録から参加し直せる（新しい `Follow` の `id`）。登録の削除は `left` か `rejected` のときだけで、削除してもすでに送った投稿の `Update` / `Delete` は届け続ける（宛先は元の `Create` の `deliveries`）。
 - インスタンス Actor への `Follow` は、`accepted` のリレーの Actor からのものだけを自動で `Accept` する（LitePub 方式のリレーが返すフォロー）。記録はせず、それ以外の `Follow` は `Reject` する。
 - 登録ごとに **受信するか**（`receive`: `true` / `false`）を選ぶ。`false` は送るだけの参加で、届いた中継を取得せずに捨てる。変えるには脱退して登録し直す。
-- ドメイン単位の `suspend` のあるホストのリレーは登録できない。参加中のリレーのホストを `suspend` すると、受信は署名の検証より前に `403`、配送は `skipped` になる（federation.md §11 のまま）。状態は変えず、管理画面に警告を出す。
+- ドメイン単位の `suspend` のあるホストのリレーは登録できない。参加中のリレーのホストを `suspend` すると、受信は署名の検証より前に `403`、配送は `skipped` になる（federation.md §1 のまま）。状態は変えず、管理画面に警告を出す。
 
 ### 19. リレーへの送信
 
 - 送るのは **ローカルの `public` の投稿の `Create` / `Update` / `Delete` だけ**。`unlisted`・`private`・`direct` と、**`local` は送らない**（ADR-0017）。ブーストの `Announce` も送らない（Activity-Relay の Mastodon 方式の経路は `Announce` を扱わない）。
-  判定は配送の展開（federation.md §7.2）の公開範囲の規則に足し、visibility の単一のポリシー関数を通す。
+  判定は配送の展開の公開範囲の規則に足し、visibility の単一のポリシー関数を通す。
 - 利用者ごとに「自分の投稿をリレーに送らない」設定は持たない（Mastodon・Misskey と同じ）。リレーに出したくない投稿は、`unlisted` か `local` で投稿する。
 - 展開ジョブの `Create` のフェーズに「`accepted` のリレーの inbox」を最後に足す。`deliveries` に記録するので、`Update` / `Delete` は元の `Create` の `deliveries` に届く。
   サイレンスなどで公開範囲が `public` でなくなった投稿は、ほかの宛先と同じく対象にならない。
@@ -228,7 +231,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 ### 20. リレーからの受信
 
-- 同期の部分（federation.md §3.1）は変えない。リレーの IP とドメインにも、ほかのサーバーと同じレート制限（1,000 / 5 分、2,000 / 5 分）を掛ける。超えた分は `429` で、リレーの再送に任せる。
+- 同期の部分（§6）は変えない。リレーの IP とドメインにも、ほかのサーバーと同じレート制限（1,000 / 5 分、2,000 / 5 分）を掛ける。超えた分は `429` で、リレーの再送に任せる。
 - 署名者の Actor が `accepted` のリレーの Actor（`mastodon` は Actor の inbox か shared inbox が登録の inbox の URL と一致するもの）なら、ジョブに `relay_id` を付ける。中継は `trust = refetch` のまま扱う（§8）。
 - 非同期の部分では、`relay_id` の付いたアクティビティを次の順に扱う。
   1. 登録の `receive` が `false`、またはリレーが `accepted` でなければ捨てる。
@@ -286,11 +289,11 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 | 入口 | `off` | `inbound` | `outbound` | `both` |
 | --- | --- | --- | --- | --- |
-| inbox（同期、federation.md §3.1） | 署名の検証より前に `403`（ドメインの `suspend` と同じ位置） | 受け付ける | 受け付ける | いまのまま |
-| inbox（非同期、federation.md §3.2 のハンドラ） | — | `ingest`・`follow_out`・`follow_in`（断る）・`protect` の型だけ処理し、ほかは `dropped` | `follow_in`・`protect` の型だけ処理し、ほかは `dropped`（`QuoteRequest` には `Reject` を返す） | いまのまま |
-| 展開と配送（federation.md §7.2・§7.3） | すべて `skipped` | `follow_out`・`follow_in` の `Reject`・`retract`・`protect` だけ | `publish`・`follow_in`・`retract`・`protect` だけ | いまのまま |
-| 外の取得（federation.md §6） | しない | いまのまま | 署名の検証と配送の宛先に要る Actor の取得だけ。投稿・スレッド・outbox の取得はしない。メディアプロキシはフォロワーの Actor の画像だけ | いまのまま |
-| ローカルの Actor の GET（federation.md §10） | `404`（`410` にしない） | 鍵の取得のための最小の文書（Authorized Fetch の署名なしと同じ項目） | いまのまま | いまのまま |
+| inbox（同期、§6） | 署名の検証より前に `403`（ドメインの `suspend` と同じ位置） | 受け付ける | 受け付ける | いまのまま |
+| inbox（非同期のハンドラ） | — | `ingest`・`follow_out`・`follow_in`（断る）・`protect` の型だけ処理し、ほかは `dropped` | `follow_in`・`protect` の型だけ処理し、ほかは `dropped`（`QuoteRequest` には `Reject` を返す） | いまのまま |
+| 展開と配送 | すべて `skipped` | `follow_out`・`follow_in` の `Reject`・`retract`・`protect` だけ | `publish`・`follow_in`・`retract`・`protect` だけ | いまのまま |
+| 外の取得（§12） | しない | いまのまま | 署名の検証と配送の宛先に要る Actor の取得だけ。投稿・スレッド・outbox の取得はしない。メディアプロキシはフォロワーの Actor の画像だけ | いまのまま |
+| ローカルの Actor の GET | `404`（`410` にしない） | 鍵の取得のための最小の文書（Authorized Fetch の署名なしと同じ項目） | いまのまま | いまのまま |
 | 投稿・`/activity`・コレクション（outbox・followers・following・featured）の GET | `404` | `404`（outbox など空にせず存在を見せない） | いまのまま | いまのまま |
 | インスタンス Actor の GET | `404` | いまのまま | いまのまま | いまのまま |
 | WebFinger・host-meta | `404` | 答える（`follow_out` で相手がハンドルを確かめるため。Mastodon・GoToSocial は Actor を取得したあと WebFinger を引く） | いまのまま | いまのまま |
@@ -300,7 +303,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - `inbound` で外の Actor の文書に `Create` などの内容が埋め込まれていても、取り込みの範囲は §11 のまま（ローカルの利用者がフォローしている相手など）。モードは範囲を広げない。
 - `inbound` で `Like` / `Announce` / `EmojiReact` がローカルの投稿に届いても、外から見えないはずのものなので捨てる。ローカルの利用者へのメンション（フォロー中の相手から）は `ingest` として取り込む。
 - `outbound` で捨てるのは、ローカルの投稿への返信・メンション・ブースト・お気に入り・絵文字リアクション・投票への回答・引用の依頼を含む。外の反応は数にも通知にも出ない。
-- ドメインの処分（federation.md §11）はモードと独立に効く。モードが通しても、処分が止めるものは止まる。
+- ドメインの処分（federation.md §1）はモードと独立に効く。モードが通しても、処分が止めるものは止まる。
 
 ### 26. 連合の向きと client API・Web
 
@@ -328,7 +331,26 @@ federation-live（2026-10-22、[#983](https://github.com/mycroblog/my/issues/983
 - `off` の Actor・WebFinger・NodeInfo は `404` を返す。Mastodon と Misskey は Actor を取り直して `404` を受けても、アカウントとフォローを消さない。`both` に戻すと投稿がまた届く。
 - NodeInfo 2.1 のスキーマは `protocols` を `minItems: 1` とするので、空の配列は返せない。`off` は NodeInfo を `404` にする。
 
-### 29. この決定を見直す条件
+### 29. ホスト名の正規化と表示
+
+- 外から入るホスト（文書の IRI、取得する URL、`keyId`、WebFinger の `acct:` のドメイン、運営者が入力するドメイン）は、比較と保存の前に IDNA 2008 の A-label（小文字の punycode）にそろえる。写像は WHATWG URL のホストの解析と同じ UTS #46 の非推移的処理（`ß` を `ss` にしない）で、Bidi 規則・ContextJ・長さを確かめる。ラベルの 3・4 文字目の `--` と `_` は実在するホストがあるので許す。IP アドレスはそのまま、末尾の `.` は除く。
+- 写像できないホストは不正とする。文書の中のものは無いものとして読み、文書の外から来たものはエラーにする。
+- 人に見せるときは U-label に戻す。ただし、どれかのラベルが UTS #39 §5.2 の highly restrictive に当てはまらなければ、ホスト全体を A-label のまま見せる。
+- 理由: 同じホストの書き方の違いで、オリジンの照合・ドメイン単位の処分・配送の集約をすり抜けさせないため。ブラウザと同じ写像にするのは、利用者がアドレスバーで見るホストと一致させるため。表示を絞るのは、用字を混ぜたなりすまし（キリル文字の `а` を混ぜた `apple.com`）を防ぐため。
+
+### 30. Object Integrity Proofs（FEP-8b32、FR-410）
+
+- 送信: LD 署名を付ける文書（§19）を除き、配送する文書に Actor の Ed25519 鍵で `eddsa-jcs-2022` の `proof` を付ける。鍵は Actor の文書の `assertionMethod` に `Multikey`（FEP-521a）で載せる。
+- 受信: 署名者が `actor` のアクティビティだけ、`proof` を HTTP 署名に加えて検証する。検証できない `proof`（形が違う・鍵を引けない・Ed25519 でない）は無視し、鍵の持ち主が `actor` でないか署名が合わない `proof` は `401` で拒否する。署名者と `actor` が違うものは検証せず §8 のとおり取り直す。`proof` が通っても HTTP 署名と取り直しは省かない。
+- 理由: FEP-8b32 は検証できない証明を無視してほかの認証に頼り、証明を HTTP 署名より優先する。LD 署名の後に足す証明は LD 署名を壊し、先に足す証明の文脈は受け手の JSON-LD の処理系が持たない。省かないのは、証明を検証する主要実装がまだ少なく、受信の検証を二通りにしないため。
+
+### 31. Authorized Fetch（FR-408）
+
+- インスタンス設定で有効にし（既定は無効）、リクエストごとに読む。有効なときは、検証できる署名の無いオブジェクト・ブーストの `Announce`・コレクションの GET に、存在を確かめる前に `401` と、GET の署名を求める `Accept-Signature` を返す。
+- 利用者の Actor は、署名が無ければ鍵の取得のための最小の文書（Mastodon と同じ項目に、証明の鍵と移転先を加えたもの）を返す。インスタンス Actor・WebFinger・NodeInfo・host-meta・カスタム絵文字・HTML の要求は署名を求めない。応答は署名で変わるので、インスタンス Actor のほかは共有キャッシュさせない。
+- 理由: インスタンス Actor を署名なしで返すので、有効なサーバーどうしでも鍵の取得が鍵の検証を待つ循環にならない。存在より先に `401` にするのは存在を漏らさないため。最小の文書は、署名せずに鍵を取得する実装のため。
+
+### 32. この決定を見直す条件
 
 - 署名（§4・§5）
   - 主要実装のいずれかが draft-cavage を受け付けなくなった場合（RFC 9421 を先に試す案が有力になる）
@@ -350,6 +372,9 @@ federation-live（2026-10-22、[#983](https://github.com/mycroblog/my/issues/983
   - 主要実装（Mastodon・Misskey・GoToSocial・Akkoma）のどれかが、`inbound` の最小の Actor の文書でこちらの `Follow` を受け付けない（プロフィールの項目を必須にする）ことが相互運用テストで分かった場合: `inbound` でも Actor の文書全体を出す（プロフィールは外へ出る）か、`inbound` を外す。
   - `outbound` の利用者が、外からの返信・反応を通知で受けたいと求めた場合: `outbound` に「反応だけ取り込む」段を足す（2 つの bool の形のほうが表しやすくなる）。
   - 許可したドメインとだけ連合したい要望が出た場合: 許可リストを、この enum と直交するものとして別の ADR で決める。
+- ホスト名（§29）: WHATWG URL か主要なブラウザが、ホストの写像や表示の規則を変えた場合。
+- 証明（§30）: 主要実装の多くが証明を検証するようになった場合: 証明が通ったときに取り直しを省く案を決める。
+- Authorized Fetch（§31）: 主要実装が署名せずに鍵を取得しなくなった場合: 最小の文書を外す。
 
 ## 経緯
 

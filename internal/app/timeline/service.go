@@ -46,7 +46,7 @@ type Deps struct {
 
 // Service reads the home, local, hashtag, and profile timelines (FR-201 to FR-204, FR-208) from
 // the timeline module's own projections, fan-out-on-read (ADR-0013). The SQL narrows the
-// candidates as data-model §6 maps the visibility policy; before returning them, Service applies
+// candidates by the visibility policy; before returning them, Service applies
 // appcontent.CanView again to every entry (NFR-SEC-4) and drops those it denies. It also keeps
 // the viewer's lists and reads their timelines (lists.go).
 type Service struct {

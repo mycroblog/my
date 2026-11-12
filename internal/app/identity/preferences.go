@@ -16,8 +16,8 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// PreferencesRepository is the persistence of user preferences (data-model §4.1,
-// user_preferences and user_timeline_languages, current values). It is part of Repository.
+// PreferencesRepository is the persistence of user preferences
+// (user_preferences and user_timeline_languages, current values). It is part of Repository.
 type PreferencesRepository interface {
 	// InsertPreferences stores the preferences of a user who has none yet.
 	InsertPreferences(ctx context.Context, tx uow.Tx, p identity.Preferences) error

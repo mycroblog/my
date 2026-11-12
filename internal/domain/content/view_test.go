@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// The policy tables below are the spec of CanView (docs/architecture/visibility.md).
+// The policy tables below are the spec of CanView (ADR-0017 §3).
 // Each row reads: in this context, this viewer sees a status of each visibility — Y — or not — "-".
 // The columns are always, in order:
 //

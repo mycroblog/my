@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The remote servers' screens through the whole app (web-client/README.md T4, federation.md §7.3): a signed-in session
+// The remote servers' screens through the whole app (web-client/README.md T4, ADR-0006 §3): a signed-in session
 // from the default handlers, a viewer whose roles have manage_domains (or not), and MSW playing the admin API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";

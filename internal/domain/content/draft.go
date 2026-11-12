@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// This file holds drafts and scheduled posts (data-model §4.4, ADR-0156): a draft is a local post
+// This file holds drafts and scheduled posts (ADR-0156): a draft is a local post
 // saved on the server and read and written by its author alone, never federated. A schedule
 // publishes it at a chosen time.
 

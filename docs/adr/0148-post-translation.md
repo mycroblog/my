@@ -108,7 +108,7 @@ LLM を翻訳の提供元にしない。どの版でも同梱しない。
 **`現在値（キャッシュ）`** にする。`link_cards`・`remote_media_cache`・`oauth_client_metadata_documents` と同じ分類である。
 
 - **イベントではない。** 起きた事実ではなく、版から作った派生物で、消してよく、INSERT のみの規約 1 にも保持期間で消す運用にも合わない。
-- **投影でもない。** ADR-0020 規約 1 は投影に同じイベント列からの再構築を求めるが、提供元の出力は決定的でなく、作り直すと費用がかかる。data-model §9 の再構築の表にも載せない。
+- **投影でもない。** ADR-0020 規約 1 は投影に同じイベント列からの再構築を求めるが、提供元の出力は決定的でなく、作り直すと費用がかかる。`my projection` の再構築の一覧（`internal/platform/projections.go`）にも載せない。
 - **規約 5 の基準に照らしても** 監査・モデレーション・連合の整合・利用者への説明に履歴を使わない。設定の変更だけを監査ログに残す（§11）。
 
 テーブルは `translation` モジュールが持つ（`schema/<方言>/17-translation.sql`）。
@@ -238,7 +238,7 @@ LLM を翻訳の提供元にしない。どの版でも同梱しない。
 後続の作業:
 
 - #2232: `docs/operations/privacy-policy-template.md` と `processing-record-template.md`（§6）。
-- #2231: `docs/architecture/data-model/`、`docs/architecture/overview.md` のモジュール一覧。
+- #2231: `docs/architecture/overview.md` のモジュール一覧。
 
 ## Open Questions / 要検証
 

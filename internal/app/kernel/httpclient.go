@@ -13,7 +13,7 @@ import (
 
 // HTTPClient sends every outbound HTTP request of the server: federation fetches and
 // deliveries, WebFinger, NodeInfo, the media proxy, link previews, Web Push, CAPTCHA
-// verification, and the metadata documents of OAuth clients (ADR-0019 §1, ADR-0106 §9, docs/architecture/federation.md §1.1). The adapter
+// verification, and the metadata documents of OAuth clients (ADR-0019 §1, ADR-0106 §9). The adapter
 // lives in internal/adapter/httpclient and passes kerneltest.HTTPClientContract.
 //
 // The adapter refuses destinations that are not public: addresses outside the global unicast
@@ -169,7 +169,7 @@ type HTTPResponse struct {
 	StatusCode int
 	Header     http.Header
 	// URL is the URL that answered, after redirects. Callers compare its origin with the
-	// fetched document's id (docs/architecture/federation.md §6.1).
+	// fetched document's id (ADR-0006 §12).
 	URL string
 	// Body reads the decompressed body. A read past the purpose's MaxBodyBytes fails with an
 	// error wrapping ErrResponseTooLarge, and reads fail once the purpose's Timeout passes.

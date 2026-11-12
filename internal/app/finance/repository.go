@@ -5,6 +5,12 @@
 // and the totals by week, month, and year that the domain computes from them on every read. The
 // adapters of Repository live in internal/adapter/db/*; their contract test suite is
 // financetest.FinanceRepositoryContract.
+//
+// Creating a cost item writes the item, its first label, its first price from its start, and
+// its end when one is given, in one transaction. The creation and every change of the label or
+// the end emit the item's change, whose projector writes the item's head; a cancellation emits
+// its own event, whose projector removes the head, so an item has a head while it is not
+// canceled. The price revisions have no projection: a read takes all of an item's revisions.
 package finance
 
 import (
@@ -190,8 +196,7 @@ type ImportRepository interface {
 	UpsertImportedHead(ctx context.Context, tx uow.Tx, r ImportedRevision) error
 }
 
-// ProjectionRepository is the part of Repository that rebuilds the finance projection
-// (data-model §9).
+// ProjectionRepository is the part of Repository that rebuilds the finance projection.
 type ProjectionRepository interface {
 	// RebuildHeads empties cost_item_heads and derives it from the cost items that are not
 	// canceled, with the newest label revision and end change of each.

@@ -19,7 +19,7 @@ import (
 )
 
 // setUpErasure registers the erasure of deleted local accounts' data and its schedule
-// (data-model §8, FR-008). Every database adapter's repositories implement the modules'
+// (FR-008). Every database adapter's repositories implement the modules'
 // erasure repositories. The erasers run in order: the statuses first, whose notifications the
 // notification module erases with them, then the account's interactions, follows, timeline and
 // notification rows, its user's reads of the announcements, its uploads with their blobs, and

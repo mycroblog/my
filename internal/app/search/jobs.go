@@ -129,7 +129,7 @@ func (s *Service) handleSyncAuthor(ctx context.Context, j queue.Job) queue.Resul
 }
 
 // handleSyncDomain enqueues JobSyncAuthor for each account of the domain and its subdomains, since a
-// restriction of a domain reaches them (data-model §4.3).
+// restriction of a domain reaches them.
 func (s *Service) handleSyncDomain(ctx context.Context, j queue.Job) queue.Result {
 	var p syncDomainPayload
 	if err := json.Unmarshal(j.Payload, &p); err != nil || p.Domain == "" {

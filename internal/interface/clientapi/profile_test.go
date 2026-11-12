@@ -132,7 +132,7 @@ func TestVerifyAccountCredentialsHasTheSource(t *testing.T) {
 	}
 }
 
-// fakePosting answers the posting limits of a silenced account (data-model §5.4), or err.
+// fakePosting answers the posting limits of a silenced account (ADR-0058 §11), or err.
 type fakePosting struct{ err error }
 
 func (f fakePosting) PostingLimits(_ context.Context, accountID string) (appcontent.PostingLimits, error) {

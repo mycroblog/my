@@ -17,7 +17,7 @@ import (
 )
 
 // Errors that an InboxHandler returns to tell the processor what became of an activity
-// (federation.md §3.2, §3.3).
+// (ADR-0006 §8, §9).
 var (
 	// ErrUnknownObject reports that the target of a Delete or an Undo is not known: the
 	// processor records a tombstone for it, so that the object or activity arriving later is
@@ -31,7 +31,7 @@ var (
 	ErrUnprocessable = errors.New("federation: the activity cannot be processed")
 )
 
-// InboxActivity is a received activity as its InboxHandler gets it (federation.md §3.2): the
+// InboxActivity is a received activity as its InboxHandler gets it: the
 // normalized activity, fetched again from its origin when its signer is not its actor, and the
 // stored account of its actor.
 type InboxActivity struct {
@@ -59,7 +59,7 @@ func (a *InboxActivity) mode() federation.Mode {
 	return a.Mode
 }
 
-// InboxHandler processes one kind of received activity (federation.md §3.4). It writes in one
+// InboxHandler processes one kind of received activity. It writes in one
 // short transaction through the public APIs of the modules, and must give the same rows however
 // often it runs and in whatever order the activities about one object arrive (NFR-REL-1). It
 // returns nil when the activity was processed or had nothing to do, ErrUnknownObject or
@@ -81,7 +81,7 @@ type RelayGate interface {
 	Admit(ctx context.Context, relayID string, act *federation.Activity) (*RelayMembership, error)
 }
 
-// DocumentFetcher fetches a document from its origin (federation.md §6.1); *Fetcher and
+// DocumentFetcher fetches a document from its origin (ADR-0006 §12); *Fetcher and
 // *RemoteActors implement it.
 type DocumentFetcher interface {
 	Fetch(ctx context.Context, uri string) (*Fetched, error)
@@ -155,8 +155,8 @@ type inboxRoute struct {
 	ownActor bool
 }
 
-// InboxProcessor is the asynchronous part of receiving an activity (federation.md §3.2,
-// ADR-0006), the handler of JobInbox: it normalizes the stored document, fetches it again when
+// InboxProcessor is the asynchronous part of receiving an activity (ADR-0006 §8),
+// the handler of JobInbox: it normalizes the stored document, fetches it again when
 // its signer is not its actor, resolves the actor, applies the moderation restrictions and the
 // tombstones, and dispatches the activity to the handler of its type. Activities of types
 // without a handler complete; a Delete or Undo whose target is unknown leaves a tombstone.
@@ -184,7 +184,7 @@ func NewInboxProcessor(d InboxProcessorDeps) *InboxProcessor {
 	return &InboxProcessor{d: d, handlers: map[inboxRoute]InboxHandler{}, undo: map[federation.ActivityType]InboxHandler{}}
 }
 
-// Handle sets the handler of the activities of type t (federation.md §3.4). The Update and
+// Handle sets the handler of the activities of type t. The Update and
 // Delete of an actor by itself go to the handler set with HandleOwnActor instead. It panics when
 // t is unknown or already has a handler.
 func (p *InboxProcessor) Handle(t federation.ActivityType, h InboxHandler) {
@@ -201,7 +201,7 @@ func (p *InboxProcessor) HandleOwnActor(t federation.ActivityType, h InboxHandle
 }
 
 // HandleUndo sets the handler of the Undo of activities of type t (Follow, Like, Announce,
-// Block, Accept; federation.md §3.4). The first call registers the Undo route, so Undo has no
+// Block, Accept). The first call registers the Undo route, so Undo has no
 // handler of its own through Handle. An Undo that embeds the activity it takes back goes to the
 // handler of that activity's type, and to none when its type has no handler. An Undo whose
 // object is an IRI alone goes to every handler in registration order until one knows the
@@ -269,8 +269,7 @@ func (p *InboxProcessor) RegisterJobs(h *queue.JobHandlerRegistry) {
 }
 
 // HandleJob is the queue.Handler of JobInbox: Done when the activity is processed or has
-// nothing to do, Fail when it can never be processed, and Retry otherwise (federation.md §3.2
-// step 5).
+// nothing to do, Fail when it can never be processed, and Retry otherwise.
 func (p *InboxProcessor) HandleJob(ctx context.Context, j queue.Job) queue.Result {
 	var payload inboxPayload
 	if err := json.Unmarshal(j.Payload, &payload); err != nil || payload.ActivityURI == "" || !payload.Trust.Valid() {
@@ -286,7 +285,7 @@ func (p *InboxProcessor) HandleJob(ctx context.Context, j queue.Job) queue.Resul
 	return queue.Retry(0, err)
 }
 
-// Process processes the received activity activityURI (federation.md §3.2). It returns an
+// Process processes the received activity activityURI (ADR-0006 §8). It returns an
 // error wrapping ErrUnprocessable for an activity that can never be processed; any other error
 // is worth retrying.
 func (p *InboxProcessor) Process(ctx context.Context, activityURI federation.IRI, trust federation.Trust) (InboxOutcome, error) {
@@ -367,8 +366,8 @@ func (p *InboxProcessor) ProcessRelayed(ctx context.Context, activityURI federat
 	return p.dispatch(ctx, in)
 }
 
-// refetch replaces what in carries on trust with what its origin serves (federation.md §3.2
-// step 2, ActivityPub appendix B.2). Every embedded document becomes untrusted. The object of a
+// refetch replaces what in carries on trust with what its origin serves (ADR-0006 §8,
+// ActivityPub appendix B.2). Every embedded document becomes untrusted. The object of a
 // Create or Update, and every other activity (by its id), is fetched again and used when it is
 // the same; a Delete stands only when its object is gone. An Announce that cannot be fetched is
 // kept with its object untrusted; any other activity that cannot be confirmed is dropped.
@@ -429,7 +428,7 @@ func (p *InboxProcessor) fetchActivity(ctx context.Context, act *federation.Acti
 }
 
 // restricted refuses an actor whose domain or account has the federation restriction, except
-// for the Delete, Undo, and Reject that take something back (federation.md §11).
+// for the Delete, Undo, and Reject that take something back (federation.md §1).
 func (p *InboxProcessor) restricted(ctx context.Context, in *InboxActivity) error {
 	switch in.Activity.Type {
 	case federation.ActivityDelete, federation.ActivityUndo, federation.ActivityReject:
@@ -454,7 +453,7 @@ func (p *InboxProcessor) restricted(ctx context.Context, in *InboxActivity) erro
 }
 
 // tombstoned refuses an activity that an earlier Undo took back, and the Create or Update of an
-// object that an earlier Delete removed (federation.md §3.3).
+// object that an earlier Delete removed (ADR-0006 §9).
 func (p *InboxProcessor) tombstoned(ctx context.Context, in *InboxActivity) error {
 	act := in.Activity
 	if act.Type == federation.ActivityDelete || act.Type == federation.ActivityUndo {
@@ -483,7 +482,7 @@ func (p *InboxProcessor) tombstoned(ctx context.Context, in *InboxActivity) erro
 }
 
 // followTombstoned refuses the first Follow of a pair that an earlier Undo of an unknown Follow
-// named (federation.md §3.3). The Follow uses up the pair's tombstone: it records a tombstone of
+// named (ADR-0006 §9). The Follow uses up the pair's tombstone: it records a tombstone of
 // its own URI with the Undo's URI, so that it stays dropped when it is processed again, and a
 // later Follow of the pair goes through.
 func (p *InboxProcessor) followTombstoned(ctx context.Context, in *InboxActivity) error {
@@ -518,7 +517,7 @@ func (p *InboxProcessor) followTombstoned(ctx context.Context, in *InboxActivity
 	return nil
 }
 
-// dispatch hands in to the handler of its type (federation.md §3.4). A Delete or Undo without a
+// dispatch hands in to the handler of its type. A Delete or Undo without a
 // handler, or whose handler does not know its target, leaves a tombstone.
 func (p *InboxProcessor) dispatch(ctx context.Context, in *InboxActivity) (InboxOutcome, error) {
 	act := in.Activity

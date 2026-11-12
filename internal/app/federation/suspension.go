@@ -11,7 +11,7 @@ import (
 )
 
 // RegisterSuspensionProjectors subscribes the federation module to the moderation module's
-// suspensions of local accounts (federation.md §11.1, ADR-0058): each change of a local
+// suspensions of local accounts (ADR-0058 §6): each change of a local
 // account's suspension (moderation.account_suspension_changed: suspend or ban, and the lift or
 // the expiry of the last one) records, in the transaction of the action, an Update of the actor
 // and the JobFanOut that delivers it to the actor's followers and every known shared inbox,

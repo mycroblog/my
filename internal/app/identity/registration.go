@@ -21,7 +21,7 @@ import (
 )
 
 // RegistrationRepository is the persistence of registration, invites, email verification, and
-// one-time tokens (data-model §4.1). It is part of Repository.
+// one-time tokens. It is part of Repository.
 type RegistrationRepository interface {
 	InsertRegistrationApplication(ctx context.Context, tx uow.Tx, a identity.RegistrationApplication) error
 	InsertRegistrationDecision(ctx context.Context, tx uow.Tx, d identity.RegistrationDecision) error

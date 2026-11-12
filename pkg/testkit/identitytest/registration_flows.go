@@ -28,7 +28,7 @@ import (
 // §1, which internal/flowtest/identity runs once on SQLite; RegistrationRepositoryContract checks
 // the registration methods of the identity repository on every adapter. The flows check the
 // registration persistence of the
-// identity repository (data-model §4.1) through the sign-up use cases, one case per
+// identity repository through the sign-up use cases, one case per
 // registration mode: open mode approves at once (or waits for a moderator when email cannot be
 // verified), approval mode waits for a moderator's decision, invite mode needs a valid invite,
 // and closed mode refuses. It also checks that concurrent sign-ups never redeem an invite more
@@ -236,7 +236,7 @@ func registrationApproval(t *testing.T, e *AccountEnv) {
 	}
 
 	e.Clock.Advance(time.Minute)
-	// A note that a dialect cannot store as it is fails alike on every dialect (data-model §1.2)
+	// A note that a dialect cannot store as it is fails alike on every dialect
 	// and decides nothing.
 	for _, note := range []string{"wel\x00come", "\xff", strings.Repeat("あ", identity.MaxDecisionNoteLength+1)} {
 		_, err := r.DecideRegistration(ctx, appidentity.DecideInput{UserID: alice.User.ID, Decision: identity.DecisionApproved, Note: note})

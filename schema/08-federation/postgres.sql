@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the federation module
--- (docs/architecture/data-model/04-tables/08-federation.md). schema/README.md describes the layout
+-- (internal/app/federation). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- federation: inbox, delivery, and remote instances (data-model §4.8,
--- docs/architecture/federation.md). Owned by internal/app/federation.
+-- federation: inbox, delivery, and remote instances
+-- (docs/architecture/federation.md). Owned by internal/app/federation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: an activity accepted at an inbox, once per activity_uri (synthesized from the body's
@@ -207,7 +207,7 @@ CREATE TABLE relay_states (
 CREATE INDEX relay_states_follow_activity_uri ON relay_states (follow_activity_uri);
 CREATE INDEX relay_states_relay_actor_uri ON relay_states (relay_actor_uri);
 
--- graph and federation: re-sent Follows and early Undo Follows (data-model §4.5, §4.8) ----------
+-- graph and federation: re-sent Follows and early Undo Follows ----------------------------------
 
 -- Event: an Undo of an unknown Follow, by the pair of its actor and the object that the embedded
 -- Follow names. The first Follow of the pair that arrives later is dropped, and its URI recorded

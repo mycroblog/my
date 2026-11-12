@@ -389,6 +389,114 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 	}
 }
 
+// remoteVerifiesThirdPartyApprovals checks the replies and boosts of one remote account to the
+// post of another whose rules admit no one at once (ADR-0155 §6): a reply is held until its
+// replyAuthorization verifies (by the post's author, naming the reply and the post), and a boost
+// is recorded only with an announceAuthorization that verifies.
+func remoteVerifiesThirdPartyApprovals(t *testing.T, e *remoteInteractionEnv) {
+	skipWithoutQuoteHandlers(t, e)
+	const alice, bob = "https://remote.example/users/alice", "https://other.example/users/bob"
+	fan := e.user(t, "fan")
+	aliceID, bobID := e.actor(t, alice), e.actor(t, bob)
+	e.follow(t, fan, aliceID)
+	e.follow(t, fan, bobID)
+	closed := map[string]any{"interactionPolicy": map[string]any{
+		"canReply":    map[string]any{"automaticApproval": []string{alice}, "manualApproval": []string{string(federation.PublicIRI)}},
+		"canAnnounce": map[string]any{"automaticApproval": []string{alice}, "manualApproval": []string{string(federation.PublicIRI)}},
+	}}
+	published := remoteNow.Add(-time.Hour)
+	e.expect(t, remoteActivity(t, "Create", alice+"/notes/1/activity", alice, remoteNote(alice+"/notes/1", alice, published, closed)), appfederation.InboxHandled)
+	post := e.post(t, alice+"/notes/1").Status
+	authorization := func(id, typ, by, interacting string) string {
+		e.fetcher.docs[id] = mustJSON(t, map[string]any{"id": id, "type": typ, "attributedTo": by, "interactingObject": interacting, "interactionTarget": post.URI})
+		return id
+	}
+	reply := func(n, auth string) string {
+		id := bob + "/notes/" + n
+		fields := map[string]any{"inReplyTo": post.URI}
+		if auth != "" {
+			fields["replyAuthorization"] = auth
+		}
+		e.expect(t, remoteActivity(t, "Create", id+"/activity", bob, remoteNote(id, bob, published, fields)), appfederation.InboxHandled)
+		return e.post(t, id).Status.ID
+	}
+
+	// Without an authorization, or with one that is not the post's author's, the reply is held.
+	held := reply("held", "")
+	forged := reply("forged", authorization(bob+"/authorizations/forged", "ReplyAuthorization", bob, bob+"/notes/forged"))
+	// With the author's, it joins the thread.
+	approved := reply("approved", authorization(alice+"/authorizations/reply", "ReplyAuthorization", alice, bob+"/notes/approved"))
+	if got := e.replies(t, fan, post.ID); !slices.Equal(got, []string{approved}) {
+		t.Errorf("thread = %v, want the approved reply %s alone (held %s, forged %s)", got, approved, held, forged)
+	}
+
+	// A boost without an authorization is not recorded; one with the author's is.
+	e.expect(t, remoteAnnounce(t, bob+"/announces/1", bob, post.URI), appfederation.InboxDropped)
+	if _, ok := e.liveBoost(t, bobID, post.ID); ok {
+		t.Error("a boost without an authorization is recorded")
+	}
+	announce := bob + "/announces/2"
+	b, err := json.Marshal(map[string]any{
+		"@context": []any{"https://www.w3.org/ns/activitystreams", "https://gotosocial.org/ns"},
+		"id":       announce, "type": "Announce", "actor": bob, "object": post.URI,
+		"to":                    []string{string(federation.PublicIRI)},
+		"announceAuthorization": authorization(alice+"/authorizations/announce", "AnnounceAuthorization", alice, announce),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.expect(t, b, appfederation.InboxHandled)
+	if _, ok := e.liveBoost(t, bobID, post.ID); !ok {
+		t.Error("a boost with the author's authorization is not recorded")
+	}
+}
+
+// remoteTakesRejectionsOfLocalRequests checks the Reject of a local reply's ReplyRequest by the
+// author of the remote post: the request is rejected, the reply stays its author's alone and
+// sends no Create, its author is notified once, and the same Reject again changes nothing.
+func remoteTakesRejectionsOfLocalRequests(t *testing.T, e *remoteInteractionEnv) {
+	skipWithoutQuoteHandlers(t, e)
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	fan, other := e.user(t, "fan"), e.user(t, "other")
+	aliceID := e.actor(t, alice)
+	e.follow(t, fan, aliceID)
+	e.follow(t, other, fan)
+	manual := map[string]any{"interactionPolicy": map[string]any{
+		"canReply": map[string]any{"automaticApproval": []string{alice}, "manualApproval": []string{string(federation.PublicIRI)}},
+	}}
+	e.expect(t, remoteActivity(t, "Create", alice+"/notes/1/activity", alice, remoteNote(alice+"/notes/1", alice, remoteNow.Add(-time.Hour), manual)), appfederation.InboxHandled)
+	post := e.post(t, alice+"/notes/1").Status
+	p, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: fan, TextInput: appcontent.TextInput{Text: "may I?"}, Visibility: content.VisibilityPublic, InReplyToID: post.ID,
+	})
+	if err != nil {
+		t.Fatalf("reply = %v", err)
+	}
+	reply := p.Status
+	sent := e.quoteActivities(t, federation.OutboundStatus, reply.ID)
+	if len(sent) != 1 || sent[0].Type != federation.ActivityReplyRequest {
+		t.Fatalf("activities of the reply = %+v, want its ReplyRequest", sent)
+	}
+	for _, id := range []string{alice + "/rejects/1", alice + "/rejects/2"} {
+		e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": id, "type": "Reject",
+			"actor": alice, "object": string(sent[0].Doc.ID)}), appfederation.InboxHandled)
+	}
+	own, err := e.interactions.ListOwnInteractions(ctx, fan, []string{reply.URI})
+	if err != nil || len(own) != 1 || own[0].State != content.InteractionRequestRejected {
+		t.Fatalf("request of the reply = %+v, %v; want rejected", own, err)
+	}
+	if n := e.notified(t, fan, aliceID, notification.TypeInteractionRejected); n != 1 {
+		t.Errorf("interaction_rejected notifications = %d, want 1", n)
+	}
+	if got := e.replies(t, other, post.ID); len(got) != 0 {
+		t.Errorf("thread of another account after the Reject = %v, want none", got)
+	}
+	if n := len(e.quoteActivities(t, federation.OutboundStatus, reply.ID)); n != 1 {
+		t.Errorf("activities of the rejected reply = %d, want its ReplyRequest alone", n)
+	}
+}
+
 func remoteWithdrawsRequests(t *testing.T, e *remoteInteractionEnv) {
 	skipWithoutQuoteHandlers(t, e)
 	ctx := t.Context()

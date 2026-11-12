@@ -7,10 +7,11 @@
 // with gathering.CanSeePlace (internal/domain/gathering), so that a hidden place never leaves the
 // Service.
 //
-// The module owns the tables of schema/19-gathering (data-model §4.19). Its commands write the
-// rows of the events and then emit the domain events of events.go in the same transaction, whose
+// The module owns the tables of schema/19-gathering (ADR-0161 §13). Its commands write the rows
+// of the events and then emit the domain events of events.go in the same transaction, whose
 // projectors derive gathering_heads, gathering_attendees, and gathering_coorganizers
-// (RebuildProjections derives them again). It reads the accounts, the roles, the instance
+// synchronously, with the same rules as RebuildProjections. The events of invitations and their
+// revocations feed no projector; they are there for the notifications. It reads the accounts, the roles, the instance
 // settings, and the voice chat through Members, and the follows and blocks through Relations,
 // which the composition root implements; nothing is federated (ADR-0161 §1).
 package gathering

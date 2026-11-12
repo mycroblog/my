@@ -11,8 +11,8 @@ import (
 )
 
 // InstanceRepository is the persistence port of the remote servers this instance has seen and
-// the software their NodeInfo reported (remote_instances and instance_nodeinfo_observations,
-// data-model §4.8). The database adapters implement it on their federation repository and pass
+// the software their NodeInfo reported (remote_instances and instance_nodeinfo_observations).
+// The database adapters implement it on their federation repository and pass
 // federationtest.RemoteActorContract. Lookups that find nothing return an error wrapping ErrNotFound.
 type InstanceRepository interface {
 	// InsertRemoteInstance records a server the first time it is seen, and reports whether it

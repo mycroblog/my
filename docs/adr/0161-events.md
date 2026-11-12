@@ -175,7 +175,8 @@
 | `gathering_attendees` | 投影 | イベント、アカウント、今の答え、承認されているか |
 | `gathering_coorganizers` | 投影 | イベント、アカウント、指名の順 |
 | `gathering_dues` | 投影 | 次に `gathering.tick` が扱う時刻があるイベントだけの行: イベント、`next_due_at`。開始・リマインダー・検査が残らなければ行を消す |
-| `gathering_reminder_offsets` | 現在値 | アカウント、前もっての時間（分）。行がなければ既定（§12） |
+| `gathering_reminder_settings` | 現在値 | アカウント、時刻。行があればそのアカウントは前もっての時間を選んだ。行がなければ既定（§12） |
+| `gathering_reminder_offsets` | 現在値 | アカウント、前もっての時間（分）。選んだアカウントがこの行を持たなければリマインダーなし |
 | `report_gatherings` | リソース | `moderation` の通報の子（`03-moderation.sql`）: 通報、イベント、改版 |
 
 - `next_due_at` は状態ではなく、確定・リマインダーの設定・中止から再構築できる投影の値である。行の有無で「次の期限がある」ことを表し、NULL を使わない。
@@ -199,7 +200,7 @@
 
 ### 16. API と mykit
 
-[client-api.md](../architecture/client-api.md) の手順で細部を決める。形の目安:
+[ADR-0016](0016-client-api-style.md) の規約で細部を決める。形の目安:
 
 - `GET /events`（見えるイベントの一覧）、`POST /events`、`GET /events/{id}`、`PATCH /events/{id}`、`POST /events/{id}/cancel`
 - `/events/{id}/rsvp`（`PUT` で答える）、`/events/{id}/attendees`（一覧と `/{account_id}/approval`）、`/events/{id}/invitations`、`/events/{id}/coorganizers`、`/events/{id}/candidates`（追加・取り下げ・`/{candidate_id}/vote`・`/{candidate_id}/confirm`）

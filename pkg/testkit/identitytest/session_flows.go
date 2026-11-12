@@ -298,7 +298,7 @@ func (p banPolicy) Banned(_ context.Context, accountID string) (bool, error) {
 // sessionBannedSignsInUntilDeletion checks that an account whose deletion a ban scheduled signs
 // in to the server-rendered screens only, so that the user can appeal (FR-707), while one whose
 // deletion is scheduled without a ban does not, and that the deletion ends its sessions and
-// tokens and keeps it from signing in again (data-model §4.1).
+// tokens and keeps it from signing in again.
 func sessionBannedSignsInUntilDeletion(t *testing.T, e *AccountEnv) {
 	ctx := t.Context()
 	appidentity.RegisterLifecycleProjectors(e.Projectors, e.H.Identity, e.Accounts, e.Clock)
@@ -346,7 +346,7 @@ func sessionBannedSignsInUntilDeletion(t *testing.T, e *AccountEnv) {
 	}
 }
 
-// sessionModerationEndsLogins checks the login restriction (data-model §5.2): the policy keeps
+// sessionModerationEndsLogins checks the login restriction: the policy keeps
 // a restricted account from using the app and its tokens while it still signs in to the
 // server-rendered screens, and revoking a user's
 // sessions and tokens ends those of that user only, once.

@@ -160,7 +160,7 @@ func RegisterDueProjectors(r *uow.Projectors, repo Repository) {
 const rebuildBatch = 500
 
 // RebuildDues empties gathering_dues and derives it again, as of now, from the events that are
-// scheduled and have not ended, in one transaction (data-model §9).
+// scheduled and have not ended, in one transaction.
 func RebuildDues(ctx context.Context, u uow.UnitOfWork, repo Repository, now time.Time) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.DeleteAllDues(ctx, tx); err != nil {

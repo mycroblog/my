@@ -23,7 +23,7 @@ var (
 	ErrAlreadyDeleted = errors.New("content: the status is already deleted")
 )
 
-// Repository is the persistence port of the content module's statuses (data-model §4.4). The
+// Repository is the persistence port of the content module's statuses. The
 // database adapters implement it and pass contenttest.StatusRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
@@ -168,7 +168,7 @@ type Repository interface {
 	DeleteSensitivityOverridesWithoutStatus(ctx context.Context, tx uow.Tx) error
 
 	// Rebuilds empty one projection and derive it again from the statuses, their revisions,
-	// and their deletions, by the same rules as the projectors (data-model §9).
+	// and their deletions, by the same rules as the projectors.
 
 	RebuildHeads(ctx context.Context, tx uow.Tx) error
 	RebuildMentions(ctx context.Context, tx uow.Tx) error

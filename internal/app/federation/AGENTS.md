@@ -11,3 +11,4 @@
 - Changing the proof of an outgoing or incoming activity: [FEP-8b32](https://fediverse.codeberg.page/fep/fep/8b32/), search for: `DataIntegrityProof`, `eddsa-jcs-2022`, `proofValue`
 - Changing emoji reactions: [FEP-c0e0](https://fediverse.codeberg.page/fep/fep/c0e0/), search for: `EmojiReact`, `Like`
 - Changing the migration of an account (`Move`, `movedTo`): [FEP-7628](https://fediverse.codeberg.page/fep/fep/7628/), search for: `Move`, `movedTo`, `alsoKnownAs`
+- Before changing how this package talks to other servers, ask the `interop-advisor` agent: [interop-advisor](https://github.com/mycroblog/my/blob/main/.claude/agents/interop-advisor.md), search for: Mastodon, Misskey, GoToSocial, Akkoma

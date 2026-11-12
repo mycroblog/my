@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the diagnostics module
--- (docs/architecture/data-model/04-tables/15-diagnostics.md). schema/README.md describes the
+-- (their data model: the package comment of internal/app/diagnostics). schema/README.md describes the
 -- layout and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- diagnostics: the error groups (data-model §4.15, ADR-0103 §4 (2), §7). Owned by
+-- diagnostics: the error groups (ADR-0103 §4 (2), §7). Owned by
 -- internal/app/diagnostics. The reported errors arrive scrubbed (ADR-0103 §3): no column holds
 -- an account, a user name, an IP address, or a request body.
 -- ---------------------------------------------------------------------------------------------
