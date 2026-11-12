@@ -1,4 +1,4 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0009-internationalization.md", ".claude/skills/translate-catalogs/SKILL.md"]
+docs: ["docs/adr/0009-internationalization.md", "docs/adr/0169-design-harness.md", ".claude/skills/translate-catalogs/SKILL.md"]
 checks: [i18n, web]
 shared: true

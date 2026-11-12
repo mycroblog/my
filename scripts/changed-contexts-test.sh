@@ -68,6 +68,7 @@ expect "the base tsconfig" "go i18n web agentkit mykit site" tsconfig.base.json
 # The catalogs and their tools, the brand assets, and a package under web/.
 expect "a catalog" "go i18n agentkit" locales/en/server/auth.json
 expect "the catalog tools" "go i18n agentkit" tools/i18n/src/check.ts
+expect "the copy role's knowledge, which the copy lint reads" "docs go i18n agentkit" .claude/knowledge/copy/decisions.md
 expect "a brand asset" "web docker agentkit" web/brand/icon.svg
 expect "a package under web/" "web agentkit" web/app/src/main.tsx
 expect "the shared configuration" "$all" Taskfile.yml

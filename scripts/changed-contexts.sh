@@ -174,6 +174,11 @@ classify() {
       select_contexts i18n
       return
       ;;
+    # The copy role's knowledge: its word decisions are rules of the copy lint, and its shape a documentation rule.
+    .claude/knowledge/copy/*)
+      select_contexts docs i18n
+      return
+      ;;
   esac
   case "$path" in
     # A Go module of its own: its Go files are not the go context's.

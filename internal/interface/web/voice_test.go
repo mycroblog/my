@@ -58,17 +58,17 @@ func TestVoiceRoomPages(t *testing.T) {
 		t.Fatalf("GET an open room = %d", rec.Code)
 	}
 	m := metas(t, rec.Body.String())
-	if m["og:title"] != "Go talk — a voice chat hosted by Alice, open now" || m["og:description"] != "About Go" ||
+	if m["og:title"] != "Go talk: a voice chat hosted by Alice, open now" || m["og:description"] != "About Go" ||
 		!strings.HasSuffix(m["og:url"], "/voice/"+voiceRoomID) || !strings.Contains(m["robots"], "noindex") || m["og:type"] != "website" {
 		t.Errorf("metas of an open room = %v", m)
 	}
-	if !strings.Contains(rec.Body.String(), "<title>Go talk — a voice chat hosted by Alice, open now</title>") {
+	if !strings.Contains(rec.Body.String(), "<title>Go talk: a voice chat hosted by Alice, open now</title>") {
 		t.Errorf("the page title of an open room is not its preview title:\n%s", rec.Body)
 	}
 
 	summaries[voiceRoomID] = web.VoiceRoomSummary{Shown: true, Name: "Go talk", Ended: true}
 	m = metas(t, get(mux, "/voice/"+voiceRoomID, nil).Body.String())
-	if m["og:title"] != "Go talk — this voice chat has ended" || m["og:description"] != "" {
+	if m["og:title"] != "Go talk: this voice chat has ended" || m["og:description"] != "" {
 		t.Errorf("metas of an ended room = %v", m)
 	}
 }

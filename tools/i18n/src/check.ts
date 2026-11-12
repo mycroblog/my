@@ -18,10 +18,13 @@
 //          Portuguese, ASCII double quotation marks (use “…”); in German, ASCII double quotation marks (use „…“); in
 //          French, ASCII double quotation marks (use « … »), ":", ";" or "?" without the narrow no-break space before
 //          it, or « » without the narrow no-break space inside them
-//   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
+//   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the text of a machine-translated locale
 //   error: key of the source missing in ja, which is written in the same change as en (`scripts/i18n.sh set`)
+//   error, answer: the copy lint of en and ja (copy.ts): a finding of a blocking rule, or of a waivable rule that
+//          tools/i18n/waivers.json does not waive, is an error, a waiver it refuses too (waivers.ts); the rest is
+//          printed for the author to answer
 //   warn:  untranslated key in a machine-translated locale (falls back to en at runtime)
-//   warn:  translation drops a source argument (sometimes legitimate)
+//   warn:  a machine-translated locale drops a source argument (sometimes legitimate)
 //   warn:  key not referenced from code
 import { existsSync, readFileSync } from "node:fs";
 import {
@@ -37,15 +40,32 @@ import {
   REQUIRED_LOCALES,
   SOURCE,
 } from "./catalog";
+import { COPY_LOCALES, type CopyFinding, copyFindings, copyText, loadWords, type Word } from "./copy";
 import { generate, goName } from "./generate";
 import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
 import { References } from "./refs";
+import { loadWaivers, type Waiver, WAIVERS, waiverErrors, waiverKey } from "./waivers";
 
-export type Finding = { level: "error" | "warn"; message: string };
+export type Finding = { level: "error" | "warn" | "answer"; message: string };
 let findings: Finding[] = [];
 const error = (m: string) => void findings.push({ level: "error", message: m });
 const warn = (m: string) => void findings.push({ level: "warn", message: m });
+const answer = (m: string) => void findings.push({ level: "answer", message: m });
+
+/** The word decisions and the waivers of the copy lint, and why they could not be read. */
+const { words, waivers, unreadable } = (() => {
+  const unreadable: string[] = [];
+  const read = <T>(load: () => T[]): T[] => {
+    try {
+      return load();
+    } catch (e) {
+      unreadable.push((e as Error).message);
+      return [];
+    }
+  };
+  return { words: read<Word>(loadWords), waivers: read<Waiver>(loadWaivers), unreadable };
+})();
 
 export const NAMESPACE = /^[a-z][a-z0-9]*$/;
 /** "locales/<locale>/<namespace>/<area>.json <key>", where a finding about a key points. */
@@ -56,13 +76,15 @@ const glossary = loadGlossary();
 /**
  * The errors of one message on its own (ICU syntax, the shared subset, the copy rules, the plural categories of its
  * locale) and of its arguments against the source message `source`, without the path they are reported under.
- * `dropped` lists the source arguments it leaves out, which the catalog check only warns about.
+ * `dropped` lists the source arguments it leaves out. In en and ja, the errors include the findings of the copy lint
+ * that block, and the waivable ones tools/i18n/waivers.json does not waive for the key `key`.
  */
 export function messageFindings(
   locale: string,
   ns: string,
   message: string,
   source?: string,
+  key = "",
 ): { errors: string[]; dropped: string[] } {
   const collected = findings;
   findings = [];
@@ -76,10 +98,72 @@ export function messageFindings(
       } catch {}
       if (want) dropped.push(...compareArgs("", want, got));
     }
+    const waived = new Set(waivers.map(waiverKey));
+    for (const f of copyOf(locale, message, source)) {
+      // A dropped argument is the caller's to refuse (`--drop-args`).
+      if (f.tier === "block") error(f.message);
+      else if (
+        f.tier === "waive" &&
+        f.rule !== "placeholder" &&
+        !waived.has(waiverKey({ id: `${ns}:${key}`, locale, rule: f.rule }))
+      )
+        error(waivable(f));
+    }
     return { errors: findings.map((f) => f.message), dropped };
   } finally {
     findings = collected;
   }
+}
+
+const waivable = (f: CopyFinding): string =>
+  `${f.message} (${f.rule}: change the text, or waive it in ${WAIVERS} with the reason)`;
+
+/** The copy findings of an en or ja message; for ja, against the en message `source`. */
+function copyOf(locale: string, message: string, source?: string): CopyFinding[] {
+  if (!COPY_LOCALES.includes(locale)) return [];
+  try {
+    const ast = parseMessage(message);
+    let en: { text: string; missing: string[] } | undefined;
+    if (locale !== SOURCE && source !== undefined) {
+      const sourceAst = parseMessage(source);
+      const got = extractArgs(ast);
+      en = { text: copyText(sourceAst), missing: [...extractArgs(sourceAst).keys()].filter((n) => !got.has(n)) };
+    }
+    return copyFindings(words, locale, copyText(ast), en);
+  } catch {
+    // analyze reports the syntax.
+    return [];
+  }
+}
+
+/**
+ * The copy lint of every en and ja message (or of the ids `only`), and the waivers against what it finds in all of
+ * them, so that a waiver of a message the change did not touch still has to waive something.
+ */
+function checkCopy(catalog: Catalog, only?: Set<string>, locales?: string[]) {
+  for (const message of unreadable) error(message);
+  const found = new Set<string>();
+  const waived = new Set(waivers.map(waiverKey));
+  for (const [ns, entries] of Object.entries(catalog[SOURCE] ?? {})) {
+    for (const [key, e] of Object.entries(entries)) {
+      const id = `${ns}:${key}`;
+      for (const locale of COPY_LOCALES) {
+        if (locale !== SOURCE && locales && !locales.includes(locale)) continue;
+        const message = locale === SOURCE ? e.defaultMessage : catalog[locale]?.[ns]?.[key]?.defaultMessage;
+        if (typeof message !== "string") continue;
+        for (const f of copyOf(locale, message, locale === SOURCE ? undefined : e.defaultMessage)) {
+          const k = waiverKey({ id, locale, rule: f.rule });
+          if (f.tier === "waive") found.add(k);
+          if (only && !only.has(id)) continue;
+          const where = `${at(locale, ns, key)}: `;
+          if (f.tier === "block") error(`${where}${f.message}`);
+          else if (f.tier === "answer") answer(`${where}${f.message}`);
+          else if (!waived.has(k)) error(`${where}${waivable(f)}`);
+        }
+      }
+    }
+  }
+  for (const message of waiverErrors(waivers, found)) error(message);
 }
 
 /** Reports the arguments of a translation the source does not have or types differently; returns the ones it drops. */
@@ -311,7 +395,9 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
         const got = analyze(locale, ns, key, e.defaultMessage);
         if (!want || !got) continue;
         for (const name of compareArgs(`${at(locale, ns, key)}: `, want, got)) {
-          if (!isPseudo(locale)) warn(`${at(locale, ns, key)}: drops argument {${name}}`);
+          // The copy lint holds en and ja to the arguments of the source.
+          if (!isPseudo(locale) && !COPY_LOCALES.includes(locale))
+            warn(`${at(locale, ns, key)}: drops argument {${name}}`);
         }
       }
     }
@@ -376,10 +462,11 @@ export async function runCheck({ only, locales }: CheckOptions = {}): Promise<Fi
     checkUnused(catalog, ids);
     await checkGenerated(catalog, files);
   }
+  checkCopy(catalog, only, locales);
   return findings;
 }
 
-/** Prints the errors, the warnings `warnings` accepts, and the summary line; returns the number of errors. */
+/** Prints the errors, the answers, the warnings `warnings` accepts, and the summary line; returns the number of errors. */
 export function printFindings(
   all: Finding[],
   { warnings = () => true, seconds }: { warnings?: (message: string) => boolean; seconds?: number } = {},
@@ -387,10 +474,11 @@ export function printFindings(
   const count = (level: Finding["level"]) => all.filter((f) => f.level === level).length;
   for (const f of all) {
     if (f.level === "error") console.error(`error: ${f.message}`);
+    else if (f.level === "answer") console.warn(`answer: ${f.message}`);
     else if (warnings(f.message)) console.warn(`warn:  ${f.message}`);
   }
   console.log(
-    `i18n: ${count("error")} error(s), ${count("warn")} warning(s)${seconds === undefined ? "" : ` in ${seconds.toFixed(1)}s`}`,
+    `i18n: ${count("error")} error(s), ${count("answer")} to answer, ${count("warn")} warning(s)${seconds === undefined ? "" : ` in ${seconds.toFixed(1)}s`}`,
   );
   return count("error");
 }

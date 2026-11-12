@@ -42,6 +42,9 @@ english:
   - "web/docs/src/content/docs/index.mdx"
   - "pkg/**/README.md"
   - "tools/agentkit/README.md"
+  # The copy role's decisions and exemplars quote the ja copy they decide.
+  - "!.claude/knowledge/copy/decisions.md"
+  - "!.claude/knowledge/copy/exemplars.md"
 
 # For users and operators: they explain the behaviour themselves and neither link to nor cite ADRs,
 # docs/requirements/, docs/architecture/, or GitHub issues and pull requests.
@@ -193,6 +196,17 @@ adrs:
     - "tools/agentkit/internal/**/*_test.go"
     - "tools/agentkit/internal/adr/aliases.go"
     - "tools/agentkit/internal/docslint/*.go"
+
+# The knowledge of the UI roles (ADR-0169 §3), in <dir>/<role>/: index.md, the page the role always reads;
+# decisions.md and exemplars.md, a title and a lead, then one item per line. Each file is at most its limit in bytes;
+# within it a new line needs no approval (ADR-0169 §4). Only the decider changes the roles and the limits.
+knowledge:
+  dir: .claude/knowledge
+  roles: [visual, motion, copy, implementation, visual-evaluator, walker]
+  limits:
+    index: 2048
+    decisions: 4096
+    exemplars: 4096
 
 # The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
 # the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the

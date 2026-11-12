@@ -86,7 +86,7 @@ func tofuContext(root string, changed []string) bool {
 }
 
 // stale maps the sources of committed generated files to the quick check that fails when those files are
-// stale; `regen` rewrites them.
+// stale (`regen` rewrites them), and the inputs of the catalog checks to those checks.
 var stale = []struct {
 	prefix string
 	step   fastStep
@@ -97,6 +97,9 @@ var stale = []struct {
 	{"sqlc.yaml", fastStep{name: "generated: go:sqlc-check", argv: []string{"scripts/task.sh", "go:sqlc-check"}}},
 	{"locales/", fastStep{name: "i18n:lint", argv: []string{"scripts/task.sh", "i18n:lint"}}},
 	{"tools/i18n/", fastStep{name: "i18n:lint", argv: []string{"scripts/task.sh", "i18n:lint"}}},
+	// The word decisions of the copy role are rules of the copy lint, and one change adds at most a few waivers.
+	{".claude/knowledge/copy/", fastStep{name: "i18n:lint", argv: []string{"scripts/task.sh", "i18n:lint"}}},
+	{"tools/i18n/waivers.json", fastStep{name: "i18n:waivers", argv: []string{"scripts/task.sh", "i18n:waivers"}}},
 	{"internal/platform/config/", fastStep{name: "generated: config docs", env: []string{"GOWORK=off"},
 		argv: []string{"go", "test", "./internal/platform/config", "-run", "^Test(Reference|ExampleEnv|SettingsJSON)UpToDate$"}}},
 	{"cmd/my/", fastStep{name: "generated: cli docs", env: []string{"GOWORK=off"},

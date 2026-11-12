@@ -299,6 +299,8 @@ func TestFastPlan(t *testing.T) {
 		{[]string{"internal/app/x/context-map.yaml"}, []string{"agentkit:map-check"}},
 		{[]string{"scripts/a.sh"}, []string{"shellcheck"}},
 		{[]string{"locales/en/x.json"}, []string{"i18n:lint"}},
+		{[]string{".claude/knowledge/copy/decisions.md", "tools/i18n/waivers.json"},
+			[]string{"docs:lint", "docs:rules", "agentkit:map-check", "i18n:lint", "i18n:waivers"}},
 		{[]string{"schema/sqlite/01-a.sql", "queries/a.sql", "api/spec/a.yaml", "internal/platform/job_types.go"},
 			[]string{"gofmt", "generated: api:generate-check", "generated: go:sqlc-check", "generated: " + workersScript}},
 		{[]string{"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/gone.tf"}, []string{"tofu fmt"}},

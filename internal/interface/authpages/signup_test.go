@@ -86,7 +86,7 @@ func TestSignUpPageIsAccessibleHTML(t *testing.T) {
 		`<title>アカウントを作成</title>`,
 		`<label for="sign-up-username">ユーザー名</label>`,
 		`aria-describedby="sign-up-username-hint"`,
-		`<p id="sign-up-username-hint" class="hint">半角英字 (a–z)・数字・アンダースコアで 30 文字まで。あとから変更できません。</p>`,
+		`<p id="sign-up-username-hint" class="hint">半角英字 (a〜z)・数字・アンダースコアで 30 文字まで。あとから変更できません。</p>`,
 		`<label for="sign-up-email">メールアドレス</label>`,
 		`autocomplete="username"`,
 		`<label for="sign-up-password">パスワード</label>`,
@@ -183,7 +183,7 @@ func TestSignUpShowsEveryFieldError(t *testing.T) {
 	body := w.Body.String()
 	wantContains(t, body,
 		`<p id="sign-up-error" class="alert" role="alert">The account was not created. Check the fields marked below.</p>`,
-		`<p id="sign-up-username-error" class="field-error">Use 1 to 30 letters (a–z), digits, and underscores.</p>`,
+		`<p id="sign-up-username-error" class="field-error">Use 1 to 30 letters (a to z), digits, and underscores.</p>`,
 		`aria-describedby="sign-up-username-hint sign-up-username-error" aria-invalid="true"`,
 		`<p id="sign-up-email-error" class="field-error">Enter an email address such as alice@example.com.</p>`,
 		`aria-describedby="sign-up-email-hint sign-up-email-error" aria-invalid="true"`,

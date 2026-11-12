@@ -5,7 +5,8 @@
 // documents for users and operators neither link to nor cite the design records (ADRs, requirements, architecture)
 // and GitHub issues or pull requests, the published documents do not open with a sentence that only names their
 // audience, the index (docs/README.md) links every one of those documents, and the AGENTS.md of a directory below
-// the root holds only pointers to the external documents that govern its code.
+// the root holds only pointers to the external documents that govern its code, and the knowledge of each UI role
+// keeps its shape and its limits.
 // docs/lint.yaml says which files each rule covers and lists the files that do not follow a rule yet; an entry
 // there must be removed once its file follows the rule, so the lists only shrink.
 //
@@ -71,6 +72,8 @@ type Config struct {
 	Inventory struct {
 		Exclude map[string][]string `yaml:"exclude"`
 	} `yaml:"inventory"`
+	// Knowledge is where the UI roles keep their knowledge, and its limits.
+	Knowledge Knowledge `yaml:"knowledge"`
 }
 
 // Load reads the configuration of the repository at root.
@@ -203,6 +206,11 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 		}
 	}
 	out = append(out, l.index(sorted)...)
+	fs, err := l.knowledge(sorted)
+	if err != nil {
+		return nil, err
+	}
+	out = append(out, fs...)
 	out = append(out, stale(c.Pending.Japanese, pendingJA, l.exists, c.English, "pending.japanese", "contains no Japanese")...)
 	out = append(out, stale(c.Pending.DesignLinks, pendingDL, l.exists, c.Operator, "pending.design-links", "points at no design record")...)
 	sort.SliceStable(out, func(i, j int) bool {

@@ -414,7 +414,7 @@ type ServerAuthDocumentTitleArgs struct {
 
 // ServerAuthDocumentTitle formats "server:auth.document_title". The browser tab title of the sign-in, sign-up, email verification, account status and consent pages: the page's title, then the server's name. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: {page} – {instance}
+//	en: {page} | {instance}
 func (l *Localizer) ServerAuthDocumentTitle(args ServerAuthDocumentTitleArgs) string {
 	return l.format("server:auth.document_title", map[string]any{"instance": args.Instance, "page": args.Page})
 }
@@ -1078,14 +1078,14 @@ func (l *Localizer) ServerAuthSignUpTitle() string {
 
 // ServerAuthSignUpUsernameHint formats "server:auth.sign_up.username_hint". Hint under the username field. {max} is the longest allowed username in characters.
 //
-//	en: Up to {max, number} letters (a–z), digits, and underscores. It cannot be changed later.
+//	en: Up to {max, number} letters (a to z), digits, and underscores. It cannot be changed later.
 func (l *Localizer) ServerAuthSignUpUsernameHint(max float64) string {
 	return l.format("server:auth.sign_up.username_hint", map[string]any{"max": max})
 }
 
 // ServerAuthSignUpUsernameInvalid formats "server:auth.sign_up.username_invalid". Error under the username field when it has characters other than a–z, digits, and underscores, or is too long. {max} is the longest allowed length.
 //
-//	en: Use 1 to {max, number} letters (a–z), digits, and underscores.
+//	en: Use 1 to {max, number} letters (a to z), digits, and underscores.
 func (l *Localizer) ServerAuthSignUpUsernameInvalid(max float64) string {
 	return l.format("server:auth.sign_up.username_invalid", map[string]any{"max": max})
 }
@@ -1162,7 +1162,7 @@ func (l *Localizer) ServerAuthStatusActionUntilLifted() string {
 
 // ServerAuthStatusAppealAnswer formats "server:auth.status.appeal_answer". Label before the moderators' explanation of their decision on the user's appeal, on the status page of a signed-in user whose account is restricted.
 //
-//	en: The moderators' answer:
+//	en: The moderators' answer
 func (l *Localizer) ServerAuthStatusAppealAnswer() string {
 	return l.format("server:auth.status.appeal_answer", nil)
 }
@@ -1514,7 +1514,7 @@ func (l *Localizer) ServerClosureDescription(server string) string {
 
 // ServerClosureDocumentTitle formats "server:closure.document_title". <title> of the static closure page. {server} is the server's name, or its host name.
 //
-//	en: Closed – {server}
+//	en: Closed | {server}
 func (l *Localizer) ServerClosureDocumentTitle(server string) string {
 	return l.format("server:closure.document_title", map[string]any{"server": server})
 }
@@ -4412,7 +4412,7 @@ func (l *Localizer) ServerMaintenanceDescription(server string) string {
 
 // ServerMaintenanceDocumentTitle formats "server:maintenance.document_title". <title> of the maintenance page. {server} is the server's name, or its host name.
 //
-//	en: Under maintenance – {server}
+//	en: Under maintenance | {server}
 func (l *Localizer) ServerMaintenanceDocumentTitle(server string) string {
 	return l.format("server:maintenance.document_title", map[string]any{"server": server})
 }
@@ -4888,7 +4888,7 @@ func (l *Localizer) ServerPreviewTitle(args ServerPreviewTitleArgs) string {
 
 // ServerPreviewVoiceRoomEnded formats "server:preview.voice_room_ended". Title of the link preview (og:title and the page title) of a voice chat room that has ended, shown only when the instance shows the summaries of its rooms. {room} is the room's name.
 //
-//	en: {room} — this voice chat has ended
+//	en: {room}: this voice chat has ended
 func (l *Localizer) ServerPreviewVoiceRoomEnded(room string) string {
 	return l.format("server:preview.voice_room_ended", map[string]any{"room": room})
 }
@@ -4904,7 +4904,7 @@ type ServerPreviewVoiceRoomOpenArgs struct {
 
 // ServerPreviewVoiceRoomOpen formats "server:preview.voice_room_open". Title of the link preview (og:title and the page title) of a voice chat room that is open, shown only when the instance shows the summaries of its rooms. {room} is the room's name; {host} is the display name of the host, or the username when there is none.
 //
-//	en: {room} — a voice chat hosted by {host}, open now
+//	en: {room}: a voice chat hosted by {host}, open now
 func (l *Localizer) ServerPreviewVoiceRoomOpen(args ServerPreviewVoiceRoomOpenArgs) string {
 	return l.format("server:preview.voice_room_open", map[string]any{"host": args.Host, "room": args.Room})
 }

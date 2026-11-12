@@ -28,7 +28,7 @@ func TestRenderClosure(t *testing.T) {
 	}
 	body := string(page)
 	for _, want := range []string{
-		`<html lang="en" dir="ltr">`, "<title>Closed – social.example</title>", `<meta http-equiv="Content-Security-Policy"`,
+		`<html lang="en" dir="ltr">`, "<title>Closed | social.example</title>", `<meta http-equiv="Content-Security-Policy"`,
 		`<section lang="en" dir="ltr" aria-labelledby="closure-en">`, `<h1 id="closure-ja">このサーバーは閉鎖しました</h1>`,
 		`<p class="message" dir="auto" lang="">Goodbye.</p>`, `<time datetime="2027-01-31T15:00:00Z">2027-01-31 15:00 UTC</time>`,
 		`<a href="https://status.example.org/" rel="noopener">`,

@@ -11,18 +11,16 @@ test("glossary entries compile as regular expressions", () => {
 });
 
 test("a banned variant is a finding, the preferred term is not", () => {
-  expect(glossaryFindings(glossary, "ja", "サインインしてください")).toHaveLength(1);
-  expect(glossaryFindings(glossary, "ja", "ログインしてください")).toHaveLength(0);
-  expect(glossaryFindings(glossary, "ja", "もう一度お試しください")).toHaveLength(1);
-  expect(glossaryFindings(glossary, "ja", "アカウントを作る")).toHaveLength(1);
-  expect(glossaryFindings(glossary, "en", "Log in to continue")).toHaveLength(1);
-  expect(glossaryFindings(glossary, "en", "Stops it logging in.")).toHaveLength(1);
-  expect(glossaryFindings(glossary, "en", "Sign in to continue")).toHaveLength(0);
-  expect(glossaryFindings(glossary, "en", "Login providers")).toHaveLength(0);
-  expect(glossaryFindings(glossary, "en", "Read the audit catalog index")).toHaveLength(0);
+  expect(glossaryFindings(glossary, "zh-CN", "请先登陆")).toHaveLength(1);
+  expect(glossaryFindings(glossary, "zh-CN", "请先登录")).toHaveLength(0);
+  expect(glossaryFindings(glossary, "es", "Haz login para continuar")).toHaveLength(1);
+  expect(glossaryFindings(glossary, "es", "Inicia sesión para continuar")).toHaveLength(0);
+  expect(glossaryFindings(glossary, "es", "Login providers")).toHaveLength(0);
 });
 
-test("a locale only matches its own entries", () => {
-  expect(glossaryFindings(glossary, "en", "サインイン")).toHaveLength(0);
+test("a locale only matches its own entries, and en and ja have none", () => {
+  expect(glossaryFindings(glossary, "zh-TW", "请先登陆")).toHaveLength(0);
   expect(glossaryFindings(glossary, "it", "Log in")).toHaveLength(0);
+  expect(glossary.en).toBeUndefined();
+  expect(glossary.ja).toBeUndefined();
 });

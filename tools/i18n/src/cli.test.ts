@@ -376,7 +376,7 @@ test("check --changed checks the keys that differ from the merge base, and only 
     "locales/fr/web/lists.json lists.title: not in the source locale (obsolete); remove it: scripts/i18n.sh rm web:lists.title",
   );
   expect(r.out).not.toContain("untranslated");
-  expect(r.out).toMatch(/i18n: 4 error\(s\), \d+ warning\(s\) in \d+\.\ds/);
+  expect(r.out).toMatch(/i18n: 4 error\(s\), \d+ to answer, \d+ warning\(s\) in \d+\.\ds/);
   expect(run("check", "--changed", "--base", "HEAD", "--locale", "de").out).not.toContain("locales/ja/");
   expect(run("check", "--changed", "--base", "nope").out).toContain("no merge base with nope");
 });

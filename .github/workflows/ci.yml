@@ -175,6 +175,9 @@ jobs:
             env:
               APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:docs-growth') }}
             run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
+          # At most three waivers of the copy lint in one change, against the same base.
+          - name: i18n:waivers
+            run: scripts/task.sh i18n:waivers BASE=HEAD^1
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           # The pull request's own commits hold no merge commit: a branch is rebased onto main, never merged into.
