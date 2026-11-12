@@ -53,6 +53,7 @@
     "web/catalog": {
       "name": "@my/catalog",
       "dependencies": {
+        "@my/design-tokens": "workspace:*",
         "react": "19.3.1",
         "react-dom": "19.3.1",
       },
@@ -64,6 +65,12 @@
         "@vitejs/plugin-react": "6.3.0",
         "playwright": "1.65.0",
         "vite": "8.3.6",
+      },
+    },
+    "web/design-tokens": {
+      "name": "@my/design-tokens",
+      "devDependencies": {
+        "@types/bun": "1.4.4",
       },
     },
     "web/devtools": {
@@ -313,6 +320,8 @@
     "@keyv/serialize": ["@keyv/serialize@1.1.1", "", {}, "sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA=="],
 
     "@my/catalog": ["@my/catalog@workspace:web/catalog"],
+
+    "@my/design-tokens": ["@my/design-tokens@workspace:web/design-tokens"],
 
     "@my/devtools": ["@my/devtools@workspace:web/devtools"],
 

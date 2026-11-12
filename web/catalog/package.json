@@ -9,6 +9,7 @@
     "typecheck": "bun --bun tsc -p ."
   },
   "dependencies": {
+    "@my/design-tokens": "workspace:*",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
