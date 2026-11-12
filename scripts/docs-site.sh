@@ -16,7 +16,7 @@
 # A pull request gets /next/ alone on the Workers Preview pr-<number> of the same Worker: docs-site-preview.yml builds
 # it from the pull request's checkout without secrets (build-preview), and docs-site-preview-deploy.yml publishes it
 # from main's checkout (deploy-pr). That build comes from code anyone can write (forks included), so it is only ever
-# data: `stage-preview` checks that it is plain static files and copies it next to main's Worker config and redirects,
+# data: `stage-preview` checks that it is plain static files and copies it next to main's Worker config, code and redirects,
 # and wrangler uploads it as assets. Nothing in it is executed or sourced, and nothing of it reaches a shell, a config,
 # or a command line.
 #
@@ -329,7 +329,7 @@ check_preview() {
   check_pages "$build"
 }
 
-# deploy SITE publishes SITE as the Worker, from a work dir that holds only the Worker config and site/.
+# deploy SITE publishes SITE as the Worker, from a work dir that holds only the Worker config, its code and site/.
 deploy() {
   local site="$1" stage="$work/deploy"
   [[ -f "$site/index.html" && -d "$site/next" ]] || die "$site is not a combined site of scripts/docs-site.sh build"
@@ -337,14 +337,25 @@ deploy() {
   rm -rf "$stage"
   mkdir -p "$stage/site"
   cp -R "$site/." "$stage/site/"
-  cp "$config" "$stage/wrangler.jsonc"
+  stage_worker "$stage"
   local args=(deploy)
   [[ -z "$dry_run" ]] || args+=(--dry-run)
   wrangler_in "$stage" "${args[@]}"
 }
 
+# stage_worker DIR copies the Worker config and the Worker's code (app/docs/worker/, without its tests) of this
+# checkout into DIR, next to DIR/site.
+stage_worker() {
+  local dir="$1" file
+  cp "$config" "$dir/wrangler.jsonc"
+  mkdir -p "$dir/worker"
+  for file in "$root"/app/docs/worker/*.ts; do
+    [[ "$file" == *.test.ts ]] || cp "$file" "$dir/worker/"
+  done
+}
+
 # wrangler_in DIR ARGS... runs the pinned wrangler on the config DIR/wrangler.jsonc, from DIR (which holds only the
-# config and site/), with telemetry off.
+# config, worker/ and site/), with telemetry off.
 wrangler_in() {
   local dir="$1"
   shift
@@ -382,7 +393,7 @@ build_preview() {
 }
 
 # stage_preview BUILD DEST checks that BUILD is a preview build of plain files (build-preview) and copies it to
-# DEST/site, with the Worker config and the redirects of this checkout.
+# DEST/site, with the Worker config, the Worker's code and the redirects of this checkout.
 stage_preview() {
   local build="$1" dest="$2" bad total
   [[ -d "$build" ]] || die "no build directory: $build"
@@ -406,7 +417,7 @@ stage_preview() {
   rm -rf "$dest"
   mkdir -p "$dest/site"
   cp -R "$build/." "$dest/site/"
-  cp "$config" "$dest/wrangler.jsonc"
+  stage_worker "$dest"
   # The Preview has no released version: its root and /latest/ open /next/.
   printf '%s\n' '/ /next/ 302' '/latest /next/ 302' '/latest/* /next/:splat 302' >"$dest/site/_redirects"
   echo "docs-site: staged the preview ($total bytes) in $dest/site" >&2
@@ -491,7 +502,7 @@ cleanup() {
   done
   rm -rf "$stage"
   mkdir -p "$stage/site"
-  cp "$config" "$stage/wrangler.jsonc"
+  stage_worker "$stage"
   while IFS= read -r name; do
     [[ "$name" =~ ^pr-([1-9][0-9]{0,8})$ ]] || continue
     pr="${BASH_REMATCH[1]}"

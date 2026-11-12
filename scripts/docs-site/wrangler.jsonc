@@ -2,23 +2,32 @@
 //
 // The Cloudflare Worker that serves the documentation site (ADR-0150 §7): the combined static build of every
 // published version (scripts/docs-site.sh build), and on each Preview pr-<number> the /next/ of one pull request
-// (scripts/docs-site.sh deploy-pr). It only returns static assets: no Worker code, no bindings.
-// scripts/docs-site.sh copies this file next to the build (./site) and runs wrangler on the copy, always from main's
-// checkout (docs-site-deploy.yml, docs-site-preview-deploy.yml): a pull request's build never brings a config of its own.
+// (scripts/docs-site.sh deploy-pr). The static assets answer every path but those of `run_worker_first`, which go to
+// the Worker's code (app/docs/worker/index.ts): the release notes page of each version, filled from GitHub Releases
+// (ADR-0150 §12).
+// scripts/docs-site.sh copies this file and app/docs/worker/ next to the build (./site) and runs wrangler on the copy,
+// always from main's checkout (docs-site-deploy.yml, docs-site-preview-deploy.yml): a pull request's build never brings
+// a config or code of its own.
 //
-// It declares no routes and no custom domain: the binding of mycroblog.dev to the Worker (its Workers Custom Domain and
-// DNS records) belongs to the infrastructure repository, and the deploy token can edit Workers scripts only.
+// It declares no routes, no custom domain and no secret: the binding of mycroblog.dev to the Worker (its Workers Custom
+// Domain and DNS records) and the Worker's secret GITHUB_TOKEN belong to the infrastructure repository, and the deploy
+// token can edit Workers scripts only.
 //
 //   main and releases:  https://my-docs.<subdomain>.workers.dev               (wrangler deploy), and https://mycroblog.dev once bound
 //   pull request:       https://pr-<number>-my-docs.<subdomain>.workers.dev   (wrangler preview --name pr-<number>)
 {
   "name": "my-docs",
+  "main": "./worker/index.ts",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   // The Previews of pull requests are served on workers.dev.
   "preview_urls": true,
   "assets": {
     "directory": "./site",
+    "binding": "ASSETS",
+    // The release notes page of a version, in English or in a locale: /next/releases/, /v0.1/ja/releases/. Every other
+    // request is an asset's, which costs no request of the Worker's daily limit.
+    "run_worker_first": ["/*/releases/", "/*/*/releases/"],
     // /next/operations/running serves /next/operations/running/index.html, redirecting to the trailing slash.
     "html_handling": "auto-trailing-slash",
     // A missing page gets the 404.html of its version (the nearest one up the path), with status 404.

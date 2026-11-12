@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copies the published documents of the repository (src/published.ts) into src/content/docs/ before a build or the
 // dev server (ADR-0150 §4): `bun run import` from package.json's build and dev scripts. The copies are generated and
-// git-ignored; the pages written in the site (the landing page src/content/docs/index.mdx and the analytics notice
-// src/content/docs/analytics.mdx) stay. Each copy differs from its source in:
+// git-ignored; the pages written in the site (the landing page src/content/docs/index.mdx, the analytics notice
+// src/content/docs/analytics.mdx and the release notes page src/content/docs/releases.mdx) stay. Each copy differs
+// from its source in:
 //   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading),
 //     and the first paragraph after it, which becomes the `description` (the meta description and og:description);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
@@ -55,6 +56,7 @@ import {
   headingOf,
   handWrittenPages,
   isHandWritten,
+  releaseNotesPage,
   landingPage,
   legalTemplates,
   localeSegment,
@@ -66,7 +68,7 @@ import {
 
 const contentDir = join(repoRoot, "app/docs/src/content/docs");
 const publicDir = join(repoRoot, "app/docs/public");
-const handWritten = new Set(handWrittenPages.map((path) => posix.basename(path)));
+const handWritten = new Set([...handWrittenPages, releaseNotesPage].map((path) => posix.basename(path)));
 
 /** What a page is written as: a page of the site (in a locale, for a translation) or the plain Markdown form. */
 interface Output {
