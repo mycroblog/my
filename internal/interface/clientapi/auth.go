@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Authentication and authorization of the client API (ADR-0019 §4, docs/architecture/client-api.md §4).
+// Authentication and authorization of the client API (ADR-0019 §4, ADR-0090 §4).
 //
 // Register wraps every operation's handler in guard, which runs before the generated code
 // parses the request:

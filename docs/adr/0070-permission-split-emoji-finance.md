@@ -90,7 +90,7 @@
 - 管理（タグ `admin-server`、`admin:read` / `admin:write` と `manage_custom_emojis`）: `GET /admin/custom_emoji_requests`（審査中を既定にし、状態で絞り込む）、
   `POST /admin/custom_emoji_requests/{id}/approve`、`POST /admin/custom_emoji_requests/{id}/reject`（理由）。`/admin/custom_emojis` の表現に `created_by`（作成者のアカウント、NULL 可）を持つ。
 - 管理の名前空間の `admin:*` のスコープを、スタッフでない利用者のトークンに求めない。`member` の操作を `/admin/*` に置かないのはこのため。
-- CLI: `my admin emoji requests`（一覧・承認・却下）を足す。経路とフィールドの細部は [client-api.md](../architecture/client-api.md) の手順で決める。
+- CLI: `my admin emoji requests`（一覧・承認・却下）を足す。経路とフィールドの細部は [ADR-0016](0016-client-api-style.md) の規約で決める。
 
 ### 7. データモデル（`content` が持つ。ADR-0020）
 
@@ -156,7 +156,7 @@
 - 本人の掲載: 加入している利用者が、自分を一覧に載せるかを選ぶ。既定は載せない。選択は利用者ごとに 1 つで、プランごとには持たない（同時に加入できるプランは 1 つ）。プランを変えても選択は残り、加入が終わったとき（ロールが外れる時と同じ）に同じトランザクションで消える。
 - 出す項目: プランごとの見出し（プランの名前、プランの並び順）と、各人のアバター・表示名・ハンドル・プロフィールへのリンクだけを出す。
   金額・月払いか年払いか・加入した日・続けた期間・人数の合計は出さない。人数は収入の公開（ADR-0067）の範囲の設定に従う情報で、一覧の行の数を数えても載せた人の数しか分からない。
-- 一覧に出す人は、閲覧者に見せられるアカウント（[visibility.md §6](../architecture/visibility.md#6-アカウントの表示)、`Server.visibleAccount` と同じ規則。凍結・制限されたアカウントと、閲覧者とブロックの関係にあるアカウントを除く）に限る。並びは載せた順（新しい順）で、カーソルでページを送る。
+- 一覧に出す人は、閲覧者に見せられるアカウント（`Server.visibleAccount` と同じ規則。凍結・制限されたアカウントと、閲覧者とブロックの関係にあるアカウントを除く）に限る。並びは載せた順（新しい順）で、カーソルでページを送る。
 - ページは Web の `/about/supporters` で、`/about` から `supporter_list_visibility` が `off` でないときにリンクする。
 - API（タグ `instance`）: `GET /instance/supporters?plan_id=&cursor=`。`public` のときは `security: []`、`signed_in` のときはトークンを要する（`read:accounts`）。`Cache-Control` は `public` のとき `public, max-age=60`、`signed_in` のとき `private, no-store`。
   `GET /instance` は `supporter_list_visibility` を返し、Web はそれで導線を出し分ける。本人の掲載の選択は `GET/PUT /preferences/supporter_listing`（`{listed: bool}`）で、加入していなければ `PUT` は `404`。

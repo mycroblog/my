@@ -53,7 +53,7 @@ export function classify(request: RequestFacts, origin: string): Handling {
   const url = new URL(request.url);
   if (url.origin !== origin) return "network";
   if (request.mode === "navigate") return underAny(url.pathname, passThroughPaths) ? "network" : "navigation";
-  // Public media (overview.md: blob keys under media/ are public and served at /media/). Only images: a
+  // Public media (blob.ValidateKey: keys under media/ are public and served at /media/). Only images: a
   // video's range requests get partial responses, which a cache cannot replay. A request with credentials
   // in a header is never cached.
   if (underAny(url.pathname, ["/media"]) && request.destination === "image" && !request.authorized) return "media";

@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
-// Keyset pages of accounts (docs/architecture/client-api.md §2.2). A cursor is the base64url
+// Keyset pages of accounts (ADR-0016 §1). A cursor is the base64url
 // of the position of the page's last item: the follow ID of a follow list, the block ID of the
 // block list, and the creation time and target of a mute. A page asks the graph module for one
 // item more than its limit, so that the last page has no next_cursor.

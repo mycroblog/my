@@ -27,7 +27,7 @@ const OutboxPageSize = 20
 // followerScanBatch is how many followers one query checks for a requester's domain.
 const followerScanBatch = 1000
 
-// Requester is who fetches an object or a collection (docs/architecture/visibility.md §1): the
+// Requester is who fetches an object or a collection (content.ViewerRemote): the
 // server of a verified signature, or no one for an unsigned request.
 type Requester struct {
 	// Domain is the canonical host of the signer's actor, "" for an anonymous request.

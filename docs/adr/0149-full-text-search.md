@@ -102,7 +102,7 @@
 
 - `GET /api/v1/statuses/search`（`searchStatuses`）: `q`（1〜200 文字）、`cursor`、`limit`。`GET /accounts/search` と `GET /tags/search` にそろえる。
 - 認可は `security: oauth2: ["read:statuses"]` で、匿名を入れない。未ログインは `guard` が 401 にする。ADR-0090 §2 のグラントに `client_credentials` が無いのでトークンはすべて利用者のもので、スコープは `searchTags` と同じ `read:statuses` である。`direct` は §5 で出ないので `read:direct` は関係しない。`x-first-party-only` にはせず、スコープを持つサードパーティのアプリも使える。
-- レート制限は操作ごとの制限にする（`docs/architecture/client-api.md` の操作ごとの制限）。`clientapi` に `SearchLimit = kernel.Limit{Name: "api.search", Max: 30, Window: 5 * time.Minute}` を置き、ハンドラーが `Server.LimitProblem` を呼ぶ。キーはアカウントで、`AccountLimit` に加えて数える。ADR-0019 §5 の表に載らない制限を ADR-0090 §7 が足すのと同じく、この ADR が足す。
+- レート制限は操作ごとの制限にする。`clientapi` に `SearchLimit = kernel.Limit{Name: "api.search", Max: 30, Window: 5 * time.Minute}` を置き、ハンドラーが `Server.LimitProblem` を呼ぶ。キーはアカウントで、`AccountLimit` に加えて数える。ADR-0019 §5 の表に載らない制限を ADR-0090 §7 が足すのと同じく、この ADR が足す。
 - 使えるかどうかはインスタンス情報（`Instance`）の必須の項目 `full_text_search`（使えるか、対象の公開範囲）で読む。`voice_enabled` と同じ置き場所で、失敗する検索を試さなくても分かる。
 - `search = none` では 404 と専用の問題の型を返し、何も問い合わせない。バックエンドの失敗は 503 と専用の問題の型で返し、ほかの API に影響しない。
 - 問い合わせの方法は `GET` で、問い合わせは URL に載る。
@@ -163,13 +163,10 @@ ADR-0058 とアカウントの消去に対して、索引は投影と同じ位�
 
 ### 16. 実装のタスクが変える文書
 
-要件・ADR-0009・ADR-0057・`docs/architecture/overview.md` のポートの表はこの決定に揃っている。次の文書は、その内容を実装するタスクが同じ変更で直す。
+要件・ADR-0009・ADR-0057 はこの決定に揃っている。次の文書は、その内容を実装するタスクが同じ変更で直す。
 
 | 文書 | 変更 | タスク |
 | --- | --- | --- |
-| `docs/architecture/overview.md` §6 | モジュールを足す | #2247 |
-| `docs/architecture/visibility.md` | `ContextSearch` の行を文脈の表と判定の表に足す | #2249 |
-| `docs/architecture/client-api.md` の認証とレート制限の節 | `api.search` の制限と `searchStatuses` を足す | #2249 |
 | `docs/architecture/web-client/screens/search.md`、§15 | 投稿の全文検索はしないという文を、使えるサーバーでの投稿の検索に直す | #2251 |
 | `docs/architecture/web-client/screens/settings-profile.md` の項目 8 と管理の設定の画面 | 下の文言に合わせる | #2251 |
 

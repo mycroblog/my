@@ -4,7 +4,7 @@
 # api/spec/ is the source of truth: `scripts/task.sh api:generate` bundles it into api/openapi.yaml, generates the Go
 # server interface in internal/interface/clientapi and the web client's types from the bundle, and
 # `scripts/task.sh api:lint` enforces the OpenAPI 3.1 subset that the generators support.
-# docs/architecture/client-api.md explains how to add an endpoint.
+# ADR-0016 holds the conventions.
 openapi: 3.1.0
 info:
   title: my client API

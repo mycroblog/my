@@ -187,7 +187,7 @@ type OneTimeResult struct {
 - 権限: チップの有効化と金額の候補は `manage_supporters`（ADR-0072 §2）。管理画面 `/admin/supporters` に「チップ」の区画を置き、§4 の案内と、事業者が `OneTimePayments` を実装していないときの理由を出す。
   有効化・候補の変更・無効化は監査ログ（ADR-0058）に `supporter_tips_enabled`・`supporter_tips_revised`・`supporter_tips_disabled` で残す。
 - サポーターの機能を無効にする（ADR-0072 §2）と、チップも受けない。開いているチップの画面は期限まで残り、払われれば記録される。
-- API（[client-api.md](../architecture/client-api.md) の手順で細部を決める）:
+- API（細部は [ADR-0016](0016-client-api-style.md) の規約で決める）:
   - 公開: `GET /instance` に `tips_enabled`、`GET /instance/tip_amounts`（候補の金額と通貨。無効なら `404`）。
   - 利用者（タグ `supporters`、スコープ `write:supporters` / `read:supporters`）: `POST /supporter/tips`（`{amount}`。条件を満たさなければ `422`、レート制限で `429`）がリダイレクトの URL を返す。`GET /supporter/tips/{id}`（本人のチップの状態だけ）。
   - 管理（`admin-server`、`manage_supporters`）: `GET/PUT /admin/supporter_tips`（有効化と候補）。

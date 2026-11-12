@@ -15,9 +15,8 @@
 // The projections of statuses hold live statuses only: the transaction that records a deletion
 // removes the status's rows from all of them. Favourites, bookmarks, and pins of a deleted status
 // stay as long as the status's rows do, and change no count, since a deleted status has no
-// counters. local_post_counters is the count NodeInfo reports as usage.localPosts. Like Mastodon
-// and GoToSocial, which store a boost as a status, it counts live local statuses other than
-// direct ones and the live local boosts of live statuses. It is one row per local account, summed
+// counters. local_post_counters is the count NodeInfo reports as usage.localPosts (ADR-0006 §1).
+// It is one row per local account, summed
 // on each request, rather than one row for the instance that every post would contend for, so
 // deleting a status also subtracts its local boosts from each booster's row.
 //

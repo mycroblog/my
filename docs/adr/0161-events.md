@@ -200,7 +200,7 @@
 
 ### 16. API と mykit
 
-[client-api.md](../architecture/client-api.md) の手順で細部を決める。形の目安:
+[ADR-0016](0016-client-api-style.md) の規約で細部を決める。形の目安:
 
 - `GET /events`（見えるイベントの一覧）、`POST /events`、`GET /events/{id}`、`PATCH /events/{id}`、`POST /events/{id}/cancel`
 - `/events/{id}/rsvp`（`PUT` で答える）、`/events/{id}/attendees`（一覧と `/{account_id}/approval`）、`/events/{id}/invitations`、`/events/{id}/coorganizers`、`/events/{id}/candidates`（追加・取り下げ・`/{candidate_id}/vote`・`/{candidate_id}/confirm`）

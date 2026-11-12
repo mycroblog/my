@@ -18,7 +18,7 @@
 ### 2. パッケージング
 
 - モノレポ。サーバーの Go は単一モジュール（`cmd/`, `internal/`, `pkg/testkit`）とする。利用者に配る `pkg/mykit`・`pkg/mybot`（ADR-0093）と開発ツールの `tools` は別のモジュールにする。クライアントアプリは `app/` の下に 1 アプリ 1 ディレクトリで置く（`app/web`。モバイルアプリの `app/mobile` は v0 の範囲の外）。共有パッケージの `app/ui`（ADR-0025）とメールの `app/mail` も同じ場所に置く。
-  `app/*` を Bun ワークスペースのメンバーにし、クライアントのツールチェーン（依存・lint・テスト）をサーバーの Go と分けて扱う（レイアウトは [overview](../architecture/overview.md#6-リポジトリ構成)）。
+  `app/*` を Bun ワークスペースのメンバーにし、クライアントのツールチェーン（依存・lint・テスト）をサーバーの Go と分けて扱う。
 - アダプタはパッケージ単位に分け、ビルドタグで除外できるようにする（NFR-PORT-4）。
 - エントリポイント: `cmd/my`（単一バイナリ: `serve` / `worker` / `cli`。Self-hosted・Cloud Run・ECS Fargate・コンテナ）。
 - コンテナイメージ: multi-arch（amd64 / arm64）、非 root、distroless 系。レジストリは `ghcr.io/mycroblog/my` だけとし、公開（public）にする（§4 から §10）。

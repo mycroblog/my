@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]
+docs: ["docs/adr/0028-html-shell-link-previews-and-pwa.md"]

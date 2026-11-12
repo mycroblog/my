@@ -2,7 +2,7 @@
 // What the streaming API's `conversation` events change in the cache (web-client/README.md S10): the conversation as the
 // server now shows it, written into the list that the navigation's unread count and the direct messages page read. A
 // burst of them reads nothing. A list with a read on its way, which may have missed the event, is read again instead,
-// and so is everything after the stream reconnected, since the server replays nothing (client-api.md §5).
+// and so is everything after the stream reconnected, since the server replays nothing.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { type Conversation, cacheConversation, conversationsQueryOptions } from "./conversations";

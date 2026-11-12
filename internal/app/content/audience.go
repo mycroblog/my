@@ -14,7 +14,7 @@ import (
 )
 
 // audience decides who may see one status, through content.CanView in ContextStatus, for the
-// use cases that act on or present a single status (docs/architecture/visibility.md).
+// use cases that act on or present a single status (ADR-0017 §3).
 type audience struct {
 	statuses      Repository
 	interactions  InteractionRepository

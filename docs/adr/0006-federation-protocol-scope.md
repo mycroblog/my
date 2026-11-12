@@ -20,6 +20,8 @@
 | 任意 | Authorized Fetch（secure mode、§31）、Object Integrity Proofs（FEP-8b32、§30）は C |
 | 非対応 | AP C2S |
 
+NodeInfo の `usage.localPosts` は、ブーストを投稿として持つ Mastodon と GoToSocial に合わせ、削除されていない `direct` 以外のローカルの投稿と、削除されていない投稿へのローカルのブーストを数える。
+
 ### 2. 相互運用テスト対象
 
 Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれば Pixelfed、Threads。
@@ -170,7 +172,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 - リモートのアカウントのプロフィールには、投稿の一覧の上に「このサーバーが受け取った投稿だけを表示しています」という案内と、
   元のサーバーのプロフィール（`Account.url`）へのリンク「{domain} で見る」を常に出す。リンクは外部リンクとして示す。
-- 取得を始めたことを応答で示し（形は [client-api.md](../architecture/client-api.md) に従ってタスクで決める）、Web クライアントは「元のサーバーから最近の投稿を取得しています」を
+- 取得を始めたことを応答で示し（形は [ADR-0016](0016-client-api-style.md) に従ってタスクで決める）、Web クライアントは「元のサーバーから最近の投稿を取得しています」を
   `role="status"` で示して、数秒後に最初のページを 1 回だけ読み直す。読み直した後は表示を消す。取得の失敗は利用者に伝えない（案内とリンクが残る）。
 - 投稿が 1 件も無いリモートのプロフィールの空の表示も、同じリンクを出す。
 

@@ -507,7 +507,7 @@ func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSup
 		page.NextCursor = encodeSupporterCursor(*list.Last)
 	}
 	// The list of the signed-in users is for them only; the public list varies by the token's
-	// locale like any anonymous operation (client-api.md §2.4).
+	// locale like any anonymous operation.
 	cache, robots := cachePublic, supporterListRobots
 	switch {
 	case settings.SupporterListVisibility() == instance.AudienceSignedIn:

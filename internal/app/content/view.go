@@ -4,7 +4,7 @@ package content
 
 import "github.com/mycroblog/my/internal/domain/content"
 
-// The visibility policy of statuses (docs/architecture/visibility.md), as part of this module's
+// The visibility policy of statuses (ADR-0017 §3), as part of this module's
 // public API: the application layers of other modules, which do not import this module's
 // domain, decide who sees a status only through CanView (NFR-SEC-4).
 type (

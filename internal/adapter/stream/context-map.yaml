@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]
+docs: ["docs/adr/0050-stream-pubsub-across-processes.md"]

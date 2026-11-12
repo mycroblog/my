@@ -7,7 +7,7 @@
 - **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・サービスの終了・webhook・リレー・外部ログインのプロバイダー・費用・ロール・ジョブのキュー・エラー。これから足すサーバー管理の画面（リレー）は、
   `routes/admin.<画面>.tsx` のルートと、`features/admin/components/AdminMenu.tsx` の一覧の 1 行を足してここに置く。
 
-API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) の管理の操作、タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
+API の経路はどちらも `/admin/*` で（タグ `admin-moderation` / `admin-server`）、Web の経路とは一致しない。
 
 - **出し分け**: 閲覧者の `CredentialAccount.permissions` で、ナビゲーションの「モデレーション」と「管理」（§9）・各区分の画面（`/moderation`・`/admin`）・設定の画面の「モデレーション」と「管理」の区画と各画面を出す。`manage_domains` が連合先とドメインへの処分、`manage_jobs` がジョブのキュー、`view_audit` が監査ログ、`manage_accounts` が登録の審査と登録の拒否リストと異議申し立ての審査とアカウント、`manage_invites` が招待、`manage_reports` が通報の画面と自動審査の記録、`manage_rules` がルールの画面、`manage_roles` がロールの画面とアカウントの管理画面の「管理」のページのロールの区画、`manage_settings` が規約とポリシーの画面とサーバーの設定とテーマとリレーの画面、`manage_custom_emojis` がカスタム絵文字の画面、`manage_announcements` がお知らせの画面、`manage_webhooks` が webhook の画面、`manage_login_providers` が外部ログインのプロバイダーの画面、`manage_finance` が費用の画面に、`manage_errors` がエラーの画面に要る。
   利用者の機能の区分の権限はスタッフの画面を出さず、`view_finance` はナビゲーションの「会計」と会計のページ（`/finance`、§9）を、`create_custom_emojis` は設定のメニューの「あなたのカスタム絵文字」と自分のカスタム絵文字の画面（`/settings/custom-emojis`、§9）を出す。

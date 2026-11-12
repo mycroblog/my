@@ -69,7 +69,7 @@
 ### 3. API
 
 - 経路は `/admin/*` に置く。`/admin` はスタッフの操作の名前空間で、利用者本人の `/moderation/actions` と区別する。スコープは `admin:read` / `admin:write` にする。
-- OpenAPI のタグを `admin-moderation`（上の表のモデレーションの操作と `/admin/counts`）と `admin-server`（サーバー管理の操作）に分け、[client-api.md](../architecture/client-api.md) のリファレンスと生成コードのまとまりを区分に合わせる。
+- OpenAPI のタグを `admin-moderation`（上の表のモデレーションの操作と `/admin/counts`）と `admin-server`（サーバー管理の操作）に分け、API のリファレンスと生成コードのまとまりを区分に合わせる。
 - 新しいサーバー管理の操作は `/admin/<資源>`（`/admin/announcements`・`/admin/webhooks`・`/admin/relays`・`/admin/custom_emojis`・`/admin/settings` など）、新しいモデレーションの操作（`/admin/invites` など）も `/admin/<資源>` に置き、タグで区分を示す。
 - 認可は、スコープの後に操作ごとの権限で決める。経路や名前空間を認可の代わりにしない。
 
@@ -89,7 +89,7 @@
 ### 5. コードの置き場所
 
 - **Go**: サーバー管理の機能は、そのデータを持つモジュールに置く。設定・規約・ルール・テーマ・お知らせは `instance`、ロールと招待は `identity`、リレーと連合先の配送の状態は `federation`、dead job は `queue`、カスタム絵文字と webhook はそれぞれの ADR（ADR-0051・ADR-0060）が決めるモジュールに置く。`internal/app/moderation` はモデレーションだけを持つ。
-  `internal/app/admin` は作らず、`internal/interface/admin` も持たない（[overview §6](../architecture/overview.md#6-リポジトリ構成)）。管理の HTTP の入口は `internal/interface/clientapi` だけにする。
+  `internal/app/admin` は作らず、`internal/interface/admin` も持たない。管理の HTTP の入口は `internal/interface/clientapi` だけにする。
   `clientapi` のハンドラのファイルは、`admin_*.go` の名前で区分ごとにまとめる。
 - **Web**: モデレーションとサーバー管理は、それぞれ別の機能のまとまりとルートの木（§2）に置く。両方が使う部品と権限の検査は、片方の公開する入口から出して、両方の木が使う（web-client.md の規則 A3）。
 

@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-// Sizes of a fan-out. docs/architecture/job-system.md says how FanOutSize was chosen against the
-// lease of a job.
+// Sizes of a fan-out. ADR-0004 §38 says how FanOutSize was chosen against the lease of a job.
 const (
 	// FanOutSize is how many keys one job of a fan-out covers at most.
 	FanOutSize = 1000

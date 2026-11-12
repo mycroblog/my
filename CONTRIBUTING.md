@@ -230,7 +230,7 @@ scripts/task.sh db:down                       # delete the container and its dat
   edit `api/openapi.yaml` by hand.
 - oapi-codegen (pinned in `tools/go.mod`) generates the Go strict server into
   `internal/interface/clientapi/api.gen.go`, which is committed.
-- The conventions and the steps to add an endpoint are in [docs/architecture/client-api.md](docs/architecture/client-api.md).
+- The conventions are in [ADR-0016](docs/adr/0016-client-api-style.md); `api/redocly.yaml` and the tests of `internal/interface/clientapi` enforce them.
 
 ```sh
 scripts/task.sh api:generate  # bundle api/spec into api/openapi.yaml and regenerate from it

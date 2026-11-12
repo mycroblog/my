@@ -188,7 +188,7 @@
 
 ### 14. API と mykit
 
-[client-api.md](../architecture/client-api.md) の手順で細部を決める。形の目安:
+[ADR-0016](0016-client-api-style.md) の規約で細部を決める。形の目安:
 
 - `GET /voice/rooms`（一覧。`tag` で絞る）、`POST /voice/rooms`（開く。開始の投稿の本文を含む）、`GET /voice/rooms/{id}`、`PATCH /voice/rooms/{id}`（設定）、`DELETE /voice/rooms/{id}`（解散）
 - `POST /voice/rooms/{id}/participation`（参加）・`DELETE`（退出。ホストは次のホストか解散を添える）、話者・聞き手・挙手、`/participants/{account_id}` への操作（許可・取り消し・ミュート・退出させる・共同ホスト）、`/invitations`、`/reactions`、`/host`（渡す）

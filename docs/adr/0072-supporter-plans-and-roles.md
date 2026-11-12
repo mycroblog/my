@@ -18,7 +18,7 @@
   - 監査ログは `AuditRecorded` のドメインイベントで `moderation` に渡す（ADR-0067 と同じ）。
   - `identity`・`account`・`content` は `supporters` を呼ばない。`content` の `CustomEmojiQuota` の実装（§11）と、`finance` の `SupporterDirectory` の実装（§12）は、`internal/platform` が `supporters` の公開 API から組み立てる。
   - アカウントの削除・凍結・BAN（§10）は、`account` と `moderation` のドメインイベントを outbox のジョブで受ける。
-- overview §2 のモジュールの表と `.golangci.yml` の depguard に `supporters` を足す。
+- `.golangci.yml` の depguard に `supporters` を足す。
 
 ### 2. 権限と有効化
 
@@ -256,7 +256,7 @@ ADR-0070 との契約:
 - webhook のジョブと定期の照合のジョブは、取り直したスナップショットをこのモジュールのユースケース（スナップショットを当てる、冪等で順序に依らない）に渡す。それが §7 の `supporters.sync` である。
 - 外向きの HTTP の分類、設定と秘密、webhook の受け口の経路、fake と契約テストは ADR-0074 が決める。
 
-### 18. API の形（[client-api.md](../architecture/client-api.md) の手順で細部を決める）
+### 18. API の形（細部は [ADR-0016](0016-client-api-style.md) の規約で決める）
 
 - 利用者（タグ `supporters`、新しいスコープ `read:supporters` / `write:supporters`。`read` / `write` に含む）:
   `GET /supporter/subscription`（自分の加入: 状態・プラン・間隔・期間の終わり・予約・猶予の終わり）、`POST /supporter/checkout`（`{plan_id, interval}`。条件を満たさなければ `422`、続いている加入があれば `409`）、

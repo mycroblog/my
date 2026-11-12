@@ -15,7 +15,7 @@
 - 依存の向き（ADR-0002）: 公開範囲の設定は `internal/interface/clientapi` がインスタンス設定から読む。`internal/app/finance` からの読み取りはポート `SupporterDirectory` にし、監査ログは `AuditRecorded` のドメインイベントで `moderation` に渡す。ほかのモジュールから `finance` を呼ぶ向きは「加入のモジュール → `finance`」で、`RecordIncome`・`KnownIncome` を呼ぶ（§11）。
 - 期間の展開・按分・集計は `internal/domain/finance` の純粋な関数にし、表駆動のテストで確かめる。
 - 集計は読み取りのときに計算し、期間ごとの合計の投影を持たない。項目が数十件の規模では全項目を読んで展開しても軽く、公開の API は 60 秒のキャッシュを持つ。
-- `finance` は overview §2 のモジュールの表と `.golangci.yml` の depguard に載せる。
+- `finance` は `.golangci.yml` の depguard に載せる。
 
 ### 2. データモデル（ADR-0020）
 
@@ -95,7 +95,7 @@
   内訳でも事業者と区分は出るので、どのクラウドで動いているかは知られる。設定の画面で `breakdown` を選ぶところにこのことを書く。
 - 公開する場所: 匿名で読める API（§9）と、`/about` の「運営の費用」の区画と、そこからリンクする `/about/costs` のページ。区画は `finance_visibility` か `income_visibility` のどちらかが `private` でなければ出し、収入と収支を含む（§17）。公開するのは今日を含む期間までで、それより後の予定の支払いは出さない。
 
-### 9. API の形（[client-api.md](../architecture/client-api.md)）
+### 9. API の形
 
 - 管理（タグ `admin-server`、スコープ `admin:read` / `admin:write` と `manage_finance`）:
   - `GET /admin/cost_items`（キーセットページング）・`POST /admin/cost_items`・`GET /admin/cost_items/{id}`
@@ -223,7 +223,7 @@ type IncomeMovement struct {
 - 元の支払いより先に返金が来たとき（照合の順序）は、ADR-0074 のジョブが元の支払いを事業者から取り直して先に渡す。`RecordIncome` は元の行がない返金を受けず、ジョブの再試行に任せる。
 - 状態（返金済み・按分中）を列に持たない。返金済みかは子の行の有無と合計で、按分は `covers_*` と見方で決まる（ADR-0020 規約 4）。
 
-### 19. 収入の API の形（[client-api.md](../architecture/client-api.md)）
+### 19. 収入の API の形
 
 §9 と同じ問い合わせ（`granularity`・`from`・`to`・`basis`）と金額の表現（主単位の 10 進の文字列と通貨）、期間の数の上限を使う。
 

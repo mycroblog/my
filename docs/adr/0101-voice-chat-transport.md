@@ -170,7 +170,7 @@ type EventSource interface {
 
 ### 6. 参加・ハートビート・マイクの API
 
-ADR-0100 §14 の形に、接続のための次の操作を加える（細部は [client-api.md](../architecture/client-api.md) の手順で決める）。
+ADR-0100 §14 の形に、接続のための次の操作を加える（細部は [ADR-0016](0016-client-api-style.md) の規約で決める）。
 
 - `POST /voice/rooms/{id}/participation` は `{session, grant}` を返す。クライアントはそのセッションでストリームを開く。
 - `POST /voice/rooms/{id}/heartbeat`（`{session}`、15 秒ごと）: ADR-0100 §6 のハートビート。応答は `204`。ストリームを開いているだけではハートビートにしない（中継の装置がバッファしてストリームの書き込みが失敗しないことがあり、端末が生きていることを確かめられないため）。

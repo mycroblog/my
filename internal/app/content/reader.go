@@ -53,7 +53,7 @@ type ReaderDeps struct {
 // account's bookmarks, with everything a client shows of them. Every status goes through
 // content.CanView in ContextStatus; a status that the viewer may not see fails with
 // ErrNotFound, the same as a missing or deleted one, and is left out of lists, so that its
-// existence does not leak (docs/architecture/visibility.md).
+// existence does not leak (ADR-0017 §3).
 //
 // The viewer is anonymous or a local account (content.ViewerAnonymous, content.ViewerLocal).
 type Reader struct {

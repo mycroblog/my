@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/client-api.md#4-認可oauth-20", "docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]
+docs: ["docs/adr/0090-third-party-oauth-apps.md", "docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]

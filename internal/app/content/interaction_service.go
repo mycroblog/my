@@ -51,7 +51,7 @@ type InteractionDeps struct {
 // An account may act only on a status it can see: each command except the undoing ones checks
 // the status with content.CanView in ContextStatus, and a status the account cannot see, or a
 // deleted one, fails with ErrNotFound, the same as a missing one, so that its existence does
-// not leak (docs/architecture/visibility.md).
+// not leak (ADR-0090 §4).
 type Interactions struct {
 	d InteractionDeps
 }

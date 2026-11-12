@@ -668,7 +668,7 @@ func (s *Service) FindByURIs(ctx context.Context, uris []string) (map[string]Act
 }
 
 // AnyOnDomain reports whether one of the accounts ids is on domain, for judging what the
-// servers of a domain may see (docs/architecture/visibility.md §1).
+// servers of a domain may see (content.ViewerRemote).
 func (s *Service) AnyOnDomain(ctx context.Context, domain string, ids []string) (bool, error) {
 	return s.d.Repository.AnyAccountOnDomain(ctx, domain, ids)
 }

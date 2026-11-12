@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/overview.md#2-モジュール境界づけられたコンテキスト", "schema/README.md#layout"]
+docs: ["schema/README.md#layout"]

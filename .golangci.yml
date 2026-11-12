@@ -23,7 +23,7 @@ linters:
     - revive
     - unconvert
   settings:
-    # Architecture boundaries (ADR-0002, docs/architecture/overview.md §2 and §6).
+    # Architecture boundaries (ADR-0002 §1).
     # A file matched by several rules must satisfy all of them.
     # - domain/<module>: standard library and its own module's domain only.
     # - app/<module>: standard library, its own module's domain, any module's app package

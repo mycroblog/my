@@ -83,7 +83,7 @@
 - 返さないもの: 無効（`enabled = false`）の絵文字、削除された絵文字、画像の所有者のドメインか URL のホストに `media_fetch` の制限（`reject_media`）があるリモートの絵文字。返さない絵文字は文字の `:shortcode:` として表示される。
 - ピッカーの一覧 `GET /custom_emojis`: 有効でピッカーに出すローカルの絵文字を、`category`・`aliases` 付きで返す。キャッシュは ADR-0028 の方針に従う。
 - 管理 API `/admin/custom_emojis`: 一覧（ローカル・リモート、shortcode とドメインで絞り込み）、作成（アップロード済みのメディアと shortcode）、画像の差し替え、設定と別名の変更、削除、リモートの絵文字のローカルへの複製（新しい shortcode を指定できる）。申請の審査と表現の `created_by` は ADR-0070 §6 が定める。
-  エンドポイントの細部は [client-api.md](../architecture/client-api.md) の手順で決める。
+  エンドポイントの細部は [ADR-0016](0016-client-api-style.md) の規約で決める。
 - **Web の描画**: サニタイズ済み HTML は DOM のテキストノードを、プレーンテキストのフィールド（表示名・CW・投票の選択肢・補足情報）は文字列を、同じ字句解析で `:shortcode:` に分け、`emojis` にある shortcode だけを
   `<img alt=":shortcode:" title=":shortcode:" draggable="false">` の DOM 要素として差し込む（`innerHTML` は使わない。ADR-0019 §2）。
   高さは周りの文字に合わせる（デザイントークン）。アニメーションは ADR-0005 §6 と同じく `<picture>` の `<source media="(prefers-reduced-motion: no-preference)">` に `url` を、`<img>` に `static_url` を置き、利用者の設定「アニメーションを自動再生しない」が有効なら `<source>` を出さない。
@@ -148,7 +148,7 @@
 ### 10. リアクションの通知・クライアント API・Web
 
 - 通知の種類に `reaction` を足す（FR-205）。お気に入りと同じく、ミュート・ブロック・通知の除外の規則に従う。同じ人が別の絵文字で付け直したときは、新しい通知を作る。
-- クライアント API（ADR-0016、パスと名前は [client-api.md](../architecture/client-api.md) の規約に従う）:
+- クライアント API（ADR-0016、パスと名前は [ADR-0016 §8](0016-client-api-style.md#8-パスと命名) に従う）:
   - `Status` に、絵文字ごとの件数と自分が付けたかどうかの集計（件数の多い順に最大 20 種類）と、カスタム絵文字の表示に要る情報（ショートコード・画像の URL・ドメイン）を持たせる。
   - 自分のリアクションを付ける（置き換える）・外す操作。お気に入りの操作も、`Like` の枠を共有するので、リアクションを外す。
   - 投稿に付いたリアクションを、絵文字で絞って付けた人の一覧として引くページ付きの操作。

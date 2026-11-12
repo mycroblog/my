@@ -215,7 +215,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		}
 	}
 
-	// Sections the issue references by number: overview §6, ADR-0013 §1.
+	// Sections the issue references by number: ADR-0013 §1, FR-101.
 	type secRef struct{ file, num string }
 	var secs []secRef
 	seenSec := map[string]bool{}

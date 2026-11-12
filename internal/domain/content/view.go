@@ -4,7 +4,7 @@ package content
 
 // This file holds CanView, the single visibility policy function (NFR-SEC-4, ADR-0017).
 // Timelines, search, the client API, delivery, and ActivityPub object fetches all decide who may
-// see a status through it. docs/architecture/visibility.md is the policy table it implements.
+// see a status through it. The tables of view_test.go are the policy it implements.
 
 // ViewerKind says who is looking at a status.
 type ViewerKind int
