@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": []
+    },
+    "web/docs": {
+      "entry": ["scripts/*.ts", "src/route-middleware.ts", "src/routeData.ts", "src/indexing.ts", "src/api-sidebar.ts", "src/section-sidebar.ts", "src/**/*.test.ts", "worker/index.ts", "worker/**/*.test.ts"],
+      "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}", "scripts/**/*.ts", "worker/**/*.ts"],
+      "ignoreDependencies": ["satteri", "starlight-openapi-sources"]
+    },
+    "tools/i18n": {
+      "entry": ["src/cli.ts", "src/licenses.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "pkg/mykit/ts": {
+      "entry": ["src/**/*.test.ts", "examples/*.ts"],
+      "project": ["src/**/*.ts", "examples/*.ts"],
+      "ignoreDependencies": ["openapi-typescript"]
+    },
+    "pkg/mybot/ts": {
+      "entry": ["src/**/*.test.ts", "examples/*/main.ts", "examples/**/*.test.ts"],
+      "project": ["src/**/*.ts", "examples/**/*.ts"]
+    }
+  }
+}

@@ -163,8 +163,8 @@ func TestOpenAPIAndTS(t *testing.T) {
 		t.Error("no $ref edge")
 	}
 	ts := "import { x } from \"../../lib/x\";\n\n/** Deletes. */\nexport function DeleteButton() {\n  const m = useMutation(api.query.mutationOptions(\"post\", \"/accounts/delete\"));\n  return <Button onClick={m} />;\n}\n"
-	r = TS("app/web/src/features/settings/DeleteButton.tsx", []byte(ts))
-	id := "ts:app/web/src/features/settings/DeleteButton.tsx:DeleteButton"
+	r = TS("web/client/src/features/settings/DeleteButton.tsx", []byte(ts))
+	id := "ts:web/client/src/features/settings/DeleteButton.tsx:DeleteButton"
 	if n := ids(r)[id]; n.Start != 3 {
 		t.Errorf("declaration = %+v (want the comment's line 3)", n)
 	}
@@ -173,7 +173,7 @@ func TestOpenAPIAndTS(t *testing.T) {
 			t.Errorf("no edge to %s", dst)
 		}
 	}
-	if !hasEdge(r, "file:app/web/src/features/settings/DeleteButton.tsx", "file:app/web/src/lib/x") {
+	if !hasEdge(r, "file:web/client/src/features/settings/DeleteButton.tsx", "file:web/client/src/lib/x") {
 		t.Error("no import edge")
 	}
 }
@@ -190,8 +190,8 @@ func TestKind(t *testing.T) {
 	for p, want := range map[string]string{
 		"internal/interface/clientapi/api.gen.go":              "",
 		"internal/adapter/db/sqlite/accountgen/queries.go":     "",
-		"app/web/src/routeTree.gen.ts":                         "",
-		"app/web/src/App.tsx":                                  "ts",
+		"web/client/src/routeTree.gen.ts":                      "",
+		"web/client/src/App.tsx":                               "ts",
 		"locales/en-XA/client/settings.json":                   "",
 		"locales/ja/client/admin/report.json":                  "locale",
 		"queries/sqlite/queue/jobs.sql":                        "query",

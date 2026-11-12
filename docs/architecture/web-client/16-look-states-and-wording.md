@@ -2,7 +2,7 @@
 
 画面ごとに表現がばらつかないように、間隔・文字・アイコン・状態の表示・文言を 1 つの型にそろえる。
 `app/web/src` はこの章の値をクラスで書かず、`@my/ui` の部品の props（`gap`・`padding`・`tone` など）で選ぶ（A4）。
-トークンと `@my/ui` の部品の側の決まり（値の一覧、部品の props）は [app/ui/README.md](../../../app/ui/README.md) にあり、ここは画面を組み立てる側の規約である。
+トークンと `@my/ui` の部品の側の決まり（値の一覧、部品の props）は [app/ui/README.md](https://github.com/mycroblog/my/blob/7bfefa85b75fc2e94e9c4d8e1ade07e178bdb90e/app/ui/README.md) にあり、ここは画面を組み立てる側の規約である。
 主な出典は WCAG 2.2、WAI-ARIA APG、[GOV.UK Design System](https://design-system.service.gov.uk/)（エラーと空の状態の書き方）、[Material Design 3 の Typography](https://m3.material.io/styles/typography/applying-type)（文字の役割の考え方）。
 
 ### 16.1 間隔

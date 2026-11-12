@@ -15,19 +15,19 @@
 
 - 原稿はリポジトリの中の Markdown のままにする。サイトのために原稿を別のリポジトリや別の場所へ移さない
 - サイトはビルドの道具であって原稿の置き場ではない。サイトのディレクトリに手で書いた本文を置かない（トップページなどサイトの骨組み、§7 の解析のお知らせ、§9 の翻訳を除く）。
-  解析のお知らせ（`app/docs/src/content/docs/analytics.mdx`）はこのサイトそのものについての文書であり `my` の使い方ではないので、トップページと同じく `app/docs` に手で書き、トップページと同じくひとつの節として訳す
+  解析のお知らせ（`web/docs/src/content/docs/analytics.mdx`）はこのサイトそのものについての文書であり `my` の使い方ではないので、トップページと同じく `web/docs` に手で書き、トップページと同じくひとつの節として訳す
 - 理由: `context-map.yaml` の `userdocs`・`docs:pr-impact`・`agentkit docs inventory`・`go:config-docs`・`docs/lint.yaml` の規則は、
   コードと同じ PR で文書を直すことを強制している（ADR-0000）。原稿をリポジトリの外へ出すと、この保証がすべて切れる
 
 ### 2. 置き場所とツールチェーン
 
-- サイトは Bun のワークスペース `app/docs`（パッケージ名 `@my/docs`、`AGPL-3.0-only`）に置く。Web クライアントと同じ Bun・TypeScript・`bun fmt` を使い、
+- サイトは Bun のワークスペース `web/docs`（パッケージ名 `@my/docs`、`AGPL-3.0-only`）に置く。Web クライアントと同じ Bun・TypeScript・`bun fmt` を使い、
   新しい言語のツールチェーンを足さない
 - 依存は Astro・`@astrojs/starlight`・§5 の OpenAPI 用プラグインと、その周りの小さなパッケージ（Markdown の処理系 `@astrojs/markdown-satteri`、見出しのアンカーを作る `github-slugger`、リンクの検査と `llms.txt` のプラグイン）に限る。
   いずれも MIT か ISC であり、AGPL-3.0 と両立する（要検証: 採用時の版のライセンス）
 - ADR-0025 以降が定める Web クライアントのスタックはこのサイトに及ばない。サイトは Web クライアントのコードを import しない
 - タスクは `tasks/docs.yml` に `docs:site-build`（ビルド）と `docs:site-dev`（手元のプレビュー）を足す
-- `tools/agentkit/context-map.yaml` に `app/docs` の項目を足す
+- `tools/agentkit/context-map.yaml` に `web/docs` の項目を足す
 
 ### 3. 原稿の範囲
 
@@ -46,13 +46,13 @@
 
 ### 4. 原稿の取り込み
 
-- ビルドの前段で、§3 の原稿を Starlight のコンテンツのディレクトリ（`app/docs/src/content/docs/`）へ写す。写したものは生成物であり、git に入れない
+- ビルドの前段で、§3 の原稿を Starlight のコンテンツのディレクトリ（`web/docs/src/content/docs/`）へ写す。写したものは生成物であり、git に入れない
 - 写すときに次を変える。原稿そのものは GitHub でもそのまま読める形を保つ
   - 先頭の `# 見出し` を frontmatter の `title` にする
   - 原稿どうしの相対リンク（`../reference/configuration.md#voice`）を、サイトの URL へ書き換える。リンクと `#anchor` が解決するかは引き続き `agentkit docs lint` が検査する
   - サイトに載せない文書へのリンクは、`blob/<ref>/...` の GitHub の URL へ書き換える
 - サイドバーは `docs/README.md` の一覧の順と見出しから作る。目次を二か所に持たない
-- 写しの手順は `app/docs` の中の小さなスクリプトに置く。Starlight の `docsLoader` は `src/content/docs/` を読む前提であり（要検証）、
+- 写しの手順は `web/docs` の中の小さなスクリプトに置く。Starlight の `docsLoader` は `src/content/docs/` を読む前提であり（要検証）、
   Astro の `glob()` ローダーで `docs/` を直接読む方法は Starlight のルーティングとサイドバーで動くか確かめていないためである（Open Questions）
 
 ### 5. API を使う開発者向けの文書
@@ -69,18 +69,18 @@
 - サイトは版ごとに分ける。`/latest/` は最新のリリースタグ、`/v0.1/` などはそのマイナー版の最新のタグ、`/next/` は `main` を指す
 - 版ごとのビルドは、そのタグの作業ツリーからビルドする。古い版の原稿の写しをリポジトリに置かない（「ファイルは現在を書く」原則、ADR-0000）。そのため `starlight-versions` は使わない（採らなかった案）
 - 配信のたびに、サポート中の版をそれぞれのタグからビルドして束ねる。静的アセットの配信は 1 回の配信で全体を置き換えるためである（要検証）
-- 版の切り替えはサイトのヘッダーの小さな選択肢で行う。載せる版の一覧は `app/docs` の中の 1 ファイルに置き、配信の手順とヘッダーが同じものを読む
+- 版の切り替えはサイトのヘッダーの小さな選択肢で行う。載せる版の一覧は `web/docs` の中の 1 ファイルに置き、配信の手順とヘッダーが同じものを読む
 - サポート中のマイナー版、サポートを終えたマイナー版、`next` を載せる。サポートを終えた版は消さず、全ページに「サポート終了」の帯と `/latest/` の同じページへのリンクを付けて残す。
   古い版を動かし続ける運営者が、手元の版の文書を読めるようにするためである
 
 ### 7. 配信
 
-- 配信先は Cloudflare Workers の静的アセットとする。UI Preview（`ui-preview-deploy.yml`、ADR-0165 §2〜§3）がすでに同じアカウントと仕組みを使っており、
+- 配信先は Cloudflare Workers の静的アセットとする。UI Preview（ADR-0165 §2〜§3）と同じアカウントと仕組みで、
   シークレットと運用の手順を増やさない。PR ごとの Preview も同じ仕組みで出せる。サーバーの配信先として Cloudflare Workers を対象にしないこと（AGENTS.md）とは別の話である
-- PR が §3 の原稿か `app/docs` を変えたとき、UI Preview と同じ形で `/next/` だけのビルドを PR の Preview に置く。PR のビルドは信頼しないデータとして扱い、配信の側では実行しない（`ui-preview-deploy.yml` と同じ）
+- PR が §3 の原稿か `web/docs` を変えたとき、UI Preview と同じ形で `/next/` だけのビルドを PR の Preview に置く。PR のビルドは信頼しないデータとして扱い、配信の側では実行しない
 - 独自ドメインは §11 の `mycroblog.dev` とする
 - `main` への push で `/next/` を更新し、リリース（`release.yml`）で `/latest/` とそのマイナー版を更新する。リリースの手順は `.claude/skills/release/SKILL.md` に足す
-- Merge Queue の `check` は、`app/docs` か §3 の原稿が変わったときにサイトをビルドし、ビルドが通ることを検査する（ADR-0079 の変更の文脈に足す）
+- Merge Queue の `check` は、`web/docs` か §3 の原稿が変わったときにサイトをビルドし、ビルドが通ることを検査する（ADR-0079 の変更の文脈に足す）
 - 検索は Starlight の組み込み（Pagefind）を使い、外部の検索サービスを使わない
 - 解析は Cloudflare Web Analytics を、ダッシュボードが出す手動のスニペット（`static.cloudflareinsights.com/beacon.min.js` の `<script defer>`）で、本番のサイトにだけ置く
   - 目的は、どのページ・ロケール・版が読まれ、読み手がどこから来るかを知り、次に書くものと訳すものを決めることである
@@ -107,11 +107,11 @@
 翻訳の基盤も使わない（ADR-0009 §8）ためである。最初の言語は日本語とし、UI のカタログに足すロケール（ADR-0009 §8 の zh-CN・zh-TW・es・pt-BR・de・fr）もそれぞれサイトに足す。
 
 - 訳す範囲（どのロケールも同じ）
-  - `docs/guide/` のすべて、`docs/operations/` のすべて、トップページ（`app/docs/src/content/docs/index.mdx`）を訳す
+  - `docs/guide/` のすべて、`docs/operations/` のすべて、トップページ（`web/docs/src/content/docs/index.mdx`）を訳す
   - `docs/reference/`（設定・コマンド・メトリクスなどの名前が大半で、一部は生成物）と、`docs/developers/`・`docs/plugins/`（クライアントとプラグインの開発者が英語で読む）は訳さない。
     ロケールのそのページは Starlight の代替（英語のページと「まだ翻訳がない」旨の案内）とする
-  - サイドバーの見出しは、ページの見出しは訳したページの題から、区分の見出しは `app/docs/i18n/<locale>/sidebar.json` から付ける
-- 置き場所: `app/docs/i18n/<locale>/`（`<locale>` は UI のカタログと同じタグ、`zh-CN` など）に、原稿の `docs/` 以下と同じ道で置く（`docs/guide/posting.md` の訳は `app/docs/i18n/ja/guide/posting.md`）。
+  - サイドバーの見出しは、ページの見出しは訳したページの題から、区分の見出しは `web/docs/i18n/<locale>/sidebar.json` から付ける
+- 置き場所: `web/docs/i18n/<locale>/`（`<locale>` は UI のカタログと同じタグ、`zh-CN` など）に、原稿の `docs/` 以下と同じ道で置く（`docs/guide/posting.md` の訳は `web/docs/i18n/ja/guide/posting.md`）。
   `docs/` の外に置くので、`docs/` を英語だけにする規則（AGENTS.md の Documentation）はそのままである。
   §4 の写しの手順がロケールのページ（`src/content/docs/<locale>/`）を組み立てる。Starlight の i18n は、英語をルートのロケール、訳を `/<locale>/` とする
 - 翻訳の単位と古さの追跡
@@ -126,9 +126,9 @@
   - エージェントが翻訳のスキルに従って訳す
   - 訳す作業は手で始める。CI・ワークフロー・ビルドから翻訳の API を呼ばない。シークレットを増やさず、ビルドを再現できるままにするためである
   - リリースの手順に、タグの前にすべてのロケールを訳し直す手順を置く。ただしリリースの関門にはしない。版ごとのサイトはタグの作業ツリーからビルドするので（§6）、タグの時点の訳がその版で公開される
-- 道具: `app/docs/scripts/translations.ts`（`scripts/task.sh docs:site-translations`）が、訳すべき節の一覧（`status`）、節ごとの英語の本文と印（`todo`）、
+- 道具: `web/docs/scripts/translations.ts`（`scripts/task.sh docs:site-translations`）が、訳すべき節の一覧（`status`）、節ごとの英語の本文と印（`todo`）、
   原稿が引用する UI の用語とロケールのカタログ（`locales/<locale>/`）での訳（`glossary`）、訳の検査（`check`）を出す。
-  §4 の写しの手順と同じモジュール（`app/docs/src/translations.ts`）で節を読むので、両者の節の分け方は一致する
+  §4 の写しの手順と同じモジュール（`web/docs/src/translations.ts`）で節を読むので、両者の節の分け方は一致する
 - 訳の検査（`docs:site-translations-check`、サイトの文脈の `check` の一部）
   - 印が読めること、節が英語と同じ深さの見出しで始まること、原稿のどの文書も訳していないファイルがないことを確かめる
   - 古くない節については、コードブロック・コード片・リンク先が英語の本文と同じであることを確かめる。設定のキー・コマンド・リンクを訳で壊さないためである
@@ -136,7 +136,7 @@
 - 表示
   - 訳したページにはすべて、機械翻訳であり英語のページが正である旨の帯を、英語のページへのリンクとともに付ける
   - 法的文書のテンプレート（`docs/operations/privacy-policy-template.md`・`docs/operations/processing-record-template.md`）の訳には、使う前に法律の専門家の確認が要る旨を加える
-  - 帯と案内の文言は、サイトの UI 文字列（`app/docs/src/content/i18n/`）として英語と各ロケールで持つ
+  - 帯と案内の文言は、サイトの UI 文字列（`web/docs/src/content/i18n/`）として英語と各ロケールで持つ
 - 人による確認は記録しない。訳を直した人の手直しは、その節を訳し直すと上書きされうる
 - 訳は生成物ではない（ADR-0081）。生成器が同じ入力から同じ出力を作るものではなく、エージェントが書いてコミットする原稿の一種として扱う。
   ただし `agentkit docs lint` の対象から外す。リンクは英語の原稿の位置からの相対で書かれており、そのリンク先は訳の検査が英語と同じであることを保証する
@@ -144,7 +144,7 @@
 
 ### 10. 覆す条件
 
-- Starlight の取り込み（§4）が、原稿をリポジトリに置いたままでは保てないと分かったとき（生成物の写しでは足りず、原稿を `app/docs` に移す必要が出たとき）
+- Starlight の取り込み（§4）が、原稿をリポジトリに置いたままでは保てないと分かったとき（生成物の写しでは足りず、原稿を `web/docs` に移す必要が出たとき）
 - Cloudflare Workers の静的アセットの無料枠や条件が変わり、費用がかかるようになったとき。GitHub Pages に移す
 - `starlight-openapi` が `api/openapi.yaml` の OpenAPI 3.1 の部分集合を描画できないとき。Redocly か Scalar の静的出力を別のページとして置く
 - サポート中の版だけで上限に達するか、Worker の無料枠（1 日 10 万要求）に近づいたとき（§12）。有料のプラン（月 5 米ドル、100,000 ファイル）に移すかを決定者が決める
@@ -192,7 +192,7 @@ API の仕様は `api/openapi.yaml` として公開できる形にあるが、�
 - 訳を `docs/ja/` や原稿の隣（`running.ja.md`）に置く: GitHub でも訳を読める。しかし `docs/` を英語だけにする規則と `docs/lint.yaml` の各規則に例外が要り、原稿の一覧も二重になる
 
 - 文書を別のリポジトリに置く: サイトの変更をサーバーのリリースと切り離せ、コントリビューターも分けられる。しかし `userdocs` と `docs:pr-impact` による「コードと同じ PR で文書を直す」保証が切れ、版もずれるため採らない
-- 原稿を `app/docs/src/content/docs/` に移す: Starlight の標準の形で、写しの手順が要らない。しかし `docs/lint.yaml`・`context-map.yaml`・`docs/README.md` の仕組みと既存のリンクを作り直すことになり、
+- 原稿を `web/docs/src/content/docs/` に移す: Starlight の標準の形で、写しの手順が要らない。しかし `docs/lint.yaml`・`context-map.yaml`・`docs/README.md` の仕組みと既存のリンクを作り直すことになり、
   GitHub で原稿を読む形も崩れる。§4 の写しの手順が保てないときの退路とする（§10）
 - Hugo: Go の単一バイナリでピン留めが簡単で、ビルドも速い。しかしテーマと i18n、OpenAPI の描画を自前で揃える手間が大きい
 - MkDocs Material: 機能と見た目が揃っている。しかし Python のツールチェーンをひとつ足すことになる（ADR-0081 のピン留めの対象が増える）
@@ -228,7 +228,7 @@ API の仕様は `api/openapi.yaml` として公開できる形にあるが、�
   - 訳は英語の原稿より遅れうる。古い節は案内とともに表示され、訳し直すまで古いままである
   - 機械翻訳の訳は誤りを含みうる。帯で英語のページが正であることを示す
 - 後続の作業（Issue 化する）
-  - `app/docs` の骨組み、原稿の取り込み、サイドバー
+  - `web/docs` の骨組み、原稿の取り込み、サイドバー
   - API リファレンスと `docs/developers/`
   - 版のビルドと配信（`main` と `release.yml`）
   - Merge Queue の検査への組み込み

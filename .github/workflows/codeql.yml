@@ -44,7 +44,7 @@ jobs:
             name: go, pgtest
             category: /language:go/pgtest
             go-packages: ./pkg/testkit/pgtest
-          # Read without building: app/ (the Bun workspace) and tools/i18n, as configured in the config file.
+          # Read without building: the members of the Bun workspace, as configured in the config file.
           - language: javascript-typescript
             build-mode: none
             config-file: ./.github/codeql/javascript-typescript.yml

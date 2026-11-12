@@ -7,10 +7,5 @@ api/openapi.yaml linguist-generated=true
 # request diffs.
 internal/adapter/plugin/gen/** linguist-generated=true
 
-# The Unicode emoji data that `scripts/task.sh emoji:generate` writes (ADR-0091): collapsed in pull request diffs.
-app/web/src/features/emoji/unicode/*.gen.json linguist-generated=true
+# The emoji table that `scripts/task.sh emoji:generate` writes (ADR-0051 §6): collapsed in pull request diffs.
 internal/domain/content/emoji_table.gen.go linguist-generated=true
-
-# The Noto Color Emoji web font that `scripts/task.sh emoji:generate` writes (ADR-0091).
-app/ui/src/emoji.css linguist-generated=true
-app/ui/src/fonts/emoji/*.woff2 binary linguist-generated=true

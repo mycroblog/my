@@ -3,9 +3,9 @@
 // The Cloudflare Worker that serves the documentation site (ADR-0150 §7): the combined static build of every
 // published version (scripts/docs-site.sh build), and on each Preview pr-<number> the /next/ of one pull request
 // (scripts/docs-site.sh deploy-pr). The static assets answer every path but those of `run_worker_first`, which go to
-// the Worker's code (app/docs/worker/index.ts): the release notes page of each version, filled from GitHub Releases
+// the Worker's code (web/docs/worker/index.ts): the release notes page of each version, filled from GitHub Releases
 // (ADR-0150 §12).
-// scripts/docs-site.sh copies this file and app/docs/worker/ next to the build (./site) and runs wrangler on the copy,
+// scripts/docs-site.sh copies this file and web/docs/worker/ next to the build (./site) and runs wrangler on the copy,
 // always from main's checkout (docs-site-deploy.yml, docs-site-preview-deploy.yml): a pull request's build never brings
 // a config or code of its own.
 //

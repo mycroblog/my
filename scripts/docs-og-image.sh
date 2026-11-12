@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Renders the og:image of the documentation site, app/docs/public/og-image.png (1200 x 630, the size link previews
-# expect), from its SVG source app/docs/src/assets/og-image.svg. The PNG is committed; run this after changing the
+# Renders the og:image of the documentation site, web/docs/public/og-image.png (1200 x 630, the size link previews
+# expect), from its SVG source web/docs/src/assets/og-image.svg. The PNG is committed; run this after changing the
 # SVG. Needs ImageMagick (convert) with an SVG renderer, like scripts/web-icons.sh.
 # Usage: scripts/docs-og-image.sh
 set -euo pipefail

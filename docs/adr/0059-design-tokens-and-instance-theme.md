@@ -16,13 +16,13 @@
 
 - `theme.css` をトークンの唯一の定義にする。上書きできるトークンは `@theme`（`inline` でない）に置き、ユーティリティが `var(--*)` を参照する状態を保つ。
   上書きは CSS 変数の値を替えるだけで効く。上書きできるトークンを `@theme inline` にしないことを `theme.css` の注記と検査で守る。
-- `app/ui/scripts` の生成器（Bun）が、`theme.css` と `tokens.ts` から次を作る。コミットするのは Go の `theme_tokens.gen.go` だけで、`scripts/task.sh web:tokens` が古いと失敗する（ADR-0081）。クライアントの一覧はコミットせず、読むタスクの前に作る。
+- デザインシステムの生成器（Bun）が、`theme.css` と `tokens.ts` から次を作る。コミットするのは Go の `theme_tokens.gen.go` だけで、トークンの検査が古いと失敗する（ADR-0081）。クライアントの一覧はコミットせず、読むタスクの前に作る。
   - Go の `internal/domain/instance` の生成ファイル: 上書きできるトークンの一覧、それぞれの値の種類（色・長さ・フォントファミリー・影・時間・緩急・数）と既定値
     （色はライト / ダークを `#rrggbb` に解決したもの）、コントラストの組と最小値。
-    ドメインは標準ライブラリだけで、値の種類ごとの書式の検査と、WCAG 2.2 の相対輝度とコントラスト比（`app/ui/src/color.ts` と同じ式）を計算する。
-  - クライアントの `@my/ui` の同じ一覧（管理画面の入力・プレビュー・検査が使う）。コントラストの計算は `src/color.ts` に置き、検査スクリプトと管理画面が共有する。
-- 部品の側では、色以外のトークン（文字・余白・角丸・影・動き）も `theme.css` の値と app/ui/README.md の役割の表を正とし、
-  `scripts/task.sh web:tokens` は、任意の値の角丸・影・動きの時間（`rounded-[3px]`、`shadow-[…]`、`duration-[…]`）と、README にない余白の段階も拒む。
+    ドメインは標準ライブラリだけで、値の種類ごとの書式の検査と、WCAG 2.2 の相対輝度とコントラスト比（クライアントと同じ式）を計算する。
+  - クライアントのデザインシステムの同じ一覧（管理画面の入力・プレビュー・検査が使う）。コントラストの計算は 1 か所に置き、検査スクリプトと管理画面が共有する。
+- 部品の側では、色以外のトークン（文字・余白・角丸・影・動き）も `theme.css` の値とデザインシステムの役割の表を正とし、
+  トークンの検査は、任意の値の角丸・影・動きの時間（`rounded-[3px]`、`shadow-[…]`、`duration-[…]`）と、README にない余白の段階も拒む。
   部品がトークンだけを使うことで、トークンの上書きが画面全体に一様に効く。
 - Storybook の `Foundations/Theme sample` に、上書きの見本（色と余白・角丸を変えたテーマ）を当てた表示を置く。
 
@@ -33,8 +33,8 @@
     `#rrggbb` は sRGB の中にあることが書式で決まり、色域の検査が要らず、管理画面の色の入力（`<input type="color">` の値）と同じ形になる。
   - 文字: `--font-sans` / `--font-mono` / `--font-serif`（フォントファミリーの名前の並び）、`--text-*` の大きさと行の高さ。
   - 余白の単位 `--spacing`、角丸 `--radius-*`、影 `--elevation-*`、動きの時間と緩急。
-- 長さと数には、画面が使えなくならない範囲の上限と下限を生成ファイルに持たせる（範囲の値は実装（#664）で決め、app/ui/README.md に書く）。
-- 次のトークンは固定で、上書きできない（`app/ui/src/tokens.ts` の `fixedTokens`）。
+- 長さと数には、画面が使えなくならない範囲の上限と下限を生成ファイルに持たせる（範囲の値は実装（#664）で決め、デザインシステムの説明に書く）。
+- 次のトークンは固定で、上書きできない（`tokens.ts` の `fixedTokens`）。
   - 原色 `--palette-*`: 意味の色の実装の詳細で、名前と段階が版で変わりうるため。原色を替えたいときは、意味の色を直接上書きする。
   - `--shadow-*`: Tailwind が値をユーティリティに写すため。`--elevation-*` を上書きする。
   - `--color-badge-*`: バッジの色は ADR-0070 が決める。サーバーのテーマはバッジのトークンを上書きしない。
@@ -163,7 +163,7 @@ instance モジュールが持つ。テーブルの形は `schema/09-instance/<d
 - `my serve` が `/brand/<revision-id>/<版>.svg|.png` で返す（本体のオリジン。外枠の `img-src 'self'` のまま）。中身はリビジョンで決まるので `Cache-Control: public, max-age=31536000, immutable`。
 - SVG の応答のヘッダー: `Content-Type: image/svg+xml`、`Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox`、`X-Content-Type-Options: nosniff`。
   URL を直接開いても、スクリプト・外部の取得・フォームは動かない（サニタイズとの二重の守り）。PNG は `image/png` と同じ `nosniff`。
-- **クライアントは SVG を `<img>` か CSS の背景でだけ出す**。インラインの `<svg>` にも `dangerouslySetInnerHTML` にもしない（`@my/ui` の部品で一か所に閉じる）。
+- **クライアントは SVG を `<img>` か CSS の背景でだけ出す**。インラインの `<svg>` にも `dangerouslySetInnerHTML` にもしない（デザインシステムの部品で一か所に閉じる）。
 - **外枠**（`shell.go`）: アイコンがあれば `<link rel="icon" type="image/png" sizes="32x32">`（と 48）・`<link rel="icon" type="image/svg+xml">`（SVG）・
   `<link rel="apple-touch-icon" href="…/apple-touch-180.png">` をその URL で出し、組み込みのものを出さない。ロゴは外枠の JSON のデータブロックと `GET /instance` で渡す。
   外枠の ETag にブランドのリビジョンを足す。
@@ -208,7 +208,7 @@ instance モジュールが持つ。テーブルの形は `schema/09-instance/<d
 - iOS の `apple-touch-icon` は PNG のみ（[Apple](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html)）。
 - OGP は形式を決めていない（[ogp.me](https://ogp.me/)）ので、クローラーの扱いに依らないよう PNG だけを出す。Gmail は SVG を PNG に変換して出す（[Can I email](https://www.caniemail.com/features/image-svg/)、最終テスト 2026-09-16）ので、メールにも PNG を出す。
 
-トークンの上書きが `@layer` の外の `:root` の規則で Tailwind のユーティリティに効くことは、`app/web/e2e/instance-theme.spec.ts` で確かめている。
+トークンの上書きが `@layer` の外の `:root` の規則で Tailwind のユーティリティに効くことは、E2E で確かめた。
 
 組み込みのリンクプレビューの画像を白の地とワードマークにしたのは、標準のデザインにない絵ではプレビューがブランドに沿わず不具合に見えるためである（#2754）。
 

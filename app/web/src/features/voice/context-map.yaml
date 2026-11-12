@@ -1,3 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md"]
-userdocs: ["docs/operations/voice.md", "docs/guide/voice-chat.md"]

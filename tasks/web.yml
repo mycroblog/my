@@ -1,326 +1,69 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The web client and the client workspace (ADR-0025; the web context of scripts/changed-contexts.sh).
-# app/ is the Bun workspace of the TypeScript clients (app/ui = @my/ui, app/web). Bun installs the packages and runs
-# their scripts; Vite runs on Node.js from .tool-versions, because the scripts' `vite` is a `#!/usr/bin/env node`
-# bin. Do not add --bun (ADR-0025). The generated files the workspace reads are not committed (ADR-0081): every
-# task that reads them depends on web:generate, which skips the generators whose sources are unchanged.
+# The Bun workspace at the repository root (ADR-0025 §2, §10; the web context of scripts/changed-contexts.sh): its
+# members are the packages under web/, tools/i18n, pkg/mykit/ts, and pkg/mybot/ts, installed once from bun.lock.
+# Every tool runs on Bun alone (ADR-0025 §10). The checks of each member live with its area: web/docs in
+# tasks/docs.yml (site:check), tools/i18n in tasks/i18n.yml, the published packages in tasks/mykit.yml.
 version: "3"
 
 vars:
-  # The packages of the client workspace that may have one license outside NPM_ALLOWED_LICENSES, each NAME=LICENSE
-  # (a NAME ending in `*` is a prefix; src/licenses.ts --exempt): any other package with that license still fails.
+  # The packages of the workspace that may have one license outside NPM_ALLOWED_LICENSES, each NAME=LICENSE
+  # (a NAME ending in `*` is a prefix; tools/i18n/src/licenses.ts --exempt): any other package with that license still
+  # fails.
   # - @img/sharp-libvips-*: the prebuilt libvips of sharp, the image library Astro uses when it builds the
-  #   documentation site (app/docs). The FSF lists LGPLv3 as compatible with AGPLv3, and the site is a build tool,
-  #   never shipped in the client or the server image.
+  #   documentation site (web/docs). The FSF lists LGPLv3 as compatible with AGPLv3, and the site is a build tool,
+  #   never shipped in the server image.
   NPM_LICENSE_EXEMPTIONS: "@img/sharp-libvips-*=LGPL-3.0-or-later"
-  # internal/interface/web embeds the build from here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
-  # committed, so Go builds and tests need no Bun; go:bin embeds the real build.
+  # internal/interface/web embeds what web:build places here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
+  # committed, so Go builds and tests need no Bun; go:bin embeds what web:build placed.
   WEB_EMBED_DIR: internal/interface/web/dist
-  # The files bun fmt formats (web:fmt, web:fmt-check): the TypeScript and JavaScript of every TS package. The options
-  # are in the [fmt] section of the root bunfig.toml; .prettierignore lists the files it leaves alone, besides
-  # .gitignore's.
+  # The files bun fmt formats (web:fmt, web:fmt-check): the TypeScript and JavaScript of every member. The options are
+  # in the [fmt] section of bunfig.toml; .prettierignore lists the files it leaves alone, besides .gitignore's.
   FMT_FILES: >-
-    'app/**/*.{ts,tsx,js,mjs}' 'pkg/mykit/ts/**/*.{ts,tsx,js,mjs}' 'pkg/mybot/ts/**/*.{ts,tsx,js,mjs}'
+    'web/**/*.{ts,tsx,js,mjs}' 'pkg/mykit/ts/**/*.{ts,tsx,js,mjs}' 'pkg/mybot/ts/**/*.{ts,tsx,js,mjs}'
     'tools/i18n/**/*.{ts,tsx,js,mjs}'
 
 tasks:
-  # web:lint-rules copies its violation fixtures into app/web/src while it runs, so the tasks that read app/web/src
-  # (tsc, Oxlint, knip, the build, Vitest, the token scan) run after it, never beside it.
   check:
-    desc: Run the offline checks of app/web and the workspace-wide client checks (Oxlint, knip, bun fmt, licenses, tokens), in parallel
-    deps: [lint-rules]
-    cmds:
-      - task: check-after-lint-rules
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) in parallel
+    deps: [fmt-check, licenses]
 
-  # Without a desc, so `--list` leaves it out; not internal, so scripts/ci-coverage.sh can read it with --summary.
-  check-after-lint-rules:
-    deps: [static, fmt-check, lint-css, licenses, tokens, test, playwright-image-check]
-
-  static:
-    desc: Run tsc on app/web, Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
-    deps: [typecheck, oxlint, knip, dist]
-
-  # It skips while app/node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
+  # It skips while node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.
   install:
-    desc: Install the pinned client workspace dependencies (app/bun.lock)
+    desc: Install the pinned dependencies of the workspace (bun.lock)
     run: once
-    dir: app
-    sources: [bun.lock, bunfig.toml, package.json, "*/package.json", ../pkg/mykit/ts/package.json, ../pkg/mybot/ts/package.json]
+    sources: [bun.lock, bunfig.toml, package.json, "web/*/package.json", tools/i18n/package.json, pkg/mykit/ts/package.json, pkg/mybot/ts/package.json]
     status:
       - test -d node_modules
     cmds:
       - bun install --frozen-lockfile
 
-  generate:
-    desc: Generate the uncommitted files the client workspace reads (route tree, i18n accessors and client pseudo-locales, theme tokens)
-    run: once
-    deps: [routes-gen, tokens-gen-ts, ":i18n:gen-ts"]
-
-  routes-gen:
-    desc: Generate app/web/src/routeTree.gen.ts from app/web/src/routes without Vite (app/web/scripts/routes.ts)
-    deps: [install]
-    run: once
-    sources:
-      - "app/web/src/routes/**/*"
-      - app/web/scripts/routes.ts
-      - app/bun.lock
-    generates:
-      - app/web/src/routeTree.gen.ts
-    cmds:
-      - cd app/web && node scripts/routes.ts
-
-  typecheck:
-    desc: Type-check app/web with tsc (incremental, node_modules/.cache/tsc)
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run typecheck
-
-  # web:check builds into app/web/dist only, never into internal/interface/web/dist that the Go builds embed.
-  dist:
-    desc: Build app/web into app/web/dist (fails when React Compiler compiled nothing or skipped a function)
-    deps: [generate]
-    run: once
-    dir: app
-    cmds:
-      - bun run build
-
+  # What the server embeds (internal/interface/web): the files of web/brand, whose icons it serves at the root and
+  # lists in the Web App Manifest. There is no client build, so the shell loads no client script. The Dockerfile's
+  # build stage mounts web/brand there the same way.
   build:
-    desc: Build app/web and copy the build to internal/interface/web/dist for embedding
-    deps: [dist]
+    desc: Place the build that the Go server embeds in internal/interface/web/dist (the brand assets of web/brand)
     cmds:
       - find {{.WEB_EMBED_DIR}} -mindepth 1 ! -name .gitkeep -delete
-      - cp -R app/web/dist/. {{.WEB_EMBED_DIR}}/
-
-  dev:
-    desc: Start the Vite dev server of app/web on http://localhost:5173 (give it to `my serve -dev-vite-origin`, CONTRIBUTING.md)
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run dev
+      - cp web/brand/* {{.WEB_EMBED_DIR}}/
 
   licenses:
-    desc: Fail on client npm dependency licenses incompatible with AGPL-3.0
-    deps: [install, ":i18n:install"]
+    desc: Fail on npm dependency licenses of the workspace incompatible with AGPL-3.0
+    deps: [install]
     dir: tools/i18n
     cmds:
-      - bun run src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --exempt {{shellQuote .NPM_LICENSE_EXEMPTIONS}} ../../app/node_modules
-
-  lint:
-    desc: Lint the client workspace, the tests of the Oxlint restrictions first, then Oxlint, knip, and no 100vh in CSS in parallel
-    deps: [lint-rules]
-    cmds:
-      - task: lint-after-lint-rules
-
-  lint-after-lint-rules:
-    deps: [oxlint, knip, lint-css]
-
-  oxlint:
-    desc: Run Oxlint on the client workspace (app/.oxlintrc.json)
-    deps: [generate]
-    dir: app
-    cmds:
-      - bun run lint
-
-  lint-rules:
-    desc: Test the Oxlint restrictions and their violation fixtures (app/oxlint), which it copies into app/web/src
-    deps: [generate]
-    run: once
-    dir: app
-    cmds:
-      - bun run lint:rules
-
-  knip:
-    desc: Find unused files, exports, and dependencies of the client workspace with knip
-    deps: [generate]
-    dir: app
-    cmds:
-      - bun run knip
+      - bun src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --exempt {{shellQuote .NPM_LICENSE_EXEMPTIONS}} ../../node_modules
 
   # Bun only: it reads no node_modules, so it needs no install.
   fmt:
-    desc: Format the TypeScript and JavaScript of app/, pkg/mykit/ts, pkg/mybot/ts, and tools/i18n with bun fmt (the preflight checks it, so run it before committing them)
+    desc: Format the TypeScript and JavaScript of web/, pkg/mykit/ts, pkg/mybot/ts, and tools/i18n with bun fmt (the preflight checks it, so run it before committing them)
     cmds:
       - bun fmt {{.FMT_FILES}}
 
-  # The i18n, mail, and mykit checks run it too, for their packages' files.
+  # The i18n, site, and mykit checks run it too, for their packages' files.
   fmt-check:
-    desc: Fail if bun fmt would change a TypeScript or JavaScript file of the TS packages (scripts/task.sh web:fmt fixes them)
+    desc: Fail if bun fmt would change a TypeScript or JavaScript file of the workspace (scripts/task.sh web:fmt fixes them)
     run: once
     cmds:
       - bun fmt --check {{.FMT_FILES}}
-
-  lint-css:
-    desc: Fail when CSS uses 100vh (docs/architecture/web-client/README.md D5)
-    cmds:
-      - >-
-        ! grep -rn --include='*.css' '100vh' app/ui/src app/web/src
-        || { echo 'CSS must not use 100vh; use svh / dvh (docs/architecture/web-client/README.md D5)' >&2; exit 1; }
-
-  tokens:
-    desc: Check the @my/ui design tokens, WCAG AA contrast of every token pair, no palette / arbitrary colors or token values, motion only under motion-safe, the committed Go token list up to date
-    deps: [tokens-gen-ts]
-    dir: app/ui
-    cmds:
-      - bun run check-tokens
-
-  tokens-gen:
-    desc: Regenerate the list of the tokens a server theme may override (ADR-0059) from app/ui/src/theme.css and tokens.ts (commit the Go file)
-    deps: [install]
-    run: once
-    sources: &tokens-sources
-      - app/ui/src/theme.css
-      - app/ui/src/tokens.ts
-      - app/ui/src/color.ts
-      - app/ui/scripts/theme-tokens.ts
-      - app/ui/scripts/theme-source.ts
-    generates:
-      - app/ui/src/themeTokens.gen.ts
-      - internal/domain/instance/theme_tokens.gen.go
-    cmds:
-      - cd app/ui && bun run scripts/theme-tokens.ts
-
-  tokens-gen-ts:
-    desc: Generate app/ui/src/themeTokens.gen.ts, the token list the theme editor and the @my/ui checks read
-    deps: [install]
-    run: once
-    sources: *tokens-sources
-    generates:
-      - app/ui/src/themeTokens.gen.ts
-    cmds:
-      - cd app/ui && bun run scripts/theme-tokens.ts --ts
-
-  test:
-    desc: Run the app/web component tests with Vitest (jsdom + MSW); SHARD=1/2 runs one of two shards
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run test{{if .SHARD}} --shard={{.SHARD}}{{end}}
-
-  # Playwright runs against `vite preview` of the fresh build, and the server-rendered pages against `my serve` on
-  # SQLite from the fresh bin/my (app/web/e2e/server.ts). E2E_MATRIX=full also runs the width and locale
-  # projects (the slow suite); the default is the primary project alone (app/web/playwright.config.ts). It runs every test in one go; CI
-  # (web-e2e.yml) builds once and runs the tests as Playwright shards in the pinned Playwright image. Locally,
-  # install the browser once with web:e2e-install. Both servers listen on free ports picked per run
-  # (E2E_PREVIEW_PORT / E2E_SERVER_PORT fix them), so parallel runs in several worktrees stay apart;
-  # E2E_BASE_URL / E2E_SERVER_URL test servers started elsewhere instead.
-  # The screen stories (ADR-0165 §1): each renders the whole app at a route, with MSW in the browser playing the server
-  # with the features' default handlers. The Storybook composes the @my/ui Storybook: ui:storybook on port 6006 in
-  # development, and the static build of web:storybook-build carries the kit's build under ui/.
-  storybook:
-    desc: Start the app/web Storybook of the screens on http://localhost:6007 (start ui:storybook too for the components)
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run storybook
-
-  storybook-build:
-    desc: Build the static Storybook of the screens into app/web/storybook-static, with the @my/ui Storybook under ui/
-    deps: [generate, ":ui:storybook-build"]
-    cmds:
-      - cd app/web && bun run build-storybook
-      - rm -rf app/web/storybook-static/ui
-      - cp -R app/ui/storybook-static app/web/storybook-static/ui
-
-  story-test:
-    desc: Run the app/web screen stories in Chromium with their play functions and axe (no screenshots; ui:test-install installs it); SHARD=1/2 runs one of two shards
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run test:stories{{if .SHARD}} --shard={{.SHARD}}{{end}}
-
-  # The look of a change before its pull request (app/web/scripts/shot.ts): no Docker and no Storybook build. It
-  # starts the Storybook dev server of app/web or app/ui on a free port and leaves it for the next call (it stops
-  # after 30 minutes without one; `-- --stop` stops it). Standard output is the PNG paths, one a line, each followed
-  # by an `overflow: <selector>` line for whatever reaches past the viewport or scrolls sideways at that width;
-  # .tmp/agentkit/shots/manifest.json lists the shots for `agentkit pr open`. interactive, so that the lines carry
-  # no task prefix.
-  shot:
-    desc: Render stories to PNGs in .tmp/agentkit/shots and flag sideways overflow (`-- <story id | story file | route | L1 file> ... [--width 390,1440] [--theme light,dark] [--locale en,ja]`, or `-- --changed`)
-    deps: [generate]
-    dir: app/web
-    silent: true
-    interactive: true
-    cmds:
-      - node scripts/shot.ts {{.CLI_ARGS}}
-
-  # web:story-test holds every story to the budget of its screen's L1 file (app/web/l4/budget.ts). This fills in what
-  # is missing and never changes a budget or a baseline that exists: those are edited by hand, for the owner to review.
-  budget-init:
-    desc: Write a budget into the L1 files of the screens that have none, from what their stories show now (and app/web/l4/screenBaseline.json when missing)
-    deps: [generate]
-    dir: app/web
-    env:
-      BUDGET: init
-    cmds:
-      - bun run test:stories
-
-  e2e:
-    desc: Run the web E2E tests with Playwright (E2E_MATRIX=full adds the width and locale projects)
-    deps: [":go:bin"]
-    dir: app/web
-    cmds:
-      - bun run e2e
-
-  # The demo server (ADR-0015 §8): starts the development Mailpit, builds bin/my as the test build (GO_TAGS=e2e_fakes,
-  # the fake payment provider, the fake search index, and the fake push service), and runs `node e2e/server.ts demo` on a fresh database under
-  # .tmp/demo on every start, with Web Push on (a VAPID key generated on the spot, `my dev push-service` on
-  # https://localhost:8930 as its only push service), which applies the demo scenario (app/web/demo) and prints the URL,
-  # Mailpit's web UI, and the people's sign-ins. DEMO_PORT moves it from 8787, PUSH_SERVICE_PORT the fake push service
-  # from 8930. It runs until Ctrl-C, and needs Docker. bin/my stays the test build afterwards: never release it (go:bin
-  # without GO_TAGS builds the normal one again).
-  demo:
-    desc: Start a demo server with the demo scenario, the fake payment provider and push service, its email in Mailpit (needs Docker)
-    deps: [install]
-    cmds:
-      - task: :docker:mailpit
-      - task: :go:bin
-        vars: { GO_TAGS: e2e_fakes }
-      - cmd: >-
-          cd app/web && E2E_DEMO_SERVER_PORT={{.DEMO_PORT | default "8787"}} E2E_DEMO_SERVER_DIR="{{.ROOT_DIR}}/.tmp/demo"
-          E2E_PUSH_SERVICE_PORT={{.PUSH_SERVICE_PORT | default "8930"}} node e2e/server.ts demo
-        ignore_error: true
-
-  # The L4 task tests (ADR-0110 §7, ADR-0015; app/web/l4/run.ts): Claude Code, non-interactive, does the tasks of the
-  # screens' L1 files through the Playwright MCP server (ARIA snapshots only) against the demo server of web:demo
-  # (`node e2e/server.ts demo`: the test build with the demo scenario, its email in Mailpit), and the steps,
-  # backtracks, and lostness of each task go to .tmp/l4/results.json. SCREEN=<name>[,<name>] picks screens,
-  # SINCE=<commit> the screens changed since then, neither every screen; CAP bounds the tasks. DRY_RUN=1 does
-  # everything but call the agent. It starts Mailpit as web:demo does (needs Docker), unless MAILPIT_RUNNING=1 says
-  # that it already runs (the Nightly job starts it with .github/actions/start-mailpit). It needs `claude` on PATH,
-  # signed in or with the Workload Identity Federation variables (Nightly), and the Chromium of web:e2e-install.
-  l4:
-    desc: Run the L4 task tests of the screens' L1 with Claude Code on the demo server (SCREEN=<name>, DRY_RUN=1 without the agent; needs Docker for Mailpit)
-    deps: [install]
-    cmds:
-      - task: :docker:mailpit
-        if: '[ "{{.MAILPIT_RUNNING}}" != 1 ]'
-      - task: :go:bin
-        vars: { GO_TAGS: e2e_fakes }
-      - >-
-        cd app/web && node l4/run.ts --cap {{.CAP | default "10"}} --out "{{.ROOT_DIR}}/.tmp/l4/results.json"
-        {{if .SCREEN}}--screen {{.SCREEN}}{{end}} {{if .SINCE}}--since {{.SINCE}}{{end}} {{if .DRY_RUN}}--dry-run{{end}}
-
-  # Files or updates one issue per screen for the tasks of .tmp/l4/results.json over lostness 0.4 or not completed (app/web/l4/issues.ts),
-  # with `gh`; DRY_RUN=1 prints them instead.
-  l4-issues:
-    desc: File or update the issues of the last web:l4 run's tasks over lostness 0.4 or not completed (DRY_RUN=1 prints them)
-    dir: app/web
-    cmds:
-      - node l4/issues.ts --results "{{.ROOT_DIR}}/.tmp/l4/results.json" {{if .DRY_RUN}}--dry-run{{end}}
-
-  e2e-install:
-    desc: Download the Playwright browsers that web:e2e uses, Firefox and WebKit for the emoji font spec (local runs only)
-    deps: [install]
-    dir: app/web
-    cmds:
-      - bun run playwright install chromium firefox webkit
-
-  playwright-image-check:
-    desc: Fail if a workflow's Playwright image or a playwright package version differs from PLAYWRIGHT_IMAGE
-    env:
-      PLAYWRIGHT_IMAGE: "{{.PLAYWRIGHT_IMAGE}}"
-    cmds:
-      - scripts/playwright-image-check.sh

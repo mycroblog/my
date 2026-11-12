@@ -18,7 +18,7 @@ type draft struct {
 
 // doc links the page of a published document (docs/operations/database.md#upgrading) on the documentation site, at
 // the version of the release: /vX.Y/ for a stable release, /next/ for a pre-release, which the site does not publish.
-// The page path mirrors the document's path, as app/docs/src/published.ts and internal/platform/docsite map it.
+// The page path mirrors the document's path, as web/docs/src/published.ts and internal/platform/docsite map it.
 func doc(version, path, title string) string {
 	site := "next"
 	if !strings.Contains(version, "-") {

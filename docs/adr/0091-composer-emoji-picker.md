@@ -16,7 +16,7 @@
   CLDR は `unicode-org/cldr-json` のリリースの JSON（`cldr-annotations-full/annotations/<ロケール>/annotations.json` と `cldr-annotations-derived-full/annotationsDerived/<ロケール>/annotations.json`）を取る。
   CLDR 49（cldr-json 49.0.0、2026-10-22 公開）は、Emoji 18.0 の `emoji-test.txt` の絵文字（`Component` を除く）すべてに `en` と `ja` の名前を持つ（2026-10-23 に両方を取得して突き合わせて確認）。
   CLDR の annotations は VS16（U+FE0F）を外した列を鍵にするので、生成器は fully-qualified の列と VS16 を外した列の両方で引く。
-- クライアントのデータは `app/web/src/features/emoji/unicode/` に生成してコミットする（`*.gen.json`）。
+- クライアントのデータは `features/emoji/unicode/` に生成してコミットする（`*.gen.json`）。
   - 基本のデータ（ロケールに依らない）: 書記素の列（fully-qualified）、グループ、並び順、絵文字の版、肌の色の異体の列。`Component` のグループ（肌の色の修飾子だけのものなど）は出さない。
   - ロケールごとのデータ: CLDR の短い名前とキーワード。`en` と `ja` を作り、`en-XA` / `ar-XB`（疑似ロケール）とほかのロケールは `en` に落とす。CLDR に名前が無い絵文字は `en`、それも無ければ `emoji-test.txt` の英語の名前を使う。
 - グループの名前（9 個）と肌の色の選択の文言は、メッセージカタログ（`client` の名前空間）に足す（ADR-0009）。肌の色の 5 段階の名前は CLDR の修飾子の annotations を使う。
@@ -285,7 +285,7 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
   - リポジトリに約 5.7 MB のバイナリが入り、Unicode の版を上げるたびに増える。生成に Python の道具（fontTools・brotli・lxml・uharfbuzz）が要る。
   - 通知（Web Push）・`document.title`・OS のネイティブの UI（`select` の一覧など）は OS のフォントで描かれ、Noto にならない。
   - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/ui/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
-  - サーバー単位のテーマで `font-sans` / `font-mono` を上書きすると、`"my Noto Color Emoji"` を先頭に残さない限り、Web クライアントの絵文字も OS のフォントになる（[app/ui/README.md](../../app/ui/README.md#server-themes)・[運用の手引き](../operations/instance-settings.md#theme)）。
+  - サーバー単位のテーマで `font-sans` / `font-mono` を上書きすると、`"my Noto Color Emoji"` を先頭に残さない限り、Web クライアントの絵文字も OS のフォントになる（[運用の手引き](../operations/instance-settings.md#theme)）。
   - グリッドのキー操作・フォーカスの移動・ARIA の属性を自前で持つ。`GridList` が持っていた細かな扱い（typeahead など）は持たない。テスト（Testing Library のキー操作と Storybook の実ブラウザ）で固める。
   - React Compiler から外すフックが `Feed` のほかにもう 1 つある（web-client R4）。
   - ブラウザーのページ内検索（Ctrl+F）は、描いていない絵文字を見つけない。名前で探すのはピッカーの検索欄が受け持つ。

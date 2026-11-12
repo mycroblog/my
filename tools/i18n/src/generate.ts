@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Computes the generated files from the source catalogs, without writing anything. They come in two parts
-// (ADR-0081): the files Go reads, which are committed,
-//   locales/{en-XA,ar-XB}/<namespace>/   pseudo-locales of the namespaces Go formats (FormatJS AST transforms),
-//                                        one file per area as in the source locale
+// Computes the generated files from the source catalogs, without writing anything. Go reads them and the repository
+// commits them (ADR-0081):
+//   locales/{en-XA,ar-XB}/<namespace>/   pseudo-locales (FormatJS AST transforms), one file per area as in the
+//                                        source locale
 //   internal/i18n/messages_gen.go        Go typed accessors
 //   internal/i18n/testdata/golden.json   FormatJS outputs the Go parity tests compare against
-// and the files only the TS clients read, which are not:
-//   locales/{en-XA,ar-XB}/client*/            pseudo-locales of the client namespaces
-//   tools/i18n/src/runtime/messages.gen.ts   TS typed accessors
-// gen.ts writes the result; check.ts compares the committed part with the committed files.
+// gen.ts writes the result; check.ts compares it with the committed files.
 import { compile } from "@formatjs/cli-lib";
 import type { MessageFormatElement } from "@formatjs/icu-messageformat-parser";
 import { printAST } from "@formatjs/icu-messageformat-parser/printer.js";
@@ -20,22 +17,18 @@ import {
   catalogFile,
   goPackageDir,
   goTestdataDir,
-  isClientNamespace,
   isPseudo,
   type Namespace,
-  repoRoot,
   SOURCE,
   toJSON,
 } from "./catalog";
 import { type ArgType, extractArgs, parseMessage } from "./icu";
-import { compileMessage, createTranslator } from "./runtime/translator";
-
-export const runtimeDir = join(repoRoot, "tools", "i18n", "src", "runtime");
+import { compileMessage, createTranslator } from "./translator";
 
 /** Pseudo-locale -> FormatJS pseudo-locale transform. ar-XB uses FormatJS's RTL "en-XB". */
 const PSEUDO_TRANSFORMS = { "en-XA": "en-XA", "ar-XB": "en-XB" } as const;
 
-export type Message = {
+type Message = {
   ns: string;
   key: string;
   id: string;
@@ -45,7 +38,7 @@ export type Message = {
 };
 
 /** Parses every source-locale message; throws on ICU errors (check.ts reports them first). */
-export function sourceMessages(catalog: Catalog): Message[] {
+function sourceMessages(catalog: Catalog): Message[] {
   const messages: Message[] = [];
   for (const [ns, entries] of Object.entries(catalog[SOURCE] ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
     for (const [key, entry] of Object.entries(entries).sort(([a], [b]) => a.localeCompare(b))) {
@@ -63,15 +56,12 @@ export function sourceMessages(catalog: Catalog): Message[] {
   return messages;
 }
 
-/** The part of the generated files a namespace's pseudo-locales belong to. */
-export const pseudoPart = (ns: string): Part => (isClientNamespace(ns) ? "ts" : "go");
-
-async function pseudoCatalogs(catalog: Catalog, part: Part): Promise<Catalog> {
+async function pseudoCatalogs(catalog: Catalog): Promise<Catalog> {
   const out: Catalog = {};
-  for (const ns of Object.keys(catalog[SOURCE])
-    .filter((ns) => pseudoPart(ns) === part)
-    .sort()) {
-    const files = [...new Set(Object.keys(catalog[SOURCE][ns]).map((key) => catalogFile(SOURCE, ns, key)))];
+  const sources = catalog[SOURCE] ?? {};
+  for (const ns of Object.keys(sources).sort()) {
+    const keys = Object.keys(sources[ns] ?? {});
+    const files = [...new Set(keys.map((key) => catalogFile(SOURCE, ns, key)))];
     for (const [locale, transform] of Object.entries(PSEUDO_TRANSFORMS)) {
       // FormatJS pseudo-localizes the parsed AST, so arguments, `#` and plural keywords
       // survive; print it back to ICU source.
@@ -79,9 +69,11 @@ async function pseudoCatalogs(catalog: Catalog, part: Part): Promise<Catalog> {
         await compile(files, { pseudoLocale: transform, ast: true }),
       );
       const entries: Namespace = {};
-      for (const key of Object.keys(catalog[SOURCE][ns]).sort()) {
+      for (const key of keys.sort()) {
+        const ast = compiled[key];
+        if (!ast) throw new Error(`FormatJS did not compile ${ns}:${key}`);
         entries[key] = {
-          defaultMessage: printAST(compiled[key]),
+          defaultMessage: printAST(ast),
           description: "Generated from en by tools/i18n; do not edit.",
         };
       }
@@ -96,7 +88,7 @@ async function pseudoCatalogs(catalog: Catalog, part: Part): Promise<Catalog> {
 const words = (s: string) => s.split(/[._\-:]/).filter(Boolean);
 export const goName = (id: string): string =>
   words(id)
-    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join("");
 const GO_KEYWORDS = new Set(
   "break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var".split(
@@ -105,7 +97,7 @@ const GO_KEYWORDS = new Set(
 );
 const goParam = (name: string) => {
   const n = goName(name);
-  const p = n[0].toLowerCase() + n.slice(1);
+  const p = n.charAt(0).toLowerCase() + n.slice(1);
   return GO_KEYWORDS.has(p) ? `${p}Arg` : p;
 };
 const goType = (t: ArgType): string => {
@@ -118,29 +110,13 @@ const goType = (t: ArgType): string => {
     case "date":
       return "time.Time";
     case "tag":
-      throw new Error("rich-text tags are client-only and have no Go accessor");
-  }
-};
-const tsType = (t: ArgType): string => {
-  switch (t.kind) {
-    case "string":
-      return "string";
-    case "number":
-      return "number";
-    case "date":
-      return "Date | number";
-    case "select":
-      // Literal options for autocompletion; `other` accepts any string.
-      return [...t.options.map((o) => JSON.stringify(o)), "(string & {})"].join(" | ");
-    case "tag":
-      return "(chunks: string[]) => string";
+      throw new Error("rich-text tags are outside the shared subset and have no Go accessor");
   }
 };
 const comment = (s: string) => s.replaceAll("\n", " ");
 
 function goAccessors(messages: Message[]): string {
-  const server = messages.filter((m) => !m.ns.startsWith("client"));
-  const needsTime = server.some((m) => m.args.some(([, t]) => t.kind === "date"));
+  const needsTime = messages.some((m) => m.args.some(([, t]) => t.kind === "date"));
   return [
     "// SPDX-License-Identifier: AGPL-3.0-only",
     "",
@@ -149,7 +125,7 @@ function goAccessors(messages: Message[]): string {
     "package i18n",
     "",
     ...(needsTime ? ['import "time"', ""] : []),
-    ...server.flatMap(({ id, source, description, args }) => {
+    ...messages.flatMap(({ id, source, description, args }) => {
       const name = goName(id);
       // A message with two or more arguments takes them by name, in a struct of its own: positional
       // parameters of the same type (mostly string) would let a caller swap them without a compile error.
@@ -188,25 +164,6 @@ function goAccessors(messages: Message[]): string {
   ].join("\n");
 }
 
-function tsAccessors(messages: Message[]): string {
-  return [
-    "// SPDX-License-Identifier: AGPL-3.0-only",
-    "// Code generated by tools/i18n (scripts/task.sh i18n:gen); DO NOT EDIT.",
-    "",
-    "export interface MessageArgs {",
-    ...messages.map(({ id, source, args }) =>
-      [
-        `  /** ${comment(source).replaceAll("*/", "*\\/")} */`,
-        `  ${JSON.stringify(id)}: {${args.length ? ` ${args.map(([n, t]) => `${n}: ${tsType(t)}`).join("; ")} ` : ""}};`,
-      ].join("\n"),
-    ),
-    "}",
-    "",
-    "export type MessageKey = keyof MessageArgs;",
-    "",
-  ].join("\n");
-}
-
 // ---- Parity fixtures ----
 
 type Value = string | number;
@@ -216,7 +173,7 @@ type Cases = {
   /** Standalone messages covering the shared-subset syntax. */
   syntax: { locale: string; message: string; args: Record<string, Value> }[];
 };
-export const GOLDEN_LOCALES = [SOURCE, "ja", "zh-CN", "zh-TW", "es", "pt-BR", "de", "fr", "en-XA", "ar-XB"];
+const GOLDEN_LOCALES = [SOURCE, "ja", "zh-CN", "zh-TW", "es", "pt-BR", "de", "fr", "en-XA", "ar-XB"];
 /** Locales with non-trivial CLDR plural rules or number formats, for the drift test. */
 const CLDR_LOCALES = [
   "en",
@@ -244,9 +201,9 @@ function golden(catalog: Catalog): string {
   const cases: Cases = JSON.parse(readFileSync(join(goTestdataDir, "cases.json"), "utf8"));
   const catalogOut: Record<string, string[]> = {};
   for (const locale of GOLDEN_LOCALES) {
-    const t = createTranslator(catalog, locale) as (key: string, args?: Record<string, Value>) => string;
+    const t = createTranslator(catalog, locale);
     catalogOut[locale] = cases.catalog.map(({ key, args }) => {
-      const [ns, id] = key.split(/:(.*)/s);
+      const [ns = "", id = ""] = key.split(/:(.*)/s);
       if (!catalog[locale]?.[ns]?.[id]) throw new Error(`cases.json: ${key} is missing in ${locale}`);
       return t(key, args);
     });
@@ -264,33 +221,23 @@ function golden(catalog: Catalog): string {
   return toJSON({ catalog: catalogOut, syntax, cldr });
 }
 
-/** The files Go reads and the repository commits ("go"), or the files only the TS clients read ("ts"). */
-export type Part = "go" | "ts";
-
-/** Returns absolute path -> expected content for every generated file of the given parts. */
-export async function generate(catalog: Catalog, parts: readonly Part[] = ["go", "ts"]): Promise<Map<string, string>> {
+/** Returns absolute path -> expected content for every generated file. */
+export async function generate(catalog: Catalog): Promise<Map<string, string>> {
   const source: Catalog = Object.fromEntries(Object.entries(catalog).filter(([l]) => !isPseudo(l)));
-  const messages = sourceMessages(source);
+  const pseudo = await pseudoCatalogs(source);
   const files = new Map<string, string>();
-  for (const part of parts) {
-    const pseudo = await pseudoCatalogs(source, part);
-    for (const [locale, namespaces] of Object.entries(pseudo)) {
-      for (const [ns, entries] of Object.entries(namespaces)) {
-        // One file per area, like the source catalog; the keys stay sorted inside each file.
-        const areas = new Map<string, Namespace>();
-        for (const [key, entry] of Object.entries(entries)) {
-          const file = catalogFile(locale, ns, key);
-          areas.set(file, { ...areas.get(file), [key]: entry });
-        }
-        for (const [file, area] of areas) files.set(file, toJSON(area));
+  for (const [locale, namespaces] of Object.entries(pseudo)) {
+    for (const [ns, entries] of Object.entries(namespaces)) {
+      // One file per area, like the source catalog; the keys stay sorted inside each file.
+      const areas = new Map<string, Namespace>();
+      for (const [key, entry] of Object.entries(entries)) {
+        const file = catalogFile(locale, ns, key);
+        areas.set(file, { ...areas.get(file), [key]: entry });
       }
-    }
-    if (part === "go") {
-      files.set(join(goPackageDir, "messages_gen.go"), goAccessors(messages));
-      files.set(join(goTestdataDir, "golden.json"), golden({ ...source, ...pseudo }));
-    } else {
-      files.set(join(runtimeDir, "messages.gen.ts"), tsAccessors(messages));
+      for (const [file, area] of areas) files.set(file, toJSON(area));
     }
   }
+  files.set(join(goPackageDir, "messages_gen.go"), goAccessors(sourceMessages(source)));
+  files.set(join(goTestdataDir, "golden.json"), golden({ ...source, ...pseudo }));
   return files;
 }

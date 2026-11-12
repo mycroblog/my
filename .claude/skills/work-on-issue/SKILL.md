@@ -34,7 +34,7 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` after a conflict in generated files).
    Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/redesign-web`), push
    `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; the merge queue runs the rest, so run the
-   full check or the web E2E only to reproduce a failure.
+   full check only to reproduce a failure.
 6. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background. An epic is one pull
    request: `pr open -draft` with its first commit, `pr open` again after each later one (it rewrites the open pull
    request's description), and `gh pr ready` before `pr land` once the last is in. When `pr land` reports a failure

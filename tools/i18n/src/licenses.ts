@@ -9,8 +9,8 @@
 // NPM_ALLOWED_LICENSES of Taskfile.yml, mykit:ts-licenses MYKIT_ALLOWED_LICENSES of tasks/mykit.yml).
 // The rest are the node_modules directories to check, tools/i18n's own when none is given. Both
 // layouts Bun installs are covered: hoisted packages and the isolated store in node_modules/.bun that
-// the client workspace uses (app/bunfig.toml). Symlinks are skipped: in the isolated layout they point
-// into the store, and workspace packages are our own code.
+// the workspace uses. Symlinks are skipped: in the isolated layout they point into the store, and
+// workspace packages are our own code.
 //
 // --deps-of checks the packages that a library brings to its users instead: the dependencies,
 // optional and peer dependencies of PACKAGE_DIR's package.json, and theirs, resolved as Node.js does
@@ -62,23 +62,12 @@ const reviewed: Record<string, string> = {
   // Douglas Crockford's JSON parser, dedicated to the public domain; pulled in by
   // @formatjs/cli-lib through json-stable-stringify.
   "jsonify@0.0.1": "Public Domain",
-  // Browser support data that browserslist reads at build time (pulled in by @babel/core through
-  // @babel/helper-compilation-targets); none of it is bundled into the client. The FSF lists
-  // CC BY 4.0 as compatible with GPLv3, and so with AGPLv3.
-  "caniuse-lite@1.0.30001814": "CC-BY-4.0",
-  // The same data, in the version that MJML pulls in through cssnano (app/mail; compiles the email layout at
-  // development time, never shipped).
-  "caniuse-lite@1.0.30001815": "CC-BY-4.0",
-  // The CSS selector parser of juice, MJML's CSS inliner (app/mail; development time only). Its license field is
-  // "MIT (http://mootools.net/license.txt)", the MIT license with a link to its text.
-  "slick@1.12.2": "MIT (http://mootools.net/license.txt)",
-  // Glob matcher that the lint's ESLint plugins pull in through their peers eslint and
-  // @typescript-eslint/typescript-estree (app/ lint only; never bundled into the client). The Blue
+  // Glob matcher that the lint's ESLint plugin pulls in through its peer eslint (lint only; never shipped). The Blue
   // Oak Model License 1.0.0 is an OSI-approved permissive license with only a notice condition, so it
   // imposes nothing that conflicts with AGPL-3.0.
   "minimatch@10.2.6": "BlueOak-1.0.0",
   // The YAML loader's argument parser (js-yaml, through @redocly/openapi-core), which openapi-typescript
-  // runs in `scripts/task.sh api:generate` (app/web devDependency; never bundled into the client). The FSF lists the
+  // runs to generate the types of pkg/mykit/ts (a devDependency; never shipped). The FSF lists the
   // Python license of 2.0.1 and later as compatible with the GPL, and so with AGPLv3.
   "argparse@2.0.1": "Python-2.0",
 };

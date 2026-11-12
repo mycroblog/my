@@ -147,7 +147,7 @@ lint は Oxlint だけで行い、ESLint とその実行は使わない。
   `@eslint-react/no-unused-props` と `@typescript-eslint/no-unsafe-enum-assignment` も検査から外れる。
 - web-client の「強制」の列の規則名は、Oxlint で動く名前（`react-hooks/purity` は `react/purity` など）に合わせる。
 - 無効化コメントは `eslint-disable` の形のまま使う。R9 の `no-restricted-disable` には、`react-hooks/*` に加えて Oxlint の `react/` の名前（`react/exhaustive-deps` など）を挙げる。
-- `scripts/task.sh web:lint` は Oxlint・`restrictions.test.js`・knip・CSS の `100vh` の検査を動かす。
+- lint のタスクは Oxlint・`restrictions.test.js`・knip・CSS の `100vh` の検査を動かす。
 - 依存から ESLint、typescript-eslint、`eslint-plugin-react-hooks` を外す。JS プラグインとして使うプラグインは残す。
   knip は `.oxlintrc.json` の `jsPlugins` と `settings` を読んで、JS プラグインと boundaries の resolver を使われている依存として数える。
 - Oxlint の版を上げるたびに、違反のフィクスチャで「強制」の列の各行が検出されることを確かめる。
@@ -243,7 +243,7 @@ ESLint は 1 回に約 50 秒かかり、CI の web ジョブで最も長い手�
 - React Compiler の lint の規則は Oxlint の移植で動く。移植は `"use no memo"` の関数の中でも `react/incompatible-library` を報告するなど、細部が公式のプラグインと違う。
 - 0.x の experimental な変換を本番のビルドに使う。0.x はマイナー版でオプションが変わり得る。React の e2e では Babel 版より失敗が多く（2026-10-12 の対応表で Babel 1792/1802、OXC 1704/1795）、Oxc だけの誤変換の issue が開いている（oxc-project/oxc の #26161、#27402、#27429、#27401、#27113）。版を上げるたびに出力の確認が要る。
 - Rust の panic（oxc-project/oxc の #27404）はビルドのエラーではなく、プロセスの異常終了になる。ビルドは失敗するが、原因のファイルを示さない。
-- Babel は推移的な依存として `app/bun.lock` に残る。`@tanstack/router-plugin`、`vite-plugin-pwa` の `workbox-build`、Storybook の `react-docgen`、`@babel/code-frame` を使う Testing Library などが持ち、版はそれぞれのライブラリが決める。
+- Babel は推移的な依存として `bun.lock` に残る。`@formatjs/cli-lib`、`magicast`、`@babel/code-frame` を使うライブラリなどが持ち、版はそれぞれのライブラリが決める。
 - Oxc はコンパイルした関数の中のコメントを出力から落とす。開発サーバーの出力が読みにくくなるが、ソースマップは残る。`"use no memo"` の関数の診断を除くために、ゲートが自前でソースを解析する。
 - `vite build` は速くなり、諦めた関数の報告が、関数の先頭ではなく原因の式の場所を指す。
 

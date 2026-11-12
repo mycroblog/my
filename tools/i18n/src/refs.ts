@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Where the source refers to catalog keys: a TS key literal ("client:home.title"), or the Go accessor of a key of a
-// namespace Go formats (`.ServerHomeTitle(`, a method expression, a field chain in an html/template file, and the
-// `ServerHomeTitleArgs` struct). check.ts reports the keys nothing refers to; cli.ts lists and rewrites the references.
+// Where the source refers to catalog keys: a quoted key literal ("server:home.title"), or the Go accessor of a key
+// (`.ServerHomeTitle(`, a method expression, a field chain in an html/template file, and the `ServerHomeTitleArgs`
+// struct). check.ts reports the keys nothing refers to; cli.ts lists and rewrites the references.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { isClientNamespace, repoRoot, writeFileAtomic } from "./catalog";
+import { repoRoot, writeFileAtomic } from "./catalog";
 import { goName } from "./generate";
 
 export type Ref = { file: string; line: number; text: string };
@@ -52,10 +52,7 @@ function loadSources(): Source[] {
     if (!p.endsWith("_gen.go")) out.push(source(p, true, !p.endsWith("_test.go") && !p.startsWith("internal/i18n/")));
   }
   for (const p of scan("internal/**/*.html")) out.push(source(p, true, !p.startsWith("internal/i18n/")));
-  if (existsSync(join(repoRoot, "app"))) {
-    for (const p of scan("app/**/*.{ts,tsx}")) if (!p.endsWith(".gen.ts")) out.push(source(p, false, true));
-  }
-  for (const p of scan("tools/i18n/src/**/*.ts")) if (!p.endsWith(".gen.ts")) out.push(source(p, false, false));
+  for (const p of scan("tools/i18n/src/**/*.ts")) out.push(source(p, false, false));
   const cases = "internal/i18n/testdata/cases.json";
   if (existsSync(join(repoRoot, cases))) out.push(source(cases, false, false));
   return out;
@@ -68,9 +65,9 @@ export class References {
   private readonly accessors = new Map<string, Hit[]>();
   private readonly accessor: RegExp | undefined;
 
-  /** `namespaces` are the catalog's; the ones Go formats give the accessor names their first word. */
+  /** `namespaces` are the catalog's; they give the accessor names their first word. */
   constructor(namespaces: string[]) {
-    const prefixes = namespaces.filter((ns) => !isClientNamespace(ns)).map((ns) => goName(ns));
+    const prefixes = namespaces.map((ns) => goName(ns));
     this.accessor = prefixes.length
       ? new RegExp(`(\\.|(?<![A-Za-z0-9_.]))((?:${prefixes.map(escapeRegExp).join("|")})[A-Z][A-Za-z0-9_]*)`, "g")
       : undefined;
@@ -80,21 +77,21 @@ export class References {
       else map.set(name, [hit]);
     };
     for (const source of this.sources) {
-      for (const m of source.text.matchAll(QUOTED)) add(this.literals, m[2], { source, index: m.index });
+      for (const { 2: id = "", index } of source.text.matchAll(QUOTED)) add(this.literals, id, { source, index });
       if (!source.accessors || !this.accessor) continue;
-      for (const m of source.text.matchAll(this.accessor)) {
-        if (isAccessor(source, m.index, m[1], m[2])) add(this.accessors, m[2], { source, index: m.index });
+      for (const { 1: dot = "", 2: name = "", index } of source.text.matchAll(this.accessor)) {
+        if (isAccessor(source, index, dot, name)) add(this.accessors, name, { source, index });
       }
     }
   }
 
   private hits(id: string): Hit[] {
-    const out = [...(this.literals.get(id) ?? [])];
-    if (!isClientNamespace(id.split(":")[0])) {
-      const name = goName(id);
-      out.push(...(this.accessors.get(name) ?? []), ...(this.accessors.get(`${name}Args`) ?? []));
-    }
-    return out;
+    const name = goName(id);
+    return [
+      ...(this.literals.get(id) ?? []),
+      ...(this.accessors.get(name) ?? []),
+      ...(this.accessors.get(`${name}Args`) ?? []),
+    ];
   }
 
   /** Whether the code that ships refers to the key; what check.ts calls used. */
@@ -121,7 +118,7 @@ export class References {
   undefinedLiterals(namespaces: string[], defined: (id: string) => boolean): Map<string, Ref[]> {
     const out = new Map<string, Ref[]>();
     for (const [id, hits] of this.literals) {
-      if (!namespaces.includes(id.split(":")[0]) || defined(id) || !hits.some((h) => h.source.counts)) continue;
+      if (!namespaces.includes(id.split(":")[0] ?? "") || defined(id) || !hits.some((h) => h.source.counts)) continue;
       out.set(
         id,
         hits
@@ -145,7 +142,6 @@ export class References {
   rewrite(renames: Map<string, string>): string[] {
     const names = new Map<string, string>();
     for (const [from, to] of renames) {
-      if (isClientNamespace(from.split(":")[0])) continue;
       names.set(goName(from), goName(to));
       names.set(`${goName(from)}Args`, `${goName(to)}Args`);
     }

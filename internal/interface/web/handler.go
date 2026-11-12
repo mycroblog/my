@@ -27,7 +27,7 @@ import (
 
 // Options configure a Handler.
 type Options struct {
-	// Build is the Vite build of app/web; Embedded() in production.
+	// Build is the Vite build of the web client; Embedded() in production.
 	Build fs.FS
 	// DevViteOrigin, when set, is the origin of a Vite dev server (http://localhost:5173).
 	// The shell then loads the client from it with hot module replacement, and its
@@ -680,11 +680,11 @@ func addVary(h http.Header, value string) {
 }
 
 // Stylesheet returns the URL of the stylesheet that the build makes for the server-rendered
-// pages from the client's design tokens (app/web/src/server-pages.css, ADR-0090), or "" when the
+// pages from the client's design tokens (ADR-0090), or "" when the
 // build has none. With a Vite dev server it is the file on that server, of another origin.
 func (h *Handler) Stylesheet() string { return h.tags.ServerPages }
 
 // PasskeySignInScript returns the URL of the module script that signs in with a passkey on the
-// server-rendered sign-in page (app/web/src/server-pages/passkey-sign-in.ts), or "" when the
+// server-rendered sign-in page, or "" when the
 // build has none.
 func (h *Handler) PasskeySignInScript() string { return h.tags.PasskeySignIn }

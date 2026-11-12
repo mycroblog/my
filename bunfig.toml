@@ -1,5 +1,15 @@
+# Bun settings for the one workspace of the repository (ADR-0025): the packages under web/, tools/i18n, pkg/mykit/ts,
+# and pkg/mybot/ts.
+[install]
+# `bun add` writes exact versions; every dependency is pinned (ADR-0025).
+exact = true
+# Each workspace package resolves only the dependencies it declares (ADR-0025).
+linker = "isolated"
+# Never resolve a version published less than three days ago, transitive ones included.
+minimumReleaseAge = 259200
+
 # The options of `bun fmt` for every TypeScript package (scripts/task.sh web:fmt). bun fmt reads the [fmt] section of
-# the nearest bunfig.toml that has one, so the packages' own bunfig.toml files hold no [fmt]. Indentation and line
-# endings come from .editorconfig; the other options are Prettier's defaults.
+# the nearest bunfig.toml that has one, so the packages hold no bunfig.toml. Indentation and line endings come from
+# .editorconfig; the other options are Prettier's defaults.
 [fmt]
 printWidth = 120

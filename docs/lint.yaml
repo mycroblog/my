@@ -13,7 +13,7 @@ skip:
   - "**/testdata/**"
   # The translations of the documentation site: their links are written as in the English source they translate, and
   # `scripts/task.sh docs:site-translations-check` keeps each link target equal to the source's, whose links this checks.
-  - "app/docs/i18n/**"
+  - "web/docs/i18n/**"
   # The map files name headings by their anchors, which are Japanese for the design documents; `agentkit map check` reads them.
   - "**/context-map.yaml"
 
@@ -39,8 +39,7 @@ english:
   - "test/**/*.yaml"
   - ".github/ISSUE_TEMPLATE/*"
   - ".github/pull_request_template.md"
-  - "app/ui/README.md"
-  - "app/docs/src/content/docs/index.mdx"
+  - "web/docs/src/content/docs/index.mdx"
   - "pkg/**/README.md"
   - "tools/agentkit/README.md"
 
@@ -50,7 +49,7 @@ operator:
   - "README.md"
   - "SECURITY.md"
   # The landing page of the documentation site.
-  - "app/docs/src/content/docs/index.mdx"
+  - "web/docs/src/content/docs/index.mdx"
   - "docs/operations/**"
   - "docs/guide/**"
   - "docs/reference/**"
@@ -62,7 +61,7 @@ operator:
 maintainer-terms:
   files:
     - "README.md"
-    - "app/docs/src/content/docs/index.mdx"
+    - "web/docs/src/content/docs/index.mdx"
     - "docs/operations/**"
     - "docs/guide/**"
     - "docs/reference/**"

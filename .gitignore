@@ -13,7 +13,7 @@
 node_modules/
 dist/
 build/
-# The web build that internal/interface/web embeds; only the placeholder is committed.
+# The build that internal/interface/web embeds (scripts/task.sh web:build); only the placeholder is committed.
 !/internal/interface/web/dist/
 /internal/interface/web/dist/*
 !/internal/interface/web/dist/.gitkeep
@@ -36,33 +36,25 @@ coverage/
 # Claude Code local settings
 .claude/settings.local.json
 
-# The documents app/docs/scripts/import-docs.ts copies into the documentation site; only its landing page, the
+# The documents web/docs/scripts/import-docs.ts copies into the documentation site; only its landing page, the
 # analytics notice and the release notes page are written there.
-/app/docs/src/content/docs/*
-!/app/docs/src/content/docs/index.mdx
-!/app/docs/src/content/docs/analytics.mdx
-!/app/docs/src/content/docs/releases.mdx
+/web/docs/src/content/docs/*
+!/web/docs/src/content/docs/index.mdx
+!/web/docs/src/content/docs/analytics.mdx
+!/web/docs/src/content/docs/releases.mdx
 # Their Markdown forms (public/<slug>.md), served next to the pages.
-/app/docs/public/operations/
-/app/docs/public/reference/
-/app/docs/public/guide/
-/app/docs/public/developers/
-/app/docs/public/plugins/
-/app/docs/public/*.md
-# The copy of api/openapi.yaml that the client API reference renders (app/docs/src/api-schemas.ts).
-/app/docs/generated/
+/web/docs/public/operations/
+/web/docs/public/reference/
+/web/docs/public/guide/
+/web/docs/public/developers/
+/web/docs/public/plugins/
+/web/docs/public/*.md
+# The copy of api/openapi.yaml that the client API reference renders (web/docs/src/api-schemas.ts).
+/web/docs/generated/
 
-# Playwright output (app/web)
-test-results/
-playwright-report/
-blob-report/
 
-# Storybook build and Vitest browser-mode attachments (app/ui)
-storybook-static/
-.vitest/
-
-# The types and cache Astro generates for the documentation site (app/docs); its build goes to dist/.
-/app/docs/.astro/
+# The types and cache Astro generates for the documentation site (web/docs); its build goes to dist/.
+/web/docs/.astro/
 
 # Scratch space of local tools and agents (logs, temporary clones).
 /.tmp/
@@ -70,10 +62,3 @@ storybook-static/
 # go-task's checksums of the generators' inputs (ADR-0081).
 /.task/
 
-# Generated files only the TypeScript clients read (ADR-0081): the tasks that read them generate them first
-# (`scripts/task.sh generate` makes them all, for an editor). The generated files Go reads are committed.
-/tools/i18n/src/runtime/messages.gen.ts
-/app/web/src/routeTree.gen.ts
-/app/ui/src/themeTokens.gen.ts
-/locales/en-XA/client*/
-/locales/ar-XB/client*/

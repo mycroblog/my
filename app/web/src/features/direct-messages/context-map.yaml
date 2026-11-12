@@ -1,3 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0154-conversations.md#decision決定", "internal/app/timeline/doc.go", "docs/adr/0017-visibility-local.md#3-派生ルール", "docs/architecture/web-client/screens/direct-messages.md"]
-userdocs: ["docs/guide/posting.md"]

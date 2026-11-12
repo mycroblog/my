@@ -1,2 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 docs: ["docs/adr/0020-data-modeling-principles.md"]
+userdocs: ["docs/guide/moving-your-account.md"]

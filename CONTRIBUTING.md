@@ -15,33 +15,27 @@ Tool versions are pinned in `.tool-versions` (use [asdf](https://asdf-vm.com/) o
 
 ```sh
 asdf install               # or: mise install
-scripts/task.sh generate   # generate the uncommitted files your editor's type checker reads
+scripts/task.sh web:install  # the npm packages of the Bun workspace at the root (bun.lock)
 scripts/task.sh check
 ```
-
-Generated files that only TypeScript reads (`app/web/src/routeTree.gen.ts`, `tools/i18n/src/runtime/messages.gen.ts`,
-`app/ui/src/themeTokens.gen.ts`, and the pseudo-locales of `client`) are not committed. The tasks that read them
-(type checks, lint, builds, tests, development servers) generate them first, so they work right after a clone.
-Editors do not go through the tasks, so run `scripts/task.sh generate` once after cloning; it skips the generators
-whose inputs have not changed.
 
 Tasks run with [go-task](https://taskfile.dev/) and live in `Taskfile.yml` and `tasks/<area>.yml`. `scripts/task.sh`
 builds the version pinned in `tools/go.mod` into `bin/task` and runs it; never use a `task` from your PATH.
 `scripts/task.sh --list` lists and describes the tasks.
 
-`scripts/task.sh check` runs the check of every context in parallel: docs, Go, i18n, the email layout (`app/mail`),
-the API, `app/ui`, `app/web`, Docker, agentkit, and `pkg/mykit` with `pkg/mybot` (`docs:check`, `go:check`,
-`i18n:check`, `mail:check`, `api:check`, `ui:check`, `web:check`, `docker:check`, `agentkit:check`, `mykit:check`).
+`scripts/task.sh check` runs the check of every context in parallel: docs, Go, i18n, the API, the Bun workspace,
+Docker, agentkit, `pkg/mykit` with `pkg/mybot`, and the documentation site (`docs:check`, `go:check`, `i18n:check`,
+`api:check`, `web:check`, `docker:check`, `agentkit:check`, `mykit:check`, `site:check`).
 `CHECKS="go web"` runs some of them only. `TASK_CONCURRENCY` limits the parallelism; locally `scripts/task.sh` defaults it to half the CPUs.
 `scripts/task.sh check:changed` (optional locally) runs only the contexts you changed and those that depend on them (compared with
 `BASE=origin/main`); CI decides the same way (`scripts/changed-contexts.sh`) which jobs to skip, and the required
 check `check` collects the results of the jobs ([CI](#ci)).
 
-The checks need no network once the Go modules and tools and the npm packages of `tools/i18n` and `app/` have
-been downloaded the first time. They cover Markdown lint and the documentation rules, the ADR index, Go
+The checks need no network once the Go modules and tools and the npm packages of the Bun workspace have been
+downloaded the first time. They cover Markdown lint and the documentation rules, the ADR index, Go
 (`go vet`, golangci-lint, tests, the `CGO_ENABLED=0` build, dependency licenses, the sqlc output), the i18n catalogs,
-the client API spec and the code generated from it, the Go image of the `Dockerfile` against `.tool-versions`, and
-the web client (type checks, build, dependency licenses).
+the client API spec and the code generated from it, the Go image of the `Dockerfile` against `.tool-versions`, the
+formatting and dependency licenses of the Bun workspace, and the documentation site (build, type checks, lint).
 
 - The Go tools (go-licenses, sqlc, oapi-codegen, protoc-gen-go, protoc-gen-connect-go) are pinned by the `tool` directives
   of `tools/go.mod`, and buf by that of `tools/buf/go.mod`, since its requirements would raise the product's protobuf.
@@ -61,7 +55,7 @@ the web client (type checks, build, dependency licenses).
   `scripts/task.sh api:license-scope` (part of `api:check`) checks them. The MIT parts depend only on permissive
   licenses such as MIT, Apache-2.0, BSD, and ISC, never on GPL-family ones.
 - Every other dependency must have a license compatible with AGPL-3.0 (`GO_ALLOWED_LICENSES` in `Taskfile.yml`; the npm
-  packages of `tools/i18n` and `app/` are checked against the same list). Explain in the pull request
+  packages of the Bun workspace are checked against the same list). Explain in the pull request
   why you need to add one.
 
 ### Tests that listen on ports
@@ -96,9 +90,8 @@ so no hosts file entry is needed. The server runs with `profile = development` a
 
 | Service | What the server uses it for | On this machine |
 | --- | --- | --- |
-| `caddy` | The way in: the server and Vite over HTTPS, and `http://my.localhost` redirected to HTTPS; it starts once both are healthy | `:443` (`MY_DEV_HTTPS_PORT`), `:80` (`MY_DEV_HTTP_PORT`), `:5173` |
-| `my` | `my serve` built from the working tree, with the scripts from Vite | `https://my.localhost`, through Caddy only |
-| `vite` | The Vite dev server of `app/web`, with HMR | `https://vite.my.localhost:5173`, through Caddy only |
+| `caddy` | The way in: the server over HTTPS, and `http://my.localhost` redirected to HTTPS; it starts once the server is healthy | `:443` (`MY_DEV_HTTPS_PORT`), `:80` (`MY_DEV_HTTP_PORT`) |
+| `my` | `my serve` built from the working tree | `https://my.localhost`, through Caddy only |
 | `postgres` | The database (`database = postgres`) | `localhost:5432`, user and password `my` (`PG_PORT`) |
 | `mailpit` | Every email (`mail = smtp`); see [Emails](#emails) | `http://127.0.0.1:8025` (`MAILPIT_UI_PORT`), SMTP on `:1025` |
 | `garage` | The media (`blob = s3`), in the bucket `my-media` | S3 on `127.0.0.1:3900` (`GARAGE_S3_PORT`) |
@@ -114,9 +107,8 @@ so no hosts file entry is needed. The server runs with `profile = development` a
   (`winget install FiloSottile.mkcert`), so that the browsers on Windows trust it; on Linux and macOS it runs `mkcert`
   (`brew install mkcert`, or your distribution's package). Without the certificate, `docker compose up` stops and
   says so. It is valid for about two years; the task makes a new one when it expires within 30 days.
-- Ports 80, 443, and 5173 of `127.0.0.1` must be free. When 80 or 443 is taken, move it with `MY_DEV_HTTP_PORT` or
-  `MY_DEV_HTTPS_PORT` and set `MY_DEV_HOST` to the host with that port (`MY_DEV_HOST=my.localhost:8443`); Vite stays on
-  5173, the port its HMR client connects to.
+- Ports 80 and 443 of `127.0.0.1` must be free. When one is taken, move it with `MY_DEV_HTTP_PORT` or
+  `MY_DEV_HTTPS_PORT` and set `MY_DEV_HOST` to the host with that port (`MY_DEV_HOST=my.localhost:8443`).
 - The server's host is recorded in its database, so a database made with another host (an earlier
   `MY_DEV_HOST`, say) needs `docker compose down -v` before the server starts again.
 - The database starts empty, with the schema applied. Create an administrator with
@@ -125,21 +117,22 @@ so no hosts file entry is needed. The server runs with `profile = development` a
 - Translation needs the provider enabled: turn LibreTranslate on in the translation settings of the administration, or
   run `docker compose exec my my instance set translation_providers libretranslate`. Its first start downloads the
   models, and translations fail until it answers.
-- The Go code is not reloaded: `docker compose restart my` builds it again and restarts the server. The web client
-  reloads through Vite as you edit it.
+- The Go code is not reloaded: `docker compose restart my` builds it again and restarts the server.
 - `GO_TAGS` builds the server with [build tags](docs/reference/build-tags.md), such as `GO_TAGS=e2e_fakes` for the
   test build with the fake push service, payment provider, and search index.
 - Put the variables of the table and `GO_TAGS` in a `.env` file next to `compose.yaml`; it is never committed. A port
   that another program uses must move there.
-- `my` and Vite run as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so
-  the files they write in it are yours. The Go caches and every `node_modules` are volumes of their own, apart from
+- `my` runs as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so
+  the files it writes in it are yours. The Go caches and every `node_modules` are volumes of their own, apart from
   those of your machine.
 - `docker compose down` stops everything and keeps the data in the volumes; `docker compose down -v` removes it too.
 - The secrets in `compose.yaml` (the KEK, the keys of Garage and Meilisearch) are fixed values for development only.
 
-The tests, the demo server (`scripts/task.sh web:demo`), the E2E tests, and the L4 task tests do not use these services:
-they start what they need themselves, and `scripts/task.sh db:up` and `scripts/task.sh docker:mailpit` start the
-services `postgres` and `mailpit` alone.
+The tests do not use these services: they start what they need themselves, and `scripts/task.sh db:up` and
+`scripts/task.sh docker:mailpit` start the services `postgres` and `mailpit` alone.
+
+`scripts/task.sh docs:site-dev` serves the documentation site (`web/docs`) on `http://localhost:4321`, and
+`scripts/task.sh mail:preview` writes every email to `.tmp/mail/preview/` ([Emails](#emails)).
 
 ## Workflow
 
@@ -158,12 +151,11 @@ services `postgres` and `mailpit` alone.
 
 ## Formatting
 
-Go is formatted with `gofmt` (`scripts/task.sh go:fmt-check` checks it). The TypeScript and JavaScript of `app/`,
+Go is formatted with `gofmt` (`scripts/task.sh go:fmt-check` checks it). The TypeScript and JavaScript of `web/`,
 `pkg/mykit/ts`, `pkg/mybot/ts`, and `tools/i18n` are formatted with `bun fmt`, the formatter built into
 the pinned Bun: run `scripts/task.sh web:fmt` before you commit them, and again after resolving a conflict in one of
 them. `scripts/task.sh web:fmt-check` fails when a file needs formatting; `check` and CI run it. Its options are in
-the `[fmt]` section of the root `bunfig.toml`, and `.prettierignore` lists the files it leaves alone (generated files
-and the Oxlint violation fixtures). To format from an editor, have it run `bun fmt --stdin-filepath <file>`.
+the `[fmt]` section of the root `bunfig.toml`, and `.prettierignore` lists the generated files it leaves alone. To format from an editor, have it run `bun fmt --stdin-filepath <file>`.
 
 Commits that only reformat are listed in `.git-blame-ignore-revs`. GitHub's blame view skips them; for `git blame`,
 run once:
@@ -180,8 +172,7 @@ the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slo
 before a release. The workflows in `.github/workflows/` say which job runs what: each step is named after the task it
 runs, so a failed step is reproduced with `scripts/task.sh <step name>`, and `scripts/agentkit.sh pr jobs <pr>`
 prints where the time went. To run the merge queue's jobs on a pull request (an outside contribution, a failure to
-investigate), add the label `allow:full-ci`. The web E2E does not run on pull requests: run it locally with
-`scripts/task.sh web:e2e`, or by hand with `gh workflow run web-e2e.yml --ref <branch>`.
+investigate), add the label `allow:full-ci`.
 
 ## Schema changes
 
@@ -240,47 +231,21 @@ scripts/task.sh api:check     # api:spec-check (the root lists every file of api
 
 ## Web client
 
-The web client (`app/web`) is built with Vite, and `my serve` serves the build and the HTML shell embedded in the
-binary. Its conventions are in [docs/architecture/web-client/README.md](docs/architecture/web-client/README.md).
+`my serve` serves the HTML shell embedded in the binary for `/` and the client's routes, with the link previews, the
+icons, and the Web App Manifest. The shell loads no client script, and the server-rendered pages (sign-in and the
+others) render without the client's stylesheet.
 
-- `scripts/task.sh web:build` builds into `app/web/dist` and copies it to `internal/interface/web/dist`, which Go
+- `scripts/task.sh web:build` places the brand assets of `web/brand` in `internal/interface/web/dist`, which Go
   embeds with `//go:embed all:dist`. Only a placeholder `.gitkeep` is committed there, so the Go build and tests need
-  no Bun (such a binary serves the shell without scripts).
-- `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my` with the web client inside;
-  the Docker image embeds the same build. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave
-  unused adapters out of the binary.
-
-During development, the server loads the scripts from the Vite dev server, with HMR: [Local development](#local-development)
-runs both. Go serves the shell, the runtime configuration, the API, and ActivityPub as in production, and only the
-scripts come from Vite (`my serve -dev-vite-origin https://vite.my.localhost:5173`). Vite writes the URLs of its
-assets with the origin of `VITE_DEV_ORIGIN` (default `http://localhost:5173`, the port `scripts/task.sh web:dev` serves).
-
-- With `-dev-vite-origin`, the shell is never cached (`no-store`) and the CSP is a development one that allows that
-  origin's scripts and WebSocket and the `<style>` elements Vite injects. To see the app under the production CSP
-  (`script-src 'self'` without a nonce), use a binary built by `scripts/task.sh go:bin`.
+  no Bun. `scripts/web-icons.sh` renders the PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
+- `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`; the Docker image embeds the
+  same files. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave unused adapters out of the binary.
+- `my serve -dev-vite-origin <origin>` loads the client's scripts from the web client's Vite dev server at that origin.
+  The shell is then never cached (`no-store`), and the CSP is a development one that allows that origin's scripts and
+  WebSocket and the `<style>` elements Vite injects.
 - The runtime configuration's `apiOrigin` is the origin of `MY_WEB_ORIGIN` when that is on `host` (such as
   `https://my.localhost`, or `http://localhost:8080`), and `https://{host}` otherwise; with `-dev-vite-origin` and
   no `MY_WEB_ORIGIN` on `host`, it is `http://{host}`.
-- The voice chat works with `voice = p2p` on `https://my.localhost`: browsers allow the microphone only on `localhost`
-  or over HTTPS, and browsers on this machine connect to each other without a STUN server.
-
-To look at the screens with data in them, start the demo server: `scripts/task.sh web:demo` (needs Docker)
-starts the development Mailpit, builds the test build of `bin/my`, creates a fresh database under `.tmp/demo/`, and
-fills it with the demo scenario of `app/web/demo/`: people, posts with images and a thread, follows and a follow
-request, reactions and boosts, an open report and an appeal, roles with badges, a supporter plan with a subscriber who
-paid through the fake payment provider, cost items, invites, and announcements. Web Push is on: the server gets a
-VAPID key generated on every start and sends its push messages to the fake push service of the test build
-(`my dev push-service` on `https://localhost:8930`, or `PUSH_SERVICE_PORT`), which starts and stops with it. The search
-of posts is on too, with the fake search index of the test build, and new accounts allow it. It prints the URL
-(`http://localhost:8787`, or `DEMO_PORT`), Mailpit's web UI (`http://127.0.0.1:8025`, where the server's email
-arrives), and every person's email address and password. The scenario is created through `bin/my` and the client and
-admin APIs only, never SQL (ADR-0015): an item that no command or API can make is an API to add. When you change the
-API, keep `app/web/demo/` working; with the test build and Mailpit running, its specs (`e2e/demo-*.spec.ts`) run alone:
-
-```sh
-scripts/task.sh docker:mailpit && scripts/task.sh go:bin GO_TAGS=e2e_fakes
-cd app/web && E2E_DEMO=1 bun run e2e --project=demo-chromium
-```
 
 ## SQL and database tests
 
@@ -359,8 +324,8 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 ## Emails
 
 Every email the server sends is a draft from a pure function next to its job handler (`internal/app/<module>/mail_drafts.go`),
-which `kernel.MailComposer` completes with the common frame: the HTML layout compiled from `app/mail/frame.mjml`
-(`scripts/task.sh mail:gen`) and the text version with the signature. The catalog in
+which `kernel.MailComposer` completes with the common frame: the committed HTML layout
+(`internal/app/kernel/mail_frame.gen.html`) and the text version with the signature. The catalog in
 `internal/platform/mailpreview/catalog.go` renders each of them from sample inputs:
 
 - `scripts/task.sh mail:preview` writes every email in `en`, `ja`, `en-XA`, and `ar-XB` to `.tmp/mail/preview/` and
@@ -369,7 +334,6 @@ which `kernel.MailComposer` completes with the common frame: the HTML layout com
 - A new email needs a draft function, a job type named `Job...Email`, and its entries in the catalog: a test fails
   until the catalog has them. `scripts/task.sh mail:golden` then writes its golden files
   (`internal/platform/mailpreview/testdata/golden`), so that a change to any email shows in the pull request's diff.
-- If the committed layout is stale, `scripts/task.sh mail:gen-check` (`server-static` of the merge queue) fails.
 
 With `mail = none` (the default) and `profile = development`, nothing is sent and the email goes to the log, so you can take the
 confirmation link from the log.
@@ -388,8 +352,8 @@ shows it in a web UI (`http://127.0.0.1:8025`) and a REST API.
 - The server of [Local development](#local-development) trusts the CA alongside the system roots, so it still reaches
   servers outside.
 
-[Local development](#local-development) sends every email of the server to Mailpit. The demo server and the E2E tests
-use the same Mailpit, which `scripts/task.sh docker:mailpit` starts alone (stop it with `docker compose rm -sf mailpit`).
+[Local development](#local-development) sends every email of the server to Mailpit, which
+`scripts/task.sh docker:mailpit` starts alone (stop it with `docker compose rm -sf mailpit`).
 
 Ask for a password reset (`/auth/forgot_password`) or register in `open` mode, and the email arrives in the
 Mailpit UI. Open the link of the email you opened in the UI in your browser.
@@ -400,7 +364,7 @@ Pull requests and the merge queue check the same adapter against a stand-in SMTP
 
 ## Build tags
 
-[The reference](docs/reference/build-tags.md) lists the tags. The test build adds the fakes for the end-to-end tests and the local demonstration:
+[The reference](docs/reference/build-tags.md) lists the tags. The test build adds the fakes for tests:
 
 ```sh
 scripts/task.sh go:bin GO_TAGS=e2e_fakes
@@ -421,8 +385,7 @@ Four checks keep the fakes out of production; each one stops them on its own whe
 
 ### The fake push service
 
-A browser's Web Push subscription points at its vendor's push service, which the browsers of the end-to-end tests
-cannot reach. `my dev push-service` stands in for it: it serves HTTPS on this machine, issues subscriptions, and receives
+A browser's Web Push subscription points at its vendor's push service, which a test cannot reach. `my dev push-service` stands in for it: it serves HTTPS on this machine, issues subscriptions, and receives
 the server's push messages the way a push service does. It verifies each message's VAPID authorization, decrypts its
 `aes128gcm` body with the keys it issued, and keeps what it received in memory for the tests to read.
 
@@ -504,7 +467,7 @@ mark an ADR `Accepted`.
   `CONTRIBUTING.md`, `docs/README.md`, `docs/operations/`, `docs/reference/`, `.claude/`, `schema/README.md`, the
   comments of `deploy/`, and the issue and pull request templates.
 - Design documents (`docs/adr/`, `docs/requirements/`, `docs/architecture/`) are written in Japanese during v0.
-- The documentation site's Japanese pages are machine translations that an agent writes into `app/docs/i18n/`, following
+- The documentation site's Japanese pages are machine translations that an agent writes into `web/docs/i18n/`, following
   the [`/translate-docs` skill](.claude/skills/translate-docs/SKILL.md). The English document is authoritative: change it,
   not only its translation. A pull request that changes English documents does not need to translate them too.
 - Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/`) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
@@ -530,25 +493,21 @@ mark an ADR `Accepted`.
 User-facing strings go into `locales/<locale>/<namespace>/<area>.json` (FormatJS JSON format), and `en` and `ja` are
 updated together: a key that `ja` lacks fails `scripts/task.sh i18n:check`.
 Change the catalogs with `scripts/i18n.sh` (`scripts/i18n.sh help` lists its commands). It writes a key to the file of
-its area (the key's first segment, or its first two for `admin`: `settings.profile.title` is in
-`locales/en/client/settings.json`, `admin.report.title` in `locales/en/client/admin/report.json`), refuses a text that
+its area (the key's first segment, or its first two for `admin`: `feed.tag_title` is in
+`locales/en/server/feed.json`), refuses a text that
 breaks a rule of the check and says which, and regenerates the pseudo-locales (`en-XA` / `ar-XB`) and the typed accessors:
 
 ```sh
-scripts/i18n.sh add client:lists.empty.title --en "No lists yet" --ja "リストはまだありません" --desc "Heading of the empty list of lists."
-scripts/i18n.sh set client:lists.empty.title --en "No lists" --ja "リストはありません"  # drops the machine translations of the old text
-scripts/i18n.sh mv client:lists.empty.title lists.none.title  # in every locale, and the references in the source
-scripts/i18n.sh rm client:lists.none.title                    # refused while the source refers to it
-scripts/i18n.sh show lists.empty                              # also: find "<text>", unused
+scripts/i18n.sh add server:feed.empty_title --en "No posts yet" --ja "投稿はまだありません" --desc "Title of an empty feed."
+scripts/i18n.sh set server:feed.empty_title --en "No posts" --ja "投稿はありません"  # drops the machine translations of the old text
+scripts/i18n.sh mv server:feed.empty_title feed.none_title  # in every locale, and the references in the source
+scripts/i18n.sh rm server:feed.none_title                   # refused while the source refers to it
+scripts/i18n.sh show feed.empty                             # also: find "<text>", unused
 scripts/i18n.sh check --changed                               # the checks of the keys changed since origin/main
 ```
 
 Commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_gen.go`, and
-`internal/i18n/testdata/golden.json`). The pseudo-locales of `client` and the TypeScript accessors are not committed.
-
-A helper text of a client, a key that ends in `description`, `hint`, `help`, or `note`, is one short sentence: at most
-20 words in `en` and 50 characters in `ja`. Say more in the label or in the documentation. The texts that were longer
-when the rule arrived are listed in `tools/i18n/helper-text-baseline.json`; they may not grow, and the list only shrinks.
+`internal/i18n/testdata/golden.json`).
 
 Every accessor takes the arguments of a message by name, so that two arguments of the same type cannot be swapped:
 
@@ -556,7 +515,6 @@ Every accessor takes the arguments of a message by name, so that two arguments o
   one with two or more takes a generated struct named after it, with one field per argument
   (`l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: max, Name: name})`). The struct cannot be written without
   the field names, and `scripts/task.sh go:lint` reports a field left out.
-- In TypeScript, the translator takes the arguments as an object of named values (`t("client:key", { name })`), typed
-  by `MessageArgs` of the generated accessors.
+
 To see the pages the server renders in a pseudo-locale, start it with `my serve -pseudo-locales` and set the browser's
 language to `en-XA` or `ar-XB` (they cannot be chosen without the flag).

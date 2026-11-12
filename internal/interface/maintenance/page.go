@@ -37,7 +37,7 @@ type Theme struct {
 	Light, Dark map[string]string
 }
 
-// TokenNames are the tokens of the theme (app/ui/src/theme.css) that the page's CSS reads; the
+// TokenNames are the design tokens of the theme that the page's CSS reads; the
 // callers fill Theme with their defaults and the instance's overrides.
 var TokenNames = []string{
 	"color-surface", "color-surface-raised", "color-fg", "color-fg-muted", "color-accent", "color-border", "font-sans",

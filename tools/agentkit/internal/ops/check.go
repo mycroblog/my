@@ -115,8 +115,6 @@ var generators = []struct {
 	{"queries/", "go:sqlc", "", nil},
 	{"sqlc.yaml", "go:sqlc", "", nil},
 	{"locales/", "i18n:gen", "", nil},
-	{"app/ui/src/theme.css", "web:tokens-gen", "", nil},
-	{"app/ui/src/tokens.ts", "web:tokens-gen", "", nil},
 	{"internal/platform/config/", "go:config-docs", "", nil},
 	{"cmd/my/", "go:cli-docs", "", nil},
 	{"internal/platform/job_types.go", workersScript + " --write", workersScript, []string{"--write"}},

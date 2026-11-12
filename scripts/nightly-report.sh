@@ -3,8 +3,7 @@
 #
 # Reports a full Nightly run on main (ADR-0079 §8: a red Nightly stops the line). When a checked job failed, it opens
 # the issue of the failing Nightly, or adds a comment to the one already open, with the failed jobs and the commits
-# since the last green run. When every checked job passed, it closes that issue. It also writes the E2E tests that
-# passed only on a retry (flaky candidates) to the step summary.
+# since the last green run. When every checked job passed, it closes that issue.
 #
 #   scripts/nightly-report.sh
 #
@@ -13,7 +12,6 @@
 #   RUN_ID       the run of the Nightly; its failed jobs are read from the API
 #   SHA          the commit the run checked
 #   SINCE        the commit of the last successful full run, empty when there is none
-#   FLAKY        a file of the flaky tests, one per line (optional; written by web-e2e.yml)
 #   GH_REPO      owner/name
 #   GITHUB_STEP_SUMMARY
 # gh must be on PATH with a token that may write issues.
@@ -30,16 +28,6 @@ if [ -n "$failed_needs" ]; then passed=false; fi
 if jq -e 'any(.[]; .result == "cancelled")' <<< "$RESULTS" > /dev/null; then
   echo "A job was cancelled: nothing is reported." | tee -a "$summary"
   exit 0
-fi
-
-if [ -n "${FLAKY:-}" ] && [ -s "$FLAKY" ]; then
-  {
-    echo "### Flaky candidates"
-    echo
-    echo "These E2E tests failed and then passed on a retry:"
-    echo
-    sed 's/^/- /' "$FLAKY"
-  } >> "$summary"
 fi
 
 open_issue="$(gh issue list --repo "$GH_REPO" --label "$label" --state open --json number --jq '.[0].number // ""')"

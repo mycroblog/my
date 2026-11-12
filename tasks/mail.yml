@@ -1,67 +1,30 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The layout of the HTML emails in app/mail (@my/mail, a package of the client workspace; ADR-0086 §2; the mail context
-# of scripts/changed-contexts.sh): MJML compiles app/mail/frame.mjml into the Go html/template
-# internal/app/kernel/mail_frame.gen.html, which is committed because Go embeds it (ADR-0081). MJML runs at development
-# time only, so Go builds and tests need no Bun. Its npm packages are installed by web:install from app/bun.lock, and
-# web:licenses checks their licenses with the rest of the workspace.
+# The previews and golden files of the emails (ADR-0086). The HTML layout is the committed Go html/template
+# internal/app/kernel/mail_frame.gen.html, which Go embeds (ADR-0081).
 version: "3"
 
 tasks:
-  gen:
-    desc: Regenerate internal/app/kernel/mail_frame.gen.html from app/mail/frame.mjml with MJML (commit it)
-    deps: [":web:install"]
-    run: once
-    sources:
-      - app/mail/frame.mjml
-      - app/mail/src/*.ts
-      - app/bun.lock
-      - internal/domain/instance/theme_tokens.gen.go
-    generates:
-      - internal/app/kernel/mail_frame.gen.html
-    cmds:
-      - cd app/mail && bun run src/frame.ts
-
-  check:
-    desc: Fail on a stale email layout, type-check app/mail, and check the TS formatting (web:fmt-check), in parallel
-    deps: [gen-check, typecheck, ":web:fmt-check"]
-
-  gen-check:
-    desc: Fail if the committed internal/app/kernel/mail_frame.gen.html differs from what app/mail/frame.mjml compiles to
-    deps: [":web:install"]
-    dir: app/mail
-    cmds:
-      - bun run src/frame.ts --check
-
-  typecheck:
-    desc: Type-check app/mail with tsc
-    deps: [":web:install"]
-    dir: app/mail
-    cmds:
-      - bun run typecheck
-
   preview:
     desc: Write every email, rendered from sample inputs in en, ja, zh-CN, zh-TW, es, pt-BR, de, fr, en-XA, and ar-XB, to .tmp/mail/preview/ and print the path of its index.html (no database, server, or mail server)
-    deps: [gen, ":i18n:gen"]
+    deps: [":i18n:gen"]
     cmds:
       - go run ./scripts/mail-preview -out .tmp/mail/preview
 
   preview-watch:
-    desc: Run mail:preview, then again whenever app/mail, the locale catalogs, or the Go code change (reload index.html to see the change)
+    desc: Run mail:preview, then again whenever the layout, the locale catalogs, or the Go code change (reload index.html to see the change)
     watch: true
     sources:
-      - app/mail/frame.mjml
-      - app/mail/src/*.ts
       - "locales/*/**/*.json"
       - exclude: "locales/en-XA/**"
       - exclude: "locales/ar-XB/**"
       - "internal/**/*.go"
+      - internal/app/kernel/mail_frame.gen.html
       - exclude: internal/i18n/messages_gen.go
       - internal/platform/mailpreview/index.html.tmpl
       - scripts/mail-preview/*.go
     cmds:
-      # A new go-task process on every change: in one process, the run-once generators (mail:gen, i18n:gen)
-      # would not run again.
+      # A new go-task process on every change: in one process, the run-once generator i18n:gen would not run again.
       - scripts/task.sh mail:preview
 
   golden:

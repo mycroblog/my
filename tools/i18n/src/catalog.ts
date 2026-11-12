@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 
-/** tools/i18n, where the glossary and the baseline of the tool live. */
+/** tools/i18n, where the glossary of the tool lives. */
 export const toolDir = join(import.meta.dir, "..");
 /** The repository the scripts read and write. I18N_TOOL_ROOT points the tests of the tool at a temporary one. */
 export const repoRoot = process.env.I18N_TOOL_ROOT || join(toolDir, "..", "..");
@@ -25,8 +25,8 @@ export const rel = (path: string): string => relative(repoRoot, path);
 
 /** The locale every catalog is written in, and the last fallback. */
 export const SOURCE = "en";
-/** Pseudo-locales generated from SOURCE (pseudo.ts); never edited or translated by hand. */
-export const PSEUDO_LOCALES = ["en-XA", "ar-XB"] as const;
+/** Pseudo-locales generated from SOURCE (generate.ts); never edited or translated by hand. */
+const PSEUDO_LOCALES = ["en-XA", "ar-XB"] as const;
 export const isPseudo = (locale: string): boolean => (PSEUDO_LOCALES as readonly string[]).includes(locale);
 /** The locales written in the same change as SOURCE: a key they lack is an error. The others catch up later (ADR-0009 §8). */
 export const REQUIRED_LOCALES: readonly string[] = ["ja"];
@@ -64,7 +64,7 @@ export function loadCatalogFiles(): CatalogFile[] {
     for (const file of readdirSync(join(localesDir, locale.name), { recursive: true, encoding: "utf8" }).sort()) {
       if (!file.endsWith(".json")) continue;
       const path = join(localesDir, locale.name, file);
-      const [ns, ...area] = file.slice(0, -".json".length).split(sep);
+      const [ns = "", ...area] = file.slice(0, -".json".length).split(sep);
       files.push({
         path,
         locale: locale.name,
@@ -86,13 +86,6 @@ export function loadCatalog(files: CatalogFile[] = loadCatalogFiles()): Catalog 
   }
   return catalog;
 }
-
-/**
- * Namespaces whose name starts with "client" are used only by the TypeScript clients and
- * may use FormatJS-only syntax. Every other namespace is formatted by Go as well and must
- * stay inside the shared subset (icu.ts outsideSharedSubset).
- */
-export const isClientNamespace = (ns: string): boolean => ns.startsWith("client");
 
 /**
  * Pseudo-locales keep the source locale's plural categories, so both runtimes format them
