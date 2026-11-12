@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the notification module
--- (docs/architecture/data-model/04-tables/07-notification.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/app/notification). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
 -- notification: notifications, their dismissals, read markers, the exclusions and deleted
--- statuses that hide them, and the Web Push subscriptions (data-model §4.7, FR-205, FR-206).
+-- statuses that hide them, and the Web Push subscriptions (FR-205, FR-206).
 -- Owned by internal/app/notification.
 -- ---------------------------------------------------------------------------------------------
 
@@ -222,7 +222,7 @@ CREATE TABLE post_subscription_requests (
 );
 CREATE INDEX post_subscription_requests_target_account ON post_subscription_requests (target_account_id, account_id);
 
--- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
+-- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
 -- the rows of an account.
 CREATE INDEX notifications_source_account_id ON notifications (source_account_id);
 CREATE INDEX notifications_subject_user_id ON notifications (subject_user_id);
@@ -247,7 +247,7 @@ CREATE INDEX conversation_mutes_conversation_account ON conversation_mutes (conv
 
 -- ---------------------------------------------------------------------------------------------
 -- The notification policy and the requests of the filtered notifications (ADR-0158 §1-§7,
--- §9, data-model §4.7).
+-- §9).
 -- ---------------------------------------------------------------------------------------------
 
 -- Current value: a local account's action for the notifications whose source meets a condition.

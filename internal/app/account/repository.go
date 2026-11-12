@@ -27,7 +27,7 @@ var (
 	ErrNotRemote = errors.New("account: not a remote account")
 )
 
-// Repository is the persistence port of the account module (data-model §4.2). The database
+// Repository is the persistence port of the account module. The database
 // adapters implement it and pass identitytest.AccountRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside

@@ -23,7 +23,9 @@ import (
 // are listed in ID order and in pages, past the period when nothing local refers to them and past
 // the maximum regardless, never the deleted ones nor local ones; so are the statuses only a relay
 // brought in; purging deleted statuses removes their rows and revisions and keeps their
-// deletions; the deletions by retention of purged statuses go in bounded batches; and the records
+// deletions, and their quotes, detachments, interaction policies, the requests whose target or
+// interaction they are with their answers and states, and the approvals of interactions with
+// them, while those of other statuses stay; the deletions by retention of purged statuses go in bounded batches; and the records
 // of received activities, their documents and answers, the tombstones, and the observations of
 // servers (all but the newest of each server) go after their retention, in bounded batches; the
 // Creates of deleted statuses and actors go with their deliveries, attempts, documents, and
@@ -43,6 +45,7 @@ func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 		{"ListsTheRemoteStatusesToPurge", retentionRepoRemoteStatuses},
 		{"ListsTheRelayedStatusesToPurge", retentionRepoRelayed},
 		{"PurgesDeletedStatuses", retentionRepoPurgeStatuses},
+		{"PurgesTheQuotesAndApprovalsOfDeletedStatuses", retentionRepoPurgeQuotes},
 		{"DeletesTheDeletionsByRetention", retentionRepoDeletions},
 		{"DeletesTheRecordsOfTheInbox", retentionRepoInbox},
 		{"DeletesTheObservationsOfServers", retentionRepoObservations},
@@ -215,6 +218,135 @@ func retentionRepoPurgeStatuses(t *testing.T, r *retentionRepo) {
 	}
 	if _, err := r.h.Statuses.FindStatus(ctx, kept.ID); err != nil {
 		t.Errorf("FindStatus(another status) = %v, want it kept", err)
+	}
+}
+
+// approvalRows are the rows of the quotes and approvals (ADR-0069, ADR-0155 §8) of one status:
+// its quote with its detachment and its interaction policy, the request of its interaction with
+// another status and the request of another status's interaction with it, and the approval of an
+// interaction with it, revoked.
+type approvalRows struct {
+	interacting, target content.InteractionRequest
+	authorization       content.InteractionAuthorization
+}
+
+func (r *retentionRepo) approvals(t *testing.T, q appcontent.QuoteRepository, s content.Status, other string) approvalRows {
+	t.Helper()
+	now := r.clock.Now()
+	rows := approvalRows{
+		interacting: content.InteractionRequest{
+			ID: r.ids.NewID(), Kind: content.InteractionQuote, Direction: content.DirectionRemote,
+			TargetURI: other, InteractingURI: s.URI, InteractingAccountID: s.AuthorAccountID, CreatedAt: now,
+		},
+		target: content.InteractionRequest{
+			ID: r.ids.NewID(), Kind: content.InteractionReply, Direction: content.DirectionRemote,
+			TargetURI: s.URI, TargetAccountID: s.AuthorAccountID, InteractingURI: other, InteractingAccountID: r.ids.NewID(), CreatedAt: now,
+		},
+		authorization: content.InteractionAuthorization{
+			ID: r.ids.NewID(), Kind: content.InteractionQuote, InteractingURI: other, InteractingAccountID: r.ids.NewID(),
+			TargetStatusID: s.ID, CreatedAt: now,
+		},
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var errs []error
+		_, err := q.InsertQuote(ctx, tx, content.Quote{StatusID: s.ID, QuotedURI: other, Form: content.QuoteFormFEP044f})
+		errs = append(errs, err, q.InsertQuoteDetachment(ctx, tx, s.ID, now),
+			q.ReplaceInteractionPolicy(ctx, tx, s.ID, nil, content.InteractionPolicy{{Kind: content.InteractionQuote, Approval: content.ApprovalManual, Audience: content.AudienceEveryone}}))
+		for _, req := range []content.InteractionRequest{rows.interacting, rows.target} {
+			_, err := q.InsertInteractionRequest(ctx, tx, req)
+			e := content.InteractionEvent{ID: r.ids.NewID(), RequestID: req.ID, Kind: content.InteractionEventRejected, OccurredAt: now}
+			errs = append(errs, err, q.InsertInteractionEvent(ctx, tx, e),
+				q.UpsertInteractionState(ctx, tx, content.InteractionStateOf(req, []content.InteractionEvent{e})))
+		}
+		_, err = q.InsertInteractionAuthorization(ctx, tx, rows.authorization)
+		errs = append(errs, err)
+		_, err = q.InsertInteractionAuthorizationRevocation(ctx, tx, rows.authorization.ID, now)
+		return errors.Join(append(errs, err)...)
+	})
+	return rows
+}
+
+// events returns the answers to the request id, read in a transaction.
+func (r *retentionRepo) events(t *testing.T, q appcontent.QuoteRepository, id string) []content.InteractionEvent {
+	t.Helper()
+	var events []content.InteractionEvent
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var err error
+		events, err = q.ListInteractionEvents(ctx, tx, id)
+		return err
+	})
+	return events
+}
+
+func retentionRepoPurgeQuotes(t *testing.T, r *retentionRepo) {
+	q := r.h.Quotes
+	if q == nil {
+		t.Skip("the harness has no quote repository")
+	}
+	ctx := t.Context()
+	const other = "https://remote.example/notes/other"
+	purged := r.status(t, false, time.Hour, "")
+	kept := r.status(t, false, time.Hour, "")
+	purgedRows := r.approvals(t, q, purged, other)
+	keptRows := r.approvals(t, q, kept, other)
+	r.deleteStatus(t, purged, content.DeletedByRetention)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Retention.PurgeStatuses(ctx, tx, []string{purged.ID})
+	})
+
+	if _, err := q.FindQuote(ctx, purged.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindQuote(purged) = %v, want ErrNotFound", err)
+	}
+	if p, err := q.FindInteractionPolicy(ctx, purged.ID); err != nil || len(p) != 0 {
+		t.Errorf("FindInteractionPolicy(purged) = %+v, %v; want none", p, err)
+	}
+	for _, req := range []content.InteractionRequest{purgedRows.interacting, purgedRows.target} {
+		if _, err := q.FindInteractionRequest(ctx, nil, req.ID); !errors.Is(err, appcontent.ErrNotFound) {
+			t.Errorf("FindInteractionRequest(%s of the purged status) = %v, want ErrNotFound", req.Kind, err)
+		}
+		if events := r.events(t, q, req.ID); len(events) != 0 {
+			t.Errorf("ListInteractionEvents(%s of the purged status) = %+v, want none", req.Kind, events)
+		}
+		if _, err := q.FindInteractionState(ctx, nil, req.ID); !errors.Is(err, appcontent.ErrNotFound) {
+			t.Errorf("FindInteractionState(%s of the purged status) = %v, want ErrNotFound", req.Kind, err)
+		}
+	}
+	if _, err := q.FindInteractionAuthorization(ctx, purgedRows.authorization.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindInteractionAuthorization(of the purged status) = %v, want ErrNotFound", err)
+	}
+	// A purged status may come back (IngestsAPurgedStatusAgain): recorded again, its quote and
+	// approval start over, without the detachment and the revocation of before.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := q.InsertQuote(ctx, tx, content.Quote{StatusID: purged.ID, QuotedURI: other, Form: content.QuoteFormLegacy})
+		_, err2 := q.InsertInteractionAuthorization(ctx, tx, purgedRows.authorization)
+		return errors.Join(err, err2)
+	})
+	if s, err := q.FindQuoteState(ctx, purged.ID); err != nil || s.Approval != content.QuoteApprovalLegacy {
+		t.Errorf("FindQuoteState(quoted again) = %+v, %v; want legacy, its detachment purged", s, err)
+	}
+	if a, err := q.FindInteractionAuthorization(ctx, purgedRows.authorization.ID); err != nil || a.RevokedAt != nil {
+		t.Errorf("FindInteractionAuthorization(given again) = %+v, %v; want it standing, its revocation purged", a, err)
+	}
+
+	if s, err := q.FindQuoteState(ctx, kept.ID); err != nil || s.Approval != content.QuoteApprovalDetached {
+		t.Errorf("FindQuoteState(another status) = %+v, %v; want it kept, detached", s, err)
+	}
+	if p, err := q.FindInteractionPolicy(ctx, kept.ID); err != nil || len(p) != 1 {
+		t.Errorf("FindInteractionPolicy(another status) = %+v, %v; want it kept", p, err)
+	}
+	for _, req := range []content.InteractionRequest{keptRows.interacting, keptRows.target} {
+		if _, err := q.FindInteractionRequest(ctx, nil, req.ID); err != nil {
+			t.Errorf("FindInteractionRequest(%s of another status) = %v, want it kept", req.Kind, err)
+		}
+		if events := r.events(t, q, req.ID); len(events) != 1 {
+			t.Errorf("ListInteractionEvents(%s of another status) = %+v, want its answer kept", req.Kind, events)
+		}
+		if s, err := q.FindInteractionState(ctx, nil, req.ID); err != nil || s.State != content.InteractionRequestRejected {
+			t.Errorf("FindInteractionState(%s of another status) = %+v, %v; want it kept", req.Kind, s, err)
+		}
+	}
+	if a, err := q.FindInteractionAuthorization(ctx, keptRows.authorization.ID); err != nil || a.RevokedAt == nil {
+		t.Errorf("FindInteractionAuthorization(of another status) = %+v, %v; want it kept, revoked", a, err)
 	}
 }
 

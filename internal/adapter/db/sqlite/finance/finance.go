@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
-// Repository implements appfinance.Repository (data-model §4.12, ADR-0067).
+// Repository implements appfinance.Repository (ADR-0067).
 type Repository struct {
 	db *moduleDB
 }
@@ -28,7 +28,7 @@ func NewRepository(d *sqlite.DB) *Repository {
 	return &Repository{db: &moduleDB{d}}
 }
 
-// Dates are TEXT as YYYY-MM-DD (data-model §1.2).
+// Dates are TEXT as YYYY-MM-DD.
 func toNullDate(d *finance.Date) sql.NullString {
 	if d == nil {
 		return sql.NullString{}

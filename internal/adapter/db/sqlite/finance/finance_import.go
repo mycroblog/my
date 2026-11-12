@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
-// The billing imports (data-model §4.12, ADR-0068 §5).
+// The billing imports (ADR-0068 §5).
 
 func runOutcome(r appfinance.Run) string {
 	if r.Succeeded() {

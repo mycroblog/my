@@ -23,7 +23,7 @@ import (
 )
 
 // TestClientAPIActionsOnStatusesAndBans checks, through the composition root and the client API,
-// the actions that do more than restrict (FR-703, data-model §5.2): force_sensitive and
+// the actions that do more than restrict (FR-703): force_sensitive and
 // mark_statuses_sensitive show the media as sensitive until they are lifted, delete_statuses
 // deletes the posts it names for everyone, their author included, and a ban hides the account,
 // schedules its deletion, and is never lifted.

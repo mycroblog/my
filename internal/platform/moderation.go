@@ -20,7 +20,7 @@ import (
 
 // setUpModeration builds the moderation use cases, the policy that federation and the media
 // proxy read the domain and account restrictions through (docs/architecture/federation.md §11),
-// and the policy of the accounts' restrictions (data-model §5.3). It needs the account module,
+// and the policy of the accounts' restrictions. It needs the account module,
 // and comes before the identity module and everything that federates. It also registers the
 // job that deletes the accounts whose deletion is due, which bans schedule, and
 // the audit log projector. Suspensions cut follows through the graph module (FR-717), which is

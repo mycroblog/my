@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- The translation module: translations of posts, and how many characters went to the providers
--- (ADR-0148, data-model section 4.17).
+-- (ADR-0148).
 
 -- Current value (cache): the translation of a revision by one provider. It is derived from the
 -- revision, may be deleted at any time, and is not a projection, since the output of a provider

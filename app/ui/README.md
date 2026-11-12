@@ -418,7 +418,7 @@ string through props or children.
   Keyboard focus shows `focus-ring`; text inputs show it on any focus. Controls are at least 24 px tall and 44 px under `pointer-coarse:`.
 - `TextArea` with `characterLimit` and `formatRemaining` (the count message for a remaining count, negative when over) shows a count
   after the control, as the [GOV.UK character count](https://design-system.service.gov.uk/components/character-count/) does:
-  - the count is counted in Unicode code points, like the server ([data-model/README.md](../../docs/architecture/data-model/README.md));
+  - the count is counted in Unicode code points, like the server;
   - the visible count is linked to the text area with `aria-describedby` and hidden from the reading order, so it is read with the field;
   - a visually hidden `role="status"` region announces it when typing pauses for a second, and at once when the remaining count
     reaches 50, 20 or 0 ([ADR-0110](../../docs/adr/0110-web-experience-principles.md));

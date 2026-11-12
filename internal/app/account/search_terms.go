@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 )
 
-// The account_search_terms projection (ADR-0092 §1, FR-307, data-model §4.2): the words that
+// The account_search_terms projection (ADR-0092 §1, FR-307): the words that
 // the search of accounts matches by their start. It is synchronous (ADR-0020 rule 7): the projector rewrites the
 // rows of an account from its handle, its profile head, its lifecycle state, and whether the
 // moderation module suspends it, whenever one of them changes.

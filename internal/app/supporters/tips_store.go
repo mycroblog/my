@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// The records of the tips (ADR-0162 §12, data-model §4.13), which TipRepository keeps. A tip's
+// The records of the tips (ADR-0162 §12), which TipRepository keeps. A tip's
 // state is the rows it has: paid with a payment, expired with that outcome, and open with neither.
 
 // ErrOpenTip reports a tip of a user who has an open one already.

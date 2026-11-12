@@ -8,7 +8,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// The logical type date is TEXT that date() gives back unchanged (data-model §1.2): the CHECK
+// The logical type date is TEXT that date() gives back unchanged: the CHECK
 // takes a real YYYY-MM-DD only.
 func TestDateCheck(t *testing.T) {
 	t.Parallel()

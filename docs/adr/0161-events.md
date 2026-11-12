@@ -175,7 +175,8 @@
 | `gathering_attendees` | 投影 | イベント、アカウント、今の答え、承認されているか |
 | `gathering_coorganizers` | 投影 | イベント、アカウント、指名の順 |
 | `gathering_dues` | 投影 | 次に `gathering.tick` が扱う時刻があるイベントだけの行: イベント、`next_due_at`。開始・リマインダー・検査が残らなければ行を消す |
-| `gathering_reminder_offsets` | 現在値 | アカウント、前もっての時間（分）。行がなければ既定（§12） |
+| `gathering_reminder_settings` | 現在値 | アカウント、時刻。行があればそのアカウントは前もっての時間を選んだ。行がなければ既定（§12） |
+| `gathering_reminder_offsets` | 現在値 | アカウント、前もっての時間（分）。選んだアカウントがこの行を持たなければリマインダーなし |
 | `report_gatherings` | リソース | `moderation` の通報の子（`03-moderation.sql`）: 通報、イベント、改版 |
 
 - `next_due_at` は状態ではなく、確定・リマインダーの設定・中止から再構築できる投影の値である。行の有無で「次の期限がある」ことを表し、NULL を使わない。

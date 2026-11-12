@@ -53,7 +53,7 @@ func (a audience) visible(ctx context.Context, viewer content.Viewer, st content
 	case err != nil:
 		return false, appaccount.Actor{}, err
 	default:
-		// A suspended or deleted author is shown to no one else (data-model §5.1).
+		// A suspended or deleted author is shown to no one else.
 		restrictions.ProfileView = restrictions.ProfileView || !author.Lifecycle.Active()
 	}
 

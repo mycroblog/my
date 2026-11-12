@@ -123,7 +123,7 @@
 ### 10. バッジの属性
 
 - バッジはロールの属性で、1 つのロールに 0 か 1 つ。持つのは**名前**（`label`、1〜32 文字の 1 行）と**色**（`neutral`・`red`・`orange`・`yellow`・`green`・`teal`・`blue`・`purple`・`pink` の 9 色の名前）だけである。
-- 名前は管理者が書く文字列で、どのロケールでも同じ値を出す（インスタンスのルールと同じ扱い、data-model §4.9）。翻訳の機構は持たず、UI の文言ではなく利用者の内容として `dir="auto"` で描く。
+- 名前は管理者が書く文字列で、どのロケールでも同じ値を出す（インスタンスのルールと同じ扱い、ADR-0009 §2）。翻訳の機構は持たず、UI の文言ではなく利用者の内容として `dir="auto"` で描く。
   ロールの `key`（`small-support` など）は管理のための識別子で、利用者には出さない。
 - 色は `@my/ui` のトークン `badge-<色>`（背景）と `badge-<色>-fg`（文字）の組で、ライトとダークの両方で 4.5:1 を `scripts/task.sh web:tokens` が検査する。
   サーバーのテーマ（ADR-0059）はバッジのトークンを上書きしない。色は飾りで、意味は名前が運ぶ（WCAG 1.4.1）。
@@ -182,7 +182,7 @@
 
 - インスタンス設定は `instance_setting_revisions` のキー `supporter_list_visibility` で、`instance_settings` の投影に入る。
 - 「選んだか」を NULL 許容の列や真偽の列で持たず、行の有無で表す（ADR-0020 規約 4）。本人の選択は履歴を問わない設定で、`user_preferences` と同じく現在値にする。
-- ロールの剥奪（`user_role_revocations` を足す処理）とバッジの削除が `user_role_badge_displays` を、加入が終わる処理が `supporter_listings` を、同じトランザクションで消す。ロールの削除は持っている人がいないときだけできる（data-model §4.1）ので、`role_badges` の行もそのとき消す。
+- ロールの剥奪（`user_role_revocations` を足す処理）とバッジの削除が `user_role_badge_displays` を、加入が終わる処理が `supporter_listings` を、同じトランザクションで消す。ロールの削除は持っている人がいないときだけできるので、`role_badges` の行もそのとき消す。
 - プロフィールのバッジは `user_roles`・`role_badges`・`user_role_badge_displays` の結合 1 回で読み、アカウント自身の取得でだけ行う。
 
 ### この決定を覆す条件

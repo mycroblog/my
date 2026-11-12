@@ -11,13 +11,13 @@ import (
 
 // LocalDomain is the domain of local accounts. It is the empty string rather than the
 // configured host, so that a unique key over (username, domain) never sees NULL and stays valid
-// whatever the host is (data-model §1.2).
+// whatever the host is.
 const LocalDomain = ""
 
 // ActorType is the ActivityStreams actor type of an account.
 type ActorType string
 
-// Actor types (data-model §4.2, accounts.actor_type).
+// Actor types (accounts.actor_type).
 const (
 	ActorPerson       ActorType = "person"
 	ActorService      ActorType = "service"

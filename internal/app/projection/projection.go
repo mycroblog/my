@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package projection rebuilds and verifies the projections (data-model §9). It knows no table
+// Package projection rebuilds and verifies the projections. It knows no table
 // of its own: each Projection names the tables that one module's rebuild function derives, and
 // the module's function does the deriving. The service runs that function inside a
 // transaction that it rolls back, reads what the function produced, and compares it with the
@@ -11,8 +11,7 @@
 //     per transaction (ADR-0003), so that readers never see an emptied projection and rows
 //     that are right are not rewritten.
 //
-// The scheduled job JobVerify verifies every projection and corrects the ones that drifted
-// (data-model §2.3).
+// The scheduled job JobVerify verifies every projection and corrects the ones that drifted.
 package projection
 
 import (

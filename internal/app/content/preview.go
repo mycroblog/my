@@ -191,7 +191,7 @@ func (p *Previews) status(ctx context.Context, statusID string, authors previewA
 	if !author.found {
 		restrictions.ProfileView = true
 	} else {
-		// A suspended or deleted author is shown to no one else (data-model §5.1).
+		// A suspended or deleted author is shown to no one else.
 		restrictions.ProfileView = restrictions.ProfileView || !author.actor.Lifecycle.Active() || author.actor.Local == nil
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
@@ -218,7 +218,7 @@ func (p *Previews) status(ctx context.Context, statusID string, authors previewA
 			images = []content.Attachment{{MediaID: a.Cover.MediaID, Description: a.Cover.Description}}
 		}
 	}
-	// Moderation may show the attachments and the cover as sensitive (data-model §5.2): the
+	// Moderation may show the attachments and the cover as sensitive: the
 	// preview shows none.
 	sensitive := rev.Sensitive || r.MediaSensitive
 	if !sensitive && len(images) > 0 {

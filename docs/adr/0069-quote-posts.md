@@ -15,7 +15,7 @@ FEP-044f は Draft です。ただし、同意の手順を持つ形式はこれ�
 
 ### 1. 資源と状態
 
-すべて `content` モジュールが持ちます。表と列の名前は、実装の issue で [data-model.md](../architecture/data-model/README.md) に書きます。
+すべて `content` モジュールが持ちます。表と列の名前は `schema/04-content/` に書きます。
 
 - **引用**（resource）: 1 つの投稿は、引用先を 1 つだけ持ちます。
   - 持つもの: 引用元の投稿、引用先の IRI、解決できた引用先の投稿（取得前は空）、形式（`fep-044f` / `legacy`）

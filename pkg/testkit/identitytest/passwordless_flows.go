@@ -4,6 +4,8 @@ package identitytest
 
 import (
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -221,4 +223,44 @@ func passwordlessRemovesThePassword(t *testing.T, e *AccountEnv) {
 		t.Errorf("RemovePassword(removed passkey) = %v, want ErrInvalidPasskey", err)
 	}
 	e.wantHasPassword(t, userID, true)
+}
+
+// passwordlessKeepsAWayToSignInUnderConcurrency removes the password and the only passkey of a
+// user at once, several times: the removals hold the user's sign-in methods while they check and
+// write, so one of the two fails and the user keeps a way to sign in.
+func passwordlessKeepsAWayToSignInUnderConcurrency(t *testing.T, e *AccountEnv) {
+	ctx := t.Context()
+	for i := range 5 {
+		reg := e.Register(t, fmt.Sprintf("racer%d", i))
+		userID := reg.User.ID
+		phone, phoneCred := e.registerPasskeyWith(t, userID, "phone", appidentity.Confirmation{Password: sessionPassword})
+		c := e.confirmWithPasskey(t, userID, phone)
+		var removedPassword, removedPasskey error
+		var wg sync.WaitGroup
+		start := make(chan struct{})
+		wg.Go(func() {
+			<-start
+			removedPassword = e.Identity.RemovePassword(ctx, appidentity.RemovePasswordInput{UserID: userID, Passkey: c.Passkey})
+		})
+		wg.Go(func() {
+			<-start
+			removedPasskey = e.Identity.RemovePasskey(ctx, userID, phoneCred.ID)
+		})
+		close(start)
+		wg.Wait()
+		if (removedPassword == nil) == (removedPasskey == nil) {
+			t.Fatalf("round %d: RemovePassword = %v, RemovePasskey = %v; want exactly one to succeed", i, removedPassword, removedPasskey)
+		}
+		hasPassword, err := e.Identity.HasPassword(ctx, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		passkeys, err := e.Identity.Passkeys(ctx, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasPassword && len(passkeys) == 0 {
+			t.Fatalf("round %d: the user has neither a password nor a passkey", i)
+		}
+	}
 }

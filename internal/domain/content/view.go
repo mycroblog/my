@@ -59,7 +59,7 @@ type Relation struct {
 }
 
 // AuthorRestrictions are the author's moderation restrictions that bear on viewing
-// (data-model §5.2; lifecycle states such as deleted map to ProfileView).
+// (lifecycle states such as deleted map to ProfileView).
 type AuthorRestrictions struct {
 	ProfileView              bool // only the author and moderators see the profile and posts
 	VisibilityCeilingPrivate bool // every post, past ones included, is followers-only (§5.4)

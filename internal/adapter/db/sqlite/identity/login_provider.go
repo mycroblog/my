@@ -15,8 +15,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// External login providers and the external identities linked to users (data-model §4.1,
-// ADR-0106).
+// External login providers and the external identities linked to users
+// (ADR-0106).
 
 // InsertLoginProvider implements appidentity.LoginProviderRepository.
 func (r *Repository) InsertLoginProvider(ctx context.Context, tx uow.Tx, id, createdByUserID string, createdAt time.Time) error {

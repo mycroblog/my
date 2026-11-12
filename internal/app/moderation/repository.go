@@ -19,7 +19,7 @@ var (
 )
 
 // Repository is the persistence port of the moderation module: the actions on accounts and
-// domains, their lifts, the restrictions they impose, and reports (data-model §4.3). The
+// domains, their lifts, the restrictions they impose, and reports. The
 // database adapters implement it and pass moderationtest.ModerationContract, and the flows of the use
 // cases on them are moderationtest.ModerationFlows (internal/flowtest/moderation).
 //

@@ -95,7 +95,7 @@ type InteractionRepository interface {
 
 	// Current values. Each insert does nothing when the account already has the row for the
 	// status and reports whether it inserted; each delete reports whether there was a row.
-	// Only a row actually inserted or deleted changes a counter (data-model §2.3).
+	// Only a row actually inserted or deleted changes a counter.
 
 	// InsertFavourite inserts f. A URI that another favourite has fails with
 	// ErrFavouriteURIUsed.

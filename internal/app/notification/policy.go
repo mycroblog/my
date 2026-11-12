@@ -14,7 +14,7 @@ import (
 )
 
 // PolicyRepository is the persistence port of the notification policy and the requests of the
-// filtered notifications (ADR-0158, data-model §4.7): the policy choices (current value), the
+// filtered notifications (ADR-0158): the policy choices (current value), the
 // filterings of the notifications (event), the accepted sources (resource), the dismissals of the
 // requests (event), and the requests (projection). Repository embeds it; the database adapters
 // pass notificationtest.NotificationContract.

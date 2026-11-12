@@ -12,7 +12,7 @@ import (
 )
 
 // JobVerify is the type of the scheduled job that verifies every projection and corrects the
-// ones that drifted (data-model §2.3).
+// ones that drifted.
 const JobVerify = "projection.verify"
 
 // DefaultVerifyInterval is how often JobVerify runs.

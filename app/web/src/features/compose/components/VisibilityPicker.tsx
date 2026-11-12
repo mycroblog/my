@@ -34,7 +34,7 @@ export type VisibilityPickerProps = {
  * visibilities as a radio group, each with who can see it (ADR-0017; WAI-ARIA APG radio group and dialog
  * patterns), without `local` on a one-person server (ADR-0152 §5). Choosing does not close the popover, because the arrow keys choose as they move.
  * While a restriction narrows what the account can post, the wider visibilities are disabled and the
- * group says why (data-model/05-states-and-policies.md §5.4). A reply to a direct message stays direct, so the others
+ * group says why (ADR-0058 §11). A reply to a direct message stays direct, so the others
  * are disabled the same way and the group says so (ADR-0154 §6). On a server that allows a translation provider a
  * narrow visibility, the group also says that a reader's request can send the text there (ADR-0148 §6).
  */

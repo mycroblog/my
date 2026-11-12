@@ -476,8 +476,8 @@ func NormalizeIRI(s string, host HostFunc) (IRI, error) {
 }
 
 // DomainAndParents returns a canonical host and its parent domains, from the host itself to the
-// last label, so that a domain-level moderation action on a domain also covers its subdomains
-// (data-model §4.3): "a.b.example" gives "a.b.example", "b.example", "example".
+// last label, so that a domain-level moderation action on a domain also covers its subdomains:
+// "a.b.example" gives "a.b.example", "b.example", "example".
 func DomainAndParents(host string) []string {
 	if host == "" {
 		return nil

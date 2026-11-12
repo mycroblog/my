@@ -45,8 +45,8 @@ func (e *RuleTextError) Error() string {
 func (e *RuleTextError) Unwrap() error { return ErrInvalidValue }
 
 // ValidateRuleText checks the text and the hint of one rule revision: a single-line,
-// non-blank text and a hint ("" for none) within their limits, valid UTF-8 without U+0000
-// (data-model §1.2). They hold one value, written in any language and shown as it is in every
+// non-blank text and a hint ("" for none) within their limits, valid UTF-8 without U+0000.
+// They hold one value, written in any language and shown as it is in every
 // locale.
 func ValidateRuleText(text, hint string) error {
 	fail := func(field string, limit int, why string) error {

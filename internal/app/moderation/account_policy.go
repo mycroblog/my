@@ -20,7 +20,7 @@ type AccountDomains interface {
 	AccountDomainTx(ctx context.Context, tx uow.Tx, id string) (string, error)
 }
 
-// AccountPolicy is the RestrictionPolicy of data-model §5.3 as far as moderation decides it: the
+// AccountPolicy is the RestrictionPolicy as far as moderation decides it: the
 // restrictions in effect on an account are those of its own actions (account_restrictions) and
 // those of its domain and the parent domains (domain_restrictions), read at the time of each
 // call. The other modules decide through it, never from the moderation tables: the content

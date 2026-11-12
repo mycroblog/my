@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the graph module
--- (docs/architecture/data-model/04-tables/05-graph.md). schema/README.md describes the layout
+-- (internal/app/graph). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- graph: follows (data-model §4.5) ------------------------------------------------------------
@@ -142,7 +142,7 @@ CREATE TABLE follow_resends (
   received_at timestamptz NOT NULL
 );
 
--- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
+-- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
 -- the rows of an account.
 CREATE INDEX follows_follower_account_id ON follows (follower_account_id);
 CREATE INDEX follows_followee_account_id ON follows (followee_account_id);

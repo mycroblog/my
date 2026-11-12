@@ -90,7 +90,7 @@ func (s *Service) AddReportNote(ctx context.Context, reportID, body, byUserID st
 // ReopenReport reopens a resolved report: it records the reopening and, in the same
 // transaction, the report's open state (keeping its assignee) and the audit log entry. An open
 // report fails with ErrReportNotResolved, an unknown one with ErrNotFound. Resolving the report
-// again does not notify its reporter again (data-model §4.7). byUserID is the moderator, "" for
+// again does not notify its reporter again. byUserID is the moderator, "" for
 // the CLI.
 func (s *Service) ReopenReport(ctx context.Context, reportID, byUserID string) (moderation.ReportRecord, error) {
 	now := kernel.Normalize(s.d.Clock.Now())

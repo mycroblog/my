@@ -6,8 +6,10 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +29,7 @@ import (
 // the lists of reports, of actions, and of domain actions newest first with their filters and
 // keyset pages; the notes and reopenings of a report and the counts of a target's history; what
 // the rebuild of the projections reads and deletes; and the reads in a transaction that see what
-// it wrote; and the allowlist of federation (AllowlistContract). The moderation use cases on top
+// it wrote; the lock that orders the changes of one account's or domain's restrictions; and the allowlist of federation (AllowlistContract). The moderation use cases on top
 // of it are ModerationFlows, which
 // internal/flowtest/moderation runs once on SQLite.
 func ModerationContract(t *testing.T, newHarness ModerationFactory) {
@@ -44,6 +46,7 @@ func ModerationContract(t *testing.T, newHarness ModerationFactory) {
 		{"KeepsNotesAndCountsTheHistory", modRepoNotes},
 		{"ReadsAndDeletesForTheRebuild", modRepoRebuild},
 		{"ReadsWhatItsTransactionWrote", modRepoTxReads},
+		{"OrdersTheLiftsOfOneTarget", modRepoLocksTheTargetOfConcurrentLifts},
 	})
 	t.Run("Allowlist", func(t *testing.T) { AllowlistContract(t, newHarness) })
 }
@@ -919,6 +922,93 @@ func modRepoRebuild(t *testing.T, r *modRepo) {
 		}
 		return err
 	})
+}
+
+// modRepoLocksTheTargetOfConcurrentLifts lifts two actions on one account, and two on one
+// domain, from two transactions at once, each under the target's lock, deleting its own rows and
+// then reading the rows left, as the lift projects them: the lock orders the lifts, so the later
+// one reads what the earlier one committed and sees no rows left.
+func modRepoLocksTheTargetOfConcurrentLifts(t *testing.T, r *modRepo) {
+	ctx := t.Context()
+	repo := r.h.Moderation
+	targets := []struct {
+		name   string
+		lock   func(uow.Tx, string) error
+		insert func(uow.Tx, moderation.RestrictionRow) error
+		lift   func(uow.Tx, string) error
+		rows   func(uow.Tx, string) ([]moderation.RestrictionRow, error)
+		target func(round int) string
+	}{
+		{
+			"account",
+			func(tx uow.Tx, id string) error { return repo.LockAccountRestrictions(ctx, tx, id) },
+			func(tx uow.Tx, row moderation.RestrictionRow) error {
+				return repo.InsertAccountRestriction(ctx, tx, row)
+			},
+			func(tx uow.Tx, actionID string) error { return repo.DeleteAccountRestrictionsOf(ctx, tx, actionID) },
+			func(tx uow.Tx, id string) ([]moderation.RestrictionRow, error) {
+				return repo.AccountRestrictionRows(ctx, tx, id)
+			},
+			func(int) string { return r.ids.NewID() },
+		},
+		{
+			"domain",
+			func(tx uow.Tx, d string) error { return repo.LockDomainRestrictions(ctx, tx, d) },
+			func(tx uow.Tx, row moderation.RestrictionRow) error {
+				return repo.InsertDomainRestriction(ctx, tx, row)
+			},
+			func(tx uow.Tx, actionID string) error { return repo.DeleteDomainRestrictionsOf(ctx, tx, actionID) },
+			func(tx uow.Tx, d string) ([]moderation.RestrictionRow, error) {
+				return repo.DomainRestrictionRows(ctx, tx, d)
+			},
+			func(round int) string { return fmt.Sprintf("bad%d.example", round) },
+		},
+	}
+	for _, tg := range targets {
+		for round := range 5 {
+			target := tg.target(round)
+			actions := []string{r.ids.NewID(), r.ids.NewID()}
+			r.tx(t, func(_ context.Context, tx uow.Tx) error {
+				if err := tg.lock(tx, target); err != nil {
+					return err
+				}
+				for _, a := range actions {
+					if err := tg.insert(tx, moderation.RestrictionRow{Target: target, Restriction: moderation.RestrictFederation, SourceActionID: a}); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+			left := make([]int, len(actions))
+			errs := make([]error, len(actions))
+			var wg sync.WaitGroup
+			start := make(chan struct{})
+			for i, a := range actions {
+				wg.Go(func() {
+					<-start
+					errs[i] = r.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+						if err := tg.lock(tx, target); err != nil {
+							return err
+						}
+						if err := tg.lift(tx, a); err != nil {
+							return err
+						}
+						rows, err := tg.rows(tx, target)
+						left[i] = len(rows)
+						return err
+					})
+				})
+			}
+			close(start)
+			wg.Wait()
+			if err := errors.Join(errs...); err != nil {
+				t.Fatalf("%s round %d: %v", tg.name, round, err)
+			}
+			if !slices.Contains(left, 0) {
+				t.Fatalf("%s round %d: rows left after each lift = %v; want the later lift to see none", tg.name, round, left)
+			}
+		}
+	}
 }
 
 func modRepoTxReads(t *testing.T, r *modRepo) {

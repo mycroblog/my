@@ -28,7 +28,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   「配送」の区画は `GET /admin/instances/{domain}/deliveries` の新しい順の一覧（`RecordList` と「さらに表示」）で、配送ごとに種類・日時・送信者・受信箱・アクティビティの ID と、試行（結果・日時・状態コード・署名の方式・エラー）を出す。アクティビティの中身はどこにも出さない。
   公開でない配送は送信者・アクティビティの ID・個人の受信箱を伏せた理由を言い、「伏せた項目を表示」（`POST …/deliveries/{id}/reveal`。監査ログに残ることを説明に書く。答えは mutation にだけ持つ）を置く。
   絞り込みはアクティビティの ID と、このサーバーのアカウント（ユーザー名を `GET /accounts/lookup` で ID に直す。監査ログに残ることを欄の説明で送る前に言う）で、実行のたびに監査ログに残るのでページの state に置き、URL には置かない。
-  データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する。[data-model §4.8](../data-model/04-tables/08-federation.md#48-federation)）ので、「最後の成功」は配送の再開の日時で示す。
+  データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する）ので、「最後の成功」は配送の再開の日時で示す。
   失敗の日数があるか停止中なら「配送を再開する」を出し、成功したら詳細の答えを置き換え、一覧と履歴を無効にして結果を知らせる。失敗はトーストで知らせ、状態とボタンを残す（E2）。
   「モデレーション」の区画から、そのドメインのドメインへの処分の画面（`/moderation/domain-actions?domain=…`）へリンクする。「投稿の取り直し」の区画（下の「投稿の取り直し」）を持つ。
 - **ドメインへの処分**（`/moderation/domain-actions`、FR-702）: 一覧 → 詳細の 4 つのページ（上の「画面の分け方」）。`h1` の下の `LocalNav` は一覧（`/moderation/domain-actions`）・ブロックリストの購読（`/moderation/domain-actions/subscriptions`）・許可したドメイン（`/moderation/domain-actions/allowed`）・Mastodon の CSV（`/moderation/domain-actions/import`）の 4 つで、新しい処分（`/new`）と処分の詳細（`/$id`）・購読の追加と購読のページは `h1` の下に一覧へ戻るリンクを置く。

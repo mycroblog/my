@@ -30,13 +30,13 @@
 
 - 区分 `category` は `enum(compute, database, storage, network, domain, email, software, other)` の固定の一覧にし、表示名はカタログで翻訳する（ADR-0009）。事業者は自由な文字列で、内訳は `provider_normalized`（NFKC・小文字）でまとめる。各行に出す表記は §20 が決める。
 - 「終了した」「取り消した」を NULL 可の時刻の列で表さない（ADR-0020 規約 4）。終了は `cost_item_end_changes` の最新の行、取り消しは `cost_item_cancellations` の行の有無で表す。
-  `ends_on` の NULL は data-model §1.2 の「無期限」に当たる。
+  `ends_on` の NULL は「無期限」に当たる（ADR-0020 規約 4）。
 - **取り消し**は、記録の誤りや不要になった項目を集計から外す操作で、過去の期間からも消える。**終了**は解約で、終了日より後の支払いだけが消える。取り消しを戻す操作は持たない（作り直す）。
 - 改定（`cost_item_price_revisions`）は値上げ・値下げにも誤記の訂正にも使う。誤記は `effective_on = starts_on` で改定すれば全期間が直る。同じ `effective_on` の改定が複数あれば、最後に記録した行が効く。
   `effective_on` と `revised_at` は、効く日（業務の日付）と記録した時刻で、`moderation_actions` の開始・期限と同じく、イベントの日時属性は `revised_at` の 1 つである。
 - 支払いの周期と開始日は項目の不変の事実にする。周期を変えるときは、項目を終了して新しい項目を作る。1 回だけの支払いを抜く例外（スキップ）は持たない。
 - 取り込んだ費用の行（事業者・請求期間・サービス・見込みと確定・取り込みの世代）のテーブルは ADR-0068 §5 が `finance` の中に決める。ここでは §5 の境界の契約だけを決める。収入の行は §18 にある。
-- 論理型 `date`（暦の日付 `YYYY-MM-DD`）を data-model §1.2 に置く。SQLite は `TEXT` と形の `CHECK`、PostgreSQL は `date`（data-model §1.2）。
+- 論理型 `date`（暦の日付 `YYYY-MM-DD`）を置く。SQLite は `TEXT` と形の `CHECK`、PostgreSQL は `date`。
 
 ### 3. 支払いの周期
 

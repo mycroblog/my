@@ -22,7 +22,7 @@ var ErrUnknownKey = errors.New("instance: unknown key")
 // ErrInvalidValue reports a setting value or text body that its key rejects.
 var ErrInvalidValue = errors.New("instance: invalid value")
 
-// SettingKey names an instance setting (data-model §4.9, instance_setting_revisions.key).
+// SettingKey names an instance setting (instance_setting_revisions.key).
 // Every key holds one scalar; a compound setting is split into several keys.
 type SettingKey string
 

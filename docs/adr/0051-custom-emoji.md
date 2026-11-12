@@ -103,7 +103,7 @@
 
 - リアクションは `content` モジュールの現在値 `reactions` にする（ADR-0020）。行は 1 つのリアクションで、主体・投稿・絵文字・`uri`（`Like` / `EmojiReact` の `id`）・作成時刻を持つ。一意制約は `(account_id, status_id, 絵文字)` と `(uri)`。
   絵文字は「Unicode 絵文字の文字列」か「`custom_emojis` の行」のどちらかで、集計に使う正規化した鍵（Unicode はその文字列、カスタム絵文字は `custom_emojis.id`）を持つ。
-- 取り消しは行の削除と `content.unreacted` イベント（お気に入りと同じく、取り消した後の付け直しは新しい行）。絵文字ごとの件数は `content` が持つ投影（`status_reaction_counts (status_id, 絵文字の鍵, count)`）で、行を実際に挿入・削除したときだけ増減する。表と列の詳細は [data-model.md](../architecture/data-model/README.md) に書く。
+- 取り消しは行の削除と `content.unreacted` イベント（お気に入りと同じく、取り消した後の付け直しは新しい行）。絵文字ごとの件数は `content` が持つ投影（`status_reaction_counts (status_id, 絵文字の鍵, count)`）で、行を実際に挿入・削除したときだけ増減する。表と列の詳細は `schema/04-content/` に書く。
 - `favourites` と `favourites_count` はリアクションと別に残す。お気に入りとリアクションは別の資源で、API でも別に数える。
 - **ローカルの人**は 1 投稿にお気に入りかリアクション 1 つのどちらか一方だけを持つ（`Like` の枠）。リアクションを付けると、同じ投稿へのお気に入りや別の絵文字のリアクションを同じトランザクションで外し、外したものの `Undo` を送ってから新しい `Like` を送る（どちらもアウトボックス経由）。お気に入りを付けたときも同じ。
   Mastodon は `Undo Like` で `id` に関係なくお気に入りを消し、Misskey は 1 人 1 投稿にリアクションを 1 つしか持たないので、枠を 2 つ使うと相手のサーバーでの状態が食い違う。
@@ -143,7 +143,7 @@
 
 - リアクションを付けられる投稿は、お気に入りと同じ単一のポリシー関数（`canView`。リモートの人は `ContextObjectFetch`）で閲覧できる、削除されていない投稿。ブロックしている・されている相手の投稿には付けられず、受信したものも捨てる。
 - 交流の禁止（FR-708、`account_restrictions` の `interact`）はリアクションも禁止する。
-- 投稿の削除・アカウントの削除・凍結での消し方は `favourites` と同じ扱いにする（[data-model.md](../architecture/data-model/README.md) のアカウント削除の表）。
+- 投稿の削除・アカウントの削除・凍結での消し方は `favourites` と同じ扱いにする。
 
 ### 10. リアクションの通知・クライアント API・Web
 

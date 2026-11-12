@@ -25,7 +25,7 @@ Read (instead of grep / cat over the repository):
                                                        go go-test ts ts-test op schema table query msg file
   show <ref> [--max 12000]                             the text of a ref: a declaration (<GoName>, Recv.Name,
                                                        pkg.Name, <path>:<Name>), lines (<path>:10-40), ADR-0070#decision,
-                                                       FR-915, data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
+                                                       FR-915, web-client§14.2, web-client#5-アクセシビリティ, op:<id>,
                                                        table:<name>, query:<Name>
   outline <path>                                       headings / declarations with line ranges and sizes
   refs <ref> [-n 40]                                   what points at ref, and what ref points at

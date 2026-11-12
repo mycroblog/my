@@ -28,7 +28,7 @@ const (
 
 // ScheduleDeletionByModeration records inside tx that a moderation action (a ban) schedules
 // the deletion of a local account at due: a deletion_scheduled lifecycle event initiated by a
-// moderator that names the action (data-model §4.2). An account that is deleted already, or
+// moderator that names the action. An account that is deleted already, or
 // whose deletion is due no later than due, is left as it is. A remote account fails with
 // ErrNotLocal.
 func (s *Service) ScheduleDeletionByModeration(ctx context.Context, tx uow.Tx, accountID, actionID string, due time.Time) error {
@@ -66,7 +66,7 @@ var ErrAlreadyDeleted = errors.New("account: the account is deleted")
 
 // CancelDeletionByModeration records inside tx that a moderation decision (an overturned appeal
 // of a ban) cancels the scheduled deletion of an account: a deletion_canceled lifecycle event
-// initiated by a moderator that names the action, with ID eventID (data-model §4.2). It reports
+// initiated by a moderator that names the action, with ID eventID. It reports
 // whether it recorded one: an account whose deletion is not scheduled is left as it is. A deleted
 // account fails with ErrAlreadyDeleted. The state is read with a lock where the database takes
 // one, so the deletion job and the cancellation never both win.

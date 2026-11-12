@@ -527,8 +527,8 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 	return out, nil
 }
 
-// forcedSensitive reports whether moderation shows the attachments of st as sensitive
-// (data-model §5.2): a mark_statuses_sensitive action marks the status, or its author is under
+// forcedSensitive reports whether moderation shows the attachments of st as sensitive:
+// a mark_statuses_sensitive action marks the status, or its author is under
 // force_sensitive.
 func (r *Reader) forcedSensitive(ctx context.Context, st content.Status) (bool, error) {
 	marked, err := r.d.Statuses.SensitivityOverridden(ctx, st.ID)

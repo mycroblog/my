@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the account module
--- (docs/architecture/data-model/04-tables/02-account.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/domain/account). schema/README.md describes the layout
 -- and the conventions of this directory.
 
--- account (data-model §4.2) ------------------------------------------------------------------
+-- account ------------------------------------------------------------------------------------
 
 -- Resource: a local or remote actor. domain is '' for local actors.
 CREATE TABLE accounts (
@@ -105,7 +105,7 @@ CREATE TABLE local_account_private_keys (
   private_key_enc bytea NOT NULL
 );
 
--- Event: a lifecycle transition of an account (self and system axis, data-model §5.1).
+-- Event: a lifecycle transition of an account (self and system axis).
 CREATE TABLE account_lifecycle_events (
   id uuid NOT NULL PRIMARY KEY,
   account_id uuid NOT NULL,
@@ -200,7 +200,7 @@ CREATE INDEX account_profile_revisions_avatar_media_id ON account_profile_revisi
 CREATE INDEX account_profile_revisions_header_media_id ON account_profile_revisions (header_media_id);
 
 -- ---------------------------------------------------------------------------------------------
--- account: what the owner of a local profile typed (data-model §4.2). Owned by
+-- account: what the owner of a local profile typed. Owned by
 -- internal/app/account; the client API returns it for editing the profile.
 -- ---------------------------------------------------------------------------------------------
 
@@ -221,7 +221,7 @@ CREATE TABLE account_profile_field_sources (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- account: remote actors and key rotation (data-model §4.2, docs/architecture/federation.md).
+-- account: remote actors and key rotation (docs/architecture/federation.md).
 -- Owned by internal/app/account.
 -- ---------------------------------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ CREATE TABLE account_key_revocations (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- account: the erasure of deleted local accounts' data (#397, data-model §4.2, §8). Owned by
+-- account: the erasure of deleted local accounts' data (#397, data-model §8). Owned by
 -- internal/app/account; the indexes serve the erasure's statements in the other modules.
 -- ---------------------------------------------------------------------------------------------
 

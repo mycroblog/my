@@ -113,8 +113,8 @@ func newInteractionEnv(t *testing.T, newHarness InteractionFactory) *interaction
 	return e
 }
 
-// interactionRestrictions checks the moderation restrictions of the acting account
-// (data-model §5.2): the interact restriction forbids favouriting and boosting, the post
+// interactionRestrictions checks the moderation restrictions of the acting account:
+// the interact restriction forbids favouriting and boosting, the post
 // restriction boosting, and neither bookmarking.
 func interactionRestrictions(t *testing.T, e *interactionEnv) {
 	ctx := t.Context()

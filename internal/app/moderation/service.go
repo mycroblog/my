@@ -161,7 +161,7 @@ func (AccountRestrictionsExpired) EventType() string { return EventAccountRestri
 type ReportFiled struct {
 	Report moderation.Report
 	// FirstOpen reports that no other report of the target was open when the report was filed:
-	// the moderators are notified of the first open report of an account only (data-model §4.7).
+	// the moderators are notified of the first open report of an account only.
 	FirstOpen bool
 }
 
@@ -309,7 +309,7 @@ func (s *Service) ownDomain(domain string) bool {
 }
 
 // IssueDomainAction records an action on a domain and, in the same transaction, the
-// restrictions it imposes on the domain and its subdomains (data-model §5.2), and emits
+// restrictions it imposes on the domain and its subdomains, and emits
 // DomainRestrictionsChanged and its audit log entry. A suspension also enqueues JobSeverDomain,
 // which cuts the follows with the domain (SeverDomain).
 func (s *Service) IssueDomainAction(ctx context.Context, in DomainActionInput) (moderation.DomainAction, error) {
@@ -438,10 +438,10 @@ func (s *Service) emitDomain(ctx context.Context, tx uow.Tx, domain string, now 
 }
 
 // remoteActionKinds are the kinds of actions on a remote account whose only effect is the
-// restrictions they impose (data-model §5.2: login and post mean nothing for a remote account).
+// restrictions they impose (login and post mean nothing for a remote account).
 var remoteActionKinds = []moderation.ActionKind{moderation.ActionLimit, moderation.ActionSuspend, moderation.ActionForceSensitive}
 
-// localActionKinds are the kinds of actions on a local account: every kind (data-model §5.2).
+// localActionKinds are the kinds of actions on a local account: every kind.
 // Besides their restrictions and the notice to the account, the actions on statuses delete or
 // mark the statuses they name, and a ban schedules the deletion of the account.
 var localActionKinds = []moderation.ActionKind{
@@ -473,13 +473,13 @@ type AccountActionInput struct {
 	// none for the other kinds.
 	StatusIDs []string
 	// BlockEmail also blocks sign-ups with the email address of a banned account's user
-	// (an email_hash block with severity reject, data-model §4.3), audited with the action;
+	// (an email_hash block with severity reject), audited with the action;
 	// only a ban of a local account takes it, and it fails with ErrCannotBlockEmail otherwise.
 	BlockEmail bool
 }
 
 // IssueAccountAction records an action on an account and, in the same transaction, the
-// restrictions it imposes (data-model §5.2) and its other effects, and emits
+// restrictions it imposes and its other effects, and emits
 // AccountRestrictionsChanged and AccountActionIssued, and AccountSuspensionChanged when the
 // action (suspend, ban) suspends an account that was not suspended; the suspension of a remote
 // account also cuts its follows with the local accounts (severance.go). delete_statuses deletes the
@@ -679,7 +679,7 @@ type statusesBatch interface {
 	MarkManySensitiveByModeration(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error
 }
 
-// carryOut records inside tx the effects of a beyond its restrictions (data-model §5.2): the
+// carryOut records inside tx the effects of a beyond its restrictions: the
 // deletion or the sensitivity of its statuses, and the scheduled deletion of a banned account.
 func (s *Service) carryOut(ctx context.Context, tx uow.Tx, a moderation.Action, statuses []appcontent.Status) error {
 	switch a.Kind {

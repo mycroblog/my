@@ -56,9 +56,9 @@
   `direct` の投稿（DM）への返信は、選んだものによらず `direct` にする（`policy.ts` の `chosenVisibility`）。会話にいなかった人に広げないため（ADR-0154 §6）で、公開範囲の選択肢は `direct` のほかを無効にし、グループの説明でその理由を言う（[screens/direct-messages.md](screens/direct-messages.md)）。
   公開範囲は 5 段階を説明付きのラジオグループ（ポップオーバーの中）で選ぶ。
   `GET /instance` の `translation.providers` に `private` か `direct` を受け取れる提供元があるサーバーでだけ、グループの説明に、読者が翻訳を求めるとその公開範囲の本文がその提供元に送られることがあると書く（`hooks/useTranslationDisclosure`、ADR-0148 §6）。
-  制限で公開範囲に上限があるとき（data-model/05-states-and-policies.md §5.4）は、閲覧者の `CredentialAccount` の `posting`（サーバーがドメインの規則から求めたもの）の `visibilities` にない選択肢を無効にし、ラジオグループの説明で上限を示す。
+  制限で公開範囲に上限があるとき（ADR-0058 §11）は、閲覧者の `CredentialAccount` の `posting`（サーバーがドメインの規則から求めたもの）の `visibilities` にない選択肢を無効にし、ラジオグループの説明で上限を示す。
   上限より広い選択（制限の前に選んだもの、既定値）は、上限（`visibility_ceiling`）として表示して送る。上限は投稿の間にも変わり得るので、結果の公開範囲が送ったものより狭いときは、投稿の後にトーストで知らせる。
-  `local` の投稿がほかのサーバーのアカウントにメンションするときは警告する（ADR-0017）。本文が 400 ms 変わらなくなってから、ドメイン付きのメンションを `GET /accounts/lookup`（`resolve=true`。サーバーが投稿のメンションを解決するのと同じく、未知のハンドルは WebFinger で解決する。data-model/04-tables/04-content.md §4.4）で引き、
+  `local` の投稿がほかのサーバーのアカウントにメンションするときは警告する（ADR-0017）。本文が 400 ms 変わらなくなってから、ドメイン付きのメンションを `GET /accounts/lookup`（`resolve=true`。サーバーが投稿のメンションを解決するのと同じく、未知のハンドルは WebFinger で解決する）で引き、
   見つかったほかのサーバーのアカウント（`acct` にドメインがある）を `GET /accounts/relationships` で調べ、閲覧者をフォローしていない相手には投稿が届かないこと、ほかのサーバーのフォロワーにはそのメンションがメンションではなくただのリンクとして見えること（ADR-0017）を本文の下に示す。
   解決できないハンドル（404）はサーバーもテキストのままにするので示さない。解決の上限に達した（429）ときも示さない。
   言語の選択肢の名前は `Intl.DisplayNames` で表示中のロケールにする（カタログに言語名を持たない）。

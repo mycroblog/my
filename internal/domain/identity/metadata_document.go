@@ -37,8 +37,8 @@ const (
 )
 
 // ClientMetadataDocument is the last fetch of the metadata document of a client whose
-// registration is ClientRegisteredByMetadataDocument (data-model §4.1,
-// oauth_client_metadata_documents). It is a cache: fetching the document again rebuilds it.
+// registration is ClientRegisteredByMetadataDocument
+// (oauth_client_metadata_documents). It is a cache: fetching the document again rebuilds it.
 type ClientMetadataDocument struct {
 	// ClientID is the ID of the OAuthClient (not its public client_id).
 	ClientID string
@@ -241,7 +241,7 @@ func thirdPartyScope(s string) Scope {
 }
 
 // OAuthClientHostDenial records that an administrator denied the metadata documents of a host
-// (data-model §4.1, oauth_client_host_denials). DeniedByUserID is "" for the CLI.
+// (oauth_client_host_denials). DeniedByUserID is "" for the CLI.
 type OAuthClientHostDenial struct {
 	ID             string
 	Host           string

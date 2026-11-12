@@ -30,7 +30,7 @@ var (
 	// A citation with its sections: ADR-0070, ADR-0070 §4, ADR-0070§4.1, §5 and §6.
 	reADRCite = regexp.MustCompile(`\bADR-(\d{4})\b((?:\s*§\s*` + adrSec + `(?:(?:\s*(?:,|、|・|and|と)\s*)§\s*` + adrSec + `)*)?)`)
 	reADRSec  = regexp.MustCompile(`§\s*` + adrSec)
-	// What a § follows when it belongs to another document (ADR-0018 §3, RFC 9421 の §2, data-model§4.4, web-client（§8）).
+	// What a § follows when it belongs to another document (ADR-0018 §3, RFC 9421 の §2, web-client§14.2, web-client（§8）).
 	reSecOwner = regexp.MustCompile(`[\w./-]\s*[の（(]?\s*$`)
 	// What a § follows when it continues a list of sections (§3, §4).
 	reSecList = regexp.MustCompile(`(?:,|、|・|/|〜|-|–|and|と|or|か)\s*$`)

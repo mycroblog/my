@@ -10,7 +10,7 @@ import (
 )
 
 // TestBodyTextIsCheckedBeforeTheHandler checks that a NUL anywhere in a JSON body is a 422
-// that names the property, before the handler looks the value up (data-model §1.2).
+// that names the property, before the handler looks the value up.
 func TestBodyTextIsCheckedBeforeTheHandler(t *testing.T) {
 	called := false
 	e := newStatusEnv(t, &fakeStatuses{create: func(appcontent.CreateInput) (appcontent.Post, error) {

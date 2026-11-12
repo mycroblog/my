@@ -23,7 +23,7 @@ import (
 )
 
 // ModerationRetentionFlows verifies the retention of the moderation records of a database adapter's
-// moderation repository through the moderation use cases (ADR-0058, data-model §4.3, §8): an
+// moderation repository through the moderation use cases (ADR-0058, data-model §8): an
 // operator places holds on an account, each released once; the purge erases the actions with their
 // appeals once they ended longer ago than the period (an action without lasting effect when it was
 // issued, a lifted or expired one at its end, an appealed one not before the decision; an

@@ -25,8 +25,8 @@ type VoiceHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type VoiceFactory func(t *testing.T, opts uow.Options) VoiceHarness
 
-// VoiceRepositoryContract verifies the voice repository of a database adapter (ADR-0100 §12,
-// data-model §4.14): a room reads back with its settings, hashtags, host, and ending; the open
+// VoiceRepositoryContract verifies the voice repository of a database adapter (ADR-0100 §12):
+// a room reads back with its settings, hashtags, host, and ending; the open
 // rooms list by the most participants and filter by a hashtag of the current revision; the
 // participants carry their role, co-host nomination, and raised hand, one room per account; a
 // co-host nomination lasts while its participation does and ends when the co-host becomes the

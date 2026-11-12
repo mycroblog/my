@@ -784,8 +784,8 @@ func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity,
 
 // admits reports whether content.CanView lets the remote account recipient see the object in
 // the context view (ContextDelivery but for the voters of a poll). An active follower is not
-// blocked by either side: a block ends the follows between the two accounts in its transaction
-// (data-model §2.1). Any other recipient's relationship with the actor is rel, which
+// blocked by either side: a block ends the follows between the two accounts in its transaction.
+// Any other recipient's relationship with the actor is rel, which
 // relationsWith read from the graph module.
 func (f *FanOut) admits(s subject, recipient string, follower bool, rel appcontent.Relation, view appcontent.ViewContext) bool {
 	if follower {

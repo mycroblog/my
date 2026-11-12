@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the gathering module
--- (docs/architecture/data-model/04-tables/19-gathering.md). schema/README.md describes the layout
+-- (internal/app/gathering). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------

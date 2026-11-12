@@ -23,7 +23,7 @@ import (
 // (badge-<color> and badge-<color>-fg of @my/ui).
 type BadgeColor string
 
-// The badge colors (data-model §4.1, role_badges.color).
+// The badge colors (role_badges.color).
 const (
 	BadgeNeutral BadgeColor = "neutral"
 	BadgeRed     BadgeColor = "red"
@@ -58,7 +58,7 @@ var ErrInvalidBadgeLabel = errors.New("identity: a badge label is 1 to 32 charac
 // ErrInvalidBadgeColor reports a color that is not a badge color.
 var ErrInvalidBadgeColor = errors.New("identity: unknown badge color")
 
-// RoleBadge is the badge of a role (data-model §4.1, role_badges).
+// RoleBadge is the badge of a role (role_badges).
 type RoleBadge struct {
 	Label     string
 	Color     BadgeColor

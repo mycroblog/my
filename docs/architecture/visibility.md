@@ -5,7 +5,7 @@
 
 投稿を誰に見せるかは、`internal/domain/content` の `CanView` だけが決めます（NFR-SEC-4）。
 タイムライン・検索・クライアント API・配送・ActivityPub のオブジェクト取得は、すべてこの関数を通します。
-タイムラインの SQL（[data-model §6](data-model/06-timeline-queries.md#6-タイムラインのクエリ)）は候補を絞り込むための写像で、返す直前に `CanView` を再適用します。
+タイムラインの SQL（`queries/<dialect>/timeline/`）は候補を絞り込むための写像で、返す直前に `CanView` を再適用します。
 
 ```go
 content.CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRestrictions, rel Relation) bool
@@ -20,7 +20,7 @@ content.EffectiveVisibility(original Visibility, author AuthorRestrictions) Visi
 | --- | --- |
 | 閲覧者 `Viewer` | 種類（未ログイン / ログイン中のローカルアカウント / リモートのアクター）、アカウント ID、モデレーターか |
 | 投稿 `StatusFacts` | 作者のアカウント ID、作者がローカルか、保存された公開範囲（不変） |
-| 作者の制限 `AuthorRestrictions` | `profile_view`、`visibility_ceiling_private`、`public_discovery`（[data-model §5.2](data-model/05-states-and-policies.md#52-処分の種類と制限能力の剥奪)） |
+| 作者の制限 `AuthorRestrictions` | `profile_view`、`visibility_ceiling_private`、`public_discovery` |
 | 関係 `Relation` | 閲覧者から作者へのフォロー（なし / 承認待ち / 承認済み）、閲覧者が作者をブロックしているか、作者が閲覧者をブロックしているか、投稿が閲覧者をメンションしているか |
 | 文脈 `ViewContext` | 単体の取得 / ホーム / ローカル / 連合 / ハッシュタグ / プロフィール / AP のオブジェクト取得 / 配送 / 全文検索 / ダイレクトメッセージ |
 
@@ -32,7 +32,7 @@ content.EffectiveVisibility(original Visibility, author AuthorRestrictions) Visi
 
 ## 2. 実効公開範囲
 
-判定に使う公開範囲は、保存された値ではなく **実効公開範囲 = min(元の公開範囲, 上限)** です（[data-model §5.4](data-model/05-states-and-policies.md#54-サイレンスと公開範囲)）。
+判定に使う公開範囲は、保存された値ではなく **実効公開範囲 = min(元の公開範囲, 上限)** です（[ADR-0058 §11](../adr/0058-moderation-admin-separation.md)）。
 公開範囲は広い順に `public` > `local` > `unlisted` > `private` > `direct` と並び、`min` は狭いほうを取ります。
 
 | 元の公開範囲 | 制限なし | `visibility_ceiling_private`（サイレンス） |
@@ -131,7 +131,7 @@ content.EffectiveVisibility(original Visibility, author AuthorRestrictions) Visi
 投稿ではなくアカウント（プロフィール・フォロー一覧・関係）を誰に見せるかは、クライアント API（`internal/interface/clientapi` の `Server.presentable`）が次の規則で決めます。
 
 - 有効でないアカウント（停止・削除予定・削除済み）とインスタンスアクターは、誰にも見せません。存在しないアカウントと同じ 404 です。
-- モデレーションがプロフィールを隠すアカウント（`profile_view`。凍結と、凍結されたドメインのアカウント。[data-model §5.2](data-model/05-states-and-policies.md#52-処分の種類と制限能力の剥奪)）は、本人以外には有効でないアカウントと同じに扱います。モデレーターは管理 API で見ます。
+- モデレーションがプロフィールを隠すアカウント（`profile_view`。凍結と、凍結されたドメインのアカウント）は、本人以外には有効でないアカウントと同じに扱います。モデレーターは管理 API で見ます。
 - 閲覧者をブロックしているアカウントは、閲覧者に対して存在しないものとして扱います。取得・ハンドルでの検索・フォロー一覧・フォローやミュートなどの操作はすべて 404 で、
   関係の一覧からも省きます。関係（`Relationship`）は「相手にブロックされているか」を返しません。ブロックしていることを相手に知らせないためです。
 - 閲覧者がブロックしているアカウントは、閲覧者からは見えます（ブロックの一覧から解除できるように）。そのアカウントをフォローしようとすると 409 です。

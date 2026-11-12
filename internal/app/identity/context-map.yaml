@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/data-model/04-tables/01-identity.md#41-identity", "docs/operations/registration.md"]
+docs: ["docs/operations/registration.md"]
 userdocs: ["docs/operations/registration.md", "docs/guide/signing-in.md", "docs/operations/login-providers.md"]

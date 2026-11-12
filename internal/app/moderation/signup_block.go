@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The sign-up block list (FR-719, data-model §4.3). Moderators add and lift blocks through the
+// The sign-up block list (FR-719). Moderators add and lift blocks through the
 // admin API and the CLI, or add the block of a banned account's email address with the ban; the
 // registration page screens every sign-up against the blocks in effect (ScreenSignup).
 

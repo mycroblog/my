@@ -22,7 +22,7 @@ import (
 // RoleFlows verifies the role use cases on a database adapter, the flows of ADR-0153 §1, which
 // internal/flowtest/identity runs once on SQLite; RoleRepositoryContract checks the role methods
 // of the identity repository on every adapter. The flows check the role persistence of the identity
-// repository (data-model §4.1, FR-720) through the role use cases: the roles list with their
+// repository (FR-720) through the role use cases: the roles list with their
 // permissions; a grant and a revocation change the user's permissions and the holders of a
 // permission at once, record their audit log entry in their transaction, and do nothing when
 // they would change nothing; a user changes only the roles at or below their own; the admin role

@@ -47,7 +47,7 @@ entries:
     docs: ["docs/architecture/overview.md#依存ルール"]
     checks: [go]
   - paths: ["sqlc.yaml"]
-    docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0023-declarative-schema-management.md"]
+    docs: ["docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
     checks: [go, schema]
     shared: true
   - paths: ["bunfig.toml", ".prettierignore"]

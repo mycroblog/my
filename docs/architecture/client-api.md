@@ -117,7 +117,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   解釈できても本文の値をアプリケーション層が拒否した場合（長すぎる・多すぎる・不正な値）は 422（`about:blank`、`title` は `l.ServerErrorsUnprocessable()`）で、
   `detail` がプロパティ名を示します（`l.ServerErrorsTooLong`・`ServerErrorsTooMany`・`ServerErrorsInvalidValue`）。
   パス・クエリのパラメーターが不正な UTF-8 かヌル文字を含む要求は、`platform` が操作より前に 400 にします。
-  JSON の本文の文字列がヌル文字を含む要求は、ハンドラより前に strict のミドルウェア（`rejectInvalidBodyText`）が 422（`l.ServerErrorsInvalidValue`。`media[1].description` のようにプロパティの位置を示す）にします（[data-model §1.2](data-model/01-conventions.md#12-論理型)）。
+  JSON の本文の文字列がヌル文字を含む要求は、ハンドラより前に strict のミドルウェア（`rejectInvalidBodyText`）が 422（`l.ServerErrorsInvalidValue`。`media[1].description` のようにプロパティの位置を示す）にします。
   ハンドラが `error` を返した場合は 500 で、内部の詳細は応答に含めずログに記録します。
 - クライアントから受け取る ID は、DB に渡す前に `kernel.ValidID`（36 文字の小文字の正規形の UUIDv7。[ADR-0003](../adr/0003-database-abstraction.md) §9）で検査します。正規形でないものは、存在しない ID と同じ応答にします（存在しないときと同じ 404 で、存在が漏れないようにする、ADR-0018）。
   path の ID は認可の後に `guard` が 404 にします。ページ送りのカーソルは、中身が ID でなければ壊れたカーソルと同じ 400（`invalid_parameter`）にします（時刻と ID などの複合のカーソルは ID の部分を検査します）。
@@ -285,7 +285,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 | `security: [{oauth2: [read:accounts]}]` | トークンが必須で、列挙したスコープをすべて要する |
 | `security: [{}, {oauth2: [read:statuses]}]` | 匿名でも使える。トークンが送られたら列挙したスコープを要する |
 
-管理の操作（タグ `admin-moderation` / `admin-server`、`/admin/...`）は、スコープ（`admin:read` / `admin:write`）に加えて、利用者のロールが操作の権限（`manage_domains`、`manage_jobs` など。[data-model §4.1](data-model/README.md)）を持つことを要します。
+管理の操作（タグ `admin-moderation` / `admin-server`、`/admin/...`）は、スコープ（`admin:read` / `admin:write`）に加えて、利用者のロールが操作の権限（`manage_domains`、`manage_jobs` など）を持つことを要します。
 ハンドラが最初に `Server.requirePermission` で `Options.Permissions`（`identity.Service.HasPermission`）に問い合わせ、持たなければ 403 にします。
 権限は spec の `security` に書けないので、操作の `description` に書きます。
 経路とスコープは区分で分けません（[ADR-0058](../adr/0058-moderation-admin-separation.md)）。新しい操作は区分によらず `/admin/<資源>` に置き、タグで区分を示します。

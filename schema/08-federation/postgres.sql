@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the federation module
--- (docs/architecture/data-model/04-tables/08-federation.md). schema/README.md describes the layout
+-- (internal/app/federation). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------

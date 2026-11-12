@@ -72,7 +72,7 @@ func Narrower(a, b Visibility) Visibility {
 }
 
 // VisibilityCeiling returns the widest visibility the author may currently use: private when the
-// author carries visibility_ceiling_private (silence, data-model §5.2), public otherwise.
+// author carries visibility_ceiling_private (silence), public otherwise.
 func (r AuthorRestrictions) VisibilityCeiling() Visibility {
 	if r.VisibilityCeilingPrivate {
 		return VisibilityPrivate
@@ -81,7 +81,7 @@ func (r AuthorRestrictions) VisibilityCeiling() Visibility {
 }
 
 // EffectiveVisibility is the visibility a status is judged by on this server:
-// min(original, ceiling) (data-model §5.4). The stored value is never rewritten, so lifting the
+// min(original, ceiling) (ADR-0058 §11). The stored value is never rewritten, so lifting the
 // ceiling restores the original audience. The same function caps the requested visibility when
 // a status is posted.
 func EffectiveVisibility(original Visibility, author AuthorRestrictions) Visibility {
@@ -90,7 +90,7 @@ func EffectiveVisibility(original Visibility, author AuthorRestrictions) Visibil
 
 // PostingVisibilities returns the visibilities that a new status of the author keeps as asked for,
 // from the widest audience to the narrowest: those that EffectiveVisibility leaves unchanged.
-// Clients offer these and say that any other one becomes the ceiling (data-model §5.4).
+// Clients offer these and say that any other one becomes the ceiling (ADR-0058 §11).
 func PostingVisibilities(author AuthorRestrictions) []Visibility {
 	var out []Visibility
 	for _, v := range Visibilities() {

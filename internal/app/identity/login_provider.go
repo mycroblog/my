@@ -20,7 +20,7 @@ var (
 )
 
 // LoginProviderRepository is the part of Repository that keeps the external login providers and
-// the external identities that users link (data-model §4.1, ADR-0106 §2). The database adapters
+// the external identities that users link (ADR-0106 §2). The database adapters
 // pass identitytest.LoginProviderRepositoryContract.
 //
 // A provider is inserted with its first revision, secret, and state change, and its head, in one

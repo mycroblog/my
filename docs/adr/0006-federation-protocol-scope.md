@@ -91,7 +91,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 
 - 未知のオブジェクトへの `Delete` は tombstone（`remote_object_tombstones`、保持期間は既定 30 日）を記録し、後から届いた `Create` / `Update` を捨てる。
 - 未知のオブジェクトへの `Update` は、取り込み範囲（§11）に入るなら `Create` と同じく扱う。
-- 版は `updated` が現在版より新しいときだけ作る（[data-model §2.2](../architecture/data-model/02-consistency.md#22-冪等キーと一意制約)）。
+- 版は `updated` が現在版より新しいときだけ作る。
 - 対象が見つからない `Undo` / `Accept` / `Reject` / `Like` / `Announce`（ローカルの投稿宛て）は何もせず完了にする。
 
 ### 10. 未知の型

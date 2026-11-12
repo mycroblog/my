@@ -31,7 +31,7 @@ import (
 )
 
 // TestClientAPIRemoteAccountActions checks the actions on a remote account through the
-// composition root and the client API (FR-703, data-model §5.2, ADR-0058): a suspend drops what
+// composition root and the client API (FR-703, ADR-0058): a suspend drops what
 // the account sends and hides its profile and posts, and its lift brings them back; the kinds
 // that only a local account takes are a 422; issuing and lifting are audited (ADR-0058), and
 // nothing is sent to the account's server.

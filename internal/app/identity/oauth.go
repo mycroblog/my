@@ -95,7 +95,7 @@ var (
 // ErrInvalidAccessToken reports an access token that is unknown, revoked, or expired.
 var ErrInvalidAccessToken = errors.New("identity: invalid access token")
 
-// OAuthRepository is the persistence of the authorization server (data-model §4.1). It is part
+// OAuthRepository is the persistence of the authorization server. It is part
 // of Repository. Every clientID argument and field is the ID of an oauth_clients row, except
 // the public client_id that FindOAuthClient looks up.
 type OAuthRepository interface {

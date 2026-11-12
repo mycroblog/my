@@ -24,7 +24,7 @@ func NewSQLite(d *sqlite.DB, opts Options) *Queue {
 	return newQueue(d, sqliteStore{d}, opts)
 }
 
-// sqliteStore stores timestamps as Unix milliseconds (data-model/01-conventions.md §1.2).
+// sqliteStore stores timestamps as Unix milliseconds (ADR-0003 §3).
 type sqliteStore struct{ db *sqlite.DB }
 
 var _ store = sqliteStore{}

@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
-// Repository implements appfinance.Repository (data-model §4.12, ADR-0067).
+// Repository implements appfinance.Repository (ADR-0067).
 type Repository struct {
 	db *moduleDB
 }
@@ -30,7 +30,7 @@ func NewRepository(d *postgres.DB) *Repository {
 	return &Repository{db: &moduleDB{d}}
 }
 
-// Dates are date (data-model §1.2), which pgx reads as the start of the day in UTC.
+// Dates are date, which pgx reads as the start of the day in UTC.
 func toDate(d finance.Date) pgtype.Date { return pgtype.Date{Time: d.Time(), Valid: true} }
 
 func toNullDate(d *finance.Date) pgtype.Date {

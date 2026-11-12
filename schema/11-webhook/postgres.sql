@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the webhook module
--- (docs/architecture/data-model/04-tables/11-webhook.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/app/webhook). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- webhook: the instance's webhooks (data-model §4.11, FR-722, ADR-0060). Owned by
+-- webhook: the instance's webhooks (FR-722, ADR-0060). Owned by
 -- internal/app/webhook.
 -- ---------------------------------------------------------------------------------------------
 

@@ -24,7 +24,7 @@ import (
 // notification, in the app and by Web Push, never by email.
 
 // SubscriptionRepository is the persistence of the subscriptions (post_subscriptions and
-// post_subscription_requests, data-model §4.7), part of Repository.
+// post_subscription_requests), part of Repository.
 type SubscriptionRepository interface {
 	// InsertSubscription inserts a subscription and reports false, writing nothing, when the
 	// account already subscribes to the target.

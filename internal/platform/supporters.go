@@ -164,7 +164,7 @@ func (u supporterUsers) SupporterUser(ctx context.Context, userID string) (suppo
 	if out.Suspended, err = u.a.ModerationPolicy.AccountFederationSuspended(ctx, la.AccountID); err != nil {
 		return supporters.User{}, err
 	}
-	// A primary address is a verified one (user_primary_emails, data-model §4.1).
+	// A primary address is a verified one (user_primary_emails).
 	if out.Email, err = u.a.Identity.PrimaryEmailAddress(ctx, userID); err != nil {
 		return supporters.User{}, err
 	}

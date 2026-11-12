@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the voice module
--- (docs/architecture/data-model/04-tables/14-voice.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/app/voice). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
 -- voice: the voice chat rooms, their settings, hosts, participants, invitations, and endings
--- (data-model §4.14, ADR-0100 §12). Owned by internal/app/voice.
+-- (ADR-0100 §12). Owned by internal/app/voice.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a room. transport is the voice setting when it opened.

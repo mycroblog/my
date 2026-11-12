@@ -79,7 +79,7 @@ func ReadEnvelope(raw []byte, host HostFunc) (Envelope, error) {
 	return e, nil
 }
 
-// ActivityURI returns the key that deduplicates the activity (data-model §2.2): its id, or for an
+// ActivityURI returns the key that deduplicates the activity: its id, or for an
 // activity without one, DigestURIPrefix and the hex SHA-256 of the actor, a line feed, and the
 // body as received.
 func (e Envelope) ActivityURI(body []byte) IRI {

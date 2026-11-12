@@ -23,7 +23,7 @@ func NewSQLite(d *sqlite.DB, clock kernel.Clock) *Store {
 	return &Store{db: d, st: sqliteStore{d}, clock: clock}
 }
 
-// sqliteStore stores timestamps as Unix milliseconds (data-model §1.2).
+// sqliteStore stores timestamps as Unix milliseconds.
 type sqliteStore struct{ db *sqlite.DB }
 
 var _ store = sqliteStore{}

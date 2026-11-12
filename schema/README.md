@@ -8,9 +8,8 @@ nothing is left to apply (`db:check`). Never write migration SQL by hand.
 ## Layout
 
 - Each module has a directory `<NN>-<module>/` with one file per dialect, `sqlite.sql` and `postgres.sql` (ADR-0023,
-  ADR-0081). The modules and their numbers are those of
-  [data-model §4](../docs/architecture/data-model/04-tables/README.md); `10-infrastructure/` holds the tables that
-  adapters own (kernel, uow, and queue).
+  ADR-0081), named for the module of `internal/app/<module>` that owns its tables and whose package comment describes
+  them; `10-infrastructure/` holds the tables that adapters own (kernel, uow, and queue).
 - Each module's directory is also a Go package (`schema.go`) that embeds its two files and declares the module with
   `ddl.New`, naming the modules it depends on: the modules that `internal/app/<module>` imports, and `10-infrastructure`
   when it imports kernel, uow, or queue (`schema_test.go` checks the list). Package `schema` (`schema.go`) imports every
@@ -34,9 +33,9 @@ nothing is left to apply (`db:check`). Never write migration SQL by hand.
 
 ## Conventions
 
-Tables follow [the logical data model](../docs/architecture/data-model/README.md), mapping logical types per its
-[§1.2](../docs/architecture/data-model/01-conventions.md#12-論理型). There are no foreign keys: references between tables are
-logical, and contract tests keep them consistent.
+Tables follow [ADR-0020](../docs/adr/0020-data-modeling-principles.md), and each module's data model is the package
+comment of its Go packages. There are no foreign keys: references between tables are logical, and contract tests keep
+them consistent.
 
 SQLite:
 

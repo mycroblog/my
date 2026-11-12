@@ -5,7 +5,7 @@
 import { TextArea, type TextAreaProps } from "./TextArea";
 
 export type ReasonFieldProps = Omit<TextAreaProps, "characterLimit" | "formatRemaining"> & {
-  /** The most characters the server accepts for this reason (data-model/README.md, 5,000 for most). */
+  /** The most characters the server accepts for this reason (5,000 for most). */
   characterLimit: number;
   /** The count message, e.g. "12 characters left" / "3 characters too many"; `remaining` is negative when over. */
   formatRemaining: (remaining: number) => string;

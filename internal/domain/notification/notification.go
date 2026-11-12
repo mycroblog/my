@@ -306,7 +306,7 @@ func (t Type) Valid() bool {
 }
 
 // Notification is one notification to a local account: an event that happened to it
-// (notifications, data-model §4.7). It never changes; dismissing it is a separate Dismissal.
+// (notifications). It never changes; dismissing it is a separate Dismissal.
 //
 // DedupeKey is unique per recipient, so that processing the same domain event again, or an
 // action that the source repeats, inserts nothing: see the *Key functions.

@@ -174,7 +174,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 
 ### 4.4 リアルタイム更新（SSE）
 
-1. コマンドのトランザクションがコミットされると、`uow.Projectors` に登録したコミットフックが、そのトランザクションで発行したイベントを受け取る（[data-model §2.1](data-model/02-consistency.md#21-トランザクションの規律)）
+1. コマンドのトランザクションがコミットされると、`uow.Projectors` に登録したコミットフックが、そのトランザクションで発行したイベントを受け取る（[ADR-0020 規約 7](../adr/0020-data-modeling-principles.md)）
 2. `timeline` のフックは新しい投稿・ブーストの ID を、`notification` のフックは通知を受け取りうるアカウントを、`stream.Publisher` に知らせる。知らせるのは「何が変わったか」だけで、内容は載せない。
    ローカル・連合のタイムラインに載りうる投稿は、載りうるタイムラインを添えた「公開のタイムラインの新着」（`stream.KindPublicEntry`）としても知らせる（ADR-0013）
 3. `GET /api/v1/streaming` の各接続は `stream.Subscriber` で自分のアカウントを購読し、知らせを受けるたびにユースケースで読み直す。
@@ -214,7 +214,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 
 ## 5. データ設計の原則
 
-テーブル・カラム・制約・インデックスの詳細は [論理データモデル](data-model/README.md) を参照してください。
+テーブル・カラム・制約・インデックスは `schema/` に、各モジュールのデータモデルはそのパッケージのコメント（`internal/app/<module>/doc.go`）にあります。
 モデリングの規約（リソース・イベント・投影の分離、状態の直交分解、正規化）は [ADR-0020](../adr/0020-data-modeling-principles.md) です。
 
 - ID は時系列ソート可能な **UUIDv7**（文字列表現）。API ではそのまま文字列で返す。

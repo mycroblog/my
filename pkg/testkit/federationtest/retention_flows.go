@@ -70,6 +70,7 @@ func RetentionFlows(t *testing.T, newHarness RetentionFactory) {
 	}{
 		{"PurgesUnreferencedRemoteStatuses", retentionPurgesUnreferenced},
 		{"KeepsReferencedRemoteStatuses", retentionKeepsReferenced},
+		{"KeepsTheConversationOfAPurgedStatus", retentionKeepsConversations},
 		{"PurgesEveryRemoteStatusPastTheMaximum", retentionMaximum},
 		{"KeepsTheDeletionOfANotifiedStatusThroughARebuild", retentionNotifiedDeletion},
 		{"KeepsTheEvidenceOfModeration", retentionKeepsModerationEvidence},
@@ -271,6 +272,30 @@ func retentionPurgesUnreferenced(t *testing.T, e *retentionEnv) {
 // referencedStatuses posts the remote statuses that something local refers to, all published
 // 200 days ago, and returns them by what refers to them, with the local account that replied,
 // boosted, favourited, and bookmarked, and the one mentioned.
+// retentionKeepsConversations checks that a conversation outlives its statuses: the purge
+// deletes a status's place in its conversation with the status, and keeps the conversation, so
+// that its IRI never names another one.
+func retentionKeepsConversations(t *testing.T, e *retentionEnv) {
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	e.follow(t, e.user(t, "reader"), e.actor(t, alice))
+	old := e.note(t, alice, alice+"/notes/old", 100*24*time.Hour, map[string]any{"context": "https://remote.example/contexts/old"})
+	convs, err := e.rh.Statuses.StatusConversations(ctx, []string{old.ID})
+	conv, ok := convs[old.ID]
+	if err != nil || !ok {
+		t.Fatalf("StatusConversations before the purge = %+v, %v; want the status in a conversation", convs, err)
+	}
+	if n := e.purgeAll(t, e.retention(retentionPeriod, 0, 0)); n != 1 {
+		t.Fatalf("purged %d statuses, want 1", n)
+	}
+	if convs, err := e.rh.Statuses.StatusConversations(ctx, []string{old.ID}); err != nil || len(convs) != 0 {
+		t.Errorf("StatusConversations after the purge = %+v, %v; want none", convs, err)
+	}
+	if got, err := e.rh.Statuses.FindConversation(ctx, conv.ID); err != nil || got != conv {
+		t.Errorf("FindConversation after the purge = %+v, %v; want %+v kept", got, err, conv)
+	}
+}
+
 func (e *retentionEnv) referencedStatuses(t *testing.T) (statuses map[string]content.Status, reader, mentioned string) {
 	t.Helper()
 	ctx := t.Context()

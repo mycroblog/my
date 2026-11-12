@@ -108,7 +108,6 @@ tasks/
 | --- | --- | --- |
 | ロケールのカタログ | `locales/<locale>/<namespace>/<area>.json`。`area` はキーの先頭の区切り（`settings`・`compose` など）。`admin` は 2 つ目の区切りまで（`admin.domain_actions` → `admin/domain_actions.json`） | `tools/i18n` のローダーと `locales.go` の `go:embed` がディレクトリを読む。キーは変えない |
 | Web クライアントの設計文書 | `docs/architecture/web-client/<NN>-<slug>.md`（節ごと。`14-admin.md` など） | `web-client/README.md` に節の一覧と、節をまたぐ原則を置く |
-| データモデルの設計文書 | `docs/architecture/data-model/<NN>-<slug>.md`（同上） | `data-model/README.md` |
 | `internal/platform` の `NewApp` | `internal/platform/setup_<module>.go` ごとに、モジュールの配線を `(a *App) setUp<Module>(...)` にまとめる | `NewApp` はモジュールの `setUp*` を依存の順に呼ぶだけにする |
 | スキーマ | `schema/<NN>-<module>/<dialect>.sql`（モジュールのディレクトリは Go のパッケージ。ADR-0153 §3） | Atlas には `scripts/schema-files.sh` が方言のファイルを 1 つのディレクトリに `<NN>-<module>.sql` として写して渡す（`db:check`・`db:lint`）。Go はパッケージ `schema` が各モジュールのパッケージを import し、名前の順に連結する。モジュールを足すときは `schema.go` に 1 行足す |
 
@@ -121,7 +120,7 @@ tasks/
   モジュールのファイルは自分で作るものだけを使う（外部キーはなく、索引と注釈は同じファイルの表の後に置く）ので、依存するモジュールだけを当てたテストの DB でも通る（`schema_test.go` が各モジュールで確かめる）。
 - 翻訳のプラットフォームの候補（ADR-0009）は、どちらも分けたカタログを扱える。Weblate は Component discovery のアドオンが、名前付きのグループ（`language`・`component`）を持つ正規表現でファイルを探し、コンポーネントを自動で足し引きする（[Add-ons](https://docs.weblate.org/en/latest/admin/addons.html)）。
   Crowdin は `crowdin.yml` の `source` に `**` を、`translation` に `%locale%` を書ける（[Configuration file](https://support.crowdin.com/configuration-file/)）。いずれも 2026-10-23 確認。
-- 節の参照: agentkit の `show web-client§14.2` と `data-model§4.4` は、節の番号から分けたファイルを引く。
+- 節の参照: agentkit の `show web-client§14.2` は、節の番号から分けたファイルを引く。
 - `AGENTS.md` と機能要件の表（`01-functional.md`）は分けない。規則や要件の追加は決定者の判断を伴い、並行して変わることが少ないからである。
 
 ### 9. TypeScript の整形: bun fmt

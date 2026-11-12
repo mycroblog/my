@@ -66,7 +66,7 @@
   管理画面は任意の CSS の欄に、この責任と、品質ゲート（ADR-0110）が既定のテーマに対してだけ働くことを示す。
 - 管理画面は同じ一覧と計算で、入力中に色の組ごとの比を示し、下回る組があるうちは保存のボタンの前に理由を示す（保存の判定はサーバーが正）。
 - 保存は ADR-0020 に従い、テーマのリビジョン（イベント。任意の CSS の本文を持つ）と、そのリビジョンのトークンの行（トークン・テーマ・値。トークンとテーマは CHECK で限る）と、
-  現在のリビジョンの投影に分ける。トークンを JSON の列に入れない。テーブルの形は data-model.md に書く。
+  現在のリビジョンの投影に分ける。トークンを JSON の列に入れない。テーブルの形はスキーマに書く（§11）。
   権限は `manage_settings`（ADR-0058 のサーバー管理）、変更は監査ログ（ADR-0058）に残す。
 
 ### 5. 配信
@@ -161,7 +161,7 @@ SVG を受け付けない場所のために、管理画面が次の PNG を描�
 
 ### 11. 保存（ADR-0020）
 
-instance モジュールが持つ。テーブルの形は `docs/architecture/data-model/04-tables/09-instance.md` と `schema/09-instance/<dialect>.sql` に書く。
+instance モジュールが持つ。テーブルの形は `schema/09-instance/<dialect>.sql` に書く。
 
 - **イベント（リビジョン）** `instance_brand_revisions`: `id`・`kind`（CHECK で `icon` / `logo` / `logo_dark`）・`action`（CHECK で `set` / `clear`）・`revised_by_user_id`（CLI からは NULL）・`revised_at`。
 - **イベントの子** `instance_brand_files`: リビジョン・版（CHECK で `svg` と §10 の版）・BlobStore のキー・`content_type`・幅・高さ・バイト数・SHA-256。`clear` のリビジョンは子を持たない。

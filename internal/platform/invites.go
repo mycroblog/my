@@ -29,7 +29,7 @@ func (a *App) memberInviteSettings(ctx context.Context) (appidentity.MemberInvit
 // inviterRestricted reports whether moderation suspends (or bans) or limits a local account,
 // which keeps its user from creating invites and its invites from working (ADR-0106 §14, §16).
 // A suspension or a ban restricts the federation of the account, and a limit its unsolicited
-// reach (data-model §5.2).
+// reach.
 func (a *App) inviterRestricted(ctx context.Context, accountID string) (bool, error) {
 	rs, err := a.AccountPolicy.Restrictions(ctx, accountID)
 	if err != nil {

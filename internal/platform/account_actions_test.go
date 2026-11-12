@@ -11,7 +11,7 @@ import (
 )
 
 // TestClientAPIAccountActions checks the actions on a local account through the composition
-// root and the client API (FR-703, data-model §5.2): each takes away its capabilities at once,
+// root and the client API (FR-703): each takes away its capabilities at once,
 // and lifting it gives them back; a user without manage_accounts may not issue one.
 func TestClientAPIAccountActions(t *testing.T) {
 	t.Parallel()

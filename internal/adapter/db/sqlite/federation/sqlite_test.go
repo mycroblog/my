@@ -88,6 +88,7 @@ func TestRetentionContract(t *testing.T) {
 				Timeline:       sqlitetimeline.NewRepository(db),
 				Notifications:  sqlitenotification.NewRepository(db),
 				Inbox:          NewRepository(db),
+				Quotes:         sqlitecontent.NewStatusRepository(db),
 			},
 			Interactions: sqlitecontent.NewInteractionRepository(db),
 			Federation:   NewRepository(db),

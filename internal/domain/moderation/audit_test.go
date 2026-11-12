@@ -65,7 +65,7 @@ func TestAuditActionsHaveTargets(t *testing.T) {
 		t.Error("an unknown action has a target")
 	}
 	if len(moderation.AuditTargetKinds()) != 32 {
-		t.Errorf("target kinds = %v, want the 32 of data-model §4.3", moderation.AuditTargetKinds())
+		t.Errorf("target kinds = %v, want the 32 of the schema", moderation.AuditTargetKinds())
 	}
 }
 

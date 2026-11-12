@@ -5,6 +5,12 @@
 // fingerprint in the database, the resolve, mute, and unmute of a group, the regression of a
 // resolved group, and the daily prune of the hourly counts. The adapters of Repository live in
 // internal/adapter/db/*; their contract test suite is diagnosticstest.DiagnosticsRepositoryContract.
+//
+// The projector of the groups' states is registered before the subscribers of notification and
+// webhook, so that they read a group's state in the transaction of its event. The counts and
+// samples that cannot be written are dropped: they are a rough picture, and the metrics and the
+// logs hold the exact numbers. Only the first report of a fingerprint and version is written
+// again when it fails.
 package diagnostics
 
 import (

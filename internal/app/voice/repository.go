@@ -204,7 +204,7 @@ type RoomRecord struct {
 	Ending *Ending
 }
 
-// Repository is the persistence port of the voice module (data-model §4.14). The writes take the
+// Repository is the persistence port of the voice module. The writes take the
 // transaction of the command; the reads run in tx, or outside any transaction when tx is nil.
 type Repository interface {
 	ProjectionRepository

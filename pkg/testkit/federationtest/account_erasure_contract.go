@@ -27,10 +27,12 @@ import (
 // AccountErasureContract verifies the erasure repositories of the modules on a database adapter, by
 // their methods alone, the port contract of ADR-0153 §1: the deleted accounts to erase are listed
 // in ID order and in pages until their erasure is recorded, once; an account loses its profile
-// revisions and head; a user loses its email addresses and password credentials; the statuses of
+// revisions and head; a user loses its email addresses with their delivery failures, suppression
+// lifts, and suppressions, and its password credentials; the statuses of
 // an author are listed in pages with whether they are deleted, and erased with their interactions,
 // keeping their deletions; an account's favourites and bookmarks go in bounded batches; its follows,
-// blocks, mutes, private notes, and counters go in bounded batches; its feed entries go; and its notifications go,
+// blocks, mutes, private notes, and counters go in bounded batches; its feed entries and its rows of
+// the direct-message conversations go, the other parties keeping theirs; and its notifications go,
 // as do the notifications about erased statuses. Each method leaves the rows of other accounts.
 // The erasure on top of it is AccountErasureFlows, which internal/flowtest/federation runs once on
 // SQLite.
@@ -45,6 +47,7 @@ func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 		{"ErasesStatusesAndInteractions", erasureRepoContent},
 		{"ErasesTheGraph", erasureRepoGraph},
 		{"ErasesFeedsAndNotifications", erasureRepoFeeds},
+		{"ErasesDirectMessageConversations", erasureRepoConversations},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -153,20 +156,36 @@ func erasureRepoProfiles(t *testing.T, r *erasureRepo) {
 	r.rows(t, "account_profile_revisions", "account_id", kept, 2)
 	r.rows(t, "account_profile_heads", "account_id", kept, 1)
 
-	user := func() string {
+	// A user's address has a failure, a lift, and a later failure that suppresses it.
+	user := func() (userID, addressID string) {
 		u := identity.User{ID: r.ids.NewID(), CreatedAt: r.clock.Now()}
 		email := identity.EmailAddress{ID: r.ids.NewID(), UserID: u.ID, Address: u.ID + "@example.com", AddressNormalized: u.ID + "@example.com", AddedAt: r.clock.Now()}
+		failure := func(kind identity.EmailFailureKind) identity.EmailDeliveryFailure {
+			r.clock.Advance(time.Second)
+			return identity.EmailDeliveryFailure{ID: r.ids.NewID(), EmailAddressID: email.ID, Kind: kind, Source: identity.EmailFailureSES, FeedbackKey: r.ids.NewID(), OccurredAt: r.clock.Now()}
+		}
+		first := failure(identity.EmailComplaint)
+		r.clock.Advance(time.Second)
+		lift := identity.EmailSuppressionLift{ID: r.ids.NewID(), EmailAddressID: email.ID, Reason: identity.EmailLiftModerator, LiftedAt: r.clock.Now()}
+		later := failure(identity.EmailHardBounce)
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			_, failed := r.h.Identity.InsertEmailDeliveryFailure(ctx, tx, first)
+			_, failedAgain := r.h.Identity.InsertEmailDeliveryFailure(ctx, tx, later)
 			return errors.Join(
 				r.h.Identity.InsertUser(ctx, tx, u),
 				r.h.Identity.InsertEmailAddress(ctx, tx, email),
 				r.h.Identity.InsertPrimaryEmail(ctx, tx, email),
 				r.h.Identity.InsertPasswordCredential(ctx, tx, identity.PasswordCredential{ID: r.ids.NewID(), UserID: u.ID, Hash: "$argon2id$hash", SetAt: r.clock.Now()}),
+				failed,
+				r.h.Identity.InsertEmailSuppressionLift(ctx, tx, lift),
+				failedAgain,
+				r.h.Identity.RefreshEmailSuppression(ctx, tx, email.ID),
 			)
 		})
-		return u.ID
+		return u.ID, email.ID
 	}
-	erasedUser, keptUser := user(), user()
+	erasedUser, erasedAddress := user()
+	keptUser, keptAddress := user()
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := r.h.IdentityErasure.EraseUserData(ctx, tx, erasedUser); err != nil {
 			return err
@@ -179,6 +198,10 @@ func erasureRepoProfiles(t *testing.T, r *erasureRepo) {
 	for _, table := range []string{"user_email_addresses", "user_primary_emails", "password_credentials"} {
 		r.rows(t, table, "user_id", erasedUser, 0)
 		r.rows(t, table, "user_id", keptUser, 1)
+	}
+	for table, kept := range map[string]int{"email_delivery_failures": 2, "email_suppression_lifts": 1, "email_suppressions": 1} {
+		r.rows(t, table, "email_address_id", erasedAddress, 0)
+		r.rows(t, table, "email_address_id", keptAddress, kept)
 	}
 	r.rows(t, "users", "id", erasedUser, 1)
 }
@@ -458,4 +481,66 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	r.rows(t, "notification_filterings", "source_account_id", third, 0)
 	// The request held only the erased notification.
 	r.rows(t, "notification_requests", "source_account_id", third, 0)
+}
+
+// erasureRepoConversations checks that the erasure of an account takes its rows out of the four
+// tables of the direct-message conversations, and the parties of its erased direct posts with
+// them, while the other parties keep the conversation with its last entry derived again.
+func erasureRepoConversations(t *testing.T, r *erasureRepo) {
+	ctx := t.Context()
+	erased, other, third := r.account(t), r.account(t), r.account(t)
+	conversation := r.ids.NewID()
+	dm := func(author string, parties ...string) apptimeline.Entry {
+		e := apptimeline.Entry{
+			ID: r.ids.NewID(), Kind: timeline.KindPost, StatusID: r.ids.NewID(), AuthorAccountID: author, AuthorDomain: "remote.example",
+			OriginalAuthorAccountID: author, OriginalAuthorDomain: "remote.example", Visibility: content.VisibilityDirect, RevisionSeq: 1,
+		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			if _, err := r.h.Timeline.InsertEntry(ctx, tx, e); err != nil {
+				return err
+			}
+			return r.h.Timeline.AddConversationEntry(ctx, tx, conversation, e.ID, append([]string{author}, parties...))
+		})
+		return e
+	}
+	first := dm(other, erased, third)
+	dm(erased, other)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if ok, err := r.h.Timeline.MarkConversationRead(ctx, tx, erased, conversation); err != nil || !ok {
+			t.Errorf("MarkConversationRead = %v, %v; want true", ok, err)
+		}
+		if ok, err := r.h.Timeline.HideConversation(ctx, tx, erased, conversation); err != nil || !ok {
+			t.Errorf("HideConversation = %v, %v; want true", ok, err)
+		}
+		return nil
+	})
+
+	for i := 0; ; i++ {
+		if i == 10 {
+			t.Fatal("EraseFeedsOf still erases after 10 calls")
+		}
+		var n int64
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			var err error
+			n, err = r.h.TimelineErasure.EraseFeedsOf(ctx, tx, erased, 1)
+			return err
+		})
+		if n == 0 {
+			break
+		}
+	}
+	for _, table := range []string{"feed_conversation_participants", "feed_conversations", "feed_conversation_reads", "feed_conversation_hides"} {
+		r.rows(t, table, "account_id", erased, 0)
+	}
+	// The other parties keep the conversation, whose last entry is no longer the erased post.
+	for _, viewer := range []string{other, third} {
+		rows, err := r.h.Timeline.ListConversations(ctx, apptimeline.ConversationsQuery{ViewerAccountID: viewer, Limit: 10})
+		if err != nil || len(rows) != 1 || rows[0].ConversationID != conversation || rows[0].LastEntryID != first.ID {
+			t.Errorf("ListConversations(%s) after the erasure = %+v, %v; want %s with the last entry %s", viewer, rows, err, conversation, first.ID)
+		}
+	}
+	parts, err := r.h.Timeline.ConversationParticipants(ctx, other, []string{conversation})
+	if err != nil || !slices.Equal(parts[conversation], []string{third}) {
+		t.Errorf("ConversationParticipants(%s) after the erasure = %+v, %v; want only %s", other, parts, err, third)
+	}
 }

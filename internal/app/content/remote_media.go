@@ -103,7 +103,7 @@ type AccountDomains interface {
 
 // MediaFetchPolicy is the port through which the media proxy reads the domain restrictions on
 // fetching media (the media_fetch restriction of a reject_media domain action, and the federation
-// restriction of a suspension or of a domain the allowlist cuts off, data-model §5.2).
+// restriction of a suspension or of a domain the allowlist cuts off).
 // *moderation.FederationPolicy implements it.
 type MediaFetchPolicy interface {
 	// RejectsMedia reports whether the media of domain, or of a parent domain, are not fetched.

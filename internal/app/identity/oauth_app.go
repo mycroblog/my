@@ -36,7 +36,7 @@ var (
 	ErrOAuthAppDisabled = errors.New("identity: the OAuth app is disabled")
 )
 
-// OAuthAppRepository is the persistence of the clients that users register (data-model §4.1).
+// OAuthAppRepository is the persistence of the clients that users register.
 // It is part of Repository. Every clientID argument is the ID of an oauth_clients row.
 type OAuthAppRepository interface {
 	// InsertOAuthClient inserts a new client.

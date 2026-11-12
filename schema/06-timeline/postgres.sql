@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the timeline module
--- (docs/architecture/data-model/04-tables/06-timeline.md). schema/README.md describes the layout
+-- (internal/app/timeline). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ CREATE TABLE feed_conversation_hides (
 );
 CREATE INDEX feed_conversation_hides_conversation_id ON feed_conversation_hides (conversation_id);
 
--- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
+-- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
 -- the rows of an account.
 CREATE INDEX feed_entries_original_author_account_id ON feed_entries (original_author_account_id);
 CREATE INDEX feed_follow_edges_followee_account_id ON feed_follow_edges (followee_account_id);

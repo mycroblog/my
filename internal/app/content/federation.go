@@ -116,7 +116,7 @@ func (s *Service) AuthorSearchableStatusIDs(ctx context.Context, authorAccountID
 
 // AuthorRestrictions returns the restrictions of an author that bear on who sees its statuses,
 // as CanView takes them: the moderation restrictions in effect, and profile_view for an author
-// that is missing, suspended, or deleted (data-model §5.1).
+// that is missing, suspended, or deleted.
 func (s *Service) AuthorRestrictions(ctx context.Context, accountID string) (AuthorRestrictions, error) {
 	r, err := s.d.Restrictions.Restrictions(ctx, accountID)
 	if err != nil {
@@ -157,7 +157,7 @@ func (i *Interactions) FindLiveBoost(ctx context.Context, id string) (Boost, err
 }
 
 // EffectiveVisibility is content.EffectiveVisibility: the visibility a status is judged and
-// addressed by, min(original, the author's ceiling) (data-model §5.4).
+// addressed by, min(original, the author's ceiling) (ADR-0058 §11).
 func EffectiveVisibility(original Visibility, author AuthorRestrictions) Visibility {
 	return content.EffectiveVisibility(original, author)
 }

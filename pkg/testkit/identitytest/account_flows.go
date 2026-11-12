@@ -137,6 +137,7 @@ func AccountFlows(t *testing.T, newHarness AccountFactory) {
 		{"RateLimitsFailedPasskeySignIns", passkeyRateLimitsFailedSignIns},
 		{"ConfirmsOperationsWithAPasskey", passwordlessConfirmsWithAPasskey},
 		{"RemovesThePasswordOfPasskeyUsers", passwordlessRemovesThePassword},
+		{"KeepsAWayToSignInUnderConcurrentRemovals", passwordlessKeepsAWayToSignInUnderConcurrency},
 		{"ResetsPasswordsWithOneTimeLinks", passwordResetWorksOnce},
 		{"LimitsSignInToEnabledLoginProviders", loginProvidersOnlyFollowsTheRule},
 		{"RefusesPasswordsAndPasskeysAlikeWhileLimited", loginProvidersOnlyRefusesAlike},

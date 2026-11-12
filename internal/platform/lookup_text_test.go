@@ -25,7 +25,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// badTexts are the values that no text column of PostgreSQL can hold (data-model §1.2): a NUL
+// badTexts are the values that no text column of PostgreSQL can hold: a NUL
 // and a byte that is not UTF-8.
 var badTexts = []string{"\x00", "\xff"}
 

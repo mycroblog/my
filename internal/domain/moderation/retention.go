@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// The retention of the moderation records (ADR-0058, data-model §4.3, §8). Each kind of record is
+// The retention of the moderation records (ADR-0058, data-model §8). Each kind of record is
 // erased after its period, counted from the time below, unless a hold on its account stops it:
 //
 //   - a report: from its last resolution while it is resolved; an open report, and one that an

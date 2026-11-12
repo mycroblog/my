@@ -34,8 +34,8 @@ type ModerationHarness struct {
 type ModerationFactory func(t *testing.T, opts uow.Options) ModerationHarness
 
 // ModerationFlows verifies the moderation repository of a database adapter through the moderation
-// use cases, moderation.FederationPolicy (federation.md §11), and moderation.AccountPolicy
-// (data-model §5.3): a domain action restricts the domain and its subdomains until it expires or is
+// use cases, moderation.FederationPolicy (federation.md §11), and moderation.AccountPolicy:
+// a domain action restricts the domain and its subdomains until it expires or is
 // lifted, a lift ends only its own action's restrictions, actions on remote accounts restrict them,
 // each kind of action on a local account takes away its capabilities until it ends and may name a
 // report of the account only, the actions on statuses record and act on statuses of the account
@@ -286,7 +286,7 @@ func moderationAccountActions(t *testing.T, e *moderationEnv) {
 }
 
 // moderationLocalAccountActions checks the actions on a local account: each kind takes away
-// the capabilities of data-model §5.2 through the AccountPolicy until it expires or is lifted,
+// its capabilities (accountRestrictions) through the AccountPolicy until it expires or is lifted,
 // and an action may name a report of the account only.
 func moderationLocalAccountActions(t *testing.T, e *moderationEnv) {
 	ctx := t.Context()
@@ -511,7 +511,7 @@ func moderationRejectsInvalid(t *testing.T, e *moderationEnv) {
 	if err != nil || len(imported.Issued) != 0 || len(imported.Skipped) != 1 || imported.Skipped[0].Reason != appmoderation.DomainBlockOwnDomain {
 		t.Errorf("ImportDomainBlocks(this server) = %+v, %v; want it skipped as own_domain", imported, err)
 	}
-	// Text that a dialect cannot store as it is fails alike on every dialect (data-model §1.2),
+	// Text that a dialect cannot store as it is fails alike on every dialect,
 	// naming its column.
 	for _, tc := range []struct {
 		field string

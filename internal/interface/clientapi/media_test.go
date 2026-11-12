@@ -660,7 +660,7 @@ func TestUpdateMedia(t *testing.T) {
 	if p.Detail == nil || !strings.Contains(*p.Detail, "1,500") {
 		t.Errorf("detail = %v", p.Detail)
 	}
-	// Text that a dialect cannot store as it is (data-model §1.2), sent as JSON or as a form part.
+	// Text that a dialect cannot store as it is, sent as JSON or as a form part.
 	for _, res := range []*http.Response{
 		patch("bob-write", `{"description": "a\u0000cat"}`),
 		e.upload(t, "bob-write", png(), part{name: "description", data: []byte("a\xffcat")}),

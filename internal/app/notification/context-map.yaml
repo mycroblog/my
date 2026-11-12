@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
+docs: ["docs/adr/0158-notification-policy.md"]
 userdocs: ["docs/guide/notifications.md"]

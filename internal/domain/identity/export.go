@@ -30,7 +30,7 @@ const (
 	ExportStateExpired ExportState = "expired"
 )
 
-// DataExport is a user's request for an archive of their data (FR-008, data-model §4.1).
+// DataExport is a user's request for an archive of their data (FR-008).
 type DataExport struct {
 	ID          string
 	UserID      string

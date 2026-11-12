@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Queries of the database job queue (internal/adapter/queue/db) for SQLite.
--- Timestamps are Unix milliseconds (see docs/architecture/data-model/README.md, section 1.2).
+-- Timestamps are Unix milliseconds (see schema/README.md).
 
 -- InsertJobs inserts the jobs of a JSON array, one row per element, as an INSERT of each would:
 -- the payload is hex, and an absent idempotency, ordering, or trace key is none. WHERE true

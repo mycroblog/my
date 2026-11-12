@@ -15,7 +15,7 @@ import (
 
 // The imports and CSV exports of a user's follows, blocks, mutes, bookmarks, and muted domains
 // in the CSV
-// formats of Mastodon (FR-008, data-model §4.1): the files that Mastodon's "Import and export"
+// formats of Mastodon (FR-008): the files that Mastodon's "Import and export"
 // page exports can be imported here, and the files exported here can be imported by Mastodon.
 
 // ImportKind is what a CSV file lists (data_imports.kind).

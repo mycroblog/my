@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-// The server-wide announcements (FR-726, data-model §4.9): administrators write one in Markdown,
+// The server-wide announcements (FR-726): administrators write one in Markdown,
 // publish it for every local user within an optional window, and withdraw it; each user marks
 // the ones they have read.
 

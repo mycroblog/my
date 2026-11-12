@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// TextKey names an instance text (data-model §4.9, instance_text_revisions.key). A text holds
+// TextKey names an instance text (instance_text_revisions.key). A text holds
 // one value, written by an administrator in any language and shown as it is in every locale.
 type TextKey string
 
@@ -75,7 +75,7 @@ func (d TextDefinition) Validate(body string) error {
 	case !utf8.ValidString(body):
 		return invalid("not valid UTF-8")
 	case strings.ContainsRune(body, 0):
-		return invalid("contains NUL") // data-model §1.2
+		return invalid("contains NUL") // which PostgreSQL's text cannot hold
 	case utf8.RuneCountInString(body) > d.MaxLength:
 		return invalid(fmt.Sprintf("longer than %d characters", d.MaxLength))
 	case d.SingleLine && strings.ContainsAny(body, "\r\n"):

@@ -23,7 +23,7 @@
 ### 2. 連合の範囲 `federation_scope`（決定）
 
 - インスタンス設定 `federation_scope`（`KindEnum`、`open` / `allowlist`、既定 `open`）を足す。`federation_mode`（ADR-0006、向き）と独立の軸で、`instance_setting_revisions` に記録し、リクエストとジョブごとに読む。
-- `allowlist` のとき、許可の無いドメインは、`moderation.FederationPolicy` がドメインの制限を返すところ（`DomainRestrictions` とトランザクションの中の読み取り。federation.md §11 の表が読む唯一の場所）で、`suspend` が生む制限（`federation`・`profile_view` ほか、data-model §5.2）を持つものとして返す。受信・配送・取得・メディアプロキシ・リレーの各入口は今の判定のまま、新しい分岐を持たない。
+- `allowlist` のとき、許可の無いドメインは、`moderation.FederationPolicy` がドメインの制限を返すところ（`DomainRestrictions` とトランザクションの中の読み取り。federation.md §11 の表が読む唯一の場所）で、`suspend` が生む制限（`federation`・`profile_view` ほか）を持つものとして返す。受信・配送・取得・メディアプロキシ・リレーの各入口は今の判定のまま、新しい分岐を持たない。
 - 投影の `domain_restrictions` には行を書かない。許可の無いドメインは数に上限がなく、判定のときに `domain_allows` と設定から合成する。
 - `allowlist` は secure mode（Authorized Fetch）を強制する。ローカルの公開の投稿・Actor の ActivityPub の GET は、Authorized Fetch の設定にかかわらず、許可したドメインの署名を求め、署名の無い GET は拒む（署名の無い GET は、許可の無いドメインの取得と区別できないため。Mastodon の LIMITED_FEDERATION_MODE が secure mode を前提にするのと同じ）。ブラウザ向けの Web のページは、このモードではなくそれぞれの設定に従う。
 - NodeInfo の `metadata` に `federationScope` を出す（`federationMode` と同じ扱い）。
@@ -124,7 +124,7 @@ FR-413 が連合の向きを、FR-702 がドメインの処分を、FR-706 が M
 - 悪い: `allowlist` で署名の無い GET を拒むと、署名しない実装やクローラーからは公開の投稿が見えなくなる。
 - 悪い: 判定のたびに `domain_allows` と設定を読むので、`allowlist` では読み取りが 1 つ増える（ドメインの処分と同じキャッシュの対象にする）。
 - 悪い: スキーマに `domain_allows`・`allowlist_cutoffs`・購読の 6 つのテーブルが増え、`relationship_severances` の `CHECK` が変わる（v0.1.0 の後なら、前の `main` から上げられる形にする）。
-- 後続（このマイルストーンのタスク）: #2580 許可のテーブル・`federation_scope`・切り替えのプレビューと切断、#2581 購読・取得・下書き・自動の反映、#2582 管理画面。採ったら ADR-0058 §1・§4・§7、ADR-0060 のイベントの表、federation.md §11、data-model §4.3、運用の文書（`docs/operations/moderation.md`）を合わせる。
+- 後続（このマイルストーンのタスク）: #2580 許可のテーブル・`federation_scope`・切り替えのプレビューと切断、#2581 購読・取得・下書き・自動の反映、#2582 管理画面。採ったら ADR-0058 §1・§4・§7、ADR-0060 のイベントの表、federation.md §11、運用の文書（`docs/operations/moderation.md`）を合わせる。
 
 ## Open Questions / 要検証
 

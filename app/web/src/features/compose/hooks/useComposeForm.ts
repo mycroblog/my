@@ -83,7 +83,7 @@ export type ReadyComposeForm = {
   textLimit: number;
   /** The visibility the post gets: the chosen one, or the ceiling of the account's posting limits. */
   visibility: Visibility;
-  /** What the account's restrictions let it post (data-model/05-states-and-policies.md §5.4), or null while they keep every visibility. */
+  /** What the account's restrictions let it post (ADR-0058 §11), or null while they keep every visibility. */
   limits: PostingLimits | null;
   /** Whether the post replies to a direct message, and so is direct whatever is chosen (chosenVisibility). */
   directReply: boolean;
@@ -309,7 +309,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
       store.remove(idempotencyKey);
       // A published draft has left the server, with its schedule: the lists of the drafts page lose it.
       if (published != null) await cacheDraftChange(queryClient);
-      // The server narrows the visibility of a restricted account (data-model/05-states-and-policies.md §5.4); say so.
+      // The server narrows the visibility of a restricted account (ADR-0058 §11); say so.
       const narrowed = status.visibility !== body.visibility;
       if (narrowed) {
         toast.show({

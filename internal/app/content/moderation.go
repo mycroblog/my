@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// The effects on statuses of the moderation actions on statuses (data-model §5.2), which the
+// The effects on statuses of the moderation actions on statuses, which the
 // moderation module records inside the transaction of the action.
 
 // DeleteByModeration records inside tx that the moderation action actionID deleted st: the

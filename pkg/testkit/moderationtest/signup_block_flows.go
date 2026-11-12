@@ -21,12 +21,12 @@ import (
 )
 
 // SignupBlockFlows verifies the sign-up block list of a database adapter's moderation repository
-// (FR-719, data-model §4.3) through the moderation use cases: blocks are stored in the canonical
+// (FR-719) through the moderation use cases: blocks are stored in the canonical
 // form of their kind and invalid ones are refused, a sign-up is screened against the blocks in
 // effect only (neither lifted nor expired) by the domain of its email address and its parents, the
 // hash of its canonical address, and the IP range of its client, the strongest severity wins, a
 // lift is recorded once, a ban can add the block of the banned user's email address in its
-// transaction, the blocks list newest first with their lifts and filters, every addition and lift
+// transaction and the erasure of the banned account keeps it, the blocks list newest first with their lifts and filters, every addition and lift
 // is audited once, and the purge of the moderation records erases a block with its lift
 // moderation.SignupBlockRetention after it ends (the earlier of its lift and expiry), keeps one in
 // effect and one made by the ban of a held account, and is safe to repeat; an import of a list adds
@@ -267,6 +267,16 @@ func signupBlocksFromBan(t *testing.T, e *signupBlockEnv) {
 	checkAudit(t, got, []auditWant{
 		{moderation.AuditActorUser, testkit.NamedID("mod-1"), moderation.AuditSignupBlockAdded, moderation.AuditTargetSignupBlock, b.ID, "email_hash " + b.Value, b.ID, a.IssuedAt},
 	})
+
+	// The erasure of the banned account, when its scheduled deletion comes, keeps the block: only
+	// the purge of the moderation records ends it.
+	if _, err := e.svc.EraseAccountData(ctx, appaccount.ErasureTarget{AccountID: e.local, UserID: e.localUser, DeletedAt: e.clock.Now()}, "", 100); err != nil {
+		t.Fatalf("EraseAccountData = %v", err)
+	}
+	if after, err := e.svc.SignupBlocks(ctx, appmoderation.SignupBlockFilter{}, 10); err != nil || len(after) != 1 || after[0].Block.ID != b.ID {
+		t.Errorf("SignupBlocks after the erasure = %+v, %v; want the ban's block kept", after, err)
+	}
+	e.screen(t, "spam.mer@mail.example", "", moderation.SignupReject)
 }
 
 func signupBlocksList(t *testing.T, e *signupBlockEnv) {

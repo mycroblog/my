@@ -17,7 +17,7 @@ import (
 )
 
 // RoleRepositoryContract verifies the roles of a database adapter's identity repository
-// (data-model §4.1, FR-720) by its methods alone, the port contract of ADR-0153 §1: EnsureRole
+// (FR-720) by its methods alone, the port contract of ADR-0153 §1: EnsureRole
 // inserts a role once by key and keeps the permissions of the existing one; roles are found by
 // key and by ID, listed highest position first with their permissions and badge, also inside a
 // transaction; grants and revocations change the current roles, the holders, and the holders of

@@ -124,7 +124,7 @@ The requirements, the architecture, and the decision records are written in Japa
 - [Non-functional requirements](requirements/02-non-functional.md)
 - [Glossary](requirements/03-glossary.md)
 - [Architecture overview](architecture/overview.md)
-- [Logical data model](architecture/data-model/README.md)
+- [Data model](architecture/data-model.md)
 - [Visibility checks (canView)](architecture/visibility.md)
 - [Federation design (ActivityPub server-to-server)](architecture/federation.md)
 - [Job system: components, lifecycle, and fan-out](architecture/job-system.md)

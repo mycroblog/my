@@ -15,7 +15,7 @@ import (
 // The instance theme (ADR-0059, FR-605): the administrator's overrides of the web client's design
 // tokens and custom CSS, versioned like the settings.
 
-// ThemeRepository is the part of Repository about the theme (data-model §4.9).
+// ThemeRepository is the part of Repository about the theme.
 type ThemeRepository interface {
 	// InsertThemeRevision inserts a revision with its token rows.
 	InsertThemeRevision(ctx context.Context, tx uow.Tx, rev instance.ThemeRevision) error

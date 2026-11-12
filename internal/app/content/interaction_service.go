@@ -420,8 +420,7 @@ func (s *Interactions) visibleStatus(ctx context.Context, accountID, statusID st
 }
 
 // checkRestrictions fails with ErrInteractionRestricted when the account may not interact and,
-// for a boost, which is also a post, with ErrPostingRestricted when it may not post
-// (data-model §5.2).
+// for a boost, which is also a post, with ErrPostingRestricted when it may not post.
 func (s *Interactions) checkRestrictions(ctx context.Context, accountID string, boost bool) error {
 	r, err := s.d.Restrictions.Restrictions(ctx, accountID)
 	switch {

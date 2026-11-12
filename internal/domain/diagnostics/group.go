@@ -107,8 +107,8 @@ func MessageHead(msg string) string {
 	return msg
 }
 
-// CleanText returns s as valid UTF-8 without the null character, each replaced by U+FFFD
-// (data-model §1.2): every text column of a group holds what the reporter received.
+// CleanText returns s as valid UTF-8 without the null character, each replaced by U+FFFD:
+// every text column of a group holds what the reporter received.
 func CleanText(s string) string {
 	s = strings.ToValidUTF8(s, string(utf8.RuneError))
 	return strings.ReplaceAll(s, "\x00", string(utf8.RuneError))

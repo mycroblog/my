@@ -50,7 +50,7 @@ func (s RemoteSnapshot) SameDocument(digest []byte) bool {
 }
 
 // RemoteHead is the newest snapshot of a remote actor (the remote_account_heads projection):
-// the endpoints delivery reads and the fetch state of the periodic refresh (data-model §4.2).
+// the endpoints delivery reads and the fetch state of the periodic refresh.
 type RemoteHead struct {
 	AccountID  string
 	SnapshotID string

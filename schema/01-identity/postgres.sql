@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for PostgreSQL (ADR-0023): the tables of the identity module
--- (docs/architecture/data-model/04-tables/01-identity.md). schema/README.md describes the layout
+-- (their data model: the package comment of internal/domain/identity). schema/README.md describes the layout
 -- and the conventions of this directory.
 
--- identity (data-model §4.1) -----------------------------------------------------------------
+-- identity -----------------------------------------------------------------------------------
 
 -- Resource: a login principal.
 CREATE TABLE users (
@@ -175,7 +175,7 @@ CREATE TABLE user_role_badge_displays (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- identity: user preferences (data-model/04-tables/01-identity.md §4.1, FR-007, FR-208).
+-- identity: user preferences (FR-007, FR-208).
 -- ---------------------------------------------------------------------------------------------
 
 -- Current value: a user's settings. locale and default_post_language are canonical BCP 47
@@ -225,7 +225,7 @@ CREATE TABLE user_timeline_languages (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- identity: browser sessions of the server-rendered screens (data-model/04-tables/01-identity.md §4.1, ADR-0019 §4).
+-- identity: browser sessions of the server-rendered screens (ADR-0019 §4).
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a sign-in. token_hash is the SHA-256 digest of the session cookie's value.
@@ -254,7 +254,7 @@ CREATE TABLE session_activity (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- identity: OAuth 2.0 authorization server (data-model/04-tables/01-identity.md §4.1, ADR-0019 §4, ADR-0090).
+-- identity: OAuth 2.0 authorization server (ADR-0019 §4, ADR-0090).
 -- Every oauth_client_id column refers to oauth_clients.id; oauth_clients.client_id is the public identifier.
 -- ---------------------------------------------------------------------------------------------
 
@@ -428,7 +428,7 @@ CREATE TABLE oauth_token_family_last_used (
 
 -- ---------------------------------------------------------------------------------------------
 -- identity: registration, invites, email verification, and one-time tokens
--- (data-model/04-tables/01-identity.md §4.1, FR-001, FR-002).
+-- (FR-001, FR-002).
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: an email address was verified, at most once per address.
@@ -584,7 +584,7 @@ CREATE TABLE user_token_redemptions (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- identity: where sign-ins and registrations came from (data-model/04-tables/01-identity.md §4.1, ADR-0058). Kept
+-- identity: where sign-ins and registrations came from (ADR-0058). Kept
 -- apart from sessions and users so that the purge erases them after their retention.
 -- ---------------------------------------------------------------------------------------------
 
@@ -612,7 +612,7 @@ CREATE INDEX registration_origins_ip ON registration_origins (ip);
 CREATE INDEX registration_origins_recorded_at ON registration_origins (recorded_at);
 
 -- ---------------------------------------------------------------------------------------------
--- identity: the exports and imports of a user's data (data-model/04-tables/01-identity.md §4.1, FR-008).
+-- identity: the exports and imports of a user's data (FR-008).
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a user's request for an archive of their data.

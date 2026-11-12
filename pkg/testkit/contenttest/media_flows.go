@@ -71,6 +71,7 @@ func MediaFlows(t *testing.T, newHarness MediaFactory) {
 		{"CleansUpOldUnattachedUploads", mediaCleansUp},
 		{"CleanupPagesPastReferencedUploads", mediaCleanupPages},
 		{"ErasesDeletedAccountsUploads", mediaErasesDeletedAccounts},
+		{"ErasesPastReferencedUploads", mediaErasesPastReferencedUploads},
 		{"RecordsRemoteMediaOnce", mediaRecordsRemoteMedia},
 		{"CachesRemoteMediaUnderThePolicy", mediaCachesRemoteMedia},
 		{"CachesTheSmallVariantOfRemoteMedia", mediaCachesSmallRemoteVariants},
@@ -1014,6 +1015,32 @@ func mediaErasesDeletedAccounts(t *testing.T, e *mediaEnv) {
 	}
 	if _, err := e.service.Media(ctx, attached.File.ID); err != nil {
 		t.Errorf("the second run erased the attached upload: %v", err)
+	}
+}
+
+// mediaErasesPastReferencedUploads checks that an upload that a referrer references, as the
+// instance settings reference their images, stays with its blobs as the instance's and does not
+// hold back the erasure of the account, as an upload that a retained post attaches does.
+func mediaErasesPastReferencedUploads(t *testing.T, e *mediaEnv) {
+	ctx := t.Context()
+	referenced := e.upload(t, testkit.FixturePNG(4, 3, false))
+	e.process(t, referenced.File.ID)
+	e.referrers[referenced.File.ID] = true
+	plain := e.upload(t, testkit.FixturePNG(4, 3, false))
+	er := appcontent.NewMediaEraser(appcontent.MediaErasureDeps{
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Media, Blobs: e.blobs, Referrers: []appcontent.MediaReferrer{e.referrers},
+	})
+	if kept := e.eraseMedia(t, er, mediaOwner, 10); kept {
+		t.Error("the run reported a referenced upload as kept, which would hold back the erasure")
+	}
+	if _, err := e.service.Media(ctx, plain.File.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("erased upload: Media = %v, want ErrNotFound", err)
+	}
+	if _, err := e.service.Media(ctx, referenced.File.ID); err != nil {
+		t.Errorf("referenced upload: Media = %v", err)
+	}
+	if b := e.blobs.Bytes(mediaLargeKey(e.media(t, referenced.File.ID))); len(b) == 0 {
+		t.Error("the referenced upload lost its blobs")
 	}
 }
 

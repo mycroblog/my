@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the hook module
--- (docs/architecture/data-model/04-tables/16-hook.md). schema/README.md describes the
+-- (internal/app/hook). schema/README.md describes the
 -- layout and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ CREATE TABLE hook_decision_appeal_decisions (
 ) STRICT;
 
 -- Current value: the hook no longer reviews the account, because a moderator overturned its appeal.
--- The row is the value (data-model §1, rule 5): it does not follow the decision or the appeal, which
+-- The row is the value (ADR-0020 rule 5): it does not follow the decision or the appeal, which
 -- retention removes. Erasing the account removes it.
 CREATE TABLE hook_account_exemptions (
   hook TEXT NOT NULL CHECK (hook IN ('local.status')),

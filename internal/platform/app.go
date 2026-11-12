@@ -157,7 +157,7 @@ type App struct {
 	// Moderation records the actions on domains and accounts and the reports received from
 	// other servers; ModerationPolicy reads the restrictions they impose for federation and the
 	// media proxy (docs/architecture/federation.md §11), and AccountPolicy those that the
-	// identity, graph, and content modules and the client API apply (data-model §5.3).
+	// identity, graph, and content modules and the client API apply.
 	Moderation       *moderation.Service
 	ModerationPolicy *moderation.FederationPolicy
 	AccountPolicy    *moderation.AccountPolicy

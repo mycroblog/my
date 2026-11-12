@@ -56,7 +56,7 @@ func RunQueries[Q any](ctx context.Context, q Q, what string, steps ...func(Q, c
 	return nil
 }
 
-// ToMillis returns t as Unix milliseconds, the form of every timestamp column (data-model §1.2).
+// ToMillis returns t as Unix milliseconds, the form of every timestamp column.
 func ToMillis(t time.Time) int64 { return t.UnixMilli() }
 
 // FromMillis reads a timestamp column back as a time in UTC.

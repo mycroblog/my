@@ -82,6 +82,7 @@ func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 		{"SendsReactionsInTheLikeSlot", remoteSendsReactions},
 		{"SendsPollVotes", remoteSendsPollVotes},
 		{"VotesInLocalPolls", remoteVotesInLocalPolls},
+		{"ClosesPollsAtTheirEnd", remoteClosesPolls},
 		{"DecidesVotesWithThePollLocked", pollVotesDecidedUnderLock},
 		{"QuotesLocalPostsWithApprovals", remoteQuotesLocalPosts},
 		{"SendsQuoteRequestsAndTakesTheAnswers", remoteSendsQuoteRequests},

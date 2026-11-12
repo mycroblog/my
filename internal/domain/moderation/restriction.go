@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// Restriction is a capability that a moderation action takes away (data-model §5.2,
-// account_restrictions.restriction and domain_restrictions.restriction).
+// Restriction is a capability that a moderation action takes away
+// (account_restrictions.restriction and domain_restrictions.restriction).
 type Restriction string
 
 // Restrictions.
@@ -66,7 +66,7 @@ type Effect struct {
 
 // Merge merges the restriction rows of one account or domain into the restrictions in effect at
 // now, in restriction order: several actions imposing one restriction make one Effect that lasts
-// as long as the longest of them (data-model §4.3, the union of the actions).
+// as long as the longest of them (the union of the actions).
 func Merge(rows []RestrictionRow, now time.Time) []Effect {
 	byRestriction := map[Restriction]*Effect{}
 	for _, r := range rows {
@@ -102,7 +102,7 @@ type RestrictionRow struct {
 
 // DomainAndParents returns a domain followed by each of its parent domains, from the nearest:
 // "a.b.example" gives a.b.example, b.example, and example. A domain action covers its
-// subdomains, so these are the domains whose restrictions apply to a server (data-model §4.3).
+// subdomains, so these are the domains whose restrictions apply to a server.
 // The empty domain (a local account) has none.
 func DomainAndParents(domain string) []string {
 	var out []string

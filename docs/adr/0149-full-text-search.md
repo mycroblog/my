@@ -118,7 +118,7 @@
 
 ### 11. 削除と消去
 
-ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.md#8-削除と消去) に対して、索引は投影と同じ位置に置く。消去の順序はイベントを記録し、表示から即時に外し、非同期に物理削除する形のままで、表示から外すのは §8 の読み取りが担う。索引が持つのは DB の写しで、モデレーションの記録ではない。
+ADR-0058 とアカウントの消去に対して、索引は投影と同じ位置に置く。消去の順序はイベントを記録し、表示から即時に外し、非同期に物理削除する形のままで、表示から外すのは §8 の読み取りが担う。索引が持つのは DB の写しで、モデレーションの記録ではない。
 
 - **投稿の削除**: 本人の削除、自動削除（FR-118）、リモート投稿の保持期間（FR-803）、リモートの `Delete` はどれも `status_deletions` と `content.status_deleted` を通るので `search.sync_status` が消す。
 - **アカウントの削除**: `account_lifecycle_events` の `deleted`・`deactivated`・`remote_deleted` で `search.sync_author` が作者の文書を消す。7 日の消去ジョブを待たない。`reactivated` では同じジョブが入れ直すので、410 の聞き直しで戻った Actor も元に戻る。

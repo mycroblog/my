@@ -16,7 +16,7 @@ import (
 	domain "github.com/mycroblog/my/internal/domain/supporters"
 )
 
-// SupporterRepository implements supporters.Repository (data-model §4.13, ADR-0072 §15).
+// SupporterRepository implements supporters.Repository (ADR-0072 §15).
 type SupporterRepository struct {
 	db *moduleDB
 }

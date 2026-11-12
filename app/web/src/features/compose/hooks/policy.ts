@@ -83,7 +83,7 @@ export function domainMentions(text: string): string[] {
   return [...new Set(handles)];
 }
 
-/** Characters as the server counts them: Unicode code points (data-model/README.md). */
+/** Characters as the server counts them: Unicode code points. */
 export function countCharacters(text: string): number {
   return Array.from(text).length;
 }

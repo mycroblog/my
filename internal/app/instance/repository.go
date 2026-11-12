@@ -14,7 +14,7 @@ import (
 var ErrNotFound = errors.New("instance: not found")
 
 // Repository is the persistence port of the instance module's settings, texts, rules, theme, brand images,
-// announcements, service closure, secrets, domains, and TLS certificates (data-model §4.9). The database adapters implement it and
+// announcements, service closure, secrets, domains, and TLS certificates. The database adapters implement it and
 // pass instancetest.InstanceRepositoryContract; the flows of the use cases on them are instancetest.InstanceFlows
 // (internal/flowtest/instance).
 //

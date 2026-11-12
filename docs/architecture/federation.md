@@ -2,7 +2,7 @@
 
 > 前提にしている ADR: [ADR-0002](../adr/0002-modular-monolith-hexagonal.md)、[ADR-0003](../adr/0003-database-abstraction.md)、[ADR-0004](../adr/0004-job-queue-abstraction.md)、[ADR-0005](../adr/0005-blob-storage-and-media.md)、[ADR-0006](../adr/0006-federation-protocol-scope.md)、[ADR-0017](../adr/0017-visibility-local.md)、[ADR-0018](../adr/0018-federated-uris.md)、[ADR-0019](../adr/0019-security-baseline.md)、[ADR-0020](../adr/0020-data-modeling-principles.md)。
 > 署名は [ADR-0006](../adr/0006-federation-protocol-scope.md)、受信処理は [ADR-0006](../adr/0006-federation-protocol-scope.md)、取り込み範囲と保持は [ADR-0006](../adr/0006-federation-protocol-scope.md)、`local` 投稿のメンションは [ADR-0017](../adr/0017-visibility-local.md)、リレーは [ADR-0006](../adr/0006-federation-protocol-scope.md) に従います。
-> 要件: FR-305、FR-401〜411、FR-701〜702、FR-709、FR-713、FR-716〜717、NFR-MOD-3、NFR-SEC-1〜2、NFR-SEC-4〜5、NFR-PERF-4、NFR-REL-1〜2、NFR-COST-4〜5。テーブルは [論理データモデル](data-model/README.md) §4.8 ほかにあります。
+> 要件: FR-305、FR-401〜411、FR-701〜702、FR-709、FR-713、FR-716〜717、NFR-MOD-3、NFR-SEC-1〜2、NFR-SEC-4〜5、NFR-PERF-4、NFR-REL-1〜2、NFR-COST-4〜5。テーブルは `schema/08-federation/` ほかにあります。
 
 ## 1. 構成
 
@@ -20,7 +20,7 @@
 | `internal/interface/media` | メディアプロキシ `/media/proxy/…`（§9） |
 
 - 受け入れのポリシー（必須の対象・時間窓・鍵と `actor` の一致）は `internal/app/federation` に書き、暗号処理と署名ベースの組み立てだけをアダプタに任せます（ADR-0006）。
-- テーブルの所有者はモジュール単位です（ADR-0002）。`federation` が書くのは §4.8 のテーブルだけで、リモートのアカウント・投稿・フォローなどは、それぞれのモジュールのアプリケーション層の公開 API を **同じトランザクションの中で** 呼んで書きます（利用者登録と同じ形。[data-model §2.1](data-model/02-consistency.md#21-トランザクションの規律)）。
+- テーブルの所有者はモジュール単位です（ADR-0002）。`federation` が書くのは §4.8 のテーブルだけで、リモートのアカウント・投稿・フォローなどは、それぞれのモジュールのアプリケーション層の公開 API を **同じトランザクションの中で** 呼んで書きます（利用者登録と同じ形。`internal/app/identity` のパッケージのコメント）。
 
 | 受信した内容 | 呼ぶ公開 API（書くモジュール） |
 | --- | --- |
@@ -113,7 +113,7 @@ ADR-0006 の推奨案に従い、**署名の検証までを同期**、**処理�
   - 鍵の持ち主が `actor` でない、または署名が合わないときは `401` で拒否します（FEP-8b32 は `proof` を HTTP 署名より優先する）。保存した鍵で合わなければ、HTTP 署名と同じく `keyId` ごとに 5 分に 1 回まで鍵を取り直して 1 回だけ再検証します。拒否の理由は `integrity proof does not verify` です。
   - 検証は `proof` を除き、FEP-8b32 のとおり LD 署名（`signature`）も除いた文書に対して行います。`proof` に `@context` があれば、文書の `@context` がそれで始まることを確かめ、文書の `@context` をそれに置き換えて正規化します（vc-di-eddsa §3.3.2）。
   - 署名者と `actor` が違う（`trust = refetch`）アクティビティの `proof` は検証しません。どのみちオブジェクトをオリジンから取り直すからです。`proof` が通ったときに取り直しや HTTP 署名を省くことはしません（省くなら ADR-0006 の改定が要る）。
-- `id` の無いアクティビティは、`actor`・改行・受け取った本文をつないだ SHA-256 の 16 進表記から `urn:my:digest:<hex>` を合成して重複排除のキーにします（[data-model §2.2](data-model/02-consistency.md#22-冪等キーと一意制約)）。
+- `id` の無いアクティビティは、`actor`・改行・受け取った本文をつないだ SHA-256 の 16 進表記から `urn:my:digest:<hex>` を合成して重複排除のキーにします。
 - `id` のホストが `actor` のホストと異なるアクティビティと、鍵の持ち主（`owner`）が `keyId` のホストに無いアクティビティは、`trust = refetch` にします。
 - 鍵の取得はトランザクションの外で行います（ADR-0003）。取得した Actor の書き込みは、受信の記録とは別の短いトランザクションです。
 - 手順 1・2 と、個人の inbox の宛先の確認（404）は `internal/interface/activitypub` が、手順 3〜14 は `federation.Inbox.Receive` が行います。拒否は `Received.Rejection` の `InboxRejection`（`Status`、`429` の `Retry-After`、`401` の `Accept-Signature`）で、想定外の失敗（500）とは別の戻り値で返します。拒否のログには、ヘッダーの値を引用するエラーではなく、決まった語彙の理由（`InboxRejection.Reason`）だけを出します（ADR-0019）。レート制限のストアが使えないときは、制限を掛けずに通します。
@@ -198,7 +198,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `ReplyRequest` / `AnnounceRequest` | ローカルの投稿（`object`）への主体の返信、またはそのブーストの `Announce`（`instrument`。IRI か埋め込みで、主体と同じオリジン） | `content.ReceiveInteractionRequest`（ADR-0155 §6）。判定は `QuoteRequest` と同じ規則（`content.MayInteract`）で、自動の許可に当てはまれば依頼を `accepted` で記録し、`result` に `ReplyAuthorization` / `AnnounceAuthorization`（`/ap/reply_authorizations/{id}`・`/ap/announce_authorizations/{id}`）を付けた `Accept` を返す。承認の許可だけに当てはまれば `pending` で記録して作者に通知（`reply_request` / `boost_request`）し、何も返さない。それ以外は `rejected` で記録して `Reject`。どれも `object` は依頼の埋め込みと交流の IRI をこの順に並べた配列（ADR-0155 §6。GoToSocial は交流の IRI から答えを読む）で、主体の inbox だけに送る。同じ依頼は `(種類, 交流, 対象)` で 1 つで、受け直しても答えた内容は変わらず、同じアクティビティへの答えは 1 度だけ（`received_activity_answers`）。依頼の後に届く返信の `Create`・`Announce` は、依頼の状態で扱う（`accepted` ならそのまま記録、それ以外は保留・不記録） |
 | `Accept` / `Reject` | このサーバーが送った `QuoteRequest`（`id` が `{引用元の IRI}/quote_request`） | `QuoteHandlers.ReceiveQuoteAnswer`。主体は引用先の作者でなければならない。`Accept` は `result` の `QuoteAuthorization` を取得し、§6.3 の引用先の検証と同じ規則で確かめてから `content.AcceptQuote` で承認する（承認は §7.1 の `Update` で伝わる）。`Reject` は `content.RejectQuote` で拒否にする。フォローへの答えより先に照合する |
 | `Accept` / `Reject` | このサーバーが送った `ReplyRequest` / `AnnounceRequest`（`id` が `/ap/interaction_requests/{依頼の id}`）。`object` は依頼の IRI か埋め込みか、それを含む配列か、依頼が承認を求めるこちらの返信・`Announce` の IRI だけ（承認待ちの依頼を `content.FindOutboundRequestOf` で引く） | `QuoteHandlers.receiveInteractionAnswer`（ADR-0155 §6、§7）。主体は対象の投稿の作者でなければならない。`Accept` は `result` の `ReplyAuthorization` / `AnnounceAuthorization` を取得し、ホストが作者のホストと同じで、`attributedTo` が作者、`interactingObject` がこちらの返信か `Announce`、`interactionTarget` が対象の投稿であることを確かめてから、`content.ReceiveInteractionAnswer` で承認する。承認した返信は保留から外れて `Create` を配送し（`replyAuthorization` を付ける）、ブーストは予約した `Announce` の IRI で記録して配送する（`announceAuthorization` を付ける）。`Reject` は拒否にし、交流は作者にだけ「断られた」と見える。どちらも交流した人に通知（`interaction_accepted` / `interaction_rejected`）。答え直しは何も変えない |
-| `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。7 日後に消去ジョブ（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)）がプロフィール・投稿（ローカルの利用者がブックマークや返信をした投稿を含む）・フォロー・ブーストなどを物理削除する。削除は取り消せず、以後その Actor のアクティビティは捨て、取得した文書も投稿も保存しない。取得への 410 で削除済みにした Actor も、この `Delete` で確定し、消去の前に聞き直さない（§6.2） |
+| `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。7 日後に消去ジョブ（`account.erase_deleted`）がプロフィール・投稿（ローカルの利用者がブックマークや返信をした投稿を含む）・フォロー・ブーストなどを物理削除する。削除は取り消せず、以後その Actor のアクティビティは捨て、取得した文書も投稿も保存しない。取得への 410 で削除済みにした Actor も、この `Delete` で確定し、消去の前に聞き直さない（§6.2） |
 | `Announce` | 投稿（主体が参加中のリレーの Actor で `relay_id` の付いたもの） | 投稿をオリジンから取得し、`public` なら取り込んで `relayed_statuses` に記録する。ブーストとしては記録しない（§13） |
 | `Announce` | 投稿（URI か埋め込み） | `content.RecordRemoteBoost`。ローカルの投稿と保存済みの投稿は `id` で引く。保存していないリモートの投稿は、ブーストした人をローカルのアカウントがフォローしているときだけ取り込み（ADR-0006）、埋め込みの投稿は、オリジンが主体と同じでなければ `id` から取得し直す。ブーストの公開範囲は、`Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう（`direct` になるものは捨てる）。`local` の投稿、ほかの人の `private` の投稿、主体が閲覧できないローカルの投稿は捨てる。許可は下の「返信とブーストの承認」のとおりで、承認待ちと断ったブーストは記録しないので、件数にも通知にも出ない。`announceAuthorization` を持つ、許可が誰にもすぐには認めないリモートの投稿のブーストは、その承認を確かめてから記録する（`StatusHandlers.verifyAnnounce`） |
 | `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0051）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字のドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。主体のドメインの絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込む。ほかのサーバーの絵文字は、そのサーバーの文書から記録済みのとき（このサーバーの絵文字はローカルの絵文字）だけ使い、行も画像も変えない。記録が無ければ捨てる（ADR-0051 の「他のサーバーの絵文字を偽れない」。ADR-0051 §6 の取り込みの文を置き換える推奨案は ADR-0051）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
@@ -221,7 +221,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 
 ### 3.5 返信・ブースト・引用の承認
 
-承認の要る交流は、種類によらない依頼（`interaction_requests`）・答え（`interaction_request_events`）・状態の投影（`interaction_request_states`）・このサーバーの承認（`interaction_authorizations`）で記録します（ADR-0155 §8、[data-model §4.4](data-model/04-tables/04-content.md#44-content)）。依頼は `(種類, 交流, 対象)` で一意なので、同じ依頼・同じ交流を受け直しても増えず、答えは状態が変わるときだけ記録します（冪等）。外への答えは送信トレイ経由で、トランザクションの中で外部の I/O はしません。
+承認の要る交流は、種類によらない依頼（`interaction_requests`）・答え（`interaction_request_events`）・状態の投影（`interaction_request_states`）・このサーバーの承認（`interaction_authorizations`）で記録します（ADR-0155 §8）。依頼は `(種類, 交流, 対象)` で一意なので、同じ依頼・同じ交流を受け直しても増えず、答えは状態が変わるときだけ記録します（冪等）。外への答えは送信トレイ経由で、トランザクションの中で外部の I/O はしません。
 
 - **受信: ローカルの投稿へのリモートの交流**（§6）
   - `ReplyRequest` / `AnnounceRequest` / `QuoteRequest` は上の表のとおり、その場で答えるか、`pending` で作者を待ちます。
@@ -275,7 +275,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 返信の一覧 | 投稿の `replies` はコレクションへの参照（IRI か埋め込み）として読む。`Collection` / `OrderedCollection` / `CollectionPage` / `OrderedCollectionPage` は、`items`（順序付きなら `orderedItems`）を 100 件まで、`first` と `next` をページへの参照として読む（Mastodon は最初のページを埋め込む） |
 | 方言 | Misskey の `_misskey_content`（MFM の原文）・`_misskey_summary` は使わず、`content` / `summary` を使う。引用（FR-114、[ADR-0069](../adr/0069-quote-posts.md) §2）は、FEP-044f の `quote`・`_misskey_quote`・`quoteUrl`・`quoteURL`・`quoteUri`・`rel` が `_misskey_quote` の IRI の FEP-e232 の `Link`（`mediaType` が AS2 の JSON-LD）の順に最初の 1 つを読む。`quote` なら形式は `fep_044f` で `quoteAuthorization` も読み、それ以外は `legacy`。`QuoteAuthorization` の文書は `attributedTo`・`interactingObject`・`interactionTarget` を読む。本文の `quote-inline` のフォールバックはそのまま残す。返信の `replyAuthorization` と `Announce` の `announceAuthorization` を読み、`ReplyRequest`・`AnnounceRequest` は `QuoteRequest` と同じく `instrument` を読む（`ReplyAuthorization`・`AnnounceAuthorization` の文書も `attributedTo`・`interactingObject`・`interactionTarget` を読む）。投稿の `interactionPolicy` の `canReply`・`canAnnounce`・`canQuote` は、`automaticApproval` と `manualApproval`（GoToSocial 0.20 より前の `always` と `approvalRequired` も）を分けたまま、IRI ごとに相手（`Public` は `everyone`、作者の followers / following は `followers` / `following`、作者自身は `author`、ほかは `account`）として読み、自動の相手が残らない種類は作者だけとする。`can*` が無い・`null`・`{}` の種類は宣言なしとする（[ADR-0155](../adr/0155-interaction-policy.md) §2、data-model §4.4）。`isCat` などの未知のプロパティは無視する |
 | 未知のプロパティ | 無視する（[AS2 Core §5](https://www.w3.org/TR/activitystreams-core/#extensibility)）。原本は `received_activity_documents` に短期間残る |
-| 文字列 | 文書を読むとき、すべての文字列（キーを含む）のヌル文字（`\u0000`）を `U+FFFD` に置き換える。不正な UTF-8 と対になっていないサロゲートも JSON の復号で `U+FFFD` になるので、以降の値はどれもそのまま両方の方言の文字列の列に書ける（[data-model §1.2](data-model/01-conventions.md#12-論理型)）。取り除かずに置き換えるのは、前後の文字列がつながって別の値（`java\u0000script:` → `javascript:`）にならないようにするため。IRI では `%EF%BF%BD` になる |
+| 文字列 | 文書を読むとき、すべての文字列（キーを含む）のヌル文字（`\u0000`）を `U+FFFD` に置き換える。不正な UTF-8 と対になっていないサロゲートも JSON の復号で `U+FFFD` になるので、以降の値はどれもそのまま両方の方言の文字列の列に書ける。取り除かずに置き換えるのは、前後の文字列がつながって別の値（`java\u0000script:` → `javascript:`）にならないようにするため。IRI では `%EF%BF%BD` になる |
 | 上限 | 文書のネストの深さ 16、`tag` 100 件、`to` / `cc` 合わせて 1,000 件、本文 HTML 100 KiB。超えたら、その文書を正規化できないものとして扱う |
 
 ## 5. リモート HTML のサニタイズ
@@ -361,7 +361,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   3. 返信先がローカルの投稿か、返信先の会話に削除されていないローカルの投稿がある（投稿が宣言した会話では判定しない。ADR-0154 §2）
   4. 参加中のリレーが運んだ（`relay_id` の付いた）`public` の投稿（§13）
   - どれにも当てはまらない `Create` は `ErrDropActivity` で捨て、受信の記録だけが残ります（`info` のログ）。未知のリモートの Actor へのメンションは、範囲に入ると決まってから取得します。
-- 書き込む行とメンション・ハッシュタグ・カスタム絵文字・添付・投票の扱いは [data-model §4.4 のリモート投稿のコマンド](data-model/04-tables/04-content.md#リモート投稿のコマンド) にあります。コントラクトテストは `federationtest.RemoteStatusContract` で、主要実装のフィクスチャの `Note` を取り込みます。
+- 書き込む行とメンション・ハッシュタグ・カスタム絵文字・添付・投票の扱いは `content.Service` の `IngestRemoteStatus` にあります。コントラクトテストは `federationtest.RemoteStatusContract` で、主要実装のフィクスチャの `Note` を取り込みます。
 - 返信先は受信時に 1 段だけ非同期（`federation.fetch_object`、ペイロードに残りの深さ）で取得し、スレッドの祖先と返信の一覧は利用者がスレッドを開いたときに深さ 20・件数 100 まで取得します。
   - **取得した投稿**: 取得した文書が投稿で、`attributedTo` があり、そのオリジンが投稿の `id` と同じで、作者を解決でき（未知なら取得）、作者が有効なリモートのアカウントで、URI に削除（`status_deletions` の tombstone）も `remote_object_tombstones` も無いときだけ、`content.IngestRemoteStatus`（`activity_uri` は NULL）で取り込みます。取り込み範囲の判定はしません（受信した投稿の返信先・利用者が開いたスレッド・検索で解決した投稿・フォローされている人がブーストした投稿は ADR-0006 の範囲、利用者が開いたプロフィールの outbox の最初のページの公開投稿は ADR-0006 の範囲です）。`Announce` の対象・`fetch_object`・`fetch_outbox`・`Resolver` は、この取り込み（`StatusHandlers.fetched`）を共有します。`Announce` の対象と検索で解決した投稿は、受信した投稿と同じく返信先を 1 段だけ取得します。
   - **受信時**: 取り込んだ返信の親が未知でリモートなら、取り込みのトランザクションで `federation.fetch_object`（祖先 0）を `queue.Outbox` に投入します。取得した親の親は取得しません。
@@ -394,8 +394,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - **件数の上限**: 1 回の取得の文書は、outbox・ページ・投稿 20 件の合わせて 22 件までです（`OutboxMaxDocuments`）。取得の失敗と取り込まない文書は `info` のログを残して次の投稿に進み、outbox やページが取得できなければジョブを完了にします。ストアの失敗は `Retry` です。
   - 取り込んだ投稿は、ほかの取得した投稿と同じく保持期間（ADR-0006、`content.purge_remote_statuses`）の対象で、プロフィールのタイムラインに出ます。新しいテーブルは使いません。
   - コントラクトテストは `federationtest.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の outbox のフィクスチャ（`outbox.json`・`outbox-page.json`）を取り込みます。
-- 投稿の ID は `published` から作った UUIDv7 です（[data-model §1.3](data-model/01-conventions.md#13-id-とキーセットページング)、#71）。
-- 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge_records` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0006、[data-model §4.4 のリモート投稿の保持期間](data-model/04-tables/04-content.md#リモート投稿の保持期間)、§4.2、§4.8）。
+- 投稿の ID は `published` から作った UUIDv7 です（[ADR-0003 §6](../adr/0003-database-abstraction.md)、#71）。
+- 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge_records` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0006 §13）。
   保持期間で消えた投稿（`origin = retention`）は tombstone にならないので、同じ URI の `Create` や取得でまた取り込めます。コントラクトテストは `federationtest.RetentionContract` です。
 
 ### 6.4 投稿の取り直し
@@ -437,7 +437,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | ドメインイベント | アクティビティ | 宛先 |
 | --- | --- | --- |
 | `content.status_created`（承認を待つローカルの返信を除く）、`content.status_released`（承認されたローカルの返信） | `Create` | §7.2 の公開範囲ごとの宛先 |
-| `content.status_revised`（承認を待つローカルの返信を除く） | `Update` | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー。[data-model §7](data-model/07-visibility-and-delivery.md#7-公開範囲と配送)） |
+| `content.status_revised`（承認を待つローカルの返信を除く） | `Update` | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
 | `content.status_deleted`（アカウントの消去による `origin = account_deletion` を除く。`Delete`（Actor）が代わりを務める） | `Delete`（`Tombstone`） | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
 | `content.boosted` / `content.boost_retracted`（`Federates` のときだけ） | `Announce` / `Undo Announce` | ブーストした人のリモートフォロワー + 元投稿の作者（リモートなら） |
 | `content.favourited` / `content.unfavourited`（リモートの投稿だけ） | `Like` / `Undo Like`（本文は projector がイベントから組み立てて保存する。Mastodon と同じく宛先を持たない） | 投稿の作者の inbox |
@@ -453,7 +453,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `account.profile_revised`（ローカルのプロフィールの 2 版目以降。最初の版はアカウントの作成で、まだだれもフォローしていない） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.aliases_changed`（ローカルのアカウントの別名の追加・削除。ADR-0089。連合の向きが `publish` を通すときだけ積む） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `timeline.featured_tags_changed`（ローカルのアカウントの注目のハッシュタグの変更。ADR-0006 §17。受け取ったサーバーは `featuredTags` を取得し直す） | `Update`（Actor の文書） | リモートフォロワーの inbox |
-| `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)） |
+| `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox |
 | `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1。本人が無効化している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deactivated` / `reactivated`。§11.2。凍結している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
 | `account.moved`（ローカルのアカウントが自分で移転したとき。`initiated_by = self`。ADR-0089） | `movedTo` 付きの `Update`（Actor の文書）、続けて `Move`（`object_type = move`、`object_id` は `account_moves.id`。`actor` と `object` はこちらの Actor、`target` は移転先の Actor、`to` はこちらの `followers`、`id` は `/ap/activities/{uuid}`） | リモートフォロワーの inbox（shared inbox に集約） |
@@ -747,7 +747,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   - 項目ごとに、閲覧者を署名者のドメインとして `content.CanView`（`ContextObjectFetch`）を当て、見られない項目は省きます（ページは詰めない）。リモートの投稿は、未ログインの閲覧者として見られるもの（`public` / `unlisted`）だけです。
   - 併合されたローカルの会話の IRI は、併合先がローカルの会話ならその IRI へ `308`、そうでなければ 404 です。リモートの IRI を持つ会話と存在しない会話は 404、どの項目も見られない会話は空のコレクションです。
   - 署名の無い要求への応答（Authorized Fetch が無効なとき）は `public, max-age=60`、署名のある要求への応答は `private, no-store` です。Authorized Fetch の表ではコレクションとして扱います。
-- Authorized Fetch（FR-408、S）はインスタンス設定 `authorized_fetch`（既定 `false`、[data-model §4.9](data-model/04-tables/09-instance.md#49-instance)）で有効にします。設定はリクエストごとに読むので、変更はすぐに効きます。
+- Authorized Fetch（FR-408、S）はインスタンス設定 `authorized_fetch`（既定 `false`）で有効にします。設定はリクエストごとに読むので、変更はすぐに効きます。
   有効なときは、検証できる署名の無い GET（署名なし・検証できない・未ログインとして扱う署名者）に次のように答えます。
 
   | 対象 | 署名なし | 検証できる署名 |
@@ -764,7 +764,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 ## 11. モデレーションとの連携
 
-`moderation` の投影（`account_restrictions`・`domain_restrictions`、[data-model §5.2](data-model/05-states-and-policies.md#52-処分の種類と制限能力の剥奪)）を、`moderation` の公開 API（`moderation.FederationPolicy`）から読みます。`federation` はテーブルを直接見ません。
+`moderation` の投影（`account_restrictions`・`domain_restrictions`）を、`moderation` の公開 API（`moderation.FederationPolicy`）から読みます。`federation` はテーブルを直接見ません。
 
 | 制限 | 受信 | 送信 | 取得・表示 |
 | --- | --- | --- | --- |
@@ -775,7 +775,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | ドメインの `media_sensitive`（`force_sensitive`） | 受け付ける | 送る | 添付をセンシティブとして表示 |
 | アカウントの `federation`（`suspend` / `ban`） | リモートなら `Delete` / `Undo` / `Reject` 以外を捨てる | ローカルなら、下の「処分の伝播」のアクティビティ以外を送らない | ローカルの Actor の GET は、空のプロフィールに `suspended: true` を付けた Actor を返す（鍵は返す）。投稿などのオブジェクトの GET は `404` |
 
-- 判定はサブドメインにも効きます（[data-model §4.3](data-model/04-tables/03-moderation.md#ドメイン単位の処分)）。
+- 判定はサブドメインにも効きます。
 - インスタンス設定 `federation_scope` が `allowlist` のとき（[ADR-0159](../adr/0159-federation-allowlist-and-blocklist-subscriptions.md)）、`moderation.FederationPolicy` は、自身も親ドメインも `domain_allows` に無いドメインを、`suspend` の制限（`federation`・`profile_view`）を持つものとして返します。表の各入口は今の判定のまま、新しい分岐を持ちません。許可は処分を打ち消さず、許可したドメインの処分はそのまま効きます。`domain_restrictions` には行を書かず、判定のときに `domain_allows` と設定から合成します。
   リンクのカードの取得先はウェブサイトで連合の相手ではないので、`FederationPolicy.Unscoped`（処分だけを読む）で判定します。`allowlist` の間は、ローカルの Actor・投稿・コレクションの GET が Authorized Fetch の設定にかかわらず署名を求めます（§10）。NodeInfo は `metadata.federationScope` に値を出します。
   `allowlist` への切り替えと、`allowlist` の間の許可の削除は、`allowlist_cutoffs` を記録し、ジョブ `moderation.sever_allowlist` がドメインの `suspend` と同じく両方向のフォローを切って `relationship_severances` に記録します（FR-717）。
@@ -808,7 +808,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | それ以外（`limit`・`restrict_posting`・`force_sensitive` など） | 送らない | — |
 
 - `suspended` は Mastodon 拡張（`toot:suspended`）で、`@context` は §7.4 の Actor と同じです。凍結中の文書は `federation.ActorDocument.Suspend` が作り、`id`・コレクション・inbox・鍵は残します。
-- 凍結とその終わりは、`moderation` が処分・解除・期限切れの行の削除のトランザクションで発行する `moderation.account_suspension_changed`（[data-model §4.3](data-model/04-tables/03-moderation.md#制限投影)）から、`federation.RegisterSuspensionProjectors` が同じトランザクションで `Update`（Actor）を積みます。重なった凍結の 2 つ目と、1 つが残る解除は何も送りません。
+- 凍結とその終わりは、`moderation` が処分・解除・期限切れの行の削除のトランザクションで発行する `moderation.account_suspension_changed`から、`federation.RegisterSuspensionProjectors` が同じトランザクションで `Update`（Actor）を積みます。重なった凍結の 2 つ目と、1 つが残る解除は何も送りません。
   文書は展開の始めの時点の状態から組み立てるので（§7.4）、凍結と解除が続けて起きても、後から展開した `Update` ほど新しい状態を表します。
 - BAN の `Delete`（Actor）は、削除の予約の期日に `account.execute_deletions` がアカウントの削除（`deleted`）を記録したときに、§7.1 のアカウント削除と同じ経路で送ります。凍結中でも `Delete` は止めません。
 - リモートのアカウントの `suspend` は、凍結を始めた処分のトランザクションで `graph.SeverByModeration` が両方向のフォローを切り、その `FollowTerminated`（`reason = moderation`）から §7.1 の projector が `Reject`（そのアカウントのフォロー）と `Undo`（ローカルの利用者のフォロー）を積みます。
@@ -864,7 +864,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 参加はインスタンス Actor の `Follow` です。`id` は `/ap/activities/{relay_events.id}`、`object` は `mastodon` なら `as:Public`、`litepub` ならリレーの Actor です。
   `relay_events`（`follow_sent`）・`relay_states`（`pending`）・`outbound_activities`（`object_type = relay`）・保存した本文・展開ジョブを 1 つのトランザクションで書きます。
 - 脱退は `Undo(Follow)`（`left`）、参加し直しは新しい `id` の `Follow`（`rejected` か `left` から）です。登録の削除は `left` か `rejected` のときだけで、`relays` と子の行を消します。
-- 状態の遷移は `federation.RelayStatus.Next` が決めます（[data-model §4.8](data-model/04-tables/08-federation.md#48-federation)）。`Accept` / `Reject` は、`object` の `id` がリレーの現在の `Follow` のものだけを受け付けます。
+- 状態の遷移は `federation.RelayStatus.Next` が決めます。`Accept` / `Reject` は、`object` の `id` がリレーの現在の `Follow` のものだけを受け付けます。
   主体は、`litepub` なら登録した Actor、`mastodon` なら inbox か shared inbox が登録の inbox と一致する Actor でなければ捨てます。`accepted` で主体を `relay_actor_uri` に記録します。同じ答えをもう一度受けても何も変えません。
 - インスタンス Actor への `Follow` は、参加中のリレーの Actor からのもの（`litepub` のリレーはフォローし返す）に `Accept` を、それ以外に `Reject` を送ります。フォローとしては記録しません。
 - 監査ログは登録・参加・脱退・削除（`relay_added`・`relay_followed`・`relay_unfollowed`・`relay_removed`）と、受け取った答え（`relay_accepted`・`relay_rejected`、`actor_kind = remote`）を `target_kind = relay` で記録します。
@@ -888,7 +888,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   - リレーの Actor の `Announce` は、`object` をいつもオリジンから取得し、作者の制限を確かめて、`public` なら取り込んで記録します。ブーストとしては記録しません。
 - 取り込んだ投稿は、ほかのリモートの `public` の投稿と同じく連合タイムラインとハッシュタグのタイムラインに出ます。ホームには出ず、通知も作りません。
 - 関門の結果はメトリクス `my.relay.activities`（`my.outcome` が `admitted` / `over_limit` / `restricted` / `not_receiving`）に出ます。管理画面と CLI は、直近 24 時間の時ごとの件数から、取り込んだ件数（上限まで）と上限で捨てた件数を示します。
-- `relayed_statuses` の投稿は、`content.purge_relayed_statuses` が公開から設定 `relay_status_retention_days`（既定 7 日）で消します（[data-model §4.4](data-model/04-tables/04-content.md#リモート投稿の保持期間)）。脱退しても、取り込んだ投稿はすぐには消しません。
+- `relayed_statuses` の投稿は、`content.purge_relayed_statuses` が公開から設定 `relay_status_retention_days`（既定 7 日）で消します。脱退しても、取り込んだ投稿はすぐには消しません。
 
 ## 14. 連合の向き
 
@@ -908,7 +908,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | `protect` | 保護のための手続き（`Block` / `Undo Block` と `Flag` の送受信、外の Actor の自分自身の `Update` / `Delete` の受信） | × | ○ | ○ | ○ |
 | `identify` | 署名の検証のための鍵の取得と提供（外の Actor の取得、ローカルの Actor・インスタンス Actor の GET、WebFinger・host-meta・NodeInfo） | × | ○ | ○ | ○ |
 
-- `inbound` の `follow_in` の「断る」は、受けた `Follow` に `Reject` を返すことです。承認待ちを作りません。この `Reject` は対応するフォローの行が無いので、`outbound_activities.object_type = 'refusal'` として記録して配送します（[data-model §4.9](data-model/README.md)）。
+- `inbound` の `follow_in` の「断る」は、受けた `Follow` に `Reject` を返すことです。承認待ちを作りません。この `Reject` は対応するフォローの行が無いので、`outbound_activities.object_type = 'refusal'` として記録して配送します。
 - `retract` は、`inbound` に狭めたあとも、それまでに外へ出したものを消せるように通します。宛先は元の配送（`deliveries`）とその時点のフォロワーだけで、共有 inbox やリレーのフェーズは付けません。
 - ドメインの処分（§11）はモードと独立に効きます。モードが通しても、処分が止めるものは止まります。
 - サービスのクローズ（[§15](#15-サービスの終了)）はモードより先に判定します。クローズの後は、モードが `off` / `inbound` でもクローズの `Delete`（Actor）を送り、それ以外はモードが `both` でも通しません（ADR-0088 §2。ADR-0006 の「`off` は何も通さない」への例外）。
@@ -961,7 +961,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 
 ## 15. サービスの終了
 
-[ADR-0088](../adr/0088-service-shutdown-modes.md) §2・§3（FR-809）の連合の側の実装です。状態（`none` / `announced` / `closed` / `delivery_completed`）は `instance` モジュールが持ち（[data-model §4.9](data-model/04-tables/09-instance.md#49-instance)）、リクエストとジョブごとに読みます。各入口は `instance.ClosureAllows(state, 操作)` に聞くだけで、状態の値では分岐しません。
+[ADR-0088](../adr/0088-service-shutdown-modes.md) §2・§3（FR-809）の連合の側の実装です。状態（`none` / `announced` / `closed` / `delivery_completed`）は `instance` モジュールが持ち、リクエストとジョブごとに読みます。各入口は `instance.ClosureAllows(state, 操作)` に聞くだけで、状態の値では分岐しません。
 
 ### 15.1 判定
 

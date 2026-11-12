@@ -280,7 +280,7 @@ type CreateInput struct {
 // Create posts a local status. The text becomes HTML with mentions of active accounts (local
 // ones, and remote ones resolved before the transaction), hashtags, and URLs linked; attached media must be the author's own processed uploads
 // (ErrMediaNotFound, ErrMediaNotReady); the visibility is capped by the author's visibility ceiling
-// (data-model §5.4) and stored as capped. A reply must target a status the author may see.
+// (ADR-0058 §11) and stored as capped. A reply must target a status the author may see.
 // A poll (FR-112) must keep the limits of content.NewPoll (content.ErrInvalidPoll) and comes
 // without media (ErrPollWithMedia); it is posted with a tally observation of no votes. A quote
 // must name a status the author may see (ErrQuoteTargetNotFound) and may quote
@@ -875,7 +875,7 @@ func (s *Service) ownStatus(ctx context.Context, accountID, statusID string) (co
 
 // PostingLimits returns what the account's current restrictions let it post: the visibility
 // ceiling that Create applies and the visibilities that a new status keeps as asked for
-// (data-model §5.4), so that a client can say so before posting. A one-person server leaves local
+// (ADR-0058 §11), so that a client can say so before posting. A one-person server leaves local
 // out of those visibilities, since Create refuses it (ADR-0152 §5).
 func (s *Service) PostingLimits(ctx context.Context, accountID string) (PostingLimits, error) {
 	r, err := s.d.Restrictions.Restrictions(ctx, accountID)

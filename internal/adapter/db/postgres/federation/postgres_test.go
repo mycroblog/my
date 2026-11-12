@@ -82,6 +82,7 @@ func TestRetentionContract(t *testing.T) {
 				Timeline:       postgrestimeline.NewRepository(db),
 				Notifications:  postgresnotification.NewRepository(db),
 				Inbox:          NewRepository(db),
+				Quotes:         postgrescontent.NewStatusRepository(db),
 			},
 			Interactions: postgrescontent.NewInteractionRepository(db),
 			Federation:   NewRepository(db),

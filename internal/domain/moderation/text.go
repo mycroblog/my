@@ -9,7 +9,7 @@ import (
 )
 
 // TextError reports a text that a moderation record cannot hold: one that is not valid UTF-8
-// without NUL (data-model §1.2), or one longer than Max characters. The records' Validate
+// without NUL, or one longer than Max characters. The records' Validate
 // methods return it wrapped together with their own sentinel error, such as ErrInvalidAction.
 type TextError struct {
 	// Field is the record's column, such as public_comment or reason.
@@ -25,8 +25,7 @@ func (e *TextError) Error() string {
 	return fmt.Sprintf("the %s is not valid UTF-8 without NUL", e.Field)
 }
 
-// validText reports whether s is text that every database dialect stores as it is
-// (data-model §1.2).
+// validText reports whether s is text that every database dialect stores as it is.
 func validText(s string) bool { return utf8.ValidString(s) && !strings.ContainsRune(s, 0) }
 
 // checkText checks the text of field: valid text of at most maxLen characters.

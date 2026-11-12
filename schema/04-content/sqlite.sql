@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
 -- Desired-state schema for SQLite (ADR-0023): the tables of the content module
--- (docs/architecture/data-model/04-tables/04-content.md). schema/README.md describes the layout
+-- (internal/app/content). schema/README.md describes the layout
 -- and the conventions of this directory.
 
 -- content: statuses (data-model §4.4) --------------------------------------------------------
@@ -209,7 +209,7 @@ CREATE TABLE status_mention_index (
 ) STRICT;
 CREATE INDEX status_mention_index_status_id ON status_mention_index (status_id);
 
--- Projection: the counters of each status that is not deleted (data-model §2.3).
+-- Projection: the counters of each status that is not deleted.
 CREATE TABLE status_counters (
   status_id TEXT NOT NULL PRIMARY KEY,
   replies_count INTEGER NOT NULL CHECK (replies_count >= 0),
@@ -843,7 +843,7 @@ CREATE TABLE poll_tallies (
   PRIMARY KEY (poll_id, position)
 ) STRICT;
 
--- moderation and content: actions on statuses (#364, data-model §4.3, §4.4) -------------------
+-- moderation and content: actions on statuses (#364, data-model §4.4) -------------------------
 
 -- Projection (content): a status shown as sensitive because of a mark_statuses_sensitive action or
 -- a mark_sensitive decision of a hook, until that source ends (ADR-0147 §8). source_kind names what
@@ -857,7 +857,7 @@ CREATE TABLE status_sensitivity_overrides (
 ) STRICT;
 CREATE INDEX status_sensitivity_overrides_source_kind_source_id ON status_sensitivity_overrides (source_kind, source_id);
 
--- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
+-- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
 -- the rows of an account.
 CREATE INDEX boosts_booster_account_id ON boosts (booster_account_id);
 

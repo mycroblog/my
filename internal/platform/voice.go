@@ -195,7 +195,7 @@ func (m voiceMembers) Member(ctx context.Context, accountID string) (appvoice.Me
 		return appvoice.Member{}, nil
 	}
 	// A suspension or a ban restricts the federation of the account, and a limit its
-	// unsolicited reach (data-model §5.2).
+	// unsolicited reach.
 	rs, err := m.a.AccountPolicy.Restrictions(ctx, accountID)
 	if err != nil {
 		return appvoice.Member{}, err

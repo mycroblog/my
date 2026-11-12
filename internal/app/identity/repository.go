@@ -17,7 +17,7 @@ var ErrNotFound = errors.New("identity: not found")
 // ErrEmailTaken reports that another user already has the email address as primary address.
 var ErrEmailTaken = errors.New("identity: email address is taken")
 
-// Repository is the persistence port of the identity module (data-model §4.1). The database
+// Repository is the persistence port of the identity module. The database
 // adapters implement it and pass identitytest.AccountRepositoryContract, identitytest.PreferencesRepositoryContract,
 // and identitytest.RegistrationRepositoryContract.
 //
@@ -98,8 +98,8 @@ type Repository interface {
 	FindUnrevokedSession(ctx context.Context, tokenHash []byte) (identity.Session, identity.SessionActivity, error)
 }
 
-// TOTPRepository is the part of Repository that keeps TOTP enrollments and their recovery codes
-// (data-model §4.1). The database adapters pass identitytest.AccountRepositoryContract.
+// TOTPRepository is the part of Repository that keeps TOTP enrollments and their recovery codes.
+// The database adapters pass identitytest.AccountRepositoryContract.
 type TOTPRepository interface {
 	// InsertTOTPEnrollment records an enrollment with the digests of its recovery codes.
 	InsertTOTPEnrollment(ctx context.Context, tx uow.Tx, e identity.TOTPEnrollment, recoveryCodeHashes [][]byte) error
@@ -115,7 +115,7 @@ type TOTPRepository interface {
 	CountUnusedTOTPRecoveryCodes(ctx context.Context, enrollmentID string) (int, error)
 }
 
-// PasskeyRepository is the part of Repository that keeps passkeys (data-model §4.1). The
+// PasskeyRepository is the part of Repository that keeps passkeys. The
 // database adapters pass identitytest.AccountRepositoryContract.
 type PasskeyRepository interface {
 	// InsertPasskeyCredential records a passkey.

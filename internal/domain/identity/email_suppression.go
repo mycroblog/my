@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// The suppression of email addresses that do not receive email (ADR-0086 §5, data-model §4.1):
+// The suppression of email addresses that do not receive email (ADR-0086 §5):
 // a failure of delivery (email_delivery_failures) suppresses its address until a lift
 // (email_suppression_lifts); email_suppressions holds the addresses suppressed now.
 

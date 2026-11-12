@@ -91,7 +91,7 @@ func FromNullString(s *string) string {
 	return *s
 }
 
-// ToInt32 converts a value of the logical int type (data-model §1.2), which is integer in PostgreSQL.
+// ToInt32 converts a value of the logical int type, which is integer in PostgreSQL.
 func ToInt32(n int, what string) (int32, error) {
 	if n < math.MinInt32 || n > math.MaxInt32 {
 		return 0, fmt.Errorf("postgres: %s %d is out of the integer range", what, n)
