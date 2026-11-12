@@ -73,10 +73,11 @@ func (Adapter) ParseAcceptSignature(value string) ([]federation.RequestedSignatu
 }
 
 const (
-	headerSignature      = "Signature"
-	headerSignatureInput = "Signature-Input"
-	headerDigest         = "Digest"
-	headerContentDigest  = "Content-Digest"
+	headerSignature       = "Signature"
+	headerSignatureInput  = "Signature-Input"
+	headerDigest          = "Digest"
+	headerContentDigest   = "Content-Digest"
+	headerAcceptSignature = "Accept-Signature"
 )
 
 func contains(list []string, s string) bool {
