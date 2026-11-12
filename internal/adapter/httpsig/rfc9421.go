@@ -19,8 +19,9 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// unbounded disables the library's own time checks; federation.SignatureVerifier applies the
-// window of ADR-0006 with the injected clock. 100 years keeps time arithmetic in range.
+// unbounded is the clock skew the library allows for created and expires, with no max age:
+// federation.SignatureVerifier applies the window of ADR-0006 with the injected clock. 100 years
+// keeps time arithmetic in range.
 const unbounded = 100 * 365 * 24 * time.Hour
 
 // parseRFC9421 reads the first signature of Signature-Input and checks that Signature carries
@@ -141,7 +142,7 @@ func verifyRFC9421(r *federation.SignedRequest, sig *federation.Signature, opts 
 		rfc9421.WithValidateAllSignatures(),
 		rfc9421.WithCreatedTimestamp(false),
 		rfc9421.WithExpiresTimestamp(false),
-		rfc9421.WithMaxAge(unbounded),
+		rfc9421.WithoutMaxAge(),
 		rfc9421.WithValidityTolerance(unbounded),
 	)
 	if err != nil {
@@ -204,8 +205,14 @@ func signRFC9421(req *kernel.HTTPRequest, key federation.SigningKey, opts federa
 	if label == "" {
 		label = "sig1"
 	}
+	ids := make([]string, len(opts.Components))
+	for i, c := range opts.Components {
+		if ids[i], err = identifier(c); err != nil {
+			return fmt.Errorf("%w: component %q: %w", kernel.ErrInvalidHTTPRequest, c, err)
+		}
+	}
 	signerOpts := []rfc9421.SignerOption{
-		rfc9421.WithComponents(opts.Components...),
+		rfc9421.WithComponents(ids...),
 		rfc9421.WithTTL(opts.TTL),
 		rfc9421.WithLabel(label),
 		rfc9421.WithTag(opts.Tag),
@@ -236,44 +243,48 @@ func signRFC9421(req *kernel.HTTPRequest, key federation.SigningKey, opts federa
 	return nil
 }
 
-// parseAcceptSignature reads an Accept-Signature dictionary (RFC 9421 §5.1).
-func parseAcceptSignature(value string) ([]federation.RequestedSignature, error) {
-	d, err := httpsfv.UnmarshalDictionary([]string{value})
+// identifier renders a component as Signature.Components holds it in the serialized Structured
+// Field form the library takes: `@query-param;name="Pet"` becomes `"@query-param";name="Pet"`.
+func identifier(c string) (string, error) {
+	name, params, hasParams := strings.Cut(c, ";")
+	bare, err := httpsfv.Marshal(httpsfv.NewItem(name))
 	if err != nil {
+		return "", err
+	}
+	if hasParams {
+		return bare + ";" + params, nil
+	}
+	return bare, nil
+}
+
+// parseAcceptSignature reads an Accept-Signature dictionary (RFC 9421 §5.1). Members the library
+// cannot use are left out, as RFC 9421 permits; it fails only when none is usable.
+func parseAcceptSignature(value string) ([]federation.RequestedSignature, error) {
+	reqs, err := rfc9421.ParseAcceptSignature(http.Header{headerAcceptSignature: {value}})
+	if err != nil && len(reqs) == 0 {
 		return nil, fmt.Errorf("%w: Accept-Signature: %w", federation.ErrMalformedSignature, err)
 	}
-	var out []federation.RequestedSignature
-	for _, label := range d.Names() {
-		m, _ := d.Get(label)
-		list, ok := m.(httpsfv.InnerList)
-		if !ok {
-			return nil, fmt.Errorf("%w: Accept-Signature %s is not an inner list", federation.ErrMalformedSignature, label)
+	out := make([]federation.RequestedSignature, 0, len(reqs))
+	for _, r := range reqs {
+		rs := federation.RequestedSignature{
+			Label:     r.Label,
+			KeyID:     r.KeyID,
+			Algorithm: string(r.Algorithm),
+			Tag:       r.Tag,
+			Nonce:     r.Nonce,
+			Created:   r.Created,
+			Expires:   r.Expires,
 		}
-		rs := federation.RequestedSignature{Label: label}
-		for _, it := range list.Items {
+		for _, id := range r.Components {
+			it, err := httpsfv.UnmarshalItem([]string{id})
+			if err != nil {
+				return nil, fmt.Errorf("%w: Accept-Signature: %w", federation.ErrMalformedSignature, err)
+			}
 			c, err := componentString(it)
 			if err != nil {
 				return nil, err
 			}
 			rs.Components = append(rs.Components, c)
-		}
-		for _, name := range list.Params.Names() {
-			v, _ := list.Params.Get(name)
-			s, _ := v.(string)
-			switch name {
-			case "keyid":
-				rs.KeyID = s
-			case "alg":
-				rs.Algorithm = s
-			case "tag":
-				rs.Tag = s
-			case "nonce":
-				rs.Nonce = s
-			case "created":
-				rs.Created = true
-			case "expires":
-				rs.Expires = true
-			}
 		}
 		out = append(out, rs)
 	}
