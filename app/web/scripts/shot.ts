@@ -5,7 +5,7 @@
 // minutes without one), and opens each story's frame in the Chromium of Playwright.
 //
 //   node scripts/shot.ts <target> ... [--width 390,1440] [--theme light,dark] [--locale en,ja]
-//   node scripts/shot.ts --changed     the stories of the features and components changed since origin/main
+//   node scripts/shot.ts --changed     the stories of the features and components changed since origin/redesign-web
 //   node scripts/shot.ts --stop        stops the servers
 //
 // A target is a story id (screens-admin-rules--normal), a story file (app/ui/src/Button.stories.tsx), a route of a
@@ -308,9 +308,9 @@ function git(...args: string[]): string[] {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).split("\n").filter(Boolean);
 }
 
-/** The story files of the features of app/web and the components of app/ui changed since origin/main. */
+/** The story files of the features of app/web and the components of app/ui changed since origin/redesign-web. */
 function changedStoryFiles(): string[] {
-  const [base = "HEAD"] = git("merge-base", "origin/main", "HEAD");
+  const [base = "HEAD"] = git("merge-base", "origin/redesign-web", "HEAD");
   const changed = [...git("diff", "--name-only", base), ...git("ls-files", "--others", "--exclude-standard")];
   const files = new Set<string>();
   for (const path of changed) {
@@ -383,7 +383,7 @@ async function main(args: string[]): Promise<void> {
   if (changed) {
     const files = changedStoryFiles();
     if (files.length === 0 && targets.length === 0) {
-      console.error("web:shot: no feature of app/web and no component of app/ui changed since origin/main");
+      console.error("web:shot: no feature of app/web and no component of app/ui changed since origin/redesign-web");
       return;
     }
     for (const file of files) cappedGroups.push(await storiesOfFile(file));

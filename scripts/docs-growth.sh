@@ -4,7 +4,7 @@
 # Holds the prose that agents read and maintain to its kind (ADR-0000 §6): `scripts/task.sh docs:growth` runs it.
 #
 #   scripts/docs-growth.sh [options]
-#     --base REF       compare with the merge base of REF and HEAD (default: origin/main)
+#     --base REF       compare with the merge base of REF and HEAD (default: origin/redesign-web)
 #     --allow-growth   report the growth but do not fail on it
 #     --root DIR       the repository (default: the one this script is in)
 #
@@ -41,7 +41,7 @@ usage() {
   exit 2
 }
 
-base="origin/main" allow=0
+base="origin/redesign-web" allow=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --base) base="${2:-}" && shift ;;

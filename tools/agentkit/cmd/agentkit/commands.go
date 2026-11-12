@@ -65,9 +65,9 @@ Workflow (instead of gh / scripts/task.sh loops):
   pr watch [<pr>...] [--interval 60s]                one line per event: merged, closed, head-moved, conflicting,
                                                        ci-failed, ci-cancelled, ci-green, dequeued (for the
                                                        Monitor tool)
-  check [--base origin/main] [--full]                  the quick checks of the changed files, one line each
+  check [--base REF] [--full]                          the quick checks of the changed files, one line each
                                                        (pr open runs them); --full: scripts/task.sh check:changed
-  regen [--base origin/main] [--dry-run]               run the generators the changed sources need
+  regen [--base REF] [--dry-run]                       run the generators the changed sources need
   gh sync                                              refresh the local cache of issues and pull requests
 
 Maintenance:
@@ -78,7 +78,7 @@ Maintenance:
                                                        of each ADR, which docs lint limits
   docs inventory                                       every command of my, metric, webhook event type, build tag,
                                                        and listed task is mentioned in its document
-  docs impact [--base origin/main]                     the user and operator documents (userdocs) of the changed
+  docs impact [--base REF]                             the user and operator documents (userdocs) of the changed
                                                        paths
   map check                                            every path is under a context-map.yaml, no map repeats one
                                                        above it, every user document is some map's userdocs

@@ -432,7 +432,7 @@ async function check(argv: string[]) {
   const locales = new Store().locales;
   if (flags.has("locale") && !locales.includes(flags.get("locale") as string))
     refuse(`--locale ${flags.get("locale")}: the locales are ${locales.join(", ")}`);
-  const only = flags.has("changed") ? changedIds(flags.get("base") ?? "origin/main") : undefined;
+  const only = flags.has("changed") ? changedIds(flags.get("base") ?? "origin/redesign-web") : undefined;
   const findings = await runCheck({ only, locales: flags.has("locale") ? [flags.get("locale") as string] : undefined });
   if (flags.has("changed"))
     console.log(only ? `checking ${only.size} changed key(s)` : "the i18n tool changed: checking every key");

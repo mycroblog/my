@@ -67,11 +67,11 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if branch == "main" || branch == "HEAD" {
+	if isTrunk(branch) || branch == "HEAD" {
 		return "", fmt.Errorf("on %s: work on a <type>/<issue>-<slug> branch (/work-on-issue)", branch)
 	}
 	if o.Base == "" {
-		o.Base = "main"
+		o.Base = repo.Trunk
 	}
 	if err := gate(r, branch, "origin/"+o.Base); err != nil {
 		return "", err
@@ -102,7 +102,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	}
 
 	var b strings.Builder
-	if o.Base != "main" {
+	if o.Base != repo.Trunk {
 		var prs []struct {
 			Number int `json:"number"`
 		}
@@ -570,7 +570,7 @@ func Wait(w io.Writer, n int, o WaitOptions) int {
 		case behind:
 			// GitHub has not seen the push yet.
 		case p.Mergeable == "CONFLICTING":
-			say("PR #%d conflicts with its base: CI does not run. Rebase onto origin/main, regenerate generated files (agentkit regen), push with --force-with-lease", n)
+			say("PR #%d conflicts with its base: CI does not run. Rebase onto "+trunkRef()+", regenerate generated files (agentkit regen), push with --force-with-lease", n)
 			return 3
 		default:
 			last = &p

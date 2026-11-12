@@ -26,7 +26,9 @@ const (
 )
 
 // rebaseFix is what brings a branch back to a state the merge queue takes.
-const rebaseFix = "in the branch's worktree: git fetch origin && git rebase origin/main && scripts/agentkit.sh regen && git push --force-with-lease; then run pr land again"
+func rebaseFix() string {
+	return "in the branch's worktree: git fetch origin && git rebase " + trunkRef() + " && scripts/agentkit.sh regen && git push --force-with-lease; then run pr land again"
+}
 
 // LandOptions are the waits of Land.
 type LandOptions struct {
@@ -62,7 +64,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 		say("PR #%d is closed without merging", n)
 		return 1
 	case p.Mergeable == "CONFLICTING":
-		say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix)
+		say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix())
 		return LandConflict
 	}
 	autoMerge := func() bool {
@@ -96,7 +98,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 			say("PR #%d is closed without merging", n)
 			return 1
 		case p.Mergeable == "CONFLICTING":
-			say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix)
+			say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix())
 			return LandConflict
 		default:
 			behind, from := follow.observe(p.HeadRefOid, pushedHead(main, p.HeadRefName))
@@ -146,7 +148,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 				for _, l := range mergeGroupFailure(n, o.LogDir) {
 					say("%s", l)
 				}
-				say("fix: %s", rebaseFix)
+				say("fix: %s", rebaseFix())
 				return LandDropped
 			}
 			for _, e := range transitions(old, had, cur) {
@@ -370,6 +372,8 @@ func followUp(n int, issues []int) []string {
 			remains = append(remains, fmt.Sprintf("#%d %s: %d of %d sub-issues open (%s)", pa.Number, pa.Title, left, pa.Summary.Total, short(open, 8)))
 		case pa.State != "OPEN":
 			queue = append(queue, pa.Number)
+		case repo.Trunk != repo.Default:
+			remains = append(remains, fmt.Sprintf("#%d %s: every sub-issue is closed; it closes with the merge of %s into %s", pa.Number, pa.Title, repo.Trunk, repo.Default))
 		default:
 			if _, err := gh.Run("issue", "close", strconv.Itoa(pa.Number), "-R", gh.Repo(), "--comment",
 				fmt.Sprintf("Every sub-issue is closed; #%d merged the last one.", n)); err != nil {
@@ -411,6 +415,21 @@ func followUp(n int, issues []int) []string {
 	return remains
 }
 
+// closeIntoTrunk closes the issues pull request n closes, which GitHub leaves open when it merges into a branch
+// other than the default one. An issue already closed is left as it is.
+func closeIntoTrunk(n int, issues []int) {
+	for _, num := range issues {
+		var is struct {
+			State string `json:"state"`
+		}
+		if err := gh.JSON(&is, "issue", "view", strconv.Itoa(num), "-R", gh.Repo(), "--json", "state"); err != nil || is.State != "OPEN" {
+			continue
+		}
+		_, _ = gh.Run("issue", "close", strconv.Itoa(num), "-R", gh.Repo(), "--comment",
+			fmt.Sprintf("Merged into %s by #%d.", repo.Trunk, n))
+	}
+}
+
 // landed finishes a merged pull request and prints the three closing lines.
 func landed(w io.Writer, r *repo.Repo, p prState) int {
 	issues := closedBy(p.Number)
@@ -424,6 +443,9 @@ func landed(w io.Writer, r *repo.Repo, p prState) int {
 	}
 	fmt.Fprintf(w, "merged: PR #%d %s%s\n", p.Number, p.Title, closes)
 	fmt.Fprintf(w, "cleaned up: %s\n", cleanUp(r, p))
+	if repo.Trunk != repo.Default {
+		closeIntoTrunk(p.Number, issues)
+	}
 	remains := followUp(p.Number, issues)
 	if len(remains) == 0 {
 		remains = []string{"nothing (the pull request closes no issue)"}
@@ -442,8 +464,8 @@ func cleanUp(r *repo.Repo, p prState) string {
 	if err != nil {
 		return "no local branch " + branch
 	}
-	if h := strings.TrimSpace(head); h != p.HeadRefOid && !ancestor(main, h, "origin/main") {
-		return fmt.Sprintf("kept %s: it has commits PR #%d did not merge (git log origin/main..%s)", branch, p.Number, branch)
+	if h := strings.TrimSpace(head); h != p.HeadRefOid && !ancestor(main, h, trunkRef()) {
+		return fmt.Sprintf("kept %s: it has commits PR #%d did not merge (git log %s..%s)", branch, p.Number, trunkRef(), branch)
 	}
 	wts, err := worktrees(main)
 	if err != nil {

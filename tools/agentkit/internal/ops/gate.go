@@ -100,7 +100,7 @@ func gate(r *repo.Repo, branch, base string) error {
 	if !linkedWorktree(r) {
 		dir := ".claude/worktrees/" + strings.ReplaceAll(branch, "/", "-")
 		return refusal("this is the main checkout; work happens in a worktree of its own",
-			fmt.Sprintf("git switch main && git worktree add %s %s && cd %s", dir, branch, dir))
+			fmt.Sprintf("git switch %s && git worktree add %s %s && cd %s", repo.Trunk, dir, branch, dir))
 	}
 	// The base as GitHub has it; offline, the last fetched one.
 	_, _ = repo.Git(r.Root, "fetch", "--quiet", "origin", strings.TrimPrefix(base, "origin/"))
