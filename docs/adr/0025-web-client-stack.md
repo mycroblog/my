@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-16
 - Deciders: @rosylilly
-- Issue: #85, #86, #188, #483, #567, #572, #845, #2863
+- Issue: #85, #86, #188, #483, #567, #572, #845, #2863, #2948
 
 ## Decision（決定）
 
@@ -14,7 +14,8 @@
 | UI ライブラリ | React 19（`react` / `react-dom` 19.3 系）、Strict Mode |
 | メモ化 | React Compiler 1.0 の規則を全コードに適用する（実装は §9）。手動の `useMemo` / `useCallback` / `memo` は原則書かない |
 | 言語 | TypeScript（`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）。版は §7 |
-| ビルド | Vite 8 + `@vitejs/plugin-react` 6。Bun をパッケージ管理とスクリプト実行に使う |
+| ビルド | Vite 8 + `@vitejs/plugin-react` 6 |
+| 実行環境 | Bun だけ。パッケージ管理・スクリプト・すべてのツールを Bun で動かす（§10） |
 | スタイル | Tailwind CSS v4（`@tailwindcss/vite`）、`tailwind-variants`（クラスの合成も持つ） |
 | アクセシブルな部品の土台 | React Aria Components（Apache-2.0）。自前の UI キット（§2）が包んで公開する |
 | ルーティング | TanStack Router（ファイルベース、自動コード分割、Zod で検索パラメータを検証） |
@@ -27,7 +28,6 @@
 | テスト | Vitest（ブラウザモードを含む）、Testing Library、`user-event`、MSW、Playwright + `@axe-core/playwright`（ADR-0110） |
 | 部品カタログ | Storybook 10（`@storybook/react-vite`、a11y アドオン、Vitest アドオン） |
 | lint | Oxlint（`oxlint`、`oxlint-tsgolint`。§8）、`knip` |
-| Node.js | Vite・Vitest・Storybook・Playwright は Node.js（LTS、`.tool-versions` で固定）で動かす。`bun --bun` は使わない |
 
 音声通話の `livekit-client` と `sora-js-sdk` は ADR-0101 が足す。
 
@@ -37,10 +37,6 @@
 - **TanStack Router**: React Router の型安全なルートは framework mode 限定で、SPA では型安全にならない。
 - **TanStack Query**: React 19 の `use` はキャッシュを持たず、無効化・ページングも提供しない。
 - **Vitest**: React Compiler の変換をテストにも同じように適用でき、Storybook と組み合わせて実ブラウザでアクセシビリティの検査ができる。
-- **Vite・Vitest の実行環境を Node.js にする**: `bun --bun` で動かしても Vite のビルド成果物は Node.js と同一で、速さの差も 1 秒未満と小さい。
-  一方、Vitest は `bun --bun` だと jsdom 環境のワーカーを起動できない（2026-10-16 に Vite 8.3.2・Vitest 5.0.3・Bun 1.4.3・Node.js 24.21 で確認、#117）。
-  Storybook・Playwright も Node.js を前提とするので、ツールの実行環境は Node.js の 1 つにそろえる。
-  パッケージのスクリプトは `bun run` で起動し、`vite` などの bin は shebang に従って Node.js で動く。
 
 具体的なバージョンは各パッケージの `package.json` と lockfile で固定する。公開から 3 日未満の版は使わない（ワークスペースの `minimumReleaseAge`）。
 
@@ -178,6 +174,22 @@ React Compiler は `oxc-transform-react` で動かし、React のパッケージ
   - `oxc-transform-react` の公開が 8 週間止まる、または Oxc が React Compiler の移植をやめる
   - `@vitejs/plugin-react` が `compiler` オプションを外し、今の Vite に合う版の `oxc-transform-react` がなくなる
 
+### 10. ツールの実行環境
+
+ワークスペースのツールは Bun だけで動かし、Node.js を要する道具・手順・イメージを持たない（決定者、2026-11-12）。
+実行環境・lockfile・版を固定して追従するものが 1 つで済み、2 つ目の toolchain を入れることも直すこともない。
+
+- 子のプロセスは `process.execPath` で起こす。CI のイメージはブラウザとその共有ライブラリのために使い、中の Node.js と npm を使わない。
+- 公開する npm パッケージを Node.js 22 と Deno で動かす試験（ADR-0093 §9）は利用者の環境を試すもので、対象外とする。
+- npm パッケージを公開する job だけは Node.js と npm を入れる。trusted publishing の公式の道具で公開の信頼性を保ち、公開するパッケージはもともと Node.js で動く。
+
+| ツール | 動かし方 |
+| --- | --- |
+| Vite・Vitest（ブラウザモードを含む）・Storybook・Playwright・Astro・openapi-typescript・tsc・Oxlint・knip・Lingui CLI | `bun --bun <bin>` |
+| Redocly CLI・markdownlint-cli2・Wrangler | `bunx --bun` |
+| 整形・テスト・i18n のツール・リポジトリのスクリプト | `bun fmt`・`bun test`・`bun <file>` |
+| Claude Code | ネイティブのインストーラ |
+
 ## 経緯
 
 Web クライアント（PWA、ADR-0028）は、オーナーの指定で React と TailwindCSS をベースにする。React は、ネット上のコードや一般的な知識に古い・誤った書き方（Effect の濫用、手動メモ化、サーバーデータのコピーなど）が多いので、react.dev などの一次情報に基づいて周辺ライブラリと書き方を決めた（#84 の調査報告。版は 2026-10-16 時点）。判断基準は、Rules of React に沿うこと、WCAG 2.2 AA・RTL・タッチ操作を部品の土台で保証できること（ADR-0009、NFR-A11Y-1）、Go のサーバーの SPA であること（RSC・SSR なし、ADR-0028）、OpenAPI の型（ADR-0016）をそのまま使えること、ライセンス（ADR-0011）、Tauri 2 と UI を共有できることだった。
@@ -216,12 +228,13 @@ ESLint は 1 回に約 50 秒かかり、CI の web ジョブで最も長い手�
 - Biome: 最速（4 CPU で 2.8 s）だが、境界・i18n・Tailwind・Testing Library・TanStack の検査を失い、型の規則は今のコードに 74 件の偽陽性を出した。Biome と ESLint の併用: 全規則が残るが、型情報の規則が残って速くならない（1.4 s ＋ 49.7 s）。
 - Babel 7 のまま: 今いちばん枯れていて React の e2e の対応も最も多いが、Babel 7 に縛られ、ビルドが約 5.5 倍遅い。
 - `@vitejs/plugin-react` の `compiler` オプションだけ: 設定が最も短いが、診断を警告として出すだけで構造のある形で受け取れず、R4 のゲートを作れない。ゲートが要らないパッケージには足りる。
+- ツールを Node.js で動かす: Vite・Storybook・Playwright が公式に対応する実行環境だが、実行環境と toolchain が 2 つになり、それぞれを固定して追従する。
 
 ## Consequences（影響）
 
 - 部品がドメインを知らないことが構造で保証され、デザインシステムは Tauri と共有できる。デザインシステムを替えれば、Go が描画していた画面（ADR-0090 §16、ADR-0074 §11）を含むすべての画面に届く。ワークスペースの管理（パッケージ間の型参照、Tailwind の `@source` 設定）は増える。
 - デザインシステムに variant がない見た目は、上の層では作れない。作る前にデザインシステムに足す。
-- Node.js と Bun の 2 つの JS 実行環境を固定・保守する。
+- JS の実行環境は Bun の 1 つになる。Storybook・Playwright などは Bun を公式に対応しないので、版を上げるたびに Bun で動くことを検査で確かめる。
 - 依存が増えるたびに、§5 の一覧と lint の許可リストを更新する手間がかかる。
 - アイコンの形のレビューは、パスの数字ではなく Phosphor の名前と一覧で行える。新しいアイコンは描かずに表に 1 行足すだけになる。線が 2 px から 1.5 px 相当に細くなり、23 個で約 3 KB（gzip）大きくなる。
 - react-icons は 30 以上のセットを含み、展開後に約 88 MB ある。インストールの時間と `node_modules` の大きさが増える（バンドルには選んだアイコンしか入らない）。各セットの更新の取り込みが遅れることがある。
@@ -229,7 +242,7 @@ ESLint は 1 回に約 50 秒かかり、CI の web ジョブで最も長い手�
 - 「強制」の列の大半（境界・i18n・Tailwind・Testing Library・TanStack）が、alpha の Oxlint の JS プラグインで動く。
 - React Compiler の lint の規則は Oxlint の移植で動く。移植は `"use no memo"` の関数の中でも `react/incompatible-library` を報告するなど、細部が公式のプラグインと違う。
 - 0.x の experimental な変換を本番のビルドに使う。0.x はマイナー版でオプションが変わり得る。React の e2e では Babel 版より失敗が多く（2026-10-12 の対応表で Babel 1792/1802、OXC 1704/1795）、Oxc だけの誤変換の issue が開いている（oxc-project/oxc の #26161、#27402、#27429、#27401、#27113）。版を上げるたびに出力の確認が要る。
-- Rust の panic（oxc-project/oxc の #27404）はビルドのエラーではなく、Node のプロセスの異常終了になる。ビルドは失敗するが、原因のファイルを示さない。
+- Rust の panic（oxc-project/oxc の #27404）はビルドのエラーではなく、プロセスの異常終了になる。ビルドは失敗するが、原因のファイルを示さない。
 - Babel は推移的な依存として `app/bun.lock` に残る。`@tanstack/router-plugin`、`vite-plugin-pwa` の `workbox-build`、Storybook の `react-docgen`、`@babel/code-frame` を使う Testing Library などが持ち、版はそれぞれのライブラリが決める。
 - Oxc はコンパイルした関数の中のコメントを出力から落とす。開発サーバーの出力が読みにくくなるが、ソースマップは残る。`"use no memo"` の関数の診断を除くために、ゲートが自前でソースを解析する。
 - `vite build` は速くなり、諦めた関数の報告が、関数の先頭ではなく原因の式の場所を指す。
@@ -237,3 +250,6 @@ ESLint は 1 回に約 50 秒かかり、CI の web ジョブで最も長い手�
 ## Open Questions / 要検証
 
 - TypeScript 7.1 の API が出たときに、openapi-typescript が対応する時期
+- jsdom のテストの MSW は Bun の `fetch` を横取りしない: `msw/experimental` の fetch の interceptor で受ける。だめなら Bun で動く別のライブラリを探す。
+- Oxlint の RuleTester は Bun を拒む: 独自の規則を Bun で試せる別の lint か、禁止規則を Oxlint の CLI の出力で確かめるかを比べる。
+- Wrangler は Bun を対応外とする: `bunx --bun wrangler deploy` で配置できるか。
