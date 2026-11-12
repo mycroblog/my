@@ -45,7 +45,7 @@ type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 // the flows of ADR-0153 §1, which internal/flowtest/federation runs once on
 // SQLite; FederationRepositoryContract checks the repository's methods on every adapter. It
 // covers the outbound activities and their lookups, the first document kept, one delivery per
-// inbox, the state of remote servers, the inboxes each visibility reaches (data-model §7), the Update and Delete that follow
+// inbox, the state of remote servers, the inboxes each visibility reaches, the Update and Delete that follow
 // the Create, a fan-out run again without a delivery twice, the servers left out, the boosts that
 // are not recorded, the Update and Delete of a local actor (to its followers, and for the
 // Delete to every known shared inbox), the Update of a local actor's suspension and of its end
@@ -731,7 +731,7 @@ func fedDeliversEachVisibility(t *testing.T, e *fedEnv) {
 	everyone := append(slices.Clone(followersInboxes), "https://c.example/inbox")
 	slices.Sort(everyone)
 
-	// data-model §7: who each visibility reaches and how it is addressed.
+	// Who each visibility reaches and how it is addressed.
 	cases := []struct {
 		visibility content.Visibility
 		inboxes    []string

@@ -9,8 +9,8 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// ProjectionRepository is the part of Repository that rebuilds the identity projections
-// (data-model §9). Each method empties one projection and derives it again by the rule of the
+// ProjectionRepository is the part of Repository that rebuilds the identity projections.
+// Each method empties one projection and derives it again by the rule of the
 // commands that write it.
 type ProjectionRepository interface {
 	// RebuildUserRoles derives user_roles from the role grants without a revocation.
@@ -38,7 +38,7 @@ type ProjectionRepository interface {
 // from the role grants and revocations, the registration applications and decisions, the email
 // addresses, the delivery failures and suppression lifts, the revisions, state changes, and
 // secrets of the login providers, and the links and unlinks of the external identities, in one
-// transaction (data-model §9).
+// transaction.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		for _, rebuild := range []func(context.Context, uow.Tx) error{

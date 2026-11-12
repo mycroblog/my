@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Follow is one follow relationship from its request on (data-model §4.5, follows). It is
+// Follow is one follow relationship from its request on (follows). It is
 // immutable: acceptance, rejection, and termination are separate events, and following again
 // after a rejection or termination creates a new Follow, so earlier relationships stay on record.
 type Follow struct {
@@ -39,7 +39,7 @@ func (f Follow) Validate() error {
 }
 
 // Resend is the event that a remote follower sent a Follow again, under another URI, while its
-// follow is active (data-model §4.5, follow_resends): its server does not count the follow as
+// follow is active (follow_resends): its server does not count the follow as
 // established. The follow keeps its row, and its Accept is sent again for URI.
 type Resend struct {
 	URI        string // the IRI of the Follow received again

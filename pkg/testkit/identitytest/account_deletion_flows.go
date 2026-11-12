@@ -14,8 +14,8 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// accountExecutesDeletions checks the deletions that moderation schedules and their execution
-// (data-model §8): a ban's deletion_scheduled names the action and keeps an earlier due
+// accountExecutesDeletions checks the deletions that moderation schedules and their execution:
+// a ban's deletion_scheduled names the action and keeps an earlier due
 // time, a remote account takes none, and ExecuteDueDeletions deletes the accounts whose
 // deletion is due, once, leaving the others and the canceled ones; CancelDeletionByModeration
 // cancels a scheduled deletion once, refuses a deleted account, and races the job with exactly

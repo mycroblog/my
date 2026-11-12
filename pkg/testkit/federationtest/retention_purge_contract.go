@@ -18,7 +18,7 @@ import (
 )
 
 // The cases of RetentionContract on the outbound activities, the handle checks, and the snapshots
-// of remote actors (data-model §4.8, §8).
+// of remote actors.
 
 // at runs fn with the clock set to age before now, so that the IDs fn makes are of that time.
 func (r *retentionRepo) at(age time.Duration, fn func(at time.Time)) {

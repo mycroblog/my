@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/gathering"
 )
 
-// Repository implements appgathering.Repository (data-model §4.19, ADR-0161 §13).
+// Repository implements appgathering.Repository (ADR-0161 §13).
 type Repository struct {
 	db *moduleDB
 }

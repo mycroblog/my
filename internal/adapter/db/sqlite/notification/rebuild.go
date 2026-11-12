@@ -10,7 +10,7 @@ import (
 )
 
 // This file holds the sources and the emptying of the projections that `my projection
-// rebuild` derives again (data-model §9) and that no other file of the module covers.
+// rebuild` derives again and that no other file of the module covers.
 
 // DeleteAllExclusions implements notification.Repository.
 func (r *Repository) DeleteAllExclusions(ctx context.Context, tx uow.Tx) error {

@@ -18,8 +18,8 @@ import (
 var ErrNotFound = errors.New("federation: not found")
 
 // Repository is the persistence port of the federation module's outbound side: outbound
-// activities, their documents, their deliveries, and the health of remote servers
-// (data-model §4.8). The database adapters implement it and pass
+// activities, their documents, their deliveries, and the health of remote servers.
+// The database adapters implement it and pass
 // federationtest.FederationRepositoryContract; the outbound use cases on it are federationtest.FederationFlows
 // (internal/flowtest/federation).
 //

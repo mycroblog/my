@@ -6,7 +6,7 @@
 
 -- ---------------------------------------------------------------------------------------------
 -- gathering: the events of the local users, their settings, places, dates, invitations,
--- answers, approvals, co-organizers, and cancellations (data-model §4.19, ADR-0161 §13). Owned by
+-- answers, approvals, co-organizers, and cancellations (ADR-0161 §13). Owned by
 -- internal/app/gathering.
 -- ---------------------------------------------------------------------------------------------
 

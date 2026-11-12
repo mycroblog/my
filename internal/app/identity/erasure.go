@@ -13,7 +13,7 @@ import (
 )
 
 // ErasureRepository is the part of the identity module's persistence that the erasure of
-// deleted accounts uses (data-model §8). The database adapters' identity repositories implement
+// deleted accounts uses. The database adapters' identity repositories implement
 // it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseUserData deletes the user's email addresses with their verifications and the primary
@@ -35,7 +35,7 @@ type ErasureRepository interface {
 	RevokeTokensOfClient(ctx context.Context, tx uow.Tx, clientID string, reason identity.TokenRevocationReason, at time.Time) error
 }
 
-// Eraser erases the identity data of a deleted local account's user (data-model §8). The rows
+// Eraser erases the identity data of a deleted local account's user. The rows
 // of one user do not grow with other users, so one transaction erases them all. The clients that
 // the user registered lose their names and websites and are disabled, which stops the tokens other
 // users gave them; like any client, they keep their row.

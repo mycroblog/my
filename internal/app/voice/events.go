@@ -191,7 +191,7 @@ func RegisterProjectors(r *uow.Projectors, repo ProjectionRepository) {
 }
 
 // RebuildProjections derives voice_room_heads and voice_room_participants again from the
-// events, in one transaction (data-model §9). voice_room_host_graces is a current value that no
+// events, in one transaction. voice_room_host_graces is a current value that no
 // event records, and stays.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo ProjectionRepository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildProjections(ctx, tx) })

@@ -170,7 +170,6 @@ ADR-0058 とアカウントの消去に対して、索引は投影と同じ位�
 | `docs/architecture/overview.md` §6 | モジュールを足す | #2247 |
 | `docs/architecture/visibility.md` | `ContextSearch` の行を文脈の表と判定の表に足す | #2249 |
 | `docs/architecture/client-api.md` の認証とレート制限の節 | `api.search` の制限と `searchStatuses` を足す | #2249 |
-| `docs/architecture/data-model/` | §8 に索引の行と §11 の順序、§4 に `search_visibilities` と進み具合の表、§10 に FR-309 を足す | #2248、#2250 |
 | `docs/architecture/web-client/screens/search.md`、§15 | 投稿の全文検索はしないという文を、使えるサーバーでの投稿の検索に直す | #2251 |
 | `docs/architecture/web-client/screens/settings-profile.md` の項目 8 と管理の設定の画面 | 下の文言に合わせる | #2251 |
 

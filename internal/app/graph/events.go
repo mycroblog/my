@@ -4,7 +4,7 @@ package graph
 
 import "github.com/mycroblog/my/internal/domain/graph"
 
-// Event types of the graph module, for uow.Projectors (data-model §4.5). Every follow command
+// Event types of the graph module, for uow.Projectors. Every follow command
 // emits exactly one of them inside its transaction, after writing the event rows, so that the
 // projectors of this module (follow_edges, follow_counters, block_edges) and of other modules
 // (timeline's feed_follow_edges and feed_exclusions, notification's follow notifications) see

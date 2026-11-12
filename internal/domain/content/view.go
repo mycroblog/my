@@ -97,7 +97,7 @@ const (
 	// ContextObjectFetch is a GET of the status's ActivityPub object IRI (ADR-0018).
 	// A denial is answered with 404 so that existence does not leak.
 	ContextObjectFetch
-	// ContextDelivery is pushing the status to a remote actor's inbox (data-model §7).
+	// ContextDelivery is pushing the status to a remote actor's inbox.
 	ContextDelivery
 	// ContextSearch is a result of the full-text search of statuses (FR-309, ADR-0149 §8). It admits
 	// only signed-in viewers, and nothing but public and local, not even for the author.

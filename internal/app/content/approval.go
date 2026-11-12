@@ -136,7 +136,7 @@ type ApprovalRepository interface {
 	DeleteAllInteractionStates(ctx context.Context, tx uow.Tx) error
 }
 
-// Event types of the approvals of interactions (data-model §4.4):
+// Event types of the approvals of interactions:
 //   - EventInteractionRequested: an interaction that its target's author approves was recorded,
 //     answered at once or pending. This module projects its state; the notification module
 //     notifies the local author of a pending request; the federation module sends the
@@ -257,7 +257,7 @@ func (p approvals) withdraw(ctx context.Context, tx uow.Tx, r content.Interactio
 const requestRebuildPage = 500
 
 // RebuildInteractionStates empties interaction_request_states and derives it again from the
-// requests and their answers (data-model §9).
+// requests and their answers.
 func RebuildInteractionStates(ctx context.Context, u uow.UnitOfWork, repo ApprovalRepository) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.DeleteAllInteractionStates(ctx, tx); err != nil {

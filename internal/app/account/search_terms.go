@@ -148,7 +148,7 @@ func (p *SearchTermProjector) derive(ctx context.Context, tx uow.Tx, accountID s
 }
 
 // Rebuild empties the account_search_terms projection and derives it again for every account
-// with a handle, in one transaction (data-model §9).
+// with a handle, in one transaction.
 func (p *SearchTermProjector) Rebuild(ctx context.Context, u uow.UnitOfWork) error {
 	return u.Tx(ctx, func(tx uow.Tx) error {
 		if err := p.repo.DeleteAllSearchTerms(ctx, tx); err != nil {

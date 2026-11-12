@@ -219,7 +219,7 @@ var (
 // registerBusinessMetrics counts the registrations and posts, and the timeline delivery lag,
 // from the events of committed transactions. It runs after timeline.RegisterCommitHooks, so
 // that the lag includes the signal to the streams: the home timeline entries are written in
-// the transaction that creates the status (data-model §4.6).
+// the transaction that creates the status.
 func (a *App) registerBusinessMetrics(r *uow.Projectors) {
 	if kernel.IsNop(a.Meter) {
 		return

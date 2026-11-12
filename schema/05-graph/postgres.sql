@@ -4,7 +4,7 @@
 -- (internal/app/graph). schema/README.md describes the layout
 -- and the conventions of this directory.
 
--- graph: follows (data-model §4.5) ------------------------------------------------------------
+-- graph: follows ------------------------------------------------------------------------------
 
 -- Resource: one follow relationship. Following again after a rejection or termination inserts a
 -- new row, so earlier relationships stay on record.
@@ -65,7 +65,7 @@ CREATE TABLE follow_counters (
   following_count bigint NOT NULL CHECK (following_count >= 0)
 );
 
--- graph: blocks and mutes (data-model §4.5) -------------------------------------------------
+-- graph: blocks and mutes -------------------------------------------------------------------
 
 -- Resource: one block. Blocking again after a retraction inserts a new row. uri is NULL only for
 -- a received Block without an id.
@@ -129,10 +129,10 @@ CREATE TABLE account_notes (
   updated_at timestamptz NOT NULL,
   PRIMARY KEY (account_id, target_account_id)
 );
--- The erasure of a deleted account (data-model §8) deletes the notes on it.
+-- The erasure of a deleted account deletes the notes on it.
 CREATE INDEX account_notes_target_account_id ON account_notes (target_account_id);
 
--- graph and federation: re-sent Follows and early Undo Follows (data-model §4.5, §4.8) ----------
+-- graph and federation: re-sent Follows and early Undo Follows ----------------------------------
 
 -- Event: a Follow received again, under another URI, for a follow that is already active. The
 -- follow keeps its row; its Accept is sent again for the new URI.
@@ -142,7 +142,7 @@ CREATE TABLE follow_resends (
   received_at timestamptz NOT NULL
 );
 
--- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
+-- The erasure of deleted local accounts' data (account, #397) looks up
 -- the rows of an account.
 CREATE INDEX follows_follower_account_id ON follows (follower_account_id);
 CREATE INDEX follows_followee_account_id ON follows (followee_account_id);

@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The retention of the moderation records (ADR-0058, data-model §8): the hourly
+// The retention of the moderation records (ADR-0058): the hourly
 // JobPurgeRecords erases the actions on accounts with their appeals, the reports, and the audit
 // log entries past the retention periods of the instance settings, and the sign-up blocks
 // moderation.SignupBlockRetention after they end (internal/domain/moderation retention.go says

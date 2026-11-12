@@ -20,7 +20,7 @@ import (
 )
 
 // RoomContract verifies the voice chat rooms of the events on the gathering repository of a
-// database adapter through appgathering.Service (ADR-0161 §10, data-model §4.19): the start of a
+// database adapter through appgathering.Service (ADR-0161 §10): the start of a
 // date opens its room once, with the settings, the co-host candidates, and the invitees of the
 // event, and the event shows it; a room that cannot open records why, tells the organizer once,
 // and the event shows the reason; the confirmation and the day before check the host; a room that

@@ -15,7 +15,7 @@
 - 依存の向き（ADR-0002）: 公開範囲の設定は `internal/interface/clientapi` がインスタンス設定から読む。`internal/app/finance` からの読み取りはポート `SupporterDirectory` にし、監査ログは `AuditRecorded` のドメインイベントで `moderation` に渡す。ほかのモジュールから `finance` を呼ぶ向きは「加入のモジュール → `finance`」で、`RecordIncome`・`KnownIncome` を呼ぶ（§11）。
 - 期間の展開・按分・集計は `internal/domain/finance` の純粋な関数にし、表駆動のテストで確かめる。
 - 集計は読み取りのときに計算し、期間ごとの合計の投影を持たない。項目が数十件の規模では全項目を読んで展開しても軽く、公開の API は 60 秒のキャッシュを持つ。
-- `finance` は overview §2 のモジュールの表、data-model §4.0 の所有の表、`.golangci.yml` の depguard に載せる。
+- `finance` は overview §2 のモジュールの表と `.golangci.yml` の depguard に載せる。
 
 ### 2. データモデル（ADR-0020）
 

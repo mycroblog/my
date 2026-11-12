@@ -10,7 +10,7 @@ import (
 )
 
 // ErasureRepository is the part of the timeline module's persistence that the erasure of
-// deleted accounts uses (data-model §8). The database adapters' timeline repositories implement
+// deleted accounts uses. The database adapters' timeline repositories implement
 // it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseFeedsOf deletes up to limit of each of: the entries by the account or of its
@@ -23,7 +23,7 @@ type ErasureRepository interface {
 }
 
 // Eraser erases a deleted local account's rows of the timeline projections, its lists, its
-// followed and featured hashtags, and its keyword filters (data-model §8).
+// followed and featured hashtags, and its keyword filters.
 // The restrictions of moderation (feed_author_restrictions) stay with the moderation records.
 type Eraser struct {
 	uow     uow.UnitOfWork

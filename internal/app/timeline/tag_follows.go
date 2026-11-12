@@ -16,8 +16,7 @@ import (
 
 // The followed hashtags (ADR-0013 §24 to §28): an account follows up to timeline.MaxFollowedTags
 // hashtags, and its home timeline lists, next to the entries of the accounts it follows, the
-// public and local posts that carry one of them, read from feed_tag_entries fan-out-on-read
-// (data-model §6.1).
+// public and local posts that carry one of them, read from feed_tag_entries fan-out-on-read.
 
 // TagFollow is a hashtag that an account follows (feed_tag_follows).
 type TagFollow struct {
@@ -179,7 +178,7 @@ func (s *Service) FollowedTags(ctx context.Context, accountID string) ([]Followe
 	return out, nil
 }
 
-// homeRows reads both branches of the home timeline with q (data-model §6.1): the entries of the
+// homeRows reads both branches of the home timeline with q: the entries of the
 // viewer and of the accounts the viewer follows, and the posts of the hashtags the viewer
 // follows, merged newest first, each ID once, at most q.Limit.
 func (s *Service) homeRows(ctx context.Context, q HomeQuery) ([]Entry, error) {

@@ -14,7 +14,7 @@ import (
 var errBoostEdgeExists = errors.New("content: the account already boosts the status")
 
 // RegisterInteractionProjectors registers the synchronous projectors of the interactions with
-// statuses (data-model §9). Register them after RegisterProjectors, which creates the counters
+// statuses. Register them after RegisterProjectors, which creates the counters
 // of a status.
 //   - boost_edges holds each boost that is not retracted, of a status that is not deleted;
 //   - status_counters.boosts_count counts those boosts and favourites_count the favourites of
@@ -119,7 +119,7 @@ func addLocalBoost(ctx context.Context, tx uow.Tx, repo InteractionRepository, b
 }
 
 // RebuildInteractionProjections empties boost_edges and status_reaction_counts and derives them
-// again from the boosts and their retractions and from the reactions (data-model §9). The
+// again from the boosts and their retractions and from the reactions. The
 // boosts and favourites counts are rebuilt with the other status counters by
 // RebuildProjections.
 func RebuildInteractionProjections(ctx context.Context, u uow.UnitOfWork, repo InteractionRepository) error {

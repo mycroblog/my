@@ -314,7 +314,7 @@ func TestObjectsAnnounce(t *testing.T) {
 	}
 }
 
-// TestObjectsCanView checks the decision of object fetches (visibility.md §5.1, data-model §7):
+// TestObjectsCanView checks the decision of object fetches (visibility.md §5.1):
 // public and unlisted for anyone, local for the servers of followers, private for those of
 // followers and mentioned accounts, direct for those of mentioned accounts.
 func TestObjectsCanView(t *testing.T) {

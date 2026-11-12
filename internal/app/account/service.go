@@ -560,8 +560,7 @@ func (s *Service) RemoteInboxTx(ctx context.Context, tx uow.Tx, accountID string
 
 // KnownSharedInboxes returns at most limit distinct shared inboxes that remote actors not
 // deleted declare in their newest documents, in order, after the shared inbox after ("" for
-// the first batch). A local account's deletion reaches every known server through them
-// (data-model §8).
+// the first batch). A local account's deletion reaches every known server through them.
 func (s *Service) KnownSharedInboxes(ctx context.Context, after string, limit int) ([]string, error) {
 	return s.d.Repository.ListKnownSharedInboxes(ctx, after, limit)
 }

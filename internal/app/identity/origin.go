@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Retention of the sign-in and registration origins (ADR-0058, data-model §8).
+// Retention of the sign-in and registration origins (ADR-0058).
 const (
 	// JobPurgeOrigins deletes the session and registration origins past their retention; no
 	// payload.

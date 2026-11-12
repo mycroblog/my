@@ -29,7 +29,7 @@ type ModeratedEffects interface {
 	AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]appmoderation.Effect, error)
 }
 
-// feedRestrictions are the moderation restrictions that the timelines apply (data-model §4.6).
+// feedRestrictions are the moderation restrictions that the timelines apply.
 var feedRestrictions = []timeline.Restriction{
 	timeline.RestrictProfileView, timeline.RestrictVisibilityCeilingPrivate, timeline.RestrictPublicDiscovery,
 }
@@ -49,7 +49,7 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 		case err != nil:
 			return err
 		case a.Deleted(), a.Lifecycle.Deactivated():
-			// Deletion is final (data-model §8), and a deactivation lasts until the reactivation
+			// Deletion is final, and a deactivation lasts until the reactivation
 			// (ADR-0089 §15), whatever moderation does meanwhile.
 			effects = lifecycleHidden(effects)
 		}

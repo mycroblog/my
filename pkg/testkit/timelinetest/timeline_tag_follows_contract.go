@@ -82,7 +82,7 @@ func timelineRepoTagFollows(t *testing.T, r *timelineRepo) {
 	}
 }
 
-// timelineRepoHomeTags checks the hashtag branch of the home timeline (data-model §6.1): the
+// timelineRepoHomeTags checks the hashtag branch of the home timeline: the
 // public and local posts with a followed tag, each once with its followed tags, without boosts,
 // the viewer's own posts, the posts of followed authors, and what the hashtag timeline leaves
 // out; and the followers of an entry's tags among accounts.

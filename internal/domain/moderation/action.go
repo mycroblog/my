@@ -65,7 +65,7 @@ func (k ActionKind) Liftable() bool { return k != ActionBan }
 const MaxActionStatuses = 100
 
 // BanDeletionDelay is how long after a ban its account is deleted: the ban records the
-// account's deletion_scheduled lifecycle event due then (data-model §8).
+// account's deletion_scheduled lifecycle event due then.
 const BanDeletionDelay = 30 * 24 * time.Hour
 
 // Category is the reason category of an action or a report.

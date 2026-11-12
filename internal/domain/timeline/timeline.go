@@ -47,7 +47,7 @@ const (
 // always let such entries through (FR-208).
 const UndeterminedLanguage = "und"
 
-// The read window of the home timeline (data-model §6.1, ADR-0013). Fan-out-on-read bounds each
+// The read window of the home timeline (ADR-0013). Fan-out-on-read bounds each
 // home query to the entries newer than the cursor minus a window, so that the rows a page reads
 // stay proportional to recent activity. When a page is not filled within the window, the query
 // runs again with a window HomeWindowGrowth times wider, up to HomeWindowWidenings times, and

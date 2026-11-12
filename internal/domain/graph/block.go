@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Block is one block of an account by another from its creation on (data-model §4.5, blocks).
+// Block is one block of an account by another from its creation on (blocks).
 // It is immutable: lifting it is a separate Retraction event, and blocking again after a
 // retraction creates a new Block, so earlier blocks stay on record for harassment reviews.
 type Block struct {

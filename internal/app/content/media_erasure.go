@@ -21,7 +21,7 @@ type MediaErasureDeps struct {
 	Referrers []MediaReferrer
 }
 
-// MediaEraser erases the uploads of deleted local accounts with their blobs (data-model §8). It
+// MediaEraser erases the uploads of deleted local accounts with their blobs. It
 // runs after the StatusEraser, so that a status revision attaches a file only while the status
 // is kept for the moderation records (ADR-0058); such a file stays until a later run, and so
 // does the account's erasure. A file that a referrer references stays as the instance's.

@@ -4,7 +4,7 @@ package content
 
 import "github.com/mycroblog/my/internal/domain/content"
 
-// Event types of the content module's statuses, for uow.Projectors (data-model §4.4). Every
+// Event types of the content module's statuses, for uow.Projectors. Every
 // status command emits exactly one of them inside its transaction, after writing the resource
 // and event rows, so that the projectors of this module (status_heads, status_mention_index,
 // status_reply_links, status_counters, account_post_counters, local_post_counters) and of other
@@ -80,7 +80,7 @@ type StatusesDeleted struct {
 func (StatusesDeleted) EventType() string { return EventStatusesDeleted }
 
 // ByAccountErasure reports whether the erasure of the author's deleted account recorded the
-// deletion (data-model §8): the Delete of the actor stands for it, so it sends no Delete.
+// deletion: the Delete of the actor stands for it, so it sends no Delete.
 func (e StatusDeleted) ByAccountErasure() bool {
 	return e.Deletion.Origin == content.DeletedByAccountDeletion
 }

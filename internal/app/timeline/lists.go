@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// Lists (ADR-0013, data-model §4.6): an account groups the accounts it actively follows into
+// Lists (ADR-0013): an account groups the accounts it actively follows into
 // lists that only it sees, and reads a timeline of each. The timeline module owns them: the
 // owner's commands write lists, list_names, and list_members, the projector of
 // graph.follow_terminated takes an ended follow's followee out of every list of the follower, and

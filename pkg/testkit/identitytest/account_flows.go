@@ -1044,7 +1044,7 @@ func accountRejectsTakenAdmin(t *testing.T, e *AccountEnv) {
 
 // accountProjectionEqualsRebuild runs random sequences of commands, which update the projections
 // incrementally through the synchronous projectors, and checks that rebuilding the projections
-// from their events yields exactly the same rows (data-model §9).
+// from their events yields exactly the same rows.
 func accountProjectionEqualsRebuild(t *testing.T, e *AccountEnv) {
 	ctx := t.Context()
 	rng := rand.New(rand.NewPCG(58, 20261016)) //nolint:gosec // deterministic test input, not a secret

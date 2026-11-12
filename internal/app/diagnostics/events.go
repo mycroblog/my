@@ -87,7 +87,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 }
 
 // RebuildProjections derives error_group_states again from the groups and their events, in one
-// transaction (data-model §9).
+// transaction.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
 	if err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildHeads(ctx, tx) }); err != nil {
 		return fmt.Errorf("rebuild the diagnostics projections: %w", err)

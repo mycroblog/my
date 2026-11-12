@@ -17,8 +17,7 @@ type DraftScheduleRecord struct {
 	Outcome  content.DraftScheduleOutcome
 }
 
-// DraftRepository is the persistence port of drafts and scheduled posts (data-model §4.4,
-// ADR-0156). The database adapters' status repositories implement it and pass
+// DraftRepository is the persistence port of drafts and scheduled posts (ADR-0156). The database adapters' status repositories implement it and pass
 // contenttest.DraftRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside

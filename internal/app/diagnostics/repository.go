@@ -206,6 +206,6 @@ type Repository interface {
 	Events(ctx context.Context, groupID string) ([]Event, error)
 
 	// RebuildHeads empties error_group_states and derives it from the groups and the newest
-	// event of each (data-model §9).
+	// event of each.
 	RebuildHeads(ctx context.Context, tx uow.Tx) error
 }

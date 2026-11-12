@@ -370,7 +370,7 @@ func (x *Exports) remove(ctx context.Context, e identity.DataExport) error {
 }
 
 // EraseAccountData implements account.DataEraser: the deleted account's user loses every export
-// with its archive (data-model §8).
+// with its archive.
 func (x *Exports) EraseAccountData(ctx context.Context, t account.ErasureTarget, _ string, limit int) (account.ErasureStep, error) {
 	if t.UserID == "" {
 		return account.ErasureStep{Done: true}, nil

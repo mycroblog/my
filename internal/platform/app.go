@@ -241,7 +241,7 @@ type App struct {
 	Diagnostics *appdiagnostics.Service
 	// Scheduler enqueues the periodic jobs for the worker role.
 	Scheduler *queue.Scheduler
-	// Projections rebuilds and verifies the projections (`my projection`, data-model §9).
+	// Projections rebuilds and verifies the projections (`my projection`).
 	Projections *projection.Service
 	// DataUpgrades runs and checks the data upgrade steps (`my db upgrade`, ADR-0023 §7); the
 	// readiness check requires every step that it registers.

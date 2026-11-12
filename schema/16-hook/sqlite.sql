@@ -5,7 +5,7 @@
 -- layout and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- hook: the decisions of the decision hooks (data-model §4.16, ADR-0147 §6). Owned by
+-- hook: the decisions of the decision hooks (ADR-0147 §6). Owned by
 -- internal/app/hook. No decision holds the text of a post, an email address, or an IP address; an
 -- appeal holds the text its author sends. hook.purge_decisions removes the decisions after
 -- hook_decisions_retention_days, with their appeals.

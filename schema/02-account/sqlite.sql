@@ -303,11 +303,11 @@ CREATE TABLE account_key_revocations (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- account: the erasure of deleted local accounts' data (#397, data-model §8). Owned by
+-- account: the erasure of deleted local accounts' data (#397). Owned by
 -- internal/app/account; the indexes serve the erasure's statements in the other modules.
 -- ---------------------------------------------------------------------------------------------
 
--- Event: the erasure job removed the data of a deleted local account (data-model §8). An
+-- Event: the erasure job removed the data of a deleted local account. An
 -- account is erased at most once; one whose statuses the moderation records still keep has no
 -- row until they are erased too.
 CREATE TABLE account_erasures (

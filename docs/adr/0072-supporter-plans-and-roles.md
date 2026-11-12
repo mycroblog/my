@@ -18,7 +18,7 @@
   - 監査ログは `AuditRecorded` のドメインイベントで `moderation` に渡す（ADR-0067 と同じ）。
   - `identity`・`account`・`content` は `supporters` を呼ばない。`content` の `CustomEmojiQuota` の実装（§11）と、`finance` の `SupporterDirectory` の実装（§12）は、`internal/platform` が `supporters` の公開 API から組み立てる。
   - アカウントの削除・凍結・BAN（§10）は、`account` と `moderation` のドメインイベントを outbox のジョブで受ける。
-- overview §2 のモジュールの表、data-model §4.0 の所有の表、`.golangci.yml` の depguard に `supporters` を足す。
+- overview §2 のモジュールの表と `.golangci.yml` の depguard に `supporters` を足す。
 
 ### 2. 権限と有効化
 

@@ -29,7 +29,7 @@ type DeletedStatuses interface {
 
 // RebuildExclusions empties notification_exclusions and derives it again, in one transaction,
 // by applying the exclusion projectors to the events that graph replays: the blocks in force
-// and the mutes (data-model §9). It creates no notifications.
+// and the mutes. It creates no notifications.
 func RebuildExclusions(ctx context.Context, u uow.UnitOfWork, repo Repository, graph Source) error {
 	projectors := &uow.Projectors{}
 	registerExclusionProjectors(projectors, repo)
@@ -47,7 +47,7 @@ func RebuildExclusions(ctx context.Context, u uow.UnitOfWork, repo Repository, g
 
 // RebuildDeletedStatuses empties notification_deleted_statuses and records again, in one
 // transaction, every status that a notification is about and that the content module has
-// deleted: the rows that the projector of content.status_deleted keeps (data-model §9).
+// deleted: the rows that the projector of content.status_deleted keeps.
 func RebuildDeletedStatuses(ctx context.Context, u uow.UnitOfWork, repo Repository, statuses DeletedStatuses) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.DeleteAllDeletedStatuses(ctx, tx); err != nil {

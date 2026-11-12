@@ -222,7 +222,7 @@ type Facts struct {
 	Direct map[string]bool
 }
 
-// Repository is the persistence port of the timeline module (data-model §4.6). It reads and
+// Repository is the persistence port of the timeline module. It reads and
 // writes only the feed_* tables (those of the direct messages by conversation and the followed
 // hashtags included), tag_usage, and the tables of lists. The database adapters implement it and pass
 // timelinetest.TimelineContract; timelinetest.TimelineFlows (internal/flowtest/timeline) drives the timeline use
@@ -328,7 +328,7 @@ type Repository interface {
 	// AllListMembers returns every list member, ordered by list and member, for verifying them.
 	AllListMembers(ctx context.Context) ([]ListMember, error)
 
-	// Timelines (data-model §6), newest first, at most Limit entries each.
+	// Timelines, newest first, at most Limit entries each.
 
 	ListHome(ctx context.Context, q HomeQuery) ([]Entry, error)
 	// FeedFollowersAmong returns the accounts among followerIDs whose home timelines follow

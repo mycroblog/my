@@ -484,8 +484,7 @@ func (m *Imports) ExpireImports(ctx context.Context) (int, error) {
 	return len(ids), nil
 }
 
-// EraseAccountData implements account.DataEraser: the deleted account's user loses every import
-// (data-model §8).
+// EraseAccountData implements account.DataEraser: the deleted account's user loses every import.
 func (m *Imports) EraseAccountData(ctx context.Context, t account.ErasureTarget, _ string, limit int) (account.ErasureStep, error) {
 	if t.UserID == "" {
 		return account.ErasureStep{Done: true}, nil

@@ -53,7 +53,7 @@ type HealthProjectorDeps struct {
 }
 
 // RegisterHealthProjectors subscribes the instance_health projector to the delivery attempts and
-// the servers reached otherwise (data-model §4.8, ADR-0006 §3). In the transaction that
+// the servers reached otherwise (ADR-0006 §3). In the transaction that
 // records the event, it:
 //
 //   - counts a retryable failure on a new UTC day as one more failure day, and marks the server

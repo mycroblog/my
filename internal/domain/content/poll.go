@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-// This file holds the votes of accounts in polls (FR-112, data-model §4.4). A vote with several
+// This file holds the votes of accounts in polls (FR-112). A vote with several
 // choices is one PollVote per choice, and votes are never taken back.
 
 var (

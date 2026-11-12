@@ -222,7 +222,7 @@ CREATE TABLE post_subscription_requests (
 );
 CREATE INDEX post_subscription_requests_target_account ON post_subscription_requests (target_account_id, account_id);
 
--- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
+-- The erasure of deleted local accounts' data (account, #397) looks up
 -- the rows of an account.
 CREATE INDEX notifications_source_account_id ON notifications (source_account_id);
 CREATE INDEX notifications_subject_user_id ON notifications (subject_user_id);

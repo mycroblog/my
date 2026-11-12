@@ -27,7 +27,7 @@ type RemoteBoostInput struct {
 	BoosterAccountID string
 	StatusID         string
 	// Visibility is what the addressing of the Announce gives; the boost has the narrower of it
-	// and the status's visibility (data-model §4.4).
+	// and the status's visibility.
 	Visibility content.Visibility
 	// BoostedAt is the published time of the Announce; zero, or a time in the future, is now.
 	BoostedAt time.Time

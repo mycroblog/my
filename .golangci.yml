@@ -96,7 +96,7 @@ linters:
             - github.com/mycroblog/my/internal/domain/content
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
-            # NFKC normalization of hashtags (data-model §4.4, tags.name_normalized): pure-Go Unicode data, not an external resource.
+            # NFKC normalization of hashtags (tags.name_normalized): pure-Go Unicode data, not an external resource.
             - golang.org/x/text/unicode/norm
             # Reading the head of linked pages for link cards (ADR-0062 §2): a pure-Go HTML tokenizer and charset decoder, not an external resource.
             - golang.org/x/net/html
@@ -371,7 +371,7 @@ linters:
             - github.com/mycroblog/my/internal/app/queue
             - github.com/mycroblog/my/internal/app/kernel
             - github.com/mycroblog/my/internal/app/uow
-        # app/projection rebuilds and verifies the projections (data-model §9) through rebuild
+        # app/projection rebuilds and verifies the projections through rebuild
         # functions that the composition root takes from the modules; it owns no tables and
         # depends only on uow and queue.
         app-projection:

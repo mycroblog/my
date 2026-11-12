@@ -5,7 +5,7 @@
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: feeds (data-model §4.6, §6, ADR-0013). Owned by internal/app/timeline, whose
+-- timeline: feeds (ADR-0013). Owned by internal/app/timeline, whose
 -- synchronous projectors derive every table from the events of content and graph (and of
 -- moderation for the restrictions); the timeline queries read only these tables.
 -- ---------------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ CREATE TABLE feed_domain_restrictions (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: lists (data-model §4.6, ADR-0013). Owned by internal/app/timeline: the owner's
+-- timeline: lists (ADR-0013). Owned by internal/app/timeline: the owner's
 -- commands write them, the projector of graph.follow_terminated takes the ended follows out of
 -- list_members, and only the owner reads them.
 -- ---------------------------------------------------------------------------------------------
@@ -148,9 +148,9 @@ CREATE INDEX list_members_owner_member ON list_members (owner_account_id, member
 CREATE INDEX list_members_member_account_id ON list_members (member_account_id);
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: followed and featured hashtags (data-model §4.6, ADR-0013 §27, ADR-0006 §17). Owned
+-- timeline: followed and featured hashtags (ADR-0013 §27, ADR-0006 §17). Owned
 -- by internal/app/timeline: the account's commands write them, the home timeline reads the posts
--- of the followed tags from feed_tag_entries (data-model §6.1), and the profile counts the posts
+-- of the followed tags from feed_tag_entries, and the profile counts the posts
 -- of the featured tags there.
 -- ---------------------------------------------------------------------------------------------
 
@@ -179,7 +179,7 @@ CREATE TABLE featured_tags (
 CREATE UNIQUE INDEX featured_tags_account_id_ordinal ON featured_tags (account_id, ordinal);
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: keyword filters (data-model §4.6, ADR-0157). Owned by internal/app/timeline: the
+-- timeline: keyword filters (ADR-0157). Owned by internal/app/timeline: the
 -- account's commands write them, and the reads of the timelines, the threads, the notifications,
 -- and the streams match the statuses they show against the active filters of the viewer.
 -- ---------------------------------------------------------------------------------------------
@@ -223,7 +223,7 @@ CREATE TABLE keyword_filter_words (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: direct messages by conversation (data-model §4.6, §6.4, ADR-0154 §6). Owned by
+-- timeline: direct messages by conversation (ADR-0154 §6). Owned by
 -- internal/app/timeline: its projectors derive feed_conversation_participants and
 -- feed_conversations from the direct posts and follow content.conversation_merged; the owner's
 -- commands write the read and hide boundaries, which the merges move too.
@@ -271,7 +271,7 @@ CREATE TABLE feed_conversation_hides (
 ) STRICT;
 CREATE INDEX feed_conversation_hides_conversation_id ON feed_conversation_hides (conversation_id);
 
--- The erasure of deleted local accounts' data (account, #397, data-model §8) looks up
+-- The erasure of deleted local accounts' data (account, #397) looks up
 -- the rows of an account.
 CREATE INDEX feed_entries_original_author_account_id ON feed_entries (original_author_account_id);
 CREATE INDEX feed_follow_edges_followee_account_id ON feed_follow_edges (followee_account_id);

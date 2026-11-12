@@ -890,7 +890,7 @@ func interactionCountsLocalPosts(t *testing.T, e *interactionEnv) {
 // interactionProjectionEqualsRebuild runs random boosts, favourites, remote emoji reactions,
 // their undos, and status deletions, and checks that rebuilding status_counters, boost_edges, and
 // status_reaction_counts from their sources yields exactly the rows that the synchronous
-// projectors wrote (data-model §9).
+// projectors wrote.
 func interactionProjectionEqualsRebuild(t *testing.T, e *interactionEnv) {
 	ctx := t.Context()
 	rng := rand.New(rand.NewPCG(100, 20261016)) //nolint:gosec // deterministic test input, not a secret

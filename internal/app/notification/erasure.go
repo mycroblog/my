@@ -10,7 +10,7 @@ import (
 )
 
 // ErasureRepository is the part of the notification module's persistence that the erasure of
-// deleted accounts uses (data-model §8). The database adapters' notification repositories
+// deleted accounts uses. The database adapters' notification repositories
 // implement it and pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseNotificationsOf deletes up to limit notifications to or from the account or about its
@@ -24,7 +24,7 @@ type ErasureRepository interface {
 	EraseStatusNotifications(ctx context.Context, tx uow.Tx, statusIDs []string) error
 }
 
-// Eraser erases a deleted local account's notifications (data-model §8): those it received,
+// Eraser erases a deleted local account's notifications: those it received,
 // those of its actions, those about its user, and those about its statuses as the content
 // module's eraser purges them.
 type Eraser struct {

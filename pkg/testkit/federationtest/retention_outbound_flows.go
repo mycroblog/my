@@ -17,7 +17,7 @@ import (
 )
 
 // The cases of RetentionFlows on the outbound activities, the deletions by retention, and the
-// observations of remote servers (data-model §4.8, §8).
+// observations of remote servers.
 
 const retentionDay = 24 * time.Hour
 

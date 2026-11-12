@@ -196,8 +196,7 @@ type ImportRepository interface {
 	UpsertImportedHead(ctx context.Context, tx uow.Tx, r ImportedRevision) error
 }
 
-// ProjectionRepository is the part of Repository that rebuilds the finance projection
-// (data-model §9).
+// ProjectionRepository is the part of Repository that rebuilds the finance projection.
 type ProjectionRepository interface {
 	// RebuildHeads empties cost_item_heads and derives it from the cost items that are not
 	// canceled, with the newest label revision and end change of each.

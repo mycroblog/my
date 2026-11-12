@@ -61,7 +61,7 @@ func (e *CustomEmojiRequestConflict) Error() string {
 }
 
 // CustomEmojiRequestRepository is the persistence port of the requests, part of
-// CustomEmojiRepository (data-model §4.4). Lookups that find nothing return an error wrapping
+// CustomEmojiRepository. Lookups that find nothing return an error wrapping
 // ErrNotFound.
 type CustomEmojiRequestRepository interface {
 	// InsertCustomEmojiRequest inserts a request with its pending row. A request to create fails
@@ -80,7 +80,7 @@ type CustomEmojiRequestRepository interface {
 	// BlankCustomEmojiRequester removes a user from its requests, which stay for the audit log.
 	BlankCustomEmojiRequester(ctx context.Context, tx uow.Tx, userID string) error
 	// RebuildCustomEmojiPendingRequests makes custom_emoji_pending_requests again from the requests
-	// without an outcome (data-model §9).
+	// without an outcome.
 	RebuildCustomEmojiPendingRequests(ctx context.Context, tx uow.Tx) error
 	FindCustomEmojiRequest(ctx context.Context, id string) (content.CustomEmojiRequestRecord, error)
 	// ListCustomEmojiRequests returns up to limit requests matching q, newest first.
@@ -678,7 +678,7 @@ func (s *CustomEmojiService) DeleteOwn(ctx context.Context, id, userID string) e
 
 // EraseAccountData implements account.DataEraser: it closes the pending requests of a deleted
 // account's user as lapsed, which frees their shortcodes and the emoji whose image they would
-// replace, and takes the user out of its requests (data-model §8). It is safe to repeat.
+// replace, and takes the user out of its requests. It is safe to repeat.
 func (s *CustomEmojiService) EraseAccountData(ctx context.Context, t appaccount.ErasureTarget, _ string, _ int) (appaccount.ErasureStep, error) {
 	if t.UserID == "" {
 		return appaccount.ErasureStep{Done: true}, nil
@@ -701,7 +701,7 @@ func (s *CustomEmojiService) EraseAccountData(ctx context.Context, t appaccount.
 }
 
 // RebuildCustomEmojiRequestProjection makes the pending requests again from the requests and their
-// outcomes (data-model §9).
+// outcomes.
 func RebuildCustomEmojiRequestProjection(ctx context.Context, u uow.UnitOfWork, repo CustomEmojiRequestRepository) error {
 	if err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildCustomEmojiPendingRequests(ctx, tx) }); err != nil {
 		return fmt.Errorf("rebuild custom_emoji_pending_requests: %w", err)

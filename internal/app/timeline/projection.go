@@ -23,8 +23,7 @@ import (
 // their modules insert once, so it means that the projectors are registered twice.
 var errEntryExists = errors.New("timeline: the feed entry already exists")
 
-// RegisterProjectors registers the timeline module's synchronous projectors (data-model §4.6,
-// §9). They read only the events and the feed_* tables:
+// RegisterProjectors registers the timeline module's synchronous projectors. They read only the events and the feed_* tables:
 //   - feed_entries holds a post entry for each status that is not deleted, with the language of
 //     its current revision, and a boost entry for each live boost of such a status;
 //   - feed_direct_recipients holds the current mentions of each direct post, and
@@ -259,7 +258,7 @@ func registerLifecycleProjector(r *uow.Projectors, repo Repository, moderated Mo
 		id := ev.Event.AccountID
 		switch {
 		case ev.Deletes(), ev.Deactivates():
-			// A deletion's restriction has no end of its own (data-model §4.6, §8), and a
+			// A deletion's restriction has no end of its own, and a
 			// deactivation lasts until the reactivation.
 			return repo.UpsertAuthorRestriction(ctx, tx, AuthorRestriction{AccountID: id, Restriction: timeline.RestrictProfileView})
 		case ev.Reactivates(), ev.RestoresRemoteActor():
@@ -365,8 +364,8 @@ func GraphSource(repo appgraph.Repository) Source {
 }
 
 // RebuildProjections empties the projections of Projection and derives them again, in one
-// transaction, by applying this module's projectors to the events that sources replay
-// (data-model §9). The restrictions are left alone: RebuildRestrictions derives them. The lists
+// transaction, by applying this module's projectors to the events that sources replay.
+// The restrictions are left alone: RebuildRestrictions derives them. The lists
 // are not projections and stay, but a member whose follow the rebuilt feed_follow_edges no longer
 // holds leaves them, as the end of the follow would have taken it out.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, sources ...Source) error {

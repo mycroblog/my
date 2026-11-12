@@ -14,7 +14,7 @@ import (
 )
 
 // PollContract verifies the date polls of the gathering repository of a database adapter through
-// appgathering.Service (ADR-0161 §7, §13, data-model §4.19): an event created with candidates is
+// appgathering.Service (ADR-0161 §7, §13): an event created with candidates is
 // unscheduled, its head spans the candidates, and it lists among the upcoming events; only those
 // who see the event answer its candidates, and they change their answers until a candidate is
 // confirmed, which keeps the event visible to them; the organizers add and withdraw candidates

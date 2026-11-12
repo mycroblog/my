@@ -18,7 +18,7 @@ import (
 // maxDiffRows is how many differing rows `my projection verify` prints per table.
 const maxDiffRows = 20
 
-// runProjection implements `my projection <subcommand>` (data-model §9): list the projections,
+// runProjection implements `my projection <subcommand>`: list the projections,
 // rebuild them from their sources, or verify that they hold what a rebuild derives.
 func runProjection(args []string, stdout, stderr io.Writer) int {
 	sub, code := dispatch("projection", args, []string{"list", "rebuild", "verify"}, stderr, projectionUsage)

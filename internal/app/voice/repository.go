@@ -315,7 +315,7 @@ type Repository interface {
 	ViewerFactsInRooms(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) (map[string]ViewerFacts, error)
 }
 
-// ProjectionRepository derives the projections of the voice module (data-model §9) from the
+// ProjectionRepository derives the projections of the voice module from the
 // events: voice_room_heads from the rooms, their revisions, host changes, participations, and
 // endings, and voice_room_participants from the participations that have not ended in rooms
 // that have not ended, their role changes and raised hands, the co-host changes of their accounts

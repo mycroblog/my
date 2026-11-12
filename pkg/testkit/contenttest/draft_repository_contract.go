@@ -26,7 +26,7 @@ type DraftRepositoryHarness struct {
 // DraftRepositoryFactory returns a harness on a new, empty database whose UnitOfWork uses opts.
 type DraftRepositoryFactory func(t *testing.T, opts uow.Options) DraftRepositoryHarness
 
-// DraftRepositoryContract verifies an adapter's DraftRepository (data-model §4.4, ADR-0156): a
+// DraftRepositoryContract verifies an adapter's DraftRepository (ADR-0156): a
 // save replaces the whole content; the schedule in effect is one per draft and one of two
 // concurrent deletions of it wins; the counts of the limits; the outcomes; deleting a draft deletes
 // every row of it; the projection rebuilds; and a file that a draft attaches counts as attached

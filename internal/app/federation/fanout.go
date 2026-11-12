@@ -400,7 +400,7 @@ type subject struct {
 // the profile: its suspension, or its move (federation.OutboundFlows).
 func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 
-// phases returns the sources of recipients of the activity, in order (data-model §7).
+// phases returns the sources of recipients of the activity, in order.
 //
 //   - Create: the mentioned accounts, then the followers, then, for a public status, the accepted
 //     relays (ADR-0006).
@@ -409,8 +409,8 @@ func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 //     voted in it (FR-112).
 //   - Announce and Undo Announce: the booster's followers, then the boosted status's author.
 //   - Update of an actor: its followers. Delete of an actor, and the Update of a suspension or
-//     of its end: its followers, then every shared inbox known to the instance (data-model §8,
-//     ADR-0058 §6).
+//     of its end: its followers, then every shared inbox known to the instance
+//     (ADR-0058 §6).
 //   - Move of an actor: its followers (ADR-0089).
 //   - Follow, Accept, Reject, and Undo Follow: the other account of the follow.
 //   - Like and Undo Like: the author of the favourited status.
@@ -562,7 +562,7 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 // the exception: its Update tells that it is suspended, also while a ban schedules its
 // deletion (ADR-0058 §6), and so is one that its owner deactivated, which publishes the
 // same document (ADR-0089 §17). The Delete of an actor goes out whatever its state, since the
-// account row stays after the purge (data-model §8).
+// account row stays after the purge.
 func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error) {
 	act := s.act
 	if act.ObjectID != act.ActorAccountID || (act.Type != federation.ActivityUpdate && act.Type != federation.ActivityDelete) {

@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// Retention of the expired sign-in records (data-model §8).
+// Retention of the expired sign-in records.
 const (
 	// JobPurgeAuthRecords deletes the expired sessions, authorization codes, token families, and
 	// one-time tokens past their retention; no payload.

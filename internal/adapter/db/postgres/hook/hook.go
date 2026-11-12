@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/hook"
 )
 
-// Repository implements apphook.Repository (data-model §4.16, ADR-0147 §6).
+// Repository implements apphook.Repository (ADR-0147 §6).
 type Repository struct {
 	db *moduleDB
 }

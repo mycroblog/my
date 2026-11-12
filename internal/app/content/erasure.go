@@ -19,7 +19,7 @@ type ErasableStatus struct {
 }
 
 // ErasureRepository is the part of the content module's persistence that the erasure of deleted
-// accounts uses (data-model §8). The database adapters' status repositories implement it and
+// accounts uses. The database adapters' status repositories implement it and
 // pass federationtest.AccountErasureContract.
 type ErasureRepository interface {
 	// ListAuthorStatusesToErase returns up to limit statuses of the author in ID order after the
@@ -53,7 +53,7 @@ type ErasureDeps struct {
 	Clock    kernel.Clock
 }
 
-// StatusEraser erases the statuses of deleted accounts, local and remote (data-model §8): each status that
+// StatusEraser erases the statuses of deleted accounts, local and remote: each status that
 // is not deleted yet gets a deletion with origin account_deletion, which takes it out of every
 // projection as the author's deletion does but sends no Delete (the Delete of the actor stands
 // for them); then its rows, every boost, favourite, reaction, bookmark, and pin of it,
@@ -118,7 +118,7 @@ func (e *StatusEraser) EraseAccountData(ctx context.Context, t appaccount.Erasur
 }
 
 // InteractionEraser erases a deleted account's favourites, reactions, bookmarks, pins, and boosts of
-// other statuses (data-model §8), and a remote account's media files, counting them out of the statuses' counters. The timeline
+// other statuses, and a remote account's media files, counting them out of the statuses' counters. The timeline
 // entries of its boosts and the notifications of its interactions go with the timeline and
 // notification modules' erasers.
 type InteractionEraser struct {

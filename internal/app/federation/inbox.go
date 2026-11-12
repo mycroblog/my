@@ -63,7 +63,7 @@ func inboxJob(a federation.ReceivedActivity, relayID string) (queue.NewJob, erro
 	}, nil
 }
 
-// InboxRepository is the persistence port of received activities (data-model §4.8): the
+// InboxRepository is the persistence port of received activities: the
 // deduplication row, the document as it arrived, and the tombstones of unknown objects. The
 // database adapters implement it and pass federationtest.InboxContract and
 // federationtest.InboxProcessingContract; the flows of the inbox on them are federationtest.InboxFlows and

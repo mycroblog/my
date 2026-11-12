@@ -186,7 +186,7 @@ type ViewerFacts struct {
 	Voted    bool
 }
 
-// Repository is the persistence port of the gathering module (data-model §4.19). The writes take
+// Repository is the persistence port of the gathering module. The writes take
 // the transaction of the command; the reads run in tx, or outside any transaction when tx is nil.
 type Repository interface {
 	ProjectionRepository
@@ -248,7 +248,7 @@ type Repository interface {
 	EraseRevisions(ctx context.Context, tx uow.Tx, accountID string, limit int) (int, error)
 }
 
-// ProjectionRepository derives the projections of the gathering module (data-model §9) from the
+// ProjectionRepository derives the projections of the gathering module from the
 // events: gathering_attendees from the answers and the approvals, gathering_heads from the events,
 // their revisions, confirmations, cancellations, and attendees, and gathering_coorganizers from
 // the co-organizer changes.

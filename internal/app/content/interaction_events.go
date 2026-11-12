@@ -8,7 +8,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// Event types of the interactions with statuses, for uow.Projectors (data-model §4.4). Each
+// Event types of the interactions with statuses, for uow.Projectors. Each
 // interaction command emits at most one of them inside its transaction, and only when it
 // actually wrote a row: repeating a command that changes nothing emits nothing, so subscribers
 // never count twice. Each event carries everything its subscribers need; they never read the

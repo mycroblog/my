@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// The direct messages by conversation (FR-212, data-model §6.4, ADR-0154 §6): the direct posts
+// The direct messages by conversation (FR-212, ADR-0154 §6): the direct posts
 // that a viewer sent or received, grouped by the conversation (content's status_conversations)
 // they belong to, followed or not. The projectors keep two projections:
 //   - feed_conversation_participants holds the parties of each direct post (its author and its

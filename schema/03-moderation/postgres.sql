@@ -208,7 +208,7 @@ CREATE TABLE report_forwards (
 );
 CREATE UNIQUE INDEX report_forwards_report_id ON report_forwards (report_id);
 
--- moderation and content: actions on statuses (#364, data-model §4.4) -------------------------
+-- moderation and content: actions on statuses (#364) ------------------------------------------
 
 -- Event child: a status that an action on statuses (delete_statuses, mark_statuses_sensitive)
 -- acts on. The status is the target account's.
@@ -398,7 +398,7 @@ CREATE TABLE signup_block_lifts (
 
 -- ---------------------------------------------------------------------------------------------
 -- moderation: retention of the moderation records and the holds that stop it (#349,
--- data-model §8, ADR-0058). Owned by internal/app/moderation.
+-- ADR-0058). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: an operator's hold on the erasure of an account's records (a court order to preserve

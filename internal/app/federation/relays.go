@@ -60,8 +60,8 @@ type RelayRecord struct {
 	Status federation.RelayStatus
 }
 
-// RelayRepository is the persistence port of the relays (relays, relay_events, relay_states,
-// data-model §4.8). The database adapters implement it and pass federationtest.RelayContract. Methods
+// RelayRepository is the persistence port of the relays (relays, relay_events, relay_states).
+// The database adapters implement it and pass federationtest.RelayContract. Methods
 // that take a uow.Tx run inside that transaction; the others read committed data. Lookups that
 // find nothing return an error wrapping ErrNotFound.
 type RelayRepository interface {
@@ -92,8 +92,7 @@ type RelayRepository interface {
 	ListAcceptedRelayInboxes(ctx context.Context) ([]federation.IRI, error)
 }
 
-// RebuildRelayStates derives relay_states again from relay_events in one transaction
-// (data-model §9).
+// RebuildRelayStates derives relay_states again from relay_events in one transaction.
 func RebuildRelayStates(ctx context.Context, u uow.UnitOfWork, repo RelayRepository) error {
 	if err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildRelayStates(ctx, tx) }); err != nil {
 		return fmt.Errorf("rebuild the relay states: %w", err)

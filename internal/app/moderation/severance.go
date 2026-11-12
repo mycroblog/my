@@ -293,7 +293,7 @@ func (s *Service) SeveranceOf(ctx context.Context, accountID, id string) (Severa
 }
 
 // EraseAccountData implements account.DataEraser: it deletes the records of the follows that a
-// deleted local account lost to suspensions (data-model §8). It is safe to repeat.
+// deleted local account lost to suspensions. It is safe to repeat.
 func (s *Service) EraseAccountData(ctx context.Context, t appaccount.ErasureTarget, _ string, _ int) (appaccount.ErasureStep, error) {
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.EraseSeverancesOf(ctx, tx, t.AccountID) })
 	return appaccount.ErasureStep{Done: true}, err
