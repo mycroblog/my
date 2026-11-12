@@ -56,6 +56,12 @@ const analyticsPage = "app/docs/src/content/docs/analytics.mdx";
  */
 export const handWrittenPages: readonly string[] = [landingPage, analyticsPage];
 
+/**
+ * The release notes page (ADR-0150 §12), written in the site like the landing page. The site's Worker fills it with the
+ * notes of GitHub Releases, which are in English, so it has no translation: a locale serves the English page.
+ */
+export const releaseNotesPage = "app/docs/src/content/docs/releases.mdx";
+
 /** Whether a source is a page written in the site (handWrittenPages) rather than a document of docs/. */
 export function isHandWritten(source: string): boolean {
   return handWrittenPages.includes(source);

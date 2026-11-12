@@ -78,6 +78,8 @@ expect_stage() {
     [[ -z "$want" ]] || fail "stage $name: passed, want an error with '$want'"
     [[ -n "$want" || (-f "$tmp/work-$name/site/next/index.html" && -f "$tmp/work-$name/wrangler.jsonc") ]] ||
       fail "stage $name: did not copy the build and the config"
+    [[ -n "$want" || (-f "$tmp/work-$name/worker/index.ts" && -z "$(find "$tmp/work-$name/worker" -name '*.test.ts')") ]] ||
+      fail "stage $name: did not copy the Worker's code alone"
     [[ -n "$want" ]] || grep -qx '/ /next/ 302' "$tmp/work-$name/site/_redirects" ||
       fail "stage $name: no redirect of / to /next/"
   else

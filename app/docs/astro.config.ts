@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The documentation site (ADR-0150): Astro Starlight, built to static files in dist/ by `scripts/task.sh docs:site-build`.
 // The site is a build tool, not where the documents live: the pages under src/content/docs/ are copied there from the
-// Markdown of the repository before the build; only the landing page (src/content/docs/index.mdx) and the notice of the
-// site's analytics (src/content/docs/analytics.mdx) are written here.
+// Markdown of the repository before the build; only the landing page (src/content/docs/index.mdx), the notice of the
+// site's analytics (src/content/docs/analytics.mdx) and the release notes page (src/content/docs/releases.mdx, which
+// the site's Worker fills from GitHub Releases as it serves it: worker/release-notes.ts) are written here.
 // Search is Starlight's built-in Pagefind. The one external service is Cloudflare Web Analytics on the production site
 // (ADR-0150 §7, src/analytics.ts): its beacon is in the head of every page only when DOCS_SITE_CF_BEACON_TOKEN is set,
 // which docs-site-deploy.yml alone does, so local builds, the merge queue and the previews of pull requests have none.
@@ -71,8 +72,8 @@ export default defineConfig({
       lastUpdated: false,
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides. A page
       // lists only the entries of its own section; every other section is one link to its first document
-      // (src/section-sidebar.ts, added by the reference's plugin after its own middleware).
-      sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
+      // (src/section-sidebar.ts, added by the reference's plugin after its own middleware). The release notes come last.
+      sidebar: [...docsSidebar({ Developers: [apiReferenceSidebar] }), { label: "Release notes", slug: "releases" }],
       // The Markdown form of each page in its head (src/route-middleware.ts), the landing page's hero buttons, which
       // name documents by their repository path (src/routeData.ts), and what the head tells search engines: noindex,
       // canonical and hreflang links (src/indexing.ts).
