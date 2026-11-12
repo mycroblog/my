@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The glossary of the machine-translated catalogs (tools/i18n/glossary.json, web-client/16-look-states-and-wording.md
-// G21): per locale, the preferred term of a thing and the variants check.ts rejects in the text of a message. The
-// words of en and ja are decisions of the copy role, which the copy lint reads (copy.ts).
+// The glossary of the machine-translated catalogs (tools/i18n/glossary.json): per locale, the preferred term of a
+// thing and the variants check.ts rejects in the text of a message. The words of en and ja are decisions of the copy
+// role, which the copy lint reads (copy.ts).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { toolDir } from "./catalog";

@@ -9,7 +9,7 @@
 //   error: malformed locale directory, namespace, or key; two keys mapping to one accessor
 //   error: catalog file outside locales/<locale>/<namespace>/<area>.json, or a key outside its area's file (ADR-0081)
 //   error: generated files (pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
-//   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
+//   error: copy outside the tone and punctuation rules of its locale: an exclamation mark
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
 //          parenthesis next to a Han character, corner brackets 「」『』, or kana; in Traditional Chinese, the same ASCII
@@ -209,18 +209,17 @@ function analyze(
   }
 }
 
-/** The glossary variants (G21) and the punctuation that web-client/16-look-states-and-wording.md G19 / G20 rule out, found in the message's own text (not its ICU syntax). */
+/** The glossary variants and the punctuation of each locale, found in the message's own text (not its ICU syntax). */
 function copyStyleFindings(locale: string, text: string): string[] {
   if (isPseudo(locale)) return [];
   const out: string[] = glossaryFindings(glossary, locale, text);
-  if (/[!！¡]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
+  if (/[!！¡]/.test(text)) out.push("no exclamation marks in UI copy");
   if (new Intl.Locale(locale).language === "ja") {
     if (/[：；（）]/u.test(text))
       out.push(
-        'use the ASCII colon, semicolon and parentheses (": ", "; ", " (…)") in Japanese, not "：", "；", "（）" (web-client/16-look-states-and-wording.md G20)',
+        'use the ASCII colon, semicolon and parentheses (": ", "; ", " (…)") in Japanese, not "：", "；", "（）"',
       );
-    if (text.includes(","))
-      out.push('use "、" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)');
+    if (text.includes(",")) out.push('use "、" instead of an ASCII comma in Japanese');
   }
   if (isSimplifiedChinese(locale)) out.push(...simplifiedChineseFindings(text));
   if (isTraditionalChinese(locale)) out.push(...traditionalChineseFindings(text));
@@ -231,12 +230,10 @@ function copyStyleFindings(locale: string, text: string): string[] {
   return out;
 }
 
-/** The punctuation rules of German (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of German. */
 function germanFindings(text: string): string[] {
   if (!text.includes('"')) return [];
-  return [
-    'use "„…“" (and "‚…‘" inside them) as quotation marks in German, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-  ];
+  return ['use "„…“" (and "‚…‘" inside them) as quotation marks in German, not ASCII double quotation marks'];
 }
 
 /** A narrow no-break space (U+202F), which French puts before ":", ";", "?" and inside « ». */
@@ -245,41 +242,28 @@ const NNBSP = "\u202F";
 const FR_UNSPACED = new RegExp(`(?:^|[^${NNBSP}])(?:[;?]|:(?=\\s|$))`, "mu");
 const FR_GUILLEMETS = new RegExp(`«(?!${NNBSP})|(?<!${NNBSP})»`, "u");
 
-/** The punctuation rules of French (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of French. */
 function frenchFindings(text: string): string[] {
   const out: string[] = [];
-  if (text.includes('"'))
-    out.push(
-      'use "« … »" as quotation marks in French, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (FR_UNSPACED.test(text))
-    out.push(
-      'put a narrow no-break space (U+202F) before ":", ";" and "?" in French (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (FR_GUILLEMETS.test(text))
-    out.push(
-      "put a narrow no-break space (U+202F) inside « » in French (web-client/16-look-states-and-wording.md G20)",
-    );
+  if (text.includes('"')) out.push('use "« … »" as quotation marks in French, not ASCII double quotation marks');
+  if (FR_UNSPACED.test(text)) out.push('put a narrow no-break space (U+202F) before ":", ";" and "?" in French');
+  if (FR_GUILLEMETS.test(text)) out.push("put a narrow no-break space (U+202F) inside « » in French");
   return out;
 }
 
-/** The punctuation rules of Brazilian Portuguese (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of Brazilian Portuguese. */
 function portugueseFindings(text: string): string[] {
   if (!text.includes('"')) return [];
-  return [
-    'use "“…”" (and "‘…’" inside them) as quotation marks in Portuguese, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-  ];
+  return ['use "“…”" (and "‘…’" inside them) as quotation marks in Portuguese, not ASCII double quotation marks'];
 }
 
-/** The punctuation rules of Spanish (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of Spanish. */
 function spanishFindings(text: string): string[] {
   const out: string[] = [];
   if ((text.match(/\?/g) ?? []).length !== (text.match(/¿/g) ?? []).length)
-    out.push('open each question with "¿" in Spanish (web-client/16-look-states-and-wording.md G20)');
+    out.push('open each question with "¿" in Spanish');
   if (text.includes('"'))
-    out.push(
-      'use "«…»" (and "“…”" inside them) as quotation marks in Spanish, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-    );
+    out.push('use "«…»" (and "“…”" inside them) as quotation marks in Spanish, not ASCII double quotation marks');
   return out;
 }
 
@@ -297,19 +281,14 @@ function isSimplifiedChinese(locale: string): boolean {
 const HAN = "\\p{Script=Han}";
 const ZH_ASCII_PUNCTUATION = new RegExp(`${HAN}[,;:?]|[,;?]${HAN}|${HAN}[()]|[()]${HAN}`, "u");
 
-/** The punctuation rules of Simplified Chinese (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of Simplified Chinese. */
 function simplifiedChineseFindings(text: string): string[] {
   const out: string[] = [];
   if (ZH_ASCII_PUNCTUATION.test(text))
-    out.push(
-      'use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Simplified Chinese (web-client/16-look-states-and-wording.md G20)',
-    );
+    out.push('use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Simplified Chinese');
   if (/[「」『』]/u.test(text))
-    out.push(
-      'use "“…”" and "‘…’" as quotation marks in Simplified Chinese, not "「」" or "『』" (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
-    out.push("no kana in Simplified Chinese (web-client/16-look-states-and-wording.md G20)");
+    out.push('use "“…”" and "‘…’" as quotation marks in Simplified Chinese, not "「」" or "『』"');
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) out.push("no kana in Simplified Chinese");
   return out;
 }
 
@@ -320,24 +299,16 @@ function simplifiedChineseFindings(text: string): string[] {
 const SIMPLIFIED_ONLY =
   /[们这个说发书设认关账号录图视频网络软据库应该对开从过还进选择删让请时间问题错误页动态码为务当将无与实现点击显户级员复帮览项织线绑权验证读写传输]/u;
 
-/** The punctuation and script rules of Traditional Chinese (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation and script rules of Traditional Chinese. */
 function traditionalChineseFindings(text: string): string[] {
   const out: string[] = [];
   if (ZH_ASCII_PUNCTUATION.test(text))
-    out.push(
-      'use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Traditional Chinese (web-client/16-look-states-and-wording.md G20)',
-    );
+    out.push('use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Traditional Chinese');
   if (/[“”‘’]/u.test(text))
-    out.push(
-      'use "「…」" and "『…』" as quotation marks in Traditional Chinese, not "“”" or "‘’" (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
-    out.push("no kana in Traditional Chinese (web-client/16-look-states-and-wording.md G20)");
+    out.push('use "「…」" and "『…』" as quotation marks in Traditional Chinese, not "“”" or "‘’"');
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) out.push("no kana in Traditional Chinese");
   const simplified = text.match(SIMPLIFIED_ONLY);
-  if (simplified)
-    out.push(
-      `"${simplified[0]}" is a Simplified Chinese character; write Traditional Chinese (web-client/16-look-states-and-wording.md G20)`,
-    );
+  if (simplified) out.push(`"${simplified[0]}" is a Simplified Chinese character; write Traditional Chinese`);
   return out;
 }
 

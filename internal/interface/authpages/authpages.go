@@ -62,7 +62,7 @@ const (
 	PathSignOut       = "/auth/sign_out"
 	PathSignUp        = "/auth/sign_up"
 	// PathWelcome starts the web client's sign-in, which comes back to its welcome step after
-	// sign-up (web-client/screens/welcome.md): a new user who can use the account goes there.
+	// sign-up: a new user who can use the account goes there.
 	PathWelcome = "/login?return_to=%2Fwelcome"
 	// PathVerifyEmail is the page that verification emails link to.
 	PathVerifyEmail = appidentity.PathVerifyEmail

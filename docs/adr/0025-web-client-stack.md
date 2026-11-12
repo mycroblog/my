@@ -40,7 +40,7 @@
 
 具体的なバージョンは各パッケージの `package.json` と lockfile で固定する。公開から 3 日未満の版は使わない（ワークスペースの `minimumReleaseAge`）。
 
-書き方の規約は [Web クライアントの設計規約](../architecture/web-client/README.md) にまとめ、可能なものは lint で強制する。
+書き方の規約は、可能なものを lint で強制する。
 React Compiler がルール違反のコンポーネントを黙って最適化から外すので、関連する lint は error にする。
 
 ### 2. ワークスペースとパッケージ
@@ -108,7 +108,7 @@ React Compiler がルール違反のコンポーネントを黙って最適化�
 
 ### 6. アイコン
 
-`@my/design-system` のアイコンは react-icons の Phosphor（`react-icons/pi`）から使う。`Icons.tsx` は「意味の名前から Phosphor のアイコンを引く薄い層」にする（web-client [§16.3](../architecture/web-client/16-look-states-and-wording.md#163-アイコン) の G10〜G13）。
+`@my/design-system` のアイコンは react-icons の Phosphor（`react-icons/pi`）から使う。`Icons.tsx` は「意味の名前から Phosphor のアイコンを引く薄い層」にする。
 
 - `Icons.tsx` は意味の名前（`ReplyIcon`・`StarIcon` など）の export を保ち、それぞれを Phosphor のコンポーネントの対応で定義する。
   画面の側の import は変わらず、セットをもう一度替えるときも `Icons.tsx` だけを直せばよい。
@@ -145,7 +145,7 @@ lint は Oxlint だけで行い、ESLint とその実行は使わない。
     `restrictions.test.js` は Oxlint の RuleTester（`oxlint/plugins-dev`）で、各禁止規則が違反を拒むことを確かめる。
 - R14（数値を `&&` の条件にしない）は、型情報が要る `@eslint-react/no-leaked-conditional-rendering` が Oxlint では動かないので、lint では検査せず、レビューで確かめる。決定者はこれを受け入れている。
   `@eslint-react/no-unused-props` と `@typescript-eslint/no-unsafe-enum-assignment` も検査から外れる。
-- web-client の「強制」の列の規則名は、Oxlint で動く名前（`react-hooks/purity` は `react/purity` など）に合わせる。
+- 規則は Oxlint で動く名前（`react-hooks/purity` は `react/purity` など）で書く。
 - 無効化コメントは `eslint-disable` の形のまま使う。R9 の `no-restricted-disable` には、`react-hooks/*` に加えて Oxlint の `react/` の名前（`react/exhaustive-deps` など）を挙げる。
 - lint のタスクは Oxlint・`restrictions.test.js`・knip・CSS の `100vh` の検査を動かす。
 - 依存から ESLint、typescript-eslint、`eslint-plugin-react-hooks` を外す。JS プラグインとして使うプラグインは残す。
@@ -157,9 +157,9 @@ lint は Oxlint だけで行い、ESLint とその実行は使わない。
 React Compiler は `oxc-transform-react` で動かし、React のパッケージの直接の依存から Babel を外す。
 
 - `@my/app` は、`oxc-transform-react` を呼ぶ 1 ファイルの Vite プラグインを置く。
-  - client の環境のファイルだけを変換し（web-client の T6）、plugin-react と同じコードのフィルタを使う。`node_modules` は変換しない。
+  - client の環境のファイルだけを変換し、plugin-react と同じコードのフィルタを使う。`node_modules` は変換しない。
   - `jsx: "preserve"` で TypeScript だけを除いてコンパイラを通し、JSX と React Refresh は Vite 自身の Oxc の変換に任せる。
-  - web-client の R4 のゲートは同じプラグインが持つ。`reportDiagnostics` の診断が 1 つでもあれば、場所と理由を挙げて `vite build` を失敗させる。
+  - コンパイラが最適化を諦めるコードを止めるゲートは、同じプラグインが持つ。`reportDiagnostics` の診断が 1 つでもあれば、場所と理由を挙げて `vite build` を失敗させる。
     `"use no memo"` / `"use no forget"` で始まる関数の中の診断は除く。関数の範囲は Vite が出す `parseSync`（Rolldown の Oxc のパーサ）で求め、
     診断の UTF-8 のバイト位置を UTF-16 の位置に直して比べる。出力の `_c(N)` が 1 つもなければ失敗させる。
   - このゲートは診断のすべてを失敗にするので、位置のない検証を数えなかった Babel 版より厳しい。決定者はこの厳しさを受け入れている。
