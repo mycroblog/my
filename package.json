@@ -9,6 +9,6 @@
     "knip": "6.44.2",
     "oxlint": "1.92.0",
     "oxlint-tsgolint": "7.0.2006",
-    "typescript": "npm:@typescript/typescript6@6.0.2"
+    "typescript": "7.0.2"
   }
 }
