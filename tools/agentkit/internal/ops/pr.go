@@ -163,6 +163,32 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		fmt.Fprintf(&b, "\n%s\n", o.Footer)
 	}
 
+	// A branch that already has an open pull request (an epic's draft, which each issue adds a commit to) gets its
+	// description rewritten, and only the issues it did not close yet are told.
+	var existing []struct {
+		Number int    `json:"number"`
+		URL    string `json:"url"`
+		Body   string `json:"body"`
+	}
+	if err := gh.JSON(&existing, "pr", "list", "-R", gh.Repo(), "--head", branch, "--state", "open", "--json", "number,url,body"); err == nil && len(existing) > 0 {
+		pr := existing[0]
+		edit := exec.Command("gh", "pr", "edit", strconv.Itoa(pr.Number), "-R", gh.Repo(), "--title", o.Title, "--body-file", "-")
+		edit.Dir = r.Root
+		edit.Stdin = strings.NewReader(b.String())
+		if out, err := edit.CombinedOutput(); err != nil {
+			return "", fmt.Errorf("gh pr edit %d: %w: %s", pr.Number, err, strings.TrimSpace(string(out)))
+		}
+		for _, is := range issues {
+			if strings.Contains(pr.Body, fmt.Sprintf("Closes #%d\n", is.Number)) {
+				continue
+			}
+			if _, err := gh.Run("issue", "comment", strconv.Itoa(is.Number), "-R", gh.Repo(), "--body", "PR: "+pr.URL); err != nil {
+				return pr.URL, err
+			}
+		}
+		return pr.URL, nil
+	}
+
 	args := []string{"pr", "create", "-R", gh.Repo(), "--base", o.Base, "--head", branch, "--title", o.Title, "--body-file", "-"}
 	if o.Draft {
 		args = append(args, "--draft")

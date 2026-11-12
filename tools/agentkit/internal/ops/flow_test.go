@@ -461,6 +461,31 @@ func TestOpenClosesEveryIssue(t *testing.T) {
 	}
 }
 
+func TestOpenUpdatesTheBranchsPullRequest(t *testing.T) {
+	main := sandbox(t)
+	log := fakeGH(t, `
+case "$1 $2" in
+  "pr list") printf '%s\n' '[{"number":20,"url":"https://github.com/o/r/pull/20","body":"## Summary\n\nS\n\nCloses #12\n\n## Changes\n"}]' ;;
+  "pr edit") cat > "$STATE/body" ;;
+  "pr create") echo "a second pull request was created" >&2; exit 1 ;;
+`+strings.TrimPrefix(ghIssues, "\ncase \"$1 $2\" in\n"))
+	r := addWorktree(t, main, "docs/12-epic")
+	commit(t, r.Root, "a.txt", "a\n", "docs: first (#12)")
+	commit(t, r.Root, "b.txt", "b\n", "docs: second (#15)")
+	url, err := Open(r, OpenOptions{Summary: "S"})
+	if err != nil || url != "https://github.com/o/r/pull/20" {
+		t.Fatalf("got %q, %v", url, err)
+	}
+	body, _ := os.ReadFile(filepath.Join(filepath.Dir(log), "body"))
+	if !strings.Contains(string(body), "Closes #12\nCloses #15\n") {
+		t.Errorf("the rewritten description lacks both issues:\n%s", body)
+	}
+	calls := readLog(t, log)
+	if !strings.Contains(calls, "issue comment 15") || strings.Contains(calls, "issue comment 12") {
+		t.Errorf("only the issue the pull request did not close yet is told:\n%s", calls)
+	}
+}
+
 func TestOpenListsScreens(t *testing.T) {
 	main := sandbox(t)
 	log := fakeGH(t, ghIssues)
