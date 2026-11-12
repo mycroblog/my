@@ -146,6 +146,9 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// What the link card crawler does on this instance, for the page that tells site operators
 	// about it (ADR-0062).
 	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
+	// Whether the web client sends its UX measurements (ADR-0167 §3).
+	uxMeasurement := settings.UXMeasurement() && s.o.UXMeasurements != nil
+	out.UxMeasurement = &uxMeasurement
 	// What translation offers and where it sends the text of posts (ADR-0148 §6).
 	translationInfo, err := s.instanceTranslation(ctx, settings.TranslationBrowser(), settings.TranslationReportsToServer())
 	if err != nil {

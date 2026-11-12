@@ -3239,6 +3239,7 @@ const (
 	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
 	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyUxMeasurement                      InstanceSettingKey = "ux_measurement"
 	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
@@ -3478,6 +3479,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyTranslationUserMonthlyCharacters:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyUxMeasurement:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
@@ -5194,6 +5197,42 @@ func (e TipAmountsProblemReason) Valid() bool {
 	case TipAmountsProblemReasonCurrency:
 		return true
 	case TipAmountsProblemReasonRange:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UXMetric.
+const (
+	UXMetricCallJitter     UXMetric = "call_jitter"
+	UXMetricCallPacketLoss UXMetric = "call_packet_loss"
+	UXMetricCallRtt        UXMetric = "call_rtt"
+	UXMetricInp            UXMetric = "inp"
+	UXMetricLcp            UXMetric = "lcp"
+	UXMetricLongFrame      UXMetric = "long_frame"
+	UXMetricPress          UXMetric = "press"
+	UXMetricTransition     UXMetric = "transition"
+)
+
+// Valid indicates whether the value is a known member of the UXMetric enum.
+func (e UXMetric) Valid() bool {
+	switch e {
+	case UXMetricCallJitter:
+		return true
+	case UXMetricCallPacketLoss:
+		return true
+	case UXMetricCallRtt:
+		return true
+	case UXMetricInp:
+		return true
+	case UXMetricLcp:
+		return true
+	case UXMetricLongFrame:
+		return true
+	case UXMetricPress:
+		return true
+	case UXMetricTransition:
 		return true
 	default:
 		return false
@@ -9650,6 +9689,33 @@ type ClientErrorReport struct {
 // `unhandledrejection` as a promise rejection that nothing handled.
 type ClientErrorReportKind string
 
+// ClientMeasurement One sample of how fast the web client responded.
+type ClientMeasurement struct {
+	// Metric What a UX measurement of the web client measures, and so what its name names. The values are
+	// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+	//
+	// - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+	//   a long animation frame of a route, named by the route's ID (a pattern such as
+	//   `/_app/statuses/$id`, never the URL).
+	// - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+	//   `replace`, `none`).
+	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+	//   call transport (`p2p`, `livekit`, `sora`).
+	Metric UXMetric `json:"metric"`
+
+	// Name The route ID, interaction kind, action ID, or call transport that `metric` names.
+	Name string `json:"name"`
+
+	// Value The value in milliseconds, or in percent for `call_packet_loss`.
+	Value float64 `json:"value"`
+}
+
+// ClientMeasurementReport Samples of how fast the web client responded, sent together.
+type ClientMeasurementReport struct {
+	Measurements []ClientMeasurement `json:"measurements"`
+}
+
 // CloseServiceRequest The confirmation of the closure of the server.
 type CloseServiceRequest struct {
 	// ConfirmDomain The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
@@ -12612,6 +12678,11 @@ type Instance struct {
 	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
 	// no `providers`, nothing can be translated and clients show no action for it.
 	Translation InstanceTranslation `json:"translation"`
+
+	// UxMeasurement Whether the server takes samples of how fast the web client responds
+	// (`POST /client_measurements`). While it is false, the server takes none and the client sends
+	// none.
+	UxMeasurement *bool `json:"ux_measurement,omitempty"`
 
 	// Version The server version.
 	Version string `json:"version"`
@@ -16902,6 +16973,63 @@ type TwoFactorCodeRequest struct {
 	Code string `json:"code"`
 }
 
+// UXMeasurementBucket The samples whose value is above the bound of the bucket before and at most `le`. The last
+// bucket has no `le`: it holds the samples above every bound.
+type UXMeasurementBucket struct {
+	// Le The upper bound of the bucket, in the unit of the metric.
+	Le      *float64 `json:"le,omitempty"`
+	Samples int64    `json:"samples"`
+}
+
+// UXMeasurementList The UX measurements of a window of hours, by metric and then by most samples.
+type UXMeasurementList struct {
+	Items []UXMeasurementSummary `json:"items"`
+
+	// Since The start of the first hour of the window, in UTC.
+	Since time.Time `json:"since"`
+}
+
+// UXMeasurementSummary The samples of one metric and name over the window.
+type UXMeasurementSummary struct {
+	// Buckets The samples by bucket, from the lowest bound up.
+	Buckets []UXMeasurementBucket `json:"buckets"`
+
+	// Metric What a UX measurement of the web client measures, and so what its name names. The values are
+	// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+	//
+	// - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+	//   a long animation frame of a route, named by the route's ID (a pattern such as
+	//   `/_app/statuses/$id`, never the URL).
+	// - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+	//   `replace`, `none`).
+	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+	//   call transport (`p2p`, `livekit`, `sora`).
+	Metric UXMetric `json:"metric"`
+
+	// Name The route ID, interaction kind, action ID, or call transport; `other` for the names past
+	// the first 200 of the metric that a process of the server kept.
+	Name string `json:"name"`
+
+	// P75 The upper bound of the bucket that holds the 75th percentile: at least three quarters of
+	// the samples are at most this value. Absent when the 75th percentile is in the last bucket.
+	P75     *float64 `json:"p75,omitempty"`
+	Samples int64    `json:"samples"`
+}
+
+// UXMetric What a UX measurement of the web client measures, and so what its name names. The values are
+// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+//
+//   - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+//     a long animation frame of a route, named by the route's ID (a pattern such as
+//     `/_app/statuses/$id`, never the URL).
+//   - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+//     `replace`, `none`).
+//   - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+//   - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+//     call transport (`p2p`, `livekit`, `sora`).
+type UXMetric string
+
 // UpdateBadgeChoiceRequest Whether to show the badge of the role on the authenticated user's profile.
 type UpdateBadgeChoiceRequest struct {
 	Displayed bool `json:"displayed"`
@@ -18529,6 +18657,12 @@ type ListSupporterSubscriptionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListUXMeasurementsParams defines parameters for ListUXMeasurements.
+type ListUXMeasurementsParams struct {
+	// Hours The hours of the window, 24 by default.
+	Hours *int `form:"hours,omitempty" json:"hours,omitempty"`
+}
+
 // ListWebhookDeliveriesParams defines parameters for ListWebhookDeliveries.
 type ListWebhookDeliveriesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -20056,6 +20190,9 @@ type ServerInterface interface {
 	// GetAdminTranslationOverview Show how translation is used
 	// (GET /admin/translation)
 	GetAdminTranslationOverview(w http.ResponseWriter, r *http.Request)
+	// ListUXMeasurements List the UX measurements
+	// (GET /admin/ux_measurements)
+	ListUXMeasurements(w http.ResponseWriter, r *http.Request, params ListUXMeasurementsParams)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
 	EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
@@ -27201,6 +27338,39 @@ func (siw *ServerInterfaceWrapper) GetAdminTranslationOverview(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAdminTranslationOverview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListUXMeasurements operation middleware
+func (siw *ServerInterfaceWrapper) ListUXMeasurements(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListUXMeasurementsParams
+
+	// ------------- Optional query parameter "hours" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "hours", r.URL.Query(), &params.Hours, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "hours"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hours", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUXMeasurements(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34626,6 +34796,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/resolve", wrapper.ResolveErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/mute", wrapper.MuteErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/unmute", wrapper.UnmuteErrorGroup)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/ux_measurements", wrapper.ListUXMeasurements)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/{id}/lift", wrapper.LiftDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/reports", wrapper.ListReports)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/reports/{id}", wrapper.GetReport)
@@ -48176,6 +48347,68 @@ type GetAdminTranslationOverviewdefaultApplicationProblemPlusJSONResponse struct
 }
 
 func (response GetAdminTranslationOverviewdefaultApplicationProblemPlusJSONResponse) VisitGetAdminTranslationOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUXMeasurementsRequestObject struct {
+	Params ListUXMeasurementsParams
+}
+
+type ListUXMeasurementsResponseObject interface {
+	VisitListUXMeasurementsResponse(w http.ResponseWriter) error
+}
+
+type ListUXMeasurements200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListUXMeasurements200JSONResponse struct {
+	Body    UXMeasurementList
+	Headers ListUXMeasurements200ResponseHeaders
+}
+
+func (response ListUXMeasurements200JSONResponse) VisitListUXMeasurementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUXMeasurementsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListUXMeasurementsdefaultApplicationProblemPlusJSONResponse) VisitListUXMeasurementsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -63518,6 +63751,9 @@ type StrictServerInterface interface {
 	// GetAdminTranslationOverview Show how translation is used
 	// (GET /admin/translation)
 	GetAdminTranslationOverview(ctx context.Context, request GetAdminTranslationOverviewRequestObject) (GetAdminTranslationOverviewResponseObject, error)
+	// ListUXMeasurements List the UX measurements
+	// (GET /admin/ux_measurements)
+	ListUXMeasurements(ctx context.Context, request ListUXMeasurementsRequestObject) (ListUXMeasurementsResponseObject, error)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
 	EndVoiceRoomAsModerator(ctx context.Context, request EndVoiceRoomAsModeratorRequestObject) (EndVoiceRoomAsModeratorResponseObject, error)
@@ -70307,6 +70543,32 @@ func (sh *strictHandler) GetAdminTranslationOverview(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAdminTranslationOverviewResponseObject); ok {
 		if err := validResponse.VisitGetAdminTranslationOverviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListUXMeasurements operation middleware
+func (sh *strictHandler) ListUXMeasurements(w http.ResponseWriter, r *http.Request, params ListUXMeasurementsParams) {
+	var request ListUXMeasurementsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUXMeasurements(ctx, request.(ListUXMeasurementsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUXMeasurements")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListUXMeasurementsResponseObject); ok {
+		if err := validResponse.VisitListUXMeasurementsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: reportClientMeasurements
+  summary: Report samples of how fast the web client responds
+  description: |
+    Reports samples of how fast the web client responded, for the operators of the server: up
+    to 50 of them in a body of at most 16 KiB of `application/json`. A report that reaches the
+    operation is answered 204, which never tells whether it was kept; the limit of requests per
+    client IP (429) and an unavailable server (503) answer as for every operation. The server
+    ignores a body of another content type or over the size, and a body it cannot read; it
+    drops each sample whose name is not one of its metric or whose value is out of range, keeps
+    at most 10 reports a minute from each client IP, and takes nothing while the instance
+    setting `ux_measurement` is off (`ux_measurement` of the instance).
+
+    The client sends a sample of its page views, and nothing that identifies a person: a sample
+    names a route by its ID, never by its URL. A report may be sent without an access token,
+    with `navigator.sendBeacon` while the page is left. An access token that is sent must be
+    valid, as for every operation.
+  tags: [client-errors]
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ClientMeasurementReport.yaml
+  responses:
+    "204":
+      description: The report was received, or ignored.
+    default:
+      $ref: ../components/responses/Problem.yaml

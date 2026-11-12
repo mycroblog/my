@@ -147,6 +147,12 @@ properties:
       Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
       link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
     type: boolean
+  ux_measurement:
+    description: |
+      Whether the server takes samples of how fast the web client responds
+      (`POST /client_measurements`). While it is false, the server takes none and the client sends
+      none.
+    type: boolean
   translation:
     $ref: ./InstanceTranslation.yaml
   auto_delete_limit:

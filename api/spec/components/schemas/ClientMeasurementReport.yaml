@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: Samples of how fast the web client responded, sent together.
+type: object
+required: [measurements]
+properties:
+  measurements:
+    type: array
+    maxItems: 50
+    items:
+      $ref: ./ClientMeasurement.yaml

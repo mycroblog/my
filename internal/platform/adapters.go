@@ -66,6 +66,7 @@ type repositories struct {
 	voice        voice.Repository
 	gatherings   gathering.Repository
 	diagnostics  diagnostics.Repository
+	ux           diagnostics.UXRepository
 	translations translation.Repository
 	search       search.Repository
 	decisions    apphook.Repository

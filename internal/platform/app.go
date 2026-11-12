@@ -239,6 +239,8 @@ type App struct {
 	// Diagnostics groups the error reports in the database and changes the state of the groups
 	// (ADR-0103 §4 (2), §7).
 	Diagnostics *appdiagnostics.Service
+	// UXMeasurements counts the UX measurements of the web client (ADR-0167 §3).
+	UXMeasurements *appdiagnostics.UX
 	// Scheduler enqueues the periodic jobs for the worker role.
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`).
@@ -576,7 +578,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpTimeline(repos.feeds, repos.statuses)
 	// The error groups' projector of their states runs before the notifications and the webhooks
 	// that read the states of the groups in the same transactions.
-	a.setUpDiagnostics(repos.diagnostics)
+	a.setUpDiagnostics(repos.diagnostics, repos.ux)
 	if err := a.setUpNotification(cfg, repos.notifs, repos.pushes); err != nil {
 		return nil, err
 	}
@@ -899,6 +901,7 @@ func (a *App) Close() error {
 	}
 	// The sinks of the error reports may write to the database and measure what they send.
 	a.closeErrorReporter()
+	a.closeUXMeasurements()
 	if a.closeMeter != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), meterCloseTimeout)
 		_ = a.closeMeter(ctx) // the last measurements are lost when the collector is down

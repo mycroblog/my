@@ -3237,6 +3237,7 @@ const (
 	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
 	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyUxMeasurement                      InstanceSettingKey = "ux_measurement"
 	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
@@ -3476,6 +3477,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyTranslationUserMonthlyCharacters:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyUxMeasurement:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
@@ -5192,6 +5195,42 @@ func (e TipAmountsProblemReason) Valid() bool {
 	case TipAmountsProblemReasonCurrency:
 		return true
 	case TipAmountsProblemReasonRange:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UXMetric.
+const (
+	UXMetricCallJitter     UXMetric = "call_jitter"
+	UXMetricCallPacketLoss UXMetric = "call_packet_loss"
+	UXMetricCallRtt        UXMetric = "call_rtt"
+	UXMetricInp            UXMetric = "inp"
+	UXMetricLcp            UXMetric = "lcp"
+	UXMetricLongFrame      UXMetric = "long_frame"
+	UXMetricPress          UXMetric = "press"
+	UXMetricTransition     UXMetric = "transition"
+)
+
+// Valid indicates whether the value is a known member of the UXMetric enum.
+func (e UXMetric) Valid() bool {
+	switch e {
+	case UXMetricCallJitter:
+		return true
+	case UXMetricCallPacketLoss:
+		return true
+	case UXMetricCallRtt:
+		return true
+	case UXMetricInp:
+		return true
+	case UXMetricLcp:
+		return true
+	case UXMetricLongFrame:
+		return true
+	case UXMetricPress:
+		return true
+	case UXMetricTransition:
 		return true
 	default:
 		return false
@@ -9649,6 +9688,33 @@ type ClientErrorReport struct {
 // `unhandledrejection` as a promise rejection that nothing handled.
 type ClientErrorReportKind string
 
+// ClientMeasurement One sample of how fast the web client responded.
+type ClientMeasurement struct {
+	// Metric What a UX measurement of the web client measures, and so what its name names. The values are
+	// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+	//
+	// - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+	//   a long animation frame of a route, named by the route's ID (a pattern such as
+	//   `/_app/statuses/$id`, never the URL).
+	// - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+	//   `replace`, `none`).
+	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+	//   call transport (`p2p`, `livekit`, `sora`).
+	Metric UXMetric `json:"metric"`
+
+	// Name The route ID, interaction kind, action ID, or call transport that `metric` names.
+	Name string `json:"name"`
+
+	// Value The value in milliseconds, or in percent for `call_packet_loss`.
+	Value float64 `json:"value"`
+}
+
+// ClientMeasurementReport Samples of how fast the web client responded, sent together.
+type ClientMeasurementReport struct {
+	Measurements []ClientMeasurement `json:"measurements"`
+}
+
 // CloseServiceRequest The confirmation of the closure of the server.
 type CloseServiceRequest struct {
 	// ConfirmDomain The domain of the server (`Instance.domain`), typed by the administrator to confirm; compared without regard to case.
@@ -12613,6 +12679,11 @@ type Instance struct {
 	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
 	// no `providers`, nothing can be translated and clients show no action for it.
 	Translation InstanceTranslation `json:"translation"`
+
+	// UxMeasurement Whether the server takes samples of how fast the web client responds
+	// (`POST /client_measurements`). While it is false, the server takes none and the client sends
+	// none.
+	UxMeasurement *bool `json:"ux_measurement,omitempty"`
 
 	// Version The server version.
 	Version string `json:"version"`
@@ -16911,6 +16982,63 @@ type TwoFactorCodeRequest struct {
 	Code string `json:"code"`
 }
 
+// UXMeasurementBucket The samples whose value is above the bound of the bucket before and at most `le`. The last
+// bucket has no `le`: it holds the samples above every bound.
+type UXMeasurementBucket struct {
+	// Le The upper bound of the bucket, in the unit of the metric.
+	Le      *float64 `json:"le,omitempty"`
+	Samples int64    `json:"samples"`
+}
+
+// UXMeasurementList The UX measurements of a window of hours, by metric and then by most samples.
+type UXMeasurementList struct {
+	Items []UXMeasurementSummary `json:"items"`
+
+	// Since The start of the first hour of the window, in UTC.
+	Since time.Time `json:"since"`
+}
+
+// UXMeasurementSummary The samples of one metric and name over the window.
+type UXMeasurementSummary struct {
+	// Buckets The samples by bucket, from the lowest bound up.
+	Buckets []UXMeasurementBucket `json:"buckets"`
+
+	// Metric What a UX measurement of the web client measures, and so what its name names. The values are
+	// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+	//
+	// - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+	//   a long animation frame of a route, named by the route's ID (a pattern such as
+	//   `/_app/statuses/$id`, never the URL).
+	// - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+	//   `replace`, `none`).
+	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+	//   call transport (`p2p`, `livekit`, `sora`).
+	Metric UXMetric `json:"metric"`
+
+	// Name The route ID, interaction kind, action ID, or call transport; `other` for the names past
+	// the first 200 of the metric that a process of the server kept.
+	Name string `json:"name"`
+
+	// P75 The upper bound of the bucket that holds the 75th percentile: at least three quarters of
+	// the samples are at most this value. Absent when the 75th percentile is in the last bucket.
+	P75     *float64 `json:"p75,omitempty"`
+	Samples int64    `json:"samples"`
+}
+
+// UXMetric What a UX measurement of the web client measures, and so what its name names. The values are
+// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+//
+//   - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+//     a long animation frame of a route, named by the route's ID (a pattern such as
+//     `/_app/statuses/$id`, never the URL).
+//   - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+//     `replace`, `none`).
+//   - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+//   - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+//     call transport (`p2p`, `livekit`, `sora`).
+type UXMetric string
+
 // UpdateBadgeChoiceRequest Whether to show the badge of the role on the authenticated user's profile.
 type UpdateBadgeChoiceRequest struct {
 	Displayed bool `json:"displayed"`
@@ -18537,6 +18665,12 @@ type ListSupporterSubscriptionsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListUXMeasurementsParams defines parameters for ListUXMeasurements.
+type ListUXMeasurementsParams struct {
+	// Hours The hours of the window, 24 by default.
+	Hours *int `form:"hours,omitempty" json:"hours,omitempty"`
 }
 
 // ListWebhookDeliveriesParams defines parameters for ListWebhookDeliveries.
@@ -24840,6 +24974,16 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
 	GetAdminTranslationOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListUXMeasurements List the UX measurements
+	//
+	// The samples of how fast the web client responded (`POST /client_measurements`), summed over
+	// the last `hours` hours, the current one included, by metric and name, with their buckets and
+	// 75th percentile. The server keeps the hourly counts for 30 days. Needs the `manage_errors`
+	// permission.
+	//
+	// Corresponds with GET /admin/ux_measurements (the `ListUXMeasurements` operationId).
+	ListUXMeasurements(ctx context.Context, params *ListUXMeasurementsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// EndVoiceRoomAsModeratorWithBody End a voice chat room as a moderator
 	//
@@ -35118,6 +35262,26 @@ func (c *Client) SetAdminTheme(ctx context.Context, body SetAdminThemeJSONReques
 // Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
 func (c *Client) GetAdminTranslationOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetAdminTranslationOverviewRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListUXMeasurements List the UX measurements
+//
+// The samples of how fast the web client responded (`POST /client_measurements`), summed over
+// the last `hours` hours, the current one included, by metric and name, with their buckets and
+// 75th percentile. The server keeps the hourly counts for 30 days. Needs the `manage_errors`
+// permission.
+//
+// Corresponds with GET /admin/ux_measurements (the `ListUXMeasurements` operationId).
+func (c *Client) ListUXMeasurements(ctx context.Context, params *ListUXMeasurementsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListUXMeasurementsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -51724,6 +51888,60 @@ func NewGetAdminTranslationOverviewRequest(server string) (*http.Request, error)
 	return req, nil
 }
 
+// NewListUXMeasurementsRequest constructs an http.Request for the ListUXMeasurements method
+func NewListUXMeasurementsRequest(server string, params *ListUXMeasurementsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/ux_measurements")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Hours != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "hours", *params.Hours, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewEndVoiceRoomAsModeratorRequest calls the generic EndVoiceRoomAsModerator builder with application/json body
 func NewEndVoiceRoomAsModeratorRequest(server string, id VoiceRoomId, body EndVoiceRoomAsModeratorJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -66313,6 +66531,18 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
 	GetAdminTranslationOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminTranslationOverviewResponse, error)
+
+	// ListUXMeasurementsWithResponse List the UX measurements
+	//
+	// The samples of how fast the web client responded (`POST /client_measurements`), summed over
+	// the last `hours` hours, the current one included, by metric and name, with their buckets and
+	// 75th percentile. The server keeps the hourly counts for 30 days. Needs the `manage_errors`
+	// permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/ux_measurements (the `ListUXMeasurements` operationId).
+	ListUXMeasurementsWithResponse(ctx context.Context, params *ListUXMeasurementsParams, reqEditors ...RequestEditorFn) (*ListUXMeasurementsResponse, error)
 
 	// EndVoiceRoomAsModeratorWithBodyWithResponse End a voice chat room as a moderator
 	//
@@ -84544,6 +84774,71 @@ func (r GetAdminTranslationOverviewResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetAdminTranslationOverviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListUXMeasurementsResponse200Headers the declared response headers of an HTTP 200 response for ListUXMeasurements
+type ListUXMeasurementsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListUXMeasurementsResponseDefaultHeaders the declared response headers of an HTTP default response for ListUXMeasurements
+type ListUXMeasurementsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListUXMeasurementsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UXMeasurementList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListUXMeasurementsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListUXMeasurementsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListUXMeasurementsResponse) GetJSON200() *UXMeasurementList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListUXMeasurementsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListUXMeasurementsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListUXMeasurementsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListUXMeasurementsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListUXMeasurementsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -105919,6 +106214,24 @@ func (c *ClientWithResponses) GetAdminTranslationOverviewWithResponse(ctx contex
 		return nil, err
 	}
 	return ParseGetAdminTranslationOverviewResponse(rsp)
+}
+
+// ListUXMeasurementsWithResponse List the UX measurements
+//
+// The samples of how fast the web client responded (`POST /client_measurements`), summed over
+// the last `hours` hours, the current one included, by metric and name, with their buckets and
+// 75th percentile. The server keeps the hourly counts for 30 days. Needs the `manage_errors`
+// permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/ux_measurements (the `ListUXMeasurements` operationId).
+func (c *ClientWithResponses) ListUXMeasurementsWithResponse(ctx context.Context, params *ListUXMeasurementsParams, reqEditors ...RequestEditorFn) (*ListUXMeasurementsResponse, error) {
+	rsp, err := c.ListUXMeasurements(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListUXMeasurementsResponse(rsp)
 }
 
 // EndVoiceRoomAsModeratorWithBodyWithResponse End a voice chat room as a moderator
@@ -128841,6 +129154,83 @@ func ParseGetAdminTranslationOverviewResponse(rsp *http.Response) (*GetAdminTran
 		response.Headers200 = &headers
 	case true:
 		var headers GetAdminTranslationOverviewResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListUXMeasurementsResponse parses an HTTP response from a ListUXMeasurementsWithResponse call
+func ParseListUXMeasurementsResponse(rsp *http.Response) (*ListUXMeasurementsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListUXMeasurementsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UXMeasurementList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListUXMeasurementsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListUXMeasurementsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

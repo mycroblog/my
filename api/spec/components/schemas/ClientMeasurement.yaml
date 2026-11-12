@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: One sample of how fast the web client responded.
+type: object
+required: [metric, name, value]
+properties:
+  metric:
+    $ref: ./UXMetric.yaml
+  name:
+    description: The route ID, interaction kind, action ID, or call transport that `metric` names.
+    type: string
+    maxLength: 128
+  value:
+    description: The value in milliseconds, or in percent for `call_packet_loss`.
+    type: number
+    format: double
+    minimum: 0

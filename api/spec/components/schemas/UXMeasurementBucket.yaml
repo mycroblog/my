@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The samples whose value is above the bound of the bucket before and at most `le`. The last
+  bucket has no `le`: it holds the samples above every bound.
+type: object
+required: [samples]
+properties:
+  le:
+    description: The upper bound of the bucket, in the unit of the metric.
+    type: number
+    format: double
+  samples:
+    type: integer
+    format: int64
