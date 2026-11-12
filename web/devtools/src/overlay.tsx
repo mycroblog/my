@@ -2,8 +2,11 @@
 
 // The overlay of the dev server (ADR-0168 §1): the decider writes notes on elements or areas, sends them as one
 // batch, reads the agent's answer next to each note, and switches between the variants of an <Options> and picks
-// one (options.tsx). The plugin of vite.ts loads this module on the dev server
-// only. It is a developer tool: plain, in a shadow root of its own, and it sets nothing on the page.
+// one (options.tsx). It also shows the page at a device viewport (sizes.ts), as Storybook's viewport toolbar does: the
+// page itself, whole, in one iframe of that width and height over it, rotated or not and scaled down to fit the
+// window, whose elements take the notes and whose <Options> switch. The plugin of
+// vite.ts loads this module on the dev server only. It is a developer tool: plain, in a shadow root of its own, and
+// it sets nothing on the page.
 
 import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -19,9 +22,20 @@ import {
   type NoteInput,
   type Rect,
 } from "./note";
+import { sizes, viewportOf, type Size } from "./sizes";
 
 const pendingKey = "my-devtools:pending";
 const clearedKey = "my-devtools:cleared";
+const sizeKey = "my-devtools:size";
+
+/** The device viewport the decider chose, rotated from its natural orientation or not. */
+interface Chosen {
+  size: Size;
+  rotated: boolean;
+}
+
+// The margin around the device iframe, inside which it shrinks to fit the window.
+const margin = 16;
 
 function load<T>(storage: () => Storage, key: string, fallback: T): T {
   try {
@@ -61,19 +75,119 @@ interface Draft {
 const host = document.createElement("div");
 host.setAttribute("data-my-devtools", "");
 
-// The element under a point of the viewport, passing over the overlay.
-const elementAt = (x: number, y: number) =>
-  document.elementsFromPoint(x, y).find((e) => e !== host && e !== document.documentElement) ?? null;
+// The iframe that shows the page at a device size, while a size is chosen. It is in the overlay's shadow root.
+let device: HTMLIFrameElement | null = null;
 
-const find = (selector: string) => {
+const deviceDocument = () => {
   try {
-    return document.querySelector(selector);
+    return device?.contentDocument ?? null;
   } catch {
     return null;
   }
 };
 
-const page = () => location.pathname + location.search + location.hash;
+// A document and those of its same-origin iframes, whose elements take notes too.
+function tree(doc: Document): Document[] {
+  const inner = Array.from(doc.querySelectorAll("iframe")).flatMap((f) => {
+    try {
+      return f.contentDocument ? tree(f.contentDocument) : [];
+    } catch {
+      return [];
+    }
+  });
+  return [doc, ...inner];
+}
+
+// The documents the decider sees: the page at a device size while one is chosen, the page itself otherwise.
+const documents = () => tree(deviceDocument() ?? document);
+
+// How much an iframe is scaled on screen: the device iframe shrinks to fit the window.
+const scaleOf = (frame: Element) => {
+  const width = (frame as HTMLElement).offsetWidth;
+  return width > 0 ? frame.getBoundingClientRect().width / width : 1;
+};
+
+interface Offset {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+// Where a document's viewport starts in the top viewport, and its scale: the content box of each iframe it is in.
+function offsetOf(doc: Document): Offset {
+  const frame = doc.defaultView?.frameElement;
+  if (!frame || frame.ownerDocument === doc) return { x: 0, y: 0, scale: 1 };
+  const outer = offsetOf(frame.ownerDocument);
+  const r = frame.getBoundingClientRect();
+  const s = scaleOf(frame);
+  return {
+    x: outer.x + (r.left + frame.clientLeft * s) * outer.scale,
+    y: outer.y + (r.top + frame.clientTop * s) * outer.scale,
+    scale: outer.scale * s,
+  };
+}
+
+// A box in the client coordinates of a document, in those of the top viewport.
+function toTop(doc: Document, r: Rect): DOMRect {
+  const o = offsetOf(doc);
+  return new DOMRect(o.x + r.x * o.scale, o.y + r.y * o.scale, r.width * o.scale, r.height * o.scale);
+}
+
+// A box in the client coordinates of the top viewport, in those of a document.
+function fromTop(doc: Document, r: Rect): Rect {
+  const o = offsetOf(doc);
+  return { x: (r.x - o.x) / o.scale, y: (r.y - o.y) / o.scale, width: r.width / o.scale, height: r.height / o.scale };
+}
+
+// An element's box in the client coordinates of the top viewport.
+const rectOf = (el: Element) => toTop(el.ownerDocument, el.getBoundingClientRect());
+
+// The element under a point of a document's viewport, passing over the overlay and into same-origin iframes.
+function elementIn(doc: Document, x: number, y: number): Element | null {
+  const el = doc.elementsFromPoint(x, y).find((e) => e !== host && e !== doc.documentElement) ?? null;
+  if (el?.tagName !== "IFRAME") return el;
+  const frame = el as HTMLIFrameElement;
+  let inner: Document | null = null;
+  try {
+    inner = frame.contentDocument;
+  } catch {
+    // A cross-origin iframe: the note is on the iframe.
+  }
+  if (!inner) return el;
+  const p = fromTop(inner, toTop(doc, { x, y, width: 0, height: 0 }));
+  return elementIn(inner, p.x, p.y) ?? el;
+}
+
+// The element under a point of the top viewport: in the page at a device size while one is chosen.
+function elementAt(x: number, y: number): Element | null {
+  const inner = deviceDocument();
+  if (!device || !inner) return elementIn(document, x, y);
+  const r = device.getBoundingClientRect();
+  if (x < r.left || x >= r.right || y < r.top || y >= r.bottom) return null;
+  const p = fromTop(inner, { x, y, width: 0, height: 0 });
+  return elementIn(inner, p.x, p.y);
+}
+
+const pageOf = (doc: Document) => {
+  const { location } = doc;
+  return location.pathname + location.search + location.hash;
+};
+
+// The element of a note again, among the documents the decider sees: in the one whose page and viewport width are
+// the note's state, else in one of its page.
+function elementOf(note: NoteInput): Element | null {
+  const docs = documents();
+  const doc =
+    docs.find((d) => d.defaultView?.innerWidth === note.state.viewport.width && pageOf(d) === note.state.page) ??
+    docs.find((d) => pageOf(d) === note.state.page);
+  try {
+    return doc?.querySelector(note.target.selector) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const page = () => pageOf(document);
 
 interface OptionSet {
   id: string;
@@ -83,11 +197,12 @@ interface OptionSet {
   element: Element;
 }
 
-// The <Options> on the page (options.tsx), read from their elements. The <Options> of one id switch together, as
-// in a list whose every item is wrapped, so the first stands for them.
+// The <Options> the decider sees (options.tsx), read from their elements. The <Options> of one id switch together,
+// as in a list whose every item is wrapped, so the first stands for them.
 function optionSets(): OptionSet[] {
   const seen = new Set<string>();
-  const first = Array.from(document.querySelectorAll(`[${optionsAttribute}]`)).filter((el) => {
+  const all = documents().flatMap((doc) => Array.from(doc.querySelectorAll(`[${optionsAttribute}]`)));
+  const first = all.filter((el) => {
     const id = el.getAttribute(optionsAttribute) ?? "";
     if (seen.has(id)) return false;
     seen.add(id);
@@ -109,14 +224,19 @@ function optionSets(): OptionSet[] {
   });
 }
 
+// Each window runs its own <Options>, so the switch goes to every one of them: the page's, and the page's at a
+// device size, which then agree when the decider goes back.
 const switchTo = (id: string, variant: string) => {
-  window.dispatchEvent(new CustomEvent(switchEvent, { detail: { id, variant } }));
+  const inner = deviceDocument();
+  for (const doc of [...tree(document), ...(inner ? tree(inner) : [])]) {
+    doc.defaultView?.dispatchEvent(new CustomEvent(switchEvent, { detail: { id, variant } }));
+  }
 };
 
-function Marker({ label, selector, color }: { label: string; selector: string; color: string }) {
-  const el = find(selector);
+function Marker({ label, note, color }: { label: string; note: NoteInput; color: string }) {
+  const el = elementOf(note);
   if (!el) return null;
-  const r = el.getBoundingClientRect();
+  const r = rectOf(el);
   return (
     <div
       style={{
@@ -160,7 +280,19 @@ function Overlay() {
   const [cleared, setCleared] = useState<string>(() => load(() => localStorage, clearedKey, ""));
   const [open, setOpen] = useState(true);
   const [error, setError] = useState("");
+  const [chosen, setChosen] = useState<Chosen | null>(() => {
+    const v = load<Partial<Chosen> | null>(() => localStorage, sizeKey, null);
+    return v?.size !== undefined && v.size in sizes ? { size: v.size, rotated: v.rotated === true } : null;
+  });
   const [, setTick] = useState(0);
+  const rerender = () => {
+    setTick((t) => t + 1);
+  };
+
+  const choose = (c: Chosen | null) => {
+    setChosen(c);
+    save(() => localStorage, sizeKey, c);
+  };
 
   const refresh = () => {
     fetch(`${endpoint}/batches`)
@@ -175,9 +307,6 @@ function Overlay() {
     refresh();
     // Only the dev server loads the overlay, so import.meta.hot is always there.
     import.meta.hot.on(updateEvent, refresh);
-    const rerender = () => {
-      setTick((t) => t + 1);
-    };
     window.addEventListener("scroll", rerender, true);
     window.addEventListener("resize", rerender);
     window.addEventListener(optionsEvent, rerender);
@@ -207,7 +336,9 @@ function Overlay() {
 
   const add = () => {
     if (!draft || draft.text.trim() === "") return;
-    keep([...pending, noteOf(draft.text.trim(), draft.element, draft.area)]);
+    // noteOf takes the area in the client coordinates of the element's document.
+    const area = draft.area && fromTop(draft.element.ownerDocument, draft.area);
+    keep([...pending, noteOf(draft.text.trim(), draft.element, area)]);
     setDraft(null);
   };
 
@@ -245,7 +376,10 @@ function Overlay() {
   };
   const onMove = (e: PointerEvent) => {
     if (drag) setDrag({ ...drag, x1: e.clientX, y1: e.clientY });
-    else setHover(elementAt(e.clientX, e.clientY)?.getBoundingClientRect() ?? null);
+    else {
+      const el = elementAt(e.clientX, e.clientY);
+      setHover(el ? rectOf(el) : null);
+    }
   };
   const onUp = (e: PointerEvent) => {
     if (!drag) return;
@@ -266,10 +400,56 @@ function Overlay() {
     setDraft({ element: at, area, text: "" });
   };
 
-  const draftRect = draft?.area ?? draft?.element.getBoundingClientRect() ?? null;
+  const draftRect = draft ? (draft.area ?? rectOf(draft.element)) : null;
+
+  // The device viewport, scaled down to fit the window whole.
+  const viewport = chosen && viewportOf(chosen.size, chosen.rotated);
+  const scale = viewport
+    ? Math.min(
+        1,
+        (window.innerWidth - 2 * margin) / viewport.width,
+        (window.innerHeight - 2 * margin) / viewport.height,
+      )
+    : 1;
 
   return (
     <>
+      {chosen && viewport && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#ddd",
+            pointerEvents: "auto",
+          }}
+        >
+          <div style={{ width: viewport.width * scale, height: viewport.height * scale, outline: "1px solid #888" }}>
+            <iframe
+              ref={(el) => {
+                device = el;
+              }}
+              title={`The page at ${chosen.size} ${viewport.width}×${viewport.height}`}
+              src={location.href}
+              style={{
+                display: "block",
+                width: viewport.width,
+                height: viewport.height,
+                border: 0,
+                background: "#fff",
+                transform: `scale(${scale})`,
+                transformOrigin: "0 0",
+              }}
+              onLoad={(e) => {
+                e.currentTarget.contentWindow?.addEventListener("scroll", rerender, true);
+                rerender();
+              }}
+            />
+          </div>
+        </div>
+      )}
       {picking && (
         <div
           style={{ position: "fixed", inset: 0, cursor: "crosshair", pointerEvents: "auto" }}
@@ -306,15 +486,10 @@ function Overlay() {
         />
       )}
       {pending.map((n, i) => (
-        <Marker key={`p${i}`} label={`${i + 1}`} selector={n.target.selector} color="#666" />
+        <Marker key={`p${i}`} label={`${i + 1}`} note={n} color="#666" />
       ))}
       {sent.map((n, i) => (
-        <Marker
-          key={n.id}
-          label={`${pending.length + i + 1}`}
-          selector={n.target.selector}
-          color={n.reply ? "#137333" : "#0b57d0"}
-        />
+        <Marker key={n.id} label={`${pending.length + i + 1}`} note={n} color={n.reply ? "#137333" : "#0b57d0"} />
       ))}
       {draft && draftRect && (
         <div
@@ -414,6 +589,36 @@ function Overlay() {
             {open ? "Hide" : "Show"}
           </button>
         </div>
+        <div role="group" aria-label="Viewport" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+          {[null, ...(Object.keys(sizes) as Size[])].map((s) => {
+            const on = s === (chosen?.size ?? null);
+            const v = s && viewportOf(s, chosen?.rotated ?? false);
+            return (
+              <button
+                key={s ?? "page"}
+                type="button"
+                style={{ ...button, fontWeight: on ? 700 : 400 }}
+                aria-pressed={on}
+                onClick={() => {
+                  choose(s && { size: s, rotated: chosen?.rotated ?? false });
+                }}
+              >
+                {s && v ? `${s} ${v.width}×${v.height}` : "Page"}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            style={button}
+            disabled={!chosen}
+            aria-pressed={chosen?.rotated ?? false}
+            onClick={() => {
+              if (chosen) choose({ ...chosen, rotated: !chosen.rotated });
+            }}
+          >
+            Rotate
+          </button>
+        </div>
         {error && <div style={{ color: "#b3261e", marginTop: 4 }}>{error}</div>}
         {open &&
           sets.map((set) => (
@@ -483,14 +688,16 @@ function Overlay() {
   );
 }
 
-// One overlay per page. After an edit of the overlay, React Refresh imports this module again under another URL,
-// and the new copy replaces the one before.
-const global = window as { myDevtoolsUnmount?: () => void };
-global.myDevtoolsUnmount?.();
-document.documentElement.appendChild(host);
-const root = createRoot(host.attachShadow({ mode: "open" }));
-root.render(<Overlay />);
-global.myDevtoolsUnmount = () => {
-  root.unmount();
-  host.remove();
-};
+// One overlay per page, in the top window: the one of a page in a frame is its parent's. After an edit of the
+// overlay, React Refresh imports this module again under another URL, and the new copy replaces the one before.
+if (window.top === window) {
+  const global = window as { myDevtoolsUnmount?: () => void };
+  global.myDevtoolsUnmount?.();
+  document.documentElement.appendChild(host);
+  const root = createRoot(host.attachShadow({ mode: "open" }));
+  root.render(<Overlay />);
+  global.myDevtoolsUnmount = () => {
+    root.unmount();
+    host.remove();
+  };
+}

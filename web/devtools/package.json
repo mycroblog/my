@@ -5,7 +5,8 @@
   "license": "AGPL-3.0-only",
   "exports": {
     "./vite": "./src/vite.ts",
-    "./options": "./src/options.tsx"
+    "./options": "./src/options.tsx",
+    "./sizes": "./src/sizes.ts"
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",

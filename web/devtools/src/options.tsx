@@ -44,12 +44,18 @@ export function Options({ id, variants }: { id: string; variants: Record<string,
     };
   }, [id]);
 
-  // The overlay reads the options from the DOM again whenever one mounts, switches, or goes away.
+  // The overlay reads the options from the DOM again whenever one mounts, switches, or goes away. In a frame, the
+  // overlay is the top window's.
   useEffect(() => {
-    window.dispatchEvent(new Event(optionsEvent));
-    return () => {
-      window.dispatchEvent(new Event(optionsEvent));
+    const changed = () => {
+      try {
+        (window.top ?? window).dispatchEvent(new Event(optionsEvent));
+      } catch {
+        // A cross-origin top window has no overlay of ours.
+      }
     };
+    changed();
+    return changed;
   }, [current]);
 
   return (
