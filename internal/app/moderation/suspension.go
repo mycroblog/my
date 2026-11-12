@@ -17,7 +17,7 @@ import (
 // federation restriction of suspend and ban): an action that suspends it, and the lift or the
 // expiry of its last suspension (moderation.SuspensionChange), of a local account and of a
 // remote one alike. The federation module sends the Update of a local actor from it
-// (federation.md §11.1, ADR-0058); when it starts the suspension of a remote account, the same
+// (ADR-0058 §6); when it starts the suspension of a remote account, the same
 // transaction cuts the follows with the account (FR-717: relationship_severances.action_id is
 // ActionID, severance.go).
 const EventAccountSuspensionChanged = "moderation.account_suspension_changed"
@@ -57,7 +57,7 @@ func (s *Service) emitSuspension(ctx context.Context, tx uow.Tx, accountID, acti
 const (
 	// JobExpireRestrictions removes the restriction rows of accounts and domains that have expired
 	// and tells that they ended, and the end of the suspensions among them (FR-803,
-	// federation.md §11.1); no payload.
+	// ADR-0058 §6); no payload.
 	JobExpireRestrictions = "moderation.expire_restrictions"
 	// ExpiryInterval is the period of the expiry schedule: an expired suspension reaches other
 	// servers within it.

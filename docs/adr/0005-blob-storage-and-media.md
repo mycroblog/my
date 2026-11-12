@@ -94,7 +94,7 @@
   - WebM は `Tags` と `Attachments` の要素を落とす。MP3 は ID3v1 / ID3v2、Ogg は Vorbis comment / OpusTags の中身を落とす。
   - 長さ・寸法・codec はこの解析で得る。候補は [`github.com/abema/go-mp4`](https://pkg.go.dev/github.com/abema/go-mp4)（MIT）と [`github.com/at-wat/ebml-go`](https://pkg.go.dev/github.com/at-wat/ebml-go)（Apache-2.0）。どちらも読み書きに対応と記載（2026-10-20 確認）。MP3 / Ogg は自前で読む。
 - **ポスター**: Web クライアントが upload のときに `<video>` と `<canvas>` で 1 フレームを取り出し、画像として一緒に送る（Mastodon の API の `thumbnail` と同じ考え方）。サーバーはそれを §4 の投稿画像として処理して静止版の S / M / L と blurhash を作る。
-  音声は、利用者が選んだ画像か、ファイルに埋め込まれたカバー画像（ID3 の `APIC`、MP4 の `covr`）をポスターにする。ポスターがなければ、クライアントは「プレビューなし」と表示する（federation.md §9 と同じ）。
+  音声は、利用者が選んだ画像か、ファイルに埋め込まれたカバー画像（ID3 の `APIC`、MP4 の `covr`）をポスターにする。ポスターがなければ、クライアントは「プレビューなし」と表示する（リモートの動画と同じ）。
 - 波形は作らない（AAC / Opus を純 Go で復号できないため）。
 - Safari での再生は配信の挙動に任せる。`Range` のない配信（メディアプロキシ）や Safari が扱わない WebM の codec で再生できない場合も、対応を足さず、そのままにする。
 

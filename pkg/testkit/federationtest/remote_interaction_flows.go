@@ -39,7 +39,7 @@ type RemoteInteractionHarness struct {
 type RemoteInteractionFactory func(t *testing.T, opts uow.Options) RemoteInteractionHarness
 
 // RemoteInteractionFlows verifies the boosts, favourites, and emoji reactions across servers
-// (federation.md §3.4, §7.1, ADR-0051), the flows of ADR-0153 §1, which internal/flowtest/federation
+// (ADR-0051), the flows of ADR-0153 §1, which internal/flowtest/federation
 // runs once on SQLite (RemoteInteractionContract checks the interaction repository's methods on
 // every adapter), through the inbox processor with
 // the real Announce, Like, EmojiReact, and Undo handlers, the real content, account, graph,
@@ -83,6 +83,7 @@ func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 		{"SendsPollVotes", remoteSendsPollVotes},
 		{"VotesInLocalPolls", remoteVotesInLocalPolls},
 		{"ClosesPollsAtTheirEnd", remoteClosesPolls},
+		{"VotesOnlyInPollsTheVoterMaySee", remoteVotesOnlyInSeenPolls},
 		{"DecidesVotesWithThePollLocked", pollVotesDecidedUnderLock},
 		{"QuotesLocalPostsWithApprovals", remoteQuotesLocalPosts},
 		{"SendsQuoteRequestsAndTakesTheAnswers", remoteSendsQuoteRequests},
@@ -91,6 +92,8 @@ func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 		{"AnswersReplyAndAnnounceRequests", remoteAnswersReplyAndAnnounceRequests},
 		{"HoldsRepliesWithoutRequests", remoteHoldsRepliesWithoutRequests},
 		{"RequestsLocalRepliesAndBoosts", remoteRequestsLocalRepliesAndBoosts},
+		{"TakesTheRejectionsOfLocalRequests", remoteTakesRejectionsOfLocalRequests},
+		{"VerifiesTheApprovalsOfThirdParties", remoteVerifiesThirdPartyApprovals},
 		{"WithdrawsRequests", remoteWithdrawsRequests},
 	}
 	for _, tc := range cases {

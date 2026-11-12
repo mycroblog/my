@@ -39,7 +39,7 @@
   GoToSocial は既定で 100 KiB を超えるリモートの絵文字を取得しないので、管理画面は 100 KiB を超える画像に注意を表示する。
 - 派生は ADR-0005 の用途 `emoji` で作る: S / M / L は 64×64 / 128×128 / 256×256 の箱に縦横比を保って収め、アニメーションは静止版（最初のフレーム）と動く版の両方を作る。原本は保存しない。
   形式も ADR-0005 §5, §6 に従う（L は PNG、動く版の L は GIF）。APNG は ADR-0005 §6 のとおり最初のフレームの静止画として扱い、アニメーション WebP は ADR-0005 の spike が通ったときだけ受け付ける。
-- リモートの絵文字の画像はメディアプロキシ（federation.md §9）を通し、静止版はプロキシの `small`（ADR-0005 §10。絵文字の S の 64×64）で返す。プロキシは、`custom_emoji_images` が指すメディアには設定 `remote_custom_emoji_max_bytes`（既定 1 MiB）の上限を当て、超えるものを 404 にする。
+- リモートの絵文字の画像はメディアプロキシ（ADR-0005 §10）を通し、静止版はプロキシの `small`（ADR-0005 §10。絵文字の S の 64×64）で返す。プロキシは、`custom_emoji_images` が指すメディアには設定 `remote_custom_emoji_max_bytes`（既定 1 MiB）の上限を当て、超えるものを 404 にする。
   形式の許可リストは上の 3 つに絞る。
 
 ### 3. 連合（送信・受信）
@@ -132,7 +132,7 @@
 
 ### 8. リアクションの送信の形
 
-- リアクションは、FEP-c0e0 の互換の形として、**作者の inbox へ `content` と `_misskey_reaction` を付けた `Like`** を送る。宛先・署名・配送はお気に入りの `Like` と同じ（[federation.md §4](../architecture/federation.md)）。
+- リアクションは、FEP-c0e0 の互換の形として、**作者の inbox へ `content` と `_misskey_reaction` を付けた `Like`** を送る。宛先・署名・配送はお気に入りの `Like` と同じ。
 - `content` と `_misskey_reaction` は同じ文字列で、Unicode ならその絵文字、カスタム絵文字なら `:shortcode:`。カスタム絵文字は `tag` に `Emoji` を 1 つ付ける。形は §3 に従う（`toot:Emoji`。`id`・`type: "Emoji"`・コロンで囲んだ `name`・`updated`・`icon` の `Image`（`mediaType` と `url`））。`@context` には `toot` と `misskey`（`https://misskey-hub.net/ns#`）の `_misskey_reaction` を足す。
 - 取り消しは `Undo`（`object` に元の `Like` を埋め込む）。
 - この 1 つの形で、Misskey（`_misskey_reaction`）と Pleroma / Akkoma（`content` 付きの `Like` を `EmojiReact` に書き換える）ではリアクション、Mastodon と GoToSocial ではお気に入りとして届く。
@@ -171,7 +171,7 @@ M4 は、カスタム絵文字とリアクションが Mastodon / Misskey / Pler
 
 リアクションも同じ日に各実装の既定ブランチのソースで確かめた。Misskey は `Like` に `content` と `_misskey_reaction` を付けて送り、1 人 1 投稿に 1 つで、無い・解釈できない絵文字は ❤ にする（[ReactionService.ts](https://github.com/misskey-dev/misskey/blob/develop/packages/backend/src/core/ReactionService.ts)）。Pleroma / Akkoma は `EmojiReact` を送り、絵文字ごとに複数を持ち、絵文字かショートコードを `content` に持つ `Like` を `EmojiReact` に書き換える（[transmogrifier.ex](https://akkoma.dev/AkkomaGang/akkoma/src/branch/develop/lib/pleroma/web/activity_pub/transmogrifier.ex)）。Mastodon と GoToSocial は `content` を見ず `Like` をお気に入りとして扱い、Mastodon は `EmojiReact` を捨てる（[like.rb](https://github.com/mastodon/mastodon/blob/main/app/lib/activitypub/activity/like.rb)、[federatingdb/like.go](https://codeberg.org/superseriousbusiness/gotosocial/src/branch/main/internal/federation/federatingdb/like.go)）。[FEP-c0e0](https://codeberg.org/fediverse/fep/src/branch/main/fep/c0e0/fep-c0e0.md)（Draft）はこの慣行を文書にしている。そこで、Mastodon と Misskey で状態が食い違わない `Like` の枠と、1 つの送信の形を選んだ。
 
-受信のカスタム絵文字は、当初は第三のサーバーの絵文字もその `Emoji` の `id` で識別して取り込むとしていた。しかしこれだと、ある人のリアクション 1 つで、別のサーバーの絵文字の見た目をこのサーバー全体で差し替えられる。そこで第三のサーバーの絵文字は記録済みのものだけを使う形にし、`content.RecordRemoteReaction` と `testkit.RemoteInteractionContract` と [federation.md §3.4](../architecture/federation.md#34-アクティビティごとのハンドラ) をこの規則にそろえた（#1469）。
+受信のカスタム絵文字は、当初は第三のサーバーの絵文字もその `Emoji` の `id` で識別して取り込むとしていた。しかしこれだと、ある人のリアクション 1 つで、別のサーバーの絵文字の見た目をこのサーバー全体で差し替えられる。そこで第三のサーバーの絵文字は記録済みのものだけを使う形にし、`content.RecordRemoteReaction` と `testkit.RemoteInteractionContract` をこの規則にそろえた（#1469）。
 
 作成の権限は、M4.2 の課金のプランに結び付くロールのために ADR-0070 が分け、`created_by_user_id` を足した。
 

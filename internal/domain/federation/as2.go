@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Limits on a received document (federation.md §4). A document over any of them cannot be
+// Limits on a received document. A document over any of them cannot be
 // normalized.
 const (
 	MaxDepth         = 16        // nesting depth of JSON objects and arrays
@@ -64,7 +64,7 @@ func SameOrigin(a, b IRI) bool {
 	return o != "" && o == b.Origin()
 }
 
-// ActivityType is a known activity type (federation.md §3.4).
+// ActivityType is a known activity type.
 type ActivityType string
 
 // Known activity types.
@@ -162,7 +162,7 @@ func (d *Document) ID() IRI {
 // Ref is a property that refers to another document: an IRI, a Link, or an embedded document.
 // ID is the referred IRI in every case. The embedded document is kept with a flag saying whether
 // it has the same origin as the document that embeds it (or no id of its own); only then may its
-// contents be trusted (federation.md §4, ActivityPub appendix B.1). Otherwise it must be fetched
+// contents be trusted (ActivityPub appendix B.1). Otherwise it must be fetched
 // from ID.
 type Ref struct {
 	ID         IRI
@@ -237,7 +237,7 @@ func (a *Activity) Object() Ref {
 }
 
 // Body is the HTML of a post in one language. HTML is as received; it must go through the
-// server-side sanitizer before it is stored (federation.md §5).
+// server-side sanitizer before it is stored (ADR-0019 §2).
 type Body struct {
 	Language string // canonical BCP 47 tag, or UndeterminedLang
 	HTML     string
@@ -317,7 +317,7 @@ type Object struct {
 	OmittedAttachments int
 	Poll               *Poll
 	// Name is the name of a post that is not converted, as received, "" for none: the title of
-	// the choice that a Note in reply to a Question votes for (federation.md §3.4).
+	// the choice that a Note in reply to a Question votes for.
 	Name string
 	// Replies is the collection of the replies to the object, the zero Ref when it declares none.
 	Replies Ref
@@ -446,7 +446,7 @@ type Actor struct {
 func (a *Actor) Bot() bool { return a.Type == ActorService || a.Type == ActorApplication }
 
 // HostFunc canonicalizes the host of a remote IRI or the domain of a handle, without a port:
-// the application layer maps it to IDNA A-labels (federation.md §1.2), which the domain cannot
+// the application layer maps it to IDNA A-labels (ADR-0006 §29), which the domain cannot
 // do with the standard library alone. It returns an error for a host that is not a valid name.
 type HostFunc func(host string) (string, error)
 

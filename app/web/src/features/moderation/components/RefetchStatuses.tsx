@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The region of a remote account's or server's page that refetches its stored posts from their servers (FR-407,
-// federation.md §6.4), for a viewer with manage_domains: what the refetch does, its button, and what the request
+// FR-407), for a viewer with manage_domains: what the refetch does, its button, and what the request
 // did (a StatusMessage). The button stays, so focus stays on it.
 import { Button, Section, Hint, Stack, StatusMessage } from "@my/ui";
 import { useId } from "react";

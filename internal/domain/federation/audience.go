@@ -6,7 +6,7 @@ import "slices"
 
 // Visibility is the visibility of a post as federation sees it. The values equal the content
 // module's visibilities. A received post maps to every value but local: a remote post is never
-// local (ADR-0017, federation.md §4); only a local post is, and Address keeps it to the author's
+// local (ADR-0017); only a local post is, and Address keeps it to the author's
 // followers.
 type Visibility string
 
@@ -36,7 +36,7 @@ func (a Audience) Visibility(followers IRI) Visibility {
 
 // Addressed returns the recipients in to and cc other than Public and the followers
 // collection, without duplicates, in order. The caller keeps the local actors among them as
-// mentions (federation.md §4).
+// mentions.
 func (a Audience) Addressed(followers IRI) []IRI {
 	var out []IRI
 	for _, r := range slices.Concat(a.To, a.Cc) {
@@ -49,7 +49,7 @@ func (a Audience) Addressed(followers IRI) []IRI {
 }
 
 // MentionedIRIs returns the actors a post mentions: the Mention tags, then the recipients for
-// which isLocal is true even without a tag (federation.md §4), without duplicates.
+// which isLocal is true even without a tag, without duplicates.
 func (o *Object) MentionedIRIs(followers IRI, isLocal func(IRI) bool) []IRI {
 	var out []IRI
 	for _, m := range o.Mentions {

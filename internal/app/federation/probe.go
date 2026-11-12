@@ -19,7 +19,7 @@ import (
 )
 
 // JobProbeInstances fetches the NodeInfo of unavailable servers and marks those that answer
-// available again (federation.md §7.3). The scheduler enqueues it once a day; one job handles
+// available again (ADR-0006 §3). The scheduler enqueues it once a day; one job handles
 // ProbeBatch servers and enqueues the job of the next batch.
 const JobProbeInstances = "federation.probe_instances"
 

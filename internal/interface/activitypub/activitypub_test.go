@@ -379,7 +379,7 @@ func TestIDsDoNotDependOnUsernames(t *testing.T) {
 }
 
 // TestWebFingerCanonicalDomain checks that every spelling of the configured domains answers, on a
-// server with internationalized domains and on one whose host has a port (federation.md §1.2).
+// server with internationalized domains and on one whose host has a port (ADR-0006 §29).
 func TestWebFingerCanonicalDomain(t *testing.T) {
 	const (
 		aLabel = "xn--r8jz45g.jp"

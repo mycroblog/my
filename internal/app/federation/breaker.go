@@ -9,8 +9,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// CircuitBreaker is the short-term, in-process circuit breaker of inbox hosts (federation.md
-// §7.3): after federation.BreakerThreshold consecutive retryable failures of a host, it sends
+// CircuitBreaker is the short-term, in-process circuit breaker of inbox hosts (ADR-0006
+// §3): after federation.BreakerThreshold consecutive retryable failures of a host, it sends
 // nothing there for federation.BreakerCooldown. Each process has its own; the long-term state
 // that every process shares is instance_health. The zero value is not usable; use
 // NewCircuitBreaker. It is safe for concurrent use.

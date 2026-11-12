@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The Move of a remote account (federation.md §3.4, ADR-0089, FR-414). A Move is processed only
+// The Move of a remote account (ADR-0089, FR-414). A Move is processed only
 // when its actor moves itself to a target that names the actor among its aliases, the target has
 // not moved itself, and neither account nor its domain is suspended; anything else is dropped
 // with its reason in the log and in my.move.activities. A processed Move records the move in the
@@ -98,7 +98,7 @@ type MoveHandlerDeps struct {
 	Logger *slog.Logger
 }
 
-// RegisterMoveHandler registers the inbox handler of Move on p (federation.md §3.4).
+// RegisterMoveHandler registers the inbox handler of Move on p.
 func RegisterMoveHandler(p *InboxProcessor, d MoveHandlerDeps) {
 	if d.Domains == nil {
 		d.Domains = NoDomainRestrictions{}

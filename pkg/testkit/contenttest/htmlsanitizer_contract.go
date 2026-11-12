@@ -13,7 +13,7 @@ import (
 )
 
 // HTMLSanitizerContract verifies a kernel.HTMLSanitizer adapter against the policy of
-// federation.md §5 (ADR-0019 §2): script injection is neutralized (javascript: and data:
+// ADR-0019 §2: script injection is neutralized (javascript: and data:
 // links, event handler attributes, style, svg, nested links), the transformations of the
 // policy give the expected markup, the HTML of local statuses is returned unchanged, every
 // output is a fixed point, and plain-text fields lose their tags.
@@ -170,7 +170,7 @@ var LocalStatusMentions = map[content.MentionHandle]content.MentionTarget{
 var (
 	sanitizedTag  = regexp.MustCompile(`^<(/?)([a-z]+)((?: [a-z]+="[^"<>]*")*)>`)
 	sanitizedAttr = regexp.MustCompile(` ([a-z]+)="([^"<>]*)"`)
-	// sanitizedAttrs are the attributes each element may carry besides lang (federation.md §5).
+	// sanitizedAttrs are the attributes each element may carry besides lang (ADR-0019 §2).
 	sanitizedAttrs = map[string][]string{
 		"p": {"class"}, "br": nil, "span": {"class", "translate"}, "a": {"href", "class", "translate", "rel", "target"},
 		"del": nil, "s": nil, "pre": nil, "blockquote": nil, "code": nil, "b": nil, "strong": nil, "u": nil, "i": nil,
@@ -181,7 +181,7 @@ var (
 )
 
 // CheckSanitizedHTML fails unless every tag of h is an allowlisted element with allowlisted
-// attributes and values (federation.md §5), links have an allowlisted scheme and do not nest,
+// attributes and values (ADR-0019 §2), links have an allowlisted scheme and do not nest,
 // and no "<" or ">" appears outside a tag.
 func CheckSanitizedHTML(t *testing.T, h string) {
 	t.Helper()

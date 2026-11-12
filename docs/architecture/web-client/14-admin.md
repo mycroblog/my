@@ -2,7 +2,7 @@
 
 スタッフの画面は、モデレーションとサーバー管理の 2 つの区分に分ける（[ADR-0058](../../adr/0058-moderation-admin-separation.md)）。1 つの画面は 1 つの区分の経路だけを持つ。
 
-- **モデレーション**（`/moderation/*`、`features/moderation`）: 通報・異議申し立ての審査・アカウント・登録の審査・登録の拒否リスト・招待・ドメインへの処分・連合先のサーバーの状態（[federation.md §7.3](../federation.md)）・監査ログ。
+- **モデレーション**（`/moderation/*`、`features/moderation`）: 通報・異議申し立ての審査・アカウント・登録の審査・登録の拒否リスト・招待・ドメインへの処分・連合先のサーバーの状態（[ADR-0006 §3](../../adr/0006-federation-protocol-scope.md)）・監査ログ。
   `features/moderation` は、利用者が自分への処分を確かめる画面（§18）も受け持ち、サーバー管理の画面が使う共通の部品（下の「共通の部品」）と権限の型・一覧のページングも `index.ts` から出す。
 - **サーバー管理**（`/admin/*`、`features/admin`）: サーバーの設定・ルール・テーマ・規約とポリシー・カスタム絵文字・お知らせ・サービスの終了・webhook・リレー・外部ログインのプロバイダー・費用・ロール・ジョブのキュー・エラー。これから足すサーバー管理の画面（リレー）は、
   `routes/admin.<画面>.tsx` のルートと、`features/admin/components/AdminMenu.tsx` の一覧の 1 行を足してここに置く。
@@ -413,7 +413,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   各区画は、最後に保存した日時、公開ページへのリンク（公開しているときだけ。同じタブの `DocumentLink`）、本文（Markdown の `TextArea`、100,000 文字）と「保存する」の `form` で、その文書だけを保存する。
   成功したら本文・`GET /instance`（リンク）・監査ログを取り直してから、監査ログに記録したことを区画の `StatusMessage` に出す。失敗はフォームの下（`role="alert"`）に出して入力を残す。保存してある本文を空にして保存すると削除になるので、`ConfirmDialog`（`danger`）で確かめる。
   下書きはページごとに持つ。下書きがあるまま別のページへ移るとき（ほかの文書のページも含む）は、`features/settings` の `useUnsavedChangesGuard` で確かめる（§9 の未保存の変更）。
-- **投稿の取り直し**（FR-407、[federation.md §6.4](../federation.md#64-投稿の取り直し)、`components/RefetchStatuses.tsx`・`hooks/useRefetch.ts`）: 保存したリモートの投稿を相手のサーバーから取り直すよう頼む。
+- **投稿の取り直し**（FR-407、`components/RefetchStatuses.tsx`・`hooks/useRefetch.ts`）: 保存したリモートの投稿を相手のサーバーから取り直すよう頼む。
   連合先の詳細とリモートのアカウントの管理画面は「投稿の取り直し」の区画（`h2` の `section`）に、何をするか（件数の上限と、裏で 1 分ごとに進むこと）の説明を `aria-describedby` にした「投稿を取り直す」を置く。
   押すと `POST /admin/instances/{domain}/refetch_statuses` か `POST /admin/accounts/{id}/refetch_statuses`（通報の投稿は `POST /admin/statuses/{id}/refetch`）を送り、監査ログに無効化の印を付けてから、頼んで監査ログに記録したことを区画の `StatusMessage` に出す。
   ボタンは残るのでフォーカスも残る。投稿は取り直したときに変わるので、投稿の一覧は取り直さない。失敗はトーストで知らせ、ボタンを残す（E2）。

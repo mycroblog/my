@@ -16,7 +16,7 @@ import { PageHeading } from "./-layout/PageHeading";
 /** The `_` keeps the page out of the list's layout at `/moderation/instances`. */
 const paramsSchema = z.object({ domain: z.string().min(1).max(253) });
 
-/** One remote server's health and the history of its availability (federation.md §7.3), for manage_domains. */
+/** One remote server's health and the history of its availability (ADR-0006 §3), for manage_domains. */
 export const Route = createFileRoute("/moderation/instances_/$domain")({
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,

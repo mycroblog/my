@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]
+docs: ["docs/adr/0006-federation-protocol-scope.md", "docs/adr/0019-security-baseline.md","docs/operations/key-management.md"]

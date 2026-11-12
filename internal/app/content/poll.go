@@ -15,10 +15,10 @@ import (
 
 // This file holds the votes in polls (FR-112) and what a viewer sees of a poll. A vote in a
 // remote poll is recorded in poll_votes and carried to the poll's server by the federation
-// module, one Note per choice (federation.md §7.1); the counts of a remote poll stay those its
+// module, one Note per choice; the counts of a remote poll stay those its
 // server reports (poll_tallies), which include the vote once the server sends its next Update.
 // The votes in a local poll, of local accounts and of remote ones (a Note in reply to the
-// Question, federation.md §3.4), are counted again after each vote and recorded as a tally
+// Question), are counted again after each vote and recorded as a tally
 // observation, so that poll_tallies follows the newest counts of every poll alike.
 
 // EventPollVoted is emitted when a local account votes in a poll: the federation module delivers
@@ -201,7 +201,7 @@ func (s *Interactions) voted(ctx context.Context, tx uow.Tx, ev PollVoted) error
 }
 
 // RemotePollVoteInput is a remote account's choice in a local poll: the Create of a Note named
-// after the choice, in reply to the Question (federation.md §3.4).
+// after the choice, in reply to the Question.
 type RemotePollVoteInput struct {
 	// URI is the id of the Note.
 	URI       string

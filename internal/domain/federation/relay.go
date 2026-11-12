@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// This file holds the rules of the relays the instance joins (ADR-0006, federation.md §13): the
+// This file holds the rules of the relays the instance joins (ADR-0006 §18): the
 // registration, the events of its membership and the state they lead to, and the activities the
 // instance actor sends to a relay.
 

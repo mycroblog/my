@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// This file holds the rules of one delivery (federation.md §7.3): how a response is classified,
+// This file holds the rules of one delivery (ADR-0006 §3): how a response is classified,
 // the short-term circuit breaker of an inbox host, and the long-term health of a remote server.
 
 // DeliveryOutcome is the result of one delivery attempt (delivery_attempts.outcome).
@@ -31,7 +31,7 @@ const (
 )
 
 // ClassifyResponse returns the outcome of a delivery that got a response with status code
-// status (federation.md §7.3).
+// status.
 func ClassifyResponse(status int) DeliveryOutcome {
 	switch {
 	case status >= 200 && status < 300:
@@ -90,7 +90,7 @@ func RetryAfter(value string, now time.Time) time.Duration {
 // does not park a job beyond the retry schedule.
 const MaxRetryAfter = 24 * time.Hour
 
-// The circuit breaker of an inbox host (federation.md §7.3, Mastodon's Stoplight values).
+// The circuit breaker of an inbox host (ADR-0006 §3, Mastodon's Stoplight values).
 const (
 	// BreakerThreshold is the number of consecutive failures that opens the breaker.
 	BreakerThreshold = 10
@@ -125,7 +125,7 @@ func (s BreakerState) Failed(now time.Time) BreakerState {
 func (s BreakerState) Succeeded() BreakerState { return BreakerState{} }
 
 // FailureDaysThreshold is the number of distinct UTC days with a retryable failure, without a
-// success in between, that make a server unavailable (federation.md §7.3, Mastodon's
+// success in between, that make a server unavailable (ADR-0006 §3, Mastodon's
 // DeliveryFailureTracker).
 const FailureDaysThreshold = 7
 

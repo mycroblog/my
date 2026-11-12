@@ -46,7 +46,7 @@ const (
 )
 
 // RemoteActorInput is a fetched remote actor document, as the federation module read it
-// (federation.md §6.2). The URLs and key IDs are canonical IRIs; the HTML and the display name
+// (ADR-0006 §12). The URLs and key IDs are canonical IRIs; the HTML and the display name
 // are as received, and UpsertRemoteActor sanitizes them.
 type RemoteActorInput struct {
 	// URI is the actor's id; Domain is its canonical host.
@@ -216,7 +216,7 @@ func ActorTypeOf(as2Type string) account.ActorType {
 	return account.ActorPerson
 }
 
-// UpsertRemoteActor stores a fetched remote actor inside tx (federation.md §6.2): the account
+// UpsertRemoteActor stores a fetched remote actor inside tx (ADR-0006 §12): the account
 // and its remote subtype the first time, a snapshot when the document changed, its head, a
 // profile revision when the sanitized profile changed, its keys (a key whose fingerprint changed
 // under the same key ID replaces the old one, which is revoked, and so is a key the document no

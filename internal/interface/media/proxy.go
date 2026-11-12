@@ -32,7 +32,7 @@ type ProxyOptions struct {
 
 // ProxyHandler serves the media proxy: GET and HEAD of
 // content.ProxyPathPrefix + "{media_id}/{variant}?sig=..." relay a remote media file from the
-// instance's origin (docs/architecture/federation.md §9). A missing or wrong signature, an
+// instance's origin (ADR-0005 §10). A missing or wrong signature, an
 // unknown file, a rejected domain, a refused destination, and content outside the allowed
 // formats or over the size limit are all 404; a remote server that cannot be reached is 502.
 type ProxyHandler struct {

@@ -16,7 +16,7 @@ import (
 
 // This file holds the boosts and favourites of remote accounts, which the federation module
 // records from the Announce, Like, and Undo activities it receives
-// (docs/architecture/federation.md §3.4). They emit the same events as the local commands, so the
+// They emit the same events as the local commands, so the
 // counters, the feed entries, and the notifications follow them; the federation module sends
 // nothing for them (a remote boost does not federate, and a remote favourite is of a local status).
 
@@ -37,7 +37,7 @@ type RemoteBoostInput struct {
 	Authorized bool
 }
 
-// RecordRemoteBoost records the boost of a remote account (an Announce, federation.md §3.4) and
+// RecordRemoteBoost records the boost of a remote account (an Announce) and
 // returns it. The account must be remote and able to see the status: a local status as an
 // ActivityPub fetch by that account would see it (content.CanView in ContextObjectFetch). A
 // local-visibility status, a followers-only status of someone else, a direct status, and an
@@ -167,7 +167,7 @@ type RemoteFavouriteInput struct {
 	CreatedAt time.Time
 }
 
-// RecordRemoteFavourite records the favourite of a remote account (a Like, federation.md §3.4)
+// RecordRemoteFavourite records the favourite of a remote account (a Like)
 // and returns it. Only a local status takes remote favourites, and only one the account can see
 // (content.CanView in ContextObjectFetch); anything else fails with ErrNotFound. An account under
 // the interact restriction (FR-708) fails with ErrInteractionRestricted. Recording a

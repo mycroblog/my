@@ -34,7 +34,7 @@ import (
 )
 
 // This file holds the cases of FederationFlows that cover one delivery
-// (federation.md §7.3): the classification of responses, the circuit breaker, the health of
+// (ADR-0004, ADR-0006 §3): the classification of responses, the circuit breaker, the health of
 // remote servers and its availability events, the dead job after the retry schedule, and the
 // daily probe. The network is an in-memory HTTPClient that routes by host.
 

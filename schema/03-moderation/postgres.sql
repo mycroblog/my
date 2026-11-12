@@ -6,7 +6,7 @@
 
 -- ---------------------------------------------------------------------------------------------
 -- moderation: actions on accounts and domains, the restrictions they impose, and reports
--- (docs/architecture/federation.md §11). Owned by internal/app/moderation.
+-- (docs/architecture/federation.md §1). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: a moderation action on an account. A ban never expires.
@@ -55,7 +55,7 @@ CREATE TABLE account_restrictions (
   PRIMARY KEY (account_id, restriction, source_action_id)
 );
 CREATE INDEX account_restrictions_source_action_id ON account_restrictions (source_action_id);
--- The removal of expired rows, which tells the end of expired suspensions (federation.md §11.1).
+-- The removal of expired rows, which tells the end of expired suspensions (ADR-0058 §6).
 CREATE INDEX account_restrictions_effective_until ON account_restrictions (effective_until);
 
 -- Event: a moderation action on a domain and its subdomains. issued_by_user_id is NULL for the

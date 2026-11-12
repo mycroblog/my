@@ -38,7 +38,7 @@ type ProfileRevised struct {
 func (ProfileRevised) EventType() string { return EventProfileRevised }
 
 // Federates reports whether the revision is sent to the account's remote followers as an
-// Update (federation.md §7.1): a revision of a local profile after the first one, which the
+// Update: a revision of a local profile after the first one, which the
 // account is created with and no one follows yet. Remote revisions come from the actor's own
 // server.
 func (e ProfileRevised) Federates() bool { return e.Revision.Remote == nil && e.Revision.Seq > 1 }
@@ -59,7 +59,7 @@ func (e LifecycleEventRecorded) Deletes() bool {
 }
 
 // DeletesLocalAccount reports whether the event is a local account's deletion, which is sent
-// to the remote servers as a Delete of the actor (federation.md §7.1).
+// to the remote servers as a Delete of the actor.
 func (e LifecycleEventRecorded) DeletesLocalAccount() bool {
 	return e.Event.Kind == account.LifecycleDeleted
 }

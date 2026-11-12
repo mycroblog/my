@@ -14,7 +14,7 @@ import (
 )
 
 // setUpFederation registers the projectors that record outbound activities, after those of the
-// modules whose events they follow (federation.md §7), and returns the outbox they enqueue the
+// modules whose events they follow, and returns the outbox they enqueue the
 // fan-out with.
 func (a *App) setUpFederation(cfg *config.Config, repo federation.Repository) queue.Outbox {
 	outbox := a.Outbox
@@ -72,7 +72,7 @@ func (a *App) setUpPolls(cfg *config.Config, statuses content.Repository, repo f
 	}).RegisterJobs(a.Handlers)
 }
 
-// setUpFanOut registers the fan-out of outbound activities (federation.md §7.2). It comes after
+// setUpFanOut registers the fan-out of outbound activities. It comes after
 // the status reader, which resolves the media, mentions, and hashtags of the Notes it builds.
 func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox queue.Outbox) {
 	a.FanOut = federation.NewFanOut(federation.FanOutDeps{
@@ -94,7 +94,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 }
 
 // newObjects builds the use case behind the ActivityPub objects and collections of local
-// statuses (federation.md §10). Signed GETs are verified with the HTTP signature adapter and
+// statuses (ADR-0018). Signed GETs are verified with the HTTP signature adapter and
 // the keys that RemoteActors resolves, so setUpRemoteActors runs first.
 func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 	return federation.NewObjects(federation.ObjectsDeps{

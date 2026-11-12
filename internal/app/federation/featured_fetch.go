@@ -17,7 +17,7 @@ import (
 
 // Fetching the pinned posts of a remote account, its featured collection, when the account is
 // fetched or refreshed, or when it sends an Add or Remove whose target is the collection
-// (federation.md §3.4, §6.2, ADR-0006).
+// (ADR-0006 §17).
 const (
 	// JobFetchFeatured fetches the featured collection of a remote account and makes its pins
 	// those the collection lists.
@@ -54,7 +54,7 @@ func enqueueFetchFeaturedTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox,
 	return outbox.EnqueueTx(ctx, tx, queue.NewJob{Type: JobFetchFeatured, Payload: payload, IdempotencyKey: "fetch_featured:" + accountID})
 }
 
-// FeaturedChanged is the inbox handler of Add and Remove (federation.md §3.4): an Add or Remove
+// FeaturedChanged is the inbox handler of Add and Remove: an Add or Remove
 // whose target is the featured collection of its actor, as the stored actor document declares
 // it, enqueues the JobFetchFeatured of the actor, which makes the pins those the collection lists
 // then, and the JobFetchFeaturedTags of the actor when its document declares a featuredTags
@@ -62,7 +62,7 @@ func enqueueFetchFeaturedTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox,
 // to the featured collection (ADR-0006 §17). The activity's object is not read: fetching the
 // collections again applies the same checks and bounds as the fetch of a refreshed actor, and
 // catches up on the changes that did not arrive. The caller has checked that the signer is the
-// activity's actor (federation.md §3.2), so the actor is the owner of the collection. Any other
+// activity's actor (ADR-0006 §8), so the actor is the owner of the collection. Any other
 // Add or Remove is dropped, as is one of an account whose featured collection is not mirrored.
 // While a fetch of the account is pending, the activity enqueues none.
 func (h *StatusHandlers) FeaturedChanged(ctx context.Context, a *InboxActivity) error {

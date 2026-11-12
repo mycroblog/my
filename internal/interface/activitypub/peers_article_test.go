@@ -31,7 +31,7 @@ func newArticleWorld() *noteWorld {
 }
 
 // TestArticleDocuments checks the Article of a local article, as its IRI and the Create's IRI
-// serve it with the builder that the fan-out delivers too (federation.md §7.4), and that the
+// serve it with the builder that the fan-out delivers too, and that the
 // outbox carries the same Article.
 func TestArticleDocuments(t *testing.T) {
 	s := newNoteServer(t, newArticleWorld(), nil)

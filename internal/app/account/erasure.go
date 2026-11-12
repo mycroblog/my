@@ -23,7 +23,7 @@ const (
 	ErasureInterval = time.Hour
 	// ErasureDelay is how long a deleted account's data stays before the erasure: the Delete of
 	// a local actor reaches its followers with the account's key and its follows, and its
-	// delivery retries end within about four days (federation.md §7.3). The retries of a remote
+	// delivery retries end within about four days (ADR-0004). The retries of a remote
 	// actor's server end within such a time too, so no late activity needs its keys.
 	ErasureDelay = 7 * 24 * time.Hour
 	// ErasureBatch is the number of rows (statuses, for the statuses) that one erasure statement

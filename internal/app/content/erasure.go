@@ -56,7 +56,7 @@ type ErasureDeps struct {
 // StatusEraser erases the statuses of deleted accounts, local and remote (data-model §8): each status that
 // is not deleted yet gets a deletion with origin account_deletion, which takes it out of every
 // projection as the author's deletion does but sends no Delete (the Delete of the actor stands
-// for them, federation.md §7.1); then its rows, every boost, favourite, reaction, bookmark, and pin of it,
+// for them); then its rows, every boost, favourite, reaction, bookmark, and pin of it,
 // and the notifications about it go. A status that a report or an action points at keeps its
 // rows (ADR-0058) until a later run finds the record gone.
 type StatusEraser struct{ d ErasureDeps }

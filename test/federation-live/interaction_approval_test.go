@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// The approvals of replies, boosts, and quotes (ADR-0155 §6 to §8, ADR-0069, federation.md §3.5).
+// The approvals of replies, boosts, and quotes (ADR-0155 §6 to §8, ADR-0069).
 
 // --- This server ------------------------------------------------------------------------------
 

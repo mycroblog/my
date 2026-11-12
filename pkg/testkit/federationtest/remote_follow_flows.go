@@ -40,8 +40,8 @@ type RemoteFollowHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type RemoteFollowFactory func(t *testing.T, opts uow.Options) RemoteFollowHarness
 
-// RemoteFollowFlows verifies follows between local and remote accounts (federation.md §3.4,
-// §7.1) through the real account, graph, notification, and federation use cases and projectors,
+// RemoteFollowFlows verifies follows between local and remote accounts
+// through the real account, graph, notification, and federation use cases and projectors,
 // the flows of ADR-0153 §1, which internal/flowtest/federation runs once on SQLite
 // (RemoteFollowContract checks the repository methods of remote follows on every adapter): the Follow and Accept documents of Mastodon, Misskey, and
 // GoToSocial set up a follow in both directions, and the Follow, Accept, Reject, and Undo
@@ -64,6 +64,7 @@ func RemoteFollowFlows(t *testing.T, newHarness RemoteFollowFactory) {
 		{"RejectsBlockedFollowers", remoteFollowsBlocked},
 		{"AcceptsAFollowSentAgain", remoteFollowsResent},
 		{"DropsAFollowAfterAnEarlyUndo", remoteFollowsEarlyUndo},
+		{"MatchesAnAnswerByTheEmbeddedPair", remoteFollowsAnswerByPair},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, NewRemoteFollowEnv(t, newHarness)) })
@@ -646,6 +647,42 @@ func remoteFollowsEnd(t *testing.T, e *RemoteFollowEnv) {
 	}
 	if r := e.Relationship(t, alice, mPeer); r.Following != graph.StateNone {
 		t.Errorf("Following = %q after the Undo of the Accept, want none", r.Following)
+	}
+}
+
+// remoteFollowsAnswerByPair checks an Accept whose embedded Follow has an id this server never
+// sent: it is matched by the embedded actor (local) and the sender, and makes the follow active.
+// An Accept that embeds something other than a Follow, or a Follow of someone else, is dropped.
+func remoteFollowsAnswerByPair(t *testing.T, e *RemoteFollowEnv) {
+	ctx := t.Context()
+	alice := e.Register(t, "alice").AccountID
+	mastodon := remotePeers[0]
+	peer := e.Remote(t, mastodon.actor)
+	if _, err := e.Graph.Follow(ctx, alice, peer); err != nil {
+		t.Fatal(err)
+	}
+	answer := func(suffix, object string) []byte {
+		return fmt.Appendf(nil, `{"@context":"https://www.w3.org/ns/activitystreams","id":"%s/accepts/%s","type":"Accept","actor":"%s","object":%s}`,
+			mastodon.actor, suffix, mastodon.actor, object)
+	}
+	local := "https://" + testkit.ContractHost + "/ap/activities/"
+	like := fmt.Sprintf(`{"id":"%slike","type":"Like","actor":"%s","object":"%s"}`, local, e.actorURI(alice), mastodon.actor)
+	if got := e.receive(t, answer("like", like)); got != appfederation.InboxDropped {
+		t.Errorf("Accept of a Like = %q, want dropped", got)
+	}
+	foreign := fmt.Sprintf(`{"id":"%sforeign","type":"Follow","actor":"%s","object":"https://elsewhere.example/users/dan"}`, local, e.actorURI(alice))
+	if got := e.receive(t, answer("foreign", foreign)); got != appfederation.InboxDropped {
+		t.Errorf("Accept of a Follow of someone else = %q, want dropped", got)
+	}
+	if r := e.Relationship(t, alice, peer); r.Following != graph.StatePending {
+		t.Fatalf("Following = %q after the dropped answers, want pending", r.Following)
+	}
+	pair := fmt.Sprintf(`{"id":"%snever-sent","type":"Follow","actor":"%s","object":"%s"}`, local, e.actorURI(alice), mastodon.actor)
+	if got := e.receive(t, answer("pair", pair)); got != appfederation.InboxHandled {
+		t.Errorf("Accept of the pair = %q, want handled", got)
+	}
+	if r := e.Relationship(t, alice, peer); r.Following != graph.StateActive {
+		t.Errorf("Following = %q after the Accept of the pair, want active", r.Following)
 	}
 }
 

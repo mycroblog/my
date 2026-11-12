@@ -10,7 +10,7 @@ import { HomeLink } from "./-layout/HomeLink";
 import { PageHeading } from "./-layout/PageHeading";
 
 /**
- * The templates of the Activity Intents that WebFinger publishes (FEP-3b86, federation.md §6.1): `follow` is the
+ * The templates of the Activity Intents that WebFinger publishes (FEP-3b86, ADR-0006 §1): `follow` is the
  * account a follow button of another server names (`{object}` of the Follow intent), and `reply` the post a reply
  * button names (`{inReplyTo}` of the Create intent). Anything else is dropped (web-client/README.md S3).
  */

@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Linked data signatures (RsaSignature2017) of public posts (ADR-0006, federation.md §7.3): a
+// Linked data signatures (RsaSignature2017) of public posts (ADR-0006 §19): a
 // relay forwards the Create, Update, and Delete of a public post as they are, signed by the
 // relay, and Mastodon and Misskey take such a forwarded activity only when the document carries
 // the author's linked data signature. The signature is made only for this use, never checked on

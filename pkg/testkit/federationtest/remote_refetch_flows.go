@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit/contenttest"
 )
 
-// remoteRefetches checks the refetch of stored remote posts (FR-407, federation.md §6.4): a
+// remoteRefetches checks the refetch of stored remote posts (FR-407): a
 // refetch records a newer revision and the counts of a poll as a received Update does, deletes a
 // post that is gone, and leaves a post that cannot be fetched or that names another author; the
 // requests for a post, an account, and a domain are audited and walk their posts within bounds.

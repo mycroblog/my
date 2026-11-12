@@ -362,6 +362,53 @@ func TestRelays(t *testing.T) {
 	}
 }
 
+// TestRelayAnswersOnlyTheRelay holds what the instance actor answers to anyone but a relay: the
+// Follow of an actor that is no relay gets a Reject and is no follow, an Accept of the relay's
+// Follow from another actor changes nothing, and the relay's own Reject makes it rejected.
+func TestRelayAnswersOnlyTheRelay(t *testing.T) {
+	t.Parallel()
+	network := &relayNet{docs: map[string][]byte{}}
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{HTTPClient: network}, "alice")
+	relay := newRemoteActor(t, network, "https://relay.example/actor", "Application", "https://relay.example/inbox")
+	carol := newRemoteActor(t, network, "https://remote.example/users/carol", "Person", "https://remote.example/users/carol/inbox")
+
+	var r clientapi.AdminRelay
+	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": "https://relay.example/inbox"}, &r); res.StatusCode != http.StatusCreated {
+		t.Fatalf("POST /admin/relays = %d", res.StatusCode)
+	}
+	posts := network.taken()["https://relay.example/inbox"]
+	if len(posts) != 1 || posts[0]["type"] != "Follow" {
+		t.Fatalf("POSTs to the relay = %v, want its Follow", posts)
+	}
+	follow, instance := posts[0]["id"].(string), posts[0]["actor"].(string)
+	state := func() clientapi.RelayState {
+		t.Helper()
+		var list clientapi.AdminRelayList
+		if res := c.do("alice", http.MethodGet, "/admin/relays", nil, &list); res.StatusCode != http.StatusOK || len(list.Items) != 1 {
+			t.Fatalf("GET /admin/relays = %d %+v", res.StatusCode, list)
+		}
+		return list.Items[0].State
+	}
+
+	// Carol is no relay: her Follow of the instance actor is rejected.
+	postInbox(t, c, carol, map[string]any{"id": carol.id + "/follow", "type": "Follow", "actor": carol.id, "object": instance})
+	if got := network.taken()["https://remote.example/users/carol/inbox"]; len(got) != 1 || got[0]["type"] != "Reject" {
+		t.Errorf("answer to carol's Follow of the instance actor = %v, want a Reject", got)
+	}
+
+	// Carol's Accept of the relay's Follow is not the relay's.
+	postInbox(t, c, carol, map[string]any{"id": carol.id + "/accept", "type": "Accept", "actor": carol.id, "object": follow})
+	if got := state(); got != clientapi.RelayStatePending {
+		t.Errorf("relay after carol's Accept = %s, want pending", got)
+	}
+
+	// The relay's Reject makes it rejected.
+	postInbox(t, c, relay, map[string]any{"id": relay.id + "/reject", "type": "Reject", "actor": relay.id, "object": follow})
+	if got := state(); got != clientapi.RelayStateRejected {
+		t.Errorf("relay after its Reject = %s, want rejected", got)
+	}
+}
+
 // alicePublicKey returns the RSA public key among a local actor's keys.
 func alicePublicKey(t *testing.T, keys []domainaccount.Key) *rsa.PublicKey {
 	t.Helper()

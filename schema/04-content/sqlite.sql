@@ -458,7 +458,7 @@ CREATE TABLE status_auto_delete_limits (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
--- content: remote statuses and media (data-model §4.4, docs/architecture/federation.md §9).
+-- content: remote statuses and media (data-model §4.4, ADR-0005 §10).
 -- Owned by internal/app/content.
 -- ---------------------------------------------------------------------------------------------
 

@@ -46,7 +46,7 @@ func (j jrd) self() federation.IRI {
 	return ""
 }
 
-// checkHandle checks the handle of an actor with WebFinger (federation.md §6.2). The handle that
+// checkHandle checks the handle of an actor with WebFinger (ADR-0006 §1). The handle that
 // the actor names in its webfinger (FEP-2c59) is its handle when WebFinger of it on its domain
 // names the actor as self; when that answer does not name the actor, or the handle is not one,
 // the claim is ignored and the handle is found as Mastodon finds it (preferredHandle). The

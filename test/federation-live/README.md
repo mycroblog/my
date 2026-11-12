@@ -2,8 +2,8 @@
 
 This server, Mastodon, GoToSocial, Misskey, and Bonfire Social federating with each other over HTTPS, with an Activity-Relay relay
 between this server and Mastodon and Akkoma's LitePub relay, for the live test of
-[federation.md §12](../../docs/architecture/federation.md#12-テスト) ([ADR-0006](../../docs/adr/0006-federation-protocol-scope.md),
-[ADR-0015](../../docs/adr/0015-testing-strategy.md)). CI runs it nightly (job `federation-live` in
+[ADR-0006](../../docs/adr/0006-federation-protocol-scope.md) and
+[ADR-0015](../../docs/adr/0015-testing-strategy.md). CI runs it nightly (job `federation-live` in
 `.github/workflows/nightly.yml`); it is not part of `scripts/task.sh check`.
 
 | File | What it is |
@@ -148,7 +148,7 @@ What the scenarios show about the pinned peers, and how this server and the scen
 | GoToSocial 0.22 | Logs `error fetching account featured collection … empty url host` for this server's instance actor, which has no `featured` | Harmless: the actor is still stored and the signature verified |
 | Misskey 2026.10 | Signs with draft-cavage only (`rsa-sha256`, `{actor}#main-key`); delivers to this server's shared inbox | Nothing to do |
 | Misskey 2026.10 | A new server federates with no one (`federation: none`) and limits the API calls of each user | The script opens federation and lifts the limits (How it works) |
-| Misskey 2026.10 | A favourite is a reaction: a `Like` with the emoji in `content` and `_misskey_reaction`; a `Like` without one shows as Misskey's default reaction | This server records it as a reaction with the emoji, not as a favourite ([ADR-0051](../../docs/adr/0051-custom-emoji.md), [federation.md §3](../../docs/architecture/federation.md#3-受信inbox)); a favourite from this server (a `Like` without an emoji) shows on Misskey as its default reaction |
+| Misskey 2026.10 | A favourite is a reaction: a `Like` with the emoji in `content` and `_misskey_reaction`; a `Like` without one shows as Misskey's default reaction | This server records it as a reaction with the emoji, not as a favourite ([ADR-0051](../../docs/adr/0051-custom-emoji.md)); a favourite from this server (a `Like` without an emoji) shows on Misskey as its default reaction |
 | Misskey 2026.10 | Cannot edit a note, and its inbox skips an `Update` of a `Note` (`skip: Unknown type: Note`, answered 202) | `TestEdit` checks that the `Update` is delivered and that the text stays |
 | Misskey 2026.10 | `renoteCount` never goes down: deleting a renote, also on an `Undo Announce`, leaves it as it was | The scenarios count the renotes that exist (`notes/renotes`) |
 | Misskey 2026.10 | Answers an `Undo Follow` with a `Reject` of the follow (`UserFollowingService.unfollow`), whose `Follow` has the id `/follows/{follower}/{followee}` | This server drops it (`inbox activity dropped`, the follow has already ended) |

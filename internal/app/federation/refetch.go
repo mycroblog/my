@@ -20,8 +20,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Refetching remote posts from their origin on an operator's request (FR-407, federation.md
-// §6.4). Nothing schedules it: only the administration API and the CLI enqueue it.
+// Refetching remote posts from their origin on an operator's request (FR-407).
+// Nothing schedules it: only the administration API and the CLI enqueue it.
 const (
 	// JobRefetchStatus fetches one stored remote post again and records what its origin serves
 	// now: a new revision, the counts of its poll, or its deletion.
@@ -85,7 +85,7 @@ func refetchStatusesJob(p refetchStatusesPayload, runAt time.Time) (queue.NewJob
 	}, nil
 }
 
-// Refetch fetches the stored remote post statusID again from its origin (federation.md §6.4)
+// Refetch fetches the stored remote post statusID again from its origin (FR-407)
 // and records what the origin serves now, with the rules of a received Update: a newer revision
 // with its mentions, the counts of its poll, nothing when the document is unchanged. A document
 // that is gone (410 Gone, or a Tombstone with the post's id) deletes the post as its author's
@@ -214,8 +214,8 @@ type RefetchesDeps struct {
 	Host string
 }
 
-// Refetches queues the refetch of remote posts that an operator requests (FR-407,
-// federation.md §6.4): one post, the posts of a remote account, or those of the accounts of a
+// Refetches queues the refetch of remote posts that an operator requests (FR-407):
+// one post, the posts of a remote account, or those of the accounts of a
 // remote domain. Each request is recorded in the audit log in the transaction that enqueues it.
 type Refetches struct {
 	d RefetchesDeps

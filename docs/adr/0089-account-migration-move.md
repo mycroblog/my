@@ -33,7 +33,7 @@
 ### 4. 受ける側: 外のアカウントの移転を受ける
 
 - `Move` のハンドラを federation に登録し、次をすべて満たすときだけ処理する。満たさなければ理由をログとメトリクスに残して完了にする。
-  1. `actor` と `object` が同じで、署名者が `actor`（federation.md §3.2 の確かめ）。FEP-7628 の pull mode（移転先が送る `Move`）は受けない（Mastodon・Akkoma も受けない）
+  1. `actor` と `object` が同じで、署名者が `actor`（ADR-0006 §8 の確かめ）。FEP-7628 の pull mode（移転先が送る `Move`）は受けない（Mastodon・Akkoma も受けない）
   2. `target` の Actor をキャッシュを使わずに取得し、その `alsoKnownAs` に `actor` の `id` がある
   3. `target` が `actor` と異なり、`target` 自身が移転済みでない（移転の連鎖をたどらない）
   4. 移転元・移転先のアカウントにも、そのドメインにも、このサーバーの `suspend` の処分がない
@@ -102,7 +102,7 @@ ADR-0006 の流れの表の `retract` は、`Move` の送信を含む。
 
 ### 12. 無効化: 期間と削除
 
-- 無効化から 30 日（`deactivated` の `since` から 30 × 24 時間）で削除します。`account.execute_deletions` が期限を過ぎた `deactivated` を読み直して、`initiated_by = system` の `deleted` を記録します。以後は本人の削除と同じ経路で、このときに `Delete`（Actor）を送り（[federation.md §7.1](../architecture/federation.md)）、7 日後に消去します。ユーザー名は解放しません。
+- 無効化から 30 日（`deactivated` の `since` から 30 × 24 時間）で削除します。`account.execute_deletions` が期限を過ぎた `deactivated` を読み直して、`initiated_by = system` の `deleted` を記録します。以後は本人の削除と同じ経路で、このときに `Delete`（Actor）を送り、7 日後に消去します。ユーザー名は解放しません。
 - スキーマは変えません。期限は `since` から求めます。`deletion_due_at` は `deletion_scheduled` のものなので、`deactivated` では使いません。
 - 期限の前なら必ず再有効化でき、期限を過ぎたら、ジョブが記録するまでの隙間でも断ります。戻った後の無効化は、`since` が変わるので 30 日を数え直します。
 - 無効化の間に処分を受けても期限は変わりません。`ban` は `deletion_scheduled` に移るので、その時点から再有効化できず、`ban` の期日に従います。`ban` の取り消しの `deletion_canceled` は、畳み込みのとおり `active` に戻します。保全（`retention_holds`）は消去を止めるだけで、削除は止めません。

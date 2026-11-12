@@ -11,7 +11,7 @@ import (
 )
 
 // FederationPolicy reads the restrictions of domains and remote accounts that bear on
-// federation (federation.md §11) from the moderation projections, domain_restrictions and
+// federation (federation.md §1) from the moderation projections, domain_restrictions and
 // account_restrictions, at the time of each call. A domain's restrictions cover its subdomains.
 // It implements the federation module's DomainPolicy and AccountPolicy and the content module's
 // MediaFetchPolicy.

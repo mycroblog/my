@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// moderationSuspensions checks AccountSuspensionChanged (federation.md §11.1): an action that
+// moderationSuspensions checks AccountSuspensionChanged (ADR-0058 §6): an action that
 // suspends an account that was not suspended, local or remote, tells it with the action, the lift or the expiry of its last
 // suspension tells the end once, whichever removes the suspension first, and the expiry job
 // removes the expired restrictions of every kind.

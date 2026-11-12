@@ -541,7 +541,7 @@ func (r *Reader) forcedSensitive(ctx context.Context, st content.Status) (bool, 
 
 // Parts resolves what rev refers to. It does not decide who may see the revision; callers
 // that present it to a viewer decide that first. ActivityPub documents of local statuses are
-// built from it (federation.md §7.4).
+// built from it.
 func (r *Reader) Parts(ctx context.Context, rev content.Revision) (RevisionParts, error) {
 	out, err := r.viewParts(ctx, rev)
 	if err != nil {

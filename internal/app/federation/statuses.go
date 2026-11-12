@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Bounds of ingesting remote posts (federation.md §3.3, §6.3).
+// Bounds of ingesting remote posts (ADR-0006 §9, §12).
 const (
 	// UpdateAsCreateWindow is how recent the published time of an Update of an unknown post
 	// must be for the Update to be taken as its Create (Mastodon does the same).
@@ -31,8 +31,8 @@ const (
 	MaxMentions = federation.MaxTags
 )
 
-// RemoteStatuses is the part of the content module's public API that stores remote posts
-// (federation.md §1.1). *appcontent.Service implements it.
+// RemoteStatuses is the part of the content module's public API that stores remote posts.
+// *appcontent.Service implements it.
 type RemoteStatuses interface {
 	IngestRemoteStatus(ctx context.Context, tx uow.Tx, in appcontent.RemoteStatusInput) (appcontent.Post, error)
 	ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in appcontent.RemoteStatusInput) (bool, error)
@@ -69,12 +69,12 @@ type StatusHandlersDeps struct {
 	Fetcher DocumentFetcher
 	// Followers tells whether local accounts follow the author (ADR-0006).
 	Followers Followers
-	// Tombstones tells which URIs a Delete or Undo of an unknown object left (federation.md
-	// §3.3), so that a fetch does not bring them in; nil knows none.
+	// Tombstones tells which URIs a Delete or Undo of an unknown object left (ADR-0006
+	// §9), so that a fetch does not bring them in; nil knows none.
 	Tombstones RemoteObjectTombstones
 	// Outbox enqueues the fetch of the parent of an ingested reply in its transaction; Jobs
 	// enqueues the fetches of a thread outside transactions; KV keeps the thread fetches of
-	// the last ThreadFetchTTL (federation.md §6.3). Without Outbox, parents are not fetched;
+	// the last ThreadFetchTTL (ADR-0006 §12). Without Outbox, parents are not fetched;
 	// without Jobs and KV, threads are not.
 	Outbox queue.Outbox
 	Jobs   queue.JobQueue
@@ -120,7 +120,7 @@ type StatusHandlersDeps struct {
 	Logger *slog.Logger
 }
 
-// StatusHandlers are the inbox handlers of remote posts (federation.md §3.4): Create and Update
+// StatusHandlers are the inbox handlers of remote posts: Create and Update
 // of Note, Question, Article (an article, ADR-0160 §10), and the converted types, Delete of a post, and Add and Remove of the pinned
 // posts. Only posts related to a local
 // account are ingested (ADR-0006).
@@ -180,7 +180,7 @@ type RemotePollVotes interface {
 	RecordRemotePollVote(ctx context.Context, in appcontent.RemotePollVoteInput) (bool, error)
 }
 
-// vote records a Note of the actor that votes in a local poll (FR-112, federation.md §3.4): a
+// vote records a Note of the actor that votes in a local poll (FR-112): a
 // Note with a name in reply to a local status, as Mastodon, Misskey, Pleroma (Akkoma), and
 // GoToSocial send votes. It reports whether obj was a vote. A reply to a local status without a
 // poll is no vote: it is a post like any other. A vote in a poll that has ended, for a choice
@@ -210,7 +210,7 @@ func (h *StatusHandlers) vote(ctx context.Context, a *InboxActivity, obj *federa
 	return true, interactionError(err)
 }
 
-// Update records a new revision of a stored post (federation.md §3.3): an Update older than the
+// Update records a new revision of a stored post (ADR-0006 §9): an Update older than the
 // current revision makes none. The Update of a post that is not stored is taken as its Create
 // when the post is in scope and was published within UpdateAsCreateWindow.
 func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
@@ -272,7 +272,7 @@ func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
 	return err
 }
 
-// Delete deletes a stored post of the actor (federation.md §3.4). A post that is not stored is
+// Delete deletes a stored post of the actor. A post that is not stored is
 // ErrUnknownObject, so that the processor keeps a tombstone for a Create arriving later.
 func (h *StatusHandlers) Delete(ctx context.Context, a *InboxActivity) error {
 	id := a.Activity.Object().ID
@@ -314,7 +314,7 @@ func (h *StatusHandlers) object(ctx context.Context, a *InboxActivity) (*federat
 	}
 	doc := ref.Trusted()
 	if doc == nil {
-		// Only a post in scope is fetched (federation.md §3.3); without the post, only the
+		// Only a post in scope is fetched (ADR-0006 §9); without the post, only the
 		// follows of its author tell.
 		followed, err := h.followed(ctx, a.Actor)
 		if err != nil {
@@ -534,7 +534,7 @@ type postMentions struct {
 }
 
 // mentions looks up the actors a post mentions (its Mention tags, and the local actors it
-// addresses, federation.md §4) among the stored accounts.
+// addresses) among the stored accounts.
 func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, followers federation.IRI) (*postMentions, error) {
 	m := &postMentions{}
 	iris := obj.MentionedIRIs(followers, h.isLocal)
@@ -623,8 +623,8 @@ func (h *StatusHandlers) resolveMentions(ctx context.Context, m *postMentions) e
 
 func (h *StatusHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() == h.origin }
 
-// input maps a normalized post that activity a carried to what the content module stores
-// (federation.md §4). A post without addressing takes the addressing of the activity only when
+// input maps a normalized post that activity a carried to what the content module stores.
+// A post without addressing takes the addressing of the activity only when
 // the post's author signed the activity: the addressing of an activity that someone else signed
 // is not the author's, even when the post itself was fetched from its origin.
 func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, cols authorCollections, m *postMentions) appcontent.RemoteStatusInput {
@@ -635,8 +635,8 @@ func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, cols au
 	return h.inputOf(a.Actor, fallback, string(a.Received.ActivityURI), obj, cols, m)
 }
 
-// inputOf maps a normalized post by author to what the content module stores (federation.md
-// §4). A post without addressing takes fallback, the addressing of the activity that carried it;
+// inputOf maps a normalized post by author to what the content module stores.
+// A post without addressing takes fallback, the addressing of the activity that carried it;
 // activityURI is that activity, "" for a post fetched by its id.
 func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Audience, activityURI string, obj *federation.Object, cols authorCollections, m *postMentions) appcontent.RemoteStatusInput {
 	audience := obj.Audience

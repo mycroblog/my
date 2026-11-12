@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The refetch of remote posts from their servers (FR-407, federation.md §6.4): the admin
+// The refetch of remote posts from their servers (FR-407): the admin
 // operations that queue it (manage_domains). Nothing schedules a refetch on its own.
 
 // Refetches queues the refetch of remote posts. *appfederation.Refetches implements it.

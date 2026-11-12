@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The refetch of remote posts from their servers (FR-407, federation.md §6.4): one post, the posts of a remote
+// The refetch of remote posts from their servers (FR-407): one post, the posts of a remote
 // account, or those of the accounts of a remote server. The server queues the fetches and records the request in
 // the audit log; nothing on screen shows the posts as they are fetched, which happens in the background.
 import type { QueryClient } from "@tanstack/react-query";

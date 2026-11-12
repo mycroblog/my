@@ -2,7 +2,7 @@
 
 //go:build federationlive
 
-// Package federationlive holds the scenarios of the live interoperability test (federation.md §12):
+// Package federationlive holds the scenarios of the live interoperability test (README.md):
 // black-box checks, over HTTPS through the proxy of compose.yaml, that this server federates with
 // Mastodon, GoToSocial, and Misskey. scripts/federation-live.sh starts the stack and runs them; without the
 // FEDERATION_LIVE_* variables that it sets, every test skips.

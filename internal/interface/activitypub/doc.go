@@ -15,7 +15,7 @@
 //
 // The shared inbox (POST /ap/inbox) and the inbox of each active local actor (POST
 // /ap/actors/{id}/inbox) check the content type and the body size, and leave the signature,
-// the rate limits, and the record of the activity to the federation module (federation.md §3.1):
+// the rate limits, and the record of the activity to the federation module (ADR-0006 §6):
 // they answer 202 Accepted, or the status of the step that refused the request. The outbox
 // (the Create activities of public and unlisted statuses), followers, and following
 // collections are paged (?page=true, then ?max_id=…&page=true); featured holds the pinned public

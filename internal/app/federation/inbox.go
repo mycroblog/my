@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// JobInbox processes one received activity (federation.md §3.2). Its payload is inboxPayload.
+// JobInbox processes one received activity (ADR-0006 §8). Its payload is inboxPayload.
 const JobInbox = "federation.inbox"
 
 // InboxMaxBodyBytes is the largest request body an inbox reads (ADR-0019 §5).
@@ -148,7 +148,7 @@ type InboxDeps struct {
 	Meter kernel.Meter
 }
 
-// Inbox is the synchronous part of receiving an activity (federation.md §3.1, ADR-0006): it
+// Inbox is the synchronous part of receiving an activity (ADR-0006 §6): it
 // verifies the request, records the activity once, and enqueues JobInbox, whose handlers do the
 // rest asynchronously.
 type Inbox struct {
@@ -174,7 +174,7 @@ func NewInbox(d InboxDeps) *Inbox {
 }
 
 // InboxRequest is one POST to an inbox whose content type and body size the HTTP handler has
-// checked (federation.md §3.1 steps 1 and 2).
+// checked.
 type InboxRequest struct {
 	Request *SignedRequest
 	// ClientIP is the address the request came from, for the IP rate limit; "" skips it.
@@ -182,7 +182,7 @@ type InboxRequest struct {
 }
 
 // InboxRejection is the answer to a request that the inbox refuses before it touches the
-// database or the queue: the HTTP status of the step that refused it (federation.md §3.1).
+// database or the queue: the HTTP status of the step that refused it (ADR-0006 §6).
 type InboxRejection struct {
 	Status int
 	// RetryAfter is the Retry-After of a 429; 0 otherwise.
@@ -243,7 +243,7 @@ type Received struct {
 	Rejection *InboxRejection
 }
 
-// Receive runs steps 3 to 14 of federation.md §3.1 on in. A refused request comes back with
+// Receive runs the steps of ADR-0006 §6 after the HTTP handler's on in. A refused request comes back with
 // Received.Rejection set before anything is written; the error is only for unexpected
 // failures (500). They are separate results so that the caller can log an unexpected failure
 // without the header values that a refusal quotes.

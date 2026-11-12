@@ -26,7 +26,7 @@ func (e *fedEnv) article(t *testing.T, s content.Status, typ federation.Activity
 	return obj
 }
 
-// fedSendsTheArticle checks the Article of a local article (ADR-0160 §9, federation.md §7.4):
+// fedSendsTheArticle checks the Article of a local article (ADR-0160 §9):
 // its title as name, its summary (the one made from the body when the author left it empty) as
 // summary and never as a content warning, the rendered HTML once as content (a body in one
 // language without contentMap, its language in nameMap and summaryMap) and never the Markdown as

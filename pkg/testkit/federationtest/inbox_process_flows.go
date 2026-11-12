@@ -25,7 +25,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
-// InboxProcessingFlows verifies the asynchronous part of the inbox (federation.md §3.2, §3.3) on
+// InboxProcessingFlows verifies the asynchronous part of the inbox (ADR-0006 §8, §9) on
 // a database adapter, the flows of ADR-0153 §1, which internal/flowtest/federation runs once on
 // SQLite (InboxProcessingContract checks the inbox repository's methods that the processing uses
 // on every adapter): activities of unknown types complete, a
@@ -800,7 +800,7 @@ func followRows(uris ...string) func(t *testing.T, e *inboxProcessEnv) any {
 var inboxOrderCases = []inboxOrderCase{
 	{
 		// An Update of the actor before or after its Delete never brings it back, and the
-		// Delete is recorded once (federation.md §3.4).
+		// Delete is recorded once.
 		name: "OwnActorUpdatesAndDelete",
 		activities: func(t *testing.T) [][]byte {
 			return [][]byte{

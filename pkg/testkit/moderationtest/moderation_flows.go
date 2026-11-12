@@ -34,7 +34,7 @@ type ModerationHarness struct {
 type ModerationFactory func(t *testing.T, opts uow.Options) ModerationHarness
 
 // ModerationFlows verifies the moderation repository of a database adapter through the moderation
-// use cases, moderation.FederationPolicy (federation.md §11), and moderation.AccountPolicy:
+// use cases, moderation.FederationPolicy (federation.md §1), and moderation.AccountPolicy:
 // a domain action restricts the domain and its subdomains until it expires or is
 // lifted, a lift ends only its own action's restrictions, actions on remote accounts restrict them,
 // each kind of action on a local account takes away its capabilities until it ends and may name a

@@ -82,7 +82,7 @@ func allowsAny(mode federation.Mode, flows ...federation.Flow) bool {
 }
 
 // receives reports whether mode lets the received activity act through to its handler
-// (federation.md §3.2, ADR-0006 入口ごとの振る舞い); host is this server's, which tells the local
+// (ADR-0006 §25); host is this server's, which tells the local
 // objects. The handlers of the activities that span several flows decide the rest with the mode
 // of InboxActivity:
 //

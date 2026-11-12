@@ -11,7 +11,7 @@ import (
 
 // RemoteActorTTL is how long a fetched remote actor stays fresh. After it, the actor is fetched
 // again the next time it is used, and the periodic refresh fetches the ones that local accounts
-// follow (federation.md §6.2, ADR-0019 §7).
+// follow (ADR-0006 §12, ADR-0019 §7).
 const RemoteActorTTL = 24 * time.Hour
 
 // RemoteAccount is the remote subtype of an account: an actor of another server.

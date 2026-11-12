@@ -20,7 +20,7 @@ const ReasonProofMismatch = "integrity proof does not verify"
 var errProofIgnored = errors.New("integrity proof ignored")
 
 // VerifyProof checks the integrity proof of a received activity by actor (FEP-8b32,
-// federation.md §3.1 step 12), after its HTTP signature verified. A document without a proof to
+// ADR-0006 §30), after its HTTP signature verified. A document without a proof to
 // check (federation.ReadProof), or whose proof names a key that cannot be resolved or that is
 // not an Ed25519 key, passes unchanged: FEP-8b32 tells a verifier to ignore such a proof and
 // rely on other authentication, here the HTTP signature. A proof that names another actor's key

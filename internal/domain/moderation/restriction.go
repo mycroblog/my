@@ -32,7 +32,7 @@ const (
 	// RestrictProfileView hides the profile and statuses from all but the owner and moderators.
 	RestrictProfileView Restriction = "profile_view"
 	// RestrictFederation stops federation: received activities are dropped, and nothing is
-	// delivered (federation.md §11).
+	// delivered (federation.md §1).
 	RestrictFederation Restriction = "federation"
 	// RestrictMediaFetch keeps media from being fetched and shown (a domain's reject_media).
 	RestrictMediaFetch Restriction = "media_fetch"

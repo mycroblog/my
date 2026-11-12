@@ -1,2 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["internal/domain/federation/doc.go", "docs/architecture/federation.md#1-構成"]
+docs: ["internal/domain/federation/doc.go", "docs/adr/0006-federation-protocol-scope.md", "docs/architecture/federation.md"]

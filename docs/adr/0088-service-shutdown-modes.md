@@ -43,12 +43,12 @@
 
 - inbox の `410` は、主要な実装がどれも再試行しない失敗として扱うので、連合先からの配送が早く止まる: Mastodon は 401・408・429 以外の 4xx（[`response_error_unsalvageable?`](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/helpers/json_ld_helper.rb)）、Misskey は 429 以外の 4xx（[`StatusError`](https://github.com/misskey-dev/misskey/blob/2dd2e114b72dc256bdfa0ce88a8387f5cf6bd348/packages/backend/src/misc/status-error.ts)）、GoToSocial は 429 以外の 4xx（[`httpclient`](https://codeberg.org/superseriousbusiness/gotosocial/src/commit/311cecaeb6e302509c847d20e21185a7ec41d28d/internal/httpclient/client.go)）、Akkoma は 405 と 410（[`PublisherWorker`](https://akkoma.dev/AkkomaGang/akkoma/src/commit/a69f0b9e328dd6c12bf4a308892041035408d03a/lib/pleroma/workers/publisher_worker.ex)）を再試行しない（2026-10-23 にソースで確認）。Misskey は shared inbox の `410` で、そのサーバー全体への配送を止める（`goneSuspended`、同じく [`DeliverProcessorService`](https://github.com/misskey-dev/misskey/blob/2dd2e114b72dc256bdfa0ce88a8387f5cf6bd348/packages/backend/src/queue/processors/DeliverProcessorService.ts)）。
 - 配送中に Actor の文書と鍵を返し続けるのは、鍵を取り直す受信側のためである。GoToSocial は、署名の鍵の取得が `410` だと tombstone を記録して inbox に `202` を返し、その `Delete` を処理しない（2026-10-23 に [`authenticate.go`](https://codeberg.org/superseriousbusiness/gotosocial/src/commit/311cecaeb6e302509c847d20e21185a7ec41d28d/internal/federation/authenticate.go) と [`federatingprotocol.go`](https://codeberg.org/superseriousbusiness/gotosocial/src/commit/311cecaeb6e302509c847d20e21185a7ec41d28d/internal/federation/federatingprotocol.go) で確認）。
-- クローズの判定は `federation_mode`（ADR-0006）より優先する: クローズでは `retract` と、鍵を出すための `identify` だけを通す。`federation_mode` が `off` / `inbound` でも `Delete` は送る（予告の期間に連合を狭めた運営者も、外に残ったものを消せるように）。これは ADR-0006 の「`off` は何も通さない」に対する例外で、ADR-0006 自体は変えない（クローズは別の軸の状態として足す）。管理画面の確認でこの例外を示す。ドメインの処分（federation.md §11）はいつもどおり効き、凍結したドメインには送らない。
+- クローズの判定は `federation_mode`（ADR-0006）より優先する: クローズでは `retract` と、鍵を出すための `identify` だけを通す。`federation_mode` が `off` / `inbound` でも `Delete` は送る（予告の期間に連合を狭めた運営者も、外に残ったものを消せるように）。これは ADR-0006 の「`off` は何も通さない」に対する例外で、ADR-0006 自体は変えない（クローズは別の軸の状態として足す）。管理画面の確認でこの例外を示す。ドメインの処分（federation.md §1）はいつもどおり効き、凍結したドメインには送らない。
 - メンテナンスモード（§8）はどの状態でも重ねて使える（すべてを止める）。ステータスページ（§20）への掲出は運用文書の手順に書く。
 
 ### 3. クローズの配送
 
-- `closed` を記録したトランザクションで、ジョブ `instance.closure_delete_actors`（カーソルはアカウントの ID）を outbox に積む。ジョブはローカルのアカウント（インスタンス Actor・削除済みを除く。凍結中は含む）を 100 件ずつ、アカウントごとに `Delete`（Actor）の outbound activity を記録し、既存の展開（[federation.md §7.2](../architecture/federation.md#72-展開fan-out)。承認済みのフォロワー → 既知の shared inbox）に渡す。ライフサイクル（`account_lifecycle_events`）は変えない（消去ジョブを動かさない。§5）。
+- `closed` を記録したトランザクションで、ジョブ `instance.closure_delete_actors`（カーソルはアカウントの ID）を outbox に積む。ジョブはローカルのアカウント（インスタンス Actor・削除済みを除く。凍結中は含む）を 100 件ずつ、アカウントごとに `Delete`（Actor）の outbound activity を記録し、既存の展開（承認済みのフォロワー → 既知の shared inbox）に渡す。ライフサイクル（`account_lifecycle_events`）は変えない（消去ジョブを動かさない。§5）。
 - 投稿ごとの `Delete` は送らない（アカウントの削除と同じく `Delete`（Actor）が代わりを務める）。
 - 速度: 次のページの展開は、前のページの展開が終わってから積む。同時に動く配送はキューの同時実行数の設定で抑え、未処理の配送のジョブが上限（既定 10,000 件、Mastodon と同じ値。要調整）を超えている間は次のページを積まない。shared inbox への集約と `unavailable` のドメインの除外は既存のまま効く。
 - 再試行と諦める時点: 既存の配送の方針（最大 9 回、約 4 日、使い切ったら dead job）。dead job は自動では再実行しない（運営者は既存の管理 API で再実行できる）。
@@ -131,7 +131,7 @@
 - **Web クライアントと Tauri アプリ**: Problem の `type` が `/api/v1/problems/maintenance` なら、画面全体をメンテナンスの表示（`message`・`until`・ステータスページへのリンク）に替え、
   `Retry-After` の後か利用者の操作で再読み込みする。**503 でトークンを捨てない・サインアウトしない**。キャッシュ済みの Service Worker が古いシェルを出しても、API の応答で同じ表示になる。
   ブラウザは `sw.js` の更新の取得が 2xx でなければ更新をやめ、登録済みの Service Worker を使い続ける（2026-10-23 に [Service Workers の Update 手順](https://w3c.github.io/ServiceWorker/#update-algorithm)で確認。登録を消すのは既存の worker が無いときだけ）。
-- **連合先**: 503 と `Retry-After` は、こちらの配送の分類（[federation.md §7.3](../architecture/federation.md)）と同じく、送り手から見て「再試行する失敗」に当たる。
+- **連合先**: 503 と `Retry-After` は、こちらの配送の分類と同じく、送り手から見て「再試行する失敗」に当たる。
   - Mastodon は 5xx を再試行する（再試行しないのは 501 と、401・408・429 を除く 4xx）。再試行は 16 回で、`n` 回目の待ちは `n⁴ + 15` 秒にジッタ（最大 `0.5 × n⁴`）を足したもの（合計およそ 2〜3 日）。
     `Retry-After` は読まない。失敗した試行のたびにその日（UTC）を記録し、異なる 7 日に達したドメインを配送の対象から外す（`DeliveryFailureTracker`。こちらの `InstanceHealth` はこれに合わせている）。
     出典: [`delivery_worker.rb`](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/workers/activitypub/delivery_worker.rb)・[`delivery_failure_tracker.rb`](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/lib/delivery_failure_tracker.rb)・[`json_ld_helper.rb`](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/helpers/json_ld_helper.rb)（2026-10-23 に確認）。

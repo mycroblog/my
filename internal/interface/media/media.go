@@ -3,7 +3,7 @@
 // Package media serves the public media blobs under /media/ (ADR-0005, ADR-0019 §8). Object
 // storage with a CDN can serve the same keys directly; this handler serves them when the
 // BlobStore cannot (the local file system). The media proxy (ProxyHandler) relays remote media
-// files under /media/proxy/ (docs/architecture/federation.md §9).
+// files under /media/proxy/ (ADR-0005 §10).
 package media
 
 import (

@@ -15,7 +15,7 @@ import (
 )
 
 // runAdminRefetch implements `my admin refetch <subcommand>`: the refetch of remote posts from
-// their servers (FR-407, federation.md §6.4). The CLI acts as no user: the request is recorded
+// their servers (FR-407). The CLI acts as no user: the request is recorded
 // in the audit log as the command line's.
 func runAdminRefetch(args []string, stdout, stderr io.Writer) int {
 	sub, code := dispatch("admin refetch", args, []string{"status", "account", "domain"}, stderr, adminRefetchUsage)

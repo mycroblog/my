@@ -8,3 +8,4 @@
 - Changing the remote follow and share links of WebFinger (activity intents): [FEP-3b86](https://fediverse.codeberg.page/fep/fep/3b86/), search for: `https://w3id.org/fep/3b86/Follow`, `https://w3id.org/fep/3b86/Create`, `template`
 - Changing what Mastodon expects of an actor, a collection, or secure mode: [Mastodon documentation, ActivityPub](https://docs.joinmastodon.org/spec/activitypub/), search for: `featured`, `featuredTags`, `publicKey`, Secure mode
 - Asking a signer for a scheme with `Accept-Signature`: [RFC 9421](https://www.rfc-editor.org/rfc/rfc9421), search for: `Accept-Signature`, Requesting Signatures
+- Before changing how this package talks to other servers, ask the `interop-advisor` agent: [interop-advisor](https://github.com/mycroblog/my/blob/main/.claude/agents/interop-advisor.md), search for: Mastodon, Misskey, GoToSocial, Akkoma

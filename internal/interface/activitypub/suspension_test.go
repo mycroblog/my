@@ -40,7 +40,7 @@ func TestDeactivatedActor(t *testing.T) {
 	}
 }
 
-// TestSuspendedActor checks GET of a local actor that moderation suspends (federation.md §11):
+// TestSuspendedActor checks GET of a local actor that moderation suspends (federation.md §1):
 // the emptied actor marked suspended, with its keys, also while its lifecycle hides it (a ban
 // schedules the deletion), and 410 once it is deleted.
 func TestSuspendedActor(t *testing.T) {

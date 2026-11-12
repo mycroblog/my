@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Fetching remote posts and their threads (federation.md §6.3, ADR-0006).
+// Fetching remote posts and their threads (ADR-0006 §12).
 const (
 	// JobFetchObject fetches one remote post and, within the bounds of its payload, enqueues
 	// the fetches of its ancestors and replies.
@@ -46,7 +46,7 @@ const (
 var ErrNotTaken = errors.New("federation: the remote object is not taken")
 
 // RemoteObjectTombstones tells which URIs have a tombstone of a Delete or Undo whose object was
-// unknown (federation.md §3.3), left by the actor that owns the object. InboxRepository
+// unknown (ADR-0006 §9), left by the actor that owns the object. InboxRepository
 // implements it.
 type RemoteObjectTombstones interface {
 	RemoteObjectTombstoned(ctx context.Context, uri, actorURI federation.IRI) (bool, error)
@@ -86,8 +86,8 @@ func (h *StatusHandlers) RegisterJobs(r *queue.JobHandlerRegistry) {
 }
 
 // fetchParentTx enqueues in tx the fetch of the parent of a reply p that was just ingested, when
-// the parent is not stored and is remote: one level, with no further ancestors (federation.md
-// §6.3). Storing the parent merges the reply's conversation into the parent's (ADR-0154 §3).
+// the parent is not stored and is remote: one level, with no further ancestors (ADR-0006
+// §12). Storing the parent merges the reply's conversation into the parent's (ADR-0154 §3).
 func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, p appcontent.Post) error {
 	parent := federation.IRI(p.Status.InReplyToURI)
 	if h.d.Outbox == nil || parent == "" || p.ParentStored || h.isLocal(parent) {
@@ -101,7 +101,7 @@ func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, p appcont
 }
 
 // FetchThread starts fetching the thread of the status statusID that a user opened
-// (federation.md §6.3, ADR-0006): its missing ancestors up to ThreadDepth levels, and for a
+// (ADR-0006 §12): its missing ancestors up to ThreadDepth levels, and for a
 // remote status the replies its server lists, ThreadDepth levels deep, ThreadMaxItems documents
 // in all. The fetches run as JobFetchObject jobs. A thread opened in the last ThreadFetchTTL is
 // not fetched again, and neither is a local status that replies to nothing (its replies are
@@ -375,7 +375,7 @@ func (h *StatusHandlers) fetchStatus(ctx context.Context, target federation.IRI)
 	return st, got.Document.Object, err
 }
 
-// fetched stores a post fetched from its origin (federation.md §6.1, §6.3): a post whose
+// fetched stores a post fetched from its origin (ADR-0006 §11, §12): a post whose
 // attributedTo has the origin of its id, by an active remote author, whose URI no deletion or
 // tombstone keeps. A post stored already is returned as it is. With parent, the fetch of its
 // parent is enqueued as on receipt. It fails with ErrNotTaken or the errors of resolving the

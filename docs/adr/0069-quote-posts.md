@@ -24,7 +24,7 @@ FEP-044f は Draft です。ただし、同意の手順を持つ形式はこれ�
 - **引用の状態**（projection）: 承認の記録から導きます。値は `pending` / `accepted` / `rejected` / `revoked` / `legacy` で、Mastodon の `Quote.state` に合わせます。
   - 引用先の削除・ブロック・ミュート・閲覧不可は状態に持ちません。表示のたびに、閲覧者ごとに判定します（§4）。
 - **引用の許可**: ADR-0155 §2〜§5 の交流の許可の `quote` です。作者が投稿後に変えても、出した承認は取り消しません。取り消しは承認ごとに行います。
-- **自サーバーが出した承認**（resource）: ローカルの投稿への引用ごとに 1 行です。`QuoteAuthorization` の IRI は自サーバーの URI（[federation.md §1.2](../architecture/federation.md#12-自サーバーの-uri)）で、GET で返します。取り消しは承認の行を残したまま取り消しのイベント（event）として記録し、IRI の GET は 410 を返します。
+- **自サーバーが出した承認**（resource）: ローカルの投稿への引用ごとに 1 行です。`QuoteAuthorization` の IRI は自サーバーの URI（ADR-0018）で、GET で返します。取り消しは承認の行を残したまま取り消しのイベント（event）として記録し、IRI の GET は 410 を返します。
 
 ### 2. 受信
 

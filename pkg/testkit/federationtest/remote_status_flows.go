@@ -56,8 +56,8 @@ type RemoteStatusHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type RemoteStatusFactory func(t *testing.T, opts uow.Options) RemoteStatusHarness
 
-// RemoteStatusFlows verifies the ingestion of remote posts (federation.md §3.3, §3.4, §6.3,
-// ADR-0006) through the inbox processor with the real Create, Update, and Delete handlers and the
+// RemoteStatusFlows verifies the ingestion of remote posts (ADR-0006 §9, §11)
+// through the inbox processor with the real Create, Update, and Delete handlers and the
 // real content, account, graph, timeline, and notification modules, the flows of ADR-0153 §1,
 // which internal/flowtest/federation runs once on SQLite (RemoteStatusContract checks the
 // repository methods of the ingestion on every adapter):
@@ -73,7 +73,7 @@ type RemoteStatusFactory func(t *testing.T, opts uow.Options) RemoteStatusHarnes
 // featured collections of fetched actors become their pins, fetched again on an Add or Remove to
 // them by their owner (ADR-0006); the quotes of posts are recorded, their quoted posts fetched one
 // level, and their approvals verified, revoked, and presented per viewer (ADR-0069); and a
-// post with NUL in every string is stored with U+FFFD (federation.md §4). The
+// post with NUL in every string is stored with U+FFFD. The
 // actors and the fetches are in-memory stand-ins, and the network of the fetch cases is in memory.
 func RemoteStatusFlows(t *testing.T, newHarness RemoteStatusFactory) {
 	t.Helper()
@@ -245,7 +245,7 @@ func newRemoteStatusEnv(t *testing.T, newHarness RemoteStatusFactory) *remoteSta
 	})
 	e.votes, e.approvals = &lateVotes{}, &lateApprovals{}
 	e.statuses = appfederation.NewStatusHandlers(appfederation.StatusHandlersDeps{
-		UnitOfWork: h.UnitOfWork, Statuses: e.content, Accounts: e.remote, Actors: e.actors, Fetcher: e.fetcher,
+		UnitOfWork: h.UnitOfWork, Statuses: e.content, Accounts: e.remote, Profiles: e.remote, Actors: e.actors, Fetcher: e.fetcher,
 		Followers: e.graph, Votes: e.votes, Interactions: e.approvals, Clock: ae.Clock, Host: testkit.ContractHost,
 	})
 	e.statuses.Register(e.processor)
@@ -788,7 +788,7 @@ func remoteRecordsParts(t *testing.T, e *remoteStatusEnv) {
 }
 
 // remoteStatusStoresStringsWithNUL delivers a Create of a poll whose every string has a NUL (\u0000):
-// the activity is recorded and handled, and each NUL is stored as U+FFFD (federation.md §4) the
+// the activity is recorded and handled, and each NUL is stored as U+FFFD the
 // same way in every dialect.
 func remoteStatusStoresStringsWithNUL(t *testing.T, e *remoteStatusEnv) {
 	const alice = "https://remote.example/users/alice"

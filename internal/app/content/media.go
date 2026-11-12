@@ -98,7 +98,7 @@ type MediaDeps struct {
 	// DefaultReplacedRetention.
 	ReplacedRetention time.Duration
 	Referrers         []MediaReferrer
-	// Proxy signs the media proxy URLs that present remote media files (federation.md §9);
+	// Proxy signs the media proxy URLs that present remote media files (ADR-0005 §10);
 	// nil presents no remote file.
 	Proxy *MediaProxy
 	// Review asks the hook media.check about each upload before its result is ready; nil asks
@@ -728,8 +728,8 @@ func (s *MediaService) image(variants []content.MediaVariant) (Image, bool) {
 	return img, true
 }
 
-// RemoteImage returns the image of a remote media file through the media proxy (federation.md
-// §9): the file itself as the medium and large variants, with the declared dimensions, and, for
+// RemoteImage returns the image of a remote media file through the media proxy:
+// the file itself as the medium and large variants, with the declared dimensions, and, for
 // a file that may be an image, the proxy's small still variant as the small one (ADR-0005 §10);
 // a video or audio file (gifv included) is its Media alone. It returns false when no proxy is
 // configured.

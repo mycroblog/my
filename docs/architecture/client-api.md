@@ -77,7 +77,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   ブーストは、ブーストした人の `Status` の `boost` に元の投稿を入れて表します。
 - 投稿のリンクのカード（`Status.card`、`LinkCard`）は、`StatusView.Card`（`content.LinkCards.View`）を `Server.newLinkCard` で詰め替えます。
   カードは投稿の後にジョブが取得するので、投稿の直後の応答には無く、添付・投票のある投稿と `link_cards` が偽のときも省きます。
-  画像はメディアプロキシの `small` の URL だけを返します（[federation.md §9.1](federation.md#91-リンクのカード)、ADR-0062 §8）。
+  画像はメディアプロキシの `small` の URL だけを返します（ADR-0062 §8）。
 - 投稿の引用（`Status.quote`、`StatusQuote`）は、`StatusView.Quote`（`content.Reader` が閲覧者ごとに決める `QuoteView`）を `Server.newStatus` で詰め替えます（ADR-0069 §5）。
   `state` は承認の状態か、閲覧者に引用先を見せない理由（`QuoteState`）で、`quoted_status` は `accepted`・`legacy` と、閲覧者のミュートの理由（`muted_account`・`blocked_domain`）のときだけ入れます。
   引用は 1 段で、`quoted_status` には `quote` を入れません。引用先の著者などのアカウントの分は、`Server.statusParts` が引用元と一緒に読みます。
@@ -87,7 +87,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   作者は `listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuoteApproval` で承認を取り消します。
   交流の許可は、投稿の作成（`createStatus` の `interaction_policy`）と `setStatusInteractionPolicy`（`PUT /statuses/{id}/interaction_policy`）で種類ごとに指定し、指定しない種類は `Preferences.default_interaction_policy`（`updatePreferences` で種類ごとに変える）を写すか、今の値のままです。どちらも `InteractionPolicyChange` で、承認の相手が自動の相手より広くなければ `422` です。
   アカウントの投稿の一覧（`listAccountStatuses`）だけは、`StatusPage` に `remote_fetch_started` を加えた `#/components/responses/AccountStatusPage` を返します。
-  その要求がリモートのアカウントの最近の投稿の取得を始めたときだけ `true` が入り、ほかのときは省きます（[federation.md §6.3](federation.md#63-投稿)、ADR-0006）。
+  その要求がリモートのアカウントの最近の投稿の取得を始めたときだけ `true` が入り、ほかのときは省きます（ADR-0006 §14）。
 
 ### 2.3 エラー
 

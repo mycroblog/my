@@ -275,7 +275,7 @@ internal/
     captcha/siteverify/ # HumanVerifier の実装（Turnstile / hCaptcha / reCAPTCHA v2 のプリセット。ADR-0106）
     system/          # Clock / IDGenerator の本番実装（システム時計・UUIDv7）
     keymanager/{local,gcpkms,awskms,plugin}/ # KeyManager の実装（設定の KEK、Cloud KMS、AWS KMS、運営者のプラグイン。ADR-0019、ADR-0146 §14）
-    htmlsanitizer/   # HTMLSanitizer の実装（bluemonday。リモート HTML の許可リスト。federation.md §5）と、インスタンスの文書の許可リスト
+    htmlsanitizer/   # HTMLSanitizer の実装（bluemonday。リモート HTML の許可リスト。ADR-0019 §2）と、インスタンスの文書の許可リスト
     oidc/            # identity.OIDCClient の実装（標準ライブラリ。Discovery・JWKS・RS256 / ES256 / EdDSA の ID トークンの検証。ADR-0106）
     webauthn/        # identity.PasskeyCeremonies の実装（go-webauthn。パスキーの登録とログインの WebAuthn の手続き。FR-004）
     acme/            # instance.ACMEClient の実装（acmez/v3。tls = acme の証明書の発注・失効・ARI。ADR-0163 §2）
@@ -301,7 +301,7 @@ deploy/
   docker/ k8s/ aws/
   opentofu/  # Cloud Run の OpenTofu モジュール（`<role>-<provider>-<service>`）
 test/                # テストの構成
-  federation-live/   # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
+  federation-live/   # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ）
   upgrade-test/      # アップグレードのテストと復旧の訓練の compose
 compose.yaml         # 開発の構成（go run のサーバーが使う PostgreSQL と Mailpit）
 docs/

@@ -109,7 +109,7 @@ func decodeValue(dec *json.Decoder, depth, maxDepth int) (any, error) {
 	return nil, fmt.Errorf("%w: unexpected %v", ErrMalformed, delim)
 }
 
-// storable returns s as text that every dialect stores as it is (federation.md §4): U+0000, which
+// storable returns s as text that every dialect stores as it is: U+0000, which
 // a JSON string can carry as \u0000 but PostgreSQL text cannot store, becomes U+FFFD. The JSON
 // decoder already reads invalid UTF-8 and unpaired surrogates as U+FFFD, so a decoded string
 // has no other value that a text column refuses. Replacing the NUL, as the decoder does with

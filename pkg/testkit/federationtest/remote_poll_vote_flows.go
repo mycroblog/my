@@ -356,6 +356,48 @@ func remoteClosesPolls(t *testing.T, e *remoteInteractionEnv) {
 	}
 }
 
+// remoteVotesOnlyInSeenPolls checks the other side of a vote's Note: a vote in a poll that the
+// voter may not see (followers-only, and the voter follows no one) is dropped, and a Note with a
+// name in reply to a post without a poll is a reply, stored as a post.
+func remoteVotesOnlyInSeenPolls(t *testing.T, e *remoteInteractionEnv) {
+	ctx := t.Context()
+	author := e.user(t, "author")
+	const bob = "https://remote.example/users/bob"
+	e.actor(t, bob)
+	vote := func(id, name, inReplyTo string) []byte {
+		return remoteActivity(t, "Create", id+"/activity", bob, map[string]any{
+			"id": id, "type": "Note", "attributedTo": bob, "name": name, "inReplyTo": inReplyTo,
+			"to": []string{e.localIRI(author)}, "published": e.Clock.Now().Format(time.RFC3339),
+		})
+	}
+	private, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "followers, which?"}, Visibility: content.VisibilityPrivate,
+		Poll: &content.PollInput{Options: []string{"yes", "no"}, Duration: time.Hour},
+	})
+	if err != nil {
+		t.Fatalf("Create with a poll = %v", err)
+	}
+	e.expect(t, vote(bob+"/votes/private", "yes", private.Status.URI), appfederation.InboxDropped)
+	view, err := e.reader.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: author}, private.Status.ID)
+	if err != nil {
+		t.Fatalf("View = %v", err)
+	}
+	if v := view.Poll; v == nil || !slices.Equal(v.Votes, []int64{0, 0}) {
+		t.Errorf("poll the voter may not see = %+v, want no votes", view.Poll)
+	}
+
+	plain, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "no poll here"}, Visibility: content.VisibilityPublic,
+	})
+	if err != nil {
+		t.Fatalf("Create = %v", err)
+	}
+	e.expect(t, vote(bob+"/votes/plain", "yes", plain.Status.URI), appfederation.InboxHandled)
+	if !e.stored(t, bob+"/votes/plain") {
+		t.Error("a named Note in reply to a post without a poll is not stored as a post")
+	}
+}
+
 // questionDoc is the object of the Update of a local poll.
 type questionDoc struct {
 	Type        string `json:"type"`

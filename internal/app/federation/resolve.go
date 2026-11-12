@@ -18,8 +18,8 @@ import (
 // refused or unavailable, or WebFinger does not confirm its handle.
 var ErrUnresolvable = errors.New("federation: the account could not be resolved")
 
-// ResolveHandle returns the account with the handle username@domain (FR-305, federation.md
-// §6.2): the stored one, or the actor that WebFinger of acct:username@domain on https://domain
+// ResolveHandle returns the account with the handle username@domain (FR-305):
+// the stored one, or the actor that WebFinger of acct:username@domain on https://domain
 // names as self, fetched and stored with Resolve. The actor must hold this handle, confirmed by
 // WebFinger; a stored actor that holds another one is fetched again to check it anew. It fails
 // with ErrUnresolvable; other errors come from the stores. It does network I/O, so callers call
@@ -107,7 +107,7 @@ type Resolved struct {
 	Status  *appcontent.Status
 }
 
-// Resolver resolves what a user searches for (FR-305, federation.md §6.2): a handle
+// Resolver resolves what a user searches for (FR-305): a handle
 // @username@domain, or the URL of an account or a status.
 type Resolver struct {
 	actors   *RemoteActors

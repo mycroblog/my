@@ -35,7 +35,7 @@ var (
 	errNoAlgorithm = errors.New("unsupported signing key type")
 )
 
-// SignedHTTPClient sends signed requests (federation.md §2, ADR-0006). It signs with
+// SignedHTTPClient sends signed requests (ADR-0006 §5). It signs with
 // draft-cavage-12 first; when the server answers 400 or 401, it sends the request once more
 // signed with RFC 9421 (following the server's Accept-Signature when a 401 carries one). A host
 // where that retry succeeded is remembered in the KeyValueStore for SchemeMemoryTTL and gets

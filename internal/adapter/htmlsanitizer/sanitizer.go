@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package htmlsanitizer implements kernel.HTMLSanitizer with the allowlist of federation.md §5,
+// Package htmlsanitizer implements kernel.HTMLSanitizer with the allowlist of ADR-0019 §2,
 // which follows Mastodon's Sanitize::Config::MASTODON_STRICT (lib/sanitize_ext/sanitize_config.rb)
 // and adds noreferrer to the rel of links (ADR-0019 §2).
 //

@@ -16,7 +16,7 @@ import (
 // DeleteByModeration records inside tx that the moderation action actionID deleted st: the
 // deletion (origin moderation, naming the action), which stays as the tombstone of its URI, and
 // the removal from every projection, the same as the author's deletion; a local status's Delete
-// goes out like the author's (federation.md §11.1). A status that is already deleted fails with
+// goes out like the author's (ADR-0058 §6). A status that is already deleted fails with
 // ErrAlreadyDeleted, which abandons tx.
 func (s *Service) DeleteByModeration(ctx context.Context, tx uow.Tx, st Status, actionID string, at time.Time) error {
 	d := content.Deletion{

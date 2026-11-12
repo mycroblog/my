@@ -55,7 +55,7 @@ type Graph interface {
 }
 
 // Suspensions tells the local accounts that moderation suspends (suspend, ban), whose actor is
-// served emptied and marked suspended (federation.md §11); *moderation.FederationPolicy
+// served emptied and marked suspended (federation.md §1); *moderation.FederationPolicy
 // implements it.
 type Suspensions interface {
 	AccountFederationSuspended(ctx context.Context, accountID string) (bool, error)

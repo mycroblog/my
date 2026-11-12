@@ -95,7 +95,7 @@ func (s *Service) CancelDeletionByModeration(ctx context.Context, tx uow.Tx, acc
 // DeleteBySelf deletes a local account at its owner's request (FR-008): a deleted lifecycle event
 // initiated by the account itself, recorded at once without a waiting period, which hides the
 // account and its statuses, ends its user's sessions and tokens, and sends the Delete of the
-// actor (federation.md §7.1) in the same transaction. Its data is erased ErasureDelay later
+// actor in the same transaction. Its data is erased ErasureDelay later
 // (data-model §8). An account that is deleted already fails with ErrAlreadyDeleted, and a
 // remote account with ErrNotLocal. The state is read with a lock where the database takes one,
 // so that a concurrent deletion records one event only.
@@ -162,7 +162,7 @@ func (s *Service) SetDeletionHold(hold DeletionHold) { s.deletionHold = hold }
 // ExecuteDueDeletions deletes up to deletionBatch accounts of each kind that are due: those whose
 // scheduled deletion is due, and those deactivated for account.DeactivationPeriod (ADR-0089 §12).
 // Each gets a deleted lifecycle event initiated by the system, in a short transaction of its own,
-// which hides it and its statuses at once and sends the Delete of the actor (federation.md §7.1).
+// which hides it and its statuses at once and sends the Delete of the actor.
 // The state is read again under its lock, and an account that was reactivated, or whose deletion
 // was canceled or rescheduled meanwhile, is left as it is, so running it again is safe. A
 // deactivated account that DeletionHold holds back stays as it is and is logged, and the next run

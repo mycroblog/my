@@ -156,7 +156,7 @@ type App struct {
 	TagSearch *timeline.TagSearch
 	// Moderation records the actions on domains and accounts and the reports received from
 	// other servers; ModerationPolicy reads the restrictions they impose for federation and the
-	// media proxy (docs/architecture/federation.md §11), and AccountPolicy those that the
+	// media proxy (docs/architecture/federation.md §1), and AccountPolicy those that the
 	// identity, graph, and content modules and the client API apply.
 	Moderation       *moderation.Service
 	ModerationPolicy *moderation.FederationPolicy
@@ -250,13 +250,13 @@ type App struct {
 	// ADR-0019 §6).
 	Rewrap *rewrap.Service
 	// FanOut turns the outbound activities that the federation projectors record into
-	// deliveries (docs/architecture/federation.md §7).
+	// deliveries.
 	FanOut *federation.FanOut
 	// RemoteActors fetches remote actors, checks their handles, keeps their keys, and resolves
-	// the keys of inbound signatures (docs/architecture/federation.md §6).
+	// the keys of inbound signatures (ADR-0006 §12).
 	RemoteActors *federation.RemoteActors
 	// Deliverer sends the deliveries; InstanceHealth records the remote servers that answer
-	// outside deliveries (docs/architecture/federation.md §7.3).
+	// outside deliveries (ADR-0006 §3).
 	Deliverer      *federation.Deliverer
 	InstanceHealth *federation.Health
 	// DeliveryLog shows the deliveries to a remote server and their attempts to the operators,
@@ -266,18 +266,17 @@ type App struct {
 	// closed, and tells when their deliveries end (ADR-0088 §3).
 	ClosureDeletes *federation.ClosureDeletes
 	// Inbox verifies and records the activities POSTed to the inboxes
-	// (docs/architecture/federation.md §3.1).
+	// (ADR-0006 §6).
 	Inbox *federation.Inbox
 	// InboxProcessor processes the recorded activities and dispatches them to the handler of
-	// their type (docs/architecture/federation.md §3.2).
+	// their type (ADR-0006 §8).
 	InboxProcessor *federation.InboxProcessor
 	// RemoteStatuses ingests remote posts from the inbox and fetches remote posts and threads;
 	// Resolver resolves handles and the URLs of accounts and posts
-	// (docs/architecture/federation.md §6.2, §6.3).
+	// (ADR-0006 §11, §12).
 	RemoteStatuses *federation.StatusHandlers
 	Resolver       *federation.Resolver
-	// Refetches queues the refetch of remote posts that operators request (FR-407,
-	// docs/architecture/federation.md §6.4).
+	// Refetches queues the refetch of remote posts that operators request (FR-407).
 	Refetches *federation.Refetches
 	// Relays joins and leaves the relays and admits what they bring in (ADR-0006).
 	Relays *federation.Relays

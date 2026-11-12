@@ -210,7 +210,7 @@ type imageSource interface {
 
 // newRemoteAttachment presents a remote media file (appcontent.MediaView of a Media with Remote)
 // as the MediaAttachment schema: ready, with what the remote server declared and the file served
-// through the media proxy (federation.md §9). The instance does not process it, so it has no
+// through the media proxy (ADR-0005 §10). The instance does not process it, so it has no
 // variants.
 func newRemoteAttachment(m appcontent.Media, img appcontent.Image) MediaAttachment {
 	r := m.Remote

@@ -38,7 +38,7 @@ func federationFixtures(t *testing.T) []testkit.FederationFixture {
 	return fixtures
 }
 
-// Every fixture is normalized as the inbox does (federation.md §4, hosts canonicalized) and the result is compared with
+// Every fixture is normalized as the inbox does (hosts canonicalized) and the result is compared with
 // testdata/golden/normalize/<implementation>/<version>/<name>.json.
 func TestFederationFixturesNormalize(t *testing.T) {
 	for _, f := range federationFixtures(t) {

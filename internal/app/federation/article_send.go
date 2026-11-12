@@ -7,8 +7,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// asArticle returns the Note of a local article as its Article (ADR-0160 §9, federation.md
-// §7.4): the title, the stored summary (made from the body when the author left it empty, so an
+// asArticle returns the Note of a local article as its Article (ADR-0160 §9):
+// the title, the stored summary (made from the body when the author left it empty, so an
 // Article always has one unless its body has no text), and the cover as image; the Markdown is not
 // sent (federation.AsArticle). note was built by statusNote from a revision that has no mentions,
 // content warning, attachments, or poll, so its tag holds only the editor's hashtags and the

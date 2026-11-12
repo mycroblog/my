@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The relays the instance joins (ADR-0006, FR-411, FR-724, federation.md §13): the operator
+// The relays the instance joins (ADR-0006 §18, FR-411, FR-724): the operator
 // registers a relay and the instance actor follows it; public posts go to the accepted relays as
 // the last phase of their fan-out, and the posts that relays bring in are fetched again from
 // their origin, within an hourly limit per relay.
@@ -519,7 +519,7 @@ type RelayMembership struct {
 }
 
 // AcceptedRelayOf returns the ID of the accepted relay whose actor is signer, "" when it is none
-// (federation.md §3.1 step 12).
+// (ADR-0006 §20).
 func (r *Relays) AcceptedRelayOf(ctx context.Context, signer federation.IRI) (string, error) {
 	if signer == "" {
 		return "", nil
@@ -535,7 +535,7 @@ func (r *Relays) AcceptedRelayOf(ctx context.Context, signer federation.IRI) (st
 }
 
 // Admit decides whether an activity that relay relayID sent is taken in, before anything is
-// fetched for it (ADR-0006, federation.md §13):
+// fetched for it (ADR-0006 §20):
 //
 //  1. The relay must be accepted and receive what it relays.
 //  2. The relay may bring in HourlyLimit activities per hour (UTC); the rest are dropped.

@@ -143,8 +143,8 @@ type VerifiedSignature struct {
 	Owner string
 }
 
-// SignatureVerifier applies the receive profile of ADR-0006 (docs/architecture/federation.md
-// §2, §3.1): it parses the signature, checks the required components, the time window, and the
+// SignatureVerifier applies the receive profile of ADR-0006 (§4, §6):
+// it parses the signature, checks the required components, the time window, and the
 // body digest without any I/O (Check), then resolves the key and verifies the signature,
 // refetching a rotated key at most once per KeyRefreshInterval (Verify).
 type SignatureVerifier struct {

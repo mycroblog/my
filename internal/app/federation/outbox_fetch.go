@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Fetching the recent posts of a remote profile that a user opens (federation.md §6.3, ADR-0006).
+// Fetching the recent posts of a remote profile that a user opens (ADR-0006 §14, §15).
 const (
 	// JobFetchOutbox fetches the first page of the outbox of a remote account and stores its
 	// recent public posts.

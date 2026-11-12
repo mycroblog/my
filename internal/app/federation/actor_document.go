@@ -153,7 +153,7 @@ func SharedInboxURI(host string) string { return "https://" + host + "/ap/inbox"
 func ProfileURL(host, username string) string { return "https://" + host + "/@" + username }
 
 // LocalActorDocument returns the document of a local actor served on host: the answer to a GET
-// of its id (federation.md §10) and the object of the Update its profile revisions send
+// of its id (ADR-0018) and the object of the Update its profile revisions send
 // (§7.1). The instance actor's document is the minimal one that signs the instance's requests;
 // its preferredUsername is instanceUsername. images are the actor's avatar and header
 // (LocalActorImages), the Emoji tags of its profile (LocalActorEmojis), its aliases

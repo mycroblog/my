@@ -93,7 +93,7 @@ func FuzzSanitizeHTML(f *testing.F) {
 }
 
 // FuzzLocalHTML checks that the HTML of any local status passes the sanitizer unchanged
-// (federation.md §5: local HTML uses a subset of the allowlist).
+// (local HTML uses a subset of the allowlist of ADR-0019 §2).
 func FuzzLocalHTML(f *testing.F) {
 	for _, text := range contenttest.LocalStatusTexts {
 		f.Add(text)

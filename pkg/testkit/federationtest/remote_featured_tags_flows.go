@@ -20,7 +20,7 @@ import (
 
 // The cases of RemoteStatusFlows that mirror the featuredTags collections (the featured
 // hashtags) of remote accounts when the accounts are fetched or refreshed and when they send an
-// Add or Remove to their featured collection (federation.md §6.2, ADR-0006 §17):
+// Add or Remove to their featured collection (ADR-0006 §17):
 // federation.fetch_featured_tags through the real RemoteActors and Fetcher over an in-memory
 // network. The featured hashtags themselves are the timeline module's (timelinetest), so a
 // recorder stands in for it.

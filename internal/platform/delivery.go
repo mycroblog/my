@@ -9,7 +9,7 @@ import (
 )
 
 // setUpDelivery registers the delivery of outbound activities, the instance_health projector,
-// and the daily probe of unavailable servers (docs/architecture/federation.md §7.3). It needs
+// and the daily probe of unavailable servers (ADR-0006 §3). It needs
 // the HTTP client, so it runs after newHTTPClient.
 func (a *App) setUpDelivery(repo federation.Repository) error {
 	ld, err := jsonld.New()

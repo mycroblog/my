@@ -655,7 +655,7 @@ func TestDomainAndParents(t *testing.T) {
 	}
 }
 
-// A NUL in any string of a document, keys included, is read as U+FFFD (federation.md §4), so
+// A NUL in any string of a document, keys included, is read as U+FFFD, so
 // that PostgreSQL text can store every value.
 func TestNormalizeReplacesNUL(t *testing.T) {
 	const n = `\u0000`

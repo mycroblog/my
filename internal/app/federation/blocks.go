@@ -20,7 +20,7 @@ type BlockFinder interface {
 }
 
 // RegisterBlockProjectors subscribes the federation module to graph.blocked and graph.unblocked
-// (federation.md §7.1): a local account's block of a remote account, and its lift, are recorded
+// a local account's block of a remote account, and its lift, are recorded
 // as a Block (whose URI is the block's) and an Undo Block, delivered to the blocked account.
 // Blocks between local accounts, and blocks received from other servers, are not. It needs
 // d.Accounts.

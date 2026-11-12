@@ -34,7 +34,7 @@ func (f fakeMoves) FindByID(ctx context.Context, id string) (appaccount.Actor, e
 	return f.accounts.FindByID(ctx, id)
 }
 
-// TestMovedActor checks GET of a local actor that moved (ADR-0089, federation.md §10): its
+// TestMovedActor checks GET of a local actor that moved (ADR-0089): its
 // document names the target in movedTo, also in the minimal document that authorized fetch
 // serves to an unsigned request (Misskey reads it when the Move arrives), and has none once the
 // move is canceled.

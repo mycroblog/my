@@ -103,7 +103,7 @@ type Accounts interface {
 	FindByHandle(ctx context.Context, username, domain string) (appaccount.Actor, error)
 }
 
-// RemoteMentions finds the remote accounts that local text mentions (federation.md §6.2). The
+// RemoteMentions finds the remote accounts that local text mentions. The
 // federation module's RemoteActors resolves handles and the account module reads profile pages;
 // the platform joins them.
 type RemoteMentions interface {
@@ -115,7 +115,7 @@ type RemoteMentions interface {
 	RemoteProfileURL(ctx context.Context, accountID string) (string, error)
 }
 
-// Bounds of resolving the unknown remote handles of one text (federation.md §6.2): handles past
+// Bounds of resolving the unknown remote handles of one text: handles past
 // MaxResolvedMentions, and those still unresolved after MentionResolveTimeout, stay text.
 const (
 	MaxResolvedMentions   = 5

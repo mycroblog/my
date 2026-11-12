@@ -36,7 +36,7 @@ func newHTMLSanitizer() kernel.HTMLSanitizer { return htmlsanitizer.New() }
 func newRemoteArticleSanitizer() content.RemoteArticleSanitizer { return htmlsanitizer.New() }
 
 // recordRemoteImage records the avatar or header (prop) of a remote actor as a remote media file
-// of the actor, which the media proxy serves (federation.md §9).
+// of the actor, which the media proxy serves (ADR-0005 §10).
 func (a *App) recordRemoteImage(ctx context.Context, tx uow.Tx, accountID, url string, prop domainaccount.ProfileProperty) (string, error) {
 	purpose := domaincontent.PurposeAvatar
 	if prop == domainaccount.PropertyHeader {
@@ -58,7 +58,7 @@ func (a *App) recordRemoteEmojis(ctx context.Context, tx uow.Tx, accountID, doma
 	return a.Content.RecordRemoteEmojis(ctx, tx, accountID, domain, in)
 }
 
-// setUpRemoteActors builds the fetching of remote actors (federation.md §6): GETs signed with
+// setUpRemoteActors builds the fetching of remote actors (ADR-0006 §12): GETs signed with
 // the instance actor's key, WebFinger checks of handles, key rotation, the public key resolver
 // of inbound signatures, and the refresh and NodeInfo jobs. It needs the HTTPClient.
 func (a *App) setUpRemoteActors(cfg *config.Config, repo federationRepository) {

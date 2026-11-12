@@ -102,7 +102,7 @@ type ClosureDeletesDeps struct {
 // JobClosureFanOut, which RegisterClosureProjectors enqueues in the transaction of the closure,
 // reads Page local accounts in ID order (the instance actor and the deleted accounts left out,
 // the suspended ones in) and, in one transaction, records for each one closure_deletes row and
-// the Delete of its actor, enqueues the Delete's fan-out (federation.md §7.2: its followers, then
+// the Delete of its actor, enqueues the Delete's fan-out (its followers, then
 // every known shared inbox), and enqueues the next page. A first pass takes the accounts that did
 // not move, and a second one those that moved. The lifecycle of the accounts does not change. A
 // page waits, by enqueueing itself again after Wait, while a Delete of the earlier pages has not

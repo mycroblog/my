@@ -54,7 +54,7 @@ func (h *Handler) actorInbox(w http.ResponseWriter, r *http.Request) {
 	h.receive(w, r)
 }
 
-// receive runs the synchronous part of the inbox (federation.md §3.1): the content type (415)
+// receive runs the synchronous part of the inbox (ADR-0006 §6): the content type (415)
 // and the body size (413) here, the rest in the federation module. It answers 202 Accepted once
 // the activity is recorded, and the status of the refusing step otherwise.
 func (h *Handler) receive(w http.ResponseWriter, r *http.Request) {

@@ -7,7 +7,7 @@
 // On the staff's side, the moderation screens: the reports (FR-701, FR-710), the review of appeals (FR-707),
 // the accounts and the actions on them (FR-714, FR-703), the review of registrations awaiting approval
 // (FR-721), the blocks on sign-ups (FR-719), the moderation actions on domains (FR-702), the health of remote
-// servers with resuming deliveries to them (federation.md §7.3), and the audit log (FR-704). Each screen is for
+// servers with resuming deliveries to them (ADR-0006 §3), and the audit log (FR-704). Each screen is for
 // a viewer whose roles have its permission (manage_reports, manage_accounts, manage_domains, view_audit); the
 // server checks it on every request. The navigation's Moderation entry and the menu show what awaits the
 // moderators (FR-712).

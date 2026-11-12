@@ -849,7 +849,7 @@ func expiry(now time.Time, d time.Duration) *time.Time {
 	return &t
 }
 
-// RemoteReportInput is a report received from another server in a Flag (federation.md §11).
+// RemoteReportInput is a report received from another server in a Flag (federation.md §1).
 type RemoteReportInput struct {
 	// URI is the id of the Flag (or the URI synthesized for a Flag without one), the key that
 	// makes filing the same Flag again do nothing.

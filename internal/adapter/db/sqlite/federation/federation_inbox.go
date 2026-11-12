@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// This file holds the received activities and their documents (federation.md §3.1).
+// This file holds the received activities and their documents (ADR-0006 §6).
 
 var _ appfederation.InboxRepository = (*Repository)(nil)
 

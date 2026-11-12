@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Requesting the refetch of remote posts from their servers (FR-407, federation.md §6.4). The server queues the
+// Requesting the refetch of remote posts from their servers (FR-407). The server queues the
 // fetches; what the request did stays on the page in a StatusMessage, and a failure is a toast that leaves the
 // button (web-client/README.md E2).
 import { useToast } from "@my/ui";

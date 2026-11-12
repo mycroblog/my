@@ -3,6 +3,12 @@
 // Package federation holds the use cases and port definitions of the federation module: ActivityPub inbox processing, delivery, actor and object fetching, signatures, and remote domain health.
 // It is the module's public API; other modules reach the federation module only through this package.
 //
+// The module writes only its own tables. What an inbox handler receives, a remote actor, post,
+// boost, favourite, follow, block, or report, it writes through the application API of the module that owns it
+// (account, content, graph, moderation), inside the handler's one short transaction. The other way, each domain
+// event of a local command that goes out has one projector (RegisterOutboundProjectors and its Register*Projectors
+// neighbours), which records the outbound activity and its fan-out job in the command's transaction.
+//
 // The document an outbound activity delivers is built once and every delivery and retry sends the
 // same bytes. The fan-out job builds most documents; the activities whose source may be gone by
 // then are built in the transaction that records them: the Delete of a status, Like and Undo

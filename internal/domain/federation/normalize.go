@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-// Normalize reads a received AS2 document (federation.md §4). The document is read as JSON
+// Normalize reads a received AS2 document. The document is read as JSON
 // compacted with the normative ActivityStreams context, never processed as JSON-LD: @context is
 // not interpreted (a missing one means the normative context, AS2 Core §2.1), and a Linked Data
 // signature is ignored. Unknown properties, including dialect extensions such as Misskey's
@@ -258,7 +258,7 @@ func (n normalizer) cover(v any) *Attachment {
 // not read.
 const maxConversationURILength = 2048
 
-// conversation reads the conversation that a post declares (federation.md §4, ADR-0154 §2): the
+// conversation reads the conversation that a post declares (ADR-0154 §2): the
 // first context, when it is an https IRI (a string, the href of a Link, or the id of an embedded
 // object), else the conversation (ostatus:conversation), when it is an https IRI or a tag: URI
 // (RFC 4151, which Mastodon sends for its older conversations). Anything else declares none.

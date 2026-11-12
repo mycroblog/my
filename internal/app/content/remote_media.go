@@ -42,7 +42,7 @@ type RemoteMediaInput struct {
 }
 
 // RecordRemoteMedia records a remote media file inside tx: the media file (origin remote) and
-// its remote subtype with the declared values (docs/architecture/federation.md §9). The file
+// its remote subtype with the declared values (ADR-0005 §10). The file
 // is not fetched. Recording the same owner and URL again returns the file recorded first.
 func (s *MediaService) RecordRemoteMedia(ctx context.Context, tx uow.Tx, in RemoteMediaInput) (content.RemoteMedia, error) {
 	existing, err := s.d.Repository.RemoteMediaByURL(ctx, tx, in.OwnerAccountID, in.RemoteURL)
@@ -179,8 +179,8 @@ type LinkCardMediaReader interface {
 	FindLinkCardMedia(ctx context.Context, mediaID string) (content.LinkCardMedia, error)
 }
 
-// MediaProxy relays remote media files from the instance's origin (ADR-0005,
-// docs/architecture/federation.md §9), so that clients never contact remote servers: their IP
+// MediaProxy relays remote media files from the instance's origin (ADR-0005 §10),
+// so that clients never contact remote servers: their IP
 // addresses stay private and the web client's CSP needs no remote origins. URLs are signed
 // with an HMAC of the media ID and the variant, so the proxy relays only the files that the
 // instance has recorded, never an arbitrary URL. The file is fetched through the SSRF-guarded

@@ -11,7 +11,7 @@ import (
 )
 
 // MaxReportComment is the number of characters of a report's comment that are kept; a received
-// Flag's longer comment is cut (federation.md §11).
+// Flag's longer comment is cut.
 const MaxReportComment = 5000
 
 // Bounds of a report filed on this server (FR-701): its comment, and how many statuses and

@@ -102,7 +102,7 @@ func (s *Signature) Covers(c string) bool {
 
 // KeyHost returns the canonical host (CanonicalHost) of the key ID, or "" when the key ID is
 // not an absolute URL with a valid host. The inbox uses it for domain checks before resolving
-// the key (federation.md §3.1).
+// the key (ADR-0006 §6).
 func (s *Signature) KeyHost() string {
 	u, err := url.Parse(s.KeyID)
 	if err != nil || !u.IsAbs() {
@@ -135,7 +135,7 @@ type VerifyOptions struct {
 // Verifier parses and cryptographically verifies HTTP signatures (draft-cavage-12 and
 // RFC 9421). It builds the signature base and checks the signature, nothing more: which
 // components are required, the time window, the digests, and the keys are the
-// SignatureVerifier's policy (federation.md §1.1). The adapter lives in internal/adapter/httpsig
+// SignatureVerifier's policy (ADR-0006 §3). The adapter lives in internal/adapter/httpsig
 // and passes federationtest.HTTPSignatureContract.
 type Verifier interface {
 	// Parse reads the signature of r: RFC 9421 when a Signature-Input header is present (the

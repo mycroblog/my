@@ -93,7 +93,7 @@ func (n notes) followersAmong(ctx context.Context, authorID string, mentions []a
 
 // notes builds the Note of a local status, the one place that the fan-out (the object of Create
 // and Update), object fetches (GET of the status's IRI), and the outbox and featured collections
-// build it (federation.md §7.4).
+// build it.
 type notes struct {
 	parts NoteParts
 	graph Relationships
@@ -243,7 +243,7 @@ func approvalIRIs(a appcontent.InteractionAudience, actor federation.IRI, mentio
 // statusNote returns the Note of a local status st as of rev by author, addressed by the
 // effective visibility vis to its followers and the mentioned accounts of parts, with the body of
 // rev: content per language, content warning, attachments, and the mentions, hashtags, and custom
-// emoji of parts as tag (federation.md §7.4, ADR-0051 §3). Its url is the status page under the author's current username
+// emoji of parts as tag (ADR-0051 §3). Its url is the status page under the author's current username
 // (ADR-0018). A zero updated leaves updated out. A status with a poll is a Question, and an
 // article an Article (asArticle).
 func statusNote(st appcontent.Status, rev appcontent.Revision, author appaccount.Actor, vis appcontent.Visibility, parts appcontent.RevisionParts, updated time.Time, host, accountDomain string) federation.NoteDocument {
@@ -367,7 +367,7 @@ func handleOf(a appaccount.Actor, accountDomain string) string {
 	return ""
 }
 
-// document builds the body of act (federation.md §7.4): the activity envelope with its context
+// document builds the body of act: the activity envelope with its context
 // and addressing around the object. The object of a Create or Update is the status's Note as of
 // the revision the activity presents. The Delete of a status, the Like and Undo Like of a
 // favourite, and the Create of a vote have no document here: their projectors store them with
@@ -453,7 +453,7 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 
 // announceDocument returns the Announce of boost b of st by actor, addressed by the effective
 // visibility vis to its followers and mentioned, the one place that the fan-out and GET of the
-// Announce's IRI build it (federation.md §7.4, §10).
+// Announce's IRI build it (ADR-0018 §16).
 func announceDocument(b appcontent.Boost, st appcontent.Status, actor federation.IRI, vis appcontent.Visibility, mentioned []federation.IRI) federation.ActivityDocument {
 	aud := federation.Address(federation.Visibility(vis), federation.FollowersOf(actor), mentioned)
 	return federation.NewActivityDocument(federation.IRI(b.URI), federation.ActivityAnnounce, actor, b.BoostedAt, aud, federation.IRI(st.URI))
@@ -462,7 +462,7 @@ func announceDocument(b appcontent.Boost, st appcontent.Status, actor federation
 // accountDocument builds the Update or the Delete of a local actor, addressed to the public as
 // Mastodon addresses them. The Update carries the actor's document as it is when the fan-out
 // starts, the same document a GET of the actor returns; a later revision sends an Update of its
-// own. The document of a suspended actor is emptied and marked suspended (federation.md §11.1).
+// own. The document of a suspended actor is emptied and marked suspended (ADR-0058 §6).
 // The Delete names the actor by its id.
 func accountDocument(host, accountDomain string, act federation.OutboundActivity, a appaccount.Actor, images ActorImages, suspended bool) ([]byte, error) {
 	actor := federation.IRI(a.Account.URI)
@@ -495,7 +495,7 @@ func moveDocument(act federation.OutboundActivity, a appaccount.Actor, target fe
 
 // deleteDocument returns the Delete of a local status st, built from the deletion event alone so
 // that it does not depend on rows that the purge removes: a Tombstone of the status's IRI,
-// addressed by the status's own visibility to the author's followers (federation.md §7.1). It
+// addressed by the status's own visibility to the author's followers. It
 // names no mentioned account: a Delete tells only that the status is gone, and goes to the
 // inboxes of the Create.
 func deleteDocument(act federation.OutboundActivity, host string, st appcontent.Status) ([]byte, error) {

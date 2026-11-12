@@ -181,7 +181,7 @@ func inboxHandlesModeration(t *testing.T, e *inboxProcessEnv) {
 		t.Errorf("Flag of nothing local = %q, want dropped", got)
 	}
 
-	// The Flags of a domain with reject_reports are dropped (federation.md §11).
+	// The Flags of a domain with reject_reports are dropped (federation.md §1).
 	if _, err := m.moderation.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: "example", Kind: moderation.DomainRejectReports}); err != nil {
 		t.Fatal(err)
 	}

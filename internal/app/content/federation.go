@@ -13,7 +13,7 @@ import (
 )
 
 // The part of this module's public API that the federation module reads to deliver local
-// statuses and boosts (docs/architecture/federation.md §7): the statuses, revisions, and boosts
+// statuses and boosts: the statuses, revisions, and boosts
 // that outbound activities refer to, and what the visibility policy needs about their authors.
 type (
 	// Status is content.Status.
@@ -163,7 +163,7 @@ func EffectiveVisibility(original Visibility, author AuthorRestrictions) Visibil
 }
 
 // ObjectStatus returns a status with the revision its ActivityPub object presents, and whether
-// it is deleted (federation.md §10). The revision of a live status is its current one; that of
+// it is deleted (ADR-0018). The revision of a live status is its current one; that of
 // a deleted status is its last one, which still tells whom the status mentioned, and is the zero
 // Revision once the purge has removed it. It fails with ErrNotFound when there is no status.
 func (s *Service) ObjectStatus(ctx context.Context, id string) (Status, Revision, bool, error) {

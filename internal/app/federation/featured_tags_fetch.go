@@ -16,8 +16,8 @@ import (
 
 // Fetching the featured hashtags of a remote account, its featuredTags collection, when the
 // account is fetched or refreshed, or when it sends an Add or Remove whose target is its featured
-// collection, which Mastodon sends when the featured hashtags change (federation.md §3.4, §6.2,
-// ADR-0006 §17).
+// collection, which Mastodon sends when the featured hashtags change
+// (ADR-0006 §17).
 const (
 	// JobFetchFeaturedTags fetches the featuredTags collection of a remote account and makes its
 	// featured hashtags those the collection lists.

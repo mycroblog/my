@@ -85,7 +85,7 @@ type ModerationHandlerDeps struct {
 }
 
 // RegisterModerationHandlers registers the inbox handlers of Block, the Undo of a Block, and Flag
-// on p (federation.md §3.4, §11).
+// on p (federation.md §1).
 //
 //   - Block of a local actor: graph.ReceiveBlock, which ends the follows between the two
 //     accounts in both directions and hides the blocker's posts from the blocked account.

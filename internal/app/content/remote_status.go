@@ -28,7 +28,7 @@ type RemoteMediaRecorder interface {
 var ErrInvalidRemoteStatus = errors.New("content: the remote status is not valid")
 
 // RemoteStatusInput is a remote post as the federation module read it from a Create or an
-// Update (docs/architecture/federation.md §4): the facts of the status and the content of one
+// Update: the facts of the status and the content of one
 // revision. The HTML is as received; the content module sanitizes it.
 type RemoteStatusInput struct {
 	URI             string
@@ -112,7 +112,7 @@ type RemotePollInput struct {
 	VotersCount *int64
 }
 
-// IngestRemoteStatus stores a remote post inside tx (federation.md §3.4): the status with an ID
+// IngestRemoteStatus stores a remote post inside tx: the status with an ID
 // whose time is its published time (#71), and its first revision with the bodies sanitized, the
 // mentions, hashtags, custom emoji, the attachments' declared values, and the poll with its
 // counts. The post joins the conversation it declares, else its stored parent's, else a new one,
@@ -183,8 +183,8 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	return Post{Status: st, Revision: rev, ParentStored: ins.ParentStored}, nil
 }
 
-// ReviseRemoteStatus records a new revision of a remote post inside tx (federation.md §3.3,
-// §3.4): only when its RevisedAt is later than the current revision's, so that an Update that
+// ReviseRemoteStatus records a new revision of a remote post inside tx (ADR-0006 §9):
+// only when its RevisedAt is later than the current revision's, so that an Update that
 // arrives late or twice makes no revision. A revision without a quote takes the status's quote
 // away (ADR-0069 §3), and one that names the quote it asked for records it
 // (recordRequestedQuote). The counts of the current poll are recorded either
@@ -269,8 +269,8 @@ func (s *Service) recordRequestedQuote(ctx context.Context, tx uow.Tx, st conten
 	return s.recordQuote(ctx, tx, st, in)
 }
 
-// DeleteRemoteStatus records inside tx that the author of a remote post deleted it (a Delete,
-// federation.md §3.4): the deletion (origin remote), which stays as the tombstone of the URI, and
+// DeleteRemoteStatus records inside tx that the author of a remote post deleted it (a Delete):
+// the deletion (origin remote), which stays as the tombstone of the URI, and
 // the removal from every projection. A status that is already deleted is left as it is. A URI
 // that no status has fails with ErrNotFound; a status of another author, or a local one, with
 // ErrNotAuthor. A concurrent deletion fails with ErrAlreadyDeleted, which abandons tx.
@@ -302,7 +302,7 @@ func (s *Service) DeleteRemoteStatus(ctx context.Context, tx uow.Tx, uri, author
 
 // LiveRemoteStatusIDs returns up to limit remote statuses of an author that are not deleted,
 // newest first, by ID, whose ID is below before ("" for the first page): the statuses that an
-// operator refetches from their origin (federation.md §6.4).
+// operator refetches from their origin (FR-407).
 func (s *Service) LiveRemoteStatusIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error) {
 	return s.d.Repository.ListLiveRemoteStatusIDs(ctx, authorAccountID, before, limit)
 }
@@ -494,7 +494,7 @@ func hasHost(uri, domain string) bool {
 }
 
 // remoteAttachments records the first MaxAttachments attachments of a remote post as remote
-// media files of the author, with their declared values (federation.md §9), and returns them
+// media files of the author, with their declared values (ADR-0005 §10), and returns them
 // with the number of the attachments left out.
 func (s *Service) remoteAttachments(ctx context.Context, tx uow.Tx, in RemoteStatusInput) ([]content.Attachment, int, error) {
 	omitted := max(in.OmittedAttachments, 0)
