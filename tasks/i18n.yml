@@ -28,11 +28,21 @@ tasks:
     deps: [lint, licenses, test, typecheck, knip, ":web:fmt-check"]
 
   lint:
-    desc: Lint the catalogs and fail on stale generated i18n files (pseudo-locales, Go accessors, golden)
+    desc: Lint the catalogs, the copy of en and ja and its waivers among them, and fail on stale generated i18n files (pseudo-locales, Go accessors, golden)
     deps: [":web:install"]
     dir: tools/i18n
     cmds:
       - bun src/check.ts
+
+  # Like docs:growth, it reads the change against its base, so the pull request's preflight runs it with BASE=HEAD^1.
+  waivers:
+    desc: Fail when more than three waivers of the copy lint (tools/i18n/waivers.json) were added since the merge base with BASE (default origin/redesign-web)
+    deps: [":web:install"]
+    dir: tools/i18n
+    vars:
+      BASE: '{{.BASE | default "origin/redesign-web"}}'
+    cmds:
+      - bun src/waivers.ts {{shellQuote .BASE}}
 
   # web:licenses checks every installed package of the workspace; this checks the ones tools/i18n runs on.
   licenses:

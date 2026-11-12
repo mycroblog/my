@@ -22,7 +22,7 @@
 
 ### 2. モジュールと依存の向き
 
-- 新しいモジュール `gathering` を置く（`internal/domain/gathering`・`internal/app/gathering`、スキーマは `schema/<NN>-gathering/<dialect>.sql`）。ADR-0020 の「イベント」（起きた事実の表）と取り違えないよう、コードの名前は `gathering` にする。UI・API・文書は「イベント」/ "event" と呼ぶ（`locales/en`・`locales/ja`、`tools/i18n/glossary.json` に語を足す）。
+- 新しいモジュール `gathering` を置く（`internal/domain/gathering`・`internal/app/gathering`、スキーマは `schema/<NN>-gathering/<dialect>.sql`）。ADR-0020 の「イベント」（起きた事実の表）と取り違えないよう、コードの名前は `gathering` にする。UI・API・文書は「イベント」/ "event" と呼ぶ（`locales/en`・`locales/ja`、文言の役の決定に語を足す）。
 - `internal/app/gathering` が import する他のモジュールの `internal/app`（ADR-0002）:
   - `graph`: 主催者とのフォロー（承認済み）・相互フォロー・ブロックの判定
   - `identity`: 権限 `create_events` の検査、インスタンス設定（§3）、利用者のタイムゾーン（`user_time_zones`）

@@ -6,6 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { catalogFile, type Entry, isPseudo, rel, repoRoot, REQUIRED_LOCALES, SOURCE } from "./catalog";
 import { KEY, messageFindings, printFindings, runCheck } from "./check";
+import { DECISIONS } from "./copy";
 import { writeGenerated } from "./gen";
 import { goName } from "./generate";
 import { type Ref, References } from "./refs";
@@ -76,8 +77,15 @@ function checkNewKey(store: Store, ns: string, key: string, ignoring: string[] =
 }
 
 /** The errors of `text` as the `locale` message of the key, against the source text when it is a translation. */
-function textErrors(locale: string, ns: string, text: string, source: string, dropArgs: boolean): string[] {
-  const { errors, dropped } = messageFindings(locale, ns, text, locale === SOURCE ? undefined : source);
+function textErrors(
+  locale: string,
+  ns: string,
+  key: string,
+  text: string,
+  source: string,
+  dropArgs: boolean,
+): string[] {
+  const { errors, dropped } = messageFindings(locale, ns, text, locale === SOURCE ? undefined : source, key);
   if (!dropArgs) {
     for (const name of dropped)
       errors.push(
@@ -108,7 +116,7 @@ async function add(argv: string[]) {
       `usage: scripts/i18n.sh add ${id} --en "<text>" --ja "<text>" --desc "<note for translators>"`,
     );
   const text = (locale: string) => flags.get(locale) as string;
-  const errors = locales.flatMap((l) => textErrors(l, ns, text(l), text(SOURCE), flags.has("drop-args")));
+  const errors = locales.flatMap((l) => textErrors(l, ns, key, text(l), text(SOURCE), flags.has("drop-args")));
   if (errors.length) refuse(...errors);
   const description = (flags.get("desc") as string).trim();
   try {
@@ -144,7 +152,7 @@ async function set(argv: string[]) {
   const followers = store.locales.filter((l) => l !== SOURCE && !REQUIRED_LOCALES.includes(l) && !flags.has(l));
   const kept = sourceChanged && flags.has("keep-translations") ? followers.filter((l) => store.get(l, ns, key)) : [];
   const text = (l: string) => flags.get(l) ?? (store.get(l, ns, key) as Entry).defaultMessage;
-  const errors = [...given, ...kept].flatMap((l) => textErrors(l, ns, text(l), next, flags.has("drop-args")));
+  const errors = [...given, ...kept].flatMap((l) => textErrors(l, ns, key, text(l), next, flags.has("drop-args")));
   if (errors.length) refuse(...errors);
 
   const description = flags.get("desc")?.trim() || source.description;
@@ -352,8 +360,8 @@ function changedIds(base: string): Set<string> | undefined {
     ...names("diff", "--name-only", "-z", ref, "--", ...spec),
     ...names("ls-files", "--others", "--exclude-standard", "-z", "--", ...spec),
   ];
-  // A changed rule or glossary can fail a message the change did not touch.
-  if (paths("tools/i18n").length) return undefined;
+  // A changed rule, glossary, or word decision of the copy role can fail a message the change did not touch.
+  if (paths("tools/i18n", DECISIONS).length) return undefined;
   const ids = new Set<string>();
   for (const path of paths("locales")) {
     const [, locale = "", ns = "", ...area] = path.split("/");

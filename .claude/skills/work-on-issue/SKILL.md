@@ -29,7 +29,8 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 3. One worktree and one branch per pull request, `<type>/<issue>-<slug>`, one commit per issue. A spike's report
    is a comment on its issue; its code stays on an unmerged `spike/<issue>-<slug>` branch.
 4. Build: yourself for one small issue; otherwise up to four subagents at once, `builder` for implementation,
-   `routine` for mechanical work, the roles of ADR-0169 for a UI change, which starts with the design, not the code.
+   `routine` for mechanical work, the roles of ADR-0169 for a UI change, design first; a role reads
+   `.claude/knowledge/<role>/index.md` first.
    Hand each `scripts/agentkit.sh ctx <n> --quiet`'s file. Rebase their commits onto the branch.
 5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` after a conflict in generated files).
    Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/redesign-web`), push

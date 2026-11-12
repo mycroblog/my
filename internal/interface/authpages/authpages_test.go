@@ -288,8 +288,8 @@ func TestPagesNameTheInstance(t *testing.T) {
 	}).Register(m)
 	br := newBrowser(t, m)
 	for _, tt := range []struct{ path, lang, want string }{
-		{authpages.PathSignIn, "ja", `<title>ログイン – 例の&lt;サーバー&gt;</title>`},
-		{authpages.PathSignUp, "en", `<title>Create an account – 例の&lt;サーバー&gt;</title>`},
+		{authpages.PathSignIn, "ja", `<title>ログイン | 例の&lt;サーバー&gt;</title>`},
+		{authpages.PathSignUp, "en", `<title>Create an account | 例の&lt;サーバー&gt;</title>`},
 	} {
 		body := br.do(http.MethodGet, tt.path, nil, map[string]string{"Accept-Language": tt.lang}).Body.String()
 		name := "例の&lt;サーバー&gt;"

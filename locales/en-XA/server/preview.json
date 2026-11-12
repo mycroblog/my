@@ -44,11 +44,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "preview.voice_room_ended": {
-    "defaultMessage": "[{room} — ŧħīş ṽǿǿīƈḗḗ ƈħȧȧŧ ħȧȧş ḗḗƞḓḗḗḓ]",
+    "defaultMessage": "[{room}: ŧħīş ṽǿǿīƈḗḗ ƈħȧȧŧ ħȧȧş ḗḗƞḓḗḗḓ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "preview.voice_room_open": {
-    "defaultMessage": "[{room} — ȧȧ ṽǿǿīƈḗḗ ƈħȧȧŧ ħǿǿşŧḗḗḓ ƀẏ {host}, ǿǿƥḗḗƞ ƞǿǿẇ]",
+    "defaultMessage": "[{room}: ȧȧ ṽǿǿīƈḗḗ ƈħȧȧŧ ħǿǿşŧḗḗḓ ƀẏ {host}, ǿǿƥḗḗƞ ƞǿǿẇ]",
     "description": "Generated from en by tools/i18n; do not edit."
   }
 }
