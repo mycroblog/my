@@ -188,7 +188,7 @@ SVG を描くのは `TrendChart` と `Sparkline` だけである。帯・進み�
 
 ### 17. データの図: 規約
 
-- **G10（`restrict/svg`）**: 例外に「データの図（`TrendChart`・`Sparkline`）」を足し、`app/.oxlintrc.json` に 2 つのファイルを理由とともに挙げる。アイコンは `Icons.tsx` だけから使う。レビューで図以外の絵を入れないよう見る。
+- **G10（`restrict/svg`）**: 例外に「データの図（`TrendChart`・`Sparkline`）」を足し、`.oxlintrc.json` に 2 つのファイルを理由とともに挙げる。アイコンは `Icons.tsx` だけから使う。レビューで図以外の絵を入れないよう見る。
 - **ADR-0025**: 依存を増やさないので許可リストは変えない。
 - **web-client §14**: 費用・収入（`/admin/finance`・`/finance`・`/about/costs`）・ジョブ・エラー・サービスの終了の規約は、図と表の切り替えで出す形にする。
 

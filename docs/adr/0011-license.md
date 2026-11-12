@@ -12,7 +12,7 @@
 **リポジトリは AGPL-3.0（SPDX: `AGPL-3.0-only`）とする。例外は `pkg/mykit/`・`pkg/mybot/` と、生成元の `api/spec/` とそのバンドル `api/openapi.yaml` で、これらは MIT とする（ADR-0093 §2）。**
 
 - 改変版をネットワーク越しに提供する事業者にもソース公開を求め、コミュニティへの還元を担保する。Fediverse の主要実装と同じ立場をとる。
-- サーバーの実装（`internal/`・`cmd/`・`app/web` など）は AGPL-3.0-only である。
+- サーバーの実装（`internal/`・`cmd/`・`web/` など）は AGPL-3.0-only である。
 
 ### 2. ライセンス文とヘッダ
 

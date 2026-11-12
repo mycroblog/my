@@ -1,5 +1,5 @@
 {
-  "extends": "../../../app/tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "//": "The example bots (examples/) and their bun tests. They import the package by its name, as a bot does, and each other with .ts extensions, so that Bun, Deno, and Node.js's type stripping run them as they are; process and bun:test come from Bun's types.",
   "compilerOptions": {
     "module": "NodeNext",

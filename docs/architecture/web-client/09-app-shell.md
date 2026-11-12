@@ -36,7 +36,7 @@
   設定の画面で言語やゾーンを選ぶと、値だけを送り、サーバーはそれを利用者の選択として従うのをやめる。
   設定の画面は、選んでいるゾーンが端末のゾーンと違うとき（`Asia/Calcutta` と `Asia/Kolkata` のような別名は同じとみなす）、選択肢の下に端末のゾーンの名前を書いた注記と「この端末のタイムゾーンにする」ボタンを出す。
   ボタンを押すとフォーカスをタイムゾーンの選択肢に移してから保存する（注記はボタンごと消える）。
-- **表示のテーマ**（`lib/theme.ts`）: 「システムに合わせる / ライト / ダーク」から選び、`<html data-theme>`（`light` / `dark`、システムに合わせるときは属性なし）にする。トークンの切り替えは [app/ui/README.md](../../../app/ui/README.md) の「Light and dark」にある。
+- **表示のテーマ**（`lib/theme.ts`）: 「システムに合わせる / ライト / ダーク」から選び、`<html data-theme>`（`light` / `dark`、システムに合わせるときは属性なし）にする。トークンの切り替えは [app/ui/README.md](https://github.com/mycroblog/my/blob/7bfefa85b75fc2e94e9c4d8e1ade07e178bdb90e/app/ui/README.md) の「Light and dark」にある。
   表示言語の `my:display:locale` と同じく、このブラウザでの表示のしかたなので、利用者の設定（`GET /preferences`）ではなく localStorage の `my:display:theme` に残し、サインインしていなくても効き、セッションが終わっても消さない。
   外枠は `<head>` のスタイルシートより前で、同じオリジンのクラシックスクリプト `public/theme.js`（`/theme.js`、`defer` / `async` なし）を読み込み、最初の描画の前に属性を付ける。CSP がインラインのスクリプトを許さず、外枠はどの閲覧者にも同じもの（ADR-0028）なので、サーバーは選択を外枠に書けない。
   `my serve` はビルドにこのファイルがあるときだけタグを書き（`internal/interface/web`）、Service Worker はほかのビルドのファイルと一緒にプリキャッシュする。

@@ -6,8 +6,8 @@
 //
 // The catalog names each email by its job type and, for a job that sends several emails, the
 // variant; its draft is the module's own draft function (internal/app/<module>/mail_drafts.go)
-// with sample values, and Render composes it with the real kernel.MailComposer, the frame that
-// MJML compiles from app/mail/frame.mjml, and the embedded locale catalogs. A test fails when a
+// with sample values, and Render composes it with the real kernel.MailComposer, the committed
+// frame compiled with MJML, and the embedded locale catalogs. A test fails when a
 // mail job type, a draft function, or a variant of one is missing from the catalog.
 //
 // The package is a development tool: nothing in the server imports it.

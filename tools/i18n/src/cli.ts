@@ -4,27 +4,7 @@
 // runs the generator; a refusal names the rule and the fix.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  baselinePath,
-  HELPER_LIMITS,
-  helperFindings,
-  isHelperText,
-  loadBaseline,
-  measure,
-  pruneBaseline,
-} from "./budget";
-import {
-  catalogFile,
-  type Entry,
-  isClientNamespace,
-  isPseudo,
-  rel,
-  repoRoot,
-  REQUIRED_LOCALES,
-  SOURCE,
-  toJSON,
-  writeFileAtomic,
-} from "./catalog";
+import { catalogFile, type Entry, isPseudo, rel, repoRoot, REQUIRED_LOCALES, SOURCE } from "./catalog";
 import { KEY, messageFindings, printFindings, runCheck } from "./check";
 import { writeGenerated } from "./gen";
 import { goName } from "./generate";
@@ -39,31 +19,29 @@ const USAGE = `scripts/i18n.sh <command>
   show <key or prefix> [--refs] [--limit <n>]
   find "<text>" [--locale <locale>] [--limit <n>]
   check [--changed [--base <ref>]] [--locale <locale>] [--warnings]
-  unused
-  prune-baseline`;
+  unused`;
 
 class Refusal extends Error {}
 /** Stops the command before it writes anything: each line is a rule and its fix. */
-const refuse = (...lines: string[]): never => {
+function refuse(...lines: string[]): never {
   throw new Refusal(lines.map((l) => `error: ${l}`).join("\n"));
-};
+}
 
 const BOOLEAN_FLAGS = new Set(["drop-args", "keep-translations", "refs", "changed", "warnings"]);
 
 function parseArgs(argv: string[]): { args: string[]; flags: Map<string, string> } {
   const args: string[] = [];
   const flags = new Map<string, string>();
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
+  const rest = [...argv];
+  for (let arg = rest.shift(); arg !== undefined; arg = rest.shift()) {
     if (!arg.startsWith("--") || arg === "--") {
       if (arg !== "--") args.push(arg);
       continue;
     }
-    const [name, inline] = arg.slice(2).split(/=(.*)/s);
-    if (BOOLEAN_FLAGS.has(name)) flags.set(name, "true");
-    else if (inline !== undefined) flags.set(name, inline);
-    else if (i + 1 < argv.length) flags.set(name, argv[++i]);
-    else refuse(`--${name} needs a value`);
+    const [name = "", inline] = arg.slice(2).split(/=(.*)/s);
+    const value = BOOLEAN_FLAGS.has(name) ? "true" : (inline ?? rest.shift());
+    if (value === undefined) refuse(`--${name} needs a value`);
+    flags.set(name, value);
   }
   return { args, flags };
 }
@@ -84,10 +62,7 @@ function parseId(store: Store, id: string | undefined, what = "<namespace>:<key>
   if (!id) return refuse(`missing ${what}`, USAGE);
   const [ns, key] = splitId(id);
   const namespaces = store.namespaces();
-  if (!key || !namespaces.includes(ns))
-    refuse(
-      `${id}: write ${what}; the namespaces are ${namespaces.join(", ")} (client* for the TS clients, the others for Go)`,
-    );
+  if (!key || !namespaces.includes(ns)) refuse(`${id}: write ${what}; the namespaces are ${namespaces.join(", ")}`);
   return [ns, key];
 }
 
@@ -112,13 +87,9 @@ function textErrors(locale: string, ns: string, text: string, source: string, dr
   return errors.map((e) => `--${locale}: ${e}`);
 }
 
-const usageOf = (ns: string, key: string): string =>
-  isClientNamespace(ns) ? `t("${ns}:${key}")` : `(*i18n.Localizer).${goName(`${ns}:${key}`)}`;
-
-/** Saves the catalogs, drops what the baseline no longer needs, and regenerates; prints what changed. */
+/** Saves the catalogs and regenerates; prints what changed. */
 async function commit(store: Store) {
   for (const line of store.save()) console.log(line);
-  for (const id of pruneBaseline(store.catalog())) console.log(`removed ${id} from ${rel(baselinePath)}`);
   for (const path of await writeGenerated()) console.log(`generated ${path}`);
 }
 
@@ -138,7 +109,6 @@ async function add(argv: string[]) {
     );
   const text = (locale: string) => flags.get(locale) as string;
   const errors = locales.flatMap((l) => textErrors(l, ns, text(l), text(SOURCE), flags.has("drop-args")));
-  errors.push(...helperFindings(ns, key, Object.fromEntries(locales.map((l) => [l, text(l)])), undefined));
   if (errors.length) refuse(...errors);
   const description = (flags.get("desc") as string).trim();
   try {
@@ -147,7 +117,7 @@ async function add(argv: string[]) {
     refuse((e as Error).message);
   }
   await commit(store);
-  console.log(`added ${id}; use ${usageOf(ns, key)}`);
+  console.log(`added ${id}; use (*i18n.Localizer).${goName(id)}`);
 }
 
 async function set(argv: string[]) {
@@ -175,17 +145,16 @@ async function set(argv: string[]) {
   const kept = sourceChanged && flags.has("keep-translations") ? followers.filter((l) => store.get(l, ns, key)) : [];
   const text = (l: string) => flags.get(l) ?? (store.get(l, ns, key) as Entry).defaultMessage;
   const errors = [...given, ...kept].flatMap((l) => textErrors(l, ns, text(l), next, flags.has("drop-args")));
-  const budgeted = Object.fromEntries(
-    Object.keys(HELPER_LIMITS).map((l) => [l, flags.get(l) ?? store.get(l, ns, key)?.defaultMessage]),
-  );
-  errors.push(...helperFindings(ns, key, budgeted, loadBaseline()[id]));
   if (errors.length) refuse(...errors);
 
   const description = flags.get("desc")?.trim() || source.description;
   for (const l of given) store.set(l, ns, key, { defaultMessage: text(l), ...(description ? { description } : {}) });
   if (flags.has("desc")) {
     for (const l of store.localesWith(ns, key))
-      store.set(l, ns, key, { ...(store.get(l, ns, key) as Entry), description });
+      store.set(l, ns, key, {
+        defaultMessage: (store.get(l, ns, key) as Entry).defaultMessage,
+        ...(description ? { description } : {}),
+      });
   }
   const dropped =
     sourceChanged && !flags.has("keep-translations") ? followers.filter((l) => store.delete(l, ns, key)) : [];
@@ -206,7 +175,6 @@ function leftovers(renames: Map<string, string>, references: References): string
   for (const from of renames.keys()) {
     needles.push(from);
     patterns.push(new RegExp(`${escape(from)}(?![A-Za-z0-9_]|\\.[a-z])`));
-    if (isClientNamespace(splitId(from)[0])) continue;
     needles.push(goName(from));
     names.push(new RegExp(`(?<![A-Za-z0-9_])${goName(from)}(Args)?(?![A-Za-z0-9_])`));
   }
@@ -230,7 +198,7 @@ function leftovers(renames: Map<string, string>, references: References): string
       (line) =>
         line &&
         (patterns.some((p) => p.test(line)) ||
-          (!references.rewritesAccessors(line.split(":")[0]) && names.some((p) => p.test(line)))),
+          (!references.rewritesAccessors(line.split(":")[0] ?? "") && names.some((p) => p.test(line)))),
     );
 }
 
@@ -241,8 +209,7 @@ async function mv(argv: string[]) {
   const [ns, from] = parseId(store, args[0], "<namespace>:<key or prefix>");
   if (!args[1]) refuse("missing the new key", USAGE);
   const [toNs, toKey] = args[1].includes(":") ? splitId(args[1]) : [ns, args[1]];
-  if (toNs !== ns)
-    refuse(`a key is renamed inside its namespace (${ns}); the namespace decides which runtime formats it`);
+  if (toNs !== ns) refuse(`a key is renamed inside its namespace (${ns})`);
   const keys = store.get(SOURCE, ns, from)
     ? [from]
     : store
@@ -255,23 +222,10 @@ async function mv(argv: string[]) {
       `${ns}:${from} is neither a key nor a prefix of keys of ${SOURCE}; look it up: scripts/i18n.sh show ${from}`,
     );
   const renames = new Map(keys.map((k) => [`${ns}:${k}`, `${ns}:${toKey}${k.slice(from.length)}`]));
-  const baseline = loadBaseline();
-  const errors: string[] = [];
-  for (const [old, id] of renames) {
-    const [, key] = splitId(id);
-    checkNewKey(store, ns, key, [...renames.keys()]);
-    const texts = Object.fromEntries(
-      Object.keys(HELPER_LIMITS).map((l) => [l, store.get(l, ns, splitId(old)[1])?.defaultMessage]),
-    );
-    errors.push(...helperFindings(ns, key, texts, baseline[old]));
-  }
-  if (errors.length) refuse(...errors);
+  for (const id of renames.values()) checkNewKey(store, ns, splitId(id)[1], [...renames.keys()]);
 
   const references = new References(store.namespaces());
   for (const [old, id] of renames) store.rename(ns, splitId(old)[1], splitId(id)[1]);
-  const moved = Object.entries(baseline).map(([id, lengths]) => [renames.get(id) ?? id, lengths] as const);
-  if (existsSync(baselinePath))
-    writeFileAtomic(baselinePath, toJSON(Object.fromEntries(moved.sort(([a], [b]) => (a < b ? -1 : 1)))));
   for (const path of references.rewrite(renames)) console.log(`rewrote ${path}`);
   await commit(store);
   for (const [old, id] of renames) console.log(`renamed ${old} -> ${id}`);
@@ -330,19 +284,9 @@ function show(argv: string[]) {
   const references = flags.has("refs") ? new References(store.namespaces()) : undefined;
   for (const [ns, key] of matches.slice(0, limit)) {
     const id = `${ns}:${key}`;
-    const helper = isHelperText(ns, key);
     console.log(`${id}  (${rel(catalogFile(SOURCE, ns, key))})`);
     for (const locale of [SOURCE, ...REQUIRED_LOCALES]) {
-      const message = store.get(locale, ns, key)?.defaultMessage;
-      if (message === undefined) {
-        console.log(`  ${locale}    MISSING`);
-        continue;
-      }
-      const { words, characters } = measure(message);
-      const limitOf =
-        helper && HELPER_LIMITS[locale] ? `, limit ${HELPER_LIMITS[locale].max} ${HELPER_LIMITS[locale].unit}` : "";
-      const length = HELPER_LIMITS[locale]?.unit === "characters" ? "" : `${words} words, `;
-      console.log(`  ${locale}    ${clip(message)}  [${length}${characters} chars${limitOf}]`);
+      console.log(`  ${locale}    ${clip(store.get(locale, ns, key)?.defaultMessage ?? "MISSING")}`);
     }
     console.log(`  desc  ${clip(store.get(SOURCE, ns, key)?.description ?? "(none)")}`);
     const others = store.locales.filter((l) => l !== SOURCE && !REQUIRED_LOCALES.includes(l));
@@ -408,11 +352,11 @@ function changedIds(base: string): Set<string> | undefined {
     ...names("diff", "--name-only", "-z", ref, "--", ...spec),
     ...names("ls-files", "--others", "--exclude-standard", "-z", "--", ...spec),
   ];
-  // A changed rule, glossary or baseline can fail a message the change did not touch.
+  // A changed rule or glossary can fail a message the change did not touch.
   if (paths("tools/i18n").length) return undefined;
   const ids = new Set<string>();
   for (const path of paths("locales")) {
-    const [, locale, ns, ...area] = path.split("/");
+    const [, locale = "", ns = "", ...area] = path.split("/");
     if (!path.endsWith(".json") || !area.length || isPseudo(locale)) continue;
     const before = git("show", `${ref}:${path}`);
     const old: Record<string, Entry> = before.ok ? JSON.parse(before.out) : {};
@@ -459,13 +403,6 @@ function unused(argv: string[]) {
   console.log(`i18n: ${unreferenced.length} unused key(s), ${undefinedIds.size} undefined key literal(s)`);
 }
 
-function prune(argv: string[]) {
-  allow(parseArgs(argv).flags);
-  const removed = pruneBaseline(new Store().catalog());
-  for (const id of removed) console.log(`removed ${id}`);
-  console.log(`${rel(baselinePath)}: ${Object.keys(loadBaseline()).length} entries, ${removed.length} removed`);
-}
-
 const commands: Record<string, (argv: string[]) => void | Promise<void>> = {
   add,
   set,
@@ -475,15 +412,14 @@ const commands: Record<string, (argv: string[]) => void | Promise<void>> = {
   find,
   check,
   unused,
-  "prune-baseline": prune,
 };
 
-const [name, ...rest] = process.argv.slice(2);
+const [name = "help", ...rest] = process.argv.slice(2);
 try {
   const command = commands[name];
   if (!command) {
     console.log(USAGE);
-    process.exit(name === undefined || name === "help" || name === "--help" ? 0 : 2);
+    process.exit(name === "help" || name === "--help" ? 0 : 2);
   }
   await command(rest);
 } catch (e) {

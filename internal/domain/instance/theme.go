@@ -15,7 +15,7 @@ import (
 
 // The instance theme (ADR-0059, FR-605): overrides of the web client's design tokens and one custom
 // stylesheet of the administrator. The overridable tokens, their kinds, defaults, and bounds, and the
-// contrast pairs of the colors are generated from app/ui/src/theme.css (theme_tokens.gen.go).
+// contrast pairs of the colors are generated from the design tokens (theme_tokens.gen.go, committed).
 
 // ThemeTokenKind is the kind of value a token holds, which decides the shape of its overrides.
 type ThemeTokenKind string
@@ -527,7 +527,7 @@ func luminance(c rgba) float64 { return 0.2126*c.r + 0.7152*c.g + 0.0722*c.b }
 
 // ContrastRatio returns the WCAG 2.2 contrast ratio of the color fg drawn on the opaque color bg,
 // both #rrggbb or #rrggbbaa, from 1 to 21. A translucent fg is composited over bg in gamma-encoded
-// sRGB, as browsers paint it. It computes what app/ui/src/color.ts computes.
+// sRGB, as browsers paint it.
 func ContrastRatio(fg, bg string) float64 {
 	f, b := parseHexColor(fg), parseHexColor(bg)
 	if f.a < 1 {

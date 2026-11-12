@@ -1,8 +1,8 @@
 name: Docs site preview deploy
 
 # Publishes the builds of docs-site-preview.yml on the Preview pr-<number> of the Cloudflare Worker my-docs of
-# scripts/docs-site/wrangler.jsonc (ADR-0150 §7, the same way as ui-preview-deploy.yml; docs-site-preview-cleanup.yml
-# deletes the Previews of closed pull requests), and writes the one comment of the pull request with its URL and the
+# scripts/docs-site/wrangler.jsonc (ADR-0150 §7; docs-site-preview-cleanup.yml deletes the Previews of closed pull
+# requests), and writes the one comment of the pull request with its URL and the
 # pages it changes. workflow_run always runs main's workflow, script, and Worker config, so the job can use the
 # environment `doc-site` (deployment refs: main and the tags v*), which holds the secret CLOUDFLARE_API_TOKEN and the
 # variable CLOUDFLARE_ACCOUNT_ID.
@@ -66,11 +66,12 @@ jobs:
           path: ${{ runner.temp }}/build
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+      # Wrangler does not run on Bun (#2954).
       - name: Set up Node
         if: steps.pr.outputs.number != ''
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .tool-versions
+          node-version: "26.12.1"
       - name: Install wrangler
         if: steps.pr.outputs.number != ''
         run: scripts/docs-site.sh install

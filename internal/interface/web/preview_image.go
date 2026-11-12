@@ -13,7 +13,7 @@ import (
 // instance has neither a preview_image, a thumbnail, nor a logo (ADR-0028 §2): mycroblog's
 // colourful wordmark on white (ADR-0059 §8), one image that fits every instance. The server draws
 // no SVG (ADR-0059 §10), so scripts/web-icons.sh renders it from
-// app/ui/src/logos/Wordmark-Primary-Color.svg and it is committed beside this file.
+// web/brand/Wordmark-Primary-Color.svg and it is committed beside this file.
 
 // PathDefaultImage is the path of the built-in preview image.
 const PathDefaultImage = "/preview-image.png"

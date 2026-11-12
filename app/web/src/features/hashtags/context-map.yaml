@@ -1,3 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0013-timeline-strategy.md#28-ハッシュタグから入った投稿の表示", "docs/adr/0006-federation-protocol-scope.md#17-リモートのピン留めfeaturedと注目のハッシュタグfeaturedtags", "docs/architecture/web-client/screens/tag.md", "docs/architecture/web-client/screens/settings-followed-tags.md", "docs/architecture/web-client/screens/profile.md", "docs/architecture/web-client/screens/settings-profile.md"]
-userdocs: ["docs/guide/following.md"]

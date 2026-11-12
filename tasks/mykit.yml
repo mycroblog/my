@@ -4,8 +4,8 @@
 # of scripts/changed-contexts.sh): the Go module pkg/mykit and the npm package @mycroblog/mykit in pkg/mykit/ts, and
 # the Go module pkg/mybot and the npm package @mycroblog/mybot in pkg/mybot/ts, the bot library on top of mykit. The
 # Go modules are modules of their own, so the root module's `./...`, depguard, and go:check never see them: these
-# tasks check them (the mybot-* tasks pkg/mybot). The npm packages are packages of the client workspace
-# (app/package.json), checked here by the ts-* and mybot-ts-* tasks.
+# tasks check them (the mybot-* tasks pkg/mybot). The npm packages are members of the Bun workspace
+# (package.json at the root), checked here by the ts-* and mybot-ts-* tasks.
 # api:generate writes their generated code (pkg/mykit/api.gen.go, pkg/mykit/ts/src/schema.gen.ts).
 #
 # The integration tests (integration-vet, integration-test) live in pkg/mykit/integration, a test module that is never
@@ -111,11 +111,10 @@ tasks:
       - bun run lint
 
   ts-knip:
-    desc: Find unused files, exports, and dependencies of @mycroblog/mykit with knip (its workspace of app/knip.json)
+    desc: Find unused files, exports, and dependencies of @mycroblog/mykit with knip (its workspace of knip.json)
     deps: [":web:install"]
-    dir: app
     cmds:
-      - bun run knip --workspace ../pkg/mykit/ts
+      - bun --bun knip --workspace pkg/mykit/ts
 
   ts-test:
     desc: Run the @mycroblog/mykit unit tests with bun test
@@ -135,10 +134,10 @@ tasks:
 
   ts-licenses:
     desc: Fail on licenses outside the permissive allowlist among the npm packages that @mycroblog/mykit depends on at run time
-    deps: [":web:install", ":i18n:install"]
+    deps: [":web:install"]
     dir: tools/i18n
     cmds:
-      - bun run src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mykit/ts
+      - bun src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mykit/ts
 
   mybot-ts-typecheck:
     desc: Type-check @mycroblog/mybot with tsc (the library without Node.js types, and its tests), reading @mycroblog/mykit from its sources
@@ -155,11 +154,10 @@ tasks:
       - bun run lint
 
   mybot-ts-knip:
-    desc: Find unused files, exports, and dependencies of @mycroblog/mybot with knip (its workspace of app/knip.json)
+    desc: Find unused files, exports, and dependencies of @mycroblog/mybot with knip (its workspace of knip.json)
     deps: [":web:install"]
-    dir: app
     cmds:
-      - bun run knip --workspace ../pkg/mybot/ts
+      - bun --bun knip --workspace pkg/mybot/ts
 
   mybot-ts-test:
     desc: Run the @mycroblog/mybot unit tests with bun test, reading @mycroblog/mykit from its sources
@@ -177,10 +175,10 @@ tasks:
 
   mybot-ts-licenses:
     desc: Fail on licenses outside the permissive allowlist among the npm packages that @mycroblog/mybot depends on at run time (@mycroblog/mykit and its own)
-    deps: [":web:install", ":i18n:install"]
+    deps: [":web:install"]
     dir: tools/i18n
     cmds:
-      - bun run src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mybot/ts
+      - bun src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mybot/ts
 
   mybot-ts-runtimes:
     desc: Load the build of @mycroblog/mybot on Node.js and Deno and run a bot on each (pkg/mybot/ts/test/runtimes.mjs); needs node and deno on PATH, which the repo job of CI installs (Node.js 22, the oldest supported)

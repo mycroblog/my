@@ -12,7 +12,7 @@ type CredentialAccount = components["schemas"]["CredentialAccount"];
 type Visibility = components["schemas"]["Visibility"];
 type CreateStatusRequest = components["schemas"]["CreateStatusRequest"];
 
-export const server = "https://example.com";
+const server = "https://example.com";
 
 /** A UUIDv7-shaped ID whose order is the order of n. */
 export function id(n: number): string {
@@ -83,7 +83,7 @@ export function mention(n: number, a: Account, text: string, v: Visibility = "pu
 }
 
 /** A logger that drops everything. */
-export const quiet: Logger = { debug() {}, info() {}, warn() {}, error() {} };
+const quiet: Logger = { debug() {}, info() {}, warn() {}, error() {} };
 
 /** A connection of the event stream, for FakeServer.stream. */
 export type StreamConnection = {

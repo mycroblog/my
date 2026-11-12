@@ -13,23 +13,17 @@ tasks:
     deps: [dockerfile-check]
 
   dockerfile-check:
-    desc: Fail if the Dockerfile's Go, Node.js, or Bun image differs from the version in .tool-versions
+    desc: Fail if the Dockerfile's Go or Bun image differs from the version in .tool-versions
     silent: true
     cmds:
       - |
         status=0
-        for pair in golang:golang node:nodejs oven/bun:bun; do
+        for pair in golang:golang oven/bun:bun; do
           image="${pair%:*}"; tool="${pair##*:}"
           want="$image:$(awk -v t="$tool" '$1 == t { print $2 }' .tool-versions)-"
           grep -q "^FROM --platform=\$BUILDPLATFORM $want" Dockerfile || { echo "Dockerfile: the FROM line of $image must start with $want" >&2; status=1; }
         done
         exit "$status"
-
-  # Not part of `check`, which needs no Docker: CI runs it after the smoke test, which has built the web stage already.
-  web-reproducible:
-    desc: Fail when two builds of the Dockerfile's web stage with different VERSIONs differ in any file (needs docker)
-    cmds:
-      - scripts/docker-web-reproducible.sh
 
   # Not part of `check`, which needs no Docker: CI runs it in the docker-smoke job.
   alert-rules:

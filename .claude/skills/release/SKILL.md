@@ -15,7 +15,7 @@ Only the decider publishes a release. What each job does is in the comments of t
 2. Pick the version: `vX.Y.Z` from `main`, or a prerelease `vX.Y.Z-<id>`, the only kind a branch can make. A patch
    only adds to the schema; removing data waits for the next minor version.
 3. For a stable version, `scripts/tofu-examples.sh bump vX.Y.Z` and merge it first. For `vX.Y.0`, in the same change,
-   add the minor version to the top of `app/docs/versions.json` and set any minor version whose support ends to `ended`.
+   add the minor version to the top of `web/docs/versions.json` and set any minor version whose support ends to `ended`.
 4. Bring the translations up to date, so that the tag carries them: `/translate-docs` for the documents, and the
    untranslated keys of the UI catalogs (`scripts/i18n.sh`). Neither blocks the release.
 

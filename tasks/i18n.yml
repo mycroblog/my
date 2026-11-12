@@ -1,88 +1,63 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # The message catalogs in locales/ and tools/i18n (ADR-0009; the i18n context of scripts/changed-contexts.sh).
+# tools/i18n is a member of the Bun workspace at the repository root, installed by web:install.
 version: "3"
 
 tasks:
-  # It skips while node_modules exists and the manifests are unchanged, as web:install does.
-  install:
-    desc: Install the pinned i18n tool dependencies (tools/i18n/bun.lock)
-    run: once
-    dir: tools/i18n
-    sources: [bun.lock, bunfig.toml, package.json]
-    status:
-      - test -d node_modules
-    cmds:
-      - bun install --frozen-lockfile
-
   gen:
-    desc: Regenerate pseudo-locales, typed accessors, and parity fixtures from locales/ (commit the files Go reads)
-    deps: [install]
+    desc: Regenerate pseudo-locales, Go typed accessors, and parity fixtures from locales/ (commit the result)
+    deps: [":web:install"]
     run: once
     sources:
       - "locales/*/**/*.json"
       - exclude: "locales/en-XA/**"
       - exclude: "locales/ar-XB/**"
       - "tools/i18n/src/**/*.ts"
-      - exclude: tools/i18n/src/runtime/messages.gen.ts
-      - tools/i18n/bun.lock
+      - bun.lock
     generates:
       - "locales/en-XA/**/*.json"
       - "locales/ar-XB/**/*.json"
       - internal/i18n/messages_gen.go
-      - tools/i18n/src/runtime/messages.gen.ts
       - internal/i18n/testdata/golden.json
     cmds:
-      - cd tools/i18n && bun run src/gen.ts
-
-  # The generated files only the TS clients read are not committed (ADR-0081); every task that reads them
-  # (here and in tasks/web.yml) depends on this. It skips while its sources are unchanged.
-  gen-ts:
-    desc: Generate the files only the TS clients read (client pseudo-locales, TS accessors) from locales/
-    deps: [install]
-    run: once
-    sources:
-      - "locales/*/**/*.json"
-      - exclude: "locales/en-XA/**"
-      - exclude: "locales/ar-XB/**"
-      - "tools/i18n/src/**/*.ts"
-      - exclude: tools/i18n/src/runtime/messages.gen.ts
-      - tools/i18n/bun.lock
-    generates:
-      - "locales/en-XA/client*/**/*.json"
-      - "locales/ar-XB/client*/**/*.json"
-      - tools/i18n/src/runtime/messages.gen.ts
-    cmds:
-      - cd tools/i18n && bun run src/gen.ts --ts
+      - cd tools/i18n && bun src/gen.ts
 
   check:
-    desc: Lint the catalogs, fail on stale committed i18n files, check npm licenses, test and type-check the TS runtime, check the TS formatting (web:fmt-check)
-    deps: [lint, licenses, test, typecheck, ":web:fmt-check"]
+    desc: Lint the catalogs, fail on stale generated i18n files, check npm licenses, test and type-check tools/i18n, check the TS formatting (web:fmt-check)
+    deps: [lint, licenses, test, typecheck, knip, ":web:fmt-check"]
 
   lint:
-    desc: Lint the catalogs and fail on stale generated i18n files Go reads (server pseudo-locales, Go accessors, golden)
-    deps: [install]
+    desc: Lint the catalogs and fail on stale generated i18n files (pseudo-locales, Go accessors, golden)
+    deps: [":web:install"]
     dir: tools/i18n
     cmds:
-      - bun run src/check.ts
+      - bun src/check.ts
 
+  # web:licenses checks every installed package of the workspace; this checks the ones tools/i18n runs on.
   licenses:
-    desc: Fail on tools/i18n npm dependency licenses incompatible with AGPL-3.0
-    deps: [install]
+    desc: Fail on licenses of the npm dependencies of tools/i18n incompatible with AGPL-3.0
+    deps: [":web:install"]
     dir: tools/i18n
     cmds:
-      - bun run src/licenses.ts {{.NPM_ALLOWED_LICENSES}}
+      - bun src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --deps-of .
 
   test:
     desc: Run the tools/i18n tests
-    deps: [gen-ts]
+    deps: [":web:install"]
     dir: tools/i18n
     cmds:
       - bun test
 
+  knip:
+    desc: Fail on unused files, exports, and dependencies of tools/i18n (knip.json)
+    deps: [":web:install"]
+    cmds:
+      - bun --bun knip --workspace tools/i18n
+
   typecheck:
     desc: Type-check tools/i18n with tsc
-    deps: [gen-ts]
+    deps: [":web:install"]
     dir: tools/i18n
     cmds:
-      - bun --bun run tsc --noEmit -p .
+      - bun --bun tsc --noEmit -p .

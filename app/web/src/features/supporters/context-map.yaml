@@ -1,2 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0162-one-time-tips.md#decision決定", "docs/operations/supporters.md", "docs/architecture/web-client/screens/settings-supporter-tip.md"]

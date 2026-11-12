@@ -251,7 +251,7 @@ func TestFastPlanTofuContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	linkFromRepo(t, contextsScript, root)
-	for _, f := range []string{"docs/reference/configuration.md", "deploy/opentofu/m/main.tf", "app/web/src/a.tsx"} {
+	for _, f := range []string{"docs/reference/configuration.md", "deploy/opentofu/m/main.tf", "web/client/src/a.tsx"} {
 		write(t, filepath.Join(root, f), "x")
 	}
 	cases := []struct {
@@ -261,7 +261,7 @@ func TestFastPlanTofuContext(t *testing.T) {
 		{[]string{"docs/reference/configuration.md"}, append([]string{"docs:lint", "docs:rules", "agentkit:map-check"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/main.tf"}, append([]string{"tofu fmt"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/gone.json"}, tofuConsistency},
-		{[]string{"app/web/src/a.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
+		{[]string{"web/client/src/a.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
 	}
 	for _, c := range cases {
 		if got := names(fastPlan(root, c.changed)); !reflect.DeepEqual(got, c.want) {
@@ -283,7 +283,7 @@ func names(plan [][]fastStep) []string {
 func TestFastPlan(t *testing.T) {
 	root := t.TempDir()
 	for _, f := range []string{"go.mod", "internal/a/a.go", "internal/a/testdata/t.go", "tools/agentkit/go.mod", "tools/agentkit/x/x.go",
-		"app/web/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
+		"web/client/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
 		"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/.terraform.lock.hcl", "deploy/other/x.tf"} {
 		write(t, filepath.Join(root, f), "x")
 	}
@@ -293,7 +293,7 @@ func TestFastPlan(t *testing.T) {
 	}{
 		{[]string{"internal/a/a.go", "internal/a/testdata/t.go", "internal/gone/g.go"}, []string{"gofmt", "go vet (1 packages)"}},
 		{[]string{"tools/agentkit/x/x.go"}, []string{"gofmt", "go vet tools/agentkit (1 packages)"}},
-		{[]string{"app/web/src/a.tsx", "app/web/src/gone.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
+		{[]string{"web/client/src/a.tsx", "web/client/src/gone.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
 		{[]string{"pkg/mykit/ts/src/b.ts"}, []string{"bun fmt"}},
 		{[]string{"docs/a.md"}, []string{"docs:lint", "docs:rules", "agentkit:map-check"}},
 		{[]string{"internal/app/x/context-map.yaml"}, []string{"agentkit:map-check"}},
@@ -424,7 +424,7 @@ func TestOpenAsksForNoScreenshots(t *testing.T) {
 	main := sandbox(t)
 	log := fakeGH(t, ghIssues)
 	r := addWorktree(t, main, "feat/12-ui")
-	commit(t, r.Root, "app/web/src/a.css", "a{}\n", "feat: look (#12)")
+	commit(t, r.Root, "web/client/src/a.css", "a{}\n", "feat: look (#12)")
 	if _, err := Open(r, OpenOptions{}); err != nil {
 		t.Fatalf("a change of the web UI opens without screenshots, got %v", err)
 	}

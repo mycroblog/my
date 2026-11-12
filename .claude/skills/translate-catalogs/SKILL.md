@@ -13,8 +13,7 @@ hand. A key missing from them shows English and only warns, so they never block 
 2. Translate them. `scripts/i18n.sh show <key or prefix>` prints the English, the Japanese, and the description;
    `scripts/i18n.sh set <namespace>:<key> --<locale> "<text>"` checks one translation and writes it in its place. For
    a large catch-up, write the area files in the order of the English files and split the work by them.
-   - Keep every argument name, `select` key, and rich-text tag (`<link>…</link>`) as in English; translate the text
-     inside the branches and the tags.
+   - Keep every argument name and `select` key as in English; translate the text inside the branches.
    - Keep only the plural categories the locale has in CLDR, plus exact selectors (`=0`, `=1`).
    - Keep product names, commands, settings, environment variables, and URLs in English.
    - Follow the locale's rules in `docs/architecture/web-client/16-look-states-and-wording.md` G19–G21 and its terms in `tools/i18n/glossary.json`.
@@ -28,12 +27,12 @@ Before a release, catch up every locale this way; untranslated keys never block 
 ## Adding a locale
 
 The directory is the language tag alone (`es`, `de`), with a region only where the language is written differently by
-region (`zh-CN`, `zh-TW`, `pt-BR`). The server and the web client find a new directory on their own.
+region (`zh-CN`, `zh-TW`, `pt-BR`). The server finds a new directory on its own.
 
 1. Add the language's style rules to web-client §16 G20, its terms to `tools/i18n/glossary.json`, and the checks of
    `tools/i18n/src/check.ts` the rules need. The decider reviews them in the pull request.
-2. Add the tags that resolve to the locale to `parentLocales` of `internal/i18n/locale.go` and
-   `app/web/src/lib/i18n.tsx`, with their tests, when they are not there yet.
+2. Add the tags that resolve to the locale to `parentLocales` of `internal/i18n/locale.go` and `PARENTS` of
+   `tools/i18n/src/translator.ts`, with their tests, when they are not there yet.
 3. Add the locale to `GOLDEN_LOCALES` and `CLDR_LOCALES` of `tools/i18n/src/generate.ts`, and a message to
    `internal/i18n/testdata/cases.json` if the catalogs differ in plurals.
 4. Translate every file as above, then `scripts/task.sh i18n:gen`.

@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app/ui/src/logos/Wordmark-Primary-Color.svg" alt="mycroblog" width="320">
+  <img src="web/brand/Wordmark-Primary-Color.svg" alt="mycroblog" width="320">
 </div>
 
 <h1 align="center">mycroblog</h1>
@@ -27,8 +27,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="app/docs/src/assets/screenshots/home-dark.webp">
-    <img src="app/docs/src/assets/screenshots/home-light.webp" alt="The home timeline of mycroblog: a post quoting two photos of a lake and a sunset, with custom emoji reactions, then a post in Japanese about bread, beside the navigation, the latest notifications and the server's information.">
+    <source media="(prefers-color-scheme: dark)" srcset="web/docs/src/assets/screenshots/home-dark.webp">
+    <img src="web/docs/src/assets/screenshots/home-light.webp" alt="The home timeline of mycroblog: a post quoting two photos of a lake and a sunset, with custom emoji reactions, then a post in Japanese about bread, beside the navigation, the latest notifications and the server's information.">
   </picture>
 </p>
 

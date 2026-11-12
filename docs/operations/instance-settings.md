@@ -556,11 +556,22 @@ The server-wide theme is a set of overrides of the web client's design tokens pl
 applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on), in
 both light and dark.
 
-- You can override every token in `app/ui/src/theme.css` except the primitive colors (`--palette-*`). The list, defaults, and
-  ranges are in [app/ui/README.md](../../app/ui/README.md#server-themes). A color is `#rrggbb` for light and for dark
-  (`color-overlay` may also be `#rrggbbaa`); the other tokens take a value of the shape of their kind (length, number,
-  duration, easing, font name list, shadow) within its range. When you override `font-sans` or `font-mono`, keep
-  `"my Noto Color Emoji"` first; otherwise the emoji of the web client are drawn with the OS font.
+- You can override every design token except the primitive colors (`--palette-*`):
+
+  | Tokens | Kind | Override |
+  | --- | --- | --- |
+  | `color-*` (but `color-badge-*`, `color-avatar-*`, `color-hand`, `color-hand-fg`) | color | `#rrggbb` for light and for dark (`#rrggbbaa` for `color-overlay`) |
+  | `font-sans`, `font-mono`, `font-serif` | font family | Family names, quoted or plain, comma-separated (at most 30) |
+  | `text-*` | length | `0` or rem / px, 0.625rem to 3rem |
+  | `text-*--line-height` | number | 1 to 2.5 |
+  | `spacing` | length | 0.125rem to 0.5rem |
+  | `radius-*` (but `radius-avatar`) | length | 0 to 2rem |
+  | `elevation-*` | shadow | `none` or up to 4 `[inset] <x> <y> [<blur> [<spread>]] <#color>` layers, lengths within 4rem |
+  | `transition-duration-*`, `default-transition-duration` | duration | ms / s, 0 to 1000ms |
+  | `ease-*`, `default-transition-timing-function` | easing | `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, or `cubic-bezier()` with x in 0..1 |
+
+  When you override `font-sans` or `font-mono`, keep `"my Noto Color Emoji"` first; otherwise the emoji of the web client
+  are drawn with the OS font.
 - When you save, the server checks the shape and range of the values, the contrast of every pair of color tokens (tokens you do
   not override use their defaults; WCAG 2.2 AA in both light and dark), and the length of the custom CSS (64 KiB). If any check
   fails, nothing is saved.

@@ -111,8 +111,7 @@ var mailText = template.Must(template.New("mail").Parse(
 {{with .Unsubscribe}}{{.}}
 {{end}}`))
 
-// mailFrame is the HTML layout, compiled from app/mail/frame.mjml with MJML
-// (`scripts/task.sh mail:gen`). html/template escapes every value for its context, and turns a
+// mailFrame is the HTML layout, a committed file compiled with MJML. html/template escapes every value for its context, and turns a
 // URL of a scheme other than http, https, and mailto into "#ZgotmplZ".
 //
 //go:embed mail_frame.gen.html

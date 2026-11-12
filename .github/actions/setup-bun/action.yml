@@ -1,38 +1,20 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 name: Set up Bun
 description: >-
-  Install the Bun of .tool-versions, and the Node.js that Vite, Vitest, and openapi-typescript run on (ADR-0025), and
-  restore the Bun package cache that main.yml builds, without saving one (ADR-0079). Run it after actions/checkout.
-
-inputs:
-  node:
-    description: "`false` leaves Node.js out, for jobs that only run Bun."
-    default: "true"
-  npm:
-    description: "`true` installs Bun with the image's npm, for a container image without the unzip that oven-sh/setup-bun extracts Bun with."
-    default: "false"
+  Install the Bun of .tool-versions, which runs every tool of the workspace (ADR-0025 §10), and restore the Bun
+  package cache that main.yml builds, without saving one (ADR-0079). Run it after actions/checkout.
 
 runs:
   using: composite
   steps:
     - name: Set up Bun
-      if: inputs.npm != 'true'
       uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
         bun-version-file: .tool-versions
-    - name: Set up Bun with npm
-      if: inputs.npm == 'true'
-      shell: bash
-      run: scripts/ci-bun-npm.sh
-    - name: Set up Node
-      if: inputs.node == 'true'
-      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-      with:
-        node-version-file: .tool-versions
     # The key must equal that of main.yml's bun-cache job.
     - name: Restore the Bun package cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
-        key: bun-${{ runner.os }}-${{ hashFiles('app/bun.lock', 'tools/i18n/bun.lock') }}
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
         restore-keys: bun-${{ runner.os }}-

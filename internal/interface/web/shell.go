@@ -179,7 +179,7 @@ func renderShell(d shellData) (document, error) {
 // server's own origin. Trusted Types are required for every script sink, and `trusted-types`
 // allows exactly the client's two policies, each created once (no 'allow-duplicates'):
 // my-server-sanitized-html (@my/ui PostContent, the server-sanitized post HTML) and
-// my-service-worker (app/web src/lib/pwa.ts, the worker's fixed URL). No other script can make a
+// my-service-worker (the worker's fixed URL). No other script can make a
 // policy of its own. Over HTTPS it ends with upgradeInsecureRequests.
 const contentSecurityPolicy = "default-src 'none'; " +
 	"script-src 'self'; " +

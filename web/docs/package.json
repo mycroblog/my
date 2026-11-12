@@ -1,0 +1,27 @@
+{
+  "name": "@my/docs",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "import": "bun scripts/import-docs.ts",
+    "dev": "bun run import && ASTRO_TELEMETRY_DISABLED=1 bun --bun astro dev",
+    "build": "bun run import && ASTRO_TELEMETRY_DISABLED=1 bun --bun astro build",
+    "typecheck": "bun --bun tsc -p tsconfig.typecheck.json",
+    "test": "bun test",
+    "translations": "bun scripts/translations.ts"
+  },
+  "dependencies": {
+    "@astrojs/markdown-satteri": "0.4.7",
+    "@astrojs/starlight": "0.42.10",
+    "astro": "7.4.7",
+    "github-slugger": "2.0.0",
+    "satteri": "0.11.7",
+    "starlight-links-validator": "0.27.0",
+    "starlight-llms-txt": "0.12.0",
+    "starlight-openapi": "0.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6"
+  }
+}

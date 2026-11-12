@@ -499,8 +499,8 @@ func pushTopic(notificationID string) string {
 	return t[:min(len(t), 32)]
 }
 
-// PushPayload is the JSON document that a push message carries to the Service Worker
-// (app/web/sw/push.ts), which shows it as a notification.
+// PushPayload is the JSON document that a push message carries to the Service Worker of the web
+// client, which shows it as a notification.
 type PushPayload struct {
 	// NotificationID is the notification's ID; the Service Worker shows the message with it
 	// as the tag, so that a message sent twice replaces itself.

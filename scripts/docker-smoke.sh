@@ -3,7 +3,7 @@
 # Smoke test of deploy/docker/compose.yaml, the path an operator takes: build the server image with the override
 # compose.build.yaml and give it the published image's name, so that the plain compose.yaml starts it as it starts a
 # pulled one. Start the stack on an empty volume (my db upgrade -check, my schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
-# NodeInfo, and the embedded web client, and sign in as the web client does over plain HTTP on localhost
+# NodeInfo, and the embedded brand assets, and sign in as a web client does over plain HTTP on localhost
 # (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
 # one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
 # keeps the server stopped (docs/operations/database.md, "Upgrading"). The settings come from a copy of example.env and
@@ -175,14 +175,15 @@ nodeinfo="$(curl -fsS "$base/nodeinfo/2.1")"
 echo "$nodeinfo" | jq -e --arg v "$want_version" '.version == "2.1" and .software.version == $v and .usage.users.total == 1' >/dev/null ||
 	fail "unexpected NodeInfo: $nodeinfo"
 
-# The image embeds the web client: the shell loads its entry module from /assets/ (ADR-0028).
+# The image embeds web/brand (ADR-0028): the Web App Manifest's icons are served.
 shell="$(curl -fsS -H 'Accept: text/html' "$base/@alice")"
-entry="$(echo "$shell" | grep -o '<script type="module" src="/assets/[^"]*"' | head -n 1 | sed 's/.*src="//; s/"$//' || true)"
-[[ -n "$entry" ]] || fail "the HTML shell loads no entry module from /assets/ (web client not embedded?): $shell"
 echo "$shell" | grep -q '<script type="application/json" id="config">' || fail "the HTML shell has no runtime config: $shell"
-curl -fsS -o /dev/null "$base$entry" || fail "the entry module $entry is not served"
-curl -fsS "$base/manifest.webmanifest" | jq -e --arg name "$MY_HOST" '.name == $name' >/dev/null ||
-	fail "unexpected Web App Manifest"
+manifest="$(curl -fsS "$base/manifest.webmanifest")"
+echo "$manifest" | jq -e --arg name "$MY_HOST" '.name == $name and (.icons | length > 0)' >/dev/null ||
+	fail "unexpected Web App Manifest: $manifest"
+for icon in $(echo "$manifest" | jq -r '.icons[].src'); do
+	curl -fsS -o /dev/null "$base$icon" || fail "the icon $icon is not served (web/brand not embedded?)"
+done
 
 # Sign in without a browser, as the web client does (OAuth 2.0 authorization code with PKCE, ADR-0090): the shell's
 # apiOrigin, the authorization endpoint, the sign-in form, the redirect back with a code and the issuer, the token

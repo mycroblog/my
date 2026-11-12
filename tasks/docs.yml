@@ -62,12 +62,12 @@ tasks:
     cmds:
       - scripts/adr-new.sh {{shellQuote .TITLE}} {{.SLUG}}
 
-  # The documentation site (app/docs, @my/docs; ADR-0150): Astro Starlight in the client workspace. Its package.json
+  # The documentation site (web/docs, @my/docs; ADR-0150): Astro Starlight in the Bun workspace. Its package.json
   # scripts turn Astro's telemetry off, so the build needs no network beyond the package install.
   site-build:
-    desc: Copy the published documents into the documentation site (app/docs) and build it into app/docs/dist as static files, with its Pagefind search index (DOCS_SITE_BASE sets the path prefix)
+    desc: Copy the published documents into the documentation site (web/docs) and build it into web/docs/dist as static files, with its Pagefind search index (DOCS_SITE_BASE sets the path prefix)
     deps: [":web:install"]
-    dir: app/docs
+    dir: web/docs
     cmds:
       - bun run build
 
@@ -82,60 +82,48 @@ tasks:
       - scripts/docs-site.sh build .tmp/docs-site/check
 
   site-dev:
-    desc: Copy the published documents into the documentation site (app/docs) and start its Astro dev server on http://localhost:4321
+    desc: Copy the published documents into the documentation site (web/docs) and start its Astro dev server on http://localhost:4321
     deps: [":web:install"]
-    dir: app/docs
+    dir: web/docs
     cmds:
       - bun run dev
 
-  # The translations of the site (app/docs/i18n/, ADR-0150 §9; .claude/skills/translate-docs). An agent writes them;
+  # The translations of the site (web/docs/i18n/, ADR-0150 §9; .claude/skills/translate-docs). An agent writes them;
   # this command lists what to translate and checks what it wrote.
   site-translations:
-    desc: "Work on the translations of the documentation site (app/docs/i18n/<locale>/): `-- status [source...]` lists the sources and sections to translate, `-- todo <source>` prints the sections to translate with their markers, `-- glossary <source>` the UI terms it quotes in the locale's catalog, `-- check` checks the translations (--locale ja by default)"
-    dir: app/docs
+    desc: "Work on the translations of the documentation site (web/docs/i18n/<locale>/): `-- status [source...]` lists the sources and sections to translate, `-- todo <source>` prints the sections to translate with their markers, `-- glossary <source>` the UI terms it quotes in the locale's catalog, `-- check` checks the translations (--locale ja by default)"
+    dir: web/docs
     cmds:
       - bun scripts/translations.ts {{.CLI_ARGS}}
 
   site-translations-check:
-    desc: "Fail when a translation of the documentation site (app/docs/i18n/) is malformed: a marker that does not parse, a section that does not start with its heading, a current section whose code blocks, code spans or link targets differ from the English text, or a file that translates nothing (stale and missing sections never fail; site:check runs it)"
-    dir: app/docs
+    desc: "Fail when a translation of the documentation site (web/docs/i18n/) is malformed: a marker that does not parse, a section that does not start with its heading, a current section whose code blocks, code spans or link targets differ from the English text, or a file that translates nothing (stale and missing sections never fail; site:check runs it)"
+    dir: web/docs
     cmds:
       - bun scripts/translations.ts check
 
-  screenshots:
-    desc: Take the screenshots of the documentation site and the README (app/docs/src/assets/screenshots/*.webp) from the Showcase stories of the app/web Storybook in PLAYWRIGHT_IMAGE, light and dark (needs Docker); review and commit them
-    deps: [":web:storybook-build"]
-    env:
-      PLAYWRIGHT_IMAGE: "{{.PLAYWRIGHT_IMAGE}}"
-    cmds:
-      - scripts/docs-screenshots.sh {{.CLI_ARGS}}
-
   site-typecheck:
-    desc: Type-check the configuration of the documentation site (app/docs) with tsc (site:check runs it)
+    desc: Type-check the configuration of the documentation site (web/docs) with tsc (site:check runs it)
     deps: [":web:install"]
-    dir: app/docs
+    dir: web/docs
     cmds:
       - bun run typecheck
 
   site-test:
-    desc: Run the unit tests of the documentation site (app/docs) with bun test (site:check runs it)
+    desc: Run the unit tests of the documentation site (web/docs) with bun test (site:check runs it)
     deps: [":web:install"]
-    dir: app/docs
+    dir: web/docs
     cmds:
       - bun run test
 
-  # web:oxlint and web:knip cover app/docs too, as part of the whole workspace; these two let the site context check
-  # it without the client's generated files.
   site-lint:
-    desc: Run Oxlint on the documentation site (app/docs) with the client workspace's configuration (app/.oxlintrc.json; site:check runs it)
+    desc: Run Oxlint on the documentation site (web/docs) with the workspace's configuration (.oxlintrc.json; site:check runs it)
     deps: [":web:install"]
-    dir: app
     cmds:
-      - bun run lint docs
+      - bun --bun oxlint web/docs
 
   site-knip:
-    desc: Find unused files, exports, and dependencies of the documentation site (app/docs) with knip (its workspace of app/knip.json; site:check runs it)
+    desc: Find unused files, exports, and dependencies of the documentation site (web/docs) with knip (its workspace of knip.json; site:check runs it)
     deps: [":web:install"]
-    dir: app
     cmds:
-      - bun run knip --workspace docs
+      - bun --bun knip --workspace web/docs

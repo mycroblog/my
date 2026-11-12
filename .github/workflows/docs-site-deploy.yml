@@ -2,7 +2,7 @@ name: Docs site deploy
 
 # Publishes the documentation site (ADR-0150 §6, §7) on the Cloudflare Worker my-docs of scripts/docs-site/wrangler.jsonc.
 # One deploy replaces every asset of the Worker, so each run builds every published version and combines them
-# (scripts/docs-site.sh build): /next/ from main, and /latest/ and each minor version of app/docs/versions.json from the
+# (scripts/docs-site.sh build): /next/ from main, and /latest/ and each minor version of web/docs/versions.json from the
 # tag of its newest published release. A push to main therefore changes /next/ only, and a published release changes
 # /latest/ and its minor version; the other versions are rebuilt from the same tags as before.
 #
@@ -19,16 +19,16 @@ on:
     branches: [main]
     paths:
       # What the site publishes (the paths of the site context of scripts/changed-contexts.sh): the documents
-      # (app/docs/src/published.ts), the table of contents of the sidebar, and the bundle of the API spec.
+      # (web/docs/src/published.ts), the table of contents of the sidebar, and the bundle of the API spec.
       - "docs/README.md"
       - "api/openapi.yaml"
       - "docs/operations/**"
       - "docs/reference/**"
       - "docs/guide/**"
       - "docs/developers/**"
-      - "app/docs/**"
-      - "app/package.json"
-      - "app/bun.lock"
+      - "web/docs/**"
+      - "package.json"
+      - "bun.lock"
       - "tasks/docs.yml"
       - "tasks/web.yml"
       - "scripts/docs-site.sh"
@@ -102,10 +102,11 @@ jobs:
         with:
           name: docs-site
           path: ${{ runner.temp }}/site
+      # Wrangler does not run on Bun (#2954).
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .tool-versions
+          node-version: "26.12.1"
       - name: Install wrangler
         run: scripts/docs-site.sh install
       - name: Deploy

@@ -5,13 +5,10 @@
 //   error: translation argument unknown to the source, or of a different type
 //   error: plural / selectordinal category the locale's CLDR rules do not have
 //   error: translation key absent from the source (obsolete)
-//   error: rich-text tag, number skeleton / style, or date / time argument in a namespace
-//          shared with Go (anything but client*)
+//   error: rich-text tag, number skeleton / style, or date / time argument (outside the subset Go formats)
 //   error: malformed locale directory, namespace, or key; two keys mapping to one accessor
 //   error: catalog file outside locales/<locale>/<namespace>/<area>.json, or a key outside its area's file (ADR-0081)
-//   error: generated files Go reads (server pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
-// The generated files only the TS clients read (client pseudo-locales, TS accessors) are not committed and not
-// checked here (ADR-0081): i18n:gen-ts writes them before the tasks that read them, maybe while this runs.
+//   error: generated files (pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
 //   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
@@ -23,20 +20,16 @@
 //          it, or « » without the narrow no-break space inside them
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   error: key of the source missing in ja, which is written in the same change as en (`scripts/i18n.sh set`)
-//   error: helper text of a client (a key ending in description / hint / help / note) longer than its budget, and
-//          an entry of tools/i18n/helper-text-baseline.json that no longer needs to be there (budget.ts)
 //   warn:  untranslated key in a machine-translated locale (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
 //   warn:  key not referenced from code
 import { existsSync, readFileSync } from "node:fs";
-import { budgetFindings, loadBaseline } from "./budget";
 import {
   areaOf,
   type Catalog,
   type CatalogFile,
   catalogFile,
   formattingLocale,
-  isClientNamespace,
   isPseudo,
   loadCatalog,
   loadCatalogFiles,
@@ -44,7 +37,7 @@ import {
   REQUIRED_LOCALES,
   SOURCE,
 } from "./catalog";
-import { generate, goName, pseudoPart } from "./generate";
+import { generate, goName } from "./generate";
 import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
 import { References } from "./refs";
@@ -112,11 +105,7 @@ function analyze(
   if (typeof message !== "string") return void error(`${where}defaultMessage must be a string`);
   try {
     const ast = parseMessage(message);
-    if (!isClientNamespace(ns)) {
-      for (const f of outsideSharedSubset(ast)) {
-        error(`${where}${f} is outside the Go/TS shared subset (allowed only in client* namespaces)`);
-      }
-    }
+    for (const f of outsideSharedSubset(ast)) error(`${where}${f} is outside the Go/TS shared subset`);
     const rules = {
       cardinal: new Set<string>(new Intl.PluralRules(formattingLocale(locale)).resolvedOptions().pluralCategories),
       ordinal: new Set<string>(
@@ -302,8 +291,7 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
   for (const [locale, namespaces] of Object.entries(catalog)) {
     if (locale === SOURCE || (locales && !locales.includes(locale))) continue;
     for (const id of sourceArgs.keys()) {
-      const [ns, key] = id.split(/:(.*)/s);
-      if (isPseudo(locale) && pseudoPart(ns) !== "go") continue;
+      const [ns = "", key = ""] = id.split(/:(.*)/s);
       if (namespaces[ns]?.[key]) continue;
       if (REQUIRED_LOCALES.includes(locale))
         error(
@@ -337,7 +325,7 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
  * nor by a TS key literal.
  */
 function checkUnused(catalog: Catalog, ids: string[]) {
-  const references = new References(Object.keys(catalog[SOURCE]));
+  const references = new References(Object.keys(catalog[SOURCE] ?? {}));
   for (const id of ids) {
     if (!references.used(id)) warn(`unused ${id}; refer to it, or remove it: scripts/i18n.sh rm ${id}`);
   }
@@ -357,7 +345,7 @@ function checkLayout(files: CatalogFile[]) {
 }
 
 async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
-  const generated = await generate(catalog, ["go"]);
+  const generated = await generate(catalog);
   for (const [path, want] of generated) {
     const got = existsSync(path) ? readFileSync(path, "utf8") : undefined;
     if (got !== want)
@@ -372,21 +360,19 @@ async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
 
 export type CheckOptions = {
   /** Check only the messages of these ids (the keys of a change), in every locale. */
-  only?: Set<string>;
+  only?: Set<string> | undefined;
   /** Of the translations, check only these locales. */
-  locales?: string[];
+  locales?: string[] | undefined;
 };
 
 /** Runs every check and returns the findings; `options` narrow the messages, never the rules. */
 export async function runCheck({ only, locales }: CheckOptions = {}): Promise<Finding[]> {
   findings = [];
-  // The client pseudo-locales are generated, uncommitted files that may be missing or stale; leave them out.
-  const files = loadCatalogFiles().filter((f) => !isPseudo(f.locale) || (f.ns !== "" && pseudoPart(f.ns) === "go"));
+  const files = loadCatalogFiles();
   const catalog = loadCatalog(files);
   checkLayout(files);
   const ids = checkCatalog(catalog, only, locales);
   if (!findings.some((f) => f.level === "error")) {
-    for (const f of budgetFindings(catalog, loadBaseline(), only)) error(f);
     checkUnused(catalog, ids);
     await checkGenerated(catalog, files);
   }

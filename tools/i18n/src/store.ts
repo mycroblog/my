@@ -5,7 +5,6 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   areaOf,
-  type Catalog,
   type CatalogFile,
   catalogFile,
   type Entry,
@@ -21,8 +20,8 @@ import {
 } from "./catalog";
 
 export const splitId = (id: string): [ns: string, key: string] => {
-  const [ns, key] = id.split(/:(.*)/s);
-  return [ns, key ?? ""];
+  const [ns = "", key = ""] = id.split(/:(.*)/s);
+  return [ns, key];
 };
 
 /** Where a new key goes in a file: after the last key that shares the longest run of leading segments with it. */
@@ -83,13 +82,6 @@ export class Store {
       .flatMap((f) => Object.keys(f.entries).map((key) => `${f.ns}:${key}`));
   }
 
-  catalog(): Catalog {
-    const catalog: Catalog = {};
-    for (const { locale, ns, entries } of this.files.values())
-      Object.assign(((catalog[locale] ??= {})[ns] ??= {}), entries);
-    return catalog;
-  }
-
   /**
    * Writes the entry. A new key of the source locale goes after `after`, which must be in the same file, or next to
    * its siblings; throws when `after` is elsewhere.
@@ -109,8 +101,8 @@ export class Store {
     const previous = after ?? siblingOf(keys, key) ?? keys.at(-1);
     const next: Namespace = {};
     if (previous === undefined) next[key] = entry;
-    for (const k of keys) {
-      next[k] = file.entries[k];
+    for (const [k, e] of Object.entries(file.entries)) {
+      next[k] = e;
       if (k === previous) next[key] = entry;
     }
     file.entries = next;

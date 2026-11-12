@@ -39,8 +39,8 @@ run() {
   : > "$work/calls"
   : > "$work/summary"
   if ! PATH="$work/bin:$PATH" CALLS="$work/calls" RESULTS="$2" OPEN_ISSUE="$3" \
-    FAILED_JOBS=$'- [slow-suite / web-e2e / shard 1/8](https://example.test/j/1)\n' \
-    IDS="${IDS-I_99	F_prio	O_p1}" RUN_ID=7 SHA=abc SINCE=def GH_REPO=o/r FLAKY="${FLAKY:-}" GITHUB_STEP_SUMMARY="$work/summary" \
+    FAILED_JOBS=$'- [slow-suite / federation-live / live](https://example.test/j/1)\n' \
+    IDS="${IDS-I_99	F_prio	O_p1}" RUN_ID=7 SHA=abc SINCE=def GH_REPO=o/r GITHUB_STEP_SUMMARY="$work/summary" \
     bash "$script" > "$work/stdout" 2>&1; then
     fail "$name: the script failed: $(cat "$work/stdout")"
   fi
@@ -64,11 +64,11 @@ expect_not() {
   done
 }
 
-red='{"slow-suite":{"result":"failure"},"demo-e2e":{"result":"success"}}'
-green='{"slow-suite":{"result":"success"},"demo-e2e":{"result":"success"}}'
+red='{"slow-suite":{"result":"failure"},"nightly-image":{"result":"skipped"}}'
+green='{"slow-suite":{"result":"success"},"nightly-image":{"result":"success"}}'
 
 run "a first failure" "$red" ""
-expect_has "a first failure" "$calls" "issue create" "--label ci:nightly-failure" "shard 1/8" "compare/def...abc" "actions/runs/7" \
+expect_has "a first failure" "$calls" "issue create" "--label ci:nightly-failure" "federation-live / live" "compare/def...abc" "actions/runs/7" \
   "api -X PATCH repos/o/r/issues/99 -f type=Bug" "-F owner=o -F name=r -F number=99" "-f issue=I_99 -f field=F_prio -f option=O_p1"
 expect_not "a first failure" "$calls" "issue comment" "issue close " "--label type:" "--label priority:"
 expect_not "a first failure" "$out" "could not be set"
@@ -78,7 +78,7 @@ expect_has "a failure in an organization without the Priority field" "$out" "Ope
 expect_not "a failure in an organization without the Priority field" "$calls" "mutation"
 
 run "a failure that goes on" "$red" "12"
-expect_has "a failure that goes on" "$calls" "issue comment 12" "shard 1/8"
+expect_has "a failure that goes on" "$calls" "issue comment 12" "federation-live / live"
 expect_not "a failure that goes on" "$calls" "issue create" "issue close "
 
 run "green again" "$green" "12"
@@ -88,12 +88,8 @@ expect_not "green again" "$calls" "issue create"
 run "green with nothing open" "$green" ""
 expect_not "green with nothing open" "$calls" "issue create" "issue comment" "issue close "
 
-run "a cancelled run" '{"slow-suite":{"result":"cancelled"},"demo-e2e":{"result":"failure"}}' "12"
+run "a cancelled run" '{"slow-suite":{"result":"cancelled"},"nightly-image":{"result":"failure"}}' "12"
 expect_not "a cancelled run" "$calls" "issue create" "issue comment" "issue close "
-
-printf 'app/web/e2e/compose.spec.ts › posts a status (en-320)\n' > "$work/flaky"
-FLAKY="$work/flaky" run "flaky candidates" "$green" ""
-expect_has "flaky candidates" "$out" "Flaky candidates" "- app/web/e2e/compose.spec.ts › posts a status (en-320)"
 
 if [ "$failed" -ne 0 ]; then
   exit 1
