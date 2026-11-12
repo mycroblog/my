@@ -188,7 +188,7 @@ func (c *checker) check(cmd string) *denial {
 
 func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 	segs := splitCommand(cmd)
-	loop, sleeps := false, false
+	loop, sleeps, long := false, false, false
 	vars := map[string]string{}
 	for i, seg := range segs {
 		pc := parseCommand(seg.text, vars)
@@ -225,6 +225,9 @@ func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 			cwd = chdir(cwd, pc.args)
 		case "sleep":
 			sleeps = true
+			if !shortSleep(pc.args) {
+				long = true
+			}
 		case "pgrep":
 			return &denial{"wait-loop", waitReason}
 		case "bash", "sh", "zsh":
@@ -268,8 +271,43 @@ func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 	if loop && sleeps {
 		return &denial{"wait-loop", waitReason}
 	}
+	if long {
+		return &denial{"sleep", sleepReason}
+	}
 	return nil
 }
+
+// shortSleep reports whether `sleep args` sleeps a second or less in all, as a script does between two steps. A
+// duration it cannot read (a variable, `infinity`) counts as long.
+func shortSleep(args []word) bool {
+	total := 0.0
+	for _, a := range args {
+		s := a.text
+		unit := 1.0
+		switch {
+		case strings.HasSuffix(s, "s"):
+			s = strings.TrimSuffix(s, "s")
+		case strings.HasSuffix(s, "m"):
+			s, unit = strings.TrimSuffix(s, "m"), 60
+		case strings.HasSuffix(s, "h"):
+			s, unit = strings.TrimSuffix(s, "h"), 3600
+		case strings.HasSuffix(s, "d"):
+			s, unit = strings.TrimSuffix(s, "d"), 86400
+		}
+		n, err := strconv.ParseFloat(s, 64)
+		if err != nil || n < 0 {
+			return false
+		}
+		total += n * unit
+	}
+	return total <= 1
+}
+
+const sleepReason = "Do not wait by sleeping. A subagent's result or message, a teammate's message, and a background " +
+	"command's completion each arrive as a notification: end your turn, and you are resumed when one arrives. Start a " +
+	"long command with the Bash tool's run_in_background; wait for CI with `scripts/agentkit.sh pr wait <pr>` in the " +
+	"background, or for many PRs with `scripts/agentkit.sh pr watch` and the Monitor tool. A sleep of a second or less " +
+	"between two steps of a script passes."
 
 const waitReason = "Polling for a background command (an until / while loop that sleeps, or pgrep) hangs or ends " +
 	"early: `pgrep -f` matches the polling shell's own command line. Run the long command with the Bash tool's " +

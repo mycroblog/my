@@ -118,7 +118,7 @@ command to run instead, filled in from the denied one:
 | `sed -i`, `perl -pi`, a `python3` / `node` script that writes a file of the repository | the Edit tool; `scripts/i18n.sh add\|mv\|rm` for `locales/` |
 | `git merge` of `main`, `git pull` without `--rebase` or `--ff-only` | `git fetch origin && git rebase origin/main`, `regen`, `git push --force-with-lease` |
 | `gh pr checks`, `gh run watch`, `gh run view` without `--log-failed`, `gh run list` without `--workflow`, `gh api` of check runs and workflow runs, `statusCheckRollup` | `pr wait <pr>` in the background; `pr jobs <pr>` for the jobs of a run and their durations |
-| a loop that sleeps, `pgrep`, also inside `bash -c` | `run_in_background` and its notification |
+| a loop that sleeps, `pgrep`, a `sleep` over a second, also inside `bash -c` | end the turn: `run_in_background`, a subagent's result, and a message each notify |
 | reading a whole Markdown file of 40KB or more (code: 80KB) | `outline`, then `show` |
 
 It splits a compound command at `;`, `&&`, `||`, `|` and newlines outside quotes and here-documents, and follows `cd`
