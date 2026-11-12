@@ -16,6 +16,14 @@ import (
 	"strings"
 )
 
+// Trunk is the branch pull requests target and branches are rebased onto: redesign-web, the integration branch of
+// #2863, which reaches the default branch, main, in one merge. Its pull requests do not close issues by keyword, so
+// `pr land` closes them itself and leaves their parents open. A variable so that tests can run on either.
+var Trunk = "redesign-web"
+
+// Default is the repository's default branch.
+const Default = "main"
+
 // Repo is one working tree.
 type Repo struct {
 	Root   string // the working tree

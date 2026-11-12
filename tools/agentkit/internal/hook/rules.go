@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
 // denial is why a Bash command is refused: the rule that matched and the reason shown to the agent, which names
@@ -594,32 +596,37 @@ sub:
 		}
 		for _, a := range rest {
 			if isMain(a.text) {
-				return &denial{"merge-main", rebaseReason}
+				return &denial{"merge-main", rebaseReason()}
 			}
 		}
 	case "pull":
 		if has("--rebase", "-r", "--ff-only") {
 			return nil
 		}
-		return &denial{"merge-main", "`git pull` makes a merge commit when the branch has its own commits. " + rebaseReason +
-			" On a checkout of main itself, `git pull --ff-only`."}
+		return &denial{"merge-main", "`git pull` makes a merge commit when the branch has its own commits. " + rebaseReason() +
+			" On a checkout of " + repo.Trunk + " itself, `git pull --ff-only`."}
 	}
 	return nil
 }
 
 var reRev = regexp.MustCompile(`^([0-9a-f]{7,40}|HEAD.*|origin/.*|main|v\d.*|\$.*)$`)
 
+// isMain reports whether ref names the trunk (repo.Trunk), the branch every branch is rebased onto. While the trunk
+// is not the default branch, merging the default branch is allowed: that is how the trunk keeps up with it.
 func isMain(ref string) bool {
+	t := repo.Trunk
 	switch ref {
-	case "main", "origin/main", "upstream/main", "refs/heads/main", "refs/remotes/origin/main":
+	case t, "origin/" + t, "upstream/" + t, "refs/heads/" + t, "refs/remotes/origin/" + t:
 		return true
 	}
 	return false
 }
 
-const rebaseReason = "Bring a branch up to date by rebasing, not by merging main into it: " +
-	"`git fetch origin && git rebase origin/main`, resolve conflicts in generated files with `scripts/agentkit.sh regen` " +
-	"(then `git add` them and `git rebase --continue`), and push with `git push --force-with-lease`."
+func rebaseReason() string {
+	return "Bring a branch up to date by rebasing, not by merging " + repo.Trunk + " into it: " +
+		"`git fetch origin && git rebase origin/" + repo.Trunk + "`, resolve conflicts in generated files with `scripts/agentkit.sh regen` " +
+		"(then `git add` them and `git rebase --continue`), and push with `git push --force-with-lease`."
+}
 
 // ---- reading ---------------------------------------------------------------------------------------------
 

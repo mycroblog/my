@@ -131,7 +131,7 @@ func runPR(r *repo.Repo, args []string) error {
 			o.Issues = append(o.Issues, n)
 			return nil
 		})
-		fs.StringVar(&o.Base, "base", "main", "base branch (a stacked PR's base)")
+		fs.StringVar(&o.Base, "base", repo.Trunk, "base branch (a stacked PR's base)")
 		fs.StringVar(&o.Title, "title", "", "PR title (default: the first commit's subject)")
 		fs.StringVar(&o.Summary, "summary", "", "summary: what and why")
 		summaryFile := fs.String("summary-file", "", "file with the summary")
@@ -235,7 +235,7 @@ func runPR(r *repo.Repo, args []string) error {
 
 func runCheck(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("check", flag.ContinueOnError)
-	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
+	base := fs.String("base", "origin/"+repo.Trunk, "compare with the merge base of this revision")
 	full := fs.Bool("full", false, "run scripts/task.sh check:changed, every check of the changed contexts")
 	fs.Bool("fast", true, "the quick checks of the changed files (the default)")
 	if _, err := parse(fs, args); err != nil {
@@ -279,7 +279,7 @@ func runTidy(r *repo.Repo, args []string) error {
 
 func runRegen(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("regen", flag.ContinueOnError)
-	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
+	base := fs.String("base", "origin/"+repo.Trunk, "compare with the merge base of this revision")
 	dry := fs.Bool("dry-run", false, "print the generators without running them")
 	if _, err := parse(fs, args); err != nil {
 		return err

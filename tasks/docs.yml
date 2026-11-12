@@ -24,9 +24,9 @@ tasks:
       - bin/agentkit docs lint
 
   growth:
-    desc: "Fail when the ADRs, the architecture, agentkit's ADRs, the context maps, or AGENTS.md / CLAUDE.md grew since the merge base with BASE (default origin/main), or a .claude document or the requirements are over their budget (ADR-0000 §6); ALLOW_GROWTH=true, the allow:docs-growth label in CI, lets the growth pass but not a budget"
+    desc: "Fail when the ADRs, the architecture, agentkit's ADRs, the context maps, or AGENTS.md / CLAUDE.md grew since the merge base with BASE (default origin/redesign-web), or a .claude document or the requirements are over their budget (ADR-0000 §6); ALLOW_GROWTH=true, the allow:docs-growth label in CI, lets the growth pass but not a budget"
     vars:
-      BASE: '{{.BASE | default "origin/main"}}'
+      BASE: '{{.BASE | default "origin/redesign-web"}}'
     cmds:
       - scripts/docs-growth.sh --base {{shellQuote .BASE}}{{if eq (.ALLOW_GROWTH | default "") "true"}} --allow-growth{{end}}
 
@@ -36,17 +36,17 @@ tasks:
       - scripts/adr-numbers.sh
 
   # A branch is rebased onto its base, never merged into (agentkit pr open refuses the same commits). The merge
-  # queue's own merge commits are on main, outside BASE..HEAD of a pull request.
+  # queue's own merge commits are on the trunk, outside BASE..HEAD of a pull request.
   pr-commits:
-    desc: 'Fail when BASE..HEAD holds a merge commit: scripts/task.sh docs:pr-commits [BASE=origin/main] [HEAD=HEAD]'
+    desc: 'Fail when BASE..HEAD holds a merge commit: scripts/task.sh docs:pr-commits [BASE=origin/redesign-web] [HEAD=HEAD]'
     vars:
-      BASE: '{{.BASE | default "origin/main"}}'
+      BASE: '{{.BASE | default "origin/redesign-web"}}'
       HEAD: '{{.HEAD | default "HEAD"}}'
     cmds:
       - |
         merges="$(git log --min-parents=2 --format='%h %s' {{shellQuote .BASE}}..{{shellQuote .HEAD}})"
         if [ -n "$merges" ]; then
-          printf '%s..%s has merge commits; a branch is rebased, never merged into:\n%s\nfix: git rebase origin/main && scripts/agentkit.sh regen && git push --force-with-lease\n' {{shellQuote .BASE}} {{shellQuote .HEAD}} "$merges" >&2
+          printf '%s..%s has merge commits; a branch is rebased, never merged into:\n%s\nfix: git rebase origin/redesign-web && scripts/agentkit.sh regen && git push --force-with-lease\n' {{shellQuote .BASE}} {{shellQuote .HEAD}} "$merges" >&2
           exit 1
         fi
 

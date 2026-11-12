@@ -102,15 +102,23 @@ func removeBranch(main, cwd string, wts []worktree, branch string, dry bool) (st
 	return "removed " + what, true
 }
 
-// merged returns the local branches other than main whose commits the merge queue merged into origin/main: the
-// head is an ancestor of origin/main and not on its first-parent line, where a branch without commits of its
+// trunkRef is the remote-tracking ref of the trunk (repo.Trunk).
+func trunkRef() string { return "origin/" + repo.Trunk }
+
+// isTrunk reports whether branch is the trunk or the default branch, which are never tidied or worked on.
+func isTrunk(branch string) bool {
+	return branch == repo.Trunk || branch == repo.Default
+}
+
+// merged returns the local branches other than the trunk whose commits the merge queue merged into the trunk: the
+// head is an ancestor of the trunk and not on its first-parent line, where a branch without commits of its
 // own points. It reads no remote.
 func merged(main string) ([]string, error) {
-	refs, err := repo.Git(main, "for-each-ref", "--format=%(refname:short) %(objectname)", "--merged", "origin/main", "refs/heads")
+	refs, err := repo.Git(main, "for-each-ref", "--format=%(refname:short) %(objectname)", "--merged", trunkRef(), "refs/heads")
 	if err != nil {
 		return nil, err
 	}
-	line, err := repo.Git(main, "rev-list", "--first-parent", "origin/main")
+	line, err := repo.Git(main, "rev-list", "--first-parent", trunkRef())
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +129,7 @@ func merged(main string) ([]string, error) {
 	var out []string
 	for _, l := range nonEmpty(refs) {
 		branch, head, _ := strings.Cut(l, " ")
-		if branch != "main" && !first[head] {
+		if !isTrunk(branch) && !first[head] {
 			out = append(out, branch)
 		}
 	}
@@ -166,7 +174,7 @@ func Tidy(r *repo.Repo, dry bool) ([]string, error) {
 	}
 	why := map[string]string{}
 	for _, b := range done {
-		why[b] = "merged into origin/main"
+		why[b] = "merged into " + trunkRef()
 	}
 	refs, err := repo.Git(main, "for-each-ref", "--format=%(refname:short) %(objectname)", "refs/heads")
 	if err != nil {
@@ -180,7 +188,7 @@ func Tidy(r *repo.Repo, dry bool) ([]string, error) {
 	removed, kept := 0, 0
 	for _, l := range nonEmpty(refs) {
 		branch, head, _ := strings.Cut(l, " ")
-		if branch == "main" {
+		if isTrunk(branch) {
 			continue
 		}
 		reason, ok := why[branch]
@@ -190,7 +198,7 @@ func Tidy(r *repo.Repo, dry bool) ([]string, error) {
 				continue
 			}
 			reason = fmt.Sprintf("PR #%d %s", pr.Number, strings.ToLower(pr.State))
-			if head != pr.HeadRefOid && !ancestor(main, head, "origin/main") {
+			if head != pr.HeadRefOid && !ancestor(main, head, trunkRef()) {
 				kept++
 				lines = append(lines, fmt.Sprintf("kept %s: it has commits that %s does not hold (git log %s..%s)", branch, reason, short7(pr.HeadRefOid), branch))
 				continue

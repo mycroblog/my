@@ -31,9 +31,9 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 4. Build: yourself for one small issue; otherwise up to four subagents at once, `builder` for implementation,
    `routine` for mechanical work, the roles of ADR-0169 for a UI change, which starts with the design, not the code.
    Hand each `scripts/agentkit.sh ctx <n> --quiet`'s file. Rebase their commits onto the branch.
-5. Keep the branch on `origin/main` by rebase (`scripts/agentkit.sh regen` after a conflict in generated files).
-   Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/main`) and push with
-   `--force-with-lease`. `scripts/agentkit.sh check` is the local check; the merge queue runs the rest, so run the
+5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` after a conflict in generated files).
+   Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/redesign-web`), push
+   `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; the merge queue runs the rest, so run the
    full check or the web E2E only to reproduce a failure.
 6. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background. An epic is one pull
    request: `pr open -draft` with its first commit, `pr open` again after each later one (it rewrites the open pull

@@ -112,14 +112,14 @@ tasks:
       - task: apply
 
   lint:
-    desc: Fail on a change of the DB_DIALECT schema since BASE (default origin/main) that can lose or rewrite data
+    desc: Fail on a change of the DB_DIALECT schema since BASE (default origin/redesign-web) that can lose or rewrite data
     # scripts/db-lint.sh. PostgreSQL needs the db:up container (its my_lint database) or DB_LINT_DEV_URL.
     # ALLOW_DESTRUCTIVE=true reports destructive changes without failing on them; the change must still apply. CI sets
     # it from the allow:db-destructive label on pull requests, and always in the merge queue.
     deps: [atlas]
     preconditions: *dialect
     vars:
-      BASE: '{{.BASE | default "origin/main"}}'
+      BASE: '{{.BASE | default "origin/redesign-web"}}'
     cmds:
       - >-
         scripts/db-lint.sh --dialect '{{.DB_DIALECT}}' --dev-url '{{.DB_LINT_DEV_URL}}' --base {{shellQuote .BASE}}

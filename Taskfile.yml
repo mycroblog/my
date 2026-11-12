@@ -60,10 +60,10 @@ tasks:
         if: case " {{.CHECKS}} " in *" site "*) true;; *) false;; esac
 
   check:changed:
-    desc: Run the checks of the contexts changed since BASE (default origin/main) and of their dependents
+    desc: Run the checks of the contexts changed since BASE (default origin/redesign-web) and of their dependents
     vars:
       # The changes since the merge base of BASE and HEAD, uncommitted and untracked files included.
-      BASE: '{{.BASE | default "origin/main"}}'
+      BASE: '{{.BASE | default "origin/redesign-web"}}'
       CONTEXTS:
         sh: scripts/changed-contexts.sh '{{.BASE}}' | tr '\n' ' '
       SELECTED:

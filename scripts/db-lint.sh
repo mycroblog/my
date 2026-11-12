@@ -7,7 +7,7 @@
 #   scripts/db-lint.sh [options]
 #     --dialect sqlite|postgres  the dialect (required)
 #     --dev-url URL              an empty dev database that Atlas may write to (required)
-#     --base REF                 compare with the dialect's schema at the merge base of REF and HEAD (default: origin/main)
+#     --base REF                 compare with the dialect's schema at the merge base of REF and HEAD (default: origin/redesign-web)
 #     --base-dir DIR             compare with the schema files in DIR instead (tests)
 #     --target-dir DIR           the schema files to check (default: the dialect's schema of the working tree)
 #     --allow-destructive        report destructive changes but do not fail on them; the target must still apply
@@ -33,7 +33,7 @@ usage() {
   exit 2
 }
 
-dialect="" dev_url="" base="origin/main" base_dir="" target_dir="" allow=0 atlas="$root/bin/atlas"
+dialect="" dev_url="" base="origin/redesign-web" base_dir="" target_dir="" allow=0 atlas="$root/bin/atlas"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dialect) dialect="${2:-}" && shift ;;

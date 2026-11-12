@@ -553,6 +553,7 @@ case "$1 $2" in
       *number=30) echo '{"data":{"repository":{"issue":{"number":30,"title":"Epic","state":"CLOSED","milestone":{"number":3,"title":"M5"},"parent":null}}}}' ;;
     esac ;;
   "issue close") ;;
+  "issue view") echo '{"state":"OPEN"}' ;;
   "api repos/mycroblog/my/milestones/3") cat "$STATE/milestone" 2>/dev/null || echo '{"open_issues":4,"closed_issues":9,"state":"open"}' ;;
   "api -X") [ "$*" = "api -X PATCH repos/mycroblog/my/milestones/3 -f state=closed" ] || { echo "unexpected: $*" >&2; exit 1; } ;;
   "api repos/mycroblog/my/actions/jobs/"*)
@@ -629,6 +630,35 @@ func TestLandMergesCleansUpAndReports(t *testing.T) {
 	}
 	if b := git(t, main, "branch", "--list", "feat/12-x"); b != "" {
 		t.Error("the branch is still there")
+	}
+}
+
+// On an integration branch GitHub closes nothing by keyword: land closes the issues itself and leaves the parent
+// for the merge of the trunk into the default branch.
+func TestLandIntoIntegrationBranch(t *testing.T) {
+	main, _, state, log, head := landSetup(t)
+	withTrunk(t, "redesign-web")
+	write(t, filepath.Join(state, "pr"), prJSON("MERGED", "UNKNOWN", head, "", false))
+	write(t, filepath.Join(state, "completed"), "2")
+	write(t, filepath.Join(state, "sibling"), "CLOSED")
+	write(t, filepath.Join(state, "other"), "CLOSED")
+	mergeToMain(t, main, "feat/12-x")
+	git(t, main, "push", "-q", "origin", "main:redesign-web")
+	code, out := land(t, main)
+	if code != 0 {
+		t.Fatalf("exit %d:\n%s", code, out)
+	}
+	if want := "#30 Epic: every sub-issue is closed; it closes with the merge of redesign-web into main"; !strings.Contains(out, want) {
+		t.Errorf("output lacks %q:\n%s", want, out)
+	}
+	calls := readLog(t, log)
+	for _, n := range []string{"12", "13"} {
+		if !strings.Contains(calls, "issue close "+n+" -R mycroblog/my --comment Merged into redesign-web by #20.") {
+			t.Errorf("#%s was not closed:\n%s", n, calls)
+		}
+	}
+	if strings.Contains(calls, "issue close 30") {
+		t.Errorf("the parent was closed before the trunk reached main:\n%s", calls)
 	}
 }
 

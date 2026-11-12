@@ -194,16 +194,17 @@ jobs:
           # The pull request's own commits hold no merge commit: a branch is rebased onto main, never merged into.
           # The checkout is the merge of the two with a depth of 2, so the commits are fetched first, one deeper
           # than the pull request has, which leaves the commit it branched from without parents. Dependabot rebases
-          # its branches itself.
+          # its branches itself; `sync/main` is the merge of main into redesign-web, a merge by design.
           - name: docs:pr-commits
             env:
               AUTHOR: ${{ github.event.pull_request.user.login }}
+              HEAD_REF: ${{ github.head_ref }}
               COMMITS: ${{ github.event.pull_request.commits }}
               BASE_SHA: ${{ github.event.pull_request.base.sha }}
               HEAD_SHA: ${{ github.event.pull_request.head.sha }}
             run: |
-              if [ "$AUTHOR" = "dependabot[bot]" ]; then
-                echo "A Dependabot update: skipped."
+              if [ "$AUTHOR" = "dependabot[bot]" ] || [ "$HEAD_REF" = sync/main ]; then
+                echo "A Dependabot update or the merge of main: skipped."
                 exit 0
               fi
               git fetch --no-tags --quiet --depth="$((COMMITS + 1))" origin "$HEAD_SHA"
