@@ -22,6 +22,8 @@
       "Bash(gh pr view *)",
       "Bash(gh pr list *)",
       "Bash(gh pr diff *)",
+      "Bash(gh issue comment -R mycroblog/*)",
+      "Bash(gh pr comment -R mycroblog/*)",
       "Bash(gh pr merge --auto *)",
       "Bash(gh pr merge * --auto*)",
       "Bash(scripts/agentkit.sh *)",
