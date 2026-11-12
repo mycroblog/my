@@ -41,7 +41,8 @@ libSQL / Turso は v0.1.0 では対応せず、将来の候補とする。v0.1.0
 - ID: UUIDv7 を文字列（36 文字）として扱い、`kernel.IDGenerator`（`internal/adapter/system`）で生成する。同じプロセスの中では、時計が小さく巻き戻っても ID は増え続ける（`uuid.NewV7()` は秒をまたいで巻き戻るとシステムの時刻からやり直すので、続けて行った操作の順に並ばなくなる）。時系列ソート可能で、クライアント API のキーセットページングに使える。
   保存の型は、PostgreSQL では `uuid` 型（§5）、SQLite では `TEXT`（§7）にする。
 - 時刻: UTC・ミリ秒精度。SQLite は `INTEGER`（Unix ミリ秒、`STRICT` テーブル）、PostgreSQL は `timestamptz`。ドライバ既定の文字列化は、文字列の順序が時刻の順序と一致しないので使わない。
-- 真偽値: 整数 0/1（SQLite）/ `boolean`（PG）をアダプタで吸収。JSON: SQLite は TEXT、PG は `jsonb`。
+- 真偽値: 整数 0/1（SQLite）/ `boolean`（PG）をアダプタで吸収。
+- JSON 文書: データベースに解釈させないバイト列として、SQLite は `BLOB`、PG は `bytea` に保存し、書いたバイト列のまま読み戻す。JSON の型（`jsonb`）はキーの順序・重複したキー・エスケープを変えるので、方言によって文書の扱いが変わる。
 - 文字列比較・照合順序に依存したロジックを書かない（ユーザー名は保存時に正規化した小文字カラムを別に持つ）。
 
 ### 4. KeyValueStore ポート

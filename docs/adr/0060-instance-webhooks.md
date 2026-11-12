@@ -72,20 +72,10 @@
 
 `webhook` モジュールが所有する。
 
-| テーブル | 分類 | 内容 |
-| --- | --- | --- |
-| `webhook_endpoints` | リソース | `id`, `created_by_user_id`（NULL 可 = CLI）, `created_at` |
-| `webhook_endpoint_revisions` | イベント（版） | `id`, `endpoint_id`, `url`, `description`, `revised_by_user_id`（NULL 可）, `revised_at` |
-| `webhook_endpoint_revision_events` | イベント（版の子） | PK `(revision_id, event_type)`。`event_type` は enum |
-| `webhook_secrets` | イベント | `id`, `endpoint_id`, `sealed_secret`（`bytes`）, `created_by_user_id`（NULL 可）, `created_at`。回転は新しい行。古い行は次の行の `created_at` から 24 時間で使わなくなる |
-| `webhook_endpoint_state_changes` | イベント | `id`, `endpoint_id`, `state`（`enum(enabled, disabled, deleted)`）, `reason`（`enum(admin, gone, failing)`）, `changed_by_user_id`（NULL 可）, `changed_at` |
-| `webhook_messages` | リソース | `id`（= `webhook-id`）, `event_type`, `body`（`bytes`。送る本文そのもの）, `created_at` |
-| `webhook_deliveries` | リソース | `id`, `message_id`, `endpoint_id`, `created_at`。一意 `(message_id, endpoint_id)` |
-| `webhook_delivery_attempts` | イベント | `id`, `delivery_id`, `outcome`（`enum(succeeded, http_error, timeout, connection_error, forbidden_destination)`）, `status_code`（`outcome = http_error` と `succeeded` のときだけ。`CHECK`）, `duration_ms`, `attempted_at` |
-| `webhook_endpoint_heads` | 投影 | `endpoint_id`, `revision_id`, `state`, `secret_id` |
-| `webhook_endpoint_failures` | 投影 | `endpoint_id`（PK）, `first_failure_attempt_id`, `consecutive_failures`。行がある = 成功せずに失敗が続いている。成功した試行で行を消す |
-
-- `body` は「解釈しない文書」（規約 4）で、通報のコメントなどの個人データを含む。`webhook_messages` と配送・試行の行は、作成から 14 日で消す定期ジョブを持つ（FR-803）。
+- 宛先はリソースで、URL と購読するイベントは版、秘密と状態の変化（有効・無効・削除と、その理由）はイベントとして記録する。秘密の回転は新しい秘密を足すだけにする（§2）。
+- メッセージ（送る本文そのもの）と、宛先ごとの配送はリソース、送信の試行はイベントにする。
+- 宛先の現在の版・状態・秘密と、成功せずに続いている失敗（自動の無効化の判定、§3）は投影にする。
+- 本文は「解釈しない文書」（規約 4）で、通報のコメントなどの個人データを含む。メッセージと配送・試行は、作成から 14 日で消す定期ジョブを持つ（FR-803）。
   14 日は固定の値で、ADR-0058 の保持期間の設定（`retention_*`）には足さない。
 - URL は、Discord や Slack のように経路やクエリに秘密を含むことがあるので、ログと監査ログにはホスト名だけを出す。
 

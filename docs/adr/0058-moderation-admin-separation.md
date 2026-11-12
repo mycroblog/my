@@ -91,8 +91,7 @@
 - **Go**: サーバー管理の機能は、そのデータを持つモジュールに置く。設定・規約・ルール・テーマ・お知らせは `instance`、ロールと招待は `identity`、リレーと連合先の配送の状態は `federation`、dead job は `queue`、カスタム絵文字と webhook はそれぞれの ADR（ADR-0051・ADR-0060）が決めるモジュールに置く。`internal/app/moderation` はモデレーションだけを持つ。
   `internal/app/admin` は作らず、`internal/interface/admin` も持たない（[overview §6](../architecture/overview.md#6-リポジトリ構成)）。管理の HTTP の入口は `internal/interface/clientapi` だけにする。
   `clientapi` のハンドラのファイルは、`admin_*.go` の名前で区分ごとにまとめる。
-- **Web**: モデレーションは `features/moderation`、サーバー管理は `features/admin` に置く。両方が使う部品（`RequirePermission`・`RecordList`・`DetailSection`・`useFocusAfterChange`・権限の読み出し）は片方の `index.ts` から出す（web-client.md の規則 A3）。
-  ルートは `routes/moderation.*.tsx` と `routes/admin.*.tsx`、権限の検査（`loadWithPermission`・`AdminError`）は両方の木が使う。
+- **Web**: モデレーションとサーバー管理は、それぞれ別の機能のまとまりとルートの木（§2）に置く。両方が使う部品と権限の検査は、片方の公開する入口から出して、両方の木が使う（web-client.md の規則 A3）。
 
 ### 6. 処分を連合先へ伝える
 

@@ -92,15 +92,10 @@ type CostLine struct {
 
 ### 5. データモデル（ADR-0020）
 
-`finance` が所有する。ADR-0067 §2 の表のほかに次を持つ。
+`finance` が所有する。ADR-0067 §2 のほかに次を持つ。
 
-| テーブル | 分類 | 内容 |
-| --- | --- | --- |
-| `billing_import_runs` | イベント | `id`, `source`（`enum(aws, gcp)`）, `run_key`（ジョブの冪等キー）, `outcome`（`enum(succeeded, failed)`）, `error_kind`（`enum(none, permission, not_enabled, not_found, throttled, request_cap, bytes_cap, invalid_response, unavailable)`）, `requests`（`int`）, `bytes_billed`（`bigint`）, `occurred_at` |
-| `billing_import_reservations` | イベント | `id`（試行の `billing_import_runs.id`）, `source`, `requests`, `reserved_at`。呼ぶ前の予約（§4） |
-| `imported_cost_revisions` | イベント（版） | `id`, `source`, `billing_month`（`string(7)`、`YYYY-MM`）, `service`（`string(200)`）, `charge_type`（`enum(usage, credit, refund, tax, support, fee, adjustment, other)`）, `category`（ADR-0067 の enum）, `starts_on`・`ends_on`（`date`）, `amount_minor`（`bigint`、負も可）, `currency`（`string(3)`）, `kind`（`enum(estimate, final, correction)`）, `run_id`（`billing_import_runs.id`）, `run_key`, `recorded_at`。`(source, billing_month, service, charge_type, run_key)` で一意 |
-| `imported_cost_heads` | 投影 | `(source, billing_month, service, charge_type)`（PK）→ `revision_id`。版を足すトランザクションで同期に更新する（ADR-0020 規約 7） |
-
+- 取り込みの実行（事業者・結果・失敗の種類・呼んだ回数と課金された量）と、呼ぶ前の予約（§4）はイベントにする。
+- 取り込んだ費用は、事業者・請求月・サービス・料金の種類ごとの版（見込み・確定・修正、§3）として記録し、最新の版を指す投影を版を足すトランザクションで同期に更新する（ADR-0020 規約 7）。
 - 実行の記録は試行ごとに 1 行（ジョブの再試行も 1 行ずつ）。管理画面の状態は事業者ごとの最新の行と最新の成功の行から出す。失敗も行で残し、NULL 可の時刻の列で状態を表さない（ADR-0020 規約 4）。
 - 同じジョブの試行が重なって書いても版は 1 行になる: 版は `run_key` を持ち、`(source, billing_month, service, charge_type, run_key)` の一意制約にぶつかった行は書かない（upsert の do nothing）。別の日のジョブが同じ値を取り込んだときは、最新の版との比較（§2）で書かない。
 - 絞り込みの設定（§6）を変えると、同じキーの値が変わり `correction` か `estimate` の版として記録される。過去の確定した月は取り直さないので、変更より前の月の値は変わらない。
