@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/mycroblog/my/tools/agentkit/internal/feedback"
 	"github.com/mycroblog/my/tools/agentkit/internal/gh"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
@@ -59,9 +61,10 @@ func inside(path, dir string) bool {
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
-// removeBranch removes the worktree of branch, if it has one, and the branch, and returns the line to print and
-// whether it removed them (or would, with dry). It keeps a worktree that is the main checkout, the caller's own
-// (cwd), locked, or has uncommitted changes. The caller has checked that the branch's commits are not lost.
+// removeBranch removes the worktree of branch, if it has one, after stopping its dev server, and the branch, and
+// returns the line to print and whether it removed them (or would, with dry). It keeps a worktree that is the main
+// checkout, the caller's own (cwd), locked, has uncommitted changes, or whose dev server does not stop. The caller
+// has checked that the branch's commits are not lost.
 func removeBranch(main, cwd string, wts []worktree, branch string, dry bool) (string, bool) {
 	what := "branch " + branch
 	var wt *worktree
@@ -92,6 +95,14 @@ func removeBranch(main, cwd string, wts []worktree, branch string, dry bool) (st
 		return "would remove " + what, true
 	}
 	if wt != nil {
+		// A dev server left running would watch a directory that is gone; feedback.Stop guards the pid.
+		pid, err := feedback.Stop(wt.path, 10*time.Second)
+		if err != nil {
+			return fmt.Sprintf("kept %s: %v", branch, err), false
+		}
+		if pid != 0 {
+			what = fmt.Sprintf("worktree %s with its dev server (pid %d) and branch %s", wt.path, pid, branch)
+		}
 		if _, err := repo.Git(main, "worktree", "remove", wt.path); err != nil {
 			return fmt.Sprintf("kept %s: %v", branch, err), false
 		}

@@ -16,6 +16,7 @@ import {
   optionsAttribute,
   optionsEvent,
   switchEvent,
+  pickNote,
   updateEvent,
   type Batch,
   type Note,
@@ -280,6 +281,7 @@ function Overlay() {
   const [cleared, setCleared] = useState<string>(() => load(() => localStorage, clearedKey, ""));
   const [open, setOpen] = useState(true);
   const [error, setError] = useState("");
+  const [reasons, setReasons] = useState<Record<string, string>>({});
   const [chosen, setChosen] = useState<Chosen | null>(() => {
     const v = load<Partial<Chosen> | null>(() => localStorage, sizeKey, null);
     return v?.size !== undefined && v.size in sizes ? { size: v.size, rotated: v.rotated === true } : null;
@@ -342,13 +344,14 @@ function Overlay() {
     setDraft(null);
   };
 
-  // A pick is a note on the variant, sent with the other notes.
+  // A pick is a note on the variant, sent with the other notes, with the decider's reason when they wrote one.
   const pick = (set: OptionSet) => {
-    const note = noteOf(`Pick ${set.variant} of ${set.id}.`, set.element, null);
-    keep([
-      ...pending.filter((n) => n.pick?.options !== set.id),
-      { ...note, pick: { options: set.id, variant: set.variant, variants: set.variants } },
-    ]);
+    const { text, pick } = pickNote(
+      { options: set.id, variant: set.variant, variants: set.variants },
+      reasons[set.id] ?? "",
+    );
+    keep([...pending.filter((n) => n.pick?.options !== set.id), { ...noteOf(text, set.element, null), pick }]);
+    setReasons({ ...reasons, [set.id]: "" });
   };
   const sets = optionSets();
 
@@ -653,6 +656,18 @@ function Overlay() {
                   Pick {set.variant}
                 </button>
               </div>
+              <input
+                aria-label={`Reason for the pick of ${set.id}`}
+                placeholder="Reason (optional)"
+                style={{ font, width: "100%", boxSizing: "border-box", marginTop: 4 }}
+                value={reasons[set.id] ?? ""}
+                onChange={(e) => {
+                  setReasons({ ...reasons, [set.id]: e.target.value });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") pick(set);
+                }}
+              />
             </div>
           ))}
         {open && (

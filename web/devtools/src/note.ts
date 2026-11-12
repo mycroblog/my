@@ -65,10 +65,19 @@ interface Reply {
 }
 
 /** The variant the decider picked of an <Options>. */
-interface Pick {
+export interface Pick {
   options: string;
   variant: string;
   variants: string[];
+  /** Why the decider picked it, in one line; absent when they gave none. */
+  reason?: string;
+}
+
+/** The text and the pick of a note that picks a variant: an empty reason still picks, without one. */
+export function pickNote(pick: Omit<Pick, "reason">, reason: string): { text: string; pick: Pick } {
+  const why = reason.replace(/\s+/g, " ").trim();
+  const text = `Pick ${pick.variant} of ${pick.options}${why === "" ? "." : `: ${why}`}`;
+  return { text, pick: why === "" ? pick : { ...pick, reason: why } };
 }
 
 /** What the overlay sends for one note; the dev server adds the id and the layer. */

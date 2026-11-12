@@ -31,12 +31,18 @@ tasks:
 
   # The page where the decider writes notes for an agent (ADR-0168). It prints `catalog: <url>` once it listens;
   # `scripts/agentkit.sh feedback url` prints the same URL, and `feedback wait` in the background receives the notes.
+  # A worktree runs one dev server: while the one it recorded answers, this prints its URL and starts none.
   catalog:
-    desc: Serve the catalog page (web/catalog) on Vite's dev server, with the feedback overlay of @my/devtools
+    desc: Serve the catalog page (web/catalog) on Vite's dev server, with the feedback overlay of @my/devtools, unless the worktree's dev server already runs
     deps: [install]
     dir: web/catalog
     cmds:
-      - bun --bun vite {{.CLI_ARGS}}
+      - |
+        if url=$("{{.ROOT_DIR}}/scripts/agentkit.sh" feedback url 2>/dev/null); then
+          echo "catalog: $url (already running in this worktree)"
+          exit 0
+        fi
+        bun --bun vite {{.CLI_ARGS}}
 
   # What the visual evaluator sees (ADR-0169 §2): web/catalog/shot.ts prints the path of each shot.
   shot:
