@@ -1,13 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The overlay of the dev server (ADR-0168 §1): the decider writes notes on elements or areas, sends them as one
-// batch, and reads the agent's answer next to each note. The plugin of vite.ts loads this module on the dev server
+// batch, reads the agent's answer next to each note, and switches between the variants of an <Options> and picks
+// one (options.tsx). The plugin of vite.ts loads this module on the dev server
 // only. It is a developer tool: plain, in a shadow root of its own, and it sets nothing on the page.
 
 import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { noteOf } from "./capture";
-import { endpoint, updateEvent, type Batch, type Note, type NoteInput, type Rect } from "./note";
+import {
+  endpoint,
+  optionsAttribute,
+  optionsEvent,
+  switchEvent,
+  updateEvent,
+  type Batch,
+  type Note,
+  type NoteInput,
+  type Rect,
+} from "./note";
 
 const pendingKey = "my-devtools:pending";
 const clearedKey = "my-devtools:cleared";
@@ -64,6 +75,44 @@ const find = (selector: string) => {
 
 const page = () => location.pathname + location.search + location.hash;
 
+interface OptionSet {
+  id: string;
+  variant: string;
+  variants: string[];
+  /** The element the variant renders, which a pick is a note on. */
+  element: Element;
+}
+
+// The <Options> on the page (options.tsx), read from their elements. The <Options> of one id switch together, as
+// in a list whose every item is wrapped, so the first stands for them.
+function optionSets(): OptionSet[] {
+  const seen = new Set<string>();
+  const first = Array.from(document.querySelectorAll(`[${optionsAttribute}]`)).filter((el) => {
+    const id = el.getAttribute(optionsAttribute) ?? "";
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  return first.map((el) => {
+    let variants: string[] = [];
+    try {
+      variants = JSON.parse(el.getAttribute("data-variants") ?? "[]") as string[];
+    } catch {
+      // Not an element of <Options>: it lists no variant.
+    }
+    return {
+      id: el.getAttribute(optionsAttribute) ?? "",
+      variant: el.getAttribute("data-variant") ?? "",
+      variants,
+      element: el.firstElementChild ?? el,
+    };
+  });
+}
+
+const switchTo = (id: string, variant: string) => {
+  window.dispatchEvent(new CustomEvent(switchEvent, { detail: { id, variant } }));
+};
+
 function Marker({ label, selector, color }: { label: string; selector: string; color: string }) {
   const el = find(selector);
   if (!el) return null;
@@ -96,6 +145,7 @@ function ReplyLine({ note }: { note: Note }) {
   return (
     <div style={{ marginTop: 4, padding: 4, background: "#eef3fd", borderRadius: 3 }} data-reply={note.id}>
       <strong>{note.reply.kind}</strong>: {note.reply.text}
+      {note.reply.options !== undefined && <div>Switch them under Options: {note.reply.options}</div>}
     </div>
   );
 }
@@ -130,10 +180,12 @@ function Overlay() {
     };
     window.addEventListener("scroll", rerender, true);
     window.addEventListener("resize", rerender);
+    window.addEventListener(optionsEvent, rerender);
     return () => {
       import.meta.hot.off(updateEvent, refresh);
       window.removeEventListener("scroll", rerender, true);
       window.removeEventListener("resize", rerender);
+      window.removeEventListener(optionsEvent, rerender);
     };
   }, []);
 
@@ -158,6 +210,16 @@ function Overlay() {
     keep([...pending, noteOf(draft.text.trim(), draft.element, draft.area)]);
     setDraft(null);
   };
+
+  // A pick is a note on the variant, sent with the other notes.
+  const pick = (set: OptionSet) => {
+    const note = noteOf(`Pick ${set.variant} of ${set.id}.`, set.element, null);
+    keep([
+      ...pending.filter((n) => n.pick?.options !== set.id),
+      { ...note, pick: { options: set.id, variant: set.variant, variants: set.variants } },
+    ]);
+  };
+  const sets = optionSets();
 
   const send = () => {
     setError("");
@@ -353,6 +415,41 @@ function Overlay() {
           </button>
         </div>
         {error && <div style={{ color: "#b3261e", marginTop: 4 }}>{error}</div>}
+        {open &&
+          sets.map((set) => (
+            <div
+              key={set.id}
+              role="group"
+              aria-label={`Options ${set.id}`}
+              style={{ marginTop: 8, paddingTop: 6, borderTop: "1px solid #ddd" }}
+            >
+              <div style={{ color: "#666" }}>Options {set.id}</div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                {set.variants.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    style={{ ...button, fontWeight: v === set.variant ? 700 : 400 }}
+                    aria-pressed={v === set.variant}
+                    onClick={() => {
+                      switchTo(set.id, v);
+                    }}
+                  >
+                    {v}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  style={button}
+                  onClick={() => {
+                    pick(set);
+                  }}
+                >
+                  Pick {set.variant}
+                </button>
+              </div>
+            </div>
+          ))}
         {open && (
           <ol style={{ margin: "8px 0 0", padding: "0 0 0 20px" }}>
             {pending.map((n, i) => (

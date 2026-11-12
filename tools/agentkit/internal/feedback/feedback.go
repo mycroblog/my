@@ -34,7 +34,16 @@ type Rect struct {
 type Reply struct {
 	Kind string `json:"kind"`
 	Text string `json:"text"`
-	At   string `json:"at"`
+	// Options is, for the kind options, the id of the <Options> the agent placed on the page.
+	Options string `json:"options,omitempty"`
+	At      string `json:"at"`
+}
+
+// Pick is the variant the decider picked of an <Options>.
+type Pick struct {
+	Options  string   `json:"options"`
+	Variant  string   `json:"variant"`
+	Variants []string `json:"variants"`
 }
 
 // Note is one note of a batch.
@@ -73,6 +82,7 @@ type Note struct {
 		Step     *string `json:"step"`
 	} `json:"reproduction"`
 	Accessibility string `json:"accessibility"`
+	Pick          *Pick  `json:"pick,omitempty"`
 	Reply         *Reply `json:"reply,omitempty"`
 }
 
@@ -200,11 +210,15 @@ func Wait(ctx context.Context, dir string, interval time.Duration, now func() ti
 	}
 }
 
-// Kinds are the kinds of a reply other than options.
-var Kinds = []string{"fixed", "question"}
+// Kinds are the kinds of a reply: fixed, a question, or options the decider switches between on the page.
+var Kinds = []string{"fixed", "question", "options"}
 
-// Answer writes the reply to a note: "<batch>.<n>", or "<n>" for a note of the newest batch. It returns the note's id.
-func Answer(dir, note, kind, text string, now time.Time) (string, error) {
+// Answer writes the reply to a note: "<batch>.<n>", or "<n>" for a note of the newest batch; options is the id of
+// the <Options> of a reply of the kind options. It returns the note's id.
+func Answer(dir, note, kind, options, text string, now time.Time) (string, error) {
+	if (kind == "options") != (options != "") {
+		return "", fmt.Errorf("a reply of the kind options, and only one, names the id of its <Options> (--options)")
+	}
 	batch, n, ok := strings.Cut(note, ".")
 	if !ok {
 		latest, err := Latest(dir)
@@ -227,7 +241,11 @@ func Answer(dir, note, kind, text string, now time.Time) (string, error) {
 		if m == nil {
 			return fmt.Errorf("note %s is not an object", id)
 		}
-		m["reply"] = map[string]any{"kind": kind, "text": text, "at": now.UTC().Format(time.RFC3339)}
+		reply := map[string]any{"kind": kind, "text": text, "at": now.UTC().Format(time.RFC3339)}
+		if options != "" {
+			reply["options"] = options
+		}
+		m["reply"] = reply
 		return nil
 	})
 }
@@ -253,6 +271,10 @@ func Print(w io.Writer, b *Batch) {
 func PrintNote(w io.Writer, n *Note) {
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format+"\n", a...) }
 	p("%s  %q", n.ID, n.Text)
+	if n.Pick != nil {
+		p("  pick: %s of the options %s (%s): keep it, remove the <Options> and the other variants",
+			n.Pick.Variant, n.Pick.Options, strings.Join(n.Pick.Variants, ", "))
+	}
 	p("  source: %s (layer %s)", or(n.Source, "none: no data-source on the element or its ancestors"), or(n.Layer, "unknown"))
 	t := n.Target
 	p("  element: <%s> %q, selector %q, at %g,%g %gx%g", t.Tag, t.Text, t.Selector, t.Rect.X, t.Rect.Y, t.Rect.Width, t.Rect.Height)
@@ -276,6 +298,10 @@ func PrintNote(w io.Writer, n *Note) {
 		}
 	}
 	if n.Reply != nil {
-		p("  reply (%s, %s): %s", n.Reply.Kind, n.Reply.At, n.Reply.Text)
+		kind := n.Reply.Kind
+		if n.Reply.Options != "" {
+			kind += " " + n.Reply.Options
+		}
+		p("  reply (%s, %s): %s", kind, n.Reply.At, n.Reply.Text)
 	}
 }

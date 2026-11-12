@@ -9,6 +9,15 @@ export const endpoint = "/__my-devtools";
 /** The custom event of Vite's HMR channel that tells the overlay a batch file changed. */
 export const updateEvent = "my-devtools:update";
 
+/** The DOM event that switches an <Options> to a variant: detail {id, variant}. */
+export const switchEvent = "my-devtools:switch";
+
+/** The DOM event an <Options> dispatches when it mounts or switches, for the overlay to read the options again. */
+export const optionsEvent = "my-devtools:options";
+
+/** The attribute that marks the element of an <Options>, holding its id. */
+export const optionsAttribute = "data-my-devtools-options";
+
 export interface Rect {
   x: number;
   y: number;
@@ -48,9 +57,18 @@ interface Reproduction {
 }
 
 interface Reply {
-  kind: "fixed" | "question";
+  kind: "fixed" | "question" | "options";
   text: string;
+  /** For options, the id of the <Options> the agent placed on the page. */
+  options?: string;
   at: string;
+}
+
+/** The variant the decider picked of an <Options>. */
+interface Pick {
+  options: string;
+  variant: string;
+  variants: string[];
 }
 
 /** What the overlay sends for one note; the dev server adds the id and the layer. */
@@ -65,6 +83,8 @@ export interface NoteInput {
   reproduction: Reproduction;
   /** An outline of the accessibility tree of the element or area, one node per line. */
   accessibility: string;
+  /** On a note that picks a variant, the pick. */
+  pick?: Pick;
 }
 
 export interface Note extends NoteInput {

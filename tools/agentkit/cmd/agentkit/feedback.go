@@ -26,7 +26,13 @@ which the dev server writes to .tmp/feedback/<batch>.json.
   feedback show [<batch>|<note>]
         print a batch (default: the newest) or one note: its source, layer, state, and accessibility outline
   feedback reply <note> [--kind fixed|question] <text>
-        answer a note (<batch>.<n>, or <n> in the newest batch); the overlay shows the answer next to it`
+        answer a note (<batch>.<n>, or <n> in the newest batch); the overlay shows the answer next to it
+  feedback reply <note> --kind options --options <id> <text>
+        answer with live options: first wrap the variants in code,
+          import { Options } from "@my/devtools/options";
+          <Options id="<id>" variants={{ square: <Swatch />, round: <Swatch round /> }} />
+        the decider switches between them in the overlay and picks one, which arrives as a note with a pick;
+        keep that variant and remove the <Options> (a production build fails while one is left)`
 
 func runFeedback(r *repo.Repo, args []string) error {
 	if len(args) == 0 || args[0] == "help" || args[0] == "-h" || args[0] == "--help" {
@@ -89,15 +95,16 @@ func runFeedback(r *repo.Repo, args []string) error {
 		return fmt.Errorf("batch %s has no note %s", batch, ref)
 	case "reply":
 		fs := flag.NewFlagSet("feedback reply", flag.ContinueOnError)
-		kind := fs.String("kind", "fixed", "fixed or question")
+		kind := fs.String("kind", "fixed", "fixed, question, or options")
+		options := fs.String("options", "", "with --kind options: the id of the <Options> on the page")
 		pos, err := parse(fs, args[1:])
 		if err != nil || len(pos) < 2 {
-			return fmt.Errorf("usage: agentkit feedback reply <note> [--kind fixed|question] <text>")
+			return fmt.Errorf("usage: agentkit feedback reply <note> [--kind fixed|question|options] [--options id] <text>")
 		}
 		if !slices.Contains(feedback.Kinds, *kind) {
 			return fmt.Errorf("--kind %q: expected one of %s", *kind, strings.Join(feedback.Kinds, ", "))
 		}
-		id, err := feedback.Answer(dir, pos[0], *kind, strings.Join(pos[1:], " "), time.Now())
+		id, err := feedback.Answer(dir, pos[0], *kind, *options, strings.Join(pos[1:], " "), time.Now())
 		if err != nil {
 			return err
 		}

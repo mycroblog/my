@@ -84,7 +84,10 @@ function refuse(): Plugin {
     enforce: "pre",
     resolveId(id, importer) {
       if (id === "@my/devtools" || id.startsWith("@my/devtools/")) {
-        this.error(`${importer ?? "a module"} imports ${id}: only the dev server loads @my/devtools (ADR-0168 §3).`);
+        this.error(
+          `${importer ?? "a module"} imports ${id}: only the dev server loads @my/devtools (ADR-0168 §3). ` +
+            "Keep the variant the decider picked of each <Options> and remove the rest.",
+        );
       }
       return null;
     },

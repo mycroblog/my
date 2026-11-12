@@ -56,6 +56,7 @@ and sends them as one batch, which the dev server writes to `.tmp/feedback/<batc
 | Receive | `feedback wait` **in the background**: returns with the oldest batch no wait has delivered, so a send notifies the session; run it again after each batch |
 | Read | `feedback show [<batch>\|<note>]`: each note with its source (`file:line`), layer (the package), page and state, and an outline of its accessibility tree. A page without a router or an E2E scenario records the page instead; open it with Playwright at the note's viewport |
 | Answer | `feedback reply <note> [--kind fixed\|question] <text>`: the overlay shows the answer next to the note at once |
+| Offer options | wrap the variants in `<Options id variants>` of `@my/devtools/options`, then `feedback reply <note> --kind options --options <id> <text>`: the decider switches between them in the overlay, and the pick arrives as a note. Keep the picked variant and remove the `<Options>`, which a production build refuses |
 
 ## The context map
 

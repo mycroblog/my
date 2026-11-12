@@ -85,12 +85,12 @@ func TestWaitTimesOut(t *testing.T) {
 func TestAnswerKeepsUnknownFields(t *testing.T) {
 	dir := Dir(t.TempDir())
 	write(t, dir, "20261112-153045-0001")
-	id, err := Answer(dir, "1", "question", "which weight?", clock())
+	id, err := Answer(dir, "1", "question", "", "which weight?", clock())
 	if err != nil || id != "20261112-153045-0001.1" {
 		t.Fatalf("Answer = %q, %v", id, err)
 	}
 	b, err := Load(dir, "20261112-153045-0001")
-	if err != nil || b.Notes[0].Reply == nil || *b.Notes[0].Reply != (Reply{"question", "which weight?", "2026-11-12T07:00:00Z"}) {
+	if err != nil || b.Notes[0].Reply == nil || *b.Notes[0].Reply != (Reply{Kind: "question", Text: "which weight?", At: "2026-11-12T07:00:00Z"}) {
 		t.Fatalf("reply = %+v, %v", b.Notes[0].Reply, err)
 	}
 	data, _ := os.ReadFile(filepath.Join(dir, "20261112-153045-0001.json"))
@@ -104,8 +104,37 @@ func TestAnswerKeepsUnknownFields(t *testing.T) {
 	if err := json.Unmarshal(data, &raw); err != nil || !raw.Notes[0].Extra.Kept {
 		t.Fatalf("the unknown field was lost: %s", data)
 	}
-	if _, err := Answer(dir, "20261112-153045-0001.2", "fixed", "x", clock()); err == nil {
+	if _, err := Answer(dir, "20261112-153045-0001.2", "fixed", "", "x", clock()); err == nil {
 		t.Fatal("Answer to a note the batch does not have succeeded")
+	}
+}
+
+func TestAnswerWithOptions(t *testing.T) {
+	dir := Dir(t.TempDir())
+	write(t, dir, "20261112-153045-0001")
+	if _, err := Answer(dir, "1", "options", "", "two shapes", clock()); err == nil {
+		t.Fatal("options without an id succeeded")
+	}
+	if _, err := Answer(dir, "1", "fixed", "swatch", "done", clock()); err == nil {
+		t.Fatal("an id on a fixed reply succeeded")
+	}
+	if _, err := Answer(dir, "1", "options", "swatch", "two shapes", clock()); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := Load(dir, "20261112-153045-0001")
+	var out bytes.Buffer
+	PrintNote(&out, &b.Notes[0])
+	if !strings.Contains(out.String(), "reply (options swatch, 2026-11-12T07:00:00Z): two shapes") {
+		t.Fatalf("PrintNote:\n%s", out.String())
+	}
+}
+
+func TestPrintPick(t *testing.T) {
+	n := Note{ID: "b.1", Text: "Pick round of swatch.", Pick: &Pick{Options: "swatch", Variant: "round", Variants: []string{"square", "round"}}}
+	var out bytes.Buffer
+	PrintNote(&out, &n)
+	if !strings.Contains(out.String(), "pick: round of the options swatch (square, round)") {
+		t.Fatalf("PrintNote:\n%s", out.String())
 	}
 }
 
