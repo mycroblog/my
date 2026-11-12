@@ -258,7 +258,7 @@ func TestFastPlanTofuContext(t *testing.T) {
 		changed []string
 		want    []string
 	}{
-		{[]string{"docs/reference/configuration.md"}, append([]string{"docs:lint", "docs:rules"}, tofuConsistency...)},
+		{[]string{"docs/reference/configuration.md"}, append([]string{"docs:lint", "docs:rules", "agentkit:map-check"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/main.tf"}, append([]string{"tofu fmt"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/gone.json"}, tofuConsistency},
 		{[]string{"app/web/src/a.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
@@ -295,7 +295,8 @@ func TestFastPlan(t *testing.T) {
 		{[]string{"tools/agentkit/x/x.go"}, []string{"gofmt", "go vet tools/agentkit (1 packages)"}},
 		{[]string{"app/web/src/a.tsx", "app/web/src/gone.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
 		{[]string{"pkg/mykit/ts/src/b.ts"}, []string{"bun fmt"}},
-		{[]string{"docs/a.md"}, []string{"docs:lint", "docs:rules"}},
+		{[]string{"docs/a.md"}, []string{"docs:lint", "docs:rules", "agentkit:map-check"}},
+		{[]string{"internal/app/x/context-map.yaml"}, []string{"agentkit:map-check"}},
 		{[]string{"scripts/a.sh"}, []string{"shellcheck"}},
 		{[]string{"locales/en/x.json"}, []string{"i18n:lint"}},
 		{[]string{"schema/sqlite/01-a.sql", "queries/a.sql", "api/spec/a.yaml", "internal/platform/job_types.go"},
