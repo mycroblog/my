@@ -15,15 +15,14 @@ import (
 
 // The instance theme (ADR-0059, FR-605): overrides of the web client's design tokens and one custom
 // stylesheet of the administrator. The overridable tokens, their kinds, defaults, and bounds, and the
-// contrast pairs of the colors are generated from the design tokens (theme_tokens.gen.go, committed).
+// contrast pairs of the colors are generated from @my/design-tokens (theme_tokens.gen.go, committed).
 
 // ThemeTokenKind is the kind of value a token holds, which decides the shape of its overrides.
 type ThemeTokenKind string
 
 // Kinds of theme tokens.
 const (
-	// ThemeTokenColor is a color with a value per color scheme, each #rrggbb (#rrggbbaa when
-	// ThemeToken.Alpha).
+	// ThemeTokenColor is a color with a value per color scheme, each #rrggbb.
 	ThemeTokenColor ThemeTokenKind = "color"
 	// ThemeTokenLength is 0 or a rem or px length, bounded in rem (16px each).
 	ThemeTokenLength ThemeTokenKind = "length"
@@ -31,12 +30,8 @@ const (
 	ThemeTokenNumber ThemeTokenKind = "number"
 	// ThemeTokenFontFamily is a comma-separated list of font family names.
 	ThemeTokenFontFamily ThemeTokenKind = "font-family"
-	// ThemeTokenShadow is none or up to MaxShadowLayers box shadows.
-	ThemeTokenShadow ThemeTokenKind = "shadow"
 	// ThemeTokenDuration is a time in ms or s, bounded in ms.
 	ThemeTokenDuration ThemeTokenKind = "duration"
-	// ThemeTokenEasing is an easing keyword or a cubic-bezier() function.
-	ThemeTokenEasing ThemeTokenKind = "easing"
 )
 
 // Limits of a theme.
@@ -47,21 +42,15 @@ const (
 	MaxFontFamilies = 30
 	// MaxFontFamilyLength bounds a font-family value, in characters.
 	MaxFontFamilyLength = 1000
-	// MaxShadowLayers bounds the layers of a shadow value.
-	MaxShadowLayers = 4
-	// MaxShadowOffsetRem bounds every length of a shadow, in rem.
-	MaxShadowOffsetRem = 4
 )
 
 // ThemeToken is a design token that a theme may override, named without the leading "--".
 type ThemeToken struct {
 	Name string
 	Kind ThemeTokenKind
-	// Light and Dark are the defaults of a color token, as #rrggbb (#rrggbbaa when Alpha).
+	// Light and Dark are the defaults of a color token, as #rrggbb.
 	Light, Dark string
-	// Alpha reports whether a color override may be translucent.
-	Alpha bool
-	// Default is the default of a token of another kind, as theme.css writes it.
+	// Default is the default of a token of another kind, as @my/design-tokens writes it.
 	Default string
 	// Min and Max bound a length (in rem), a number, or a duration (in ms), inclusive. Both are 0
 	// for the other kinds.
@@ -75,7 +64,7 @@ type ContrastPair struct {
 	Minimum float64
 }
 
-// ThemeTokens returns the overridable tokens, in the order of theme.css.
+// ThemeTokens returns the overridable tokens, in the order of @my/design-tokens.
 func ThemeTokens() []ThemeToken { return slices.Clone(themeTokens) }
 
 // ThemeContrastPairs returns the contrast pairs of the color tokens.
@@ -313,7 +302,7 @@ func normalizeTokenValue(t ThemeToken, v ThemeTokenValue) (ThemeTokenValue, []Th
 			in     string
 			out    *string
 		}{{SchemeLight, v.Light, &out.Light}, {SchemeDark, v.Dark, &out.Dark}} {
-			c, ok := normalizeColor(side.in, t.Alpha)
+			c, ok := normalizeColor(side.in)
 			if !ok {
 				problems = append(problems, ThemeProblem{Code: ThemeInvalidValue, Token: t.Name, Scheme: side.scheme})
 				continue
@@ -335,24 +324,17 @@ func normalizeTokenValue(t ThemeToken, v ThemeTokenValue) (ThemeTokenValue, []Th
 }
 
 var (
-	hexColorPattern      = regexp.MustCompile(`^#[0-9a-f]{6}$`)
-	hexAlphaColorPattern = regexp.MustCompile(`^#[0-9a-f]{6}(?:[0-9a-f]{2})?$`)
-	lengthPattern        = regexp.MustCompile(`^(?:0|(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
-	numberPattern        = regexp.MustCompile(`^\d{1,2}(?:\.\d{1,4})?$`)
-	durationPattern      = regexp.MustCompile(`^(\d{1,5}(?:\.\d{1,3})?)(ms|s)$`)
-	cubicBezierPattern   = regexp.MustCompile(`^cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)$`)
-	quotedFamilyPattern  = regexp.MustCompile(`^"[^"\\;{}<>\x00-\x1f]{1,100}"$`)
-	plainFamilyPattern   = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z0-9-]+)*$`)
-	shadowLengthPattern  = regexp.MustCompile(`^(?:0|-?(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
+	hexColorPattern     = regexp.MustCompile(`^#[0-9a-f]{6}$`)
+	lengthPattern       = regexp.MustCompile(`^(?:0|(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
+	numberPattern       = regexp.MustCompile(`^\d{1,2}(?:\.\d{1,4})?$`)
+	durationPattern     = regexp.MustCompile(`^(\d{1,5}(?:\.\d{1,3})?)(ms|s)$`)
+	quotedFamilyPattern = regexp.MustCompile(`^"[^"\\;{}<>\x00-\x1f]{1,100}"$`)
+	// An unquoted family name is a CSS identifier, which may start with a hyphen (-apple-system).
+	plainFamilyPattern = regexp.MustCompile(`^-?[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z0-9-]+)*$`)
 )
 
-var easingKeywords = []string{"linear", "ease", "ease-in", "ease-out", "ease-in-out"}
-
-func normalizeColor(s string, alpha bool) (string, bool) {
+func normalizeColor(s string) (string, bool) {
 	c := strings.ToLower(strings.TrimSpace(s))
-	if alpha {
-		return c, hexAlphaColorPattern.MatchString(c)
-	}
 	return c, hexColorPattern.MatchString(c)
 }
 
@@ -403,45 +385,14 @@ func normalizeValue(t ThemeToken, s string) (string, ThemeProblemCode, bool) {
 		if !inRange(t, n) {
 			return "", ThemeOutOfRange, false
 		}
-	case ThemeTokenEasing:
-		if !validEasing(v) {
-			return "", ThemeInvalidValue, false
-		}
 	case ThemeTokenFontFamily:
 		if !validFontFamily(v) {
 			return "", ThemeInvalidValue, false
 		}
-	case ThemeTokenShadow:
-		out, ok := normalizeShadow(v)
-		if !ok {
-			return "", ThemeInvalidValue, false
-		}
-		v = out
 	default:
 		return "", ThemeInvalidValue, false
 	}
 	return v, "", true
-}
-
-func validEasing(v string) bool {
-	if slices.Contains(easingKeywords, v) {
-		return true
-	}
-	m := cubicBezierPattern.FindStringSubmatch(v)
-	if m == nil {
-		return false
-	}
-	for i, s := range m[1:] {
-		n, err := strconv.ParseFloat(s, 64)
-		if err != nil {
-			return false
-		}
-		// The x coordinates (1st and 3rd) must be in [0, 1]; the y coordinates may overshoot a little.
-		if i%2 == 0 && (n < 0 || n > 1) || i%2 == 1 && (n < -2 || n > 3) {
-			return false
-		}
-	}
-	return true
 }
 
 func validFontFamily(v string) bool {
@@ -459,39 +410,6 @@ func validFontFamily(v string) bool {
 		}
 	}
 	return true
-}
-
-// normalizeShadow checks a shadow value: none, or up to MaxShadowLayers comma-separated layers of
-// [inset] <x> <y> [<blur> [<spread>]] <#color>, each length 0 or rem / px within MaxShadowOffsetRem.
-func normalizeShadow(v string) (string, bool) {
-	if v == "none" {
-		return v, true
-	}
-	layers := strings.Split(v, ",")
-	if len(layers) > MaxShadowLayers {
-		return "", false
-	}
-	out := make([]string, len(layers))
-	for i, layer := range layers {
-		parts := strings.Fields(layer)
-		if len(parts) > 0 && parts[0] == "inset" {
-			parts = parts[1:]
-		}
-		if len(parts) < 3 || len(parts) > 5 {
-			return "", false
-		}
-		if _, ok := normalizeColor(parts[len(parts)-1], true); !ok {
-			return "", false
-		}
-		for _, p := range parts[:len(parts)-1] {
-			m := shadowLengthPattern.FindStringSubmatch(p)
-			if m == nil || lengthRem(m) > MaxShadowOffsetRem {
-				return "", false
-			}
-		}
-		out[i] = strings.ToLower(strings.Join(strings.Fields(layer), " "))
-	}
-	return strings.Join(out, ", "), true
 }
 
 // rgba is a color in linear-light sRGB with straight alpha.
@@ -553,6 +471,15 @@ func ThemeColor(tokens []ThemeTokenValue, name string, scheme ColorScheme) strin
 		return dark
 	}
 	return light
+}
+
+// DefaultThemeColor returns the default of the color token name in the dark color scheme, or in
+// the light one, or "" for a name that is not a color token.
+func DefaultThemeColor(name string, dark bool) string {
+	if dark {
+		return ThemeColor(nil, name, SchemeDark)
+	}
+	return ThemeColor(nil, name, SchemeLight)
 }
 
 func checkContrast(tokens []ThemeTokenValue) []ThemeProblem {

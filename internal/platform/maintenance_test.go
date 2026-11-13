@@ -15,7 +15,7 @@ import (
 )
 
 // The maintenance mode passes the middleware that needs no adapter (ADR-0088 §10): the security headers of
-// ADR-0019, the request ID, and the page's own CSP, in the default theme of theme.css.
+// ADR-0019, the request ID, and the page's own CSP, in the default theme of @my/design-tokens.
 func TestMaintenanceApp(t *testing.T) {
 	env := map[string]string{"MY_HOST": "example.test", "MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unreachable.invalid/my"}
 	cfg, _, err := config.LoadMaintenance(config.Source{LookupEnv: func(k string) (string, bool) { v, ok := env[k]; return v, ok }})
@@ -44,15 +44,15 @@ func TestMaintenanceApp(t *testing.T) {
 // MaintenancePage applies the instance theme's overrides of the tokens the page uses (ADR-0059 §2).
 func TestMaintenancePageTheme(t *testing.T) {
 	p := platform.MaintenancePage(&config.Config{Host: "example.test", MaintenanceServerName: "Example"}, []instance.ThemeTokenValue{
-		{Token: "color-accent", Light: "#112233", Dark: "#445566"},
+		{Token: "color-accent-text", Light: "#112233", Dark: "#445566"},
 		{Token: "font-sans", Value: "Georgia, serif"},
-		{Token: "radius-md", Value: "1rem"},
+		{Token: "radius-control", Value: "1rem"},
 	})
-	if p.ServerName != "Example" || p.Theme.Light["color-accent"] != "#112233" || p.Theme.Dark["color-accent"] != "#445566" ||
+	if p.ServerName != "Example" || p.Theme.Light["color-accent-text"] != "#112233" || p.Theme.Dark["color-accent-text"] != "#445566" ||
 		p.Theme.Dark["font-sans"] != "Georgia, serif" {
 		t.Errorf("page = %+v", p)
 	}
-	if _, ok := p.Theme.Light["radius-md"]; ok {
+	if _, ok := p.Theme.Light["radius-control"]; ok {
 		t.Error("the theme has a token the page does not use")
 	}
 }

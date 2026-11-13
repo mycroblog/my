@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
 	"github.com/mycroblog/my/schema"
+	"github.com/mycroblog/my/schema/ddl"
 )
 
 // query returns the first column of the rows of sql on the database at url.
@@ -259,6 +260,28 @@ func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 	after := columns(t, url)
 	if slices.Contains(after, "probe_extra") || slices.Contains(after, table+".probe_extra") {
 		t.Errorf("the dropped table and column remain: %q", after)
+	}
+}
+
+// A prepare deletes the rows that a tightened CHECK refuses before the plan adds it; on a
+// database without its table it does not run.
+func TestApplySchemaRunsThePreparesFirst(t *testing.T) {
+	pgtest.RequireRealServer(t)
+	url := pgtest.NewEmptyDatabase(t)
+	opts := schemaapply.Options{Prepares: []ddl.Prepare{{Table: "tokens", SQL: "DELETE FROM tokens WHERE token NOT IN ('kept')"}}}
+	mustApply(t, url, "CREATE TABLE tokens (token text NOT NULL CHECK (token IN ('kept', 'retired')));", opts)
+	c, err := pgx.Connect(t.Context(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = c.Exec(t.Context(), "INSERT INTO tokens (token) VALUES ('kept'), ('retired')")
+	_ = c.Close(context.WithoutCancel(t.Context()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustApply(t, url, "CREATE TABLE tokens (token text NOT NULL CHECK (token IN ('kept')));", opts)
+	if got := query(t, url, "SELECT token FROM tokens"); !slices.Equal(got, []string{"kept"}) {
+		t.Errorf("tokens after the apply = %v, want [kept]", got)
 	}
 }
 

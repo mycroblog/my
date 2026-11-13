@@ -100,14 +100,14 @@ func TestMaintenanceExportReadsTheDatabase(t *testing.T) {
 	}
 	mustInstance(t, "", "set", "name", "Example Social")
 	mustInstance(t, "", "set", "default_locale", "ja")
-	mustInstance(t, `{"tokens":[{"token":"color-accent","light":"#123456","dark":"#abcdef"}],"custom_css":"body{display:none}"}`, "theme", "set")
+	mustInstance(t, `{"tokens":[{"token":"color-accent-text","light":"#123456","dark":"#abcdef"}],"custom_css":"body{display:none}"}`, "theme", "set")
 	dir := t.TempDir()
 	code, _, stderr := runMaintenanceCmd(t, "export", "-out", dir)
 	if code != 0 || stderr != "" {
 		t.Fatalf("export = %d, stderr %q", code, stderr)
 	}
 	page := readFile(t, filepath.Join(dir, "ja.html"))
-	for _, want := range []string{`<html lang="ja"`, `<p class="server" dir="auto">Example Social</p>`, "--color-accent:#123456;", "--color-accent:#abcdef;"} {
+	for _, want := range []string{`<html lang="ja"`, `<p class="server" dir="auto">Example Social</p>`, "--color-accent-text:#123456;", "--color-accent-text:#abcdef;"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("ja.html lacks %s:\n%s", want, page)
 		}

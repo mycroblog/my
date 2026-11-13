@@ -106,26 +106,16 @@ CREATE TABLE instance_theme_revisions (
 
 -- Event (child of a revision): the value of one overridden design token in one color scheme
 -- (light and dark for a color token, all for the others). The token list is generated from the
--- web client's theme.css (internal/domain/instance/theme_tokens.gen.go).
+-- web client's @my/design-tokens (internal/domain/instance/theme_tokens.gen.go).
 CREATE TABLE instance_theme_tokens (
   revision_id uuid NOT NULL,
   token text COLLATE "C" NOT NULL CHECK (token IN (
-    'color-surface', 'color-surface-raised', 'color-surface-sunken', 'color-soft', 'color-fg',
-   'color-fg-muted', 'color-accent', 'color-accent-hover', 'color-accent-fg', 'color-accent-fill',
-   'color-accent-fill-hover', 'color-accent-fill-fg', 'color-danger', 'color-danger-fg',
-   'color-danger-bg', 'color-success', 'color-success-fg', 'color-success-bg', 'color-warning',
-   'color-warning-fg', 'color-warning-bg', 'color-border', 'color-border-strong', 'color-focus',
-   'color-toast', 'color-toast-fg', 'color-toast-action', 'color-toast-success',
-   'color-toast-danger', 'color-toast-muted', 'color-overlay', 'color-alt-overlay', 'color-highlight-mention', 'color-highlight-hashtag', 'color-highlight-url',
-   'color-highlight-shortcode', 'color-highlight-over', 'color-pressed', 'color-pressed-fg', 'color-media-chip', 'color-wave', 'color-spark', 'color-data-1', 'color-data-2', 'color-data-3', 'font-sans',
-   'font-mono', 'font-serif', 'text-xs', 'text-xs--line-height', 'text-sm', 'text-sm--line-height',
-   'text-base', 'text-base--line-height', 'text-lg', 'text-lg--line-height', 'text-xl',
-   'text-xl--line-height', 'text-2xl', 'text-2xl--line-height', 'text-3xl', 'text-3xl--line-height',
-   'text-4xl', 'text-4xl--line-height', 'text-5xl', 'text-5xl--line-height',
-   'spacing', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-2xl', 'elevation-card',
-   'elevation-sm', 'elevation-md', 'elevation-lg', 'elevation-soft-raised', 'elevation-soft-inset', 'ease-standard', 'ease-enter', 'ease-exit', 'ease-celebrate',
-   'transition-duration-fast', 'transition-duration-normal', 'transition-duration-slow',
-   'default-transition-duration', 'default-transition-timing-function'
+    'font-sans', 'text-tagline', 'text-tagline--line-height', 'text-title', 'text-title--line-height',
+    'text-body', 'text-body--line-height', 'text-caption', 'text-caption--line-height',
+    'color-surface', 'color-text', 'color-muted-text', 'color-accent', 'color-on-accent',
+    'color-accent-text', 'color-surface-raised', 'color-surface-raised-hover',
+    'color-surface-raised-pressed', 'color-surface-hover', 'color-surface-pressed', 'color-quote-bar',
+    'radius-control', 'radius-overlay', 'duration-spin'
   )),
   scheme text COLLATE "C" NOT NULL CHECK (scheme IN ('light', 'dark', 'all')),
   value text NOT NULL,

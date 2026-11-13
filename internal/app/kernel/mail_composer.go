@@ -25,6 +25,36 @@ type MailSite struct {
 	// Logo is the instance's own logo for the header of the HTML version (ADR-0059), nil for
 	// none; LogoDark replaces it on dark backgrounds where the client follows the color scheme.
 	Logo, LogoDark *MailLogo
+	// Colors are the colors of the HTML version.
+	Colors MailColors
+}
+
+// MailColors are the colors of the HTML version in the light and the dark color scheme.
+type MailColors struct {
+	Light, Dark MailPalette
+}
+
+// MailPalette is one color scheme of the HTML version, each color #rrggbb: the backdrop around
+// the card, the card's surface, its text and muted text, the button's fill and label, the links,
+// and the rule above the signature.
+type MailPalette struct {
+	Backdrop, Surface, Text, MutedText, Accent, OnAccent, AccentText, Rule string
+}
+
+// MailColorsFrom returns the colors of the HTML version from the design tokens (ADR-0059,
+// ADR-0086 §2): color returns the #rrggbb of a color token, named without "--", in the light or
+// the dark color scheme. The card is the surface that every contrast pair of the tokens is held
+// on, and the backdrop around it is the raised surface.
+func MailColorsFrom(color func(token string, dark bool) string) MailColors {
+	palette := func(dark bool) MailPalette {
+		return MailPalette{
+			Backdrop: color("color-surface-raised", dark), Surface: color("color-surface", dark),
+			Text: color("color-text", dark), MutedText: color("color-muted-text", dark),
+			Accent: color("color-accent", dark), OnAccent: color("color-on-accent", dark),
+			AccentText: color("color-accent-text", dark), Rule: color("color-quote-bar", dark),
+		}
+	}
+	return MailColors{Light: palette(false), Dark: palette(true)}
 }
 
 // MailLogo is a logo image of the HTML version: one https URL that is the same for every
@@ -111,8 +141,9 @@ var mailText = template.Must(template.New("mail").Parse(
 {{with .Unsubscribe}}{{.}}
 {{end}}`))
 
-// mailFrame is the HTML layout, a committed file compiled with MJML. html/template escapes every value for its context, and turns a
-// URL of a scheme other than http, https, and mailto into "#ZgotmplZ".
+// mailFrame is the HTML layout, in the table markup of MJML, with the colors of MailSite.Colors.
+// html/template escapes every value for its context, and turns a URL of a scheme other than http,
+// https, and mailto into "#ZgotmplZ".
 //
 //go:embed mail_frame.gen.html
 var mailFrame string
@@ -190,12 +221,13 @@ func (c MailComposer) html(d MailDraft, contact string) (string, error) {
 		Site             MailSite
 		SiteURL          string
 		Logo, LogoDark   *MailLogo
+		Colors           MailColors
 		Contact          string
 		Reason           string
 		Unsubscribe      *htmlLine
 	}{
 		Lang: "en", Dir: "ltr", Start: "left", Subject: d.Subject, Paragraphs: d.Paragraphs,
-		Site: MailSite{Name: oneLine(c.Site.Name)}, SiteURL: httpsURL(c.Site.URL), Contact: contact, Reason: d.Reason,
+		Site: MailSite{Name: oneLine(c.Site.Name)}, SiteURL: httpsURL(c.Site.URL), Colors: c.Site.Colors, Contact: contact, Reason: d.Reason,
 	}
 	if c.Words != nil {
 		if l := c.Words.Locale(); l != "" {

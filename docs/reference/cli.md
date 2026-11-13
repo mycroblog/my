@@ -2239,8 +2239,8 @@ Usage:
 Reads and replaces the theme of the web client: overrides of the design tokens
 and a custom CSS, as JSON of the admin API's PUT /api/v1/admin/theme:
 
-  {"tokens": [{"token": "color-accent", "light": "#1447e6", "dark": "#92c5fe"},
-              {"token": "radius-md", "value": "0.25rem"}],
+  {"tokens": [{"token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80"},
+              {"token": "radius-control", "value": "0.25rem"}],
    "custom_css": ""}
 
 set replaces the whole theme (tokens left out go back to their defaults; no

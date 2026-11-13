@@ -86,7 +86,7 @@ tasks:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/app-data --workspace web/devtools --workspace web/catalog
 
   test:
-    desc: Run the tests of web/design-tokens, web/design-system, web/app-components, web/app-data and web/devtools
+    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/app-data and web/devtools
     deps: [install, ":i18n:compile"]
     cmds:
       - cd web/design-tokens && bun test
@@ -95,6 +95,15 @@ tasks:
       # The condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
       - cd web/app-data && bun test --conditions=@mycroblog/source
       - cd web/devtools && bun test
+
+  # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
+  # generator reads no node_modules.
+  tokens-gen:
+    desc: Regenerate internal/domain/instance/theme_tokens.gen.go from @my/design-tokens (commit the result)
+    sources: [web/design-tokens/src/tokens.ts, web/design-tokens/src/theme-tokens.ts]
+    generates: [internal/domain/instance/theme_tokens.gen.go]
+    cmds:
+      - bun web/design-tokens/src/theme-tokens.ts
 
   # The production build of the catalog page stands for every production build: the plugin of @my/devtools refuses
   # an import of the package there, and this fails when the output still contains it.

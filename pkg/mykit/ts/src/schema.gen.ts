@@ -7336,14 +7336,13 @@ export interface paths {
          *     their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
          *     change are kept (the audit log's `setting_changed` of `theme`).
          *
-         *     The overridable tokens are the web client's design tokens except the primitive palette
-         *     (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
-         *     (`#rrggbbaa` for `color-overlay`); the other tokens take `value`: a length is `0` or a `rem`
-         *     / `px` value within the token's bounds, a line height a number, a duration `ms` / `s`, an
-         *     easing a keyword or `cubic-bezier()`, a font family a list of family names, and an
-         *     `elevation-*` shadow `none` or up to four `[inset] <x> <y> [<blur> [<spread>]] <#color>`
-         *     layers. Every contrast pair of the color tokens, with the defaults of the tokens not
-         *     overridden, must meet WCAG 2.2 AA (4.5:1 for text, 3:1 for controls) in both color schemes.
+         *     The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
+         *     and the durations of the web client's design tokens (the list generated from
+         *     `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+         *     take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
+         *     a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
+         *     of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
+         *     (4.5:1 for text, 3:1 for marks) in both color schemes.
          *     The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
          *     does not read it, it runs under the same Content-Security-Policy as the client (only
          *     same-origin resources), and what it does to contrast, layout, and focus is the
@@ -18720,7 +18719,7 @@ export interface components {
             theme_errors?: components["schemas"]["ThemeError"][];
         };
         /**
-         * @description The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
+         * @description The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
          *     and `dark` for a color token, `value` for the others.
          */
         ThemeTokenValue: {

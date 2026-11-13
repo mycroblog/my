@@ -16875,7 +16875,7 @@ type ThemeProblem struct {
 	Type string `json:"type"`
 }
 
-// ThemeTokenValue The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
+// ThemeTokenValue The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
 // and `dark` for a color token, `value` for the others.
 type ThemeTokenValue struct {
 	Dark  *string `json:"dark,omitempty"`

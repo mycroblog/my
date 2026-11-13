@@ -355,7 +355,7 @@ func instanceRepoTheme(t *testing.T, r *instanceRepo) {
 	wantNotFound(t, "CurrentTheme before a revision", err)
 	revise := func(css string) instance.ThemeRevision {
 		rev := instance.ThemeRevision{ID: r.ids.NewID(), CustomCSS: css, RevisedByUserID: testkit.NamedID("admin"), RevisedAt: r.now(), Tokens: []instance.ThemeTokenValue{
-			{Token: "color-accent", Light: "#123456", Dark: "#abcdef"}, {Token: "radius-sm", Value: "4px"},
+			{Token: "color-accent", Light: "#123456", Dark: "#abcdef"}, {Token: "radius-control", Value: "4px"},
 		}}
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 			return errors.Join(r.i.InsertThemeRevision(ctx, tx, rev), r.i.UpsertThemeHead(ctx, tx, instance.ThemeHead{RevisionID: rev.ID}))

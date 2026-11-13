@@ -247,6 +247,13 @@ classify() {
       ;;
   esac
   case "$path" in
+    # web:test fails when the Go list generated from web/design-tokens is stale.
+    internal/domain/instance/theme_tokens.gen.go)
+      select_contexts web
+      known=1
+      ;;
+  esac
+  case "$path" in
     schema/* | scripts/install-atlas.sh | scripts/db-lint.sh | scripts/db-lint-test.sh)
       select_contexts schema go
       known=1
