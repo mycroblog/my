@@ -17,3 +17,22 @@ export const usePreviewState = () => useContext(PreviewContext);
 export function Preview({ state, children }: { state: PreviewState | undefined; children: ReactNode }) {
   return <PreviewContext value={state}>{children}</PreviewContext>;
 }
+
+const ItemsContext = createContext<Readonly<Record<string, PreviewState>>>({});
+
+/** The state an item of a collection (a menu's) shows, by its id, the real ones aside. */
+export const usePreviewItemState = (id: string) => useContext(ItemsContext)[id];
+
+/**
+ * Shows the items of the collections inside by their ids in a state each, so that a menu shows one item hovered and
+ * another focused from the keyboard.
+ */
+export function PreviewItems({
+  states,
+  children,
+}: {
+  states: Readonly<Record<string, PreviewState>>;
+  children: ReactNode;
+}) {
+  return <ItemsContext value={states}>{children}</ItemsContext>;
+}

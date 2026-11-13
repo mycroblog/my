@@ -12,3 +12,4 @@ One line each: `- <the model screen, or the options that lost> — <why> — <fr
 - Gutter and byline were good too and may return as variants of another screen (a report, PC) — a losing option is not a wrong one — the decider's pick post-anatomy — 2026-11-13
 - Tabler over Lucide and Phosphor, and its message-circle for reply over arrows that read as undo — the set is Tabler; a glyph must read as its action — the decider's picks icon-set, reply-glyph — 2026-11-13
 - Glyph and pattern avatars lost to initials — a glyph makes every account look alike, and a pattern blurs at 20 px and for ja names — the decider's pick avatar — 2026-11-13
+- Step (a raised surface alone) and sheet (a bottom sheet on mobile) lost to shadow, which took sheet's caption over the account's actions and step's glyphs — the decider picks part by part across variants; a phone needs no sheet for a short menu — the decider's pick menu — 2026-11-14
