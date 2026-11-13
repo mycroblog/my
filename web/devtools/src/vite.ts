@@ -27,6 +27,11 @@ function serve(): Plugin {
     name: "my-devtools",
     apply: "serve",
     enforce: "pre",
+    // Vite's watcher (chokidar) drops a change to a file within 50 ms of its last change, and a raw event within 5 ms
+    // of the last. So when an agent saves a file twice in a row while the page fetches the module in between, the
+    // server keeps the first save until the file changes again. Waiting until a file holds still reports its last
+    // save instead, a few tens of milliseconds later.
+    config: () => ({ server: { watch: { awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 } } } }),
     configResolved(config) {
       root = searchForWorkspaceRoot(config.root);
     },
