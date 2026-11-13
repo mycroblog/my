@@ -5,8 +5,8 @@
 # Every tool runs on Bun alone (ADR-0025 §10). The checks of each member live with its area: web/docs in
 # tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
 # that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
-# development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059) and the
-# components of web/design-system (ADR-0025 §4) here.
+# development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059), the
+# components of web/design-system and the shared components of web/app-components (ADR-0025 §4) here.
 version: "3"
 
 vars:
@@ -28,7 +28,7 @@ vars:
 
 tasks:
   check:
-    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/devtools and web/catalog in parallel
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/devtools and web/catalog in parallel
     deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, devtools-absent]
 
   # The page where the decider writes notes for an agent (ADR-0168). It prints `catalog: <url>` once it listens;
@@ -55,38 +55,40 @@ tasks:
       - bun --bun shot.ts {{.CLI_ARGS}}
 
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/devtools and web/catalog with tsc
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/devtools and web/catalog with tsc
     deps: [install, ":i18n:compile"]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
+      - cd web/app-components && bun --bun tsc -p .
       - cd web/devtools && bun --bun tsc -p .
       - cd web/catalog && bun --bun tsc -p .
 
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json)
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json)
     deps: [install, ":i18n:compile"]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/devtools web/catalog web/i18n
+      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/devtools web/catalog web/i18n
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/devtools, web/catalog and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/devtools, web/catalog and web/i18n, naming the logical one
     cmds:
-      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/devtools web/catalog web/i18n
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/devtools web/catalog web/i18n
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/devtools and web/catalog (knip.json)
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/devtools and web/catalog (knip.json)
     deps: [install, ":i18n:compile"]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/devtools --workspace web/catalog
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/devtools --workspace web/catalog
 
   test:
-    desc: Run the tests of web/design-tokens, web/design-system and web/devtools
+    desc: Run the tests of web/design-tokens, web/design-system, web/app-components and web/devtools
     deps: [install, ":i18n:compile"]
     cmds:
       - cd web/design-tokens && bun test
       - cd web/design-system && bun test
+      - cd web/app-components && bun test
       - cd web/devtools && bun test
 
   # The production build of the catalog page stands for every production build: the plugin of @my/devtools refuses

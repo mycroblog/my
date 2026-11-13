@@ -45,7 +45,7 @@ export type SchemeColor = Record<Scheme, string>;
 export const color = {
   surface: { light: "#ffffff", dark: "#221c1b" },
   text: { light: "#111111", dark: "#f2e9e7" },
-  "muted-text": { light: "#74665f", dark: "#9c8f8b" },
+  "muted-text": { light: "#74665f", dark: "#9c908b" },
   accent: { light: "#ff6b6b", dark: "#ff6b6b" },
   "on-accent": { light: "#111111", dark: "#111111" },
   "accent-text": { light: "#a64646", dark: "#ff6b6b" },
@@ -56,6 +56,8 @@ export const color = {
   "surface-pressed": { light: "#f1ebe9", dark: "#332624" },
   // The backing under an avatar's image: light in both schemes, so that a dark logo on transparency stays seen.
   "avatar-backing": { light: "#f4efed", dark: "#f4efed" },
+  // The bar at the start of a quote in what people write: a mark, at 3:1 on every surface a post or a quoted post has.
+  "quote-bar": { light: "#938882", dark: "#7e726f" },
 } as const satisfies Record<string, SchemeColor>;
 
 export type ColorName = keyof typeof color;
@@ -80,6 +82,11 @@ export const contrastPairs: readonly ContrastPair[] = [
   // An icon button's muted count, hovered, and hovered in a marked post; pressed, it takes the text.
   { fg: "muted-text", bg: "surface-hover", minimum: 4.5 },
   { fg: "muted-text", bg: "surface-pressed", minimum: 4.5 },
+  // A quote's muted text and its bar (a mark, 3:1), in a post, hovered, and in a quoted post on the raised surface.
+  { fg: "muted-text", bg: "surface-raised", minimum: 4.5 },
+  { fg: "quote-bar", bg: "surface", minimum: 3 },
+  { fg: "quote-bar", bg: "surface-hover", minimum: 3 },
+  { fg: "quote-bar", bg: "surface-raised", minimum: 3 },
 ];
 
 /** The weight of a control's label. */
@@ -156,6 +163,24 @@ export const menu = { padding: 0.25, groupGap: 0.5, iconGap: 0.625, minWidth: 12
  */
 export const disclosure = { gap: 0.5, padding: 0.375, paddingStart: 0.75 } as const;
 
+/**
+ * What people write (a post's body): the space between its paragraphs and the indent of its lists, in rem; a quote's
+ * bar and the space after it, in rem; a code block's padding, in rem, and the indent of a line's continuation, in ch;
+ * inline code's padding, in em; and a custom emoji's size, in em of the text around it, which it overhangs evenly
+ * above and below.
+ */
+export const content = {
+  paragraphGap: 0.5,
+  indent: 1.25,
+  quoteBar: 0.1875,
+  quoteIndent: 0.75,
+  codePaddingBlock: 0.5,
+  codePaddingInline: 0.75,
+  codeHang: 2,
+  codeInline: 0.25,
+  emoji: 1.4,
+} as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -195,7 +220,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*` and `--disclosure-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*` and `--content-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -246,4 +271,13 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--disclosure-gap", `${disclosure.gap}rem`],
   ["--disclosure-padding", `${disclosure.padding}rem`],
   ["--disclosure-padding-start", `${disclosure.paddingStart}rem`],
+  ["--content-paragraph-gap", `${content.paragraphGap}rem`],
+  ["--content-indent", `${content.indent}rem`],
+  ["--content-quote-bar", `${content.quoteBar}rem`],
+  ["--content-quote-indent", `${content.quoteIndent}rem`],
+  ["--content-code-padding-block", `${content.codePaddingBlock}rem`],
+  ["--content-code-padding-inline", `${content.codePaddingInline}rem`],
+  ["--content-code-hang", `${content.codeHang}ch`],
+  ["--content-code-inline", `${content.codeInline}em`],
+  ["--content-emoji", `${content.emoji}em`],
 ]);

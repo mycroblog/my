@@ -22,6 +22,10 @@
       "entry": ["src/theme.ts", "src/**/*.test.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     },
+    "web/app-components": {
+      "entry": ["src/**/*.test.tsx"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
     "web/catalog": {
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]

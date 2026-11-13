@@ -50,6 +50,22 @@
         "@types/bun": "1.4.4",
       },
     },
+    "web/app-components": {
+      "name": "@my/app-components",
+      "dependencies": {
+        "@my/design-system": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.4",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+      },
+      "peerDependencies": {
+        "react": "19.3.1",
+      },
+    },
     "web/catalog": {
       "name": "@my/catalog",
       "dependencies": {
@@ -383,6 +399,8 @@
     "@messageformat/date-skeleton": ["@messageformat/date-skeleton@1.1.0", "", {}, "sha512-rmGAfB1tIPER+gh3p/RgA+PVeRE/gxuQ2w4snFWPF5xtb5mbWR7Cbw7wCOftcUypbD6HVoxrVdyyghPm3WzP5A=="],
 
     "@messageformat/parser": ["@messageformat/parser@5.2.0", "", { "dependencies": { "moo": "^0.5.1" } }, "sha512-sc3hNZ0JtC32GhL5nUgPbh2ilcwji4G+Vmj/vhMd8hZaH//NDOvkfwKK1mFnRWG5h2DpksN8xr/HB5/+vMg3iw=="],
+
+    "@my/app-components": ["@my/app-components@workspace:web/app-components"],
 
     "@my/catalog": ["@my/catalog@workspace:web/catalog"],
 

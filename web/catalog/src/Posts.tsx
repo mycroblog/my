@@ -3,8 +3,8 @@
 // The anatomy of a post in the home timeline, in grayscale (ADR-0169 §9), on a short column of en and ja posts: an
 // author header (avatar, then the name with the visibility and the time at the end, over the handle), then the body, the media and the actions at the full width,
 // so that no empty column takes room on mobile. The media, not yet a component, is drawn as a gray block; the avatar,
-// the actions (the IconButton) and the glyphs are those of @my/design-system. Custom emoji wait for the post's text
-// renderer.
+// the actions (the IconButton) and the glyphs are those of @my/design-system. Its text is plain; custom emoji and links
+// are the content renderer's (Contents.tsx).
 
 import {
   Avatar,
