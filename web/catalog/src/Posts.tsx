@@ -24,6 +24,7 @@ import { Preview, PreviewItems, type PreviewState } from "@my/design-system/prev
 import { iconButton, rootPx, text, type Scheme } from "@my/design-tokens";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { AvatarSpecimen, images } from "./Avatars";
+import { DisclosureSpecimen } from "./Disclosures";
 import { ago, caption, NameLine, Stamp, TimeSpecimen, visibilityLabel, type Visibility } from "./Times";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -697,8 +698,8 @@ const stateRows: StateRow[] = [
 ];
 
 // The column: the posts on one surface, separated by space alone, several times the space inside a post; no line,
-// no card edge. Below it, one post in each of its states and its buttons' states, shown at rest, then the avatars and
-// the glyphs in light and dark. The section follows the page's color scheme. The more menu is open at rest above the
+// no card edge. Below it, one post in each of its states and its buttons' states, shown at rest, then the disclosure,
+// the times, the avatars and the glyphs in light and dark. The section follows the page's color scheme. The more menu is open at rest above the
 // column, in light and dark; in the column, each more button opens it.
 export function Posts() {
   return (
@@ -720,6 +721,10 @@ export function Posts() {
             <PostView post={posts[2] as Post} shown={row.shown} on={row.on} shownOn={row.shownOn} />
           </div>
         ))}
+      </div>
+      <div id="disclosure" style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
+        <DisclosureSpecimen scheme="light" lang="en" />
+        <DisclosureSpecimen scheme="dark" lang="ja" />
       </div>
       <div id="time" style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
         <TimeSpecimen scheme="light" />

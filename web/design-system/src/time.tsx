@@ -7,6 +7,7 @@
 // Intl.DateTimeFormat, so it needs no strings of its own.
 
 import { useEffect, useState } from "react";
+import { pageLocale } from "./strings";
 
 export type RelativeTimeProps = {
   /** The moment, as a Date or an ISO 8601 string. */
@@ -42,10 +43,6 @@ export function relativeTime(date: Date, now: Date, locale: string): { text: str
   const text = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", ...year }).format(date);
   return { text, changes: false };
 }
-
-const pageLocale = () =>
-  (typeof document !== "undefined" && document.documentElement.lang) ||
-  (typeof navigator !== "undefined" ? navigator.language : "en");
 
 /** How long until the text may change: every second in the first minute, then every minute, then every hour. */
 const nextIn = (age: number) => (age < minute ? second : age < hour ? minute : hour);

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The rough parts of the home timeline screen (#3005), on the catalog only while their issues stay open: the post's
-// text renderer (#2881), the disclosure of a content warning (#2987), the post (#2988) and the column with the keyboard
-// moving between posts (#2989), with a quoted post, emoji reactions and translation. They use the built parts of
-// @my/design-system and follow the decisions of the post's anatomy: the author header over a body at the full width,
+// text renderer (#2881), the post (#2988) and the column with the keyboard moving between posts (#2989), with a
+// quoted post, emoji reactions and translation. They use the built parts of @my/design-system, among them the
+// disclosure of a content warning, and follow the decisions of the post's anatomy: the author header over a body at the full width,
 // the extent shown by a surface on hover and focus only.
 
 import {
   Avatar,
-  Button,
+  Disclosure,
   Icon,
   IconButton,
   markedSurface,
@@ -145,49 +145,6 @@ function MediaGrid({ media }: { media: Media[] }) {
           />
         ))}
       </div>
-    </div>
-  );
-}
-
-/**
- * The disclosure of a content warning: the warning on a raised surface with a button that shows or hides what it
- * covers (the text and the images) below it.
- */
-function Disclosure({ warning, lang, children }: { warning: string; lang: Lang; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const s = strings[lang];
-  return (
-    <div style={{ display: "grid", gap: rem(8), gridTemplateColumns: one }}>
-      <div
-        style={{
-          alignItems: "center",
-          background: "var(--color-surface-raised)",
-          borderRadius: "var(--radius-control)",
-          display: "flex",
-          gap: rem(8),
-          padding: `${rem(6)} ${rem(6)} ${rem(6)} ${rem(12)}`,
-        }}
-      >
-        <span style={{ display: "inline-flex", color: "var(--color-muted-text)" }}>
-          <Icon name="report" place="caption" />
-        </span>
-        <span style={{ flex: "1 1 0", fontSize: `${text.body.size}rem`, lineHeight: text.body.lineHeight }}>
-          {warning}
-        </span>
-        <span lang={lang} style={{ display: "contents" }}>
-          <Button
-            kind="quiet"
-            size="timeline"
-            aria-expanded={open}
-            onPress={() => {
-              setOpen(!open);
-            }}
-          >
-            {open ? s.hide : s.show}
-          </Button>
-        </span>
-      </div>
-      {open && children}
     </div>
   );
 }
@@ -486,8 +443,8 @@ function PostView({ post, lang }: { post: TimelinePost; lang: Lang }) {
         </div>
       </div>
       {post.cw ? (
-        <Disclosure warning={post.cw} lang={lang}>
-          {content}
+        <Disclosure summary={post.cw} icon="hidden" locale={lang}>
+          <div style={{ display: "grid", gap: rem(8), gridTemplateColumns: one }}>{content}</div>
         </Disclosure>
       ) : (
         content

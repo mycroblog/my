@@ -5,6 +5,7 @@
 
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
 export { Button, markedSurface, type ButtonKind, type ButtonProps, type ButtonSize } from "./button";
+export { Disclosure, type DisclosureProps } from "./disclosure";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";

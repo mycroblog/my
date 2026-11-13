@@ -136,8 +136,9 @@ for module in "$dir"/*/; do
   case "$name" in network-*) continue ;; esac
   while IFS= read -r output; do
     grep -qxF "$output" "$contract" && continue
+    # A here-string, not a pipe: grep -q exits at the first match, and the writer of a pipe would die of SIGPIPE.
     # shellcheck disable=SC2086 # the list is words on purpose
-    printf '%s\n' $for_the_operator | grep -qxF "$output" && continue
+    grep -qxF "$output" <<< "$(printf '%s\n' $for_the_operator)" && continue
     echo "$name: the output $output is neither in the contract in README.md nor listed for the operator in $(basename "$0")" >&2
     status=1
   done < <(cat "$module"/*.tf | grep -oE '^output "[a-z_0-9]+"' | cut -d'"' -f2)
