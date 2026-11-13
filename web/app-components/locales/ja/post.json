@@ -27,6 +27,10 @@
     "defaultMessage": "その他",
     "description": "The button of a post that opens the menu of its other actions."
   },
+  "post.more_shortcut": {
+    "defaultMessage": "その他の操作を表示",
+    "description": "In the keyboard shortcuts dialog, the row of the key that opens a focused post's more menu; says what the key does, unlike the button's name More."
+  },
   "post.boosted_by": {
     "defaultMessage": "{name}さんがブースト",
     "description": "The context line over a post that someone boosted into the timeline; name is the display name of who boosted it."
@@ -130,5 +134,9 @@
   "post.report": {
     "defaultMessage": "通報…",
     "description": "The item of a post's more menu, under the author's handle, that reports the post to the moderators after a form (hence the ellipsis)."
+  },
+  "post.shortcuts": {
+    "defaultMessage": "投稿にフォーカスしているとき",
+    "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
   }
 }

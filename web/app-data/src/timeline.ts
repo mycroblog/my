@@ -46,6 +46,8 @@ export type HomeTimeline = {
   readonly isFetchingNextPage: boolean;
   /** Fetches the next page; does nothing while one is being fetched or when there is none. */
   readonly fetchNextPage: () => void;
+  /** Fetches the timeline again from its first page: the reader's try again after the first page failed. */
+  readonly refetch: () => void;
 };
 
 /** The home timeline of the viewer, for its column. */
@@ -59,6 +61,9 @@ export function useHomeTimeline(): HomeTimeline {
     isFetchingNextPage: query.isFetchingNextPage,
     fetchNextPage: () => {
       if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
+    },
+    refetch: () => {
+      void query.refetch();
     },
   };
 }

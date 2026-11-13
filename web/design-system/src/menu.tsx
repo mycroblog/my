@@ -124,6 +124,9 @@ export function MenuButton({
   count,
   pressed,
   align = "end",
+  open,
+  onOpenChange,
+  "aria-keyshortcuts": keyshortcuts,
   children,
 }: {
   icon: IconName;
@@ -135,11 +138,16 @@ export function MenuButton({
   pressed?: boolean | undefined;
   /** Which edge of the button the menu lines up with: its end (more, at the row's end) or its start. */
   align?: "start" | "end";
+  /** The menu is open, when its owner opens it too (a shortcut), with `onOpenChange`; else the button alone does. */
+  open?: boolean | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
+  /** The keys that open the menu (what `useAction` returns). */
+  "aria-keyshortcuts"?: string | undefined;
   children: ReactNode;
 }) {
   return (
-    <MenuTrigger>
-      <IconButton icon={icon} label={label} count={count} pressed={pressed} />
+    <MenuTrigger {...(open === undefined ? {} : { isOpen: open })} {...(onOpenChange ? { onOpenChange } : {})}>
+      <IconButton icon={icon} label={label} count={count} pressed={pressed} aria-keyshortcuts={keyshortcuts} />
       <Popover placement={`bottom ${align}`} offset={4} className="outline-hidden">
         <MenuPanel label={label}>{children}</MenuPanel>
       </Popover>

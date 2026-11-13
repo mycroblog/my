@@ -10,7 +10,7 @@ import type { PostTranslation } from "@my/app-components";
 import { Preview, type PreviewState } from "@my/design-system/preview";
 import { rootPx, text } from "@my/design-tokens";
 import { useLocale } from "@my/design-system";
-import { SamplePost } from "./timeline/Column";
+import { SamplePost } from "./timeline/SamplePost";
 import { posts, type TimelinePost } from "./timeline/fixtures";
 
 const rem = (px: number) => `${px / rootPx}rem`;

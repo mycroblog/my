@@ -4,7 +4,8 @@
 // @my/design-system and the one content renderer: the context line (who boosted it, or whom it replies to), the author
 // header (the avatar, the name with the visibility and the time at the end, over the handle), the text, or a content
 // warning over it, the images, the quoted post as a reduced preview, the emoji reactions, the translate line, and the
-// actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end). It shows its extent
+// actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end), whose keys
+// (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. It shows its extent
 // by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
 // action is a callback, and what the action changes comes back in the next status.
 
@@ -28,11 +29,12 @@ import {
   Stack,
   Stamp,
   TextButton,
+  useAction,
   useLocale,
   type IconName,
   type MediaItem,
 } from "@my/design-system";
-import { Fragment, useId, type ReactNode } from "react";
+import { Fragment, useId, useState, type ReactNode } from "react";
 import { stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { EmojiText, PostContent } from "./post-content";
@@ -270,17 +272,38 @@ function Actions({ status, own, t, lang, act }: { status: PostStatus; own: boole
     act({ type, id: status.id });
   };
   const boosted = status.boosted ?? false;
+  const [moreOpen, setMoreOpen] = useState(false);
+  // The keys of the focused post: reply, boost (or take it back) and favourite at once, and more opens its menu.
+  // The help lists them once for every post, under the post's group.
+  const keyed = (label: string) => ({ scope: "focus" as const, label, groupLabel: t("post.shortcuts") });
+  const reply = useAction("post.reply", on("reply"), keyed(t("post.reply")));
+  const boost = useAction("post.boost", on("boost"), keyed(t("post.boost")));
+  const favourite = useAction("post.favourite", on("favourite"), keyed(t("post.favourite")));
+  const more = useAction(
+    "post.more",
+    () => {
+      setMoreOpen(true);
+    },
+    keyed(t("post.more_shortcut")),
+  );
   return (
     <ActionRow
       lang={lang}
       end={
-        <MenuButton icon="more" label={t("post.more")}>
+        <MenuButton icon="more" label={t("post.more")} open={moreOpen} onOpenChange={setMoreOpen} {...more}>
           <MoreItems status={status} own={own} t={t} act={act} />
         </MenuButton>
       }
     >
-      <IconButton icon="reply" label={t("post.reply")} count={status.replies_count} onPress={on("reply")} />
-      <MenuButton icon="boost" label={t("post.boost")} count={status.boosts_count} pressed={boosted} align="start">
+      <IconButton icon="reply" label={t("post.reply")} count={status.replies_count} onPress={on("reply")} {...reply} />
+      <MenuButton
+        icon="boost"
+        label={t("post.boost")}
+        count={status.boosts_count}
+        pressed={boosted}
+        align="start"
+        {...boost}
+      >
         <MenuGroup>
           <MenuItem id="boost" icon="boost" on={boosted} onAction={on("boost")}>
             {t(boosted ? "post.unboost" : "post.boost")}
@@ -296,6 +319,7 @@ function Actions({ status, own, t, lang, act }: { status: PostStatus; own: boole
         count={status.favourites_count}
         pressed={status.favourited ?? false}
         onPress={on("favourite")}
+        {...favourite}
       />
       <IconButton icon="react" label={t("post.react")} onPress={on("react")} />
     </ActionRow>

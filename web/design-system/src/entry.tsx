@@ -8,18 +8,20 @@
 // and the time) over the handle; a name and a handle are isolated with <bdi>, and the handle reads left-to-right and
 // truncates at its end in either direction. Every part lays out in the reader's direction (locale.ts).
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
+import { useFeedPosition } from "./feed";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 import { Preview, usePreviewState } from "./preview";
+import { ActionScope } from "./shortcuts";
 import { RelativeTime } from "./time";
 
 const entry = tv({
   base: [
     "box-border grid grid-cols-[minmax(0,1fr)] gap-entry rounded-entry text-body text-text outline-hidden",
-    "-m-entry-reach p-entry-reach scroll-my-entry-scroll",
+    "-m-entry-reach p-entry-reach scroll-mt-feed-scroll scroll-mb-entry-scroll",
     "data-surface-marked:bg-surface-hover data-focus-visible:shadow-focus",
   ],
 });
@@ -35,22 +37,28 @@ export type EntryProps = {
 /**
  * An entry of a feed: a focusable article whose parts stand one under another. It marks its surface while hovered or
  * focused from the keyboard (the icon buttons inside step their hover a tone down), and it carries `data-entry`, by
- * which a feed moves the focus between its entries. A catalog's preview of hover or focus applies to the entry alone,
- * not to the buttons inside it.
+ * which a feed moves the focus between its entries; inside a FeedItem it states its position in the feed. It is the
+ * `ActionScope` of the focus actions its parts declare (a post's reply), which act while focus is inside it. A
+ * catalog's preview of hover or focus applies to the entry alone, not to the buttons inside it.
  */
 export function Entry({ lang, labelledBy, children }: EntryProps) {
+  const position = useFeedPosition();
   const preview = usePreviewState();
   const { direction } = useReader(undefined);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const ref = useRef<HTMLElement>(null);
   const focus = focused || preview === "focus-visible";
   const marked = hovered || focus || preview === "hover";
   return (
     <article
+      ref={ref}
       lang={lang}
       dir={direction}
       tabIndex={0}
       aria-labelledby={labelledBy}
+      aria-posinset={position?.posinset}
+      aria-setsize={position?.setsize}
       data-entry=""
       data-focus-visible={focus || undefined}
       {...markedSurface(marked)}
@@ -68,7 +76,9 @@ export function Entry({ lang, labelledBy, children }: EntryProps) {
         setFocused(false);
       }}
     >
-      <Preview state={undefined}>{children}</Preview>
+      <ActionScope target={ref}>
+        <Preview state={undefined}>{children}</Preview>
+      </ActionScope>
     </article>
   );
 }

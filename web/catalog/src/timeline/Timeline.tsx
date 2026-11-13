@@ -3,7 +3,8 @@
 // The home timeline screen, composed roughly from the built parts and the rough ones (#3005), so that the decider
 // judges the parts together as one screen: /timeline on the catalog's dev server. The shell (timeline.css) holds the
 // compose entry and the navigation (home, notifications, search, profile, settings), which shows where the reader is,
-// so the page has no visible header; the column holds the sample posts; on wide screens a right column follows. The
+// so the page has no visible header; the column (HomeColumn.tsx) holds the sample posts, through @my/app-data from a
+// fake server; on wide screens a right column follows. The
 // locale and the direction are the page's (main.tsx), from ?lang=, which the overlay's locale switch sets; its own
 // words are in ja for ja and in en for any other locale (ar-XB shows it right-to-left). The scheme is the page's.
 
@@ -11,12 +12,12 @@ import "./timeline.css";
 // The wordmark, not the app icon: a mark, so that the compose entry under it is the only coral button.
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
-import { Avatar, Button, Icon, RelativeTime, useLocale, type IconName } from "@my/design-system";
+import { Avatar, Button, Icon, RelativeTime, useAction, useLocale, type IconName } from "@my/design-system";
 import { text } from "@my/design-tokens";
 import type { Lang } from "../Posts";
 import { ago } from "../Times";
-import { announcements, emoji, me, notifications, openRoom, posts, server, type NotificationKind } from "./fixtures";
-import { Column } from "./Column";
+import { announcements, emoji, me, notifications, openRoom, server, type NotificationKind } from "./fixtures";
+import { HomeColumn } from "./HomeColumn";
 import { strings } from "./strings";
 
 const places = ["home", "notifications", "search", "profile", "settings"] as const satisfies IconName[];
@@ -49,9 +50,12 @@ function NavList({ lang }: { lang: Lang }) {
   );
 }
 
-/** The compose entry: the primary action, a glyph and, where there is room, its label. */
-const Compose = ({ lang }: { lang: Lang }) => (
-  <Button kind="primary" aria-label={strings[lang].compose}>
+// What the compose entry opens: nothing yet, while the composer is not built.
+const openCompose = () => undefined;
+
+/** The compose entry: the primary action, a glyph and, where there is room, its label, with the keys of compose.open. */
+const Compose = ({ lang, keys }: { lang: Lang; keys: { "aria-keyshortcuts"?: string } }) => (
+  <Button kind="primary" aria-label={strings[lang].compose} onPress={openCompose} {...keys}>
     <Icon name="compose" place="action" />
     <span className="tl-label" aria-hidden="true">
       {strings[lang].compose}
@@ -178,6 +182,7 @@ function Aside({ lang }: { lang: Lang }) {
 export function Timeline() {
   const lang: Lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   const s = strings[lang];
+  const compose = useAction("compose.open", openCompose, { scope: "screen", label: s.compose });
   document.title = s.timeline;
   return (
     <div className="tl-screen">
@@ -187,7 +192,7 @@ export function Timeline() {
           <img className="tl-mark-dark" src={wordmarkDark} alt="" />
         </a>
         <div className="tl-compose">
-          <Compose lang={lang} />
+          <Compose lang={lang} keys={compose} />
         </div>
         <NavList lang={lang} />
         <div className="tl-account">
@@ -207,14 +212,14 @@ export function Timeline() {
       </nav>
       <main className="tl-main">
         <h1 className="tl-visually-hidden">{s.home}</h1>
-        <Column posts={posts} lang={lang} label={s.timeline} />
+        <HomeColumn lang={lang} label={s.timeline} />
       </main>
       <Aside lang={lang} />
       <nav className="tl-tabbar" aria-label={s.nav}>
         <NavList lang={lang} />
       </nav>
       <div className="tl-fab">
-        <Compose lang={lang} />
+        <Compose lang={lang} keys={compose} />
       </div>
     </div>
   );
