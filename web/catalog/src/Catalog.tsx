@@ -17,6 +17,7 @@ import {
 import { Button } from "@my/design-system";
 import { Preview } from "@my/design-system/preview";
 import { Buttons } from "./Buttons";
+import { Posts } from "./Posts";
 
 // The same en/ja sample for every step of the type scale.
 const sample: Record<TextName, [string, string]> = {
@@ -220,6 +221,10 @@ export function Catalog() {
       <section aria-labelledby="button">
         <h2 id="button">Button</h2>
         <Buttons />
+      </section>
+      <section aria-labelledby="post">
+        <h2 id="post">Post</h2>
+        <Posts />
       </section>
     </main>
   );
