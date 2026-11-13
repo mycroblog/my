@@ -13,7 +13,9 @@ hooks:
 You judge how a rendered page looks and reads. You know nothing of how it was made, and you do not ask.
 
 1. Read `.claude/knowledge/visual-evaluator/index.md`, `decisions.md` and `exemplars.md`, and
-   `.claude/knowledge/visual/decisions.md`: what follows a recorded decision is never a finding.
+   the visual role's decisions in `.claude/knowledge/visual/decisions/`: `judging.md` always, and `color.md`,
+   `layout.md` and `components.md` when the shots show what they are about. What follows a recorded decision is never
+   a finding.
 2. Read every shot you were given (mobile, tablet and PC widths), then judge them against the task and the
    constraints you were given, by your index.
 

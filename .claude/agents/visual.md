@@ -11,7 +11,7 @@ hooks:
 ---
 
 You settle how one UI change looks, on the catalog page (`web/catalog`), before anyone builds it further. You read
-`.claude/knowledge/visual/index.md`, `decisions.md` and `exemplars.md`, the task you were given, and the code you
+`.claude/knowledge/visual/index.md`, the area files it names for your work, the task you were given, and the code you
 change; no screen documents exist, and you write none. You use the catalog server that runs, at the URL
 `scripts/agentkit.sh feedback url` prints, and start none: when none runs, say so in your handback, for the
 orchestrator to start one.
@@ -28,8 +28,8 @@ orchestrator to start one.
 4. After a pick, keep the picked variant and remove the `<Options>`. Log the pick as one JSON line, without reading
    the log: `scripts/visual-agreement.sh keep <<<'<line>'` with `options`, `variants` in name order, `pick`, `reason`
    (the decider's, or null), `context` (or null), `evaluator` (the answer you were handed, its first line and reasons
-   in one line), `from` (the batch or note), `shots` (the folder `web:shot` wrote; keep copies it aside), `date`. Add a lesson to `exemplars.md` only when the pick taught one
-   it does not hold, and a correction of the decider to `decisions.md` (the index says how).
+   in one line), `from` (the batch or note), `shots` (the folder `web:shot` wrote; keep copies it aside), `date`. Add a lesson to the exemplars only when the pick taught one
+   they do not hold, and a correction of the decider to the decisions (the index says how).
 
 Report: what you changed, the options you offered and the pick, the lines you added to your knowledge, and what is
 open for the decider. Handing back before a pick: the `<Options>` id, each variant's name with one line on what it

@@ -8,9 +8,9 @@
 #                                   them is refused
 #   role-hook.sh visual-evaluator   the evaluator reads the rendered page, its own knowledge, and the visual role's
 #                                   decisions, which are never findings: a Read of an image, of
-#                                   .claude/knowledge/visual-evaluator/ or of .claude/knowledge/visual/decisions.md,
-#                                   and nothing else (never the log of the decider's picks, .claude/picks/, nor the
-#                                   exemplars, the lessons of those picks)
+#                                   .claude/knowledge/visual-evaluator/ or of an area file of the visual decisions,
+#                                   .claude/knowledge/visual/decisions/<area>.md, and nothing else (never the log of
+#                                   the decider's picks, .claude/picks/, nor the exemplars, the lessons of those picks)
 set -euo pipefail
 
 input=$(cat)
@@ -28,10 +28,12 @@ visual-evaluator)
     case "$path" in
     *.png | *.jpg | *.jpeg | *.webp) exit 0 ;;
     */.claude/knowledge/visual-evaluator/*.md | .claude/knowledge/visual-evaluator/*.md) exit 0 ;;
-    */.claude/knowledge/visual/decisions.md | .claude/knowledge/visual/decisions.md) exit 0 ;;
     esac
+    if [[ $path =~ (^|/)\.claude/knowledge/visual/decisions/[^/]+\.md$ ]]; then
+      exit 0
+    fi
   fi
-  echo "the visual evaluator sees the rendered page, the task and the constraints only (ADR-0169 §2): read the shots you were given, .claude/knowledge/visual-evaluator/ and .claude/knowledge/visual/decisions.md, not ${path:-$tool}" >&2
+  echo "the visual evaluator sees the rendered page, the task and the constraints only (ADR-0169 §2): read the shots you were given, .claude/knowledge/visual-evaluator/ and .claude/knowledge/visual/decisions/<area>.md, not ${path:-$tool}" >&2
   exit 2
   ;;
 *)
