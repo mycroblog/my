@@ -143,7 +143,8 @@ lint は Oxlint だけで行い、ESLint とその実行は使わない。
   - `@eslint-react`、TanStack Query / Router、Testing Library、boundaries、better-tailwindcss、formatjs、eslint-comments は、Oxlint の JS プラグイン（`jsPlugins`）で動かす。
     JS プラグインは alpha だが、決定者はこれを受け入れている。
   - `no-restricted-syntax` は Oxlint にないので、`restrictions.js` のセレクタを受け取って報告する 1 ファイルの JS プラグインをリポジトリに置く。
-    `restrictions.test.js` は Oxlint の RuleTester（`oxlint/plugins-dev`）で、各禁止規則が違反を拒むことを確かめる。
+    `restrictions.test.js` は `bun --bun oxlint` で違反と許す形のフィクスチャを lint し、期待した指摘とだけ一致することを確かめる。
+    RuleTester（`oxlint/plugins-dev`）は Bun では動かず、§10 は Bun を求めるため（決定者、2026-11-14）。
 - R14（数値を `&&` の条件にしない）は、型情報が要る `@eslint-react/no-leaked-conditional-rendering` が Oxlint では動かないので、lint では検査せず、レビューで確かめる。決定者はこれを受け入れている。
   `@eslint-react/no-unused-props` と `@typescript-eslint/no-unsafe-enum-assignment` も検査から外れる。
 - 規則は Oxlint で動く名前（`react-hooks/purity` は `react/purity` など）で書く。
