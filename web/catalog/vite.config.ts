@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { devtools } from "@my/devtools/vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, type Plugin } from "vite";
+import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 
 // Tailwind loads the theme of @my/design-system (theme.ts) in this process. Under Bun its cache-busting loader hook is
 // off, so Bun's module cache keeps what theme.ts imports (@my/design-tokens), and Tailwind rebuilds only when theme.ts
@@ -31,8 +31,10 @@ function reloadTheme(): Plugin {
 // The catalog page runs on the dev server only (`scripts/task.sh web:catalog`). Its production build exists for
 // web:devtools-absent, which proves that the build leaves @my/devtools out. Tailwind builds the stylesheet of
 // @my/design-system without its own optimizer, and the build targets the browsers of light-dark() (ADR-0110 §14):
-// older targets would lower it to the system's scheme alone and lose an element's color-scheme.
+// older targets would lower it to the system's scheme alone and lose an element's color-scheme. The condition
+// @mycroblog/source reads @mycroblog/mykit (under /timeline's @my/app-data) from its sources, which need no build.
 export default defineConfig({
   plugins: [devtools(), react(), tailwindcss({ optimize: false }), reloadTheme()],
+  resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
   build: { cssTarget: ["chrome123", "firefox120", "safari17.5"] },
 });

@@ -1,0 +1,26 @@
+{
+  "column.loading": {
+    "defaultMessage": "Loading posts…",
+    "description": "In place of a timeline's posts while its first ones are being fetched."
+  },
+  "column.loading_more": {
+    "defaultMessage": "Loading more posts…",
+    "description": "Under the posts of a timeline while the older ones after them are being fetched."
+  },
+  "column.failed": {
+    "defaultMessage": "The posts could not be loaded.",
+    "description": "In place of a timeline's posts when fetching its first ones failed; a retry action follows it."
+  },
+  "column.failed_more": {
+    "defaultMessage": "More posts could not be loaded.",
+    "description": "Under the posts of a timeline when fetching the older ones after them failed; a retry action follows it."
+  },
+  "column.retry": {
+    "defaultMessage": "Try again",
+    "description": "The action after a failure to load a timeline's posts, its first ones or more of them, which fetches them again."
+  },
+  "column.empty": {
+    "defaultMessage": "No posts yet.",
+    "description": "In place of a timeline's posts when it has none."
+  }
+}

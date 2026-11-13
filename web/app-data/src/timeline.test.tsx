@@ -95,6 +95,30 @@ describe("useHomeTimeline", () => {
     expect(render(data)).toBe('<ol data-status="pending" data-more="false"></ol>');
   });
 
+  test("after its first page failed, refetch fetches it again", async () => {
+    let fail = true;
+    const { data, requests } = fakeAppData(() =>
+      fail ? json(500, { type: "about:blank", status: 500 }) : json(200, page(["1"])),
+    );
+    await load(data).catch(() => undefined);
+    let refetch: () => void = () => undefined;
+    function Failed() {
+      refetch = useHomeTimeline().refetch;
+      return null;
+    }
+    renderToStaticMarkup(
+      <AppDataProvider data={data}>
+        <Failed />
+      </AppDataProvider>,
+    );
+    expect(data.queryClient.getQueryState(homeTimelineQuery(data).queryKey)?.status).toBe("error");
+    fail = false;
+    refetch();
+    await data.queryClient.getQueryCache().find({ queryKey: homeTimelineQuery(data).queryKey })?.promise;
+    expect(requests).toHaveLength(2);
+    expect(render(data)).toBe('<ol data-status="success" data-more="false"><li>1</li></ol>');
+  });
+
   test("fails outside AppDataProvider", () => {
     expect(() => renderToStaticMarkup(<Column />)).toThrow(/outside AppDataProvider/);
   });

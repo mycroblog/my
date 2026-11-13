@@ -3,7 +3,8 @@
 // The home timeline screen, composed roughly from the built parts and the rough ones (#3005), so that the decider
 // judges the parts together as one screen: /timeline on the catalog's dev server. The shell (timeline.css) holds the
 // compose entry and the navigation (home, notifications, search, profile, settings), which shows where the reader is,
-// so the page has no visible header; the column holds the sample posts; on wide screens a right column follows. The
+// so the page has no visible header; the column (HomeColumn.tsx) holds the sample posts, through @my/app-data from a
+// fake server; on wide screens a right column follows. The
 // locale and the direction are the page's (main.tsx), from ?lang=, which the overlay's locale switch sets; its own
 // words are in ja for ja and in en for any other locale (ar-XB shows it right-to-left). The scheme is the page's.
 
@@ -15,8 +16,8 @@ import { Avatar, Button, Icon, RelativeTime, useLocale, type IconName } from "@m
 import { text } from "@my/design-tokens";
 import type { Lang } from "../Posts";
 import { ago } from "../Times";
-import { announcements, emoji, me, notifications, openRoom, posts, server, type NotificationKind } from "./fixtures";
-import { Column } from "./Column";
+import { announcements, emoji, me, notifications, openRoom, server, type NotificationKind } from "./fixtures";
+import { HomeColumn } from "./HomeColumn";
 import { strings } from "./strings";
 
 const places = ["home", "notifications", "search", "profile", "settings"] as const satisfies IconName[];
@@ -207,7 +208,7 @@ export function Timeline() {
       </nav>
       <main className="tl-main">
         <h1 className="tl-visually-hidden">{s.home}</h1>
-        <Column posts={posts} lang={lang} label={s.timeline} />
+        <HomeColumn lang={lang} label={s.timeline} />
       </main>
       <Aside lang={lang} />
       <nav className="tl-tabbar" aria-label={s.nav}>

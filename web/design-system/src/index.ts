@@ -41,6 +41,7 @@ export {
   type EntryProps,
   type StampProps,
 } from "./entry";
+export { Feed, FeedItem, FeedNotice, moveFeedFocus, type FeedProps } from "./feed";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { catalogReader, type Strings } from "./locale";

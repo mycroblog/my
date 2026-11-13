@@ -11,6 +11,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
+import { useFeedPosition } from "./feed";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 import { Preview, usePreviewState } from "./preview";
@@ -19,7 +20,7 @@ import { RelativeTime } from "./time";
 const entry = tv({
   base: [
     "box-border grid grid-cols-[minmax(0,1fr)] gap-entry rounded-entry text-body text-text outline-hidden",
-    "-m-entry-reach p-entry-reach scroll-my-entry-scroll",
+    "-m-entry-reach p-entry-reach scroll-mt-feed-scroll scroll-mb-entry-scroll",
     "data-surface-marked:bg-surface-hover data-focus-visible:shadow-focus",
   ],
 });
@@ -35,10 +36,11 @@ export type EntryProps = {
 /**
  * An entry of a feed: a focusable article whose parts stand one under another. It marks its surface while hovered or
  * focused from the keyboard (the icon buttons inside step their hover a tone down), and it carries `data-entry`, by
- * which a feed moves the focus between its entries. A catalog's preview of hover or focus applies to the entry alone,
- * not to the buttons inside it.
+ * which a feed moves the focus between its entries; inside a FeedItem it states its position in the feed. A catalog's
+ * preview of hover or focus applies to the entry alone, not to the buttons inside it.
  */
 export function Entry({ lang, labelledBy, children }: EntryProps) {
+  const position = useFeedPosition();
   const preview = usePreviewState();
   const { direction } = useReader(undefined);
   const [hovered, setHovered] = useState(false);
@@ -51,6 +53,8 @@ export function Entry({ lang, labelledBy, children }: EntryProps) {
       dir={direction}
       tabIndex={0}
       aria-labelledby={labelledBy}
+      aria-posinset={position?.posinset}
+      aria-setsize={position?.setsize}
       data-entry=""
       data-focus-visible={focus || undefined}
       {...markedSurface(marked)}

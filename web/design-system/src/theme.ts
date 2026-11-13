@@ -77,6 +77,8 @@ const theme = {
     "entry-caption": ref("--entry-caption-gap"),
     "entry-action": ref("--entry-action-gap"),
     "entry-scroll": ref("--entry-scroll-margin"),
+    feed: ref("--feed-gap"),
+    "feed-scroll": ref("--feed-scroll-margin"),
     embed: ref("--embed-padding"),
     "embed-gap": ref("--embed-gap"),
     media: ref("--media-gap"),

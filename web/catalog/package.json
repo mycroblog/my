@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@my/app-components": "workspace:*",
+    "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",
     "@my/design-tokens": "workspace:*",
+    "@mycroblog/mykit": "workspace:*",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

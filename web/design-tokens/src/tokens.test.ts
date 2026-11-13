@@ -12,6 +12,7 @@ import {
   disclosure,
   embed,
   entry,
+  feed,
   fontFamily,
   fontWeight,
   focusRing,
@@ -143,6 +144,8 @@ test("properties declare every token", () => {
     expect(properties[`--entry-${name}`]).toBe(`${entry[key]}rem`);
   }
   expect(properties["--entry-leading"]).toBe(`${entry.leading}`);
+  expect(properties["--feed-gap"]).toBe(`${feed.gap}rem`);
+  expect(properties["--feed-scroll-margin"]).toBe(`${feed.scrollMargin}rem`);
   expect(properties["--embed-padding"]).toBe(`${embed.padding}rem`);
   expect(properties["--embed-gap"]).toBe(`${embed.gap}rem`);
   expect(properties["--media-gap"]).toBe(`${media.gap}rem`);
@@ -165,4 +168,10 @@ test("properties declare every token", () => {
 test("an entry's surface reaches past an action's tile and its focus ring", () => {
   const ring = (focusRing.gap + focusRing.width + focusRing.halo) / 16;
   expect(entry.reach).toBeGreaterThanOrEqual(iconButton.paddingInline + ring);
+});
+
+test("a feed's entries never overlap, and an entry brought to the top keeps its focus ring in view", () => {
+  const ring = (focusRing.gap + focusRing.width + focusRing.halo) / 16;
+  expect(feed.gap).toBeGreaterThanOrEqual(2 * entry.reach);
+  expect(feed.scrollMargin).toBeGreaterThanOrEqual(ring);
 });

@@ -185,8 +185,8 @@ export const content = {
  * An entry of a feed (a post), in rem: the space between its parts and between the lines of one part; how far its
  * surface reaches past its content when hovered or focused, which holds an action's tile and its focus ring, and that
  * surface's corner; the gap after the avatar, between the name and what ends its line, after a caption's glyph and
- * between the actions; the leading of the author's two lines, unitless; and the room kept above and below it when it
- * scrolls into view.
+ * between the actions; the leading of the author's two lines, unitless; and the room kept below it when it scrolls into
+ * view.
  */
 export const entry = {
   gap: 0.5,
@@ -200,6 +200,13 @@ export const entry = {
   leading: 1.3,
   scrollMargin: 4.5,
 } as const;
+
+/**
+ * A feed of entries (a timeline), in rem: the space between its entries, in which their surfaces meet edge to edge
+ * (twice an entry's reach), and the room kept above an entry the keyboard brings to the top of the view, which holds
+ * its focus ring.
+ */
+export const feed = { gap: 1.75, scrollMargin: 0.75 } as const;
 
 /** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */
 export const embed = { padding: 0.75, gap: 0.375 } as const;
@@ -256,7 +263,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--embed-*`, `--media-*` and `--chip-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*` and `--chip-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -326,6 +333,8 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--entry-action-gap", `${entry.actionGap}rem`],
   ["--entry-leading", `${entry.leading}`],
   ["--entry-scroll-margin", `${entry.scrollMargin}rem`],
+  ["--feed-gap", `${feed.gap}rem`],
+  ["--feed-scroll-margin", `${feed.scrollMargin}rem`],
   ["--embed-padding", `${embed.padding}rem`],
   ["--embed-gap", `${embed.gap}rem`],
   ["--media-gap", `${media.gap}rem`],
