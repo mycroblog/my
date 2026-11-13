@@ -2,12 +2,14 @@
 
 // The anatomy of a post in the home timeline, in grayscale (ADR-0169 §9), on a short column of en and ja posts: an
 // author header (avatar, name and time over the handle), then the body, the media and the actions at the full width,
-// so that no empty column takes room on mobile. What is not yet a component (the avatar, the media) is drawn as a gray
-// block; the actions are the Button of @my/design-system, and the glyphs are its icons.
+// so that no empty column takes room on mobile. The media, not yet a component, is drawn as a gray block; the avatar,
+// the actions (the Button) and the glyphs are those of @my/design-system. Custom emoji wait for the post's text
+// renderer.
 
-import { Button, Icon, icons, type IconName, type IconPlace } from "@my/design-system";
+import { Avatar, Button, Icon, icons, type IconName, type IconPlace } from "@my/design-system";
 import { rootPx, text, type Scheme } from "@my/design-tokens";
 import { useState, type CSSProperties, type ReactNode } from "react";
+import { AvatarSpecimen, images } from "./Avatars";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -17,6 +19,7 @@ type Post = {
   name: string;
   handle: string;
   time: string;
+  avatar?: string;
   visibility: Visibility;
   context?: { kind: "boost" | "reply"; who: string };
   cw?: string;
@@ -35,8 +38,7 @@ const visibilityLabel: Record<Visibility, string> = {
 const muted = "var(--color-muted-text)";
 const block = "var(--color-surface-raised-pressed)";
 
-// The avatar's size and its gap to the name, in px.
-const avatar = 40;
+// The avatar's gap to the name, in px.
 const avatarGap = 10;
 
 // One column that may shrink below its content, so that a long handle truncates instead of widening the post.
@@ -53,22 +55,6 @@ const A = ({ children }: { children: ReactNode }) => (
   <a href="#post" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: "0.15em" }}>
     {children}
   </a>
-);
-
-// A custom emoji, drawn as a gray square of the line's size.
-const Emoji = ({ name }: { name: string }) => (
-  <span
-    role="img"
-    aria-label={`:${name}:`}
-    style={{
-      background: block,
-      borderRadius: 3,
-      display: "inline-block",
-      height: "1.2em",
-      verticalAlign: "-0.25em",
-      width: "1.2em",
-    }}
-  />
 );
 
 // An icon of @my/design-system at the size of its place. Where the glyph alone carries meaning (the visibility), a
@@ -93,26 +79,16 @@ function Glyph({
   );
 }
 
-const Avatar = ({ size }: { size: number }) => (
-  <div
-    aria-hidden
-    style={{ background: block, borderRadius: rem(size / 4), flex: "none", height: rem(size), width: rem(size) }}
-  />
-);
-
 const posts: Post[] = [
   {
     lang: "en",
     name: "Alice Chen",
     handle: "@alice@example.social",
     time: "3m",
+    avatar: images.dusk,
     visibility: "public",
     context: { kind: "reply", who: "@mika" },
-    body: (
-      <>
-        Morning! The bakery on the corner finally reopened <Emoji name="croissant" /> See you there at nine?
-      </>
-    ),
+    body: <>Morning! The bakery on the corner finally reopened. See you there at nine?</>,
     counts: { replies: 2, boosts: 0, favourites: 5 },
   },
   {
@@ -120,13 +96,14 @@ const posts: Post[] = [
     name: "佐藤 美香",
     handle: "@mika@mstdn.example.jp",
     time: "12分",
+    avatar: images.snow,
     visibility: "public",
     body: (
       <>
         週末に小さなサーバーを立ててみました。最初はひとりで使うつもりでしたが、
         <A>@alice@example.social</A>{" "}
         さんに声をかけたら友だちが三人来てくれて、いまはタイムラインがちょうどいい速さで流れています。大きなサーバーにいたころは追いきれなかった会話が、ここでは全部読めるのがうれしい。設定の手順はブログにまとめました{" "}
-        <A>example.jp/blog/small-server</A> <A>#小さなサーバー</A> <Emoji name="tada" />
+        <A>example.jp/blog/small-server</A> <A>#小さなサーバー</A>
       </>
     ),
     counts: { replies: 4, boosts: 12, favourites: 38 },
@@ -136,6 +113,7 @@ const posts: Post[] = [
     name: "Open Source Weekly",
     handle: "@news@social.example.org",
     time: "1h",
+    avatar: images.logo,
     visibility: "unlisted",
     context: { kind: "boost", who: "Kenji" },
     body: (
@@ -329,7 +307,7 @@ function PostView({ post, shown }: { post: Post; shown?: PostState }) {
     >
       <Context post={post} />
       <div style={{ alignItems: "center", display: "flex", gap: rem(avatarGap) }}>
-        <Avatar size={avatar} />
+        <Avatar name={post.name} src={post.avatar} size="post" decorative />
         <div style={{ display: "grid", flex: "1 1 0", minWidth: 0, fontSize: `${text.body.size}rem` }}>
           <div style={{ alignItems: "baseline", display: "flex", gap: rem(8), lineHeight: 1.3, minWidth: 0 }}>
             <span style={name}>{post.name}</span>
@@ -438,11 +416,12 @@ function IconTable() {
 }
 
 // The column: the posts on one surface, separated by space alone, several times the space inside a post; no line,
-// no card edge. Below it, one post in each of its states, shown at rest, then the glyphs in light and dark.
+// no card edge. Below it, one post in each of its states, shown at rest, then the avatars and the glyphs in light and
+// dark. The section follows the page's color scheme.
 export function Posts() {
   const states: PostState[] = ["hover", "focus-visible"];
   return (
-    <div style={{ color: "var(--color-text)", colorScheme: "light", display: "grid", gap: rem(40) }}>
+    <div style={{ color: "var(--color-text)", display: "grid", gap: rem(40) }}>
       <IconTable />
       <div style={column}>
         {posts.map((post) => (
@@ -456,6 +435,10 @@ export function Posts() {
             <PostView post={posts[2] as Post} shown={state} />
           </div>
         ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
+        <AvatarSpecimen scheme="light" />
+        <AvatarSpecimen scheme="dark" />
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
         <Sheet scheme="light" />

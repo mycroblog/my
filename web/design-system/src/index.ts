@@ -3,5 +3,6 @@
 // The design system of the web client (ADR-0025 §2–§6): its components, on React Aria Components, styled with
 // Tailwind from the tokens of @my/design-tokens, and its icons. An app loads @my/design-system/styles.css once.
 
+export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
 export { Button, type ButtonKind, type ButtonProps, type ButtonSize } from "./button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";

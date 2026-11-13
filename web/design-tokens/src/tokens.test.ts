@@ -2,6 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  avatar,
   color,
   contrast,
   contrastPairs,
@@ -87,4 +88,8 @@ test("properties declare every token", () => {
   expect(properties["--icon-action"]).toBe(`${icon.action}rem`);
   expect(properties["--icon-caption"]).toBe(`${icon.caption}rem`);
   expect(properties["--icon-tile-glyph"]).toBe(`${icon.tile.glyph * 100}%`);
+  for (const place of ["inline", "post", "preview"] as const) {
+    expect(properties[`--avatar-${place}`]).toBe(`${avatar[place]}rem`);
+  }
+  expect(properties["--avatar-initial"]).toBe(`${avatar.initial}`);
 });

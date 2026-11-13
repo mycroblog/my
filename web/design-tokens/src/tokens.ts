@@ -120,6 +120,12 @@ export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const
  */
 export const icon = { action: 1.125, caption: 0.875, tile: { radius: 0.22, glyph: 0.72 } } as const;
 
+/**
+ * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the head of a post,
+ * and in a profile preview; and the size of the initial that stands in for a missing image, as a share of the avatar.
+ */
+export const avatar = { inline: 1.25, post: 2.5, preview: 4, initial: 0.44 } as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -159,7 +165,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*` and `--icon-*`. The design system's stylesheet declares them on :root.
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*` and `--avatar-*`. The design system's stylesheet declares them on :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
   ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
@@ -191,4 +197,8 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--icon-caption", `${icon.caption}rem`],
   ["--icon-tile-radius", percent(icon.tile.radius)],
   ["--icon-tile-glyph", percent(icon.tile.glyph)],
+  ["--avatar-inline", `${avatar.inline}rem`],
+  ["--avatar-post", `${avatar.post}rem`],
+  ["--avatar-preview", `${avatar.preview}rem`],
+  ["--avatar-initial", `${avatar.initial}`],
 ]);
