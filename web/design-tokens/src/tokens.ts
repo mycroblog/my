@@ -83,8 +83,8 @@ export const contrastPairs: readonly ContrastPair[] = [
 /** The weight of a control's label. */
 export const fontWeight = { label: 600 } as const;
 
-/** The corner radius of a control, in rem. */
-export const radius = { control: 0.375 } as const;
+/** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
+export const radius = { control: 0.375, overlay: 0.5 } as const;
 
 /** A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form. */
 export const control = {
@@ -136,6 +136,18 @@ export const icon = { action: 1.125, caption: 0.875, tile: { radius: 0.22, glyph
  */
 export const avatar = { inline: 1.25, post: 2.5, preview: 4, initial: 0.44 } as const;
 
+/**
+ * The shadow a surface over the page (a menu) casts, down `y` px and blurred `blur` px, in a share of black that is
+ * heavier in dark, where a shadow shows less: it sets off a surface that is the page's own.
+ */
+export const shadow = { y: 4, blur: 16, share: { light: 0.12, dark: 0.5 } } as const;
+
+/**
+ * A menu, in rem: its padding around the items, the space between its groups, the gap between an item's glyph and
+ * its label, and its least width. Its rows are a form control's height.
+ */
+export const menu = { padding: 0.25, groupGap: 0.5, iconGap: 0.625, minWidth: 12 } as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -175,7 +187,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*` and `--avatar-*`. The design system's stylesheet declares them on :root.
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay` and `--menu-*`. The design system's stylesheet declares them on :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
   ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
@@ -214,4 +226,12 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--avatar-post", `${avatar.post}rem`],
   ["--avatar-preview", `${avatar.preview}rem`],
   ["--avatar-initial", `${avatar.initial}`],
+  [
+    "--shadow-overlay",
+    `0 ${shadow.y}px ${shadow.blur}px light-dark(rgb(0 0 0 / ${percent(shadow.share.light)}), rgb(0 0 0 / ${percent(shadow.share.dark)}))`,
+  ],
+  ["--menu-padding", `${menu.padding}rem`],
+  ["--menu-group-gap", `${menu.groupGap}rem`],
+  ["--menu-icon-gap", `${menu.iconGap}rem`],
+  ["--menu-min-width", `${menu.minWidth}rem`],
 ]);

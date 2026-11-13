@@ -13,10 +13,14 @@ import {
   IconButton,
   icons,
   markedSurface,
+  MenuButton,
+  MenuGroup,
+  MenuItem,
+  MenuPanel,
   type IconName,
   type IconPlace,
 } from "@my/design-system";
-import { Preview, type PreviewState } from "@my/design-system/preview";
+import { Preview, PreviewItems, type PreviewState } from "@my/design-system/preview";
 import { iconButton, rootPx, text, type Scheme } from "@my/design-tokens";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { AvatarSpecimen, images } from "./Avatars";
@@ -148,6 +152,107 @@ const posts: Post[] = [
   },
 ];
 
+type Lang = "en" | "ja";
+
+// The more menu's sample labels; the design system's strings are not built yet. A label whose action asks for a
+// confirmation (block, report, delete) ends in "…".
+const moreLabels = {
+  en: {
+    more: "More",
+    link: "Copy link",
+    open: "Open original page",
+    share: "Share",
+    bookmark: "Bookmark",
+    unbookmark: "Remove bookmark",
+    edit: "Edit",
+    mute: "Mute",
+    block: "Block…",
+    report: "Report…",
+    delete: "Delete…",
+  },
+  ja: {
+    more: "その他",
+    link: "リンクをコピー",
+    open: "元のページを開く",
+    share: "共有",
+    bookmark: "ブックマーク",
+    unbookmark: "ブックマークを外す",
+    edit: "編集",
+    mute: "ミュート",
+    block: "ブロック…",
+    report: "通報…",
+    delete: "削除…",
+  },
+} as const;
+
+// The account part of a handle: "@mika" of "@mika@mstdn.example.jp".
+const shortHandle = (h: string) => `@${h.split("@")[1] ?? h}`;
+
+// A post's more menu, in the reader's `lang`: what reaches the post (copy link, open original, share), then the
+// bookmark toggle on its own; then for another's post the actions on its account (mute, block, report) last and
+// apart, under a caption naming it, or for one's own post edit, then delete last and apart.
+function MoreItems({
+  post,
+  lang,
+  own = false,
+  bookmarked = false,
+}: {
+  post: Post;
+  lang: Lang;
+  own?: boolean;
+  bookmarked?: boolean;
+}) {
+  const l = moreLabels[lang];
+  return (
+    <>
+      <MenuGroup>
+        <MenuItem id="link" icon="link">
+          {l.link}
+        </MenuItem>
+        {!own && (
+          <MenuItem id="open" icon="open">
+            {l.open}
+          </MenuItem>
+        )}
+        <MenuItem id="share" icon="share">
+          {l.share}
+        </MenuItem>
+      </MenuGroup>
+      <MenuGroup>
+        <MenuItem id="bookmark" icon="bookmark" on={bookmarked}>
+          {bookmarked ? l.unbookmark : l.bookmark}
+        </MenuItem>
+      </MenuGroup>
+      {own ? (
+        <>
+          <MenuGroup>
+            <MenuItem id="edit" icon="edit">
+              {l.edit}
+            </MenuItem>
+          </MenuGroup>
+          <MenuGroup>
+            <MenuItem id="delete" icon="delete">
+              {l.delete}
+            </MenuItem>
+          </MenuGroup>
+        </>
+      ) : (
+        <MenuGroup title={shortHandle(post.handle)}>
+          <MenuItem id="mute" icon="mute">
+            {l.mute}
+          </MenuItem>
+          <MenuItem id="block" icon="block">
+            {l.block}
+          </MenuItem>
+          <MenuItem id="report" icon="report">
+            {l.report}
+          </MenuItem>
+        </MenuGroup>
+      )}
+    </>
+  );
+}
+
 // The tile's inline padding: the row reaches that far past the body on both sides, so that the first glyph lines up
 // with the body's start and the last with its end.
 const tilePadding = `${iconButton.paddingInline}rem`;
@@ -159,14 +264,19 @@ type Done = "boost" | "favourite";
 type ShownOn = { meaning: IconName; state: PreviewState };
 function Actions({ post, on = [], shownOn }: { post: Post; on?: Done[] | undefined; shownOn?: ShownOn | undefined }) {
   const action = (icon: IconName, label: string, count?: number, end = false) => {
-    const button = (
-      <IconButton
-        icon={icon}
-        label={label}
-        count={count}
-        pressed={icon === "boost" || icon === "favourite" ? on.includes(icon) : undefined}
-      />
-    );
+    const button =
+      icon === "more" && shownOn?.meaning !== "more" ? (
+        <MenuButton icon="more" label={label}>
+          <MoreItems post={post} lang="en" />
+        </MenuButton>
+      ) : (
+        <IconButton
+          icon={icon}
+          label={label}
+          count={count}
+          pressed={icon === "boost" || icon === "favourite" ? on.includes(icon) : undefined}
+        />
+      );
     return (
       <span style={{ display: "inline-flex", ...(end ? { marginInlineStart: "auto" } : {}) }}>
         {shownOn?.meaning === icon ? <Preview state={shownOn.state}>{button}</Preview> : button}
@@ -444,6 +554,93 @@ function IconTable() {
   );
 }
 
+// One's own post, for the menu of one's own post.
+const ownPost: Post = {
+  lang: "en",
+  name: "Kumi Ito",
+  handle: "@kumi@my.example",
+  ago: 5 * minute,
+  visibility: "public",
+  body: <>Trying out the new server. Hello, fediverse!</>,
+  counts: { replies: 1, boosts: 0, favourites: 2 },
+};
+
+// The space between the more button and its menu, as the popover places it, in px.
+const menuOffset = 4;
+
+// A post with its more menu open at rest, in the reader's `lang`: the more button pressed, as while the menu is
+// open, and the menu under it, its end at the button's end. `states` shows items hovered or focused from the keyboard.
+function OpenMenu({
+  post,
+  lang,
+  own = false,
+  bookmarked = false,
+  states = {},
+}: {
+  post: Post;
+  lang: Lang;
+  own?: boolean;
+  bookmarked?: boolean;
+  states?: Record<string, PreviewState>;
+}) {
+  return (
+    <div lang={lang} style={{ display: "grid", gap: rem(menuOffset), gridTemplateColumns: one }}>
+      <PostView post={post} shownOn={{ meaning: "more", state: "pressed" }} />
+      <div style={{ justifySelf: "end", marginInlineEnd: `calc(-1 * ${tilePadding})` }}>
+        <PreviewItems states={states}>
+          <MenuPanel label={moreLabels[lang].more}>
+            <MoreItems post={post} lang={lang} own={own} bookmarked={bookmarked} />
+          </MenuPanel>
+        </PreviewItems>
+      </div>
+    </div>
+  );
+}
+
+// The more menu open at rest in one scheme and the reader's language: on another's post with one item hovered and
+// one focused from the keyboard, and on one's own post, bookmarked.
+function MenuSpecimen({ scheme, lang }: { scheme: Scheme; lang: Lang }) {
+  const panel = (children: ReactNode) => (
+    <div
+      style={{
+        alignContent: "start",
+        background: "var(--color-surface)",
+        border: "1px solid #ccc",
+        borderRadius: 8,
+        color: "var(--color-text)",
+        colorScheme: scheme,
+        display: "grid",
+        flex: `1 1 ${rem(320)}`,
+        gap: rem(16),
+        gridTemplateColumns: one,
+        padding: rem(16),
+      }}
+    >
+      {children}
+    </div>
+  );
+  return (
+    <>
+      {panel(
+        <>
+          <div style={caption}>
+            {scheme} · {lang} · another&apos;s post · open hovered, block focused from the keyboard
+          </div>
+          <OpenMenu post={posts[1] as Post} lang={lang} states={{ open: "hover", block: "focus-visible" }} />
+        </>,
+      )}
+      {panel(
+        <>
+          <div style={caption}>
+            {scheme} · {lang} · one&apos;s own post, bookmarked
+          </div>
+          <OpenMenu post={ownPost} lang={lang} own bookmarked />
+        </>,
+      )}
+    </>
+  );
+}
+
 // A post in a state, with one of its buttons in a state or toggled on, as the states column shows it.
 type StateRow = { title: string; shown?: PostState; on?: Done[]; shownOn?: ShownOn };
 const stateRows: StateRow[] = [
@@ -462,11 +659,16 @@ const stateRows: StateRow[] = [
 
 // The column: the posts on one surface, separated by space alone, several times the space inside a post; no line,
 // no card edge. Below it, one post in each of its states and its buttons' states, shown at rest, then the avatars and
-// the glyphs in light and dark. The section follows the page's color scheme.
+// the glyphs in light and dark. The section follows the page's color scheme. The more menu is open at rest above the
+// column, in light and dark; in the column, each more button opens it.
 export function Posts() {
   return (
     <div style={{ color: "var(--color-text)", display: "grid", gap: rem(40) }}>
       <IconTable />
+      <div id="menu" style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
+        <MenuSpecimen scheme="light" lang="en" />
+        <MenuSpecimen scheme="dark" lang="ja" />
+      </div>
       <div style={column}>
         {posts.map((post) => (
           <PostView key={post.handle} post={post} />

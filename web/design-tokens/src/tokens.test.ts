@@ -11,11 +11,13 @@ import {
   focusRing,
   icon,
   iconButton,
+  menu,
   mix,
   motion,
   press,
   properties,
   radius,
+  shadow,
   spinner,
   text,
 } from "./tokens";
@@ -96,4 +98,16 @@ test("properties declare every token", () => {
     expect(properties[`--avatar-${place}`]).toBe(`${avatar[place]}rem`);
   }
   expect(properties["--avatar-initial"]).toBe(`${avatar.initial}`);
+  expect(properties["--radius-overlay"]).toBe(`${radius.overlay}rem`);
+  expect(properties["--shadow-overlay"]).toBe(
+    `0 ${shadow.y}px ${shadow.blur}px light-dark(rgb(0 0 0 / ${shadow.share.light * 100}%), rgb(0 0 0 / ${shadow.share.dark * 100}%))`,
+  );
+  for (const [name, key] of [
+    ["padding", "padding"],
+    ["group-gap", "groupGap"],
+    ["icon-gap", "iconGap"],
+    ["min-width", "minWidth"],
+  ] as const) {
+    expect(properties[`--menu-${name}`]).toBe(`${menu[key]}rem`);
+  }
 });

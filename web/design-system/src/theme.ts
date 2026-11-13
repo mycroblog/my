@@ -55,6 +55,9 @@ const theme = {
     "avatar-inline": ref("--avatar-inline"),
     "avatar-post": ref("--avatar-post"),
     "avatar-preview": ref("--avatar-preview"),
+    "menu-padding": ref("--menu-padding"),
+    "menu-group-gap": ref("--menu-group-gap"),
+    "menu-icon-gap": ref("--menu-icon-gap"),
   },
   borderWidth: { 0: "0", spinner: ref("--spinner-stroke") },
   opacity: { disabled: ref("--press-disabled-opacity") },
@@ -64,6 +67,9 @@ const theme = {
       "0 0 0 calc(var(--focus-ring-gap) + var(--focus-ring-width)) var(--color-accent-text)",
       "0 0 0 calc(var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo)) color-mix(in srgb, var(--color-accent) var(--focus-ring-halo-share), transparent)",
     ].join(", "),
+    // Inside a menu, whose rows touch, the ring is drawn within the item.
+    "focus-inset": "inset 0 0 0 var(--focus-ring-width) var(--color-accent-text)",
+    overlay: ref("--shadow-overlay"),
   },
   animation: Object.fromEntries(
     names(motion).map((name) => [name, `my-${name} var(--duration-${name}) linear infinite`]),
