@@ -26,6 +26,10 @@
       "entry": ["src/**/*.test.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     },
+    "web/app-data": {
+      "entry": ["src/**/*.test.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
     "web/catalog": {
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]
