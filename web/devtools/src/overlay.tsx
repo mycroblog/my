@@ -4,9 +4,10 @@
 // batch, reads the agent's answer next to each note, and switches between the variants of an <Options> and picks
 // one (options.tsx). It also shows the page at a device viewport (sizes.ts), as Storybook's viewport toolbar does: the
 // page itself, whole, in one iframe of that width and height over it, rotated or not and scaled down to fit the
-// window, whose elements take the notes and whose <Options> switch. The plugin of
-// vite.ts loads this module on the dev server only. It is a developer tool: plain, in a shadow root of its own, and
-// it sets nothing on the page.
+// window, whose elements take the notes and whose <Options> switch. Its locale switch loads the page again with
+// `?lang=en|ja`, which a page that reads it (the catalog's /timeline) renders in; a note records the locale the page
+// then has. The plugin of vite.ts loads this module on the dev server only. It is a developer tool: plain, in a shadow
+// root of its own above the page, and it sets nothing on the page but its URL's `lang`.
 
 import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -73,8 +74,23 @@ interface Draft {
   text: string;
 }
 
+// The overlay's own stacking context, above any the page makes (a sticky header's z-index), so that the page under the
+// device iframe never shows through it.
 const host = document.createElement("div");
 host.setAttribute("data-my-devtools", "");
+host.style.cssText = "position: relative; z-index: 2147483647";
+
+/** The locales the overlay shows a page in, by `?lang=`; none leaves the page its own. */
+const locales = ["en", "ja"] as const;
+const langParam = "lang";
+
+/** The page again in `lang`, the device iframe with it, or in its own locale for null. */
+const showIn = (lang: string | null) => {
+  const url = new URL(location.href);
+  if (lang === null) url.searchParams.delete(langParam);
+  else url.searchParams.set(langParam, lang);
+  location.replace(url);
+};
 
 // The iframe that shows the page at a device size, while a size is chosen. It is in the overlay's shadow root.
 let device: HTMLIFrameElement | null = null;
@@ -621,6 +637,24 @@ function Overlay() {
           >
             Rotate
           </button>
+        </div>
+        <div role="group" aria-label="Locale" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+          {[null, ...locales].map((l) => {
+            const on = l === new URLSearchParams(location.search).get(langParam);
+            return (
+              <button
+                key={l ?? "page"}
+                type="button"
+                style={{ ...button, fontWeight: on ? 700 : 400 }}
+                aria-pressed={on}
+                onClick={() => {
+                  showIn(l);
+                }}
+              >
+                {l ?? "Page locale"}
+              </button>
+            );
+          })}
         </div>
         {error && <div style={{ color: "#b3261e", marginTop: 4 }}>{error}</div>}
         {open &&

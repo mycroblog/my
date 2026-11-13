@@ -48,3 +48,20 @@ test("the button opens a menu", () => {
   expect(html).toContain('aria-haspopup="true"');
   expect(html).toContain('aria-label="More"');
 });
+
+test("the button may show a count and an on state, and line its menu up with its start", () => {
+  const html = renderToStaticMarkup(
+    <MenuButton icon="boost" label="Boost" count={12} pressed align="start">
+      {items}
+    </MenuButton>,
+  );
+  expect(html).toContain('aria-label="Boost, 12"');
+  expect(html).toContain('aria-pressed="true"');
+  expect(html).toContain(">12</span>");
+  const plain = renderToStaticMarkup(
+    <MenuButton icon="more" label="More">
+      {items}
+    </MenuButton>,
+  );
+  expect(plain).not.toContain("aria-pressed=");
+});

@@ -54,6 +54,8 @@ export const color = {
   "surface-raised-pressed": { light: "#d9cdc8", dark: "#503835" },
   "surface-hover": { light: "#f9f6f5", dark: "#2b201f" },
   "surface-pressed": { light: "#f1ebe9", dark: "#332624" },
+  // The backing under an avatar's image: light in both schemes, so that a dark logo on transparency stays seen.
+  "avatar-backing": { light: "#f4efed", dark: "#f4efed" },
 } as const satisfies Record<string, SchemeColor>;
 
 export type ColorName = keyof typeof color;

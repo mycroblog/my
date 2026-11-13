@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The menu, first for a post's more action, on React Aria Components' Menu: an icon button opens it in a popover at
-// the button's end, on every screen; the pointer and the keyboard move through its items (arrows, Home and End,
+// The menu, for a post's more and boost actions, on React Aria Components' Menu: an icon button opens it in a popover
+// under the button, at its end or its start, on every screen; the pointer and the keyboard move through its items (arrows, Home and End,
 // typing a label's start), Enter or a press runs one and closes it, Escape or a press outside closes it and focus
 // returns to the button. It stands off the page by a shadow on the page's surface; each item is an 18 px glyph and
 // its label, in rows of a form control's height. Its groups stand apart by space; a group of actions on another
@@ -114,21 +114,33 @@ export function MenuItem({
   );
 }
 
-/** An icon button that opens a menu of `children` in a popover at the button's end. */
+/**
+ * An icon button that opens a menu of `children` in a popover under it, at its end or its start. Like the icon
+ * button, it may show a count and an on state (boost, whose menu holds boost and quote).
+ */
 export function MenuButton({
   icon,
   label,
+  count,
+  pressed,
+  align = "end",
   children,
 }: {
   icon: IconName;
   /** The button's name, which also names the menu. */
   label: string;
+  /** How many have done it, as the icon button shows it (boost); zero or none shows no count. */
+  count?: number | undefined;
+  /** The on state of what the menu toggles, as the icon button shows it (boost). */
+  pressed?: boolean | undefined;
+  /** Which edge of the button the menu lines up with: its end (more, at the row's end) or its start. */
+  align?: "start" | "end";
   children: ReactNode;
 }) {
   return (
     <MenuTrigger>
-      <IconButton icon={icon} label={label} />
-      <Popover placement="bottom end" offset={4} className="outline-hidden">
+      <IconButton icon={icon} label={label} count={count} pressed={pressed} />
+      <Popover placement={`bottom ${align}`} offset={4} className="outline-hidden">
         <MenuPanel label={label}>{children}</MenuPanel>
       </Popover>
     </MenuTrigger>

@@ -1,0 +1,372 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/*
+ * The shell of the rough home timeline screen (#3005), by device width, with no visible page header (the navigation
+ * shows where the reader is): on mobile (under 640 px) the column at the full width, the navigation as a tab bar at the
+ * bottom and the compose entry over it at the end; on tablet (640 px up) a rail at the start, the compose entry right
+ * under the logo and the glyphs of the places under it; on PC (1100 px up) the rail grows into a sidebar with the
+ * labels and one's account; from 1240 px a right column follows the timeline. Every surface is the page's; the bars
+ * stand apart from the posts under them by a shadow, not a line.
+ */
+
+html:has(.tl-screen) {
+  background: var(--color-surface);
+}
+
+html:has(.tl-screen) body {
+  margin: 0;
+}
+
+.tl-screen {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+.tl-main {
+  min-width: 0;
+  padding: 1.5rem 1rem 6.5rem;
+}
+
+/* The page's heading, for assistive technology only: the navigation shows where the reader is. */
+.tl-visually-hidden {
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* The right column: hidden until there is room for it beside the sidebar and a full timeline. */
+.tl-aside {
+  display: none;
+}
+
+/* Its sections, all on the page, tight inside and apart by space; the room's Join is the one surface among them. */
+.tl-aside {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+}
+
+.tl-aside section {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.tl-aside h2 {
+  font-size: var(--text-caption);
+  font-weight: 400;
+  margin: 0 0 0.125rem;
+}
+
+/* A heading is a link to its section's place, muted like a caption, with its place's glyph. */
+.tl-heading-link {
+  align-items: center;
+  color: var(--color-muted-text);
+  display: inline-flex;
+  gap: 0.375rem;
+  text-decoration: none;
+}
+
+.tl-heading-link:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.tl-heading-link:focus-visible {
+  border-radius: var(--radius-control);
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+  outline: none;
+}
+
+.tl-aside p {
+  margin: 0;
+}
+
+.tl-muted {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}
+
+.tl-aside-line {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.tl-aside-title {
+  font-weight: 700;
+}
+
+.tl-aside-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.tl-announcement {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.tl-notifications {
+  display: grid;
+  gap: 0.625rem;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+}
+
+.tl-notifications li {
+  align-items: start;
+  display: grid;
+  font-size: var(--text-caption);
+  gap: 0.375rem;
+  grid-template-columns: 0.875rem auto minmax(0, 1fr) auto;
+  line-height: var(--text-caption--line-height);
+}
+
+.tl-notification-glyph {
+  display: inline-flex;
+  justify-content: center;
+  padding-top: 0.125rem;
+}
+
+
+.tl-nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tl-nav-item {
+  align-items: center;
+  border-radius: var(--radius-control);
+  color: var(--color-muted-text);
+  display: flex;
+  gap: 1rem;
+  text-decoration: none;
+}
+
+.tl-nav-item[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.tl-nav-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.tl-nav-item:focus-visible {
+  box-shadow: inset 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+  outline: none;
+}
+
+/* The navigation's glyphs, larger than an action's. */
+.tl-nav-item svg,
+.tl-compose svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+/* Mobile: a tab bar at the bottom, the compose entry over its end. */
+.tl-side {
+  display: none;
+}
+
+.tl-tabbar {
+  background: var(--color-surface);
+  bottom: 0;
+  box-shadow: 0 -2px 12px light-dark(rgb(0 0 0 / 8%), rgb(0 0 0 / 40%));
+  inset-inline: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  position: fixed;
+  z-index: 3;
+}
+
+.tl-tabbar .tl-nav-list {
+  justify-content: space-around;
+}
+
+.tl-tabbar .tl-nav-item {
+  height: 3.5rem;
+  justify-content: center;
+  width: 3.5rem;
+}
+
+.tl-tabbar .tl-nav-item:hover {
+  background: none;
+}
+
+.tl-fab {
+  border-radius: var(--radius-control);
+  bottom: calc(3.5rem + 1rem + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-overlay);
+  inset-inline-end: 1rem;
+  position: fixed;
+  z-index: 3;
+}
+
+.tl-fab button {
+  height: 3.5rem;
+  padding: 0;
+  width: 3.5rem;
+}
+
+.tl-compose button > span,
+.tl-fab button > span {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.tl-tabbar .tl-label,
+.tl-fab .tl-label {
+  display: none;
+}
+
+.tl-account-name {
+  display: none;
+}
+
+.tl-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tablet: a rail of glyphs at the start, the column beside it. */
+@media (width >= 640px) {
+  .tl-screen {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    padding-inline: 1rem;
+  }
+
+  .tl-main {
+    flex: 0 1 37.5rem;
+    padding: 1.5rem 0 3rem;
+  }
+
+  .tl-tabbar,
+  .tl-fab {
+    display: none;
+  }
+
+  .tl-side {
+    align-self: flex-start;
+    box-sizing: border-box;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100vh;
+    padding-block: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    width: 3.5rem;
+  }
+
+  .tl-side .tl-nav-list {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .tl-side .tl-nav-item {
+    height: 3rem;
+    justify-content: center;
+  }
+
+  .tl-side .tl-label {
+    display: none;
+  }
+
+  .tl-brand {
+    align-items: center;
+    display: flex;
+    height: 3rem;
+    justify-content: center;
+  }
+
+  /* The wordmark, smaller than a button and with no tile, in the version for the scheme's surface. */
+  .tl-brand img {
+    height: 1.5rem;
+  }
+
+  .tl-mark-dark,
+  :root[data-theme="dark"] .tl-mark-light {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .tl-mark-dark {
+    display: block;
+  }
+
+  .tl-compose button {
+    gap: 0.5rem;
+    height: 3rem;
+    padding: 0;
+    width: 100%;
+  }
+
+  .tl-account {
+    align-items: center;
+    display: flex;
+    gap: 0.625rem;
+    justify-content: center;
+    margin-top: auto;
+    min-width: 0;
+  }
+}
+
+/* PC: the rail grows into a sidebar with the labels, the compose button and one's account. */
+@media (width >= 1100px) {
+  .tl-screen {
+    gap: 2.5rem;
+  }
+
+  .tl-side {
+    width: 15rem;
+  }
+
+  .tl-side .tl-label {
+    display: block;
+  }
+
+  .tl-side .tl-nav-item,
+  .tl-brand {
+    font-size: 1rem;
+    justify-content: flex-start;
+    padding-inline: 0.75rem;
+  }
+
+  .tl-account {
+    justify-content: flex-start;
+    padding-inline: 0.5rem;
+  }
+
+  .tl-account-name {
+    display: grid;
+    min-width: 0;
+  }
+}
+
+/* PC, wide: a third column at the end, beside the sidebar and the timeline at its full 600 px. */
+@media (width >= 1240px) {
+  .tl-aside {
+    align-self: flex-start;
+    box-sizing: border-box;
+    display: grid;
+    flex: none;
+    gap: 2rem;
+    padding-block: 1.5rem;
+    width: 18.75rem;
+  }
+}
