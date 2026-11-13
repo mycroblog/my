@@ -4,6 +4,7 @@
 // Tailwind from the tokens of @my/design-tokens, and its icons. An app loads @my/design-system/styles.css once.
 
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
-export { Button, type ButtonKind, type ButtonProps, type ButtonSize } from "./button";
+export { Button, markedSurface, type ButtonKind, type ButtonProps, type ButtonSize } from "./button";
+export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { RelativeTime, type RelativeTimeProps } from "./time";
