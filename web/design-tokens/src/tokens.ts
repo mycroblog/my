@@ -113,6 +113,13 @@ export const motion: { readonly spin: Motion } = { spin: { duration: 800, reduce
 /** The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. */
 export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
 
+/**
+ * An icon's size where it sits, in rem: in an action of a timeline, or beside a caption. An on state the icon set
+ * cannot draw by shape is the glyph knocked out of a solid tile: the tile's corner radius and the glyph's size within
+ * it, as shares of the tile.
+ */
+export const icon = { action: 1.125, caption: 0.875, tile: { radius: 0.22, glyph: 0.72 } } as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -152,7 +159,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*` and `--spinner-*`. The design system's stylesheet declares them on :root.
+ * `--press-*`, `--duration-*`, `--spinner-*` and `--icon-*`. The design system's stylesheet declares them on :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
   ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
@@ -180,4 +187,8 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--spinner-size", `${spinner.size}em`],
   ["--spinner-stroke", `${spinner.stroke}em`],
   ["--spinner-track-share", percent(spinner.trackShare)],
+  ["--icon-action", `${icon.action}rem`],
+  ["--icon-caption", `${icon.caption}rem`],
+  ["--icon-tile-radius", percent(icon.tile.radius)],
+  ["--icon-tile-glyph", percent(icon.tile.glyph)],
 ]);

@@ -8,6 +8,7 @@ import {
   control,
   fontFamily,
   focusRing,
+  icon,
   mix,
   motion,
   press,
@@ -83,4 +84,7 @@ test("properties declare every token", () => {
   expect(properties["--press-pressed"]).toBe(`${press.pressed * 100}%`);
   expect(properties["--duration-spin"]).toBe(`${motion.spin.duration}ms`);
   expect(properties["--spinner-size"]).toBe(`${spinner.size}em`);
+  expect(properties["--icon-action"]).toBe(`${icon.action}rem`);
+  expect(properties["--icon-caption"]).toBe(`${icon.caption}rem`);
+  expect(properties["--icon-tile-glyph"]).toBe(`${icon.tile.glyph * 100}%`);
 });

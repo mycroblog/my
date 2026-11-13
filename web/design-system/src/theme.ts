@@ -31,7 +31,11 @@ const theme = {
       ],
     ]),
   ),
-  borderRadius: { ...Object.fromEntries(names(radius).map((name) => [name, ref(`--radius-${name}`)])), full: "50%" },
+  borderRadius: {
+    ...Object.fromEntries(names(radius).map((name) => [name, ref(`--radius-${name}`)])),
+    "icon-tile": ref("--icon-tile-radius"),
+    full: "50%",
+  },
   spacing: {
     0: "0",
     ...Object.fromEntries(
@@ -42,6 +46,9 @@ const theme = {
     ),
     press: ref("--press-shift"),
     spinner: ref("--spinner-size"),
+    "icon-action": ref("--icon-action"),
+    "icon-caption": ref("--icon-caption"),
+    "icon-tile-glyph": ref("--icon-tile-glyph"),
   },
   borderWidth: { 0: "0", spinner: ref("--spinner-stroke") },
   opacity: { disabled: ref("--press-disabled-opacity") },

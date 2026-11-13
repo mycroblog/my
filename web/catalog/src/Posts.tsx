@@ -2,16 +2,16 @@
 
 // The anatomy of a post in the home timeline, in grayscale (ADR-0169 §9), on a short column of en and ja posts: an
 // author header (avatar, name and time over the handle), then the body, the media and the actions at the full width,
-// so that no empty column takes room on mobile. What is not yet a component (the avatar, the media, the glyphs) is
-// drawn as a gray block; the actions are the Button of @my/design-system.
+// so that no empty column takes room on mobile. What is not yet a component (the avatar, the media) is drawn as a gray
+// block; the actions are the Button of @my/design-system, and the glyphs are its icons.
 
-import { Button } from "@my/design-system";
-import { rootPx, text } from "@my/design-tokens";
+import { Button, Icon, icons, type IconName, type IconPlace } from "@my/design-system";
+import { rootPx, text, type Scheme } from "@my/design-tokens";
 import { useState, type CSSProperties, type ReactNode } from "react";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
-type Visibility = "public" | "unlisted" | "followers";
+type Visibility = "public" | "unlisted" | "followers" | "direct";
 type Post = {
   lang: "en" | "ja";
   name: string;
@@ -29,6 +29,7 @@ const visibilityLabel: Record<Visibility, string> = {
   public: "Public",
   unlisted: "Quiet public",
   followers: "Followers only",
+  direct: "Direct",
 };
 
 const muted = "var(--color-muted-text)";
@@ -70,23 +71,27 @@ const Emoji = ({ name }: { name: string }) => (
   />
 );
 
-// A glyph, drawn as a gray square, until the icons are decided.
-const Glyph = ({ size = 16, label }: { size?: number; label?: string }) => (
-  <span
-    role={label ? "img" : undefined}
-    aria-label={label}
-    aria-hidden={label ? undefined : true}
-    style={{
-      background: muted,
-      borderRadius: 3,
-      display: "inline-block",
-      flex: "none",
-      height: rem(size),
-      opacity: 0.6,
-      width: rem(size),
-    }}
-  />
-);
+// An icon of @my/design-system at the size of its place. Where the glyph alone carries meaning (the visibility), a
+// wrapper names it.
+function Glyph({
+  meaning,
+  on = false,
+  size = "action",
+  label,
+}: {
+  meaning: IconName;
+  on?: boolean | undefined;
+  size?: IconPlace;
+  label?: string;
+}) {
+  const glyph = <Icon name={meaning} place={size} on={on} />;
+  if (!label) return glyph;
+  return (
+    <span role="img" aria-label={label} style={{ display: "inline-flex", flex: "none" }}>
+      {glyph}
+    </span>
+  );
+}
 
 const Avatar = ({ size }: { size: number }) => (
   <div
@@ -156,20 +161,22 @@ const posts: Post[] = [
     name: "Ravi",
     handle: "@ravi@fedi.example.net",
     time: "4h",
-    visibility: "public",
+    visibility: "direct",
     body: <>First snow on the ridge this morning.</>,
     media: "A snowy ridge under a pale sky, with pine trees in the foreground",
     counts: { replies: 3, boosts: 5, favourites: 41 },
   },
 ];
 
-// The actions, as quiet timeline buttons: a glyph and a count. Zero shows no count.
-function Actions({ post }: { post: Post }) {
-  const action = (label: string, count?: number) => (
+// The actions, as quiet timeline buttons: a glyph and a count. Zero shows no count. `on` shows the boost or the
+// favourite done.
+type Done = "boost" | "favourite";
+function Actions({ post, on = [] }: { post: Post; on?: Done[] }) {
+  const action = (label: string, meaning: IconName, count?: number) => (
     <Button kind="quiet" size="timeline" aria-label={count ? `${label} (${count})` : label}>
-      <span style={{ alignItems: "center", display: "inline-flex", gap: rem(6), fontWeight: 400 }}>
-        <Glyph />
-        {count ? <span style={{ color: muted, fontVariantNumeric: "tabular-nums" }}>{count}</span> : null}
+      <span style={{ alignItems: "center", color: muted, display: "inline-flex", gap: rem(6), fontWeight: 400 }}>
+        <Glyph meaning={meaning} on={(on as IconName[]).includes(meaning)} />
+        {count ? <span style={{ fontVariantNumeric: "tabular-nums" }}>{count}</span> : null}
       </span>
     </Button>
   );
@@ -182,10 +189,10 @@ function Actions({ post }: { post: Post }) {
         maxWidth: rem(320),
       }}
     >
-      {action("Reply", post.counts.replies)}
-      {action("Boost", post.counts.boosts)}
-      {action("Favourite", post.counts.favourites)}
-      {action("More")}
+      {action("Reply", "reply", post.counts.replies)}
+      {action(on.includes("boost") ? "Boosted" : "Boost", "boost", post.counts.boosts)}
+      {action(on.includes("favourite") ? "Favourited" : "Favourite", "favourite", post.counts.favourites)}
+      {action("More", "more")}
     </div>
   );
 }
@@ -194,7 +201,7 @@ function Actions({ post }: { post: Post }) {
 const Context = ({ post }: { post: Post }) =>
   post.context ? (
     <div lang="en" style={{ ...caption, alignItems: "center", display: "flex", gap: rem(6) }}>
-      <Glyph size={12} />
+      <Glyph meaning={post.context.kind} size="caption" />
       {post.context.kind === "boost" ? `${post.context.who} boosted` : `Replying to ${post.context.who}`}
     </div>
   ) : null;
@@ -263,10 +270,10 @@ const name: CSSProperties = { ...ellipsis, fontWeight: 700, flex: "none", maxWid
 const handle: CSSProperties = { ...ellipsis, color: muted, flex: "0 1 auto" };
 
 // The time with the visibility as a glyph, next to the name.
-const Stamp = ({ post }: { post: Post }) => (
+const Stamp = ({ visibility, time }: { visibility: Visibility; time: string }) => (
   <span style={{ ...caption, alignItems: "center", display: "flex", flex: "none", gap: rem(6) }}>
-    <Glyph size={12} label={visibilityLabel[post.visibility]} />
-    <time>{post.time}</time>
+    <Glyph meaning={visibility} size="caption" label={visibilityLabel[visibility]} />
+    <time>{time}</time>
   </span>
 );
 
@@ -326,7 +333,7 @@ function PostView({ post, shown }: { post: Post; shown?: PostState }) {
         <div style={{ display: "grid", flex: "1 1 0", minWidth: 0, fontSize: `${text.body.size}rem` }}>
           <div style={{ alignItems: "baseline", display: "flex", gap: rem(8), lineHeight: 1.3, minWidth: 0 }}>
             <span style={name}>{post.name}</span>
-            <Stamp post={post} />
+            <Stamp visibility={post.visibility} time={post.time} />
           </div>
           <span style={{ ...handle, ...caption, lineHeight: 1.3 }}>{post.handle}</span>
         </div>
@@ -338,13 +345,105 @@ function PostView({ post, shown }: { post: Post; shown?: PostState }) {
 }
 
 const column: CSSProperties = { display: "grid", gap: rem(28), gridTemplateColumns: one, maxWidth: rem(600) };
+const sheetRow: CSSProperties = { display: "grid", gap: rem(6), gridTemplateColumns: one };
+const wrapRow: CSSProperties = { alignItems: "center", display: "flex", flexWrap: "wrap", gap: `${rem(8)} ${rem(16)}` };
+
+// The glyphs at their timeline sizes beside the decided type, in one scheme: the actions off and on, the visibility
+// and the context glyphs at the caption, and the rest of what a timeline needs.
+function Sheet({ scheme }: { scheme: Scheme }) {
+  const sample = posts[1] as Post;
+  const visibilities: Visibility[] = ["public", "unlisted", "followers", "direct"];
+  const others: [IconName, string, boolean?][] = [
+    ["bookmark", "Bookmark"],
+    ["bookmark", "Bookmarked", true],
+    ["share", "Share"],
+    ["attach", "Attach"],
+    ["emoji", "Emoji"],
+    ["close", "Close"],
+    ["back", "Back"],
+  ];
+  return (
+    <div
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid #ccc",
+        borderRadius: 8,
+        color: "var(--color-text)",
+        colorScheme: scheme,
+        display: "grid",
+        flex: `1 1 ${rem(320)}`,
+        gap: rem(16),
+        gridTemplateColumns: one,
+        padding: rem(16),
+      }}
+    >
+      <div style={caption}>{scheme}</div>
+      <div style={sheetRow}>
+        <h4 style={{ ...caption, margin: 0 }}>Actions · off, boosted, favourited</h4>
+        <Actions post={sample} />
+        <Actions post={sample} on={["boost"]} />
+        <Actions post={sample} on={["favourite"]} />
+      </div>
+      <div style={sheetRow}>
+        <h4 style={{ ...caption, margin: 0 }}>Visibility, by the time</h4>
+        <div style={{ ...wrapRow, fontSize: `${text.body.size}rem` }}>
+          {visibilities.map((v) => (
+            <span key={v} style={{ alignItems: "baseline", display: "flex", gap: rem(8) }}>
+              <span style={{ fontWeight: 700 }}>{visibilityLabel[v]}</span>
+              <Stamp visibility={v} time="12m" />
+            </span>
+          ))}
+        </div>
+      </div>
+      <div style={sheetRow}>
+        <h4 style={{ ...caption, margin: 0 }}>Context</h4>
+        <Context post={posts[0] as Post} />
+        <Context post={posts[2] as Post} />
+      </div>
+      <div style={sheetRow}>
+        <h4 style={{ ...caption, margin: 0 }}>Others</h4>
+        <div
+          style={{ ...wrapRow, gap: rem(4), marginInlineStart: `calc(-1 * var(--control-timeline-padding-inline))` }}
+        >
+          {others.map(([meaning, label, on]) => (
+            <Button key={label} kind="quiet" size="timeline" aria-label={label}>
+              <span
+                style={{ alignItems: "center", color: muted, display: "inline-flex", gap: rem(6), fontWeight: 400 }}
+              >
+                <Glyph meaning={meaning} on={on} />
+                <span style={caption}>{label}</span>
+              </span>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The icon table of @my/design-system: each meaning with its Tabler glyph, its on shape, and whether it flips in RTL.
+function IconTable() {
+  type Named = { displayName?: string | undefined };
+  const entries: [string, { off: Named; on?: Named | "tile"; directional?: boolean }][] = Object.entries(icons);
+  const onOf = (on: Named | "tile" | undefined) =>
+    on === undefined ? "" : on === "tile" ? " / on: tile" : ` / on: ${on.displayName ?? ""}`;
+  return (
+    <div style={caption}>
+      Tabler (@tabler/icons-react 3.51.0, MIT), stroke 2:{" "}
+      {entries
+        .map(([m, e]) => `${m} ${e.off.displayName}${onOf(e.on)}${e.directional ? " (flips in RTL)" : ""}`)
+        .join(" · ")}
+    </div>
+  );
+}
 
 // The column: the posts on one surface, separated by space alone, several times the space inside a post; no line,
-// no card edge. Below it, one post in each of its states, shown at rest.
+// no card edge. Below it, one post in each of its states, shown at rest, then the glyphs in light and dark.
 export function Posts() {
   const states: PostState[] = ["hover", "focus-visible"];
   return (
     <div style={{ color: "var(--color-text)", colorScheme: "light", display: "grid", gap: rem(40) }}>
+      <IconTable />
       <div style={column}>
         {posts.map((post) => (
           <PostView key={post.handle} post={post} />
@@ -357,6 +456,10 @@ export function Posts() {
             <PostView post={posts[2] as Post} shown={state} />
           </div>
         ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
+        <Sheet scheme="light" />
+        <Sheet scheme="dark" />
       </div>
     </div>
   );
