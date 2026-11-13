@@ -21,8 +21,8 @@ orchestrator to start one.
    Check it at the mobile, tablet and PC widths.
 2. A change of information design or look (a new component, a regrouping, a new token): offer 2 or 3 options before
    keeping one, as variants of one `<Options>` on the catalog page (`scripts/agentkit.sh feedback` prints how).
-   Options differ in structure, not in decoration. Take their shots for the evaluator,
-   `scripts/task.sh web:shot -- --options <id>`. Then wait for the decider's pick (`feedback wait`, in the
+   Options differ in structure, not in decoration. Take their shots for the evaluator, of the section under review
+   and not the whole page, `scripts/task.sh web:shot -- --options <id> --section <id>`, and pass it those. Then wait for the decider's pick (`feedback wait`, in the
    background), unless an orchestrator handles the pick: then hand back without waiting.
 3. A change a recorded decision or the decider's note already settles: make it, without options.
 4. After a pick, keep the picked variant and remove the `<Options>`. Record the pick in `exemplars.md` as
