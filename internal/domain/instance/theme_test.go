@@ -38,6 +38,17 @@ func TestThemeDefaultsMeetTheirContrastPairs(t *testing.T) {
 	}
 }
 
+func TestThemeDefaultsAreValidOverrides(t *testing.T) {
+	// An administrator may send the defaults back as they are.
+	var tokens []instance.ThemeTokenValue
+	for _, tok := range instance.ThemeTokens() {
+		tokens = append(tokens, instance.ThemeTokenValue{Token: tok.Name, Light: tok.Light, Dark: tok.Dark, Value: tok.Default})
+	}
+	if _, err := instance.NormalizeTheme(tokens, ""); err != nil {
+		t.Fatalf("the defaults as overrides: %v", err)
+	}
+}
+
 func TestContrastRatio(t *testing.T) {
 	for _, tt := range []struct {
 		fg, bg string
@@ -57,25 +68,21 @@ func TestContrastRatio(t *testing.T) {
 
 func TestNormalizeThemeCanonicalizes(t *testing.T) {
 	got, err := instance.NormalizeTheme([]instance.ThemeTokenValue{
-		{Token: "radius-md", Value: " 4px "},
-		{Token: "color-accent", Light: "#1447E6", Dark: "#92C5FE"},
-		{Token: "elevation-md", Value: "0  2px 4px  #00000033 ,inset 0 0 0 1px #000000"},
+		{Token: "radius-control", Value: " 4px "},
+		{Token: "color-accent", Light: "#FF8A80", Dark: "#FF8A80"},
 		{Token: "font-sans", Value: `"Noto Sans JP",  sans-serif`},
-		{Token: "ease-standard", Value: "cubic-bezier(0.4, 0, 0.2, 1)"},
-		{Token: "transition-duration-fast", Value: "0.05s"},
-		{Token: "text-base--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
+		{Token: "duration-spin", Value: "0.5s"},
+		{Token: "text-body--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
 	}, "a { color: red }")
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []instance.ThemeTokenValue{
-		{Token: "color-accent", Light: "#1447e6", Dark: "#92c5fe"},
 		{Token: "font-sans", Value: `"Noto Sans JP", sans-serif`},
-		{Token: "text-base--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
-		{Token: "radius-md", Value: "4px"},
-		{Token: "elevation-md", Value: "0 2px 4px #00000033, inset 0 0 0 1px #000000"},
-		{Token: "ease-standard", Value: "cubic-bezier(0.4, 0, 0.2, 1)"},
-		{Token: "transition-duration-fast", Value: "0.05s"},
+		{Token: "text-body--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
+		{Token: "color-accent", Light: "#ff8a80", Dark: "#ff8a80"},
+		{Token: "radius-control", Value: "4px"},
+		{Token: "duration-spin", Value: "0.5s"},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %+v\nwant %+v", got, want)
@@ -89,27 +96,23 @@ func TestNormalizeThemeRejects(t *testing.T) {
 		code  instance.ThemeProblemCode
 	}{
 		{"unknown token", instance.ThemeTokenValue{Token: "palette-blue-600", Value: "#000000"}, instance.ThemeUnknownToken},
-		{"shadow alias", instance.ThemeTokenValue{Token: "shadow-md", Value: "none"}, instance.ThemeUnknownToken},
+		{"fixed shadow", instance.ThemeTokenValue{Token: "shadow-overlay", Value: "none"}, instance.ThemeUnknownToken},
+		{"fixed avatar backing", instance.ThemeTokenValue{Token: "color-avatar-backing", Light: "#000000", Dark: "#000000"}, instance.ThemeUnknownToken},
+		{"fixed component size", instance.ThemeTokenValue{Token: "control-form-height", Value: "2rem"}, instance.ThemeUnknownToken},
 		{"named color", instance.ThemeTokenValue{Token: "color-accent", Light: "red", Dark: "#000000"}, instance.ThemeInvalidValue},
 		{"missing dark", instance.ThemeTokenValue{Token: "color-accent", Light: "#155dfc"}, instance.ThemeInvalidValue},
-		{"alpha on opaque token", instance.ThemeTokenValue{Token: "color-surface", Light: "#ffffff80", Dark: "#000000"}, instance.ThemeInvalidValue},
+		{"translucent color", instance.ThemeTokenValue{Token: "color-surface", Light: "#ffffff80", Dark: "#000000"}, instance.ThemeInvalidValue},
 		{"injection in color", instance.ThemeTokenValue{Token: "color-accent", Light: "#155dfc;}", Dark: "#155dfc"}, instance.ThemeInvalidValue},
-		{"length unit", instance.ThemeTokenValue{Token: "radius-md", Value: "1em"}, instance.ThemeInvalidValue},
-		{"length injection", instance.ThemeTokenValue{Token: "radius-md", Value: "1px;} body{display:none"}, instance.ThemeInvalidValue},
-		{"radius too large", instance.ThemeTokenValue{Token: "radius-md", Value: "40px"}, instance.ThemeOutOfRange},
-		{"spacing too small", instance.ThemeTokenValue{Token: "spacing", Value: "0"}, instance.ThemeOutOfRange},
-		{"text too small", instance.ThemeTokenValue{Token: "text-xs", Value: "8px"}, instance.ThemeOutOfRange},
-		{"line height", instance.ThemeTokenValue{Token: "text-sm--line-height", Value: "3"}, instance.ThemeOutOfRange}, //nolint:gosec // a design token, not a credential
-		{"duration", instance.ThemeTokenValue{Token: "transition-duration-slow", Value: "2s"}, instance.ThemeOutOfRange},
-		{"easing", instance.ThemeTokenValue{Token: "ease-exit", Value: "cubic-bezier(2, 0, 0, 1)"}, instance.ThemeInvalidValue},
-		{"steps easing", instance.ThemeTokenValue{Token: "ease-exit", Value: "steps(4)"}, instance.ThemeInvalidValue},
+		{"length unit", instance.ThemeTokenValue{Token: "radius-control", Value: "1em"}, instance.ThemeInvalidValue},
+		{"length injection", instance.ThemeTokenValue{Token: "radius-control", Value: "1px;} body{display:none"}, instance.ThemeInvalidValue},
+		{"radius too large", instance.ThemeTokenValue{Token: "radius-control", Value: "40px"}, instance.ThemeOutOfRange},
+		{"text too small", instance.ThemeTokenValue{Token: "text-caption", Value: "8px"}, instance.ThemeOutOfRange},
+		{"line height", instance.ThemeTokenValue{Token: "text-body--line-height", Value: "3"}, instance.ThemeOutOfRange}, //nolint:gosec // a design token, not a credential
+		{"duration", instance.ThemeTokenValue{Token: "duration-spin", Value: "2s"}, instance.ThemeOutOfRange},
 		{"font url", instance.ThemeTokenValue{Token: "font-sans", Value: `url(https://example.com/f.woff)`}, instance.ThemeInvalidValue},
 		{"font comment", instance.ThemeTokenValue{Token: "font-sans", Value: `a /* b */`}, instance.ThemeInvalidValue},
 		{"font escape", instance.ThemeTokenValue{Token: "font-sans", Value: `"a\"; }"`}, instance.ThemeInvalidValue},
-		{"empty font", instance.ThemeTokenValue{Token: "font-mono", Value: ""}, instance.ThemeInvalidValue},
-		{"shadow named color", instance.ThemeTokenValue{Token: "elevation-sm", Value: "0 1px 2px black"}, instance.ThemeInvalidValue},
-		{"shadow too far", instance.ThemeTokenValue{Token: "elevation-sm", Value: "0 100px 2px #000000"}, instance.ThemeInvalidValue},
-		{"shadow layers", instance.ThemeTokenValue{Token: "elevation-sm", Value: strings.Repeat("0 1px 1px #000000, ", 4) + "0 1px 1px #000000"}, instance.ThemeInvalidValue},
+		{"empty font", instance.ThemeTokenValue{Token: "font-sans", Value: ""}, instance.ThemeInvalidValue},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{tt.token}, "")
@@ -122,7 +125,7 @@ func TestNormalizeThemeRejects(t *testing.T) {
 }
 
 func TestNormalizeThemeRejectsDuplicates(t *testing.T) {
-	v := instance.ThemeTokenValue{Token: "radius-md", Value: "4px"}
+	v := instance.ThemeTokenValue{Token: "radius-control", Value: "4px"}
 	ps := problemsOf(t, func() error { _, err := instance.NormalizeTheme([]instance.ThemeTokenValue{v, v}, ""); return err }())
 	if len(ps) != 1 || ps[0].Code != instance.ThemeDuplicateToken {
 		t.Errorf("problems = %+v", ps)
@@ -130,9 +133,9 @@ func TestNormalizeThemeRejectsDuplicates(t *testing.T) {
 }
 
 func TestNormalizeThemeChecksContrastWithDefaults(t *testing.T) {
-	// A light accent fails on the default surfaces and under the default accent-fg (white), in the
-	// light scheme only.
-	_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{{Token: "color-accent", Light: "#a0c4ff", Dark: "#a0c4ff"}}, "")
+	// A dark light-scheme surface fails under the default text (near black) and the other default
+	// foregrounds, in the light scheme only.
+	_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{{Token: "color-surface", Light: "#222222", Dark: "#221c1b"}}, "")
 	ps := problemsOf(t, err)
 	var pairs []string
 	for _, p := range ps {
@@ -141,21 +144,25 @@ func TestNormalizeThemeChecksContrastWithDefaults(t *testing.T) {
 		}
 		pairs = append(pairs, p.Token+"/"+p.Background)
 	}
-	for _, want := range []string{"color-accent/color-surface", "color-accent-fg/color-accent"} {
+	for _, want := range []string{"color-text/color-surface", "color-accent-text/color-surface"} {
 		if !slices.Contains(pairs, want) {
 			t.Errorf("pairs %v lack %s", pairs, want)
 		}
 	}
-	// Changing accent-fg along with it fixes the pair that the accent is the background of; the pair
-	// with the default accent-hover (dark blue) then fails instead.
+	// Changing the text along with it fixes the pair of the text on the surface; the pairs with the
+	// default muted text still fail.
 	_, err = instance.NormalizeTheme([]instance.ThemeTokenValue{
-		{Token: "color-accent", Light: "#a0c4ff", Dark: "#a0c4ff"},
-		{Token: "color-accent-fg", Light: "#000000", Dark: "#060d1a"}, //nolint:gosec // a design token, not a credential
+		{Token: "color-surface", Light: "#222222", Dark: "#221c1b"},
+		{Token: "color-text", Light: "#ffffff", Dark: "#f2e9e7"},
 	}, "")
-	for _, p := range problemsOf(t, err) {
-		if p.Token == "color-accent-fg" && p.Background == "color-accent" {
-			t.Errorf("accent-fg on accent still fails: %+v", p)
+	ps = problemsOf(t, err)
+	for _, p := range ps {
+		if p.Token == "color-text" && p.Background == "color-surface" {
+			t.Errorf("text on surface still fails: %+v", p)
 		}
+	}
+	if !slices.ContainsFunc(ps, func(p instance.ThemeProblem) bool { return p.Token == "color-muted-text" }) {
+		t.Errorf("problems %+v lack the muted text", ps)
 	}
 }
 
@@ -180,12 +187,12 @@ func TestThemeStylesheet(t *testing.T) {
 		ID: testID(1),
 		Tokens: []instance.ThemeTokenValue{
 			{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"},
-			{Token: "radius-md", Value: "2px"},
+			{Token: "radius-control", Value: "2px"},
 		},
 		CustomCSS: ".x { color: red }",
 	}
 	want := "/* The theme of this server (revision " + testID(1) + "). */\n" +
-		":root {\n  --color-surface: light-dark(#fffdf5, #101010);\n  --radius-md: 2px;\n}\n" +
+		":root {\n  --color-surface: light-dark(#fffdf5, #101010);\n  --radius-control: 2px;\n}\n" +
 		".x { color: red }\n"
 	if got := string(r.Stylesheet()); got != want {
 		t.Errorf("Stylesheet() =\n%s\nwant\n%s", got, want)
@@ -197,8 +204,8 @@ func TestThemeStylesheet(t *testing.T) {
 
 func TestThemeTokenRows(t *testing.T) {
 	values := []instance.ThemeTokenValue{
-		{Token: "radius-md", Value: "2px"},
-		{Token: "color-fg", Light: "#000000", Dark: "#ffffff"},
+		{Token: "radius-control", Value: "2px"},
+		{Token: "color-text", Light: "#000000", Dark: "#ffffff"},
 	}
 	var rows []instance.ThemeTokenRow
 	for _, v := range values {
@@ -208,7 +215,7 @@ func TestThemeTokenRows(t *testing.T) {
 		t.Fatalf("rows = %+v", rows)
 	}
 	got := instance.ThemeTokenValuesFromRows(rows)
-	// Back in the order of the tokens: colors come first in theme.css.
+	// Back in the order of the tokens: the colors come before the radii in @my/design-tokens.
 	if !slices.Equal(got, []instance.ThemeTokenValue{values[1], values[0]}) {
 		t.Errorf("ThemeTokenValuesFromRows = %+v", got)
 	}
@@ -219,11 +226,11 @@ func TestThemeColor(t *testing.T) {
 	if got := instance.ThemeColor(tokens, "color-surface", instance.SchemeDark); got != "#101010" {
 		t.Errorf("overridden = %s", got)
 	}
-	def, _ := instance.LookupThemeToken("color-fg")
-	if got := instance.ThemeColor(tokens, "color-fg", instance.SchemeLight); got != def.Light {
+	def, _ := instance.LookupThemeToken("color-text")
+	if got := instance.ThemeColor(tokens, "color-text", instance.SchemeLight); got != def.Light {
 		t.Errorf("default = %s, want %s", got, def.Light)
 	}
-	if got := instance.ThemeColor(tokens, "radius-md", instance.SchemeLight); got != "" {
+	if got := instance.ThemeColor(tokens, "radius-control", instance.SchemeLight); got != "" {
 		t.Errorf("non-color = %q", got)
 	}
 }

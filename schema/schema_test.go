@@ -190,14 +190,32 @@ func TestRequiresMatchTheImportsOfTheApplicationLayer(t *testing.T) {
 	}
 }
 
-// The CHECK constraint of instance_theme_tokens.token lists exactly the tokens a theme may override,
-// which are generated from the web client's theme.css (ADR-0059).
+// The CHECK constraint of instance_theme_tokens.token, and the prepare that deletes the rows it
+// refuses, list exactly the tokens a theme may override, which are generated from the web client's
+// @my/design-tokens (ADR-0059).
 func TestThemeTokenCheckMatchesTheTokenList(t *testing.T) {
 	var want []string
 	for _, tok := range instance.ThemeTokens() {
 		want = append(want, tok.Name)
 	}
 	check := regexp.MustCompile(`(?s)CREATE TABLE instance_theme_tokens \(.*?token [^\n]*CHECK \(token IN \((.*?)\)\)`)
+	prepare := regexp.MustCompile(`(?s)DELETE FROM instance_theme_tokens WHERE token NOT IN \((.*?)\)`)
+	for _, p := range schema.Prepares {
+		if p.Table != "instance_theme_tokens" {
+			continue
+		}
+		m := prepare.FindStringSubmatch(p.SQL)
+		if m == nil {
+			t.Fatalf("the prepare of instance_theme_tokens is not a DELETE ... NOT IN: %s", p.SQL)
+		}
+		var got []string
+		for _, q := range regexp.MustCompile(`'([^']+)'`).FindAllStringSubmatch(m[1], -1) {
+			got = append(got, q[1])
+		}
+		if !slices.Equal(got, want) {
+			t.Errorf("the prepare keeps %v, want %v", got, want)
+		}
+	}
 	for name, sql := range map[string]string{"sqlite": schema.SQLite, "postgres": schema.Postgres} {
 		m := check.FindStringSubmatch(sql)
 		if m == nil {

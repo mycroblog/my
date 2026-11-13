@@ -55,6 +55,9 @@ var SQLite = ddl.SQLite(Modules)
 // Postgres is the postgres.sql files of Modules, concatenated in name order.
 var Postgres = ddl.Postgres(Modules)
 
+// Prepares are the prepares of Modules, which `my schema apply` runs before the plan's changes.
+var Prepares = ddl.Prepares(Modules)
+
 // PostgresBootstrap is schema/ddl/postgres.bootstrap.sql, which runs before Postgres on every
 // PostgreSQL database.
 var PostgresBootstrap = ddl.PostgresBootstrap

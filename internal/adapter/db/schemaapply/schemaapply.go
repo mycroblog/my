@@ -11,11 +11,14 @@ package schemaapply
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"ariga.io/atlas/sql/migrate"
 	"ariga.io/atlas/sql/schema"
+
+	"github.com/mycroblog/my/schema/ddl"
 )
 
 // Options are the flags of `my schema apply`.
@@ -24,6 +27,26 @@ type Options struct {
 	DryRun bool
 	// AllowDestructive applies a plan that drops a schema, a table, or a column.
 	AllowDestructive bool
+	// Prepares run in the transaction before the plan's changes (schema.Prepares).
+	Prepares []ddl.Prepare
+}
+
+// Execer runs a statement, as the transaction of an apply does.
+type Execer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// Prepare runs on tx the prepares whose table the database current already has.
+func Prepare(ctx context.Context, tx Execer, current *schema.Schema, prepares []ddl.Prepare) error {
+	for _, p := range prepares {
+		if _, ok := current.Table(p.Table); !ok {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, p.SQL); err != nil {
+			return fmt.Errorf("prepare %s: %w", p.Table, err)
+		}
+	}
+	return nil
 }
 
 // Result is what one run planned and did.

@@ -7,7 +7,7 @@
 // The catalog names each email by its job type and, for a job that sends several emails, the
 // variant; its draft is the module's own draft function (internal/app/<module>/mail_drafts.go)
 // with sample values, and Render composes it with the real kernel.MailComposer, the committed
-// frame compiled with MJML, and the embedded locale catalogs. A test fails when a
+// frame in the colors of the design tokens' defaults, and the embedded locale catalogs. A test fails when a
 // mail job type, a draft function, or a variant of one is missing from the catalog.
 //
 // The package is a development tool: nothing in the server imports it.
@@ -20,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/domain/supporters"
 	"github.com/mycroblog/my/internal/i18n"
@@ -41,7 +42,9 @@ const (
 )
 
 // Site is the sample instance as its emails name it.
-var Site = kernel.MailSite{Name: sampleName, URL: sampleBaseURL, ContactEmail: sampleContact}
+var Site = kernel.MailSite{
+	Name: sampleName, URL: sampleBaseURL, ContactEmail: sampleContact, Colors: kernel.MailColorsFrom(instance.DefaultThemeColor),
+}
 
 // sampleClosure is the sample schedule of the service closure, with a message from the
 // administrators.

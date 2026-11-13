@@ -36,8 +36,8 @@ func testPage() maintenance.Page {
 		ServerName: "social.example", Message: "Upgrading <the> database.", Until: now.Add(2 * time.Hour),
 		StatusPageURL: "https://status.example.org/",
 		Theme: maintenance.Theme{
-			Light: map[string]string{"color-surface": "#fcf9f6", "color-fg": "#2e2e2e", "font-sans": `"Noto Sans", sans-serif`},
-			Dark:  map[string]string{"color-surface": "#241f20", "color-fg": "#f5ebea"},
+			Light: map[string]string{"color-surface": "#fcf9f6", "color-text": "#2e2e2e", "font-sans": `"Noto Sans", sans-serif`},
+			Dark:  map[string]string{"color-surface": "#241f20", "color-text": "#f5ebea"},
 		},
 	}
 }
@@ -235,7 +235,9 @@ func TestRenderExport(t *testing.T) {
 	}
 	body := string(page)
 	meta := strings.TrimSuffix(csp, "; frame-ancestors 'none'")
-	if !strings.Contains(body, `<meta http-equiv="Content-Security-Policy" content="`+html.EscapeString(meta)+`">`) {
+	// html/template escapes more than html.EscapeString does (a + of the hash is &#43;), so the
+	// attribute is compared as a browser reads it.
+	if !strings.Contains(html.UnescapeString(body), `<meta http-equiv="Content-Security-Policy" content="`+meta+`">`) {
 		t.Errorf("no meta CSP %q:\n%s", meta, body)
 	}
 	if !strings.Contains(body, `<section lang="en" dir="ltr"`) || !strings.Contains(body, `<section lang="ja" dir="ltr"`) {
@@ -250,7 +252,7 @@ func TestUnsafeTheme(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, v := range []string{"red;}body{display:none", "url(https://example.org/x.png)", "</style><script>", `red\;`} {
-		p := maintenance.Page{ServerName: "x", Theme: maintenance.Theme{Light: map[string]string{"color-fg": v}}}
+		p := maintenance.Page{ServerName: "x", Theme: maintenance.Theme{Light: map[string]string{"color-text": v}}}
 		if _, _, err := maintenance.Render(p, []*i18n.Localizer{b.Localizer("en")}, maintenance.RenderOptions{}); err == nil {
 			t.Errorf("%q: Render accepted it", v)
 		}

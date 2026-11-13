@@ -40,7 +40,7 @@ type Theme struct {
 // TokenNames are the design tokens of the theme that the page's CSS reads; the
 // callers fill Theme with their defaults and the instance's overrides.
 var TokenNames = []string{
-	"color-surface", "color-surface-raised", "color-fg", "color-fg-muted", "color-accent", "color-border", "font-sans",
+	"color-surface", "color-surface-raised", "color-text", "color-muted-text", "color-accent-text", "font-sans",
 }
 
 //go:embed templates/page.html templates/closure
@@ -179,16 +179,16 @@ func safeValue(v string) bool {
 	return !strings.Contains(strings.ToLower(v), "url(")
 }
 
-const baseCSS = `html{color-scheme:light dark;background:var(--color-surface,Canvas);color:var(--color-fg,CanvasText);` +
+const baseCSS = `html{color-scheme:light dark;background:var(--color-surface,Canvas);color:var(--color-text,CanvasText);` +
 	`font-family:var(--font-sans,system-ui,sans-serif);line-height:1.7}` +
 	`body{margin:0}` +
 	`main{box-sizing:border-box;max-inline-size:40rem;margin-inline:auto;padding-block:3rem;padding-inline:1rem;display:grid;gap:1.5rem}` +
-	`section{background:var(--color-surface-raised,Canvas);border:1px solid var(--color-border,GrayText);border-radius:1rem;` +
+	`section{background:var(--color-surface-raised,Canvas);border-radius:1rem;` +
 	`padding-block:1.5rem;padding-inline:1.5rem}` +
 	`h1{font-size:1.5rem;line-height:1.3;margin-block:0 .75rem}` +
 	`h2{font-size:1rem;margin-block:1.25rem .25rem}` +
 	`p,dl{margin-block:0 .75rem}` +
-	`.server{color:var(--color-fg-muted,GrayText);font-size:.875rem;font-weight:600;margin-block-end:.25rem}` +
+	`.server{color:var(--color-muted-text,GrayText);font-size:.875rem;font-weight:600;margin-block-end:.25rem}` +
 	`.message{white-space:pre-wrap;overflow-wrap:anywhere}` +
 	`dt{font-weight:600}dd{margin-inline-start:0}` +
-	`a{color:var(--color-accent,LinkText)}`
+	`a{color:var(--color-accent-text,LinkText)}`

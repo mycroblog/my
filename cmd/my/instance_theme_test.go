@@ -13,14 +13,14 @@ func TestInstanceTheme(t *testing.T) {
 	if out := mustInstance(t, "", "theme", "get"); !strings.Contains(out, `"tokens": []`) {
 		t.Errorf("get without a theme = %q", out)
 	}
-	out := mustInstance(t, `{"tokens":[{"token":"radius-md","value":"2px"},{"token":"color-surface","light":"#FFFDF5","dark":"#0a0a0a"}],"custom_css":"a{}"}`,
+	out := mustInstance(t, `{"tokens":[{"token":"radius-control","value":"2px"},{"token":"color-surface","light":"#FFFDF5","dark":"#0a0a0a"}],"custom_css":"a{}"}`,
 		"theme", "set")
 	var got themeDocument
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
 		t.Fatalf("set output %q: %v", out, err)
 	}
 	want := themeDocument{
-		Tokens:    []themeTokenDocument{{Token: "color-surface", Light: "#fffdf5", Dark: "#0a0a0a"}, {Token: "radius-md", Value: "2px"}},
+		Tokens:    []themeTokenDocument{{Token: "color-surface", Light: "#fffdf5", Dark: "#0a0a0a"}, {Token: "radius-control", Value: "2px"}},
 		CustomCSS: "a{}",
 	}
 	if len(got.Tokens) != 2 || got.Tokens[0] != want.Tokens[0] || got.Tokens[1] != want.Tokens[1] || got.CustomCSS != want.CustomCSS {
@@ -41,7 +41,7 @@ func TestInstanceTheme(t *testing.T) {
 		{"not json", []string{"theme", "set"}, 1, "not JSON"},
 		{`{"tokens":[]} {"tokens":[]}`, []string{"theme", "set"}, 1, "exactly one JSON value"},
 		{`{"tokens":[]} garbage`, []string{"theme", "set"}, 1, "exactly one JSON value"},
-		{`{"tokens":[{"token":"color-fg","light":"#ffffff","dark":"#ffffff"}],"custom_css":""}`, []string{"theme", "set"}, 1, "color-fg on color-surface"},
+		{`{"tokens":[{"token":"color-text","light":"#ffffff","dark":"#ffffff"}],"custom_css":""}`, []string{"theme", "set"}, 1, "color-text on color-surface"},
 	} {
 		code, _, stderr := runInstanceCmd(t, tc.stdin, tc.args...)
 		if code != tc.code || !strings.Contains(stderr, tc.want) {

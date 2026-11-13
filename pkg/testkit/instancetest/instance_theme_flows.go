@@ -56,7 +56,7 @@ func instanceHasNoTheme(t *testing.T, e *instanceEnv) {
 
 func instanceKeepsThemeRevisions(t *testing.T, e *instanceEnv) {
 	first := e.setTheme(t, ".a { color: red }",
-		instance.ThemeTokenValue{Token: "radius-md", Value: "2px"},
+		instance.ThemeTokenValue{Token: "radius-control", Value: "2px"},
 		instance.ThemeTokenValue{Token: "color-surface", Light: "#FFFDF5", Dark: "#0a0a0a"},
 	)
 	got, ok := e.theme(t)
@@ -67,14 +67,14 @@ func instanceKeepsThemeRevisions(t *testing.T, e *instanceEnv) {
 		ID: first.ID, CustomCSS: ".a { color: red }", RevisedByUserID: ruleModerator, RevisedAt: first.RevisedAt,
 		Tokens: []instance.ThemeTokenValue{
 			{Token: "color-surface", Light: "#fffdf5", Dark: "#0a0a0a"},
-			{Token: "radius-md", Value: "2px"},
+			{Token: "radius-control", Value: "2px"},
 		},
 	}
 	if !reflect.DeepEqual(got, want) || !reflect.DeepEqual(first, want) {
 		t.Errorf("Theme = %+v\nSetTheme = %+v\nwant %+v", got, first, want)
 	}
 
-	second := e.setTheme(t, "", instance.ThemeTokenValue{Token: "spacing", Value: "0.3rem"})
+	second := e.setTheme(t, "", instance.ThemeTokenValue{Token: "radius-overlay", Value: "0.3rem"})
 	if got, _ := e.theme(t); got.ID != second.ID || got.CustomCSS != "" || len(got.Tokens) != 1 {
 		t.Errorf("Theme after the second save = %+v", got)
 	}
@@ -95,7 +95,7 @@ func instanceKeepsThemeRevisions(t *testing.T, e *instanceEnv) {
 
 func instanceRejectsInvalidThemes(t *testing.T, e *instanceEnv) {
 	_, err := e.service.SetTheme(t.Context(), appinstance.SetThemeInput{
-		Tokens: []instance.ThemeTokenValue{{Token: "color-fg", Light: "#ffffff", Dark: "#ffffff"}},
+		Tokens: []instance.ThemeTokenValue{{Token: "color-text", Light: "#ffffff", Dark: "#ffffff"}},
 	})
 	var te *instance.ThemeError
 	if !errors.As(err, &te) || len(te.Problems) == 0 {
@@ -110,7 +110,7 @@ func instanceThemeProjectionEqualsRebuild(t *testing.T, e *instanceEnv) {
 	ctx := t.Context()
 	var last instance.ThemeRevision
 	for i := range 5 {
-		last = e.setTheme(t, "", instance.ThemeTokenValue{Token: "radius-md", Value: []string{"1px", "2px", "3px", "4px", "5px"}[i]})
+		last = e.setTheme(t, "", instance.ThemeTokenValue{Token: "radius-control", Value: []string{"1px", "2px", "3px", "4px", "5px"}[i]})
 	}
 	if err := appinstance.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Instance); err != nil {
 		t.Fatal(err)

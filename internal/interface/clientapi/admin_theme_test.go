@@ -80,7 +80,7 @@ func TestManageTheme(t *testing.T) {
 	}
 
 	res := e.sendJSON(t, http.MethodPut, "/admin/theme", "admin", `{"tokens":[
-		{"token":"radius-md","value":"2px"},
+		{"token":"radius-control","value":"2px"},
 		{"token":"color-surface","light":"#FFFDF5","dark":"#0a0a0a"}
 	],"custom_css":".brand { color: red }"}`)
 	got = decodeJSON[clientapi.AdminTheme](t, res)
@@ -89,7 +89,7 @@ func TestManageTheme(t *testing.T) {
 		t.Fatalf("set = %d %+v", res.StatusCode, got)
 	}
 	if len(got.Tokens) != 2 || got.Tokens[0].Token != "color-surface" || *got.Tokens[0].Light != "#fffdf5" || got.Tokens[0].Value != nil ||
-		got.Tokens[1].Token != "radius-md" || *got.Tokens[1].Value != "2px" || got.Tokens[1].Light != nil {
+		got.Tokens[1].Token != "radius-control" || *got.Tokens[1].Value != "2px" || got.Tokens[1].Light != nil {
 		t.Errorf("tokens = %s", mustJSON(t, got.Tokens))
 	}
 	if by := f.sets[0].RevisedByUserID; by != userOf(aliceAccountID) {
@@ -114,8 +114,8 @@ func TestThemeProblems(t *testing.T) {
 	e, f := newThemeEnv(t)
 	res := e.sendJSON(t, http.MethodPut, "/admin/theme", "admin", `{"tokens":[
 		{"token":"palette-blue-600","value":"#000000"},
-		{"token":"radius-md","value":"1px; } body { display: none"},
-		{"token":"spacing","value":"2rem"}
+		{"token":"radius-control","value":"1px; } body { display: none"},
+		{"token":"text-body","value":"4rem"}
 	],"custom_css":""}`)
 	if res.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d", res.StatusCode)
@@ -126,17 +126,17 @@ func TestThemeProblems(t *testing.T) {
 	}
 	codes := []clientapi.ThemeErrorCode{themeErrors(p)[0].Code, themeErrors(p)[1].Code, themeErrors(p)[2].Code}
 	if codes[0] != "unknown_token" || codes[1] != "invalid_value" || codes[2] != "out_of_range" ||
-		*themeErrors(p)[2].Min != 0.125 || *themeErrors(p)[2].Max != 0.5 {
+		*themeErrors(p)[2].Min != 0.625 || *themeErrors(p)[2].Max != 3 {
 		t.Errorf("errors = %s", mustJSON(t, themeErrors(p)))
 	}
 
-	res = e.sendJSON(t, http.MethodPut, "/admin/theme", "admin", `{"tokens":[{"token":"color-fg","light":"#eeeeee","dark":"#f9fafb"}],"custom_css":""}`)
+	res = e.sendJSON(t, http.MethodPut, "/admin/theme", "admin", `{"tokens":[{"token":"color-text","light":"#eeeeee","dark":"#f9fafb"}],"custom_css":""}`)
 	p = decodeJSON[clientapi.ThemeProblem](t, res)
 	if res.StatusCode != http.StatusUnprocessableEntity || len(themeErrors(p)) < 3 {
 		t.Fatalf("low contrast = %d %s", res.StatusCode, mustJSON(t, p))
 	}
 	e0 := themeErrors(p)[0]
-	if e0.Code != "low_contrast" || *e0.Token != "color-fg" || *e0.Background != "color-surface" || *e0.Scheme != "light" ||
+	if e0.Code != "low_contrast" || *e0.Token != "color-text" || *e0.Background != "color-surface" || *e0.Scheme != "light" ||
 		*e0.Minimum != 4.5 || *e0.Ratio >= 4.5 {
 		t.Errorf("contrast error = %s", mustJSON(t, e0))
 	}

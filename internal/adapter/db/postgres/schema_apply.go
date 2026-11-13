@@ -104,6 +104,9 @@ func applySchema(ctx context.Context, url, devURL, ddl string, opts schemaapply.
 		}
 		txDrv, err := atlaspostgres.Open(tx)
 		if err == nil {
+			err = schemaapply.Prepare(ctx, tx, current, opts.Prepares)
+		}
+		if err == nil {
 			err = txDrv.ApplyChanges(ctx, changes)
 		}
 		if err != nil {

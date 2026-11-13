@@ -556,22 +556,19 @@ The server-wide theme is a set of overrides of the web client's design tokens pl
 applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on), in
 both light and dark.
 
-- You can override every design token except the primitive colors (`--palette-*`):
+- You can override these design tokens; the sizes of the components, the weights of the type, and the shadow stay fixed:
 
   | Tokens | Kind | Override |
   | --- | --- | --- |
-  | `color-*` (but `color-badge-*`, `color-avatar-*`, `color-hand`, `color-hand-fg`) | color | `#rrggbb` for light and for dark (`#rrggbbaa` for `color-overlay`) |
-  | `font-sans`, `font-mono`, `font-serif` | font family | Family names, quoted or plain, comma-separated (at most 30) |
-  | `text-*` | length | `0` or rem / px, 0.625rem to 3rem |
-  | `text-*--line-height` | number | 1 to 2.5 |
-  | `spacing` | length | 0.125rem to 0.5rem |
-  | `radius-*` (but `radius-avatar`) | length | 0 to 2rem |
-  | `elevation-*` | shadow | `none` or up to 4 `[inset] <x> <y> [<blur> [<spread>]] <#color>` layers, lengths within 4rem |
-  | `transition-duration-*`, `default-transition-duration` | duration | ms / s, 0 to 1000ms |
-  | `ease-*`, `default-transition-timing-function` | easing | `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, or `cubic-bezier()` with x in 0..1 |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | color | `#rrggbb` for light and for dark |
+  | `font-sans` | font family | Family names, quoted or plain, comma-separated (at most 30) |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
+  | `text-*--line-height` of the same four | number | 1 to 2.5 |
+  | `radius-control`, `radius-overlay` | length | 0 to 2rem |
+  | `duration-spin` | duration | ms / s, 0 to 1000ms |
 
-  When you override `font-sans` or `font-mono`, keep `"my Noto Color Emoji"` first; otherwise the emoji of the web client
-  are drawn with the OS font.
+- An override of a token that a version no longer has stays in the saved theme but no longer applies; save the theme again
+  without it.
 - When you save, the server checks the shape and range of the values, the contrast of every pair of color tokens (tokens you do
   not override use their defaults; WCAG 2.2 AA in both light and dark), and the length of the custom CSS (64 KiB). If any check
   fails, nothing is saved.
@@ -585,7 +582,7 @@ both light and dark.
   seconds of revalidation), so it takes a few minutes after you save for everyone to get it. A page that is already open keeps
   the old look until it is reloaded.
 - `<meta name="theme-color">` (light and dark) in the shell and `theme_color` / `background_color` (light) of the Web App
-  Manifest take the value of the theme's `color-surface`.
+  Manifest take the value of the theme's `color-surface`. Emails use the default colors of the tokens, whatever the theme.
 - Saving a revision with no tokens and no custom CSS resets the theme to the default, and the stylesheet is no longer loaded.
 - You can change it on the admin screen of the web client ("Theme", `/admin/theme`), with the client API (`GET` / `PUT
   /api/v1/admin/theme`), and with the CLI. The admin screen and the client API need the role permission `manage_settings`, and
@@ -600,8 +597,8 @@ echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the def
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
   ],
   "custom_css": ".brand { letter-spacing: 0.02em; }"
 }
