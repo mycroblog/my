@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The anatomy of a post in the home timeline, in grayscale (ADR-0169 §9), on a short column of en and ja posts: an
-// author header (avatar, name and time over the handle), then the body, the media and the actions at the full width,
+// author header (avatar, then the name with the visibility and the time at the end, over the handle), then the body, the media and the actions at the full width,
 // so that no empty column takes room on mobile. The media, not yet a component, is drawn as a gray block; the avatar,
 // the actions (the Button) and the glyphs are those of @my/design-system. Custom emoji wait for the post's text
 // renderer.
@@ -10,15 +10,20 @@ import { Avatar, Button, Icon, icons, type IconName, type IconPlace } from "@my/
 import { rootPx, text, type Scheme } from "@my/design-tokens";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { AvatarSpecimen, images } from "./Avatars";
+import { ago, caption, NameLine, Stamp, TimeSpecimen, visibilityLabel, type Visibility } from "./Times";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
-type Visibility = "public" | "unlisted" | "followers" | "direct";
+const minute = 60_000;
+const hour = 60 * minute;
+const day = 24 * hour;
+
 type Post = {
   lang: "en" | "ja";
   name: string;
   handle: string;
-  time: string;
+  /** How long ago it was posted, in ms; the time is that long before the page renders. */
+  ago: number;
   avatar?: string;
   visibility: Visibility;
   context?: { kind: "boost" | "reply"; who: string };
@@ -26,13 +31,6 @@ type Post = {
   body: ReactNode;
   media?: string;
   counts: { replies: number; boosts: number; favourites: number };
-};
-
-const visibilityLabel: Record<Visibility, string> = {
-  public: "Public",
-  unlisted: "Quiet public",
-  followers: "Followers only",
-  direct: "Direct",
 };
 
 const muted = "var(--color-muted-text)";
@@ -43,12 +41,6 @@ const avatarGap = 10;
 
 // One column that may shrink below its content, so that a long handle truncates instead of widening the post.
 const one = "minmax(0, 1fr)";
-
-const caption: CSSProperties = {
-  color: muted,
-  fontSize: `${text.caption.size}rem`,
-  lineHeight: text.caption.lineHeight,
-};
 
 // A link, a mention or a hashtag: in grayscale, the text's own color, underlined.
 const A = ({ children }: { children: ReactNode }) => (
@@ -84,7 +76,7 @@ const posts: Post[] = [
     lang: "en",
     name: "Alice Chen",
     handle: "@alice@example.social",
-    time: "3m",
+    ago: 3 * minute,
     avatar: images.dusk,
     visibility: "public",
     context: { kind: "reply", who: "@mika" },
@@ -95,7 +87,7 @@ const posts: Post[] = [
     lang: "ja",
     name: "佐藤 美香",
     handle: "@mika@mstdn.example.jp",
-    time: "12分",
+    ago: 12 * minute,
     avatar: images.snow,
     visibility: "public",
     body: (
@@ -112,7 +104,7 @@ const posts: Post[] = [
     lang: "en",
     name: "Open Source Weekly",
     handle: "@news@social.example.org",
-    time: "1h",
+    ago: hour,
     avatar: images.logo,
     visibility: "unlisted",
     context: { kind: "boost", who: "Kenji" },
@@ -128,7 +120,7 @@ const posts: Post[] = [
     lang: "ja",
     name: "たくや",
     handle: "@takuya@example.jp",
-    time: "2時間",
+    ago: 26 * hour,
     visibility: "followers",
     cw: "映画の結末に触れています",
     body: <>最後の十分で全部ひっくり返るの、二回目に観るとちゃんと伏線があってすごい。</>,
@@ -138,7 +130,7 @@ const posts: Post[] = [
     lang: "en",
     name: "Ravi",
     handle: "@ravi@fedi.example.net",
-    time: "4h",
+    ago: 9 * day,
     visibility: "direct",
     body: <>First snow on the ridge this morning.</>,
     media: "A snowy ridge under a pale sky, with pine trees in the foreground",
@@ -242,18 +234,13 @@ function Body({ post }: { post: Post }) {
   );
 }
 
-const ellipsis: CSSProperties = { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-// The name keeps its room before the handle gives up its own.
-const name: CSSProperties = { ...ellipsis, fontWeight: 700, flex: "none", maxWidth: "65%" };
-const handle: CSSProperties = { ...ellipsis, color: muted, flex: "0 1 auto" };
-
-// The time with the visibility as a glyph, next to the name.
-const Stamp = ({ visibility, time }: { visibility: Visibility; time: string }) => (
-  <span style={{ ...caption, alignItems: "center", display: "flex", flex: "none", gap: rem(6) }}>
-    <Glyph meaning={visibility} size="caption" label={visibilityLabel[visibility]} />
-    <time>{time}</time>
-  </span>
-);
+const handle: CSSProperties = {
+  color: muted,
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
 
 type PostState = "hover" | "focus-visible";
 
@@ -268,8 +255,8 @@ const focusRing = [
 // it is, so the space between posts at rest is unchanged.
 const reach = 12;
 
-// A post: the author is a header beside the avatar, the name and the time on one line over the handle, so the time
-// stays by the name at any width; the body, the media and the actions take the whole width below it. At rest it has
+// A post: the author is a header beside the avatar, the name, then the visibility and the time at the line's end, over
+// the handle; the time is in the reader's locale, the page's, whatever the post's language. The body, the media and the actions take the whole width below it. At rest it has
 // no edge; hovered or focused from the keyboard, it shows its extent with the surface-hover surface, and focus adds
 // the ring. `shown` shows a state at rest, for the catalog.
 function PostView({ post, shown }: { post: Post; shown?: PostState }) {
@@ -309,10 +296,7 @@ function PostView({ post, shown }: { post: Post; shown?: PostState }) {
       <div style={{ alignItems: "center", display: "flex", gap: rem(avatarGap) }}>
         <Avatar name={post.name} src={post.avatar} size="post" decorative />
         <div style={{ display: "grid", flex: "1 1 0", minWidth: 0, fontSize: `${text.body.size}rem` }}>
-          <div style={{ alignItems: "baseline", display: "flex", gap: rem(8), lineHeight: 1.3, minWidth: 0 }}>
-            <span style={name}>{post.name}</span>
-            <Stamp visibility={post.visibility} time={post.time} />
-          </div>
+          <NameLine name={post.name} visibility={post.visibility} date={ago(post.ago)} />
           <span style={{ ...handle, ...caption, lineHeight: 1.3 }}>{post.handle}</span>
         </div>
       </div>
@@ -368,7 +352,7 @@ function Sheet({ scheme }: { scheme: Scheme }) {
           {visibilities.map((v) => (
             <span key={v} style={{ alignItems: "baseline", display: "flex", gap: rem(8) }}>
               <span style={{ fontWeight: 700 }}>{visibilityLabel[v]}</span>
-              <Stamp visibility={v} time="12m" />
+              <Stamp visibility={v} date={ago(12 * minute)} />
             </span>
           ))}
         </div>
@@ -435,6 +419,10 @@ export function Posts() {
             <PostView post={posts[2] as Post} shown={state} />
           </div>
         ))}
+      </div>
+      <div id="time" style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
+        <TimeSpecimen scheme="light" />
+        <TimeSpecimen scheme="dark" />
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: rem(16) }}>
         <AvatarSpecimen scheme="light" />
