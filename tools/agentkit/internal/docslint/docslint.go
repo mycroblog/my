@@ -211,6 +211,11 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 		return nil, err
 	}
 	out = append(out, fs...)
+	fs, err = l.picks(sorted)
+	if err != nil {
+		return nil, err
+	}
+	out = append(out, fs...)
 	out = append(out, stale(c.Pending.Japanese, pendingJA, l.exists, c.English, "pending.japanese", "contains no Japanese")...)
 	out = append(out, stale(c.Pending.DesignLinks, pendingDL, l.exists, c.Operator, "pending.design-links", "points at no design record")...)
 	sort.SliceStable(out, func(i, j int) bool {

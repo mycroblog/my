@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests scripts/visual-agreement.sh on recorded picks of a temporary exemplars file.
+# Tests scripts/visual-agreement.sh on recorded picks of a temporary log.
 set -euo pipefail
 
 script="$(cd "$(dirname "$0")" && pwd)/visual-agreement.sh"
@@ -17,40 +17,45 @@ check() {
   fi
 }
 
-cat >"$tmp/empty.md" <<'EOF'
-# visual: exemplars
+got=$(VISUAL_PICKS="$tmp/none.jsonl" VISUAL_MAIN="$tmp" "$script" scenes)
+check "no log" "no picks to replay" "${got%%:*}"
 
-One line each: `- <the model screen, or the options that lost> — <why> — <from: the decider's choice> — <YYYY-MM-DD>`.
-
-- the catalog's type specimen — one sample per role — the decider's choice — 2026-11-12
+cat >"$tmp/note-only.jsonl" <<'EOF'
+{"options":"swatch-color","variants":["cool","warm"],"pick":null,"reason":"retune warm","context":null,"evaluator":"ship warm","from":"n1","shots":".tmp/visual/swatch-color","date":"2026-11-12"}
 EOF
-got=$(VISUAL_EXEMPLARS="$tmp/empty.md" VISUAL_SHOTS="$tmp/shots" "$script" scenes)
-check "no picks" "no picks to replay" "${got%%:*}"
+got=$(VISUAL_PICKS="$tmp/note-only.jsonl" VISUAL_MAIN="$tmp" "$script" scenes)
+check "a note is no pick" "no picks to replay" "${got%%:*}"
 
-cat >"$tmp/picks.md" <<'EOF'
-# visual: exemplars
-
-One line each: `- <the model screen, or the options that lost> — <why> — <from: the decider's choice> — <YYYY-MM-DD>`.
-
-- pick swatch-shape: square over round, pill — round read as a button — the decider's pick (b1.2); the evaluator: round — 2026-11-12
-- pick type-scale: tight over loose — loose split the specimen across the fold — the decider's pick (b2.1); the evaluator: tight — 2026-11-13
+cat >"$tmp/picks.jsonl" <<'EOF'
+{"options":"swatch-shape","variants":["pill","round","square"],"pick":"square","reason":"round read as a button","context":null,"evaluator":"fix round","from":"b1.2","shots":".tmp/visual/swatch-shape","date":"2026-11-12"}
+{"options":"swatch-color","variants":["cool","warm"],"pick":null,"reason":"retune warm","context":null,"evaluator":"ship warm","from":"n1","shots":".tmp/visual/swatch-color","date":"2026-11-12"}
+{"options":"type-scale","variants":["loose","tight"],"pick":"tight","reason":null,"context":"loose split the specimen across the fold","evaluator":"ship tight","from":"b2.1","shots":".tmp/visual/type-scale","date":"2026-11-13"}
+{"options":"type-weight","variants":["bold","light"],"pick":"bold","reason":null,"context":null,"evaluator":"ship light","from":"b2.2","shots":".tmp/visual/type-weight","date":"2026-11-13"}
 EOF
-mkdir -p "$tmp/shots/swatch-shape"
-export VISUAL_EXEMPLARS="$tmp/picks.md" VISUAL_SHOTS="$tmp/shots"
+mkdir -p "$tmp/.tmp/visual/swatch-shape"
+export VISUAL_PICKS="$tmp/picks.jsonl" VISUAL_MAIN="$tmp"
 
-check "scenes" "swatch-shape: pill round square; shots: $tmp/shots/swatch-shape
-type-scale: loose tight; shots: $tmp/shots/type-scale (missing: take them again from the commit that held the options)" "$("$script" scenes)"
+missing="(missing: take them again from the commit that held the options)"
+check "scenes" "swatch-shape: pill round square; shots: $tmp/.tmp/visual/swatch-shape
+type-scale: loose tight; shots: $tmp/.tmp/visual/type-scale $missing
+type-weight: bold light; shots: $tmp/.tmp/visual/type-weight $missing" "$("$script" scenes)"
 
-check "score" "agreement: 1 of 2 (50%)
+check "score" "agreement: 0 of 3 (0%)
 misses:
-- swatch-shape: the evaluator picked round, the decider square — round read as a button" \
-  "$("$script" score swatch-shape=round type-scale=tight)"
+- swatch-shape: the evaluator picked round, the decider square — round read as a button
+- type-scale: the evaluator picked loose, the decider tight — loose split the specimen across the fold
+- type-weight: the evaluator picked light, the decider bold — no reason given" \
+  "$("$script" score swatch-shape=round type-scale=loose type-weight=light)"
 
-check "score, one unanswered" "agreement: 1 of 1 (100%)
-not answered: swatch-shape" "$("$script" score type-scale=tight)"
+check "score, unanswered" "agreement: 1 of 1 (100%)
+not answered: swatch-shape type-weight" "$("$script" score type-scale=tight)"
 
 if "$script" score nothing=round 2>/dev/null; then
   echo "FAIL: score accepted an unknown pick" >&2
+  fail=1
+fi
+if "$script" score swatch-color=warm 2>/dev/null; then
+  echo "FAIL: score accepted a record without a pick" >&2
   fail=1
 fi
 

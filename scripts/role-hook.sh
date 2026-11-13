@@ -9,7 +9,8 @@
 #   role-hook.sh visual-evaluator   the evaluator reads the rendered page, its own knowledge, and the visual role's
 #                                   decisions, which are never findings: a Read of an image, of
 #                                   .claude/knowledge/visual-evaluator/ or of .claude/knowledge/visual/decisions.md,
-#                                   and nothing else (never the exemplars, which hold the decider's picks)
+#                                   and nothing else (never the log of the decider's picks, .claude/picks/, nor the
+#                                   exemplars, the lessons of those picks)
 set -euo pipefail
 
 input=$(cat)
