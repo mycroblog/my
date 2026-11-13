@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import "@my/design-system/styles.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Catalog } from "./Catalog";

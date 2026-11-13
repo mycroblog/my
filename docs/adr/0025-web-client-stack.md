@@ -38,6 +38,8 @@
 - **TanStack Query**: React 19 の `use` はキャッシュを持たず、無効化・ページングも提供しない。
 - **Vitest**: React Compiler の変換をテストにも同じように適用でき、Storybook と組み合わせて実ブラウザでアクセシビリティの検査ができる。
 
+対応するブラウザは Chrome 123・Firefox 120・Safari 17.5 以上とし、ビルドの CSS の対象にする。`light-dark()` を書き換えさせないため（決定者、2026-11-13）。
+
 具体的なバージョンは各パッケージの `package.json` と lockfile で固定する。公開から 3 日未満の版は使わない（ワークスペースの `minimumReleaseAge`）。
 
 書き方の規約は、可能なものを lint で強制する。

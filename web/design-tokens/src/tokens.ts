@@ -37,7 +37,10 @@ export type SchemeColor = Record<Scheme, string>;
 
 /**
  * The colors. `accent` is the brand's coral as a fill, with `on-accent` on it; `accent-text` carries links and the
- * focus ring, darker than the fill in light, where the coral reaches only 2.8:1 on the surface.
+ * focus ring, darker than the fill in light, where the coral reaches only 2.8:1 on the surface. Coral means the
+ * primary action and links only. `surface-raised` and its hovered and pressed steps are the neutral surface of a
+ * control, drawn from the warmth of the palette; `surface-hover` and `surface-pressed` answer a control without a
+ * surface, lighter than `surface-raised`, so that it never reads as one with a surface.
  */
 export const color = {
   surface: { light: "#ffffff", dark: "#221c1b" },
@@ -46,6 +49,11 @@ export const color = {
   accent: { light: "#ff6b6b", dark: "#ff6b6b" },
   "on-accent": { light: "#111111", dark: "#111111" },
   "accent-text": { light: "#a64646", dark: "#ff6b6b" },
+  "surface-raised": { light: "#f4efed", dark: "#372826" },
+  "surface-raised-hover": { light: "#e6ddd9", dark: "#43302d" },
+  "surface-raised-pressed": { light: "#d9cdc8", dark: "#503835" },
+  "surface-hover": { light: "#f9f6f5", dark: "#2b201f" },
+  "surface-pressed": { light: "#f1ebe9", dark: "#332624" },
 } as const satisfies Record<string, SchemeColor>;
 
 export type ColorName = keyof typeof color;
@@ -62,7 +70,48 @@ export const contrastPairs: readonly ContrastPair[] = [
   { fg: "muted-text", bg: "surface", minimum: 4.5 },
   { fg: "accent-text", bg: "surface", minimum: 4.5 },
   { fg: "on-accent", bg: "accent", minimum: 4.5 },
+  { fg: "text", bg: "surface-raised", minimum: 4.5 },
+  { fg: "text", bg: "surface-raised-hover", minimum: 4.5 },
+  { fg: "text", bg: "surface-raised-pressed", minimum: 4.5 },
+  { fg: "text", bg: "surface-hover", minimum: 4.5 },
+  { fg: "text", bg: "surface-pressed", minimum: 4.5 },
 ];
+
+/** The weight of a control's label. */
+export const fontWeight = { label: 600 } as const;
+
+/** The corner radius of a control, in rem. */
+export const radius = { control: 0.375 } as const;
+
+/** A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form. */
+export const control = {
+  timeline: { height: 2, paddingInline: 0.75 },
+  form: { height: 2.5, paddingInline: 1 },
+} as const satisfies Record<string, { height: number; paddingInline: number }>;
+
+/**
+ * The focus ring, in px: a gap of the surface, a ring of `accent-text`, and a halo of the accent at `haloShare`, so
+ * that it marks focus around any control, also one without a surface.
+ */
+export const focusRing = { gap: 2, width: 2, halo: 3, haloShare: 0.35 } as const;
+
+/**
+ * How a control answers the pointer: a fill mixes in `hover` and `pressed` of `shade` (on-accent keeps 4.5:1, a test
+ * holds it), a press moves it down `shift` px, and a disabled control shows at `disabledOpacity`.
+ */
+export const press = { shade: "#000000", hover: 0.1, pressed: 0.2, shift: 1, disabledOpacity: 0.4 } as const;
+
+/** A motion: its duration in ms, and whether it stands `still` or keeps turning with reduced motion. */
+export type Motion = { duration: number; reduced: "still" | "turn" };
+
+/**
+ * Motion. The spinner of a control in flight turns once in `duration` ms; with reduced motion it stands `still`,
+ * since a ring with one arc reads as busy without turning.
+ */
+export const motion: { readonly spin: Motion } = { spin: { duration: 800, reduced: "still" } };
+
+/** The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. */
+export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
 
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
@@ -81,26 +130,54 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const textProperties = (name: string, step: TextStep) => [
-  `--text-${name}: ${step.size}rem;`,
-  `--text-${name}--line-height: ${step.lineHeight};`,
-  `--text-${name}--font-weight: ${step.fontWeight};`,
-  ...(step.letterSpacing === undefined ? [] : [`--text-${name}--letter-spacing: ${step.letterSpacing};`]),
+/** `over` mixed over `under` at `share` (0 to 1) in sRGB, as CSS color-mix does, as #rrggbb. */
+export function mix(over: string, under: string, share: number): string {
+  const u = channels(under);
+  const mixed = channels(over).map((v, i) => Math.round(v * share + (u[i] ?? 0) * (1 - share)));
+  return `#${mixed.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+const textProperties = (name: string, step: TextStep): [string, string][] => [
+  [`--text-${name}`, `${step.size}rem`],
+  [`--text-${name}--line-height`, `${step.lineHeight}`],
+  [`--text-${name}--font-weight`, `${step.fontWeight}`],
+  ...(step.letterSpacing === undefined
+    ? []
+    : [[`--text-${name}--letter-spacing`, step.letterSpacing] as [string, string]]),
 ];
 
+const percent = (share: number) => `${share * 100}%`;
+
 /**
- * The tokens as custom properties on :root: `--font-*`, `--text-*` (with Tailwind's `--line-height`,
- * `--font-weight` and `--letter-spacing` suffixes) and `--color-*` as `light-dark()`, which follows the color
- * scheme of the system or of `<html data-theme>`.
+ * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
+ * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
+ * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--focus-ring-*`,
+ * `--press-*`, `--duration-*` and `--spinner-*`. The design system's stylesheet declares them on :root.
  */
-export const css = [
-  ":root {",
-  "  color-scheme: light dark;",
-  ...Object.entries(fontFamily).map(([name, value]) => `  --font-${name}: ${value};`),
-  ...Object.entries(text).flatMap(([name, step]) => textProperties(name, step).map((line) => `  ${line}`)),
-  ...Object.entries(color).map(([name, c]) => `  --color-${name}: light-dark(${c.light}, ${c.dark});`),
-  "}",
-  ':root[data-theme="light"] { color-scheme: light; }',
-  ':root[data-theme="dark"] { color-scheme: dark; }',
-  "",
-].join("\n");
+export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
+  ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
+  ...Object.entries(text).flatMap(([name, step]) => textProperties(name, step)),
+  ...Object.entries(color).map(([name, c]): [string, string] => [
+    `--color-${name}`,
+    `light-dark(${c.light}, ${c.dark})`,
+  ]),
+  ...Object.entries(fontWeight).map(([name, w]): [string, string] => [`--font-weight-${name}`, `${w}`]),
+  ...Object.entries(radius).map(([name, r]): [string, string] => [`--radius-${name}`, `${r}rem`]),
+  ...Object.entries(control).flatMap(([size, c]): [string, string][] => [
+    [`--control-${size}-height`, `${c.height}rem`],
+    [`--control-${size}-padding-inline`, `${c.paddingInline}rem`],
+  ]),
+  ["--focus-ring-gap", `${focusRing.gap}px`],
+  ["--focus-ring-width", `${focusRing.width}px`],
+  ["--focus-ring-halo", `${focusRing.halo}px`],
+  ["--focus-ring-halo-share", percent(focusRing.haloShare)],
+  ["--press-shade", press.shade],
+  ["--press-hover", percent(press.hover)],
+  ["--press-pressed", percent(press.pressed)],
+  ["--press-shift", `${press.shift}px`],
+  ["--press-disabled-opacity", `${press.disabledOpacity}`],
+  ...Object.entries(motion).map(([name, m]): [string, string] => [`--duration-${name}`, `${m.duration}ms`]),
+  ["--spinner-size", `${spinner.size}em`],
+  ["--spinner-stroke", `${spinner.stroke}em`],
+  ["--spinner-track-share", percent(spinner.trackShare)],
+]);

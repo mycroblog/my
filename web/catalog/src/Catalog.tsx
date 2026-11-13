@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The catalog page, where the decider and an agent decide the tokens and the components with the notes of
-// @my/devtools (ADR-0168). It shows the tokens of @my/design-tokens.
+// @my/devtools (ADR-0168). It shows the tokens of @my/design-tokens and the components of @my/design-system.
 
 import {
   color,
@@ -14,6 +14,9 @@ import {
   type Scheme,
   type TextName,
 } from "@my/design-tokens";
+import { Button } from "@my/design-system";
+import { Preview } from "@my/design-system/preview";
+import { Buttons } from "./Buttons";
 
 // The same en/ja sample for every step of the type scale.
 const sample: Record<TextName, [string, string]> = {
@@ -34,7 +37,9 @@ const verdict = (r: number, minimum = 4.5) => `${r.toFixed(1)} ${r >= minimum ? 
 
 // The page itself is light: its labels use the light muted text.
 const label = { fontSize: rem(12), color: color["muted-text"].light } as const;
-const cell = { padding: `${rem(8)} ${rem(12)} ${rem(8)} 0`, textAlign: "left", whiteSpace: "nowrap" } as const;
+// Cells wrap, so that a table fits the narrowest device; a value keeps its number and its verdict on one line.
+const cell = { padding: `${rem(8)} ${rem(12)} ${rem(8)} 0`, textAlign: "left", verticalAlign: "top" } as const;
+const value = { ...cell, whiteSpace: "nowrap" } as const;
 const table = { borderCollapse: "collapse", fontSize: rem(14), width: "100%" } as const;
 const head = { ...label, borderBottom: "1px solid #ccc" } as const;
 const row = { borderBottom: "1px solid #eee" } as const;
@@ -73,15 +78,6 @@ const of = (scheme: Scheme) => (name: ColorName) => color[name][scheme];
 // The accent as a fill with its text, as links in body text, and as a focus ring, with a caption in muted text.
 function Panel({ scheme }: { scheme: Scheme }) {
   const c = of(scheme);
-  const button = {
-    background: c("accent"),
-    border: 0,
-    borderRadius: 6,
-    color: c("on-accent"),
-    font: "inherit",
-    fontWeight: 600,
-    padding: `${rem(8)} ${rem(16)}`,
-  } as const;
   const link = { color: c("accent-text") };
   return (
     <div
@@ -90,6 +86,7 @@ function Panel({ scheme }: { scheme: Scheme }) {
         border: "1px solid #ccc",
         borderRadius: 8,
         color: c("text"),
+        colorScheme: scheme,
         flex: `1 1 ${rem(280)}`,
         fontSize: `${text.body.size}rem`,
         lineHeight: text.body.lineHeight,
@@ -98,12 +95,10 @@ function Panel({ scheme }: { scheme: Scheme }) {
     >
       <div style={{ fontSize: rem(12), marginBottom: rem(12), color: c("muted-text") }}>{scheme}</div>
       <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: rem(16), marginBottom: rem(16) }}>
-        <button type="button" style={button}>
-          Post
-        </button>
-        <button type="button" style={{ ...button, outline: `2px solid ${c("accent-text")}`, outlineOffset: 2 }}>
-          Post (focused)
-        </button>
+        <Button kind="primary">Post</Button>
+        <Preview state="focus-visible">
+          <Button kind="primary">Post (focused)</Button>
+        </Preview>
       </div>
       <p style={{ margin: 0 }}>
         Reply to{" "}
@@ -136,8 +131,13 @@ function Panel({ scheme }: { scheme: Scheme }) {
   );
 }
 
-const swatch = (c: string) => (
-  <div style={{ background: c, border: "1px solid #ccc", borderRadius: 4, height: rem(24), width: rem(40) }} />
+// A color with its value and its contrast on the scheme's surface, wrapping below the swatch where the cell is narrow.
+const swatch = (c: string, surface: string) => (
+  <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: `${rem(4)} ${rem(8)}` }}>
+    <div style={{ background: c, border: "1px solid #ccc", borderRadius: 4, height: rem(24), width: rem(40) }} />
+    <code>{c}</code>
+    <span style={{ whiteSpace: "nowrap" }}>{verdict(contrast(c, surface))}</span>
+  </div>
 );
 
 // One row per color, so that the colors compare down a column, with the contrast on the surface of each scheme.
@@ -148,12 +148,8 @@ function Swatches() {
         <thead>
           <tr style={head}>
             <th style={cell}>Token</th>
-            <th style={cell} />
-            <th style={cell}>Light</th>
-            <th style={cell}>on surface</th>
-            <th style={cell} />
-            <th style={cell}>Dark</th>
-            <th style={cell}>on surface</th>
+            <th style={cell}>Light · on surface</th>
+            <th style={cell}>Dark · on surface</th>
           </tr>
         </thead>
         <tbody>
@@ -162,16 +158,8 @@ function Swatches() {
               <td style={cell}>
                 <code>{name}</code>
               </td>
-              <td style={cell}>{swatch(c.light)}</td>
-              <td style={cell}>
-                <code>{c.light}</code>
-              </td>
-              <td style={cell}>{verdict(contrast(c.light, color.surface.light))}</td>
-              <td style={cell}>{swatch(c.dark)}</td>
-              <td style={cell}>
-                <code>{c.dark}</code>
-              </td>
-              <td style={cell}>{verdict(contrast(c.dark, color.surface.dark))}</td>
+              <td style={cell}>{swatch(c.light, color.surface.light)}</td>
+              <td style={cell}>{swatch(c.dark, color.surface.dark)}</td>
             </tr>
           ))}
         </tbody>
@@ -199,9 +187,9 @@ function Pairs() {
               <td style={cell}>
                 <code>{fg}</code> on <code>{bg}</code>
               </td>
-              <td style={cell}>{minimum}:1</td>
-              <td style={cell}>{verdict(contrast(color[fg].light, color[bg].light), minimum)}</td>
-              <td style={cell}>{verdict(contrast(color[fg].dark, color[bg].dark), minimum)}</td>
+              <td style={value}>{minimum}:1</td>
+              <td style={value}>{verdict(contrast(color[fg].light, color[bg].light), minimum)}</td>
+              <td style={value}>{verdict(contrast(color[fg].dark, color[bg].dark), minimum)}</td>
             </tr>
           ))}
         </tbody>
@@ -228,6 +216,10 @@ export function Catalog() {
         <Swatches />
         <h3>Contrast pairs</h3>
         <Pairs />
+      </section>
+      <section aria-labelledby="button">
+        <h2 id="button">Button</h2>
+        <Buttons />
       </section>
     </main>
   );
