@@ -9,7 +9,7 @@
 
 import { ButtonBase, type ButtonProps } from "./button";
 import { Icon, type IconName } from "./icons";
-import { pageLocale } from "./locale";
+import { useReader } from "./locale";
 
 export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "busy" | "children" | "aria-label"> & {
   /** The icon, by its meaning. */
@@ -20,7 +20,7 @@ export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "busy" | "chil
   count?: number | undefined;
   /** A toggle's state: on or off; none for an action that is no toggle. */
   pressed?: boolean | undefined;
-  /** The reader's locale; the page's language by default. */
+  /** The reader's locale, for the count; the I18nProvider's by default. */
   locale?: string | undefined;
 };
 
@@ -29,11 +29,12 @@ export const compactCount = (n: number, locale: string) =>
   new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
 export function IconButton({ icon, label, count, pressed, locale, ...rest }: IconButtonProps) {
-  const lang = locale ?? pageLocale();
+  const { lang, direction } = useReader(locale);
   const shows = count !== undefined && count > 0;
   return (
     <ButtonBase
       {...rest}
+      dir={direction}
       kind="icon"
       size="icon"
       pressed={pressed}

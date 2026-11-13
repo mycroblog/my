@@ -443,7 +443,7 @@ function PostView({ post, lang }: { post: TimelinePost; lang: Lang }) {
         </div>
       </div>
       {post.cw ? (
-        <Disclosure summary={post.cw} icon="hidden" locale={lang}>
+        <Disclosure summary={post.cw} icon="hidden">
           <div style={{ display: "grid", gap: rem(8), gridTemplateColumns: one }}>{content}</div>
         </Disclosure>
       ) : (

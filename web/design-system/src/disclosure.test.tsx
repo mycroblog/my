@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { I18nProvider } from "react-aria-components";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Disclosure } from "./disclosure";
 
@@ -63,4 +64,22 @@ test("the label reads the pseudo-locales made from en, so a string left out of t
   expect(folded("en-XA")).toMatch(/<span lang="en-XA">\[[^\]]+\]<\/span>/);
   expect(folded("en-XA")).not.toContain(">Show<");
   expect(folded("ar-XB")).toMatch(/<span lang="ar-XB">‮[^<]+‬<\/span>/);
+});
+
+test("it reads the locale and the direction of the I18nProvider: under ar-XB it lays out right-to-left", () => {
+  const under = (locale: string) =>
+    renderToStaticMarkup(
+      <I18nProvider locale={locale}>
+        <Disclosure summary="Spoilers" icon="hidden">
+          x
+        </Disclosure>
+      </I18nProvider>,
+    );
+  const rtl = under("ar-XB");
+  expect(rtl).toMatch(/^<div [^>]*dir="rtl"/);
+  expect(rtl).toMatch(/<span lang="ar-XB">‮[^<]+‬<\/span>/);
+  // Its sides are logical, so that the glyph leads and the toggle trails in either direction.
+  expect(rtl).toContain("ps-disclosure-start pe-disclosure-padding");
+  expect(under("ja")).toMatch(/^<div [^>]*dir="ltr"/);
+  expect(under("ja")).toContain('<span lang="ja">表示</span>');
 });

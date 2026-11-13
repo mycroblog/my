@@ -2,16 +2,17 @@
 
 // Screenshots of the catalog page for the visual evaluator (ADR-0169 §2), which sees the rendered page and nothing of
 // its source: `scripts/task.sh web:shot -- [--section <id>]... [--options <id>] [--scheme light|dark] [--landscape]
-// [--out <dir>] [<url>]`. It shoots at the device viewports of @my/devtools/sizes (ADR-0169 §1), portrait but for PC
-// (with --landscape, each in landscape: mobile 812×375), in the light and the dark scheme of the page's data-theme
-// (--scheme keeps one, for a section that already shows both side by side), at 1:1, without the overlay. With
-// --section, it shoots only that section (the <section> its heading of that id labels, or the element of that id),
-// once per --section; without, the whole page. A shot taller than a tile is split into numbered tiles, so the
-// evaluator can read a glyph. With --options, it takes one set per variant of that <Options>, so the evaluator can
-// answer before the decider picks. The shots go to .tmp/visual/<options id, else the sections, else page> of the main
-// checkout, which outlives the worktree, as <variant>-<preset>-<scheme>[-<section>][-<tile>].png; a logged pick's
-// shots are copied from there to .tmp/picks for the agreement check (scripts/visual-agreement.sh keep). It prints the
-// path of each shot.
+// [--lang <locale>] [--out <dir>] [<url>]`. It shoots at the device viewports of @my/devtools/sizes (ADR-0169 §1),
+// portrait but for PC (with --landscape, each in landscape: mobile 812×375), in the light and the dark scheme of the
+// page's data-theme (--scheme keeps one, for a section that already shows both side by side), at 1:1, without the
+// overlay. With --lang, it shoots the page in that locale (`?lang=`, as the overlay's locale switch sets it; ar-XB
+// reads right-to-left). With --section, it shoots only that section (the <section> its heading of that id labels, or
+// the element of that id), once per --section; without, the whole page. A shot taller than a tile is split into
+// numbered tiles, so the evaluator can read a glyph. With --options, it takes one set per variant of that <Options>,
+// so the evaluator can answer before the decider picks. The shots go to .tmp/visual/<options id, else the sections,
+// else page> of the main checkout, which outlives the worktree, as
+// <variant>[-<locale>]-<preset>-<scheme>[-<section>][-<tile>].png; a logged pick's shots are copied from there to
+// .tmp/picks for the agreement check (scripts/visual-agreement.sh keep). It prints the path of each shot.
 
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -41,6 +42,7 @@ const { values, positionals } = parseArgs({
     options: { type: "string" },
     scheme: { type: "string" },
     landscape: { type: "boolean" },
+    lang: { type: "string" },
     out: { type: "string" },
   },
   allowPositionals: true,
@@ -50,7 +52,10 @@ if (values.scheme !== undefined && !isScheme(values.scheme))
   throw new Error(`--scheme ${values.scheme}: light or dark`);
 const inSchemes = values.scheme === undefined ? schemes : [values.scheme];
 const sections: (string | undefined)[] = values.section ?? [undefined];
-const url = positionals[0] ?? run([join(repo, "scripts/agentkit.sh"), "feedback", "url"]);
+const target = new URL(positionals[0] ?? run([join(repo, "scripts/agentkit.sh"), "feedback", "url"]));
+if (values.lang !== undefined) target.searchParams.set("lang", Intl.getCanonicalLocales(values.lang)[0] ?? values.lang);
+const url = target.href;
+const locale = target.searchParams.get("lang") ?? undefined;
 const dir = values.options ?? values.section?.join("-") ?? "page";
 const out = resolve(values.out ?? join(main, ".tmp/visual", dir));
 // Every logged pick names a folder under .tmp/picks (`agentkit docs lint` holds it), where scripts/visual-agreement.sh
@@ -105,7 +110,7 @@ async function shoot(page: Page, variant: string) {
         const tiles = Math.ceil(h / tileHeight);
         for (let i = 0; i < tiles; i++) {
           const tile = tiles > 1 ? String(i + 1) : undefined;
-          const path = join(out, `${[variant, preset, scheme, section, tile].filter(Boolean).join("-")}.png`);
+          const path = join(out, `${[variant, locale, preset, scheme, section, tile].filter(Boolean).join("-")}.png`);
           const top = y + i * tileHeight;
           const clip = { x, y: top, width: w, height: Math.min(tileHeight, y + h - top) };
           await page.screenshot({ path, fullPage: true, clip, animations: "disabled" });

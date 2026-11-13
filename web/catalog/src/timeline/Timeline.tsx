@@ -4,13 +4,14 @@
 // judges the parts together as one screen: /timeline on the catalog's dev server. The shell (timeline.css) holds the
 // compose entry and the navigation (home, notifications, search, profile, settings), which shows where the reader is,
 // so the page has no visible header; the column holds the sample posts; on wide screens a right column follows. The
-// language is the page's, from ?lang=en|ja, which the overlay's locale switch sets; the scheme is the page's.
+// locale and the direction are the page's (main.tsx), from ?lang=, which the overlay's locale switch sets; its own
+// words are in ja for ja and in en for any other locale (ar-XB shows it right-to-left). The scheme is the page's.
 
 import "./timeline.css";
 // The wordmark, not the app icon: a mark, so that the compose entry under it is the only coral button.
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
-import { Avatar, Button, Icon, RelativeTime, type IconName } from "@my/design-system";
+import { Avatar, Button, Icon, RelativeTime, useLocale, type IconName } from "@my/design-system";
 import { text } from "@my/design-tokens";
 import type { Lang } from "../Posts";
 import { ago } from "../Times";
@@ -19,8 +20,6 @@ import { Column } from "./Post";
 import { strings } from "./strings";
 
 const places = ["home", "notifications", "search", "profile", "settings"] as const satisfies IconName[];
-
-const lang: Lang = new URLSearchParams(location.search).get("lang") === "ja" ? "ja" : "en";
 
 /** The places, each a glyph and its label; home, where the reader is, is on. */
 function NavList({ lang }: { lang: Lang }) {
@@ -177,8 +176,7 @@ function Aside({ lang }: { lang: Lang }) {
 }
 
 export function Timeline() {
-  // The page's language, which the relative times and the counts read: set before the screen renders in it.
-  document.documentElement.lang = lang;
+  const lang: Lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   const s = strings[lang];
   document.title = s.timeline;
   return (

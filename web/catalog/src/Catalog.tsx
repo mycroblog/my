@@ -39,7 +39,12 @@ const verdict = (r: number, minimum = 4.5) => `${r.toFixed(1)} ${r >= minimum ? 
 // The page itself is light: its labels use the light muted text.
 const label = { fontSize: rem(12), color: color["muted-text"].light } as const;
 // Cells wrap, so that a table fits the narrowest device; a value keeps its number and its verdict on one line.
-const cell = { padding: `${rem(8)} ${rem(12)} ${rem(8)} 0`, textAlign: "left", verticalAlign: "top" } as const;
+const cell = {
+  paddingBlock: rem(8),
+  paddingInline: `0 ${rem(12)}`,
+  textAlign: "start",
+  verticalAlign: "top",
+} as const;
 const value = { ...cell, whiteSpace: "nowrap" } as const;
 const table = { borderCollapse: "collapse", fontSize: rem(14), width: "100%" } as const;
 const head = { ...label, borderBottom: "1px solid #ccc" } as const;
