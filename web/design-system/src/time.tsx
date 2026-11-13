@@ -7,12 +7,12 @@
 // Intl.DateTimeFormat, so it needs no strings of its own.
 
 import { useEffect, useState } from "react";
-import { pageLocale } from "./locale";
+import { useReader } from "./locale";
 
 export type RelativeTimeProps = {
   /** The moment, as a Date or an ISO 8601 string. */
   date: Date | string;
-  /** The reader's locale; the page's language by default. */
+  /** The reader's locale; the I18nProvider's by default. */
   locale?: string | undefined;
 };
 
@@ -49,7 +49,7 @@ const nextIn = (age: number) => (age < minute ? second : age < hour ? minute : h
 
 export function RelativeTime({ date, locale }: RelativeTimeProps) {
   const at = typeof date === "string" ? new Date(date) : date;
-  const lang = locale ?? pageLocale();
+  const { lang } = useReader(locale);
   const [now, setNow] = useState(() => new Date());
   const { text, changes } = relativeTime(at, now, lang);
   const time = at.getTime();

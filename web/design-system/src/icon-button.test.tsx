@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { I18nProvider } from "react-aria-components";
 import { renderToStaticMarkup } from "react-dom/server";
 import { markedSurface } from "./button";
 import { compactCount, IconButton } from "./icon-button";
@@ -23,6 +24,21 @@ test("a toggle says whether it is on, and an action that is no toggle says nothi
     'aria-pressed="false"',
   );
   expect(renderToStaticMarkup(<IconButton icon="more" label="More" />)).not.toContain("aria-pressed=");
+});
+
+test("it reads the locale and the direction of the I18nProvider; a locale prop names the count's locale alone", () => {
+  const under = (provided: string, locale?: string) =>
+    renderToStaticMarkup(
+      <I18nProvider locale={provided}>
+        <IconButton icon="favourite" label="Favourite" count={12_840} locale={locale} />
+      </I18nProvider>,
+    );
+  expect(under("ar-XB")).toMatch(/^<button [^>]*dir="rtl"/);
+  expect(under("ar-XB")).toContain('lang="ar-XB"');
+  expect(under("ja")).toMatch(/^<button [^>]*dir="ltr"/);
+  expect(under("ja")).toContain('lang="ja" class="tabular-nums">1.3万</span>');
+  expect(under("ar-XB", "en")).toMatch(/^<button [^>]*dir="rtl"/);
+  expect(under("ar-XB", "en")).toContain('lang="en" class="tabular-nums">12.8K</span>');
 });
 
 test("the count is compact in the reader's locale", () => {

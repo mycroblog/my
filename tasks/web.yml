@@ -29,7 +29,7 @@ vars:
 tasks:
   check:
     desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/devtools and web/catalog in parallel
-    deps: [fmt-check, licenses, typecheck, lint, knip, test, devtools-absent]
+    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, devtools-absent]
 
   # The page where the decider writes notes for an agent (ADR-0168). It prints `catalog: <url>` once it listens;
   # `scripts/agentkit.sh feedback url` prints the same URL, and `feedback wait` in the background receives the notes.
@@ -48,7 +48,7 @@ tasks:
 
   # What the visual evaluator sees (ADR-0169 §2): web/catalog/shot.ts prints the path of each shot.
   shot:
-    desc: Screenshot the running catalog page, or one section with --section <id>, at the mobile, tablet and PC viewports in light and dark (--landscape rotates them), once per variant with --options <id>
+    desc: Screenshot the running catalog page, or one section with --section <id>, at the mobile, tablet and PC viewports in light and dark (--landscape rotates them, --lang <locale> shows the page in a locale such as ar-XB), once per variant with --options <id>
     deps: [install, ":i18n:compile"]
     dir: web/catalog
     cmds:
@@ -68,6 +68,12 @@ tasks:
     deps: [install, ":i18n:compile"]
     cmds:
       - bun --bun oxlint web/design-tokens web/design-system web/devtools web/catalog web/i18n
+
+  # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
+  direction:
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/devtools, web/catalog and web/i18n, naming the logical one
+    cmds:
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/devtools web/catalog web/i18n
 
   knip:
     desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/devtools and web/catalog (knip.json)

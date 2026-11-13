@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { I18nProvider } from "react-aria-components";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RelativeTime, relativeTime } from "./time";
 
@@ -35,4 +36,16 @@ test("after a week it reads the date, with the year only when it is not the curr
 test("the time carries the full date in its datetime attribute and its tooltip", () => {
   const html = renderToStaticMarkup(<RelativeTime date="2026-11-12T09:41:00Z" locale="en" />);
   expect(html).toMatch(/^<time dateTime="2026-11-12T09:41:00.000Z" title="November 12, 2026 at [^"]+" lang="en">/);
+});
+
+test("the time reads the I18nProvider's locale, and a locale prop over it", () => {
+  const under = (provided: string, locale?: string) =>
+    renderToStaticMarkup(
+      <I18nProvider locale={provided}>
+        <RelativeTime date="2025-12-20T09:41:00Z" locale={locale} />
+      </I18nProvider>,
+    );
+  expect(under("ja")).toMatch(/ lang="ja">2025年12月20日<\/time>$/);
+  expect(under("ar-XB")).toContain(' lang="ar-XB">');
+  expect(under("ja", "en")).toMatch(/ lang="en">Dec 20, 2025<\/time>$/);
 });

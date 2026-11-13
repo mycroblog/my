@@ -5,9 +5,9 @@
 // one (options.tsx). It also shows the page at a device viewport (sizes.ts), as Storybook's viewport toolbar does: the
 // page itself, whole, in one iframe of that width and height over it, rotated or not and scaled down to fit the
 // window, whose elements take the notes and whose <Options> switch. Its locale switch loads the page again with
-// `?lang=en|ja`, which a page that reads it (the catalog's /timeline) renders in; a note records the locale the page
-// then has. The plugin of vite.ts loads this module on the dev server only. It is a developer tool: plain, in a shadow
-// root of its own above the page, and it sets nothing on the page but its URL's `lang`.
+// `?lang=en|ja|ar-XB`, which a page that reads it (the catalog's) renders in, ar-XB right-to-left; a note records the
+// locale the page then has. The plugin of vite.ts loads this module on the dev server only. It is a developer tool:
+// plain, in a shadow root of its own above the page, and it sets nothing on the page but its URL's `lang`.
 
 import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -75,13 +75,16 @@ interface Draft {
 }
 
 // The overlay's own stacking context, above any the page makes (a sticky header's z-index), so that the page under the
-// device iframe never shows through it.
+// device iframe never shows through it. It reads left-to-right in English on a page of any locale, so that a box
+// placed from screen coordinates at its inline start is placed from the left.
 const host = document.createElement("div");
 host.setAttribute("data-my-devtools", "");
+host.lang = "en";
+host.dir = "ltr";
 host.style.cssText = "position: relative; z-index: 2147483647";
 
-/** The locales the overlay shows a page in, by `?lang=`; none leaves the page its own. */
-const locales = ["en", "ja"] as const;
+/** The locales the overlay shows a page in, by `?lang=`; none leaves the page its own. ar-XB is right-to-left. */
+const locales = ["en", "ja", "ar-XB"] as const;
 const langParam = "lang";
 
 /** The page again in `lang`, the device iframe with it, or in its own locale for null. */
@@ -258,7 +261,7 @@ function Marker({ label, note, color }: { label: string; note: NoteInput; color:
     <div
       style={{
         position: "fixed",
-        left: Math.max(0, r.right - 10),
+        insetInlineStart: Math.max(0, r.right - 10),
         top: Math.max(0, r.top - 10),
         minWidth: 20,
         height: 20,
@@ -481,7 +484,7 @@ function Overlay() {
         <div
           style={{
             position: "fixed",
-            left: hover.left,
+            insetInlineStart: hover.left,
             top: hover.top,
             width: hover.width,
             height: hover.height,
@@ -495,7 +498,7 @@ function Overlay() {
         <div
           style={{
             position: "fixed",
-            left: Math.min(drag.x0, drag.x1),
+            insetInlineStart: Math.min(drag.x0, drag.x1),
             top: Math.min(drag.y0, drag.y1),
             width: Math.abs(drag.x1 - drag.x0),
             height: Math.abs(drag.y1 - drag.y0),
@@ -515,7 +518,7 @@ function Overlay() {
           style={{
             ...box,
             position: "fixed",
-            left: Math.min(Math.max(8, draftRect.x), window.innerWidth - 300),
+            insetInlineStart: Math.min(Math.max(8, draftRect.x), window.innerWidth - 300),
             top: Math.min(draftRect.y + draftRect.height + 8, window.innerHeight - 140),
             width: 280,
             padding: 8,
@@ -561,7 +564,7 @@ function Overlay() {
         style={{
           ...box,
           position: "fixed",
-          right: 12,
+          insetInlineEnd: 12,
           bottom: 12,
           width: open ? 320 : "auto",
           maxHeight: "60vh",

@@ -5,7 +5,7 @@
 // button carries aria-expanded and aria-controls, Enter and Space toggle it, and it is described by the summary, so
 // that "Show" is read with what it shows. What it folds stays out of the layout, of assistive technology and of the
 // page's search while folded: a reader who chose not to see it is not shown it by a find. The button's label is the
-// design system's own string, in the reader's locale.
+// design system's own string, in the reader's locale; it lays out in the reader's direction (locale.ts).
 
 import type { ReactNode } from "react";
 import { useId } from "react";
@@ -13,7 +13,7 @@ import { Disclosure as AriaDisclosure, DisclosurePanel } from "react-aria-compon
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { Icon, type IconName } from "./icons";
-import { pageLocale, stringsIn } from "./locale";
+import { stringsIn, useReader } from "./locale";
 
 export type DisclosureProps = {
   /** What the folded part is about (a content warning's text); it stays in sight. */
@@ -22,7 +22,7 @@ export type DisclosureProps = {
   icon?: IconName | undefined;
   /** Shown at first; folded by default. */
   defaultExpanded?: boolean | undefined;
-  /** The reader's locale, for the button's label; the page's language by default. */
+  /** The reader's locale, for the button's label; the I18nProvider's by default. */
   locale?: string | undefined;
   /** What the disclosure folds. */
   children: ReactNode;
@@ -46,11 +46,12 @@ const disclosure = tv({
 });
 
 export function Disclosure({ summary, icon, defaultExpanded = false, locale, children }: DisclosureProps) {
-  const { t, lang } = stringsIn(locale ?? pageLocale());
+  const reader = useReader(locale);
+  const { t, lang } = stringsIn(reader.lang);
   const summaryId = useId();
   const s = disclosure();
   return (
-    <AriaDisclosure defaultExpanded={defaultExpanded} className={s.root()}>
+    <AriaDisclosure defaultExpanded={defaultExpanded} className={s.root()} dir={reader.direction}>
       {({ isExpanded }) => (
         <>
           <div className={s.summary()}>
