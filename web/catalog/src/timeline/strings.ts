@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The rough screen's sample strings in en and ja; the client's strings are not built yet.
+// The rough screen's sample strings in en and ja; the client's strings are not built yet. A post's are its own
+// (@my/app-components).
 
 export const strings = {
   en: {
@@ -12,19 +13,6 @@ export const strings = {
     settings: "Settings",
     compose: "New post",
     timeline: "Home timeline",
-    reply: "Reply",
-    boost: "Boost",
-    quote: "Quote",
-    favourite: "Favourite",
-    react: "React",
-    reactions: "Reactions",
-    reacted: (emoji: string, n: number, mine: boolean) =>
-      `${emoji}, ${n}${mine ? ", yours: press to take it back" : ""}`,
-    boosted: (who: string) => `${who} boosted`,
-    replying: (who: string) => `Replying to ${who}`,
-    translate: "Translate",
-    translatedFrom: (language: string, provider: string) => `Translated from ${language} by ${provider}`,
-    original: "Show original",
     aside: "Around you",
     roomStarted: (name: string) => `${name} started a voice chat room`,
     roomPeople: (n: number) => (n === 1 ? "1 person is in the room" : `${n} people are in the room`),
@@ -52,19 +40,6 @@ export const strings = {
     settings: "設定",
     compose: "投稿する",
     timeline: "ホームタイムライン",
-    reply: "返信",
-    boost: "ブースト",
-    quote: "引用",
-    favourite: "お気に入り",
-    react: "リアクション",
-    reactions: "リアクション",
-    reacted: (emoji: string, n: number, mine: boolean) =>
-      `${emoji}、${n}件${mine ? "、自分のリアクション: 押すと取り消します" : ""}`,
-    boosted: (who: string) => `${who} さんがブースト`,
-    replying: (who: string) => `${who} さんへの返信`,
-    translate: "翻訳する",
-    translatedFrom: (language: string, provider: string) => `${provider} が${language}から翻訳`,
-    original: "原文を表示",
     aside: "まわりのこと",
     roomStarted: (name: string) => `${name}さんが通話のルームを開きました`,
     roomPeople: (n: number) => `${n}人が参加しています`,

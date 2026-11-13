@@ -8,7 +8,7 @@
 // root, so that it reads right-to-left under an RTL locale wherever it is placed. It depends on no i18n package of the
 // app; a locale its catalog does not have reads en.
 
-import { setupI18n } from "@lingui/core";
+import { setupI18n, type Messages } from "@lingui/core";
 import { useLocale } from "react-aria-components";
 import { type MessageId, messages } from "./messages.gen";
 
@@ -18,8 +18,8 @@ export function useReader(locale: string | undefined): { lang: string; direction
   return { lang: locale ?? provided.locale, direction: provided.direction };
 }
 
-/** The locale of the catalog that `locale` resolves to (ADR-0009 §2): the tag, else its language; en for neither. */
-function catalogLocale(locale: string): string {
+/** The locale of the catalog of `messages` that `locale` resolves to (ADR-0009 §2): the tag, else its language; en for neither. */
+function catalogLocale(locale: string, messages: Readonly<Record<string, Messages>>): string {
   let tag: string | undefined;
   try {
     tag = Intl.getCanonicalLocales(locale)[0];
@@ -32,14 +32,29 @@ function catalogLocale(locale: string): string {
   return language in messages ? language : "en";
 }
 
-const readers = new Map(
-  Object.entries(messages).map(([locale, m]) => [locale, setupI18n({ locale, messages: { [locale]: m } })]),
-);
+/** A package's strings in one locale: each by its id, with the values of its arguments, and the locale they are in. */
+export type Strings<Id extends string> = {
+  t: (id: Id, values?: Readonly<Record<string, string | number>>) => string;
+  lang: string;
+};
+
+/**
+ * The reader of a package's compiled catalog (its messages.gen.ts): the package's strings in a locale, resolved as the
+ * design system's own are, so that a package above it reads its own catalog the same way.
+ */
+export function catalogReader<Id extends string>(
+  messages: Readonly<Record<string, Messages>>,
+): (locale: string) => Strings<Id> {
+  const readers = new Map(
+    Object.entries(messages).map(([locale, m]) => [locale, setupI18n({ locale, messages: { [locale]: m } })]),
+  );
+  return (locale) => {
+    const lang = catalogLocale(locale, messages);
+    const i18n = readers.get(lang);
+    if (!i18n) throw new Error(`the catalog has no ${lang}`);
+    return { t: (id, values) => i18n._(id, values), lang };
+  };
+}
 
 /** The design system's strings in `locale`, by their ids, and the locale they are in. */
-export function stringsIn(locale: string): { t: (id: MessageId) => string; lang: string } {
-  const lang = catalogLocale(locale);
-  const i18n = readers.get(lang);
-  if (!i18n) throw new Error(`the design system's catalog has no ${lang}`);
-  return { t: (id) => i18n._(id), lang };
-}
+export const stringsIn = catalogReader<MessageId>(messages);

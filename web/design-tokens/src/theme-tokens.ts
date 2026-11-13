@@ -29,7 +29,10 @@ const rules: readonly Rule[] = [
   // values hold a touch target, a ring around a control, or a contrast of a mix.
   { pattern: /^--text-[a-z]+--(font-weight|letter-spacing)$/ },
   { pattern: /^--font-weight-/ },
-  { pattern: /^--(control|icon-button|focus-ring|press|spinner|icon|avatar|menu|disclosure|content)-/ },
+  {
+    pattern:
+      /^--(control|icon-button|focus-ring|press|spinner|icon|avatar|menu|disclosure|content|entry|embed|media|chip)-/,
+  },
   // Fixed: Tailwind maps a shadow to its utilities.
   { pattern: /^--shadow-/ },
 ];

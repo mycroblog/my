@@ -16,7 +16,7 @@ import { text } from "@my/design-tokens";
 import type { Lang } from "../Posts";
 import { ago } from "../Times";
 import { announcements, emoji, me, notifications, openRoom, posts, server, type NotificationKind } from "./fixtures";
-import { Column } from "./Post";
+import { Column } from "./Column";
 import { strings } from "./strings";
 
 const places = ["home", "notifications", "search", "profile", "settings"] as const satisfies IconName[];
@@ -200,7 +200,7 @@ export function Timeline() {
               className="tl-label"
               style={{ color: "var(--color-muted-text)", fontSize: `${text.caption.size}rem` }}
             >
-              {me.handle}
+              <bdi dir="ltr">{me.handle}</bdi>
             </span>
           </span>
         </div>

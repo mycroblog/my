@@ -157,7 +157,7 @@ export type Lang = "en" | "ja";
 
 // The menus' sample labels (more, and boost's boost and quote); the design system's strings are not built yet. A
 // label whose action asks for a confirmation (block, report, delete) ends in "…".
-export const moreLabels = {
+const moreLabels = {
   en: {
     boost: "Boost",
     quote: "Quote",
@@ -196,7 +196,7 @@ const shortHandle = (h: string) => `@${h.split("@")[1] ?? h}`;
 // A post's more menu, in the reader's `lang`: what reaches the post (copy link, open original, share), then the
 // bookmark toggle on its own; then for another's post the actions on its account (mute, block, report) last and
 // apart, under a caption naming it, or for one's own post edit, then delete last and apart.
-export function MoreItems({
+function MoreItems({
   post,
   lang,
   own = false,
@@ -376,7 +376,7 @@ const handle: CSSProperties = {
 type PostState = "hover" | "focus-visible";
 
 // The button's two-tone focus ring, at the post's edge.
-export const focusRing = [
+const focusRing = [
   "0 0 0 var(--focus-ring-gap) var(--color-surface)",
   "0 0 0 calc(var(--focus-ring-gap) + var(--focus-ring-width)) var(--color-accent-text)",
   "0 0 0 calc(var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo)) color-mix(in srgb, var(--color-accent) var(--focus-ring-halo-share), transparent)",

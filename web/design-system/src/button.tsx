@@ -3,7 +3,8 @@
 // The button (ADR-0025 §4), on React Aria Components' Button: its kinds told apart by surfaces, not outlines: the
 // primary is the accent fill, the secondary a neutral raised surface, the quiet one has none until touched. React Aria
 // tells hover, press and keyboard focus apart (data-hovered, data-pressed, data-focus-visible); the classes read only
-// the theme of theme.ts, generated from @my/design-tokens. The icon button (icon-button.tsx) draws on the same base.
+// the theme of theme.ts, generated from @my/design-tokens. The icon button (icon-button.tsx) and the chip (chip.tsx)
+// draw on the same base. The text button is an action inside a line of text, underlined in the text's own color.
 
 import { motion } from "@my/design-tokens";
 import type { ReactNode } from "react";
@@ -74,11 +75,21 @@ const button = tv({
         ],
         label: "inline-flex items-center gap-icon-button-gap",
       },
+      // A toggle on the raised surface; on, it is knocked out: the text's color as its fill, with no hue.
+      chip: {
+        base: [
+          "text-caption bg-surface-raised text-text data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
+          "aria-pressed:bg-text aria-pressed:text-surface",
+          "aria-pressed:data-hovered:bg-text aria-pressed:data-pressed:bg-text",
+        ],
+        label: "inline-flex items-center gap-chip-gap",
+      },
     },
     size: {
       timeline: { base: "h-control-timeline px-control-timeline-inline" },
       form: { base: "h-control-form px-control-form-inline" },
       icon: { base: "h-control-timeline px-icon-button-inline" },
+      chip: { base: "h-chip px-chip-inline" },
     },
     busy: { true: { label: "text-transparent" } },
   },
@@ -93,8 +104,8 @@ export function ButtonBase({
   children,
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
-  kind: ButtonKind | "icon";
-  size: ButtonSize | "icon";
+  kind: ButtonKind | "icon" | "chip";
+  size: ButtonSize | "icon" | "chip";
   pressed?: boolean | undefined;
 }) {
   const preview = usePreviewState();
@@ -123,4 +134,32 @@ export function ButtonBase({
 
 export function Button({ kind = "secondary", size = "form", ...rest }: ButtonProps) {
   return <ButtonBase kind={kind} size={size} {...rest} />;
+}
+
+// It takes the font and the color of the line it sits in, and keeps no surface, so the line reads as one.
+const textButton = tv({
+  base: [
+    "cursor-pointer rounded-control border-0 bg-transparent p-0 text-current [font:inherit]",
+    "underline underline-offset-[0.15em] outline-hidden data-focus-visible:shadow-focus",
+  ],
+});
+
+export type TextButtonProps = Omit<AriaButtonProps, "className" | "style" | "render" | "isPending" | "children"> & {
+  children: ReactNode;
+};
+
+/** An action inside a line of text (a translation's "Show original"), underlined in the line's own color. */
+export function TextButton({ children, ...rest }: TextButtonProps) {
+  const preview = usePreviewState();
+  return (
+    <AriaButton
+      {...rest}
+      className={textButton()}
+      render={(props, { isFocusVisible }) => (
+        <button {...props} data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined} />
+      )}
+    >
+      {children}
+    </AriaButton>
+  );
 }

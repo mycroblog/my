@@ -15,6 +15,7 @@ import {
   IconBellFilled,
   IconBookmark,
   IconBookmarkFilled,
+  IconBuildingCommunity,
   IconDots,
   IconExternalLink,
   IconEyeOff,
@@ -69,6 +70,8 @@ export const icons = {
   unlisted: { off: IconMoon },
   followers: { off: IconLock },
   direct: { off: IconAt },
+  // Seen on this server alone: its community, not the world.
+  local: { off: IconBuildingCommunity },
   bookmark: { off: IconBookmark, on: IconBookmarkFilled },
   share: { off: IconShare2 },
   attach: { off: IconPaperclip },

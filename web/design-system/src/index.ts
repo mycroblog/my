@@ -5,7 +5,16 @@
 // places React Aria's I18nProvider, from which every part reads the locale and the direction (locale.ts).
 
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
-export { Button, markedSurface, type ButtonKind, type ButtonProps, type ButtonSize } from "./button";
+export {
+  Button,
+  markedSurface,
+  TextButton,
+  type ButtonKind,
+  type ButtonProps,
+  type ButtonSize,
+  type TextButtonProps,
+} from "./button";
+export { Chip, ChipRow, type ChipProps } from "./chip";
 export {
   ContentBody,
   ContentLink,
@@ -18,8 +27,24 @@ export {
   type UrlPartProps,
 } from "./content";
 export { Disclosure, type DisclosureProps } from "./disclosure";
+export {
+  ActionRow,
+  Byline,
+  CaptionLine,
+  CaptionName,
+  Embed,
+  Entry,
+  Stack,
+  Stamp,
+  type BylineProps,
+  type CaptionLineProps,
+  type EntryProps,
+  type StampProps,
+} from "./entry";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
+export { catalogReader, type Strings } from "./locale";
+export { MediaGrid, type MediaGridProps, type MediaItem } from "./media";
 export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
 export { RelativeTime, type RelativeTimeProps } from "./time";
 export { I18nProvider, useLocale } from "react-aria-components";
