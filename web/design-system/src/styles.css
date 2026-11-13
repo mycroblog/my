@@ -1,0 +1,11 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/*
+ * The design system's stylesheet (ADR-0025 §4): the tokens on :root and the utilities its components use, from
+ * Tailwind with the theme of theme.ts, generated from @my/design-tokens. Only this package writes Tailwind classes, so
+ * Tailwind scans this package's sources alone. Preflight is the app's to load.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./**/*.tsx";
+@plugin "./theme.ts";

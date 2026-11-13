@@ -4,7 +4,8 @@
 # members are the packages under web/, tools/i18n, pkg/mykit/ts, and pkg/mybot/ts, installed once from bun.lock.
 # Every tool runs on Bun alone (ADR-0025 §10). The checks of each member live with its area: web/docs in
 # tasks/docs.yml (site:check), tools/i18n in tasks/i18n.yml, the published packages in tasks/mykit.yml, and the
-# development packages web/devtools and web/catalog (ADR-0168) and the tokens of web/design-tokens (ADR-0059) here.
+# development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059) and the
+# components of web/design-system (ADR-0025 §4) here.
 version: "3"
 
 vars:
@@ -26,7 +27,7 @@ vars:
 
 tasks:
   check:
-    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/devtools and web/catalog in parallel
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/devtools and web/catalog in parallel
     deps: [fmt-check, licenses, typecheck, lint, knip, test, devtools-absent]
 
   # The page where the decider writes notes for an agent (ADR-0168). It prints `catalog: <url>` once it listens;
@@ -53,30 +54,32 @@ tasks:
       - bun --bun shot.ts {{.CLI_ARGS}}
 
   typecheck:
-    desc: Type-check web/design-tokens, web/devtools and web/catalog with tsc
+    desc: Type-check web/design-tokens, web/design-system, web/devtools and web/catalog with tsc
     deps: [install]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
+      - cd web/design-system && bun --bun tsc -p .
       - cd web/devtools && bun --bun tsc -p .
       - cd web/catalog && bun --bun tsc -p .
 
   lint:
-    desc: Run Oxlint on web/design-tokens, web/devtools and web/catalog with the workspace's configuration (.oxlintrc.json)
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/devtools and web/catalog with the workspace's configuration (.oxlintrc.json)
     deps: [install]
     cmds:
-      - bun --bun oxlint web/design-tokens web/devtools web/catalog
+      - bun --bun oxlint web/design-tokens web/design-system web/devtools web/catalog
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/devtools and web/catalog (knip.json)
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/devtools and web/catalog (knip.json)
     deps: [install]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/devtools --workspace web/catalog
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/devtools --workspace web/catalog
 
   test:
-    desc: Run the tests of web/design-tokens and web/devtools
+    desc: Run the tests of web/design-tokens, web/design-system and web/devtools
     deps: [install]
     cmds:
       - cd web/design-tokens && bun test
+      - cd web/design-system && bun test
       - cd web/devtools && bun test
 
   # The production build of the catalog page stands for every production build: the plugin of @my/devtools refuses

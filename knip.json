@@ -18,6 +18,10 @@
       "entry": ["src/**/*.test.ts"],
       "project": ["src/**/*.ts"]
     },
+    "web/design-system": {
+      "entry": ["src/theme.ts", "src/**/*.test.tsx"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
     "web/catalog": {
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]

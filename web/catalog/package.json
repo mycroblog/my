@@ -9,12 +9,14 @@
     "typecheck": "bun --bun tsc -p ."
   },
   "dependencies": {
+    "@my/design-system": "workspace:*",
     "@my/design-tokens": "workspace:*",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@my/devtools": "workspace:*",
+    "@tailwindcss/vite": "4.3.5",
     "@types/bun": "1.4.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
