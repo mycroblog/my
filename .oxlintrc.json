@@ -314,6 +314,35 @@
       "env": {
         "node": true
       }
+    },
+    // The icon set reaches the web client through the icon layer of @my/design-system alone (ADR-0025 §6).
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@tabler/*"
+                ],
+                "message": "Use the Icon of @my/design-system; only web/design-system/src/icons.tsx imports Tabler (ADR-0025 §6)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "web/design-system/src/icons.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }
