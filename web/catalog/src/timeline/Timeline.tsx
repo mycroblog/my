@@ -12,7 +12,7 @@ import "./timeline.css";
 // The wordmark, not the app icon: a mark, so that the compose entry under it is the only coral button.
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
-import { Avatar, Button, Icon, RelativeTime, useLocale, type IconName } from "@my/design-system";
+import { Avatar, Button, Icon, RelativeTime, useAction, useLocale, type IconName } from "@my/design-system";
 import { text } from "@my/design-tokens";
 import type { Lang } from "../Posts";
 import { ago } from "../Times";
@@ -50,9 +50,12 @@ function NavList({ lang }: { lang: Lang }) {
   );
 }
 
-/** The compose entry: the primary action, a glyph and, where there is room, its label. */
-const Compose = ({ lang }: { lang: Lang }) => (
-  <Button kind="primary" aria-label={strings[lang].compose}>
+// What the compose entry opens: nothing yet, while the composer is not built.
+const openCompose = () => undefined;
+
+/** The compose entry: the primary action, a glyph and, where there is room, its label, with the keys of compose.open. */
+const Compose = ({ lang, keys }: { lang: Lang; keys: { "aria-keyshortcuts"?: string } }) => (
+  <Button kind="primary" aria-label={strings[lang].compose} onPress={openCompose} {...keys}>
     <Icon name="compose" place="action" />
     <span className="tl-label" aria-hidden="true">
       {strings[lang].compose}
@@ -179,6 +182,7 @@ function Aside({ lang }: { lang: Lang }) {
 export function Timeline() {
   const lang: Lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   const s = strings[lang];
+  const compose = useAction("compose.open", openCompose, { scope: "screen", label: s.compose });
   document.title = s.timeline;
   return (
     <div className="tl-screen">
@@ -188,7 +192,7 @@ export function Timeline() {
           <img className="tl-mark-dark" src={wordmarkDark} alt="" />
         </a>
         <div className="tl-compose">
-          <Compose lang={lang} />
+          <Compose lang={lang} keys={compose} />
         </div>
         <NavList lang={lang} />
         <div className="tl-account">
@@ -215,7 +219,7 @@ export function Timeline() {
         <NavList lang={lang} />
       </nav>
       <div className="tl-fab">
-        <Compose lang={lang} />
+        <Compose lang={lang} keys={compose} />
       </div>
     </div>
   );

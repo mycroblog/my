@@ -22,5 +22,17 @@
   "column.empty": {
     "defaultMessage": "No posts yet.",
     "description": "In place of a timeline's posts when it has none."
+  },
+  "column.next": {
+    "defaultMessage": "Go to next post",
+    "description": "The keyboard shortcut that moves the focus to the next post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.previous": {
+    "defaultMessage": "Go to previous post",
+    "description": "The keyboard shortcut that moves the focus to the previous post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.shortcuts": {
+    "defaultMessage": "When the timeline is focused",
+    "description": "The heading of the group of keyboard shortcuts that act on a timeline (moving between its posts), in the keyboard shortcuts dialog."
   }
 }

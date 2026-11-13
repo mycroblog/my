@@ -224,6 +224,23 @@ export const media = { gap: 0.25, ratio: 0.5625, maxHeight: 20, previewWidth: 6,
  */
 export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.375, glyph: 1.25 } as const;
 
+/**
+ * A dialog over the page (the keyboard shortcuts), in rem: its padding, the space between its parts and between the
+ * rows of a list in it, its most width, and the margin it keeps from the viewport's edges; and the scrim that dims the
+ * page behind it, a share of black that is heavier in dark.
+ */
+export const dialog = {
+  padding: 1.25,
+  gap: 1,
+  rowGap: 0.5,
+  maxWidth: 28,
+  margin: 1,
+  scrim: { light: 0.4, dark: 0.6 },
+} as const;
+
+/** A key's cap (a shortcut's key), in rem: its least width, its height, its inline padding, and the gap between caps. */
+export const kbd = { minWidth: 1.5, height: 1.5, paddingInline: 0.375, gap: 0.25 } as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -263,7 +280,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*` and `--chip-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*` and `--kbd-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -347,4 +364,17 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--chip-gap", `${chip.gap}rem`],
   ["--chip-spacing", `${chip.spacing}rem`],
   ["--chip-glyph", `${chip.glyph}em`],
+  ["--dialog-padding", `${dialog.padding}rem`],
+  ["--dialog-gap", `${dialog.gap}rem`],
+  ["--dialog-row-gap", `${dialog.rowGap}rem`],
+  ["--dialog-max-width", `${dialog.maxWidth}rem`],
+  ["--dialog-margin", `${dialog.margin}rem`],
+  [
+    "--dialog-scrim",
+    `light-dark(rgb(0 0 0 / ${percent(dialog.scrim.light)}), rgb(0 0 0 / ${percent(dialog.scrim.dark)}))`,
+  ],
+  ["--kbd-min-width", `${kbd.minWidth}rem`],
+  ["--kbd-height", `${kbd.height}rem`],
+  ["--kbd-padding-inline", `${kbd.paddingInline}rem`],
+  ["--kbd-gap", `${kbd.gap}rem`],
 ]);

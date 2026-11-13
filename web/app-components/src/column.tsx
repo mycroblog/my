@@ -5,9 +5,9 @@
 // load, that they failed (with a retry), or that there are none (the feature's `empty`, else a plain line), and under
 // the posts that more load or failed to (with a retry); near the end it asks for more. It fetches nothing: it takes a timeline in the shape of @my/app-data's (`useHomeTimeline()`), which a
 // feature passes on as it is, and each post's action goes to `onAction`. `moveFocus` moves the focus between the posts
-// of the column it is in, for the shortcuts of the next and the previous post.
+// of the column it is in, which the column's shortcuts of the next and the previous post use.
 
-import { Feed, FeedItem, FeedNotice, moveFeedFocus, TextButton, useLocale } from "@my/design-system";
+import { Feed, FeedItem, FeedNotice, moveFeedFocus, TextButton, useAction, useLocale } from "@my/design-system";
 import { stringsIn } from "./locale";
 import { Post, type PostAction, type PostProps } from "./post";
 import type { PostStatus } from "./status";
@@ -44,7 +44,28 @@ export type ColumnProps = ColumnTimeline & {
  * Moves the focus from `from` (a post of a column, or something inside one) to the next post (1) or the previous one
  * (-1), and scrolls that post to the top of the view; returns whether it moved.
  */
-export const moveFocus = (from: Element | null, step: 1 | -1): boolean => moveFeedFocus(from, step);
+export const moveFocus = (from: Element | null, step: 1 | -1, options: { repeat?: boolean } = {}): boolean =>
+  moveFeedFocus(from, step, options);
+
+/**
+ * The keys of the next and the previous post (timeline.next, timeline.previous), while focus is on a post or inside
+ * one; at either end the key goes on to the page. A widget inside a post that takes the same key (a menu's arrows)
+ * keeps it.
+ */
+function Moves({ t }: { t: ReturnType<typeof stringsIn>["t"] }) {
+  const groupLabel = t("column.shortcuts");
+  useAction("timeline.next", ({ repeat }) => moveFocus(document.activeElement, 1, { repeat }), {
+    scope: "focus",
+    label: t("column.next"),
+    groupLabel,
+  });
+  useAction("timeline.previous", ({ repeat }) => moveFocus(document.activeElement, -1, { repeat }), {
+    scope: "focus",
+    label: t("column.previous"),
+    groupLabel,
+  });
+  return null;
+}
 
 export function Column({
   label,
@@ -89,6 +110,7 @@ export function Column({
       onNearEnd={asks ? fetchNextPage : undefined}
       end={end}
     >
+      <Moves t={t} />
       {statuses.map((s, i) => (
         <FeedItem key={s.id} position={i + 1}>
           <Post {...postProps?.(s)} status={s} onAction={onAction} />

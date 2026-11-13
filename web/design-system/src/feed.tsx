@@ -6,10 +6,12 @@
 // an entry (those keys, Tab, or a shortcut through `moveFeedFocus`), the page scrolls that entry to the top of the
 // view: a click does not. The scroll keeps the entry's scroll margin (--feed-scroll-margin) and the scroller's
 // scroll-padding-top, which the shell sets to the height of a sticky header; with reduced motion it jumps instead of
-// gliding. Near its end it asks for more (onNearEnd).
+// gliding. Near its end it asks for more (onNearEnd). It is the `ActionScope` of the focus actions declared inside
+// it (the next and the previous post), which act while focus is on an entry or inside one.
 
 import { createContext, use, useEffect, useEffectEvent, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
+import { ActionScope } from "./shortcuts";
 
 /** Where an entry stands in its feed, for aria-posinset and aria-setsize; undefined outside a feed. */
 export type FeedPosition = { posinset: number; setsize: number };
@@ -36,17 +38,24 @@ function entriesOf(feed: Element): HTMLElement[] {
  * Scrolls `entry` to the top of its scroller, below its scroll margin and the scroller's scroll padding (a sticky
  * header's), gliding unless the reader asked for reduced motion.
  */
-function scrollEntryToTop(entry: Element): void {
+function scrollEntryToTop(entry: Element, jump = false): void {
   const reduced = entry.ownerDocument.defaultView?.matchMedia("(prefers-reduced-motion: reduce)").matches ?? true;
-  entry.scrollIntoView({ block: "start", inline: "nearest", behavior: reduced ? "instant" : "smooth" });
+  entry.scrollIntoView({ block: "start", inline: "nearest", behavior: reduced || jump ? "instant" : "smooth" });
 }
+
+// The feeds that moved in the frame being drawn: a feed moves once a frame, so that a held key advances steadily
+// instead of piling up moves the screen never shows.
+const movedThisFrame = new WeakSet<Element>();
 
 /**
  * Moves the focus from `from` (an entry of a feed, or something inside one) to the entry `step` after it (1) or
- * before it (-1), and scrolls that entry to the top of the view. From inside the feed but outside any entry, it moves
- * to the first entry (1) or the last (-1). It returns whether it moved: not past either end, nor outside a feed.
+ * before it (-1), and scrolls that entry to the top of the view: gliding for a single press, jumping while the key is
+ * held (`repeat`), since each glide would cancel the one before and the screen would stand still. From inside the feed
+ * but outside any entry, it moves to the first entry (1) or the last (-1). It moves at most once a frame; a press
+ * within the same frame is taken without a move. It returns whether it took the press: not past either end, nor
+ * outside a feed.
  */
-export function moveFeedFocus(from: Element | null, step: 1 | -1): boolean {
+export function moveFeedFocus(from: Element | null, step: 1 | -1, { repeat = false } = {}): boolean {
   const feed = from?.closest('[role="feed"]');
   if (!from || !feed) return false;
   const entries = entriesOf(feed);
@@ -54,8 +63,16 @@ export function moveFeedFocus(from: Element | null, step: 1 | -1): boolean {
   const i = current ? entries.indexOf(current) : -1;
   const to = i < 0 ? (step > 0 ? entries[0] : entries.at(-1)) : entries[i + step];
   if (!to) return false;
+  if (movedThisFrame.has(feed)) return true;
+  const view = feed.ownerDocument.defaultView;
+  if (view?.requestAnimationFrame) {
+    movedThisFrame.add(feed);
+    view.requestAnimationFrame(() => {
+      movedThisFrame.delete(feed);
+    });
+  }
   to.focus({ preventScroll: true });
-  scrollEntryToTop(to);
+  scrollEntryToTop(to, repeat);
   return true;
 }
 
@@ -66,13 +83,13 @@ export function onFeedKeyDown(
   e: Pick<
     KeyboardEvent,
     "key" | "altKey" | "ctrlKey" | "metaKey" | "shiftKey" | "target" | "preventDefault" | "defaultPrevented"
-  >,
+  > & { repeat?: boolean },
 ): void {
   const step = keySteps[e.key];
   const target = e.target as Element;
   if (step === undefined || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
   if (target.closest(fieldSelector)) return;
-  if (moveFeedFocus(target, step)) e.preventDefault();
+  if (moveFeedFocus(target, step, { repeat: e.repeat === true })) e.preventDefault();
 }
 
 /** Scrolls an entry the keyboard focused (Tab, a shortcut) to the top; an entry focused by a click stays put. */
@@ -110,6 +127,7 @@ export type FeedProps = {
 export function Feed({ label, count, more, busy, onNearEnd, children, end }: FeedProps) {
   const s = feed();
   const sentinel = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
   const asks = onNearEnd !== undefined;
   const nearEnd = useEffectEvent(() => {
     onNearEnd?.();
@@ -133,6 +151,7 @@ export function Feed({ label, count, more, busy, onNearEnd, children, end }: Fee
     <div className={s.root()}>
       <FeedSize value={more ? -1 : count}>
         <div
+          ref={list}
           role="feed"
           aria-label={label}
           aria-busy={busy}
@@ -142,7 +161,7 @@ export function Feed({ label, count, more, busy, onNearEnd, children, end }: Fee
             onFeedFocus({ target: e.target, currentTarget: e.currentTarget });
           }}
         >
-          {children}
+          <ActionScope target={list}>{children}</ActionScope>
         </div>
       </FeedSize>
       {end}

@@ -22,5 +22,17 @@
   "column.empty": {
     "defaultMessage": "まだ投稿はありません。",
     "description": "In place of a timeline's posts when it has none."
+  },
+  "column.next": {
+    "defaultMessage": "次の投稿に移動",
+    "description": "The keyboard shortcut that moves the focus to the next post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.previous": {
+    "defaultMessage": "前の投稿に移動",
+    "description": "The keyboard shortcut that moves the focus to the previous post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.shortcuts": {
+    "defaultMessage": "タイムラインにフォーカスしているとき",
+    "description": "The heading of the group of keyboard shortcuts that act on a timeline (moving between its posts), in the keyboard shortcuts dialog."
   }
 }

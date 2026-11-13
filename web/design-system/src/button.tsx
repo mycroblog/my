@@ -22,6 +22,8 @@ export type ButtonProps = Omit<AriaButtonProps, "className" | "style" | "render"
   size?: ButtonSize;
   /** An action in flight: the button keeps its width and its label as its name, shows a spinner, and ignores presses. */
   busy?: boolean;
+  /** The keys that run the button's action (what `useAction` returns), for assistive technology. */
+  "aria-keyshortcuts"?: string | undefined;
   children: ReactNode;
 };
 
@@ -101,6 +103,7 @@ export function ButtonBase({
   size,
   busy = false,
   pressed,
+  "aria-keyshortcuts": keyshortcuts,
   children,
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
@@ -119,6 +122,7 @@ export function ButtonBase({
         <button
           {...props}
           aria-pressed={pressed}
+          aria-keyshortcuts={keyshortcuts}
           aria-busy={busy || undefined}
           data-hovered={isHovered || preview === "hover" || undefined}
           data-pressed={isPressed || preview === "pressed" || undefined}

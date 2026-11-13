@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import "@my/design-system/styles.css";
-import { I18nProvider, useLocale } from "@my/design-system";
+import { I18nProvider, ShortcutProvider, useLocale } from "@my/design-system";
 import { StrictMode, useEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Catalog } from "./Catalog";
+import { keymap } from "./keymap";
 import { Timeline } from "./timeline/Timeline";
 
-// The catalog page at /, and the rough home timeline screen at /timeline.
+// The catalog page at /, and the rough home timeline screen at /timeline, under the shortcuts of the keymap.
 const Page = location.pathname.replace(/\/+$/, "") === "/timeline" ? Timeline : Catalog;
 
 // The page's locale: `?lang=`, which the overlay's locale switch sets (en, ja, ar-XB), else <html lang>. The parts
@@ -36,7 +37,9 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider locale={locale}>
       <Html>
-        <Page />
+        <ShortcutProvider keymap={keymap}>
+          <Page />
+        </ShortcutProvider>
       </Html>
     </I18nProvider>
   </StrictMode>,

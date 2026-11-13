@@ -60,7 +60,7 @@ class Node {
   focusedWith: FocusOptions | undefined;
   focusVisible = false;
   readonly kind: "feed" | "entry" | "field" | "button" | "other";
-  readonly env: { reduced: boolean; focused?: Node };
+  readonly env: { reduced: boolean; focused?: Node; frames?: (() => void)[] };
   constructor(kind: Node["kind"], env: Node["env"]) {
     this.kind = kind;
     this.env = env;
@@ -73,7 +73,15 @@ class Node {
     return this;
   }
   get ownerDocument() {
-    return { defaultView: { matchMedia: () => ({ matches: this.env.reduced }) } };
+    const { env } = this;
+    const frames = env.frames;
+    return {
+      defaultView: {
+        matchMedia: () => ({ matches: env.reduced }),
+        // Frames only when the test draws them by hand.
+        requestAnimationFrame: frames && ((f: () => void) => frames.push(f)),
+      },
+    };
   }
   matches(selector: string): boolean {
     if (selector === '[role="feed"]') return this.kind === "feed";
@@ -98,7 +106,7 @@ class Node {
 }
 
 function sample(reduced = false) {
-  const env: { reduced: boolean; focused?: Node } = { reduced };
+  const env: Node["env"] = { reduced };
   const button = new Node("button", env);
   const field = new Node("field", env);
   const first = new Node("entry", env).add(button, field);
@@ -184,6 +192,34 @@ describe("scrolling an entry to the top", () => {
     const { first, second } = sample(true);
     moveFeedFocus(el(second), -1);
     expect(first.scrolls).toEqual([{ block: "start", inline: "nearest", behavior: "instant" }]);
+  });
+
+  test("while the key is held it jumps, and it moves once a frame", () => {
+    const { env, first, second, third } = sample();
+    const frames: (() => void)[] = [];
+    env.frames = frames;
+    expect(moveFeedFocus(el(first), 1, { repeat: true })).toBe(true);
+    expect(second.scrolls).toEqual([{ block: "start", inline: "nearest", behavior: "instant" }]);
+    // Another repeat in the same frame is taken, so the page does not scroll, but moves nothing.
+    expect(moveFeedFocus(el(second), 1, { repeat: true })).toBe(true);
+    expect(env.focused).toBe(second);
+    for (const draw of frames.splice(0)) draw();
+    expect(moveFeedFocus(el(second), 1, { repeat: true })).toBe(true);
+    expect(env.focused).toBe(third);
+    // A held Page Down jumps too.
+    for (const draw of frames.splice(0)) draw();
+    onFeedKeyDown({
+      key: "PageUp",
+      repeat: true,
+      altKey: false,
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      target: el(third),
+      defaultPrevented: false,
+      preventDefault: () => undefined,
+    });
+    expect(second.scrolls.at(-1)?.behavior).toBe("instant");
   });
 
   test("an entry the keyboard focuses scrolls to the top; one a click focuses stays put", () => {

@@ -9,6 +9,7 @@ import {
   content,
   contrastPairs,
   control,
+  dialog,
   disclosure,
   embed,
   entry,
@@ -19,6 +20,7 @@ import {
   media,
   icon,
   iconButton,
+  kbd,
   menu,
   mix,
   motion,
@@ -162,6 +164,24 @@ test("properties declare every token", () => {
     expect(properties[`--chip-${name}`]).toBe(`${chip[key]}rem`);
   }
   expect(properties["--chip-glyph"]).toBe(`${chip.glyph}em`);
+  for (const [name, key] of [
+    ["padding", "padding"],
+    ["gap", "gap"],
+    ["row-gap", "rowGap"],
+    ["max-width", "maxWidth"],
+    ["margin", "margin"],
+  ] as const) {
+    expect(properties[`--dialog-${name}`]).toBe(`${dialog[key]}rem`);
+  }
+  expect(properties["--dialog-scrim"]).toBe("light-dark(rgb(0 0 0 / 40%), rgb(0 0 0 / 60%))");
+  for (const [name, key] of [
+    ["min-width", "minWidth"],
+    ["height", "height"],
+    ["padding-inline", "paddingInline"],
+    ["gap", "gap"],
+  ] as const) {
+    expect(properties[`--kbd-${name}`]).toBe(`${kbd[key]}rem`);
+  }
   expect(properties["--font-weight-strong"]).toBe(`${fontWeight.strong}`);
 });
 

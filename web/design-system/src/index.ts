@@ -47,5 +47,7 @@ export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { catalogReader, type Strings } from "./locale";
 export { MediaGrid, type MediaGridProps, type MediaItem } from "./media";
 export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
+export type { Binding, Keymap, Scope } from "./keys";
+export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";
 export { I18nProvider, useLocale } from "react-aria-components";
