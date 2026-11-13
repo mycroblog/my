@@ -1,0 +1,8 @@
+# visual: decisions, color
+
+Color and tokens: the brand and its accent, the neutral surfaces, light and dark. One line each:
+`- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N`.
+
+- Keep the brand's own color as it is; where a gate needs more, add a separate token. Coral means the primary action and links only; no other kind of control takes it; destructive items take no color but sit last and apart — the brand coral stays the fill, a darker accent-text carries text and the ring; the decider agreed with the evaluator's reasoning for neutral; a red would read as the coral — the pick of accent (20261112-221223-4a90.2), confirmed in the retrospective of 2026-11-12; the decider's note (20261113-133424-dad1); the pick of menu (20261114-012035-ee33.1) — 2026-11-14 — held 1 / missed 0
+- Draw a neutral surface from the palette's warmth, not a plain gray, or it reads bleak — the decider found neutral's gray bleak and picked raised — the decider's note (20261113-133424-dad1) and pick (20261113-134649-6620.1) — 2026-11-13 — held 0 / missed 0
+- Light and dark need not mirror each other; matching temperature or values across modes is no reason for an option — the decider took a neutral light with a warm dark — the picks of dark-surface (20261112-221548-55e0) and light-surface (20261112-222042-36cb.1), confirmed in the retrospective of 2026-11-12 — 2026-11-12 — held 0 / missed 0

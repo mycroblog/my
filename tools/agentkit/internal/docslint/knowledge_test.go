@@ -15,6 +15,7 @@ func knowledgeConfig() *Config {
 	c.Knowledge.Limits.Index = 64
 	c.Knowledge.Limits.Decisions = 512
 	c.Knowledge.Limits.Exemplars = 256
+	c.Knowledge.Limits.Area = 1024
 	return c
 }
 
@@ -25,14 +26,15 @@ const (
 
 func TestKnowledgeInShape(t *testing.T) {
 	got := lint(t, knowledgeConfig(), map[string]string{
-		".claude/knowledge/copy/index.md":          "# copy: index\n\nRead the decisions.\n",
-		".claude/knowledge/copy/decisions.md":      "# copy: decisions\n\nOne line each.\n\n" + goodDecision + goodDecision,
-		".claude/knowledge/copy/exemplars.md":      "# copy: exemplars\n\n" + goodExemplar,
-		".claude/knowledge/walker/index.md":        "# walker: index\n",
-		".claude/knowledge/walker/decisions.md":    "# walker: decisions\n",
-		".claude/knowledge/walker/exemplars.md":    "# walker: exemplars\n",
-		".claude/knowledge/interop-advisor/mx.md":  "# Not a UI role\n\nFree prose.\n",
-		".claude/knowledge/interop-advisor/foo.md": "Anything\n",
+		".claude/knowledge/copy/index.md":             "# copy: index\n\nRead the decisions.\n",
+		".claude/knowledge/copy/decisions.md":         "# copy: decisions\n\nOne line each.\n\n" + goodDecision + goodDecision,
+		".claude/knowledge/copy/exemplars.md":         "# copy: exemplars\n\n" + goodExemplar,
+		".claude/knowledge/walker/index.md":           "# walker: index\n",
+		".claude/knowledge/walker/decisions/color.md": "# walker: decisions, color\n\nOne line each.\n\n" + strings.Repeat(goodDecision, 8),
+		".claude/knowledge/walker/decisions/type.md":  "# walker: decisions, type\n\n" + strings.Repeat(goodDecision, 8),
+		".claude/knowledge/walker/exemplars/menu.md":  "# walker: exemplars, menu\n\n" + goodExemplar,
+		".claude/knowledge/interop-advisor/mx.md":     "# Not a UI role\n\nFree prose.\n",
+		".claude/knowledge/interop-advisor/foo.md":    "Anything\n",
 	})
 	if len(got) != 0 {
 		t.Errorf("findings = %v, want none", got)
@@ -53,6 +55,12 @@ func TestKnowledgeOutOfShape(t *testing.T) {
 		".claude/knowledge/copy/notes.md":     "# notes\n",
 		".claude/knowledge/copy/old/a.md":     "# a\n",
 		".claude/knowledge/walker/index.md":   "# walker: index\n",
+		// Flat and area files at once; an area file over its limit, with a line of another kind; no area files.
+		".claude/knowledge/walker/decisions.md":      "# walker: decisions\n",
+		".claude/knowledge/walker/decisions/a.md":    "# walker: decisions, a\n\n" + strings.Repeat(goodDecision, 16) + goodExemplar,
+		".claude/knowledge/walker/decisions/b.txt":   "# b\n",
+		".claude/knowledge/walker/decisions/x/c.md":  "# c\n",
+		".claude/knowledge/walker/exemplars/menu.md": "no title\n",
 	})
 	want := []string{
 		".claude/knowledge/copy/decisions.md:4:knowledge",
@@ -67,7 +75,11 @@ func TestKnowledgeOutOfShape(t *testing.T) {
 		".claude/knowledge/copy/notes.md:0:knowledge",
 		".claude/knowledge/copy/old/a.md:0:knowledge",
 		".claude/knowledge/walker/decisions.md:0:knowledge",
-		".claude/knowledge/walker/exemplars.md:0:knowledge",
+		".claude/knowledge/walker/decisions/a.md:0:knowledge",
+		".claude/knowledge/walker/decisions/a.md:19:knowledge",
+		".claude/knowledge/walker/decisions/b.txt:0:knowledge",
+		".claude/knowledge/walker/decisions/x/c.md:0:knowledge",
+		".claude/knowledge/walker/exemplars/menu.md:1:knowledge",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("findings =\n%v\nwant\n%v", strings.Join(got, "\n"), strings.Join(want, "\n"))

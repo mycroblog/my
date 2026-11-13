@@ -1,0 +1,8 @@
+# visual: decisions, components
+
+Components: icons, the header and the actions of a post, menus. One line each:
+`- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N`.
+
+- Icons are 18 px in actions and 14 px beside captions; an on state the icon library cannot draw by shape is drawn by us: the glyph knocked out of a solid tile. An on state takes no hue, only its shape and the text color over the muted off state — the sizes the icon-set options showed, which the decider kept; on must differ from off by shape, and a thicker line is no shape — the decider's decision on icon-set (20261113-220339-3e3c) and pick of icon-button fitted (20261113-235923-35ad.1) — 2026-11-14 — held 0 / missed 1
+- The post header's line: the name first, truncating first, then the visibility glyph and the time together at the end. The time counts ("1d ago"), never says "yesterday", in the reader's locale, not the post's (the page's on the catalog). In the actions, more sits at the end — no reason given — the decider's decision on relative-time (20261113-233816-90c2), the note 20261113-235923-35ad.3 — 2026-11-14 — held 0 / missed 2
+- A menu: a glyph and a label per item, a shadow on the page's surface, a popover on every screen; another account's actions under a caption naming it; "…" ends an item a confirmation follows — the design is shadow's, the separation of the items is sheet's — the decider's pick of menu (20261114-012035-ee33.1), corrected to shadow with glyphs — 2026-11-14 — held 0 / missed 0

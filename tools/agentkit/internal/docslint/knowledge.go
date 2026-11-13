@@ -14,11 +14,13 @@ import (
 // RuleKnowledge is the knowledge of a UI role out of its shape or over its limit (ADR-0169 §3, §4).
 const RuleKnowledge = "knowledge"
 
-// The files of a role's knowledge: the index it always reads, its decisions, and its exemplars.
+// The files of a role's knowledge: the index it always reads, its decisions, and its exemplars. The decisions and the
+// exemplars are each one file (decisions.md) or area files (decisions/<area>.md), which the role reads only when its
+// work touches the area.
 const (
 	knowledgeIndex     = "index.md"
-	knowledgeDecisions = "decisions.md"
-	knowledgeExemplars = "exemplars.md"
+	knowledgeDecisions = "decisions"
+	knowledgeExemplars = "exemplars"
 )
 
 // Knowledge is the knowledge of the UI roles: <Dir>/<role>/ for each of Roles, each file at most its limit in bytes,
@@ -31,6 +33,7 @@ type Knowledge struct {
 		Index     int `yaml:"index"`
 		Decisions int `yaml:"decisions"`
 		Exemplars int `yaml:"exemplars"`
+		Area      int `yaml:"area"`
 	} `yaml:"limits"`
 }
 
@@ -44,51 +47,78 @@ var knowledgeLines = map[string]struct {
 	knowledgeExemplars: {4, false, "- <the model screen, or the options that lost> — <why> — <from: the decider's choice> — <YYYY-MM-DD>"},
 }
 
-// knowledge checks each role's directory: its three files and no other, each within its limit, the index a page
-// under a title, and the decisions and the exemplars a title and a lead followed by one item per line.
+// knowledgeFile is one file of a role's knowledge to check: its limit and, for a list file, its kind.
+type knowledgeFile struct {
+	path, kind string
+	limit      int
+}
+
+// knowledge checks each role's directory: index.md, and the decisions and the exemplars each as one file or as area
+// files, and nothing else. Each file is within its limit, the index a page under a title, and every list file a title
+// and a lead followed by one item per line. The area files have no limit on their total.
 func (l *linter) knowledge(files []string) ([]Finding, error) {
 	k := l.c.Knowledge
 	var out []Finding
-	limits := map[string]int{knowledgeIndex: k.Limits.Index, knowledgeDecisions: k.Limits.Decisions, knowledgeExemplars: k.Limits.Exemplars}
 	for _, role := range k.Roles {
 		dir := path.Join(k.Dir, role)
+		flat := map[string]int{knowledgeDecisions: k.Limits.Decisions, knowledgeExemplars: k.Limits.Exemplars}
+		var todo []knowledgeFile
+		areas := map[string]bool{}
 		for _, f := range files {
-			if path.Dir(f) == dir {
-				if _, ok := limits[path.Base(f)]; !ok {
-					out = append(out, Finding{f, 0, RuleKnowledge, "a role keeps index.md, decisions.md and exemplars.md only (ADR-0169 §3): fold it into one of them, or delete it"})
-				}
-			} else if strings.HasPrefix(f, dir+"/") {
-				out = append(out, Finding{f, 0, RuleKnowledge, "a role's knowledge has no subdirectories (ADR-0169 §3): fold it into index.md, decisions.md or exemplars.md"})
-			}
-		}
-		for _, name := range []string{knowledgeIndex, knowledgeDecisions, knowledgeExemplars} {
-			p := path.Join(dir, name)
-			if !l.exists[p] {
-				out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("missing: the %s role keeps %s, under a title (ADR-0169 §3)", role, name)})
+			rel, ok := strings.CutPrefix(f, dir+"/")
+			if !ok {
 				continue
 			}
-			src, err := os.ReadFile(filepath.Join(l.root, filepath.FromSlash(p)))
+			kind, area, sub := strings.Cut(rel, "/")
+			_, list := flat[kind]
+			switch {
+			case rel == knowledgeIndex, rel == knowledgeDecisions+".md", rel == knowledgeExemplars+".md":
+			case sub && list && !strings.Contains(area, "/") && strings.HasSuffix(area, ".md"):
+				areas[kind] = true
+				todo = append(todo, knowledgeFile{f, kind, k.Limits.Area})
+			default:
+				out = append(out, Finding{f, 0, RuleKnowledge, "a role keeps index.md, and decisions.md or decisions/<area>.md, exemplars.md or exemplars/<area>.md, only (ADR-0169 §3): fold it into one of them, or delete it"})
+			}
+		}
+		if p := path.Join(dir, knowledgeIndex); l.exists[p] {
+			todo = append(todo, knowledgeFile{p, "", k.Limits.Index})
+		} else {
+			out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("missing: the %s role keeps %s, under a title (ADR-0169 §3)", role, knowledgeIndex)})
+		}
+		for _, kind := range []string{knowledgeDecisions, knowledgeExemplars} {
+			p := path.Join(dir, kind+".md")
+			switch {
+			case l.exists[p] && areas[kind]:
+				out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("the %s role keeps %s.md or area files in %s/, not both (ADR-0169 §3): move its lines into the area files", role, kind, kind)})
+			case l.exists[p]:
+				todo = append(todo, knowledgeFile{p, kind, flat[kind]})
+			case !areas[kind]:
+				out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("missing: the %s role keeps %s.md, or area files %s/<area>.md, under a title (ADR-0169 §3)", role, kind, kind)})
+			}
+		}
+		for _, f := range todo {
+			src, err := os.ReadFile(filepath.Join(l.root, filepath.FromSlash(f.path)))
 			if err != nil {
 				return nil, err
 			}
-			if n := len(src); n > limits[name] {
-				out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("%d bytes, over the limit of %d: merge similar lines, delete the lines that keep missing or go unused, or turn a line the decider repeats into a check (ADR-0169 §4); only the decider changes the limit (%s knowledge.limits)", n, limits[name], File)})
+			if n := len(src); n > f.limit {
+				out = append(out, Finding{f.path, 0, RuleKnowledge, fmt.Sprintf("%d bytes, over the limit of %d: merge similar lines, delete the lines that keep missing or go unused, or turn a line the decider repeats into a check (ADR-0169 §4); only the decider changes the limit (%s knowledge.limits)", n, f.limit, File)})
 			}
-			out = append(out, knowledgeShape(p, string(src))...)
+			out = append(out, knowledgeShape(f.path, f.kind, string(src))...)
 		}
 	}
 	return out, nil
 }
 
-// knowledgeShape checks one file: a "# " title on the first line and, in a list file, after the lead before the
-// first item, items of the file's shape only.
-func knowledgeShape(p, src string) []Finding {
+// knowledgeShape checks one file: a "# " title on the first line and, in a list file (kind decisions or exemplars),
+// after the lead before the first item, items of the kind's shape only.
+func knowledgeShape(p, kind, src string) []Finding {
 	lines := strings.Split(strings.TrimSuffix(src, "\n"), "\n")
 	var out []Finding
 	if !strings.HasPrefix(lines[0], "# ") {
 		out = append(out, Finding{p, 1, RuleKnowledge, "the first line is the title: # <role>: " + strings.TrimSuffix(path.Base(p), ".md")})
 	}
-	want, list := knowledgeLines[path.Base(p)]
+	want, list := knowledgeLines[kind]
 	if !list {
 		return out
 	}
