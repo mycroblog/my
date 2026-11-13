@@ -67,10 +67,11 @@ tasks:
       - cd web/catalog && bun --bun tsc -p .
 
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json)
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
     deps: [install, ":i18n:compile"]
     cmds:
       - bun --bun oxlint web/design-tokens web/design-system web/app-components web/app-data web/devtools web/catalog web/i18n
+      - bun test ./web/devtools/src/restrictions.test.js
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:

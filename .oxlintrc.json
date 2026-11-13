@@ -3,7 +3,8 @@
 // written out rule by rule, as `@oxlint/migrate --type-aware` writes them.
 // - typescript/*: the type-aware rules run in tsgolint (options.typeAware), with each file's project found from the
 //   nearest tsconfig.json.
-// - jsPlugins: eslint-comments, so that a disable comment says why.
+// - jsPlugins: eslint-comments, so that a disable comment says why; restrict/* (web/devtools/src/restrictions.js), the
+//   layer rules of ADR-0025 §4 that a prop type cannot hold, which restrictions.test.js proves.
 // options.denyWarnings makes a warning fail like an error.
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -11,7 +12,8 @@
     "typescript"
   ],
   "jsPlugins": [
-    "@eslint-community/eslint-plugin-eslint-comments"
+    "@eslint-community/eslint-plugin-eslint-comments",
+    "./web/devtools/src/restrictions.js"
   ],
   "categories": {
     "correctness": "off"
@@ -27,7 +29,9 @@
   "ignorePatterns": [
     "**/node_modules/",
     "**/dist/",
-    "web/docs/.astro/"
+    "web/docs/.astro/",
+    // Violations on purpose: web/devtools/src/restrictions.test.js lints copies of them.
+    "web/*/fixtures/"
   ],
   // Every file. A disable comment must say why; the React rules are never switched off, under either name.
   "rules": {
@@ -342,6 +346,23 @@
       ],
       "rules": {
         "no-restricted-imports": "off"
+      }
+    },
+    // Outside @my/design-system a component of it takes no className and no style (ADR-0025 §4).
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/design-system-props": "error"
+      }
+    },
+    {
+      "files": [
+        "web/design-system/**"
+      ],
+      "rules": {
+        "restrict/design-system-props": "off"
       }
     }
   ]
