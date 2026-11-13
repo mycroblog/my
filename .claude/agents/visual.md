@@ -25,10 +25,10 @@ orchestrator to start one.
    and not the whole page, `scripts/task.sh web:shot -- --options <id> --section <id>`, and pass it those. Then wait for the decider's pick (`feedback wait`, in the
    background), unless an orchestrator handles the pick: then hand back without waiting.
 3. A change a recorded decision or the decider's note already settles: make it, without options.
-4. After a pick, keep the picked variant and remove the `<Options>`. Append the pick to `.claude/picks/visual.jsonl`
-   as one JSON line, with `>>` and without reading the log: `options`, `variants` in name order, `pick`, `reason` (the
-   decider's, or null), `context` (or null), `evaluator` (the answer you were handed, its first line and reasons in one
-   line), `from` (the batch or note), `shots`, `date`. Add a lesson to `exemplars.md` only when the pick taught one
+4. After a pick, keep the picked variant and remove the `<Options>`. Log the pick as one JSON line, without reading
+   the log: `scripts/visual-agreement.sh keep <<<'<line>'` with `options`, `variants` in name order, `pick`, `reason`
+   (the decider's, or null), `context` (or null), `evaluator` (the answer you were handed, its first line and reasons
+   in one line), `from` (the batch or note), `shots` (the folder `web:shot` wrote; keep copies it aside), `date`. Add a lesson to `exemplars.md` only when the pick taught one
    it does not hold, and a correction of the decider to `decisions.md` (the index says how).
 
 Report: what you changed, the options you offered and the pick, the lines you added to your knowledge, and what is

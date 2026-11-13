@@ -3,10 +3,14 @@
 #
 # The agreement check of the visual evaluator with the decider (ADR-0169 §7), run when the decider asks for it. It
 # replays the decider's picks among live options, which the visual role records in .claude/picks/visual.jsonl, one
-# JSON object per pick (`agentkit docs lint` holds its shape), with the shots that
-# `scripts/task.sh web:shot -- --options <id>` left in the record's shots folder of the main checkout. A record without
-# a pick (the decider sent a note instead) is not replayed.
+# JSON object per pick (`agentkit docs lint` holds its shape), with keep, which copies the shots that
+# `scripts/task.sh web:shot -- --options <id>` took to .tmp/picks/visual/<id> of the main checkout, a folder web:shot
+# refuses to write into. A record without a pick (the decider sent a note instead) or without shots (they were lost
+# before they were kept) is not replayed.
 #
+#   visual-agreement.sh keep <<<'<record>'
+#                                       appends the record to the log, its shots (the folder web:shot wrote) copied to
+#                                       .tmp/picks/visual/<id> and its shots field pointing there
 #   visual-agreement.sh scenes          each recorded pick with the outcome hidden: its id, its variants in name order,
 #                                       and the directory of its shots
 #   visual-agreement.sh score <id>=<variant>...
@@ -25,9 +29,33 @@ main=${VISUAL_MAIN:-$main}
 # One line per replayable pick: id, pick, the variants in name order, why, the shots folder.
 picks() {
   [[ -f $log ]] || return 0
-  jq -r 'select(.pick != null)
+  jq -r 'select(.pick != null and .shots != null)
     | [.options, .pick, (.variants | sort | join(" ")), (.reason // .context // "no reason given"), .shots] | @tsv' "$log"
 }
+
+if [[ ${1:-} == keep ]]; then
+  rec=$(jq -ce 'select(type == "object" and (.options | strings | test("^[a-z0-9][a-z0-9-]*$")) and (.shots | type) == "string")') || rec=""
+  if [[ -z $rec || $rec == *$'\n'* ]]; then
+    echo "visual-agreement: keep reads one record of a pick on stdin, its shots the folder web:shot wrote" >&2
+    exit 1
+  fi
+  id=$(jq -r .options <<<"$rec")
+  from=$main/$(jq -r .shots <<<"$rec")
+  kept=.tmp/picks/visual/$id
+  if [[ ! -d $from ]]; then
+    echo "visual-agreement: no shots in $from: take them again with web:shot, then keep the pick" >&2
+    exit 1
+  fi
+  if [[ -e $main/$kept ]]; then
+    echo "visual-agreement: $main/$kept keeps the shots of a pick already: one record per options id" >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname "$main/$kept")"
+  cp -R "$from" "$main/$kept"
+  jq -c --arg s "$kept" '.shots = $s' <<<"$rec" >>"$log"
+  echo "kept $main/$kept"
+  exit 0
+fi
 
 all=$(picks)
 if [[ -z $all ]]; then
@@ -76,7 +104,7 @@ score)
   [[ -z $unanswered ]] || echo "not answered:$unanswered"
   ;;
 *)
-  echo "usage: visual-agreement.sh scenes | score <id>=<variant>..." >&2
+  echo "usage: visual-agreement.sh keep <<<'<record>' | scenes | score <id>=<variant>..." >&2
   exit 2
   ;;
 esac
