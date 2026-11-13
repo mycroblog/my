@@ -22,7 +22,7 @@
 //
 // SPDX expressions are evaluated: "A OR B" needs one allowed side, "A AND B" needs both.
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 
 const allowed = new Set((process.argv[2] ?? "").split(",").filter(Boolean));
 const args = process.argv.slice(3);
@@ -121,8 +121,15 @@ function resolvePackage(from: string, name: string): string | undefined {
   }
 }
 
-/** Checks the packages that the package in `dir` depends on at run time, and theirs. */
+/** The directories walkDeps has walked, so that two workspace members that depend on each other end. */
+const walked = new Set<string>();
+
+/**
+ * Checks the packages that the package in `dir` depends on at run time, and theirs. A dependency outside every
+ * node_modules is a member of the workspace, our own code: its own dependencies are checked, not its license.
+ */
 function walkDeps(dir: string) {
+  walked.add(dir);
   const m: Manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
   const deps = { ...m.peerDependencies, ...m.optionalDependencies, ...m.dependencies };
   for (const name of Object.keys(deps)) {
@@ -130,6 +137,10 @@ function walkDeps(dir: string) {
     if (pkg === undefined) {
       // An optional or peer dependency need not be installed.
       if (m.dependencies?.[name] !== undefined) failures.push(`${name}: not installed (a dependency of ${m.name})`);
+      continue;
+    }
+    if (!pkg.split(sep).includes("node_modules")) {
+      if (!walked.has(pkg)) walkDeps(pkg);
       continue;
     }
     if (check(JSON.parse(readFileSync(join(pkg, "package.json"), "utf8")))) walkDeps(pkg);

@@ -22,7 +22,7 @@
 | サーバー状態 | TanStack Query 5（`queryOptions`、無限スクロールは `useInfiniteQuery`） |
 | 長いリスト | TanStack Virtual |
 | API クライアント | `openapi-typescript` + `openapi-fetch` + `openapi-react-query`（ADR-0016） |
-| i18n | `react-intl`（FormatJS、ADR-0009）。カタログと型付きアクセサは `tools/i18n` が生成 |
+| i18n | Lingui（`@lingui/core`、ADR-0009）。カタログは `@my/i18n` がコンパイル |
 | 検証 | Zod 4（検索パラメータとフォーム） |
 | エラー境界 | `react-error-boundary` |
 | テスト | Vitest（ブラウザモードを含む）、Testing Library、`user-event`、MSW、Playwright + `@axe-core/playwright`（ADR-0110） |
@@ -101,6 +101,7 @@ React Compiler がルール違反のコンポーネントを黙って最適化�
 - Tailwind CSS と `tailwind-variants`
 - ドメインを持たない振る舞いのライブラリ: 現在は `@tanstack/react-virtual`
 - アイコン: `@tabler/icons-react`（`icons.tsx` からだけ。§6）
+- Lingui の実行時: `@lingui/core`（ADR-0009 §9）
 
 許可リストに追加できるのは、次をすべて満たすものだけとする。追加は PR の説明で理由を示し、この節の一覧を更新する。
 
@@ -185,7 +186,8 @@ React Compiler は `oxc-transform-react` で動かし、React のパッケージ
 
 | ツール | 動かし方 |
 | --- | --- |
-| Vite・Vitest（ブラウザモードを含む）・Storybook・Playwright・Astro・openapi-typescript・tsc・Oxlint・knip・Lingui CLI | `bun --bun <bin>` |
+| Vite・Vitest（ブラウザモードを含む）・Storybook・Playwright・Astro・openapi-typescript・tsc・Oxlint・knip | `bun --bun <bin>` |
+| Lingui のコンパイラ | Bun のスクリプトから `@lingui/message-utils`。CLI は Babel 経由の caniuse-lite（CC-BY-4.0）がライセンスの検査に落ちる |
 | Redocly CLI・markdownlint-cli2・Wrangler | `bunx --bun` |
 | 整形・テスト・i18n のツール・リポジトリのスクリプト | `bun fmt`・`bun test`・`bun <file>` |
 | Claude Code | ネイティブのインストーラ |

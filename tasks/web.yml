@@ -3,7 +3,8 @@
 # The Bun workspace at the repository root (ADR-0025 §2, §10; the web context of scripts/changed-contexts.sh): its
 # members are the packages under web/, tools/i18n, pkg/mykit/ts, and pkg/mybot/ts, installed once from bun.lock.
 # Every tool runs on Bun alone (ADR-0025 §10). The checks of each member live with its area: web/docs in
-# tasks/docs.yml (site:check), tools/i18n in tasks/i18n.yml, the published packages in tasks/mykit.yml, and the
+# tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
+# that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
 # development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059) and the
 # components of web/design-system (ADR-0025 §4) here.
 version: "3"
@@ -35,7 +36,7 @@ tasks:
   # A worktree runs one dev server: while the one it recorded answers, this prints its URL and starts none.
   catalog:
     desc: Serve the catalog page (web/catalog) on Vite's dev server, with the feedback overlay of @my/devtools, unless the worktree's dev server already runs
-    deps: [install]
+    deps: [install, ":i18n:compile"]
     dir: web/catalog
     cmds:
       - |
@@ -48,14 +49,14 @@ tasks:
   # What the visual evaluator sees (ADR-0169 §2): web/catalog/shot.ts prints the path of each shot.
   shot:
     desc: Screenshot the running catalog page, or one section with --section <id>, at the mobile, tablet and PC viewports in light and dark (--landscape rotates them), once per variant with --options <id>
-    deps: [install]
+    deps: [install, ":i18n:compile"]
     dir: web/catalog
     cmds:
       - bun --bun shot.ts {{.CLI_ARGS}}
 
   typecheck:
     desc: Type-check web/design-tokens, web/design-system, web/devtools and web/catalog with tsc
-    deps: [install]
+    deps: [install, ":i18n:compile"]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
@@ -63,20 +64,20 @@ tasks:
       - cd web/catalog && bun --bun tsc -p .
 
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/devtools and web/catalog with the workspace's configuration (.oxlintrc.json)
-    deps: [install]
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json)
+    deps: [install, ":i18n:compile"]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/devtools web/catalog
+      - bun --bun oxlint web/design-tokens web/design-system web/devtools web/catalog web/i18n
 
   knip:
     desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/devtools and web/catalog (knip.json)
-    deps: [install]
+    deps: [install, ":i18n:compile"]
     cmds:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/devtools --workspace web/catalog
 
   test:
     desc: Run the tests of web/design-tokens, web/design-system and web/devtools
-    deps: [install]
+    deps: [install, ":i18n:compile"]
     cmds:
       - cd web/design-tokens && bun test
       - cd web/design-system && bun test
@@ -86,7 +87,7 @@ tasks:
   # an import of the package there, and this fails when the output still contains it.
   devtools-absent:
     desc: Build web/catalog for production and fail if the build contains @my/devtools (ADR-0168 §3)
-    deps: [install]
+    deps: [install, ":i18n:compile"]
     cmds:
       - cd web/catalog && bun --bun vite build --logLevel warn
       - bun web/devtools/src/absent.ts web/catalog/dist

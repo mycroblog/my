@@ -4,6 +4,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
+  areaFile,
   areaOf,
   type CatalogFile,
   catalogFile,
@@ -16,6 +17,7 @@ import {
   removeCatalogFile,
   SOURCE,
   toJSON,
+  tsNamespaces,
   writeFileAtomic,
 } from "./catalog";
 
@@ -60,10 +62,14 @@ export class Store {
     return file;
   }
 
+  /** The namespaces of locales/, then those of the web packages. */
   namespaces(): string[] {
-    return readdirSync(join(localesDir, SOURCE), { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name);
+    return [
+      ...readdirSync(join(localesDir, SOURCE), { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name),
+      ...tsNamespaces.keys(),
+    ];
   }
 
   get(locale: string, ns: string, key: string): Entry | undefined {
@@ -141,16 +147,14 @@ export class Store {
       if (Object.keys(file.entries).length === 0) {
         this.files.delete(path);
         if (existsSync(path)) {
-          removeCatalogFile(path, file.locale);
+          removeCatalogFile(path, file.locale, file.ns);
           out.push(`removed ${rel(path)}`);
         }
         continue;
       }
       if (file.locale !== SOURCE) {
         // The order of the source file; a key the source lacks stays behind the others.
-        const order = Object.keys(
-          this.files.get(join(localesDir, SOURCE, file.ns, `${file.area}.json`))?.entries ?? {},
-        );
+        const order = Object.keys(this.files.get(areaFile(SOURCE, file.ns, file.area))?.entries ?? {});
         const ranks = new Map(order.map((key, i) => [key, i]));
         const rank = (key: string) => ranks.get(key) ?? order.length;
         file.entries = Object.fromEntries(Object.entries(file.entries).sort(([a], [b]) => rank(a) - rank(b)));

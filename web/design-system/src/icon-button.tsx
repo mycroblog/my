@@ -9,7 +9,7 @@
 
 import { ButtonBase, type ButtonProps } from "./button";
 import { Icon, type IconName } from "./icons";
-import { pageLocale } from "./strings";
+import { pageLocale } from "./locale";
 
 export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "busy" | "children" | "aria-label"> & {
   /** The icon, by its meaning. */

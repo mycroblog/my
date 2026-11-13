@@ -12,8 +12,8 @@ export async function writeGenerated(): Promise<string[]> {
   const files = await generate(loadCatalog(catalogFiles));
   // Pseudo-locale directories are fully generated; drop the files that no longer have a source (a removed area or
   // namespace, or a catalog outside a namespace directory), and the directories left empty.
-  for (const { path, locale } of catalogFiles) {
-    if (isPseudo(locale) && !files.has(path)) removeCatalogFile(path, locale);
+  for (const { path, locale, ns } of catalogFiles) {
+    if (isPseudo(locale) && !files.has(path)) removeCatalogFile(path, locale, ns);
   }
   const written: string[] = [];
   for (const [path, content] of files) {

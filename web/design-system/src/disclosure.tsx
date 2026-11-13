@@ -13,7 +13,7 @@ import { Disclosure as AriaDisclosure, DisclosurePanel } from "react-aria-compon
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { Icon, type IconName } from "./icons";
-import { pageLocale, stringsFor } from "./strings";
+import { pageLocale, stringsIn } from "./locale";
 
 export type DisclosureProps = {
   /** What the folded part is about (a content warning's text); it stays in sight. */
@@ -46,7 +46,7 @@ const disclosure = tv({
 });
 
 export function Disclosure({ summary, icon, defaultExpanded = false, locale, children }: DisclosureProps) {
-  const { strings, lang } = stringsFor(locale ?? pageLocale());
+  const { t, lang } = stringsIn(locale ?? pageLocale());
   const summaryId = useId();
   const s = disclosure();
   return (
@@ -63,7 +63,7 @@ export function Disclosure({ summary, icon, defaultExpanded = false, locale, chi
               {summary}
             </div>
             <Button slot="trigger" kind="quiet" size="timeline" aria-describedby={summaryId}>
-              <span lang={lang}>{isExpanded ? strings.hide : strings.show}</span>
+              <span lang={lang}>{t(isExpanded ? "disclosure.hide" : "disclosure.show")}</span>
             </Button>
           </div>
           <DisclosurePanel className={s.panel()}>{children}</DisclosurePanel>

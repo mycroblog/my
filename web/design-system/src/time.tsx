@@ -7,7 +7,7 @@
 // Intl.DateTimeFormat, so it needs no strings of its own.
 
 import { useEffect, useState } from "react";
-import { pageLocale } from "./strings";
+import { pageLocale } from "./locale";
 
 export type RelativeTimeProps = {
   /** The moment, as a Date or an ISO 8601 string. */

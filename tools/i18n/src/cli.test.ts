@@ -406,3 +406,35 @@ test("unused lists the keys nothing refers to and the literals no catalog define
   expect(r.out).toContain("undefined web:home.gone at internal/web/home.go:4");
   expect(r.out).toContain("i18n: 4 unused key(s), 1 undefined key literal(s)");
 });
+
+test("a web package's catalog is a namespace of its own, checked like locales/, of which Go generates nothing", () => {
+  const goBefore = read("internal/i18n/messages_gen.go");
+  mkdirSync(join(root, "web/design-system/locales"), { recursive: true });
+  const added = run("add", "designsystem:disclosure.show", "--en", "Show", "--ja", "表示", "--desc", "The button.");
+  expect(added.out).toContain('added designsystem:disclosure.show; read it as "disclosure.show" in web/design-system');
+  expect(added.code).toBe(0);
+  expect(catalog("web/design-system/locales/ja/disclosure.json")).toEqual({
+    "disclosure.show": entry("表示", "The button."),
+  });
+  expect(read("internal/i18n/messages_gen.go")).toBe(goBefore);
+  expect(existsSync(join(root, "web/design-system/locales/en-XA"))).toBe(false);
+  expect(run("add", "designsystem:disclosure.x", "--en", "Done!", "--ja", "完了", "--desc", "d").out).toContain(
+    "--en: no exclamation marks",
+  );
+
+  // The package refers to its keys without the namespace; its tests keep none alive.
+  write("web/design-system/src/disclosure.test.tsx", 'expect(t("disclosure.show"));\n');
+  expect(run("check", "--warnings").out).toContain("warn:  unused designsystem:disclosure.show");
+  write("web/design-system/src/disclosure.tsx", 'const label = t("disclosure.show");\n');
+  const checked = run("check", "--warnings");
+  expect(checked.code).toBe(0);
+  expect(checked.out).not.toContain("unused designsystem");
+  expect(checked.out).toContain("warn:  de: untranslated designsystem:disclosure.show");
+  expect(run("mv", "designsystem:disclosure.show", "disclosure.open").code).toBe(0);
+  expect(read("web/design-system/src/disclosure.tsx")).toBe('const label = t("disclosure.open");\n');
+
+  writeCatalog("web/design-system/locales/ja/disclosure.json", {});
+  const missing = run("check");
+  expect(missing.code).toBe(1);
+  expect(missing.out).toContain("web/design-system/locales/ja/disclosure.json disclosure.open: missing");
+});

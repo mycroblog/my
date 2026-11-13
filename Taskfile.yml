@@ -97,3 +97,4 @@ tasks:
       - go:config-docs
       - go:cli-docs
       - i18n:gen
+      - i18n:compile
