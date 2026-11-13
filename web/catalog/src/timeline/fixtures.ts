@@ -3,11 +3,13 @@
 // The sample home timeline of the rough screen (#3005): plain fixtures in en and ja, of every kind a timeline holds
 // (replies, boosts, content warnings, one, two and four images, long text with links, mentions, hashtags and custom
 // emoji, a post with no counts, one's own post, quotes, emoji reactions, translations). The images are generated
-// scenes, not photos.
+// scenes, not photos. `statusOf` turns a fixture into the status the API would send for it, and `translationOf` into
+// the translation it would answer, which the post of @my/app-components draws.
 
-import type { ContentEmoji } from "@my/app-components";
+import type { ContentEmoji, PostAccount, PostStatus, PostTranslation, PostVisibility } from "@my/app-components";
 import type { Visibility } from "../Times";
 import { images } from "../Avatars";
+import { serverHtml } from "../serverHtml";
 
 const minute = 60_000;
 const hour = 60 * minute;
@@ -15,7 +17,7 @@ const day = 24 * hour;
 
 export type Account = { name: string; handle: string; avatar?: string };
 
-export type Media = { alt: string; src: string };
+type Media = { alt: string; src: string };
 
 export type TimelinePost = {
   id: string;
@@ -23,9 +25,10 @@ export type TimelinePost = {
   author: Account;
   /** How long ago it was posted, in ms. */
   ago: number;
-  visibility: Visibility;
+  /** Who may see it; `local`, seen on its own server alone, has no glyph on the catalog's older specimens. */
+  visibility: Visibility | "local";
   /** Who boosted it into the timeline. */
-  boostedBy?: string;
+  boostedBy?: Account;
   /** The handle of the account it replies to. */
   replyTo?: string;
   cw?: string;
@@ -49,10 +52,10 @@ export type TimelinePost = {
 
 export type QuotedPost = Pick<TimelinePost, "lang" | "author" | "ago" | "visibility" | "text" | "media">;
 
-export type Reaction = { emoji: string; count: number; mine?: boolean };
+type Reaction = { emoji: string; count: number; mine?: boolean };
 
 /** The provider a translation names. */
-export const translationProvider = "LibreTranslate";
+const translationProvider = "LibreTranslate";
 
 const svg = (w: number, h: number, body: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 4}" height="${h * 4}">${body}</svg>`)}`;
@@ -159,7 +162,7 @@ export const posts: TimelinePost[] = [
     author: news,
     ago: hour,
     visibility: "unlisted",
-    boostedBy: ken.name,
+    boostedBy: ken,
     text: "This week: three servers federate their first polls, and a guide to moving your account without losing your followers. https://social.example.org/weekly/42 #OpenSource",
     media: [{ alt: "A sea under a pale blue sky, with low hills on the horizon", src: scenes.sea }],
     counts: { replies: 18, boosts: 1_234, favourites: 12_840 },
@@ -269,7 +272,7 @@ export const posts: TimelinePost[] = [
     author: takuya,
     ago: day + 2 * hour,
     visibility: "public",
-    boostedBy: mika.name,
+    boostedBy: mika,
     text: "駅前の古本屋、来月で閉まるらしい。学生のころ毎週通ってたので寂しい。最後にもう一度行ってきます。",
     counts: { replies: 5, boosts: 22, favourites: 64 },
     translation: {
@@ -394,3 +397,82 @@ export const emojis: ContentEmoji[] = Object.entries(emoji).map(([shortcode, src
   url: src,
   static_url: src,
 }));
+
+/** The server the reader is on: an account of it has a handle without its domain in `acct`. */
+const here = "my.example";
+
+/** An account as a status embeds it; its handle is its id. */
+function accountOf(account: Account): PostAccount {
+  const [, username = "", domain = here] = account.handle.split("@");
+  return {
+    id: account.handle,
+    username,
+    acct: domain === here ? username : `${username}@${domain}`,
+    domain,
+    display_name: account.name,
+    emojis,
+    avatar: account.avatar === undefined ? undefined : { small: { url: account.avatar } },
+  };
+}
+
+const visibilities: Record<Visibility | "local", PostVisibility> = {
+  public: "public",
+  local: "local",
+  unlisted: "unlisted",
+  followers: "private",
+  direct: "direct",
+};
+
+/** The status the API would send for a fixture: its text rendered as the server would, its times before now. */
+export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostStatus {
+  const full: Partial<TimelinePost> = post;
+  const replyTo = full.replyTo === undefined ? undefined : accountOf({ name: "", handle: full.replyTo });
+  const shown: PostStatus = {
+    id,
+    account: accountOf(post.author),
+    content: serverHtml(post.text),
+    spoiler_text: full.cw ?? "",
+    visibility: visibilities[post.visibility],
+    language: post.lang,
+    in_reply_to_account_id: replyTo?.id,
+    created_at: new Date(Date.now() - post.ago).toISOString(),
+    media_attachments: (post.media ?? []).map((m, i) => ({
+      id: `${id}-${i}`,
+      type: "image",
+      description: m.alt,
+      preview_url: m.src,
+    })),
+    mentions: replyTo === undefined ? [] : [{ id: replyTo.id, username: replyTo.username, acct: replyTo.acct }],
+    emojis,
+    replies_count: full.counts?.replies ?? 0,
+    boosts_count: full.counts?.boosts ?? 0,
+    favourites_count: full.counts?.favourites ?? 0,
+    reactions: (full.reactions ?? []).map((r) => {
+      const custom = emojis.find((e) => `:${e.shortcode}:` === r.emoji);
+      return custom === undefined
+        ? { name: r.emoji, count: r.count, me: r.mine ?? false }
+        : { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom, count: r.count, me: r.mine ?? false };
+    }),
+    favourited: full.favourited ?? false,
+    boosted: full.boosted ?? false,
+    bookmarked: full.bookmarked ?? false,
+    quote:
+      full.quote === undefined ? undefined : { state: "accepted", quoted_status: statusOf(full.quote, `${id}-quote`) },
+  };
+  if (full.boostedBy === undefined) return shown;
+  return { ...shown, id: `${id}-boost`, account: accountOf(full.boostedBy), boost: shown };
+}
+
+/** The translation the server would answer for a fixture in `lang`, by the provider; none when it has none. */
+export function translationOf(post: TimelinePost, lang: "en" | "ja"): PostTranslation | undefined {
+  const content = post.lang === lang ? undefined : post.translation?.[lang];
+  if (content === undefined) return undefined;
+  return {
+    language: lang,
+    source_language: post.lang,
+    content: serverHtml(content),
+    spoiler_text: "",
+    media_attachments: [],
+    provider: { name: translationProvider },
+  };
+}

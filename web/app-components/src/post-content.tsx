@@ -47,6 +47,11 @@ function emojiText(text: string, emojis: ReadonlyMap<string, ContentEmoji>): Rea
   return out;
 }
 
+/** Plain text people wrote outside a post's body (a display name, a content warning), with its custom emoji. */
+export function EmojiText({ text, emojis = [] }: { text: string; emojis?: readonly ContentEmoji[] | undefined }) {
+  return emojiText(text, new Map(emojis.map((emoji) => [emoji.shortcode, emoji])));
+}
+
 // The places where code may break before it breaks inside a word: after a slash (a run of them, as in "https://") or
 // a question mark, and before a pipe.
 const codeBreak = /(?<=[/?])(?=[^/])|(?<=.)(?=\|)/g;

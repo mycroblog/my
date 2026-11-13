@@ -89,8 +89,8 @@ export const contrastPairs: readonly ContrastPair[] = [
   { fg: "quote-bar", bg: "surface-raised", minimum: 3 },
 ];
 
-/** The weight of a control's label. */
-export const fontWeight = { label: 600 } as const;
+/** The weight of a control's label, and of a name that heads what follows it (a post's author). */
+export const fontWeight = { label: 600, strong: 700 } as const;
 
 /** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
 export const radius = { control: 0.375, overlay: 0.5 } as const;
@@ -181,6 +181,42 @@ export const content = {
   emoji: 1.4,
 } as const;
 
+/**
+ * An entry of a feed (a post), in rem: the space between its parts and between the lines of one part; how far its
+ * surface reaches past its content when hovered or focused, which holds an action's tile and its focus ring, and that
+ * surface's corner; the gap after the avatar, between the name and what ends its line, after a caption's glyph and
+ * between the actions; the leading of the author's two lines, unitless; and the room kept above and below it when it
+ * scrolls into view.
+ */
+export const entry = {
+  gap: 0.5,
+  lineGap: 0.25,
+  reach: 0.875,
+  radius: 0.5,
+  avatarGap: 0.625,
+  nameGap: 0.5,
+  captionGap: 0.375,
+  actionGap: 0.25,
+  leading: 1.3,
+  scrollMargin: 4.5,
+} as const;
+
+/** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */
+export const embed = { padding: 0.75, gap: 0.375 } as const;
+
+/**
+ * Images: in a grid at the full width, the gap between them, the height as a share of the width (16:9) and the most
+ * it may reach in rem, so that the next entry shows on the same screen; as small previews, their width and height in
+ * rem.
+ */
+export const media = { gap: 0.25, ratio: 0.5625, maxHeight: 20, previewWidth: 6, previewHeight: 4.5 } as const;
+
+/**
+ * A chip (an emoji reaction), in rem: its height, its inline padding, the gap between its glyph and its count, and
+ * the space between chips; and its glyph's size, in em of its count.
+ */
+export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.375, glyph: 1.25 } as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -220,7 +256,7 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*` and `--content-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--embed-*`, `--media-*` and `--chip-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -280,4 +316,26 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--content-code-hang", `${content.codeHang}ch`],
   ["--content-code-inline", `${content.codeInline}em`],
   ["--content-emoji", `${content.emoji}em`],
+  ["--entry-gap", `${entry.gap}rem`],
+  ["--entry-line-gap", `${entry.lineGap}rem`],
+  ["--entry-reach", `${entry.reach}rem`],
+  ["--entry-radius", `${entry.radius}rem`],
+  ["--entry-avatar-gap", `${entry.avatarGap}rem`],
+  ["--entry-name-gap", `${entry.nameGap}rem`],
+  ["--entry-caption-gap", `${entry.captionGap}rem`],
+  ["--entry-action-gap", `${entry.actionGap}rem`],
+  ["--entry-leading", `${entry.leading}`],
+  ["--entry-scroll-margin", `${entry.scrollMargin}rem`],
+  ["--embed-padding", `${embed.padding}rem`],
+  ["--embed-gap", `${embed.gap}rem`],
+  ["--media-gap", `${media.gap}rem`],
+  ["--media-ratio", `${media.ratio}`],
+  ["--media-max-height", `${media.maxHeight}rem`],
+  ["--media-preview-width", `${media.previewWidth}rem`],
+  ["--media-preview-height", `${media.previewHeight}rem`],
+  ["--chip-height", `${chip.height}rem`],
+  ["--chip-padding-inline", `${chip.paddingInline}rem`],
+  ["--chip-gap", `${chip.gap}rem`],
+  ["--chip-spacing", `${chip.spacing}rem`],
+  ["--chip-glyph", `${chip.glyph}em`],
 ]);

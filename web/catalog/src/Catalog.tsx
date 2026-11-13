@@ -2,7 +2,7 @@
 
 // The catalog page, where the decider and an agent decide the tokens and the components with the notes of
 // @my/devtools (ADR-0168). It shows the tokens of @my/design-tokens, the components of @my/design-system, and the
-// content renderer of @my/app-components.
+// content renderer and the post of @my/app-components.
 
 import {
   color,
@@ -19,6 +19,7 @@ import { Button } from "@my/design-system";
 import { Preview } from "@my/design-system/preview";
 import { Buttons } from "./Buttons";
 import { Contents } from "./Contents";
+import { PostStates } from "./PostStates";
 import { Posts } from "./Posts";
 
 // The same en/ja sample for every step of the type scale.
@@ -236,6 +237,10 @@ export function Catalog() {
       <section aria-labelledby="content">
         <h2 id="content">Content</h2>
         <Contents />
+      </section>
+      <section aria-labelledby="post-states">
+        <h2 id="post-states">Post states</h2>
+        <PostStates />
       </section>
     </main>
   );

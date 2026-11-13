@@ -3,14 +3,19 @@
 import { describe, expect, test } from "bun:test";
 import {
   avatar,
+  chip,
   color,
   contrast,
   content,
   contrastPairs,
   control,
   disclosure,
+  embed,
+  entry,
   fontFamily,
+  fontWeight,
   focusRing,
+  media,
   icon,
   iconButton,
   menu,
@@ -124,4 +129,40 @@ test("properties declare every token", () => {
   expect(properties["--content-code-hang"]).toBe(`${content.codeHang}ch`);
   expect(properties["--content-code-inline"]).toBe(`${content.codeInline}em`);
   expect(properties["--content-emoji"]).toBe(`${content.emoji}em`);
+  for (const [name, key] of [
+    ["gap", "gap"],
+    ["line-gap", "lineGap"],
+    ["reach", "reach"],
+    ["radius", "radius"],
+    ["avatar-gap", "avatarGap"],
+    ["name-gap", "nameGap"],
+    ["caption-gap", "captionGap"],
+    ["action-gap", "actionGap"],
+    ["scroll-margin", "scrollMargin"],
+  ] as const) {
+    expect(properties[`--entry-${name}`]).toBe(`${entry[key]}rem`);
+  }
+  expect(properties["--entry-leading"]).toBe(`${entry.leading}`);
+  expect(properties["--embed-padding"]).toBe(`${embed.padding}rem`);
+  expect(properties["--embed-gap"]).toBe(`${embed.gap}rem`);
+  expect(properties["--media-gap"]).toBe(`${media.gap}rem`);
+  expect(properties["--media-ratio"]).toBe(`${media.ratio}`);
+  expect(properties["--media-max-height"]).toBe(`${media.maxHeight}rem`);
+  expect(properties["--media-preview-width"]).toBe(`${media.previewWidth}rem`);
+  expect(properties["--media-preview-height"]).toBe(`${media.previewHeight}rem`);
+  for (const [name, key] of [
+    ["height", "height"],
+    ["padding-inline", "paddingInline"],
+    ["gap", "gap"],
+    ["spacing", "spacing"],
+  ] as const) {
+    expect(properties[`--chip-${name}`]).toBe(`${chip[key]}rem`);
+  }
+  expect(properties["--chip-glyph"]).toBe(`${chip.glyph}em`);
+  expect(properties["--font-weight-strong"]).toBe(`${fontWeight.strong}`);
+});
+
+test("an entry's surface reaches past an action's tile and its focus ring", () => {
+  const ring = (focusRing.gap + focusRing.width + focusRing.halo) / 16;
+  expect(entry.reach).toBeGreaterThanOrEqual(iconButton.paddingInline + ring);
 });

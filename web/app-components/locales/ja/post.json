@@ -1,0 +1,134 @@
+{
+  "post.reply": {
+    "defaultMessage": "返信",
+    "description": "The action of a post that replies to it."
+  },
+  "post.boost": {
+    "defaultMessage": "ブースト",
+    "description": "The action of a post that boosts it, and the item of its boost menu that boosts it or takes the boost back."
+  },
+  "post.unboost": {
+    "defaultMessage": "ブーストを取り消す",
+    "description": "The item of a boosted post's boost menu that takes the reader's boost back."
+  },
+  "post.quote": {
+    "defaultMessage": "引用",
+    "description": "The item of a post's boost menu that writes a post quoting it."
+  },
+  "post.favourite": {
+    "defaultMessage": "お気に入り",
+    "description": "The action of a post that favourites it, or takes the favourite back."
+  },
+  "post.react": {
+    "defaultMessage": "リアクション",
+    "description": "The action of a post that reacts to it with an emoji."
+  },
+  "post.more": {
+    "defaultMessage": "その他",
+    "description": "The button of a post that opens the menu of its other actions."
+  },
+  "post.boosted_by": {
+    "defaultMessage": "{name}さんがブースト",
+    "description": "The context line over a post that someone boosted into the timeline; name is the display name of who boosted it."
+  },
+  "post.replying_to": {
+    "defaultMessage": "{handle}さんへの返信",
+    "description": "The context line over a reply; handle is the account it replies to, as @user."
+  },
+  "post.reactions": {
+    "defaultMessage": "リアクション",
+    "description": "The accessible name of the row of a post's emoji reactions."
+  },
+  "post.reaction": {
+    "defaultMessage": "{emoji}、{count, number}件",
+    "description": "The accessible name of an emoji reaction chip: the emoji (a Unicode emoji or :shortcode:) and how many reacted with it."
+  },
+  "post.reaction_mine": {
+    "defaultMessage": "{emoji}、{count, number}件、自分のリアクションを含む",
+    "description": "The accessible name of the reader's own emoji reaction chip, a toggle that is on: the emoji, how many reacted with it, and that the reader is one of them; pressing it takes the reader's reaction back."
+  },
+  "post.translate": {
+    "defaultMessage": "翻訳する",
+    "description": "The action under a post in another language that shows it translated into the reader's language."
+  },
+  "post.translated_from_by": {
+    "defaultMessage": "{provider} が{language}から翻訳",
+    "description": "The note under a translated post; language is the name of the language it was written in, provider the name of the translation service."
+  },
+  "post.translated_by": {
+    "defaultMessage": "{provider} が翻訳",
+    "description": "The note under a translated post when the language it was written in is not known; provider is the name of the translation service."
+  },
+  "post.translated_from": {
+    "defaultMessage": "{language}から翻訳",
+    "description": "The note under a translated post when the translation service has no name; language is the name of the language it was written in."
+  },
+  "post.translated": {
+    "defaultMessage": "翻訳済み",
+    "description": "The note under a translated post when neither its language nor the translation service is known."
+  },
+  "post.original": {
+    "defaultMessage": "原文を表示",
+    "description": "The action under a translated post that shows it again as it was written."
+  },
+  "post.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "What the visibility glyph of a public post says, beside its time."
+  },
+  "post.visibility.local": {
+    "defaultMessage": "ローカル限定",
+    "description": "What the visibility glyph of a local post says, beside its time: on its server's local timeline, and outside its server to the author's followers alone."
+  },
+  "post.visibility.unlisted": {
+    "defaultMessage": "ひかえめな公開",
+    "description": "What the visibility glyph of a public post kept out of the public timelines says, beside its time."
+  },
+  "post.visibility.private": {
+    "defaultMessage": "フォロワー限定",
+    "description": "What the visibility glyph of a post for its author's followers alone says, beside its time."
+  },
+  "post.visibility.direct": {
+    "defaultMessage": "ダイレクト",
+    "description": "What the visibility glyph of a post for the accounts it mentions alone says, beside its time."
+  },
+  "post.copy_link": {
+    "defaultMessage": "リンクをコピー",
+    "description": "The item of a post's more menu that copies the link to the post."
+  },
+  "post.open_original": {
+    "defaultMessage": "元のページを表示",
+    "description": "The item of a remote post's more menu that opens the post's page on its own server."
+  },
+  "post.share": {
+    "defaultMessage": "共有",
+    "description": "The item of a post's more menu that shares it through the device's share sheet."
+  },
+  "post.bookmark": {
+    "defaultMessage": "ブックマーク",
+    "description": "The item of a post's more menu that bookmarks it."
+  },
+  "post.unbookmark": {
+    "defaultMessage": "ブックマークを削除",
+    "description": "The item of a bookmarked post's more menu that takes the bookmark back."
+  },
+  "post.edit": {
+    "defaultMessage": "編集",
+    "description": "The item of the more menu of the reader's own post that edits it."
+  },
+  "post.delete": {
+    "defaultMessage": "削除…",
+    "description": "The item of the more menu of the reader's own post that deletes it after a confirmation (hence the ellipsis)."
+  },
+  "post.mute": {
+    "defaultMessage": "ミュート",
+    "description": "The item of a post's more menu, under the author's handle, that mutes the author."
+  },
+  "post.block": {
+    "defaultMessage": "ブロック…",
+    "description": "The item of a post's more menu, under the author's handle, that blocks the author after a confirmation (hence the ellipsis)."
+  },
+  "post.report": {
+    "defaultMessage": "通報…",
+    "description": "The item of a post's more menu, under the author's handle, that reports the post to the moderators after a form (hence the ellipsis)."
+  }
+}
