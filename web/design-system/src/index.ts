@@ -6,3 +6,4 @@
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
 export { Button, type ButtonKind, type ButtonProps, type ButtonSize } from "./button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
+export { RelativeTime, type RelativeTimeProps } from "./time";
