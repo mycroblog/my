@@ -10,7 +10,8 @@
 #                                   decisions, which are never findings: a Read of an image, of
 #                                   .claude/knowledge/visual-evaluator/ or of an area file of the visual decisions,
 #                                   .claude/knowledge/visual/decisions/<area>.md, and nothing else (never the log of
-#                                   the decider's picks, .claude/picks/, nor the exemplars, the lessons of those picks)
+#                                   the decider's picks, .claude/picks/, nor the exemplars, the lessons of those picks);
+#                                   besides, the SubagentHandback call that delivers its answer, which reads nothing
 set -euo pipefail
 
 input=$(cat)
@@ -24,6 +25,9 @@ builder)
 visual-evaluator)
   tool=$(jq -r '.tool_name // ""' <<<"$input")
   path=$(jq -r '.tool_input.file_path // ""' <<<"$input")
+  if [[ $tool == SubagentHandback ]]; then
+    exit 0
+  fi
   if [[ $tool == Read && $path != *..* ]]; then
     case "$path" in
     *.png | *.jpg | *.jpeg | *.webp) exit 0 ;;
