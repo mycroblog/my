@@ -5,6 +5,7 @@
 // emoji, a post with no counts, one's own post, quotes, emoji reactions, translations). The images are generated
 // scenes, not photos.
 
+import type { ContentEmoji } from "@my/app-components";
 import type { Visibility } from "../Times";
 import { images } from "../Avatars";
 
@@ -28,7 +29,7 @@ export type TimelinePost = {
   /** The handle of the account it replies to. */
   replyTo?: string;
   cw?: string;
-  /** The text, as the server's plain form: URLs, @mentions, #hashtags and :shortcode: emoji are found in it. */
+  /** The text as its author wrote it, which the server renders as HTML (serverHtml.ts), with :shortcode: emoji. */
   text: string;
   media?: Media[];
   counts: { replies: number; boosts: number; favourites: number };
@@ -386,3 +387,10 @@ export const emoji: Record<string, string> = {
     `<path d="M16 2 L19 13 L30 16 L19 19 L16 30 L13 19 L2 16 L13 13Z" fill="#ffc94a"/><path d="M26 3 L27 6 L30 7 L27 8 L26 11 L25 8 L22 7 L25 6Z" fill="#ffe08a"/>`,
   ),
 };
+
+/** The same emoji as a status's `emojis` lists them; none is animated. */
+export const emojis: ContentEmoji[] = Object.entries(emoji).map(([shortcode, src]) => ({
+  shortcode,
+  url: src,
+  static_url: src,
+}));

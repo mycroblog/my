@@ -61,8 +61,15 @@ const theme = {
     "disclosure-gap": ref("--disclosure-gap"),
     "disclosure-padding": ref("--disclosure-padding"),
     "disclosure-start": ref("--disclosure-padding-start"),
+    "content-paragraph": ref("--content-paragraph-gap"),
+    "content-indent": ref("--content-indent"),
+    "content-quote": ref("--content-quote-indent"),
+    "content-code-block": ref("--content-code-padding-block"),
+    "content-code-inline": ref("--content-code-padding-inline"),
+    "content-code-chip": ref("--content-code-inline"),
+    "content-emoji": ref("--content-emoji"),
   },
-  borderWidth: { 0: "0", spinner: ref("--spinner-stroke") },
+  borderWidth: { 0: "0", spinner: ref("--spinner-stroke"), "content-quote": ref("--content-quote-bar") },
   opacity: { disabled: ref("--press-disabled-opacity") },
   boxShadow: {
     focus: [

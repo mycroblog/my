@@ -5,6 +5,7 @@ import {
   avatar,
   color,
   contrast,
+  content,
   contrastPairs,
   control,
   disclosure,
@@ -114,4 +115,13 @@ test("properties declare every token", () => {
   expect(properties["--disclosure-gap"]).toBe(`${disclosure.gap}rem`);
   expect(properties["--disclosure-padding"]).toBe(`${disclosure.padding}rem`);
   expect(properties["--disclosure-padding-start"]).toBe(`${disclosure.paddingStart}rem`);
+  expect(properties["--content-paragraph-gap"]).toBe(`${content.paragraphGap}rem`);
+  expect(properties["--content-indent"]).toBe(`${content.indent}rem`);
+  expect(properties["--content-quote-bar"]).toBe(`${content.quoteBar}rem`);
+  expect(properties["--content-quote-indent"]).toBe(`${content.quoteIndent}rem`);
+  expect(properties["--content-code-padding-block"]).toBe(`${content.codePaddingBlock}rem`);
+  expect(properties["--content-code-padding-inline"]).toBe(`${content.codePaddingInline}rem`);
+  expect(properties["--content-code-hang"]).toBe(`${content.codeHang}ch`);
+  expect(properties["--content-code-inline"]).toBe(`${content.codeInline}em`);
+  expect(properties["--content-emoji"]).toBe(`${content.emoji}em`);
 });

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The catalog page, where the decider and an agent decide the tokens and the components with the notes of
-// @my/devtools (ADR-0168). It shows the tokens of @my/design-tokens and the components of @my/design-system.
+// @my/devtools (ADR-0168). It shows the tokens of @my/design-tokens, the components of @my/design-system, and the
+// content renderer of @my/app-components.
 
 import {
   color,
@@ -17,6 +18,7 @@ import {
 import { Button } from "@my/design-system";
 import { Preview } from "@my/design-system/preview";
 import { Buttons } from "./Buttons";
+import { Contents } from "./Contents";
 import { Posts } from "./Posts";
 
 // The same en/ja sample for every step of the type scale.
@@ -230,6 +232,10 @@ export function Catalog() {
       <section aria-labelledby="post">
         <h2 id="post">Post</h2>
         <Posts />
+      </section>
+      <section aria-labelledby="content">
+        <h2 id="content">Content</h2>
+        <Contents />
       </section>
     </main>
   );

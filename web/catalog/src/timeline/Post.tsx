@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The rough parts of the home timeline screen (#3005), on the catalog only while their issues stay open: the post's
-// text renderer (#2881), the post (#2988) and the column with the keyboard moving between posts (#2989), with a
-// quoted post, emoji reactions and translation. They use the built parts of @my/design-system, among them the
-// disclosure of a content warning, and follow the decisions of the post's anatomy: the author header over a body at the full width,
-// the extent shown by a surface on hover and focus only.
+// The rough parts of the home timeline screen (#3005), on the catalog only while their issues stay open: the post
+// (#2988) and the column with the keyboard moving between posts (#2989), with a quoted post, emoji reactions and
+// translation. They use the built parts of @my/design-system, among them the disclosure of a content warning, and the
+// one content renderer of @my/app-components for the text, and follow the decisions of the post's anatomy: the author
+// header over a body at the full width, the extent shown by a surface on hover and focus only.
 
+import { PostContent } from "@my/app-components";
 import {
   Avatar,
+  CustomEmoji,
   Disclosure,
   Icon,
   IconButton,
@@ -18,10 +20,11 @@ import {
   RelativeTime,
 } from "@my/design-system";
 import { iconButton, rootPx, text } from "@my/design-tokens";
-import { Fragment, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { focusRing, MoreItems, moreLabels, type Lang } from "../Posts";
+import { serverHtml } from "../serverHtml";
 import { ago, caption, NameLine } from "../Times";
-import { emoji, translationProvider, type Media, type QuotedPost, type Reaction, type TimelinePost } from "./fixtures";
+import { emojis, translationProvider, type Media, type QuotedPost, type Reaction, type TimelinePost } from "./fixtures";
 import { strings } from "./strings";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -29,92 +32,15 @@ const rem = (px: number) => `${px / rootPx}rem`;
 // One column that may shrink below its content, so that a long word or handle wraps or truncates in it.
 const one = "minmax(0, 1fr)";
 
-const link = { color: "var(--color-accent-text)", textDecoration: "none" } as const;
-
-// A mention or a hashtag breaks only around it, never inside.
-const unbroken = { ...link, whiteSpace: "nowrap" } as const;
-
-// A URL as a post shows it: without its scheme, and cut after 30 characters with an ellipsis; the link keeps it whole.
-const shownUrl = (url: string) => {
-  const bare = url.replace(/^https?:\/\//, "");
-  return bare.length > 30 ? `${bare.slice(0, 30)}…` : bare;
-};
-
-// URLs, mentions (@user or @user@host), hashtags and :shortcode: emoji, in that order of precedence.
-const token = /(https?:\/\/[^\s]+)|(@[\w.-]+(?:@[\w-]+(?:\.[\w-]+)+)?)|(#[\p{L}\p{N}_]+)|(:[a-z0-9_]+:)/gu;
-
-// One line of text with its links, mentions, hashtags and emoji.
-function inline(line: string): ReactNode[] {
-  const out: ReactNode[] = [];
-  let at = 0;
-  for (const m of line.matchAll(token)) {
-    const [whole, url, mention, tag, code] = m;
-    if (m.index > at) out.push(line.slice(at, m.index));
-    const key = m.index;
-    if (url)
-      out.push(
-        <a key={key} href={url} style={link} title={url} rel="noopener nofollow">
-          {shownUrl(url)}
-        </a>,
-      );
-    else if (mention)
-      out.push(
-        <a key={key} href="#mention" style={unbroken} title={mention}>
-          {`@${mention.split("@")[1] ?? mention}`}
-        </a>,
-      );
-    else if (tag)
-      out.push(
-        <a key={key} href="#tag" style={unbroken}>
-          {tag}
-        </a>,
-      );
-    else if (code) {
-      const src = emoji[code.slice(1, -1)];
-      out.push(
-        src ? (
-          <img
-            key={key}
-            src={src}
-            alt={code}
-            title={code}
-            style={{ height: "1.4em", margin: "-0.2em 0.05em", verticalAlign: "middle", width: "1.4em" }}
-          />
-        ) : (
-          code
-        ),
-      );
-    }
-    at = m.index + whole.length;
-  }
-  if (at < line.length) out.push(line.slice(at));
-  return out;
+/** The post's text, rendered by the server from the fixture's text, through the one content renderer. */
+function PostText({ value }: { value: string }) {
+  return <PostContent html={serverHtml(value)} emojis={emojis} />;
 }
 
-/** The post's text: paragraphs at blank lines, line breaks kept, and its links, mentions, hashtags and emoji. */
-function PostText({ value }: { value: string }) {
-  return (
-    <div style={{ display: "grid", gap: rem(8), gridTemplateColumns: one }}>
-      {value.split(/\n{2,}/).map((para, i) => (
-        <p
-          key={i}
-          style={{
-            fontSize: `${text.body.size}rem`,
-            lineHeight: text.body.lineHeight,
-            margin: 0,
-            overflowWrap: "anywhere",
-          }}
-        >
-          {para.split("\n").map((line, j) => (
-            <Fragment key={j}>
-              {j > 0 && <br />}
-              {inline(line)}
-            </Fragment>
-          ))}
-        </p>
-      ))}
-    </div>
-  );
+/** A reaction's emoji: a :shortcode: of the post's custom emoji as its image, a Unicode emoji as text. */
+function ReactionEmoji({ value }: { value: string }) {
+  const custom = emojis.find((e) => `:${e.shortcode}:` === value);
+  return custom ? <CustomEmoji shortcode={custom.shortcode} url={custom.url} staticUrl={custom.static_url} /> : value;
 }
 
 /**
@@ -313,7 +239,7 @@ function Reactions({ reactions, lang }: { reactions: Reaction[]; lang: Lang }) {
             }}
           >
             <span aria-hidden="true" style={{ fontSize: "1.25em", lineHeight: 1 }}>
-              {inline(r.emoji)}
+              <ReactionEmoji value={r.emoji} />
             </span>
             <span aria-hidden="true" style={{ fontVariantNumeric: "tabular-nums" }}>
               {count(r)}
