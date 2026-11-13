@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The avatar: an account's image in a circle, with no edge, on a surface-raised backing, so that a transparent image
-// sits on the avatar's own surface. An image may blend into a surface of its own tone; no line is drawn around it.
+// The avatar: an account's image in a circle, with no edge, on a light backing in both schemes, so that a transparent
+// image sits on the avatar's own surface and a dark logo stays seen in dark. An image may blend into a surface of its own tone; no line is drawn around it.
 // Without an image, or when the image fails to load, the first letter of the display name stands in. Its accessible
 // name is the display name; where the name sits next to it (the post header, a reply context) it is decorative and
 // hidden, so the name is read once. React Aria has no avatar or image primitive, so this is plain markup.
@@ -25,7 +25,8 @@ export type AvatarProps = {
 const avatar = tv({
   slots: {
     base: "relative inline-flex shrink-0 overflow-hidden rounded-full bg-surface-raised align-middle",
-    image: "block size-full object-cover",
+    // An image sits on the light avatar-backing in both schemes, so that a dark logo on transparency stays seen.
+    image: "block size-full object-cover bg-avatar-backing",
     // The initial's own surface, over the backing: the place for a color of the account's own, which would tell two
     // accounts with the same initial apart.
     fallback: "absolute inset-0 flex items-center justify-center bg-surface-raised leading-none font-label text-text",

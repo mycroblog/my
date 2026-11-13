@@ -30,3 +30,9 @@ test("the place gives the size", () => {
     expect(renderToStaticMarkup(<Avatar name="Ravi" size={size} />)).toContain(`size-avatar-${size}`);
   }
 });
+
+test("an image sits on the light backing in both schemes, with no outline", () => {
+  const html = render(<Avatar name="Open Source Weekly" src="/logo.svg" size="post" />);
+  expect(html).toMatch(/<img[^>]*class="[^"]*bg-avatar-backing/);
+  expect(html).not.toMatch(/\b(border|outline|ring)-/);
+});

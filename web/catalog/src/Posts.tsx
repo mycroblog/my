@@ -152,12 +152,14 @@ const posts: Post[] = [
   },
 ];
 
-type Lang = "en" | "ja";
+export type Lang = "en" | "ja";
 
-// The more menu's sample labels; the design system's strings are not built yet. A label whose action asks for a
-// confirmation (block, report, delete) ends in "…".
-const moreLabels = {
+// The menus' sample labels (more, and boost's boost and quote); the design system's strings are not built yet. A
+// label whose action asks for a confirmation (block, report, delete) ends in "…".
+export const moreLabels = {
   en: {
+    boost: "Boost",
+    quote: "Quote",
     more: "More",
     link: "Copy link",
     open: "Open original page",
@@ -171,6 +173,8 @@ const moreLabels = {
     delete: "Delete…",
   },
   ja: {
+    boost: "ブースト",
+    quote: "引用",
     more: "その他",
     link: "リンクをコピー",
     open: "元のページを開く",
@@ -191,13 +195,13 @@ const shortHandle = (h: string) => `@${h.split("@")[1] ?? h}`;
 // A post's more menu, in the reader's `lang`: what reaches the post (copy link, open original, share), then the
 // bookmark toggle on its own; then for another's post the actions on its account (mute, block, report) last and
 // apart, under a caption naming it, or for one's own post edit, then delete last and apart.
-function MoreItems({
+export function MoreItems({
   post,
   lang,
   own = false,
   bookmarked = false,
 }: {
-  post: Post;
+  post: { handle: string };
   lang: Lang;
   own?: boolean;
   bookmarked?: boolean;
@@ -371,7 +375,7 @@ const handle: CSSProperties = {
 type PostState = "hover" | "focus-visible";
 
 // The button's two-tone focus ring, at the post's edge.
-const focusRing = [
+export const focusRing = [
   "0 0 0 var(--focus-ring-gap) var(--color-surface)",
   "0 0 0 calc(var(--focus-ring-gap) + var(--focus-ring-width)) var(--color-accent-text)",
   "0 0 0 calc(var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo)) color-mix(in srgb, var(--color-accent) var(--focus-ring-halo-share), transparent)",
@@ -598,7 +602,7 @@ function OpenMenu({
 }
 
 // The more menu open at rest in one scheme and the reader's language: on another's post with one item hovered and
-// one focused from the keyboard, and on one's own post, bookmarked.
+// one focused from the keyboard, and on one's own post, bookmarked; then the boost menu of a boosted post.
 function MenuSpecimen({ scheme, lang }: { scheme: Scheme; lang: Lang }) {
   const panel = (children: ReactNode) => (
     <div
@@ -637,7 +641,42 @@ function MenuSpecimen({ scheme, lang }: { scheme: Scheme; lang: Lang }) {
           <OpenMenu post={ownPost} lang={lang} own bookmarked />
         </>,
       )}
+      {panel(
+        <>
+          <div style={caption}>
+            {scheme} · {lang} · the boost menu of a boosted post, its count and on state kept
+          </div>
+          <BoostMenu lang={lang} />
+        </>,
+      )}
     </>
+  );
+}
+
+// The boost button's menu open at rest, in the reader's `lang`: the button, boosted and with its count, pressed as
+// while the menu is open, and the menu under it, its start at the button's start: boost (on) and quote.
+function BoostMenu({ lang }: { lang: Lang }) {
+  const l = moreLabels[lang];
+  return (
+    <div lang={lang} style={{ display: "grid", gap: rem(menuOffset), justifyItems: "start" }}>
+      <Preview state="pressed">
+        <MenuButton icon="boost" label={l.boost} count={1_234} pressed align="start">
+          <MenuItem id="boost" icon="boost" on>
+            {l.boost}
+          </MenuItem>
+        </MenuButton>
+      </Preview>
+      <MenuPanel label={l.boost}>
+        <MenuGroup>
+          <MenuItem id="boost" icon="boost" on>
+            {l.boost}
+          </MenuItem>
+          <MenuItem id="quote" icon="quote">
+            {l.quote}
+          </MenuItem>
+        </MenuGroup>
+      </MenuPanel>
+    </div>
   );
 }
 
