@@ -26,6 +26,10 @@
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]
     },
+    "web/i18n": {
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
     "tools/i18n": {
       "entry": ["src/cli.ts", "src/licenses.ts", "src/**/*.test.ts"],
       "project": ["src/**/*.ts"]

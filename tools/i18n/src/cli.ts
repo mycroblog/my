@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// `scripts/i18n.sh <command>`: every edit of and question about the message catalogs of locales/. A command that
+// `scripts/i18n.sh <command>`: every edit of and question about the message catalogs, those of locales/ and those of
+// the web packages (web/<package>/locales/, one namespace each: designsystem for web/design-system). A command that
 // writes a message checks it first with the rules of check.ts, writes it to the file of its area in each locale, and
 // runs the generator; a refusal names the rule and the fix.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { catalogFile, type Entry, isPseudo, rel, repoRoot, REQUIRED_LOCALES, SOURCE } from "./catalog";
+import { catalogFile, type Entry, isPseudo, rel, repoRoot, REQUIRED_LOCALES, SOURCE, tsNamespaces } from "./catalog";
 import { KEY, messageFindings, printFindings, runCheck } from "./check";
 import { DECISIONS } from "./copy";
 import { writeGenerated } from "./gen";
@@ -125,7 +126,12 @@ async function add(argv: string[]) {
     refuse((e as Error).message);
   }
   await commit(store);
-  console.log(`added ${id}; use (*i18n.Localizer).${goName(id)}`);
+  const pkg = tsNamespaces.get(ns);
+  console.log(
+    pkg
+      ? `added ${id}; read it as "${key}" in ${rel(pkg)} (scripts/task.sh i18n:compile compiles it)`
+      : `added ${id}; use (*i18n.Localizer).${goName(id)}`,
+  );
 }
 
 async function set(argv: string[]) {
@@ -196,6 +202,7 @@ function leftovers(renames: Map<string, string>, references: References): string
     "--",
     ".",
     ":!locales",
+    ":!web/*/locales",
     ":!internal/i18n/messages_gen.go",
     ":!internal/i18n/testdata/golden.json",
   );
@@ -363,8 +370,12 @@ function changedIds(base: string): Set<string> | undefined {
   // A changed rule, glossary, or word decision of the copy role can fail a message the change did not touch.
   if (paths("tools/i18n", DECISIONS).length) return undefined;
   const ids = new Set<string>();
-  for (const path of paths("locales")) {
-    const [, locale = "", ns = "", ...area] = path.split("/");
+  const packages = new Map([...tsNamespaces].map(([ns, pkg]) => [rel(pkg), ns]));
+  for (const path of paths("locales", ...[...packages.keys()].map((pkg) => `${pkg}/locales`))) {
+    // locales/<locale>/<namespace>/<area>.json, or web/<package>/locales/<locale>/<area>.json.
+    const segments = path.split("/");
+    const tsNs = packages.get(segments.slice(0, 2).join("/"));
+    const [locale = "", ns = "", ...area] = tsNs ? [segments[3] ?? "", tsNs, ...segments.slice(4)] : segments.slice(1);
     if (!path.endsWith(".json") || !area.length || isPseudo(locale)) continue;
     const before = git("show", `${ref}:${path}`);
     const old: Record<string, Entry> = before.ok ? JSON.parse(before.out) : {};

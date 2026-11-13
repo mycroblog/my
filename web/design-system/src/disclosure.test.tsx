@@ -3,7 +3,6 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Disclosure } from "./disclosure";
-import { stringsFor } from "./strings";
 
 const folded = (locale?: string) =>
   renderToStaticMarkup(
@@ -60,6 +59,8 @@ test("the summary sits on a raised surface with its glyph muted; the glyph is op
   expect(plain).not.toContain("<svg");
 });
 
-test("en and ja hold the same strings", () => {
-  expect(Object.keys(stringsFor("ja").strings)).toEqual(Object.keys(stringsFor("en").strings));
+test("the label reads the pseudo-locales made from en, so a string left out of the catalog shows", () => {
+  expect(folded("en-XA")).toMatch(/<span lang="en-XA">\[[^\]]+\]<\/span>/);
+  expect(folded("en-XA")).not.toContain(">Show<");
+  expect(folded("ar-XB")).toMatch(/<span lang="ar-XB">‮[^<]+‬<\/span>/);
 });

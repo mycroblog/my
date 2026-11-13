@@ -1,0 +1,20 @@
+{
+  "name": "@my/i18n",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "compile": "bun src/compile.ts",
+    "typecheck": "bun --bun tsc -p .",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@lingui/conf": "6.12.0",
+    "@lingui/message-utils": "6.12.0",
+    "@my/i18n-tools": "workspace:*"
+  },
+  "devDependencies": {
+    "@lingui/core": "6.12.0",
+    "@types/bun": "1.4.4"
+  }
+}

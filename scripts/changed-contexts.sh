@@ -174,6 +174,11 @@ classify() {
       select_contexts i18n
       return
       ;;
+    # The catalogs of the web packages and @my/i18n, which compiles them for the packages that read them.
+    web/*/locales/* | web/i18n/*)
+      select_contexts i18n web
+      return
+      ;;
     # The copy role's knowledge: its word decisions are rules of the copy lint, and its shape a documentation rule.
     .claude/knowledge/copy/*)
       select_contexts docs i18n

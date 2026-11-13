@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Catalog checks run by `scripts/task.sh i18n:check` (ADR-0009 §1), and, for the keys of a change, by
-// `scripts/i18n.sh check --changed` and by the commands of cli.ts that write a message.
+// `scripts/i18n.sh check --changed` and by the commands of cli.ts that write a message. They cover the catalogs of
+// locales/ and those of the web packages (web/<package>/locales/) alike, but for the generated files Go reads.
 //   error: ICU syntax error, including a plural / select without `other`
 //   error: translation argument unknown to the source, or of a different type
 //   error: plural / selectordinal category the locale's CLDR rules do not have
@@ -9,6 +10,7 @@
 //   error: malformed locale directory, namespace, or key; two keys mapping to one accessor
 //   error: catalog file outside locales/<locale>/<namespace>/<area>.json, or a key outside its area's file (ADR-0081)
 //   error: generated files (pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
+//   error: a message of a web package's catalog that the pseudo-locales cannot be made from
 //   error: copy outside the tone and punctuation rules of its locale: an exclamation mark
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
@@ -34,6 +36,7 @@ import {
   catalogFile,
   formattingLocale,
   isPseudo,
+  isTsNamespace,
   loadCatalog,
   loadCatalogFiles,
   rel,
@@ -41,7 +44,7 @@ import {
   SOURCE,
 } from "./catalog";
 import { COPY_LOCALES, type CopyFinding, copyFindings, copyText, loadWords, type Word } from "./copy";
-import { generate, goName } from "./generate";
+import { generate, goName, pseudoCatalogs } from "./generate";
 import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
 import { References } from "./refs";
@@ -347,7 +350,8 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
     if (locale === SOURCE || (locales && !locales.includes(locale))) continue;
     for (const id of sourceArgs.keys()) {
       const [ns = "", key = ""] = id.split(/:(.*)/s);
-      if (namespaces[ns]?.[key]) continue;
+      // The pseudo-locales of a web package's catalog are made when it is compiled, never written beside it.
+      if (namespaces[ns]?.[key] || (isPseudo(locale) && isTsNamespace(ns))) continue;
       if (REQUIRED_LOCALES.includes(locale))
         error(
           `${at(locale, ns, key)}: missing; ${locale} is written in the same change as ${SOURCE}: scripts/i18n.sh set ${id} --${locale} "<text>"`,
@@ -401,6 +405,17 @@ function checkLayout(files: CatalogFile[]) {
   }
 }
 
+/** The pseudo-locales of the web packages' catalogs, which @my/i18n makes when it compiles them and never commits. */
+async function checkTsPseudo(catalog: Catalog) {
+  const source = Object.fromEntries(Object.entries(catalog[SOURCE] ?? {}).filter(([ns]) => isTsNamespace(ns)));
+  if (!Object.keys(source).length) return;
+  try {
+    await pseudoCatalogs({ [SOURCE]: source });
+  } catch (e) {
+    error(`the pseudo-locales of ${Object.keys(source).join(", ")}: ${(e as Error).message}`);
+  }
+}
+
 async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
   const generated = await generate(catalog);
   for (const [path, want] of generated) {
@@ -432,6 +447,7 @@ export async function runCheck({ only, locales }: CheckOptions = {}): Promise<Fi
   if (!findings.some((f) => f.level === "error")) {
     checkUnused(catalog, ids);
     await checkGenerated(catalog, files);
+    await checkTsPseudo(catalog);
   }
   checkCopy(catalog, only, locales);
   return findings;

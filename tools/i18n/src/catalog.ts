@@ -10,7 +10,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, relative, sep } from "node:path";
+import { basename, dirname, join, relative, sep } from "node:path";
 
 /** tools/i18n, where the glossary of the tool lives. */
 export const toolDir = join(import.meta.dir, "..");
@@ -46,32 +46,68 @@ export const areaOf = (key: string): string => {
   return segments.slice(0, segments[0] === "admin" ? 2 : 1).join("/");
 };
 
-/** The path of the catalog file that holds `key`: locales/<locale>/<namespace>/<area>.json. */
-export const catalogFile = (locale: string, ns: string, key: string): string =>
-  join(localesDir, locale, ns, `${areaOf(key)}.json`);
+/**
+ * The namespaces of the web packages that hold a catalog of their own (ADR-0009 §1, §9), each mapped to the package's
+ * directory: web/<package>/locales/<locale>/<area>.json, named after the package without its hyphens
+ * (web/design-system: designsystem). TS formats them with Lingui (@my/i18n compiles them); Go neither formats nor
+ * embeds them, and their pseudo-locales are made when they are compiled, never committed (ADR-0081).
+ */
+export const tsNamespaces: ReadonlyMap<string, string> = new Map(
+  [...new Bun.Glob("web/*/locales").scanSync({ cwd: repoRoot, onlyFiles: false })].sort().map((path) => {
+    const pkg = join(repoRoot, dirname(path));
+    return [basename(pkg).replaceAll("-", ""), pkg] as const;
+  }),
+);
+export const isTsNamespace = (ns: string): boolean => tsNamespaces.has(ns);
 
-/** One catalog file: locales/<locale>/<namespace>/<area>.json. */
+/** The directory of the catalog files of `locale` that holds the namespace `ns`; removing files stops at it. */
+export const localeDir = (locale: string, ns: string): string => {
+  const pkg = tsNamespaces.get(ns);
+  return pkg ? join(pkg, "locales", locale) : join(localesDir, locale);
+};
+
+/** One area's catalog file: locales/<locale>/<namespace>/<area>.json, or web/<package>/locales/<locale>/<area>.json. */
+export const areaFile = (locale: string, ns: string, area: string): string =>
+  join(localeDir(locale, ns), isTsNamespace(ns) ? "" : ns, `${area}.json`);
+
+/** The path of the catalog file that holds `key`. */
+export const catalogFile = (locale: string, ns: string, key: string): string => areaFile(locale, ns, areaOf(key));
+
+/** One catalog file: locales/<locale>/<namespace>/<area>.json, or web/<package>/locales/<locale>/<area>.json. */
 export type CatalogFile = { path: string; locale: string; ns: string; area: string; entries: Namespace };
 
+/** The locale directories under `dir`. */
+const localeNames = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+
+/** The JSON files under `dir`, each as its path segments relative to it, without ".json". */
+const jsonFiles = (dir: string): string[][] =>
+  readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .sort()
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => file.slice(0, -".json".length).split(sep));
+
 /**
- * Reads every catalog file. A JSON file directly in a locale directory, outside a namespace directory,
- * comes back with an empty namespace, for check.ts to report.
+ * Reads every catalog file, those of locales/ and those of the web packages. A JSON file directly in a locale
+ * directory of locales/, outside a namespace directory, comes back with an empty namespace, for check.ts to report.
  */
 export function loadCatalogFiles(): CatalogFile[] {
   const files: CatalogFile[] = [];
-  for (const locale of readdirSync(localesDir, { withFileTypes: true })) {
-    if (!locale.isDirectory()) continue;
-    for (const file of readdirSync(join(localesDir, locale.name), { recursive: true, encoding: "utf8" }).sort()) {
-      if (!file.endsWith(".json")) continue;
-      const path = join(localesDir, locale.name, file);
-      const [ns = "", ...area] = file.slice(0, -".json".length).split(sep);
-      files.push({
-        path,
-        locale: locale.name,
-        ns: area.length ? ns : "",
-        area: area.join("/"),
-        entries: JSON.parse(readFileSync(path, "utf8")),
-      });
+  const read = (path: string): Namespace => JSON.parse(readFileSync(path, "utf8"));
+  for (const locale of localeNames(localesDir)) {
+    for (const [ns = "", ...area] of jsonFiles(join(localesDir, locale))) {
+      const path = `${join(localesDir, locale, ns, ...area)}.json`;
+      files.push({ path, locale, ns: area.length ? ns : "", area: area.join("/"), entries: read(path) });
+    }
+  }
+  for (const [ns, pkg] of tsNamespaces) {
+    for (const locale of localeNames(join(pkg, "locales"))) {
+      for (const area of jsonFiles(join(pkg, "locales", locale))) {
+        const path = `${join(pkg, "locales", locale, ...area)}.json`;
+        files.push({ path, locale, ns, area: area.join("/"), entries: read(path) });
+      }
     }
   }
   return files;
@@ -105,10 +141,11 @@ export function writeFileAtomic(path: string, content: string): boolean {
   return true;
 }
 
-/** Removes a catalog file and the directories it leaves empty, up to the locale's directory. */
-export function removeCatalogFile(path: string, locale: string): void {
+/** Removes a catalog file of the namespace `ns` and the directories it leaves empty, up to the locale's directory. */
+export function removeCatalogFile(path: string, locale: string, ns: string): void {
   rmSync(path);
-  for (let dir = dirname(path); dir !== join(localesDir, locale) && readdirSync(dir).length === 0; dir = dirname(dir)) {
+  const stop = localeDir(locale, ns);
+  for (let dir = dirname(path); dir !== stop && readdirSync(dir).length === 0; dir = dirname(dir)) {
     rmdirSync(dir);
   }
 }

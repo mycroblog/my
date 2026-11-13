@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Computes the generated files from the source catalogs, without writing anything. Go reads them and the repository
-// commits them (ADR-0081):
+// Computes the generated files from the source catalogs of locales/, without writing anything. Go reads them and the
+// repository commits them (ADR-0081); the catalogs of the web packages are @my/i18n's to compile:
 //   locales/{en-XA,ar-XB}/<namespace>/   pseudo-locales (FormatJS AST transforms), one file per area as in the
 //                                        source locale
 //   internal/i18n/messages_gen.go        Go typed accessors
@@ -18,6 +18,7 @@ import {
   goPackageDir,
   goTestdataDir,
   isPseudo,
+  isTsNamespace,
   type Namespace,
   SOURCE,
   toJSON,
@@ -56,7 +57,11 @@ function sourceMessages(catalog: Catalog): Message[] {
   return messages;
 }
 
-async function pseudoCatalogs(catalog: Catalog): Promise<Catalog> {
+/**
+ * The pseudo-locales of every namespace of the source locale of `catalog`. @my/i18n compiles those of the web
+ * packages' namespaces with their catalogs; the rest are written to locales/.
+ */
+export async function pseudoCatalogs(catalog: Catalog): Promise<Catalog> {
   const out: Catalog = {};
   const sources = catalog[SOURCE] ?? {};
   for (const ns of Object.keys(sources).sort()) {
@@ -221,9 +226,16 @@ function golden(catalog: Catalog): string {
   return toJSON({ catalog: catalogOut, syntax, cldr });
 }
 
-/** Returns absolute path -> expected content for every generated file. */
+/** Returns absolute path -> expected content for every generated file, from the namespaces of locales/. */
 export async function generate(catalog: Catalog): Promise<Map<string, string>> {
-  const source: Catalog = Object.fromEntries(Object.entries(catalog).filter(([l]) => !isPseudo(l)));
+  const source: Catalog = Object.fromEntries(
+    Object.entries(catalog)
+      .filter(([l]) => !isPseudo(l))
+      .map(([l, namespaces]) => [
+        l,
+        Object.fromEntries(Object.entries(namespaces).filter(([ns]) => !isTsNamespace(ns))),
+      ]),
+  );
   const pseudo = await pseudoCatalogs(source);
   const files = new Map<string, string>();
   for (const [locale, namespaces] of Object.entries(pseudo)) {

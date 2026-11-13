@@ -59,6 +59,9 @@ coverage/
 # Scratch space of local tools and agents (logs, temporary clones).
 /.tmp/
 
+# The catalogs of the web packages, compiled by @my/i18n (scripts/task.sh i18n:compile; ADR-0081).
+/web/*/src/messages.gen.ts
+
 # go-task's checksums of the generators' inputs (ADR-0081).
 /.task/
 

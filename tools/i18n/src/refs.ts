@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Where the source refers to catalog keys: a quoted key literal ("server:home.title"), or the Go accessor of a key
+// Where the source refers to catalog keys: a quoted key literal ("server:home.title"), a web package's own key quoted
+// in its code without the namespace ("disclosure.show" in web/design-system), or the Go accessor of a key
 // (`.ServerHomeTitle(`, a method expression, a field chain in an html/template file, and the `ServerHomeTitleArgs`
 // struct). check.ts reports the keys nothing refers to; cli.ts lists and rewrites the references.
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { repoRoot, writeFileAtomic } from "./catalog";
+import { join, relative } from "node:path";
+import { repoRoot, tsNamespaces, writeFileAtomic } from "./catalog";
 import { goName } from "./generate";
 
 export type Ref = { file: string; line: number; text: string };
@@ -19,10 +20,14 @@ type Source = {
   bare: boolean;
   /** False for the files that keep a key alive only for themselves (Go tests, the tool's own tests and fixtures). */
   counts: boolean;
+  /** In a web package with a catalog of its own, its namespace: the package refers to its keys without it. */
+  ns?: string;
 };
 type Hit = { source: Source; index: number };
 
 const QUOTED = /(["'`])([a-z][a-z0-9]*:[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)\1/g;
+/** A key of a web package's own namespace, as the package's code quotes it: without the namespace, with a dot. */
+const QUOTED_KEY = /(["'`])([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\1/g;
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -53,6 +58,12 @@ function loadSources(): Source[] {
   }
   for (const p of scan("internal/**/*.html")) out.push(source(p, true, !p.startsWith("internal/i18n/")));
   for (const p of scan("tools/i18n/src/**/*.ts")) out.push(source(p, false, false));
+  // The code of each web package with a catalog, but for the module @my/i18n compiles it into.
+  for (const [ns, pkg] of tsNamespaces) {
+    for (const p of scan(`${relative(repoRoot, pkg)}/src/**/*.{ts,tsx}`)) {
+      if (!p.endsWith(".gen.ts")) out.push({ ...source(p, false, !/\.test\.tsx?$/.test(p)), ns });
+    }
+  }
   const cases = "internal/i18n/testdata/cases.json";
   if (existsSync(join(repoRoot, cases))) out.push(source(cases, false, false));
   return out;
@@ -62,6 +73,8 @@ function loadSources(): Source[] {
 export class References {
   private readonly sources = loadSources();
   private readonly literals = new Map<string, Hit[]>();
+  /** The keys a web package quotes without its namespace, by id; a quoted dotted word that is no key is never read. */
+  private readonly keys = new Map<string, Hit[]>();
   private readonly accessors = new Map<string, Hit[]>();
   private readonly accessor: RegExp | undefined;
 
@@ -78,6 +91,10 @@ export class References {
     };
     for (const source of this.sources) {
       for (const { 2: id = "", index } of source.text.matchAll(QUOTED)) add(this.literals, id, { source, index });
+      if (source.ns !== undefined) {
+        for (const { 2: key = "", index } of source.text.matchAll(QUOTED_KEY))
+          add(this.keys, `${source.ns}:${key}`, { source, index });
+      }
       if (!source.accessors || !this.accessor) continue;
       for (const { 1: dot = "", 2: name = "", index } of source.text.matchAll(this.accessor)) {
         if (isAccessor(source, index, dot, name)) add(this.accessors, name, { source, index });
@@ -89,6 +106,7 @@ export class References {
     const name = goName(id);
     return [
       ...(this.literals.get(id) ?? []),
+      ...(this.keys.get(id) ?? []),
       ...(this.accessors.get(name) ?? []),
       ...(this.accessors.get(`${name}Args`) ?? []),
     ];
@@ -149,9 +167,14 @@ export class References {
       const to = renames.get(id);
       return to ? `${quote}${to}${quote}` : all;
     };
+    const key = (ns: string) => (all: string, quote: string, from: string) => {
+      const to = renames.get(`${ns}:${from}`);
+      return to ? `${quote}${to.slice(ns.length + 1)}${quote}` : all;
+    };
     const changed: string[] = [];
     for (const source of this.sources) {
       let text = source.text.replace(QUOTED, literal);
+      if (source.ns !== undefined) text = text.replace(QUOTED_KEY, key(source.ns));
       if (source.accessors && this.accessor) {
         text = source.text.replace(this.accessor, (all, dot: string, name: string, index: number) => {
           const to = names.get(name);

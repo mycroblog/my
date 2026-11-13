@@ -1,10 +1,26 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The message catalogs in locales/ and tools/i18n (ADR-0009; the i18n context of scripts/changed-contexts.sh).
-# tools/i18n is a member of the Bun workspace at the repository root, installed by web:install.
+# The message catalogs in locales/ and web/<package>/locales/, tools/i18n, and @my/i18n in web/i18n (ADR-0009; the
+# i18n context of scripts/changed-contexts.sh). Both are members of the Bun workspace at the repository root, installed
+# by web:install.
 version: "3"
 
 tasks:
+  # Its output is not committed (ADR-0081): the tasks that read a package's messages.gen.ts depend on it.
+  compile:
+    desc: Compile the catalogs of the web packages (web/<package>/locales/) with Lingui into each package's src/messages.gen.ts
+    deps: [":web:install"]
+    run: once
+    sources:
+      - "web/*/locales/**/*.json"
+      - "web/i18n/src/**/*.ts"
+      - "tools/i18n/src/**/*.ts"
+      - bun.lock
+    generates:
+      - "web/*/src/messages.gen.ts"
+    cmds:
+      - bun web/i18n/src/compile.ts
+
   gen:
     desc: Regenerate pseudo-locales, Go typed accessors, and parity fixtures from locales/ (commit the result)
     deps: [":web:install"]
@@ -24,8 +40,8 @@ tasks:
       - cd tools/i18n && bun src/gen.ts
 
   check:
-    desc: Lint the catalogs, fail on stale generated i18n files, check npm licenses, test and type-check tools/i18n, check the TS formatting (web:fmt-check)
-    deps: [lint, licenses, test, typecheck, knip, ":web:fmt-check"]
+    desc: Lint the catalogs, fail on stale generated i18n files, compile the web packages' catalogs, check npm licenses, test and type-check tools/i18n and web/i18n, check the TS formatting (web:fmt-check)
+    deps: [lint, compile, licenses, test, typecheck, knip, ":web:fmt-check"]
 
   lint:
     desc: Lint the catalogs, the copy of en and ja and its waivers among them, and fail on stale generated i18n files (pseudo-locales, Go accessors, golden)
@@ -44,30 +60,31 @@ tasks:
     cmds:
       - bun src/waivers.ts {{shellQuote .BASE}}
 
-  # web:licenses checks every installed package of the workspace; this checks the ones tools/i18n runs on.
+  # web:licenses checks every installed package of the workspace; this checks the ones tools/i18n and web/i18n run on.
   licenses:
-    desc: Fail on licenses of the npm dependencies of tools/i18n incompatible with AGPL-3.0
+    desc: Fail on licenses of the npm dependencies of tools/i18n and web/i18n incompatible with AGPL-3.0
     deps: [":web:install"]
     dir: tools/i18n
     cmds:
       - bun src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --deps-of .
+      - bun src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --deps-of ../../web/i18n
 
   test:
-    desc: Run the tools/i18n tests
+    desc: Run the tests of tools/i18n and web/i18n
     deps: [":web:install"]
-    dir: tools/i18n
     cmds:
-      - bun test
+      - cd tools/i18n && bun test
+      - cd web/i18n && bun test
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of tools/i18n (knip.json)
+    desc: Fail on unused files, exports, and dependencies of tools/i18n and web/i18n (knip.json)
     deps: [":web:install"]
     cmds:
-      - bun --bun knip --workspace tools/i18n
+      - bun --bun knip --workspace tools/i18n --workspace web/i18n
 
   typecheck:
-    desc: Type-check tools/i18n with tsc
+    desc: Type-check tools/i18n and web/i18n with tsc
     deps: [":web:install"]
-    dir: tools/i18n
     cmds:
-      - bun --bun tsc --noEmit -p .
+      - cd tools/i18n && bun --bun tsc --noEmit -p .
+      - cd web/i18n && bun --bun tsc --noEmit -p .
