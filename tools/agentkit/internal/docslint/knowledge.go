@@ -21,10 +21,12 @@ const (
 	knowledgeExemplars = "exemplars.md"
 )
 
-// Knowledge is the knowledge of the UI roles: <Dir>/<role>/ for each of Roles, each file at most its limit in bytes.
+// Knowledge is the knowledge of the UI roles: <Dir>/<role>/ for each of Roles, each file at most its limit in bytes,
+// and the logs of the decider's picks, <Picks>/<role>.jsonl, which the roles do not read.
 type Knowledge struct {
 	Dir    string   `yaml:"dir"`
 	Roles  []string `yaml:"roles"`
+	Picks  string   `yaml:"picks"`
 	Limits struct {
 		Index     int `yaml:"index"`
 		Decisions int `yaml:"decisions"`

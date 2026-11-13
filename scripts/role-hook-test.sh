@@ -24,6 +24,7 @@ expect 0 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.tm
 expect 0 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual-evaluator/decisions.md"}}'
 expect 0 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual/decisions.md"}}'
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual/exemplars.md"}}'
+expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/picks/visual.jsonl"}}'
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/web/catalog/src/Catalog.tsx"}}'
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual-evaluator/../../agents/visual.md"}}'
 expect 2 visual-evaluator '{"tool_name":"Bash","tool_input":{"command":"cat web/catalog/src/Catalog.tsx"}}'
