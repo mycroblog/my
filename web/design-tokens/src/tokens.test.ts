@@ -10,6 +10,7 @@ import {
   fontFamily,
   focusRing,
   icon,
+  iconButton,
   mix,
   motion,
   press,
@@ -80,6 +81,9 @@ test("properties declare every token", () => {
     expect(properties[`--control-${size}-height`]).toBe(`${c.height}rem`);
     expect(properties[`--control-${size}-padding-inline`]).toBe(`${c.paddingInline}rem`);
   }
+  expect(properties["--icon-button-padding-inline"]).toBe(`${iconButton.paddingInline}rem`);
+  expect(properties["--icon-button-gap"]).toBe(`${iconButton.gap}rem`);
+  expect(properties["--icon-button-touch"]).toBe(`${iconButton.touch}rem`);
   expect(properties["--focus-ring-width"]).toBe(`${focusRing.width}px`);
   expect(properties["--press-shade"]).toBe(press.shade);
   expect(properties["--press-pressed"]).toBe(`${press.pressed * 100}%`);

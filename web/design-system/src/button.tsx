@@ -3,7 +3,7 @@
 // The button (ADR-0025 §4), on React Aria Components' Button: its kinds told apart by surfaces, not outlines: the
 // primary is the accent fill, the secondary a neutral raised surface, the quiet one has none until touched. React Aria
 // tells hover, press and keyboard focus apart (data-hovered, data-pressed, data-focus-visible); the classes read only
-// the theme of theme.ts, generated from @my/design-tokens.
+// the theme of theme.ts, generated from @my/design-tokens. The icon button (icon-button.tsx) draws on the same base.
 
 import { motion } from "@my/design-tokens";
 import type { ReactNode } from "react";
@@ -24,11 +24,22 @@ export type ButtonProps = Omit<AriaButtonProps, "className" | "style" | "render"
   children: ReactNode;
 };
 
+/**
+ * The attribute a surface that marks itself (a hovered or focused post) sets, so that an icon button inside it steps
+ * its hover a tone down and still shows; `markedSurface` gives it.
+ */
+const marked = "data-surface-marked";
+
+/** The props that mark a surface while `on`, for the icon buttons inside it: spread them on the surface. */
+export const markedSurface = (on: boolean): Record<typeof marked, "" | undefined> => ({
+  [marked]: on ? "" : undefined,
+});
+
 const button = tv({
   slots: {
     base: [
       "relative box-border inline-flex items-center justify-center whitespace-nowrap",
-      "cursor-pointer rounded-control border-0 py-0 font-sans text-body leading-none font-label",
+      "cursor-pointer rounded-control border-0 py-0 font-sans leading-none",
       "data-pressed:translate-y-press data-focus-visible:shadow-focus data-focus-visible:outline-hidden",
       "data-disabled:cursor-not-allowed data-disabled:opacity-disabled data-pending:cursor-progress",
     ],
@@ -41,21 +52,51 @@ const button = tv({
   },
   variants: {
     kind: {
-      primary: { base: "bg-accent text-on-accent data-hovered:bg-accent-hover data-pressed:bg-accent-pressed" },
-      secondary: {
-        base: "bg-surface-raised text-text data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
+      primary: {
+        base: "text-body font-label bg-accent text-on-accent data-hovered:bg-accent-hover data-pressed:bg-accent-pressed",
       },
-      quiet: { base: "bg-transparent text-text data-hovered:bg-surface-hover data-pressed:bg-surface-pressed" },
+      secondary: {
+        base: "text-body font-label bg-surface-raised text-text data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
+      },
+      quiet: {
+        base: "text-body font-label bg-transparent text-text data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
+      },
+      // Muted until pressed or on; inside a marked surface, which wears surface-hover, its hover steps to
+      // surface-pressed and its press to surface-raised-hover. The hit area reaches the touch height on a touch screen.
+      icon: {
+        base: [
+          "text-caption bg-transparent text-muted-text aria-pressed:text-text data-pressed:text-text",
+          "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
+          "[[data-surface-marked]_&]:data-hovered:bg-surface-pressed",
+          "[[data-surface-marked]_&]:data-pressed:bg-surface-raised-hover",
+          "pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2",
+          "pointer-coarse:before:h-icon-button-touch pointer-coarse:before:-translate-y-1/2",
+        ],
+        label: "inline-flex items-center gap-icon-button-gap",
+      },
     },
     size: {
       timeline: { base: "h-control-timeline px-control-timeline-inline" },
       form: { base: "h-control-form px-control-form-inline" },
+      icon: { base: "h-control-timeline px-icon-button-inline" },
     },
     busy: { true: { label: "text-transparent" } },
   },
 });
 
-export function Button({ kind = "secondary", size = "form", busy = false, children, ...rest }: ButtonProps) {
+/** The base of the button and the icon button: a kind and a size, and a toggle's state. */
+export function ButtonBase({
+  kind,
+  size,
+  busy = false,
+  pressed,
+  children,
+  ...rest
+}: Omit<ButtonProps, "kind" | "size"> & {
+  kind: ButtonKind | "icon";
+  size: ButtonSize | "icon";
+  pressed?: boolean | undefined;
+}) {
   const preview = usePreviewState();
   const s = button({ kind, size, busy });
   return (
@@ -66,6 +107,7 @@ export function Button({ kind = "secondary", size = "form", busy = false, childr
       render={(props, { isHovered, isPressed, isFocusVisible }) => (
         <button
           {...props}
+          aria-pressed={pressed}
           aria-busy={busy || undefined}
           data-hovered={isHovered || preview === "hover" || undefined}
           data-pressed={isPressed || preview === "pressed" || undefined}
@@ -77,4 +119,8 @@ export function Button({ kind = "secondary", size = "form", busy = false, childr
       {busy && <span className={s.spinner()} aria-hidden="true" />}
     </AriaButton>
   );
+}
+
+export function Button({ kind = "secondary", size = "form", ...rest }: ButtonProps) {
+  return <ButtonBase kind={kind} size={size} {...rest} />;
 }

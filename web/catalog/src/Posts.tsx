@@ -3,11 +3,21 @@
 // The anatomy of a post in the home timeline, in grayscale (ADR-0169 §9), on a short column of en and ja posts: an
 // author header (avatar, then the name with the visibility and the time at the end, over the handle), then the body, the media and the actions at the full width,
 // so that no empty column takes room on mobile. The media, not yet a component, is drawn as a gray block; the avatar,
-// the actions (the Button) and the glyphs are those of @my/design-system. Custom emoji wait for the post's text
+// the actions (the IconButton) and the glyphs are those of @my/design-system. Custom emoji wait for the post's text
 // renderer.
 
-import { Avatar, Button, Icon, icons, type IconName, type IconPlace } from "@my/design-system";
-import { rootPx, text, type Scheme } from "@my/design-tokens";
+import {
+  Avatar,
+  Button,
+  Icon,
+  IconButton,
+  icons,
+  markedSurface,
+  type IconName,
+  type IconPlace,
+} from "@my/design-system";
+import { Preview, type PreviewState } from "@my/design-system/preview";
+import { iconButton, rootPx, text, type Scheme } from "@my/design-tokens";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { AvatarSpecimen, images } from "./Avatars";
 import { ago, caption, NameLine, Stamp, TimeSpecimen, visibilityLabel, type Visibility } from "./Times";
@@ -114,7 +124,7 @@ const posts: Post[] = [
         <A>social.example.org/weekly/42</A>
       </>
     ),
-    counts: { replies: 1, boosts: 27, favourites: 64 },
+    counts: { replies: 18, boosts: 1_234, favourites: 12_840 },
   },
   {
     lang: "ja",
@@ -138,31 +148,37 @@ const posts: Post[] = [
   },
 ];
 
-// The actions, as quiet timeline buttons: a glyph and a count. Zero shows no count. `on` shows the boost or the
-// favourite done.
+// The tile's inline padding: the row reaches that far past the body on both sides, so that the first glyph lines up
+// with the body's start and the last with its end.
+const tilePadding = `${iconButton.paddingInline}rem`;
+
+// The actions, as icon buttons: a glyph and a count. Zero shows no count. Reply, boost and favourite sit close
+// together at the start, more at the end; the buttons sit side by side and their touch areas reach only up and down,
+// so they never overlap. `on` shows the boost or the favourite done; `shownOn` shows one button in a state at rest.
 type Done = "boost" | "favourite";
-function Actions({ post, on = [] }: { post: Post; on?: Done[] }) {
-  const action = (label: string, meaning: IconName, count?: number) => (
-    <Button kind="quiet" size="timeline" aria-label={count ? `${label} (${count})` : label}>
-      <span style={{ alignItems: "center", color: muted, display: "inline-flex", gap: rem(6), fontWeight: 400 }}>
-        <Glyph meaning={meaning} on={(on as IconName[]).includes(meaning)} />
-        {count ? <span style={{ fontVariantNumeric: "tabular-nums" }}>{count}</span> : null}
+type ShownOn = { meaning: IconName; state: PreviewState };
+function Actions({ post, on = [], shownOn }: { post: Post; on?: Done[] | undefined; shownOn?: ShownOn | undefined }) {
+  const action = (icon: IconName, label: string, count?: number, end = false) => {
+    const button = (
+      <IconButton
+        icon={icon}
+        label={label}
+        count={count}
+        pressed={icon === "boost" || icon === "favourite" ? on.includes(icon) : undefined}
+      />
+    );
+    return (
+      <span style={{ display: "inline-flex", ...(end ? { marginInlineStart: "auto" } : {}) }}>
+        {shownOn?.meaning === icon ? <Preview state={shownOn.state}>{button}</Preview> : button}
       </span>
-    </Button>
-  );
+    );
+  };
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginInlineStart: `calc(-1 * var(--control-timeline-padding-inline))`,
-        maxWidth: rem(320),
-      }}
-    >
-      {action("Reply", "reply", post.counts.replies)}
-      {action(on.includes("boost") ? "Boosted" : "Boost", "boost", post.counts.boosts)}
-      {action(on.includes("favourite") ? "Favourited" : "Favourite", "favourite", post.counts.favourites)}
-      {action("More", "more")}
+    <div style={{ display: "flex", gap: rem(4), marginInline: `calc(-1 * ${tilePadding})` }}>
+      {action("reply", "Reply", post.counts.replies)}
+      {action("boost", "Boost", post.counts.boosts)}
+      {action("favourite", "Favourite", post.counts.favourites)}
+      {action("more", "More", undefined, true)}
     </div>
   );
 }
@@ -252,14 +268,25 @@ const focusRing = [
 ].join(", ");
 
 // The room the surface of a hovered or focused post reaches beyond its content, in px; the post's content stays where
-// it is, so the space between posts at rest is unchanged.
-const reach = 12;
+// it is, so the space between posts at rest is unchanged. It holds an action's tile, which reaches past the body by
+// its inline padding (6), and the tile's focus ring around it (7).
+const reach = 14;
 
 // A post: the author is a header beside the avatar, the name, then the visibility and the time at the line's end, over
 // the handle; the time is in the reader's locale, the page's, whatever the post's language. The body, the media and the actions take the whole width below it. At rest it has
 // no edge; hovered or focused from the keyboard, it shows its extent with the surface-hover surface, and focus adds
 // the ring. `shown` shows a state at rest, for the catalog.
-function PostView({ post, shown }: { post: Post; shown?: PostState }) {
+function PostView({
+  post,
+  shown,
+  on,
+  shownOn,
+}: {
+  post: Post;
+  shown?: PostState | undefined;
+  on?: Done[] | undefined;
+  shownOn?: ShownOn | undefined;
+}) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const focus = focused || shown === "focus-visible";
@@ -268,6 +295,7 @@ function PostView({ post, shown }: { post: Post; shown?: PostState }) {
     <article
       lang={post.lang}
       tabIndex={0}
+      {...markedSurface(marked)}
       onPointerEnter={() => {
         setHovered(true);
       }}
@@ -301,7 +329,7 @@ function PostView({ post, shown }: { post: Post; shown?: PostState }) {
         </div>
       </div>
       <Body post={post} />
-      <Actions post={post} />
+      <Actions post={post} on={on} shownOn={shownOn} />
     </article>
   );
 }
@@ -341,10 +369,27 @@ function Sheet({ scheme }: { scheme: Scheme }) {
     >
       <div style={caption}>{scheme}</div>
       <div style={sheetRow}>
-        <h4 style={{ ...caption, margin: 0 }}>Actions · off, boosted, favourited</h4>
+        <h4 style={{ ...caption, margin: 0 }}>
+          Actions · off, boosted, favourited, both with large counts, no replies or boosts yet
+        </h4>
         <Actions post={sample} />
         <Actions post={sample} on={["boost"]} />
         <Actions post={sample} on={["favourite"]} />
+        <Actions post={posts[2] as Post} on={["boost", "favourite"]} />
+        <Actions post={posts[3] as Post} />
+      </div>
+      <div style={sheetRow}>
+        <h4 style={{ ...caption, margin: 0 }}>Counts · a reader in en, a reader in ja</h4>
+        {(["en", "ja"] as const).map((locale) => (
+          <div
+            key={locale}
+            style={{ display: "flex", flexWrap: "wrap", gap: rem(4), marginInline: `calc(-1 * ${tilePadding})` }}
+          >
+            {[7, 999, 1_234, 12_840, 1_250_000].map((n) => (
+              <IconButton key={n} icon="favourite" label="Favourite" count={n} locale={locale} />
+            ))}
+          </div>
+        ))}
       </div>
       <div style={sheetRow}>
         <h4 style={{ ...caption, margin: 0 }}>Visibility, by the time</h4>
@@ -399,11 +444,26 @@ function IconTable() {
   );
 }
 
+// A post in a state, with one of its buttons in a state or toggled on, as the states column shows it.
+type StateRow = { title: string; shown?: PostState; on?: Done[]; shownOn?: ShownOn };
+const stateRows: StateRow[] = [
+  { title: "hover", shown: "hover" },
+  { title: "focus-visible", shown: "focus-visible" },
+  { title: "hover · favourite hovered", shown: "hover", shownOn: { meaning: "favourite", state: "hover" } },
+  { title: "hover · favourite pressed", shown: "hover", shownOn: { meaning: "favourite", state: "pressed" } },
+  { title: "at rest · reply focused from the keyboard", shownOn: { meaning: "reply", state: "focus-visible" } },
+  {
+    title: "hover · boosted and favourited, boost hovered",
+    shown: "hover",
+    on: ["boost", "favourite"],
+    shownOn: { meaning: "boost", state: "hover" },
+  },
+];
+
 // The column: the posts on one surface, separated by space alone, several times the space inside a post; no line,
-// no card edge. Below it, one post in each of its states, shown at rest, then the avatars and the glyphs in light and
-// dark. The section follows the page's color scheme.
+// no card edge. Below it, one post in each of its states and its buttons' states, shown at rest, then the avatars and
+// the glyphs in light and dark. The section follows the page's color scheme.
 export function Posts() {
-  const states: PostState[] = ["hover", "focus-visible"];
   return (
     <div style={{ color: "var(--color-text)", display: "grid", gap: rem(40) }}>
       <IconTable />
@@ -413,10 +473,10 @@ export function Posts() {
         ))}
       </div>
       <div style={column}>
-        {states.map((state) => (
-          <div key={state} style={{ display: "grid", gap: rem(20), gridTemplateColumns: one }}>
-            <h4 style={{ ...caption, margin: 0 }}>{state}</h4>
-            <PostView post={posts[2] as Post} shown={state} />
+        {stateRows.map((row) => (
+          <div key={row.title} style={{ display: "grid", gap: rem(20), gridTemplateColumns: one }}>
+            <h4 style={{ ...caption, margin: 0 }}>{row.title}</h4>
+            <PostView post={posts[2] as Post} shown={row.shown} on={row.on} shownOn={row.shownOn} />
           </div>
         ))}
       </div>

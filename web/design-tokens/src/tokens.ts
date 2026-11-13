@@ -75,6 +75,9 @@ export const contrastPairs: readonly ContrastPair[] = [
   { fg: "text", bg: "surface-raised-pressed", minimum: 4.5 },
   { fg: "text", bg: "surface-hover", minimum: 4.5 },
   { fg: "text", bg: "surface-pressed", minimum: 4.5 },
+  // An icon button's muted count, hovered, and hovered in a marked post; pressed, it takes the text.
+  { fg: "muted-text", bg: "surface-hover", minimum: 4.5 },
+  { fg: "muted-text", bg: "surface-pressed", minimum: 4.5 },
 ];
 
 /** The weight of a control's label. */
@@ -88,6 +91,13 @@ export const control = {
   timeline: { height: 2, paddingInline: 0.75 },
   form: { height: 2.5, paddingInline: 1 },
 } as const satisfies Record<string, { height: number; paddingInline: number }>;
+
+/**
+ * The icon button of a post's actions, in rem: its tile is a timeline control's height, with a narrow inline padding
+ * so that the tile and the focus ring stay inside a marked post's surface, a gap between the glyph and the count, and
+ * the height its hit area reaches on a touch screen, beyond the tile.
+ */
+export const iconButton = { paddingInline: 0.375, gap: 0.25, touch: 2.75 } as const;
 
 /**
  * The focus ring, in px: a gap of the surface, a ring of `accent-text`, and a halo of the accent at `haloShare`, so
@@ -164,7 +174,7 @@ const percent = (share: number) => `${share * 100}%`;
 /**
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
- * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--focus-ring-*`,
+ * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
  * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*` and `--avatar-*`. The design system's stylesheet declares them on :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -180,6 +190,9 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
     [`--control-${size}-height`, `${c.height}rem`],
     [`--control-${size}-padding-inline`, `${c.paddingInline}rem`],
   ]),
+  ["--icon-button-padding-inline", `${iconButton.paddingInline}rem`],
+  ["--icon-button-gap", `${iconButton.gap}rem`],
+  ["--icon-button-touch", `${iconButton.touch}rem`],
   ["--focus-ring-gap", `${focusRing.gap}px`],
   ["--focus-ring-width", `${focusRing.width}px`],
   ["--focus-ring-halo", `${focusRing.halo}px`],
