@@ -9,8 +9,9 @@
 // once per --section; without, the whole page. A shot taller than a tile is split into numbered tiles, so the
 // evaluator can read a glyph. With --options, it takes one set per variant of that <Options>, so the evaluator can
 // answer before the decider picks. The shots go to .tmp/visual/<options id, else the sections, else page> of the main
-// checkout, which outlives the worktree, for the agreement check to replay (scripts/visual-agreement.sh), as
-// <variant>-<preset>-<scheme>[-<section>][-<tile>].png. It prints the path of each shot.
+// checkout, which outlives the worktree, as <variant>-<preset>-<scheme>[-<section>][-<tile>].png; a logged pick's
+// shots are copied from there to .tmp/picks for the agreement check (scripts/visual-agreement.sh keep). It prints the
+// path of each shot.
 
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -52,6 +53,13 @@ const sections: (string | undefined)[] = values.section ?? [undefined];
 const url = positionals[0] ?? run([join(repo, "scripts/agentkit.sh"), "feedback", "url"]);
 const dir = values.options ?? values.section?.join("-") ?? "page";
 const out = resolve(values.out ?? join(main, ".tmp/visual", dir));
+// Every logged pick names a folder under .tmp/picks (`agentkit docs lint` holds it), where scripts/visual-agreement.sh
+// keeps its shots for the replay: no shot goes there.
+const kept = join(main, ".tmp/picks");
+if (out === kept || out.startsWith(`${kept}/`))
+  throw new Error(
+    `shots into ${out}: ${kept} keeps the shots of logged picks, which no shot may overwrite; shoot into ${join(main, ".tmp/visual")}/<options id> (--options <id> without --out), then keep a pick's shots with scripts/visual-agreement.sh keep`,
+  );
 await mkdir(out, { recursive: true });
 
 // The overlay is mounted on <html>, outside <body>; its own unmount removes it, so that it covers no shot.

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -21,7 +20,8 @@ const RulePicks = "picks"
 // pickFields are the fields of one record of a pick, every one present: the options' id, their variants in name
 // order, the variant the decider picked (null when the decider sent a note instead), the decider's reason (null when
 // none was given), what else the role recorded about the pick (or null), the evaluator's first line with its reasons,
-// the batch or note the pick came from, the folder of the shots from the main checkout, and the date.
+// the batch or note the pick came from, the folder of the main checkout that keeps its shots (pickShots, or null when
+// they were lost before they were kept, so the pick cannot be replayed), and the date.
 var pickFields = []string{"options", "variants", "pick", "reason", "context", "evaluator", "from", "shots", "date"}
 
 type pickRecord struct {
@@ -32,11 +32,15 @@ type pickRecord struct {
 	Context   *string  `json:"context"`
 	Evaluator string   `json:"evaluator"`
 	From      string   `json:"from"`
-	Shots     string   `json:"shots"`
+	Shots     *string  `json:"shots"`
 	Date      string   `json:"date"`
 }
 
 var reName = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+
+// pickShots is the folder of the main checkout that keeps the shots of a pick, apart from the folders `web:shot`
+// writes; `web:shot` refuses to write into a folder a pick names.
+func pickShots(role, options string) string { return ".tmp/picks/" + role + "/" + options }
 
 // picks checks the logs of the picks, <Picks>/<role>.jsonl for a role of Roles: one record per line, each of the
 // shape of pickFields, and each options id once. A log has no size limit: the roles do not read it.
@@ -59,18 +63,18 @@ func (l *linter) picks(files []string) ([]Finding, error) {
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, picksShape(f, src)...)
+		out = append(out, picksShape(f, role, src)...)
 	}
 	return out, nil
 }
 
 // picksShape checks one log, line by line.
-func picksShape(p string, src []byte) []Finding {
+func picksShape(p, role string, src []byte) []Finding {
 	var out []Finding
 	seen := map[string]int{}
 	shape := "one JSON object per line with " + strings.Join(pickFields, ", ")
 	for i, ln := range bytes.Split(bytes.TrimSuffix(src, []byte("\n")), []byte("\n")) {
-		msg, id := pickLine(ln)
+		msg, id := pickLine(role, ln)
 		if msg == "" && id != "" {
 			if first, dup := seen[id]; dup {
 				msg = fmt.Sprintf("the options %s are recorded on line %d already: one record per options id", id, first)
@@ -85,8 +89,8 @@ func picksShape(p string, src []byte) []Finding {
 	return out
 }
 
-// pickLine says what is wrong with one record, or "" with its options id.
-func pickLine(ln []byte) (string, string) {
+// pickLine says what is wrong with one record of a role's log, or "" with its options id.
+func pickLine(role string, ln []byte) (string, string) {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(ln, &fields); err != nil || fields == nil {
 		return "not a JSON object", ""
@@ -134,8 +138,8 @@ func pickLine(ln []byte) (string, string) {
 			return "an empty " + name, ""
 		}
 	}
-	if r.Shots == "" || path.IsAbs(r.Shots) || path.Clean(r.Shots) != r.Shots || strings.HasPrefix(r.Shots, "..") {
-		return fmt.Sprintf("the shots %q are not a clean path from the main checkout", r.Shots), ""
+	if want := pickShots(role, r.Options); r.Shots != nil && *r.Shots != want {
+		return fmt.Sprintf("the shots %q are not %s, where the pick's shots are kept (null when they were lost)", *r.Shots, want), ""
 	}
 	if _, err := time.Parse(time.DateOnly, r.Date); err != nil {
 		return fmt.Sprintf("the date %q is not YYYY-MM-DD", r.Date), ""
