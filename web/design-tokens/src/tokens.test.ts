@@ -7,6 +7,7 @@ import {
   contrast,
   contrastPairs,
   control,
+  disclosure,
   fontFamily,
   focusRing,
   icon,
@@ -110,4 +111,7 @@ test("properties declare every token", () => {
   ] as const) {
     expect(properties[`--menu-${name}`]).toBe(`${menu[key]}rem`);
   }
+  expect(properties["--disclosure-gap"]).toBe(`${disclosure.gap}rem`);
+  expect(properties["--disclosure-padding"]).toBe(`${disclosure.padding}rem`);
+  expect(properties["--disclosure-padding-start"]).toBe(`${disclosure.paddingStart}rem`);
 });

@@ -17,6 +17,7 @@ import {
   IconBookmarkFilled,
   IconDots,
   IconExternalLink,
+  IconEyeOff,
   IconFlag,
   IconHome,
   IconHomeFilled,
@@ -96,6 +97,8 @@ export const icons = {
   room: { off: IconMicrophone },
   announcements: { off: IconSpeakerphone },
   about: { off: IconInfoCircle },
+  // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
+  hidden: { off: IconEyeOff },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;

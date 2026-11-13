@@ -150,6 +150,12 @@ export const shadow = { y: 4, blur: 16, share: { light: 0.12, dark: 0.5 } } as c
  */
 export const menu = { padding: 0.25, groupGap: 0.5, iconGap: 0.625, minWidth: 12 } as const;
 
+/**
+ * A disclosure, in rem: the space between its summary and what it folds, and between the summary's glyph, text and
+ * button; the summary's padding around its button; and the wider padding at the summary's start, before its glyph.
+ */
+export const disclosure = { gap: 0.5, padding: 0.375, paddingStart: 0.75 } as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -189,7 +195,8 @@ const percent = (share: number) => `${share * 100}%`;
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay` and `--menu-*`. The design system's stylesheet declares them on :root.
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*` and `--disclosure-*`. The design system's stylesheet declares them on
+ * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
   ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
@@ -236,4 +243,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--menu-group-gap", `${menu.groupGap}rem`],
   ["--menu-icon-gap", `${menu.iconGap}rem`],
   ["--menu-min-width", `${menu.minWidth}rem`],
+  ["--disclosure-gap", `${disclosure.gap}rem`],
+  ["--disclosure-padding", `${disclosure.padding}rem`],
+  ["--disclosure-padding-start", `${disclosure.paddingStart}rem`],
 ]);

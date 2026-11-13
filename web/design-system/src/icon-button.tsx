@@ -9,6 +9,7 @@
 
 import { ButtonBase, type ButtonProps } from "./button";
 import { Icon, type IconName } from "./icons";
+import { pageLocale } from "./strings";
 
 export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "busy" | "children" | "aria-label"> & {
   /** The icon, by its meaning. */
@@ -22,10 +23,6 @@ export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "busy" | "chil
   /** The reader's locale; the page's language by default. */
   locale?: string | undefined;
 };
-
-const pageLocale = () =>
-  (typeof document !== "undefined" && document.documentElement.lang) ||
-  (typeof navigator !== "undefined" ? navigator.language : "en");
 
 /** The count as the button shows it, compact in `locale`: "1.2K", "1.3万". */
 export const compactCount = (n: number, locale: string) =>

@@ -20,8 +20,6 @@ export const strings = {
     reactions: "Reactions",
     reacted: (emoji: string, n: number, mine: boolean) =>
       `${emoji}, ${n}${mine ? ", yours: press to take it back" : ""}`,
-    show: "Show",
-    hide: "Hide",
     boosted: (who: string) => `${who} boosted`,
     replying: (who: string) => `Replying to ${who}`,
     translate: "Translate",
@@ -62,8 +60,6 @@ export const strings = {
     reactions: "リアクション",
     reacted: (emoji: string, n: number, mine: boolean) =>
       `${emoji}、${n}件${mine ? "、自分のリアクション: 押すと取り消します" : ""}`,
-    show: "表示",
-    hide: "隠す",
     boosted: (who: string) => `${who} さんがブースト`,
     replying: (who: string) => `${who} さんへの返信`,
     translate: "翻訳する",
