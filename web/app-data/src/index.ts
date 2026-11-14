@@ -6,6 +6,7 @@
 
 export { createAppData, createQueryClient, type AppData } from "./app-data";
 export { receiveHomeGap, receiveHomeStatuses, useHomeArrivals, type Arrival } from "./arrivals";
+export { useUnreadNotifications } from "./notifications";
 export { AppDataProvider } from "./provider";
 export { openSession } from "./session";
 export {
@@ -18,4 +19,5 @@ export {
   type SignInStorage,
 } from "./sign-in";
 export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
+export { startStream } from "./stream";
 export { homeTimelineQuery, useHomeTimeline, type HomeTimeline } from "./timeline";
