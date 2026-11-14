@@ -4,14 +4,30 @@
 // @plugin. It declares every token as a custom property on :root, and names each in the theme as a reference to that
 // property, so that a utility reads `var(--color-surface)` and a theme's override of the property reaches it.
 
-import { color, control, fontFamily, fontWeight, motion, properties, radius, text } from "@my/design-tokens";
+import {
+  breakpoint,
+  color,
+  control,
+  fontFamily,
+  fontWeight,
+  motion,
+  properties,
+  radius,
+  shell,
+  text,
+} from "@my/design-tokens";
 import plugin from "tailwindcss/plugin";
 
 const ref = (name: string) => `var(${name})`;
 const names = <T extends object>(o: T) => Object.keys(o) as (keyof T & string)[];
 
-// The theme's keys, each a token or a value derived from tokens only.
+/** A token's camel-case name as its custom property's: `gapWide` as `gap-wide`. */
+const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
+// The theme's keys, each a token or a value derived from tokens only. The breakpoints (`tablet:`, `desktop:`,
+// `wide:`) are for the app's frame alone (shell.tsx, ADR-0110 §10); a part lays itself out by its container.
 const theme = {
+  screens: Object.fromEntries(names(breakpoint).map((name) => [name, `${breakpoint[name]}rem`])),
   colors: {
     ...Object.fromEntries(names(color).map((name) => [name, ref(`--color-${name}`)])),
     "accent-hover": "color-mix(in srgb, var(--press-shade) var(--press-hover), var(--color-accent))",
@@ -53,6 +69,8 @@ const theme = {
     spinner: ref("--spinner-size"),
     "icon-action": ref("--icon-action"),
     "icon-caption": ref("--icon-caption"),
+    "icon-navigation": ref("--icon-navigation"),
+    ...Object.fromEntries(names(shell).map((name) => [`shell-${kebab(name)}`, ref(`--shell-${kebab(name)}`)])),
     "icon-tile-glyph": ref("--icon-tile-glyph"),
     "avatar-inline": ref("--avatar-inline"),
     "avatar-post": ref("--avatar-post"),
@@ -109,6 +127,7 @@ const theme = {
     // Inside a menu, whose rows touch, the ring is drawn within the item.
     "focus-inset": "inset 0 0 0 var(--focus-ring-width) var(--color-accent-text)",
     overlay: ref("--shadow-overlay"),
+    bar: ref("--shadow-bar"),
   },
   animation: Object.fromEntries(
     names(motion).map((name) => [name, `my-${name} var(--duration-${name}) linear infinite`]),

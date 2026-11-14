@@ -106,8 +106,8 @@ export const icons = {
 
 export type IconName = keyof typeof icons;
 
-/** Where an icon sits, which gives its size: in an action of a timeline, or beside a caption. */
-export type IconPlace = "action" | "caption";
+/** Where an icon sits, which gives its size: in an action of a timeline, beside a caption, or in the navigation. */
+export type IconPlace = "action" | "caption" | "navigation";
 
 const icon = tv({
   slots: {
@@ -119,6 +119,7 @@ const icon = tv({
     place: {
       action: { glyph: "size-icon-action", tile: "size-icon-action" },
       caption: { glyph: "size-icon-caption", tile: "size-icon-caption" },
+      navigation: { glyph: "size-icon-navigation", tile: "size-icon-navigation" },
     },
     directional: { true: { glyph: "rtl:-scale-x-100", inner: "rtl:-scale-x-100" } },
   },

@@ -233,14 +233,16 @@ scripts/task.sh api:check     # api:spec-check (the root lists every file of api
 ## Web client
 
 `my serve` serves the HTML shell embedded in the binary for `/` and the client's routes, with the link previews, the
-icons, and the Web App Manifest. The shell loads no client script, and the server-rendered pages (sign-in and the
-others) render without the client's stylesheet.
+icons, and the Web App Manifest. The shell loads the client (`web/app`) when the binary embeds its build, and the
+server-rendered pages (sign-in and the others) render without the client's stylesheet.
 
-- `scripts/task.sh web:build` places the brand assets of `web/brand` in `internal/interface/web/dist`, which Go
-  embeds with `//go:embed all:dist`. Only a placeholder `.gitkeep` is committed there, so the Go build and tests need
-  no Bun. `scripts/web-icons.sh` renders the PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
-- `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`; the Docker image embeds the
-  same files. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave unused adapters out of the binary.
+- `scripts/task.sh web:build` builds `web/app` with Vite into `internal/interface/web/dist`, which Go embeds with
+  `//go:embed all:dist`, with the brand assets of `web/brand`. Only a placeholder `.gitkeep` is committed there, so the
+  Go build and tests need no Bun; the Docker image embeds the brand assets alone. `scripts/web-icons.sh` renders the
+  PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
+- `scripts/task.sh web:dev` serves `web/app` on `http://localhost:5173` and passes `/api`, `/oauth` and `/auth` on to
+  the server of `docker compose up` (`MY_SERVER` names another).
+- `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave unused adapters out of the binary.
 - `my serve -dev-vite-origin <origin>` loads the client's scripts from the web client's Vite dev server at that origin.
   The shell is then never cached (`no-store`), and the CSP is a development one that allows that origin's scripts and
   WebSocket and the `<style>` elements Vite injects.

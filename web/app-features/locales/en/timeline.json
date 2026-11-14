@@ -1,0 +1,6 @@
+{
+  "timeline.home": {
+    "defaultMessage": "Home timeline",
+    "description": "The name of the home timeline (the posts of the accounts the reader follows), for assistive technology."
+  }
+}

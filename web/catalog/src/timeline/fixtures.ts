@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The sample home timeline of the rough screen (#3005): plain fixtures in en and ja, of every kind a timeline holds
+// The sample home timeline of the catalog: plain fixtures in en and ja, of every kind a timeline holds
 // (replies, boosts, content warnings, one, two and four images, long text with links, mentions, hashtags and custom
 // emoji, a post with no counts, one's own post, quotes, emoji reactions, translations). The images are generated
 // scenes, not photos. `statusOf` turns a fixture into the status the API would send for it, and `translationOf` into
@@ -15,7 +15,7 @@ const minute = 60_000;
 const hour = 60 * minute;
 const day = 24 * hour;
 
-export type Account = { name: string; handle: string; avatar?: string };
+type Account = { name: string; handle: string; avatar?: string };
 
 type Media = { alt: string; src: string };
 
@@ -85,7 +85,7 @@ const scenes = {
   snow: scene("#c9d6e3", "#f3f6f9", "#ffffff", ["#e3e9ef", "#cfd8e1", "#9fb0c0"]),
 };
 
-export const me: Account = { name: "Kumi Ito", handle: "@kumi@my.example" };
+const me: Account = { name: "Kumi Ito", handle: "@kumi@my.example" };
 
 const alice: Account = { name: "Alice Chen", handle: "@alice@example.social", avatar: images.dusk };
 const mika: Account = { name: "佐藤 美香", handle: "@mika@mstdn.example.jp", avatar: images.snow };
@@ -320,60 +320,10 @@ export const posts: TimelinePost[] = [
   },
 ];
 
-// The right column's samples. What the server's people write (a room's title, an announcement, the server's
-// description) is given in both languages only so that the screen reads in one; a server writes it once.
-
-type ByLang = Record<"en" | "ja", string>;
-
-/** A voice chat room open now that the reader has not joined; null when there is none. */
-export const openRoom: { host: Account; title: ByLang; people: number } | null = {
-  host: hana,
-  title: { en: "Sunday tea and small talk", ja: "日曜のお茶とおしゃべり" },
-  people: 4,
-};
-
-/** The server's announcements the reader has not read. */
-export const announcements: { title: ByLang; body: ByLang; ago: number }[] = [
-  {
-    title: { en: "Maintenance on Saturday night", ja: "土曜の夜にメンテナンスします" },
-    body: {
-      en: "The server will be down for about 10 minutes from 23:00 JST while we move to new hardware.",
-      ja: "新しいハードウェアに移すため、23時から10分ほどサーバーが止まります。",
-    },
-    ago: 5 * hour,
-  },
-];
-
-export type NotificationKind = "favourite" | "boost" | "follow" | "mention" | "quote" | "reaction";
-
-/** The reader's latest notifications, newest first. */
-export const notifications: { kind: NotificationKind; who: Account; ago: number; emoji?: string }[] = [
-  { kind: "favourite", who: alice, ago: minute },
-  { kind: "reaction", who: mika, ago: 4 * minute, emoji: "👋" },
-  { kind: "follow", who: lena, ago: 20 * minute },
-  { kind: "mention", who: ravi, ago: hour },
-  { kind: "boost", who: ken, ago: 2 * hour },
-  { kind: "quote", who: hana, ago: 3 * hour },
-  { kind: "favourite", who: takuya, ago: 5 * hour },
-  { kind: "reaction", who: alice, ago: 8 * hour, emoji: ":blobcat:" },
-  { kind: "follow", who: news, ago: day },
-  { kind: "boost", who: mika, ago: 2 * day },
-];
-
-/** The server's own section: its name, description and how many accounts it has; its rules are on /about. */
-export const server = {
-  name: "my.example",
-  description: {
-    en: "A small server for friends who like photos, books and tea. Everyone is welcome to read along.",
-    ja: "写真と本とお茶が好きな友だちの小さなサーバーです。読むだけの人も歓迎します。",
-  },
-  accounts: 128,
-};
-
 const tile = (body: string) => svg(32, 32, body);
 
 /** The custom emoji the sample text uses, by shortcode. */
-export const emoji: Record<string, string> = {
+const emoji: Record<string, string> = {
   wave: tile(
     `<circle cx="16" cy="16" r="14" fill="#ffcf5a"/><path d="M9 18 Q16 25 23 18" stroke="#6b4a1f" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="11" cy="12" r="2" fill="#6b4a1f"/><circle cx="21" cy="12" r="2" fill="#6b4a1f"/>`,
   ),

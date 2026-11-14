@@ -32,7 +32,8 @@ RUN --mount=type=bind,source=go.mod,target=go.mod \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=cache,target=/go/pkg/mod \
     go mod download
-# internal/interface/web embeds its dist/ (ADR-0028): the files of web/brand, as `scripts/task.sh web:build` copies them.
+# internal/interface/web embeds its dist/ (ADR-0028): the files of web/brand alone, without the client's Vite build that
+# `scripts/task.sh web:build` adds, so the image's shell loads no client script yet.
 RUN --mount=type=bind,target=. \
     --mount=type=bind,source=web/brand,target=internal/interface/web/dist \
     --mount=type=cache,target=/go/pkg/mod \

@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The router (ADR-0025 §1, ADR-0028 §6): file-based routes from src/routes, compiled into routeTree.gen.ts by the
+// TanStack Router plugin of vite.config.ts, and by scripts/routes.ts before tsc, the lint and the tests. TanStack
+// Query is the one cache of server data, so the router keeps none of its own.
+
+import type { AppData } from "@my/app-data";
+import { createMemoryHistory, createRouter } from "@tanstack/react-router";
+import type { RuntimeConfig } from "./config";
+import { routeTree } from "./routeTree.gen";
+
+/** What every route reads: the session's data (null without a session) and the instance's configuration. */
+export type RouterContext = { data: AppData | null; config: RuntimeConfig };
+
+export type AppRouterOptions = RouterContext & {
+  /**
+   * The path to start at in a history of the router's own, apart from the page's address (the catalog's preview);
+   * without it the router follows the browser's history.
+   */
+  at?: string;
+};
+
+export function createAppRouter({ data, config, at }: AppRouterOptions) {
+  return createRouter({
+    routeTree,
+    context: { data, config },
+    ...(at === undefined ? {} : { history: createMemoryHistory({ initialEntries: [at] }) }),
+    // Every match is stale at once, so that a screen entered again runs its loader, which returns what the cache holds
+    // unless a write marked it stale. Not 0: a wall clock that steps back would make a match look fresh.
+    defaultStaleTime: Number.NEGATIVE_INFINITY,
+    defaultPreloadStaleTime: Number.NEGATIVE_INFINITY,
+    // A screen visited before renders once its loader has ended, not from its previous match while the loader runs.
+    defaultStaleReloadMode: "blocking",
+  });
+}
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: ReturnType<typeof createAppRouter>;
+  }
+}

@@ -4,7 +4,7 @@
 // - typescript/*: the type-aware rules run in tsgolint (options.typeAware), with each file's project found from the
 //   nearest tsconfig.json.
 // - jsPlugins: eslint-comments, so that a disable comment says why; restrict/* (web/devtools/src/restrictions.js), the
-//   layer rules of ADR-0025 §4 that a prop type cannot hold, which restrictions.test.js proves.
+//   layer rules of ADR-0025 §3 and §4 that a type cannot hold, which restrictions.test.js proves.
 // options.denyWarnings makes a warning fail like an error.
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -30,6 +30,8 @@
     "**/node_modules/",
     "**/dist/",
     "web/docs/.astro/",
+    // The route tree TanStack Router's generator writes (web/app/scripts/routes.ts), which is not committed.
+    "web/app/src/routeTree.gen.ts",
     // Violations on purpose: web/devtools/src/restrictions.test.js lints copies of them.
     "web/*/fixtures/"
   ],
@@ -363,6 +365,15 @@
       ],
       "rules": {
         "restrict/design-system-props": "off"
+      }
+    },
+    // A layer imports only the layers below it (ADR-0025 §3); the rule knows the layers by their directories of web/.
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/layer-imports": "error"
       }
     }
   ]

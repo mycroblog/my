@@ -6,5 +6,6 @@
 
 export { createAppData, createQueryClient, type AppData } from "./app-data";
 export { AppDataProvider } from "./provider";
+export { openSession } from "./session";
 export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
 export { homeTimelineQuery, useHomeTimeline, type HomeTimeline } from "./timeline";
