@@ -38,7 +38,7 @@ import {
 } from "@my/design-system";
 import { Fragment, useId, useState, type ReactNode } from "react";
 import { AccountName as Name, handleOf, nameOf } from "./account";
-import { stringsIn } from "./locale";
+import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
 import { EmojiText, PostContent } from "./post-content";
@@ -214,7 +214,7 @@ function Reactions({ status, t, lang, act }: { status: PostStatus; t: T; lang: s
 /** The note of a translation: the language it was written in and the provider, as far as they are known. */
 function translatedNote(translation: PostTranslation, t: T, lang: string): ReactNode {
   const source = known(translation.source_language);
-  const name = source === undefined ? undefined : new Intl.DisplayNames([lang], { type: "language" }).of(source);
+  const name = source === undefined ? undefined : languageName(source, lang);
   // A provider's name is a proper name, and a language's is the platform's: both isolated, in their own direction.
   const language = name === undefined ? undefined : <bdi>{name}</bdi>;
   const provider = translation.provider === undefined ? undefined : <bdi>{translation.provider.name}</bdi>;

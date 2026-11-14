@@ -7,7 +7,7 @@
 // menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
 // interactions, whose reply, boost and quote permissions open as a submenu. Its state is the hook's (use-composer.ts).
 
-import { isRemote, QuoteContext, ReplyContext } from "@my/app-components";
+import { isRemote, languageName, QuoteContext, ReplyContext } from "@my/app-components";
 import type { Audience, Interaction, Visibility } from "@my/app-data";
 import {
   AttachButton,
@@ -73,13 +73,9 @@ const interactions: readonly Interaction[] = ["reply", "announce", "quote"];
 const appLanguages = ["en", "ja", "de", "es", "fr", "pt-BR", "zh-CN", "zh-TW"];
 
 /** A language by its name in its own words (English, 日本語), its first letter capitalized as a picker lists it. */
-function languageName(tag: string): string {
-  try {
-    const name = new Intl.DisplayNames([tag], { type: "language" }).of(tag) ?? tag;
-    return name.charAt(0).toLocaleUpperCase(tag) + name.slice(1);
-  } catch {
-    return tag;
-  }
+function ownName(tag: string): string {
+  const name = languageName(tag, tag) ?? tag;
+  return name.charAt(0).toLocaleUpperCase(tag) + name.slice(1);
 }
 
 /** How long a poll runs, as its choice reads. */
@@ -207,20 +203,20 @@ function Language({
       end
       trigger={
         <ToolText
-          label={t("compose.language.tool", { language: languageName(shown) })}
+          label={t("compose.language.tool", { language: ownName(shown) })}
           lang={shown}
           expanded={open}
           onPress={() => {
             setOpen(!open);
           }}
         >
-          {languageName(shown)}
+          {ownName(shown)}
         </ToolText>
       }
     >
       <ChoiceGroup
         title={t("compose.language")}
-        items={tags.map((tag) => ({ id: tag, icon: "translate" as const, label: languageName(tag) }))}
+        items={tags.map((tag) => ({ id: tag, icon: "translate" as const, label: ownName(tag) }))}
         chosen={shown}
         onChoose={(language) => {
           c.change({ language });

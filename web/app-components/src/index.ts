@@ -14,6 +14,7 @@ export {
   type ListColumnProps,
   type ListWords,
 } from "./column";
+export { languageName } from "./locale";
 export { accountPath, statusPath } from "./paths";
 export { Post, type PostAction, type PostProps } from "./post";
 export { PostContent, type ContentEmoji, type PostContentProps } from "./post-content";
