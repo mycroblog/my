@@ -5,7 +5,7 @@
 // the focused post, a step larger, with when it was posted, to whom and its counts inside it (PostDetails) in place of
 // the stamp at the end of its author's line; then its replies, each indented by how deep it replies, the first of them
 // and a fold of the rest. All of it is one feed, so that the keys of the next and the previous entry run through it.
-// A post's actions are not connected yet, as on the home timeline.
+// A post's actions are answered as on every screen (post-actions.tsx).
 
 import { FeedKeys, Post, PostDetails } from "@my/app-components";
 import { statusContextQuery, statusQuery, useThread, type AppData, type Status } from "@my/app-data";
@@ -24,6 +24,7 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
+import { usePostActions } from "../post-actions";
 
 /** How many ancestors show around the fold: the first, and as many closest to the focused post. */
 const closest = 2;
@@ -58,6 +59,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const { status, context, error, refetch } = useThread(id);
   const [earlier, setEarlier] = useState(false);
   const [shown, setShown] = useState(repliesShown);
+  const onAction = usePostActions();
   const back = <BackButton onPress={onBack}>{t("thread.back")}</BackButton>;
   if (status === undefined)
     return (
@@ -83,7 +85,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const positions = new Map([...first, ...last, status, ...replies].map((s, i) => [s.id, i + 1]));
   const item = (s: Status, children?: ReactNode) => (
     <FeedItem key={s.id} id={s.id} position={positions.get(s.id) ?? 0}>
-      {children ?? <Post status={s} />}
+      {children ?? <Post status={s} onAction={onAction} />}
     </FeedItem>
   );
   const count = positions.size;
@@ -116,7 +118,10 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         )}
         {last.map((s) => item(s))}
         <ThreadFocus key="focus">
-          {item(status, <Post status={status} stamp={false} details={<PostDetails status={status} />} />)}
+          {item(
+            status,
+            <Post status={status} stamp={false} details={<PostDetails status={status} />} onAction={onAction} />,
+          )}
         </ThreadFocus>
         {replies.length > 0 && <GroupHeading key="replies">{t("thread.replies")}</GroupHeading>}
         {replies.map((s) => (

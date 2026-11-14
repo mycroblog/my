@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { PostActions, type ComposeRequest } from "../post-actions";
+import { press } from "../test/actions";
 import { account, render, server, status } from "../test/server";
 import { loadNotifications, Notifications } from "./notifications";
 
@@ -67,4 +69,21 @@ test("a follow request asks to accept, its refusal beside it", async () => {
   const html = render(data, <Notifications instance="my.example" />);
   expect(html.indexOf(">Reject<")).toBeGreaterThan(0);
   expect(html.indexOf(">Reject<")).toBeLessThan(html.indexOf(">Accept<"));
+});
+
+test("the post of a mention answers its actions: a favourite reaches the server, Reply opens the composer", async () => {
+  const { data, requests } = server({ ...answers, "/statuses/m/favourite": status("m", "lena", { favourited: true }) });
+  await loadNotifications(data);
+  const composed: ComposeRequest[] = [];
+  render(
+    data,
+    <PostActions onCompose={(to) => composed.push(to)}>
+      <Notifications instance="my.example" />
+    </PostActions>,
+  );
+  press({ type: "favourite", id: "m" });
+  press({ type: "reply", id: "m" });
+  await Bun.sleep(0);
+  expect(requests).toContain("POST /statuses/m/favourite");
+  expect(composed).toEqual([{ kind: "reply", id: "m" }]);
 });

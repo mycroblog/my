@@ -12,6 +12,7 @@ export {
   type Target as ComposeTarget,
 } from "./compose/model";
 export { loadNotifications, Notifications } from "./notifications/notifications";
+export { PostActions, type ComposeRequest } from "./post-actions";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
 export { loadThread, Thread } from "./thread/thread";
 export { HomeTimeline, loadHomeTimeline } from "./timeline/home";

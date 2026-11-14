@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { accountStatusesQuery } from "@my/app-data";
+import { PostActions, type ComposeRequest } from "../post-actions";
+import { press } from "../test/actions";
 import { account, render, server, status } from "../test/server";
 import { loadProfile, Profile } from "./profile";
 
@@ -78,4 +81,29 @@ test("the reader's own profile offers no follow", async () => {
   const { html } = await shown(account("kumi"), {});
   expect(html).not.toContain(">Follow<");
   expect(html).not.toContain('aria-label="More"');
+});
+
+test("a post and a pinned one answer their actions: a favourite reaches the server, Reply opens the composer", async () => {
+  const { data, requests } = server({
+    "/accounts/lookup": account("hana"),
+    "/accounts/verify_credentials": account("kumi"),
+    "/accounts/hana/statuses": { items: [status("p", "hana"), status("q", "hana")] },
+    "/statuses/p/favourite": status("p", "hana", { favourited: true }),
+  });
+  await loadProfile(data, "hana");
+  await data.queryClient.infiniteQuery(accountStatusesQuery(data, "hana", "posts"));
+  await data.queryClient.infiniteQuery(accountStatusesQuery(data, "hana", "pinned"));
+  const composed: ComposeRequest[] = [];
+  const html = render(
+    data,
+    <PostActions onCompose={(to) => composed.push(to)}>
+      <Profile acct="hana" />
+    </PostActions>,
+  );
+  expect(html).toContain("Pinned");
+  press({ type: "favourite", id: "p" });
+  press({ type: "reply", id: "q" });
+  await Bun.sleep(0);
+  expect(requests).toContain("POST /statuses/p/favourite");
+  expect(composed).toEqual([{ kind: "reply", id: "q" }]);
 });

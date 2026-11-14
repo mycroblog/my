@@ -8,7 +8,6 @@ import { HomeTimeline, loadHomeTimeline } from "@my/app-features";
 import { FeedNotice } from "@my/design-system";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStrings } from "../locale";
-import { useCompose } from "../shell/compose";
 import { ScreenHeading } from "../shell/heading";
 import { signInPath } from "../sign-in";
 
@@ -22,14 +21,13 @@ export const Route = createFileRoute("/")({
 function Home() {
   const { data } = Route.useRouteContext();
   const t = useStrings();
-  const { open } = useCompose();
   return (
     <>
       <ScreenHeading>{t("app.home")}</ScreenHeading>
       {data === null ? (
         <FeedNotice action={<a href={signInPath}>{t("app.sign_in")}</a>}>{t("app.signed_out")}</FeedNotice>
       ) : (
-        <HomeTimeline onCompose={open} />
+        <HomeTimeline />
       )}
     </>
   );

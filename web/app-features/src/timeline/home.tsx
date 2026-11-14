@@ -3,12 +3,13 @@
 // The home timeline (ADR-0025 §2, §4): the column of @my/app-components fed by useHomeTimeline() of @my/app-data, and
 // what a route's loader reads before the column shows (ADR-0028 §6). Its new posts follow the policy of new-posts.ts,
 // with `timeline_auto_insert` at its default, on (ADR-0013 §22), until the reader's preferences are read. A post's
-// Reply and Quote ask the app to open the composer; its other actions are not connected yet.
+// actions are answered as on every screen (post-actions.tsx).
 
 import { Column } from "@my/app-components";
 import { homeTimelineQuery, useHomeTimeline, type AppData } from "@my/app-data";
 import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
+import { usePostActions } from "../post-actions";
 import { useNewHomePosts } from "./new-posts";
 
 /**
@@ -19,13 +20,10 @@ export async function loadHomeTimeline(data: AppData): Promise<void> {
   await data.queryClient.infiniteQuery({ ...homeTimelineQuery(data), staleTime: Infinity }).catch(() => undefined);
 }
 
-/** The home timeline's column; a post's Reply, and Quote of its boost menu, ask `onCompose` to open the composer. */
-export function HomeTimeline({
-  onCompose,
-}: {
-  onCompose?: ((target: { kind: "reply" | "quote"; id: string }) => void) | undefined;
-} = {}) {
+/** The home timeline's column. */
+export function HomeTimeline() {
   const { t } = stringsIn(useLocale().locale);
+  const onAction = usePostActions();
   const { onTopChange, onReaderChange, told, onPress } = useNewHomePosts(true);
   const label =
     told === undefined
@@ -39,9 +37,7 @@ export function HomeTimeline({
       {...useHomeTimeline()}
       onTopChange={onTopChange}
       onReaderChange={onReaderChange}
-      onAction={(action) => {
-        if (action.type === "reply" || action.type === "quote") onCompose?.({ kind: action.type, id: action.id });
-      }}
+      onAction={onAction}
       newPosts={label === undefined ? undefined : { label, onPress }}
     />
   );
