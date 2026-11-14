@@ -11,9 +11,10 @@ test("a favourite and a boost stay after a reload", async ({ page, signIn }) => 
   const post = homeTimeline(page).post(sam.displayName, "The ending of the film we watched");
   await expect(post.favourited).toBeHidden();
   await expect(post.boosted).toBeHidden();
+  // The boost goes without waiting for the favourite's answer: neither answer takes back the other mark.
   await post.favourite();
-  await expect(post.favourited).toHaveAccessibleName("Favourite, 1");
   await post.boost();
+  await expect(post.favourited).toHaveAccessibleName("Favourite, 1");
   await expect(post.boosted).toHaveAccessibleName("Boost, 1");
   await page.reload();
   await expect(post.favourited).toHaveAccessibleName("Favourite, 1");
