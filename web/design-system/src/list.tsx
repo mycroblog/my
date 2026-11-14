@@ -85,9 +85,9 @@ export function TabRow<T extends string>({ label, tabs: items, current, onChange
 const group = tv({
   base: [
     "m-0 text-caption font-normal text-muted-text",
-    // In a feed, nearer what it heads than what is before it, yet with the room the first entry's ring needs.
-    "[[role=feed]>&]:mt-screen-group-gap [[role=feed]>&]:mb-entry-room-in-feed",
-    "[[role=feed]>&:first-child]:mt-0",
+    // In a feed, which owns its articles alone, it stands in the first entry of the group it heads, above the post,
+    // with the group's space above it.
+    "[[data-entry]>&]:mt-screen-group-gap",
   ],
 });
 

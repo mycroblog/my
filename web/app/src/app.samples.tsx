@@ -3,7 +3,8 @@
 // The app as the screens' stories show it (ADR-0165 §1): the router and the shell of the app, its features, signed in
 // to the fake server of @my/e2e, which answers from the scenario as its reader (yuki) reads it, at a screen, in one of
 // the states every screen is shown in: normal, empty (every list answers no item), loading (the screen's requests never
-// answer), error (they fail) and long (every name and text runs long). A story names its screen and state in `parameters.fake`, no argument of the reader's;
+// answer), error (they fail) and long (every name and text runs long); and a thread folded (more ancestors and replies
+// than its page shows at once). A story names its screen and state in `parameters.fake`, no argument of the reader's;
 // right-to-left and the minimum width are the toolbar's locale and viewport, which a story may pin. The router keeps
 // its own history, so a link inside the app moves the app alone. The host's Stream panel stands in for the stream
 // (`parameters.stream` names what it offers): its buttons hand new posts or a notification to the app as the stream
@@ -26,7 +27,7 @@ import { waitFor } from "storybook/test";
 import { AppRoot } from "./app";
 import { createAppRouter } from "./router";
 
-type ScreenState = "normal" | "empty" | "loading" | "error" | "long";
+type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
@@ -80,6 +81,24 @@ function lengthened(body: unknown): unknown {
   );
 }
 
+/** `items` repeated, each copy with an id of its own, until there are `least` of them. */
+function grown(items: unknown[], least: number): unknown[] {
+  const out = [...items];
+  for (let n = 1; items.length > 0 && out.length < least; n++)
+    for (const item of items)
+      if (out.length < least && item !== null && typeof item === "object")
+        out.push({ ...item, id: `${String((item as { id?: unknown }).id)}-${String(n)}` });
+  return out;
+}
+
+/** A thread's context with more ancestors and replies than its page shows at once, so that both its folds show. */
+function folded(body: unknown): unknown {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return body;
+  const context = body as { ancestors?: unknown; descendants?: unknown };
+  if (!Array.isArray(context.ancestors) || !Array.isArray(context.descendants)) return body;
+  return { ...body, ancestors: grown(context.ancestors, 5), descendants: grown(context.descendants, 25) };
+}
+
 /** The fake server's answers as a screen in `state` gets them. */
 function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
   if (state === "normal") return serve;
@@ -94,7 +113,7 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
     const response = await serve(request);
     if (!response.ok) return response;
     const body: unknown = await response.json();
-    const answer = state === "empty" ? emptied(body) : lengthened(body);
+    const answer = state === "empty" ? emptied(body) : state === "folded" ? folded(body) : lengthened(body);
     return Response.json(answer, {
       status: response.status,
       headers: response.headers,
@@ -168,6 +187,9 @@ function shows(canvas: HTMLElement, { state = "normal", failFirst = false }: Fak
       return has('[role="alert"]');
     case "empty":
       return settled && has('article, p[role="status"]');
+    case "folded":
+      // Both folds, each a text button in the entry before what it holds.
+      return settled && canvas.querySelectorAll("article > p > button").length >= 2;
     default:
       return settled && has("article");
   }
