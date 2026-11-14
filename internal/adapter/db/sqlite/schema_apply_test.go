@@ -16,7 +16,6 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/schemaapply"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/schema"
-	"github.com/mycroblog/my/schema/ddl"
 )
 
 // newEmptyFile returns the path of a database file that does not exist yet.
@@ -242,41 +241,6 @@ func TestApplySchemaRollsBackAFailedPlan(t *testing.T) {
 	t.Logf("the failed apply: %v", err)
 	if got := objects(t, path); slices.Contains(got, table+".probe_added") || slices.Contains(got, "zz_probe_rows.v") {
 		t.Errorf("the failed apply left a part of the plan: %q", got)
-	}
-}
-
-// A prepare deletes the rows that a tightened CHECK refuses before the plan rebuilds the table; on
-// a database without its table it does not run.
-func TestApplySchemaRunsThePreparesFirst(t *testing.T) {
-	t.Parallel()
-	path := newEmptyFile(t)
-	opts := schemaapply.Options{Prepares: []ddl.Prepare{{Table: "tokens", SQL: "DELETE FROM tokens WHERE token NOT IN ('kept')"}}}
-	mustApply(t, path, "CREATE TABLE tokens (token TEXT NOT NULL CHECK (token IN ('kept', 'retired'))) STRICT;", opts)
-	db, err := sql.Open("sqlite", "file:"+path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = db.Close() }()
-	ctx := context.WithoutCancel(t.Context())
-	if _, err := db.ExecContext(ctx, "INSERT INTO tokens (token) VALUES ('kept'), ('retired')"); err != nil {
-		t.Fatal(err)
-	}
-	mustApply(t, path, "CREATE TABLE tokens (token TEXT NOT NULL CHECK (token IN ('kept'))) STRICT;", opts)
-	var tokens []string
-	rows, err := db.QueryContext(ctx, "SELECT token FROM tokens")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var s string
-		if err := rows.Scan(&s); err != nil {
-			t.Fatal(err)
-		}
-		tokens = append(tokens, s)
-	}
-	if err := rows.Err(); err != nil || !slices.Equal(tokens, []string{"kept"}) {
-		t.Errorf("tokens after the apply = %v, %v; want [kept]", tokens, err)
 	}
 }
 

@@ -552,11 +552,12 @@ modes. A rule is the operator's choice, and it applies besides what the linked s
 
 ## Theme
 
-The server-wide theme is a set of overrides of the web client's design tokens plus one optional piece of CSS (custom CSS). It
-applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on), in
-both light and dark.
+The server-wide theme is one set of overrides of the web client's design tokens, with a light and a dark value for each color.
+It applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on).
+There is no custom CSS.
 
-- You can override these design tokens; the sizes of the components, the weights of the type, and the shadow stay fixed:
+- You can override these design tokens; the spacing, the sizes of the components, the weights of the type, the shadows, and
+  the colors of the data charts stay fixed:
 
   | Tokens | Kind | Override |
   | --- | --- | --- |
@@ -567,31 +568,33 @@ both light and dark.
   | `radius-control`, `radius-overlay` | length | 0 to 2rem |
   | `duration-spin` | duration | ms / s, 0 to 1000ms |
 
-- An override of a token that a version no longer has stays in the saved theme but no longer applies; save the theme again
-  without it.
-- When you save, the server checks the shape and range of the values, the contrast of every pair of color tokens (tokens you do
-  not override use their defaults; WCAG 2.2 AA in both light and dark), and the length of the custom CSS (64 KiB). If any check
-  fails, nothing is saved.
-- The server does not read the custom CSS. It puts it in the same stylesheet after the token rules, outside any `@layer`. It runs
-  under the same CSP as the web client, so images, fonts, and `@import` from another origin cannot load.
-  **The server does not check the effects of custom CSS (contrast, horizontal scrolling, tap target size, focus indication,
-  right-to-left languages); that is the administrator's responsibility.** Class names and the page structure change between
-  versions, so only the tokens are stable to rely on.
-- A theme is kept as revisions (`instance_theme_revisions`), and the stylesheet of the current revision is served at
-  `/theme/{revision ID}.css` (`immutable`, cached for a long time). The HTML shell has a shared cache (60 seconds plus 300
-  seconds of revalidation), so it takes a few minutes after you save for everyone to get it. A page that is already open keeps
-  the old look until it is reloaded.
+- You save a set as a draft, preview it, and then publish it; the theme in effect does not change until you publish. Each save
+  replaces the whole draft, and each publication is a new revision. Restoring publishes again the set that was in effect
+  before the current one, and leaves the draft as it is.
+- When you save and when you publish, the server checks the shape and range of the values and the contrast of every pair of
+  color tokens (tokens you do not override use their defaults; WCAG 2.2 AA in both light and dark). If any check fails, nothing
+  is saved or published.
+- An override of a token that a new version renames or retires, or whose value no longer fits the token, never fails an upgrade.
+  It stays in the saved set but no longer applies: the admin API lists it under `stale_tokens`, `my instance theme get` names
+  it, and the next save of the draft drops it.
+- The stylesheet of the published revision is served at `/theme/{revision ID}.css` (`immutable`, cached for a long time). The
+  HTML shell has a shared cache (60 seconds plus 300 seconds of revalidation), so it takes a few minutes after you publish for
+  everyone to get it. A page that is already open keeps the old look until it is reloaded.
 - `<meta name="theme-color">` (light and dark) in the shell and `theme_color` / `background_color` (light) of the Web App
   Manifest take the value of the theme's `color-surface`. Emails use the default colors of the tokens, whatever the theme.
-- Saving a revision with no tokens and no custom CSS resets the theme to the default, and the stylesheet is no longer loaded.
-- You can change it on the admin screen of the web client ("Theme", `/admin/theme`), with the client API (`GET` / `PUT
-  /api/v1/admin/theme`), and with the CLI. The admin screen and the client API need the role permission `manage_settings`, and
-  changes are recorded in the audit log (`setting_changed`, target `theme`).
+- Publishing a set with no tokens resets the theme to the default, and the stylesheet is no longer loaded.
+- You can change it with the client API and with the CLI. The client API needs the role permission `manage_settings`:
+  `GET /api/v1/admin/theme` reads the draft and the set in effect, `PUT /api/v1/admin/theme/draft` saves the draft,
+  `GET /api/v1/admin/theme/draft/stylesheet` returns the draft's stylesheet to preview, and `POST /api/v1/admin/theme/publish`
+  and `POST /api/v1/admin/theme/restore` publish. Publications are recorded in the audit log (`setting_changed`, target
+  `theme`).
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
@@ -599,10 +602,12 @@ echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the def
   "tokens": [
     { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
     { "token": "radius-control", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+  ]
 }
 ```
+
+When you upgrade from a release that kept the theme without drafts, `my db upgrade` copies each saved theme into a published
+set under the same revision, so the theme in effect stays and the earlier ones can be restored. A custom CSS is not carried over.
 
 ## Logo and icon
 

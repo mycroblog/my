@@ -108,7 +108,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 - What it writes:
   - `<dir>/<locale>.html`, and `<dir>/index.html`, which lists all locales in order. They use the same template and CSS as the maintenance page (`my maintenance export`) and show
     the server name (`maintenance_server_name`, else the instance name, else the host name), the closing date, the operator's message from the announcement, and a link to the status page (`status_page_url`).
-    The CSS is inline only, there are no scripts or external resources, and the CSP is in a `<meta>` tag. Theme color overrides are baked in; custom CSS is not included.
+    The CSS is inline only, there are no scripts or external resources, and the CSP is in a `<meta>` tag. The color overrides of the published theme are baked in.
   - Front-end configuration examples `nginx.conf`, `Caddyfile` and `cloudfront-function.js`. Each returns `410` with no body for the federation and discovery paths (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
     `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) and for profiles (`/@*`),
     and for every other path returns the page of the first language in `Accept-Language` (or `index.html` if there is none).

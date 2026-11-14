@@ -14,6 +14,5 @@ import (
 
 // applySQLiteSchema applies the embedded schema to the SQLite database of databaseURL.
 func applySQLiteSchema(ctx context.Context, databaseURL string, opts schemaapply.Options) (schemaapply.Result, error) {
-	opts.Prepares = schema.Prepares
 	return sqlite.ApplySchema(ctx, databaseURL, schema.SQLite, opts)
 }

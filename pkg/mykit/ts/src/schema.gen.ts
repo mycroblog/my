@@ -7323,35 +7323,122 @@ export interface paths {
         };
         /**
          * Read the instance theme
-         * @description The current theme of the web client: the overridden design tokens and the
-         *     custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-         *     `manage_settings` permission.
+         * @description The theme of the web client as its administrators edit it: the draft token set and the set
+         *     in effect. Each omits what was never saved or published. A set lists the overrides that apply
+         *     in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+         *     retired their token or changed its bounds; the server leaves those out of the stylesheet and
+         *     the next save of the draft drops them. Needs the `manage_settings` permission.
          */
         get: operations["getAdminTheme"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         /**
-         * Replace the instance theme
-         * @description Records a revision of the theme, which every visitor's web client and the server-rendered
-         *     pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-         *     few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-         *     their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-         *     change are kept (the audit log's `setting_changed` of `theme`).
+         * Save the draft of the instance theme
+         * @description Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+         *     effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+         *     stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+         *     overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+         *     resets the theme.
          *
          *     The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-         *     and the durations of the web client's design tokens (the list generated from
-         *     `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+         *     and the spin duration of the web client's design tokens (the list generated from
+         *     `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+         *     charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
          *     take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
          *     a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
          *     of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-         *     (4.5:1 for text, 3:1 for marks) in both color schemes.
-         *     The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-         *     does not read it, it runs under the same Content-Security-Policy as the client (only
-         *     same-origin resources), and what it does to contrast, layout, and focus is the
-         *     administrator's responsibility. A theme that breaks any rule is a 422
+         *     (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
          *     `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
          *     `manage_settings` permission.
          */
-        put: operations["setAdminTheme"];
+        put: operations["setAdminThemeDraft"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/draft/stylesheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview the draft of the instance theme
+         * @description The stylesheet that the draft would serve once published, for the administrator to apply
+         *     over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+         *     no draft was saved. Needs the `manage_settings` permission.
+         */
+        get: operations["getAdminThemeDraftStylesheet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish the draft of the instance theme
+         * @description Publishes the draft under a new revision, which every visitor's web client and the
+         *     server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+         *     of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+         *     changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+         *     publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+         *     saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+         *     `manage_settings` permission.
+         */
+        post: operations["publishAdminTheme"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore the previously published instance theme
+         * @description Publishes again, under a new revision, the token set published before the one in effect; the
+         *     draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+         *     restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+         *     other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+         *     meets a rule. Needs the `manage_settings` permission.
+         */
+        post: operations["restoreAdminTheme"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12902,22 +12989,21 @@ export interface components {
         };
         /** @description The instance theme as its administrators edit it. */
         AdminTheme: {
-            /** @description The ID of the current theme revision; omitted when no theme was ever saved. */
-            revision?: string;
+            draft?: components["schemas"]["ThemeSet"];
+            published?: components["schemas"]["AdminThemeRevision"];
+        };
+        /** @description A publication of a token set, which made it the theme in effect. */
+        AdminThemeRevision: {
+            /** @description The ID of the publication, which names its stylesheet. */
+            revision: string;
             /**
              * Format: uri
-             * @description The stylesheet of the theme; omitted when the theme changes nothing.
+             * @description The stylesheet of the theme; omitted when the set overrides nothing.
              */
             stylesheet_url?: string;
-            /** @description The overridden tokens, in the order of the token list. */
-            tokens: components["schemas"]["ThemeTokenValue"][];
-            /** @description The custom CSS; empty for none. */
-            custom_css: string;
-            /**
-             * Format: date-time
-             * @description When the current revision was recorded; omitted when no theme was ever saved.
-             */
-            revised_at?: string;
+            set: components["schemas"]["ThemeSet"];
+            /** Format: date-time */
+            published_at: string;
         };
         /** @description The service closure as its administrators see it. */
         AdminServiceClosure: {
@@ -17311,8 +17397,9 @@ export interface components {
          *       which.
          *     - `/api/v1/problems/invalid-relay` (422): a relay cannot be registered, joined, left, or
          *       deleted; `reason` says why.
-         *     - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
-         *       reason in `theme_errors` (`PUT /admin/theme`).
+         *     - `/api/v1/problems/invalid-theme` (422): the theme's token set breaks a rule; the problem lists
+         *       every reason in `theme_errors` (`PUT /admin/theme/draft`, `POST /admin/theme/publish`,
+         *       `POST /admin/theme/restore`).
          *     - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
          *       why (`/admin/instance/brand/...`).
          *     - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
@@ -18024,10 +18111,9 @@ export interface components {
             /** @description What the administrators keep about the rule; empty when omitted. */
             note?: string;
         };
-        /** @description The whole theme; tokens left out go back to their defaults. */
+        /** @description A whole token set; tokens left out keep their defaults. */
         SetThemeRequest: {
             tokens: components["schemas"]["ThemeTokenValue"][];
-            custom_css: string;
         };
         /** @description What an import of a list of sign-up blocks did. */
         SignupBlockImportResult: {
@@ -18693,15 +18779,15 @@ export interface components {
             statuses_count: number;
         };
         /**
-         * @description One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
-         *     `invalid_value` (the value does not have the token's shape; `scheme` names the color scheme
-         *     of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and ms for a
-         *     duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
-         *     `minimum`:1), `css_too_long` (`max` bytes), or `css_invalid` (not UTF-8 text).
+         * @description One reason a token set cannot be saved or published. `code` is `unknown_token`,
+         *     `duplicate_token`, `invalid_value` (the value does not have the token's shape; `scheme` names the
+         *     color scheme of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and
+         *     ms for a duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
+         *     `minimum`:1), or `too_many_overrides` (more than `max` tokens).
          */
         ThemeError: {
             /** @enum {string} */
-            code: "unknown_token" | "duplicate_token" | "invalid_value" | "out_of_range" | "low_contrast" | "css_too_long" | "css_invalid";
+            code: "unknown_token" | "duplicate_token" | "invalid_value" | "out_of_range" | "low_contrast" | "too_many_overrides";
             token?: string;
             /** @enum {string} */
             scheme?: "light" | "dark";
@@ -18712,11 +18798,34 @@ export interface components {
             max?: number;
         };
         /**
-         * @description A 422 of `PUT /admin/theme`. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
-         *     lists why the theme cannot be saved; another 422 (a malformed request) has none.
+         * @description A 422 of the theme operations. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
+         *     lists why the token set cannot be saved or published; another 422 (a malformed request) has none.
          */
         ThemeProblem: components["schemas"]["Problem"] & {
             theme_errors?: components["schemas"]["ThemeError"][];
+        };
+        /** @description A saved token set of the instance theme. */
+        ThemeSet: {
+            id: string;
+            /** @description The overrides that apply, in the order of the token list. */
+            tokens: components["schemas"]["ThemeTokenValue"][];
+            /**
+             * @description The overrides that no longer apply and are left out of the stylesheet: `reason` is
+             *     `unknown_token` (the token was renamed or retired), `duplicate_token`, `invalid_value`, or
+             *     `out_of_range` (the token's kind or bounds changed).
+             */
+            stale_tokens: components["schemas"]["StaleThemeToken"][];
+            /** Format: date-time */
+            saved_at: string;
+        };
+        /** @description A stored override that no longer applies, as it was saved, and why. */
+        StaleThemeToken: {
+            token: string;
+            light?: string;
+            dark?: string;
+            value?: string;
+            /** @enum {string} */
+            reason: "unknown_token" | "duplicate_token" | "invalid_value" | "out_of_range";
         };
         /**
          * @description The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
@@ -19821,6 +19930,18 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["AdminTheme"];
+            };
+        };
+        /** @description The token set breaks a rule; nothing was saved or published. */
+        ThemeProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ThemeProblem"];
             };
         };
         /** @description The service closure. */
@@ -28309,7 +28430,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    setAdminTheme: {
+    setAdminThemeDraft: {
         parameters: {
             query?: never;
             header?: never;
@@ -28323,18 +28444,57 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["AdminTheme"];
-            /** @description The theme breaks a rule; nothing was saved. */
-            422: {
+            422: components["responses"]["ThemeProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminThemeDraftStylesheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The stylesheet of the draft. */
+            200: {
                 headers: {
-                    /** @description The locale of `title` and `detail`. */
-                    "Content-Language"?: string;
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ThemeProblem"];
+                    "text/css": string;
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    publishAdminTheme: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminTheme"];
+            422: components["responses"]["ThemeProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    restoreAdminTheme: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminTheme"];
+            422: components["responses"]["ThemeProblem"];
             default: components["responses"]["Problem"];
         };
     };

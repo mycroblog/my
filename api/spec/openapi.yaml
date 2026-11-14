@@ -676,6 +676,14 @@ paths:
     $ref: ./paths/admin_announcements_{id}_withdraw.yaml
   /admin/theme:
     $ref: ./paths/admin_theme.yaml
+  /admin/theme/draft:
+    $ref: ./paths/admin_theme_draft.yaml
+  /admin/theme/draft/stylesheet:
+    $ref: ./paths/admin_theme_draft_stylesheet.yaml
+  /admin/theme/publish:
+    $ref: ./paths/admin_theme_publish.yaml
+  /admin/theme/restore:
+    $ref: ./paths/admin_theme_restore.yaml
   /admin/instance/brand:
     $ref: ./paths/admin_instance_brand.yaml
   /admin/instance/brand/sanitize:
@@ -1164,6 +1172,8 @@ components:
       $ref: ./components/responses/AdminSupporterTips.yaml
     AdminTheme:
       $ref: ./components/responses/AdminTheme.yaml
+    ThemeProblem:
+      $ref: ./components/responses/ThemeProblem.yaml
     AdminServiceClosure:
       $ref: ./components/responses/AdminServiceClosure.yaml
     AdminServiceClosureCheck:
@@ -1641,6 +1651,8 @@ components:
       $ref: ./components/schemas/AdminSupporterSubscriptionPage.yaml
     AdminTheme:
       $ref: ./components/schemas/AdminTheme.yaml
+    AdminThemeRevision:
+      $ref: ./components/schemas/AdminThemeRevision.yaml
     AdminServiceClosure:
       $ref: ./components/schemas/AdminServiceClosure.yaml
     AdminServiceClosureCheck:
@@ -2473,6 +2485,10 @@ components:
       $ref: ./components/schemas/ThemeError.yaml
     ThemeProblem:
       $ref: ./components/schemas/ThemeProblem.yaml
+    ThemeSet:
+      $ref: ./components/schemas/ThemeSet.yaml
+    StaleThemeToken:
+      $ref: ./components/schemas/StaleThemeToken.yaml
     ThemeTokenValue:
       $ref: ./components/schemas/ThemeTokenValue.yaml
     TotpSetup:

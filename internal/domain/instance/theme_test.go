@@ -26,7 +26,7 @@ func problemsOf(t *testing.T, err error) []instance.ThemeProblem {
 
 func TestThemeDefaultsMeetTheirContrastPairs(t *testing.T) {
 	// The generated defaults are rounded to #rrggbb, which must not take a pair below its minimum.
-	if _, err := instance.NormalizeTheme(nil, ""); err != nil {
+	if _, err := instance.NormalizeTheme(nil); err != nil {
 		t.Fatalf("the defaults: %v", err)
 	}
 	for _, p := range instance.ThemeContrastPairs() {
@@ -44,7 +44,7 @@ func TestThemeDefaultsAreValidOverrides(t *testing.T) {
 	for _, tok := range instance.ThemeTokens() {
 		tokens = append(tokens, instance.ThemeTokenValue{Token: tok.Name, Light: tok.Light, Dark: tok.Dark, Value: tok.Default})
 	}
-	if _, err := instance.NormalizeTheme(tokens, ""); err != nil {
+	if _, err := instance.NormalizeTheme(tokens); err != nil {
 		t.Fatalf("the defaults as overrides: %v", err)
 	}
 }
@@ -73,7 +73,7 @@ func TestNormalizeThemeCanonicalizes(t *testing.T) {
 		{Token: "font-sans", Value: `"Noto Sans JP",  sans-serif`},
 		{Token: "duration-spin", Value: "0.5s"},
 		{Token: "text-body--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
-	}, "a { color: red }")
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,6 +97,7 @@ func TestNormalizeThemeRejects(t *testing.T) {
 	}{
 		{"unknown token", instance.ThemeTokenValue{Token: "palette-blue-600", Value: "#000000"}, instance.ThemeUnknownToken},
 		{"fixed shadow", instance.ThemeTokenValue{Token: "shadow-overlay", Value: "none"}, instance.ThemeUnknownToken},
+		{"fixed data color", instance.ThemeTokenValue{Token: "color-data-1", Light: "#000000", Dark: "#000000"}, instance.ThemeUnknownToken},
 		{"fixed avatar backing", instance.ThemeTokenValue{Token: "color-avatar-backing", Light: "#000000", Dark: "#000000"}, instance.ThemeUnknownToken},
 		{"fixed component size", instance.ThemeTokenValue{Token: "control-form-height", Value: "2rem"}, instance.ThemeUnknownToken},
 		{"named color", instance.ThemeTokenValue{Token: "color-accent", Light: "red", Dark: "#000000"}, instance.ThemeInvalidValue},
@@ -115,7 +116,7 @@ func TestNormalizeThemeRejects(t *testing.T) {
 		{"empty font", instance.ThemeTokenValue{Token: "font-sans", Value: ""}, instance.ThemeInvalidValue},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{tt.token}, "")
+			_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{tt.token})
 			ps := problemsOf(t, err)
 			if len(ps) == 0 || ps[0].Code != tt.code || ps[0].Token != tt.token.Token {
 				t.Errorf("problems = %+v, want %s for %s", ps, tt.code, tt.token.Token)
@@ -126,8 +127,19 @@ func TestNormalizeThemeRejects(t *testing.T) {
 
 func TestNormalizeThemeRejectsDuplicates(t *testing.T) {
 	v := instance.ThemeTokenValue{Token: "radius-control", Value: "4px"}
-	ps := problemsOf(t, func() error { _, err := instance.NormalizeTheme([]instance.ThemeTokenValue{v, v}, ""); return err }())
+	ps := problemsOf(t, func() error { _, err := instance.NormalizeTheme([]instance.ThemeTokenValue{v, v}); return err }())
 	if len(ps) != 1 || ps[0].Code != instance.ThemeDuplicateToken {
+		t.Errorf("problems = %+v", ps)
+	}
+}
+
+func TestNormalizeThemeBoundsTheSet(t *testing.T) {
+	tokens := make([]instance.ThemeTokenValue, instance.MaxThemeOverrides+1)
+	for i := range tokens {
+		tokens[i] = instance.ThemeTokenValue{Token: "radius-control", Value: "4px"}
+	}
+	ps := problemsOf(t, func() error { _, err := instance.NormalizeTheme(tokens); return err }())
+	if len(ps) != 1 || ps[0].Code != instance.ThemeTooManyOverrides {
 		t.Errorf("problems = %+v", ps)
 	}
 }
@@ -135,7 +147,7 @@ func TestNormalizeThemeRejectsDuplicates(t *testing.T) {
 func TestNormalizeThemeChecksContrastWithDefaults(t *testing.T) {
 	// A dark light-scheme surface fails under the default text (near black) and the other default
 	// foregrounds, in the light scheme only.
-	_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{{Token: "color-surface", Light: "#222222", Dark: "#221c1b"}}, "")
+	_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{{Token: "color-surface", Light: "#222222", Dark: "#221c1b"}})
 	ps := problemsOf(t, err)
 	var pairs []string
 	for _, p := range ps {
@@ -154,7 +166,7 @@ func TestNormalizeThemeChecksContrastWithDefaults(t *testing.T) {
 	_, err = instance.NormalizeTheme([]instance.ThemeTokenValue{
 		{Token: "color-surface", Light: "#222222", Dark: "#221c1b"},
 		{Token: "color-text", Light: "#ffffff", Dark: "#f2e9e7"},
-	}, "")
+	})
 	ps = problemsOf(t, err)
 	for _, p := range ps {
 		if p.Token == "color-text" && p.Background == "color-surface" {
@@ -166,57 +178,112 @@ func TestNormalizeThemeChecksContrastWithDefaults(t *testing.T) {
 	}
 }
 
-func TestNormalizeThemeChecksCustomCSS(t *testing.T) {
-	if _, err := instance.NormalizeTheme(nil, strings.Repeat("a", instance.MaxCustomCSSBytes)); err != nil {
-		t.Errorf("CSS at the limit: %v", err)
+func TestThemeSetDocumentRoundTrips(t *testing.T) {
+	set := instance.ThemeSet{ID: testID(1), Tokens: []instance.ThemeTokenValue{
+		{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"},
+		{Token: "radius-control", Value: "2px"},
+	}}
+	doc := set.Document()
+	if want := `{"version":1,"tokens":[{"token":"color-surface","light":"#fffdf5","dark":"#101010"},{"token":"radius-control","value":"2px"}]}`; string(doc) != want {
+		t.Errorf("Document() = %s\nwant %s", doc, want)
 	}
-	for css, code := range map[string]instance.ThemeProblemCode{
-		strings.Repeat("a", instance.MaxCustomCSSBytes+1): instance.ThemeCSSTooLong,
-		"a\x00":   instance.ThemeCSSInvalid,
-		"a\xff{}": instance.ThemeCSSInvalid,
-	} {
-		ps := problemsOf(t, func() error { _, err := instance.NormalizeTheme(nil, css); return err }())
-		if len(ps) != 1 || ps[0].Code != code {
-			t.Errorf("problems = %+v, want %s", ps, code)
+	tokens, stale, err := instance.ReadThemeSet(doc)
+	if err != nil || !slices.Equal(tokens, set.Tokens) || len(stale) != 0 {
+		t.Errorf("ReadThemeSet = %+v, %+v, %v", tokens, stale, err)
+	}
+}
+
+// An override that no longer applies after an upgrade is dropped on read and kept as stale,
+// never failing the read; the document keeps it.
+func TestReadThemeSetDropsWhatNoLongerApplies(t *testing.T) {
+	doc := []byte(`{"version":1,"tokens":[
+		{"token":"elevation-card","value":"0 1px 2px #000"},
+		{"token":"radius-control","value":"2px"},
+		{"token":"radius-control","value":"3px"},
+		{"token":"radius-overlay","value":"9rem"},
+		{"token":"color-accent","value":"#ff0000"},
+		{"token":"color-surface","light":"#FFFDF5","dark":"#101010"}
+	]}`)
+	tokens, stale, err := instance.ReadThemeSet(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []instance.ThemeTokenValue{
+		{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"},
+		{Token: "radius-control", Value: "2px"},
+	}
+	if !slices.Equal(tokens, want) {
+		t.Errorf("tokens = %+v, want %+v", tokens, want)
+	}
+	reasons := map[string]instance.ThemeProblemCode{}
+	for _, s := range stale {
+		reasons[s.Token+"="+s.Value] = s.Reason
+	}
+	wantReasons := map[string]instance.ThemeProblemCode{
+		"elevation-card=0 1px 2px #000": instance.ThemeUnknownToken,
+		"radius-control=3px":            instance.ThemeDuplicateToken,
+		"radius-overlay=9rem":           instance.ThemeOutOfRange,
+		"color-accent=#ff0000":          instance.ThemeInvalidValue,
+	}
+	if len(reasons) != len(wantReasons) {
+		t.Errorf("stale = %+v", stale)
+	}
+	for k, v := range wantReasons {
+		if reasons[k] != v {
+			t.Errorf("stale %s = %q, want %q", k, reasons[k], v)
+		}
+	}
+	// The stale overrides stay in the document of the set.
+	again, staleAgain, err := instance.ReadThemeSet(instance.ThemeSet{Tokens: tokens, Stale: stale}.Document())
+	if err != nil || !slices.Equal(again, want) || len(staleAgain) != len(stale) {
+		t.Errorf("read again = %+v, %+v, %v", again, staleAgain, err)
+	}
+	if strings.Contains(string(instance.ThemeRevision{Set: instance.ThemeSet{Tokens: tokens, Stale: stale}}.Stylesheet()), "elevation") {
+		t.Error("the stylesheet has a stale override")
+	}
+}
+
+func TestReadThemeSetRefusesWhatIsNotADocument(t *testing.T) {
+	for _, doc := range []string{``, `[]`, `{"version":2,"tokens":[]}`, `{"tokens":[]}`} {
+		if _, _, err := instance.ReadThemeSet([]byte(doc)); err == nil {
+			t.Errorf("ReadThemeSet(%s) = nil error", doc)
 		}
 	}
 }
 
 func TestThemeStylesheet(t *testing.T) {
-	r := instance.ThemeRevision{
-		ID: testID(1),
-		Tokens: []instance.ThemeTokenValue{
-			{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"},
-			{Token: "radius-control", Value: "2px"},
-		},
-		CustomCSS: ".x { color: red }",
-	}
-	want := "/* The theme of this server (revision " + testID(1) + "). */\n" +
-		":root {\n  --color-surface: light-dark(#fffdf5, #101010);\n  --radius-control: 2px;\n}\n" +
-		".x { color: red }\n"
-	if got := string(r.Stylesheet()); got != want {
+	set := instance.ThemeSet{ID: testID(2), Tokens: []instance.ThemeTokenValue{
+		{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"},
+		{Token: "radius-control", Value: "2px"},
+	}}
+	r := instance.ThemeRevision{ThemePublication: instance.ThemePublication{ID: testID(1), SetID: set.ID}, Set: set}
+	rules := ":root {\n  --color-surface: light-dark(#fffdf5, #101010);\n  --radius-control: 2px;\n}\n"
+	if got, want := string(r.Stylesheet()), "/* The theme of this server (revision "+testID(1)+"). */\n"+rules; got != want {
 		t.Errorf("Stylesheet() =\n%s\nwant\n%s", got, want)
 	}
-	if got := string((instance.ThemeRevision{ID: testID(1), CustomCSS: "a{}\n"}).Stylesheet()); strings.Contains(got, ":root") {
-		t.Errorf("a theme without tokens has a :root rule: %s", got)
+	if got, want := string(set.Stylesheet()), "/* A draft theme of this server (set "+testID(2)+"), not published. */\n"+rules; got != want {
+		t.Errorf("ThemeSet.Stylesheet() =\n%s\nwant\n%s", got, want)
+	}
+	if got := string((instance.ThemeSet{ID: testID(2)}).Stylesheet()); strings.Contains(got, ":root") {
+		t.Errorf("a set without overrides has a :root rule: %s", got)
 	}
 }
 
-func TestThemeTokenRows(t *testing.T) {
-	values := []instance.ThemeTokenValue{
-		{Token: "radius-control", Value: "2px"},
+func TestThemeTokenValuesFromRows(t *testing.T) {
+	rows := []instance.ThemeTokenRow{
+		{Token: "radius-control", Scheme: instance.SchemeAll, Value: "2px"},
+		{Token: "color-text", Scheme: instance.SchemeLight, Value: "#000000"},
+		{Token: "elevation-card", Scheme: instance.SchemeAll, Value: "none"},
+		{Token: "color-text", Scheme: instance.SchemeDark, Value: "#ffffff"},
+	}
+	// In the order of the tokens (the colors come before the radii in @my/design-tokens), then the
+	// names the list no longer has.
+	want := []instance.ThemeTokenValue{
 		{Token: "color-text", Light: "#000000", Dark: "#ffffff"},
+		{Token: "radius-control", Value: "2px"},
+		{Token: "elevation-card", Value: "none"},
 	}
-	var rows []instance.ThemeTokenRow
-	for _, v := range values {
-		rows = append(rows, v.Rows()...)
-	}
-	if len(rows) != 3 {
-		t.Fatalf("rows = %+v", rows)
-	}
-	got := instance.ThemeTokenValuesFromRows(rows)
-	// Back in the order of the tokens: the colors come before the radii in @my/design-tokens.
-	if !slices.Equal(got, []instance.ThemeTokenValue{values[1], values[0]}) {
+	if got := instance.ThemeTokenValuesFromRows(rows); !slices.Equal(got, want) {
 		t.Errorf("ThemeTokenValuesFromRows = %+v", got)
 	}
 }

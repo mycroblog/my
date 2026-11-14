@@ -5,6 +5,7 @@ package instancetest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"slices"
 	"strings"
@@ -37,6 +38,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 		{"KeepsRulesByPosition", instanceRepoRules},
 		{"KeepsLinkCardDomainRules", instanceRepoLinkCards},
 		{"KeepsTheTheme", instanceRepoTheme},
+		{"UpgradesTheThemeToTokenSets", instanceRepoThemeUpgrade},
 		{"KeepsTheBrandImages", instanceRepoBrands},
 		{"KeepsAnnouncements", instanceRepoAnnouncements},
 		{"KeepsTheServiceClosure", instanceRepoClosure},
@@ -349,59 +351,157 @@ func instanceRepoLinkCards(t *testing.T, r *instanceRepo) {
 	})
 }
 
+// instanceRepoTheme keeps token sets as documents, with the overrides that no longer apply apart,
+// their publications, the draft and the published heads, and the publication before another.
 func instanceRepoTheme(t *testing.T, r *instanceRepo) {
 	ctx := t.Context()
 	_, err := r.i.CurrentTheme(ctx)
-	wantNotFound(t, "CurrentTheme before a revision", err)
-	revise := func(css string) instance.ThemeRevision {
-		rev := instance.ThemeRevision{ID: r.ids.NewID(), CustomCSS: css, RevisedByUserID: testkit.NamedID("admin"), RevisedAt: r.now(), Tokens: []instance.ThemeTokenValue{
+	wantNotFound(t, "CurrentTheme before a publication", err)
+	_, err = r.i.ThemeDraft(ctx)
+	wantNotFound(t, "ThemeDraft before a set", err)
+	save := func(stale ...instance.StaleOverride) instance.ThemeSet {
+		set := instance.ThemeSet{ID: r.ids.NewID(), SavedByUserID: testkit.NamedID("admin"), SavedAt: r.now(), Tokens: []instance.ThemeTokenValue{
 			{Token: "color-accent", Light: "#123456", Dark: "#abcdef"}, {Token: "radius-control", Value: "4px"},
-		}}
+		}, Stale: stale}
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-			return errors.Join(r.i.InsertThemeRevision(ctx, tx, rev), r.i.UpsertThemeHead(ctx, tx, instance.ThemeHead{RevisionID: rev.ID}))
+			return errors.Join(r.i.InsertThemeSet(ctx, tx, set), r.i.UpsertThemeDraftHead(ctx, tx, set.ID))
+		})
+		return set
+	}
+	publish := func(set instance.ThemeSet, by string) instance.ThemeRevision {
+		rev := instance.ThemeRevision{ThemePublication: instance.ThemePublication{ID: r.ids.NewID(), SetID: set.ID, PublishedByUserID: by, PublishedAt: r.now()}, Set: set}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			return errors.Join(r.i.InsertThemePublication(ctx, tx, rev.ThemePublication), r.i.UpsertThemeHead(ctx, tx, instance.ThemeHead{RevisionID: rev.ID}))
 		})
 		return rev
 	}
-	first := revise("")
-	second := revise("body { margin: 0 }")
-	if got, err := r.i.CurrentTheme(ctx); err != nil || !sameTheme(got, second) {
-		t.Errorf("CurrentTheme = %+v, %v; want %+v", got, err, second)
+	first := save()
+	// A stored override of a retired token stays in the document and comes back apart.
+	second := save(instance.StaleOverride{ThemeTokenValue: instance.ThemeTokenValue{Token: "elevation-card", Value: "none"}, Reason: instance.ThemeUnknownToken})
+	p1 := publish(first, testkit.NamedID("admin"))
+	p2 := publish(second, "")
+
+	if got, err := r.i.CurrentTheme(ctx); err != nil || !reflect.DeepEqual(got, p2) {
+		t.Errorf("CurrentTheme = %+v, %v; want %+v", got, err, p2)
 	}
-	if got, err := r.i.FindThemeRevision(ctx, first.ID); err != nil || !sameTheme(got, first) {
-		t.Errorf("FindThemeRevision = %+v, %v; want %+v", got, err, first)
+	if got, err := r.i.FindThemeRevision(ctx, p1.ID); err != nil || !reflect.DeepEqual(got, p1) {
+		t.Errorf("FindThemeRevision = %+v, %v; want %+v", got, err, p1)
 	}
 	_, err = r.i.FindThemeRevision(ctx, r.ids.NewID())
 	wantNotFound(t, "FindThemeRevision(unknown)", err)
+	if got, err := r.i.ThemeDraft(ctx); err != nil || !reflect.DeepEqual(got, second) {
+		t.Errorf("ThemeDraft = %+v, %v; want %+v", got, err, second)
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		// Inserting a set or a publication again leaves the first one.
+		again := first
+		again.Tokens = nil
+		if err := errors.Join(r.i.InsertThemeSet(ctx, tx, again), r.i.InsertThemePublication(ctx, tx, instance.ThemePublication{ID: p1.ID, SetID: second.ID, PublishedAt: r.now()})); err != nil {
+			return err
+		}
+		if got, err := r.i.FindThemeSet(ctx, tx, first.ID); err != nil || !reflect.DeepEqual(got, first) {
+			t.Errorf("FindThemeSet after inserting again = %+v, %v; want %+v", got, err, first)
+		}
+		if got, err := r.i.FindThemePublication(ctx, tx, p1.ID); err != nil || got != p1.ThemePublication {
+			t.Errorf("FindThemePublication after inserting again = %+v, %v; want %+v", got, err, p1.ThemePublication)
+		}
+		if prev, err := r.i.PreviousThemePublication(ctx, tx, p2.ThemePublication); err != nil || prev != p1.ThemePublication {
+			t.Errorf("PreviousThemePublication(second) = %+v, %v; want %+v", prev, err, p1.ThemePublication)
+		}
+		_, err := r.i.PreviousThemePublication(ctx, tx, p1.ThemePublication)
+		wantNotFound(t, "PreviousThemePublication(first)", err)
+		_, err = r.i.FindThemeSet(ctx, tx, r.ids.NewID())
+		wantNotFound(t, "FindThemeSet(unknown)", err)
+
 		head, err := r.i.ThemeHead(ctx, tx)
-		if err == nil && head.RevisionID != second.ID {
-			t.Errorf("ThemeHead = %+v, want %s", head, second.ID)
+		if err == nil && head.RevisionID != p2.ID {
+			t.Errorf("ThemeHead = %+v, want %s", head, p2.ID)
 		}
 		latest, lerr := r.i.LatestThemeRevisionID(ctx, tx)
-		if lerr == nil && latest != second.ID {
-			t.Errorf("LatestThemeRevisionID = %s, want %s", latest, second.ID)
+		if lerr == nil && latest != p2.ID {
+			t.Errorf("LatestThemeRevisionID = %s, want %s", latest, p2.ID)
 		}
-		return errors.Join(err, lerr, r.i.DeleteThemeHead(ctx, tx))
+		draft, derr := r.i.ThemeDraftHead(ctx, tx)
+		if derr == nil && draft != second.ID {
+			t.Errorf("ThemeDraftHead = %s, want %s", draft, second.ID)
+		}
+		latestSet, serr := r.i.LatestThemeSetID(ctx, tx)
+		if serr == nil && latestSet != second.ID {
+			t.Errorf("LatestThemeSetID = %s, want %s", latestSet, second.ID)
+		}
+		legacy, lgerr := r.i.LegacyThemeRevisions(ctx, tx, "", 10)
+		if lgerr == nil && len(legacy) != 0 {
+			t.Errorf("LegacyThemeRevisions of a database without them = %+v", legacy)
+		}
+		return errors.Join(err, lerr, derr, serr, lgerr, r.i.DeleteThemeHead(ctx, tx), r.i.DeleteThemeDraftHead(ctx, tx))
 	})
 	_, err = r.i.CurrentTheme(ctx)
 	wantNotFound(t, "CurrentTheme after DeleteThemeHead", err)
+	_, err = r.i.ThemeDraft(ctx)
+	wantNotFound(t, "ThemeDraft after DeleteThemeDraftHead", err)
 }
 
-// sameTheme compares two theme revisions, their tokens in any order.
-func sameTheme(a, b instance.ThemeRevision) bool {
-	key := func(x, y instance.ThemeTokenValue) int {
-		switch {
-		case x.Token < y.Token:
-			return -1
-		case x.Token > y.Token:
-			return 1
-		}
-		return 0
+// instanceRepoThemeUpgrade writes theme revisions as the releases before the token set did and
+// runs the data upgrade step theme.token_sets: each becomes a set and a publication with its ID,
+// its overrides of retired tokens kept as stale ones and its custom CSS dropped; after the rebuild
+// the draft and the theme in effect are the latest; and a second run changes nothing.
+func instanceRepoThemeUpgrade(t *testing.T, r *instanceRepo) {
+	if r.h.InsertLegacyTheme == nil {
+		t.Skip("the harness writes no legacy theme")
 	}
-	a.Tokens, b.Tokens = slices.Clone(a.Tokens), slices.Clone(b.Tokens)
-	slices.SortFunc(a.Tokens, key)
-	slices.SortFunc(b.Tokens, key)
-	return reflect.DeepEqual(a, b)
+	ctx := t.Context()
+	admin := testkit.NamedID("admin")
+	var revs []LegacyThemeRevision
+	for i := range appinstance.ThemeSetsUpgradeBatch + 2 {
+		rev := LegacyThemeRevision{ID: r.ids.NewID(), RevisedAt: r.now(), Rows: []instance.ThemeTokenRow{
+			{Token: "radius-control", Scheme: instance.SchemeAll, Value: fmt.Sprintf("%dpx", i%20)},
+		}}
+		if i == appinstance.ThemeSetsUpgradeBatch+1 {
+			rev.RevisedByUserID, rev.CustomCSS = admin, "body { margin: 0 }"
+			rev.Rows = append(rev.Rows,
+				instance.ThemeTokenRow{Token: "color-surface", Scheme: instance.SchemeLight, Value: "#fffdf5"},
+				instance.ThemeTokenRow{Token: "color-surface", Scheme: instance.SchemeDark, Value: "#101010"},
+				instance.ThemeTokenRow{Token: "elevation-card", Scheme: instance.SchemeAll, Value: "none"},
+			)
+		}
+		if err := r.h.InsertLegacyTheme(ctx, rev); err != nil {
+			t.Fatal(err)
+		}
+		revs = append(revs, rev)
+	}
+	for range 2 {
+		if err := appinstance.UpgradeThemeSets(ctx, r.h.UnitOfWork, r.i); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := appinstance.RebuildProjections(ctx, r.h.UnitOfWork, r.i); err != nil {
+		t.Fatal(err)
+	}
+	last := revs[len(revs)-1]
+	want := instance.ThemeRevision{
+		ThemePublication: instance.ThemePublication{ID: last.ID, SetID: last.ID, PublishedByUserID: admin, PublishedAt: last.RevisedAt},
+		Set: instance.ThemeSet{ID: last.ID, SavedByUserID: admin, SavedAt: last.RevisedAt,
+			Tokens: []instance.ThemeTokenValue{{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"}, {Token: "radius-control", Value: "1px"}},
+			Stale:  []instance.StaleOverride{{ThemeTokenValue: instance.ThemeTokenValue{Token: "elevation-card", Value: "none"}, Reason: instance.ThemeUnknownToken}},
+		},
+	}
+	if got, err := r.i.CurrentTheme(ctx); err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("CurrentTheme after the upgrade = %+v, %v\nwant %+v", got, err, want)
+	}
+	if got, err := r.i.ThemeDraft(ctx); err != nil || !reflect.DeepEqual(got, want.Set) {
+		t.Errorf("ThemeDraft after the upgrade = %+v, %v; want %+v", got, err, want.Set)
+	}
+	// Every revision keeps its stylesheet URL, and the one before can be restored.
+	if got, err := r.i.FindThemeRevision(ctx, revs[0].ID); err != nil || len(got.Set.Tokens) != 1 || got.Set.Tokens[0].Value != "0px" {
+		t.Errorf("FindThemeRevision(first) = %+v, %v", got, err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		prev, err := r.i.PreviousThemePublication(ctx, tx, want.ThemePublication)
+		if err == nil && prev.ID != revs[len(revs)-2].ID {
+			t.Errorf("PreviousThemePublication = %+v, want %s", prev, revs[len(revs)-2].ID)
+		}
+		return err
+	})
 }
 
 func instanceRepoBrands(t *testing.T, r *instanceRepo) {

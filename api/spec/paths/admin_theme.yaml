@@ -4,65 +4,16 @@ get:
   x-permission: manage_settings
   summary: Read the instance theme
   description: |
-    The current theme of the web client: the overridden design tokens and the
-    custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-    `manage_settings` permission.
+    The theme of the web client as its administrators edit it: the draft token set and the set
+    in effect. Each omits what was never saved or published. A set lists the overrides that apply
+    in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+    retired their token or changed its bounds; the server leaves those out of the stylesheet and
+    the next save of the draft drops them. Needs the `manage_settings` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:read"]
   responses:
     "200":
       $ref: ../components/responses/AdminTheme.yaml
-    default:
-      $ref: ../components/responses/Problem.yaml
-put:
-  operationId: setAdminTheme
-  x-permission: manage_settings
-  summary: Replace the instance theme
-  description: |
-    Records a revision of the theme, which every visitor's web client and the server-rendered
-    pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-    few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-    their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-    change are kept (the audit log's `setting_changed` of `theme`).
-
-    The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-    and the durations of the web client's design tokens (the list generated from
-    `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
-    take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
-    a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
-    of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-    (4.5:1 for text, 3:1 for marks) in both color schemes.
-    The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-    does not read it, it runs under the same Content-Security-Policy as the client (only
-    same-origin resources), and what it does to contrast, layout, and focus is the
-    administrator's responsibility. A theme that breaks any rule is a 422
-    `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
-    `manage_settings` permission.
-  tags: [admin-server]
-  security:
-    - oauth2: ["admin:write"]
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          $ref: ../components/schemas/SetThemeRequest.yaml
-  responses:
-    "200":
-      $ref: ../components/responses/AdminTheme.yaml
-    "422":
-      description: The theme breaks a rule; nothing was saved.
-      headers:
-        Content-Language:
-          description: The locale of `title` and `detail`.
-          schema:
-            type: string
-        Cache-Control:
-          $ref: ../components/headers/CacheControl.yaml
-      content:
-        application/problem+json:
-          schema:
-            $ref: ../components/schemas/ThemeProblem.yaml
     default:
       $ref: ../components/responses/Problem.yaml

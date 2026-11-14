@@ -79,11 +79,18 @@ type InstanceTextRevision struct {
 	RevisedAt       int64
 }
 
-type InstanceThemeRevision struct {
-	ID              string
-	CustomCss       string
-	RevisedByUserID sql.NullString
-	RevisedAt       int64
+type InstanceThemePublication struct {
+	ID                string
+	SetID             string
+	PublishedByUserID sql.NullString
+	PublishedAt       int64
+}
+
+type InstanceThemeSet struct {
+	ID            string
+	Document      []byte
+	SavedByUserID sql.NullString
+	SavedAt       int64
 }
 
 type LinkCardDomainRule struct {

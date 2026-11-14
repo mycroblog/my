@@ -145,7 +145,7 @@ instance モジュールが持つ。テーブルの形は `schema/09-instance/<d
 - BlobStore のキーはサーバーが作る（`instance/brand/<revision-id>/<版>.<拡張子>`、ADR-0019 §8）。置き換えた古いリビジョンのファイルは、リビジョンの履歴が残る間は消さない
   （履歴の保持と消去は既存の設定のリビジョンと同じ扱い。実装で決める）。BlobStore への書き込みはトランザクションの外で先に行い、DB に記録してから投影を切り替える（ADR-0003）。
 - 権限は `manage_settings`（ADR-0058 のサーバー管理の権限。画面はサーバーの設定 `/admin/settings` に置く）。設定・消去は監査ログ（ADR-0058）に、種類とリビジョンを残す。
-- テーマの CLI は `my instance theme get` と `my instance theme set` を持つ。
+- テーマの CLI は `my instance theme get`・`set`・`publish`・`restore` を持つ（§15）。
 - CLI は `my instance brand show` と `my instance brand clear <kind>` を持つ（壊れた SVG を管理画面なしで外す復旧のため）。設定は PNG を描くので管理画面からだけ行う。
 
 ### 12. 配信（ブランドの画像）

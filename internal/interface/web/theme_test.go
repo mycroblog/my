@@ -45,12 +45,13 @@ var themeRevisionID = testkit.NamedID("theme-revision")
 func newThemes() *fakeThemes {
 	return &fakeThemes{revisions: map[string]instance.ThemeRevision{
 		themeRevisionID: {
-			ID:        themeRevisionID,
-			Tokens:    []instance.ThemeTokenValue{{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"}, {Token: "radius-control", Value: "2px"}},
-			CustomCSS: ".brand { color: red }",
-			RevisedAt: time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC),
+			ThemePublication: instance.ThemePublication{ID: themeRevisionID, PublishedAt: time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)},
+			Set: instance.ThemeSet{
+				Tokens: []instance.ThemeTokenValue{{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"}, {Token: "radius-control", Value: "2px"}},
+				Stale:  []instance.StaleOverride{{ThemeTokenValue: instance.ThemeTokenValue{Token: "elevation-card", Value: "none"}, Reason: instance.ThemeUnknownToken}},
+			},
 		},
-		"reset": {ID: "reset"},
+		"reset": {ThemePublication: instance.ThemePublication{ID: "reset"}},
 	}}
 }
 
@@ -125,10 +126,13 @@ func TestThemeStylesheet(t *testing.T) {
 		t.Errorf("headers = %v", h)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"--color-surface: light-dark(#fffdf5, #101010);", "--radius-control: 2px;", ".brand { color: red }"} {
+	for _, want := range []string{"--color-surface: light-dark(#fffdf5, #101010);", "--radius-control: 2px;"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("stylesheet lacks %q:\n%s", want, body)
 		}
+	}
+	if strings.Contains(body, "elevation-card") {
+		t.Errorf("stylesheet has an override that no longer applies:\n%s", body)
 	}
 	for _, path := range []string{
 		web.ThemeStylesheetPath("unknown"), web.ThemeStylesheetPath("reset"), web.PathTheme + themeRevisionID + ".js", web.PathTheme + themeRevisionID,

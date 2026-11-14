@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: MIT
-description: The whole theme; tokens left out go back to their defaults.
+description: A whole token set; tokens left out keep their defaults.
 type: object
-required: [tokens, custom_css]
+required: [tokens]
 properties:
   tokens:
     type: array
     maxItems: 200
     items:
       $ref: ./ThemeTokenValue.yaml
-  custom_css:
-    type: string

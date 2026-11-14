@@ -35,30 +35,6 @@ type Module struct {
 	SQLite, Postgres string
 	// Requires lists the modules this module depends on.
 	Requires []*Module
-	// Prepares run before the module's changes (WithPrepares).
-	Prepares []Prepare
-}
-
-// Prepare is a statement that `my schema apply` runs in its transaction before the changes of the
-// plan, when the database already has Table: it makes the existing rows satisfy a constraint that
-// the schema tightens, so that the plan applies. Its SQL runs on both dialects and is idempotent.
-type Prepare struct {
-	Table, SQL string
-}
-
-// WithPrepares adds prepares to m and returns m.
-func (m *Module) WithPrepares(prepares ...Prepare) *Module {
-	m.Prepares = append(m.Prepares, prepares...)
-	return m
-}
-
-// Prepares returns the prepares of modules, in the order given.
-func Prepares(modules []*Module) []Prepare {
-	var out []Prepare
-	for _, m := range modules {
-		out = append(out, m.Prepares...)
-	}
-	return out
 }
 
 // linked is every Module that New has made, in the order of their names.

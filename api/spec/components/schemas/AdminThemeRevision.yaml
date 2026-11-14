@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: A publication of a token set, which made it the theme in effect.
+type: object
+required: [revision, set, published_at]
+properties:
+  revision:
+    description: The ID of the publication, which names its stylesheet.
+    type: string
+  stylesheet_url:
+    description: The stylesheet of the theme; omitted when the set overrides nothing.
+    type: string
+    format: uri
+  set:
+    $ref: ./ThemeSet.yaml
+  published_at:
+    type: string
+    format: date-time

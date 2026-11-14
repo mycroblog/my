@@ -57,10 +57,6 @@ func ApplySchema(ctx context.Context, dsn, ddl string, opts schemaapply.Options)
 			_ = tx.Rollback()
 			return err
 		}
-		if err := schemaapply.Prepare(ctx, tx, current, opts.Prepares); err != nil {
-			_ = tx.Rollback()
-			return err
-		}
 		if err := txDrv.ApplyChanges(ctx, changes); err != nil {
 			_ = tx.Rollback()
 			return err

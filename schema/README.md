@@ -102,6 +102,4 @@ CI runs it for both dialects:
 - **The merge queue** compares with the base of the merge group and does not check the label again (a merge group
   carries no labels): it reports destructive changes and fails only when the schema does not apply on top of that base.
 
-A class C change in one pull request is never approved: split it into expand and contract instead. The one exception is a
-`CHECK` whose refused rows the decider lets go: a prepare of the module (`ddl.Prepare`, `WithPrepares`) deletes them in the
-transaction of `my schema apply`, before the plan's changes, and the pull request still needs **`allow:db-destructive`**.
+A class C change in one pull request is never approved: split it into expand and contract instead.
