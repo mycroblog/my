@@ -34,20 +34,18 @@ func tlsALPNCA(t *testing.T, ln net.Listener) *instancetest.FakeACMEClient {
 // awaitSerial waits until addr presents the certificate serial for host.
 func awaitSerial(t *testing.T, addr, host string, serial *big.Int, within time.Duration) {
 	t.Helper()
-	deadline := time.Now().Add(within)
-	for {
-		chain, err := handshake(t.Context(), addr, host)
-		if err == nil && chain[0].SerialNumber.Cmp(serial) == 0 {
-			return
+	var chain []*x509.Certificate
+	var err error
+	served := testkit.Eventually(t, within, func() bool {
+		chain, err = handshake(t.Context(), addr, host)
+		return err == nil && chain[0].SerialNumber.Cmp(serial) == 0
+	})
+	if !served {
+		got := "none"
+		if err == nil {
+			got = chain[0].SerialNumber.String()
 		}
-		if time.Now().After(deadline) {
-			got := "none"
-			if err == nil {
-				got = chain[0].SerialNumber.String()
-			}
-			t.Fatalf("%s serves %s with the certificate %s (%v), want %s within %v", addr, host, got, err, serial, within)
-		}
-		time.Sleep(20 * time.Millisecond)
+		t.Fatalf("%s serves %s with the certificate %s (%v), want %s within %v", addr, host, got, err, serial, within)
 	}
 }
 
@@ -188,20 +186,23 @@ func TestServeTLSACMENoticesOnTheBus(t *testing.T) {
 	serial := renew(t, first, acmeHost)
 	awaitSerial(t, addr, acmeHost, serial, 10*time.Second)
 
-	// A signal of the older certificate, late or repeated, leaves the newer one.
+	// A signal of the older certificate, late or repeated, leaves the newer one. The signal of a
+	// renewal of the other host, which comes after it on the Bus, shows that the second process
+	// handled it.
 	late := []byte(`{"v":1,"o":"another","k":"tls_certificate","h":"` + acmeHost + `","c":"` + oldID + `"}`)
 	if err := broker.Bus().Send(t.Context(), late); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(200 * time.Millisecond)
+	awaitSerial(t, addr, acmeWebHost, renew(t, first, acmeWebHost), 10*time.Second)
 	awaitSerial(t, addr, acmeHost, serial, time.Second)
 
 	// A process without the Bus (a my command, or stream = hub) renews: no signal goes out, and
-	// the second process loads the renewal when its listener breaks.
+	// the second process loads the renewal when its listener breaks. A renewal on the Bus after
+	// it shows that no signal of the first came before.
 	hubLn := listenOn(t, 0)
 	hub := startACMEApp(t, acmeConfig(t, sharedEnv(db, kek, nil), false), slowRounds(ca), hubLn, nil)
 	serial = renew(t, hub, acmeWebHost)
-	time.Sleep(200 * time.Millisecond)
+	awaitSerial(t, addr, acmeHost, renew(t, first, acmeHost), 10*time.Second)
 	if c := second.app.TLSCertificates.Certificate(acmeWebHost); c.Leaf.SerialNumber.Cmp(serial) == 0 {
 		t.Fatal("the renewal reached the other process without a signal")
 	}
@@ -260,13 +261,8 @@ func TestPebbleServeTLSACMERenewsInTheWindow(t *testing.T) {
 		t.Fatalf("Pebble offers no renewal information: %v", err)
 	}
 	var at time.Time
-	deadline := time.Now().Add(10 * time.Second)
-	for at.IsZero() {
-		if time.Now().After(deadline) {
-			t.Fatal("no renewal time")
-		}
-		time.Sleep(20 * time.Millisecond)
-		at = s.app.TLSManager.RenewalTime(acmeHost)
+	if !testkit.Eventually(t, 10*time.Second, func() bool { at = s.app.TLSManager.RenewalTime(acmeHost); return !at.IsZero() }) {
+		t.Fatal("no renewal time")
 	}
 	if at.Before(info.WindowStart) || !at.Before(info.WindowEnd) {
 		t.Fatalf("renewal time %v outside Pebble's window [%v, %v)", at, info.WindowStart, info.WindowEnd)
@@ -285,17 +281,14 @@ func TestPebbleServeTLSACMERenewsInTheWindow(t *testing.T) {
 // roots.
 func awaitRenewal(t *testing.T, addr, host string, roots *x509.CertPool, old *x509.Certificate) *x509.Certificate {
 	t.Helper()
-	deadline := time.Now().Add(60 * time.Second)
-	for {
-		c := awaitCertificate(t, addr, host, roots)
-		if c.SerialNumber.Cmp(old.SerialNumber) != 0 {
-			return c
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("%s still serves %s", host, old.SerialNumber)
-		}
-		time.Sleep(50 * time.Millisecond)
+	var c *x509.Certificate
+	if !testkit.Eventually(t, 60*time.Second, func() bool {
+		c = awaitCertificate(t, addr, host, roots)
+		return c.SerialNumber.Cmp(old.SerialNumber) != 0
+	}) {
+		t.Fatalf("%s still serves %s", host, old.SerialNumber)
 	}
+	return c
 }
 
 // replacesClient records the certificates that the orders of each host replace.

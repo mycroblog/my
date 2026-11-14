@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -43,26 +44,33 @@ func (x *failingIndex) Replace(ctx context.Context, doc search.Document) error {
 	return x.Index.Replace(ctx, doc)
 }
 
-// frozenClock tells the time of its start until a test moves it, so that a rebuild's rate, which
-// spaces its jobs by the clock, never lets the next job fall due while a slow machine goes on.
-type frozenClock struct{ at time.Time }
+// frozenClock tells the time of its start until a test moves it ahead, so that a rebuild's rate,
+// which spaces its jobs by the clock, never lets the next job fall due while a slow machine goes on.
+type frozenClock struct {
+	at    time.Time
+	ahead *atomic.Int64
+}
 
-func (c frozenClock) Now() time.Time { return c.at }
+func (c frozenClock) Now() time.Time { return c.at.Add(time.Duration(c.ahead.Load())) }
 
 // newRebuildEnv is a server with the fake backend whose rebuild covers batch statuses in a job,
-// on a clock that does not move.
+// on a clock that moves only by searchEnv.advance.
 func newRebuildEnv(t *testing.T, batch int) (*searchEnv, *failingIndex) {
 	t.Helper()
 	index := &failingIndex{Index: fake.New()}
+	ahead := &atomic.Int64{}
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
-		Logger: slog.New(slog.DiscardHandler), SearchIndex: index, SearchRebuildBatch: batch, Clock: frozenClock{at: time.Now().Round(0)},
+		Logger: slog.New(slog.DiscardHandler), SearchIndex: index, SearchRebuildBatch: batch,
+		Clock: frozenClock{at: time.Now().Round(0), ahead: ahead},
 	})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	return &searchEnv{accountsEnv: &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}, index: index.Index}, index
+	// The server tells the time of the frozenClock; clock holds only what moves it ahead, for advance.
+	clock := laterClock{ahead: ahead}
+	return &searchEnv{accountsEnv: &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}, index: index.Index, clock: clock}, index
 }
 
 func (e *searchEnv) rebuild(opts search.RebuildOptions) search.RebuildStart {
@@ -283,7 +291,7 @@ func TestSearchClearEndsTheRebuild(t *testing.T) {
 	if _, _, ok, err := e.app.Search.RebuildProgress(t.Context(), 10); ok || err != nil {
 		t.Errorf("RebuildProgress = %v, %v; want no rebuild", ok, err)
 	}
-	time.Sleep(5 * time.Millisecond)
+	e.advance(time.Second) // the job left waiting falls due
 	e.wantFound("armadillo")
 }
 

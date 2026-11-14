@@ -21,6 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // postgresURLWithPool returns the URL of a new PostgreSQL database with a pool of size connections.
@@ -165,8 +166,9 @@ func exerciseSlots(t *testing.T, app *platform.App, o *overlap) {
 			t.Fatalf("%d jobs were never in progress at once", o.want)
 		}
 	}
-	for deadline := time.Now().Add(60 * time.Second); ; {
-		short := 0
+	short := 0
+	delivered := testkit.Eventually(t, 60*time.Second, func() bool {
+		short = 0
 		for _, r := range readers {
 			var page clientapi.NotificationPage
 			do(http.MethodGet, "/notifications?limit=40", r.token, nil, &page)
@@ -174,13 +176,10 @@ func exerciseSlots(t *testing.T, app *platform.App, o *overlap) {
 				short++
 			}
 		}
-		if short == 0 {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("%d of %d subscribers have not got all %d notifications", short, subscribers, posts)
-		}
-		time.Sleep(50 * time.Millisecond)
+		return short == 0
+	})
+	if !delivered {
+		t.Fatalf("%d of %d subscribers have not got all %d notifications", short, subscribers, posts)
 	}
 	dead, err := app.DeadJobs.ListDeadJobs(ctx, "", queue.DeadJobPosition{}, 10)
 	if err != nil {
@@ -243,9 +242,7 @@ func TestWorkerJobConcurrencyWarnsOnSQLite(t *testing.T) {
 			t.Parallel()
 			cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_ROLE": "worker", "MY_WORKER_JOB_CONCURRENCY": tc.concurrency})
 			s := start(t, cfg, platform.ServeOptions{}, nil)
-			for deadline := time.Now().Add(5 * time.Second); !strings.Contains(s.logs.String(), `"started"`) && time.Now().Before(deadline); {
-				time.Sleep(10 * time.Millisecond)
-			}
+			testkit.Eventually(t, 5*time.Second, func() bool { return strings.Contains(s.logs.String(), `"started"`) })
 			if got := strings.Contains(s.logs.String(), warning); got != tc.want {
 				t.Errorf("warning logged = %v, want %v:\n%s", got, tc.want, s.logs.String())
 			}

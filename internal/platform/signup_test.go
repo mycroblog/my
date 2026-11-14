@@ -16,6 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 var loggedLink = regexp.MustCompile(`https://example\.test(/auth/verify_email\?token=[A-Za-z0-9_%-]+)`)
@@ -82,12 +83,13 @@ func TestSignUpScreens(t *testing.T) {
 
 	// The verification email went to the log from its job, and only there: the access log and
 	// the job's log have no token.
-	logs := s.logs.String()
-	m := loggedLink.FindStringSubmatch(logs)
-	for deadline := time.Now().Add(10 * time.Second); m == nil && time.Now().Before(deadline); m = loggedLink.FindStringSubmatch(logs) {
-		time.Sleep(20 * time.Millisecond)
+	var logs string
+	var m []string
+	testkit.Eventually(t, 10*time.Second, func() bool {
 		logs = s.logs.String()
-	}
+		m = loggedLink.FindStringSubmatch(logs)
+		return m != nil
+	})
 	if m == nil || !strings.Contains(logs, "mail not sent (mail = none)") {
 		t.Fatalf("no verification link in the log:\n%s", logs)
 	}

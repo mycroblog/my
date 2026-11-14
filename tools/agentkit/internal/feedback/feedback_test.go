@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
@@ -62,16 +63,19 @@ func TestWaitDeliversEachBatchOnce(t *testing.T) {
 		t.Fatalf("Next after delivery = %+v, %v; want none", next, err)
 	}
 
-	go func() {
-		time.Sleep(20 * time.Millisecond)
-		_ = writeBatch(dir, "20261112-153100-0002")
-	}()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	b, err = Wait(ctx, dir, 5*time.Millisecond, clock)
-	if err != nil || b.ID != "20261112-153100-0002" {
-		t.Fatalf("Wait for a later batch = %+v, %v", b, err)
-	}
+	// A batch written while Wait looks, 20ms later on the bubble's clock.
+	synctest.Test(t, func(t *testing.T) {
+		go func() {
+			<-time.After(20 * time.Millisecond)
+			_ = writeBatch(dir, "20261112-153100-0002")
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		b, err := Wait(ctx, dir, 5*time.Millisecond, clock)
+		if err != nil || b.ID != "20261112-153100-0002" {
+			t.Fatalf("Wait for a later batch = %+v, %v", b, err)
+		}
+	})
 }
 
 func TestWaitTimesOut(t *testing.T) {

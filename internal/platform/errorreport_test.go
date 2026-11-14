@@ -138,12 +138,7 @@ func TestServeStopsOnGoroutinePanic(t *testing.T) {
 // waitServing waits until Serve answers the health check, so that its shutdown hook is set.
 func waitServing(t *testing.T, s *server) {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
-		if strings.Contains(s.logs.String(), `"msg":"started"`) {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return strings.Contains(s.logs.String(), `"msg":"started"`) }) {
+		t.Fatal("Serve did not start")
 	}
-	t.Fatal("Serve did not start")
 }

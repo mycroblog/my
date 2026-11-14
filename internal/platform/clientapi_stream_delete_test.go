@@ -10,6 +10,7 @@ import (
 	"time"
 
 	domcontent "github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // nextDeleted returns the status ID of the next event of events, which must be a delete within
@@ -64,12 +65,8 @@ func TestStreamsSendTheDeletions(t *testing.T) {
 		streams[name] = openTimelineStream(streamCtx, t, e, srv, viewer, "/streaming")
 	}
 	carolsLocal := openTimelineStream(streamCtx, t, e, srv, carol, "/streaming/timelines/local")
-	deadline := time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() < 5 {
-		if time.Now().After(deadline) {
-			t.Fatal("the streams did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() >= 5 }) {
+		t.Fatal("the streams did not subscribe")
 	}
 
 	for _, id := range []string{private, unlisted, public} {

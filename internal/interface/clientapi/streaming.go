@@ -50,6 +50,15 @@ var StreamConnections = kernel.Instrument{
 	LabelKeys: []string{labelStreamKind},
 }
 
+// StreamSignals is the my.stream.signals metric: the signals that the open streams of this
+// process handled, each counted once its stream has written what it means to the client, or
+// written nothing because it means nothing to the viewer, by the kind of stream as in
+// StreamConnections.
+var StreamSignals = kernel.Instrument{
+	Name: "my.stream.signals", Unit: "{signal}", Description: "Signals that the open streams (Server-Sent Events) of this process handled, by kind.",
+	LabelKeys: []string{labelStreamKind},
+}
+
 const (
 	labelStreamKind = "my.stream.kind"
 	streamKindUser  = "user"
@@ -151,7 +160,8 @@ func (s *Server) subscribeRefused(w http.ResponseWriter, r *http.Request, err er
 }
 
 // runStream serves the open subscription sub as the Server-Sent Events of st, counted in
-// StreamConnections as kind: it hands each signal to handle and writes a heartbeat every
+// StreamConnections as kind: it hands each signal to handle, counted in StreamSignals once handle
+// returns, and writes a heartbeat every
 // StreamHeartbeat. It returns when the client goes, the subscription ends, handle fails, a
 // write times out, or a heartbeat finds that the access token is no longer valid, that the
 // server was closed, or that alive (nil for none) reports false.
@@ -216,7 +226,9 @@ func (s *Server) runStream(w http.ResponseWriter, r *http.Request, st *streamSta
 				return
 			}
 		case e := <-sub.Events():
-			if err := handle(ctx, e); err != nil {
+			err := handle(ctx, e)
+			s.signals.Add(ctx, 1, labels)
+			if err != nil {
 				if !errors.Is(err, errStreamWrite) && ctx.Err() == nil {
 					s.o.Logger.ErrorContext(ctx, "streaming", slog.String("account_id", st.viewer.AccountID), slog.Any("error", err))
 				}

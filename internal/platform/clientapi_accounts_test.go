@@ -37,8 +37,15 @@ type testUser struct {
 
 func newAccountsEnv(t *testing.T) *accountsEnv {
 	t.Helper()
+	return newAccountsEnvWith(t, platform.AppOptions{})
+}
+
+// newAccountsEnvWith is newAccountsEnv with AppOptions; their Logger is replaced by one that discards.
+func newAccountsEnvWith(t *testing.T, opts platform.AppOptions) *accountsEnv {
+	t.Helper()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	opts.Logger = slog.New(slog.DiscardHandler)
+	app, err := platform.NewApp(t.Context(), cfg, opts)
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}

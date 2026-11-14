@@ -31,15 +31,14 @@ import (
 type configuredTranslation struct {
 	translationEnv
 	two   *recordingTranslator
-	meter *testkit.Meter
 	ahead *atomic.Int64
 }
 
 func newConfiguredTranslation(t *testing.T) *configuredTranslation {
 	t.Helper()
 	path := newDatabase(t, true)
-	e := &configuredTranslation{two: newRecordingTranslator(), meter: testkit.NewMeter(), ahead: &atomic.Int64{}}
-	e.one = newRecordingTranslator()
+	e := &configuredTranslation{two: newRecordingTranslator(), ahead: &atomic.Int64{}}
+	e.one, e.meter = newRecordingTranslator(), testkit.NewMeter()
 	e.c = newStatusesClientWith(t, map[string]string{"MY_DATABASE_URL": path}, platform.AppOptions{
 		Clock: laterClock{steadyClock: newSteadyClock(), ahead: e.ahead}, Meter: e.meter,
 		TranslationRegistered: []translation.Provider{
@@ -371,7 +370,7 @@ func TestTranslationWaitingHoldsNoCharacters(t *testing.T) {
 	sent := translation.CountCharacters(e.one.requests[0].Fragments)
 	e.set(instance.SettingTranslationServerMonthlyCharacters, strconv.Itoa(sent))
 	go translate("carol")
-	time.Sleep(300 * time.Millisecond)
+	e.waitLockWaits(1) // carol's request waits for bob's translation
 	close(release)
 	for range 2 {
 		if err := <-results; err != nil {

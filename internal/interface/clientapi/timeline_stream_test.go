@@ -242,19 +242,16 @@ func TestTimelineStreamDeliversTheTimelinesPosts(t *testing.T) {
 	}
 	byTimelineAndID := func(a, b publicEntryCall) int { return strings.Compare(a.timeline+a.id, b.timeline+b.id) }
 	slices.SortFunc(want, byTimelineAndID)
-	deadline := time.Now().Add(time.Second)
-	for {
-		calls := e.entries.called()
+	var calls []publicEntryCall
+	called := testkit.Eventually(t, time.Second, func() bool {
+		calls = e.entries.called()
 		slices.SortFunc(calls, byTimelineAndID)
-		if slices.EqualFunc(calls, want, func(a, b publicEntryCall) bool {
+		return slices.EqualFunc(calls, want, func(a, b publicEntryCall) bool {
 			return a.timeline == b.timeline && a.viewer == b.viewer && a.id == b.id && slices.Equal(a.query.Languages, b.query.Languages)
-		}) {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("calls = %+v, want %+v", calls, want)
-		}
-		time.Sleep(5 * time.Millisecond)
+		})
+	})
+	if !called {
+		t.Fatalf("calls = %+v, want %+v", calls, want)
 	}
 	if line := readLine(t, local); line != ": heartbeat" {
 		t.Errorf("after the repeated signal, line = %q, want a heartbeat", line)

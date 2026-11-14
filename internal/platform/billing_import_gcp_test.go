@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -61,13 +62,16 @@ func TestBillingImportOfABudget(t *testing.T) {
 	}
 	y, m, _ := time.Now().In(pacific).Date()
 	start := time.Date(y, m, 1, 0, 0, 0, 0, pacific).UTC().Format(time.RFC3339)
+	// Each notification has a later publish time than the one before: pstest's clock runs 10ms ahead more for each.
+	var ahead atomic.Int64
+	srv.SetTimeNowFunc(func() time.Time { return time.Now().Add(time.Duration(ahead.Load())) })
 	notify := func(amount string) {
 		data, _ := json.Marshal(map[string]any{
 			"budgetDisplayName": "my", "costAmount": json.Number(amount), "costIntervalStart": start,
 			"budgetAmount": 100, "budgetAmountType": "SPECIFIED_AMOUNT", "currencyCode": "USD",
 		})
+		ahead.Add(int64(10 * time.Millisecond))
 		srv.Publish(topic, data, map[string]string{"billingAccountId": "012345-6789AB-CDEF01", "budgetId": "b1", "schemaVersion": "1.0"})
-		time.Sleep(10 * time.Millisecond) // a later publish time
 	}
 
 	src, err := billinggcp.NewBudget(ctx, billinggcp.BudgetOptions{Subscription: sub, PullWait: 2 * time.Second}, opts...)

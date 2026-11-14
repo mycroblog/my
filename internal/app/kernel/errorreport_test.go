@@ -239,10 +239,9 @@ type ctxKey struct{}
 func TestGoPanicsAgain(t *testing.T) {
 	if os.Getenv("KERNEL_GO_CRASH") == "1" {
 		kernel.Go(context.Background(), "test.crash", &recorder{}, func(context.Context) { panic("crash me") })
-		time.Sleep(10 * time.Second)
-		return
+		select {} // until the panic ends the process, or -test.timeout does without the panic in its output
 	}
-	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestGoPanicsAgain$") //nolint:gosec // G204: the test binary itself
+	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestGoPanicsAgain$", "-test.timeout=10s") //nolint:gosec // G204: the test binary itself
 	cmd.Env = append(os.Environ(), "KERNEL_GO_CRASH=1")
 	out, err := cmd.CombinedOutput()
 	if err == nil {

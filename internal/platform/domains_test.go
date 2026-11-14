@@ -13,6 +13,7 @@ import (
 
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/schema"
 )
 
@@ -101,16 +102,14 @@ func TestServeRecordsTheDomainsOnceTheSchemaIsApplied(t *testing.T) {
 	}
 	applySchema(t, path, "")
 	upgrade(t, s.app)
-	deadline := time.Now().Add(10 * time.Second)
-	for {
-		resp, body := s.do(t, http.MethodGet, platform.PathReadiness, nil)
-		if resp.StatusCode == http.StatusOK {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("readiness after the schema = %d %q, want 200", resp.StatusCode, body)
-		}
-		time.Sleep(10 * time.Millisecond)
+	var resp *http.Response
+	var body string
+	ready := testkit.Eventually(t, 10*time.Second, func() bool {
+		resp, body = s.do(t, http.MethodGet, platform.PathReadiness, nil)
+		return resp.StatusCode == http.StatusOK
+	})
+	if !ready {
+		t.Fatalf("readiness after the schema = %d %q, want 200", resp.StatusCode, body)
 	}
 	var mismatch *instance.DomainMismatchError
 	if err := newDomainsApp(t, path, "other.example.org", "", platform.AppOptions{}); !errors.As(err, &mismatch) {
@@ -158,22 +157,23 @@ func TestServeHoldsEverythingButHealthChecksUntilTheDomainsAreChecked(t *testing
 	if resp, _ := s.do(t, http.MethodGet, platform.PathLiveness, nil); resp.StatusCode != http.StatusOK {
 		t.Errorf("liveness = %d, want 200", resp.StatusCode)
 	}
-	// A job runner on a database without tables would say so in the log.
-	time.Sleep(300 * time.Millisecond)
-	if logs := s.logs.String(); strings.Contains(logs, `"msg":"job runner"`) {
-		t.Errorf("the job runner ran before the domains were checked:\n%s", logs)
-	}
-
+	// The job runner starts once the domains are checked, which needs the schema: its start, and any
+	// line of a runner (one on a database without tables would say so), come after the schema.
+	before := len(s.logs.String())
 	applySchema(t, path, "")
-	deadline := time.Now().Add(10 * time.Second)
-	for {
+	served := testkit.Eventually(t, 10*time.Second, func() bool {
 		resp, _ := s.do(t, http.MethodGet, "/api/v1/instance", nil)
-		if resp.StatusCode != http.StatusServiceUnavailable {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("still 503 after the schema was applied")
-		}
-		time.Sleep(10 * time.Millisecond)
+		return resp.StatusCode != http.StatusServiceUnavailable
+	})
+	if !served {
+		t.Fatal("still 503 after the schema was applied")
+	}
+	const started = `"msg":"job runner started"`
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return strings.Contains(s.logs.String(), started) }) {
+		t.Fatalf("the job runner did not start once the domains were checked:\n%s", s.logs.String())
+	}
+	logs := s.logs.String()
+	if i := strings.Index(logs, `"msg":"job runner`); i < before || i != strings.Index(logs, started) {
+		t.Errorf("a job runner logged before the domains were checked:\n%s", logs)
 	}
 }

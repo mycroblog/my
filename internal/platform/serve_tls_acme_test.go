@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/instancetest"
 	"github.com/mycroblog/my/pkg/testkit/pebbletest"
 )
@@ -90,24 +91,19 @@ func handshake(ctx context.Context, addr, serverName string) ([]*x509.Certificat
 // awaitCertificate waits until addr presents a certificate for host that chains to roots.
 func awaitCertificate(t *testing.T, addr, host string, roots *x509.CertPool) *x509.Certificate {
 	t.Helper()
-	deadline := time.Now().Add(60 * time.Second)
-	for {
-		chain, err := handshake(t.Context(), addr, host)
-		if err == nil {
-			inter := x509.NewCertPool()
-			for _, c := range chain[1:] {
-				inter.AddCert(c)
-			}
-			if _, err := chain[0].Verify(x509.VerifyOptions{DNSName: host, Roots: roots, Intermediates: inter}); err != nil {
-				t.Fatalf("the certificate of %s: %v", host, err)
-			}
-			return chain[0]
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("no certificate of %s: %v", host, err)
-		}
-		time.Sleep(50 * time.Millisecond)
+	var chain []*x509.Certificate
+	var err error
+	if !testkit.Eventually(t, 60*time.Second, func() bool { chain, err = handshake(t.Context(), addr, host); return err == nil }) {
+		t.Fatalf("no certificate of %s: %v", host, err)
 	}
+	inter := x509.NewCertPool()
+	for _, c := range chain[1:] {
+		inter.AddCert(c)
+	}
+	if _, err := chain[0].Verify(x509.VerifyOptions{DNSName: host, Roots: roots, Intermediates: inter}); err != nil {
+		t.Fatalf("the certificate of %s: %v", host, err)
+	}
+	return chain[0]
 }
 
 // With tls = acme, the server obtains the certificates of its hosts after it starts listening:
@@ -163,16 +159,19 @@ func TestServeTLSACMEBacksOffAfterAFailure(t *testing.T) {
 	t.Parallel()
 	ca := instancetest.NewFakeACMEClient(t)
 	ca.FailOrders(&instance.ACMEProblem{Type: "urn:ietf:params:acme:error:rateLimited", Detail: "too many"})
-	s := startACME(t, map[string]string{}, ca, listenOn(t, 0), nil)
-	deadline := time.Now().Add(10 * time.Second)
-	for len(ca.Orders()) < 2 {
-		if time.Now().After(deadline) {
-			t.Fatalf("orders = %v, want one per host", ca.Orders())
-		}
-		time.Sleep(20 * time.Millisecond)
+	meter := testkit.NewMeter()
+	s := startACMEApp(t, acmeConfig(t, map[string]string{}, false), platform.AppOptions{
+		ACMEClient: ca, Meter: meter, TLSRetryInterval: 100 * time.Millisecond, TLSCheckInterval: 200 * time.Millisecond,
+	}, listenOn(t, 0), nil)
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return len(ca.Orders()) >= 2 }) {
+		t.Fatalf("orders = %v, want one per host", ca.Orders())
 	}
-	// Several rounds pass (100 ms apart) within the backoff of a minute.
-	time.Sleep(500 * time.Millisecond)
+	// Several rounds pass within the backoff of a minute.
+	rounds := func() float64 { return meter.Sum("my.tls.rounds", nil) }
+	after := rounds() + 3
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return rounds() >= after }) {
+		t.Fatalf("%v rounds, want %v", rounds(), after)
+	}
 	if orders := ca.Orders(); len(orders) != 2 {
 		t.Errorf("orders = %v, want none during the backoff", orders)
 	}

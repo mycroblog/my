@@ -181,8 +181,16 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	var jobs sync.WaitGroup
 	stopJobs := make(chan struct{})
 	// With a push receiver, the requests of the platform's queue run the jobs and those of its
-	// scheduler tick the periodic ones (ADR-0004 §12).
-	if a.Config.Role != config.RoleWeb && a.pushReceiver == nil {
+	// scheduler tick the periodic ones (ADR-0004 §12). The line "started" names which (jobsRun).
+	jobsRun := jobsRunNone
+	switch {
+	case a.Config.Role == config.RoleWeb:
+	case a.pushReceiver != nil:
+		jobsRun = jobsRunPush
+	default:
+		jobsRun = jobsRunPull
+	}
+	if jobsRun == jobsRunPull {
 		if len(a.skippedJobTypes) > 0 {
 			a.Logger.InfoContext(ctx, "this worker skips these job types; another worker has to run them", slog.Any("job_types", a.skippedJobTypes))
 		}
@@ -192,6 +200,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		}
 		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) {
 			if domainsSettled(verified, stopJobs) {
+				a.Logger.InfoContext(ctx, "job runner started")
 				_ = a.runJobs(ctx, stopJobs)
 			}
 		})
@@ -211,7 +220,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	}
 	a.logOriginCheck(ctx)
 	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()),
-		slog.Bool("tls", tlsLn != nil))
+		slog.Bool("tls", tlsLn != nil), slog.String("jobs", jobsRun))
 
 	select {
 	case <-ctx.Done():
@@ -255,6 +264,15 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	}
 	return err
 }
+
+// How a process runs the jobs, as its log line "started" says: jobsRunPull runs the job runner,
+// which logs "job runner started" once the domains are verified; jobsRunPush runs them on the
+// requests of the queue service (queue = cloudtasks or sqs); jobsRunNone, the web role, runs none.
+const (
+	jobsRunPull = "pull"
+	jobsRunPush = "push"
+	jobsRunNone = "none"
+)
 
 // domainsSettled waits until the domains are verified or the shutdown starts, and reports which.
 func domainsSettled(verified, stop <-chan struct{}) bool {

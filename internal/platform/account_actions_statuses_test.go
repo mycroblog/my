@@ -178,10 +178,13 @@ func uploadImage(t *testing.T, e *accountsEnv, who testUser) string {
 	if code != http.StatusAccepted {
 		t.Fatalf("upload = %d", code)
 	}
-	for deadline := time.Now().Add(10 * time.Second); m.State == "processing" && time.Now().Before(deadline); {
-		time.Sleep(20 * time.Millisecond)
+	testkit.Eventually(t, 10*time.Second, func() bool {
+		if m.State != "processing" {
+			return true
+		}
 		_, m = send(http.MethodGet, "/media/"+m.Id, "", nil)
-	}
+		return m.State != "processing"
+	})
 	if m.State != "ready" {
 		t.Fatalf("processed = %+v", m)
 	}

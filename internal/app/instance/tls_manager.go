@@ -100,8 +100,8 @@ type TLSManagerOptions struct {
 	// into the database and into its memory (the tls_certificate signal of ADR-0163 §6). It
 	// must not block.
 	Notify func(host, certificateID string)
-	// Meter, when set, receives the metrics of the orders (TLSOrderAttempts and
-	// TLSOrderConsecutiveFailures).
+	// Meter, when set, receives the metrics of the orders and the rounds (TLSOrderAttempts,
+	// TLSOrderConsecutiveFailures, and TLSRounds).
 	Meter kernel.Meter
 }
 
@@ -137,6 +137,7 @@ type TLSManager struct {
 	// none, as the last round or order saw it (TLSOrderConsecutiveFailures).
 	failures map[string]int
 	attempts kernel.Counter
+	rounds   kernel.Counter
 	// notices are the hosts to load again (Notice), all of them when noticeAll is set; wake
 	// tells the goroutine of Run that loads them.
 	notices   map[string]struct{}
@@ -469,7 +470,7 @@ func (m *TLSManager) Run(ctx context.Context) {
 }
 
 // Maintain runs one round for every host at once (see TLSManager) and returns when the next round
-// is due. It logs the failures.
+// is due. It logs the failures, and counts the round in TLSRounds once it ends.
 func (m *TLSManager) Maintain(ctx context.Context) time.Time {
 	nexts := make([]time.Time, len(m.opts.Hosts))
 	var wg sync.WaitGroup
@@ -483,6 +484,7 @@ func (m *TLSManager) Maintain(ctx context.Context) time.Time {
 		})
 	}
 	wg.Wait()
+	m.rounds.Add(ctx, 1, kernel.Labels{})
 	return slices.MinFunc(nexts, func(a, b time.Time) int { return a.Compare(b) })
 }
 

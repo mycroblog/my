@@ -89,12 +89,8 @@ func waitEnd(t *testing.T, r *bufio.Reader) {
 // waitReleased fails t unless h holds no subscription within a second.
 func waitReleased(t *testing.T, h *stream.Hub) {
 	t.Helper()
-	deadline := time.Now().Add(time.Second)
-	for h.Len() != 0 {
-		if time.Now().After(deadline) {
-			t.Fatalf("%d subscriptions still open", h.Len())
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, time.Second, func() bool { return h.Len() == 0 }) {
+		t.Fatalf("%d subscriptions still open", h.Len())
 	}
 }
 
