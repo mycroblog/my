@@ -17,6 +17,7 @@ import {
   text,
 } from "@my/design-tokens";
 import plugin from "tailwindcss/plugin";
+import { transitionRules } from "./motion-css";
 
 const ref = (name: string) => `var(${name})`;
 const names = <T extends object>(o: T) => Object.keys(o) as (keyof T & string)[];
@@ -142,6 +143,7 @@ export default plugin(
       ':root[data-theme="dark"]': { colorScheme: "dark" },
       "@keyframes my-spin": { to: { transform: "rotate(360deg)" } },
     });
+    api.addBase(transitionRules);
   },
   { theme },
 );

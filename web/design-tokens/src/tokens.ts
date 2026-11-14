@@ -129,6 +129,18 @@ export type Motion = { duration: number; reduced: "still" | "turn" };
  */
 export const motion: { readonly spin: Motion } = { spin: { duration: 800, reduced: "still" } };
 
+/**
+ * The motion of a change of screen, by its kind (ADR-0025 §4): how long a push, a pop, a modal and a replace take, in
+ * ms; the easing of the screen that enters, which slows into place, and of the one that leaves, which speeds away; and
+ * how far a screen moves, in rem: sideways on a push or a pop, up on a modal. With reduced motion no screen moves.
+ */
+export const transition = {
+  duration: { push: 300, pop: 250, modal: 300, replace: 150 },
+  ease: { enter: "cubic-bezier(0.05, 0.7, 0.1, 1)", exit: "cubic-bezier(0.3, 0, 0.8, 0.15)" },
+  shift: 2,
+  rise: 3,
+} as const;
+
 /** The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. */
 export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
 
@@ -320,7 +332,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*` and `--shell-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*` and `--shell-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -349,6 +361,11 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--press-shift", `${press.shift}px`],
   ["--press-disabled-opacity", `${press.disabledOpacity}`],
   ...Object.entries(motion).map(([name, m]): [string, string] => [`--duration-${name}`, `${m.duration}ms`]),
+  ...Object.entries(transition.duration).map(([kind, ms]): [string, string] => [`--transition-${kind}`, `${ms}ms`]),
+  ["--transition-ease-enter", transition.ease.enter],
+  ["--transition-ease-exit", transition.ease.exit],
+  ["--transition-shift", `${transition.shift}rem`],
+  ["--transition-rise", `${transition.rise}rem`],
   ["--spinner-size", `${spinner.size}em`],
   ["--spinner-stroke", `${spinner.stroke}em`],
   ["--spinner-track-share", percent(spinner.trackShare)],

@@ -30,10 +30,12 @@ export const pages = [
   {
     path: "/design-system",
     title: "Design system",
-    about: "The parts of @my/design-system, and the anatomy of a post built from them.",
+    about:
+      "The parts of @my/design-system, the anatomy of a post built from them, and the motion of a change of screen.",
     sections: [
       { id: "button", title: "Button" },
       { id: "post", title: "Post" },
+      { id: "motion", title: "Motion" },
     ],
   },
   {

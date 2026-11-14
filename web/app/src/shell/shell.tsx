@@ -26,7 +26,7 @@ import { useStrings } from "../locale";
 import { Around } from "./around";
 
 /** The places of the navigation, in its order: the same list in the rail, the sidebar and the tab bar. */
-const places = [
+export const places = [
   { href: "/", icon: "home", label: "app.home" },
   { href: "/notifications", icon: "notifications", label: "app.notifications" },
   { href: "/search", icon: "search", label: "app.search" },

@@ -5,9 +5,11 @@
 // Query is the one cache of server data, so the router keeps none of its own.
 
 import type { AppData } from "@my/app-data";
+import { routerTransitions } from "@my/design-system";
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import type { RuntimeConfig } from "./config";
 import { routeTree } from "./routeTree.gen";
+import { navigationKind } from "./transitions";
 
 /** What every route reads: the session's data (null without a session) and the instance's configuration. */
 export type RouterContext = { data: AppData | null; config: RuntimeConfig };
@@ -31,6 +33,8 @@ export function createAppRouter({ data, config, at }: AppRouterOptions) {
     defaultPreloadStaleTime: Number.NEGATIVE_INFINITY,
     // A screen visited before renders once its loader has ended, not from its previous match while the loader runs.
     defaultStaleReloadMode: "blocking",
+    // Every navigation moves the screen by its kind (transitions.ts).
+    defaultViewTransition: routerTransitions(navigationKind),
   });
 }
 
