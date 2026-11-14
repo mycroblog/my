@@ -1,6 +1,6 @@
 # visual: index
 
-The visual role settles the information design of the catalog page, its components and its screens in grey
+The visual role settles the information design of the tokens, the components and the screens, in their stories, in grey
 wireframes, then their colour and density (ADR-0169 §2). Read this page, then the areas your work touches, each
 `decisions/<area>.md` and `exemplars/<area>.md`:
 

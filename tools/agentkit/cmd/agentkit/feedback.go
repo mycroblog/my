@@ -18,8 +18,8 @@ import (
 
 const feedbackUsage = `usage: agentkit feedback url|wait|show|reply (ADR-0168)
 
-The decider writes notes on the catalog page and sends them as one batch, which the dev server writes to
-.tmp/feedback/<batch>.json. Start the page (scripts/task.sh web:catalog, in the background), run feedback url, and
+The decider writes notes on the stories of the Storybook host and sends them as one batch, which the dev server writes
+to .tmp/feedback/<batch>.json. Start it (scripts/task.sh web:storybook, in the background), run feedback url, and
 give the decider the URL it prints.
 
   feedback url

@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/* The page every story renders on, as the app's frame paints it: the surface and the text of the toolbar's theme
+   (data-theme on <html>), so that no story shows the browser's own canvas around or under it. */
+html,
+body {
+  background: var(--color-surface);
+  color: var(--color-text);
+}

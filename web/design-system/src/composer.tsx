@@ -72,7 +72,7 @@ export type ComposerFrameProps = {
   onDismiss: () => void;
   /** How it shows on a phone: a screen of its own (the composer), or a dialog as from `tablet`. */
   phone?: "screen" | "dialog" | undefined;
-  /** Over the page, as the app opens it, or in the flow of a page (a catalog's specimen). */
+  /** Over the page, as the app opens it, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
   /** The form's error, directly before the row that sends it. */
   alert?: ReactNode;

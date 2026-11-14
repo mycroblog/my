@@ -23,6 +23,9 @@
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@my/e2e": "workspace:*",
+    "@mycroblog/mykit": "workspace:*",
+    "@storybook/react-vite": "10.6.7",
     "@tailwindcss/vite": "4.3.5",
     "@tanstack/router-generator": "1.168.0",
     "@tanstack/router-plugin": "1.169.0",
@@ -31,6 +34,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",
     "oxc-transform-react": "0.157.0",
+    "storybook": "10.6.7",
     "vite": "8.3.6"
   }
 }

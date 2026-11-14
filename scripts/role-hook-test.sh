@@ -30,15 +30,15 @@ expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.cl
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual/index.md"}}'
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual/exemplars/color.md"}}'
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/picks/visual.jsonl"}}'
-expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/web/catalog/src/Catalog.tsx"}}'
+expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/web/design-system/src/button.stories.tsx"}}'
 expect 2 visual-evaluator '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/visual-evaluator/../../agents/visual.md"}}'
-expect 2 visual-evaluator '{"tool_name":"Bash","tool_input":{"command":"cat web/catalog/src/Catalog.tsx"}}'
+expect 2 visual-evaluator '{"tool_name":"Bash","tool_input":{"command":"cat web/design-system/src/button.stories.tsx"}}'
 expect 0 visual-evaluator '{"tool_name":"SubagentHandback","tool_input":{"message":"ship\n- none\nMust not break: the header"}}'
 expect 2 visual-evaluator '{"tool_name":"SendMessage","tool_input":{"to":"main","message":"ship"}}'
 expect 2 visual-evaluator '{"tool_name":"Grep","tool_input":{"pattern":"color","path":"/r/web"}}'
 expect 2 visual-evaluator '{"tool_name":"Glob","tool_input":{"pattern":"/r/.claude/picks/*"}}'
 expect 2 visual-evaluator '{"tool_name":"WebFetch","tool_input":{"url":"https://example.com"}}'
-expect 2 visual-evaluator '{"tool_name":"Agent","tool_input":{"prompt":"read web/catalog/src/Catalog.tsx"}}'
+expect 2 visual-evaluator '{"tool_name":"Agent","tool_input":{"prompt":"read web/design-system/src/button.stories.tsx"}}'
 
 # The test roles (ADR-0170 §2): the tests, their helpers, the issue, the ADRs and the public interface, never the
 # implementation.

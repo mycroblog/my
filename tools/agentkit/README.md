@@ -47,12 +47,12 @@ A document split into one file per section, a directory with a `README.md`, is l
 
 ## On-screen feedback
 
-The decider writes notes on the catalog page ([ADR-0168](../../docs/adr/0168-on-screen-feedback.md)) and sends them as one
-batch, which the dev server writes to `.tmp/feedback/<batch>.json`.
+The decider writes notes on the stories of the Storybook host ([ADR-0168](../../docs/adr/0168-on-screen-feedback.md)) and
+sends them as one batch, which the dev server writes to `.tmp/feedback/<batch>.json`.
 
 | Step | Run |
 | --- | --- |
-| Start | `scripts/task.sh web:catalog` in the background, then `feedback url`, and give the decider the URL it prints. A worktree runs one: while its server answers, `web:catalog` prints that URL and starts none. With no dev server answering, it names the command that starts one and fails |
+| Start | `scripts/task.sh web:storybook` in the background, then `feedback url`, and give the decider the URL it prints. A worktree runs one: while its server answers, `web:storybook` prints that URL and starts none. With no dev server answering, it names the command that starts one and fails |
 | Receive | `feedback wait` **in the background**: returns with the oldest batch no wait has delivered, so a send notifies the session; run it again after each batch |
 | Read | `feedback show [<batch>\|<note>]`: each note with its source (`file:line`), layer (the package), page and state, and an outline of its accessibility tree. A page without a router or an E2E scenario records the page instead; open it with Playwright at the note's viewport |
 | Answer | `feedback reply <note> [--kind fixed\|question] <text>`: the overlay shows the answer next to the note at once |

@@ -7,7 +7,9 @@
 //   app-features ← app, with app-data beside app-components, under app-features, and platform and rtc under app-data;
 //   @my/i18n reaches the app alone. The layer of a file is the package of web/ it is in. It sees `import`, `export …
 //   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
-//   web/ (web/brand, which holds files and no package, is open to all).
+//   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
+//   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake server
+//   that exists for the stories (ADR-0165 §1), and nothing else of @my/e2e.
 //
 // - design-system-props: outside @my/design-system, no element of one of its components gets a `className` or a
 //   `style` (§4). The `Omit` of each component's props refuses them only while the types hold; this also refuses them
@@ -187,6 +189,11 @@ const BELOW = {
 /** The directory of web/ that holds files and no package, which every package may read. */
 const SHARED_FILES = "brand";
 
+/** A story, or a sample module beside it: what only the Storybook host loads. */
+const STORY_FILE = /\.(?:stories\.tsx|samples\.tsx?)$/;
+/** What a story may import besides the layers below its own: the fake server of the stories. */
+const STORY_FAKES = new Set(["@my/e2e/fake"]);
+
 /** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
 function webDir(/** @type {string} */ path) {
   const at = path.lastIndexOf("/web/");
@@ -209,10 +216,12 @@ function createLayerImports(context) {
   const own = webDir(filename);
   if (own === undefined || !Object.hasOwn(BELOW, own)) return {};
   const below = new Set(BELOW[/** @type {keyof typeof BELOW} */ (own)]);
+  const story = STORY_FILE.test(filename);
 
   function check(/** @type {Node | null | undefined} */ source) {
     if (source?.type !== "Literal" || typeof source.value !== "string") return;
     const specifier = source.value;
+    if (story && STORY_FAKES.has(specifier)) return;
     let target;
     let relative = false;
     if (specifier.startsWith("@my/")) target = specifier.slice("@my/".length).split("/")[0];

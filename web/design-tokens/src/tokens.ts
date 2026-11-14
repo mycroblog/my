@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The design tokens of the web client (ADR-0025 §2, ADR-0059): the values the design system reads. They start from
-// the set the decider picked on the catalog page and grow with the components. `css` writes them as custom
+// the set the decider picked in their stories and grow with the components. `css` writes them as custom
 // properties; `contrastPairs` are the pairs of colors a check holds to their minimum in both schemes.
 
 /** The root font size the rem values are relative to, in px. */

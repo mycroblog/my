@@ -333,7 +333,7 @@ export type ComposerViewProps = {
   onClose: () => void;
   /** The backdrop: the reader left by accident. */
   onDismiss: () => void;
-  /** Over the page, or in the flow of a page (a catalog's specimen). */
+  /** Over the page, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
   /** A screen of its own on a phone (the app's choice), or a dialog. */
   phone?: "screen" | "dialog" | undefined;

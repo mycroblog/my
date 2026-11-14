@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The device viewports a page is judged at (ADR-0169 §1), in their natural orientation: the overlay's viewport
-// control shows the page at them, and web/catalog/shot.ts shoots it at them.
+// control shows the page at them, the Storybook host's viewports offer them, and web/storybook/shot.ts shoots a story
+// at them.
 
 export const sizes = {
   mobile: { width: 375, height: 812 },

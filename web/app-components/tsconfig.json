@@ -1,7 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
-  "//": "The components (src/, in the browser) and their tests (on Bun, rendered to markup).",
+  "//": "The components (src/, in the browser), their tests (on Bun, rendered to markup) and their stories. The condition @mycroblog/source reads @mycroblog/mykit, under the fake server of @my/e2e that the stories' samples render text with, from its TypeScript sources, as the Storybook host does.",
   "compilerOptions": {
+    "customConditions": ["@mycroblog/source"],
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["bun"]
   },

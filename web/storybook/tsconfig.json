@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "//": "The Storybook host's configuration (.storybook/, its preview in the browser), the story tests' Vitest configuration and the screenshots (on Bun). The condition @mycroblog/source reads @mycroblog/mykit (under @my/app) from its TypeScript sources, as the host's Vite configuration does.",
+  "compilerOptions": {
+    "customConditions": ["@mycroblog/source"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["bun", "vite/client"]
+  },
+  "include": [".storybook/*.ts", ".storybook/*.tsx", "shot.ts", "vitest.config.ts"]
+}

@@ -19,11 +19,11 @@
       "project": ["src/**/*.ts"]
     },
     "web/design-system": {
-      "entry": ["src/theme.ts", "src/**/*.test.tsx"],
+      "entry": ["src/theme.ts", "src/**/*.test.tsx", "src/**/*.stories.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "web/app-components": {
-      "entry": ["src/**/*.test.tsx"],
+      "entry": ["src/**/*.test.tsx", "src/**/*.stories.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "web/app-data": {
@@ -39,12 +39,12 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
     "web/app": {
-      "entry": ["src/routes/**/*.tsx", "src/**/*.test.{ts,tsx}", "vite-plugins/**/*.test.ts"],
+      "entry": ["src/routes/**/*.tsx", "src/**/*.test.{ts,tsx}", "src/**/*.stories.tsx", "vite-plugins/**/*.test.ts"],
       "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "vite-plugins/**/*.ts"]
     },
-    "web/catalog": {
+    "web/storybook": {
       "entry": ["shot.ts"],
-      "project": ["src/**/*.{ts,tsx}", "shot.ts"]
+      "project": [".storybook/*.{ts,tsx}"]
     },
     "web/e2e": {
       "entry": ["src/seed/main.ts", "specs/**/*.ts"],

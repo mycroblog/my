@@ -21,8 +21,8 @@ import (
 // (web/devtools/src/vite.ts); it is not a batch.
 const ServerFile = "server.json"
 
-// StartCommand starts the dev server of the catalog page.
-const StartCommand = "scripts/task.sh web:catalog"
+// StartCommand starts the dev server of the Storybook host.
+const StartCommand = "scripts/task.sh web:storybook"
 
 // ErrNoServer is returned when no dev server is recorded, or the recorded one does not answer.
 var ErrNoServer = errors.New("no dev server runs: start it with " + StartCommand)

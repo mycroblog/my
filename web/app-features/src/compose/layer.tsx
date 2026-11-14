@@ -97,9 +97,9 @@ export type ComposeLayerProps = {
   onClose: () => void;
   /** A screen of its own on a phone, or a dialog: the app's choice by the viewport. */
   phone?: "screen" | "dialog" | undefined;
-  /** In the flow of a page instead of over it (a catalog's specimen). */
+  /** In the flow of a page instead of over it (a story's specimen). */
   inline?: boolean | undefined;
-  /** The draft it opens with, in place of the one kept or an empty one (a catalog's specimen). */
+  /** The draft it opens with, in place of the one kept or an empty one (a story's specimen). */
   initial?: Draft | undefined;
 };
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A state shown at rest, for a catalog of the components (ADR-0168): hover, press and keyboard focus follow the
+// A state shown at rest, for the components' stories (ADR-0165 §1): hover, press and keyboard focus follow the
 // pointer and the keyboard, so a page that shows them side by side asks for them here; and a stage for the motion of
 // a change of screen. Only the subpath
 // @my/design-system/preview exports it; screens never use it.
