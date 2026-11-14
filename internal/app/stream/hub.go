@@ -151,7 +151,7 @@ func remove(m map[string]map[*subscription]struct{}, key string, s *subscription
 // Publish implements Publisher. A signal of KindNotifications or KindConversation goes to the
 // account subscriptions of its account, one of KindHomeEntry or KindAnnouncement to every account
 // subscription, one of KindPublicEntry to the timeline subscriptions of the timelines it names,
-// and a voice signal to the subscriptions of its room. An internal signal (Kind.IsInternal) goes
+// one of KindStatusDeleted to every account and timeline subscription, and a voice signal to the subscriptions of its room. An internal signal (Kind.IsInternal) goes
 // to none.
 func (h *Hub) Publish(e Event) {
 	if e.Kind.IsInternal() {
@@ -171,6 +171,11 @@ func (h *Hub) Publish(e Event) {
 		}
 	case e.Kind.IsVoice():
 		h.deliverLocked(h.byRoom[e.RoomID], e)
+	case e.Kind == KindStatusDeleted:
+		h.deliverLocked(h.accounts, e)
+		for _, subs := range h.byTimeline {
+			h.deliverLocked(subs, e)
+		}
 	default:
 		h.deliverLocked(h.accounts, e)
 	}

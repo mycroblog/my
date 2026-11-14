@@ -3,7 +3,14 @@
 import { describe, expect, test } from "bun:test";
 import { InfiniteQueryObserver } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
-import { maxHeld, receiveHomeGap, receiveHomeStatuses, showHomeTimeline, type Arrival } from "./arrivals";
+import {
+  maxHeld,
+  receiveDeletion,
+  receiveHomeGap,
+  receiveHomeStatuses,
+  showHomeTimeline,
+  type Arrival,
+} from "./arrivals";
 import { fakeAppData, json, page, status } from "./test/fake";
 import { homeTimelineQuery } from "./timeline";
 
@@ -132,6 +139,18 @@ describe("while a screen shows it", () => {
     expect(requests).toHaveLength(3);
     leave();
     unobserve();
+  });
+
+  test("a deleted status leaves the timeline and what it holds", async () => {
+    const { data } = await twoPages();
+    const leave = showHomeTimeline(data, () => false);
+    receiveHomeStatuses(data, [status("4")]);
+    receiveHomeStatuses(data, [status("5", { boost: status("2") })]);
+    receiveDeletion(data, "2");
+    receiveDeletion(data, "4");
+    expect(cached(data)).toEqual([["3"], ["1"]]);
+    leave();
+    expect(cached(data)).toEqual([["3"], ["1"]]);
   });
 
   test("a break the policy holds is read again when the screen goes", async () => {

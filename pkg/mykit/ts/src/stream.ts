@@ -30,6 +30,7 @@ export type StreamEvent =
   | { type: "conversation"; conversation: Conversation }
   | { type: "announcement"; announcement: Announcement }
   | { type: "announcement_removed"; id: string }
+  | { type: "delete"; id: string }
   | { type: "notification_requests"; summary: NotificationRequestSummary }
   | { type: "unknown"; event: string; data: string };
 
@@ -42,7 +43,7 @@ export type StreamOptions = Omit<ClientOptions, "retry"> & {
   signal: AbortSignal;
   /**
    * Reads the stream of the local or the federated timeline (GET /streaming/timelines/{timeline}) instead of the
-   * user's (GET /streaming). It sends `update` events only, needs the scope read:statuses and a signed-in user, and is a
+   * user's (GET /streaming). It sends `update` and `delete` events only, needs the scope read:statuses and a signed-in user, and is a
    * 404 while the instance turns the timeline off, which ends runStream.
    */
   timeline?: StreamTimeline;
@@ -291,13 +292,15 @@ const knownEvents: ReadonlySet<string> = new Set([
   "conversation",
   "announcement",
   "announcement_removed",
+  "delete",
   "notification_requests",
 ]);
 
 /**
  * Types an event by its name: the data of `update`, `notification`, `conversation`, and `announcement` is the
  * server's Status, Notification, Conversation, and Announcement, that of `list_update` a list's ID and a Status (once for each of the user's lists
- * whose timeline shows the post of an `update`), that of `announcement_removed` the announcement's ID, and that of
+ * whose timeline shows the post of an `update`), that of `announcement_removed` the announcement's ID, that of `delete`
+ * the ID of a deleted status that the user may have seen (remove it and its boosts wherever they show), and that of
  * `notification_requests` the counts of the notification requests. An unknown name is an `unknown` event. It throws
  * for a known event whose data is no JSON object with an `id` (for `list_update`, with a `list_id` and a `status` that
  * has an `id`; for `notification_requests`, with the two counts).
@@ -341,6 +344,8 @@ export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent 
       return { type: "conversation", conversation: value as Conversation };
     case "announcement":
       return { type: "announcement", announcement: value as Announcement };
+    case "delete":
+      return { type: "delete", id: (value as { id: string }).id };
     default:
       return { type: "announcement_removed", id: (value as { id: string }).id };
   }

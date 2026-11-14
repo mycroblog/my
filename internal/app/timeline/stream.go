@@ -19,7 +19,8 @@ import (
 // and HomeEntry whether each of those lists it. A status that the public timelines may list,
 // local or remote, also signals a public timeline entry (ADR-0013 §20), whose streams ask
 // LocalEntry or PublicEntry. A direct post signals its conversation to each of its parties,
-// whose streams ask StreamConversation.
+// whose streams ask StreamConversation. A deletion that the streams tell (StatusDeleted.Streamed)
+// signals the deleted status, whose streams ask DeletedAudience.
 func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {
 		st := e.(appcontent.StatusCreated).Status
@@ -37,6 +38,32 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventBoosted, func(_ context.Context, e uow.Event) {
 		b := e.(appcontent.Boosted).Boost
 		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: b.ID, AuthorAccountID: b.BoosterAccountID})
+	})
+	r.OnCommit(appcontent.EventStatusDeleted, func(_ context.Context, e uow.Event) {
+		publishDeleted(pub, e.(appcontent.StatusDeleted))
+	})
+	r.OnCommit(appcontent.EventStatusesDeleted, func(_ context.Context, e uow.Event) {
+		for _, d := range e.(appcontent.StatusesDeleted).Deletions {
+			publishDeleted(pub, d)
+		}
+	})
+}
+
+// publishDeleted signals the deletion d to the streams when they tell their viewers of it
+// (StatusDeleted.Streamed), with the author and the visibility from which each stream decides
+// whether its viewer may have seen the status (DeletedAudience).
+func publishDeleted(pub stream.Publisher, d appcontent.StatusDeleted) {
+	if !d.Streamed() {
+		return
+	}
+	st := d.Status
+	domain, err := domainOf(st.IsLocal, st.URI)
+	if err != nil {
+		return // a remote status without a host was never stored
+	}
+	pub.Publish(stream.Event{
+		Kind: stream.KindStatusDeleted, EntryID: st.ID, AuthorAccountID: st.AuthorAccountID,
+		AuthorDomain: domain, Visibility: string(st.Visibility),
 	})
 }
 
@@ -93,6 +120,60 @@ func (s *Service) HomeAudience(ctx context.Context, entryID, authorID string, ac
 	}
 	for id := range tagged {
 		out[id] = true
+	}
+	return out, nil
+}
+
+// DeletedStatus is a deleted status as its stream signal names it (stream.KindStatusDeleted).
+type DeletedStatus struct {
+	ID              string
+	AuthorAccountID string
+	// AuthorDomain is "" for a local author.
+	AuthorDomain string
+	Visibility   appcontent.Visibility
+}
+
+// DeletedFrom returns the deleted status of a stream.KindStatusDeleted signal.
+func DeletedFrom(e stream.Event) DeletedStatus {
+	return DeletedStatus{
+		ID: e.EntryID, AuthorAccountID: e.AuthorAccountID, AuthorDomain: e.AuthorDomain, Visibility: appcontent.Visibility(e.Visibility),
+	}
+}
+
+// OnTimeline reports whether the public timeline t may have listed the status.
+func (d DeletedStatus) OnTimeline(t stream.Timeline) bool {
+	onLocal, onFederated := publicTimelines(d.AuthorDomain == "", d.Visibility)
+	return (t == stream.TimelineLocal && onLocal) || (t == stream.TimelineFederated && onFederated)
+}
+
+// DeletedAudience returns which of accountIDs may have seen the deleted status d, so that their
+// streams tell them of its deletion (ADR-0013 §19): those whom CanView lets see it on its own,
+// with the blocks, the mutes, the follows, and the restrictions in force now, as a page of a
+// timeline re-applies them, in one query for all of them. The status and its recipients are gone,
+// so the recipients of a direct post, and the accounts that a private post mentions but that do
+// not follow its author, are left out.
+func (s *Service) DeletedAudience(ctx context.Context, d DeletedStatus, accountIDs []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	facts, err := s.d.Repository.FactsOfViewers(ctx, uniq(slices.Clone(accountIDs)), FactsQuery{
+		Now: s.d.Clock.Now(), AccountIDs: []string{d.AuthorAccountID}, Domains: timeline.DomainAndParents(d.AuthorDomain),
+	})
+	if err != nil {
+		return nil, err
+	}
+	e := Entry{
+		ID: d.ID, Kind: timeline.KindPost, StatusID: d.ID,
+		AuthorAccountID: d.AuthorAccountID, AuthorDomain: d.AuthorDomain,
+		OriginalAuthorAccountID: d.AuthorAccountID, OriginalAuthorDomain: d.AuthorDomain,
+		Visibility: d.Visibility,
+	}
+	for _, id := range accountIDs {
+		viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: id}
+		if facts[id].canView(appcontent.ContextStatus, viewer, e) {
+			out[id] = true
+		}
 	}
 	return out, nil
 }

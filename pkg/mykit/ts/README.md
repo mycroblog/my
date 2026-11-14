@@ -114,7 +114,8 @@ await runStream({
 
 `runStream` connects again whenever the stream ends or fails. **The server replays nothing and the library sends no
 `Last-Event-ID`:** after `onOpen(true)` you read the home timeline and the notifications again yourself. The events are
-`update`, `notification`, `announcement`, `announcement_removed`, and `unknown` (an event of a newer server; ignore it).
+`update`, `notification`, `announcement`, `announcement_removed`, `delete` (the ID of a deleted post), and `unknown` (an
+event of a newer server; ignore it).
 Abort the signal to stop. See [`examples/stream.ts`](examples/stream.ts) and the
 [mykit README](../README.md#streaming) for what makes it stop.
 

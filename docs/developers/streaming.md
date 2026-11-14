@@ -35,6 +35,7 @@ From the top of the diagram down, between the client and the server:
 | `conversation` | A `Conversation`, as `GET /api/v1/conversations` shows it: a direct post the user sent or received arrived in it, or the user read it on a device. A token without `read:direct` receives none, and a conversation that the user hid receives none until a newer post arrives. |
 | `announcement` | An `Announcement` that was published or changed. |
 | `announcement_removed` | `{"id": "..."}`: an announcement no longer shows. |
+| `delete` | `{"id": "..."}`: a status that the user may see was deleted by its author, a moderator, or its server. Remove it, and the boosts of it, wherever they show. The timeline streams send it too, for the statuses of their timeline. |
 
 The user's keyword filters apply to the events as to the timelines and notifications they come from: a post that a filter with the action `hide` matches is never sent, nor is its notification, and a post that only `warn` filters match arrives with them in its `filtered`.
 
