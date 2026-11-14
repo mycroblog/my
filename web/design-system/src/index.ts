@@ -41,7 +41,7 @@ export {
   type EntryProps,
   type StampProps,
 } from "./entry";
-export { Feed, FeedItem, FeedNotice, moveFeedFocus, type FeedProps } from "./feed";
+export { Feed, FeedItem, FeedNotice, moveFeedFocus, type FeedProps, type NewItems } from "./feed";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { catalogReader, type Strings } from "./locale";
@@ -67,9 +67,11 @@ export {
   FrameSection,
   FrameSide,
   FrameTabBar,
+  focusFrameHeading,
   NavItem,
   NavList,
 } from "./shell";
+export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";
 // The app's router reaches the links of the parts through React Aria's RouterProvider, which the app places.

@@ -6,6 +6,7 @@
 
 import type { AppData } from "@my/app-data";
 import { routerTransitions } from "@my/design-system";
+import type { ScrollMode } from "@my/design-system";
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import type { RuntimeConfig } from "./config";
 import { routeTree } from "./routeTree.gen";
@@ -35,11 +36,18 @@ export function createAppRouter({ data, config, at }: AppRouterOptions) {
     defaultStaleReloadMode: "blocking",
     // Every navigation moves the screen by its kind (transitions.ts).
     defaultViewTransition: routerTransitions(navigationKind),
+    // The page's position is the screens' (shell/scroll.ts): the router neither restores it nor resets it.
+    scrollRestoration: () => false,
   });
 }
 
 declare module "@tanstack/react-router" {
   interface Register {
     router: ReturnType<typeof createAppRouter>;
+  }
+  // What every route declares about itself.
+  interface StaticDataRouteOption {
+    /** Whether the screen brings back the position it was left at, or opens at the top (ADR-0025 §4). */
+    scroll: ScrollMode;
   }
 }

@@ -2,5 +2,13 @@
   "timeline.home": {
     "defaultMessage": "ホームタイムライン",
     "description": "The name of the home timeline (the posts of the accounts the reader follows), for assistive technology."
+  },
+  "timeline.new_posts": {
+    "defaultMessage": "{count, number} 件の新しい投稿",
+    "description": "The button over the home timeline's top while new posts wait or went in above the reader; pressing it shows them at the top. count is how many."
+  },
+  "timeline.new_posts_missed": {
+    "defaultMessage": "新しい投稿",
+    "description": "The button over the home timeline's top when posts may have been missed (after a reconnection); pressing it reads the newest posts again and shows them at the top."
   }
 }

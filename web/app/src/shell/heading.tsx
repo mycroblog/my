@@ -3,7 +3,7 @@
 // The page-level accessibility of a screen (ADR-0025 §4, ADR-0110 §10): its h1, which names the document's title and
 // takes the focus after a change of screen, so that a screen reader says where the reader went.
 
-import { FrameHeading } from "@my/design-system";
+import { focusFrameHeading, FrameHeading } from "@my/design-system";
 import { useEffect, useRef } from "react";
 
 const headingId = "screen-heading";
@@ -16,12 +16,15 @@ export function ScreenHeading({ children }: { children: string }) {
   return <FrameHeading id={headingId}>{children}</FrameHeading>;
 }
 
-/** Moves the focus to the new screen's h1 whenever `pathname` changes, not when the app opens. */
+/**
+ * Moves the focus to the new screen's h1 whenever `pathname` changes, not when the app opens, without moving the
+ * position the screen restored.
+ */
 export function useFocusOnNavigation(pathname: string) {
   const shown = useRef(pathname);
   useEffect(() => {
     if (shown.current === pathname) return;
     shown.current = pathname;
-    document.getElementById(headingId)?.focus();
+    focusFrameHeading(document);
   }, [pathname]);
 }

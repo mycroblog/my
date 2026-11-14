@@ -92,8 +92,8 @@ describe("its states", () => {
   test("when more failed, it alerts with a retry, and asks for no more by itself", () => {
     const html = render({ statuses: [status("a")], hasNextPage: true, error: new Error("x") });
     expect(html).toMatch(/<p role="alert">More posts could not be loaded\. <span>· <button [^>]*>Try again<\/button>/);
-    // The mark the feed watches to ask for more is gone.
-    expect(html).not.toContain('aria-hidden="true"></div>');
+    // The mark the feed watches to ask for more, the last thing in it, is gone.
+    expect(html).not.toMatch(/<div aria-hidden="true"><\/div><\/div>$/);
   });
 
   test("with posts and nothing to say, it shows no notice; it watches its end while more may follow", () => {

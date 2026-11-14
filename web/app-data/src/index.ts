@@ -5,6 +5,7 @@
 // through the hooks and queries here, and never copy what they return into state or context.
 
 export { createAppData, createQueryClient, type AppData } from "./app-data";
+export { receiveHomeGap, receiveHomeStatuses, useHomeArrivals, type Arrival } from "./arrivals";
 export { AppDataProvider } from "./provider";
 export { openSession } from "./session";
 export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";

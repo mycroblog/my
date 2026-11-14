@@ -8,13 +8,32 @@
 // scroll-padding-top, which the shell sets to the height of a sticky header; with reduced motion it jumps instead of
 // gliding. Near its end it asks for more (onNearEnd). It is the `ActionScope` of the focus actions declared inside
 // it (the next and the previous post), which act while focus is on an entry or inside one.
+//
+// Its scroll (scroll.ts, ADR-0013 §4–§7): away from the top, entries inserted above leave what the reader sees where
+// it was; at the top they show. It says whether its top is in view (a mark at its top, seen by an
+// IntersectionObserver) and whether the reader is in it (focus or a selection inside), and floats the new entries'
+// button (NewItems) over its top, which brings the reader to the top and the focus to the screen's heading. When to
+// insert is its owner's to decide. Each entry carries its key as `data-scroll-key`, by which a screen restores its
+// position.
 
-import { createContext, use, useEffect, useEffectEvent, useRef, type KeyboardEvent, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { tv } from "tailwind-variants/lite";
+import { ButtonBase } from "./button";
+import { anchoring, scrollerOf, scrollToTop, viewTopOf, type Anchoring } from "./scroll";
+import { focusFrameHeading } from "./shell";
 import { ActionScope } from "./shortcuts";
 
-/** Where an entry stands in its feed, for aria-posinset and aria-setsize; undefined outside a feed. */
-export type FeedPosition = { posinset: number; setsize: number };
+/** Where an entry stands in its feed, for aria-posinset and aria-setsize, and its key; undefined outside a feed. */
+export type FeedPosition = { posinset: number; setsize: number; key: string };
 
 const FeedSize = createContext<number>(-1);
 const FeedPositionContext = createContext<FeedPosition | undefined>(undefined);
@@ -99,12 +118,21 @@ export function onFeedFocus(e: { target: Element; currentTarget: Element }): voi
   if (target.matches(":focus-visible")) scrollEntryToTop(target);
 }
 
+// The list, the mark at its top and the new entries' button share the first row of the grid, so that neither the
+// mark nor the button takes room or a gap. The button keeps the overlay's shadow, so that it stands off whatever
+// scrolls under it. The feed turns the browser's anchoring off, since it anchors itself.
 const feed = tv({
   slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-feed",
-    list: "grid grid-cols-[minmax(0,1fr)] gap-feed",
+    root: "grid grid-cols-[minmax(0,1fr)] gap-feed [overflow-anchor:none]",
+    list: "col-start-1 row-start-1 grid grid-cols-[minmax(0,1fr)] gap-feed",
+    top: "pointer-events-none col-start-1 row-start-1 h-px self-start",
+    newItems: "sticky top-shell-gap z-2 col-start-1 row-start-1 flex h-0 justify-center self-start",
+    newItemsButton: "rounded-control shadow-overlay",
   },
 });
+
+/** The new entries' button: what it says (how many), and what a press does before the feed goes to the top. */
+export type NewItems = { label: string; onPress: () => void };
 
 export type FeedProps = {
   /** The feed's name, for assistive technology (the timeline's). */
@@ -121,13 +149,152 @@ export type FeedProps = {
   children: ReactNode;
   /** What follows the entries, outside the feed: a FeedNotice of the loading, a failure, or no entries. */
   end?: ReactNode;
+  /** Hears whether the feed's top is in view, when that changes. */
+  onTopChange?: ((atTop: boolean) => void) | undefined;
+  /** Hears whether the reader is in the feed (focus or a selection inside it), when that changes. */
+  onReaderChange?: ((inside: boolean) => void) | undefined;
+  /** The new entries' button, floating over the feed's top; left out while there are none to tell of. */
+  newItems?: NewItems | undefined;
 };
 
+// What says that the reader scrolls by hand.
+const takeOverEvents = ["wheel", "touchstart", "keydown"] as const;
+
+/** Whether the document's selection, when there is one, starts or ends inside `el`. */
+function selectsIn(el: Element): boolean {
+  const selection = el.ownerDocument.getSelection();
+  if (!selection || selection.isCollapsed) return false;
+  return [selection.anchorNode, selection.focusNode].some((n) => n !== null && el.contains(n));
+}
+
+/**
+ * Keeps the place of what the reader sees in `list` as entries go in above it (scroll.ts), and tells `onTopChange`
+ * whether its top is in view, by the mark `top`. Returns its anchoring, once the list is there.
+ */
+function useAnchoring(
+  list: { readonly current: HTMLElement | null },
+  top: { readonly current: HTMLElement | null },
+  onTopChange: ((atTop: boolean) => void) | undefined,
+) {
+  const anchor = useRef<{ scroller: Element; anchoring: Anchoring } | null>(null);
+  const topChange = useEffectEvent((atTop: boolean) => {
+    onTopChange?.(atTop);
+  });
+  useLayoutEffect(() => {
+    const el = list.current;
+    const mark = top.current;
+    if (!el || !mark) return;
+    const scroller = scrollerOf(el);
+    const page = scroller === el.ownerDocument.scrollingElement;
+    const a = anchoring({
+      list: el,
+      items: () => entriesOf(el),
+      scroller,
+      viewTop: () => viewTopOf(scroller),
+    });
+    anchor.current = { scroller, anchoring: a };
+    a.measure();
+    const target: EventTarget = page ? (el.ownerDocument.defaultView ?? scroller) : scroller;
+    const onScroll = () => {
+      a.measure();
+    };
+    target.addEventListener("scroll", onScroll, { passive: true });
+    // A change of the entries' heights (an image that loads, a post that opens) keeps the place too.
+    const resized =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(() => {
+            a.keep();
+          });
+    resized?.observe(el);
+    // The top is in view when the mark is, below the scroller's padding (a sticky header).
+    const seen =
+      typeof IntersectionObserver === "undefined"
+        ? undefined
+        : new IntersectionObserver(
+            (records) => {
+              const last = records.at(-1);
+              if (last) topChange(last.isIntersecting);
+            },
+            {
+              root: page ? null : scroller,
+              rootMargin: `${-(viewTopOf(scroller) - (page ? 0 : scroller.getBoundingClientRect().top))}px 0px 0px 0px`,
+            },
+          );
+    seen?.observe(mark);
+    return () => {
+      target.removeEventListener("scroll", onScroll);
+      resized?.disconnect();
+      seen?.disconnect();
+      anchor.current = null;
+    };
+  }, [list, top]);
+  // Before the browser paints a change of the entries, the place it moved from is taken back.
+  useLayoutEffect(() => {
+    anchor.current?.anchoring.keep();
+  });
+  return anchor;
+}
+
 /** A feed of entries, one under another, a space apart. */
-export function Feed({ label, count, more, busy, onNearEnd, children, end }: FeedProps) {
+export function Feed({
+  label,
+  count,
+  more,
+  busy,
+  onNearEnd,
+  children,
+  end,
+  onTopChange,
+  onReaderChange,
+  newItems,
+}: FeedProps) {
   const s = feed();
   const sentinel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const top = useRef<HTMLDivElement>(null);
+  const anchor = useAnchoring(list, top, onTopChange);
+  // Whether focus is in the feed and whether a selection is, which onReaderChange hears together.
+  const reader = useRef({ focus: false, selection: false, inside: false });
+  const readerChange = useEffectEvent((part: "focus" | "selection", on: boolean) => {
+    const r = reader.current;
+    r[part] = on;
+    const inside = r.focus || r.selection;
+    if (inside === r.inside) return;
+    r.inside = inside;
+    onReaderChange?.(inside);
+  });
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    const doc = el.ownerDocument;
+    const onSelection = () => {
+      readerChange("selection", selectsIn(el));
+    };
+    doc.addEventListener("selectionchange", onSelection);
+    return () => {
+      doc.removeEventListener("selectionchange", onSelection);
+    };
+  }, []);
+  const goToTop = () => {
+    const el = list.current;
+    newItems?.onPress();
+    if (!el) return;
+    const a = anchor.current;
+    // What the press inserts goes in above without keeping the place: the view is on its way to the top.
+    if (a) {
+      a.anchoring.holdUntilTop();
+      // The reader who takes the scroll over before the top is reached gets the anchoring back.
+      const view = el.ownerDocument.defaultView;
+      const takeOver = () => {
+        a.anchoring.release();
+        for (const type of takeOverEvents) view?.removeEventListener(type, takeOver);
+      };
+      for (const type of takeOverEvents) view?.addEventListener(type, takeOver, { passive: true });
+    }
+    scrollToTop(a?.scroller ?? scrollerOf(el));
+    focusFrameHeading(el.ownerDocument);
+  };
   const asks = onNearEnd !== undefined;
   const nearEnd = useEffectEvent(() => {
     onNearEnd?.();
@@ -149,6 +316,17 @@ export function Feed({ label, count, more, busy, onNearEnd, children, end }: Fee
   }, [asks, busy, count]);
   return (
     <div className={s.root()}>
+      {/* Always there, so that a change of the count is read out (ADR-0013 §6); the button never takes the focus. */}
+      <div role="status" className={s.newItems()}>
+        {newItems && (
+          <span className={s.newItemsButton()}>
+            <ButtonBase kind="primary" size="notice" onPress={goToTop}>
+              {newItems.label}
+            </ButtonBase>
+          </span>
+        )}
+      </div>
+      <div ref={top} aria-hidden="true" className={s.top()} />
       <FeedSize value={more ? -1 : count}>
         <div
           ref={list}
@@ -158,7 +336,13 @@ export function Feed({ label, count, more, busy, onNearEnd, children, end }: Fee
           className={s.list()}
           onKeyDown={onFeedKeyDown}
           onFocus={(e) => {
+            readerChange("focus", true);
             onFeedFocus({ target: e.target, currentTarget: e.currentTarget });
+          }}
+          onBlur={(e) => {
+            if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) {
+              readerChange("focus", false);
+            }
           }}
         >
           <ActionScope target={list}>{children}</ActionScope>
@@ -170,10 +354,13 @@ export function Feed({ label, count, more, busy, onNearEnd, children, end }: Fee
   );
 }
 
-/** One entry of a feed at `position` (from 1), which its Entry states with the feed's size. */
-export function FeedItem({ position, children }: { position: number; children: ReactNode }) {
+/**
+ * One entry of a feed at `position` (from 1), which its Entry states with the feed's size, and its key: what it shows
+ * (a post's id), by which a screen finds it again to restore its position.
+ */
+export function FeedItem({ id, position, children }: { id: string; position: number; children: ReactNode }) {
   const setsize = use(FeedSize);
-  return <FeedPositionContext value={{ posinset: position, setsize }}>{children}</FeedPositionContext>;
+  return <FeedPositionContext value={{ posinset: position, setsize, key: id }}>{children}</FeedPositionContext>;
 }
 
 const notice = tv({

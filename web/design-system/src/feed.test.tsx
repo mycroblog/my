@@ -9,7 +9,7 @@ const feed = (props: { count: number; more: boolean; busy: boolean }) =>
   renderToStaticMarkup(
     <Feed label="Home" {...props} end={<FeedNotice>Loading</FeedNotice>}>
       {Array.from({ length: props.count }, (_, i) => (
-        <FeedItem key={i} position={i + 1}>
+        <FeedItem key={i} id={`p${i + 1}`} position={i + 1}>
           <Entry>{`post ${i + 1}`}</Entry>
         </FeedItem>
       ))}
@@ -30,6 +30,27 @@ describe("the feed's markup", () => {
     expect(known).toContain('aria-posinset="2" aria-setsize="2"');
     // While more may follow, the size is unknown.
     expect(feed({ count: 2, more: true, busy: false })).toContain('aria-posinset="2" aria-setsize="-1"');
+  });
+
+  test("each entry carries its key, by which a screen restores its position", () => {
+    expect(feed({ count: 2, more: false, busy: false })).toContain('data-scroll-key="p2"');
+  });
+
+  test("the browser's anchoring is off, since the feed anchors itself", () => {
+    expect(feed({ count: 1, more: false, busy: false })).toContain("[overflow-anchor:none]");
+  });
+
+  test("the new entries' status is there before it tells anything, and its button only while it does", () => {
+    const empty = feed({ count: 1, more: false, busy: false });
+    expect(empty).toMatch(/^<div [^>]*><div role="status" class="[^"]*sticky[^"]*"><\/div>/);
+    const told = renderToStaticMarkup(
+      <Feed label="Home" count={0} more={false} busy={false} newItems={{ label: "3 new posts", onPress: () => {} }}>
+        {null}
+      </Feed>,
+    );
+    expect(told).toMatch(/<div role="status" [^>]*><span [^>]*><button [^>]*>.*3 new posts.*<\/button><\/span><\/div>/);
+    // It stands off what scrolls under it, and takes a full touch target's height.
+    expect(told).toMatch(/<span class="[^"]*shadow-overlay[^"]*"><button [^>]*class="[^"]*h-icon-button-touch/);
   });
 
   test("an entry outside a feed states no position", () => {
