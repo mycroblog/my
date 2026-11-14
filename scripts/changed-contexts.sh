@@ -241,7 +241,7 @@ classify() {
   case "$path" in
     # go test fails when the generated configuration or command reference is stale (go:config-docs, go:cli-docs).
     *.go | cmd/* | internal/* | pkg/* | queries/* | sqlc.yaml | .golangci.yml | scripts/sqlc.sh | scripts/go-build-tags.sh | scripts/go-work-check.sh | scripts/stable-mtime.py | \
-      docs/reference/configuration.md | docs/reference/cli.md)
+      scripts/go-test-sleep.sh | scripts/go-test-sleep.baseline | docs/reference/configuration.md | docs/reference/cli.md)
       select_contexts go
       known=1
       ;;

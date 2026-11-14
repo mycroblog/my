@@ -197,7 +197,7 @@ adrs:
     - "tools/agentkit/internal/adr/aliases.go"
     - "tools/agentkit/internal/docslint/*.go"
 
-# The knowledge of the UI roles (ADR-0169 §3), in <dir>/<role>/: index.md, the page the role always reads;
+# The knowledge of the UI and developer roles (ADR-0169 §3, ADR-0170 §5), in <dir>/<role>/: index.md, the page the role always reads;
 # decisions.md and exemplars.md, a title and a lead, then one item per line, or instead area files of the same shape,
 # decisions/<area>.md and exemplars/<area>.md, each at most `area` bytes, with no limit on their total. Each file is at
 # most its limit in bytes; within it a new line needs no approval (ADR-0169 §4). Only the decider changes the roles and
@@ -206,7 +206,7 @@ adrs:
 # have no limit, and the agreement check replays them (ADR-0169 §7).
 knowledge:
   dir: .claude/knowledge
-  roles: [visual, motion, copy, implementation, visual-evaluator, walker]
+  roles: [visual, motion, copy, visual-evaluator, walker, go-developer, go-test-developer, ts-developer, ts-test-developer]
   picks: .claude/picks
   limits:
     index: 2048

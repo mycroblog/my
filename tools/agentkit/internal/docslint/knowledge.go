@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// RuleKnowledge is the knowledge of a UI role out of its shape or over its limit (ADR-0169 §3, §4).
+// RuleKnowledge is the knowledge of a role out of its shape or over its limit (ADR-0169 §3, §4, ADR-0170 §5).
 const RuleKnowledge = "knowledge"
 
 // The files of a role's knowledge: the index it always reads, its decisions, and its exemplars. The decisions and the
@@ -23,7 +23,7 @@ const (
 	knowledgeExemplars = "exemplars"
 )
 
-// Knowledge is the knowledge of the UI roles: <Dir>/<role>/ for each of Roles, each file at most its limit in bytes,
+// Knowledge is the knowledge of the UI and developer roles: <Dir>/<role>/ for each of Roles, each file at most its limit in bytes,
 // and the logs of the decider's picks, <Picks>/<role>.jsonl, which the roles do not read.
 type Knowledge struct {
 	Dir    string   `yaml:"dir"`
