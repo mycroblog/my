@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -290,7 +291,22 @@ func (e *externalEnv) sessionUser(c *authClient) string {
 	return s.UserID
 }
 
-var ticketField = regexp.MustCompile(`name="ticket" value="([^"]+)"`)
+// hasExternalButton reports whether an auth screen's data has the button of a login provider to
+// url with label and kind.
+func hasExternalButton(data map[string]any, url, label, kind string) bool {
+	buttons, _ := authAt(data, "external").([]any)
+	for i := range buttons {
+		p := "external." + strconv.Itoa(i) + "."
+		if authText(data, p+"url") == url {
+			return authText(data, p+"label") == label && authText(data, p+"kind") == kind
+		}
+	}
+	return false
+}
+
+// ticketField finds the ticket of the registration form of an account at a provider in the
+// screen's data (signUp.external.ticket), which only that form has.
+var ticketField = regexp.MustCompile(`"ticket":"([^"]+)"`)
 
 // TestExternalSignIn signs a linked user in with an OpenID Connect provider (ADR-0106 §3).
 func TestExternalSignIn(t *testing.T) {
@@ -303,9 +319,10 @@ func TestExternalSignIn(t *testing.T) {
 	t.Run("buttons", func(t *testing.T) {
 		c := e.client()
 		_, body := c.do(http.MethodGet, authpages.PathSignIn+"?return_to=/home", nil, nil)
-		want := `<a class="button button-secondary" href="/auth/external/` + id + `/start?return_to=%2Fhome" dir="auto">Example &lt;IdP&gt; &amp; Co</a>`
-		if !strings.Contains(body, want) {
-			t.Errorf("sign-in page lacks %s:\n%s", want, body)
+		data := authData(t, body)
+		if authText(data, "external.0.url") != "/auth/external/"+id+"/start?return_to=%2Fhome" ||
+			authText(data, "external.0.label") != "Example <IdP> & Co" || authText(data, "external.0.kind") != "oidc" {
+			t.Errorf("sign-in page lacks the provider's button: %v", authAt(data, "external"))
 		}
 	})
 
@@ -326,7 +343,7 @@ func TestExternalSignIn(t *testing.T) {
 	t.Run("sign-in", func(t *testing.T) {
 		c := e.client()
 		resp, body := e.signInWith(c, id, map[string]any{"sub": "subject-alice", "email": "someone@example.org"})
-		if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/" || e.sessionUser(c) != alice {
+		if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != authpages.PathAppSignIn || e.sessionUser(c) != alice {
 			t.Fatalf("callback = %d %q, session of %q\n%s", resp.StatusCode, resp.Header.Get("Location"), e.sessionUser(c), body)
 		}
 		if _, ok := c.cookies[authpages.CookieExternal]; ok {
@@ -487,7 +504,7 @@ func TestExternalSignUp(t *testing.T) {
 		}
 		resp, body := e.signInWith(c, id, all)
 		m := ticketField.FindStringSubmatch(body)
-		if resp.StatusCode != http.StatusOK || m == nil || strings.Contains(body, `name="password"`) {
+		if resp.StatusCode != http.StatusOK || m == nil || authText(authData(t, body), "signUp.external.ticket") != m[1] {
 			t.Fatalf("callback = %d, want the registration form without a password\n%s", resp.StatusCode, body)
 		}
 		form := url.Values{"csrf_token": {c.cookies[authpages.CookieCSRF]}, "ticket": {m[1]}}

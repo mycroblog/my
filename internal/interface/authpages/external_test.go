@@ -5,6 +5,8 @@ package authpages_test
 import (
 	"context"
 	"net/http"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -98,29 +100,37 @@ func newExternalServer(t *testing.T) (*fakeIdentity, *fakeExternalLogins, http.H
 
 func TestSignInPageOffersExternalLogins(t *testing.T) {
 	_, _, h := newExternalServer(t)
-	body := newBrowser(t, h).do(http.MethodGet, authpages.PathSignIn+"?return_to=/notifications", nil, nil).Body.String()
-	for _, want := range []string{
-		`<h2 id="external-logins-heading" class="hint">Or sign in with</h2>`,
-		// The display names are shown as the administrators wrote them, escaped.
-		`<a class="button button-secondary" href="/auth/external/corp/start?return_to=%2Fnotifications" dir="auto">Corp &lt;SSO&gt;</a>`,
-		`<a class="button button-secondary" href="/auth/external/lab/start?return_to=%2Fnotifications" dir="auto">研究室 ID</a>`,
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("sign-in page lacks %s:\n%s", want, body)
-		}
+	data := screenData(t, newBrowser(t, h).do(http.MethodGet, authpages.PathSignIn+"?return_to=/notifications", nil, nil))
+	// The display names are shown as the administrators wrote them.
+	if got, want := externalButtons(data), []string{
+		"Corp <SSO> oidc /auth/external/corp/start?return_to=%2Fnotifications",
+		"研究室 ID oidc /auth/external/lab/start?return_to=%2Fnotifications",
+	}; !slices.Equal(got, want) {
+		t.Errorf("sign-in buttons = %q, want %q", got, want)
 	}
 	// The registration page offers only the providers that let users sign up.
-	body = newBrowser(t, h).do(http.MethodGet, authpages.PathSignUp, nil, nil).Body.String()
-	if !strings.Contains(body, "/auth/external/corp/start") || strings.Contains(body, "/auth/external/lab/start") {
-		t.Errorf("registration page buttons:\n%s", body)
+	data = screenData(t, newBrowser(t, h).do(http.MethodGet, authpages.PathSignUp, nil, nil))
+	if got, want := externalButtons(data), []string{"Corp <SSO> oidc /auth/external/corp/start"}; !slices.Equal(got, want) {
+		t.Errorf("registration buttons = %q, want %q", got, want)
 	}
 	// Without external logins, neither page has the section.
 	plain := newServer(t, newFakeIdentity())
 	for _, path := range []string{authpages.PathSignIn, authpages.PathSignUp} {
-		if body := newBrowser(t, plain).do(http.MethodGet, path, nil, nil).Body.String(); strings.Contains(body, "external-logins-heading") {
-			t.Errorf("%s offers external logins without any:\n%s", path, body)
+		if data := screenData(t, newBrowser(t, plain).do(http.MethodGet, path, nil, nil)); at(data, "external") != nil {
+			t.Errorf("%s offers external logins without any: %v", path, data)
 		}
 	}
+}
+
+// externalButtons returns the screen's external login buttons as "label kind url".
+func externalButtons(data map[string]any) []string {
+	buttons, _ := at(data, "external").([]any)
+	out := make([]string, 0, len(buttons))
+	for i := range buttons {
+		p := "external." + strconv.Itoa(i) + "."
+		out = append(out, text(data, p+"label")+" "+text(data, p+"kind")+" "+text(data, p+"url"))
+	}
+	return out
 }
 
 func TestExternalLoginStart(t *testing.T) {
@@ -193,42 +203,39 @@ func TestExternalSignUpPage(t *testing.T) {
 	x.outcome = appidentity.ExternalLogin{SignUp: &corpSignUp}
 	b := newBrowser(t, h)
 	page := b.do(http.MethodGet, "/auth/external/corp/callback?code=abc&state=xyz", nil, nil)
-	body := page.Body.String()
 	if page.Code != http.StatusOK {
-		t.Fatalf("callback = %d\n%s", page.Code, body)
+		t.Fatalf("callback = %d\n%s", page.Code, page.Body.String())
 	}
-	for _, want := range []string{
-		`<h1 dir="auto">Create an account with Corp &lt;SSO&gt;</h1>`,
-		`<form class="form" method="post" action="/auth/external/sign_up">`,
-		`<input type="hidden" name="ticket" value="ticket-1">`,
-		`name="username" type="text" value="dana"`,
-		`name="email" type="email" value="dana@corp.example"`,
-		`Corp &lt;SSO&gt; confirmed this address.`,
+	data := screenData(t, page)
+	for key, want := range map[string]string{
+		"screen": "sign_up", "signUp.external.ticket": "ticket-1", "signUp.external.provider": "Corp <SSO>",
+		"signUp.username": "dana", "signUp.email": "dana@corp.example",
+		"signUp.external.emailVerifiedHint": "Corp <SSO> confirmed this address. If you change it, we send a link to confirm the new one.",
 	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("registration form lacks %s:\n%s", want, body)
+		if got := text(data, key); got != want {
+			t.Errorf("registration form: %s = %q, want %q", key, got, want)
 		}
 	}
-	if strings.Contains(body, `name="password"`) || strings.Contains(body, "external-logins-heading") {
-		t.Errorf("registration form of an external account has a password or the provider buttons:\n%s", body)
+	if at(data, "external") != nil {
+		t.Errorf("registration form of an external account has the provider buttons: %v", data)
 	}
 
 	// A field that fails shows the form again with the ticket.
 	w := b.do(http.MethodPost, authpages.PathExternalSignUp, b.form(page, "ticket", "ticket-1", "username", "Dana!", "email", "dana@corp.example"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), `name="ticket" value="ticket-1"`) || len(x.signUps) != 0 {
+	if w.Code != http.StatusUnprocessableEntity || text(screenData(t, w), "signUp.external.ticket") != "ticket-1" || len(x.signUps) != 0 {
 		t.Errorf("invalid sign-up = %d\n%s", w.Code, w.Body.String())
 	}
 	// What the identity module refuses shows the form again too.
 	x.signUpErr = appidentity.ErrEmailTaken
 	w = b.do(http.MethodPost, authpages.PathExternalSignUp, b.form(page, "ticket", "ticket-1", "username", "dana", "email", "alice@example.com"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "This email address is already in use.") ||
-		!strings.Contains(w.Body.String(), `name="ticket" value="ticket-1"`) {
+	if data := screenData(t, w); w.Code != http.StatusUnprocessableEntity || text(data, "signUp.errors.email") != "This email address is already in use." ||
+		text(data, "signUp.external.ticket") != "ticket-1" {
 		t.Errorf("sign-up with a taken address = %d\n%s", w.Code, w.Body.String())
 	}
 	// A used ticket starts again.
 	x.signUpErr = appidentity.ErrExternalIdentityLinked
 	w = b.do(http.MethodPost, authpages.PathExternalSignUp, b.form(page, "ticket", "ticket-1", "username", "dana", "email", "dana@corp.example"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "The sign-in took too long or was already used.") {
+	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(text(screenData(t, w), "error"), "The sign-in took too long or was already used.") {
 		t.Errorf("sign-up with a used ticket = %d\n%s", w.Code, w.Body.String())
 	}
 	x.signUpErr = nil

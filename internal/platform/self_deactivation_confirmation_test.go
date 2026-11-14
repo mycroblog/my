@@ -99,7 +99,7 @@ func TestSelfDeactivationConfirmedByASecondFactor(t *testing.T) {
 	// The sign-in goes through the second factor to the status page, which brings the account back.
 	s := e.screens()
 	s.signIn("alice")
-	if strings.Contains(s.page(), authpages.PathReactivate) {
+	if offersReactivation(t, s.page()) {
 		t.Error("the password alone reached the status page")
 	}
 	e.clock.Advance(domainidentity.TOTPPeriod)
@@ -108,7 +108,7 @@ func TestSelfDeactivationConfirmedByASecondFactor(t *testing.T) {
 	if rec := s.do(http.MethodPost, authpages.PathSignInTwoFactor, s.form(authpages.PathSignInTwoFactor, "code", code())); rec.Code != http.StatusSeeOther {
 		t.Fatalf("POST the second factor = %d %s", rec.Code, rec.Body)
 	}
-	if !strings.Contains(s.page(), authpages.PathReactivate) {
+	if !offersReactivation(t, s.page()) {
 		t.Error("the second factor did not reach the status page")
 	}
 	if rec := s.do(http.MethodPost, authpages.PathReactivate, s.form(authpages.PathSignIn)); rec.Code != http.StatusSeeOther {
@@ -322,7 +322,7 @@ func TestSelfDeactivationConfirmedByALinkedProvider(t *testing.T) {
 		t.Fatalf("sign-in at the provider = %d\n%s", resp.StatusCode, b)
 	}
 	_, page := c.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	if !strings.Contains(page, authpages.PathReactivate) || strings.Contains(page, `name="password"`) {
+	if !offersReactivation(t, page) || authAt(authData(t, page), "status.deleteAsksForPassword") != nil {
 		t.Errorf("the status page of a user without a password:\n%s", page)
 	}
 	if resp, b := c.do(http.MethodPost, authpages.PathDeleteDeactivated, c.formAt(authpages.PathSignIn), nil); resp.StatusCode != http.StatusOK {

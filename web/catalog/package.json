@@ -11,6 +11,7 @@
   "dependencies": {
     "@my/app": "workspace:*",
     "@my/app-components": "workspace:*",
+    "@my/app-features": "workspace:*",
     "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",
     "@my/design-tokens": "workspace:*",

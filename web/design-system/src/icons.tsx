@@ -8,6 +8,8 @@
 // is the glyph knocked out of a solid tile.
 
 import {
+  IconAlertCircle,
+  IconAlertTriangle,
   IconArrowLeft,
   IconAt,
   IconBan,
@@ -15,6 +17,8 @@ import {
   IconBellFilled,
   IconBookmark,
   IconBookmarkFilled,
+  IconBrandDiscord,
+  IconBrandGithub,
   IconBuildingCommunity,
   IconDots,
   IconExternalLink,
@@ -23,6 +27,7 @@ import {
   IconHome,
   IconHomeFilled,
   IconInfoCircle,
+  IconKey,
   IconLanguage,
   IconLink,
   IconLock,
@@ -102,6 +107,13 @@ export const icons = {
   about: { off: IconInfoCircle },
   // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
   hidden: { off: IconEyeOff },
+  // The auth screens: what went wrong (a round mark), what needs care before agreeing (a triangle), a passkey, and the
+  // marks of the login providers, in the text's color like every glyph.
+  error: { off: IconAlertCircle },
+  caution: { off: IconAlertTriangle },
+  passkey: { off: IconKey },
+  github: { off: IconBrandGithub },
+  discord: { off: IconBrandDiscord },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;

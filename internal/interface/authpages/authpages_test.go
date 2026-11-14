@@ -210,7 +210,7 @@ func (b *browser) do(method, target string, form url.Values, header map[string]s
 	return w
 }
 
-var csrfField = regexp.MustCompile(`name="csrf_token" value="([^"]+)"`)
+var csrfField = regexp.MustCompile(`"csrfToken":"([^"]+)"`)
 
 // form returns the fields of the page's form with the anti-forgery token filled in.
 func (b *browser) form(page *httptest.ResponseRecorder, fields ...string) url.Values {
@@ -226,7 +226,7 @@ func (b *browser) form(page *httptest.ResponseRecorder, fields ...string) url.Va
 	return v
 }
 
-func TestSignInPageIsAccessibleHTML(t *testing.T) {
+func TestSignInPage(t *testing.T) {
 	b := newBrowser(t, newServer(t, newFakeIdentity()))
 	w := b.do(http.MethodGet, authpages.PathSignIn, nil, map[string]string{"Accept-Language": "ja"})
 	if w.Code != http.StatusOK {
@@ -240,32 +240,12 @@ func TestSignInPageIsAccessibleHTML(t *testing.T) {
 		!strings.Contains(csp, "form-action 'self'") {
 		t.Errorf("Content-Security-Policy = %q", csp)
 	}
-	body := w.Body.String()
-	for _, want := range []string{
-		`<html lang="ja" dir="ltr">`,
-		`<title>ログイン</title>`,
-		`<label for="sign-in-email">メールアドレス</label>`,
-		`id="sign-in-email" name="email" type="email"`,
-		`autocomplete="username"`,
-		`<label for="sign-in-password">パスワード</label>`,
-		`autocomplete="current-password"`,
-		`<form class="form" method="post" action="/auth/sign_in">`,
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("page lacks %s:\n%s", want, body)
-		}
-	}
-	if strings.Contains(body, "<script") || strings.Contains(body, "style=") || strings.Contains(body, "<style") {
-		t.Errorf("page has scripts or inline styles:\n%s", body)
-	}
-	if strings.Contains(body, "aria-invalid") {
-		t.Errorf("a fresh form marks fields invalid")
-	}
-	if strings.Contains(body, `rel="stylesheet"`) {
-		t.Errorf("page links a stylesheet although Options.Stylesheet is empty:\n%s", body)
+	data := screenData(t, w)
+	if text(data, "screen") != "sign_in" || at(data, "error") != nil || at(data, "email") != nil {
+		t.Errorf("data = %v, want a fresh sign-in form", data)
 	}
 	csrf, ok := b.cookies[authpages.CookieCSRF]
-	if !ok || !strings.Contains(body, `value="`+csrf+`"`) {
+	if !ok || text(data, "csrfToken") != csrf {
 		t.Errorf("the form does not carry the CSRF cookie's token")
 	}
 	c := w.Result().Cookies()[0]
@@ -274,137 +254,12 @@ func TestSignInPageIsAccessibleHTML(t *testing.T) {
 	}
 }
 
-// TestPagesNameTheInstance checks that the pages show the instance's name, the same in every
-// locale, above the card and in the title, escaped as text.
-func TestPagesNameTheInstance(t *testing.T) {
-	b, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	m := mux{http.NewServeMux()}
-	authpages.New(authpages.Options{
-		Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b},
-		InstanceName: func(context.Context) string { return "例の<サーバー>" },
-	}).Register(m)
-	br := newBrowser(t, m)
-	for _, tt := range []struct{ path, lang, want string }{
-		{authpages.PathSignIn, "ja", `<title>ログイン | 例の&lt;サーバー&gt;</title>`},
-		{authpages.PathSignUp, "en", `<title>Create an account | 例の&lt;サーバー&gt;</title>`},
-	} {
-		body := br.do(http.MethodGet, tt.path, nil, map[string]string{"Accept-Language": tt.lang}).Body.String()
-		name := "例の&lt;サーバー&gt;"
-		if !strings.Contains(body, tt.want) || !strings.Contains(body, `<p class="site-name" dir="auto">`+name+`</p>`) {
-			t.Errorf("GET %s in %s lacks the name:\n%s", tt.path, tt.lang, body)
-		}
-	}
-}
-
-func TestRightToLeftLocale(t *testing.T) {
-	b, err := i18n.Load(i18n.WithPseudoLocales())
-	if err != nil {
-		t.Fatal(err)
-	}
-	m := mux{http.NewServeMux()}
-	authpages.New(authpages.Options{Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b}, Stylesheet: "/assets/x.css"}).Register(m)
-	w := newBrowser(t, m).do(http.MethodGet, authpages.PathSignIn, nil, map[string]string{"Accept-Language": "ar-XB"})
-	if body := w.Body.String(); !strings.Contains(body, `<html lang="ar-XB" dir="rtl">`) || !strings.Contains(body, `href="/assets/x.css"`) {
-		t.Errorf("page = %s", body)
-	}
-}
-
-// A stylesheet of another origin, the Vite dev server's, and its images are allowed by the pages' CSP.
-func TestPagesAllowTheStylesheetOrigin(t *testing.T) {
-	b, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, tt := range []struct{ stylesheet, want string }{
-		{"http://localhost:5173/src/server-pages.css", "style-src 'self' http://localhost:5173; img-src 'self' http://localhost:5173;"},
-		{"/assets/x.css", "style-src 'self'; img-src 'self';"},
-	} {
-		m := mux{http.NewServeMux()}
-		authpages.New(authpages.Options{Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b}, Stylesheet: tt.stylesheet}).Register(m)
-		w := newBrowser(t, m).do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, tt.want) {
-			t.Errorf("stylesheet %s: CSP = %q, want %q", tt.stylesheet, csp, tt.want)
-		}
-		if body := w.Body.String(); !strings.Contains(body, `href="`+tt.stylesheet+`"`) {
-			t.Errorf("stylesheet %s: page lacks the link:\n%s", tt.stylesheet, body)
-		}
-	}
-}
-
-// The instance theme's stylesheet follows the pages' own stylesheet (ADR-0059).
-func TestPagesLoadTheThemeStylesheet(t *testing.T) {
-	b, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	m := mux{http.NewServeMux()}
-	authpages.New(authpages.Options{
-		Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b}, Stylesheet: "/assets/x.css",
-		ThemeStylesheet: func(context.Context) string { return "/theme/rev1.css" },
-	}).Register(m)
-	body := newBrowser(t, m).do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String()
-	i, j := strings.Index(body, `href="/assets/x.css"`), strings.Index(body, `<link rel="stylesheet" href="/theme/rev1.css">`)
-	if i < 0 || j < i {
-		t.Errorf("page = %s", body)
-	}
-}
-
-// The instance's own logo takes the place of the built-in wordmark and the name, which is its alt
-// text, with the dark logo on a dark ground (ADR-0059).
-func TestPagesShowTheInstanceLogo(t *testing.T) {
-	b, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, tc := range []struct {
-		name, logo, dark string
-		want, notWant    []string
-	}{
-		{name: "built-in", want: []string{`<span class="site-logo" aria-hidden="true"></span>`, `<p class="site-name" dir="auto">Example</p>`}, notWant: []string{"<picture>"}},
-		{
-			name: "logo", logo: "/brand/r1/logo.svg",
-			want:    []string{`<img class="site-own-logo" src="/brand/r1/logo.svg" alt="Example">`},
-			notWant: []string{`class="site-logo"`, `class="site-name"`, "<source"},
-		},
-		{
-			name: "dark logo", logo: "/brand/r1/logo.svg", dark: "/brand/r2/logo_dark.svg",
-			want: []string{`<source srcset="/brand/r2/logo_dark.svg" media="(prefers-color-scheme: dark)">`, `src="/brand/r1/logo.svg"`},
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			m := mux{http.NewServeMux()}
-			o := authpages.Options{
-				Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b},
-				InstanceName: func(context.Context) string { return "Example" },
-			}
-			if tc.logo != "" {
-				o.Logos = func(context.Context) (string, string) { return tc.logo, tc.dark }
-			}
-			authpages.New(o).Register(m)
-			body := newBrowser(t, m).do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String()
-			for _, s := range tc.want {
-				if !strings.Contains(body, s) {
-					t.Errorf("page lacks %s:\n%s", s, body)
-				}
-			}
-			for _, s := range tc.notWant {
-				if strings.Contains(body, s) {
-					t.Errorf("page has %s:\n%s", s, body)
-				}
-			}
-		})
-	}
-}
-
 func TestSignInIssuesANewSession(t *testing.T) {
 	id := newFakeIdentity()
 	b := newBrowser(t, newServer(t, id))
 	page := b.do(http.MethodGet, authpages.PathSignIn+"?return_to=%2Foauth%2Fauthorize%3Fx%3D1", nil, nil)
-	if !strings.Contains(page.Body.String(), `name="return_to" value="/oauth/authorize?x=1"`) {
-		t.Fatalf("the form drops return_to: %s", page.Body.String())
+	if got := text(screenData(t, page), "returnTo"); got != "/oauth/authorize?x=1" {
+		t.Fatalf("the form drops return_to: returnTo = %q", got)
 	}
 	w := b.do(http.MethodPost, authpages.PathSignIn, b.form(page,
 		"email", " alice@example.com ", "password", "correct horse", "return_to", "/oauth/authorize?x=1"), map[string]string{"User-Agent": "test-agent"})
@@ -428,8 +283,8 @@ func TestSignInIssuesANewSession(t *testing.T) {
 
 	// Signing in again from the same browser replaces the session.
 	page = b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	if !strings.Contains(page.Body.String(), "/auth/sign_out") {
-		t.Fatalf("signed-in GET does not offer sign-out: %s", page.Body.String())
+	if data := screenData(t, page); text(data, "screen") != "signed_in" || text(data, "returnTo") != authpages.PathAppSignIn {
+		t.Fatalf("signed-in GET = %v, want the signed-in screen going on to %s", data, authpages.PathAppSignIn)
 	}
 	b.do(http.MethodPost, authpages.PathSignIn, b.form(page, "email", "alice@example.com", "password", "correct horse"), nil)
 	if id.last.CurrentToken != first || b.cookies[authpages.CookieSession] == first || id.live[first] {
@@ -447,11 +302,11 @@ func TestFailedSignInsLookAlike(t *testing.T) {
 			t.Fatalf("failed sign-in = %d, want 422", w.Code)
 		}
 		body := w.Body.String()
-		if !strings.Contains(body, `<p id="sign-in-error" class="alert" role="alert">The email address or password is incorrect.</p>`) ||
-			!strings.Contains(body, `aria-invalid="true" aria-describedby="sign-in-error"`) {
-			t.Errorf("failed sign-in page lacks the associated error:\n%s", body)
+		data := screenData(t, w)
+		if text(data, "screen") != "sign_in" || text(data, "error") != "The email address or password is incorrect." {
+			t.Errorf("failed sign-in page lacks the error: %v", data)
 		}
-		if !strings.Contains(body, `value="`+creds[0]+`"`) || strings.Contains(body, creds[1]+`"`) {
+		if text(data, "email") != creds[0] || strings.Contains(body, creds[1]+`"`) {
 			t.Errorf("the form should keep the email address and drop the password")
 		}
 		bodies = append(bodies, strings.ReplaceAll(body, creds[0], ""))
@@ -460,7 +315,7 @@ func TestFailedSignInsLookAlike(t *testing.T) {
 		t.Errorf("an unknown address and a wrong password answer differently:\n%s\n---\n%s", bodies[0], bodies[1])
 	}
 	w := b.do(http.MethodPost, authpages.PathSignIn, b.form(page, "email", "alice@example.com"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "Enter your email address and password.") {
+	if w.Code != http.StatusUnprocessableEntity || text(screenData(t, w), "error") != "Enter your email address and password." {
 		t.Errorf("empty password = %d %s", w.Code, w.Body.String())
 	}
 }
@@ -474,7 +329,7 @@ func TestRateLimitedSignIn(t *testing.T) {
 	if w.Code != http.StatusTooManyRequests || w.Header().Get("Retry-After") != "61" {
 		t.Fatalf("rate-limited sign-in = %d Retry-After %q, want 429 and 61", w.Code, w.Header().Get("Retry-After"))
 	}
-	if !strings.Contains(w.Body.String(), "Try again in 2 minutes.") {
+	if !strings.Contains(text(screenData(t, w), "error"), "Try again in 2 minutes.") {
 		t.Errorf("rate-limited page = %s", w.Body.String())
 	}
 }
@@ -490,7 +345,7 @@ func TestCrossOriginPostsAreRefused(t *testing.T) {
 	} {
 		for _, path := range []string{authpages.PathSignIn, authpages.PathSignOut} {
 			w := b.do(http.MethodPost, path, form, header)
-			if w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), "came from another site") {
+			if w.Code != http.StatusForbidden || !strings.Contains(text(screenData(t, w), "error"), "came from another site") {
 				t.Errorf("%s POST %s = %d %s, want the 403 page", name, path, w.Code, w.Body.String())
 			}
 		}
@@ -514,7 +369,7 @@ func TestPostsNeedTheCSRFToken(t *testing.T) {
 		form := b.form(page, "email", "alice@example.com", "password", "correct horse")
 		mutate(form)
 		w := b.do(http.MethodPost, authpages.PathSignIn, form, map[string]string{"Sec-Fetch-Site": "", "Origin": ""})
-		if w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), "This form has expired.") {
+		if w.Code != http.StatusForbidden || !strings.Contains(text(screenData(t, w), "error"), "This form has expired.") {
 			t.Errorf("%s: POST sign_in = %d, want 403 with the expired-form error", name, w.Code)
 		}
 		page = w // the error page carries a fresh form
@@ -544,12 +399,12 @@ func TestReturnToStaysOnSite(t *testing.T) {
 	b := newBrowser(t, newServer(t, newFakeIdentity()))
 	for _, bad := range []string{"https://evil.example/", "//evil.example/", "/\\evil.example", "javascript:alert(1)", "evil", "/x\nSet-Cookie: a=b"} {
 		page := b.do(http.MethodGet, authpages.PathSignIn+"?return_to="+url.QueryEscape(bad), nil, nil)
-		if strings.Contains(page.Body.String(), `name="return_to"`) {
+		if at(screenData(t, page), "returnTo") != nil {
 			t.Errorf("return_to %q kept in the form", bad)
 		}
 		w := b.do(http.MethodPost, authpages.PathSignIn, b.form(page, "email", "alice@example.com", "password", "correct horse", "return_to", bad), nil)
-		if loc := w.Header().Get("Location"); loc != "/" {
-			t.Errorf("return_to %q redirected to %q, want /", bad, loc)
+		if loc := w.Header().Get("Location"); loc != authpages.PathAppSignIn {
+			t.Errorf("return_to %q redirected to %q, want %s", bad, loc, authpages.PathAppSignIn)
 		}
 		delete(b.cookies, authpages.CookieSession)
 	}

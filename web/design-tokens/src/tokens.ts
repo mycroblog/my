@@ -257,6 +257,47 @@ export const dialog = {
 export const kbd = { minWidth: 1.5, height: 1.5, paddingInline: 0.375, gap: 0.25 } as const;
 
 /**
+ * A page of its own outside the app's frame (a sign-in or a consent), in rem: the most width of its column, and from
+ * `desktop` of its column beside the introduction; the space between the column's parts (the mark, the screen, the
+ * footer), between a screen's parts, between a form's fields, inside a field, and under a title; the space above the
+ * column on a phone and from `tablet`, and below it; the padding of the introduction's panel and the most width of
+ * what it holds, and the space between its parts; the height of the wordmark and the size of a server's own logo, in
+ * the column and in the introduction, and the gap after them; a checkbox's size; the padding of a form's alert and the
+ * gap after its glyph; the indent of a list and the space between its items; the width of a faulty field's line; and
+ * the height a third party's widget (a CAPTCHA's frame) holds before it draws. The banner's width is `bannerRatio`
+ * times its height.
+ */
+export const formPage = {
+  column: 24,
+  columnWide: 26,
+  gap: 2,
+  screenGap: 1.5,
+  formGap: 1.25,
+  fieldGap: 0.25,
+  headGap: 0.375,
+  top: 1.5,
+  topWide: 4,
+  bottom: 1,
+  introBlock: 4,
+  introInline: 2.5,
+  introWidth: 26,
+  introGap: 1.25,
+  mark: 1.5,
+  logo: 2,
+  markIntro: 2,
+  logoIntro: 3,
+  markGap: 0.625,
+  check: 1.125,
+  alertPadding: 0.75,
+  alertGap: 0.5,
+  indent: 1.25,
+  listGap: 0.375,
+  invalid: 0.125,
+  widget: 4.0625,
+  bannerRatio: 3,
+} as const;
+
+/**
  * The viewport widths, in rem, at which the app's frame changes (ADR-0110 §10): a rail from `tablet`, a sidebar from
  * `desktop`, and a column beside the main one from `wide`. A media query reads no custom property, so the design
  * system's theme names them as breakpoints, not as properties.
@@ -332,7 +373,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*` and `--shell-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*`, `--shell-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -440,4 +481,8 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--kbd-padding-inline", `${kbd.paddingInline}rem`],
   ["--kbd-gap", `${kbd.gap}rem`],
   ...Object.entries(shell).map(([name, value]): [string, string] => [`--shell-${kebab(name)}`, `${value}rem`]),
+  ...Object.entries(formPage).map(([name, value]): [string, string] => [
+    `--form-page-${kebab(name)}`,
+    name === "bannerRatio" ? `${value}` : `${value}rem`,
+  ]),
 ]);

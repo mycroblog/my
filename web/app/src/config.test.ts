@@ -11,16 +11,23 @@ test("it reads the shell's data block", () => {
     instanceName: "My Example",
     accountDomain: "my.example",
     defaultLocale: "ja",
+    clientId: "web",
   });
   expect(parseConfig(block, page)).toEqual({
     apiOrigin: "https://my.example",
     instanceName: "My Example",
     defaultLocale: "ja",
+    clientId: "web",
   });
 });
 
-test("without a data block, or a value in it, it takes the page's own origin and host", () => {
-  const own = { apiOrigin: "http://localhost:5173", instanceName: "localhost:5173", defaultLocale: "en" };
+test("without a data block, or a value in it, it takes the page's own origin and host and the default client", () => {
+  const own = {
+    apiOrigin: "http://localhost:5173",
+    instanceName: "localhost:5173",
+    defaultLocale: "en",
+    clientId: "my-web",
+  };
   expect(parseConfig(null, page)).toEqual(own);
   expect(parseConfig("{}", page)).toEqual(own);
 });

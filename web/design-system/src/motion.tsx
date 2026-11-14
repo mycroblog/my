@@ -11,22 +11,14 @@
 // - `none`: no motion, as for the first screen or a change of the address alone.
 //
 // A browser without View Transitions and their types, or a reader who asks for reduced motion, sees the new screen at
-// once, with no motion.
+// once, with no motion. Whether the browser has them is the platform's to say (@my/platform supportsViewTransitions,
+// ADR-0025 §3): the app asks it and passes the answer in as `supported`.
 
 import type { ReactNode } from "react";
 
 export type TransitionKind = "push" | "pop" | "modal" | "replace" | "none";
 
 export const transitionKinds: readonly TransitionKind[] = ["push", "pop", "modal", "replace", "none"];
-
-// Whether the browser runs a View Transition with types (Chrome 125, Safari 18.2, Firefox 144), which the motion of a
-// kind needs. Below that, within the browser floor of ADR-0025 §1, the screen changes with no motion. The one place
-// that detects it.
-const supportsTransitions = () =>
-  typeof document !== "undefined" &&
-  typeof document.startViewTransition === "function" &&
-  typeof CSS !== "undefined" &&
-  CSS.supports("selector(:active-view-transition-type(a))");
 
 const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -37,20 +29,22 @@ export function transitionTypes(kind: TransitionKind): string[] | false {
 
 /**
  * A router's View Transitions (TanStack Router's `defaultViewTransition`): each navigation moves by the kind
- * `kindOf` gives it; false where the browser runs none, so that the router changes the screen at once.
+ * `kindOf` gives it; false where the browser runs none (`supported` false), so that the router changes the screen at
+ * once.
  */
 export function routerTransitions<Change>(
   kindOf: (change: Change) => TransitionKind,
+  supported: boolean,
 ): false | { types: (change: Change) => string[] | false } {
-  return supportsTransitions() && { types: (change: Change) => transitionTypes(kindOf(change)) };
+  return supported && { types: (change: Change) => transitionTypes(kindOf(change)) };
 }
 
 /**
  * Changes the screen with `update`, which changes the DOM before it returns (in React, inside `flushSync`), moving it
- * by `kind`. It resolves once the new screen is in the DOM.
+ * by `kind` where the browser runs View Transitions (`supported`). It resolves once the new screen is in the DOM.
  */
-export async function runTransition(kind: TransitionKind, update: () => void): Promise<void> {
-  const types = supportsTransitions() && transitionTypes(kind);
+export async function runTransition(kind: TransitionKind, update: () => void, supported: boolean): Promise<void> {
+  const types = supported && transitionTypes(kind);
   if (types === false) {
     update();
     return;

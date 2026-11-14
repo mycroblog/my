@@ -11,7 +11,7 @@ import (
 )
 
 // The CAPTCHA widget of the sign-in, registration, and password reset forms (ADR-0106 §11). With
-// Options.HumanCheck set, those three pages, and no other, load the service's script, show its
+// Options.HumanCheck set, those three screens, and no other, load the service's script, show its
 // widget with a notice about the data the service receives and links to its documents, and
 // widen their Content-Security-Policy by the service's origins. The form posts the token in
 // the service's response field, and the identity module checks it.
@@ -20,24 +20,26 @@ import (
 // which picks the theme of the widgets that cannot follow the page by themselves.
 const headerColorScheme = "Sec-CH-Prefers-Color-Scheme"
 
-// humanCheckView is what templates/human_check.html renders.
+// humanCheckView is the widget of a form: the entry loads ScriptSrc and places an element of
+// ContainerClass with the data attributes that the service reads.
 type humanCheckView struct {
-	ScriptSrc      string
-	ContainerClass string
-	SiteKey        string
+	ScriptSrc      string `json:"scriptSrc"`
+	ContainerClass string `json:"containerClass"`
+	SiteKey        string `json:"siteKey"`
 	// Action is the data-action of the widget, empty when the service does not bind a token
 	// to an action; Language is its data-language, empty when the script's URL selects it.
-	Action   string
-	Language string
-	Theme    string
+	Action   string `json:"action,omitempty"`
+	Language string `json:"language,omitempty"`
+	Theme    string `json:"theme"`
 	// Notice tells which service checks the visitor and what it receives; Links point to the
 	// service's privacy policy and terms.
-	Notice string
-	Links  []humanCheckLink
+	Notice string           `json:"notice"`
+	Links  []humanCheckLink `json:"links,omitempty"`
 }
 
 type humanCheckLink struct {
-	URL, Title string
+	URL   string `json:"url"`
+	Title string `json:"title"`
 }
 
 // humanCheck returns the widget of the page that checks action, or nil without a CAPTCHA.

@@ -43,6 +43,10 @@
     "defaultMessage": "ログイン",
     "description": "The link after the line that asks a reader who is not signed in to sign in; it opens the server's sign-in page."
   },
+  "app.sign_in_failed": {
+    "defaultMessage": "ログインを完了できませんでした。もう一度試してください。",
+    "description": "In place of the home timeline when the sign-in came back to the app but could not finish (an old or second tab, the server refused it); a link to sign in again follows it."
+  },
   "app.not_found": {
     "defaultMessage": "ここにはまだ何もありません。",
     "description": "The heading of the screen at an address the app has no screen for, such as a place of the navigation that is not built yet."

@@ -52,7 +52,7 @@ func TestLoginProvidersOnlyPasswordSignIn(t *testing.T) {
 		t.Helper()
 		c := e.client()
 		_, page := c.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		if strings.Contains(page, `name="password"`) || !strings.Contains(page, refusedOnThePage) {
+		if data := authData(t, page); authAt(data, "loginProvidersOnly") != true || authAt(data, "passkey") != nil {
 			t.Errorf("%s: the page still offers the password form:\n%s", name, page)
 		}
 		// The form of a page opened before the limit: its token is the browser's cookie.
@@ -67,7 +67,7 @@ func TestLoginProvidersOnlyPasswordSignIn(t *testing.T) {
 			withFields(form, "email", "", "password", ""),
 		} {
 			resp, body := signIn(token, fields)
-			if resp.StatusCode != http.StatusForbidden || !strings.Contains(body, refusedOnThePage) || e.sessionUser(token) != "" {
+			if resp.StatusCode != http.StatusForbidden || !strings.Contains(authText(authData(t, body), "error"), refusedOnThePage) || e.sessionUser(token) != "" {
 				t.Errorf("%s: POST %d = %d\n%s", name, i, resp.StatusCode, body)
 			}
 			if i == 0 {
@@ -133,7 +133,7 @@ func TestLoginProvidersOnlyKeepsWhatIsRunning(t *testing.T) {
 	e.setMode(instance.RegistrationOpen)
 	c = e.client()
 	resp2, body := e.signInWith(c, id, map[string]any{"sub": "subject-dana", "email": "dana@example.com", "email_verified": true, "preferred_username": "dana"})
-	if resp2.StatusCode != http.StatusOK || !strings.Contains(body, `action="/auth/external/sign_up"`) || strings.Contains(body, `name="password"`) {
+	if resp2.StatusCode != http.StatusOK || authText(authData(t, body), "signUp.external.ticket") == "" {
 		t.Fatalf("sign-up form = %d\n%s", resp2.StatusCode, body)
 	}
 	m := csrfToken.FindStringSubmatch(body)
@@ -151,7 +151,7 @@ func TestLoginProvidersOnlyKeepsWhatIsRunning(t *testing.T) {
 	// The password form of the registration page is refused, whatever it holds.
 	c = e.client()
 	_, page := c.do(http.MethodGet, authpages.PathSignUp, nil, nil)
-	if strings.Contains(page, `name="password"`) || !strings.Contains(page, "/auth/external/"+id+"/start") {
+	if data := authData(t, page); authAt(data, "signUp.loginProvidersOnly") != true || authText(data, "external.0.url") != "/auth/external/"+id+"/start" {
 		t.Errorf("registration page:\n%s", page)
 	}
 	resp2, body = c.do(http.MethodPost, authpages.PathSignUp, url.Values{

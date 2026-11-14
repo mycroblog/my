@@ -361,10 +361,6 @@ type App struct {
 	closeTracer func(ctx context.Context) error
 	// page serves the web client's HTML at the GET paths that no route serves.
 	page http.Handler
-	// webStylesheet is the URL of the server-rendered pages' stylesheet from the web build, empty without one.
-	webStylesheet string
-	// webPasskeyScript is the URL of the sign-in page's passkey script from the web build, empty without one.
-	webPasskeyScript string
 }
 
 type route struct {
@@ -386,7 +382,7 @@ type AppOptions struct {
 	// server at this origin (`my serve -dev-vite-origin`). Development only.
 	DevViteOrigin string
 	// PseudoLocales makes the pseudo-locales en-XA and ar-XB selectable on every surface
-	// (`my serve -pseudo-locales`), for the E2E of the server-rendered pages. Development and tests only.
+	// (`my serve -pseudo-locales`), for the E2E of the auth screens. Development and tests only.
 	PseudoLocales bool
 	// HTTPClient sends every outbound request; nil builds the SSRF-guarded client from the
 	// configuration. Tests only, to reach other test servers by their public hosts.
@@ -638,11 +634,12 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	// The web client comes after the link previews, which it serves.
 	a.setUpPreviews(repos.statuses)
-	if err := a.setUpWeb(opts); err != nil {
+	authEntry, err := a.setUpWeb(opts)
+	if err != nil {
 		return nil, err
 	}
 	a.setUpActivityPub(cfg, opts.Version)
-	a.setUpAuthPages(cfg)
+	a.setUpAuthPages(cfg, authEntry)
 	if err := a.setUpMailEvents(cfg); err != nil {
 		return nil, err
 	}

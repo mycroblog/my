@@ -16,3 +16,4 @@ export {
   type PasskeyFailure,
   type PasskeyJSON,
 } from "./passkeys";
+export { supportsViewTransitions } from "./transitions";

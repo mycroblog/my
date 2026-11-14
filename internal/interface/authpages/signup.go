@@ -34,31 +34,41 @@ const (
 // signUpForm is the registration form: what the applicant typed (never the password), the
 // fields the mode asks for, and the error of each field.
 type signUpForm struct {
-	Closed bool
+	Closed bool `json:"closed,omitempty"`
 	// LoginProvidersOnly replaces the password form with the login providers that let new users
 	// sign up.
-	LoginProvidersOnly bool
+	LoginProvidersOnly bool `json:"loginProvidersOnly,omitempty"`
 	// AskInvite shows the invite code field, which every mode but closed takes (ADR-0106 §17);
 	// NeedInvite makes it required (invite mode).
-	AskInvite  bool
-	NeedInvite bool
-	AskReason  bool
+	AskInvite  bool `json:"askInvite,omitempty"`
+	NeedInvite bool `json:"needInvite,omitempty"`
+	AskReason  bool `json:"askReason,omitempty"`
 
-	Username, Email, InviteCode, Reason string
+	Username   string `json:"username,omitempty"`
+	Email      string `json:"email,omitempty"`
+	InviteCode string `json:"inviteCode,omitempty"`
+	Reason     string `json:"reason,omitempty"`
 
 	// NeedAgreement asks the checkbox that agrees to the published documents (the terms of
 	// service, the privacy policy), which an instance without them does not; Agreed is its value.
-	NeedAgreement, Agreed bool
+	NeedAgreement bool `json:"needAgreement,omitempty"`
+	Agreed        bool `json:"agreed,omitempty"`
 
-	UsernameHint, PasswordHint, ReasonHint, InviteHint string
+	UsernameHint string `json:"usernameHint"`
+	PasswordHint string `json:"passwordHint"`
+	ReasonHint   string `json:"reasonHint"`
+	InviteHint   string `json:"inviteHint"`
 	// Errors maps a field name to its error message.
-	Errors map[string]string
+	Errors map[string]string `json:"errors,omitempty"`
 
-	UsernameMax, PasswordMin, PasswordMax, ReasonMax int
+	UsernameMax int `json:"usernameMax"`
+	PasswordMin int `json:"passwordMin"`
+	PasswordMax int `json:"passwordMax"`
+	ReasonMax   int `json:"reasonMax"`
 
 	// External is the sign-up of an account at an external login provider, which has no
 	// password (external.go); nil for the password form.
-	External *externalSignUpForm
+	External *externalSignUpForm `json:"external,omitempty"`
 }
 
 func newSignUpForm(l *i18n.Localizer, mode identity.RegistrationMode) *signUpForm {
@@ -105,7 +115,7 @@ func (h *Handler) signUpPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
+	p := h.newPage(r, screenSignUp)
 	p.SignUp = newSignUpForm(p.L, mode)
 	p.SignUp.LoginProvidersOnly = limited
 	p.SignUp.InviteCode = r.URL.Query().Get("invite")
@@ -127,7 +137,7 @@ func (h *Handler) renderSignUp(w http.ResponseWriter, r *http.Request, status in
 			p.External = h.externalButtons(r, signUpReturnTo(p.SignUp.InviteCode), true)
 		}
 	}
-	h.render(w, r, status, pageSignUp, p)
+	h.render(w, r, status, p)
 }
 
 // signUpReturnTo is where the sign-up with a login provider comes back to from the registration
@@ -169,7 +179,7 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
+	p := h.newPage(r, screenSignUp)
 	f := newSignUpForm(p.L, mode)
 	p.SignUp = f
 	form := r.PostForm
@@ -307,26 +317,27 @@ func (h *Handler) signUpFailedWith(w http.ResponseWriter, r *http.Request, p pag
 	render(status, p)
 }
 
-// statusView is what the status page says about an account that cannot be used yet.
+// statusView is what the status screen says about an account that cannot be used yet.
 type statusView struct {
-	Pending, Rejected bool
+	Pending  bool `json:"pending,omitempty"`
+	Rejected bool `json:"rejected,omitempty"`
 	// VerifyEmail asks the user to open the link sent to their address; empty when verified.
-	VerifyEmail string
+	VerifyEmail string `json:"verifyEmail,omitempty"`
 	// Restricted tells that moderation keeps the account out of the app, by Actions
 	// (moderation.go).
-	Restricted bool
-	Actions    []statusAction
+	Restricted bool           `json:"restricted,omitempty"`
+	Actions    []statusAction `json:"actions,omitempty"`
 	// Deactivated tells that the user deactivated the account, which is deleted at DeletionAt,
-	// DeletionDate as the user reads it. The page offers to reactivate or delete it
+	// DeletionDate as the user reads it. The screen offers to reactivate or delete it
 	// (deactivation.go), with the password when the user has one.
-	Deactivated           bool
-	DeletionDate          string
-	DeletionAt            string
-	DeleteAsksForPassword bool
+	Deactivated           bool   `json:"deactivated,omitempty"`
+	DeletionDate          string `json:"deletionDate,omitempty"`
+	DeletionAt            string `json:"deletionAt,omitempty"`
+	DeleteAsksForPassword bool   `json:"deleteAsksForPassword,omitempty"`
 }
 
-// renderStatus shows the status page of userID, in the user's saved locale. notice and alert
-// are worded in l, the page's localizer, when given.
+// renderStatus shows the status screen of userID, in the user's saved locale. notice and alert
+// are worded in l, the screen's localizer, when given.
 func (h *Handler) renderStatus(w http.ResponseWriter, r *http.Request, status int, userID string, access appidentity.Access, notice, alert func(l *i18n.Localizer) string) {
 	h.renderStatusPage(w, r, status, userID, access, notice, alert, nil)
 }
@@ -335,19 +346,12 @@ func (h *Handler) renderStatus(w http.ResponseWriter, r *http.Request, status in
 // nil for none.
 func (h *Handler) renderStatusPage(w http.ResponseWriter, r *http.Request, status int, userID string, access appidentity.Access, notice, alert func(l *i18n.Localizer) string, draft *appealDraft) {
 	l := h.userLocalizer(r, userID)
-	title := (*i18n.Localizer).ServerAuthStatusTitle
-	if access.LoginRestricted {
-		title = (*i18n.Localizer).ServerAuthStatusRestrictedTitle
-	}
-	if access.Deactivated {
-		title = (*i18n.Localizer).ServerAuthStatusDeactivatedTitle
-	}
 	actions, err := h.restrictionActions(r.Context(), l, access, draft)
 	if err != nil {
 		h.internalError(w, r, err)
 		return
 	}
-	p := page{L: l, Lang: l.Locale(), Dir: l.Direction(), Title: title(l), Stylesheet: h.o.Stylesheet}
+	p := page{L: l, Lang: l.Locale(), Dir: l.Direction(), Screen: screenStatus}
 	p.CSRFToken = h.csrfToken(w, r)
 	if notice != nil {
 		p.Notice = notice(l)
@@ -375,7 +379,7 @@ func (h *Handler) renderStatusPage(w http.ResponseWriter, r *http.Request, statu
 		v.VerifyEmail = l.ServerAuthStatusVerifyEmail(access.Email)
 	}
 	p.Status = v
-	h.render(w, r, status, pageStatus, p)
+	h.render(w, r, status, p)
 }
 
 // verifyEmailPage shows a button that confirms the email address of the link's token. The
@@ -386,10 +390,10 @@ func (h *Handler) verifyEmailPage(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusBadRequest, (*i18n.Localizer).ServerAuthVerifyEmailInvalid)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthVerifyEmailTitle)
+	p := h.newPage(r, screenVerifyEmail)
 	p.CSRFToken = h.csrfToken(w, r)
 	p.Token = token
-	h.render(w, r, http.StatusOK, pageVerifyEmail, p)
+	h.render(w, r, http.StatusOK, p)
 }
 
 // maxTokenLength bounds the token of a verification link; issued tokens are far shorter.
@@ -419,8 +423,9 @@ func (h *Handler) verifyEmail(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthVerifyEmailDoneTitle)
-	h.render(w, r, http.StatusOK, pageVerified, p)
+	p := h.newPage(r, screenVerified)
+	p.ReturnTo = PathWelcome
+	h.render(w, r, http.StatusOK, p)
 }
 
 // resendVerification sends the signed-in user a new verification email.

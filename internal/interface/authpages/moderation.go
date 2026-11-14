@@ -42,35 +42,39 @@ const maxStatusActions = 40
 
 // statusAction is one action in effect on the status page.
 type statusAction struct {
-	ID             string
-	Kind, Category string
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	Category string `json:"category"`
 	// Reason is the moderators' explanation; empty when there is none.
-	Reason string
+	Reason string `json:"reason,omitempty"`
 	// Ends says when the action ends; EndsAt is that time in RFC 3339, empty for an action that
 	// lasts until it is lifted.
-	Ends, EndsAt string
+	Ends   string `json:"ends"`
+	EndsAt string `json:"endsAt,omitempty"`
 
 	// Appeal is the user's appeal of the action; nil for none.
-	Appeal *statusAppeal
+	Appeal *statusAppeal `json:"appeal,omitempty"`
 	// CanAppeal shows the appeal form, which AppealHint describes; AppealMax is the longest
 	// appeal in characters.
-	CanAppeal  bool
-	AppealHint string
-	AppealMax  int
+	CanAppeal  bool   `json:"canAppeal,omitempty"`
+	AppealHint string `json:"appealHint,omitempty"`
+	AppealMax  int    `json:"appealMax,omitempty"`
 	// NoAppeal says why the action cannot be appealed; empty when it can be or is appealed.
-	NoAppeal string
+	NoAppeal string `json:"noAppeal,omitempty"`
 	// AppealText is the text of a refused appeal of the action, shown again in its form, and
 	// AppealError why the text was refused.
-	AppealText, AppealError string
+	AppealText  string `json:"appealText,omitempty"`
+	AppealError string `json:"appealError,omitempty"`
 }
 
-// statusAppeal is the user's appeal of an action on the status page.
+// statusAppeal is the user's appeal of an action on the status screen.
 type statusAppeal struct {
 	// State says where the appeal stands; StateLabel names it in a word or two, for its badge.
-	State, StateLabel string
-	Text              string
+	State      string `json:"state"`
+	StateLabel string `json:"stateLabel"`
+	Text       string `json:"text"`
 	// Answer is the moderators' explanation of their decision; empty for none.
-	Answer string
+	Answer string `json:"answer,omitempty"`
 }
 
 // appealDraft is an appeal that the appeal form sent and that was refused for its text: empty,

@@ -27,11 +27,12 @@ func TestWebClient(t *testing.T) {
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
 	build := fstest.MapFS{
 		".vite/manifest.json": {Data: []byte(`{"index.html": {"file": "assets/index-AAAA.js", "isEntry": true, "css": ["assets/index-CCCC.css"]},
-			"src/server-pages.css": {"file": "assets/server-pages-FFFF.css", "isEntry": true}}`)},
-		"assets/index-AAAA.js":         {Data: []byte("export {}")},
-		"assets/index-CCCC.css":        {Data: []byte("body{}")},
-		"assets/server-pages-FFFF.css": {Data: []byte("main{}")},
-		"sw.js":                        {Data: []byte("// sw")},
+			"auth.html": {"file": "assets/auth-FFFF.js", "src": "auth.html", "isEntry": true, "css": ["assets/auth-GGGG.css"]}}`)},
+		"assets/index-AAAA.js":  {Data: []byte("export {}")},
+		"assets/index-CCCC.css": {Data: []byte("body{}")},
+		"assets/auth-FFFF.js":   {Data: []byte("export {}")},
+		"assets/auth-GGGG.css":  {Data: []byte("main{}")},
+		"sw.js":                 {Data: []byte("// sw")},
 	}
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), WebBuild: build})
 	if err != nil {
@@ -101,11 +102,12 @@ func TestWebClient(t *testing.T) {
 					t.Errorf("shell CSP = %q", csp)
 				}
 			case "signin":
-				// The server-rendered screens load the stylesheet the web build makes for them (ADR-0090).
+				// The sign-in screens are documents of the web build's auth entry (ADR-0090), not the app's shell.
 				body := rec.Body.String()
-				if !strings.Contains(body, `<link rel="stylesheet" href="/assets/server-pages-FFFF.css">`) || strings.Contains(body, "index-CCCC.css") ||
+				if !strings.Contains(body, `<script type="module" src="/assets/auth-FFFF.js"></script>`) ||
+					!strings.Contains(body, `<link rel="stylesheet" href="/assets/auth-GGGG.css">`) || strings.Contains(body, "index-CCCC.css") ||
 					strings.Contains(body, `id="config"`) {
-					t.Errorf("sign-in page is the shell or lacks the server pages' CSS: %s", body)
+					t.Errorf("sign-in page is the shell or lacks the auth entry: %s", body)
 				}
 			case problem:
 				if hd.Get("Content-Type") != "application/problem+json" {

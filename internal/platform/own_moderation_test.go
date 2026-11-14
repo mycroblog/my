@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -98,13 +99,11 @@ func TestOwnModerationActions(t *testing.T) {
 		t.Fatalf("sign-in while suspended = %d → %q, want the status page", w.Code, w.Header().Get("Location"))
 	}
 	w := c.do(http.MethodGet, authpages.PathSignIn, nil)
-	for _, want := range []string{
-		"<h1>Your account is restricted</h1>", "<strong>Suspended:", "Reason: Legal reasons", `<p dir="auto">A court order.</p>`,
-		"Lasts until a moderator lifts it",
-	} {
-		if !strings.Contains(w.Body.String(), want) {
-			t.Errorf("status page lacks %s:\n%s", want, w.Body.String())
-		}
+	data := authData(t, w.Body.String())
+	if authAt(data, "status.restricted") != true || !strings.HasPrefix(authText(data, "status.actions.0.kind"), "Suspended:") ||
+		authText(data, "status.actions.0.category") != "Reason: Legal reasons" || authText(data, "status.actions.0.reason") != "A court order." ||
+		authText(data, "status.actions.0.ends") != "Lasts until a moderator lifts it" {
+		t.Errorf("status page lacks the suspension:\n%s", w.Body.String())
 	}
 	if strings.Contains(w.Body.String(), "Please be kind.") {
 		t.Errorf("status page lists the warning, which keeps nobody out:\n%s", w.Body.String())
@@ -115,6 +114,18 @@ func TestOwnModerationActions(t *testing.T) {
 	}.Encode(), nil); w.Code != http.StatusForbidden || w.Header().Get("Location") != "" {
 		t.Errorf("authorize while suspended = %d → %q, want 403 and no code", w.Code, w.Header().Get("Location"))
 	}
+}
+
+// appealable reports whether the status screen's data offers the appeal form for the action id.
+func appealable(data map[string]any, id string) bool {
+	actions, _ := authAt(data, "status.actions").([]any)
+	for i := range actions {
+		p := "status.actions." + strconv.Itoa(i) + "."
+		if authText(data, p+"id") == id {
+			return authAt(data, p+"canAppeal") == true
+		}
+	}
+	return false
 }
 
 // TestAppealFromTheSignInScreens checks, through the composition root, that a suspended user,
@@ -136,7 +147,7 @@ func TestAppealFromTheSignInScreens(t *testing.T) {
 	if w := sc.do(http.MethodPost, authpages.PathSignIn, form); w.Code != http.StatusSeeOther || w.Header().Get("Location") != authpages.PathSignIn {
 		t.Fatalf("sign-in while suspended = %d → %q, want the status page", w.Code, w.Header().Get("Location"))
 	}
-	if body := sc.do(http.MethodGet, authpages.PathSignIn, nil).Body.String(); !strings.Contains(body, `name="action_id" value="`+suspend.ID+`"`) {
+	if body := sc.do(http.MethodGet, authpages.PathSignIn, nil).Body.String(); !appealable(authData(t, body), suspend.ID) {
 		t.Fatalf("status page has no appeal form for %s:\n%s", suspend.ID, body)
 	}
 
@@ -187,7 +198,7 @@ func TestBanAppealFromTheSignInScreens(t *testing.T) {
 	if w := signIn(); w.Code != http.StatusSeeOther || w.Header().Get("Location") != authpages.PathSignIn {
 		t.Fatalf("sign-in while banned = %d → %q, want the status page", w.Code, w.Header().Get("Location"))
 	}
-	if body := sc.do(http.MethodGet, authpages.PathSignIn, nil).Body.String(); !strings.Contains(body, `name="action_id" value="`+ban.ID+`"`) ||
+	if body := sc.do(http.MethodGet, authpages.PathSignIn, nil).Body.String(); !appealable(authData(t, body), ban.ID) ||
 		!strings.Contains(body, "Your account will be deleted in 30 days") {
 		t.Fatalf("status page has no appeal form for %s or no deletion:\n%s", ban.ID, body)
 	}
@@ -209,7 +220,7 @@ func TestBanAppealFromTheSignInScreens(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if body := sc.do(http.MethodGet, authpages.PathSignIn, nil).Body.String(); strings.Contains(body, `name="action_id"`) || !strings.Contains(body, `name="password"`) {
+	if body := sc.do(http.MethodGet, authpages.PathSignIn, nil).Body.String(); authText(authData(t, body), "screen") != "sign_in" {
 		t.Fatalf("sign-in screen after the deletion, want the sign-in form:\n%s", body)
 	}
 	if w := signIn(); w.Code == http.StatusSeeOther {

@@ -8,5 +8,14 @@ export { createAppData, createQueryClient, type AppData } from "./app-data";
 export { receiveHomeGap, receiveHomeStatuses, useHomeArrivals, type Arrival } from "./arrivals";
 export { AppDataProvider } from "./provider";
 export { openSession } from "./session";
+export {
+  appPath,
+  finishSignIn,
+  SignInError,
+  startSignIn,
+  type SignInFailure,
+  type SignInOptions,
+  type SignInStorage,
+} from "./sign-in";
 export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
 export { homeTimelineQuery, useHomeTimeline, type HomeTimeline } from "./timeline";

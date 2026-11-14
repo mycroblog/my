@@ -7,6 +7,7 @@
 import { Avatar, Button, runTransition, Shared, transitionKinds, type TransitionKind } from "@my/design-system";
 import { TransitionStage } from "@my/design-system/preview";
 import { rootPx, text, transition } from "@my/design-tokens";
+import { supportsViewTransitions } from "@my/platform";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 
@@ -69,11 +70,15 @@ function Post() {
 export function Motion() {
   const [opened, setOpened] = useState(false);
   const run = (kind: TransitionKind) => {
-    void runTransition(kind, () => {
-      flushSync(() => {
-        setOpened((o) => !o);
-      });
-    });
+    void runTransition(
+      kind,
+      () => {
+        flushSync(() => {
+          setOpened((o) => !o);
+        });
+      },
+      supportsViewTransitions(),
+    );
   };
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: rem(24) }}>

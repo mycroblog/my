@@ -117,6 +117,7 @@
         "@my/app-components": "workspace:*",
         "@my/app-data": "workspace:*",
         "@my/design-system": "workspace:*",
+        "@my/platform": "workspace:*",
       },
       "devDependencies": {
         "@mycroblog/mykit": "workspace:*",
@@ -136,6 +137,7 @@
         "@my/app": "workspace:*",
         "@my/app-components": "workspace:*",
         "@my/app-data": "workspace:*",
+        "@my/app-features": "workspace:*",
         "@my/design-system": "workspace:*",
         "@my/design-tokens": "workspace:*",
         "@my/platform": "workspace:*",

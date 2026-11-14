@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The instance theme (ADR-0059 §5): the shell and the server-rendered pages load the current
+// The instance theme (ADR-0059 §5): the shell and the auth screens (authpages) load the current
 // theme's stylesheet from a URL that names its revision, after the build's stylesheets, so the
 // theme applies from the first paint without relaxing the CSP or varying the shell per visitor.
 

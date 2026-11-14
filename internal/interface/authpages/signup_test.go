@@ -17,15 +17,6 @@ import (
 	"github.com/mycroblog/my/internal/interface/authpages"
 )
 
-func wantContains(t *testing.T, body string, wants ...string) {
-	t.Helper()
-	for _, want := range wants {
-		if !strings.Contains(body, want) {
-			t.Errorf("page lacks %s:\n%s", want, body)
-		}
-	}
-}
-
 func wantLacks(t *testing.T, body string, unwanted ...string) {
 	t.Helper()
 	for _, u := range unwanted {
@@ -39,39 +30,40 @@ func TestSignUpPageFollowsTheMode(t *testing.T) {
 	id := newFakeIdentity()
 	b := newBrowser(t, newServer(t, id))
 	for _, tc := range []struct {
-		mode         identity.RegistrationMode
-		status       int
-		want, unwant []string
+		mode   identity.RegistrationMode
+		status int
+		// want are the flags of the form that the mode sets; inviteHint is a part of the invite
+		// code's hint.
+		want       map[string]bool
+		inviteHint string
 	}{
 		// Every mode but closed takes an invite (ADR-0106 §17): optional in open and approval mode,
 		// required in invite mode, and filled in from ?invite=.
-		{identity.RegistrationOpen, http.StatusOK, []string{
-			`name="username"`, `name="email"`, `name="password"`,
-			`name="invite_code" type="text" value="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby`,
-			"You can also sign up without one.",
-		}, []string{`name="reason"`}},
-		{identity.RegistrationApproval, http.StatusOK, []string{
-			`<textarea id="sign-up-reason" name="reason"`, `maxlength="1000" dir="auto"`,
-			`name="invite_code" type="text" value="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby`,
-			"without waiting for review",
-		}, nil},
-		{identity.RegistrationInvite, http.StatusOK, []string{
-			`id="sign-up-invite" name="invite_code" type="text" value="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false" required`,
-			"This server accepts new accounts by invitation only.",
-		}, []string{`name="reason"`}},
-		{identity.RegistrationClosed, http.StatusForbidden, []string{"This server is not accepting new accounts."}, []string{"<form", `name="username"`}},
+		{identity.RegistrationOpen, http.StatusOK, map[string]bool{"askInvite": true}, "You can also sign up without one."},
+		{identity.RegistrationApproval, http.StatusOK, map[string]bool{"askInvite": true, "askReason": true}, "without waiting for review"},
+		{identity.RegistrationInvite, http.StatusOK, map[string]bool{"askInvite": true, "needInvite": true}, "This server accepts new accounts by invitation only."},
+		{identity.RegistrationClosed, http.StatusForbidden, map[string]bool{"closed": true}, ""},
 	} {
 		id.mode = tc.mode
 		w := b.do(http.MethodGet, authpages.PathSignUp+"?invite=ABCD", nil, nil)
 		if w.Code != tc.status {
 			t.Errorf("%s: GET sign_up = %d, want %d", tc.mode, w.Code, tc.status)
 		}
-		wantContains(t, w.Body.String(), tc.want...)
-		wantLacks(t, w.Body.String(), tc.unwant...)
+		data := screenData(t, w)
+		for _, flag := range []string{"closed", "askInvite", "needInvite", "askReason"} {
+			if got := at(data, "signUp."+flag) == true; got != tc.want[flag] {
+				t.Errorf("%s: signUp.%s = %v, want %v", tc.mode, flag, got, tc.want[flag])
+			}
+		}
+		if tc.mode != identity.RegistrationClosed {
+			if text(data, "signUp.inviteCode") != "ABCD" || !strings.Contains(text(data, "signUp.inviteHint"), tc.inviteHint) {
+				t.Errorf("%s: signUp = %v, want the invite code from ?invite= and its hint", tc.mode, at(data, "signUp"))
+			}
+		}
 	}
 }
 
-func TestSignUpPageIsAccessibleHTML(t *testing.T) {
+func TestSignUpPage(t *testing.T) {
 	id := newFakeIdentity()
 	id.mode = identity.RegistrationApproval
 	b := newBrowser(t, newServer(t, id))
@@ -80,22 +72,18 @@ func TestSignUpPageIsAccessibleHTML(t *testing.T) {
 	if h.Get("Cache-Control") != "no-store" || !strings.Contains(h.Get("Content-Security-Policy"), "default-src 'none'") {
 		t.Errorf("headers = %v", h)
 	}
-	body := w.Body.String()
-	wantContains(t, body,
-		`<html lang="ja" dir="ltr">`,
-		`<title>アカウントを作成</title>`,
-		`<label for="sign-up-username">ユーザー名</label>`,
-		`aria-describedby="sign-up-username-hint"`,
-		`<p id="sign-up-username-hint" class="hint">半角英字 (a〜z)・数字・アンダースコアで 30 文字まで。あとから変更できません。</p>`,
-		`<label for="sign-up-email">メールアドレス</label>`,
-		`autocomplete="username"`,
-		`<label for="sign-up-password">パスワード</label>`,
-		`autocomplete="new-password" required minlength="8" maxlength="128"`,
-		`<label for="sign-up-reason">参加したい理由 (任意)</label>`,
-		`<form class="form" method="post" action="/auth/sign_up">`,
-		`<a href="/auth/sign_in">ログイン</a>`,
-	)
-	wantLacks(t, body, "<script", "style=", "aria-invalid", `role="alert"`)
+	data := screenData(t, w)
+	for key, want := range map[string]any{
+		"screen": "sign_up", "signUp.usernameHint": "半角英字 (a〜z)・数字・アンダースコアで 30 文字まで。あとから変更できません。",
+		"signUp.usernameMax": 30.0, "signUp.passwordMin": 8.0, "signUp.passwordMax": 128.0, "signUp.reasonMax": 1000.0,
+	} {
+		if got := at(data, key); got != want {
+			t.Errorf("%s = %v, want %v", key, got, want)
+		}
+	}
+	if at(data, "error") != nil || at(data, "signUp.errors") != nil || text(data, "csrfToken") == "" {
+		t.Errorf("a fresh form = %v, want no error and the anti-forgery token", data)
+	}
 }
 
 func signUpForm(b *browser, fields ...string) url.Values {
@@ -128,14 +116,11 @@ func TestSignUpSignsTheNewUserIn(t *testing.T) {
 	// The new user is waiting for approval and email confirmation; the sign-in page says so.
 	w = b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
 	body := w.Body.String()
-	wantContains(t, body,
-		"<h1>Your account is not ready yet</h1>",
-		"Your registration is waiting for a moderator&#39;s approval.",
-		"Confirm your email address: open the link we sent to alice@example.com.",
-		`<form class="form" method="post" action="/auth/verify_email/resend">`,
-		`<form class="form" method="post" action="/auth/sign_out">`,
-	)
-	wantLacks(t, body, "Continue")
+	data := screenData(t, w)
+	if text(data, "screen") != "status" || at(data, "status.pending") != true || text(data, "csrfToken") == "" ||
+		text(data, "status.verifyEmail") != "Confirm your email address: open the link we sent to alice@example.com." {
+		t.Errorf("status of a new user = %v, want pending approval and email confirmation", data)
+	}
 	// Cloudflare's Email Address Obfuscation leaves the address alone between these comments.
 	if off, on, at := strings.Index(body, "<!--email_off-->"), strings.Index(body, "<!--/email_off-->"), strings.Index(body, "alice@example.com"); off < 0 || on < off || at < off || at > on {
 		t.Errorf("the address is not between <!--email_off--> and <!--/email_off-->:\n%s", body)
@@ -180,19 +165,21 @@ func TestSignUpShowsEveryFieldError(t *testing.T) {
 	if w.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("POST sign_up = %d, want 422", w.Code)
 	}
-	body := w.Body.String()
-	wantContains(t, body,
-		`<p id="sign-up-error" class="alert" role="alert">The account was not created. Check the fields marked below.</p>`,
-		`<p id="sign-up-username-error" class="field-error">Use 1 to 30 letters (a to z), digits, and underscores.</p>`,
-		`aria-describedby="sign-up-username-hint sign-up-username-error" aria-invalid="true"`,
-		`<p id="sign-up-email-error" class="field-error">Enter an email address such as alice@example.com.</p>`,
-		`aria-describedby="sign-up-email-hint sign-up-email-error" aria-invalid="true"`,
-		`<p id="sign-up-password-error" class="field-error">Use 8 to 128 characters.</p>`,
-		`aria-describedby="sign-up-password-hint sign-up-password-error" aria-invalid="true"`,
-		`<p id="sign-up-invite-error" class="field-error">Enter your invite code.</p>`,
-		`value="al ice"`, `value="alice"`,
-	)
-	wantLacks(t, body, `value="short"`)
+	data := screenData(t, w)
+	for key, want := range map[string]string{ //nolint:gosec // G101: field errors of the form, not credentials
+		"error":                     "The account was not created. Check the fields marked below.",
+		"signUp.errors.username":    "Use 1 to 30 letters (a to z), digits, and underscores.",
+		"signUp.errors.email":       "Enter an email address such as alice@example.com.",
+		"signUp.errors.password":    "Use 8 to 128 characters.",
+		"signUp.errors.invite_code": "Enter your invite code.",
+		"signUp.username":           "al ice",
+		"signUp.email":              "alice",
+	} {
+		if got := text(data, key); got != want {
+			t.Errorf("%s = %q, want %q", key, got, want)
+		}
+	}
+	wantLacks(t, w.Body.String(), `"short"`)
 	if len(id.signUps) != 0 {
 		t.Error("an invalid form reached SignUp")
 	}
@@ -202,15 +189,16 @@ func TestSignUpReportsWhatTheServiceRejects(t *testing.T) {
 	for _, tc := range []struct {
 		err    error
 		status int
-		want   string
+		// key is where the data says it, and want what it says (a prefix of it).
+		key, want string
 	}{
-		{appaccount.ErrUsernameTaken, http.StatusUnprocessableEntity, `<p id="sign-up-username-error" class="field-error">This username is already taken.</p>`},
-		{appidentity.ErrEmailTaken, http.StatusUnprocessableEntity, `<p id="sign-up-email-error" class="field-error">This email address is already in use.</p>`},
-		{appidentity.ErrInvalidInvite, http.StatusUnprocessableEntity, `<p id="sign-up-invite-error" class="field-error">This invite code is not valid.`},
-		{appidentity.ErrRegistrationClosed, http.StatusForbidden, "This server is not accepting new accounts."},
-		{appidentity.ErrSignUpRefused, http.StatusForbidden, `<p id="sign-up-error" class="alert" role="alert">This server cannot accept this sign-up.</p>`},
+		{appaccount.ErrUsernameTaken, http.StatusUnprocessableEntity, "signUp.errors.username", "This username is already taken."},
+		{appidentity.ErrEmailTaken, http.StatusUnprocessableEntity, "signUp.errors.email", "This email address is already in use."},
+		{appidentity.ErrInvalidInvite, http.StatusUnprocessableEntity, "signUp.errors.invite_code", "This invite code is not valid."},
+		{appidentity.ErrRegistrationClosed, http.StatusForbidden, "signUp.closed", ""},
+		{appidentity.ErrSignUpRefused, http.StatusForbidden, "error", "This server cannot accept this sign-up."},
 		{&kernel.RateLimitedError{RetryAfter: 90 * time.Second}, http.StatusTooManyRequests,
-			`<p id="sign-up-error" class="alert" role="alert">Too many sign-up attempts from your network. Try again in 2 minutes.</p>`},
+			"error", "Too many sign-up attempts from your network. Try again in 2 minutes."},
 	} {
 		id := newFakeIdentity()
 		id.mode = identity.RegistrationInvite
@@ -221,7 +209,14 @@ func TestSignUpReportsWhatTheServiceRejects(t *testing.T) {
 		if w.Code != tc.status {
 			t.Errorf("%v: POST sign_up = %d, want %d", tc.err, w.Code, tc.status)
 		}
-		wantContains(t, w.Body.String(), tc.want)
+		data := screenData(t, w)
+		if tc.want == "" {
+			if at(data, tc.key) != true {
+				t.Errorf("%v: %s = %v, want true", tc.err, tc.key, at(data, tc.key))
+			}
+		} else if got := text(data, tc.key); !strings.HasPrefix(got, tc.want) {
+			t.Errorf("%v: %s = %q, want %q", tc.err, tc.key, got, tc.want)
+		}
 		if _, ok := b.cookies[authpages.CookieSession]; ok {
 			t.Errorf("%v: a failed sign-up set a session", tc.err)
 		}
@@ -244,7 +239,7 @@ func TestSignUpPostsAreProtected(t *testing.T) {
 	}
 	bad.Set("csrf_token", strings.Repeat("A", 43))
 	w := b.do(http.MethodPost, authpages.PathSignUp, bad, map[string]string{"Sec-Fetch-Site": "", "Origin": ""})
-	if w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), "This form has expired.") {
+	if w.Code != http.StatusForbidden || !strings.Contains(text(screenData(t, w), "error"), "This form has expired.") {
 		t.Errorf("POST sign_up with a wrong token = %d", w.Code)
 	}
 	if len(id.signUps) != 0 {
@@ -255,9 +250,13 @@ func TestSignUpPostsAreProtected(t *testing.T) {
 func TestSignInLinksToSignUpUnlessClosed(t *testing.T) {
 	id := newFakeIdentity()
 	b := newBrowser(t, newServer(t, id))
-	wantContains(t, b.do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String(), `<a href="/auth/sign_up">Create an account</a>`)
+	if at(screenData(t, b.do(http.MethodGet, authpages.PathSignIn, nil, nil)), "canSignUp") != true {
+		t.Error("the sign-in screen does not link to the registration")
+	}
 	id.mode = identity.RegistrationClosed
-	wantLacks(t, b.do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String(), `/auth/sign_up`)
+	if at(screenData(t, b.do(http.MethodGet, authpages.PathSignIn, nil, nil)), "canSignUp") != nil {
+		t.Error("the sign-in screen links to a closed registration")
+	}
 }
 
 func TestSignInOfAPendingUserShowsTheStatus(t *testing.T) {
@@ -269,9 +268,11 @@ func TestSignInOfAPendingUserShowsTheStatus(t *testing.T) {
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != authpages.PathSignIn {
 		t.Fatalf("sign-in of a rejected user = %d → %q, want the status page", w.Code, w.Header().Get("Location"))
 	}
-	body := b.do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String()
-	wantContains(t, body, "Your registration was not approved")
-	wantLacks(t, body, "verify_email/resend", "waiting for a moderator")
+	data := screenData(t, b.do(http.MethodGet, authpages.PathSignIn, nil, nil))
+	if text(data, "screen") != "status" || at(data, "status.rejected") != true || at(data, "status.pending") != nil ||
+		at(data, "status.verifyEmail") != nil {
+		t.Errorf("status of a rejected user = %v, want the rejection only", at(data, "status"))
+	}
 }
 
 func TestSignUpOfAReadyUserGoesToTheWelcomeStep(t *testing.T) {
@@ -293,18 +294,19 @@ func TestVerifyEmail(t *testing.T) {
 	if page.Code != http.StatusOK {
 		t.Fatalf("GET verify_email = %d", page.Code)
 	}
-	wantContains(t, page.Body.String(), `<input type="hidden" name="token" value="my_evt_good">`, `<button class="button" type="submit">Confirm email address</button>`)
+	if data := screenData(t, page); text(data, "screen") != "verify_email" || text(data, "token") != "my_evt_good" {
+		t.Errorf("GET verify_email data = %v", data)
+	}
 	if id.verified["my_evt_good"] {
 		t.Fatal("GET redeemed the token")
 	}
 	w := b.do(http.MethodPost, authpages.PathVerifyEmail, b.form(page, "token", "my_evt_good"), nil)
-	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "Your email address is confirmed.") {
+	// Continuing signs in to the app, which opens its welcome step.
+	if data := screenData(t, w); w.Code != http.StatusOK || text(data, "screen") != "verified" || text(data, "returnTo") != authpages.PathWelcome {
 		t.Fatalf("POST verify_email = %d %s", w.Code, w.Body.String())
 	}
-	// Continuing signs in to the app, which opens its welcome step.
-	wantContains(t, w.Body.String(), `<a href="/login?return_to=%2Fwelcome">`)
 	w = b.do(http.MethodPost, authpages.PathVerifyEmail, b.form(page, "token", "my_evt_good"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "This link is not valid.") {
+	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(text(screenData(t, w), "error"), "This link is not valid.") {
 		t.Errorf("second POST verify_email = %d %s", w.Code, w.Body.String())
 	}
 	if w := b.do(http.MethodGet, authpages.PathVerifyEmail, nil, nil); w.Code != http.StatusBadRequest {
@@ -319,18 +321,22 @@ func TestResendVerification(t *testing.T) {
 	page := b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
 	b.do(http.MethodPost, authpages.PathSignIn, b.form(page, "email", "alice@example.com", "password", "correct horse"), nil)
 	page = b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	wantContains(t, page.Body.String(), "open the link we sent to alice@example.com")
-	wantLacks(t, page.Body.String(), "waiting for a moderator")
+	if data := screenData(t, page); !strings.Contains(text(data, "status.verifyEmail"), "open the link we sent to alice@example.com") ||
+		at(data, "status.pending") != nil {
+		t.Errorf("status = %v, want the email confirmation only", at(data, "status"))
+	}
 
 	w := b.do(http.MethodPost, authpages.PathResendVerification, b.form(page), nil)
 	if w.Code != http.StatusOK || id.resent != 1 {
 		t.Fatalf("POST resend = %d, resent %d", w.Code, id.resent)
 	}
-	wantContains(t, w.Body.String(), `<p class="notice" role="status">We sent a new link to alice@example.com.</p>`)
+	if got := text(screenData(t, w), "notice"); got != "We sent a new link to alice@example.com." {
+		t.Errorf("notice = %q", got)
+	}
 
 	id.resendErr = &kernel.RateLimitedError{RetryAfter: time.Minute}
 	w = b.do(http.MethodPost, authpages.PathResendVerification, b.form(page), nil)
-	if w.Code != http.StatusTooManyRequests || !strings.Contains(w.Body.String(), `<p class="alert" role="alert">You asked for the link too many times. Try again in 1 minute.</p>`) {
+	if w.Code != http.StatusTooManyRequests || text(screenData(t, w), "error") != "You asked for the link too many times. Try again in 1 minute." {
 		t.Errorf("rate-limited resend = %d %s", w.Code, w.Body.String())
 	}
 

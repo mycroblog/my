@@ -19,42 +19,52 @@ import (
 // consent is the data of the consent page: what the user is asked, and the authorization
 // request that the form posts back.
 type consent struct {
-	ClientName   string
-	RedirectHost string
+	ClientName   string `json:"clientName"`
+	RedirectHost string `json:"redirectHost"`
 	// Unverified is the notice that this server has not verified the application; every
 	// third-party application gets it (ADR-0090 §4).
-	Unverified string
+	Unverified string `json:"unverified"`
 	// Origin says where the application comes from, by the route it was registered by.
-	Origin string
+	Origin string `json:"origin"`
 	// Website is the home page the application declared, shown as text; "" when none.
-	Website string
+	Website string `json:"website,omitempty"`
 	// Impersonation warns that the answer goes to an address that another app may claim; ""
 	// when the redirect URI is a claimed https URL or the client was registered by a user.
-	Impersonation string
+	Impersonation string `json:"impersonation,omitempty"`
 	// ScopeGroups are the requested scopes by their weight, the heaviest first; a weight with
 	// no requested scope has no group.
-	ScopeGroups []consentScopeGroup
+	ScopeGroups []consentScopeGroup `json:"scopeGroups"`
+	// Account is the signed-in account that grants the application; nil when it cannot be named.
+	Account *consentAccount `json:"account,omitempty"`
 
-	ResponseType        string
-	ClientID            string
-	RedirectURI         string
-	Scope               string
-	State               string
-	CodeChallenge       string
-	CodeChallengeMethod string
+	ResponseType        string `json:"responseType"`
+	ClientID            string `json:"clientId"`
+	RedirectURI         string `json:"redirectUri"`
+	Scope               string `json:"scope"`
+	State               string `json:"state,omitempty"`
+	CodeChallenge       string `json:"codeChallenge"`
+	CodeChallengeMethod string `json:"codeChallengeMethod"`
+}
+
+// consentAccount is the account that grants the application: its handle, @alice@example.com,
+// and its display name, "" when it has none.
+type consentAccount struct {
+	Handle      string `json:"handle"`
+	DisplayName string `json:"displayName,omitempty"`
 }
 
 // consentScope is a requested permission and the cautions that go with it.
 type consentScope struct {
-	Text     string
-	Cautions []string
+	Text     string   `json:"text"`
+	Cautions []string `json:"cautions,omitempty"`
 }
 
 // consentScopeGroup is the requested scopes of one weight under its heading: Risk is
 // riskCaution, riskWrite, or riskRead, which also names its look.
 type consentScopeGroup struct {
-	Risk, Title string
-	Scopes      []consentScope
+	Risk   string         `json:"risk"`
+	Title  string         `json:"title"`
+	Scopes []consentScope `json:"scopes"`
 }
 
 // The weights of the scopes on the consent page, the heaviest first.
@@ -214,7 +224,7 @@ func (h *Handler) handleAuthorization(w http.ResponseWriter, r *http.Request, re
 	case decision == decisionDeny:
 		h.redirectToClient(w, r, a, url.Values{"error": {appidentity.OAuthAccessDenied}})
 	default:
-		h.renderConsent(w, r, a, req)
+		h.renderConsent(w, r, a, req, session.UserID)
 	}
 }
 
@@ -244,9 +254,9 @@ func (h *Handler) redirectToClient(w http.ResponseWriter, r *http.Request, a app
 	http.Redirect(w, r, u.String(), http.StatusSeeOther)
 }
 
-func (h *Handler) renderConsent(w http.ResponseWriter, r *http.Request, a appidentity.Authorization, req appidentity.AuthorizationRequest) {
+func (h *Handler) renderConsent(w http.ResponseWriter, r *http.Request, a appidentity.Authorization, req appidentity.AuthorizationRequest, userID string) {
 	name := a.Client.Name
-	p := h.newPage(r, func(l *i18n.Localizer) string { return l.ServerAuthAuthorizeTitle(name) })
+	p := h.newPage(r, screenAuthorize)
 	p.CSRFToken = h.csrfToken(w, r)
 	u, err := url.Parse(a.RedirectURI)
 	if err != nil {
@@ -270,9 +280,17 @@ func (h *Handler) renderConsent(w http.ResponseWriter, r *http.Request, a appide
 		c.Impersonation = p.L.ServerAuthAuthorizeImpersonation(c.RedirectHost)
 	}
 	c.ScopeGroups = groupScopes(p.L, a.Scope.Tokens())
+	if h.o.Accounts != nil {
+		acct, err := h.o.Accounts.SignedInAccount(r.Context(), userID)
+		if err != nil {
+			h.internalError(w, r, err)
+			return
+		}
+		c.Account = &consentAccount{Handle: "@" + acct.Username + "@" + h.o.AccountDomain, DisplayName: acct.DisplayName}
+	}
 	p.Consent = c
 	p.formAction = []string{redirectSource(u)}
-	h.render(w, r, http.StatusOK, pageAuthorize, p)
+	h.render(w, r, http.StatusOK, p)
 }
 
 // clientOrigin words where the client comes from, by the route it was registered by

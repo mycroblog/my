@@ -197,7 +197,7 @@ func TestDiscordSignIn(t *testing.T) {
 
 	t.Run("button", func(t *testing.T) {
 		_, body := e.client().do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		if !strings.Contains(body, "/auth/external/"+open+"/start") || !strings.Contains(body, ">Sign in with Discord</a>") {
+		if !hasExternalButton(authData(t, body), "/auth/external/"+open+"/start", "Sign in with Discord", "discord") {
 			t.Errorf("sign-in page:\n%s", body)
 		}
 	})
@@ -221,7 +221,7 @@ func TestDiscordSignIn(t *testing.T) {
 		c := e.client()
 		resp, body := dc.signIn(c, open, dcAccount{id: "200000000000000002", username: "bob_dev", globalName: strPtr("Bob"), email: strPtr("bob@example.org"), verified: true})
 		m := ticketField.FindStringSubmatch(body)
-		if resp.StatusCode != http.StatusOK || m == nil || !strings.Contains(body, `value="bob@example.org"`) {
+		if resp.StatusCode != http.StatusOK || m == nil || authText(authData(t, body), "signUp.email") != "bob@example.org" {
 			t.Fatalf("callback = %d, want the registration form with the address\n%s", resp.StatusCode, body)
 		}
 		form := url.Values{"csrf_token": {c.cookies[authpages.CookieCSRF]}, "ticket": {m[1]}, "username": {"bob"}, "email": {"bob@example.org"}}

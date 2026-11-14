@@ -34,6 +34,9 @@ type runtimeConfig struct {
 	// the build, so that the files of the build, and so the Service Worker, are the same for every
 	// version of the server with the same client; left out when there is none.
 	Version string `json:"version,omitempty"`
+	// ClientID is the client_id of the first-party web client, with which the client signs in by
+	// the authorization code flow with PKCE (ADR-0090 §16); left out when the server registers none.
+	ClientID string `json:"clientId,omitempty"`
 }
 
 type shellData struct {

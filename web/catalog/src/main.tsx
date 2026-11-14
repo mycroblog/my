@@ -7,13 +7,16 @@ import { namesCommandKey } from "@my/platform";
 import { StrictMode, useEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Catalog } from "./Catalog";
+import { AuthPreview } from "./auth/AuthPreview";
 import { AppPreview } from "./timeline/AppPreview";
 
-// The catalog's pages (Catalog.tsx), under the shortcuts of the app's keymap, and at /app/timeline the app's home
-// screen, which places its own. /timeline, its former address, which bookmarks and older notes name, leads there.
+// The catalog's pages (Catalog.tsx), under the shortcuts of the app's keymap; at /app/timeline the app's home screen,
+// which places its own; at /app/auth the auth entry's screens, which are full pages outside the app. /timeline, the
+// timeline's former address, which bookmarks and older notes name, leads there.
 const path = location.pathname.replace(/\/+$/, "");
 if (path === "/timeline") location.replace(`/app/timeline${location.search}${location.hash}`);
 const timeline = path === "/app/timeline";
+const auth = path === "/app/auth";
 
 // The page's locale: `?lang=`, which the overlay's locale switch sets (en, ja, ar-XB), else <html lang>. The parts
 // read it, and its direction, from the I18nProvider; the page's <html> carries both.
@@ -41,7 +44,9 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider locale={locale}>
       <Html>
-        {timeline ? (
+        {auth ? (
+          <AuthPreview />
+        ) : timeline ? (
           <AppPreview />
         ) : (
           <ShortcutProvider keymap={keymap} mac={namesCommandKey()}>

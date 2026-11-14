@@ -1,47 +1,47 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package authpages serves the server-rendered sign-in, sign-out, registration, email
-// verification, password reset (password_reset.go), email unsubscribe (mail_unsubscribe.go), and
-// OAuth authorization (consent) screens (ADR-0090): plain HTML forms from html/template that
-// work without JavaScript, worded from the server message catalog and styled by one stylesheet
-// that the web client's build provides. With
-// a CAPTCHA (Options.HumanCheck), the sign-in, registration, and password reset forms also load
-// the service's widget (humancheck.go). In a browser with passkeys, the web build's script adds
-// a passkey button to the sign-in form (passkey.go); without JavaScript the page stays the
-// password form.
+// Package authpages serves the sign-in, sign-out, registration, email verification, password
+// reset (password_reset.go), email unsubscribe (mail_unsubscribe.go), and OAuth authorization
+// (consent) screens (ADR-0090 §16). Each screen is a document of the web client's auth entry
+// (ADR-0028 §4): a full page load of a shell (page.go) that carries the screen's data in a JSON
+// data block, under a Content-Security-Policy of its own, and that the entry's React renders.
+// The forms post here, and every answer is again a document of the entry or a redirect. The
+// screens' own wording is the entry's; this package words what it decides: the outcome of a form,
+// and what it reads of the server (the consent's scopes, a moderation action). With a CAPTCHA
+// (Options.HumanCheck), the sign-in, registration, and password reset screens also load the
+// service's widget (humancheck.go), and with passkeys the sign-in screen asks the browser for one
+// (passkey.go).
 //
 // A sign-in or sign-up starts a browser session carried by the __Host-my_session cookie
 // (Secure, HttpOnly, SameSite=Lax, Path=/) with a new token every time (ADR-0019 §4). Every POST
 // but the one-click unsubscribe passes net/http.CrossOriginProtection and must carry the
 // anti-forgery token of the __Host-my_csrf cookie in its csrf_token field, for browsers that
 // send neither Sec-Fetch-Site nor Origin (ADR-0019 §4). Failed sign-ins answer with one message whether or not the account
-// exists.
+// exists. A completed sign-in goes on to where it was asked from, or to the web client's own
+// sign-in (PathAppSignIn), which trades the session for the client's tokens.
 //
 // A signed-in user whose account cannot be used yet (a registration waiting for approval or
 // rejected, an email address waiting for confirmation, or moderation actions that keep the
-// account out of the app, identity.Access) sees a page that says so, and lists those actions
+// account out of the app, identity.Access) sees a screen that says so, and lists those actions
 // with a form to appeal each, instead of continuing to where they were going.
 //
 // The authorization endpoint (RFC 6749 §3.1) asks a signed-in user to consent to a third-party
 // client and answers the client by a 303 redirect to its registered redirect URI with the code
 // or the error, the state, and the issuer (RFC 9207). First-party clients skip the consent.
 // Without a session, it sends the browser to the sign-in form and back; a user whose account
-// cannot be used yet gets the status page and no code.
+// cannot be used yet gets the status screen and no code.
 package authpages
 
 import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
-	"embed"
 	"encoding/base64"
 	"errors"
-	"html/template"
 	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -57,18 +57,22 @@ const (
 	// PathSignInTwoFactor is the second step of a sign-in, which asks a user with two-factor
 	// authentication for a code (twofactor.go).
 	PathSignInTwoFactor = "/auth/sign_in/two_factor"
-	// PathSignInPasskey takes the sign-in page's passkey form (passkey.go).
+	// PathSignInPasskey takes the sign-in screen's passkey form (passkey.go).
 	PathSignInPasskey = "/auth/sign_in/passkey" //nolint:gosec // G101: a path, not a credential
 	PathSignOut       = "/auth/sign_out"
 	PathSignUp        = "/auth/sign_up"
+	// PathAppSignIn is the web client's own sign-in (ADR-0090 §16): it asks the authorization
+	// endpoint for a code with PKCE, which a browser with a session gets at once, and trades it for
+	// the client's tokens. A sign-in that was not asked from anywhere goes on there.
+	PathAppSignIn = "/login"
 	// PathWelcome starts the web client's sign-in, which comes back to its welcome step after
 	// sign-up: a new user who can use the account goes there.
-	PathWelcome = "/login?return_to=%2Fwelcome"
+	PathWelcome = PathAppSignIn + "?return_to=%2Fwelcome"
 	// PathVerifyEmail is the page that verification emails link to.
 	PathVerifyEmail = appidentity.PathVerifyEmail
 	// PathResendVerification sends a signed-in user a new verification email.
 	PathResendVerification = "/auth/verify_email/resend"
-	// PathAppeal takes the status page's appeals of the moderation actions that keep the user
+	// PathAppeal takes the status screen's appeals of the moderation actions that keep the user
 	// out of the app (moderation.go).
 	PathAppeal = "/auth/appeal"
 	// PathReactivate brings back the deactivated account of the signed-in user (ADR-0089 §14).
@@ -87,49 +91,6 @@ const (
 	// CookieTwoFactor carries the challenge of a sign-in between its password and its code.
 	CookieTwoFactor = "__Host-my_2fa"
 )
-
-// contentSecurityPolicy allows the pages nothing but their own stylesheet, images, and forms.
-// Browsers check form-action on the redirects that follow a form, so it lists the origins a
-// form may end up at: this site, Options.FormActionOrigins, and the consent page's redirect URI.
-// A page with the CAPTCHA widget adds the service's sources in widget (humancheck.go); the
-// others pass none. A page that loads the web build's script (scripts) allows this site's
-// scripts. A stylesheet of another origin, a Vite dev server's (web.Handler.Stylesheet), adds
-// that origin (assets) to the stylesheets and images, since its CSS draws images from there.
-func contentSecurityPolicy(formAction []string, widget kernel.HumanCheckCSP, scripts bool, assets string) string {
-	var b strings.Builder
-	b.WriteString("default-src 'none'")
-	scriptSrc := slices.Clone(widget.ScriptSrc)
-	if scripts {
-		scriptSrc = append([]string{"'self'"}, scriptSrc...)
-	}
-	if len(scriptSrc) > 0 {
-		b.WriteString("; script-src " + strings.Join(scriptSrc, " "))
-	}
-	if len(widget.FrameSrc) > 0 {
-		b.WriteString("; frame-src " + strings.Join(widget.FrameSrc, " "))
-	}
-	if len(widget.ConnectSrc) > 0 {
-		b.WriteString("; connect-src " + strings.Join(widget.ConnectSrc, " "))
-	}
-	self := []string{"'self'"}
-	if assets != "" {
-		self = append(self, assets)
-	}
-	b.WriteString("; style-src " + strings.Join(append(slices.Clone(self), widget.StyleSrc...), " "))
-	b.WriteString("; img-src " + strings.Join(self, " ") + "; form-action " + strings.Join(append([]string{"'self'"}, formAction...), " "))
-	b.WriteString("; frame-ancestors 'none'; base-uri 'none'")
-	return b.String()
-}
-
-// stylesheetOrigin returns the origin of an absolute http or https stylesheet URL, or "" for a
-// path on this site.
-func stylesheetOrigin(stylesheet string) string {
-	u, err := url.Parse(stylesheet)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return ""
-	}
-	return u.Scheme + "://" + u.Host
-}
 
 // maxFormBytes bounds a form body; the largest are the registration form, whose reason field
 // holds up to identity.MaxRegistrationReasonLength characters, and the appeal form, whose text
@@ -162,12 +123,29 @@ type OAuth interface {
 	IssueAuthorizationCode(ctx context.Context, a appidentity.Authorization, userID string) (string, error)
 }
 
+// Accounts names the local account of a signed-in user, which the consent screen shows as the
+// account that grants the application (authorize.go).
+type Accounts interface {
+	SignedInAccount(ctx context.Context, userID string) (SignedInAccount, error)
+}
+
+// SignedInAccount is the local account of a signed-in user.
+type SignedInAccount struct {
+	Username string
+	// DisplayName is the account's display name, "" when it has none.
+	DisplayName string
+}
+
 // Options configure a Handler.
 type Options struct {
 	Identity Identity
 	// OAuth serves the authorization endpoint; nil leaves it out.
 	OAuth OAuth
-	// Deactivation reactivates and deletes a deactivated account from the status page; nil leaves
+	// Accounts names the account that the consent screen grants; nil names none.
+	Accounts Accounts
+	// AccountDomain is the domain of local handles (@alice@{AccountDomain}).
+	AccountDomain string
+	// Deactivation reactivates and deletes a deactivated account from the status screen; nil leaves
 	// them out.
 	Deactivation Deactivation
 	// Issuer is the authorization server's identifier, sent as the iss parameter of the
@@ -178,33 +156,40 @@ type Options struct {
 	FormActionOrigins []string
 	// Locales resolves the locale of the screens (ADR-0009 §2).
 	Locales *i18n.Resolver
-	// InstanceName returns the name of the instance: its display name, or
-	// its domain when it has none. The pages show it above their card and in their title; nil
-	// leaves it out.
+	// Entry is the web client's auth entry, which every screen loads (web.Handler.AuthEntry);
+	// without its script a screen is a blank document.
+	Entry Entry
+	// MediaOrigin is the origin of the media files' URLs when they are served from a CDN
+	// (media_origin), from which the server's banner may come; empty when they are on this site.
+	MediaOrigin string
+	// InstanceName returns the name of the instance: its display name, or its domain when it has
+	// none. The screens show it beside the server's logo and in their title; nil leaves it out.
 	InstanceName func(ctx context.Context) string
-	// Stylesheet is the URL of the pages' stylesheet, the web build's server pages entry
-	// (web.Handler.Stylesheet); empty leaves the pages unstyled.
-	Stylesheet string
-	// ThemeStylesheet returns the URL of the instance theme's stylesheet, which the pages load
-	// after Stylesheet (ADR-0059), or "" when the theme changes nothing; nil loads none.
+	// InstanceDescription returns the instance's one-paragraph summary as plain text, and Banner
+	// the URL of its banner image, which the screens show in the server's introduction; nil or ""
+	// shows none.
+	InstanceDescription func(ctx context.Context) string
+	Banner              func(ctx context.Context) string
+	// ThemeStylesheet returns the URL of the instance theme's stylesheet, which the screens load
+	// after the entry's (ADR-0059), or "" when the theme changes nothing; nil loads none.
 	ThemeStylesheet func(ctx context.Context) string
-	// Logos returns the paths of the instance's own logo and dark logo (ADR-0059), which the pages
-	// show above their card in place of the built-in wordmark and the name (the logo includes the
-	// name, which is its alt text); "" for one that is unset. nil shows the built-in wordmark.
+	// Logos returns the paths of the instance's own logo and dark logo (ADR-0059), which the
+	// screens show in place of the built-in wordmark; "" for one that is unset. nil shows the
+	// built-in wordmark.
 	Logos func(ctx context.Context) (logo, logoDark string)
-	// StatusPageURL is the address of the instance's status page, which the footer of every page
+	// StatusPageURL is the address of the instance's status page, which the footer of every screen
 	// links to (ADR-0088 §20); empty links to none. It is a setting, not read from the database, so
-	// the error pages of a database outage link to it too.
+	// the error screens of a database outage link to it too.
 	StatusPageURL string
 	// Logger logs unexpected errors; nil means slog.Default().
 	Logger *slog.Logger
 	// Errors receives the errors behind a 500 answer (ADR-0103 §2); nil reports nothing.
 	Errors kernel.ErrorReporter
-	// Clock tells the time the status page counts the days left of an action from, the clock
+	// Clock tells the time the status screen counts the days left of an action from, the clock
 	// that dated the action; nil is the system clock.
 	Clock kernel.Clock
 	// Moderation lists the actions that keep a signed-in user out of the app on the status
-	// page; nil lists none. UserLocales words the status page in the user's saved locale; nil
+	// screen; nil lists none. UserLocales words the status screen in the user's saved locale; nil
 	// words it in the request's.
 	Moderation  Moderation
 	UserLocales UserLocales
@@ -214,13 +199,10 @@ type Options struct {
 	// HumanCheck is the CAPTCHA widget of the sign-in and registration forms (humancheck.go);
 	// nil, as with the captcha setting none, renders none.
 	HumanCheck *kernel.HumanCheckWidget
-	// Passkeys signs in with passkeys (passkey.go), and PasskeyScript is the URL of the web
-	// build's script that runs the browser's side; the sign-in page offers passkeys only with
-	// both.
-	Passkeys      Passkeys
-	PasskeyScript string
-	// PasswordReset serves the pages that reset a forgotten password (password_reset.go), which
-	// the sign-in page links to; nil leaves them out.
+	// Passkeys signs in with passkeys (passkey.go); nil leaves them out of the sign-in screen.
+	Passkeys Passkeys
+	// PasswordReset serves the screens that reset a forgotten password (password_reset.go), which
+	// the sign-in screen links to; nil leaves them out.
 	PasswordReset PasswordReset
 	// MailUnsubscribe serves the unsubscribe links of notification emails (mail_unsubscribe.go);
 	// nil leaves them out.
@@ -232,34 +214,9 @@ type Options struct {
 
 // Handler serves the screens.
 type Handler struct {
-	o     Options
-	pages map[string]*template.Template
-	cop   *http.CrossOriginProtection
+	o   Options
+	cop *http.CrossOriginProtection
 }
-
-//go:embed templates/*.html
-var templateFS embed.FS
-
-// Page templates, each rendered inside templates/layout.html.
-const (
-	pageSignIn         = "sign_in"
-	pageTwoFactor      = "two_factor"
-	pageSignedIn       = "signed_in"
-	pageError          = "error"
-	pageSignUp         = "sign_up"
-	pageStatus         = "status"
-	pageVerifyEmail    = "verify_email"
-	pageVerified       = "verified"
-	pageAccountDeleted = "account_deleted"
-	pageAuthorize      = "authorize"
-	// The pages of password_reset.go.
-	pageForgotPassword = "forgot_password"
-	pageResetPassword  = "reset_password"
-	pagePasswordReset  = "password_reset"
-	// The pages of mail_unsubscribe.go.
-	pageMailUnsubscribe  = "mail_unsubscribe"
-	pageMailUnsubscribed = "mail_unsubscribed"
-)
 
 // New returns a Handler on o.
 func New(o Options) *Handler {
@@ -272,23 +229,12 @@ func New(o Options) *Handler {
 	if o.Clock == nil {
 		o.Clock = systemClock{}
 	}
-	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
-	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,
-		pageForgotPassword, pageResetPassword, pagePasswordReset, pageMailUnsubscribe, pageMailUnsubscribed, pageAccountDeleted} {
-		h.pages[name] = template.Must(template.New(name).Funcs(pageFuncs).ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/external_logins.html", "templates/"+name+".html"))
+	if o.Entry.Script == "" {
+		o.Logger.Warn("the web client's auth entry is not built into this binary; the sign-in screens are blank")
 	}
+	h := &Handler{o: o, cop: http.NewCrossOriginProtection()}
 	h.cop.SetDenyHandler(http.HandlerFunc(h.crossOrigin))
 	return h
-}
-
-// pageFuncs are the functions of the page templates. emailOff and emailOn write the comments around
-// the body that keep Cloudflare's Email Address Obfuscation from rewriting the addresses the pages
-// show ("we sent the email to alice@example.com") into "[email protected]": its script that would
-// restore them is not allowed by the Content-Security-Policy. html/template drops the comments of
-// the templates themselves, so they come from functions.
-var pageFuncs = template.FuncMap{
-	"emailOff": func() template.HTML { return "<!--email_off-->" },
-	"emailOn":  func() template.HTML { return "<!--/email_off-->" },
 }
 
 // Router registers handlers for http.ServeMux patterns.
@@ -339,113 +285,10 @@ func (h *Handler) Register(r Router) {
 	}
 }
 
-// page is the data of a template.
-type page struct {
-	L         *i18n.Localizer
-	Lang, Dir string
-	// Title is the page's title; DocumentTitle adds the instance's name to it.
-	Title string
-	// InstanceName names the instance in the page's locale; "" leaves it out.
-	InstanceName string
-	Stylesheet   string
-	// ThemeStylesheet is the instance theme's stylesheet; render fills it.
-	ThemeStylesheet string
-	// Logo and LogoDark are the paths of the instance's own logo and of its dark variant, or ""
-	// for the built-in wordmark; render fills them.
-	Logo, LogoDark string
-	CSRFToken      string
-	ReturnTo       string
-	Email          string
-	// Error is an alert about the whole form; Notice reports success.
-	Error  string
-	Notice string
-
-	// CanSignUp shows the link to the registration page, and CanResetPassword the link to the
-	// page that asks for a password reset link.
-	CanSignUp        bool
-	CanResetPassword bool
-	// LoginProvidersOnly leaves the password and passkey forms out of the sign-in page and says
-	// that only the login providers sign in.
-	LoginProvidersOnly bool
-	// SignUp is the registration form.
-	SignUp *signUpForm
-	// Status is the state of an account that cannot be used yet.
-	Status *statusView
-	// Token is the email verification token of the confirmation form, or the password reset
-	// token of the form of a new password.
-	Token string
-	// ForgotPassword is the page that asks for a password reset link, and NewPassword the field
-	// of the page that sets the new password (password_reset.go).
-	ForgotPassword *forgotPasswordView
-	NewPassword    *newPasswordView
-	// Unsubscribe is the page of an unsubscribe link (mail_unsubscribe.go).
-	Unsubscribe *unsubscribeView
-	// Consent is the authorization request on the consent page.
-	Consent *consent
-	// HumanCheck is the CAPTCHA widget of the form; the page's Content-Security-Policy admits
-	// the service when it is set.
-	HumanCheck *humanCheckView
-	// Passkey is the passkey form of the sign-in page; the page's Content-Security-Policy admits
-	// this site's scripts when it is set.
-	Passkey *passkeyView
-	// External are the links to the external login providers of the sign-in and registration
-	// pages (external.go).
-	External []externalButton
-	// Documents are the links to the published documents, in the footer of every page and on
-	// the registration form; render fills them.
-	Documents []documentLink
-	// StatusPageURL is the instance's status page, in the footer of every page; render fills it.
-	StatusPageURL string
-	// formAction lists origins the page's forms may be redirected to besides
-	// Options.FormActionOrigins.
-	formAction []string
-}
-
-// DocumentTitle is the <title> of the page: its title and the instance's name.
-func (p page) DocumentTitle() string {
-	if p.InstanceName == "" {
-		return p.Title
-	}
-	return p.L.ServerAuthDocumentTitle(i18n.ServerAuthDocumentTitleArgs{Instance: p.InstanceName, Page: p.Title})
-}
-
-func (h *Handler) newPage(r *http.Request, title func(*i18n.Localizer) string) page {
-	l := h.o.Locales.RequestLocalizer(r)
-	return page{L: l, Lang: l.Locale(), Dir: l.Direction(), Title: title(l), Stylesheet: h.o.Stylesheet}
-}
-
-func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, name string, p page) {
-	hd := w.Header()
-	hd.Set("Content-Type", "text/html; charset=utf-8")
-	hd.Set("Content-Language", p.Lang)
-	var widget kernel.HumanCheckCSP
-	if p.HumanCheck != nil {
-		widget = h.humanCheckCSP()
-	}
-	hd.Set("Content-Security-Policy", contentSecurityPolicy(append(slices.Clone(h.o.FormActionOrigins), p.formAction...), widget, p.Passkey != nil, stylesheetOrigin(h.o.Stylesheet)))
-	hd.Set("Cache-Control", "no-store")
-	hd.Add("Vary", "Accept-Language, Cookie")
-	if h.o.InstanceName != nil {
-		p.InstanceName = h.o.InstanceName(r.Context())
-	}
-	p.Documents = h.documentLinks(r, p.L)
-	p.StatusPageURL = h.o.StatusPageURL
-	if h.o.ThemeStylesheet != nil {
-		p.ThemeStylesheet = h.o.ThemeStylesheet(r.Context())
-	}
-	if h.o.Logos != nil {
-		p.Logo, p.LogoDark = h.o.Logos(r.Context())
-	}
-	w.WriteHeader(status)
-	if err := h.pages[name].ExecuteTemplate(w, "layout", p); err != nil {
-		h.o.Logger.ErrorContext(r.Context(), "render auth page", slog.String("page", name), slog.Any("error", err))
-	}
-}
-
 func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, status int, message func(*i18n.Localizer) string) {
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthErrorTitle)
+	p := h.newPage(r, screenError)
 	p.Error = message(p.L)
-	h.render(w, r, status, pageError, p)
+	h.render(w, r, status, p)
 }
 
 func (h *Handler) internalError(w http.ResponseWriter, r *http.Request, err error) {
@@ -460,7 +303,7 @@ func (h *Handler) crossOrigin(w http.ResponseWriter, r *http.Request) {
 }
 
 // signInPage shows the sign-in form; when the browser has a session, it shows the signed-in
-// page, or the status page of an account that cannot be used yet.
+// screen, or the status screen of an account that cannot be used yet.
 func (h *Handler) signInPage(w http.ResponseWriter, r *http.Request) {
 	returnTo := safeReturnTo(r.URL.Query().Get("return_to"))
 	session, err := h.o.Identity.Authenticate(r.Context(), cookieValue(r, CookieSession))
@@ -484,13 +327,13 @@ func (h *Handler) signInPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) renderSignedIn(w http.ResponseWriter, r *http.Request, returnTo string) {
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthSignedInTitle)
+	p := h.newPage(r, screenSignedIn)
 	p.CSRFToken = h.csrfToken(w, r)
 	p.ReturnTo = returnTo
 	if p.ReturnTo == "" {
-		p.ReturnTo = "/"
+		p.ReturnTo = PathAppSignIn
 	}
-	h.render(w, r, http.StatusOK, pageSignedIn, p)
+	h.render(w, r, http.StatusOK, p)
 }
 
 func (h *Handler) renderSignIn(w http.ResponseWriter, r *http.Request, status int, returnTo, email string, message func(*i18n.Localizer) string) {
@@ -500,7 +343,7 @@ func (h *Handler) renderSignIn(w http.ResponseWriter, r *http.Request, status in
 // renderSignInPage renders the sign-in form with the alert message about the password form or
 // passkeyMessage about the passkey form.
 func (h *Handler) renderSignInPage(w http.ResponseWriter, r *http.Request, status int, returnTo, email string, message, passkeyMessage func(*i18n.Localizer) string) {
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthSignInTitle)
+	p := h.newPage(r, screenSignIn)
 	p.CSRFToken = h.csrfToken(w, r)
 	p.ReturnTo, p.Email = returnTo, email
 	if message != nil {
@@ -513,7 +356,7 @@ func (h *Handler) renderSignInPage(w http.ResponseWriter, r *http.Request, statu
 	}
 	p.LoginProvidersOnly = limited
 	if limited {
-		// The page shows no form that the server would refuse, only what signs in.
+		// The screen shows no form that the server would refuse, only what signs in.
 		p.Email = ""
 		if p.Error == "" && passkeyMessage != nil {
 			p.Error = passkeyMessage(p.L)
@@ -532,11 +375,11 @@ func (h *Handler) renderSignInPage(w http.ResponseWriter, r *http.Request, statu
 	}
 	p.CanSignUp = err == nil && mode != identity.RegistrationClosed
 	p.External = h.externalButtons(r, returnTo, false)
-	h.render(w, r, status, pageSignIn, p)
+	h.render(w, r, status, p)
 }
 
 // refuseLoginProvidersOnly answers a sign-in with a password or a passkey that the limit to the
-// login providers refuses: the sign-in page with the same message whatever the form holds, so
+// login providers refuses: the sign-in screen with the same message whatever the form holds, so
 // that it tells nothing about any account.
 func (h *Handler) refuseLoginProvidersOnly(w http.ResponseWriter, r *http.Request, returnTo string) {
 	h.renderSignIn(w, r, http.StatusForbidden, returnTo, "", (*i18n.Localizer).ServerAuthSignInLoginProvidersOnly)
@@ -620,8 +463,8 @@ func rateLimitedMessage(w http.ResponseWriter, limited *kernel.RateLimitedError)
 	return func(l *i18n.Localizer) string { return l.ServerAuthSignInRateLimited(minutes) }
 }
 
-// signedIn gives the browser the session of a completed sign-in and sends it on to returnTo,
-// or to the page that says why the account cannot be used yet.
+// signedIn gives the browser the session of a completed sign-in and sends it on to returnTo, else
+// to the web client's own sign-in, or to the screen that says why the account cannot be used yet.
 func (h *Handler) signedIn(w http.ResponseWriter, r *http.Request, signedIn appidentity.SignedIn, returnTo string) {
 	setSessionCookie(w, signedIn)
 	access, err := h.o.Identity.UserAccess(r.Context(), signedIn.Session.UserID)
@@ -631,9 +474,9 @@ func (h *Handler) signedIn(w http.ResponseWriter, r *http.Request, signedIn appi
 	}
 	switch {
 	case !access.Allowed():
-		returnTo = PathSignIn // the page that says why the account cannot be used yet
+		returnTo = PathSignIn // the screen that says why the account cannot be used yet
 	case returnTo == "":
-		returnTo = "/"
+		returnTo = PathAppSignIn
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, returnTo, http.StatusSeeOther) //nolint:gosec // G710: safeReturnTo admits only paths on this site
