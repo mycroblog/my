@@ -6,7 +6,7 @@
 // - Post: the post goes into the home timeline at once (app-data), and the composer closes.
 // - Close or Escape with a written post: the post is discarded, and a notice offers Undo for a moment, which opens the
 //   composer again with the post. Nothing is asked: Escape is often pressed by mistake around an input method.
-// - Leaving by accident (the backdrop, or the app closing it without a word, as a phone's back gesture does): the
+// - Leaving by accident (the backdrop, or the app closing it without a word): the
 //   post is saved as a draft on the server, without a word, and kept here, so that opening the composer for the same
 //   target (New post, or Reply or Quote on the same post) brings it back.
 //
@@ -20,7 +20,7 @@ import {
   type ComposeWrites,
   type Status,
 } from "@my/app-data";
-import { UndoNotice, useLocale } from "@my/design-system";
+import { ModalPresence, UndoNotice, useLocale } from "@my/design-system";
 import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { ComposerView } from "./composer";
@@ -122,7 +122,7 @@ export function ComposeLayer({
   const key = target && targetKey(target);
 
   // A new target opens a new composer; the one before was left already, or is left by accident now (the app closed it
-  // without a word: a phone's back gesture).
+  // without a word).
   const shown = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (shown.current === key) return;
@@ -159,19 +159,22 @@ export function ComposeLayer({
   const start = target && (initial ?? (key && kept.get(key)) ?? emptyDraft(target, settings, crypto.randomUUID()));
   return (
     <>
-      {target && start && (
-        <Open
-          // One composer per target: it mounts once when opened, and a closed one comes back as a new one.
-          key={key}
-          initial={start}
-          layer={!inline}
-          phone={phone}
-          track={(d) => {
-            latest.current = { key: targetKey(d.target), draft: d };
-          }}
-          onLeave={leave}
-        />
-      )}
+      {/* A composer that was left leaves by its motion, then unmounts. */}
+      <ModalPresence>
+        {target && start && (
+          <Open
+            // One composer per target: it mounts once when opened, and a closed one comes back as a new one.
+            key={key}
+            initial={start}
+            layer={!inline}
+            phone={phone}
+            track={(d) => {
+              latest.current = { key: targetKey(d.target), draft: d };
+            }}
+            onLeave={leave}
+          />
+        )}
+      </ModalPresence>
       {discarded && (
         <UndoNotice
           action={t("compose.undo")}

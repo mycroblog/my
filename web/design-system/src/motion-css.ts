@@ -3,9 +3,10 @@
 // The motion of each kind of change of screen (motion.tsx), as the rules theme.ts adds to the stylesheet. A View
 // Transition of a kind carries the kind as its type, and these rules move the element named `screen` (the frame's main
 // column) by it: a push and a pop shift it along the line, mirrored in a right-to-left page; a modal raises the new
-// screen over the old one, or a layer (`layer`, the composer) over a screen that stays; a replace crossfades them. The page around it, and the frame's fixed bars, stay. A shared
+// screen over the old one; a replace crossfades them. The page around it, and the frame's fixed bars, stay. A shared
 // element (Shared) moves from its place on the old screen to its place on the new one in the kind's time. With reduced
-// motion nothing moves, even where a View Transition was started elsewhere.
+// motion nothing moves, even where a View Transition was started elsewhere. A modal over the page (the composer, the
+// keyboard shortcuts) is no navigation: Motion moves it (modal.tsx).
 
 type Rules = Record<string, Record<string, string> | Record<string, Record<string, string>>>;
 
@@ -59,14 +60,6 @@ export const transitionRules: Rules = {
   [`${during("modal")}::view-transition-new(screen)`]: {
     animation: "var(--transition-modal) var(--transition-ease-enter) both my-rise-in",
   },
-  // A layer over the screen (the composer, `data-layer`) rises in by itself; the screen under it stays where it was.
-  [`${during("modal")}::view-transition-new(layer)`]: {
-    animation: "var(--transition-modal) var(--transition-ease-enter) both my-rise-in",
-  },
-  [`:root:has([data-layer]):active-view-transition-type(modal)::view-transition-new(screen)`]: { animation: "none" },
-  // A modal's backdrop (backdrop.tsx) dims and blurs in over a modal's time as its modal appears, with the rise of the
-  // layer where a View Transition raises it; a reader who asks for reduced motion sees it at once.
-  "@keyframes my-backdrop-in": { from: { "background-color": "transparent", "backdrop-filter": "none" } },
   "@keyframes my-fade-in": { from: { opacity: "0" } },
   "@keyframes my-fade-out": { to: { opacity: "0" } },
   [`${during("replace")}::view-transition-old(screen)`]: {

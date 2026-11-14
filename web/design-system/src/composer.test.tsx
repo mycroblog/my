@@ -2,7 +2,6 @@
 
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { backdrop, backdropFromTablet } from "./backdrop";
 import { AttachmentRow, CharCount, ChoiceGroup, ComposerFrame, ComposerText, PollOption, UndoNotice } from "./composer";
 
 const none = () => undefined;
@@ -31,12 +30,14 @@ test("the frame's head is the title, then close at its end; at its end the alert
   expect(html).toContain("h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))]");
 });
 
-test("a modal's backdrop dims and blurs the page, and only dims with reduced transparency", () => {
-  for (const b of [backdrop, backdropFromTablet]) {
-    expect(b).toContain("bg-scrim");
-    expect(b).toContain("backdrop-blur-[var(--dialog-blur)]");
-    expect(b).toContain("[@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none");
-  }
+test("the composer is drawn as it mounts, through the modal of modal.tsx, its text focused inside the press", async () => {
+  const source = await Bun.file(new URL("./composer.tsx", import.meta.url)).text();
+  expect(source).toContain('import { ModalLayer } from "./modal";');
+  // The text takes the focus as it mounts, inside the press, so that a phone opens its keyboard.
+  const text = renderToStaticMarkup(
+    <ComposerText value="" onChange={none} label="Text" placeholder="…" over={0} autoFocus />,
+  );
+  expect(text).toContain("autofocus");
 });
 
 test("the text marks the characters over the limit behind it, and says what is wrong under it", () => {

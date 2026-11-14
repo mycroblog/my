@@ -14,19 +14,19 @@
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
+import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
-import { backdropFromTablet } from "./backdrop";
 import { Button } from "./button";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
+import { ModalLayer } from "./modal";
 
 const frame = tv({
   slots: {
-    overlay: "fixed inset-0 z-50 box-border grid items-start overflow-y-auto bg-surface",
-    modal: "contents",
+    overlay: "fixed inset-0 z-50 box-border grid items-start overflow-y-auto",
+    rise: "box-border w-full",
     panel: [
       "relative box-border flex flex-col gap-entry bg-surface font-sans text-body text-text outline-hidden",
       "h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))] px-shell-edge pt-entry-line",
@@ -45,7 +45,6 @@ const frame = tv({
       true: {
         overlay: [
           "tablet:justify-items-center tablet:px-dialog-margin",
-          backdropFromTablet,
           "tablet:pt-composer-top tablet:pb-composer-bottom",
           "tablet:has-[[data-popup]]:pb-[calc(var(--composer-pop-height)+var(--composer-bottom))]",
         ],
@@ -57,8 +56,8 @@ const frame = tv({
         end: "tablet:py-0",
       },
     },
-    // A layer over the page rises in when it opens (motion-css.ts); a specimen in a page does not.
-    layer: { true: { panel: "[view-transition-name:layer]" }, false: { panel: "h-auto min-h-[24rem]" } },
+    // A specimen in a page is as tall as what it holds.
+    layer: { false: { panel: "h-auto min-h-[24rem]" } },
   },
 });
 
@@ -147,21 +146,18 @@ export function ComposerFrame({
         {panel}
       </div>
     );
+  // A modal (modal.tsx) that shows on the frame it mounts in, its text focused inside the press; Escape is the
+  // panel's, which tells it from a press on the backdrop.
   return (
-    <ModalOverlay
-      isOpen
-      isDismissable
-      isKeyboardDismissDisabled
-      onOpenChange={(open) => {
-        if (!open) onDismiss();
-      }}
-      className={s.overlay()}
-      data-layer=""
+    <ModalLayer
+      onDismiss={onDismiss}
+      ownEscape
+      backdrop={phone === "dialog" ? "always" : "tablet"}
+      overlay={s.overlay()}
+      panel={s.rise()}
     >
-      <Modal className={s.modal()}>
-        <Dialog className="box-border w-full outline-hidden">{panel}</Dialog>
-      </Modal>
-    </ModalOverlay>
+      <Dialog className="box-border w-full outline-hidden">{panel}</Dialog>
+    </ModalLayer>
   );
 }
 
