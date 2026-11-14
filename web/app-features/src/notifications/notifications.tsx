@@ -5,7 +5,8 @@
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
 // read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). The affirmative answer
 // of a notification that asks for one (follow back, accept, approve) is the primary button, its refusal a plain one.
-// New notifications come in at the top as the stream receives them.
+// New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
+// every screen (post-actions.tsx).
 
 import { AccountLine, ListColumn, nameOf, Post, PostContent } from "@my/app-components";
 import {
@@ -43,6 +44,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
+import { usePostActions } from "../post-actions";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
 
@@ -246,6 +248,7 @@ function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string 
 
 function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean; t: T; instance: string }) {
   const mark = unread ? t("notifications.unread") : undefined;
+  const onAction = usePostActions();
   if (shapeOf(n) === "post" && n.status !== undefined)
     return (
       <Post
@@ -255,6 +258,7 @@ function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean;
             {sentenceOf(n, t, instance, known)}
           </NoticeCaption>
         }
+        onAction={onAction}
       />
     );
   return <Line n={n} unread={mark} t={t} instance={instance} />;

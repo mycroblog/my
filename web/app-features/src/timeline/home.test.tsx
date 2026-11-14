@@ -5,6 +5,9 @@ import { AppDataProvider, createAppData, homeTimelineQuery } from "@my/app-data"
 import { I18nProvider } from "@my/design-system";
 import { createClient } from "@mycroblog/mykit";
 import { renderToStaticMarkup } from "react-dom/server";
+import { PostActions, type ComposeRequest } from "../post-actions";
+import { press } from "../test/actions";
+import { render as renderUnder, server as fake, status } from "../test/server";
 import { HomeTimeline, loadHomeTimeline } from "./home";
 
 /** A server whose home timeline answers `answer`, and the paths of the requests it got. */
@@ -68,4 +71,24 @@ test("a failed first page does not fail the loader: the column fetches it again 
   await loadHomeTimeline(data);
   expect(data.queryClient.getQueryState(homeTimelineQuery(data).queryKey)?.status).toBe("error");
   expect(render(data)).toMatch(/role="feed" aria-label="Home timeline" aria-busy="true"/);
+});
+
+test("a post answers its actions: a boost reaches the server, Quote opens the composer", async () => {
+  const { data, requests } = fake({
+    "/timelines/home": { items: [status("h")] },
+    "/statuses/h/boost": status("h", "lena", { boosted: true, boosts_count: 1 }),
+  });
+  await loadHomeTimeline(data);
+  const composed: ComposeRequest[] = [];
+  renderUnder(
+    data,
+    <PostActions onCompose={(to) => composed.push(to)}>
+      <HomeTimeline />
+    </PostActions>,
+  );
+  press({ type: "boost", id: "h" });
+  press({ type: "quote", id: "h" });
+  await Bun.sleep(0);
+  expect(requests).toContain("POST /statuses/h/boost");
+  expect(composed).toEqual([{ kind: "quote", id: "h" }]);
 });

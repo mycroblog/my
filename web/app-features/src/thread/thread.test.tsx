@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { PostActions, type ComposeRequest } from "../post-actions";
+import { press } from "../test/actions";
 import { render, server, status } from "../test/server";
 import { loadThread, Thread } from "./thread";
 
@@ -53,4 +55,26 @@ test("a post that could not be read does not fail the loader: the screen reads i
   const html = render(data, <Thread id="f" onBack={back} />);
   expect(html).toContain("Loading the post…");
   expect(html).toContain(">Back<");
+});
+
+test("the focused post and a reply answer their actions: a favourite reaches the server, Reply opens the composer", async () => {
+  const { data, requests } = server({
+    "/statuses/f": focused,
+    "/statuses/f/context": { ancestors: [], descendants: [status("r", "lena", { in_reply_to_id: "f" })] },
+    "/statuses/f/favourite": { ...focused, favourited: true, favourites_count: 49 },
+  });
+  await loadThread(data, "f");
+  const composed: ComposeRequest[] = [];
+  render(
+    data,
+    <PostActions onCompose={(to) => composed.push(to)}>
+      <Thread id="f" onBack={back} />
+    </PostActions>,
+  );
+  press({ type: "favourite", id: "f" });
+  press({ type: "reply", id: "r" });
+  await Bun.sleep(0);
+  expect(requests).toContain("POST /statuses/f/favourite");
+  expect(composed).toEqual([{ kind: "reply", id: "r" }]);
+  expect(render(data, <Thread id="f" onBack={back} />)).toContain("49 favourites");
 });

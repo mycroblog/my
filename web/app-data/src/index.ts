@@ -48,6 +48,7 @@ export {
   type SavedDraft,
   type Visibility,
 } from "./compose";
+export { cachedStatus, markStatus, useStatusMarks, type StatusMark } from "./interactions";
 export {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,

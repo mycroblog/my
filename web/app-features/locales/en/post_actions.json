@@ -1,0 +1,10 @@
+{
+  "post_actions.failed": {
+    "defaultMessage": "{action, select, favourite {The favourite} boost {The boost} bookmark {The bookmark} other {The reaction}} did not finish.",
+    "description": "The notice at the bottom of the page when the reader's favourite, boost, bookmark or emoji reaction on a post (set or taken back) got no answer from the server (the network), beside Try again. The post shows again what it showed before. action is which of them."
+  },
+  "post_actions.retry": {
+    "defaultMessage": "Try again",
+    "description": "The action of the notice of a failed favourite, boost, bookmark or emoji reaction: it sends the same change again."
+  }
+}

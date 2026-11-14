@@ -20,7 +20,7 @@ import {
   useAction,
   type IconName,
 } from "@my/design-system";
-import { ComposeLayer } from "@my/app-features";
+import { ComposeLayer, PostActions } from "@my/app-features";
 import type { ReactNode } from "react";
 import type { RuntimeConfig } from "../config";
 import { useStrings } from "../locale";
@@ -56,7 +56,8 @@ function Places({ pathname }: { pathname: string }) {
 
 /**
  * The shell around the screen at `pathname`, and the composer over it, which the primary action opens (a screen of its
- * own on a phone, a dialog from `tablet`); without a session the primary action leads to the sign-in.
+ * own on a phone, a dialog from `tablet`), as a post's Reply and Quote do on every screen (PostActions); without a
+ * session the primary action leads to the sign-in.
  */
 export function Shell({
   pathname,
@@ -84,7 +85,7 @@ export function Shell({
         {action}
         <Places pathname={pathname} />
       </FrameSide>
-      <FrameMain>{children}</FrameMain>
+      <FrameMain>{signedIn ? <PostActions onCompose={open}>{children}</PostActions> : children}</FrameMain>
       <Around config={config} />
       <FrameTabBar label={t("app.navigation")}>
         <Places pathname={pathname} />
