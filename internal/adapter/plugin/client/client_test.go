@@ -203,6 +203,7 @@ func TestConcurrencyOfAKind(t *testing.T) {
 	k := probeKind(t)
 	k.Concurrency = 1
 	var active, most atomic.Int64
+	entered, release := make(chan struct{}, 16), make(chan struct{})
 	inner, _ := fakeplugin.Connect(fakeplugin.Options{})
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n := active.Add(1)
@@ -213,17 +214,38 @@ func TestConcurrencyOfAKind(t *testing.T) {
 				break
 			}
 		}
-		time.Sleep(5 * time.Millisecond)
+		entered <- struct{}{}
+		select {
+		case <-release: // each call holds its turn until the test lets the calls go
+		case <-r.Context().Done():
+		}
 		inner.ServeHTTP(w, r)
 	})
 	conn := newConn(t, client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeTCP(t, h)}})
+	echo := func(ctx context.Context) error {
+		_, err := probev1connect.NewProbeServiceClient(conn.RPC).Echo(ctx, &probev1.EchoRequest{})
+		return err
+	}
 	errs := make(chan error, 8)
 	for range 8 {
-		go func() {
-			_, err := probev1connect.NewProbeServiceClient(conn.RPC).Echo(context.WithoutCancel(t.Context()), &probev1.EchoRequest{})
-			errs <- err
-		}()
+		go func() { errs <- echo(context.WithoutCancel(t.Context())) }()
 	}
+	select {
+	case <-entered:
+	case <-time.After(10 * time.Second):
+		t.Fatal("no call reached the plugin")
+	}
+	// While one call holds the turn, another call waits for it until its own deadline ends, and the seven calls
+	// still waiting get no turn either.
+	ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
+	defer cancel()
+	if err := echo(ctx); err == nil {
+		t.Error("a call got a turn while another held it")
+	}
+	if got := most.Load(); got != 1 {
+		t.Errorf("at most %d at once while one held the turn, want 1", got)
+	}
+	close(release)
 	for range 8 {
 		if err := <-errs; err != nil {
 			t.Error(err)

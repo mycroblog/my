@@ -178,6 +178,8 @@ func setup() (*env, error) {
 func eventually(t *testing.T, timeout time.Duration, what string, check func() (bool, string)) {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
+	poll := time.NewTicker(pollInterval)
+	defer poll.Stop()
 	for {
 		done, state := check()
 		if done {
@@ -186,9 +188,12 @@ func eventually(t *testing.T, timeout time.Duration, what string, check func() (
 		if time.Now().After(deadline) {
 			t.Fatalf("%s: not after %s; last state: %s", what, timeout, state)
 		}
-		time.Sleep(2 * time.Second)
+		<-poll.C
 	}
 }
+
+// pollInterval is how often the checks of the other servers, which signal nothing, ask them again.
+const pollInterval = 2 * time.Second
 
 // unique returns text that no earlier run posted.
 func unique(prefix string) string {

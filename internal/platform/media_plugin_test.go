@@ -59,13 +59,16 @@ func TestMediaOfAPlugin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Upload: %v", err)
 			}
-			deadline := time.Now().Add(10 * time.Second)
-			for (m.Result == nil && tc.want != "" || tc.want == "" && rec.Calls() == 0) && time.Now().Before(deadline) {
-				time.Sleep(20 * time.Millisecond)
+			waiting := func() bool { return m.Result == nil && tc.want != "" || tc.want == "" && rec.Calls() == 0 }
+			testkit.Eventually(t, 10*time.Second, func() bool {
+				if !waiting() {
+					return true
+				}
 				if m, err = s.app.Media.Media(t.Context(), m.File.ID); err != nil {
 					t.Fatal(err)
 				}
-			}
+				return !waiting()
+			})
 			if rec.Calls() == 0 {
 				t.Fatal("no call reached the plugin")
 			}

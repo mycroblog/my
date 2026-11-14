@@ -16,6 +16,7 @@ import (
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // TestFollowedTagsAPI drives the followed hashtags on the real database: following a hashtag
@@ -131,12 +132,8 @@ func TestStreamingDeliversFollowedTags(t *testing.T) {
 	}
 	defer func() { _ = res.Body.Close() }()
 	events := readEvents(bufio.NewReader(res.Body))
-	deadline := time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() == 0 {
-		if time.Now().After(deadline) {
-			t.Fatal("the stream did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() != 0 }) {
+		t.Fatal("the stream did not subscribe")
 	}
 
 	// Neither an untagged post nor one of another hashtag reaches alice.

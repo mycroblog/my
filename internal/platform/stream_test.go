@@ -33,6 +33,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/valkeytest"
 )
 
@@ -150,12 +151,8 @@ func checkStreamsAcrossProcesses(t *testing.T, web, worker *platform.App) {
 	// The stream of the federated timeline (ADR-0013) shares the Bus.
 	federated := openTimelineStream(streamCtx, t, e, srv, alice, "/streaming/timelines/federated")
 	// The subscriptions open once the web process listens on the Bus.
-	deadline := time.Now().Add(15 * time.Second)
-	for web.Streams.Len() < 2 {
-		if time.Now().After(deadline) {
-			t.Fatal("the stream did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 15*time.Second, func() bool { return web.Streams.Len() >= 2 }) {
+		t.Fatal("the stream did not subscribe")
 	}
 
 	// bob posts in the worker's process.

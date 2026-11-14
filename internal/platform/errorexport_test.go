@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -183,7 +184,7 @@ func TestSentryExporterBadDSN(t *testing.T) {
 	}
 }
 
-// slowStop is a sender that needs a while to give up after its context ends.
+// slowStop is a sender that needs a while of the bubble's fake clock to give up after its context ends.
 type slowStop struct {
 	finished chan struct{}
 	entered  chan struct{}
@@ -192,22 +193,24 @@ type slowStop struct {
 func (s *slowStop) SendError(ctx context.Context, _ kernel.ErrorEvent) error {
 	s.entered <- struct{}{}
 	<-ctx.Done()
-	time.Sleep(200 * time.Millisecond)
+	<-time.After(200 * time.Millisecond)
 	close(s.finished)
 	return ctx.Err()
 }
 
 func TestExportQueueCloseWaitsForTheSendInFlight(t *testing.T) {
-	s := &slowStop{finished: make(chan struct{}), entered: make(chan struct{}, 1)}
-	q := platform.NewExportQueue(s, testkit.NewMeter())
-	q.ReceiveError(t.Context(), kernel.ErrorEvent{})
-	<-s.entered
-	if err := q.Close(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	select {
-	case <-s.finished:
-	default:
-		t.Error("a send was still running when Close returned")
-	}
+	synctest.Test(t, func(t *testing.T) {
+		s := &slowStop{finished: make(chan struct{}), entered: make(chan struct{}, 1)}
+		q := platform.NewExportQueue(s, testkit.NewMeter())
+		q.ReceiveError(t.Context(), kernel.ErrorEvent{})
+		<-s.entered
+		if err := q.Close(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case <-s.finished:
+		default:
+			t.Error("a send was still running when Close returned")
+		}
+	})
 }

@@ -139,16 +139,14 @@ func TestServeTLSFiles(t *testing.T) {
 	t.Run("a replaced certificate is served without a restart", func(t *testing.T) {
 		second := testkit.NewTLSCertificate(t, 2, time.Now().Add(-time.Hour), 90*24*time.Hour, "example.test")
 		second.WriteFiles(t, strings.TrimSuffix(s.certFile, "/cert.pem"), time.Now())
-		deadline := time.Now().Add(5 * time.Second)
-		for {
-			raw, err := s.peerCertificate(t, "example.test")
-			if err == nil && bytes.Equal(raw, second.Leaf.Raw) {
-				break
-			}
-			if time.Now().After(deadline) {
-				t.Fatalf("the server still presents the replaced certificate (%v)", err)
-			}
-			time.Sleep(20 * time.Millisecond)
+		var err error
+		replaced := testkit.Eventually(t, 5*time.Second, func() bool {
+			var raw []byte
+			raw, err = s.peerCertificate(t, "example.test")
+			return err == nil && bytes.Equal(raw, second.Leaf.Raw)
+		})
+		if !replaced {
+			t.Fatalf("the server still presents the replaced certificate (%v)", err)
 		}
 	})
 }

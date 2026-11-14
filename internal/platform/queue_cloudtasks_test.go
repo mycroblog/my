@@ -78,8 +78,10 @@ func TestCloudTasksQueue(t *testing.T) {
 	if len(wakes) != 1 || wakes[0].JobID == "" {
 		t.Fatalf("signals = %+v, want one for the job", wakes)
 	}
-	// A pull runner would take the job within its poll interval.
-	time.Sleep(queue.DefaultPollInterval + 500*time.Millisecond)
+	// No pull runner takes the job: the process runs the jobs that the signals push to it.
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return strings.Contains(s.logs.String(), `"jobs":"push"`) }) {
+		t.Fatalf("the started line does not say that the process runs pushed jobs:\n%s", s.logs.String())
+	}
 	if n := runs.Load(); n != 0 {
 		t.Fatalf("the job ran %d times before its signal arrived", n)
 	}

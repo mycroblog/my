@@ -81,18 +81,16 @@ func TestAccountRestrictionsLockSerializesLifts(t *testing.T) {
 // waitForLockWaiter waits until a transaction of the test's database waits for a lock.
 func waitForLockWaiter(t *testing.T, db *postgres.DB) {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
+	waits := testkit.Eventually(t, 10*time.Second, func() bool {
 		var waiting int
 		err := db.Pool().QueryRow(t.Context(), `SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid
 			WHERE NOT l.granted AND a.datname = current_database()`).Scan(&waiting)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if waiting > 0 {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
+		return waiting > 0
+	})
+	if !waits {
+		t.Fatal("no transaction waits for a lock")
 	}
-	t.Fatal("no transaction waits for a lock")
 }

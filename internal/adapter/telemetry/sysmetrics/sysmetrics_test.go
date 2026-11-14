@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/kv/memory"
@@ -92,53 +93,50 @@ func TestSourceSkipsIdleClaims(t *testing.T) {
 }
 
 func TestBusCountsTheListener(t *testing.T) {
-	m := testkit.NewMeter()
-	broker := stream.NewMemoryBroker()
-	b := sysmetrics.Bus(broker.Bus(), m, "stream.memory", nil)
-	ctx := t.Context()
-	conns := func() float64 {
-		return m.Sum(sysmetrics.AdapterConnections.Name, map[string]string{"my.adapter": "stream.memory"})
-	}
-	l, err := b.Listen(ctx, func([]byte) {})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := b.Send(ctx, []byte("x")); err != nil {
-		t.Fatal(err)
-	}
-	if got := conns(); got != 1 {
-		t.Errorf("connections = %v, want 1", got)
-	}
-	if err := l.Close(ctx); err != nil {
-		t.Fatal(err)
-	}
-	waitFor(t, func() bool { return conns() == 0 })
-	l, err = b.Listen(ctx, func([]byte) {})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = l.Close(ctx) }()
-	// A broken listener is no longer an open connection.
-	broker.Break()
-	waitFor(t, func() bool { return conns() == 0 })
-	if got := m.Sum(sysmetrics.AdapterReconnects.Name, nil); got != 1 {
-		t.Errorf("reconnects = %v, want 1", got)
-	}
-	if got := len(m.Measurements(sysmetrics.AdapterOperationDuration.Name, map[string]string{"my.operation": "send", "my.outcome": "success"})); got != 1 {
-		t.Errorf("%d sends, want 1", got)
-	}
-	checkMeter(t, m)
-}
-
-func waitFor(t *testing.T, ok func() bool) {
-	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for !ok() {
-		if time.Now().After(deadline) {
-			t.Fatal("timed out")
+	synctest.Test(t, func(t *testing.T) {
+		m := testkit.NewMeter()
+		broker := stream.NewMemoryBroker()
+		b := sysmetrics.Bus(broker.Bus(), m, "stream.memory", nil)
+		ctx := t.Context()
+		conns := func() float64 {
+			return m.Sum(sysmetrics.AdapterConnections.Name, map[string]string{"my.adapter": "stream.memory"})
 		}
-		time.Sleep(5 * time.Millisecond)
-	}
+		l, err := b.Listen(ctx, func([]byte) {})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := b.Send(ctx, []byte("x")); err != nil {
+			t.Fatal(err)
+		}
+		if got := conns(); got != 1 {
+			t.Errorf("connections = %v, want 1", got)
+		}
+		if err := l.Close(ctx); err != nil {
+			t.Fatal(err)
+		}
+		synctest.Wait()
+		if got := conns(); got != 0 {
+			t.Errorf("connections after Close = %v, want 0", got)
+		}
+		l, err = b.Listen(ctx, func([]byte) {})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = l.Close(ctx) }()
+		// A broken listener is no longer an open connection.
+		broker.Break()
+		synctest.Wait()
+		if got := conns(); got != 0 {
+			t.Errorf("connections after the break = %v, want 0", got)
+		}
+		if got := m.Sum(sysmetrics.AdapterReconnects.Name, nil); got != 1 {
+			t.Errorf("reconnects = %v, want 1", got)
+		}
+		if got := len(m.Measurements(sysmetrics.AdapterOperationDuration.Name, map[string]string{"my.operation": "send", "my.outcome": "success"})); got != 1 {
+			t.Errorf("%d sends, want 1", got)
+		}
+		checkMeter(t, m)
+	})
 }
 
 func TestConnCounter(t *testing.T) {

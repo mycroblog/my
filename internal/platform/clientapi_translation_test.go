@@ -26,6 +26,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // recordingTranslator is the fake provider, which records what it receives. answer, when set,
@@ -111,15 +112,24 @@ type translationEnv struct {
 	providers *changingProviders
 	limiter   *countingLimiter
 	one       *recordingTranslator
+	meter     *testkit.Meter
+}
+
+// waitLockWaits waits until n requests in all have waited for the translation lock.
+func (e *translationEnv) waitLockWaits(n float64) {
+	e.c.t.Helper()
+	if !testkit.Eventually(e.c.t, 10*time.Second, func() bool { return e.meter.Sum("my.translation.lock_waits", nil) >= n }) {
+		e.c.t.Fatalf("%v requests waited for the translation lock, want %v", e.meter.Sum("my.translation.lock_waits", nil), n)
+	}
 }
 
 func newTranslationEnv(t *testing.T) *translationEnv {
 	t.Helper()
 	path := newDatabase(t, true)
-	e := &translationEnv{providers: &changingProviders{}, limiter: &countingLimiter{}, one: newRecordingTranslator()}
+	e := &translationEnv{providers: &changingProviders{}, limiter: &countingLimiter{}, one: newRecordingTranslator(), meter: testkit.NewMeter()}
 	e.providers.set(translation.Provider{ID: "one", Name: "Provider One", URL: "https://one.example/", Translator: e.one})
 	e.c = newStatusesClientWith(t, map[string]string{"MY_DATABASE_URL": path},
-		platform.AppOptions{TranslationProviders: e.providers, TranslationLimiter: e.limiter}, "alice", "bob", "carol")
+		platform.AppOptions{TranslationProviders: e.providers, TranslationLimiter: e.limiter, Meter: e.meter}, "alice", "bob", "carol")
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		t.Fatal(err)
@@ -542,7 +552,7 @@ func TestTranslateStatusConcurrently(t *testing.T) {
 
 	// SQLite has one writer, so this write would wait on a transaction left open around the call.
 	e.c.post("alice", map[string]any{"text": "a write meanwhile", "visibility": "public", "language": "en"})
-	time.Sleep(300 * time.Millisecond) // the second request reaches the lock
+	e.waitLockWaits(1) // the second request reaches the lock
 	close(release)
 	for range 2 {
 		if err := <-results; err != nil {
@@ -585,7 +595,7 @@ func TestTranslateStatusConcurrently(t *testing.T) {
 		_, err := e.c.app.Translation.Translate(context.WithoutCancel(t.Context()), viewer, other.Id, "ja")
 		waited <- err
 	}()
-	time.Sleep(300 * time.Millisecond)
+	e.waitLockWaits(2)
 	close(release)
 	if err := <-failed; !errors.Is(err, translation.ErrFailed) {
 		t.Errorf("the holder = %v, want ErrFailed", err)

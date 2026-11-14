@@ -24,6 +24,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
@@ -422,11 +423,10 @@ func TestDeadJobIsReported(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	deadline := time.Now().Add(10 * time.Second)
 	// The report of a dead job comes after the line of its outcome, so wait for the reports themselves.
-	for time.Now().Before(deadline) && strings.Count(s.logs.String(), `"my.error.where":"test.dead"`) < 2 {
-		time.Sleep(10 * time.Millisecond)
-	}
+	testkit.Eventually(t, 10*time.Second, func() bool {
+		return strings.Count(s.logs.String(), `"my.error.where":"test.dead"`) >= 2
+	})
 	reports := errorReportLines(t, s.logs.String())
 	if len(reports) != 2 {
 		t.Fatalf("%d report lines, want 2:\n%s", len(reports), s.logs.String())

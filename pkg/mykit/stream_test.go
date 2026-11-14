@@ -225,8 +225,10 @@ func TestStreamKeepsAStreamWithHeartbeats(t *testing.T) {
 		f := w.(http.Flusher)
 		_, _ = io.WriteString(w, ": connected\n\n")
 		f.Flush()
+		heartbeats := time.NewTicker(20 * time.Millisecond) // as the server sends them, on an interval
+		defer heartbeats.Stop()
 		for range 6 {
-			time.Sleep(20 * time.Millisecond)
+			<-heartbeats.C
 			_, _ = io.WriteString(w, ": heartbeat\n\n")
 			f.Flush()
 		}

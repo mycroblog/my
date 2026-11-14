@@ -6,6 +6,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/queue"
@@ -125,48 +126,55 @@ func waitStopped(t *testing.T, done chan error) {
 
 func TestSlotRunnerRunsAsManyJobsAsSlots(t *testing.T) {
 	t.Parallel()
-	const slots = 4
-	src, g := &listSource{}, newSlotGate()
-	src.add(10)
-	stop, cancel, done := startSlots(t, src, g, slots, time.Hour)
-	defer cancel()
+	synctest.Test(t, func(t *testing.T) {
+		const slots = 4
+		src, g := &listSource{}, newSlotGate()
+		src.add(10)
+		stop, cancel, done := startSlots(t, src, g, slots, time.Hour)
+		defer cancel()
 
-	g.waitStarted(t, slots)
-	// Every slot is busy: nothing claims the jobs that are left, so none of them waits for a slot
-	// with its lease running.
-	busy := src.claimCount()
-	time.Sleep(50 * time.Millisecond)
-	if got := src.claimCount(); got != busy {
-		t.Errorf("claims with every slot busy went from %d to %d", busy, got)
-	}
-	close(g.release)
-	g.waitStarted(t, 6)
-	close(stop)
-	waitStopped(t, done)
-	if got := g.mostAtOnce(); got != slots {
-		t.Errorf("most jobs at once = %d, want %d", got, slots)
-	}
-	src.mu.Lock()
-	defer src.mu.Unlock()
-	if len(src.workers) != slots {
-		t.Errorf("claims came from %d workers, want one name per slot: %v", len(src.workers), src.workers)
-	}
+		g.waitStarted(t, slots)
+		// Every slot is busy: nothing claims the jobs that are left, so none of them waits for a slot
+		// with its lease running.
+		synctest.Wait()
+		busy := src.claimCount()
+		<-time.After(time.Minute)
+		synctest.Wait()
+		if got := src.claimCount(); got != busy {
+			t.Errorf("claims with every slot busy went from %d to %d", busy, got)
+		}
+		close(g.release)
+		g.waitStarted(t, 6)
+		close(stop)
+		waitStopped(t, done)
+		if got := g.mostAtOnce(); got != slots {
+			t.Errorf("most jobs at once = %d, want %d", got, slots)
+		}
+		src.mu.Lock()
+		defer src.mu.Unlock()
+		if len(src.workers) != slots {
+			t.Errorf("claims came from %d workers, want one name per slot: %v", len(src.workers), src.workers)
+		}
+	})
 }
 
 func TestSlotRunnerPollsWithOneSlotWhileIdle(t *testing.T) {
 	t.Parallel()
-	const poll = 20 * time.Millisecond
-	src, g := &listSource{}, newSlotGate()
-	stop, cancel, done := startSlots(t, src, g, 64, poll)
-	defer cancel()
+	synctest.Test(t, func(t *testing.T) {
+		const poll = 20 * time.Millisecond
+		src, g := &listSource{}, newSlotGate()
+		stop, cancel, done := startSlots(t, src, g, 64, poll)
+		defer cancel()
 
-	time.Sleep(20 * poll)
-	close(stop)
-	waitStopped(t, done)
-	// A poll per interval from one slot: well under what 64 slots polling would make.
-	if got := src.claimCount(); got < 2 || got > 30 {
-		t.Errorf("claims while idle = %d, want about 20", got)
-	}
+		<-time.After(20*poll + poll/2)
+		synctest.Wait()
+		close(stop)
+		waitStopped(t, done)
+		// A poll per interval from one slot: well under what 64 slots polling would make.
+		if got := src.claimCount(); got < 2 || got > 30 {
+			t.Errorf("claims while idle = %d, want about 20", got)
+		}
+	})
 }
 
 // A slot keeps polling while another runs a job, so that a job that comes later does not wait.
@@ -190,17 +198,21 @@ func TestSlotRunnerPollsWhileASlotIsBusy(t *testing.T) {
 // Jobs after an idle time reach every slot, not only the one that polls.
 func TestSlotRunnerWakesTheSlotsForABacklog(t *testing.T) {
 	t.Parallel()
-	const slots = 8
-	src, g := &listSource{}, newSlotGate()
-	stop, cancel, done := startSlots(t, src, g, slots, 5*time.Millisecond)
-	defer cancel()
+	synctest.Test(t, func(t *testing.T) {
+		const slots = 8
+		src, g := &listSource{}, newSlotGate()
+		stop, cancel, done := startSlots(t, src, g, slots, 5*time.Millisecond)
+		defer cancel()
 
-	time.Sleep(30 * time.Millisecond)
-	src.add(slots)
-	g.waitStarted(t, slots)
-	close(g.release)
-	close(stop)
-	waitStopped(t, done)
+		// The slots poll for a while with nothing to claim, so that the jobs come after an idle time.
+		<-time.After(30 * time.Millisecond)
+		synctest.Wait()
+		src.add(slots)
+		g.waitStarted(t, slots)
+		close(g.release)
+		close(stop)
+		waitStopped(t, done)
+	})
 }
 
 func TestSlotRunnerStop(t *testing.T) {

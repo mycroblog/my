@@ -15,6 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // sseEvent is one event of a Server-Sent Events stream.
@@ -101,12 +102,8 @@ func TestStreamingDeliversHomeEntriesAndNotifications(t *testing.T) {
 		}
 	}
 	// Wait for the subscription, so that no signal is published before it.
-	deadline := time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() == 0 {
-		if time.Now().After(deadline) {
-			t.Fatal("the stream did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() != 0 }) {
+		t.Fatal("the stream did not subscribe")
 	}
 
 	// A post of an account alice does not follow is not in her home timeline; the next update
@@ -138,11 +135,7 @@ func TestStreamingDeliversHomeEntriesAndNotifications(t *testing.T) {
 	}
 
 	disconnect()
-	deadline = time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() != 0 {
-		if time.Now().After(deadline) {
-			t.Fatalf("%d subscriptions still open after the client disconnected", e.app.Streams.Len())
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() == 0 }) {
+		t.Fatalf("%d subscriptions still open after the client disconnected", e.app.Streams.Len())
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -29,7 +30,8 @@ var searchJobTypes = []string{"search.narrow", "search.rebuild", "search.sync_au
 // clients, and a post enqueues no search job, while the job types stay registered and their
 // handlers succeed doing nothing (§7).
 func TestSearchNone(t *testing.T) {
-	e := newAccountsEnv(t)
+	clock := laterClock{steadyClock: newSteadyClock(), ahead: &atomic.Int64{}}
+	e := newAccountsEnvWith(t, platform.AppOptions{Clock: clock})
 	if e.app.Search.Enabled() {
 		t.Error("Search.Enabled() = true with search = none")
 	}
@@ -53,7 +55,7 @@ func TestSearchNone(t *testing.T) {
 	if _, err := e.app.Moderation.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: "remote.example", Kind: moderation.DomainLimit, Duration: time.Millisecond}); err != nil {
 		t.Fatal(err)
 	}
-	waitPast(time.Now().Add(5 * time.Millisecond))
+	clock.ahead.Add(int64(5 * time.Millisecond)) // the restrictions end
 	if _, err := e.app.Moderation.ExpireAccountRestrictions(ctx); err != nil {
 		t.Fatal(err)
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // TestVoiceStreamsAcrossProcesses runs two web Apps on one database and one broker, as two
@@ -83,12 +84,8 @@ func openVoiceStream(t *testing.T, app *platform.App, srv *httptest.Server, spec
 	if res.StatusCode != http.StatusOK || res.Header.Get("Content-Type") != "text/event-stream" {
 		t.Fatalf("GET the room stream = %d %s", res.StatusCode, res.Header.Get("Content-Type"))
 	}
-	deadline := time.Now().Add(15 * time.Second)
-	for app.Streams.Len() <= before {
-		if time.Now().After(deadline) {
-			t.Fatal("the room stream did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 15*time.Second, func() bool { return app.Streams.Len() > before }) {
+		t.Fatal("the room stream did not subscribe")
 	}
 	return &voiceStream{t: t, spec: spec, events: readEvents(bufio.NewReader(res.Body))}
 }

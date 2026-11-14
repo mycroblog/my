@@ -22,6 +22,12 @@ import (
 // streamtest.StreamBrokerContract (pkg/testkit/streamtest/stream_test.go); these tests cover what is its
 // own, on a fake clock.
 
+// advance moves the bubble's fake clock on by d, then waits until every goroutine of the bubble is blocked again.
+func advance(d time.Duration) {
+	<-time.After(d)
+	synctest.Wait()
+}
+
 func closeRelay(t *testing.T, r *stream.Relay) {
 	t.Helper()
 	if err := r.Close(context.Background()); err != nil {
@@ -49,8 +55,7 @@ func TestRelayListensLazily(t *testing.T) {
 			t.Fatalf("listeners with a subscription = %d, want 1", got)
 		}
 		s.Close()
-		time.Sleep(stream.DefaultIdleTimeout - time.Second)
-		synctest.Wait()
+		advance(stream.DefaultIdleTimeout - time.Second)
 		if got := broker.Listeners(); got != 1 {
 			t.Fatalf("listeners before the idle timeout = %d, want 1", got)
 		}
@@ -60,15 +65,13 @@ func TestRelayListensLazily(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(10 * time.Second)
+		advance(10 * time.Second)
 		s.Close()
-		time.Sleep(stream.DefaultIdleTimeout - time.Second)
-		synctest.Wait()
+		advance(stream.DefaultIdleTimeout - time.Second)
 		if got := broker.Listeners(); got != 1 {
 			t.Fatalf("listeners before the restarted idle timeout = %d, want 1", got)
 		}
-		time.Sleep(2 * time.Second)
-		synctest.Wait()
+		advance(2 * time.Second)
 		if got := broker.Listeners(); got != 0 {
 			t.Fatalf("listeners after the idle timeout = %d, want 0", got)
 		}
@@ -160,8 +163,7 @@ func TestRelayDropsWhatItCannotSend(t *testing.T) {
 		if got := r.Stats().DroppedBufferFull; got < 7 {
 			t.Errorf("DroppedBufferFull = %d, want at least 7", got)
 		}
-		time.Sleep(10 * time.Second)
-		synctest.Wait()
+		advance(10 * time.Second)
 		if st := r.Stats(); st.DroppedBufferFull+st.DroppedSendFailed != 10 {
 			t.Errorf("Stats = %+v, want 10 dropped in all", st)
 		}
@@ -337,19 +339,16 @@ func TestRelayWritesItsLivenessMarker(t *testing.T) {
 		if !alive() {
 			t.Fatal("a listening process has no liveness marker")
 		}
-		time.Sleep(3*stream.LivenessInterval + time.Second)
-		synctest.Wait()
+		advance(3*stream.LivenessInterval + time.Second)
 		if got := kv.setCount(); got != 4 {
 			t.Errorf("marker writes after 3 intervals = %d, want 4", got)
 		}
 
 		// Once the listener closes, the marker is no longer renewed and expires.
 		s.Close()
-		time.Sleep(stream.DefaultIdleTimeout + time.Second)
-		synctest.Wait()
+		advance(stream.DefaultIdleTimeout + time.Second)
 		writes := kv.setCount()
-		time.Sleep(stream.LivenessTTL)
-		synctest.Wait()
+		advance(stream.LivenessTTL)
 		if got := kv.setCount(); got != writes {
 			t.Errorf("marker writes after the listener closed = %d, want %d", got, writes)
 		}
@@ -404,11 +403,9 @@ func TestRelayBreaksWhenItsLivenessMarkerLapses(t *testing.T) {
 		defer s.Close()
 
 		kv.setFail(errors.New("kv down"))
-		time.Sleep(stream.LivenessInterval + time.Second)
-		synctest.Wait()
+		advance(stream.LivenessInterval + time.Second)
 		kv.setFail(nil)
-		time.Sleep(stream.LivenessInterval)
-		synctest.Wait()
+		advance(stream.LivenessInterval)
 		select {
 		case <-s.Done():
 			t.Fatal("one failed marker write ended the subscription")
@@ -417,15 +414,13 @@ func TestRelayBreaksWhenItsLivenessMarkerLapses(t *testing.T) {
 
 		kv.setFail(errors.New("kv down"))
 		lapse := stream.LivenessTTL - stream.LivenessInterval
-		time.Sleep(lapse - stream.LivenessInterval)
-		synctest.Wait()
+		advance(lapse - stream.LivenessInterval)
 		select {
 		case <-s.Done():
 			t.Fatal("the subscription ended while the marker was still live past the next write")
 		default:
 		}
-		time.Sleep(stream.LivenessInterval)
-		synctest.Wait()
+		advance(stream.LivenessInterval)
 		select {
 		case <-s.Done():
 		default:
@@ -570,11 +565,9 @@ func TestRelayWatch(t *testing.T) {
 		// A start that fails is tried again.
 		broker.SetUnreachable(true)
 		broker.Break()
-		time.Sleep(stream.DefaultReadyTimeout + time.Second)
-		synctest.Wait()
+		advance(stream.DefaultReadyTimeout + time.Second)
 		broker.SetUnreachable(false)
-		time.Sleep(stream.DefaultReadyTimeout)
-		synctest.Wait()
+		advance(stream.DefaultReadyTimeout)
 		if got := broker.Listeners(); got != 1 {
 			t.Fatalf("listeners once the broker is back = %d, want 1", got)
 		}
@@ -583,8 +576,7 @@ func TestRelayWatch(t *testing.T) {
 		// Without the watcher and the stream, the listener closes after the idle timeout.
 		s.Close()
 		cancel()
-		time.Sleep(stream.DefaultIdleTimeout + time.Second)
-		synctest.Wait()
+		advance(stream.DefaultIdleTimeout + time.Second)
 		if got := broker.Listeners(); got != 0 {
 			t.Fatalf("listeners after the watcher = %d, want 0", got)
 		}

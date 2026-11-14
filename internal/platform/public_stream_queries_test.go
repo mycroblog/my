@@ -44,12 +44,8 @@ func publicStreamQueries(t *testing.T, n int) int {
 	for i, v := range viewers {
 		streams[i] = openTimelineStream(ctx, t, e, srv, v, "/streaming/timelines/local")
 	}
-	deadline := time.Now().Add(5 * time.Second)
-	for app.Streams.Len() < n {
-		if time.Now().After(deadline) {
-			t.Fatal("the streams did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return app.Streams.Len() >= n }) {
+		t.Fatal("the streams did not subscribe")
 	}
 	total := func() int {
 		count := 0
