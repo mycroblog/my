@@ -6,10 +6,7 @@
 import { Frame, homeTimeline, Thread } from "./screens";
 import { expect, person, test } from "./test";
 
-const lostFocus = "after a navigation the focus falls to <body>, not to the new screen's heading";
-
 test("the main navigation moves the focus to the heading of the screen it opens", async ({ page, signIn }) => {
-  test.fail(true, lostFocus);
   await signIn(person("marco"));
   const frame = new Frame(page);
   await frame.goTo("Notifications");
@@ -21,7 +18,6 @@ test("the main navigation moves the focus to the heading of the screen it opens"
 });
 
 test("opening a post and going back move the focus to each screen's heading", async ({ page, signIn }) => {
-  test.fail(true, lostFocus);
   await signIn(person("marco"));
   await homeTimeline(page).post(person("sam").displayName, "Day 3 of the sourdough").open();
   const thread = new Thread(page);
