@@ -55,6 +55,7 @@ export {
   type UrlPartProps,
 } from "./content";
 export { Disclosure, type DisclosureProps } from "./disclosure";
+export { ModalPresence } from "./modal";
 export {
   ActionRow,
   Byline,

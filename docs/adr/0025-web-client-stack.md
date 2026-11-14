@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-16
 - Deciders: @rosylilly
-- Issue: #85, #86, #188, #483, #567, #572, #845, #2863, #2948, #2982
+- Issue: #85, #86, #188, #483, #567, #572, #845, #2863, #2948, #2982, #3067
 
 ## Decision（決定）
 
@@ -18,6 +18,7 @@
 | 実行環境 | Bun だけ。パッケージ管理・スクリプト・すべてのツールを Bun で動かす（§10） |
 | スタイル | Tailwind CSS v4（`@tailwindcss/vite`）、`tailwind-variants`（クラスの合成も持つ） |
 | アクセシブルな部品の土台 | React Aria Components（Apache-2.0）。自前の UI キット（§2）が包んで公開する |
+| 動き | 部品の動き（モーダルの出入り）は Motion（`motion/react` の `LazyMotion` と `m`。React Aria が勧める）。画面の移り変わりは View Transitions（#2893） |
 | ルーティング | TanStack Router（ファイルベース、自動コード分割、Zod で検索パラメータを検証） |
 | サーバー状態 | TanStack Query 5（`queryOptions`、無限スクロールは `useInfiniteQuery`） |
 | 長いリスト | TanStack Virtual |
@@ -99,7 +100,7 @@ React Compiler がルール違反のコンポーネントを黙って最適化�
 
 - React、React Aria Components / React Aria
 - Tailwind CSS と `tailwind-variants`
-- ドメインを持たない振る舞いのライブラリ: 現在は `@tanstack/react-virtual`
+- ドメインを持たない振る舞いのライブラリ: 現在は `@tanstack/react-virtual` と `motion`（§1）
 - アイコン: `@tabler/icons-react`（`icons.tsx` からだけ。§6）
 - Lingui の実行時: `@lingui/core`（ADR-0009 §9）
 

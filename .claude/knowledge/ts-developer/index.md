@@ -7,6 +7,7 @@ then the areas your work touches, each `decisions/<area>.md`, and `exemplars.md`
 - `layers`: the packages, the direction of their imports, and what each holds.
 - `styling`: classes, variants, tokens.
 - `stories`: a component and its story.
+- `overlays`: modals and layers over the page, how they open and move.
 
 - The OpenAPI spec is the contract with the server: when an issue crosses into it, the spec is fixed first, and you
   build against it as given (ADR-0170 §4).

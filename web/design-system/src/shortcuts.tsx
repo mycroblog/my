@@ -21,9 +21,8 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
+import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
-import { backdrop } from "./backdrop";
 import { IconButton } from "./icon-button";
 import {
   isTextField,
@@ -37,6 +36,7 @@ import {
   type Scope,
 } from "./keys";
 import { stringsIn, useReader } from "./locale";
+import { ModalLayer, ModalPresence } from "./modal";
 
 /** The action that opens the list of shortcuts; the keymap gives its key ("?"). */
 export const helpAction = "shortcuts.help";
@@ -94,18 +94,20 @@ export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; ma
   return (
     <StoreContext value={store}>
       {children}
-      <ModalOverlay
-        isDismissable
-        isOpen={shown !== null}
-        onOpenChange={(open) => {
-          if (!open) setShown(null);
-        }}
-        className={help().overlay()}
-      >
-        <Modal className={help().modal()}>
-          {shown !== null && <ShortcutList screen={shown.screen} groups={shown.groups} mac={store.mac} />}
-        </Modal>
-      </ModalOverlay>
+      <ModalPresence>
+        {shown !== null && (
+          <ModalLayer
+            key="help"
+            onDismiss={() => {
+              setShown(null);
+            }}
+            overlay={help().overlay()}
+            panel={help().modal()}
+          >
+            <ShortcutList screen={shown.screen} groups={shown.groups} mac={store.mac} />
+          </ModalLayer>
+        )}
+      </ModalPresence>
     </StoreContext>
   );
 }
@@ -159,9 +161,9 @@ export function useAction(
 
 const help = tv({
   slots: {
-    overlay: ["fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin", backdrop],
+    overlay: "fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin",
     modal: [
-      "box-border max-h-full w-full max-w-[var(--dialog-max-width)] overflow-auto rounded-overlay bg-surface",
+      "relative box-border max-h-full w-full max-w-[var(--dialog-max-width)] overflow-auto rounded-overlay bg-surface",
       "p-dialog font-sans text-body text-text shadow-overlay outline-hidden",
     ],
     dialog: "grid gap-dialog-gap",
