@@ -133,11 +133,11 @@ export const motion: { readonly spin: Motion } = { spin: { duration: 800, reduce
 export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
 
 /**
- * An icon's size where it sits, in rem: in an action of a timeline, or beside a caption. An on state the icon set
- * cannot draw by shape is the glyph knocked out of a solid tile: the tile's corner radius and the glyph's size within
- * it, as shares of the tile.
+ * An icon's size where it sits, in rem: in an action of a timeline, beside a caption, or in the app's navigation. An
+ * on state the icon set cannot draw by shape is the glyph knocked out of a solid tile: the tile's corner radius and the
+ * glyph's size within it, as shares of the tile.
  */
-export const icon = { action: 1.125, caption: 0.875, tile: { radius: 0.22, glyph: 0.72 } } as const;
+export const icon = { action: 1.125, caption: 0.875, navigation: 1.5, tile: { radius: 0.22, glyph: 0.72 } } as const;
 
 /**
  * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the head of a post,
@@ -150,6 +150,9 @@ export const avatar = { inline: 1.25, post: 2.5, preview: 4, initial: 0.44 } as 
  * heavier in dark, where a shadow shows less: it sets off a surface that is the page's own.
  */
 export const shadow = { y: 4, blur: 16, share: { light: 0.12, dark: 0.5 } } as const;
+
+/** The shadow a bar fixed at the bottom of the viewport (the tab bar) casts up over what scrolls under it, likewise. */
+export const barShadow = { y: -2, blur: 12, share: { light: 0.08, dark: 0.4 } } as const;
 
 /**
  * A menu, in rem: its padding around the items, the space between its groups, the gap between an item's glyph and
@@ -241,6 +244,40 @@ export const dialog = {
 /** A key's cap (a shortcut's key), in rem: its least width, its height, its inline padding, and the gap between caps. */
 export const kbd = { minWidth: 1.5, height: 1.5, paddingInline: 0.375, gap: 0.25 } as const;
 
+/**
+ * The viewport widths, in rem, at which the app's frame changes (ADR-0110 §10): a rail from `tablet`, a sidebar from
+ * `desktop`, and a column beside the main one from `wide`. A media query reads no custom property, so the design
+ * system's theme names them as breakpoints, not as properties.
+ */
+export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
+
+/**
+ * The app's frame, in rem: the width of the rail, of the sidebar, of the main column and of the column beside it; the
+ * height of the tab bar, which is also the size of the action floating over it, and of an item of the rail; the space
+ * between the rail's items, and inside an item of the sidebar before its glyph; the size of a label of the sidebar;
+ * the space the frame keeps from the viewport's edge, between its columns (`gapWide` from `desktop`), and below the
+ * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
+ * main one; and the height of the mark at the top of the rail.
+ */
+export const shell = {
+  rail: 3.5,
+  sidebar: 15,
+  column: 37.5,
+  aside: 18.75,
+  bar: 3.5,
+  item: 3,
+  itemGap: 0.25,
+  itemInline: 0.75,
+  label: 1,
+  edge: 1,
+  gap: 1.5,
+  gapWide: 2.5,
+  end: 3,
+  inset: 0.5,
+  section: 2,
+  mark: 1.5,
+} as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -276,11 +313,14 @@ const textProperties = (name: string, step: TextStep): [string, string][] => [
 
 const percent = (share: number) => `${share * 100}%`;
 
+/** A token's camel-case name as a custom property's: `gapWide` as `gap-wide`. */
+const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
 /**
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*` and `--kbd-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*` and `--shell-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -314,6 +354,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--spinner-track-share", percent(spinner.trackShare)],
   ["--icon-action", `${icon.action}rem`],
   ["--icon-caption", `${icon.caption}rem`],
+  ["--icon-navigation", `${icon.navigation}rem`],
   ["--icon-tile-radius", percent(icon.tile.radius)],
   ["--icon-tile-glyph", percent(icon.tile.glyph)],
   ["--avatar-inline", `${avatar.inline}rem`],
@@ -323,6 +364,10 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   [
     "--shadow-overlay",
     `0 ${shadow.y}px ${shadow.blur}px light-dark(rgb(0 0 0 / ${percent(shadow.share.light)}), rgb(0 0 0 / ${percent(shadow.share.dark)}))`,
+  ],
+  [
+    "--shadow-bar",
+    `0 ${barShadow.y}px ${barShadow.blur}px light-dark(rgb(0 0 0 / ${percent(barShadow.share.light)}), rgb(0 0 0 / ${percent(barShadow.share.dark)}))`,
   ],
   ["--menu-padding", `${menu.padding}rem`],
   ["--menu-group-gap", `${menu.groupGap}rem`],
@@ -377,4 +422,5 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--kbd-height", `${kbd.height}rem`],
   ["--kbd-padding-inline", `${kbd.paddingInline}rem`],
   ["--kbd-gap", `${kbd.gap}rem`],
+  ...Object.entries(shell).map(([name, value]): [string, string] => [`--shell-${kebab(name)}`, `${value}rem`]),
 ]);

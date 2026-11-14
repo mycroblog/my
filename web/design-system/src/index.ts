@@ -48,6 +48,21 @@ export { catalogReader, type Strings } from "./locale";
 export { MediaGrid, type MediaGridProps, type MediaItem } from "./media";
 export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
 export type { Binding, Keymap, Scope } from "./keys";
+export {
+  Frame,
+  FrameAction,
+  FrameAside,
+  FrameFloat,
+  FrameHeading,
+  FrameMain,
+  FrameMark,
+  FrameSection,
+  FrameSide,
+  FrameTabBar,
+  NavItem,
+  NavList,
+} from "./shell";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";
-export { I18nProvider, useLocale } from "react-aria-components";
+// The app's router reaches the links of the parts through React Aria's RouterProvider, which the app places.
+export { I18nProvider, RouterProvider as NavigationProvider, useLocale } from "react-aria-components";

@@ -30,6 +30,14 @@
       "entry": ["src/**/*.test.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"]
     },
+    "web/app-features": {
+      "entry": ["src/**/*.test.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "web/app": {
+      "entry": ["src/routes/**/*.tsx", "src/**/*.test.{ts,tsx}", "vite-plugins/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "vite-plugins/**/*.ts"]
+    },
     "web/catalog": {
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]

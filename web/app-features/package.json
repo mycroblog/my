@@ -1,0 +1,30 @@
+{
+  "name": "@my/app-features",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "bun --bun tsc -p .",
+    "test": "bun test --conditions=@mycroblog/source"
+  },
+  "dependencies": {
+    "@lingui/core": "6.12.0",
+    "@my/app-components": "workspace:*",
+    "@my/app-data": "workspace:*",
+    "@my/design-system": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@mycroblog/mykit": "workspace:*",
+    "@types/bun": "1.4.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}

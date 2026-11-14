@@ -1,0 +1,50 @@
+{
+  "app.navigation": {
+    "defaultMessage": "メイン",
+    "description": "The name of the app's main navigation (the places: home, notifications, search, profile, settings), for assistive technology."
+  },
+  "app.home": {
+    "defaultMessage": "ホーム",
+    "description": "The place of the navigation, and the heading of its screen, that shows the home timeline (the posts of the accounts the reader follows)."
+  },
+  "app.notifications": {
+    "defaultMessage": "通知",
+    "description": "The place of the navigation that shows the reader's notifications."
+  },
+  "app.search": {
+    "defaultMessage": "検索",
+    "description": "The place of the navigation that searches posts, accounts and hashtags."
+  },
+  "app.profile": {
+    "defaultMessage": "プロフィール",
+    "description": "The place of the navigation that shows the reader's own profile."
+  },
+  "app.settings": {
+    "defaultMessage": "設定",
+    "description": "The place of the navigation that shows the reader's settings."
+  },
+  "app.compose": {
+    "defaultMessage": "投稿する",
+    "description": "The primary action of the app, under the logo or floating over the navigation, that starts writing a post; also its keyboard shortcut in the keyboard shortcuts dialog."
+  },
+  "app.around": {
+    "defaultMessage": "まわりのこと",
+    "description": "The name of the column beside the timeline on wide screens, which shows what is happening around the reader (their server, later their notifications), for assistive technology."
+  },
+  "app.about": {
+    "defaultMessage": "このサーバーについて",
+    "description": "The heading of the section of the column beside the timeline that names the server the reader is on; it links to the server's about page."
+  },
+  "app.signed_out": {
+    "defaultMessage": "ログインすると、ホームタイムラインが表示されます。",
+    "description": "In place of the home timeline when the browser is not signed in; a link to the sign-in page follows it."
+  },
+  "app.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "The link after the line that asks a reader who is not signed in to sign in; it opens the server's sign-in page."
+  },
+  "app.not_found": {
+    "defaultMessage": "ここにはまだ何もありません。",
+    "description": "The heading of the screen at an address the app has no screen for, such as a place of the navigation that is not built yet."
+  }
+}

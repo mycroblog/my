@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Oxlint JS plugin `restrict` (ADR-0025 §8): the layer rules of ADR-0025 §4 that a prop type cannot hold, enabled
-// per path in .oxlintrc.json. restrictions.test.js lints the fixtures of web/devtools/fixtures/restrictions/ with
-// Oxlint and compares its findings with the ones each fixture expects.
+// The Oxlint JS plugin `restrict` (ADR-0025 §8): the layer rules of ADR-0025 §3 and §4 that a type cannot hold, enabled
+// per path in .oxlintrc.json. restrictions.test.js lints the fixtures of web/devtools/fixtures/restrictions/ and of
+// the layers' fixtures/ with Oxlint and compares its findings with the ones each fixture expects.
+//
+// - layer-imports: a layer imports only the layers below it (§3): design-tokens ← design-system ← app-components ←
+//   app-features ← app, with app-data beside app-components, under app-features, and platform and rtc under app-data;
+//   @my/i18n reaches the app alone. The layer of a file is the package of web/ it is in. It sees `import`, `export …
+//   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
+//   web/ (web/brand, which holds files and no package, is open to all).
 //
 // - design-system-props: outside @my/design-system, no element of one of its components gets a `className` or a
 //   `style` (§4). The `Omit` of each component's props refuses them only while the types hold; this also refuses them
@@ -156,9 +162,95 @@ function create(context) {
   };
 }
 
+/** Each layer of the web client, by its directory under web/, and the layers below it, which it may import. */
+const BELOW = {
+  "design-tokens": [],
+  "design-system": ["design-tokens"],
+  "app-components": ["design-system", "design-tokens"],
+  platform: [],
+  rtc: [],
+  "app-data": ["platform", "rtc"],
+  "app-features": ["app-components", "app-data", "design-system", "design-tokens", "platform", "rtc"],
+  app: ["app-features", "app-components", "app-data", "design-system", "design-tokens", "platform", "rtc", "i18n"],
+};
+
+/** The directory of web/ that holds files and no package, which every package may read. */
+const SHARED_FILES = "brand";
+
+/** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
+function webDir(/** @type {string} */ path) {
+  const at = path.lastIndexOf("/web/");
+  return at < 0 ? undefined : path.slice(at + "/web/".length).split("/")[0];
+}
+
+/** Resolves `/`-separated `relative` against the directory `from`, as a module path does. */
+function join(/** @type {string} */ from, /** @type {string} */ relative) {
+  const parts = from.split("/");
+  for (const part of relative.split("/")) {
+    if (part === "..") parts.pop();
+    else if (part !== ".") parts.push(part);
+  }
+  return parts.join("/");
+}
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function createLayerImports(context) {
+  const filename = String(context.filename).replaceAll("\\", "/");
+  const own = webDir(filename);
+  if (own === undefined || !Object.hasOwn(BELOW, own)) return {};
+  const below = new Set(BELOW[/** @type {keyof typeof BELOW} */ (own)]);
+
+  function check(/** @type {Node | null | undefined} */ source) {
+    if (source?.type !== "Literal" || typeof source.value !== "string") return;
+    const specifier = source.value;
+    let target;
+    let relative = false;
+    if (specifier.startsWith("@my/")) target = specifier.slice("@my/".length).split("/")[0];
+    else if (specifier.startsWith(".")) {
+      target = webDir(join(filename.slice(0, filename.lastIndexOf("/")), specifier));
+      relative = true;
+    }
+    if (target === undefined || target === own || target === SHARED_FILES) return;
+    if (relative) {
+      context.report({
+        node: source,
+        message:
+          `@my/${own} imports @my/${target} through a relative path: a package of the workspace imports another by ` +
+          `its name, a layer only the layers below it (ADR-0025 §3). Import it as @my/${target}` +
+          (below.has(target) ? "." : `, or move what it needs into a layer below @my/${own}.`),
+      });
+      return;
+    }
+    if (below.has(target)) return;
+    context.report({
+      node: source,
+      message:
+        `@my/${own} imports @my/${target}, which is not below it: a layer imports only the layers below it ` +
+        "(ADR-0025 §3): design-tokens ← design-system ← app-components ← app-features ← app, with app-data beside " +
+        `app-components under app-features, and @my/i18n for the app alone. Move what @my/${own} needs into a layer ` +
+        `below it, or let a layer above it pass it in (props, a provider, or the app's wiring).`,
+    });
+  }
+
+  return {
+    ImportDeclaration: (/** @type {Node} */ node) => check(node.source),
+    ExportNamedDeclaration: (/** @type {Node} */ node) => check(node.source),
+    ExportAllDeclaration: (/** @type {Node} */ node) => check(node.source),
+    ImportExpression: (/** @type {Node} */ node) => check(node.source),
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
+    "layer-imports": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow an import of a layer of the web client that is not below the importing one" },
+        schema: [],
+      },
+      create: createLayerImports,
+    },
     "design-system-props": {
       meta: {
         type: "problem",

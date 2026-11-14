@@ -92,6 +92,9 @@ const button = tv({
       form: { base: "h-control-form px-control-form-inline" },
       icon: { base: "h-control-timeline px-icon-button-inline" },
       chip: { base: "h-chip px-chip-inline" },
+      // The app frame's primary action (shell.tsx): the width of the rail or the sidebar, or floating over the tab bar.
+      side: { base: "h-shell-item w-full px-0", label: "inline-flex items-center gap-shell-inset" },
+      float: { base: "size-shell-bar px-0", label: "inline-flex items-center" },
     },
     busy: { true: { label: "text-transparent" } },
   },
@@ -108,7 +111,7 @@ export function ButtonBase({
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
   kind: ButtonKind | "icon" | "chip";
-  size: ButtonSize | "icon" | "chip";
+  size: ButtonSize | "icon" | "chip" | "side" | "float";
   pressed?: boolean | undefined;
 }) {
   const preview = usePreviewState();

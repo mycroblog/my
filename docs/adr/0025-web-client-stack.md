@@ -188,7 +188,7 @@ React Compiler は `oxc-transform-react` で動かし、React のパッケージ
 | ツール | 動かし方 |
 | --- | --- |
 | Vite・Vitest（ブラウザモードを含む）・Storybook・Playwright・Astro・openapi-typescript・tsc・Oxlint・knip | `bun --bun <bin>` |
-| Lingui のコンパイラ | Bun のスクリプトから `@lingui/message-utils`。CLI は Babel 経由の caniuse-lite（CC-BY-4.0）がライセンスの検査に落ちる |
+| Lingui のコンパイラ | Bun のスクリプトから `@lingui/message-utils`。CLI と違って Babel を要らない |
 | Redocly CLI・markdownlint-cli2・Wrangler | `bunx --bun` |
 | 整形・テスト・i18n のツール・リポジトリのスクリプト | `bun fmt`・`bun test`・`bun <file>` |
 | Claude Code | ネイティブのインストーラ |

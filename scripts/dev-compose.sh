@@ -69,7 +69,8 @@ serve)
 	# still reaches servers outside.
 	cat /etc/ssl/certs/ca-certificates.crt .tmp/mailpit/ca.pem >"$HOME/roots.pem"
 	export SSL_CERT_FILE="$HOME/roots.pem"
-	# What the server embeds, as `scripts/task.sh web:build` places it.
+	# What the server embeds: the files of web/brand, without the client's build of `scripts/task.sh web:build`, as the
+	# image has it.
 	find internal/interface/web/dist -mindepth 1 ! -name .gitkeep -delete
 	cp web/brand/* internal/interface/web/dist/
 	echo "dev-compose: building my${GO_TAGS:+ with the tags $GO_TAGS}"

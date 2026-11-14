@@ -3,6 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   avatar,
+  breakpoint,
   chip,
   color,
   contrast,
@@ -28,6 +29,7 @@ import {
   properties,
   radius,
   shadow,
+  shell,
   spinner,
   text,
 } from "./tokens";
@@ -183,6 +185,20 @@ test("properties declare every token", () => {
     expect(properties[`--kbd-${name}`]).toBe(`${kbd[key]}rem`);
   }
   expect(properties["--font-weight-strong"]).toBe(`${fontWeight.strong}`);
+  expect(properties["--icon-navigation"]).toBe(`${icon.navigation}rem`);
+  expect(properties["--shell-gap-wide"]).toBe(`${shell.gapWide}rem`);
+  for (const [name, value] of Object.entries(shell)) {
+    if (!/[A-Z]/.test(name)) expect(properties[`--shell-${name}`]).toBe(`${value}rem`);
+  }
+});
+
+test("the app's frame changes at widths that hold its columns, in order", () => {
+  // From tablet, the rail and a main column at least a phone's width (320 px) fit within the edges.
+  expect(breakpoint.tablet).toBeGreaterThanOrEqual(2 * shell.edge + shell.rail + shell.gap + 320 / 16);
+  // From wide, the sidebar, the main column and the column beside it fit, the main column a little narrower at first.
+  expect(breakpoint.wide).toBeGreaterThanOrEqual(shell.sidebar + shell.aside + 2 * shell.gapWide + 320 / 16);
+  expect(breakpoint.tablet).toBeLessThan(breakpoint.desktop);
+  expect(breakpoint.desktop).toBeLessThan(breakpoint.wide);
 });
 
 test("an entry's surface reaches past an action's tile and its focus ring", () => {

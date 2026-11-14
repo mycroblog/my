@@ -9,6 +9,7 @@
     "typecheck": "bun --bun tsc -p ."
   },
   "dependencies": {
+    "@my/app": "workspace:*",
     "@my/app-components": "workspace:*",
     "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",

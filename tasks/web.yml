@@ -6,8 +6,8 @@
 # tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
 # that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
 # development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059), the
-# components of web/design-system, the shared components of web/app-components (ADR-0025 §4), and the server data of
-# web/app-data (ADR-0028 §6) here.
+# components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the server data of
+# web/app-data (ADR-0028 §6), the features of web/app-features and the app of web/app (ADR-0025 §2) here.
 version: "3"
 
 vars:
@@ -17,7 +17,10 @@ vars:
   # - @img/sharp-libvips-*: the prebuilt libvips of sharp, the image library Astro uses when it builds the
   #   documentation site (web/docs). The FSF lists LGPLv3 as compatible with AGPLv3, and the site is a build tool,
   #   never shipped in the server image.
-  NPM_LICENSE_EXEMPTIONS: "@img/sharp-libvips-*=LGPL-3.0-or-later"
+  # - caniuse-lite: the browser data that browserslist reads at build time, under the @babel/core of TanStack Router's
+  #   route generator and Vite plugin (web/app); none of it is in the shipped bundle. The FSF lists CC BY 4.0 as
+  #   compatible with GPLv3. The check reads every installed package, so it cannot hold this to build time alone.
+  NPM_LICENSE_EXEMPTIONS: "@img/sharp-libvips-*=LGPL-3.0-or-later,caniuse-lite=CC-BY-4.0"
   # internal/interface/web embeds what web:build places here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
   # committed, so Go builds and tests need no Bun; go:bin embeds what web:build placed.
   WEB_EMBED_DIR: internal/interface/web/dist
@@ -29,15 +32,35 @@ vars:
 
 tasks:
   check:
-    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools and web/catalog in parallel
-    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, devtools-absent]
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools and web/catalog in parallel, with the app's build
+    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, build, devtools-absent]
+
+  # The app's Vite dev server on http://localhost:5173, which passes /api, /oauth and /auth on to the server of
+  # `docker compose up` (MY_SERVER=<origin> names another); `my serve -dev-vite-origin http://localhost:5173` loads the
+  # client from it instead of the build it embeds.
+  dev:
+    desc: Serve the app (web/app) on Vite's dev server at http://localhost:5173, talking to the server at MY_SERVER (https://my.localhost by default)
+    deps: [install, ":i18n:compile", routes]
+    dir: web/app
+    cmds:
+      - bun --bun vite {{.CLI_ARGS}}
+
+  # Its output is not committed (ADR-0081): the tasks that read the route tree depend on it.
+  routes:
+    desc: Generate the route tree of web/app (src/routeTree.gen.ts) from its file-based routes with TanStack Router's generator
+    deps: [install]
+    run: once
+    sources: [web/app/src/routes/**/*.tsx, web/app/scripts/routes.ts, bun.lock]
+    generates: [web/app/src/routeTree.gen.ts]
+    cmds:
+      - bun web/app/scripts/routes.ts
 
   # The page where the decider writes notes for an agent (ADR-0168). It prints `catalog: <url>` once it listens;
   # `scripts/agentkit.sh feedback url` prints the same URL, and `feedback wait` in the background receives the notes.
   # A worktree runs one dev server: while the one it recorded answers, this prints its URL and starts none.
   catalog:
     desc: Serve the catalog page (web/catalog) on Vite's dev server, with the feedback overlay of @my/devtools, unless the worktree's dev server already runs
-    deps: [install, ":i18n:compile"]
+    deps: [install, ":i18n:compile", routes]
     dir: web/catalog
     cmds:
       - |
@@ -56,44 +79,49 @@ tasks:
       - bun --bun shot.ts {{.CLI_ARGS}}
 
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools and web/catalog with tsc
-    deps: [install, ":i18n:compile"]
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools and web/catalog with tsc
+    deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
       - cd web/app-components && bun --bun tsc -p .
       - cd web/app-data && bun --bun tsc -p .
+      - cd web/app-features && bun --bun tsc -p .
+      - cd web/app && bun --bun tsc -p .
       - cd web/devtools && bun --bun tsc -p .
       - cd web/catalog && bun --bun tsc -p .
 
+  # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3).
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
-    deps: [install, ":i18n:compile"]
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
+    deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/app-data web/devtools web/catalog web/i18n
+      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/app-data web/app-features web/app web/devtools web/catalog web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools, web/catalog and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n, naming the logical one
     cmds:
-      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/app-data web/devtools web/catalog web/i18n
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/app-data web/app-features web/app web/devtools web/catalog web/i18n
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/app-data, web/devtools and web/catalog (knip.json)
-    deps: [install, ":i18n:compile"]
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools and web/catalog (knip.json)
+    deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/app-data --workspace web/devtools --workspace web/catalog
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/catalog
 
   test:
-    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/app-data and web/devtools
-    deps: [install, ":i18n:compile"]
+    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/app-data, web/app-features, web/app and web/devtools
+    deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun test
       - cd web/design-system && bun test
       - cd web/app-components && bun test
       # The condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
       - cd web/app-data && bun test --conditions=@mycroblog/source
+      - cd web/app-features && bun test --conditions=@mycroblog/source
+      - cd web/app && bun test --conditions=@mycroblog/source
       - cd web/devtools && bun test
 
   # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
@@ -109,7 +137,7 @@ tasks:
   # an import of the package there, and this fails when the output still contains it.
   devtools-absent:
     desc: Build web/catalog for production and fail if the build contains @my/devtools (ADR-0168 §3)
-    deps: [install, ":i18n:compile"]
+    deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/catalog && bun --bun vite build --logLevel warn
       - bun web/devtools/src/absent.ts web/catalog/dist
@@ -125,13 +153,16 @@ tasks:
     cmds:
       - bun install --frozen-lockfile
 
-  # What the server embeds (internal/interface/web): the files of web/brand, whose icons it serves at the root and
-  # lists in the Web App Manifest. There is no client build, so the shell loads no client script. The Dockerfile's
-  # build stage mounts web/brand there the same way.
+  # What the server embeds (internal/interface/web): the Vite build of web/app, whose manifest the shell's tags come
+  # from (ADR-0028 §4), and the files of web/brand, whose icons the server serves at the root and lists in the Web App
+  # Manifest. The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's build stage mounts
+  # web/brand alone, so the image's shell loads no client script yet.
   build:
-    desc: Place the build that the Go server embeds in internal/interface/web/dist (the brand assets of web/brand)
+    desc: Build web/app with Vite into internal/interface/web/dist, which the Go server embeds, with the brand assets of web/brand
+    deps: [install, ":i18n:compile", routes]
     cmds:
       - find {{.WEB_EMBED_DIR}} -mindepth 1 ! -name .gitkeep -delete
+      - cd web/app && bun --bun vite build --logLevel warn
       - cp web/brand/* {{.WEB_EMBED_DIR}}/
 
   licenses:
