@@ -184,43 +184,6 @@ func (r *Repository) ThemeDraft(ctx context.Context) (instance.ThemeSet, error) 
 	return findThemeSet(ctx, q, id)
 }
 
-// LegacyThemeRevisions implements instance.ThemeRepository.
-func (r *Repository) LegacyThemeRevisions(ctx context.Context, tx uow.Tx, after string, limit int) ([]instance.ThemeSet, error) {
-	q, err := r.db.queries(tx)
-	if err != nil {
-		return nil, err
-	}
-	revs, err := q.ListLegacyInstanceThemeRevisions(ctx, instancegen.ListLegacyInstanceThemeRevisionsParams{ID: legacyAfter(after), Limit: postgres.BatchLimit(limit)})
-	if err != nil {
-		return nil, postgres.Wrap(err, "list legacy instance theme revisions")
-	}
-	out := make([]instance.ThemeSet, len(revs))
-	for i, rev := range revs {
-		tokens, err := q.ListLegacyInstanceThemeTokens(ctx, rev.ID)
-		if err != nil {
-			return nil, postgres.Wrap(err, "list legacy instance theme tokens")
-		}
-		rows := make([]instance.ThemeTokenRow, len(tokens))
-		for j, t := range tokens {
-			rows[j] = instance.ThemeTokenRow{Token: t.Token, Scheme: instance.ColorScheme(t.Scheme), Value: t.Value}
-		}
-		out[i] = instance.ThemeSet{
-			ID: rev.ID, Tokens: instance.ThemeTokenValuesFromRows(rows),
-			SavedByUserID: postgres.FromNullString(rev.RevisedByUserID), SavedAt: postgres.UTC(rev.RevisedAt),
-		}
-	}
-	return out, nil
-}
-
-// legacyAfter is the revision ID that the first page of LegacyThemeRevisions follows: the nil UUID,
-// which every UUID follows.
-func legacyAfter(after string) string {
-	if after == "" {
-		return "00000000-0000-0000-0000-000000000000"
-	}
-	return after
-}
-
 func findThemeRevision(ctx context.Context, q *instancegen.Queries, id string) (instance.ThemeRevision, error) {
 	row, err := q.GetInstanceThemePublication(ctx, id)
 	if err != nil {

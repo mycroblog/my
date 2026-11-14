@@ -8,7 +8,6 @@ import (
 
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
-	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -29,7 +28,7 @@ type DataUpgrades struct {
 //
 // scripts/release-notes.sh reads the returned literal from this file for the release notes, at
 // each release: keep the steps in it, with literal strings, or that script fails.
-func (a *App) dataUpgrades(income appfinance.IncomeRepository, instances appinstance.Repository) DataUpgrades {
+func (a *App) dataUpgrades(income appfinance.IncomeRepository) DataUpgrades {
 	return DataUpgrades{
 		Steps: []dbupgrade.Step{
 			{
@@ -39,22 +38,14 @@ func (a *App) dataUpgrades(income appfinance.IncomeRepository, instances appinst
 					return appfinance.UpgradeIncomeSources(ctx, u, income)
 				},
 			},
-			{
-				Key:         "theme.token_sets",
-				Description: "Copies each saved theme into a token set and its publication under the same revision, so that the theme in effect stays and the earlier ones can be restored; a custom CSS is not carried over.",
-				Run: func(ctx context.Context, u uow.UnitOfWork) error {
-					return appinstance.UpgradeThemeSets(ctx, u, instances)
-				},
-				Projections: []string{"instance"},
-			},
 		},
 	}
 }
 
 // setUpDataUpgrades builds the service of `my db upgrade`, whose record the readiness check
 // also reads. A step rebuilds its projections with the service of `my projection`.
-func (a *App) setUpDataUpgrades(repo dbupgrade.Repository, income appfinance.IncomeRepository, instances appinstance.Repository, override *DataUpgrades) error {
-	ups := a.dataUpgrades(income, instances)
+func (a *App) setUpDataUpgrades(repo dbupgrade.Repository, income appfinance.IncomeRepository, override *DataUpgrades) error {
+	ups := a.dataUpgrades(income)
 	if override != nil {
 		ups = *override
 	}

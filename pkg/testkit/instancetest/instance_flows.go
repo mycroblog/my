@@ -25,17 +25,6 @@ import (
 type InstanceHarness struct {
 	UnitOfWork uow.UnitOfWork
 	Instance   appinstance.Repository
-	// InsertLegacyTheme writes a theme revision as the releases before the token set stored it,
-	// for the data upgrade step theme.token_sets; nil leaves that case out.
-	InsertLegacyTheme func(ctx context.Context, rev LegacyThemeRevision) error
-}
-
-// LegacyThemeRevision is a row of instance_theme_revisions with its rows of
-// instance_theme_tokens.
-type LegacyThemeRevision struct {
-	ID, CustomCSS, RevisedByUserID string
-	RevisedAt                      time.Time
-	Rows                           []instance.ThemeTokenRow
 }
 
 // InstanceFactory returns a harness on a new, empty database whose UnitOfWork uses opts.

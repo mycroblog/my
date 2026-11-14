@@ -113,7 +113,7 @@
   },
   "errors.invalid_theme": {
     "defaultMessage": "無法儲存這個主題。",
-    "description": "API error title for HTTP 422 when an administrator saves an instance theme that breaks a rule (a token value of the wrong shape or out of range, too little contrast, or too long a custom CSS); theme_errors lists the reasons."
+    "description": "API error title for HTTP 422 when an administrator saves an instance theme that breaks a rule (a token value of the wrong shape or out of range, or too little contrast); theme_errors lists the reasons."
   },
   "errors.invalid_token": {
     "defaultMessage": "你的登入已過期或已被撤銷。請重新登入。",
