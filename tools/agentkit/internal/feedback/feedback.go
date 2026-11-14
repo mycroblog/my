@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package feedback reads and answers the batches of notes that the overlay of @my/devtools sends from the dev server
-// (ADR-0168): one JSON file per batch in .tmp/feedback, whose shape web/devtools/src/note.ts defines.
+// Package feedback reads and answers the batches of notes that the Notes panel of @my/devtools sends from the
+// Storybook's dev server (ADR-0168): one JSON file per batch in .tmp/feedback, whose shape web/devtools/src/note.ts
+// defines.
 package feedback
 
 import (
@@ -48,6 +49,16 @@ type Pick struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+// Story is a story of the Storybook host: its id, title and name, and the args and the toolbar's globals it was
+// shown with.
+type Story struct {
+	ID      string          `json:"id"`
+	Title   string          `json:"title"`
+	Name    string          `json:"name"`
+	Args    json.RawMessage `json:"args"`
+	Globals json.RawMessage `json:"globals"`
+}
+
 // Note is one note of a batch.
 type Note struct {
 	ID     string `json:"id"`
@@ -79,10 +90,8 @@ type Note struct {
 		Orientation *string `json:"orientation"`
 		Account     *string `json:"account"`
 	} `json:"state"`
-	Reproduction struct {
-		Scenario *string `json:"scenario"`
-		Step     *string `json:"step"`
-	} `json:"reproduction"`
+	// Story is the story the note was written on, which reproduces it; nil on a page that is no story.
+	Story         *Story `json:"story"`
 	Accessibility string `json:"accessibility"`
 	Pick          *Pick  `json:"pick,omitempty"`
 	Reply         *Reply `json:"reply,omitempty"`
@@ -136,7 +145,7 @@ func Latest(dir string) (*Batch, error) {
 		return nil, err
 	}
 	if len(ids) == 0 {
-		return nil, fmt.Errorf("no batch in %s: the decider sends one from the overlay of the dev server", dir)
+		return nil, fmt.Errorf("no batch in %s: the decider sends one from the Notes panel of the Storybook", dir)
 	}
 	return Load(dir, ids[len(ids)-1])
 }
@@ -289,10 +298,11 @@ func PrintNote(w io.Writer, n *Note) {
 	p("  state: viewport %gx%g@%g, theme %s (system %s), locale %s, direction %s, orientation %s, account %s",
 		s.Viewport.Width, s.Viewport.Height, s.Viewport.DevicePixelRatio, or(s.Theme.Page, "unset"), s.Theme.System,
 		s.Locale, s.Direction, or(s.Orientation, "unknown"), or(s.Account, "none"))
-	if r := n.Reproduction; r.Scenario != nil {
-		p("  reproduce: scenario %s, step %s", *r.Scenario, or(r.Step, "-"))
+	if st := n.Story; st != nil {
+		p("  story: %s › %s (%s), args %s, globals %s", st.Title, st.Name, st.ID, compact(st.Args), compact(st.Globals))
+		p("  reproduce: open the story (scripts/task.sh web:shot -- --section %s) with those args and globals, at the viewport above", st.ID)
 	} else {
-		p("  reproduce: no E2E scenario opens the page; open %s at the viewport above", s.Page)
+		p("  reproduce: the page is no story; open %s at the viewport above", s.Page)
 	}
 	if n.Accessibility != "" {
 		p("  accessibility:")
@@ -307,4 +317,13 @@ func PrintNote(w io.Writer, n *Note) {
 		}
 		p("  reply (%s, %s): %s", kind, n.Reply.At, n.Reply.Text)
 	}
+}
+
+// compact is a JSON value on one line, or {} for none.
+func compact(raw json.RawMessage) string {
+	var b bytes.Buffer
+	if len(raw) == 0 || json.Compact(&b, raw) != nil {
+		return "{}"
+	}
+	return b.String()
 }

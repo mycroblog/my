@@ -9,7 +9,8 @@
 //   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
 //   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
 //   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake server
-//   that exists for the stories (ADR-0165 §1), and nothing else of @my/e2e.
+//   that exists for the stories (ADR-0165 §1), and @my/devtools/options, the live options the decider picks from
+//   (ADR-0168 §1), and nothing else of either package.
 //
 // - design-system-props: outside @my/design-system, no element of one of its components gets a `className` or a
 //   `style` (§4). The `Omit` of each component's props refuses them only while the types hold; this also refuses them
@@ -191,8 +192,8 @@ const SHARED_FILES = "brand";
 
 /** A story, or a sample module beside it: what only the Storybook host loads. */
 const STORY_FILE = /\.(?:stories\.tsx|samples\.tsx?)$/;
-/** What a story may import besides the layers below its own: the fake server of the stories. */
-const STORY_FAKES = new Set(["@my/e2e/fake"]);
+/** What a story may import besides the layers below its own: the fake server of the stories, and live options. */
+const STORY_FAKES = new Set(["@my/e2e/fake", "@my/devtools/options"]);
 
 /** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
 function webDir(/** @type {string} */ path) {

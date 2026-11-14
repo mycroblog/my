@@ -54,9 +54,9 @@ sends them as one batch, which the dev server writes to `.tmp/feedback/<batch>.j
 | --- | --- |
 | Start | `scripts/task.sh web:storybook` in the background, then `feedback url`, and give the decider the URL it prints. A worktree runs one: while its server answers, `web:storybook` prints that URL and starts none. With no dev server answering, it names the command that starts one and fails |
 | Receive | `feedback wait` **in the background**: returns with the oldest batch no wait has delivered, so a send notifies the session; run it again after each batch |
-| Read | `feedback show [<batch>\|<note>]`: each note with its source (`file:line`), layer (the package), page and state, and an outline of its accessibility tree. A page without a router or an E2E scenario records the page instead; open it with Playwright at the note's viewport |
-| Answer | `feedback reply <note> [--kind fixed\|question] <text>`: the overlay shows the answer next to the note at once |
-| Offer options | wrap the variants in `<Options id variants>` of `@my/devtools/options`, then `feedback reply <note> --kind options --options <id> <text>`: the decider switches between them in the overlay, and the pick arrives as a note, with the decider's reason when they gave one. Keep the picked variant and remove the `<Options>`, which a production build refuses |
+| Read | `feedback show [<batch>\|<note>]`: each note with its source (`file:line`), layer (the package), page and state, the story it was written on (id, title, name, args and the toolbar's globals), and an outline of its accessibility tree; open the story (`web:shot -- --section <story id>`) at the note's viewport |
+| Answer | `feedback reply <note> [--kind fixed\|question] <text>`: the Storybook's Notes panel shows the answer next to the note at once |
+| Offer options | wrap the variants in `<Options id variants>` of `@my/devtools/options` in the story (only a story may import it; its package lists `@my/devtools` in its devDependencies while one is there), then `feedback reply <note> --kind options --options <id> <text>`: the decider switches between them in the Notes panel, and the pick arrives as a note, with the decider's reason when they gave one. Keep the picked variant and remove the `<Options>`, which a production build refuses |
 
 ## The context map
 

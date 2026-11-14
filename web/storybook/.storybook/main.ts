@@ -24,8 +24,9 @@ const config: StorybookConfig = {
     { directory: web("app-components"), files: "**/*.stories.tsx", titlePrefix: "App components" },
     { directory: web("app"), files: "**/*.stories.tsx", titlePrefix: "Screens" },
   ],
-  // Axe on each story, and the stories as tests (ADR-0025 §1).
-  addons: ["@storybook/addon-a11y", "@storybook/addon-vitest"],
+  // Axe on each story, and the stories as tests (ADR-0025 §1); the notes of the decider on the stories, on the dev
+  // server only (ADR-0168).
+  addons: ["@storybook/addon-a11y", "@storybook/addon-vitest", "@my/devtools/storybook"],
   core: { disableTelemetry: true, disableWhatsNewNotifications: true },
   typescript: { reactDocgen: false },
   viteFinal: (vite) =>

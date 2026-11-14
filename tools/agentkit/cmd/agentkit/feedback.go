@@ -28,14 +28,15 @@ give the decider the URL it prints.
         block until a batch arrives that no wait has delivered, print it, and mark it delivered; run it in the
         background, so that a send notifies the session, and again after each batch
   feedback show [<batch>|<note>]
-        print a batch (default: the newest) or one note: its source, layer, state, and accessibility outline
+        print a batch (default: the newest) or one note: its source, layer, state, story, and accessibility outline
   feedback reply <note> [--kind fixed|question] <text>
-        answer a note (<batch>.<n>, or <n> in the newest batch); the overlay shows the answer next to it
+        answer a note (<batch>.<n>, or <n> in the newest batch); the Notes panel shows the answer next to it
   feedback reply <note> --kind options --options <id> <text>
-        answer with live options: first wrap the variants in code,
+        answer with live options: first wrap the variants in the story (its package lists @my/devtools in its
+        devDependencies while an <Options> is there),
           import { Options } from "@my/devtools/options";
           <Options id="<id>" variants={{ square: <Swatch />, round: <Swatch round /> }} />
-        the decider switches between them in the overlay and picks one, which arrives as a note with a pick;
+        the decider switches between them in the Notes panel and picks one, which arrives as a note with a pick;
         keep that variant and remove the <Options> (a production build fails while one is left)`
 
 func runFeedback(r *repo.Repo, args []string) error {

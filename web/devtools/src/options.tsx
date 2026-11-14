@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Live options (ADR-0168 §1): an agent wraps the variants of an element or a page in <Options>, and the decider
-// switches between them in the overlay and picks one, which comes back as a note. Only the dev server loads
-// @my/devtools, so a production build fails while an <Options> is left: keep the picked variant, remove the rest.
+// Live options (ADR-0168 §1): an agent wraps the variants of an element in <Options> in a story, and the decider
+// switches between them in the overlay and picks one, which comes back as a note. Only a story may import it
+// (restrict/layer-imports), and no production build may contain it (web:devtools-absent): keep the picked variant in
+// the component, remove the rest.
 
 import { useEffect, useState, type ReactNode } from "react";
 import { optionsAttribute, optionsEvent, switchEvent } from "./note";
@@ -44,15 +45,11 @@ export function Options({ id, variants }: { id: string; variants: Record<string,
     };
   }, [id]);
 
-  // The overlay reads the options from the DOM again whenever one mounts, switches, or goes away. In a frame, the
-  // overlay is the top window's.
+  // The overlay, in the same window as the story, reads the options from the DOM again whenever one mounts,
+  // switches, or goes away.
   useEffect(() => {
     const changed = () => {
-      try {
-        (window.top ?? window).dispatchEvent(new Event(optionsEvent));
-      } catch {
-        // A cross-origin top window has no overlay of ours.
-      }
+      window.dispatchEvent(new Event(optionsEvent));
     };
     changed();
     return changed;

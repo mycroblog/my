@@ -11,7 +11,7 @@
       "ignoreDependencies": ["satteri", "starlight-openapi-sources"]
     },
     "web/devtools": {
-      "entry": ["src/overlay.tsx", "src/**/*.test.{ts,tsx}"],
+      "entry": ["src/storybook-preview.ts", "src/manager.ts", "src/**/*.test.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "web/design-tokens": {
