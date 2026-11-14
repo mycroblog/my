@@ -47,6 +47,14 @@ export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { catalogReader, type Strings } from "./locale";
 export { MediaGrid, type MediaGridProps, type MediaItem } from "./media";
 export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
+export {
+  routerTransitions,
+  runTransition,
+  Shared,
+  transitionKinds,
+  transitionTypes,
+  type TransitionKind,
+} from "./motion";
 export type { Binding, Keymap, Scope } from "./keys";
 export {
   Frame,

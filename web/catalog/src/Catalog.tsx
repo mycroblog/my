@@ -8,6 +8,7 @@ import { fontFamily, rootPx } from "@my/design-tokens";
 import { useEffect, type ReactNode } from "react";
 import { Buttons } from "./Buttons";
 import { Contents } from "./Contents";
+import { Motion } from "./Motion";
 import { pageAt, pages, type Page, type SectionId } from "./pages";
 import { PostStates } from "./PostStates";
 import { Posts } from "./Posts";
@@ -20,6 +21,7 @@ const bodies: Record<SectionId, () => ReactNode> = {
   color: Colors,
   button: Buttons,
   post: Posts,
+  motion: Motion,
   content: Contents,
   "post-states": PostStates,
 };

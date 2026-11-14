@@ -25,6 +25,8 @@ const rules: readonly Rule[] = [
   { pattern: /^--text-[a-z]+--line-height$/, kind: "number", min: 1, max: 2.5 },
   { pattern: /^--radius-/, kind: "length", min: 0, max: 2 },
   { pattern: /^--duration-/, kind: "duration", min: 0, max: 1000 },
+  // Fixed: the motion of a change of screen, whose kinds read as one set only with these values.
+  { pattern: /^--transition-/ },
   // Fixed: the weights and letter spacing of the type scale, and the sizes and mixes of the components, whose
   // values hold a touch target, a ring around a control, or a contrast of a mix.
   { pattern: /^--text-[a-z]+--(font-weight|letter-spacing)$/ },

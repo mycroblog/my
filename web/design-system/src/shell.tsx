@@ -36,8 +36,10 @@ const frame = tv({
       "tablet:flex-col tablet:gap-shell-edge tablet:self-start tablet:pt-shell-inset tablet:pb-shell-edge",
       "desktop:w-shell-sidebar",
     ],
+    // The main column is the screen a change of screen moves (motion.tsx); the fixed bars stay over it.
     main: [
       "box-border min-w-0 px-shell-edge pt-shell-gap pb-[calc(var(--shell-bar)+var(--shell-end))]",
+      "[view-transition-name:screen]",
       "tablet:shrink tablet:grow-0 tablet:basis-[var(--shell-column)] tablet:px-0 tablet:pb-shell-end",
     ],
     heading: "sr-only",
@@ -53,9 +55,13 @@ const frame = tv({
       "data-hovered:text-text data-hovered:underline data-hovered:underline-offset-[0.15em]",
       "data-focus-visible:shadow-focus",
     ],
-    tabs: "fixed inset-x-0 bottom-0 z-3 bg-surface pb-[env(safe-area-inset-bottom)] shadow-bar tablet:hidden",
+    tabs: [
+      "fixed inset-x-0 bottom-0 z-3 bg-surface pb-[env(safe-area-inset-bottom)] shadow-bar",
+      "[view-transition-name:tab-bar] tablet:hidden",
+    ],
     float: [
       "fixed end-shell-edge bottom-[calc(var(--shell-bar)+var(--shell-edge)+env(safe-area-inset-bottom))] z-3",
+      "[view-transition-name:float]",
       "rounded-control shadow-overlay tablet:hidden",
     ],
     mark: [
