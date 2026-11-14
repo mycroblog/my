@@ -3,6 +3,7 @@
 import "@my/design-system/styles.css";
 import { keymap } from "@my/app";
 import { I18nProvider, ShortcutProvider, useLocale } from "@my/design-system";
+import { namesCommandKey } from "@my/platform";
 import { StrictMode, useEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Catalog } from "./Catalog";
@@ -43,7 +44,7 @@ createRoot(root).render(
         {timeline ? (
           <AppPreview />
         ) : (
-          <ShortcutProvider keymap={keymap}>
+          <ShortcutProvider keymap={keymap} mac={namesCommandKey()}>
             <Catalog path={location.pathname} />
           </ShortcutProvider>
         )}

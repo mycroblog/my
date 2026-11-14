@@ -17,6 +17,7 @@
     "@my/app-data": "workspace:*",
     "@my/app-features": "workspace:*",
     "@my/design-system": "workspace:*",
+    "@my/platform": "workspace:*",
     "@tanstack/react-router": "1.170.46",
     "react": "19.3.1",
     "react-dom": "19.3.1"

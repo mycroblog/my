@@ -57,6 +57,7 @@
         "@my/app-data": "workspace:*",
         "@my/app-features": "workspace:*",
         "@my/design-system": "workspace:*",
+        "@my/platform": "workspace:*",
         "@tanstack/react-router": "1.170.46",
         "react": "19.3.1",
         "react-dom": "19.3.1",
@@ -137,6 +138,7 @@
         "@my/app-data": "workspace:*",
         "@my/design-system": "workspace:*",
         "@my/design-tokens": "workspace:*",
+        "@my/platform": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
         "react": "19.3.1",
         "react-dom": "19.3.1",
@@ -218,6 +220,12 @@
       },
       "devDependencies": {
         "@lingui/core": "6.12.0",
+        "@types/bun": "1.4.4",
+      },
+    },
+    "web/platform": {
+      "name": "@my/platform",
+      "devDependencies": {
         "@types/bun": "1.4.4",
       },
     },
@@ -510,6 +518,8 @@
     "@my/i18n": ["@my/i18n@workspace:web/i18n"],
 
     "@my/i18n-tools": ["@my/i18n-tools@workspace:tools/i18n"],
+
+    "@my/platform": ["@my/platform@workspace:web/platform"],
 
     "@mycroblog/mybot": ["@mycroblog/mybot@workspace:pkg/mybot/ts"],
 

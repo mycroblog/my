@@ -367,13 +367,15 @@
         "restrict/design-system-props": "off"
       }
     },
-    // A layer imports only the layers below it (ADR-0025 §3); the rule knows the layers by their directories of web/.
+    // A layer imports only the layers below it (ADR-0025 §3), and only @my/platform checks the platform (ADR-0028 §17);
+    // the rules know the layers by their directories of web/.
     {
       "files": [
         "web/**"
       ],
       "rules": {
-        "restrict/layer-imports": "error"
+        "restrict/layer-imports": "error",
+        "restrict/platform-globals": "error"
       }
     }
   ]

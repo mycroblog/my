@@ -61,7 +61,7 @@ test("without a provider a part declares nothing and works on its own", () => {
 test("a focus action outside an ActionScope is refused", () => {
   expect(() =>
     renderToStaticMarkup(
-      <ShortcutProvider keymap={keymap}>
+      <ShortcutProvider keymap={keymap} mac={false}>
         <Reply />
       </ShortcutProvider>,
     ),
@@ -71,7 +71,7 @@ test("a focus action outside an ActionScope is refused", () => {
 test("the provider refuses a keymap with a chord the browser keeps", () => {
   expect(() =>
     renderToStaticMarkup(
-      <ShortcutProvider keymap={{ "compose.open": { keys: ["Mod+T"] } }}>
+      <ShortcutProvider keymap={{ "compose.open": { keys: ["Mod+T"] } }} mac={false}>
         <div />
       </ShortcutProvider>,
     ),

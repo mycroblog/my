@@ -1,0 +1,16 @@
+{
+  "name": "@my/platform",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "bun --bun tsc -p .",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4"
+  }
+}
