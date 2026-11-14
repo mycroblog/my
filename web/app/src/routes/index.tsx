@@ -8,12 +8,13 @@ import { useInstance } from "@my/app-data";
 import { HomeTimeline, loadHomeTimeline, Profile } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStrings } from "../locale";
+import { screenLoad } from "../screen-load";
 import { UnreadAnnouncements } from "../shell/around";
 import { ScreenHeading } from "../shell/heading";
 import { ProfileHeading } from "../shell/profile-heading";
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) => (context.data === null ? undefined : loadHomeTimeline(context.data)),
+  loader: ({ context }) => screenLoad(context, loadHomeTimeline),
   component: Home,
   // Back on the home timeline, the reader is where they left it.
   staticData: { scroll: "restore" },

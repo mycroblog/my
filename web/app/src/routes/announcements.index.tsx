@@ -6,11 +6,12 @@
 import { AnnouncementList, loadAnnouncements } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStrings } from "../locale";
+import { screenLoad } from "../screen-load";
 import { ScreenHeading } from "../shell/heading";
 import { SignedOut } from "../shell/signed-out";
 
 export const Route = createFileRoute("/announcements/")({
-  loader: ({ context }) => (context.data === null ? undefined : loadAnnouncements(context.data)),
+  loader: ({ context }) => screenLoad(context, loadAnnouncements),
   component: AnnouncementsScreen,
   // A place of the navigation opens at its top, where the newest announcements are.
   staticData: { scroll: "top" },

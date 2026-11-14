@@ -13,10 +13,13 @@ import type { RuntimeConfig } from "./config";
 import { routeTree } from "./routeTree.gen";
 import { navigationKind } from "./transitions";
 
-/** What every route reads: the session's data (null without a session) and the instance's configuration. */
-export type RouterContext = { data: AppData | null; config: RuntimeConfig };
+/**
+ * What every route reads: the session's data (null without a session), the instance's configuration, and whether a
+ * screen is in place yet (the first load has ended).
+ */
+export type RouterContext = { data: AppData | null; config: RuntimeConfig; shown: () => boolean };
 
-export type AppRouterOptions = RouterContext & {
+export type AppRouterOptions = Omit<RouterContext, "shown"> & {
   /**
    * The path to start at in a history of the router's own, apart from the page's address (a screen's story);
    * without it the router follows the browser's history.
@@ -25,9 +28,10 @@ export type AppRouterOptions = RouterContext & {
 };
 
 export function createAppRouter({ data, config, at }: AppRouterOptions) {
-  return createRouter({
+  let shown = false;
+  const router = createRouter({
     routeTree,
-    context: { data, config },
+    context: { data, config, shown: () => shown },
     ...(at === undefined ? {} : { history: createMemoryHistory({ initialEntries: [at] }) }),
     // Every match is stale at once, so that a screen entered again runs its loader, which returns what the cache holds
     // unless a write marked it stale. Not 0: a wall clock that steps back would make a match look fresh.
@@ -40,6 +44,12 @@ export function createAppRouter({ data, config, at }: AppRouterOptions) {
     // The page's position is the screens' (shell/scroll.ts): the router neither restores it nor resets it.
     scrollRestoration: () => false,
   });
+  // From the end of the first load on, a screen's loader waits for its data (screen-load.ts).
+  const unsubscribe = router.subscribe("onResolved", () => {
+    unsubscribe();
+    shown = true;
+  });
+  return router;
 }
 
 declare module "@tanstack/react-router" {

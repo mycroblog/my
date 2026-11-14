@@ -7,11 +7,12 @@
 import { AnnouncementPage, loadAnnouncement, useAnnouncementTitle } from "@my/app-features";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useStrings } from "../locale";
+import { screenLoad } from "../screen-load";
 import { ScreenHeading } from "../shell/heading";
 import { SignedOut } from "../shell/signed-out";
 
 export const Route = createFileRoute("/announcements/$id")({
-  loader: ({ context, params }) => (context.data === null ? undefined : loadAnnouncement(context.data, params.id)),
+  loader: ({ context, params }) => screenLoad(context, (data) => loadAnnouncement(data, params.id)),
   component: AnnouncementScreen,
   // A page of its own opens at its top.
   staticData: { scroll: "top" },

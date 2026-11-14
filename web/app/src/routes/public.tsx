@@ -5,10 +5,11 @@
 
 import { loadPublicTimeline } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
+import { screenLoad } from "../screen-load";
 import { PublicTimelineScreen } from "../shell/public-timeline";
 
 export const Route = createFileRoute("/public")({
-  loader: ({ context }) => (context.data === null ? undefined : loadPublicTimeline(context.data, "federated")),
+  loader: ({ context }) => screenLoad(context, (data) => loadPublicTimeline(data, "federated")),
   component: FederatedScreen,
   // Back on the timeline, the reader is where they left it.
   staticData: { scroll: "restore" },

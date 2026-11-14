@@ -4,10 +4,11 @@
 
 import { loadPublicTimeline } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
+import { screenLoad } from "../screen-load";
 import { PublicTimelineScreen } from "../shell/public-timeline";
 
 export const Route = createFileRoute("/local")({
-  loader: ({ context }) => (context.data === null ? undefined : loadPublicTimeline(context.data, "local")),
+  loader: ({ context }) => screenLoad(context, (data) => loadPublicTimeline(data, "local")),
   component: LocalScreen,
   // Back on the timeline, the reader is where they left it.
   staticData: { scroll: "restore" },

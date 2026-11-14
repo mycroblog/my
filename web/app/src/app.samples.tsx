@@ -269,7 +269,9 @@ function shows(
   if (signedOut) return settled && (has("article") || has('p[role="status"]'));
   switch (state) {
     case "loading":
-      return true;
+      // The shell, with the screen's heading and its own state of waiting (a busy list, or its notice that it loads):
+      // never a blank page.
+      return has("nav") && has("h1[data-frame-heading]") && has('main [aria-busy="true"], main p[role="status"]');
     case "error":
       return has('[role="alert"]');
     case "empty":

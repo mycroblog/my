@@ -7,11 +7,12 @@
 import { loadThread, Thread } from "@my/app-features";
 import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useStrings } from "../../locale";
+import { screenLoad } from "../../screen-load";
 import { ScreenHeading } from "../../shell/heading";
 import { SignedOut } from "../../shell/signed-out";
 
 export const Route = createFileRoute("/@{$acct}/status/$id")({
-  loader: ({ context, params }) => (context.data === null ? undefined : loadThread(context.data, params.id)),
+  loader: ({ context, params }) => screenLoad(context, (data) => loadThread(data, params.id)),
   component: PostScreen,
   // Back on a post, the reader is where they left its thread.
   staticData: { scroll: "restore" },
