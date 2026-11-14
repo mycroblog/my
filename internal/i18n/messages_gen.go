@@ -1524,7 +1524,7 @@ func (l *Localizer) ServerErrorsInvalidParameter(name string) string {
 	return l.format("server:errors.invalid_parameter", map[string]any{"name": name})
 }
 
-// ServerErrorsInvalidTheme formats "server:errors.invalid_theme". API error title for HTTP 422 when an administrator saves an instance theme that breaks a rule (a token value of the wrong shape or out of range, too little contrast, or too long a custom CSS); theme_errors lists the reasons.
+// ServerErrorsInvalidTheme formats "server:errors.invalid_theme". API error title for HTTP 422 when an administrator saves an instance theme that breaks a rule (a token value of the wrong shape or out of range, or too little contrast); theme_errors lists the reasons.
 //
 //	en: The theme cannot be saved.
 func (l *Localizer) ServerErrorsInvalidTheme() string {

@@ -606,9 +606,6 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 }
 ```
 
-When you upgrade from a release that kept the theme without drafts, `my db upgrade` copies each saved theme into a published
-set under the same revision, so the theme in effect stays and the earlier ones can be restored. A custom CSS is not carried over.
-
 ## Logo and icon
 
 Besides the thumbnail and the preview image, the instance can have its own icon, logo, and dark logo, each uploaded as one SVG.

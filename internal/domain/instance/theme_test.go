@@ -269,25 +269,6 @@ func TestThemeStylesheet(t *testing.T) {
 	}
 }
 
-func TestThemeTokenValuesFromRows(t *testing.T) {
-	rows := []instance.ThemeTokenRow{
-		{Token: "radius-control", Scheme: instance.SchemeAll, Value: "2px"},
-		{Token: "color-text", Scheme: instance.SchemeLight, Value: "#000000"},
-		{Token: "elevation-card", Scheme: instance.SchemeAll, Value: "none"},
-		{Token: "color-text", Scheme: instance.SchemeDark, Value: "#ffffff"},
-	}
-	// In the order of the tokens (the colors come before the radii in @my/design-tokens), then the
-	// names the list no longer has.
-	want := []instance.ThemeTokenValue{
-		{Token: "color-text", Light: "#000000", Dark: "#ffffff"},
-		{Token: "radius-control", Value: "2px"},
-		{Token: "elevation-card", Value: "none"},
-	}
-	if got := instance.ThemeTokenValuesFromRows(rows); !slices.Equal(got, want) {
-		t.Errorf("ThemeTokenValuesFromRows = %+v", got)
-	}
-}
-
 func TestThemeColor(t *testing.T) {
 	tokens := []instance.ThemeTokenValue{{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"}}
 	if got := instance.ThemeColor(tokens, "color-surface", instance.SchemeDark); got != "#101010" {

@@ -43,9 +43,3 @@ ON CONFLICT (id) DO UPDATE SET set_id = excluded.set_id;
 
 -- name: DeleteInstanceThemeDraft :exec
 DELETE FROM instance_theme_draft;
-
--- name: ListLegacyInstanceThemeRevisions :many
-SELECT id, revised_by_user_id, revised_at FROM instance_theme_revisions WHERE id > $1 ORDER BY id LIMIT $2;
-
--- name: ListLegacyInstanceThemeTokens :many
-SELECT token, scheme, value FROM instance_theme_tokens WHERE revision_id = $1 ORDER BY token, scheme;

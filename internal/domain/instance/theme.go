@@ -82,12 +82,10 @@ func LookupThemeToken(name string) (ThemeToken, bool) {
 // ColorScheme is the color scheme of a color value or a contrast pair.
 type ColorScheme string
 
-// Color schemes. SchemeAll is the scheme of a value of another kind in the rows of the releases
-// that stored a theme row by row (ThemeTokenRow).
+// Color schemes.
 const (
 	SchemeLight ColorScheme = "light"
 	SchemeDark  ColorScheme = "dark"
-	SchemeAll   ColorScheme = "all"
 )
 
 // ThemeTokenValue is the override of one token: Light and Dark for a color token, Value for the
@@ -97,51 +95,6 @@ type ThemeTokenValue struct {
 	Light string `json:"light,omitempty"`
 	Dark  string `json:"dark,omitempty"`
 	Value string `json:"value,omitempty"`
-}
-
-// ThemeTokenRow is the override of a token in one color scheme, as the releases before the token
-// set stored it (instance_theme_tokens), which the data upgrade step theme.token_sets reads.
-type ThemeTokenRow struct {
-	Token  string
-	Scheme ColorScheme
-	Value  string
-}
-
-// ThemeTokenValuesFromRows folds stored rows back into token values, in the order of the tokens,
-// then the names the list no longer has, by name.
-func ThemeTokenValuesFromRows(rows []ThemeTokenRow) []ThemeTokenValue {
-	byToken := map[string]*ThemeTokenValue{}
-	for _, r := range rows {
-		v, ok := byToken[r.Token]
-		if !ok {
-			v = &ThemeTokenValue{Token: r.Token}
-			byToken[r.Token] = v
-		}
-		switch r.Scheme {
-		case SchemeLight:
-			v.Light = r.Value
-		case SchemeDark:
-			v.Dark = r.Value
-		default:
-			v.Value = r.Value
-		}
-	}
-	out := make([]ThemeTokenValue, 0, len(byToken))
-	for _, t := range themeTokens {
-		if v, ok := byToken[t.Name]; ok {
-			out = append(out, *v)
-			delete(byToken, t.Name)
-		}
-	}
-	rest := make([]string, 0, len(byToken))
-	for name := range byToken {
-		rest = append(rest, name)
-	}
-	slices.Sort(rest)
-	for _, name := range rest {
-		out = append(out, *byToken[name])
-	}
-	return out
 }
 
 // ThemeSetVersion is the version of the document of a token set (ThemeSet.Document).

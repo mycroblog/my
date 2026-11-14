@@ -113,7 +113,7 @@
   },
   "errors.invalid_theme": {
     "defaultMessage": "No se puede guardar el tema.",
-    "description": "API error title for HTTP 422 when an administrator saves an instance theme that breaks a rule (a token value of the wrong shape or out of range, too little contrast, or too long a custom CSS); theme_errors lists the reasons."
+    "description": "API error title for HTTP 422 when an administrator saves an instance theme that breaks a rule (a token value of the wrong shape or out of range, or too little contrast); theme_errors lists the reasons."
   },
   "errors.invalid_token": {
     "defaultMessage": "Tu sesión ha caducado o se ha revocado. Inicia sesión de nuevo.",

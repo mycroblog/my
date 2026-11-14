@@ -5,7 +5,6 @@ package instancetest
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"slices"
 	"strings"
@@ -38,7 +37,6 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 		{"KeepsRulesByPosition", instanceRepoRules},
 		{"KeepsLinkCardDomainRules", instanceRepoLinkCards},
 		{"KeepsTheTheme", instanceRepoTheme},
-		{"UpgradesTheThemeToTokenSets", instanceRepoThemeUpgrade},
 		{"KeepsTheBrandImages", instanceRepoBrands},
 		{"KeepsAnnouncements", instanceRepoAnnouncements},
 		{"KeepsTheServiceClosure", instanceRepoClosure},
@@ -429,79 +427,12 @@ func instanceRepoTheme(t *testing.T, r *instanceRepo) {
 		if serr == nil && latestSet != second.ID {
 			t.Errorf("LatestThemeSetID = %s, want %s", latestSet, second.ID)
 		}
-		legacy, lgerr := r.i.LegacyThemeRevisions(ctx, tx, "", 10)
-		if lgerr == nil && len(legacy) != 0 {
-			t.Errorf("LegacyThemeRevisions of a database without them = %+v", legacy)
-		}
-		return errors.Join(err, lerr, derr, serr, lgerr, r.i.DeleteThemeHead(ctx, tx), r.i.DeleteThemeDraftHead(ctx, tx))
+		return errors.Join(err, lerr, derr, serr, r.i.DeleteThemeHead(ctx, tx), r.i.DeleteThemeDraftHead(ctx, tx))
 	})
 	_, err = r.i.CurrentTheme(ctx)
 	wantNotFound(t, "CurrentTheme after DeleteThemeHead", err)
 	_, err = r.i.ThemeDraft(ctx)
 	wantNotFound(t, "ThemeDraft after DeleteThemeDraftHead", err)
-}
-
-// instanceRepoThemeUpgrade writes theme revisions as the releases before the token set did and
-// runs the data upgrade step theme.token_sets: each becomes a set and a publication with its ID,
-// its overrides of retired tokens kept as stale ones and its custom CSS dropped; after the rebuild
-// the draft and the theme in effect are the latest; and a second run changes nothing.
-func instanceRepoThemeUpgrade(t *testing.T, r *instanceRepo) {
-	if r.h.InsertLegacyTheme == nil {
-		t.Skip("the harness writes no legacy theme")
-	}
-	ctx := t.Context()
-	admin := testkit.NamedID("admin")
-	var revs []LegacyThemeRevision
-	for i := range appinstance.ThemeSetsUpgradeBatch + 2 {
-		rev := LegacyThemeRevision{ID: r.ids.NewID(), RevisedAt: r.now(), Rows: []instance.ThemeTokenRow{
-			{Token: "radius-control", Scheme: instance.SchemeAll, Value: fmt.Sprintf("%dpx", i%20)},
-		}}
-		if i == appinstance.ThemeSetsUpgradeBatch+1 {
-			rev.RevisedByUserID, rev.CustomCSS = admin, "body { margin: 0 }"
-			rev.Rows = append(rev.Rows,
-				instance.ThemeTokenRow{Token: "color-surface", Scheme: instance.SchemeLight, Value: "#fffdf5"},
-				instance.ThemeTokenRow{Token: "color-surface", Scheme: instance.SchemeDark, Value: "#101010"},
-				instance.ThemeTokenRow{Token: "elevation-card", Scheme: instance.SchemeAll, Value: "none"},
-			)
-		}
-		if err := r.h.InsertLegacyTheme(ctx, rev); err != nil {
-			t.Fatal(err)
-		}
-		revs = append(revs, rev)
-	}
-	for range 2 {
-		if err := appinstance.UpgradeThemeSets(ctx, r.h.UnitOfWork, r.i); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := appinstance.RebuildProjections(ctx, r.h.UnitOfWork, r.i); err != nil {
-		t.Fatal(err)
-	}
-	last := revs[len(revs)-1]
-	want := instance.ThemeRevision{
-		ThemePublication: instance.ThemePublication{ID: last.ID, SetID: last.ID, PublishedByUserID: admin, PublishedAt: last.RevisedAt},
-		Set: instance.ThemeSet{ID: last.ID, SavedByUserID: admin, SavedAt: last.RevisedAt,
-			Tokens: []instance.ThemeTokenValue{{Token: "color-surface", Light: "#fffdf5", Dark: "#101010"}, {Token: "radius-control", Value: "1px"}},
-			Stale:  []instance.StaleOverride{{ThemeTokenValue: instance.ThemeTokenValue{Token: "elevation-card", Value: "none"}, Reason: instance.ThemeUnknownToken}},
-		},
-	}
-	if got, err := r.i.CurrentTheme(ctx); err != nil || !reflect.DeepEqual(got, want) {
-		t.Errorf("CurrentTheme after the upgrade = %+v, %v\nwant %+v", got, err, want)
-	}
-	if got, err := r.i.ThemeDraft(ctx); err != nil || !reflect.DeepEqual(got, want.Set) {
-		t.Errorf("ThemeDraft after the upgrade = %+v, %v; want %+v", got, err, want.Set)
-	}
-	// Every revision keeps its stylesheet URL, and the one before can be restored.
-	if got, err := r.i.FindThemeRevision(ctx, revs[0].ID); err != nil || len(got.Set.Tokens) != 1 || got.Set.Tokens[0].Value != "0px" {
-		t.Errorf("FindThemeRevision(first) = %+v, %v", got, err)
-	}
-	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-		prev, err := r.i.PreviousThemePublication(ctx, tx, want.ThemePublication)
-		if err == nil && prev.ID != revs[len(revs)-2].ID {
-			t.Errorf("PreviousThemePublication = %+v, want %s", prev, revs[len(revs)-2].ID)
-		}
-		return err
-	})
 }
 
 func instanceRepoBrands(t *testing.T, r *instanceRepo) {

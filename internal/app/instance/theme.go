@@ -49,11 +49,6 @@ type ThemeRepository interface {
 	FindThemeRevision(ctx context.Context, id string) (instance.ThemeRevision, error)
 	// ThemeDraft returns the set that the draft head points at.
 	ThemeDraft(ctx context.Context) (instance.ThemeSet, error)
-
-	// LegacyThemeRevisions returns up to limit theme revisions of the releases before the token
-	// set (instance_theme_revisions with instance_theme_tokens) whose IDs follow after ("" for
-	// the first), in ID order, as sets with the same IDs and every stored override as it is.
-	LegacyThemeRevisions(ctx context.Context, tx uow.Tx, after string, limit int) ([]instance.ThemeSet, error)
 }
 
 // Event types of the theme.
@@ -267,41 +262,4 @@ func (s *Service) publish(ctx context.Context, by string, pick func(tx uow.Tx) (
 			rev.ID, by, rev.PublishedAt))
 	})
 	return rev, err
-}
-
-// ThemeSetsUpgradeBatch is the most theme revisions one transaction of theme.token_sets copies.
-const ThemeSetsUpgradeBatch = 100
-
-// UpgradeThemeSets is the work of the data upgrade step theme.token_sets (ADR-0023 §5): it copies
-// each theme revision of the releases before the token set into a set and a publication with the
-// revision's ID, so that the stylesheet URLs already handed out keep their content, the revision
-// in effect stays in effect, and an earlier one can be restored. Every stored override is kept in
-// the set; those that no longer apply are dropped on read. The custom CSS of those releases is not
-// carried over: a theme holds tokens only (ADR-0059 §3). It is safe to run again: a copied
-// revision is left as it is. The step then rebuilds the instance projections, which point the
-// draft and the theme in effect at the latest copies.
-func UpgradeThemeSets(ctx context.Context, u uow.UnitOfWork, repo Repository) error {
-	after := ""
-	for {
-		var sets []instance.ThemeSet
-		if err := u.Tx(ctx, func(tx uow.Tx) error {
-			var err error
-			if sets, err = repo.LegacyThemeRevisions(ctx, tx, after, ThemeSetsUpgradeBatch); err != nil {
-				return err
-			}
-			for _, set := range sets {
-				p := instance.ThemePublication{ID: set.ID, SetID: set.ID, PublishedByUserID: set.SavedByUserID, PublishedAt: set.SavedAt}
-				if err := errors.Join(repo.InsertThemeSet(ctx, tx, set), repo.InsertThemePublication(ctx, tx, p)); err != nil {
-					return err
-				}
-			}
-			return nil
-		}); err != nil {
-			return fmt.Errorf("instance: upgrade the theme to token sets: %w", err)
-		}
-		if len(sets) < ThemeSetsUpgradeBatch {
-			return nil
-		}
-		after = sets[len(sets)-1].ID
-	}
 }
