@@ -32,7 +32,6 @@ test("a person follows another and unfollows them, and each stays after a reload
 });
 
 test("the profile of a person who writes in Japanese keeps the reader's language", async ({ page, signIn }) => {
-  test.fail(true, "the client shows its whole UI in the profile owner's locale (ja) to a reader whose locale is en");
   await signIn(person("marco"));
   const profile = new Profile(page, person("yuki"));
   await profile.open();
