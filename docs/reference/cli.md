@@ -2013,7 +2013,7 @@ Usage:
   my instance set -owner <username> [-config <file>] <preview_image|thumbnail> <image file>
   my instance history [-limit <n>] [-config <file>] <key>
   my instance rule <list|create|edit|move|retire> ...  (my instance rule -h)
-  my instance theme <get|set> ...  (my instance theme -h)
+  my instance theme <get|set|publish|restore> ...  (my instance theme -h)
   my instance brand <show|clear> ...  (my instance brand -h)
 
 Reads and changes the instance settings and texts stored in the database.
@@ -2229,24 +2229,28 @@ Its help is the help of [`my instance`](#my-instance).
 
 ### `my instance theme`
 
-Subcommands: [`get`](#my-instance-theme-get), [`set`](#my-instance-theme-set).
+Subcommands: [`get`](#my-instance-theme-get), [`publish`](#my-instance-theme-publish), [`restore`](#my-instance-theme-restore), [`set`](#my-instance-theme-set).
 
 ```text
 Usage:
-  my instance theme get [-config <file>]
+  my instance theme get [-published] [-config <file>]
   my instance theme set [-config <file>] < theme.json
+  my instance theme publish [-config <file>]
+  my instance theme restore [-config <file>]
 
-Reads and replaces the theme of the web client: overrides of the design tokens
-and a custom CSS, as JSON of the admin API's PUT /api/v1/admin/theme:
+Reads and changes the theme of the web client: one set of overrides of the
+design tokens, as JSON of the admin API's PUT /api/v1/admin/theme/draft:
 
   {"tokens": [{"token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80"},
-              {"token": "radius-control", "value": "0.25rem"}],
-   "custom_css": ""}
+              {"token": "radius-control", "value": "0.25rem"}]}
 
-set replaces the whole theme (tokens left out go back to their defaults; no
-tokens and no CSS reset it), checks every value and the contrast of the color
-pairs in both themes, records a revision, and prints the theme as saved. get
-prints the current theme.
+set saves the draft: it replaces the whole set (tokens left out keep their
+defaults; no tokens reset them), checks every value and the contrast of the
+color pairs in both themes, and prints the draft as saved. The theme in effect
+does not change until publish, which publishes the draft under a new revision.
+restore publishes again the set published before the one in effect. get prints
+the draft, or with -published the set in effect with its revision. Overrides
+that an upgrade made stale are named on standard error and left out.
 ```
 
 Documentation: [docs/operations/instance-settings.md](../operations/instance-settings.md)
@@ -2254,7 +2258,32 @@ Documentation: [docs/operations/instance-settings.md](../operations/instance-set
 ### `my instance theme get`
 
 ```text
-my instance theme get [-config <file>]
+my instance theme get [-published] [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-published` | `false` | print the set in effect instead of the draft |
+
+Its help is the help of [`my instance theme`](#my-instance-theme).
+
+### `my instance theme publish`
+
+```text
+my instance theme publish [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my instance theme`](#my-instance-theme).
+
+### `my instance theme restore`
+
+```text
+my instance theme restore [-config <file>]
 ```
 
 | Flag | Default | Description |
@@ -2633,10 +2662,9 @@ and no external resource; their Content-Security-Policy is in a <meta> element.
 The words come from the maintenance_* settings and status_page_url. Unless
 -offline is given, export also reads the database, waiting at most 5 seconds,
 for the instance's name (when maintenance_server_name is unset), its default
-locale (when -lang is not given), and the token overrides of its theme; the
-custom CSS of the theme is never included. When the database cannot be read,
-export warns, writes the pages from the configuration and the default theme,
-and still exits 0.
+locale (when -lang is not given), and the token overrides of its published
+theme. When the database cannot be read, export warns, writes the pages from
+the configuration and the default theme, and still exits 0.
 ```
 
 ### `my maintenance export`

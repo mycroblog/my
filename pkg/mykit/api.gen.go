@@ -4895,6 +4895,30 @@ func (e SignupBlockImportSkippedReason) Valid() bool {
 	}
 }
 
+// Defines values for StaleThemeTokenReason.
+const (
+	StaleThemeTokenReasonDuplicateToken StaleThemeTokenReason = "duplicate_token"
+	StaleThemeTokenReasonInvalidValue   StaleThemeTokenReason = "invalid_value"
+	StaleThemeTokenReasonOutOfRange     StaleThemeTokenReason = "out_of_range"
+	StaleThemeTokenReasonUnknownToken   StaleThemeTokenReason = "unknown_token"
+)
+
+// Valid indicates whether the value is a known member of the StaleThemeTokenReason enum.
+func (e StaleThemeTokenReason) Valid() bool {
+	switch e {
+	case StaleThemeTokenReasonDuplicateToken:
+		return true
+	case StaleThemeTokenReasonInvalidValue:
+		return true
+	case StaleThemeTokenReasonOutOfRange:
+		return true
+	case StaleThemeTokenReasonUnknownToken:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SupporterEndReason.
 const (
 	SupporterEndReasonAccountClosed    SupporterEndReason = "account_closed"
@@ -5131,22 +5155,17 @@ func (e SupporterTipState) Valid() bool {
 
 // Defines values for ThemeErrorCode.
 const (
-	ThemeErrorCodeCssInvalid     ThemeErrorCode = "css_invalid"
-	ThemeErrorCodeCssTooLong     ThemeErrorCode = "css_too_long"
-	ThemeErrorCodeDuplicateToken ThemeErrorCode = "duplicate_token"
-	ThemeErrorCodeInvalidValue   ThemeErrorCode = "invalid_value"
-	ThemeErrorCodeLowContrast    ThemeErrorCode = "low_contrast"
-	ThemeErrorCodeOutOfRange     ThemeErrorCode = "out_of_range"
-	ThemeErrorCodeUnknownToken   ThemeErrorCode = "unknown_token"
+	ThemeErrorCodeDuplicateToken   ThemeErrorCode = "duplicate_token"
+	ThemeErrorCodeInvalidValue     ThemeErrorCode = "invalid_value"
+	ThemeErrorCodeLowContrast      ThemeErrorCode = "low_contrast"
+	ThemeErrorCodeOutOfRange       ThemeErrorCode = "out_of_range"
+	ThemeErrorCodeTooManyOverrides ThemeErrorCode = "too_many_overrides"
+	ThemeErrorCodeUnknownToken     ThemeErrorCode = "unknown_token"
 )
 
 // Valid indicates whether the value is a known member of the ThemeErrorCode enum.
 func (e ThemeErrorCode) Valid() bool {
 	switch e {
-	case ThemeErrorCodeCssInvalid:
-		return true
-	case ThemeErrorCodeCssTooLong:
-		return true
 	case ThemeErrorCodeDuplicateToken:
 		return true
 	case ThemeErrorCodeInvalidValue:
@@ -5154,6 +5173,8 @@ func (e ThemeErrorCode) Valid() bool {
 	case ThemeErrorCodeLowContrast:
 		return true
 	case ThemeErrorCodeOutOfRange:
+		return true
+	case ThemeErrorCodeTooManyOverrides:
 		return true
 	case ThemeErrorCodeUnknownToken:
 		return true
@@ -8721,20 +8742,25 @@ type AdminSupporterTipsRequest struct {
 
 // AdminTheme The instance theme as its administrators edit it.
 type AdminTheme struct {
-	// CustomCss The custom CSS; empty for none.
-	CustomCss string `json:"custom_css"`
+	// Draft A saved token set of the instance theme.
+	Draft *ThemeSet `json:"draft,omitempty"`
 
-	// RevisedAt When the current revision was recorded; omitted when no theme was ever saved.
-	RevisedAt *time.Time `json:"revised_at,omitempty"`
+	// Published A publication of a token set, which made it the theme in effect.
+	Published *AdminThemeRevision `json:"published,omitempty"`
+}
 
-	// Revision The ID of the current theme revision; omitted when no theme was ever saved.
-	Revision *string `json:"revision,omitempty"`
+// AdminThemeRevision A publication of a token set, which made it the theme in effect.
+type AdminThemeRevision struct {
+	PublishedAt time.Time `json:"published_at"`
 
-	// StylesheetUrl The stylesheet of the theme; omitted when the theme changes nothing.
+	// Revision The ID of the publication, which names its stylesheet.
+	Revision string `json:"revision"`
+
+	// Set A saved token set of the instance theme.
+	Set ThemeSet `json:"set"`
+
+	// StylesheetUrl The stylesheet of the theme; omitted when the set overrides nothing.
 	StylesheetUrl *string `json:"stylesheet_url,omitempty"`
-
-	// Tokens The overridden tokens, in the order of the token list.
-	Tokens []ThemeTokenValue `json:"tokens"`
 }
 
 // AdminTranslationOverview How translation is used in the current month, and the providers that this server has.
@@ -15290,8 +15316,9 @@ type PreviewDomainBlockImportRequest struct {
 //     which.
 //   - `/api/v1/problems/invalid-relay` (422): a relay cannot be registered, joined, left, or
 //     deleted; `reason` says why.
-//   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
-//     reason in `theme_errors` (`PUT /admin/theme`).
+//   - `/api/v1/problems/invalid-theme` (422): the theme's token set breaks a rule; the problem lists
+//     every reason in `theme_errors` (`PUT /admin/theme/draft`, `POST /admin/theme/publish`,
+//     `POST /admin/theme/restore`).
 //   - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
 //     why (`/admin/instance/brand/...`).
 //   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
@@ -16018,10 +16045,9 @@ type SetLinkCardDomainRuleRequest struct {
 	Note *string `json:"note,omitempty"`
 }
 
-// SetThemeRequest The whole theme; tokens left out go back to their defaults.
+// SetThemeRequest A whole token set; tokens left out keep their defaults.
 type SetThemeRequest struct {
-	CustomCss string            `json:"custom_css"`
-	Tokens    []ThemeTokenValue `json:"tokens"`
+	Tokens []ThemeTokenValue `json:"tokens"`
 }
 
 // SignupBlockImportResult What an import of a list of sign-up blocks did.
@@ -16054,6 +16080,18 @@ type SignupBlockImportSkippedReason string
 
 // SpoilerText The content warning; omitted or empty for none. It counts toward `max_post_characters`.
 type SpoilerText = string
+
+// StaleThemeToken A stored override that no longer applies, as it was saved, and why.
+type StaleThemeToken struct {
+	Dark   *string               `json:"dark,omitempty"`
+	Light  *string               `json:"light,omitempty"`
+	Reason StaleThemeTokenReason `json:"reason"`
+	Token  string                `json:"token"`
+	Value  *string               `json:"value,omitempty"`
+}
+
+// StaleThemeTokenReason defines model for StaleThemeToken.Reason.
+type StaleThemeTokenReason string
 
 // Status A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
 // `muted` describe the authenticated user's relation to it and are omitted for anonymous
@@ -16839,11 +16877,11 @@ type TagSuggestionList struct {
 	Items []TagSuggestion `json:"items"`
 }
 
-// ThemeError One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
-// `invalid_value` (the value does not have the token's shape; `scheme` names the color scheme
-// of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and ms for a
-// duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
-// `minimum`:1), `css_too_long` (`max` bytes), or `css_invalid` (not UTF-8 text).
+// ThemeError One reason a token set cannot be saved or published. `code` is `unknown_token`,
+// `duplicate_token`, `invalid_value` (the value does not have the token's shape; `scheme` names the
+// color scheme of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and
+// ms for a duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
+// `minimum`:1), or `too_many_overrides` (more than `max` tokens).
 type ThemeError struct {
 	Background *string           `json:"background,omitempty"`
 	Code       ThemeErrorCode    `json:"code"`
@@ -16861,8 +16899,8 @@ type ThemeErrorCode string
 // ThemeErrorScheme defines model for ThemeError.Scheme.
 type ThemeErrorScheme string
 
-// ThemeProblem A 422 of `PUT /admin/theme`. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
-// lists why the theme cannot be saved; another 422 (a malformed request) has none.
+// ThemeProblem A 422 of the theme operations. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
+// lists why the token set cannot be saved or published; another 422 (a malformed request) has none.
 type ThemeProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -16881,6 +16919,20 @@ type ThemeProblem struct {
 	// It is `about:blank` when the problem means no more than its HTTP status.
 	Type                 string                 `json:"type"`
 	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// ThemeSet A saved token set of the instance theme.
+type ThemeSet struct {
+	Id      string    `json:"id"`
+	SavedAt time.Time `json:"saved_at"`
+
+	// StaleTokens The overrides that no longer apply and are left out of the stylesheet: `reason` is
+	// `unknown_token` (the token was renamed or retired), `duplicate_token`, `invalid_value`, or
+	// `out_of_range` (the token's kind or bounds changed).
+	StaleTokens []StaleThemeToken `json:"stale_tokens"`
+
+	// Tokens The overrides that apply, in the order of the token list.
+	Tokens []ThemeTokenValue `json:"tokens"`
 }
 
 // ThemeTokenValue The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
@@ -19337,8 +19389,8 @@ type SetSupporterProgramJSONRequestBody = AdminSupporterProgramRequest
 // SetSupporterTipsJSONRequestBody defines body for SetSupporterTips for application/json ContentType.
 type SetSupporterTipsJSONRequestBody = AdminSupporterTipsRequest
 
-// SetAdminThemeJSONRequestBody defines body for SetAdminTheme for application/json ContentType.
-type SetAdminThemeJSONRequestBody = SetThemeRequest
+// SetAdminThemeDraftJSONRequestBody defines body for SetAdminThemeDraft for application/json ContentType.
+type SetAdminThemeDraftJSONRequestBody = SetThemeRequest
 
 // EndVoiceRoomAsModeratorJSONRequestBody defines body for EndVoiceRoomAsModerator for application/json ContentType.
 type EndVoiceRoomAsModeratorJSONRequestBody = AdminVoiceRoomEnd
@@ -24903,66 +24955,95 @@ type ClientInterface interface {
 
 	// GetAdminTheme Read the instance theme
 	//
-	// The current theme of the web client: the overridden design tokens and the
-	// custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-	// `manage_settings` permission.
+	// The theme of the web client as its administrators edit it: the draft token set and the set
+	// in effect. Each omits what was never saved or published. A set lists the overrides that apply
+	// in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+	// retired their token or changed its bounds; the server leaves those out of the stylesheet and
+	// the next save of the draft drops them. Needs the `manage_settings` permission.
 	//
 	// Corresponds with GET /admin/theme (the `GetAdminTheme` operationId).
 	GetAdminTheme(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetAdminThemeWithBody Replace the instance theme
+	// SetAdminThemeDraftWithBody Save the draft of the instance theme
 	//
-	// Records a revision of the theme, which every visitor's web client and the server-rendered
-	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (the audit log's `setting_changed` of `theme`).
+	// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+	// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+	// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+	// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+	// resets the theme.
 	//
 	// The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-	// and the durations of the web client's design tokens (the list generated from
-	// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+	// and the spin duration of the web client's design tokens (the list generated from
+	// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+	// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 	// take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 	// a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 	// of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-	// (4.5:1 for text, 3:1 for marks) in both color schemes.
-	// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-	// does not read it, it runs under the same Content-Security-Policy as the client (only
-	// same-origin resources), and what it does to contrast, layout, and focus is the
-	// administrator's responsibility. A theme that breaks any rule is a 422
+	// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 	// `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 	// `manage_settings` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-	SetAdminThemeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+	SetAdminThemeDraftWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetAdminTheme Replace the instance theme
+	// SetAdminThemeDraft Save the draft of the instance theme
 	//
-	// Records a revision of the theme, which every visitor's web client and the server-rendered
-	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (the audit log's `setting_changed` of `theme`).
+	// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+	// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+	// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+	// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+	// resets the theme.
 	//
 	// The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-	// and the durations of the web client's design tokens (the list generated from
-	// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+	// and the spin duration of the web client's design tokens (the list generated from
+	// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+	// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 	// take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 	// a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 	// of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-	// (4.5:1 for text, 3:1 for marks) in both color schemes.
-	// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-	// does not read it, it runs under the same Content-Security-Policy as the client (only
-	// same-origin resources), and what it does to contrast, layout, and focus is the
-	// administrator's responsibility. A theme that breaks any rule is a 422
+	// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 	// `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 	// `manage_settings` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-	SetAdminTheme(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+	SetAdminThemeDraft(ctx context.Context, body SetAdminThemeDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminThemeDraftStylesheet Preview the draft of the instance theme
+	//
+	// The stylesheet that the draft would serve once published, for the administrator to apply
+	// over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+	// no draft was saved. Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/theme/draft/stylesheet (the `GetAdminThemeDraftStylesheet` operationId).
+	GetAdminThemeDraftStylesheet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PublishAdminTheme Publish the draft of the instance theme
+	//
+	// Publishes the draft under a new revision, which every visitor's web client and the
+	// server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+	// of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+	// changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+	// publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+	// saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+	// `manage_settings` permission.
+	//
+	// Corresponds with POST /admin/theme/publish (the `PublishAdminTheme` operationId).
+	PublishAdminTheme(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RestoreAdminTheme Restore the previously published instance theme
+	//
+	// Publishes again, under a new revision, the token set published before the one in effect; the
+	// draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+	// restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+	// other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+	// meets a rule. Needs the `manage_settings` permission.
+	//
+	// Corresponds with POST /admin/theme/restore (the `RestoreAdminTheme` operationId).
+	RestoreAdminTheme(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAdminTranslationOverview Show how translation is used
 	//
@@ -35158,9 +35239,11 @@ func (c *Client) SetSupporterTips(ctx context.Context, body SetSupporterTipsJSON
 
 // GetAdminTheme Read the instance theme
 //
-// The current theme of the web client: the overridden design tokens and the
-// custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-// `manage_settings` permission.
+// The theme of the web client as its administrators edit it: the draft token set and the set
+// in effect. Each omits what was never saved or published. A set lists the overrides that apply
+// in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+// retired their token or changed its bounds; the server leaves those out of the stylesheet and
+// the next save of the draft drops them. Needs the `manage_settings` permission.
 //
 // Corresponds with GET /admin/theme (the `GetAdminTheme` operationId).
 func (c *Client) GetAdminTheme(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -35175,33 +35258,30 @@ func (c *Client) GetAdminTheme(ctx context.Context, reqEditors ...RequestEditorF
 	return c.Client.Do(req)
 }
 
-// SetAdminThemeWithBody Replace the instance theme
+// SetAdminThemeDraftWithBody Save the draft of the instance theme
 //
-// Records a revision of the theme, which every visitor's web client and the server-rendered
-// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (the audit log's `setting_changed` of `theme`).
+// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+// resets the theme.
 //
 // The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-// and the durations of the web client's design tokens (the list generated from
-// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+// and the spin duration of the web client's design tokens (the list generated from
+// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 // take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 // a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 // of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-// (4.5:1 for text, 3:1 for marks) in both color schemes.
-// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-// does not read it, it runs under the same Content-Security-Policy as the client (only
-// same-origin resources), and what it does to contrast, layout, and focus is the
-// administrator's responsibility. A theme that breaks any rule is a 422
+// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 // `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 // `manage_settings` permission.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-func (c *Client) SetAdminThemeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetAdminThemeRequestWithBody(c.Server, contentType, body)
+// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+func (c *Client) SetAdminThemeDraftWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAdminThemeDraftRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -35212,33 +35292,93 @@ func (c *Client) SetAdminThemeWithBody(ctx context.Context, contentType string, 
 	return c.Client.Do(req)
 }
 
-// SetAdminTheme Replace the instance theme
+// SetAdminThemeDraft Save the draft of the instance theme
 //
-// Records a revision of the theme, which every visitor's web client and the server-rendered
-// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (the audit log's `setting_changed` of `theme`).
+// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+// resets the theme.
 //
 // The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-// and the durations of the web client's design tokens (the list generated from
-// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+// and the spin duration of the web client's design tokens (the list generated from
+// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 // take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 // a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 // of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-// (4.5:1 for text, 3:1 for marks) in both color schemes.
-// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-// does not read it, it runs under the same Content-Security-Policy as the client (only
-// same-origin resources), and what it does to contrast, layout, and focus is the
-// administrator's responsibility. A theme that breaks any rule is a 422
+// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 // `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 // `manage_settings` permission.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-func (c *Client) SetAdminTheme(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetAdminThemeRequest(c.Server, body)
+// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+func (c *Client) SetAdminThemeDraft(ctx context.Context, body SetAdminThemeDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAdminThemeDraftRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminThemeDraftStylesheet Preview the draft of the instance theme
+//
+// The stylesheet that the draft would serve once published, for the administrator to apply
+// over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+// no draft was saved. Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/theme/draft/stylesheet (the `GetAdminThemeDraftStylesheet` operationId).
+func (c *Client) GetAdminThemeDraftStylesheet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminThemeDraftStylesheetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PublishAdminTheme Publish the draft of the instance theme
+//
+// Publishes the draft under a new revision, which every visitor's web client and the
+// server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+// of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+// changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+// publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+// saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+// `manage_settings` permission.
+//
+// Corresponds with POST /admin/theme/publish (the `PublishAdminTheme` operationId).
+func (c *Client) PublishAdminTheme(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPublishAdminThemeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RestoreAdminTheme Restore the previously published instance theme
+//
+// Publishes again, under a new revision, the token set published before the one in effect; the
+// draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+// restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+// other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+// meets a rule. Needs the `manage_settings` permission.
+//
+// Corresponds with POST /admin/theme/restore (the `RestoreAdminTheme` operationId).
+func (c *Client) RestoreAdminTheme(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestoreAdminThemeRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -51817,19 +51957,19 @@ func NewGetAdminThemeRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewSetAdminThemeRequest calls the generic SetAdminTheme builder with application/json body
-func NewSetAdminThemeRequest(server string, body SetAdminThemeJSONRequestBody) (*http.Request, error) {
+// NewSetAdminThemeDraftRequest calls the generic SetAdminThemeDraft builder with application/json body
+func NewSetAdminThemeDraftRequest(server string, body SetAdminThemeDraftJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewSetAdminThemeRequestWithBody(server, "application/json", bodyReader)
+	return NewSetAdminThemeDraftRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewSetAdminThemeRequestWithBody constructs an http.Request for the SetAdminTheme method, with any body, and a specified content type
-func NewSetAdminThemeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewSetAdminThemeDraftRequestWithBody constructs an http.Request for the SetAdminThemeDraft method, with any body, and a specified content type
+func NewSetAdminThemeDraftRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -51837,7 +51977,7 @@ func NewSetAdminThemeRequestWithBody(server string, contentType string, body io.
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/admin/theme")
+	operationPath := fmt.Sprintf("/admin/theme/draft")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -51853,6 +51993,87 @@ func NewSetAdminThemeRequestWithBody(server string, contentType string, body io.
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetAdminThemeDraftStylesheetRequest constructs an http.Request for the GetAdminThemeDraftStylesheet method
+func NewGetAdminThemeDraftStylesheetRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/theme/draft/stylesheet")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPublishAdminThemeRequest constructs an http.Request for the PublishAdminTheme method
+func NewPublishAdminThemeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/theme/publish")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRestoreAdminThemeRequest constructs an http.Request for the RestoreAdminTheme method
+func NewRestoreAdminThemeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/theme/restore")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -66452,68 +66673,103 @@ type ClientWithResponsesInterface interface {
 
 	// GetAdminThemeWithResponse Read the instance theme
 	//
-	// The current theme of the web client: the overridden design tokens and the
-	// custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-	// `manage_settings` permission.
+	// The theme of the web client as its administrators edit it: the draft token set and the set
+	// in effect. Each omits what was never saved or published. A set lists the overrides that apply
+	// in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+	// retired their token or changed its bounds; the server leaves those out of the stylesheet and
+	// the next save of the draft drops them. Needs the `manage_settings` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/theme (the `GetAdminTheme` operationId).
 	GetAdminThemeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminThemeResponse, error)
 
-	// SetAdminThemeWithBodyWithResponse Replace the instance theme
+	// SetAdminThemeDraftWithBodyWithResponse Save the draft of the instance theme
 	//
-	// Records a revision of the theme, which every visitor's web client and the server-rendered
-	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (the audit log's `setting_changed` of `theme`).
+	// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+	// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+	// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+	// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+	// resets the theme.
 	//
 	// The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-	// and the durations of the web client's design tokens (the list generated from
-	// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+	// and the spin duration of the web client's design tokens (the list generated from
+	// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+	// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 	// take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 	// a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 	// of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-	// (4.5:1 for text, 3:1 for marks) in both color schemes.
-	// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-	// does not read it, it runs under the same Content-Security-Policy as the client (only
-	// same-origin resources), and what it does to contrast, layout, and focus is the
-	// administrator's responsibility. A theme that breaks any rule is a 422
+	// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 	// `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 	// `manage_settings` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-	SetAdminThemeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAdminThemeResponse, error)
+	// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+	SetAdminThemeDraftWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAdminThemeDraftResponse, error)
 
-	// SetAdminThemeWithResponse Replace the instance theme
+	// SetAdminThemeDraftWithResponse Save the draft of the instance theme
 	//
-	// Records a revision of the theme, which every visitor's web client and the server-rendered
-	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (the audit log's `setting_changed` of `theme`).
+	// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+	// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+	// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+	// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+	// resets the theme.
 	//
 	// The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-	// and the durations of the web client's design tokens (the list generated from
-	// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+	// and the spin duration of the web client's design tokens (the list generated from
+	// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+	// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 	// take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 	// a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 	// of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-	// (4.5:1 for text, 3:1 for marks) in both color schemes.
-	// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-	// does not read it, it runs under the same Content-Security-Policy as the client (only
-	// same-origin resources), and what it does to contrast, layout, and focus is the
-	// administrator's responsibility. A theme that breaks any rule is a 422
+	// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 	// `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 	// `manage_settings` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-	SetAdminThemeWithResponse(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAdminThemeResponse, error)
+	// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+	SetAdminThemeDraftWithResponse(ctx context.Context, body SetAdminThemeDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAdminThemeDraftResponse, error)
+
+	// GetAdminThemeDraftStylesheetWithResponse Preview the draft of the instance theme
+	//
+	// The stylesheet that the draft would serve once published, for the administrator to apply
+	// over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+	// no draft was saved. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/theme/draft/stylesheet (the `GetAdminThemeDraftStylesheet` operationId).
+	GetAdminThemeDraftStylesheetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminThemeDraftStylesheetResponse, error)
+
+	// PublishAdminThemeWithResponse Publish the draft of the instance theme
+	//
+	// Publishes the draft under a new revision, which every visitor's web client and the
+	// server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+	// of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+	// changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+	// publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+	// saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+	// `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/theme/publish (the `PublishAdminTheme` operationId).
+	PublishAdminThemeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PublishAdminThemeResponse, error)
+
+	// RestoreAdminThemeWithResponse Restore the previously published instance theme
+	//
+	// Publishes again, under a new revision, the token set published before the one in effect; the
+	// draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+	// restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+	// other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+	// meets a rule. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/theme/restore (the `RestoreAdminTheme` operationId).
+	RestoreAdminThemeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RestoreAdminThemeResponse, error)
 
 	// GetAdminTranslationOverviewWithResponse Show how translation is used
 	//
@@ -84629,26 +84885,26 @@ func (r GetAdminThemeResponse) ContentType() string {
 	return ""
 }
 
-// SetAdminThemeResponse200Headers the declared response headers of an HTTP 200 response for SetAdminTheme
-type SetAdminThemeResponse200Headers struct {
+// SetAdminThemeDraftResponse200Headers the declared response headers of an HTTP 200 response for SetAdminThemeDraft
+type SetAdminThemeDraftResponse200Headers struct {
 	CacheControl *string
 }
 
-// SetAdminThemeResponse422Headers the declared response headers of an HTTP 422 response for SetAdminTheme
-type SetAdminThemeResponse422Headers struct {
+// SetAdminThemeDraftResponse422Headers the declared response headers of an HTTP 422 response for SetAdminThemeDraft
+type SetAdminThemeDraftResponse422Headers struct {
 	CacheControl    *string
 	ContentLanguage *string
 }
 
-// SetAdminThemeResponseDefaultHeaders the declared response headers of an HTTP default response for SetAdminTheme
-type SetAdminThemeResponseDefaultHeaders struct {
+// SetAdminThemeDraftResponseDefaultHeaders the declared response headers of an HTTP default response for SetAdminThemeDraft
+type SetAdminThemeDraftResponseDefaultHeaders struct {
 	CacheControl    *string
 	ContentLanguage *string
 	RetryAfter      *int
 	WWWAuthenticate *string
 }
 
-type SetAdminThemeResponse struct {
+type SetAdminThemeDraftResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
@@ -84658,35 +84914,35 @@ type SetAdminThemeResponse struct {
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *SetAdminThemeResponse200Headers
+	Headers200 *SetAdminThemeDraftResponse200Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
-	Headers422 *SetAdminThemeResponse422Headers
+	Headers422 *SetAdminThemeDraftResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *SetAdminThemeResponseDefaultHeaders
+	HeadersDefault *SetAdminThemeDraftResponseDefaultHeaders
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SetAdminThemeResponse) GetJSON200() *AdminTheme {
+func (r SetAdminThemeDraftResponse) GetJSON200() *AdminTheme {
 	return r.JSON200
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r SetAdminThemeResponse) GetApplicationproblemJSON422() *ThemeProblem {
+func (r SetAdminThemeDraftResponse) GetApplicationproblemJSON422() *ThemeProblem {
 	return r.ApplicationproblemJSON422
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r SetAdminThemeResponse) GetApplicationproblemJSONDefault() *Problem {
+func (r SetAdminThemeDraftResponse) GetApplicationproblemJSONDefault() *Problem {
 	return r.ApplicationproblemJSONDefault
 }
 
 // GetBody returns the raw response body bytes
-func (r SetAdminThemeResponse) GetBody() []byte {
+func (r SetAdminThemeDraftResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r SetAdminThemeResponse) Status() string {
+func (r SetAdminThemeDraftResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -84694,7 +84950,7 @@ func (r SetAdminThemeResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SetAdminThemeResponse) StatusCode() int {
+func (r SetAdminThemeDraftResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -84702,7 +84958,225 @@ func (r SetAdminThemeResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r SetAdminThemeResponse) ContentType() string {
+func (r SetAdminThemeDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminThemeDraftStylesheetResponse200Headers the declared response headers of an HTTP 200 response for GetAdminThemeDraftStylesheet
+type GetAdminThemeDraftStylesheetResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminThemeDraftStylesheetResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminThemeDraftStylesheet
+type GetAdminThemeDraftStylesheetResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminThemeDraftStylesheetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminThemeDraftStylesheetResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminThemeDraftStylesheetResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminThemeDraftStylesheetResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminThemeDraftStylesheetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminThemeDraftStylesheetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminThemeDraftStylesheetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminThemeDraftStylesheetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// PublishAdminThemeResponse200Headers the declared response headers of an HTTP 200 response for PublishAdminTheme
+type PublishAdminThemeResponse200Headers struct {
+	CacheControl *string
+}
+
+// PublishAdminThemeResponse422Headers the declared response headers of an HTTP 422 response for PublishAdminTheme
+type PublishAdminThemeResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// PublishAdminThemeResponseDefaultHeaders the declared response headers of an HTTP default response for PublishAdminTheme
+type PublishAdminThemeResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type PublishAdminThemeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminTheme
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ThemeProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *PublishAdminThemeResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *PublishAdminThemeResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *PublishAdminThemeResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PublishAdminThemeResponse) GetJSON200() *AdminTheme {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r PublishAdminThemeResponse) GetApplicationproblemJSON422() *ThemeProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r PublishAdminThemeResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r PublishAdminThemeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PublishAdminThemeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PublishAdminThemeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PublishAdminThemeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RestoreAdminThemeResponse200Headers the declared response headers of an HTTP 200 response for RestoreAdminTheme
+type RestoreAdminThemeResponse200Headers struct {
+	CacheControl *string
+}
+
+// RestoreAdminThemeResponse422Headers the declared response headers of an HTTP 422 response for RestoreAdminTheme
+type RestoreAdminThemeResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// RestoreAdminThemeResponseDefaultHeaders the declared response headers of an HTTP default response for RestoreAdminTheme
+type RestoreAdminThemeResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RestoreAdminThemeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminTheme
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ThemeProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RestoreAdminThemeResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *RestoreAdminThemeResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RestoreAdminThemeResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RestoreAdminThemeResponse) GetJSON200() *AdminTheme {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RestoreAdminThemeResponse) GetApplicationproblemJSON422() *ThemeProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RestoreAdminThemeResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RestoreAdminThemeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RestoreAdminThemeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RestoreAdminThemeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RestoreAdminThemeResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -106110,9 +106584,11 @@ func (c *ClientWithResponses) SetSupporterTipsWithResponse(ctx context.Context, 
 
 // GetAdminThemeWithResponse Read the instance theme
 //
-// The current theme of the web client: the overridden design tokens and the
-// custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-// `manage_settings` permission.
+// The theme of the web client as its administrators edit it: the draft token set and the set
+// in effect. Each omits what was never saved or published. A set lists the overrides that apply
+// in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+// retired their token or changed its bounds; the server leaves those out of the stylesheet and
+// the next save of the draft drops them. Needs the `manage_settings` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -106125,70 +106601,121 @@ func (c *ClientWithResponses) GetAdminThemeWithResponse(ctx context.Context, req
 	return ParseGetAdminThemeResponse(rsp)
 }
 
-// SetAdminThemeWithBodyWithResponse Replace the instance theme
+// SetAdminThemeDraftWithBodyWithResponse Save the draft of the instance theme
 //
-// Records a revision of the theme, which every visitor's web client and the server-rendered
-// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (the audit log's `setting_changed` of `theme`).
+// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+// resets the theme.
 //
 // The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-// and the durations of the web client's design tokens (the list generated from
-// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+// and the spin duration of the web client's design tokens (the list generated from
+// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 // take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 // a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 // of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-// (4.5:1 for text, 3:1 for marks) in both color schemes.
-// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-// does not read it, it runs under the same Content-Security-Policy as the client (only
-// same-origin resources), and what it does to contrast, layout, and focus is the
-// administrator's responsibility. A theme that breaks any rule is a 422
+// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 // `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 // `manage_settings` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-func (c *ClientWithResponses) SetAdminThemeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAdminThemeResponse, error) {
-	rsp, err := c.SetAdminThemeWithBody(ctx, contentType, body, reqEditors...)
+// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+func (c *ClientWithResponses) SetAdminThemeDraftWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAdminThemeDraftResponse, error) {
+	rsp, err := c.SetAdminThemeDraftWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSetAdminThemeResponse(rsp)
+	return ParseSetAdminThemeDraftResponse(rsp)
 }
 
-// SetAdminThemeWithResponse Replace the instance theme
+// SetAdminThemeDraftWithResponse Save the draft of the instance theme
 //
-// Records a revision of the theme, which every visitor's web client and the server-rendered
-// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (the audit log's `setting_changed` of `theme`).
+// Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+// effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+// stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+// overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+// resets the theme.
 //
 // The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
-// and the durations of the web client's design tokens (the list generated from
-// `@my/design-tokens`). A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+// and the spin duration of the web client's design tokens (the list generated from
+// `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+// charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
 // take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
 // a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
 // of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
-// (4.5:1 for text, 3:1 for marks) in both color schemes.
-// The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-// does not read it, it runs under the same Content-Security-Policy as the client (only
-// same-origin resources), and what it does to contrast, layout, and focus is the
-// administrator's responsibility. A theme that breaks any rule is a 422
+// (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
 // `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
 // `manage_settings` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
-func (c *ClientWithResponses) SetAdminThemeWithResponse(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAdminThemeResponse, error) {
-	rsp, err := c.SetAdminTheme(ctx, body, reqEditors...)
+// Corresponds with PUT /admin/theme/draft (the `SetAdminThemeDraft` operationId).
+func (c *ClientWithResponses) SetAdminThemeDraftWithResponse(ctx context.Context, body SetAdminThemeDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAdminThemeDraftResponse, error) {
+	rsp, err := c.SetAdminThemeDraft(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSetAdminThemeResponse(rsp)
+	return ParseSetAdminThemeDraftResponse(rsp)
+}
+
+// GetAdminThemeDraftStylesheetWithResponse Preview the draft of the instance theme
+//
+// The stylesheet that the draft would serve once published, for the administrator to apply
+// over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+// no draft was saved. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/theme/draft/stylesheet (the `GetAdminThemeDraftStylesheet` operationId).
+func (c *ClientWithResponses) GetAdminThemeDraftStylesheetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminThemeDraftStylesheetResponse, error) {
+	rsp, err := c.GetAdminThemeDraftStylesheet(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminThemeDraftStylesheetResponse(rsp)
+}
+
+// PublishAdminThemeWithResponse Publish the draft of the instance theme
+//
+// Publishes the draft under a new revision, which every visitor's web client and the
+// server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+// of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+// changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+// publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+// saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+// `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/theme/publish (the `PublishAdminTheme` operationId).
+func (c *ClientWithResponses) PublishAdminThemeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PublishAdminThemeResponse, error) {
+	rsp, err := c.PublishAdminTheme(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePublishAdminThemeResponse(rsp)
+}
+
+// RestoreAdminThemeWithResponse Restore the previously published instance theme
+//
+// Publishes again, under a new revision, the token set published before the one in effect; the
+// draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+// restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+// other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+// meets a rule. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/theme/restore (the `RestoreAdminTheme` operationId).
+func (c *ClientWithResponses) RestoreAdminThemeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RestoreAdminThemeResponse, error) {
+	rsp, err := c.RestoreAdminTheme(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestoreAdminThemeResponse(rsp)
 }
 
 // GetAdminTranslationOverviewWithResponse Show how translation is used
@@ -129002,15 +129529,15 @@ func ParseGetAdminThemeResponse(rsp *http.Response) (*GetAdminThemeResponse, err
 	return response, nil
 }
 
-// ParseSetAdminThemeResponse parses an HTTP response from a SetAdminThemeWithResponse call
-func ParseSetAdminThemeResponse(rsp *http.Response) (*SetAdminThemeResponse, error) {
+// ParseSetAdminThemeDraftResponse parses an HTTP response from a SetAdminThemeDraftWithResponse call
+func ParseSetAdminThemeDraftResponse(rsp *http.Response) (*SetAdminThemeDraftResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SetAdminThemeResponse{
+	response := &SetAdminThemeDraftResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -129041,7 +129568,7 @@ func ParseSetAdminThemeResponse(rsp *http.Response) (*SetAdminThemeResponse, err
 
 	switch {
 	case rsp.StatusCode == 200:
-		var headers SetAdminThemeResponse200Headers
+		var headers SetAdminThemeDraftResponse200Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -129051,7 +129578,7 @@ func ParseSetAdminThemeResponse(rsp *http.Response) (*SetAdminThemeResponse, err
 		}
 		response.Headers200 = &headers
 	case rsp.StatusCode == 422:
-		var headers SetAdminThemeResponse422Headers
+		var headers SetAdminThemeDraftResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -129068,7 +129595,279 @@ func ParseSetAdminThemeResponse(rsp *http.Response) (*SetAdminThemeResponse, err
 		}
 		response.Headers422 = &headers
 	case true:
-		var headers SetAdminThemeResponseDefaultHeaders
+		var headers SetAdminThemeDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminThemeDraftStylesheetResponse parses an HTTP response from a GetAdminThemeDraftStylesheetWithResponse call
+func ParseGetAdminThemeDraftStylesheetResponse(rsp *http.Response) (*GetAdminThemeDraftStylesheetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminThemeDraftStylesheetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminThemeDraftStylesheetResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminThemeDraftStylesheetResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParsePublishAdminThemeResponse parses an HTTP response from a PublishAdminThemeWithResponse call
+func ParsePublishAdminThemeResponse(rsp *http.Response) (*PublishAdminThemeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PublishAdminThemeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminTheme
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ThemeProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers PublishAdminThemeResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers PublishAdminThemeResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers PublishAdminThemeResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRestoreAdminThemeResponse parses an HTTP response from a RestoreAdminThemeWithResponse call
+func ParseRestoreAdminThemeResponse(rsp *http.Response) (*RestoreAdminThemeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RestoreAdminThemeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminTheme
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ThemeProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RestoreAdminThemeResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers RestoreAdminThemeResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers RestoreAdminThemeResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

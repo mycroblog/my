@@ -47,8 +47,8 @@ func (h *Handler) currentTheme(ctx context.Context) (themeState, error) {
 	}
 	return themeState{
 		Stylesheet: ThemeStylesheetPath(rev.ID),
-		Light:      instance.ThemeColor(rev.Tokens, themeColorToken, instance.SchemeLight),
-		Dark:       instance.ThemeColor(rev.Tokens, themeColorToken, instance.SchemeDark),
+		Light:      instance.ThemeColor(rev.Set.Tokens, themeColorToken, instance.SchemeLight),
+		Dark:       instance.ThemeColor(rev.Set.Tokens, themeColorToken, instance.SchemeDark),
 	}, nil
 }
 
@@ -64,9 +64,8 @@ func defaultTheme() themeState {
 // theme_color and background_color: the page background.
 const themeColorToken = "color-surface"
 
-// serveThemeStylesheet serves GET /theme/{file}: the stylesheet of the revision {id}.css, as
-// text/css that browsers never sniff as anything else. The server does not read the custom CSS;
-// it is never part of an HTML document.
+// serveThemeStylesheet serves GET /theme/{file}: the stylesheet of the published revision
+// {id}.css, as text/css that browsers never sniff as anything else.
 func (h *Handler) serveThemeStylesheet(w http.ResponseWriter, r *http.Request) {
 	id, ok := strings.CutSuffix(r.PathValue("file"), ".css")
 	if !ok || id == "" || h.o.ThemeRevision == nil {

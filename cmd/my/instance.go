@@ -309,7 +309,7 @@ func instanceUsage(w io.Writer) {
   my instance set -owner <username> [-config <file>] <preview_image|thumbnail> <image file>
   my instance history [-limit <n>] [-config <file>] <key>
   my instance rule <list|create|edit|move|retire> ...  (my instance rule -h)
-  my instance theme <get|set> ...  (my instance theme -h)
+  my instance theme <get|set|publish|restore> ...  (my instance theme -h)
   my instance brand <show|clear> ...  (my instance brand -h)
 
 Reads and changes the instance settings and texts stored in the database.

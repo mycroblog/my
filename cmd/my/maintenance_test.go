@@ -100,7 +100,8 @@ func TestMaintenanceExportReadsTheDatabase(t *testing.T) {
 	}
 	mustInstance(t, "", "set", "name", "Example Social")
 	mustInstance(t, "", "set", "default_locale", "ja")
-	mustInstance(t, `{"tokens":[{"token":"color-accent-text","light":"#123456","dark":"#abcdef"}],"custom_css":"body{display:none}"}`, "theme", "set")
+	mustInstance(t, `{"tokens":[{"token":"color-accent-text","light":"#123456","dark":"#abcdef"}]}`, "theme", "set")
+	mustInstance(t, "", "theme", "publish")
 	dir := t.TempDir()
 	code, _, stderr := runMaintenanceCmd(t, "export", "-out", dir)
 	if code != 0 || stderr != "" {
@@ -111,9 +112,6 @@ func TestMaintenanceExportReadsTheDatabase(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Errorf("ja.html lacks %s:\n%s", want, page)
 		}
-	}
-	if strings.Contains(page, "display:none") {
-		t.Errorf("ja.html has the theme's custom CSS:\n%s", page)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "en.html")); err == nil {
 		t.Error("export wrote en.html without -lang en")

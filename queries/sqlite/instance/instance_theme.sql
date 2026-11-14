@@ -1,19 +1,28 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
--- name: InsertInstanceThemeRevision :exec
-INSERT INTO instance_theme_revisions (id, custom_css, revised_by_user_id, revised_at) VALUES (?, ?, ?, ?);
+-- name: InsertInstanceThemeSet :exec
+INSERT INTO instance_theme_sets (id, document, saved_by_user_id, saved_at) VALUES (?, ?, ?, ?)
+ON CONFLICT (id) DO NOTHING;
 
--- name: InsertInstanceThemeToken :exec
-INSERT INTO instance_theme_tokens (revision_id, token, scheme, value) VALUES (?, ?, ?, ?);
+-- name: GetInstanceThemeSet :one
+SELECT id, document, saved_by_user_id, saved_at FROM instance_theme_sets WHERE id = ?;
 
--- name: GetInstanceThemeRevision :one
-SELECT id, custom_css, revised_by_user_id, revised_at FROM instance_theme_revisions WHERE id = ?;
+-- name: GetLatestInstanceThemeSetID :one
+SELECT id FROM instance_theme_sets ORDER BY id DESC LIMIT 1;
 
--- name: ListInstanceThemeTokens :many
-SELECT token, scheme, value FROM instance_theme_tokens WHERE revision_id = ? ORDER BY token, scheme;
+-- name: InsertInstanceThemePublication :exec
+INSERT INTO instance_theme_publications (id, set_id, published_by_user_id, published_at) VALUES (?, ?, ?, ?)
+ON CONFLICT (id) DO NOTHING;
 
--- name: GetLatestInstanceThemeRevisionID :one
-SELECT id FROM instance_theme_revisions ORDER BY id DESC LIMIT 1;
+-- name: GetInstanceThemePublication :one
+SELECT id, set_id, published_by_user_id, published_at FROM instance_theme_publications WHERE id = ?;
+
+-- name: GetLatestInstanceThemePublicationID :one
+SELECT id FROM instance_theme_publications ORDER BY id DESC LIMIT 1;
+
+-- name: GetPreviousInstanceThemePublication :one
+SELECT id, set_id, published_by_user_id, published_at FROM instance_theme_publications
+WHERE id < sqlc.arg(before_id) AND set_id <> sqlc.arg(set_id) ORDER BY id DESC LIMIT 1;
 
 -- name: GetInstanceThemeHead :one
 SELECT revision_id FROM instance_theme WHERE id = 1;
@@ -24,3 +33,19 @@ ON CONFLICT (id) DO UPDATE SET revision_id = excluded.revision_id;
 
 -- name: DeleteInstanceThemeHead :exec
 DELETE FROM instance_theme;
+
+-- name: GetInstanceThemeDraft :one
+SELECT set_id FROM instance_theme_draft WHERE id = 1;
+
+-- name: UpsertInstanceThemeDraft :exec
+INSERT INTO instance_theme_draft (id, set_id) VALUES (1, ?)
+ON CONFLICT (id) DO UPDATE SET set_id = excluded.set_id;
+
+-- name: DeleteInstanceThemeDraft :exec
+DELETE FROM instance_theme_draft;
+
+-- name: ListLegacyInstanceThemeRevisions :many
+SELECT id, revised_by_user_id, revised_at FROM instance_theme_revisions WHERE id > ? ORDER BY id LIMIT ?;
+
+-- name: ListLegacyInstanceThemeTokens :many
+SELECT token, scheme, value FROM instance_theme_tokens WHERE revision_id = ? ORDER BY token, scheme;

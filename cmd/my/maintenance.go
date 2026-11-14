@@ -102,7 +102,7 @@ func runMaintenance(args []string, stdout, stderr io.Writer) int {
 // exportInstance is what `my maintenance export` reads from the database.
 type exportInstance struct {
 	name, locale string
-	// theme holds the overrides of the design tokens; the custom CSS is never exported (ADR-0088 §12).
+	// theme holds the overrides of the design tokens of the theme in effect (ADR-0088 §12).
 	theme []instance.ThemeTokenValue
 }
 
@@ -142,7 +142,7 @@ func readInstanceForExport(ctx context.Context, app *platform.App) (exportInstan
 	if err != nil {
 		return exportInstance{}, err
 	}
-	info.theme = rev.Tokens
+	info.theme = rev.Set.Tokens
 	return info, nil
 }
 
@@ -212,9 +212,8 @@ and no external resource; their Content-Security-Policy is in a <meta> element.
 The words come from the maintenance_* settings and status_page_url. Unless
 -offline is given, export also reads the database, waiting at most 5 seconds,
 for the instance's name (when maintenance_server_name is unset), its default
-locale (when -lang is not given), and the token overrides of its theme; the
-custom CSS of the theme is never included. When the database cannot be read,
-export warns, writes the pages from the configuration and the default theme,
-and still exits 0.
+locale (when -lang is not given), and the token overrides of its published
+theme. When the database cannot be read, export warns, writes the pages from
+the configuration and the default theme, and still exits 0.
 `)
 }

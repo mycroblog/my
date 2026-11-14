@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A 422 of `PUT /admin/theme`. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
-  lists why the theme cannot be saved; another 422 (a malformed request) has none.
+  A 422 of the theme operations. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
+  lists why the token set cannot be saved or published; another 422 (a malformed request) has none.
 allOf:
   - $ref: ./Problem.yaml
   - type: object

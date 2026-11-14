@@ -17,15 +17,15 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// maxThemeInput bounds what `my instance theme set` reads from stdin: the custom CSS limit and room
-// for the tokens.
-const maxThemeInput = instance.MaxCustomCSSBytes + 64*1024
+// maxThemeInput bounds what `my instance theme set` reads from stdin.
+const maxThemeInput = 256 * 1024
 
-// themeDocument is the JSON form of a theme on the command line: the shape of the admin API's
-// SetThemeRequest (api/openapi.yaml), so that a theme moves between the two as it is.
+// themeDocument is the JSON form of a token set on the command line: the shape of the admin API's
+// SetThemeRequest (api/openapi.yaml), so that a set moves between the two as it is. revision names
+// a published set in the output; set ignores it, so that the output of get reads back as it is.
 type themeDocument struct {
-	Tokens    []themeTokenDocument `json:"tokens"`
-	CustomCSS string               `json:"custom_css"`
+	Revision string               `json:"revision,omitempty"`
+	Tokens   []themeTokenDocument `json:"tokens"`
 }
 
 type themeTokenDocument struct {
@@ -35,9 +35,9 @@ type themeTokenDocument struct {
 	Value string `json:"value,omitempty"`
 }
 
-// runInstanceTheme implements `my instance theme <get|set>` (ADR-0059).
+// runInstanceTheme implements `my instance theme <get|set|publish|restore>` (ADR-0059 §15).
 func runInstanceTheme(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	sub, code := dispatch("instance theme", args, []string{"get", "set"}, stderr, instanceThemeUsage)
+	sub, code := dispatch("instance theme", args, []string{"get", "set", "publish", "restore"}, stderr, instanceThemeUsage)
 	if code >= 0 {
 		return code
 	}
@@ -46,6 +46,10 @@ func runInstanceTheme(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	fs.SetOutput(stderr)
 	fs.Usage = func() { instanceThemeUsage(stderr) }
 	file := fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")
+	published := false
+	if sub == "get" {
+		fs.BoolVar(&published, "published", false, "print the set in effect instead of the draft")
+	}
 	if err := fs.Parse(args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -67,7 +71,7 @@ func runInstanceTheme(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 		dec := json.NewDecoder(strings.NewReader(string(data)))
 		dec.DisallowUnknownFields()
 		if err := dec.Decode(&in); err != nil {
-			_, _ = fmt.Fprintf(stderr, "%s: the theme is not JSON of {\"tokens\": [...], \"custom_css\": \"...\"}: %v\n", name, err)
+			_, _ = fmt.Fprintf(stderr, "%s: the theme is not JSON of {\"tokens\": [...]}: %v\n", name, err)
 			return 1
 		}
 		if _, err := dec.Token(); err != io.EOF {
@@ -89,56 +93,96 @@ func runInstanceTheme(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	}
 	defer func() { _ = app.Close() }()
 
-	var rev instance.ThemeRevision
-	if sub == "set" {
-		tokens := make([]instance.ThemeTokenValue, len(in.Tokens))
-		for i, t := range in.Tokens {
-			tokens[i] = instance.ThemeTokenValue{Token: t.Token, Light: t.Light, Dark: t.Dark, Value: t.Value}
+	out, err := instanceThemeCommand(ctx, app, sub, published, in)
+	var te *instance.ThemeError
+	switch {
+	case errors.As(err, &te):
+		verb := "published"
+		if sub == "set" {
+			verb = "saved"
 		}
-		rev, err = app.Instance.SetTheme(ctx, appinstance.SetThemeInput{Tokens: tokens, CustomCSS: in.CustomCSS})
-		var te *instance.ThemeError
-		if errors.As(err, &te) {
-			_, _ = fmt.Fprintf(stderr, "%s: the theme is not saved:\n", name)
-			for _, p := range te.Problems {
-				_, _ = fmt.Fprintf(stderr, "  %s\n", p)
-			}
-			return 1
+		_, _ = fmt.Fprintf(stderr, "%s: the theme is not %s:\n", name, verb)
+		for _, p := range te.Problems {
+			_, _ = fmt.Fprintf(stderr, "  %s\n", p)
 		}
-	} else {
-		rev, _, err = app.Instance.Theme(ctx)
-	}
-	if err != nil {
+		return 1
+	case errors.Is(err, appinstance.ErrNotFound) && sub == "publish":
+		_, _ = fmt.Fprintf(stderr, "%s: no draft is saved; save one with my instance theme set\n", name)
+		return 1
+	case errors.Is(err, appinstance.ErrNotFound) && sub == "restore":
+		_, _ = fmt.Fprintf(stderr, "%s: no other set was published before the one in effect\n", name)
+		return 1
+	case err != nil:
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 		return 1
 	}
-	out := themeDocument{Tokens: make([]themeTokenDocument, len(rev.Tokens)), CustomCSS: rev.CustomCSS}
-	for i, v := range rev.Tokens {
-		out.Tokens[i] = themeTokenDocument{Token: v.Token, Light: v.Light, Dark: v.Dark, Value: v.Value}
+	doc := themeDocument{Revision: out.revision, Tokens: make([]themeTokenDocument, len(out.set.Tokens))}
+	for i, v := range out.set.Tokens {
+		doc.Tokens[i] = themeTokenDocument{Token: v.Token, Light: v.Light, Dark: v.Dark, Value: v.Value}
+	}
+	for _, o := range out.set.Stale {
+		_, _ = fmt.Fprintf(stderr, "%s: the override of %s no longer applies (%s) and is left out\n", name, o.Token, o.Reason)
 	}
 	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(out); err != nil {
+	if err := enc.Encode(doc); err != nil {
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 		return 1
 	}
 	return 0
 }
 
+// themeOutput is the set that a theme command prints, and the revision when it is published.
+type themeOutput struct {
+	revision string
+	set      instance.ThemeSet
+}
+
+// instanceThemeCommand runs the subcommand sub of `my instance theme`.
+func instanceThemeCommand(ctx context.Context, app *platform.App, sub string, published bool, in themeDocument) (themeOutput, error) {
+	revision := func(rev instance.ThemeRevision, err error) (themeOutput, error) {
+		return themeOutput{revision: rev.ID, set: rev.Set}, err
+	}
+	switch sub {
+	case "set":
+		tokens := make([]instance.ThemeTokenValue, len(in.Tokens))
+		for i, t := range in.Tokens {
+			tokens[i] = instance.ThemeTokenValue{Token: t.Token, Light: t.Light, Dark: t.Dark, Value: t.Value}
+		}
+		set, err := app.Instance.SaveThemeDraft(ctx, appinstance.SaveThemeDraftInput{Tokens: tokens})
+		return themeOutput{set: set}, err
+	case "publish":
+		return revision(app.Instance.PublishTheme(ctx, ""))
+	case "restore":
+		return revision(app.Instance.RestoreTheme(ctx, ""))
+	}
+	if published {
+		rev, _, err := app.Instance.Theme(ctx)
+		return revision(rev, err)
+	}
+	set, _, err := app.Instance.ThemeDraft(ctx)
+	return themeOutput{set: set}, err
+}
+
 func instanceThemeUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
-  my instance theme get [-config <file>]
+  my instance theme get [-published] [-config <file>]
   my instance theme set [-config <file>] < theme.json
+  my instance theme publish [-config <file>]
+  my instance theme restore [-config <file>]
 
-Reads and replaces the theme of the web client: overrides of the design tokens
-and a custom CSS, as JSON of the admin API's PUT /api/v1/admin/theme:
+Reads and changes the theme of the web client: one set of overrides of the
+design tokens, as JSON of the admin API's PUT /api/v1/admin/theme/draft:
 
   {"tokens": [{"token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80"},
-              {"token": "radius-control", "value": "0.25rem"}],
-   "custom_css": ""}
+              {"token": "radius-control", "value": "0.25rem"}]}
 
-set replaces the whole theme (tokens left out go back to their defaults; no
-tokens and no CSS reset it), checks every value and the contrast of the color
-pairs in both themes, records a revision, and prints the theme as saved. get
-prints the current theme.
+set saves the draft: it replaces the whole set (tokens left out keep their
+defaults; no tokens reset them), checks every value and the contrast of the
+color pairs in both themes, and prints the draft as saved. The theme in effect
+does not change until publish, which publishes the draft under a new revision.
+restore publishes again the set published before the one in effect. get prints
+the draft, or with -published the set in effect with its revision. Overrides
+that an upgrade made stale are named on standard error and left out.
 `+docsLine("docs/operations/instance-settings.md"))
 }

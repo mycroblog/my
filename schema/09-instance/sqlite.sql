@@ -93,9 +93,10 @@ CREATE TABLE instance_texts (
 -- instance: theme (ADR-0059, FR-605). Owned by internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
--- Event (revision): one version of the instance theme: the administrator's custom CSS, with its
--- token overrides in instance_theme_tokens. A revision without tokens and CSS resets the theme.
--- revised_by_user_id is NULL for a change from the CLI.
+-- Event: one version of the theme as the releases before the token set stored it, with its token
+-- overrides row by row in instance_theme_tokens. Nothing writes it: the data upgrade step
+-- theme.token_sets copies each revision into a set and its publication, and a later release
+-- drops both tables.
 CREATE TABLE instance_theme_revisions (
   id TEXT NOT NULL PRIMARY KEY,
   custom_css TEXT NOT NULL,
@@ -103,28 +104,49 @@ CREATE TABLE instance_theme_revisions (
   revised_at INTEGER NOT NULL
 ) STRICT;
 
--- Event (child of a revision): the value of one overridden design token in one color scheme
--- (light and dark for a color token, all for the others). The token list is generated from the
--- web client's @my/design-tokens (internal/domain/instance/theme_tokens.gen.go).
+-- Event (child of a revision): the value of one overridden token in one color scheme (light and
+-- dark for a color token, all for the others). Read only by theme.token_sets.
 CREATE TABLE instance_theme_tokens (
   revision_id TEXT NOT NULL,
-  token TEXT NOT NULL CHECK (token IN (
-    'font-sans', 'text-tagline', 'text-tagline--line-height', 'text-title', 'text-title--line-height',
-    'text-body', 'text-body--line-height', 'text-caption', 'text-caption--line-height',
-    'color-surface', 'color-text', 'color-muted-text', 'color-accent', 'color-on-accent',
-    'color-accent-text', 'color-surface-raised', 'color-surface-raised-hover',
-    'color-surface-raised-pressed', 'color-surface-hover', 'color-surface-pressed', 'color-quote-bar',
-    'radius-control', 'radius-overlay', 'duration-spin'
-  )),
+  token TEXT NOT NULL,
   scheme TEXT NOT NULL CHECK (scheme IN ('light', 'dark', 'all')),
   value TEXT NOT NULL,
   PRIMARY KEY (revision_id, token, scheme)
 ) STRICT;
 
--- Projection: the current theme revision, one row once a theme has been saved.
+-- Event: one saved token set of the theme (ADR-0059 §15), as a versioned JSON document of the
+-- overrides with their light and dark values, replaced as a whole by the next set. The token names
+-- are checked by the domain against the list generated from @my/design-tokens
+-- (internal/domain/instance/theme_tokens.gen.go), never by a constraint, so that a renamed or
+-- retired token needs no schema change. saved_by_user_id is NULL for the CLI and the data upgrade.
+CREATE TABLE instance_theme_sets (
+  id TEXT NOT NULL PRIMARY KEY,
+  document BLOB NOT NULL,
+  saved_by_user_id TEXT,
+  saved_at INTEGER NOT NULL
+) STRICT;
+
+-- Event: one publication of a set, which makes it the theme in effect. Its ID is the theme's
+-- revision, which names the stylesheet. published_by_user_id is NULL for the CLI and the data
+-- upgrade.
+CREATE TABLE instance_theme_publications (
+  id TEXT NOT NULL PRIMARY KEY,
+  set_id TEXT NOT NULL,
+  published_by_user_id TEXT,
+  published_at INTEGER NOT NULL
+) STRICT;
+
+-- Projection: the theme in effect, the publication with the greatest ID, one row once a set has
+-- been published.
 CREATE TABLE instance_theme (
   id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
   revision_id TEXT NOT NULL
+) STRICT;
+
+-- Projection: the draft, the set with the greatest ID, one row once a set has been saved.
+CREATE TABLE instance_theme_draft (
+  id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+  set_id TEXT NOT NULL
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
