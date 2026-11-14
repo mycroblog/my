@@ -1,3 +1,0 @@
-# The files `bun fmt` leaves alone (scripts/task.sh web:fmt), besides those .gitignore lists.
-# Generated from the API spec.
-/pkg/mykit/ts/src/schema.gen.ts

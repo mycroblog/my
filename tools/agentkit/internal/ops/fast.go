@@ -26,7 +26,7 @@ type fastStep struct {
 	listing bool
 }
 
-// tsExts are the extensions `bun fmt` formats (FMT_FILES of tasks/web.yml).
+// tsExts are the extensions `bun fmt` formats (the [fmt] ignorePatterns of bunfig.toml).
 var tsExts = map[string]bool{".ts": true, ".tsx": true, ".js": true, ".mjs": true}
 
 // tsRoots are the TypeScript packages `bun fmt` formats.

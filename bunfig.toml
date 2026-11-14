@@ -13,3 +13,28 @@ minimumReleaseAge = 259200
 # .editorconfig; the other options are Prettier's defaults.
 [fmt]
 printWidth = 120
+# The files it formats, besides those .gitignore lists (gitignore patterns, relative to this file): only the TypeScript
+# and JavaScript of the members, so a bare `bun fmt` from any directory formats what web:fmt does. The rest (JSON such
+# as the catalogs, Markdown, YAML, the fixtures of the Go tests) keeps the form its own tools give it.
+ignorePatterns = [
+  "*",
+  "!*/",
+  "!/web/**/*.ts",
+  "!/web/**/*.tsx",
+  "!/web/**/*.js",
+  "!/web/**/*.mjs",
+  "!/pkg/mykit/ts/**/*.ts",
+  "!/pkg/mykit/ts/**/*.tsx",
+  "!/pkg/mykit/ts/**/*.js",
+  "!/pkg/mykit/ts/**/*.mjs",
+  "!/pkg/mybot/ts/**/*.ts",
+  "!/pkg/mybot/ts/**/*.tsx",
+  "!/pkg/mybot/ts/**/*.js",
+  "!/pkg/mybot/ts/**/*.mjs",
+  "!/tools/i18n/**/*.ts",
+  "!/tools/i18n/**/*.tsx",
+  "!/tools/i18n/**/*.js",
+  "!/tools/i18n/**/*.mjs",
+  # Generated: the types from the API spec (pkg/mykit/ts/src/schema.gen.ts) and the compiled catalogs.
+  "*.gen.*",
+]

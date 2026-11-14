@@ -49,7 +49,7 @@ entries:
     docs: ["docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
     checks: [go, schema]
     shared: true
-  - paths: ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", ".oxlintrc.json", "knip.json", ".prettierignore"]
+  - paths: ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", ".oxlintrc.json", "knip.json"]
     docs: ["docs/adr/0025-web-client-stack.md"]
     checks: [web, i18n, mykit, site]
     shared: true
