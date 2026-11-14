@@ -109,6 +109,12 @@ export const control = {
 export const iconButton = { paddingInline: 0.375, gap: 0.25, touch: 2.75 } as const;
 
 /**
+ * The least a target reaches on each side, in rem (WCAG 2.5.8, 24 CSS px): a link in a line of text reaches it around
+ * its text without moving the line.
+ */
+export const target = { minimum: 1.5 } as const;
+
+/**
  * The focus ring, in px: a gap of the surface, a ring of `accent-text`, and a halo of the accent at `haloShare`, so
  * that it marks focus around any control, also one without a surface.
  */
@@ -444,6 +450,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--icon-button-padding-inline", `${iconButton.paddingInline}rem`],
   ["--icon-button-gap", `${iconButton.gap}rem`],
   ["--icon-button-touch", `${iconButton.touch}rem`],
+  ["--target-minimum", `${target.minimum}rem`],
   ["--focus-ring-gap", `${focusRing.gap}px`],
   ["--focus-ring-width", `${focusRing.width}px`],
   ["--focus-ring-halo", `${focusRing.halo}px`],

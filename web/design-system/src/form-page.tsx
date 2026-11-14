@@ -46,8 +46,13 @@ const page = tv({
     header: "desktop:hidden",
     main: "flex flex-1 flex-col gap-form-page-screen-gap",
     footer: "text-caption text-muted-text",
-    footerList: "m-0 flex list-none flex-wrap gap-x-form-page-gap gap-y-form-page-field-gap p-0",
-    footerLink: "text-muted-text",
+    // A link's target reaches the minimum around its text without moving the line (WCAG 2.5.8), and wrapped rows
+    // stand far enough apart that the targets of two rows never overlap.
+    footerList: [
+      "m-0 flex list-none flex-wrap gap-x-form-page-gap p-0",
+      "gap-y-[max(var(--form-page-field-gap),calc(var(--target-minimum)-1lh))]",
+    ],
+    footerLink: "text-muted-text py-[calc((var(--target-minimum)-1em)/2)]",
   },
   variants: {
     banner: { false: { intro: "desktop:items-center" }, true: { intro: "desktop:items-start" } },
