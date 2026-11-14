@@ -1,0 +1,688 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/*
+ * The rough composer of /app/compose (#3046), on the catalog only, from the design tokens' custom properties and in
+ * logical properties alone. Under 40rem (the frame's `tablet`) it is a screen of its own as tall as the viewport less
+ * the software keyboard, its text scrolling and its row of tools at its end, right above the keyboard; from 40rem a
+ * dialog of the main column's width over the dimmed page.
+ */
+
+/* A specimen: the page behind, and over it the layer that holds the composer; its own box for what is fixed in it. */
+.cmp-stage {
+  display: grid;
+  min-block-size: 100dvh;
+}
+.cmp-stage:not([data-live]) {
+  position: relative;
+  transform: translate(0);
+}
+.cmp-stage:not([data-live]) > * {
+  grid-area: 1 / 1;
+}
+.cmp-stage[data-keyboard] {
+  --cmp-keyboard: 17rem;
+}
+.cmp-behind[data-open] {
+  display: none;
+}
+.cmp-feed {
+  display: grid;
+  gap: var(--feed-gap);
+}
+.cmp-layer {
+  display: grid;
+  align-items: start;
+  justify-items: stretch;
+  background: var(--color-surface);
+}
+/* The live flow: the layer over the viewport. */
+.cmp-layer[data-live] {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow-y: auto;
+}
+
+/* A phone's keyboard, drawn where the real one would cover the screen. */
+.cmp-keyboard {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100dvh - var(--cmp-keyboard));
+  box-sizing: border-box;
+  block-size: var(--cmp-keyboard);
+  padding: 0.25rem;
+  background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 0.5rem,
+      var(--color-surface-raised-pressed) 0.5rem 3.25rem
+    )
+    content-box,
+    var(--color-surface-raised);
+}
+
+@media (min-width: 40rem) {
+  .cmp-behind[data-open] {
+    display: block;
+  }
+  .cmp-layer {
+    justify-items: center;
+    padding-block: 4rem 2rem;
+    padding-inline: var(--dialog-margin);
+    background: var(--dialog-scrim);
+  }
+  /* Room under the dialog for a popover that opens downward, so that the page scrolls to it. */
+  .cmp-layer:has(.cmp-pop) {
+    padding-block-end: 30rem;
+  }
+  .cmp-keyboard {
+    display: none;
+  }
+}
+
+/* The composer. */
+.cmp {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--entry-gap);
+  block-size: calc(100dvh - var(--cmp-keyboard, env(keyboard-inset-height, 0px)));
+  padding-block: 0.5rem 0;
+  padding-inline: var(--shell-edge);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+}
+.cmp-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--entry-gap);
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+}
+@media (min-width: 40rem) {
+  .cmp {
+    inline-size: min(var(--shell-column), 100%);
+    block-size: auto;
+    padding: var(--dialog-padding);
+    padding-block-start: 0.75rem;
+    border-radius: var(--radius-overlay);
+    box-shadow: var(--shadow-overlay);
+  }
+  .cmp-body {
+    overflow: visible;
+  }
+}
+
+/* The head: the title, then close at its end. */
+.cmp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--entry-caption-gap);
+  margin-inline-end: calc(-1 * var(--icon-button-padding-inline));
+}
+.cmp-title {
+  margin: 0;
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  font-weight: var(--text-title--font-weight);
+}
+
+.cmp-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cmp-muted {
+  margin: 0;
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}
+.cmp-label {
+  font-weight: var(--font-weight-label);
+}
+.cmp-glyph-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--entry-caption-gap);
+}
+
+/* The post replied to: muted, its text cut after two lines. */
+.cmp-reply {
+  display: grid;
+  gap: var(--entry-line-gap);
+  color: var(--color-muted-text);
+}
+.cmp-reply-text {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* The content warning: a band of the raised surface, as a post shows it. */
+.cmp-cw {
+  display: flex;
+  align-items: center;
+  gap: var(--disclosure-gap);
+  padding-inline-start: var(--disclosure-padding-start);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+}
+.cmp-cw-glyph {
+  display: inline-flex;
+  color: var(--color-muted-text);
+}
+.cmp-cw-input {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: var(--control-form-height);
+  padding-inline-end: var(--control-timeline-padding-inline);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+/*
+ * The text: plain on the composer's surface; the mirror behind it marks the part over the limit. Three lines of room
+ * while nothing follows it; with images, a poll or a quote under it, only its own lines.
+ */
+.cmp-text-field {
+  display: grid;
+  gap: var(--form-page-field-gap);
+}
+.cmp-text-wrap {
+  display: grid;
+}
+.cmp-text-wrap > * {
+  grid-area: 1 / 1;
+}
+.cmp-text,
+.cmp-text-mirror {
+  box-sizing: border-box;
+  min-block-size: calc(3 * 1.55rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cmp-body:has(.cmp-images, .cmp-poll) :is(.cmp-text, .cmp-text-mirror) {
+  min-block-size: 1.55rem;
+}
+.cmp-text {
+  field-sizing: content;
+  resize: none;
+  background: transparent;
+  color: var(--color-text);
+  outline: none;
+}
+.cmp-text::placeholder {
+  color: var(--color-muted-text);
+}
+.cmp-text-mirror {
+  color: transparent;
+  pointer-events: none;
+}
+.cmp-text-mirror mark {
+  color: transparent;
+  background: var(--color-surface-raised-pressed);
+  border-radius: 2px;
+}
+
+/* A field (a description, a poll's option and settings): the raised surface of the form's fields. */
+.cmp-field {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--control-form-height);
+  padding-block: 0.375rem;
+  padding-inline: var(--control-timeline-padding-inline);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+.cmp-field:focus-visible {
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+}
+.cmp-field[aria-invalid] {
+  outline: var(--form-page-invalid) solid var(--color-text);
+  outline-offset: calc(-1 * var(--form-page-invalid));
+}
+.cmp-field::placeholder {
+  color: var(--color-muted-text);
+}
+.cmp-description {
+  field-sizing: content;
+  resize: none;
+}
+
+/* The images: a row each, the thumbnail beside its description. */
+.cmp-images {
+  display: grid;
+  gap: var(--entry-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cmp-image {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  gap: var(--entry-avatar-gap);
+  align-items: start;
+}
+.cmp-thumb {
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  object-fit: cover;
+  border-radius: var(--radius-control);
+}
+.cmp-thumb[data-uploading] {
+  opacity: 0.4;
+}
+.cmp-image-field {
+  display: grid;
+  gap: var(--entry-line-gap);
+}
+.cmp-image-field > .cmp-muted {
+  padding-block-start: 0.25rem;
+}
+
+/*
+ * The poll: one raised card under its caption and remove. Its options sit together on the page's surface inside it,
+ * each a line to type on, with its remove at the end past two and Add an option as the last line; its settings follow
+ * as controls of their own (the duration's button, two checkboxes).
+ */
+.cmp-poll {
+  display: grid;
+  gap: var(--entry-line-gap);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--embed-padding);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+}
+.cmp-poll-options {
+  display: grid;
+  padding-block: 0.25rem;
+  padding-inline: var(--control-timeline-padding-inline) 0.25rem;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.cmp-poll-option {
+  display: flex;
+  align-items: center;
+  gap: var(--entry-caption-gap);
+}
+/* The answer's mark at the head of an option: a radio's ring, or a checkbox's square for several choices. */
+.cmp-poll-mark {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: var(--form-page-check);
+  block-size: var(--form-page-check);
+  border: 1.5px solid var(--color-muted-text);
+  border-radius: 50%;
+}
+.cmp-poll-mark[data-multiple] {
+  border-radius: 3px;
+}
+.cmp-poll-input {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: var(--control-form-height);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+.cmp-poll-input::placeholder {
+  color: var(--color-muted-text);
+}
+.cmp-poll-input:focus-visible {
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+}
+.cmp-poll-add {
+  justify-self: start;
+  margin-inline-start: calc(-1 * var(--control-timeline-padding-inline));
+}
+.cmp-poll-settings {
+  display: grid;
+  justify-items: start;
+  gap: var(--entry-line-gap);
+}
+.cmp-poll-settings > .cmp-pop-anchor {
+  position: relative;
+}
+/*
+ * A control that opens a list of choices, as a select reads: on the fields' surface (the page's, inside the raised
+ * card), its glyph, what it holds now and a chevron; hover and press step it as a field's surface steps.
+ */
+.cmp-select-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--entry-caption-gap);
+  block-size: var(--control-timeline-height);
+  padding-inline: var(--control-timeline-padding-inline);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+.cmp-select-button > svg {
+  color: var(--color-muted-text);
+}
+.cmp-select-button:hover {
+  background: var(--color-surface-hover);
+}
+.cmp-select-button:active {
+  background: var(--color-surface-pressed);
+}
+.cmp-select-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+}
+/* The duration's choices open under their button at every width: the poll is in the text's scroll, not the row. */
+.cmp-poll-settings .cmp-pop {
+  inset-block: calc(100% + 0.25rem) auto;
+  inset-inline: 0 auto;
+  inline-size: max-content;
+}
+.cmp-poll-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block: -0.25rem;
+  margin-inline-end: calc(-1 * var(--icon-button-padding-inline));
+}
+
+/* The quoted post, with its remove at the end of its byline. */
+.cmp-quote {
+  position: relative;
+}
+.cmp-quote > div > :first-child {
+  padding-inline-end: 2rem;
+}
+.cmp-quote-text {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.cmp-quote-remove {
+  position: absolute;
+  inset-block-start: 0.375rem;
+  inset-inline-end: 0.375rem;
+}
+
+/* The end: the form's error, and the row that sends it. */
+.cmp-end {
+  position: relative;
+  display: grid;
+  gap: var(--entry-line-gap);
+  padding-block: 0.5rem;
+  background: var(--color-surface);
+}
+@media (min-width: 40rem) {
+  .cmp-end {
+    padding-block: 0;
+  }
+}
+.cmp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--entry-caption-gap);
+}
+.cmp-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
+  min-inline-size: 0;
+  margin-inline-start: calc(-1 * var(--icon-button-padding-inline));
+}
+.cmp-count {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+.cmp-count[data-near] {
+  color: var(--color-text);
+}
+.cmp-count[data-over] {
+  color: var(--color-text);
+  font-weight: var(--font-weight-label);
+}
+.cmp-language {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-label);
+}
+
+/*
+ * A popover of choices. From 40rem it opens under its trigger, into the page below, which scrolls to it; on a phone
+ * it spans the composer above the row, the keyboard being below. Capped in height, it scrolls.
+ */
+.cmp-pop-anchor {
+  position: relative;
+  display: inline-flex;
+}
+.cmp-pop {
+  position: absolute;
+  inset-block-start: calc(100% + 0.25rem);
+  inset-inline-start: 0;
+  z-index: 5;
+  box-sizing: border-box;
+  display: grid;
+  align-content: start;
+  gap: var(--menu-group-gap);
+  inline-size: max-content;
+  max-inline-size: min(20rem, calc(100vw - 2rem));
+  max-block-size: min(28rem, 70dvh);
+  overflow-y: auto;
+  padding: var(--menu-padding);
+  border-radius: var(--radius-overlay);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+}
+.cmp-tools .cmp-pop-anchor:last-child .cmp-pop {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+@media (max-width: 39.99rem) {
+  .cmp-pop-anchor {
+    position: static;
+  }
+  .cmp-pop,
+  .cmp-tools .cmp-pop-anchor:last-child .cmp-pop {
+    inset-block-start: auto;
+    inset-block-end: calc(100% + 0.25rem);
+    inset-inline: 0;
+    inline-size: auto;
+    max-inline-size: none;
+    max-block-size: min(26rem, 60dvh);
+  }
+}
+.cmp-choices {
+  display: grid;
+}
+/* A group of another kind of setting (the interactions after the visibilities): a rule above its caption. */
+.cmp-choices-apart {
+  padding-block-start: var(--menu-group-gap);
+  border-block-start: 1px solid var(--color-surface-raised-hover);
+}
+.cmp-choices-title,
+.cmp-choices-note {
+  margin: 0;
+  padding: var(--menu-padding) var(--control-timeline-padding-inline);
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}
+.cmp-choices-note {
+  max-inline-size: 16rem;
+}
+.cmp-choice {
+  display: flex;
+  align-items: start;
+  gap: var(--menu-icon-gap);
+  padding-block: 0.375rem;
+  padding-inline: var(--control-timeline-padding-inline);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.cmp-choice:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+.cmp-choice:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+}
+.cmp-choice[aria-checked="true"] {
+  background: var(--color-surface-raised);
+}
+.cmp-choice[aria-checked="true"] .cmp-choice-label {
+  font-weight: var(--font-weight-label);
+}
+.cmp-choice:disabled {
+  cursor: not-allowed;
+  opacity: var(--press-disabled-opacity);
+}
+.cmp-choice-glyph {
+  display: inline-flex;
+  padding-block-start: 0.125rem;
+  color: var(--color-muted-text);
+}
+.cmp-choice-text {
+  display: grid;
+  flex: 1;
+}
+.cmp-choice-about {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}
+.cmp-opens-mark {
+  align-self: center;
+  color: var(--color-muted-text);
+  font-size: var(--text-title);
+}
+.cmp-opens-mark:dir(rtl) {
+  transform: scaleX(-1);
+}
+.cmp-back {
+  align-items: center;
+}
+.cmp-back .cmp-choice-glyph {
+  padding-block-start: 0;
+}
+.cmp-back .cmp-choice-label {
+  font-weight: var(--font-weight-label);
+}
+
+/* The notice of a discarded post with its Undo, knocked out, at the bottom over the tab bar or the page. */
+.cmp-notice {
+  position: absolute;
+  inset-block-end: calc(var(--shell-bar) + var(--shell-edge));
+  inset-inline: 0;
+  z-index: 30;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--entry-avatar-gap);
+  inline-size: max-content;
+  max-inline-size: calc(100% - 2 * var(--shell-edge));
+  margin-inline: auto;
+  padding-block: 0.25rem;
+  padding-inline: var(--control-timeline-padding-inline) 0.25rem;
+  border-radius: var(--radius-overlay);
+  background: var(--color-text);
+  color: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+}
+.cmp-notice[data-live] {
+  position: fixed;
+}
+/* On a phone it sits at the start, clear of New post floating at the end. */
+@media (max-width: 39.99rem) {
+  .cmp-notice {
+    inset-inline: var(--shell-edge) auto;
+    max-inline-size: calc(100% - 3 * var(--shell-edge) - var(--shell-bar));
+    margin-inline: 0;
+  }
+}
+@media (min-width: 40rem) {
+  .cmp-notice {
+    inset-block-end: var(--shell-end);
+  }
+}
+.cmp-notice-action {
+  block-size: var(--control-timeline-height);
+  padding-inline: var(--control-timeline-padding-inline);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--font-weight-label);
+  cursor: pointer;
+}
+.cmp-notice-action:hover {
+  text-decoration: underline;
+}
+.cmp-notice-action:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--focus-ring-width) var(--color-surface);
+}
+
+/* The catalog's chrome: the index of the states and the label over each. */
+.cmp-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  color: var(--color-muted-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+}
+.cmp-index a,
+.cmp-specimen-label a {
+  color: inherit;
+}
+.cmp-specimen-label {
+  margin: 0;
+  padding: 0.25rem 1rem;
+  border-block-start: 1px dashed var(--color-muted-text);
+  background: var(--color-surface);
+  color: var(--color-muted-text);
+  font-family: ui-monospace, monospace;
+  font-size: var(--text-caption);
+  font-weight: 400;
+}

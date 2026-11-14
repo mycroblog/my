@@ -67,6 +67,7 @@ export const pages = [
     about: "The app's profile, on sample data, in each of its states (?state=).",
     sections: [],
   },
+  { path: "/app/compose", title: "Compose", about: "The rough of the post composer, in each state.", sections: [] },
 ] as const satisfies readonly Page[];
 
 export type SectionId = (typeof pages)[number]["sections"][number]["id"];

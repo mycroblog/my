@@ -8,6 +8,7 @@ wireframes, then their colour and density (ADR-0169 §2). Read this page, then t
 - `color`: a color, a token, a surface, light or dark.
 - `layout`: density, spacing, separation, the room of a width.
 - `components`: icons, a post's header and actions, menus, any component.
+- `composer`: the post composer, its placement, menus, poll and how it is left (decisions only).
 
 - Grey first: the order, the grouping and the size of what is shown, with greys only, before any colour.
 - Three widths: mobile (375 px), tablet (768 px) and PC (1280 px); `scripts/task.sh web:shot` takes them.

@@ -22,7 +22,9 @@ import {
   IconBuildingCommunity,
   IconChartBar,
   IconChecks,
+  IconChevronDown,
   IconChevronRight,
+  IconClock,
   IconDots,
   IconExternalLink,
   IconEyeOff,
@@ -43,6 +45,7 @@ import {
   IconPencil,
   IconPencilPlus,
   IconPin,
+  IconPlus,
   IconQuote,
   IconRepeat,
   IconSearch,
@@ -107,6 +110,14 @@ export const icons = {
   settings: { off: IconSettings, on: IconSettingsFilled },
   compose: { off: IconPencilPlus },
   quote: { off: IconQuote },
+  // A poll a post carries: bars of its counts; on, while the composer holds one.
+  poll: { off: IconChartBar, on: "tile" },
+  // One more of a list (a poll's option).
+  add: { off: IconPlus },
+  // How long something runs (a poll's duration).
+  time: { off: IconClock },
+  // A control that opens a list of choices (a poll's duration).
+  expand: { off: IconChevronDown },
   react: { off: IconMoodPlus },
   translate: { off: IconLanguage },
   // Places with no item in the navigation: a voice chat room, the server's announcements, and the server's own page.
@@ -114,11 +125,11 @@ export const icons = {
   announcements: { off: IconSpeakerphone },
   about: { off: IconInfoCircle },
   // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
-  hidden: { off: IconEyeOff },
-  // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll, the
-  // moderators' notice; and a post its author pinned to their profile.
+  // On, while the composer holds a content warning.
+  hidden: { off: IconEyeOff, on: "tile" },
+  // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll (poll,
+  // above), the moderators' notice; and a post its author pinned to their profile.
   follow: { off: IconUserPlus, directional: true },
-  poll: { off: IconChartBar },
   moderation: { off: IconShield },
   pin: { off: IconPin },
   // Marking every notification read: two checks.
