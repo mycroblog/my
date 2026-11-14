@@ -7,7 +7,7 @@ import { Timeline } from "./timeline";
 
 export class Thread extends Timeline {
   constructor(page: Page) {
-    super(page, page.getByRole("feed", { name: "Thread" }));
+    super(page, page.getByRole("feed", { name: "Thread", exact: true }));
   }
 
   /** The screen's heading. */

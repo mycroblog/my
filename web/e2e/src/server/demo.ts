@@ -30,6 +30,8 @@ export type Demo = {
   state: SeedState;
   /** The file that holds `state`. */
   stateFile: string;
+  /** The file that holds the settings (MY_*) under which `bin/my` runs against the server's database (runMyOn). */
+  envFile: string;
   /** Stops the server and removes the directory. */
   stop: () => Promise<void>;
 };
@@ -70,7 +72,28 @@ function serverEnv(dir: string, port: number): Record<string, string> {
     MY_MAIL: "none",
     MY_PAYMENTS: "fake",
     MY_VOICE: "p2p",
+    // The client IP that keys the rate limits comes from the X-Forwarded-For of a request from this machine: each E2E
+    // test sends an address of its own (specs/test.ts), as each person comes from their own, so that the tests do not
+    // share one sign-in limit.
+    MY_TRUSTED_PROXIES: "127.0.0.1",
   };
+}
+
+/**
+ * Runs `bin/my` with `args` and `input` on its standard input under the settings of `envFile` (Demo.envFile), against
+ * the database of a running demo server; returns its output.
+ */
+export function runMyOn(envFile: string, args: readonly string[], input = ""): string {
+  const settings = JSON.parse(readFileSync(envFile, "utf8")) as Record<string, string>;
+  const inherited = Object.entries(process.env).filter(
+    (e): e is [string, string] => !e[0].startsWith("MY_") && e[1] !== undefined,
+  );
+  return execFileSync(myBin, args, {
+    input,
+    encoding: "utf8",
+    stdio: ["pipe", "pipe", "pipe"],
+    env: { ...Object.fromEntries(inherited), ...settings },
+  });
 }
 
 async function ready(url: string, server: ChildProcess): Promise<void> {
@@ -141,7 +164,10 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
     const code = await new Promise<number | null>((done) => seeder.once("exit", done));
     if (code !== 0) throw new Error(`demo: the seed failed (exit ${code})`);
     const state = JSON.parse(readFileSync(stateFile, "utf8")) as SeedState;
-    return { url, state, stateFile, stop };
+    const envFile = join(o.dir, "my-env.json");
+    const settings = Object.fromEntries(Object.entries(env).filter(([k]) => k.startsWith("MY_")));
+    writeFileSync(envFile, JSON.stringify(settings, null, 2), { mode: 0o600 });
+    return { url, state, stateFile, envFile, stop };
   } catch (err) {
     failed(err);
     await stop();

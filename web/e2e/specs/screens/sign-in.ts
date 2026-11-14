@@ -6,7 +6,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import type { Person } from "../../src/scenario";
 import type { SeedState } from "../../src/seed/seed";
-import { totp } from "../../src/seed/totp";
 
 /** A passkey as the seed made it, in the encoding of CDP's WebAuthn.addCredential. */
 export type Passkey = SeedState["passkeys"][string];
@@ -34,7 +33,7 @@ export class SignIn {
 
   /** Signs in with an email address and a password. */
   async withPassword(email: string, password: string): Promise<void> {
-    await this.page.getByRole("textbox", { name: "Email address" }).fill(email);
+    await this.page.getByRole("textbox", { name: "Email address", exact: true }).fill(email);
     await this.page.getByLabel("Password", { exact: true }).fill(password);
     await this.page.getByRole("main").getByRole("button", { name: "Sign in", exact: true }).click();
   }
@@ -48,7 +47,7 @@ export class SignIn {
 
   /** Enters the code of an authenticator app. */
   async enterCode(code: string): Promise<void> {
-    await this.page.getByRole("textbox", { name: "Authentication code" }).fill(code);
+    await this.page.getByRole("textbox", { name: "Authentication code", exact: true }).fill(code);
     await this.page.getByRole("button", { name: "Verify", exact: true }).click();
   }
 
@@ -73,21 +72,10 @@ export class SignIn {
   }
 }
 
-/**
- * The code of an authenticator app for `secret` in a 30-second window that has not begun yet when it is called. A
- * code works once, and the seed signed in with the code of its window, so the next window's code is the first one
- * sure to be unused; this waits for that window, up to 30 seconds.
- */
-export async function unusedCode(secret: string): Promise<string> {
-  const next = (Math.floor(Date.now() / 30_000) + 1) * 30_000;
-  await new Promise((resolve) => setTimeout(resolve, next - Date.now() + 200));
-  return totp(secret);
-}
-
 /** Signs in as `p` with the password on `page`, and waits for their home timeline. */
 export async function signInAs(page: Page, p: Person): Promise<void> {
   const screen = new SignIn(page);
   await screen.open();
   await screen.withPassword(p.email, p.password);
-  await expect(page.getByRole("feed", { name: "Home timeline" })).toBeVisible();
+  await expect(page.getByRole("feed", { name: "Home timeline", exact: true })).toBeVisible();
 }

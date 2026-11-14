@@ -378,13 +378,15 @@
         "restrict/platform-globals": "error"
       }
     },
-    // The E2E tests and the operations of the screens in @my/e2e find an element by its role and accessible name.
+    // The E2E tests and the operations of the screens in @my/e2e find an element by its role and accessible name, and
+    // keep out of the patterns that made them flaky.
     {
       "files": [
         "web/e2e/**"
       ],
       "rules": {
-        "restrict/e2e-queries": "error"
+        "restrict/e2e-queries": "error",
+        "restrict/e2e-flaky": "error"
       }
     }
   ]

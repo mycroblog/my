@@ -6,7 +6,7 @@
 
 import { codeChallenge, createClient, exchange, newCodeVerifier, staticToken, type Api } from "@mycroblog/mykit";
 import type { Person } from "../scenario";
-import { totp } from "./totp";
+import { totp, totpCode } from "./totp";
 
 /** A cookie jar and fetch without redirects: what a browser does on the server's auth screens. */
 class Browser {
@@ -67,9 +67,9 @@ async function submit(browser: Browser, url: string, action: string, fields: Rec
 
 /**
  * Signs in as `p` and returns a client of the API as them. `totpSecret` answers the two-factor step of a person who
- * has one.
+ * has one, with a code of a step other than `avoidStep`, one whose code was used already (totpCode).
  */
-export async function signIn(server: string, p: Person, totpSecret?: string): Promise<Api> {
+export async function signIn(server: string, p: Person, totpSecret?: string, avoidStep?: number): Promise<Api> {
   const browser = new Browser(server);
   const redirectUri = `${server}/login/callback`;
   const verifier = newCodeVerifier();
@@ -86,7 +86,7 @@ export async function signIn(server: string, p: Person, totpSecret?: string): Pr
   if (next.status === 303 && browser.location(next).includes("/auth/sign_in/two_factor")) {
     if (totpSecret === undefined) throw new Error(`seed: ${p.username} asks for a two-factor code the seed lacks`);
     const step = browser.location(next);
-    next = await submit(browser, step, "/auth/sign_in/two_factor", { code: totp(totpSecret) });
+    next = await submit(browser, step, "/auth/sign_in/two_factor", { code: totpCode(totpSecret, { avoidStep }) });
     // A code signs in once: when this step's code was used already, the next one comes within 30 seconds.
     if (next.status === 422) {
       await new Promise((done) => setTimeout(done, 30_000 - (Date.now() % 30_000) + 500));

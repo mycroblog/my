@@ -3,6 +3,7 @@
 // The composer, a dialog that writes a new post or a reply.
 
 import { expect, type Locator } from "@playwright/test";
+import { answered } from "./write";
 
 export class Composer {
   readonly dialog: Locator;
@@ -13,7 +14,7 @@ export class Composer {
 
   /** The text of the post; a reply starts with the mention of the person it replies to. */
   get text(): Locator {
-    return this.dialog.getByRole("textbox", { name: "Text" });
+    return this.dialog.getByRole("textbox", { name: "Text", exact: true });
   }
 
   /** Writes `text` after what the composer already holds. */
@@ -23,9 +24,11 @@ export class Composer {
     await this.text.pressSequentially(text);
   }
 
-  /** Sends the post and waits until the composer closes. */
+  /** Sends the post, and returns once the server has answered and the composer has closed. */
   async post(): Promise<void> {
-    await this.dialog.getByRole("button", { name: "Post", exact: true }).click();
+    await answered(this.dialog.page(), { methods: ["POST"], path: /\/statuses$/ }, async () => {
+      await this.dialog.getByRole("button", { name: "Post", exact: true }).click();
+    });
     await expect(this.dialog).toBeHidden();
   }
 }

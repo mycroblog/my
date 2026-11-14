@@ -4,6 +4,7 @@
 // the post that mentions the reader, named by its author.
 
 import type { Locator, Page } from "@playwright/test";
+import { answered } from "./write";
 
 export class Notifications {
   readonly page: Page;
@@ -13,7 +14,7 @@ export class Notifications {
   }
 
   get feed(): Locator {
-    return this.page.getByRole("feed", { name: "Notifications" });
+    return this.page.getByRole("feed", { name: "Notifications", exact: true });
   }
 
   /** The notification named `what`, as the screen says it ("Yuki 雪 favourited your post"). */
@@ -39,8 +40,10 @@ export class Notifications {
     return this.followRequest(from).getByRole("button", { name: "Accept", exact: true });
   }
 
-  /** Accepts the follow request of `from`. */
+  /** Accepts the follow request of `from`, and returns once the server has answered. */
   async accept(from: string): Promise<void> {
-    await this.acceptButton(from).click();
+    await answered(this.page, { methods: ["POST"], path: /\/follow_requests\/[^/]+\/accept$/ }, async () => {
+      await this.acceptButton(from).click();
+    });
   }
 }

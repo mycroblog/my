@@ -712,7 +712,8 @@ jobs:
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps --only-shell chromium
       - name: web:e2e
-        run: scripts/task.sh web:e2e
+        # Each test twice on the one seeded server: a suite that passes only once depends on the order of its tests.
+        run: scripts/task.sh web:e2e -- --repeat-each=2
 
   stories:
     # The static build of the Storybook host and the story tests (ADR-0110 §9): every story run by Storybook's Vitest

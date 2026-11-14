@@ -28,6 +28,16 @@
 //   (`.locator()` with a CSS or XPath selector written in the file, `$`, `$$`) or a test ID (`getByTestId`), what a
 //   reader of the screen cannot see. It refuses a method of those names on any object, and does not see a selector
 //   held in a variable.
+//
+// - e2e-flaky: in @my/e2e, none of the patterns that made the E2E tests flaky, each refused with the incidents it
+//   comes from and what to write instead: a one-shot read of the page (`.textContent()`, `.isVisible()`, `.count()`…,
+//   and `expect(await …)`), a name or a text matched as a substring (a string without `exact: true`, a RegExp not
+//   anchored `^…$`), a checkbox set by its state (`.check()`, `.uncheck()`, `.setChecked()`), and motion
+//   (`reducedMotion: "no-preference"`, and a playwright.config.ts whose own `use` does not reduce it). Under specs/
+//   (the specs and specs/screens/) it also refuses a wait for time and a read of the clock (`waitForTimeout`,
+//   `setTimeout`, `setInterval`, `Date.now()`, `new Date()`), a `timeout` option and a forced action (`force: true`);
+//   the demo server and the seed of src/ poll for readiness and remove their files by force. It refuses the methods by
+//   name on any object, and sees a name or a RegExp written in the file, not one held in a variable.
 
 const DESIGN_SYSTEM = /^@my\/design-system(?:\/|$)/;
 const LAYOUT_PROPS = new Set(["className", "style"]);
@@ -390,9 +400,241 @@ function createE2EQueries(context) {
   };
 }
 
+/** The Playwright reads that take the page's state once, without retrying until it settles. */
+const ONE_SHOT_READS = new Set([
+  "textContent",
+  "innerText",
+  "innerHTML",
+  "isVisible",
+  "isHidden",
+  "isChecked",
+  "isEnabled",
+  "isDisabled",
+  "count",
+  "getAttribute",
+  "inputValue",
+  "allTextContents",
+  "allInnerTexts",
+]);
+/** The queries whose first argument is the text to match, and which match a substring of it unless `exact`. */
+const TEXT_QUERIES = new Set(["getByLabel", "getByText", "getByPlaceholder", "getByTitle", "getByAltText"]);
+/** The calls that set a checkbox or a radio by its state, not as a person does. */
+const SET_CHECKED = new Set(["check", "uncheck", "setChecked"]);
+/** The calls that wait for time to pass. */
+const TIMERS = new Set(["setTimeout", "setInterval"]);
+/** Why a spec does not wait for time or read the clock. */
+const timing =
+  "waits for time to pass or reads the clock, which flakes on a slower or faster run (66d4f3db6, 45883c030, #1588). " +
+  "Wait for the state itself with a retrying assertion or expect.poll, and take times from the scenario.";
+
+/** The value of the property `name` of the object literal `node`, or undefined without one. */
+function propertyValue(/** @type {Node | undefined} */ node, /** @type {string} */ name) {
+  if (node === undefined) return undefined;
+  const object = unwrap(node);
+  if (object.type !== "ObjectExpression") return undefined;
+  for (const property of object.properties)
+    if (property.type === "Property" && keyName(property) === name) return unwrap(property.value);
+  return undefined;
+}
+
+/** Whether `node` is the literal `value`. */
+const isLiteral = (/** @type {Node | undefined} */ node, /** @type {unknown} */ value) =>
+  node?.type === "Literal" && node.value === value;
+
+/**
+ * Whether the pattern of a regular expression matches the whole name: it starts with `^`, ends with an unescaped `$`,
+ * and has no alternative (`|`) outside a group, which would anchor one side alone.
+ */
+function anchored(/** @type {string} */ pattern) {
+  if (!pattern.startsWith("^") || !pattern.endsWith("$")) return false;
+  let depth = 0;
+  let inClass = false;
+  for (let i = 0; i < pattern.length; i += 1) {
+    const c = pattern[i];
+    if (c === "\\") {
+      // The final `$` escaped (`\$`) matches a dollar sign, not the end.
+      if (i === pattern.length - 2) return false;
+      i += 1;
+    } else if (inClass) inClass = c !== "]";
+    else if (c === "[") inClass = true;
+    else if (c === "(") depth += 1;
+    else if (c === ")") depth -= 1;
+    else if (c === "|" && depth === 0) return false;
+  }
+  return true;
+}
+
+/**
+ * The pattern of a regular expression written in the file: a literal (`/^Save$/`) or `new RegExp` of a string or a
+ * template (whose interpolations stand for some text), else undefined.
+ */
+function regexPattern(/** @type {Node | undefined} */ node) {
+  if (node === undefined) return undefined;
+  const expression = unwrap(node);
+  if (expression.type === "Literal" && expression.regex) return expression.regex.pattern;
+  if (
+    expression.type === "NewExpression" &&
+    expression.callee.type === "Identifier" &&
+    expression.callee.name === "RegExp"
+  ) {
+    const source = expression.arguments[0] && unwrap(expression.arguments[0]);
+    if (source?.type === "Literal" && typeof source.value === "string") return source.value;
+    if (source?.type === "TemplateLiteral")
+      return source.quasis.map((/** @type {Node} */ q) => q.value.cooked).join("x");
+  }
+  return undefined;
+}
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function createE2EFlaky(context) {
+  const filename = String(context.filename).replaceAll("\\", "/");
+  // The specs and the operations of the screens (specs/screens/) wait for states alone; the demo server and the seed
+  // (src/) poll for readiness, and the configuration sets the limits of a run.
+  const specs = /\/web\/e2e\/(?:[^/]+\/)*specs\//.test(filename);
+  const config = filename.endsWith("/playwright.config.ts");
+  let reducesMotion = false;
+
+  function report(/** @type {Node} */ node, /** @type {string} */ what, /** @type {string} */ why) {
+    context.report({ node, message: `\`${what}\` ${why}` });
+  }
+
+  const oneShot =
+    "reads the page once, before it may have settled, and does not retry (0ab550727, 07d058a31, cce3243e7). Assert " +
+    "on the locator with a retrying assertion (toHaveText, toHaveCount, toHaveAttribute, toBeVisible, toBeChecked, " +
+    "toHaveValue), or wait for a computed value with expect.poll.";
+  const substring =
+    "matches any name that holds the text, and finds another element once one with a longer name shows " +
+    "(cce3243e7, b6632bd23, #1403).";
+
+  /** Checks the text or the name `node` that a query matches: a string with `exact: true`, a RegExp anchored. */
+  function checkName(
+    /** @type {Node} */ at,
+    /** @type {string} */ query,
+    /** @type {Node | undefined} */ node,
+    /** @type {Node | undefined} */ options,
+  ) {
+    if (node === undefined) return;
+    const pattern = regexPattern(node);
+    if (pattern !== undefined) {
+      if (!anchored(pattern))
+        report(
+          at,
+          `${query}(/unanchored/)`,
+          `${substring} Anchor the RegExp as /^…$/, with no alternative outside a group.`,
+        );
+      return;
+    }
+    if (isString(node) && !isLiteral(propertyValue(options, "exact"), true))
+      report(
+        at,
+        `${query}(string)`,
+        `${substring} Add \`exact: true\`, or match the whole name with an anchored RegExp.`,
+      );
+  }
+
+  return {
+    CallExpression(/** @type {Node} */ node) {
+      const callee = unwrap(node.callee);
+      if (callee.type === "Identifier") {
+        if (callee.name === "expect" && node.arguments[0] && unwrap(node.arguments[0]).type === "AwaitExpression")
+          report(node.arguments[0], "expect(await)", oneShot);
+        else if (specs && TIMERS.has(callee.name)) report(callee, `${callee.name}()`, timing);
+        return;
+      }
+      if (callee.type !== "MemberExpression" || callee.computed || callee.property.type !== "Identifier") return;
+      const name = callee.property.name;
+      const object = unwrap(callee.object);
+      if (ONE_SHOT_READS.has(name)) report(callee.property, `.${name}()`, oneShot);
+      else if (SET_CHECKED.has(name))
+        report(
+          callee.property,
+          `.${name}()`,
+          "sets the state of a checkbox or a radio, not as a person does, and fails when the control re-renders on " +
+            'the change (6bd4f2c17, 5946eba33). Click the control or its label (getByRole("radio", { name, ' +
+            "exact: true }).click()), then assert with toBeChecked().",
+        );
+      else if (name === "getByRole")
+        checkName(callee.property, name, propertyValue(node.arguments[1], "name"), node.arguments[1]);
+      else if (TEXT_QUERIES.has(name)) checkName(callee.property, name, node.arguments[0], node.arguments[1]);
+      else if (specs && name === "waitForTimeout") report(callee.property, ".waitForTimeout()", timing);
+      else if (specs && TIMERS.has(name) && object.type === "Identifier") report(callee.property, `${name}()`, timing);
+      else if (specs && name === "now" && object.type === "Identifier" && object.name === "Date")
+        report(callee, "Date.now()", timing);
+    },
+    NewExpression(/** @type {Node} */ node) {
+      if (specs && node.callee.type === "Identifier" && node.callee.name === "Date" && node.arguments.length === 0)
+        report(node, "new Date()", timing);
+    },
+    Property(/** @type {Node} */ node) {
+      const name = keyName(node);
+      const value = unwrap(node.value);
+      if (specs && name === "force" && isLiteral(value, true))
+        report(
+          node,
+          "force:true",
+          "skips the checks that the element is visible, stable and takes the click, so the click lands on an element " +
+            "still moving or covered (6bd4f2c17, 5946eba33). Wait for the state that lets a person click it with a " +
+            "retrying assertion, then click without force.",
+        );
+      else if (specs && name === "timeout")
+        report(
+          node,
+          "timeout:",
+          "stretches one wait past the defaults, which hides a state the spec does not wait for and flakes again " +
+            "under load (66d4f3db6, #309, #405). Wait for the state that comes first with a retrying assertion, or " +
+            "change the limits of every test in playwright.config.ts.",
+        );
+      else if (name === "reducedMotion") {
+        // The `use` of the configuration itself (defineConfig({ use }), export default { use }, const config = { use }),
+        // not a project's.
+        const use = node.parent?.parent;
+        const top = use?.parent?.parent;
+        if (
+          isLiteral(value, "reduce") &&
+          use?.type === "Property" &&
+          keyName(use) === "use" &&
+          (top?.type === "CallExpression" ||
+            top?.type === "ExportDefaultDeclaration" ||
+            top?.type === "VariableDeclarator")
+        )
+          reducesMotion = true;
+        if (isLiteral(value, "no-preference"))
+          report(
+            node,
+            "reducedMotion",
+            "is no-preference, so the specs assert on a screen in motion; every wait for an animation flaked again, " +
+              "and running without motion settled them (b511410df). Keep the motion reduced, as playwright.config.ts " +
+              "sets it, and test the motion in the stories.",
+          );
+      }
+    },
+    "Program:exit"(/** @type {Node} */ node) {
+      if (!config || reducesMotion) return;
+      const exported = node.body.find((/** @type {Node} */ s) => s.type === "ExportDefaultDeclaration") ?? node;
+      report(
+        exported,
+        "use.reducedMotion",
+        'is not "reduce": with motion the specs assert on screens mid-transition, and every wait for an animation ' +
+          'flaked again until the E2E ran without motion (b511410df). Set `use: { reducedMotion: "reduce" }`.',
+      );
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
+    "e2e-flaky": {
+      meta: {
+        type: "problem",
+        docs: {
+          description:
+            "Disallow the patterns that made the E2E tests flaky: one-shot reads, substring names, waits for time, forced and state-setting actions, and motion",
+        },
+        schema: [],
+      },
+      create: createE2EFlaky,
+    },
     "e2e-queries": {
       meta: {
         type: "problem",

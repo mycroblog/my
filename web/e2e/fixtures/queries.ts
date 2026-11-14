@@ -4,7 +4,7 @@
 import type { Locator, Page } from "@playwright/test";
 
 export async function queries(page: Page, item: Locator, selector: string) {
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel("Password", { exact: true }).fill("x");
   await page.getByRole("feed").getByRole("article").filter({ hasText: "bread" }).click();
   await item.locator(page.getByRole("link")).click();

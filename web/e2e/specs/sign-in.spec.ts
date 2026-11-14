@@ -3,8 +3,8 @@
 // A person signs in through the server's sign-in screens, each way the scenario's people sign in, and the client
 // opens their home timeline.
 
-import { Frame, homeTimeline, SignIn, unusedCode } from "./screens";
-import { expect, person, secrets, test } from "./test";
+import { Frame, homeTimeline, SignIn } from "./screens";
+import { expect, person, secrets, test, totpCode } from "./test";
 
 test("a person signs in with a password and lands on the home timeline", async ({ page }) => {
   const sam = person("sam");
@@ -25,15 +25,16 @@ test("a wrong password keeps the person on the sign-in screen and says why", asy
   await expect(screen.heading).toBeVisible();
 });
 
-test("a person with two-factor authentication signs in with the code of their app", async ({ page }) => {
-  test.slow(); // waits up to 30 s for an unused code
-  const kai = person("kai");
+// A fresh person: a code the server took cannot sign in again, so a second run as the same person would be refused.
+test("a person with two-factor authentication signs in with the code of their app", async ({ page, fresh }) => {
+  const p = await fresh.person({ totp: true });
+  if (p.totp === undefined) throw new Error("the fresh person has no two-factor authentication");
   const screen = new SignIn(page);
   await screen.open();
-  await screen.withPassword(kai.email, kai.password);
+  await screen.withPassword(p.email, p.password);
   await expect(screen.twoFactorHeading).toBeVisible();
-  await screen.enterCode(await unusedCode(secrets().totp["kai"] ?? ""));
-  await expect(homeTimeline(page).post(kai.displayName, "Just joined.").article).toBeVisible();
+  await screen.enterCode(totpCode(p.totp.secret, { avoidStep: p.totp.step }));
+  await expect(new Frame(page).heading("Home")).toBeVisible();
 });
 
 test("a person with a passkey signs in without a password", async ({ page }) => {

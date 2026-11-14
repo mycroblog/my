@@ -18,12 +18,22 @@ export class Frame {
 
   /** The main navigation; its name is in the reader's language. */
   get navigation(): Locator {
-    return this.page.getByRole("navigation", { name: "Main" });
+    return this.page.getByRole("navigation", { name: "Main", exact: true });
+  }
+
+  /** The main navigation's link to `place`, by its English name. */
+  link(place: Place): Locator {
+    return this.navigation.getByRole("link", { name: place, exact: true });
   }
 
   /** Follows the main navigation's link to `place`. */
   async goTo(place: Place): Promise<void> {
-    await this.navigation.getByRole("link", { name: place, exact: true }).click();
+    await this.link(place).click();
+  }
+
+  /** The language of the document (`<html lang>`), the language the client speaks to the reader in. */
+  async language(): Promise<string> {
+    return this.page.evaluate(() => document.documentElement.lang);
   }
 
   /** The heading of the screen, which names it. */
@@ -33,7 +43,7 @@ export class Frame {
 
   /** Opens the composer of a new post. */
   async newPost(): Promise<Composer> {
-    await this.navigation.getByRole("button", { name: "New post" }).click();
-    return new Composer(this.page.getByRole("dialog", { name: "New post" }));
+    await this.navigation.getByRole("button", { name: "New post", exact: true }).click();
+    return new Composer(this.page.getByRole("dialog", { name: "New post", exact: true }));
   }
 }

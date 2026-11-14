@@ -5,6 +5,7 @@
 
 import type { Locator, Page } from "@playwright/test";
 import { Composer } from "./composer";
+import { answered } from "./write";
 
 /** A count button's name: the action, then the count when there is one ("Favourite", "Favourite, 2"). */
 const counted = (action: string) => new RegExp(`^${action}(, \\d+)?$`);
@@ -53,20 +54,28 @@ export class Post {
     return this.article.getByRole("button", { name: counted("Boost"), pressed: true });
   }
 
+  /** Favourites the post, and returns once the server has answered. */
   async favourite(): Promise<void> {
-    await this.favouriteButton.click();
+    await answered(this.page, { methods: ["POST", "DELETE"], path: /\/statuses\/[^/]+\/favourite$/ }, async () => {
+      await this.favouriteButton.click();
+    });
   }
 
-  /** Boosts the post, from the boost button's menu (which also offers a quote). */
+  /** Boosts the post, from the boost button's menu (which also offers a quote), and returns once the server answered. */
   async boost(): Promise<void> {
-    await this.boostButton.click();
-    await this.page.getByRole("menu", { name: "Boost" }).getByRole("menuitem", { name: "Boost", exact: true }).click();
+    await answered(this.page, { methods: ["POST", "DELETE"], path: /\/statuses\/[^/]+\/boost$/ }, async () => {
+      await this.boostButton.click();
+      await this.page
+        .getByRole("menu", { name: "Boost", exact: true })
+        .getByRole("menuitem", { name: "Boost", exact: true })
+        .click();
+    });
   }
 
   /** Opens the composer of a reply to the post. */
   async reply(): Promise<Composer> {
     await this.article.getByRole("button", { name: counted("Reply") }).click();
-    return new Composer(this.page.getByRole("dialog", { name: "Reply" }));
+    return new Composer(this.page.getByRole("dialog", { name: "Reply", exact: true }));
   }
 
   /** Reveals the text behind the content warning. */
@@ -127,5 +136,5 @@ export class Timeline {
 
 /** The home timeline: the posts of the people the reader follows, and their own. */
 export function homeTimeline(page: Page): Timeline {
-  return new Timeline(page, page.getByRole("feed", { name: "Home timeline" }));
+  return new Timeline(page, page.getByRole("feed", { name: "Home timeline", exact: true }));
 }

@@ -29,7 +29,7 @@ import {
 import { createPasskey, type PasskeyCredential } from "./passkey";
 import { drawPNG } from "./png";
 import { signIn } from "./sign-in";
-import { totp } from "./totp";
+import { totp, totpStep } from "./totp";
 
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
@@ -37,11 +37,13 @@ type Account = components["schemas"]["Account"];
 /** What the server decided for the scenario and the E2E tests need, by username or app key. */
 export type SeedState = {
   totp: Record<string, string>;
+  /** The TOTP step whose code confirmed each person's enrollment, which a later code avoids (totpCode). */
+  totpSteps: Record<string, number>;
   passkeys: Record<string, PasskeyCredential>;
   apps: Record<string, { clientId: string }>;
 };
 
-const emptyState = (): SeedState => ({ totp: {}, passkeys: {}, apps: {} });
+const emptyState = (): SeedState => ({ totp: {}, totpSteps: {}, passkeys: {}, apps: {} });
 
 /** Runs `bin/my` with `args` and `input` on its standard input against the server's database; returns its output. */
 type RunMy = (args: readonly string[], input?: string) => string;
@@ -78,6 +80,34 @@ async function until<T>(what: string, check: () => Promise<T | undefined>, timeo
   }
 }
 
+type Purpose = "attachment" | "avatar" | "header";
+
+/**
+ * Uploads a drawing as a PNG with `api` and waits until the server has processed it: the scenario's images, and those
+ * of the E2E tests' own posts (fresh.ts).
+ */
+export async function uploadDrawing(api: Api, name: string, drawing: Drawing, description: string, purpose: Purpose) {
+  const file = new Blob([new Uint8Array(drawPNG(drawing))], { type: "image/png" });
+  const media = await uploadMedia(api, { file, fileName: name, purpose, description });
+  return until(`the processing of ${name}`, async () => {
+    const { data } = await api.GET("/media/{id}", { params: { path: { id: media.id } } });
+    const current = body(data, `the media ${name}`);
+    if (current.state === "failed") throw new Error(`seed: the server could not process ${name}`);
+    return current.state === "ready" ? current : undefined;
+  });
+}
+
+/** Enables two-factor authentication for the person of `api`: the secret, and the step whose code confirmed it. */
+export async function enrollTOTP(api: Api): Promise<{ secret: string; step: number }> {
+  const setup = body((await api.POST("/two_factor/totp/setup")).data, "the TOTP setup");
+  const at = Date.now();
+  const { error } = await api.POST("/two_factor/totp", {
+    body: { setup_token: setup.setup_token, code: totp(setup.secret, at) },
+  });
+  if (error !== undefined) throw new Error("seed: the server refused the code of its own TOTP setup");
+  return { secret: setup.secret, step: totpStep(at) };
+}
+
 class Seeder {
   readonly #o: SeedOptions;
   readonly state: SeedState;
@@ -87,7 +117,7 @@ class Seeder {
 
   constructor(o: SeedOptions) {
     this.#o = o;
-    this.state = structuredClone(o.state ?? emptyState());
+    this.state = { ...emptyState(), ...structuredClone(o.state ?? emptyState()) };
   }
 
   log(line: string) {
@@ -97,7 +127,7 @@ class Seeder {
   async api(username: string): Promise<Api> {
     let api = this.#apis.get(username);
     if (api === undefined) {
-      api = await signIn(this.#o.server, personOf(username), this.state.totp[username]);
+      api = await signIn(this.#o.server, personOf(username), this.state.totp[username], this.state.totpSteps[username]);
       this.#apis.set(username, api);
     }
     return api;
@@ -165,21 +195,8 @@ class Seeder {
   }
 
   /** Uploads a drawing as a PNG and waits until the server has processed it. */
-  async upload(
-    api: Api,
-    name: string,
-    drawing: Drawing,
-    description: string,
-    purpose: "attachment" | "avatar" | "header",
-  ) {
-    const file = new Blob([new Uint8Array(drawPNG(drawing))], { type: "image/png" });
-    const media = await uploadMedia(api, { file, fileName: name, purpose, description });
-    return until(`the processing of ${name}`, async () => {
-      const { data } = await api.GET("/media/{id}", { params: { path: { id: media.id } } });
-      const current = body(data, `the media ${name}`);
-      if (current.state === "failed") throw new Error(`seed: the server could not process ${name}`);
-      return current.state === "ready" ? current : undefined;
-    });
+  upload(api: Api, name: string, drawing: Drawing, description: string, purpose: Purpose) {
+    return uploadDrawing(api, name, drawing, description, purpose);
   }
 
   async setUpProfiles() {
@@ -372,9 +389,9 @@ class Seeder {
       const enabled = body((await api.GET("/two_factor")).data, "the two-factor status").enabled;
       if (enabled && this.state.totp[p.username] !== undefined) continue;
       if (enabled) throw new Error(`seed: ${p.username} has two-factor authentication whose secret the seed lacks`);
-      const setup = body((await api.POST("/two_factor/totp/setup")).data, "the TOTP setup");
-      await api.POST("/two_factor/totp", { body: { setup_token: setup.setup_token, code: totp(setup.secret) } });
-      this.state.totp[p.username] = setup.secret;
+      const { secret, step } = await enrollTOTP(api);
+      this.state.totp[p.username] = secret;
+      this.state.totpSteps[p.username] = step;
     }
   }
 }

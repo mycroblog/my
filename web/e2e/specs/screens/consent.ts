@@ -30,6 +30,7 @@ export class Consent {
       code_challenge: createHash("sha256").update(verifier).digest("base64url"),
       code_challenge_method: "S256",
     });
+    await this.page.clock.install();
     await this.page.goto(`/oauth/authorize?${query.toString()}`);
   }
 
@@ -41,7 +42,9 @@ export class Consent {
 
   /** The list of the permissions the app asks for that the screen asks the person to read. */
   get permissions(): Locator {
-    return this.page.getByRole("region", { name: "Permissions that need your attention" }).getByRole("listitem");
+    return this.page
+      .getByRole("region", { name: "Permissions that need your attention", exact: true })
+      .getByRole("listitem");
   }
 
   /** The paragraph of the screen that holds `text`. */
@@ -59,9 +62,14 @@ export class Consent {
     return this.choose("Deny");
   }
 
+  // The screen holds Allow and Deny for a few seconds after it opens, so that nobody allows without reading, and counts
+  // them down ("you can choose in 5 s"). The part runs the page's clock, which open() installed, a minute ahead, far
+  // past the count, instead of waiting the seconds out; when the count is already over, that changes nothing.
   private async choose(name: "Allow" | "Deny"): Promise<URLSearchParams> {
     const button = this.page.getByRole("button", { name, exact: true });
-    await expect(button).toBeEnabled({ timeout: 15_000 });
+    await this.page.clock.runFor(60_000);
+    await expect(this.paragraph("you can choose in")).toBeHidden();
+    await expect(button).toBeEnabled();
     const redirectURI = this.app.redirectUris[0] ?? "";
     const [request] = await Promise.all([
       this.page.waitForRequest((r) => r.url().startsWith(`${redirectURI}?`)),

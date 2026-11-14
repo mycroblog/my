@@ -6,6 +6,7 @@
 import type { Locator, Page } from "@playwright/test";
 import type { Person } from "../../src/scenario";
 import { Timeline } from "./timeline";
+import { answered } from "./write";
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -27,7 +28,7 @@ export class Profile {
   get heading(): Locator {
     return this.page.getByRole("main").getByRole("heading", {
       level: 1,
-      name: new RegExp(`^${escape(this.person.displayName)} \\(@${this.person.username}@`),
+      name: new RegExp(`^${escape(this.person.displayName)} \\(@${this.person.username}@[^)]+\\)$`),
     });
   }
 
@@ -56,16 +57,22 @@ export class Profile {
     return this.card.getByRole("term").filter({ hasText: name });
   }
 
+  /** Follows the person, and returns once the server has answered. */
   async follow(): Promise<void> {
-    await this.followButton.click();
+    await answered(this.page, { methods: ["POST"], path: /\/accounts\/[^/]+\/follow$/ }, async () => {
+      await this.followButton.click();
+    });
   }
 
+  /** Unfollows the person, and returns once the server has answered. */
   async unfollow(): Promise<void> {
-    await this.followingButton.click();
+    await answered(this.page, { methods: ["DELETE"], path: /\/accounts\/[^/]+\/follow$/ }, async () => {
+      await this.followingButton.click();
+    });
   }
 
   /** The person's posts. */
   get posts(): Timeline {
-    return new Timeline(this.page, this.page.getByRole("feed", { name: "Posts of the account" }));
+    return new Timeline(this.page, this.page.getByRole("feed", { name: "Posts of the account", exact: true }));
   }
 }

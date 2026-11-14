@@ -20,18 +20,19 @@ test("a post opens with its replies in the order they were written", async ({ pa
   ]);
 });
 
-test("a person replies in a thread and the reply stays there after a reload", async ({ page, signIn }) => {
-  const marco = person("marco");
-  const sam = person("sam");
+test("a person replies in a thread and the reply stays there after a reload", async ({ page, signIn, fresh }) => {
+  const author = await fresh.person();
+  const post = await fresh.post(author, { text: "Day 3 of the rye starter." });
+  const replier = await fresh.person({ follows: [author] });
   const text = "Thread check: that crumb looks right to me.";
-  await signIn(marco);
-  await homeTimeline(page).post(sam.displayName, "Day 3 of the sourdough").open();
+  await signIn(replier);
+  await homeTimeline(page).post(author.displayName, post.text).open();
   const thread = new Thread(page);
-  const composer = await thread.post(sam.displayName, "Day 3 of the sourdough").reply();
-  await expect(composer.text).toHaveValue(/^@sam\b/);
+  const composer = await thread.post(author.displayName, post.text).reply();
+  await expect(composer.text).toHaveValue(new RegExp(`^@${author.username}\\b`));
   await composer.write(text);
   await composer.post();
-  await expect(thread.post(marco.displayName, text).article).toBeVisible();
+  await expect(thread.post(replier.displayName, text).article).toBeVisible();
   await page.reload();
-  await expect(thread.post(marco.displayName, text).paragraph(text)).toContainText("@sam");
+  await expect(thread.post(replier.displayName, text).paragraph(text)).toContainText(`@${author.username}`);
 });
