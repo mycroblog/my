@@ -4,7 +4,7 @@
 // gives ShortcutProvider. The keys follow other fediverse clients, and none is one the browser keeps (Ctrl or ⌘ with
 // N, T or W), which the provider refuses. timeline.next and timeline.previous are bound by the column of
 // @my/app-components, compose.open by the app's frame. An action with no keys is declared and not yet bound
-// (notifications.read_all, which the notifications' rough on the catalog declares).
+// (notifications.read_all, which the notifications of @my/app-features declare).
 
 import type { Keymap } from "@my/design-system";
 

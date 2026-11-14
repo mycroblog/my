@@ -50,5 +50,13 @@
   "app.not_found": {
     "defaultMessage": "ここにはまだ何もありません。",
     "description": "The heading of the screen at an address the app has no screen for, such as a place of the navigation that is not built yet."
+  },
+  "app.post": {
+    "defaultMessage": "投稿",
+    "description": "The heading of the screen of a post with its thread, for assistive technology, and the document's title."
+  },
+  "app.signed_out_screen": {
+    "defaultMessage": "ログインすると、この画面が表示されます。",
+    "description": "What a screen that needs a session (the notifications, a post, a profile) says to a reader who is not signed in, beside the sign-in link."
   }
 }

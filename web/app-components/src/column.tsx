@@ -7,6 +7,7 @@
 // feature passes on as it is, and each post's action goes to `onAction`. `moveFocus` moves the focus between the posts
 // of the column it is in, which the column's shortcuts of the next and the previous post use. The feed keeps the
 // reader's place as posts go in above; when they go in, and what the new posts' button says, is the feature's.
+// `ListColumn` is the same column of any list (the notifications, a profile's posts), each item drawn by its feature.
 
 import {
   Feed,
@@ -16,6 +17,7 @@ import {
   TextButton,
   useAction,
   useLocale,
+  type FeedProps,
   type NewItems,
 } from "@my/design-system";
 import { stringsIn } from "./locale";
@@ -66,9 +68,10 @@ export const moveFocus = (from: Element | null, step: 1 | -1, options: { repeat?
 /**
  * The keys of the next and the previous post (timeline.next, timeline.previous), while focus is on a post or inside
  * one; at either end the key goes on to the page. A widget inside a post that takes the same key (a menu's arrows)
- * keeps it.
+ * keeps it. A feed a feature lays out itself (a thread) places them as `FeedKeys`.
  */
-function Moves({ t }: { t: ReturnType<typeof stringsIn>["t"] }) {
+function Moves() {
+  const { t } = stringsIn(useLocale().locale);
   const groupLabel = t("column.shortcuts");
   useAction("timeline.next", ({ repeat }) => moveFocus(document.activeElement, 1, { repeat }), {
     scope: "focus",
@@ -83,61 +86,106 @@ function Moves({ t }: { t: ReturnType<typeof stringsIn>["t"] }) {
   return null;
 }
 
-export function Column({
+export { Moves as FeedKeys };
+
+/** What a list's column says while it loads, when it failed, and when it is empty, in place of the posts' words. */
+export type ListWords = {
+  readonly loading: string;
+  readonly loadingMore: string;
+  readonly failed: string;
+  readonly failedMore: string;
+  readonly empty: string;
+};
+
+export type ListColumnProps<T> = Omit<ColumnTimeline, "statuses"> & {
+  /** The list's name, for assistive technology. */
+  label: string;
+  /** The items fetched so far, in the list's order. */
+  items: readonly T[];
+  /** An item's key, unique in the list: what it shows (a post's id). */
+  keyOf: (item: T) => string;
+  /** An item's entry. */
+  children: (item: T) => ReactNode;
+  /** What the column says while it loads, fails, or has nothing; the posts' words by default. */
+  words?: ListWords | undefined;
+  /** What the column says when the list is empty, with the feature's next action; a plain line of `words` by default. */
+  empty?: ReactNode;
+} & Pick<FeedProps, "onTopChange" | "onReaderChange" | "newItems" | "onPassed" | "onEntryClick">;
+
+/**
+ * A list's column: its entries in a feed, as a timeline's column shows its posts, with the same notices of loading,
+ * failures and an empty list, in the list's own words.
+ */
+export function ListColumn<T>({
   label,
-  statuses,
+  items,
+  keyOf,
+  children,
   status,
   error,
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
   refetch,
-  onAction,
-  postProps,
+  words,
   empty,
-  onTopChange,
-  onReaderChange,
-  newPosts,
-}: ColumnProps) {
+  ...feed
+}: ListColumnProps<T>) {
   const { t } = stringsIn(useLocale().locale);
+  const say = words ?? {
+    loading: t("column.loading"),
+    loadingMore: t("column.loading_more"),
+    failed: t("column.failed"),
+    failedMore: t("column.failed_more"),
+    empty: t("column.empty"),
+  };
   const failedMore = status === "success" && error !== null && !isFetchingNextPage;
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("column.retry")}</TextButton>;
   const end =
     status === "pending" ? (
-      <FeedNotice>{t("column.loading")}</FeedNotice>
+      <FeedNotice>{say.loading}</FeedNotice>
     ) : status === "error" ? (
       <FeedNotice alert action={retry(refetch)}>
-        {t("column.failed")}
+        {say.failed}
       </FeedNotice>
     ) : isFetchingNextPage ? (
-      <FeedNotice>{t("column.loading_more")}</FeedNotice>
+      <FeedNotice>{say.loadingMore}</FeedNotice>
     ) : failedMore && hasNextPage ? (
       <FeedNotice alert action={retry(fetchNextPage)}>
-        {t("column.failed_more")}
+        {say.failedMore}
       </FeedNotice>
-    ) : statuses.length === 0 ? (
-      (empty ?? <FeedNotice>{t("column.empty")}</FeedNotice>)
+    ) : items.length === 0 ? (
+      (empty ?? <FeedNotice>{say.empty}</FeedNotice>)
     ) : undefined;
   // After a failure it asks again only when the reader tries again, never by itself.
   const asks = status === "success" && hasNextPage && !failedMore;
   return (
     <Feed
       label={label}
-      count={statuses.length}
+      count={items.length}
       more={status !== "success" || hasNextPage}
       busy={status === "pending" || isFetchingNextPage}
       onNearEnd={asks ? fetchNextPage : undefined}
       end={end}
-      onTopChange={onTopChange}
-      onReaderChange={onReaderChange}
-      newItems={newPosts}
+      {...feed}
     >
-      <Moves t={t} />
-      {statuses.map((s, i) => (
-        <FeedItem key={s.id} id={s.id} position={i + 1}>
-          <Post {...postProps?.(s)} status={s} onAction={onAction} />
-        </FeedItem>
-      ))}
+      <Moves />
+      {items.map((item, i) => {
+        const key = keyOf(item);
+        return (
+          <FeedItem key={key} id={key} position={i + 1}>
+            {children(item)}
+          </FeedItem>
+        );
+      })}
     </Feed>
+  );
+}
+
+export function Column({ statuses, onAction, postProps, newPosts, ...rest }: ColumnProps) {
+  return (
+    <ListColumn {...rest} items={statuses} keyOf={(s) => s.id} newItems={newPosts}>
+      {(s) => <Post {...postProps?.(s)} status={s} onAction={onAction} />}
+    </ListColumn>
   );
 }

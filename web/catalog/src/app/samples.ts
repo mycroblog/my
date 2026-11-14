@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The sample data of the rough screens (#3047): a thread around a focused post, a reader's notifications of every
-// kind they meet, and profiles in each state the reader meets them in (their own, another local account, a remote
-// one, a locked one, one they block, one they mute). The posts are the timeline's fixtures (timeline/fixtures.ts),
-// which the real post draws; the people are the timeline's.
+// The sample data of the app's screens on the catalog, which its fake server answers with (server.ts): a thread around
+// a focused post, a reader's notifications of the kinds they meet, and profiles in each state the reader meets them in
+// (their own, another local account, a remote one, a locked one, one they block, one they mute). The posts are the
+// timeline's fixtures (timeline/fixtures.ts); the people are the timeline's.
 
 import { images } from "../Avatars";
 import { scenes, type TimelinePost } from "../timeline/fixtures";
@@ -210,7 +210,7 @@ export const lone = post({
 
 // The notifications -----------------------------------------------------------------------------------------------
 
-export type NotifiedKind =
+type NotifiedKind =
   | "mention"
   | "favourite"
   | "boost"

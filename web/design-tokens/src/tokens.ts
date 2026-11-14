@@ -298,6 +298,35 @@ export const formPage = {
 } as const;
 
 /**
+ * The parts of the app's screens over and among the entries of a feed, in rem: the space between the tabs of a row
+ * and before what ends it; above a heading of a group of a list; around a thread's focused post and between its
+ * lines; a step of a reply's indent, and the width of the column from which replies indent; the room between a profile's avatar and its banner's edge or its actions; the
+ * ring of the page's surface around the avatar and its inset; the space between a profile's parts, between the names
+ * on its lines (and inside a badge), between its counts, and between its fields; the size of the unread mark; and the
+ * space of the row of the requests, between its parts and inside it; and the air left past an entry's focus ring.
+ */
+export const screen = {
+  tabGap: 0.25,
+  tabsGap: 0.5,
+  groupGap: 0.5,
+  focusGap: 0.75,
+  replyStep: 1.5,
+  replyFrom: 30,
+  headRoom: 1,
+  avatarRing: 0.25,
+  avatarInset: 0.25,
+  profileGap: 0.75,
+  nameGap: 0.375,
+  metaGap: 1,
+  fieldGap: 0.5,
+  unread: 0.5,
+  rowGap: 0.75,
+  rowBlock: 0.5,
+  rowInline: 0.75,
+  air: 0.25,
+} as const;
+
+/**
  * The viewport widths, in rem, at which the app's frame changes (ADR-0110 §10): a rail from `tablet`, a sidebar from
  * `desktop`, and a column beside the main one from `wide`. A media query reads no custom property, so the design
  * system's theme names them as breakpoints, not as properties.
@@ -373,7 +402,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*`, `--shell-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -481,6 +510,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--kbd-padding-inline", `${kbd.paddingInline}rem`],
   ["--kbd-gap", `${kbd.gap}rem`],
   ...Object.entries(shell).map(([name, value]): [string, string] => [`--shell-${kebab(name)}`, `${value}rem`]),
+  ...Object.entries(screen).map(([name, value]): [string, string] => [`--screen-${kebab(name)}`, `${value}rem`]),
   ...Object.entries(formPage).map(([name, value]): [string, string] => [
     `--form-page-${kebab(name)}`,
     name === "bannerRatio" ? `${value}` : `${value}rem`,

@@ -7,7 +7,8 @@
 // actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end), whose keys
 // (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
 // over it (`context`: pinned) and lines under the reactions (`details`: a focused post's date and counts), inside its
-// surface. It shows its extent by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
+// surface. Its author's name leads to their profile and its time to the post's own page (paths.ts). It shows its
+// extent by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
 // action is a callback, and what the action changes comes back in the next status.
 
 import {
@@ -36,10 +37,12 @@ import {
   type MediaItem,
 } from "@my/design-system";
 import { Fragment, useId, useState, type ReactNode } from "react";
+import { AccountName as Name, handleOf, nameOf } from "./account";
 import { stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
+import { accountPath, statusPath } from "./paths";
 import { EmojiText, PostContent } from "./post-content";
-import type { PostAccount, PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
+import type { PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
 
 /** What the reader asked of a post, on the status it shows (a boost's boosted status). */
 export type PostAction =
@@ -106,23 +109,13 @@ function format(t: T, id: MessageId, parts: Readonly<Record<string, ReactNode>>)
 }
 
 // Each visibility's glyph, and the name it says for assistive technology.
-const visibilities: Record<PostVisibility, { icon: IconName; label: MessageId }> = {
+export const visibilities: Record<PostVisibility, { icon: IconName; label: MessageId }> = {
   public: { icon: "public", label: "post.visibility.public" },
   local: { icon: "local", label: "post.visibility.local" },
   unlisted: { icon: "unlisted", label: "post.visibility.unlisted" },
   private: { icon: "followers", label: "post.visibility.private" },
   direct: { icon: "direct", label: "post.visibility.direct" },
 };
-
-/** The account's handle, `@user@domain`, whether it is local or remote; its domain alone without a confirmed one. */
-const handleOf = (account: PostAccount) =>
-  account.username === "" ? account.domain : `@${account.username}@${account.domain}`;
-
-/** The name an account goes by: its display name, else its username. */
-const nameOf = (account: PostAccount) => account.display_name || account.username || account.domain;
-
-/** The account's display name with its custom emoji. */
-const Name = ({ account }: { account: PostAccount }) => <EmojiText text={nameOf(account)} emojis={account.emojis} />;
 
 /** A language tag that is known, for a lang attribute. */
 const known = (tag: string) => (tag === "und" || tag === "" ? undefined : tag);
@@ -390,11 +383,13 @@ export function Post({
         name={<Name account={shown.account} />}
         nameId={name}
         handle={handleOf(shown.account)}
+        href={accountPath(shown.account)}
         end={
           stamp ? (
             <Stamp
               glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
               date={shown.created_at}
+              href={statusPath(shown)}
             />
           ) : undefined
         }

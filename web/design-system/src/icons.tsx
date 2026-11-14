@@ -22,6 +22,7 @@ import {
   IconBuildingCommunity,
   IconChartBar,
   IconChecks,
+  IconChevronRight,
   IconDots,
   IconExternalLink,
   IconEyeOff,
@@ -88,6 +89,8 @@ export const icons = {
   emoji: { off: IconMoodSmile },
   close: { off: IconX },
   back: { off: IconArrowLeft, directional: true },
+  // What a row opens, toward the end of the line.
+  onward: { off: IconChevronRight, directional: true },
   link: { off: IconLink },
   // An arrow out of a box, toward the end of the line.
   open: { off: IconExternalLink, directional: true },

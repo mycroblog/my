@@ -76,7 +76,7 @@ const plate = (table: string, food: string) =>
     `<rect width="100" height="100" fill="${table}"/><circle cx="50" cy="50" r="36" fill="#fbf7f2"/><circle cx="50" cy="50" r="27" fill="#efe7dd"/><circle cx="44" cy="46" r="12" fill="${food}"/><circle cx="58" cy="56" r="9" fill="${food}" opacity=".8"/><circle cx="56" cy="40" r="5" fill="#6f9a4c"/>`,
   );
 
-/** The generated scenes the sample posts show, which the rough screens (screens/) take for banners too. */
+/** The generated scenes the sample posts show, which the sample profiles (app/samples.ts) take for banners too. */
 export const scenes = {
   dawn: scene("#f6c7a1", "#fbe6cf", "#fff4e0", ["#c98f7b", "#9a6a63", "#5d4448"]),
   sea: scene("#7fb3d5", "#d6ecf5", "#fffbe8", ["#5b8fa8", "#3f6f86", "#2a4d5f"]),
@@ -353,7 +353,7 @@ export const emojis: ContentEmoji[] = Object.entries(emoji).map(([shortcode, src
 const here = "my.example";
 
 /** An account as a status embeds it; its handle is its id. */
-function accountOf(account: Account): PostAccount {
+export function accountOf(account: Account): PostAccount {
   const [, username = "", domain = here] = account.handle.split("@");
   return {
     id: account.handle,

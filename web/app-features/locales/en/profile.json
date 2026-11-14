@@ -1,0 +1,130 @@
+{
+  "profile.follow": {
+    "defaultMessage": "Follow",
+    "description": "The button of a profile that follows the account."
+  },
+  "profile.follow_back": {
+    "defaultMessage": "Follow back",
+    "description": "The button of a profile of an account that follows the reader, which follows it back."
+  },
+  "profile.request_follow": {
+    "defaultMessage": "Request to follow",
+    "description": "The button of a profile of an account that approves its followers, which asks to follow it."
+  },
+  "profile.following": {
+    "defaultMessage": "Following",
+    "description": "The button of a profile of an account the reader follows; pressing it unfollows the account."
+  },
+  "profile.requested": {
+    "defaultMessage": "Requested",
+    "description": "The button of a profile of an account whose approval the reader's follow request awaits; pressing it withdraws the request."
+  },
+  "profile.unblock": {
+    "defaultMessage": "Unblock",
+    "description": "The button, and the item of a profile's menu, that stops blocking the account."
+  },
+  "profile.block": {
+    "defaultMessage": "Block",
+    "description": "The item of a profile's menu that blocks the account."
+  },
+  "profile.mute": {
+    "defaultMessage": "Mute",
+    "description": "The item of a profile's menu that mutes the account."
+  },
+  "profile.unmute": {
+    "defaultMessage": "Unmute",
+    "description": "The item of a profile's menu, and the action of its muted line, that stops muting the account."
+  },
+  "profile.more": {
+    "defaultMessage": "More",
+    "description": "The button of a profile that opens the menu of what else the reader may do with the account."
+  },
+  "profile.open_original": {
+    "defaultMessage": "Open original page",
+    "description": "The item of a profile's menu, and the action of its line about a remote account, that opens the account's page on its own server."
+  },
+  "profile.follows_you": {
+    "defaultMessage": "Follows you",
+    "description": "The badge beside the handle of an account that follows the reader."
+  },
+  "profile.bot": {
+    "defaultMessage": "Bot",
+    "description": "The badge beside the name of an automated account."
+  },
+  "profile.locked": {
+    "defaultMessage": "Follow requests need approval",
+    "description": "The line of a profile, and the label of the lock beside its name, of an account that approves its followers."
+  },
+  "profile.following_count": {
+    "defaultMessage": "Following",
+    "description": "The label of the number of accounts the account follows."
+  },
+  "profile.followers_count": {
+    "defaultMessage": "Followers",
+    "description": "The label of the number of accounts that follow the account."
+  },
+  "profile.joined": {
+    "defaultMessage": "Joined {date}",
+    "description": "When the account was created, on its profile. date is the month and the year."
+  },
+  "profile.featured": {
+    "defaultMessage": "Featured hashtags",
+    "description": "The heading of the hashtags the account features on its profile."
+  },
+  "profile.tag_posts": {
+    "defaultMessage": "{count, plural, one {# post} other {# posts}}",
+    "description": "How many of the account's posts carry a hashtag it features. count is how many."
+  },
+  "profile.tabs": {
+    "defaultMessage": "Posts of the account",
+    "description": "What the tabs of a profile choose between, for assistive technology."
+  },
+  "profile.posts": {
+    "defaultMessage": "Posts",
+    "description": "The tab of a profile that shows the account's posts, without its replies."
+  },
+  "profile.posts_and_replies": {
+    "defaultMessage": "Posts and replies",
+    "description": "The tab of a profile that shows the account's posts and its replies."
+  },
+  "profile.media": {
+    "defaultMessage": "Media",
+    "description": "The tab of a profile that shows the account's posts with images or other media."
+  },
+  "profile.pinned": {
+    "defaultMessage": "Pinned",
+    "description": "The line over a post the account pinned to its profile."
+  },
+  "profile.remote": {
+    "defaultMessage": "Information from {domain} may be incomplete.",
+    "description": "The line of a profile of an account on another server. domain is that server's domain name."
+  },
+  "profile.blocked": {
+    "defaultMessage": "You blocked this account.",
+    "description": "The line of a profile of an account the reader blocks."
+  },
+  "profile.blocked_posts": {
+    "defaultMessage": "Its posts are hidden while you block it.",
+    "description": "What a profile of an account the reader blocks says in place of its posts."
+  },
+  "profile.muted": {
+    "defaultMessage": "You muted this account. Its posts stay out of your timelines.",
+    "description": "The line of a profile of an account the reader mutes."
+  },
+  "profile.locked_posts": {
+    "defaultMessage": "Only its followers see its other posts.",
+    "description": "What a profile of an account that approves its followers says under its posts, to a reader who does not follow it."
+  },
+  "profile.loading": {
+    "defaultMessage": "Loading the profile…",
+    "description": "What a profile says while the account loads."
+  },
+  "profile.failed": {
+    "defaultMessage": "The profile could not be loaded.",
+    "description": "What a profile says when the account could not be found or loaded, beside a button to try again."
+  },
+  "profile.title": {
+    "defaultMessage": "{name} ({handle})",
+    "description": "The heading of a profile, for assistive technology, and the document's title. name is the account's display name, handle its @handle."
+  }
+}

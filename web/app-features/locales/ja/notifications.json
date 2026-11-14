@@ -1,0 +1,318 @@
+{
+  "notifications.label": {
+    "defaultMessage": "通知",
+    "description": "The name of the feed of the reader's notifications, for assistive technology."
+  },
+  "notifications.filters": {
+    "defaultMessage": "表示",
+    "description": "What the tabs over the notifications choose between (all of them, or the mentions), for assistive technology."
+  },
+  "notifications.all": {
+    "defaultMessage": "すべて",
+    "description": "The tab that shows every notification."
+  },
+  "notifications.mentions": {
+    "defaultMessage": "メンション",
+    "description": "The tab that shows only the notifications that speak to the reader: mentions and quotes."
+  },
+  "notifications.requests_hint": {
+    "defaultMessage": "通知の設定で保留にしたアカウントから",
+    "description": "The hint under the row of the notification requests."
+  },
+  "notifications.unread": {
+    "defaultMessage": "未読",
+    "description": "The mark of an unread notification, for assistive technology."
+  },
+  "notifications.read_all": {
+    "defaultMessage": "すべて既読にする",
+    "description": "The button over the notifications that marks every notification read."
+  },
+  "notifications.accept": {
+    "defaultMessage": "承認",
+    "description": "The button of a follow request notification that lets the account follow the reader."
+  },
+  "notifications.reject": {
+    "defaultMessage": "拒否",
+    "description": "The button of a follow request notification that refuses to let the account follow the reader."
+  },
+  "notifications.approve": {
+    "defaultMessage": "承認",
+    "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."
+  },
+  "notifications.decline": {
+    "defaultMessage": "拒否",
+    "description": "The button of a notification asking to reply to, boost or quote the reader's post that refuses it."
+  },
+  "notifications.follow_back": {
+    "defaultMessage": "フォローバック",
+    "description": "The button of a follow notification that follows the account back."
+  },
+  "notifications.follow": {
+    "defaultMessage": "フォロー",
+    "description": "The button of a notification that follows its account (the account a followed account moved to)."
+  },
+  "notifications.following": {
+    "defaultMessage": "フォロー中",
+    "description": "What a notification says, in place of its follow button, of an account the reader follows."
+  },
+  "notifications.requested": {
+    "defaultMessage": "リクエスト済み",
+    "description": "What a notification says, in place of its follow button, of an account whose approval the reader's follow request awaits."
+  },
+  "notifications.accepted": {
+    "defaultMessage": "承認しました",
+    "description": "What a request notification says once the reader accepted or approved it."
+  },
+  "notifications.rejected": {
+    "defaultMessage": "拒否しました",
+    "description": "What a request notification says once the reader rejected or declined it."
+  },
+  "notifications.loading": {
+    "defaultMessage": "通知を読み込んでいます…",
+    "description": "What the notifications say while the first of them load."
+  },
+  "notifications.loading_more": {
+    "defaultMessage": "続きの通知を読み込んでいます…",
+    "description": "What the notifications say under them while more load."
+  },
+  "notifications.failed": {
+    "defaultMessage": "通知を読み込めませんでした。",
+    "description": "What the notifications say when the first of them could not be loaded, beside a button to try again."
+  },
+  "notifications.failed_more": {
+    "defaultMessage": "続きの通知を読み込めませんでした。",
+    "description": "What the notifications say under them when more could not be loaded, beside a button to try again."
+  },
+  "notifications.empty": {
+    "defaultMessage": "まだ通知はありません。",
+    "description": "What the notifications say when the reader has none."
+  },
+  "notifications.untitled_event": {
+    "defaultMessage": "イベント",
+    "description": "The name of an event without a title, in the sentence of a notification about it."
+  },
+  "notifications.kind.account_moved": {
+    "defaultMessage": "{name} が別のアカウントに移転しました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of an account that the user followed, which moved to another account. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_account_moved": {
+    "defaultMessage": "{instance} のモデレーターが制限しているアカウントが別のアカウントに移転しました",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_appeal": {
+    "defaultMessage": "{instance} のモデレーターに新しい異議申し立てが届きました",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_custom_emoji_request": {
+    "defaultMessage": "{instance} のカスタム絵文字の申請が審査を待っています",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_report": {
+    "defaultMessage": "{instance} のモデレーターに新しい通報が届きました",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_sign_up": {
+    "defaultMessage": "{instance} で新しい登録が承認を待っています",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a new user signed up and waits for approval. It never names the user. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_webhook_disabled": {
+    "defaultMessage": "{instance} の webhook が無効になりました",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.announcement": {
+    "defaultMessage": "{instance}からのお知らせ: {title}",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.auto_delete_limit": {
+    "defaultMessage": "{instance}: 公開から{days, plural, other {# 日}}を過ぎた投稿が{daysLeft, plural, =0 {これから} other {# 日後から}}自動で削除されます",
+    "description": "The sentence of a notification in the reader's list of notifications: {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.scheduled_status_failed": {
+    "defaultMessage": "{instance}: 予約した投稿を公開できませんでした{reason, select, restricted { (今はアカウントから投稿できません)} reply_unavailable { (返信先の投稿が見られなくなりました)} quote_unavailable { (引用した投稿が見られなくなりました)} media_unavailable { (添付したファイルが使えなくなりました)} invalid { (投稿の条件を満たしていません)} rejected { (サーバーの自動審査で断られました)} other {}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.appeal_decided": {
+    "defaultMessage": "{instance} のモデレーターがあなたの異議申し立てを審査しました",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.custom_emoji_request_decided": {
+    "defaultMessage": "{instance} の管理者があなたのカスタム絵文字の申請を審査しました",
+    "description": "The sentence of a notification in the reader's list of notifications: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.boost": {
+    "defaultMessage": "{name}さんがあなたの投稿をブーストしました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that boosted the user's post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.favourite": {
+    "defaultMessage": "{name}さんがあなたの投稿をお気に入りに登録しました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that favourited the user's post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow": {
+    "defaultMessage": "{name}さんにフォローされました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that followed the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow_accepted": {
+    "defaultMessage": "{name}さんがフォローリクエストを承認しました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that accepted the user's follow request. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow_request": {
+    "defaultMessage": "{name}さんからフォローリクエストが届きました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that asked to follow the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.mention": {
+    "defaultMessage": "{name}さんがあなたをメンションしました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that wrote a post that mentions the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.moderation_notice": {
+    "defaultMessage": "{instance} のモデレーターからお知らせが届きました",
+    "description": "The sentence of a notification in the reader's list of notifications: a notice to the user from the moderators. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.other": {
+    "defaultMessage": "{instance} で新しい通知があります",
+    "description": "The sentence of a notification in the reader's list of notifications: {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.poll_closed": {
+    "defaultMessage": "参加した投票が終了しました",
+    "description": "The sentence of a notification in the reader's list of notifications: a poll that the user created or voted in has ended. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.quote": {
+    "defaultMessage": "{name}さんがあなたの投稿を引用しました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that quoted the user's post in a post of its own. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.reaction": {
+    "defaultMessage": "{name}さんがあなたの投稿にリアクションしました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.relationships_severed": {
+    "defaultMessage": "{instance} により、ほかのサーバーのアカウントとのいくつかのフォロー関係が解除されました",
+    "description": "The sentence of a notification in the reader's list of notifications: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.report_resolved": {
+    "defaultMessage": "{instance} で送った通報への対応が完了しました",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.status": {
+    "defaultMessage": "{name}さんが投稿しました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_payment_failed": {
+    "defaultMessage": "{instance} のサポーターのプランの支払いに失敗しました",
+    "description": "The sentence of a notification in the reader's list of notifications: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_plan_retired": {
+    "defaultMessage": "{instance} のサポーターのプランが廃止されました",
+    "description": "The sentence of a notification in the reader's list of notifications: the administrators retired the user's supporter plan, whose subscription ends with its period. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_subscription_ended": {
+    "defaultMessage": "{instance} のサポーターのプランの加入が終わりました",
+    "description": "The sentence of a notification in the reader's list of notifications: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_announced": {
+    "defaultMessage": "{instance} の終了が予告されました。終了の前にデータを持ち出してください",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_rescheduled": {
+    "defaultMessage": "{instance} の終了の日付が変わりました",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_withdrawn": {
+    "defaultMessage": "{instance} の終了の予告が取り消されました",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_service_closure_due": {
+    "defaultMessage": "{instance} の閉鎖日を過ぎました。サーバーをクローズしてください",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_created": {
+    "defaultMessage": "{instance} で新しいエラーが報告されました",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_regressed": {
+    "defaultMessage": "{instance} で解決したエラーが再び起きました",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_others": {
+    "defaultMessage": "{instance} でさらにエラーが報告されました",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_hook_failing": {
+    "defaultMessage": "{instance} の外部の審査が失敗し続けています",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_domain_list_failing": {
+    "defaultMessage": "{instance} のブロックリストの購読で取得の失敗が続いています",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_hook_appeal": {
+    "defaultMessage": "{instance} のモデレーターに、拒否された投稿への異議申し立てが届きました",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.hook_appeal_decided": {
+    "defaultMessage": "{instance} のモデレーターが、拒否された投稿への異議申し立てを審査しました",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_service_closure": {
+    "defaultMessage": "{instance} の終了のため、サポーターの加入が解約されます",
+    "description": "The sentence of a notification in the reader's list of notifications: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.voice_room_started": {
+    "defaultMessage": "{name}さんが通話のルームを開きました",
+    "description": "The sentence of a notification in the reader's list of notifications: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.voice_room_invited": {
+    "defaultMessage": "{name}さんから通話のルームに招待されました",
+    "description": "The sentence of a notification in the reader's list of notifications: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.reply_request": {
+    "defaultMessage": "{name}さんがあなたの投稿への返信の承認を求めています",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.boost_request": {
+    "defaultMessage": "{name}さんがあなたの投稿のブーストの承認を求めています",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.quote_request": {
+    "defaultMessage": "{name}さんがあなたの投稿の引用の承認を求めています",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.interaction_accepted": {
+    "defaultMessage": "{name}さんがあなたの返信・ブースト・引用を承認しました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.interaction_rejected": {
+    "defaultMessage": "{name}さんがあなたの返信・ブースト・引用を断りました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_invited": {
+    "defaultMessage": "{name}さんから「{title}」に招待されました",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that invited them. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_schedule_confirmed": {
+    "defaultMessage": "「{title}」の日時が決まりました",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_changed": {
+    "defaultMessage": "「{title}」の日時か場所が変わりました",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_cancelled": {
+    "defaultMessage": "「{title}」は中止になりました",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_reminder": {
+    "defaultMessage": "{unit, select, day {「{title}」は{count, plural, other {# 日}}後に始まります} hour {「{title}」は{count, plural, other {# 時間}}後に始まります} other {「{title}」は{count, plural, other {# 分}}後に始まります}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_started": {
+    "defaultMessage": "「{title}」が始まります",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_room_unavailable": {
+    "defaultMessage": "「{title}」の通話のルームを開けません",
+    "description": "The sentence of a notification in the reader's list of notifications: The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.requests": {
+    "defaultMessage": "{people, plural, other {#人からのリクエスト}} · {count, plural, other {通知 #件}}",
+    "description": "The row at the top of the notifications that opens the requests: notifications the reader's notification policy held back, one request per account. people is how many accounts, count how many notifications."
+  }
+}

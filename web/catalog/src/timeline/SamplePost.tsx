@@ -4,7 +4,7 @@
 // its actions as the server would (answers.ts), so that it behaves while nothing is fetched.
 
 import { Post, type PostAction, type PostTranslation } from "@my/app-components";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { answered } from "./answers";
 import { statusOf, translationOf, type TimelinePost } from "./fixtures";
 
@@ -16,17 +16,10 @@ export function SamplePost({
   post,
   lang,
   translationAs,
-  context,
-  details,
-  stamp,
 }: {
   post: TimelinePost;
   lang: "en" | "ja";
   translationAs?: ((t: PostTranslation) => PostTranslation) | undefined;
-  /** The screen's own line over the post, lines under its body, and the stamp's absence (the post's own props). */
-  context?: ReactNode;
-  details?: ReactNode;
-  stamp?: boolean | undefined;
 }) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
@@ -46,9 +39,6 @@ export function SamplePost({
       translatable={translation !== undefined}
       translation={translated ? translation : undefined}
       onAction={onAction}
-      context={context}
-      details={details}
-      stamp={stamp}
     />
   );
 }

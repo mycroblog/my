@@ -1,0 +1,38 @@
+{
+  "thread.back": {
+    "defaultMessage": "戻る",
+    "description": "The button at the top of a post's screen that goes back to where the reader came from."
+  },
+  "thread.label": {
+    "defaultMessage": "スレッド",
+    "description": "The name of the feed of a post with what it replies to and its replies, for assistive technology."
+  },
+  "thread.earlier": {
+    "defaultMessage": "{count, plural, other {前の投稿を#件表示}}",
+    "description": "The fold, in a thread, of the posts between its first post and the two the focused post replies to closest; pressing it shows them. count is how many."
+  },
+  "thread.replies": {
+    "defaultMessage": "返信",
+    "description": "The heading of the replies under the focused post of a thread."
+  },
+  "thread.more_replies": {
+    "defaultMessage": "{count, plural, other {さらに#件の返信を表示}}",
+    "description": "The fold at the end of a thread's replies; pressing it shows more of them. count is how many."
+  },
+  "thread.no_replies": {
+    "defaultMessage": "まだ返信はありません。",
+    "description": "What a post's screen says under a post that has no replies."
+  },
+  "thread.loading": {
+    "defaultMessage": "投稿を読み込んでいます…",
+    "description": "What a post's screen says while the post and its thread load."
+  },
+  "thread.failed": {
+    "defaultMessage": "投稿を読み込めませんでした。",
+    "description": "What a post's screen says when the post could not be loaded (it was deleted, or the reader may not see it, or the server did not answer), beside a button to try again."
+  },
+  "thread.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button that loads the post again after it failed."
+  }
+}

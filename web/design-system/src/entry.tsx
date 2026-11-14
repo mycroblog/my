@@ -9,6 +9,7 @@
 // truncates at its end in either direction. Every part lays out in the reader's direction (locale.ts).
 
 import { useId, useRef, useState, type ReactNode } from "react";
+import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
 import { useFeedPosition } from "./feed";
@@ -173,6 +174,11 @@ const byline = tv({
     lines: "min-w-0 flex-1",
     line: "flex min-w-0 items-baseline gap-entry-name leading-entry",
     name: "min-w-0 shrink truncate font-strong",
+    // A name that opens its account: in the text's color, underlined only while hovered.
+    link: [
+      "min-w-0 shrink truncate rounded-control text-current no-underline outline-hidden",
+      "data-hovered:underline data-focus-visible:shadow-focus",
+    ],
     end: "ms-auto flex flex-none",
     // The handle's line, in the page's direction, so that the handle sits at the line's start in either; the handle
     // in it reads left-to-right and, as wide as it is up to the line, truncates at its own end.
@@ -201,17 +207,27 @@ export type BylineProps = {
   end?: ReactNode;
   /** All on one line, beside an inline avatar. */
   compact?: boolean | undefined;
+  /** Where the name leads: the account's profile. */
+  href?: string | undefined;
 };
 
 /** Who wrote an entry: the avatar, the name and what ends its line, and the handle. */
-export function Byline({ avatar, name, nameId, handle, end, compact = false }: BylineProps) {
+export function Byline({ avatar, name, nameId, handle, end, compact = false, href }: BylineProps) {
   const s = byline({ compact });
   const own = useId();
-  const nameEl = (
+  const bdi = (
     <bdi id={nameId ?? own} className={s.name()}>
       {name}
     </bdi>
   );
+  const nameEl =
+    href === undefined ? (
+      bdi
+    ) : (
+      <Link href={href} className={s.link()}>
+        {bdi}
+      </Link>
+    );
   const handleEl = (
     <span className={s.handleLine()}>
       <bdi dir="ltr" className={s.handle()}>
@@ -246,6 +262,10 @@ const stamp = tv({
   slots: {
     root: "flex flex-none items-center gap-entry-caption text-caption text-muted-text",
     glyph: "inline-flex flex-none",
+    link: [
+      "rounded-control text-current no-underline outline-hidden",
+      "data-hovered:underline data-focus-visible:shadow-focus",
+    ],
   },
 });
 
@@ -254,14 +274,21 @@ export type StampProps = {
   glyph?: { icon: IconName; label: string } | undefined;
   /** The moment, as a Date or an ISO 8601 string. */
   date: Date | string;
+  /** Where the time leads: the entry on a page of its own. */
+  href?: string | undefined;
 };
 
 /**
  * A glyph and the relative time, kept together at the end of a byline's line. The time is isolated (<bdi>), so that
  * it keeps its own order beside the glyph in either direction, with words of an RTL locale reading right-to-left.
  */
-export function Stamp({ glyph, date }: StampProps) {
+export function Stamp({ glyph, date, href }: StampProps) {
   const s = stamp();
+  const time = (
+    <bdi>
+      <RelativeTime date={date} />
+    </bdi>
+  );
   return (
     <span className={s.root()}>
       {glyph !== undefined && (
@@ -269,9 +296,13 @@ export function Stamp({ glyph, date }: StampProps) {
           <Icon name={glyph.icon} place="caption" />
         </span>
       )}
-      <bdi>
-        <RelativeTime date={date} />
-      </bdi>
+      {href === undefined ? (
+        time
+      ) : (
+        <Link href={href} className={s.link()}>
+          {time}
+        </Link>
+      )}
     </span>
   );
 }

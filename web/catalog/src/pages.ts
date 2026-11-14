@@ -49,17 +49,22 @@ export const pages = [
   },
   { path: "/app/timeline", title: "Timeline", about: "The app's home screen, on sample data.", sections: [] },
   { path: "/app/auth", title: "Auth", about: "The rough of the sign-in and sign-up screens.", sections: [] },
-  { path: "/app/post", title: "Post", about: "The rough of a post with its thread (?state=).", sections: [] },
+  {
+    path: "/app/post",
+    title: "Post",
+    about: "The app's post with its thread, on sample data (?state=).",
+    sections: [],
+  },
   {
     path: "/app/notifications",
     title: "Notifications",
-    about: "The rough of the notifications, of every kind the reader meets.",
+    about: "The app's notifications, on sample data, with a control that receives one.",
     sections: [],
   },
   {
     path: "/app/profile",
     title: "Profile",
-    about: "The rough of a profile, in each of its states (?state=).",
+    about: "The app's profile, on sample data, in each of its states (?state=).",
     sections: [],
   },
 ] as const satisfies readonly Page[];
