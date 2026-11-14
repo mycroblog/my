@@ -10,7 +10,7 @@ name: CI
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
 #   server-test, and repo, and the container contracts of the adapters it changes (scripts/changed-contracts.sh);
 #   repo also checks the documentation site (web/docs), the catalog tools (tools/i18n), and the published packages
-#   when their contexts change.
+#   when their contexts change; e2e runs the E2E tests of the web client when the e2e context changes.
 # - pull_request labelled `allow:full-ci`: both.
 #
 # Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
@@ -60,6 +60,7 @@ jobs:
       tofu: ${{ steps.select.outputs.tofu }}
       site: ${{ steps.select.outputs.site }}
       web: ${{ steps.select.outputs.web }}
+      e2e: ${{ steps.select.outputs.e2e }}
       contracts: ${{ steps.select.outputs.contracts }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
@@ -111,6 +112,7 @@ jobs:
           touches tofu tofu
           touches site site
           touches web web
+          touches e2e e2e
           # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
           # sides, so that a job's `if` finds a name with contains().
           contracts=" $(scripts/changed-contracts.sh "$RUNNER_TEMP/changed" | tr '\n' ' ')"
@@ -684,6 +686,31 @@ jobs:
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:mybot-ts-runtimes
 
+  e2e:
+    # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
+    # test build of bin/my (web:e2e builds it, with the client embedded), when the e2e context changes: a workspace
+    # package that @my/app or @my/e2e depends on, or the server code (scripts/changed-contexts.sh). Chromium comes from
+    # Playwright's CLI, run on Bun.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps --only-shell chromium
+      - name: web:e2e
+        run: scripts/task.sh web:e2e
+
   check:
     # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when
     # every job above passed, or was skipped because the event or the change does not need it. A job that calls a
@@ -691,7 +718,7 @@ jobs:
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it. A draft
     # reports nothing, rather than a pass that checked nothing.
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo]
+    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

@@ -46,6 +46,10 @@
       "entry": ["shot.ts"],
       "project": ["src/**/*.{ts,tsx}", "shot.ts"]
     },
+    "web/e2e": {
+      "entry": ["src/seed/main.ts", "specs/**/*.ts"],
+      "project": ["src/**/*.ts", "specs/**/*.ts"]
+    },
     "web/i18n": {
       "entry": ["src/**/*.test.ts"],
       "project": ["src/**/*.ts"]

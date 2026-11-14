@@ -15,6 +15,7 @@
     "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",
     "@my/design-tokens": "workspace:*",
+    "@my/e2e": "workspace:*",
     "@my/platform": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
     "react": "19.3.1",

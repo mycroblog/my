@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The HTML the server renders a local post's text as (internal/app/content/text.go, ParsedText.HTML), for the samples
-// of the catalog: a paragraph at each blank line, a line break at one, and its URLs, mentions and hashtags linked as
+// The HTML the server renders a local post's text as (internal/app/content/text.go, ParsedText.HTML), for the fake API
+// (api.ts): a paragraph at each blank line, a line break at one, and its URLs, mentions and hashtags linked as
 // Mastodon links them, a URL shown without its scheme and cut after 30 characters. Every mention resolves, to the
 // profile page on the server of its handle.
 

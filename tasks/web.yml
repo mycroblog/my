@@ -5,7 +5,8 @@
 # Every tool runs on Bun alone (ADR-0025 §10). The checks of each member live with its area: web/docs in
 # tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
 # that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
-# development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059), the
+# development packages web/devtools and web/catalog (ADR-0168), the scenarios, demo and E2E tests of web/e2e
+# (ADR-0015), the tokens of web/design-tokens (ADR-0059), the
 # components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the platform of
 # web/platform (ADR-0028 §17), the server data of web/app-data (ADR-0028 §6), the features of web/app-features and
 # the app of web/app (ADR-0025 §2) here.
@@ -74,8 +75,29 @@ tasks:
     cmds:
       - bun --bun shot.ts {{.CLI_ARGS}}
 
+  # The demo server of web/e2e (ADR-0015 §8): the test build of bin/my with the web client, on a fresh database in
+  # .tmp/demo/ seeded with the scenario, at http://localhost:8787 (DEMO_PORT moves it) until Ctrl-C.
+  demo:
+    desc: Build the test build of bin/my (GO_TAGS=e2e_fakes) and run the demo server seeded with the scenario of web/e2e, printing its URL and the people's sign-ins
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    cmds:
+      - bun --conditions=@mycroblog/source web/e2e/src/server/main.ts
+
+  # The E2E tests (ADR-0015 §1), against the same demo server, which their global setup starts. Chromium comes from
+  # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the e2e context changes.
+  e2e:
+    desc: Build the test build of bin/my (GO_TAGS=e2e_fakes) and run the Playwright tests of web/e2e against the demo server (CLI_ARGS go to Playwright)
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test {{.CLI_ARGS}}
+
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/catalog with tsc
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/e2e with tsc
     deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
@@ -87,6 +109,7 @@ tasks:
       - cd web/app && bun --bun tsc -p .
       - cd web/devtools && bun --bun tsc -p .
       - cd web/catalog && bun --bun tsc -p .
+      - cd web/e2e && bun --bun tsc -p .
 
   # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3), and
   # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17).
@@ -94,20 +117,20 @@ tasks:
     desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/catalog web/i18n
+      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/catalog web/e2e web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
     desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n, naming the logical one
     cmds:
-      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/catalog web/i18n
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/catalog web/e2e web/i18n
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/catalog (knip.json)
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/e2e (knip.json)
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/catalog
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/catalog --workspace web/e2e
 
   test:
     desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools

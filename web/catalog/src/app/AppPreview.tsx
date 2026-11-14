@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The app's screens as the app shows them, on the catalog's dev server: the router and the shell of @my/app, its
-// features from @my/app-features, signed in to the fake server of server.ts instead of a live one. Each page of the
-// catalog opens the app at a screen, in the state `?state=` names: /app/timeline the home timeline, /app/post a post in
-// its thread or alone, /app/notifications the notifications, /app/profile a profile in each state the reader meets it
-// in. The router keeps its own history, so the catalog's address stays the page's, and a link inside the app moves the
+// features from @my/app-features, signed in to the fake API of @my/e2e, which answers from the scenario as its reader
+// (yuki) reads it. Each page of the catalog opens the app at a screen, in the state `?state=` names: /app/timeline the
+// home timeline, /app/post a post in its thread or alone, /app/notifications the notifications, /app/profile a profile
+// in each state the reader meets it in. The router keeps its own history, so the catalog's address stays the page's, and a link inside the app moves the
 // app alone. The catalog's own controls, over the app, stand in for the stream: they hand new posts or a notification
 // to the app as the stream does, or report a reconnection.
 
@@ -17,9 +17,13 @@ import {
   type NotificationItem,
 } from "@my/app-data";
 import { Button } from "@my/design-system";
+import { createFakeApi, fakeHost, fakeOrigin } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { CSSProperties, ReactNode } from "react";
-import { newNotification, newPosts, serve, threadPaths } from "./server";
+
+const { serve, newPosts, newNotification, postPath } = createFakeApi({
+  failFirst: new URLSearchParams(location.search).get("fail") === "first",
+});
 
 /** A page of the catalog: where it opens the app, in each of its states. */
 type Screen = { readonly states: readonly { id: string; name: string; at: string }[] };
@@ -28,19 +32,19 @@ const screens: Readonly<Record<string, Screen>> = {
   "/app/timeline": { states: [{ id: "home", name: "Home", at: "/" }] },
   "/app/post": {
     states: [
-      { id: "thread", name: "Thread", at: threadPaths.thread },
-      { id: "lone", name: "Alone, no replies", at: threadPaths.lone },
+      { id: "thread", name: "Thread", at: postPath("yuki-ridge-reply") },
+      { id: "lone", name: "Alone, no replies", at: postPath("mio-hello") },
     ],
   },
   "/app/notifications": { states: [{ id: "all", name: "All", at: "/notifications" }] },
   "/app/profile": {
     states: [
       { id: "own", name: "Own", at: "/profile" },
-      { id: "local", name: "Local, follows you", at: "/@hana" },
-      { id: "remote", name: "Remote, following", at: "/@alice@example.social" },
-      { id: "locked", name: "Locked", at: "/@takuya@example.jp" },
-      { id: "blocked", name: "Blocked", at: "/@ravi@fedi.example.net" },
-      { id: "muted", name: "Muted", at: "/@lena@toot.example.eu" },
+      { id: "mutual", name: "Following each other", at: "/@sam" },
+      { id: "locked", name: "Locked, following", at: "/@ren" },
+      { id: "follower", name: "Follows you", at: "/@mio" },
+      { id: "blocked", name: "Blocked", at: "/@quickdeals" },
+      { id: "muted", name: "Muted", at: "/@kai" },
     ],
   },
 };
@@ -53,11 +57,10 @@ const screen = screens[page] ?? { states: [{ id: "home", name: "Home", at: "/" }
 const asked = new URLSearchParams(location.search).get("state");
 const state = screen.states.find((s) => s.id === asked) ?? screen.states[0] ?? { id: "home", name: "Home", at: "/" };
 
-const server = "https://my.example";
-const data = createAppData(createClient({ server, retry: { disabled: true }, fetch: serve }));
+const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: serve }));
 const router = createAppRouter({
   data,
-  config: { apiOrigin: server, instanceName: "my.example", defaultLocale: "en", clientId: "my-web" },
+  config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
   at: state.at,
 });
 

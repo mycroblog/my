@@ -9,7 +9,7 @@
 import type { ContentEmoji, PostAccount, PostStatus, PostTranslation, PostVisibility } from "@my/app-components";
 import type { Visibility } from "../Times";
 import { images } from "../Avatars";
-import { serverHtml } from "../serverHtml";
+import { serverHtml } from "@my/e2e/fake";
 
 const minute = 60_000;
 const hour = 60 * minute;
@@ -77,7 +77,7 @@ const plate = (table: string, food: string) =>
   );
 
 /** The generated scenes the sample posts show, which the sample profiles (app/samples.ts) take for banners too. */
-export const scenes = {
+const scenes = {
   dawn: scene("#f6c7a1", "#fbe6cf", "#fff4e0", ["#c98f7b", "#9a6a63", "#5d4448"]),
   sea: scene("#7fb3d5", "#d6ecf5", "#fffbe8", ["#5b8fa8", "#3f6f86", "#2a4d5f"]),
   forest: scene("#a9d0b0", "#e8f2df", "#fff9d9", ["#6f9a6a", "#4c7650", "#2f4f36"]),
@@ -353,7 +353,7 @@ export const emojis: ContentEmoji[] = Object.entries(emoji).map(([shortcode, src
 const here = "my.example";
 
 /** An account as a status embeds it; its handle is its id. */
-export function accountOf(account: Account): PostAccount {
+function accountOf(account: Account): PostAccount {
   const [, username = "", domain = here] = account.handle.split("@");
   return {
     id: account.handle,

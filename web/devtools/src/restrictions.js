@@ -20,6 +20,11 @@
 //   §17): no `navigator` or other global of the platform (as a global or a member of any object), no `"x" in window`
 //   (or self, globalThis, document and their members), and no `matchMedia` of a platform media feature written as a
 //   literal (display-mode, pointer, hover). It does not see a query computed at run time.
+//
+// - e2e-queries: in @my/e2e, no element is found by its position (`.nth()`, `.first()`, `.last()`), its markup
+//   (`.locator()` with a CSS or XPath selector written in the file, `$`, `$$`) or a test ID (`getByTestId`), what a
+//   reader of the screen cannot see. It refuses a method of those names on any object, and does not see a selector
+//   held in a variable.
 
 const DESIGN_SYSTEM = /^@my\/design-system(?:\/|$)/;
 const LAYOUT_PROPS = new Set(["className", "style"]);
@@ -337,9 +342,55 @@ function createPlatformGlobals(context) {
   };
 }
 
+/** The Playwright calls that find an element by its position, its markup or a test ID: what a reader cannot see. */
+const POSITIONAL = new Set(["nth", "first", "last"]);
+const MARKUP = new Set(["$", "$$", "getByTestId"]);
+
+/** Whether `node` is a string written in the file: a literal, a template, or a concatenation of them. */
+function isString(/** @type {Node | undefined} */ node) {
+  if (node === undefined) return false;
+  const expression = unwrap(node);
+  if (expression.type === "Literal") return typeof expression.value === "string";
+  if (expression.type === "TemplateLiteral") return true;
+  if (expression.type === "BinaryExpression" && expression.operator === "+")
+    return isString(expression.left) || isString(expression.right);
+  return false;
+}
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function createE2EQueries(context) {
+  function report(/** @type {Node} */ node, /** @type {string} */ what) {
+    context.report({
+      node,
+      message:
+        `\`${what}\` finds an element by what a reader cannot see. Query by role and accessible name ` +
+        "(getByRole, getByLabel, getByText), narrowed by the region or the item it is in, and put the operations of a " +
+        "screen in @my/e2e for the specs to share.",
+    });
+  }
+  return {
+    CallExpression(/** @type {Node} */ node) {
+      const callee = unwrap(node.callee);
+      if (callee.type !== "MemberExpression" || callee.computed || callee.property.type !== "Identifier") return;
+      const name = callee.property.name;
+      if (POSITIONAL.has(name)) report(callee.property, `.${name}()`);
+      else if (MARKUP.has(name)) report(callee.property, `.${name}()`);
+      else if (name === "locator" && isString(node.arguments[0])) report(callee.property, ".locator(selector)");
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
+    "e2e-queries": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a query of an element by position, markup or test ID in the E2E tests" },
+        schema: [],
+      },
+      create: createE2EQueries,
+    },
     "platform-globals": {
       meta: {
         type: "problem",

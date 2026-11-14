@@ -28,7 +28,7 @@ expect() {
   fi
 }
 
-all="docs go i18n api web docker shell schema agentkit mykit tofu site"
+all="docs go i18n api web docker shell schema agentkit mykit tofu site e2e"
 
 # Shared configuration selects everything; the tasks of one area select that area and the areas that call its tasks;
 # the workflows that run no check of a pull request or a merge group select nothing but agentkit (its context map).
@@ -43,7 +43,7 @@ expect "the tasks of the emoji tables, which no check runs" "agentkit" tasks/emo
 expect "the tasks of the email previews" "go agentkit" tasks/mail.yml
 expect "the Nightly" "agentkit" .github/workflows/nightly.yml
 expect "the ignore list of git, which no check reads" "agentkit" .gitignore
-expect "the tasks of the workspace, which the other areas call (web:install)" "docs go i18n api web agentkit mykit site" tasks/web.yml
+expect "the tasks of the workspace, which the other areas call (web:install)" "docs go i18n api web agentkit mykit site e2e" tasks/web.yml
 
 # The OpenTofu modules: the public module and the internal ones select tofu, and their Markdown docs as well.
 expect "the public module" "agentkit tofu" deploy/opentofu/mycroblog-gcp/main.tf
@@ -60,7 +60,7 @@ expect "a Markdown file of web/docs" "docs agentkit site" web/docs/README.md
 expect "web/docs and a published document" "docs agentkit site" web/docs/astro.config.ts docs/operations/backup.md
 # The workspace files every member installs, type-checks, and lints with select the members' contexts (and go, which the i18n generators write to).
 expect "the workspace manifest" "go i18n web agentkit mykit site" package.json
-expect "the workspace lockfile" "go i18n web agentkit mykit site" bun.lock
+expect "the workspace lockfile" "go i18n web agentkit mykit site e2e" bun.lock
 expect "the workspace's bunfig" "go i18n web agentkit mykit site" bunfig.toml
 expect "the knip configuration" "go i18n web agentkit mykit site" knip.json
 expect "the Oxlint configuration" "go i18n web agentkit mykit site" .oxlintrc.json
@@ -68,11 +68,18 @@ expect "the base tsconfig" "go i18n web agentkit mykit site" tsconfig.base.json
 # The catalogs and their tools, the brand assets, and a package under web/.
 expect "a catalog" "go i18n agentkit" locales/en/server/auth.json
 expect "the catalog tools" "go i18n agentkit" tools/i18n/src/check.ts
-expect "a web package's catalog, which @my/i18n compiles for it" "go i18n web agentkit" web/design-system/locales/en/disclosure.json
+expect "a web package's catalog, which @my/i18n compiles for it" "go i18n web agentkit e2e" web/design-system/locales/en/disclosure.json
 expect "@my/i18n" "go i18n web agentkit" web/i18n/src/compile.ts
 expect "the copy role's knowledge, which the copy lint reads" "docs go i18n agentkit" .claude/knowledge/copy/decisions.md
 expect "a brand asset" "web docker agentkit" web/brand/icon.svg
-expect "a package under web/" "web agentkit" web/app/src/main.tsx
+expect "a package under web/" "web agentkit e2e" web/app/src/main.tsx
+# The E2E tests run when what they run changes: a workspace package @my/app or @my/e2e depends on, or the server.
+expect "@my/e2e" "web agentkit e2e" web/e2e/specs/smoke.spec.ts
+expect "a package the app depends on, through @my/app-data" "agentkit mykit e2e" pkg/mykit/ts/src/client.ts
+expect "a package neither depends on" "web agentkit" web/catalog/src/Catalog.tsx
+expect "a package outside the graph" "agentkit mykit" pkg/mybot/ts/src/index.ts
+expect "the server's code" "go agentkit e2e" internal/app/content/text.go
+expect "the tasks of bin/my, which web:e2e calls" "go web agentkit e2e" tasks/go.yml
 expect "the shared configuration" "$all" Taskfile.yml
 expect "an unknown path" "$all" unknown/file.xyz
 

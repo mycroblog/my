@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The auth screens as the auth entry shows them (ADR-0090 §16), at /app/auth on the catalog's dev server: the screens
-// of @my/app-features, each in each of its states, rendered from sample data of the server's shell (samples.ts), one
+// of @my/app-features, each in each of its states, rendered from the page data of @my/e2e's fake server, one
 // full page after another under a catalog label whose id names it (`auth-<screen>-<state>`, for `web:shot --section`).
 // `?screen=<id>` keeps one screen's states, `&state=<id>` one state alone. The language is the page's (`?lang=en|ja`),
 // the scheme the page's. No refusal takes the focus here, where many show at once; the consent's wait runs as on its
@@ -12,7 +12,7 @@ import { useLocale } from "@my/design-system";
 import type { CSSProperties } from "react";
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
-import { samples, type SampleScreen } from "./samples";
+import { authScreens as samples, type AuthScreenStates as SampleScreen } from "@my/e2e/fake";
 
 const params = new URLSearchParams(location.search);
 const onlyScreen = params.get("screen");

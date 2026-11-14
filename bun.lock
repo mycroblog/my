@@ -141,6 +141,7 @@
         "@my/app-features": "workspace:*",
         "@my/design-system": "workspace:*",
         "@my/design-tokens": "workspace:*",
+        "@my/e2e": "workspace:*",
         "@my/platform": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
         "react": "19.3.1",
@@ -214,6 +215,17 @@
       },
       "devDependencies": {
         "@types/node": "26.6.6",
+      },
+    },
+    "web/e2e": {
+      "name": "@my/e2e",
+      "dependencies": {
+        "@my/app-features": "workspace:*",
+        "@mycroblog/mykit": "workspace:*",
+      },
+      "devDependencies": {
+        "@playwright/test": "1.65.0",
+        "@types/bun": "1.4.4",
       },
     },
     "web/i18n": {
@@ -520,6 +532,8 @@
 
     "@my/docs": ["@my/docs@workspace:web/docs"],
 
+    "@my/e2e": ["@my/e2e@workspace:web/e2e"],
+
     "@my/i18n": ["@my/i18n@workspace:web/i18n"],
 
     "@my/i18n-tools": ["@my/i18n-tools@workspace:tools/i18n"],
@@ -723,6 +737,8 @@
     "@pagefind/windows-arm64": ["@pagefind/windows-arm64@1.6.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-wUrniW3REr7VWJHz6xE6F/p/AQgHDFpGZiY9sbWT71KfEijDE5Jnc37V8zc7cilV9h/QkwJGXoEP2+ZLwDmhtw=="],
 
     "@pagefind/windows-x64": ["@pagefind/windows-x64@1.6.0", "", { "os": "win32", "cpu": "x64" }, "sha512-cUA2+yXfbymdJllyMjY5YTBwuOgh0/H53Pn5fYKjDnDjk154Ft4U5RVj3TenWySPL/jG6zJfARUWSlyUyXHlZw=="],
+
+    "@playwright/test": ["@playwright/test@1.65.0", "", { "dependencies": { "playwright": "1.65.0" }, "bin": { "playwright": "cli.js" } }, "sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ=="],
 
     "@react-types/shared": ["@react-types/shared@3.37.0", "", { "peerDependencies": { "react": "^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1" } }, "sha512-VNlZuifu4tHdxWPfHvoMfKsHA9kVTCGkduv5vKVTdinm8wHFJNhyVB5RzIMiRFj0q3RKoCbP68u2zaoBSiFueg=="],
 

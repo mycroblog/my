@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The sample data of the auth screens' preview: what the server's shell would carry for each screen and state
-// (internal/interface/authpages), on a server with no logo of its own and on one with its own logo and banner. What
-// the server words (a form's outcome, the consent's permissions, a moderation action) is sampled in en and ja.
+// What the server's shell carries for each auth screen and state (internal/interface/authpages), for the screens'
+// stories: the scenario's server (its name and description), people (who signs in, who consents) and app (what they
+// consent to), and a server with its own logo and banner. What the server words (a form's outcome, the consent's
+// permissions, a moderation action) is sampled in en and ja.
 
 import type { AuthPage } from "@my/app-features";
+import { apps, instance, personOf } from "../scenario";
+import { fakeHost } from "./api";
 
 const svg = (body: string, w: number, h: number) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -14,12 +17,17 @@ type Lang = "en" | "ja";
 /** A sample of what the server words, in the preview's language. */
 type Worded = Record<Lang, string>;
 
+/** Who signs in and consents on the screens: the fake API's reader. */
+const reader = personOf("yuki");
+const email = reader.email;
+const firstApp = apps[0];
+if (firstApp === undefined) throw new Error("fake: the scenario has no app");
+const app = firstApp;
+const appHost = new URL(app.website).host;
+
 const plain = {
-  name: "my.example",
-  description: {
-    en: "A small server for friends who like books, walks and slow mornings. Everyone is welcome to read along.",
-    ja: "本と散歩とゆっくりした朝が好きな仲間のための小さなサーバーです。どなたでも気軽に読みに来てください。",
-  },
+  name: instance["name"] ?? fakeHost,
+  description: { en: instance["short_description"] ?? "", ja: instance["short_description"] ?? "" },
 };
 
 const branded = {
@@ -91,8 +99,8 @@ const words = {
   },
   humanPrivacy: { en: "Cloudflare Privacy Policy", ja: "Cloudflare のプライバシーポリシー" },
   forgotSent: {
-    en: "If an account uses alice@example.com, a link to set a new password is on its way. The link works for 60 minutes. If no email arrives, check the spam folder and the address.",
-    ja: "alice@example.com を使っているアカウントがあれば、新しいパスワードを設定するリンクを送りました。リンクの有効期限は 60 分です。メールが届かないときは、迷惑メールのフォルダーとアドレスを確かめてください。",
+    en: `If an account uses ${email}, a link to set a new password is on its way. The link works for 60 minutes. If no email arrives, check the spam folder and the address.`,
+    ja: `${email} を使っているアカウントがあれば、新しいパスワードを設定するリンクを送りました。リンクの有効期限は 60 分です。メールが届かないときは、迷惑メールのフォルダーとアドレスを確かめてください。`,
   },
   forgotLocked: {
     en: "Too many requests from your network: try again in 10 minutes.",
@@ -114,11 +122,11 @@ const words = {
     en: "This server has not verified this application. Its name is the application's own claim.",
     ja: "このサーバーが確認していないアプリです。名前はアプリ自身の申告です。",
   },
-  origin: { en: "Comes from tusky.example", ja: "出どころ: tusky.example" },
-  website: { en: "Website it declared: https://tusky.example", ja: "申告されたサイト: https://tusky.example" },
+  origin: { en: `Comes from ${appHost}`, ja: `出どころ: ${appHost}` },
+  website: { en: `Website it declared: ${app.website}`, ja: `申告されたサイト: ${app.website}` },
   impersonation: {
-    en: "After you allow, the answer goes to tusky, which other apps on your device can also claim. It may be a different app from the one named above. Allow only if you started this from that app.",
-    ja: "許可すると、答えは tusky に送られます。これはあなたの端末のほかのアプリも名乗れる宛先で、上に出ている名前とは別のアプリかもしれません。そのアプリから始めた場合だけ許可してください。",
+    en: "After you allow, the answer goes to tidepool, which other apps on your device can also claim. It may be a different app from the one named above. Allow only if you started this from that app.",
+    ja: "許可すると、答えは tidepool に送られます。これはあなたの端末のほかのアプリも名乗れる宛先で、上に出ている名前とは別のアプリかもしれません。そのアプリから始めた場合だけ許可してください。",
   },
   groupCaution: { en: "Permissions that need your attention", ja: "特に注意が必要な権限" },
   groupWrite: { en: "Permissions that change things", ja: "変更できる権限" },
@@ -140,8 +148,8 @@ const words = {
   scopeReadStatuses: { en: "Read posts and timelines", ja: "投稿とタイムラインの読み取り" },
   scopeReadNotifications: { en: "Read your notifications", ja: "通知の読み取り" },
   verifyEmailStatus: {
-    en: "Confirm your email address: open the link we sent to alice@example.com.",
-    ja: "alice@example.com に送ったリンクを開いて、メールアドレスを確認してください。",
+    en: `Confirm your email address: open the link we sent to ${email}.`,
+    ja: `${email} に送ったリンクを開いて、メールアドレスを確認してください。`,
   },
   suspended: { en: "Suspended", ja: "凍結" },
   endsIn: { en: "Ends in 6 days", ja: "あと 6 日で終わります" },
@@ -166,10 +174,11 @@ const words = {
 } satisfies Record<string, Worded>;
 
 type Specimen = { id: string; name: string; page: AuthPage };
-export type SampleScreen = { id: string; name: string; states: Specimen[] };
+/** An auth screen and the page data of each of its states. */
+export type AuthScreenStates = { id: string; name: string; states: Specimen[] };
 
-/** Every screen and its states, in the order of the flow, with what the server words in `lang`. */
-export function samples(lang: Lang): SampleScreen[] {
+/** Every auth screen and its states, in the order of the flow, with what the server words in `lang`. */
+export function authScreens(lang: Lang): AuthScreenStates[] {
   const w = (k: keyof typeof words) => words[k][lang];
   const server = { name: plain.name, description: plain.description[lang] };
   const own = { ...branded, description: branded.description[lang] };
@@ -180,13 +189,13 @@ export function samples(lang: Lang): SampleScreen[] {
       { path: "/about/terms", title: w("terms") },
       { path: "/about/privacy", title: w("privacy") },
     ],
-    statusPageUrl: "https://status.example",
+    statusPageUrl: `https://status.${fakeHost}`,
   };
   const external = [
     { label: w("github"), url: "#github", kind: "github" },
     { label: w("discord"), url: "#discord", kind: "discord" },
   ];
-  const passkey = { options: { challenge: "c2FtcGxl", rpId: "my.example" }, challenge: "sample" };
+  const passkey = { options: { challenge: "c2FtcGxl", rpId: fakeHost }, challenge: "sample" };
   const humanCheck = {
     scriptSrc: "",
     containerClass: "cf-turnstile",
@@ -210,8 +219,8 @@ export function samples(lang: Lang): SampleScreen[] {
   };
   const signUp = { ...base, screen: "sign_up", signUp: signUpForm, humanCheck, external } as const;
   const consent = {
-    clientName: "Tusky Next",
-    redirectHost: "tusky.example",
+    clientName: app.name,
+    redirectHost: appHost,
     unverified: w("unverified"),
     origin: w("origin"),
     website: w("website"),
@@ -231,11 +240,11 @@ export function samples(lang: Lang): SampleScreen[] {
         scopes: [{ text: w("scopeReadStatuses") }, { text: w("scopeReadNotifications") }],
       },
     ],
-    account: { handle: "@kumi@my.example", displayName: "Kumi" },
+    account: { handle: `@${reader.username}@${fakeHost}`, displayName: reader.displayName },
     responseType: "code",
-    clientId: "https://tusky.example/client.json",
-    redirectUri: "https://tusky.example/callback",
-    scope: "read write",
+    clientId: app.key,
+    redirectUri: app.redirectUris[0] ?? "",
+    scope: app.scope,
     state: "sample",
     codeChallenge: "sample",
     codeChallengeMethod: "S256",
@@ -249,9 +258,9 @@ export function samples(lang: Lang): SampleScreen[] {
       name: "Sign in",
       states: [
         state("empty", signIn),
-        state("filled", { ...signIn, email: "alice@example.com" }),
-        state("server-error", { ...signIn, email: "alice@example.com", error: w("signInFailed") }),
-        state("locked", { ...signIn, email: "alice@example.com", error: w("signInLocked") }),
+        state("filled", { ...signIn, email }),
+        state("server-error", { ...signIn, email, error: w("signInFailed") }),
+        state("locked", { ...signIn, email, error: w("signInLocked") }),
         state("passkey-error", { ...signIn, passkey: { ...passkey, error: w("passkeyFailed") } }),
         state("human-check", { ...signIn, humanCheck }),
         state("providers-only", { ...base, screen: "sign_in", loginProvidersOnly: true, external }),
@@ -276,8 +285,8 @@ export function samples(lang: Lang): SampleScreen[] {
           error: w("signUpSummary"),
           signUp: {
             ...signUpForm,
-            username: "alice",
-            email: "alice@example.com",
+            username: reader.username,
+            email,
             errors: { username: w("usernameTaken"), password: w("passwordInvalid"), agreement: w("agreementRequired") },
           },
         }),
@@ -287,8 +296,8 @@ export function samples(lang: Lang): SampleScreen[] {
           screen: "sign_up",
           signUp: {
             ...signUpForm,
-            username: "alice",
-            email: "alice@example.com",
+            username: reader.username,
+            email,
             external: { ticket: "sample", provider: "GitHub", emailVerifiedHint: w("emailVerified") },
           },
         }),
@@ -321,7 +330,7 @@ export function samples(lang: Lang): SampleScreen[] {
           screen: "forgot_password",
           forgotPassword: {},
           humanCheck,
-          email: "alice@example.com",
+          email,
           error: w("forgotLocked"),
         }),
         state("sent", { ...base, screen: "forgot_password", forgotPassword: { sent: true }, notice: w("forgotSent") }),

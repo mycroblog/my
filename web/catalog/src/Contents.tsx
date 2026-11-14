@@ -9,7 +9,7 @@ import { Avatar, IconButton } from "@my/design-system";
 import { iconButton, rootPx, text, type Scheme } from "@my/design-tokens";
 import type { CSSProperties } from "react";
 import { images } from "./Avatars";
-import { serverHtml } from "./serverHtml";
+import { serverHtml } from "@my/e2e/fake";
 import { emojis } from "./timeline/fixtures";
 import { ago, caption, NameLine } from "./Times";
 
