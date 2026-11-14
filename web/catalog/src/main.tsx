@@ -8,9 +8,11 @@ import { createRoot } from "react-dom/client";
 import { Catalog } from "./Catalog";
 import { AppPreview } from "./timeline/AppPreview";
 
-// The catalog page at /, under the shortcuts of the app's keymap, and at /timeline the app's home screen, which places
-// its own.
-const timeline = location.pathname.replace(/\/+$/, "") === "/timeline";
+// The catalog's pages (Catalog.tsx), under the shortcuts of the app's keymap, and at /app/timeline the app's home
+// screen, which places its own. /timeline, its former address, which bookmarks and older notes name, leads there.
+const path = location.pathname.replace(/\/+$/, "");
+if (path === "/timeline") location.replace(`/app/timeline${location.search}${location.hash}`);
+const timeline = path === "/app/timeline";
 
 // The page's locale: `?lang=`, which the overlay's locale switch sets (en, ja, ar-XB), else <html lang>. The parts
 // read it, and its direction, from the I18nProvider; the page's <html> carries both.
@@ -42,7 +44,7 @@ createRoot(root).render(
           <AppPreview />
         ) : (
           <ShortcutProvider keymap={keymap}>
-            <Catalog />
+            <Catalog path={location.pathname} />
           </ShortcutProvider>
         )}
       </Html>

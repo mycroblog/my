@@ -32,7 +32,7 @@ function reloadTheme(): Plugin {
 // web:devtools-absent, which proves that the build leaves @my/devtools out. Tailwind builds the stylesheet of
 // @my/design-system without its own optimizer, and the build targets the browsers of light-dark() (ADR-0110 §14):
 // older targets would lower it to the system's scheme alone and lose an element's color-scheme. The condition
-// @mycroblog/source reads @mycroblog/mykit (under /timeline's @my/app-data) from its sources, which need no build.
+// @mycroblog/source reads @mycroblog/mykit (under /app/timeline's @my/app-data) from its sources, which need no build.
 export default defineConfig({
   plugins: [devtools(), react(), tailwindcss({ optimize: false }), reloadTheme()],
   resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },

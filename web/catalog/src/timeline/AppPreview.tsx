@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The home timeline screen as the app shows it, at /timeline on the catalog's dev server: the router and the shell of
+// The home timeline screen as the app shows it, at /app/timeline on the catalog's dev server: the router and the shell of
 // @my/app, its home timeline from @my/app-features, signed in to a fake server instead of a live one. The fake answers
 // the home timeline from the sample posts, a page of `pageSize` at a time, each page after the first a little late so
 // that loading more shows. With `?fail=first` the first page fails while the page opens (a fetch that React's strict
 // mode cancels and starts again included), so that the column's failed first load shows, and its retry, later,
-// succeeds late. The router keeps its own history, so the catalog's address stays /timeline.
+// succeeds late. The router keeps its own history, so the catalog's address stays /app/timeline.
 
 import { AppRoot, createAppRouter } from "@my/app";
 import { createAppData } from "@my/app-data";

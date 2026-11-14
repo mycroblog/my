@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the server would answer to a post's action, on the catalog, where no server runs: the status a favourite, a
-// boost, a bookmark or an emoji reaction leaves. /timeline writes it into the cache of @my/app-data, and the single
+// boost, a bookmark or an emoji reaction leaves. /app/timeline writes it into the cache of @my/app-data, and the single
 // sample posts of the catalog (SamplePost.tsx) keep it.
 
 import type { PostAction, PostStatus } from "@my/app-components";
