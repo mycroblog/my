@@ -3,7 +3,7 @@
 # Smoke test of deploy/docker/compose.yaml, the path an operator takes: build the server image with the override
 # compose.build.yaml and give it the published image's name, so that the plain compose.yaml starts it as it starts a
 # pulled one. Start the stack on an empty volume (my db upgrade -check, my schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
-# NodeInfo, and the embedded brand assets, and sign in as a web client does over plain HTTP on localhost
+# NodeInfo, the embedded brand assets and web client, and sign in as a web client does over plain HTTP on localhost
 # (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
 # one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
 # keeps the server stopped (docs/operations/database.md, "Upgrading"). The settings come from a copy of example.env and
@@ -185,6 +185,18 @@ for icon in $(echo "$manifest" | jq -r '.icons[].src'); do
 	curl -fsS -o /dev/null "$base$icon" || fail "the icon $icon is not served (web/brand not embedded?)"
 done
 
+# The image embeds the web client's build (the Dockerfile's stage web): the module scripts of the shell and of an auth
+# screen, the client's entry and its auth entry, are served as JavaScript.
+check_entry() {
+	local page="$1" html="$2" src type
+	src="$(echo "$html" | sed -n 's|.*<script type="module" src="\([^"]*\)"></script>.*|\1|p' | head -n 1)"
+	[[ "$src" == /* ]] || fail "$page loads no client script (the web client not embedded?): $html"
+	type="$(curl -fsS -o /dev/null -w '%{content_type}' "$base$src")" || fail "the client script $src of $page is not served"
+	[[ "$type" == *javascript* ]] || fail "the client script $src of $page is served as $type"
+}
+check_entry "the HTML shell" "$shell"
+check_entry "the sign-in page" "$(curl -fsS "$base/auth/sign_in")"
+
 # Sign in without a browser, as the web client does (OAuth 2.0 authorization code with PKCE, ADR-0090): the shell's
 # apiOrigin, the authorization endpoint, the sign-in form, the redirect back with a code and the issuer, the token
 # endpoint, and an API call with the access token. Over plain HTTP on localhost, every step stays on http://.
@@ -195,6 +207,8 @@ api_origin="$(echo "$config" | jq -r '.apiOrigin')"
 access="$(web_sign_in "$api_origin" "$MY_WEB_ORIGIN" alice@example.com smoke-test-password)"
 me="$(curl -fsS -H "Authorization: Bearer $access" "$api_origin/api/v1/accounts/verify_credentials")"
 echo "$me" | jq -e '.username == "alice"' >/dev/null || fail "unexpected verify_credentials: $me"
+home="$(curl -fsS -H "Authorization: Bearer $access" "$api_origin/api/v1/timelines/home")"
+echo "$home" | jq -e '.items | type == "array"' >/dev/null || fail "unexpected home timeline: $home"
 
 # Start again on the same volume, as an upgrade to a new image does: the one-off services run again in order on the
 # existing database, and the server comes back ready with the account kept.

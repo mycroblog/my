@@ -154,8 +154,8 @@ tasks:
 
   # What the server embeds (internal/interface/web): the Vite build of web/app, whose manifest the shell's tags come
   # from (ADR-0028 §4), and the files of web/brand, whose icons the server serves at the root and lists in the Web App
-  # Manifest. The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's build stage mounts
-  # web/brand alone, so the image's shell loads no client script yet.
+  # Manifest. The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's stage web and the
+  # root compose.yaml (scripts/dev-compose.sh) run it too.
   build:
     desc: Build web/app with Vite into internal/interface/web/dist, which the Go server embeds, with the brand assets of web/brand
     deps: [install, ":i18n:compile", routes]

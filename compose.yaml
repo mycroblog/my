@@ -6,7 +6,7 @@
 #
 #   scripts/task.sh docker:dev-cert   once: the HTTPS certificate of my.localhost from mkcert (scripts/dev-cert.sh)
 #   docker compose up -d --wait       start everything and return once https://my.localhost works
-#   docker compose restart my         build the Go code again and restart the server (no automatic reload)
+#   docker compose restart my         build the web client and the Go code again and restart the server (no automatic reload)
 #   docker compose exec my my ...     run a command of `my` against the server's database
 #   docker compose down               stop; the data stays in the volumes
 #   docker compose down -v            stop and remove the data
@@ -16,8 +16,8 @@
 # Each host port is a variable below; put the variables in .env (never committed) next to this file.
 #
 # `my` runs in the stage `dev` of the Dockerfile, from the checkout mounted at /src, as the owner of the checkout, with
-# the Go caches, the Bun cache, and every node_modules of the Bun workspace in volumes of their own
-# (scripts/dev-compose.sh). GO_TAGS sets the build tags of `my`, such as e2e_fakes for the test build. The secrets
+# the Go caches, the Bun cache, bin, and every node_modules of the Bun workspace in volumes of their own
+# (scripts/dev-compose.sh). It builds the web client and the server at each start. GO_TAGS sets the build tags of `my`, such as e2e_fakes for the test build. The secrets
 # below are fixed values for this machine only.
 #
 # scripts/task.sh db:up and docker:mailpit start the services postgres and mailpit alone (--no-deps). Third-party
@@ -36,8 +36,19 @@ x-dev: &dev
     - go-build:/home/dev/.cache/go-build
     - go-mod:/home/dev/go/pkg/mod
     - bun-cache:/home/dev/.bun/install/cache
+    - task-bin:/src/bin
     - node-modules-root:/src/node_modules
+    - node-modules-web-app:/src/web/app/node_modules
+    - node-modules-web-app-components:/src/web/app-components/node_modules
+    - node-modules-web-app-data:/src/web/app-data/node_modules
+    - node-modules-web-app-features:/src/web/app-features/node_modules
+    - node-modules-web-catalog:/src/web/catalog/node_modules
+    - node-modules-web-design-system:/src/web/design-system/node_modules
+    - node-modules-web-design-tokens:/src/web/design-tokens/node_modules
+    - node-modules-web-devtools:/src/web/devtools/node_modules
     - node-modules-docs:/src/web/docs/node_modules
+    - node-modules-web-i18n:/src/web/i18n/node_modules
+    - node-modules-web-platform:/src/web/platform/node_modules
     - node-modules-mykit:/src/pkg/mykit/ts/node_modules
     - node-modules-mybot:/src/pkg/mybot/ts/node_modules
     - node-modules-i18n:/src/tools/i18n/node_modules
@@ -362,7 +373,18 @@ volumes:
   go-build:
   go-mod:
   bun-cache:
+  task-bin:
   node-modules-root:
+  node-modules-web-app:
+  node-modules-web-app-components:
+  node-modules-web-app-data:
+  node-modules-web-app-features:
+  node-modules-web-catalog:
+  node-modules-web-design-system:
+  node-modules-web-design-tokens:
+  node-modules-web-devtools:
+  node-modules-web-i18n:
+  node-modules-web-platform:
   node-modules-docs:
   node-modules-mykit:
   node-modules-mybot:
