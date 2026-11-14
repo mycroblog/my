@@ -1,0 +1,130 @@
+{
+  "profile.follow": {
+    "defaultMessage": "フォロー",
+    "description": "The button of a profile that follows the account."
+  },
+  "profile.follow_back": {
+    "defaultMessage": "フォローバック",
+    "description": "The button of a profile of an account that follows the reader, which follows it back."
+  },
+  "profile.request_follow": {
+    "defaultMessage": "フォローをリクエスト",
+    "description": "The button of a profile of an account that approves its followers, which asks to follow it."
+  },
+  "profile.following": {
+    "defaultMessage": "フォロー中",
+    "description": "The button of a profile of an account the reader follows; pressing it unfollows the account."
+  },
+  "profile.requested": {
+    "defaultMessage": "リクエスト済み",
+    "description": "The button of a profile of an account whose approval the reader's follow request awaits; pressing it withdraws the request."
+  },
+  "profile.unblock": {
+    "defaultMessage": "ブロックを解除",
+    "description": "The button, and the item of a profile's menu, that stops blocking the account."
+  },
+  "profile.block": {
+    "defaultMessage": "ブロック",
+    "description": "The item of a profile's menu that blocks the account."
+  },
+  "profile.mute": {
+    "defaultMessage": "ミュート",
+    "description": "The item of a profile's menu that mutes the account."
+  },
+  "profile.unmute": {
+    "defaultMessage": "ミュートを解除",
+    "description": "The item of a profile's menu, and the action of its muted line, that stops muting the account."
+  },
+  "profile.more": {
+    "defaultMessage": "その他",
+    "description": "The button of a profile that opens the menu of what else the reader may do with the account."
+  },
+  "profile.open_original": {
+    "defaultMessage": "元のページを表示",
+    "description": "The item of a profile's menu, and the action of its line about a remote account, that opens the account's page on its own server."
+  },
+  "profile.follows_you": {
+    "defaultMessage": "フォローされています",
+    "description": "The badge beside the handle of an account that follows the reader."
+  },
+  "profile.bot": {
+    "defaultMessage": "bot",
+    "description": "The badge beside the name of an automated account."
+  },
+  "profile.locked": {
+    "defaultMessage": "フォローには承認が必要です",
+    "description": "The line of a profile, and the label of the lock beside its name, of an account that approves its followers."
+  },
+  "profile.following_count": {
+    "defaultMessage": "フォロー",
+    "description": "The label of the number of accounts the account follows."
+  },
+  "profile.followers_count": {
+    "defaultMessage": "フォロワー",
+    "description": "The label of the number of accounts that follow the account."
+  },
+  "profile.joined": {
+    "defaultMessage": "{date}に登録",
+    "description": "When the account was created, on its profile. date is the month and the year."
+  },
+  "profile.featured": {
+    "defaultMessage": "注目のハッシュタグ",
+    "description": "The heading of the hashtags the account features on its profile."
+  },
+  "profile.tag_posts": {
+    "defaultMessage": "{count, plural, other {#件}}",
+    "description": "How many of the account's posts carry a hashtag it features. count is how many."
+  },
+  "profile.tabs": {
+    "defaultMessage": "アカウントの投稿",
+    "description": "What the tabs of a profile choose between, for assistive technology."
+  },
+  "profile.posts": {
+    "defaultMessage": "投稿",
+    "description": "The tab of a profile that shows the account's posts, without its replies."
+  },
+  "profile.posts_and_replies": {
+    "defaultMessage": "投稿と返信",
+    "description": "The tab of a profile that shows the account's posts and its replies."
+  },
+  "profile.media": {
+    "defaultMessage": "メディア",
+    "description": "The tab of a profile that shows the account's posts with images or other media."
+  },
+  "profile.pinned": {
+    "defaultMessage": "ピン留め",
+    "description": "The line over a post the account pinned to its profile."
+  },
+  "profile.remote": {
+    "defaultMessage": "{domain} の情報は一部しか表示されていない可能性があります。",
+    "description": "The line of a profile of an account on another server. domain is that server's domain name."
+  },
+  "profile.blocked": {
+    "defaultMessage": "このアカウントをブロックしています。",
+    "description": "The line of a profile of an account the reader blocks."
+  },
+  "profile.blocked_posts": {
+    "defaultMessage": "ブロックしている間、投稿は表示されません。",
+    "description": "What a profile of an account the reader blocks says in place of its posts."
+  },
+  "profile.muted": {
+    "defaultMessage": "このアカウントをミュートしています。タイムラインには投稿が表示されません。",
+    "description": "The line of a profile of an account the reader mutes."
+  },
+  "profile.locked_posts": {
+    "defaultMessage": "ほかの投稿はフォロワーだけが見られます。",
+    "description": "What a profile of an account that approves its followers says under its posts, to a reader who does not follow it."
+  },
+  "profile.loading": {
+    "defaultMessage": "プロフィールを読み込んでいます…",
+    "description": "What a profile says while the account loads."
+  },
+  "profile.failed": {
+    "defaultMessage": "プロフィールを読み込めませんでした。",
+    "description": "What a profile says when the account could not be found or loaded, beside a button to try again."
+  },
+  "profile.title": {
+    "defaultMessage": "{name} ({handle})",
+    "description": "The heading of a profile, for assistive technology, and the document's title. name is the account's display name, handle its @handle."
+  }
+}

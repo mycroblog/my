@@ -54,16 +54,22 @@ const render = (props: PostProps, locale = "en") =>
 const bare = (props: PostProps, locale?: string) => render(props, locale).replace(/ class="[^"]*"/g, "");
 
 describe("the author header", () => {
+  test("the name leads to the author's profile and the time to the post's page, the server's addresses", () => {
+    const html = bare({ status: status() });
+    expect(html).toMatch(/<a [^>]*href="\/@lena@toot.example.eu"[^>]*><bdi id="[^"]+">Lena Novak<\/bdi><\/a>/);
+    expect(html).toMatch(/<a [^>]*href="\/@lena@toot.example.eu\/status\/10"[^>]*><bdi><time /);
+  });
+
   test("the avatar, the name isolated, then the visibility and the time at the end, over the handle", () => {
     const html = bare({ status: status() });
     const name = /<bdi id="([^"]+)">Lena Novak<\/bdi>/.exec(html);
     expect(name).not.toBeNull();
     expect(html).toMatch(new RegExp(`^<article lang="en" dir="ltr" tabindex="0" aria-labelledby="${name?.[1] ?? ""}"`));
-    expect(html).toMatch(/Lena Novak<\/bdi><span><span><span role="img" aria-label="Public"><svg /);
+    expect(html).toMatch(/Lena Novak<\/bdi><\/a><span><span><span role="img" aria-label="Public"><svg /);
     expect(render({ status: status() })).toContain("tabler-icon-world");
     expect(html).toContain("<bdi><time ");
     expect(html).toContain('<bdi dir="ltr">@lena@toot.example.eu</bdi>');
-    expect(html.indexOf("3m ago")).toBeLessThan(html.indexOf("@lena@toot.example.eu"));
+    expect(html.indexOf("3m ago")).toBeLessThan(html.indexOf('<bdi dir="ltr">@lena@toot.example.eu'));
   });
 
   test("a local account's handle names its domain too, and a name keeps its custom emoji", () => {
@@ -79,6 +85,27 @@ describe("the author header", () => {
       expect(render({ status: status({ visibility }) })).toContain(`tabler-icon-${glyph} `);
     }
     expect(bare({ status: status({ visibility: "private" }) })).toContain('aria-label="Followers only"');
+  });
+
+  test("without its stamp, the author's line has no visibility and no time", () => {
+    const html = bare({ status: status(), stamp: false });
+    expect(html).not.toContain('aria-label="Public"');
+    expect(html).not.toContain("<time ");
+    expect(html).toContain("Lena Novak</bdi>");
+  });
+});
+
+describe("the screen's own lines", () => {
+  test("a context line comes first and details come before the actions, inside the post", () => {
+    const html = bare({
+      status: status(),
+      context: <p>Pinned</p>,
+      details: <p>Nov 14, 2026</p>,
+    });
+    expect(html).toMatch(/^<article [^>]*><p>Pinned<\/p>/);
+    expect(html.indexOf("Nov 14, 2026")).toBeGreaterThan(html.indexOf("Quiet morning."));
+    expect(html.indexOf("Nov 14, 2026")).toBeLessThan(html.indexOf('aria-label="Reply'));
+    expect(html.indexOf("Nov 14, 2026")).toBeLessThan(html.lastIndexOf("</article>"));
   });
 });
 

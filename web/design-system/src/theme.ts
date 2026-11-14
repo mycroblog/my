@@ -14,6 +14,7 @@ import {
   motion,
   properties,
   radius,
+  screen,
   shell,
   text,
 } from "@my/design-tokens";
@@ -74,6 +75,14 @@ const theme = {
     "icon-caption": ref("--icon-caption"),
     "icon-navigation": ref("--icon-navigation"),
     ...Object.fromEntries(names(shell).map((name) => [`shell-${kebab(name)}`, ref(`--shell-${kebab(name)}`)])),
+    ...Object.fromEntries(names(screen).map((name) => [`screen-${kebab(name)}`, ref(`--screen-${kebab(name)}`)])),
+    // The room above an entry of a feed from what stands before it outside the feed (a heading, the tabs): the
+    // entry's surface reaches past its content and its focus ring past the surface, neither touching what is above.
+    "entry-room":
+      "calc(var(--entry-reach) + var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo) + var(--screen-air))",
+    // The same room for what stands inside a feed (a group's heading), less the feed's gap after it.
+    "entry-room-in-feed":
+      "calc(var(--entry-reach) + var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo) + var(--screen-air) - var(--feed-gap))",
     "icon-tile-glyph": ref("--icon-tile-glyph"),
     "avatar-inline": ref("--avatar-inline"),
     "avatar-post": ref("--avatar-post"),
@@ -123,6 +132,8 @@ const theme = {
         .map((name) => [`form-page-${kebab(name)}`, ref(`--form-page-${kebab(name)}`)]),
     ),
   },
+  // The widths of a container from which a part lays itself out otherwise: a thread's replies indent (`@reply:`).
+  containers: { reply: `${screen.replyFrom}rem` },
   aspectRatio: { banner: ref("--form-page-banner-ratio") },
   lineHeight: { entry: ref("--entry-leading") },
   borderWidth: { 0: "0", spinner: ref("--spinner-stroke"), "content-quote": ref("--content-quote-bar") },

@@ -20,6 +20,16 @@ test("elsewhere a navigation pushes, and going back in the history pops", () => 
   expect(navigationKind({ fromLocation: at("/@alice", 1), toLocation: at("/", 0) })).toBe("pop");
 });
 
+test("a post and a profile push from the timeline and the notifications, and pop back to them", () => {
+  const post = "/@alice@remote.example/status/0190a5d0-0000-7000-8000-000000000001";
+  expect(navigationKind({ fromLocation: at("/", 0), toLocation: at(post, 1) })).toBe("push");
+  expect(navigationKind({ fromLocation: at(post, 1), toLocation: at("/@alice@remote.example", 2) })).toBe("push");
+  expect(navigationKind({ fromLocation: at("/@alice@remote.example", 2), toLocation: at(post, 1) })).toBe("pop");
+  expect(navigationKind({ fromLocation: at(post, 1), toLocation: at("/", 0) })).toBe("pop");
+  expect(navigationKind({ fromLocation: at("/notifications", 0), toLocation: at("/@bob", 1) })).toBe("push");
+  expect(navigationKind({ fromLocation: at("/@bob", 1), toLocation: at("/notifications", 0) })).toBe("pop");
+});
+
 test("the sign-in opens by a page load, as a first screen, and a move to it within the app pushes", () => {
   expect(navigationKind({ toLocation: at("/login", 0) })).toBe("none");
   expect(navigationKind({ toLocation: at("/login/callback", 0) })).toBe("none");

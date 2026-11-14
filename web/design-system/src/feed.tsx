@@ -14,7 +14,7 @@
 // IntersectionObserver) and whether the reader is in it (focus or a selection inside), and floats the new entries'
 // button (NewItems) over its top, which brings the reader to the top and the focus to the screen's heading. When to
 // insert is its owner's to decide. Each entry carries its key as `data-scroll-key`, by which a screen restores its
-// position.
+// position, and by which the feed tells which entry went out above the view (onPassed) or was clicked (onEntryClick).
 
 import {
   createContext,
@@ -155,6 +155,13 @@ export type FeedProps = {
   onReaderChange?: ((inside: boolean) => void) | undefined;
   /** The new entries' button, floating over the feed's top; left out while there are none to tell of. */
   newItems?: NewItems | undefined;
+  /**
+   * Hears the key of an entry once it went out above the view (its end above the view's top, below the scroller's
+   * padding), and of each entry above the view when the feed shows it.
+   */
+  onPassed?: ((key: string) => void) | undefined;
+  /** Hears the key of an entry the reader clicked or tapped, anywhere inside it. */
+  onEntryClick?: ((key: string) => void) | undefined;
 };
 
 // What says that the reader scrolls by hand.
@@ -248,6 +255,8 @@ export function Feed({
   onTopChange,
   onReaderChange,
   newItems,
+  onPassed,
+  onEntryClick,
 }: FeedProps) {
   const s = feed();
   const sentinel = useRef<HTMLDivElement>(null);
@@ -314,6 +323,34 @@ export function Feed({
       observer.disconnect();
     };
   }, [asks, busy, count]);
+  const hears = onPassed !== undefined;
+  const passed = useEffectEvent((key: string) => {
+    onPassed?.(key);
+  });
+  useEffect(() => {
+    const el = list.current;
+    if (!el || !hears || typeof IntersectionObserver === "undefined") return;
+    const scroller = scrollerOf(el);
+    const page = scroller === el.ownerDocument.scrollingElement;
+    // Observed anew whenever the entries change, so that a new entry is heard too.
+    const observer = new IntersectionObserver(
+      (records) => {
+        for (const r of records) {
+          const key = r.target.getAttribute("data-scroll-key");
+          const top = r.rootBounds?.top ?? 0;
+          if (key !== null && !r.isIntersecting && r.boundingClientRect.bottom <= top) passed(key);
+        }
+      },
+      {
+        root: page ? null : scroller,
+        rootMargin: `${-(viewTopOf(scroller) - (page ? 0 : scroller.getBoundingClientRect().top))}px 0px 0px 0px`,
+      },
+    );
+    for (const entry of entriesOf(el)) observer.observe(entry);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hears, count]);
   return (
     <div className={s.root()}>
       {/* Always there, so that a change of the count is read out (ADR-0013 §6); the button never takes the focus. */}
@@ -335,6 +372,11 @@ export function Feed({
           aria-busy={busy}
           className={s.list()}
           onKeyDown={onFeedKeyDown}
+          onClick={(e) => {
+            const entry = (e.target as Element).closest(entrySelector);
+            const key = entry?.getAttribute("data-scroll-key");
+            if (entry?.parentElement?.closest('[role="feed"]') === e.currentTarget && key) onEntryClick?.(key);
+          }}
           onFocus={(e) => {
             readerChange("focus", true);
             onFeedFocus({ target: e.target, currentTarget: e.currentTarget });

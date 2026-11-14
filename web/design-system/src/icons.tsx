@@ -20,6 +20,9 @@ import {
   IconBrandDiscord,
   IconBrandGithub,
   IconBuildingCommunity,
+  IconChartBar,
+  IconChecks,
+  IconChevronRight,
   IconDots,
   IconExternalLink,
   IconEyeOff,
@@ -39,6 +42,7 @@ import {
   IconPaperclip,
   IconPencil,
   IconPencilPlus,
+  IconPin,
   IconQuote,
   IconRepeat,
   IconSearch,
@@ -46,12 +50,14 @@ import {
   IconSettings,
   IconSettingsFilled,
   IconShare2,
+  IconShield,
   IconSpeakerphone,
   IconStar,
   IconStarFilled,
   IconTrash,
   IconUser,
   IconUserFilled,
+  IconUserPlus,
   IconVolumeOff,
   IconWorld,
   IconX,
@@ -83,6 +89,8 @@ export const icons = {
   emoji: { off: IconMoodSmile },
   close: { off: IconX },
   back: { off: IconArrowLeft, directional: true },
+  // What a row opens, toward the end of the line.
+  onward: { off: IconChevronRight, directional: true },
   link: { off: IconLink },
   // An arrow out of a box, toward the end of the line.
   open: { off: IconExternalLink, directional: true },
@@ -107,6 +115,14 @@ export const icons = {
   about: { off: IconInfoCircle },
   // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
   hidden: { off: IconEyeOff },
+  // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll, the
+  // moderators' notice; and a post its author pinned to their profile.
+  follow: { off: IconUserPlus, directional: true },
+  poll: { off: IconChartBar },
+  moderation: { off: IconShield },
+  pin: { off: IconPin },
+  // Marking every notification read: two checks.
+  read: { off: IconChecks },
   // The auth screens: what went wrong (a round mark), what needs care before agreeing (a triangle), a passkey, and the
   // marks of the login providers, in the text's color like every glyph.
   error: { off: IconAlertCircle },

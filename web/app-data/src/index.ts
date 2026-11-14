@@ -6,7 +6,44 @@
 
 export { createAppData, createQueryClient, type AppData } from "./app-data";
 export { receiveHomeGap, receiveHomeStatuses, useHomeArrivals, type Arrival } from "./arrivals";
-export { useUnreadNotifications } from "./notifications";
+export {
+  accountQuery,
+  accountStatusesQuery,
+  changeRelationship,
+  featuredHashtagsQuery,
+  relationshipQuery,
+  useAccount,
+  useAccountStatuses,
+  useChangeRelationship,
+  useFeaturedHashtags,
+  useRelationship,
+  useViewer,
+  viewerQuery,
+  type Account,
+  type AccountPosts,
+  type FeaturedHashtag,
+  type Relationship,
+  type RelationshipChange,
+} from "./accounts";
+export {
+  notificationMarkerQuery,
+  notificationRequestSummaryQuery,
+  notificationsQuery,
+  receiveNotification,
+  useAnswerRequest,
+  useInteractionRequest,
+  useNotificationReads,
+  useNotificationRequestSummary,
+  useNotifications,
+  useUnreadNotifications,
+  type InteractionRequest,
+  type NotificationFilter,
+  type NotificationItem,
+  type NotificationReads,
+  type NotificationRequestSummary,
+  type NotificationType,
+} from "./notifications";
+export type { PagedList } from "./paged";
 export { AppDataProvider } from "./provider";
 export { openSession } from "./session";
 export {
@@ -20,4 +57,5 @@ export {
 } from "./sign-in";
 export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
 export { startStream } from "./stream";
+export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
 export { homeTimelineQuery, useHomeTimeline, type HomeTimeline } from "./timeline";

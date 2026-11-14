@@ -138,5 +138,13 @@
   "post.shortcuts": {
     "defaultMessage": "When a post is focused",
     "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
+  },
+  "post.boosts_count": {
+    "defaultMessage": "{count, plural, one {# boost} other {# boosts}}",
+    "description": "The number of boosts of a post, under the post shown on its own page with its thread. count is how many."
+  },
+  "post.favourites_count": {
+    "defaultMessage": "{count, plural, one {# favourite} other {# favourites}}",
+    "description": "The number of favourites of a post, under the post shown on its own page with its thread. count is how many."
   }
 }
