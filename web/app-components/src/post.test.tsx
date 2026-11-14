@@ -80,6 +80,27 @@ describe("the author header", () => {
     }
     expect(bare({ status: status({ visibility: "private" }) })).toContain('aria-label="Followers only"');
   });
+
+  test("without its stamp, the author's line has no visibility and no time", () => {
+    const html = bare({ status: status(), stamp: false });
+    expect(html).not.toContain('aria-label="Public"');
+    expect(html).not.toContain("<time ");
+    expect(html).toContain("Lena Novak</bdi>");
+  });
+});
+
+describe("the screen's own lines", () => {
+  test("a context line comes first and details come before the actions, inside the post", () => {
+    const html = bare({
+      status: status(),
+      context: <p>Pinned</p>,
+      details: <p>Nov 14, 2026</p>,
+    });
+    expect(html).toMatch(/^<article [^>]*><p>Pinned<\/p>/);
+    expect(html.indexOf("Nov 14, 2026")).toBeGreaterThan(html.indexOf("Quiet morning."));
+    expect(html.indexOf("Nov 14, 2026")).toBeLessThan(html.indexOf('aria-label="Reply'));
+    expect(html.indexOf("Nov 14, 2026")).toBeLessThan(html.lastIndexOf("</article>"));
+  });
 });
 
 describe("the context line", () => {

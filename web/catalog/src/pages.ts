@@ -49,6 +49,19 @@ export const pages = [
   },
   { path: "/app/timeline", title: "Timeline", about: "The app's home screen, on sample data.", sections: [] },
   { path: "/app/auth", title: "Auth", about: "The rough of the sign-in and sign-up screens.", sections: [] },
+  { path: "/app/post", title: "Post", about: "The rough of a post with its thread (?state=).", sections: [] },
+  {
+    path: "/app/notifications",
+    title: "Notifications",
+    about: "The rough of the notifications, of every kind the reader meets.",
+    sections: [],
+  },
+  {
+    path: "/app/profile",
+    title: "Profile",
+    about: "The rough of a profile, in each of its states (?state=).",
+    sections: [],
+  },
 ] as const satisfies readonly Page[];
 
 export type SectionId = (typeof pages)[number]["sections"][number]["id"];

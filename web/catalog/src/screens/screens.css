@@ -1,0 +1,541 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/*
+ * The rough of what is new on the post detail, the notifications and the profile (#3047), on the catalog only, in the
+ * tokens of @my/design-tokens and in logical properties alone. Everything sits on the page's one surface, apart by
+ * space: tight inside a group, wider between groups. A raised surface marks only what is a control (a tab, a badge,
+ * a hashtag) or the banner's place.
+ */
+
+/* The catalog's strip of the states: not a part of the app. */
+.sc-states {
+  background: var(--color-surface);
+  border-block-end: 1px dashed var(--color-muted-text);
+  color: var(--color-muted-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: ui-monospace, monospace;
+  font-size: var(--text-caption);
+  gap: 0.25rem 0.75rem;
+  padding-block: 0.375rem;
+  padding-inline: 1rem;
+}
+
+.sc-states a {
+  color: inherit;
+}
+
+.sc-states a[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: var(--font-weight-strong);
+}
+
+/*
+ * The room above an entry of a feed, from what stands before it outside the feed's gap (a heading, the tabs, the back
+ * link): the entry's surface reaches past its content when hovered or focused, and its focus ring past the surface,
+ * so that neither touches what is above, and a little air beyond.
+ */
+:root {
+  --sc-entry-room: calc(
+    var(--entry-reach) + var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo) + 0.25rem
+  );
+}
+
+/* A screen's parts over its feed: the head, the tabs, the requests, apart by the room an entry's ring needs. */
+.sc-screen {
+  display: grid;
+  gap: var(--sc-entry-room);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* A strong name inside a sentence. */
+.sc-name {
+  font-weight: var(--font-weight-strong);
+}
+
+/* A heading of a group of a list: muted and small, as the column beside the main one heads its sections. */
+.sc-group-heading {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+  font-weight: 400;
+  line-height: var(--text-caption--line-height);
+  margin: 0;
+}
+
+/*
+ * The feed's gap holds every entry apart; a heading opens a group, nearer what it heads than what is before it, yet
+ * with the room the first entry's surface and focus ring need.
+ */
+[role="feed"] > .sc-group-heading {
+  margin-block: 0.5rem calc(var(--sc-entry-room) - var(--feed-gap));
+}
+
+[role="feed"] > .sc-group-heading:first-child {
+  margin-block-start: 0;
+}
+
+/* ---- The post detail ---------------------------------------------------------------------------------------- */
+
+.sc-back {
+  font-size: var(--text-caption);
+  margin-block: 0 var(--sc-entry-room);
+}
+
+.sc-back a {
+  align-items: center;
+  border-radius: var(--radius-control);
+  color: var(--color-muted-text);
+  display: inline-flex;
+  gap: var(--entry-caption-gap);
+  text-decoration: none;
+}
+
+.sc-back a:hover {
+  color: var(--color-text);
+}
+
+/* A fold of what the screen does not show: a text button, at the start of the column. */
+.sc-fold {
+  font-size: var(--text-caption);
+  margin: 0;
+}
+
+/* The focused post: its text a step larger, its own lines under it, and a group's space before and after it. */
+.sc-focus {
+  display: grid;
+  gap: 0.75rem;
+  margin-block: 0.75rem;
+}
+
+/* Its name and its text, which the content renderer sizes itself (text-body): the rough reaches in for them. */
+.sc-focus [data-entry],
+.sc-focus [data-entry] div.text-body {
+  font-size: var(--text-title);
+  line-height: 1.5;
+}
+
+.sc-details {
+  color: var(--color-muted-text);
+  display: grid;
+  font-size: var(--text-caption);
+  gap: 0.25rem;
+}
+
+.sc-details p {
+  margin: 0;
+}
+
+.sc-glyph-text {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--entry-caption-gap);
+  vertical-align: bottom;
+}
+
+.sc-counts a {
+  color: var(--color-text);
+  font-size: var(--text-body);
+  text-decoration: none;
+}
+
+.sc-counts a:hover {
+  text-decoration: underline;
+}
+
+/* A reply, indented by its depth under the focused post: none on a phone, up to three steps from the tablet. */
+.sc-reply {
+  --sc-cap: 0;
+  --sc-step: 1.5rem;
+
+  display: grid;
+  gap: var(--feed-gap);
+  margin-inline-start: calc(min(var(--sc-depth), var(--sc-cap)) * var(--sc-step));
+}
+
+.sc-reply-more {
+  margin-inline-start: calc((min(var(--sc-depth), var(--sc-cap)) - min(var(--sc-depth) - 1, var(--sc-cap))) * var(--sc-step));
+}
+
+@media (width >= 40rem) {
+  .sc-reply {
+    --sc-cap: 3;
+  }
+}
+
+/* ---- The tabs ----------------------------------------------------------------------------------------------- */
+
+.sc-tabs {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sc-tablist {
+  display: flex;
+  flex: 1;
+  gap: 0.25rem;
+  min-inline-size: 0;
+  overflow: auto hidden;
+}
+
+/* A tab: muted text on the page; the current one on the raised surface, in the text's color, as a tonal control. */
+.sc-tab {
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--color-muted-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-label);
+  block-size: var(--control-timeline-height);
+  padding-inline: var(--control-timeline-padding-inline);
+  white-space: nowrap;
+}
+
+.sc-tab:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.sc-tab[aria-selected="true"] {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.sc-tab:focus-visible {
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent-text);
+  outline: none;
+}
+
+.sc-tabs-end {
+  display: inline-flex;
+  margin-inline-start: auto;
+}
+
+/* ---- The notifications ------------------------------------------------------------------------------------- */
+
+/* The requests the notification policy holds back: one row that opens them. */
+.sc-requests {
+  align-items: center;
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  display: flex;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+  padding-inline: 0.75rem;
+  margin-inline: -0.75rem;
+  text-decoration: none;
+}
+
+.sc-requests:hover {
+  background: var(--color-surface-hover);
+}
+
+.sc-requests > span:nth-child(2) {
+  display: grid;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.sc-requests-title {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-label);
+}
+
+.sc-requests-hint {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}
+
+/* The chevron mirrors by itself in right-to-left text, as a paired character. */
+.sc-chevron {
+  color: var(--color-muted-text);
+  font-size: var(--text-title);
+}
+
+/* The line of a notification's kind: its glyph, the avatar, the sentence, which wraps, and the time at the end. */
+.sc-kind {
+  align-items: start;
+  display: flex;
+  gap: var(--entry-avatar-gap);
+}
+
+/* The glyph and the avatar stand on the sentence's first line, so that a sentence that wraps keeps them at its start. */
+.sc-kind {
+  --sc-line: calc(var(--text-body) * var(--text-body--line-height));
+}
+
+.sc-kind-glyph {
+  align-items: center;
+  block-size: var(--sc-line);
+  color: var(--color-muted-text);
+  display: inline-flex;
+  flex: none;
+  font-size: var(--icon-action);
+  justify-content: center;
+  line-height: 1;
+  min-inline-size: var(--icon-action);
+}
+
+.sc-kind > [aria-hidden="true"] {
+  margin-block-start: calc((var(--sc-line) - var(--avatar-inline)) / 2);
+}
+
+.sc-kind-text {
+  flex: 1;
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.sc-kind > :last-child:not(.sc-kind-text) {
+  margin-block-start: 0.1rem;
+}
+
+/* The reader's post a notification is about, as its first words: muted, on two lines at most. */
+.sc-about {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--color-muted-text);
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+}
+
+/*
+ * Unread and read: an unread notification's line is in the text's color with a dot at its end, before the time; a read
+ * one's line is muted, with no dot. A state takes no hue, only a shape and the text's color over the muted.
+ */
+.sc-unread {
+  align-self: center;
+  background: var(--color-text);
+  block-size: 0.5rem;
+  border-radius: 50%;
+  flex: none;
+  inline-size: 0.5rem;
+}
+
+.sc-kind[data-read] .sc-kind-text {
+  color: var(--color-muted-text);
+}
+
+/* A notification's kind over the post it is about: the caption line, then the dot at the line's end. */
+.sc-kind-caption {
+  align-items: center;
+  display: flex;
+  gap: var(--entry-avatar-gap);
+}
+
+.sc-kind-caption > p {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.sc-kind-caption:not([data-read]) > p {
+  color: var(--color-text);
+}
+
+
+/* An account on a row of its own, what the reader may do at its end. */
+.sc-account {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.sc-account > :first-child {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* A pair of a refusal and its confirmation, the confirmation at the end. */
+.sc-pair {
+  display: flex;
+  flex: none;
+  gap: 0.5rem;
+  justify-content: end;
+  margin: 0;
+}
+
+/* ---- The profile -------------------------------------------------------------------------------------------- */
+
+.sc-profile {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* The banner, 3:1, on the raised surface when there is none; on a phone, from edge to edge. */
+.sc-banner {
+  aspect-ratio: 3;
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-overlay);
+  margin-block-start: calc(-1 * var(--shell-gap));
+  margin-inline: calc(-1 * var(--shell-edge));
+  overflow: hidden;
+}
+
+@media (width < 40rem) {
+  .sc-banner {
+    border-radius: 0;
+  }
+}
+
+@media (width >= 40rem) {
+  .sc-banner {
+    margin-block-start: 0;
+    margin-inline: 0;
+  }
+}
+
+.sc-banner img {
+  block-size: 100%;
+  display: block;
+  inline-size: 100%;
+  object-fit: cover;
+}
+
+/*
+ * The avatar over the banner's lower edge, half on it; the reader's actions at the other end of its row, a group of
+ * their own: clear of the banner's edge by --sc-head-room, and as far from the avatar across the row. The row's start
+ * undoes the profile's gap, so that the avatar's half reaches onto the banner.
+ */
+.sc-head-row {
+  --sc-head-room: 1rem;
+
+  align-items: start;
+  display: flex;
+  gap: var(--sc-head-room);
+  margin-block-start: calc(-0.5 * var(--avatar-preview) - 0.75rem);
+}
+
+.sc-profile-avatar {
+  border-radius: 50%;
+  box-shadow: 0 0 0 0.25rem var(--color-surface);
+  display: inline-flex;
+  margin-inline-start: 0.25rem;
+}
+
+.sc-head-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  margin-block-start: calc(0.5 * var(--avatar-preview) + var(--sc-head-room));
+  margin-inline-start: auto;
+}
+
+.sc-names {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.sc-profile-name {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-title);
+  gap: 0.375rem;
+  line-height: var(--text-title--line-height);
+  margin: 0;
+}
+
+.sc-inline-glyph {
+  color: var(--color-muted-text);
+  display: inline-flex;
+}
+
+.sc-handle {
+  align-items: center;
+  color: var(--color-muted-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-caption);
+  gap: 0.375rem;
+  margin: 0;
+}
+
+/* A badge: a small label on the raised surface (follows you, a role, a bot). */
+.sc-badge {
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-label);
+  line-height: 1.5;
+  padding-inline: 0.375rem;
+}
+
+/* The fields: each name, muted and small, over its value. */
+.sc-fields {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.sc-fields div {
+  display: grid;
+  gap: 0;
+}
+
+.sc-fields dt {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}
+
+.sc-fields dd {
+  margin: 0;
+}
+
+.sc-meta {
+  color: var(--color-muted-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-caption);
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+.sc-meta a {
+  color: var(--color-muted-text);
+  text-decoration: none;
+}
+
+.sc-meta strong {
+  color: var(--color-text);
+  font-size: var(--text-body);
+}
+
+.sc-featured {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.sc-featured ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* A featured hashtag: a link on the raised surface, its count muted. */
+.sc-featured a {
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--text-body);
+  gap: 0.375rem;
+  line-height: var(--chip-height);
+  padding-inline: 0.5rem;
+  text-decoration: none;
+}
+
+.sc-featured a:hover {
+  background: var(--color-surface-raised-hover);
+}
+
+.sc-featured a span {
+  color: var(--color-muted-text);
+  font-size: var(--text-caption);
+}

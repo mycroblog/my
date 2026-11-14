@@ -5,8 +5,9 @@
 // header (the avatar, the name with the visibility and the time at the end, over the handle), the text, or a content
 // warning over it, the images, the quoted post as a reduced preview, the emoji reactions, the translate line, and the
 // actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end), whose keys
-// (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. It shows its extent
-// by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
+// (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
+// over it (`context`: pinned) and lines under the reactions (`details`: a focused post's date and counts), inside its
+// surface. It shows its extent by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
 // action is a callback, and what the action changes comes back in the next status.
 
 import {
@@ -75,6 +76,12 @@ export type PostProps = {
   translatable?: boolean | undefined;
   /** What the reader asked of it. */
   onAction?: ((action: PostAction) => void) | undefined;
+  /** A line of the screen's own over the post, inside it (that it is pinned): a `CaptionLine`. */
+  context?: ReactNode;
+  /** The screen's own lines under the body, before the actions (a focused post's date and counts). */
+  details?: ReactNode;
+  /** The visibility and the time at the end of the author's line; false where `details` says them in full. */
+  stamp?: boolean | undefined;
 };
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -326,7 +333,16 @@ function Actions({ status, own, t, lang, act }: { status: PostStatus; own: boole
   );
 }
 
-export function Post({ status, own = false, translation, translatable = false, onAction }: PostProps) {
+export function Post({
+  status,
+  own = false,
+  translation,
+  translatable = false,
+  onAction,
+  context,
+  details,
+  stamp = true,
+}: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
   const shown = status.boost ?? status;
@@ -367,6 +383,7 @@ export function Post({ status, own = false, translation, translatable = false, o
   );
   return (
     <Entry lang={known(shown.language)} labelledBy={name}>
+      {context}
       <Context status={status} shown={shown} t={t} lang={lang} />
       <Byline
         avatar={<Avatar name={nameOf(shown.account)} src={shown.account.avatar?.small.url} size="post" decorative />}
@@ -374,10 +391,12 @@ export function Post({ status, own = false, translation, translatable = false, o
         nameId={name}
         handle={handleOf(shown.account)}
         end={
-          <Stamp
-            glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
-            date={shown.created_at}
-          />
+          stamp ? (
+            <Stamp
+              glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
+              date={shown.created_at}
+            />
+          ) : undefined
         }
       />
       {cw ? (
@@ -388,6 +407,7 @@ export function Post({ status, own = false, translation, translatable = false, o
         content
       )}
       <Reactions status={shown} t={t} lang={lang} act={act} />
+      {details}
       <Actions status={shown} own={own} t={t} lang={lang} act={act} />
     </Entry>
   );
