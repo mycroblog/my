@@ -215,15 +215,16 @@ function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {
   }
 }
 
-/** A reaction's emoji, in place of the glyph of its kind. */
+/**
+ * A reaction's emoji, in place of the glyph of its kind: a custom emoji's image, or a Unicode emoji. A custom emoji
+ * whose image the server cannot show (it has a shortcode and no image) keeps the kind's glyph: its name is no emoji.
+ */
 function emojiOf(n: NotificationItem): ReactNode {
   const r = n.reaction;
   if (r === undefined) return undefined;
-  return r.emoji === undefined ? (
-    r.name
-  ) : (
-    <CustomEmoji shortcode={r.emoji.shortcode} url={r.emoji.url} staticUrl={r.emoji.static_url} />
-  );
+  if (r.emoji !== undefined)
+    return <CustomEmoji shortcode={r.emoji.shortcode} url={r.emoji.url} staticUrl={r.emoji.static_url} />;
+  return r.shortcode === undefined ? r.name : undefined;
 }
 
 function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string | undefined; t: T; instance: string }) {

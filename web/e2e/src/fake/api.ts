@@ -305,7 +305,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const p = postOf(i.post);
     if (p.author !== viewer || i.kind === "bookmark") return;
     const step = follows.length + posts.length + n;
-    const reaction = i.kind === "reaction" ? { reaction: { name: i.emoji.replace(/^:|:$/g, "") } } : {};
+    // A reaction's emoji as the API gives it: a custom one of this server with its shortcode and image, else Unicode.
+    const custom = i.kind === "reaction" ? customEmojis.find((e) => `:${e.shortcode}:` === i.emoji) : undefined;
+    const reaction =
+      i.kind !== "reaction"
+        ? {}
+        : custom === undefined
+          ? { reaction: { name: i.emoji } }
+          : { reaction: { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom } };
     notify(step, i.kind, i.by, { status: statusOf(p), ...reaction });
   });
   // The reader read all but the three newest.
