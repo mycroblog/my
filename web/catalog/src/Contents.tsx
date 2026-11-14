@@ -117,7 +117,7 @@ const blockPosts = [
 
 const one = "minmax(0, 1fr)";
 
-// A post as /timeline shows it: the author header over the body and the actions at the full width.
+// A post as /app/timeline shows it: the author header over the body and the actions at the full width.
 function BlockPost({ post }: { post: (typeof blockPosts)[number] }) {
   return (
     <article lang={post.lang} style={{ display: "grid", gap: rem(8), gridTemplateColumns: one }}>

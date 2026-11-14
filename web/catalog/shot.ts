@@ -7,7 +7,9 @@
 // page's data-theme (--scheme keeps one, for a section that already shows both side by side), at 1:1, without the
 // overlay. With --lang, it shoots the page in that locale (`?lang=`, as the overlay's locale switch sets it; ar-XB
 // reads right-to-left). With --section, it shoots only that section (the <section> its heading of that id labels, or
-// the element of that id), once per --section; without, the whole page. A shot taller than a tile is split into
+// the element of that id), once per --section, on the catalog page that holds it (src/pages.ts names the page of each
+// section; for another id, and for --options, it looks on the given page, then on each catalog page); without, the
+// whole page. A shot taller than a tile is split into
 // numbered tiles, so the evaluator can read a glyph. With --options, it takes one set per variant of that <Options>,
 // so the evaluator can answer before the decider picks. The shots go to .tmp/visual/<options id, else the sections,
 // else page> of the main checkout, which outlives the worktree, as
@@ -19,6 +21,7 @@ import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { sizes } from "@my/devtools/sizes";
 import { chromium, type Page } from "playwright";
+import { pageOf, pages } from "./src/pages";
 
 const optionsAttribute = "data-my-devtools-options";
 const schemes = ["light", "dark"] as const;
@@ -54,7 +57,6 @@ const inSchemes = values.scheme === undefined ? schemes : [values.scheme];
 const sections: (string | undefined)[] = values.section ?? [undefined];
 const target = new URL(positionals[0] ?? run([join(repo, "scripts/agentkit.sh"), "feedback", "url"]));
 if (values.lang !== undefined) target.searchParams.set("lang", Intl.getCanonicalLocales(values.lang)[0] ?? values.lang);
-const url = target.href;
 const locale = target.searchParams.get("lang") ?? undefined;
 const dir = values.options ?? values.section?.join("-") ?? "page";
 const out = resolve(values.out ?? join(main, ".tmp/visual", dir));
@@ -68,13 +70,34 @@ if (out === kept || out.startsWith(`${kept}/`))
 await mkdir(out, { recursive: true });
 
 // The overlay is mounted on <html>, outside <body>; its own unmount removes it, so that it covers no shot.
-async function load(page: Page, reload: boolean) {
-  if (reload) await page.reload({ waitUntil: "networkidle" });
+async function load(page: Page, url: string | null) {
+  if (url === null) await page.reload({ waitUntil: "networkidle" });
   else await page.goto(url, { waitUntil: "networkidle" });
   await page.evaluate(() => {
     (window as { myDevtoolsUnmount?: () => void }).myDevtoolsUnmount?.();
   });
 }
+
+// The URL of a catalog page, with the target's search (its locale).
+const at = (path: string) => {
+  const u = new URL(target);
+  u.pathname = path;
+  u.hash = "";
+  return u.href;
+};
+
+// The page that has an element, among the page src/pages.ts names for a section id, the target and each catalog page.
+async function find(page: Page, selector: string, id: string, what: string) {
+  const named = pageOf(id);
+  const candidates = [...new Set([...(named ? [at(named.path)] : []), target.href, ...pages.map((p) => at(p.path))])];
+  for (const url of candidates) {
+    await load(page, url);
+    if ((await page.locator(selector).count()) > 0) return url;
+  }
+  throw new Error(`no ${what} on ${target.href} or on any catalog page`);
+}
+
+const sectionSelector = (id: string) => `section[aria-labelledby=${JSON.stringify(id)}], [id=${JSON.stringify(id)}]`;
 
 // The box of a section, or of the whole page, in page coordinates, on whole pixels.
 async function box(page: Page, section: string | undefined) {
@@ -88,13 +111,13 @@ async function box(page: Page, section: string | undefined) {
     const r = el.getBoundingClientRect();
     return { left: r.left + scrollX, top: r.top + scrollY, right: r.right + scrollX, bottom: r.bottom + scrollY };
   }, section);
-  if (b === null) throw new Error(`no section or element with id "${section}" on ${url}`);
+  if (b === null) throw new Error(`no section or element with id "${section}" on ${page.url()}`);
   const x = Math.floor(b.left);
   const y = Math.floor(b.top);
   return { x, y, width: Math.ceil(b.right) - x, height: Math.ceil(b.bottom) - y };
 }
 
-async function shoot(page: Page, variant: string) {
+async function shoot(page: Page, variant: string, sections: readonly (string | undefined)[]) {
   for (const [size, { width, height }] of Object.entries(sizes)) {
     const viewport = values.landscape
       ? { width: Math.max(width, height), height: Math.min(width, height) }
@@ -124,16 +147,31 @@ async function shoot(page: Page, variant: string) {
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ deviceScaleFactor: 1 });
-  await load(page, false);
   const id = values.options;
   if (id === undefined) {
-    await shoot(page, "page");
+    if (values.section === undefined) {
+      await load(page, target.href);
+      await shoot(page, "page", [undefined]);
+    } else {
+      // The sections by the page that holds them, each page loaded once.
+      const byUrl = new Map<string, string[]>();
+      for (const section of values.section) {
+        const url = await find(page, sectionSelector(section), section, `section or element with id "${section}"`);
+        byUrl.set(url, [...(byUrl.get(url) ?? []), section]);
+      }
+      for (const [url, inPage] of byUrl) {
+        await load(page, url);
+        await shoot(page, "page", inPage);
+      }
+    }
   } else {
+    const selector = `[${optionsAttribute}=${JSON.stringify(id)}]`;
+    await load(page, await find(page, selector, values.section?.[0] ?? id, `<Options id="${id}">`));
     const names = await page
-      .locator(`[${optionsAttribute}="${id}"]`)
+      .locator(selector)
       .getAttribute("data-variants", { timeout: 5000 })
       .catch(() => null);
-    if (names === null) throw new Error(`no <Options id="${id}"> on ${url}`);
+    if (names === null) throw new Error(`no <Options id="${id}"> on ${page.url()}`);
     for (const variant of JSON.parse(names) as string[]) {
       await page.evaluate(
         ({ key, value }) => {
@@ -141,8 +179,8 @@ try {
         },
         { key: `my-devtools:option:${id}`, value: variant },
       );
-      await load(page, true);
-      await shoot(page, variant);
+      await load(page, null);
+      await shoot(page, variant, sections);
     }
   }
 } finally {

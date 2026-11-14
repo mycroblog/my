@@ -4,7 +4,7 @@
 // the page's locale and scheme: plain, local, boosted, a reply, behind a content warning, with images, quoting, with
 // reactions and with the reader's own, translated (and the notes when the source language, the provider or both are
 // unknown), hovered and focused from the keyboard (shown at rest), and long names and handles in en and ja. Each row
-// has an anchor, `post-states-<id>`. Each post answers its actions as /timeline's do.
+// has an anchor, `post-states-<id>`. Each post answers its actions as /app/timeline's do.
 
 import type { PostTranslation } from "@my/app-components";
 import { Preview, type PreviewState } from "@my/design-system/preview";
