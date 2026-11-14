@@ -66,12 +66,14 @@ type shellData struct {
 // marked as safe HTML, and user data never becomes template.HTML (ADR-0028).
 var shellTemplate = template.Must(template.New("shell").Parse(shellSource))
 
-// shellSource is the source of shellTemplate. Its hash is part of the ETag of previews.
+// shellSource is the source of shellTemplate. Its hash is part of the ETag of previews. Its viewport
+// shrinks with the software keyboard (interactive-widget=resizes-content), so that the composer's row
+// stays right above it in Chrome on Android.
 const shellSource = `<!doctype html>
 <html lang="{{.Lang}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>{{.Title}}</title>
 {{- with .Crawlers.Robots}}
 <meta name="robots" content="{{.}}">

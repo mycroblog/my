@@ -17,6 +17,7 @@ export {
 export { accountPath, statusPath } from "./paths";
 export { Post, type PostAction, type PostProps } from "./post";
 export { PostContent, type ContentEmoji, type PostContentProps } from "./post-content";
+export { isRemote, QuoteContext, ReplyContext } from "./post-context";
 export { PostDetails } from "./post-details";
 export type {
   PostAccount,

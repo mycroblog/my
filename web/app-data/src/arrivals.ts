@@ -45,8 +45,11 @@ function hold(store: Store, held: HeldArrivals): void {
   for (const listener of store.listeners) listener();
 }
 
-/** Puts `statuses` (newest first) at the top of the home timeline's cached first page, leaving out those it holds. */
-function prependHomeStatuses(data: AppData, statuses: readonly Status[]): void {
+/**
+ * Puts `statuses` (newest first) at the top of the home timeline's cached first page, leaving out those it holds; the
+ * reader's own new post goes in this way at once (compose.ts).
+ */
+export function prependHomeStatuses(data: AppData, statuses: readonly Status[]): void {
   const { queryKey } = homeTimelineQuery(data);
   // A fetch of a page writes the pages as they were when it started, over what went in since: it waits for the fetch.
   const query = data.queryClient.getQueryCache().find({ queryKey, exact: true });

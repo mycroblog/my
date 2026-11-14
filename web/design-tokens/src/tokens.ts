@@ -241,8 +241,9 @@ export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.37
 
 /**
  * A dialog over the page (the keyboard shortcuts), in rem: its padding, the space between its parts and between the
- * rows of a list in it, its most width, and the margin it keeps from the viewport's edges; and the scrim that dims the
- * page behind it, a share of black that is heavier in dark.
+ * rows of a list in it, its most width, and the margin it keeps from the viewport's edges; the radius of the blur of the
+ * page behind it, in px, so that the reader's eye stays on the dialog; and the scrim that dims that page, a share of
+ * black that is heavier in dark.
  */
 export const dialog = {
   padding: 1.25,
@@ -250,7 +251,29 @@ export const dialog = {
   rowGap: 0.5,
   maxWidth: 28,
   margin: 1,
+  blur: 6,
   scrim: { light: 0.4, dark: 0.6 },
+} as const;
+
+/**
+ * The post composer, in rem: the size of an image's thumbnail beside its description; the size and the leading
+ * (unitless) of the text, which keeps `textLines` lines of room while nothing follows it; the space above the dialog
+ * from `tablet`, and below it; the most width and height of a popover of choices, and its most height on a phone,
+ * where it opens over the row above the keyboard; the width of the line of a poll option's mark, in px; and the
+ * corner of the part of the text over the limit, in px.
+ */
+export const composer = {
+  thumb: 4.5,
+  textSize: 1,
+  textLeading: 1.55,
+  textLines: 3,
+  top: 4,
+  bottom: 2,
+  popWidth: 20,
+  popHeight: 28,
+  popHeightPhone: 26,
+  markLine: 1.5,
+  overRadius: 2,
 } as const;
 
 /** A key's cap (a shortcut's key), in rem: its least width, its height, its inline padding, and the gap between caps. */
@@ -402,7 +425,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -501,10 +524,22 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--dialog-row-gap", `${dialog.rowGap}rem`],
   ["--dialog-max-width", `${dialog.maxWidth}rem`],
   ["--dialog-margin", `${dialog.margin}rem`],
+  ["--dialog-blur", `${dialog.blur}px`],
   [
     "--dialog-scrim",
     `light-dark(rgb(0 0 0 / ${percent(dialog.scrim.light)}), rgb(0 0 0 / ${percent(dialog.scrim.dark)}))`,
   ],
+  ["--composer-thumb", `${composer.thumb}rem`],
+  ["--composer-text-size", `${composer.textSize}rem`],
+  ["--composer-text-leading", `${composer.textLeading}`],
+  ["--composer-text-lines", `${composer.textLines}`],
+  ["--composer-top", `${composer.top}rem`],
+  ["--composer-bottom", `${composer.bottom}rem`],
+  ["--composer-pop-width", `${composer.popWidth}rem`],
+  ["--composer-pop-height", `${composer.popHeight}rem`],
+  ["--composer-pop-height-phone", `${composer.popHeightPhone}rem`],
+  ["--composer-mark-line", `${composer.markLine}px`],
+  ["--composer-over-radius", `${composer.overRadius}px`],
   ["--kbd-min-width", `${kbd.minWidth}rem`],
   ["--kbd-height", `${kbd.height}rem`],
   ["--kbd-padding-inline", `${kbd.paddingInline}rem`],

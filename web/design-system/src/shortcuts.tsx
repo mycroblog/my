@@ -23,6 +23,7 @@ import {
 } from "react";
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { backdrop } from "./backdrop";
 import { IconButton } from "./icon-button";
 import {
   isTextField,
@@ -158,7 +159,7 @@ export function useAction(
 
 const help = tv({
   slots: {
-    overlay: "fixed inset-0 z-50 box-border flex items-center justify-center bg-scrim p-dialog-margin",
+    overlay: ["fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin", backdrop],
     modal: [
       "box-border max-h-full w-full max-w-[var(--dialog-max-width)] overflow-auto rounded-overlay bg-surface",
       "p-dialog font-sans text-body text-text shadow-overlay outline-hidden",

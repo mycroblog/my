@@ -18,6 +18,32 @@ export {
 } from "./button";
 export { Chip, ChipRow, type ChipProps } from "./chip";
 export {
+  AttachButton,
+  AttachmentList,
+  AttachmentRow,
+  CharCount,
+  ChoiceBack,
+  ChoiceGroup,
+  ChoiceOpens,
+  ChoicePopup,
+  ChoiceSection,
+  ChoiceSelect,
+  ComposerFrame,
+  ComposerQuote,
+  ComposerReply,
+  ComposerText,
+  PollCard,
+  PollOption,
+  PollOptions,
+  PollSettings,
+  ToolText,
+  UndoNotice,
+  WarningField,
+  type AttachmentRowProps,
+  type Choice,
+  type ComposerFrameProps,
+} from "./composer";
+export {
   ContentBody,
   ContentLink,
   CustomEmoji,

@@ -30,6 +30,14 @@ test("a post and a profile push from the timeline and the notifications, and pop
   expect(navigationKind({ fromLocation: at("/@bob", 1), toLocation: at("/notifications", 0) })).toBe("pop");
 });
 
+test("opening the composer over the screen raises it, and closing it does not move", () => {
+  const composing = { ...at("/", 1), search: { compose: "reply", to: "9" } };
+  expect(navigationKind({ fromLocation: at("/", 0), toLocation: composing })).toBe("modal");
+  expect(navigationKind({ fromLocation: composing, toLocation: at("/", 0) })).toBe("none");
+  // A reload with the composer open is a first screen.
+  expect(navigationKind({ toLocation: composing })).toBe("none");
+});
+
 test("the sign-in opens by a page load, as a first screen, and a move to it within the app pushes", () => {
   expect(navigationKind({ toLocation: at("/login", 0) })).toBe("none");
   expect(navigationKind({ toLocation: at("/login/callback", 0) })).toBe("none");

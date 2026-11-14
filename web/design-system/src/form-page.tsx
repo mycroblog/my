@@ -380,6 +380,8 @@ export function CheckField({
   value,
   label,
   defaultChecked,
+  checked,
+  onChange,
   required,
   error,
   describedBy,
@@ -389,6 +391,9 @@ export function CheckField({
   value: string;
   label: string;
   defaultChecked?: boolean | undefined;
+  /** Its state, where its owner keeps it (a poll's settings), with `onChange`; else the checkbox keeps its own. */
+  checked?: boolean | undefined;
+  onChange?: ((checked: boolean) => void) | undefined;
   required?: boolean | undefined;
   error?: string | undefined;
   describedBy?: string | undefined;
@@ -405,6 +410,13 @@ export function CheckField({
           value={value}
           type="checkbox"
           defaultChecked={defaultChecked}
+          checked={checked}
+          onChange={
+            onChange &&
+            ((e) => {
+              onChange(e.target.checked);
+            })
+          }
           required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={described}

@@ -5,6 +5,12 @@
 
 export { parseAuthPage, type AuthPage, type ScreenName } from "./auth/data";
 export { AuthScreen } from "./auth/screen";
+export { ComposeLayer, type ComposeLayerProps } from "./compose/layer";
+export {
+  emptyDraft as emptyComposeDraft,
+  type Draft as ComposeDraft,
+  type Target as ComposeTarget,
+} from "./compose/model";
 export { loadNotifications, Notifications } from "./notifications/notifications";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
 export { loadThread, Thread } from "./thread/thread";
