@@ -128,7 +128,7 @@ TypeScript と JavaScript のコードは `bun fmt` で整形し、CI で検査�
   - `printWidth = 120`。ほかは Prettier の既定（二重引用符、セミコロン、`trailingComma: "all"`、`arrowParens: "always"`、`objectWrap: "preserve"`）で、字下げと改行は `.editorconfig` から読む。
     120 は、コメントと文書を折り返している幅で、当時の行の 96.5 % が収まった。整形器はコメントを折り返さないので、広い幅ほど一度の差分は小さくても、コードとコメントの幅が揃う 120 を採る。
   - `sortImports`・`sortTailwindcss`・`sortPackageJson`・`jsdoc` は使わない（既定で切れている）。import の順と Tailwind のクラスは Oxlint と `better-tailwindcss` が受け持つ。
-- 整形しないファイルは根の `.prettierignore` に挙げる（`.gitignore` のファイルも読まない）。API の仕様から作る `pkg/mykit/ts/src/schema.gen.ts` を外す。コミットしない生成物（§1）は `.gitignore` にあるので読まない。
+- 範囲も `[fmt]` の `ignorePatterns` に置き、範囲の外と生成物（`*.gen.*`）を外す（`.gitignore` のファイルも読まない）。根で引数なしの `bun fmt` は `web:fmt` と同じ。
 - タスクは `web:fmt`（書き込む）と `web:fmt-check`（`bun fmt --check`。整形が要るファイルがあると失敗する）で、範囲の全部を一度に扱う。
   `web:check`・`i18n:check`・`mykit:check`・`site:check` が `web:fmt-check` を持つので、`check:changed` はどのパッケージを変えても検査する。CI では、Pull Request の preflight と、Merge Queue の `repo` ジョブで動かす（ADR-0079）。
 - TypeScript を変えたら、コミットの前に `scripts/task.sh web:fmt` を回す。整形したファイルの衝突は、解いたあとで `web:fmt` を回し直す。

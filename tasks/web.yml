@@ -21,11 +21,6 @@ vars:
   # internal/interface/web embeds what web:build places here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
   # committed, so Go builds and tests need no Bun; go:bin embeds what web:build placed.
   WEB_EMBED_DIR: internal/interface/web/dist
-  # The files bun fmt formats (web:fmt, web:fmt-check): the TypeScript and JavaScript of every member. The options are
-  # in the [fmt] section of bunfig.toml; .prettierignore lists the files it leaves alone, besides .gitignore's.
-  FMT_FILES: >-
-    'web/**/*.{ts,tsx,js,mjs}' 'pkg/mykit/ts/**/*.{ts,tsx,js,mjs}' 'pkg/mybot/ts/**/*.{ts,tsx,js,mjs}'
-    'tools/i18n/**/*.{ts,tsx,js,mjs}'
 
 tasks:
   check:
@@ -141,15 +136,16 @@ tasks:
     cmds:
       - bun src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --exempt {{shellQuote .NPM_LICENSE_EXEMPTIONS}} ../../node_modules
 
-  # Bun only: it reads no node_modules, so it needs no install.
+  # Bun only: it reads no node_modules, so it needs no install. The [fmt] section of bunfig.toml holds the options and
+  # the files: a bare `bun fmt` at the root is the same command.
   fmt:
     desc: Format the TypeScript and JavaScript of web/, pkg/mykit/ts, pkg/mybot/ts, and tools/i18n with bun fmt (the preflight checks it, so run it before committing them)
     cmds:
-      - bun fmt {{.FMT_FILES}}
+      - bun fmt
 
   # The i18n, site, and mykit checks run it too, for their packages' files.
   fmt-check:
     desc: Fail if bun fmt would change a TypeScript or JavaScript file of the workspace (scripts/task.sh web:fmt fixes them)
     run: once
     cmds:
-      - bun fmt --check {{.FMT_FILES}}
+      - bun fmt --check

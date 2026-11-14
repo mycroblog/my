@@ -139,8 +139,8 @@ classify() {
       select_contexts go mykit agentkit
       return
       ;;
-    # The options and the ignored files of bun fmt, which web:fmt-check reads for every TS package.
-    .prettierignore | .editorconfig)
+    # The indentation and line endings of bun fmt, which web:fmt-check reads for every TS package.
+    .editorconfig)
       select_contexts web
       return
       ;;

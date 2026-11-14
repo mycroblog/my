@@ -154,8 +154,9 @@ The tests do not use these services: they start what they need themselves, and `
 Go is formatted with `gofmt` (`scripts/task.sh go:fmt-check` checks it). The TypeScript and JavaScript of `web/`,
 `pkg/mykit/ts`, `pkg/mybot/ts`, and `tools/i18n` are formatted with `bun fmt`, the formatter built into
 the pinned Bun: run `scripts/task.sh web:fmt` before you commit them, and again after resolving a conflict in one of
-them. `scripts/task.sh web:fmt-check` fails when a file needs formatting; `check` and CI run it. Its options are in
-the `[fmt]` section of the root `bunfig.toml`, and `.prettierignore` lists the generated files it leaves alone. To format from an editor, have it run `bun fmt --stdin-filepath <file>`.
+them. `scripts/task.sh web:fmt-check` fails when a file needs formatting; `check` and CI run it. Its options and its
+files are in the `[fmt]` section of the root `bunfig.toml`, so a bare `bun fmt` formats the same files. To format from
+an editor, have it run `bun fmt --stdin-filepath <file>`.
 
 Commits that only reformat are listed in `.git-blame-ignore-revs`. GitHub's blame view skips them; for `git blame`,
 run once:
