@@ -7,7 +7,7 @@
 import { runStream, type StreamEvent, type StreamOptions } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
 import type { AppData } from "./app-data";
-import { receiveHomeGap, receiveHomeStatuses } from "./arrivals";
+import { receiveDeletion, receiveHomeGap, receiveHomeStatuses } from "./arrivals";
 import { receiveNotification, receiveNotificationGap } from "./notifications";
 
 /** What the leading tab passes to the others: an event of the stream, or a break after which they read again. */
@@ -75,7 +75,7 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
   };
 }
 
-/** Puts what the stream says into the cache: new home statuses, an unread notification, or a break. */
+/** Puts what the stream says into the cache: new home statuses, a deleted status, an unread notification, or a break. */
 function route(data: AppData, message: StreamMessage): void {
   if (message.kind === "gap") {
     receiveHomeGap(data);
@@ -86,6 +86,9 @@ function route(data: AppData, message: StreamMessage): void {
   switch (event.type) {
     case "update":
       receiveHomeStatuses(data, [event.status]);
+      break;
+    case "delete":
+      receiveDeletion(data, event.id);
       break;
     case "notification":
       receiveNotification(data);

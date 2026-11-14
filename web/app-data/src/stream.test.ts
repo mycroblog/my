@@ -58,6 +58,17 @@ test("one tab of the browser reads the stream, and every tab receives its events
   }
 });
 
+test("a status deleted on the stream leaves the timelines of every tab", async () => {
+  const [a, b] = [await tab(), await tab()];
+  const { streams } = start([a.data, b.data]);
+  await Bun.sleep(0);
+  const [stream] = streams;
+  stream?.open(false);
+  stream?.send(update("2"));
+  stream?.send({ type: "delete", id: "1" });
+  for (const { data } of [a, b]) expect(home(data)).toEqual([["2"]]);
+});
+
 test("when the leading tab closes, another takes the stream over and every tab catches up", async () => {
   const [a, b, c] = [await tab(), await tab(), await tab()];
   const { streams, stops } = start([a.data, b.data, c.data]);

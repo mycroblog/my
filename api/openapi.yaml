@@ -5974,6 +5974,12 @@ paths:
           is an `Announcement`.
         - `announcement_removed`: an announcement no longer shows (it was withdrawn, or its
           window changed). `data` is `{"id": "<announcement id>"}`.
+        - `delete`: a status that the user may have seen was deleted by its author, a moderator,
+          or its remote server. `data` is `{"id": "<status id>"}`; remove the status, and the boosts
+          of it, wherever they show. It is sent to the users who may see the status now (its
+          visibility, their follows, and blocks apply), not to the recipients of a `direct` post
+          other than its author. Purges of many statuses at once (an account's deletion, the
+          automatic deletion of old posts) send none.
 
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
         the access token stops being valid, when the client does not keep up, and when it shuts
@@ -6039,6 +6045,8 @@ paths:
           their `local` posts; the federated timeline has the public posts of local and remote
           accounts, never `local` posts, and neither has boosts. A remote post arrives when the
           server stores it.
+        - `delete`: a status that the timeline may have listed for the user was deleted, as
+          `GET /api/v1/streaming` sends it. `data` is `{"id": "<status id>"}`.
 
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
         the access token stops being valid, when the setting of the timeline becomes `off`, when

@@ -31,6 +31,40 @@ export function updateCachedStatuses(queryClient: QueryClient, id: string, updat
   });
 }
 
+/**
+ * Takes the deleted status with the ID given out of every cached timeline: the status, and the boosts of it, leave the
+ * items, and a quote of it shows it deleted, as the server answers once it is gone. A timeline that a fetch is reading
+ * loses it again when the fetch ends, since the fetch writes what it read over the change.
+ */
+export function removeCachedStatus(queryClient: QueryClient, id: string): void {
+  const remove = (data: StatusPages | undefined) => {
+    if (data === undefined) return data;
+    const pages = data.pages.map((page) => {
+      const items = withoutStatus(page.items, id);
+      return items === page.items ? page : { ...page, items: [...items] };
+    });
+    return pages.every((page, i) => page === data.pages[i]) ? data : { ...data, pages };
+  };
+  const filters = { predicate: (query: { queryKey: readonly unknown[] }) => isTimelineKey(query.queryKey) };
+  queryClient.setQueriesData<StatusPages>(filters, remove);
+  for (const query of queryClient.getQueryCache().findAll(filters)) {
+    if (query.state.fetchStatus !== "fetching" || !query.promise) continue;
+    const again = () => {
+      queryClient.setQueryData<StatusPages>(query.queryKey, remove);
+    };
+    query.promise.then(again, again);
+  }
+}
+
+/**
+ * `statuses` without the deleted status with the ID given and the boosts of it, and with a quote of it shown deleted;
+ * `statuses` itself when none of them has it.
+ */
+export function withoutStatus(statuses: readonly Status[], id: string): readonly Status[] {
+  const kept = statuses.filter((status) => status.id !== id && status.boost?.id !== id).map((s) => unquote(s, id));
+  return kept.length === statuses.length && kept.every((status, i) => status === statuses[i]) ? statuses : kept;
+}
+
 function isTimelineKey(key: readonly unknown[]): boolean {
   const path = key[1];
   return key[0] === "get" && typeof path === "string" && path.startsWith(timelinePathPrefix);
@@ -49,4 +83,12 @@ function mapStatus(status: Status, id: string, update: (status: Status) => Statu
     if (mapped !== quoted) next = { ...next, quote: { ...next.quote, quoted_status: mapped } };
   }
   return next;
+}
+
+/** Shows a quote of the deleted status with the ID given deleted, in status and in the status it boosts. */
+function unquote(status: Status, id: string): Status {
+  if (status.quote?.quoted_status?.id === id) return { ...status, quote: { state: "deleted" } };
+  if (status.boost === undefined) return status;
+  const boost = unquote(status.boost, id);
+  return boost === status.boost ? status : { ...status, boost };
 }

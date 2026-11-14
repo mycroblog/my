@@ -30,7 +30,8 @@ const (
 )
 
 // StreamEvent is an event of GET /streaming: one of *UpdateEvent, *ListUpdateEvent, *NotificationEvent,
-// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, *NotificationRequestsEvent, and *UnknownEvent.
+// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, *DeleteEvent, *NotificationRequestsEvent, and
+// *UnknownEvent.
 // Branch on it with a type switch.
 type StreamEvent interface {
 	// EventName is the `event` field of the event, such as "update".
@@ -59,6 +60,10 @@ type AnnouncementEvent struct{ Announcement Announcement }
 
 // AnnouncementRemovedEvent is an announcement that no longer shows.
 type AnnouncementRemovedEvent struct{ ID string }
+
+// DeleteEvent is a status that the user may have seen and that was deleted: remove it, and the boosts of it,
+// wherever they show.
+type DeleteEvent struct{ ID string }
 
 // NotificationRequestsEvent tells the new counts of the notification requests: a notification that the user's
 // notification policy filtered arrived, or a request was accepted or dismissed. The filtered notification itself
@@ -89,6 +94,9 @@ func (*AnnouncementEvent) EventName() string { return "announcement" }
 
 // EventName is "announcement_removed".
 func (*AnnouncementRemovedEvent) EventName() string { return "announcement_removed" }
+
+// EventName is "delete".
+func (*DeleteEvent) EventName() string { return "delete" }
 
 // EventName is "notification_requests".
 func (*NotificationRequestsEvent) EventName() string { return "notification_requests" }
@@ -344,16 +352,17 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 	case "announcement":
 		e := &AnnouncementEvent{}
 		typed, target = e, &e.Announcement
-	case "announcement_removed":
-		e := &AnnouncementRemovedEvent{}
+	case "announcement_removed", "delete":
 		var removed struct {
 			ID string `json:"id"`
 		}
 		if err := json.Unmarshal([]byte(ev.data), &removed); err != nil || removed.ID == "" {
 			return nil, fmt.Errorf("mykit: the data of a stream event %q has no id", ev.name)
 		}
-		e.ID = removed.ID
-		return e, nil
+		if ev.name == "delete" {
+			return &DeleteEvent{ID: removed.ID}, nil
+		}
+		return &AnnouncementRemovedEvent{ID: removed.ID}, nil
 	case "notification_requests":
 		e := &NotificationRequestsEvent{}
 		typed, target = e, &e.Summary

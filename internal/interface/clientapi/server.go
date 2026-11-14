@@ -189,11 +189,14 @@ type Options struct {
 	// Streams opens the subscriptions of the streaming endpoint; nil answers it with 503.
 	// HomeEntries tells the streams whether a home timeline lists a new entry; nil streams no
 	// home timeline entries. EntryLists tells them which lists of the viewer list such an
-	// entry; nil streams no list_update events. StreamHeartbeat overrides
-	// DefaultStreamHeartbeat when positive, and StreamWriteTimeout DefaultStreamWriteTimeout.
+	// entry; nil streams no list_update events. DeletedAudience tells the streams, of every
+	// kind, whom to tell of a deleted status; nil streams no delete events. StreamHeartbeat
+	// overrides DefaultStreamHeartbeat when positive, and StreamWriteTimeout
+	// DefaultStreamWriteTimeout.
 	Streams            stream.Subscriber
 	HomeEntries        HomeEntries
 	EntryLists         EntryLists
+	DeletedAudience    DeletedAudience
 	StreamHeartbeat    time.Duration
 	StreamWriteTimeout time.Duration
 	// TimelineStreams opens the subscriptions of the streams of the local and federated
@@ -454,6 +457,8 @@ type Server struct {
 	streams kernel.UpDownCounter
 	// home decides which user streams of the process check a new home entry.
 	home *homeGate
+	// deleted decides which streams of the process, of every kind, send the deletion of a status.
+	deleted *audienceGate
 	// monitor checks the tokens of the open streams of the process on every heartbeat; nil
 	// leaves each stream to check its own.
 	monitor *streamMonitor
@@ -487,7 +492,7 @@ func New(o Options) *Server {
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate(), public: newPublicDispatch()}
+	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate(), deleted: newAudienceGate(), public: newPublicDispatch()}
 	if b, ok := o.Authenticator.(bearerBatch); ok {
 		every := o.StreamHeartbeat
 		if every <= 0 {

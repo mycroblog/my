@@ -707,12 +707,13 @@ func brokerRoutesTimelines(t *testing.T, b StreamBroker) {
 		local := stream.Event{Kind: stream.KindPublicEntry, EntryID: testkit.NamedID("local"), OnLocal: true}
 		both := stream.Event{Kind: stream.KindPublicEntry, EntryID: testkit.NamedID("both"), OnLocal: true, OnFederated: true}
 		federated := stream.Event{Kind: stream.KindPublicEntry, EntryID: testkit.NamedID("federated"), OnFederated: true}
-		for _, e := range []stream.Event{note, home, local, both, federated} {
+		deleted := stream.Event{Kind: stream.KindStatusDeleted, EntryID: testkit.NamedID("both"), AuthorAccountID: testkit.NamedID("carol"), Visibility: "public"}
+		for _, e := range []stream.Event{note, home, local, both, federated, deleted} {
 			pub.Publish(e)
 		}
-		brokerWant(t, b, "alice's account subscription from "+from, alice, note, home)
-		brokerWant(t, b, "alice's local timeline from "+from, aliceLocal, local, both)
-		brokerWant(t, b, "bob's federated timeline from "+from, bobFederated, both, federated)
+		brokerWant(t, b, "alice's account subscription from "+from, alice, note, home, deleted)
+		brokerWant(t, b, "alice's local timeline from "+from, aliceLocal, local, both, deleted)
+		brokerWant(t, b, "bob's federated timeline from "+from, bobFederated, both, federated, deleted)
 	}
 }
 

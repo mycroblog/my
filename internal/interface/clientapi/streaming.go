@@ -74,8 +74,9 @@ func (s *Server) registerStreaming(r Router) {
 // viewer whose timeline lists the entry, data its ID and the Status), notifications (event notification,
 // data a Notification), conversations of the direct messages (event conversation, data a
 // Conversation), announcements (event announcement, data an Announcement, and event
-// announcement_removed, data its ID), and the counts of the notification requests when they
-// change (event notification_requests, data a NotificationRequestSummary). The stream subscribes to the signals of stream.Subscriber and reads
+// announcement_removed, data its ID), the counts of the notification requests when they
+// change (event notification_requests, data a NotificationRequestSummary), and the deletions of
+// the statuses that the viewer may have seen (event delete, data the status's ID). The stream subscribes to the signals of stream.Subscriber and reads
 // each change back through the use cases, as the viewer would see it in the home timeline or
 // the notification list. It ends when the client goes, the subscription ends (the broker shuts
 // down, the client fell behind, or the broker may have missed signals), a write times out, or
@@ -98,6 +99,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 	}
 	defer sub.Close()
 	defer s.home.register(v.AccountID)()
+	defer s.deleted.register(v.AccountID)()
 
 	home, err := s.timelineQuery(ctx, &v, nil, nil, true)
 	if err != nil {
@@ -275,8 +277,45 @@ func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 		return st.conversation(ctx, e)
 	case stream.KindAnnouncement:
 		return st.announcement(ctx, e.AnnouncementID)
+	case stream.KindStatusDeleted:
+		return st.deleted(ctx, e)
 	}
 	return nil
+}
+
+// statusDeleted is the data of a delete event: the ID of the deleted status.
+type statusDeleted struct {
+	ID string `json:"id"`
+}
+
+// deleted sends the deletion of the status of e (event delete) when the viewer may have seen the
+// status (DeletedAudience), which the streams of the process decide once together. A
+// cross-process broker may deliver the signal twice, and the client removes nothing the second
+// time.
+func (st *streamState) deleted(ctx context.Context, e stream.Event) error {
+	da := st.s.o.DeletedAudience
+	if da == nil || e.EntryID == "" || e.AuthorAccountID == "" {
+		return nil
+	}
+	d := apptimeline.DeletedFrom(e)
+	audience := func(ctx context.Context, ids []string) (map[string]bool, error) {
+		return da.DeletedAudience(ctx, d, ids)
+	}
+	id := st.viewer.AccountID
+	ok, err := st.s.deleted.decide(ctx, e.EntryID, id, audience)
+	if errors.Is(err, errNotAsked) {
+		// The stream opened after the decision: it decides for its viewer alone.
+		var m map[string]bool
+		m, err = audience(ctx, []string{id})
+		ok = m[id]
+	}
+	if err != nil {
+		return fmt.Errorf("the audience of the deleted status %s: %w", e.EntryID, err)
+	}
+	if !ok {
+		return nil
+	}
+	return st.event("delete", statusDeleted{ID: e.EntryID})
 }
 
 // conversation sends the conversation of e as the viewer's list of direct messages shows it
