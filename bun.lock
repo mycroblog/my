@@ -94,6 +94,7 @@
     "web/app-data": {
       "name": "@my/app-data",
       "dependencies": {
+        "@my/platform": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
         "@tanstack/react-query": "5.107.1",
         "openapi-fetch": "0.17.0",

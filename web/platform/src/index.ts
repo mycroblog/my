@@ -16,4 +16,5 @@ export {
   type PasskeyFailure,
   type PasskeyJSON,
 } from "./passkeys";
+export { joinTabGroup, type TabGroup } from "./tabs";
 export { supportsViewTransitions } from "./transitions";

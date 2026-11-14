@@ -11,6 +11,7 @@
     "test": "bun test --conditions=@mycroblog/source"
   },
   "dependencies": {
+    "@my/platform": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
     "@tanstack/react-query": "5.107.1",
     "openapi-fetch": "0.17.0",

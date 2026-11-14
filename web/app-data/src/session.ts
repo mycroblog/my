@@ -98,7 +98,6 @@ export async function openSession({
 }: SessionOptions): Promise<AppData | null> {
   const tokenSource = new SessionTokenSource(server, fetch);
   if ((await tokenSource.getAccessToken()) === null) return null;
-  return createAppData(
-    createClient({ server, tokenSource, fetch, ...(acceptLanguage === undefined ? {} : { acceptLanguage }) }),
-  );
+  const connection = { server, tokenSource, fetch, ...(acceptLanguage === undefined ? {} : { acceptLanguage }) };
+  return { ...createAppData(createClient(connection)), connection };
 }
