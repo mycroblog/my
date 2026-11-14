@@ -1,64 +1,158 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The rough post composer (#3046) at /app/compose on the catalog's dev server, to judge the whole flow before it is
-// built: each state of the composer over the app's frame and a few sample posts, one specimen after another under a
-// catalog label whose id names it (`compose-<state>`, for `web:shot --section`); `?state=<id>` keeps one. The state
-// `flow` is the live one: the frame and the posts, where New post (or `n`), a post's Reply and the boost menu's Quote
-// open the composer. The language is the page's (`?lang=en|ja`), the scheme the page's.
+// The post composer of @my/app-features at /app/compose on the catalog's dev server, on a fake server instead of a live
+// one: each state of it in the flow of the page, one specimen after another under a catalog label whose id names it
+// (`compose-<state>`, for `web:shot --section`), and `?state=<id>` keeps one; `?state=flow` is the app itself, where
+// New post (or `n`), a post's Reply and the boost menu's Quote open the composer over the home timeline, and what is
+// posted tops it. The language is the page's (`?lang=en|ja`), the scheme the page's.
 //
-// Leaving the composer: close and Escape discard a written post, and a notice offers to undo it for a moment; a press
-// on the backdrop (or, on a phone, the system's back gesture) leaves it by accident, and the post is saved as a
-// draft (ADR-0156) without a word. A specimen shows the state it leaves, and Undo, or New post, opens it again.
-//
-// The software keyboard: on a phone the row that sends the post stays right above it. For real, the page's viewport
-// says `interactive-widget=resizes-content`, so that 100dvh ends at the keyboard (Chrome on Android), and the composer
-// subtracts `env(keyboard-inset-height)` where the browser overlays the keyboard instead (with the Virtual Keyboard
-// API's overlaysContent), or the height the visualViewport loses (Safari on iOS), as --cmp-keyboard. The `keyboard`
-// state draws a keyboard of a phone's height and sets --cmp-keyboard to it.
+// The fake server takes posts, uploads (a file whose name has "fail" is refused, so that the retry shows; the others
+// are processed for a moment), and drafts; a post whose text has "#fail" is refused with the server's words, so that a
+// failed post shows. Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as
+// a draft, which New post opens again.
 
-import { keymap } from "@my/app";
-import { Post, type PostAction } from "@my/app-components";
-import {
-  Frame,
-  FrameAction,
-  FrameAside,
-  FrameFloat,
-  FrameMain,
-  FrameMark,
-  FrameSection,
-  FrameSide,
-  FrameTabBar,
-  NavItem,
-  NavList,
-  ShortcutProvider,
-  useAction,
-  useLocale,
-} from "@my/design-system";
-import { namesCommandKey } from "@my/platform";
-import { useEffect, useId, useState, type ReactNode } from "react";
-import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
-import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
+import { AppRoot, createAppRouter } from "@my/app";
+import { ComposeLayer, emptyComposeDraft, type ComposeDraft, type ComposeTarget } from "@my/app-features";
+import { AppDataProvider, createAppData, defaultComposeSettings, type Status } from "@my/app-data";
+import { useLocale } from "@my/design-system";
+import { createClient } from "@mycroblog/mykit";
+import type { ReactNode } from "react";
 import { posts, statusOf } from "../timeline/fixtures";
-import { Composer, emptyDraft, maxChars, type Draft, type Language, type Leave } from "./Composer";
-import { stringsFor } from "./strings";
-import "./compose.css";
 
 const params = new URLSearchParams(location.search);
 const onlyState = params.get("state");
 
-const ja = (locale: string) => locale.startsWith("ja");
+const server = "https://my.example";
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": status >= 400 ? "application/problem+json" : "application/json", ETag: '"1"' },
+  });
 
-const byId = (id: string) => {
-  const post = posts.find((p) => p.id === id);
-  if (!post) throw new Error(`no sample post ${id}`);
-  return post;
-};
+// What the fake server holds, newest first: the posts posted on it, then the samples.
+const served = posts.map((post) => statusOf(post, post.id) as unknown as Status);
+const uploads = new Map<string, { url: string; ready: number; description?: string }>();
+let made = 0;
 
-// The posts behind the composer, and the ones it replies to and quotes.
-const behind = posts.slice(0, 4);
-const replied = byId("alice-reply");
-const quoted = byId("ravi-quote").quote;
-const scenes = posts.flatMap((p) => p.media ?? []);
+/** A file's metadata, centered. */
+const meta = { focus: { x: 0, y: 0 } };
+
+const escape = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${String(c.charCodeAt(0))};`);
+
+/** The status a post makes, from the reader's sample post and what was sent. */
+function posted(body: Record<string, unknown>): Status {
+  const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback);
+  made += 1;
+  const base = served.find((s) => s.id === "own") ?? served[0];
+  if (!base) throw new Error("the catalog has no sample posts");
+  const media = (body["media"] as { id: string; description?: string }[] | undefined) ?? [];
+  const quoted = served.find((s) => s.id === body["quoted_status_id"]);
+  return {
+    ...base,
+    id: `posted-${String(made)}`,
+    created_at: new Date().toISOString(),
+    content: str(body["text"])
+      .split("\n")
+      .map((line) => `<p>${escape(line)}</p>`)
+      .join(""),
+    spoiler_text: str(body["spoiler_text"]),
+    visibility: body["visibility"] as Status["visibility"],
+    language: str(body["language"], "en"),
+    media_attachments: media.map((m) => {
+      const url = uploads.get(m.id)?.url ?? "";
+      return {
+        id: m.id,
+        type: "image",
+        state: "ready",
+        meta,
+        url,
+        preview_url: url,
+        ...(m.description ? { description: m.description } : {}),
+      };
+    }),
+    replies_count: 0,
+    boosts_count: 0,
+    favourites_count: 0,
+    reactions: [],
+    favourited: false,
+    boosted: false,
+    ...(typeof body["in_reply_to_id"] === "string" ? { in_reply_to_id: body["in_reply_to_id"] } : {}),
+    ...(quoted ? { quote: { state: "accepted", quoted_status: quoted } } : { quote: undefined }),
+  } as Status;
+}
+
+const refused = (detail: string) =>
+  json({ type: "/api/v1/problems/status-rejected", title: "Unprocessable Content", status: 422, detail }, 422);
+
+/** The fake server. */
+async function serve(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const path = url.pathname.replace("/api/v1", "");
+  const method = request.method;
+  if (path === "/timelines/home") {
+    const cursor = url.searchParams.get("cursor");
+    const from = cursor === null ? 0 : served.findIndex((s) => s.id === cursor) + 1;
+    const items = served.slice(from, from + 6);
+    const last = items.at(-1);
+    return json({ items, ...(last && from + 6 < served.length ? { next_cursor: last.id } : {}) });
+  }
+  if (path === "/preferences")
+    return json({
+      default_visibility: "public",
+      default_interaction_policy: {
+        reply: { automatic: "everyone" },
+        announce: { automatic: "everyone" },
+        quote: { automatic: "everyone" },
+      },
+      default_post_language: "und",
+      require_media_description: false,
+    });
+  if (path === "/instance")
+    return json({ domain: "my.example", limits: { max_post_characters: 500, require_media_description: false } });
+  if (path === "/accounts/verify_credentials") return json({ id: "kumi", acct: "kumi" });
+  if (path === "/statuses" && method === "POST") {
+    const body = (await request.json()) as Record<string, unknown>;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    if (typeof body["text"] === "string" && body["text"].includes("#fail"))
+      return refused(document.documentElement.lang.startsWith("ja") ? "投稿が断られました。" : "The post was refused.");
+    const status = posted(body);
+    served.unshift(status);
+    return json(status, 201);
+  }
+  const status = /^\/statuses\/([^/]+)$/.exec(path);
+  if (status && method === "GET") {
+    const found = served.find((s) => s.id === status[1]);
+    return found ? json(found) : json({ type: "about:blank", title: "Not Found", status: 404 }, 404);
+  }
+  if (path === "/media" && method === "POST") {
+    const file = (await request.formData()).get("file");
+    if (!(file instanceof File) || file.name.includes("fail"))
+      return json({ type: "about:blank", title: "Unsupported Media Type", status: 415 }, 415);
+    made += 1;
+    const id = `media-${String(made)}`;
+    uploads.set(id, { url: URL.createObjectURL(file), ready: Date.now() + 1500 });
+    return json({ id, type: "image", state: "processing", meta }, 202);
+  }
+  const media = /^\/media\/([^/]+)$/.exec(path);
+  if (media?.[1]) {
+    const upload = uploads.get(media[1]);
+    if (!upload) return json({ type: "about:blank", title: "Not Found", status: 404 }, 404);
+    const ready = Date.now() >= upload.ready;
+    return json({
+      id: media[1],
+      type: "image",
+      state: ready ? "ready" : "processing",
+      meta,
+      ...(ready ? { url: upload.url, preview_url: upload.url } : {}),
+    });
+  }
+  if (path === "/drafts" && method === "POST") return json({ id: "draft-1", visibility: "public" }, 201);
+  if (path.startsWith("/drafts/") && method === "PUT") return json({ id: path.slice("/drafts/".length) });
+  if (path.startsWith("/drafts/") && method === "DELETE") return new Response(null, { status: 204 });
+  return json({ type: "about:blank", title: "Not Found", status: 404 }, 404);
+}
+
+const data = createAppData(createClient({ server, retry: { disabled: true }, fetch: serve }));
 
 const words = {
   en: {
@@ -66,7 +160,6 @@ const words = {
     long: "Notes from the first month of running a small server, for anyone who is thinking about it. The hardware was the easy part: an old laptop and a backup drive did the job, and the setup took one evening. What took longer was deciding what kind of place it should be. We wrote three rules, read them aloud at the first meetup, and changed two of them a week later. The timeline is slow and that is the point. People reply to each other instead of broadcasting, and nobody has asked for a trending page yet. If you start one, write down why, and keep the rules short.",
     cw: "Spoilers for the season finale",
     cwText: "I did not expect the lighthouse keeper to be the narrator all along. Rewatching the first episode now.",
-    reply: "@alice@example.social Nine works. I will bring the thermos.",
     quote: "Bookmarking this before my move next month.",
     images: "The view from the ridge before the fog came in.",
     direct: "@mika@mstdn.example.jp the slides from today are in the shared folder.",
@@ -79,7 +172,6 @@ const words = {
     long: "小さなサーバーを一か月動かしてみての覚え書き。これから立てようと思っている人のために。機材はいちばん簡単だった。古いノートパソコンとバックアップ用のディスクで足りて、設定はひと晩で終わった。時間がかかったのは、どんな場所にしたいかを決めることのほう。ルールを三つ書いて、最初のオフ会で読み上げて、一週間後に二つ書き直した。タイムラインはゆっくり流れるけれど、それでいい。みんな発信するより返事をしていて、トレンドの画面がほしいと言った人はまだいない。もし立てるなら、なぜ立てるのかを書いておくこと。ルールは短く。それから、ひとりで抱えないこと。困ったら手伝ってくれる人は思ったよりいる。サーバーの名前は三回変えたけれど、最初の名前がいちばん好きだったので、結局それに戻した。次は絵文字を増やす予定。みんなが描いた絵をそのまま使えるようにしたい。週末に集まって描く会をやるので、来られる人はぜひ。お茶とお菓子は用意します。場所はいつもの公民館の二階、午後二時から。道に迷ったら連絡してください。サーバー代のチップも少しずつ届いていて、とてもありがたい。来年もこの調子で続けたい。まずは冬を越すところから。寒くなってきたので、みなさんもお気をつけて。ではまた。",
     cw: "最終回のネタバレ",
     cwText: "灯台守がずっと語り手だったとは思わなかった。いま第一話を見直している。",
-    reply: "@alice@example.social 9時で大丈夫。水筒を持っていくね。",
     quote: "来月の引っ越し前に読んでおく。",
     images: "霧が出る前の尾根からの眺め。",
     direct: "@mika@mstdn.example.jp 今日のスライドは共有フォルダに入れました。",
@@ -92,311 +184,163 @@ const words = {
 /** A text of `n` characters, cut from the long sample. */
 const cut = (text: string, n: number) => Array.from(text.repeat(2)).slice(0, n).join("");
 
-/** How a specimen starts: the composer open with a draft, or left one way or the other. */
-type State = { id: string; name: string; draft: Draft; left?: "discarded" | "saved"; keyboard?: boolean };
+const scenes = posts.flatMap((p) => p.media ?? []).map((m) => m.src);
+const image = (n: number, state: "ready" | "uploading" | "processing" | "failed", description = "") => ({
+  key: `sample-${String(n)}`,
+  preview: scenes[n % scenes.length],
+  state,
+  description,
+  ...(state === "failed" ? { file: new File([], "photo.jpg") } : {}),
+  ...(state === "ready"
+    ? { media: { id: `sample-${String(n)}`, type: "image" as const, state: "ready" as const, meta } }
+    : {}),
+});
+
+type State = { id: string; name: string; target: ComposeTarget; draft: (base: ComposeDraft) => ComposeDraft };
 
 function states(locale: string): State[] {
-  const lang: Language = ja(locale) ? "ja" : "en";
-  const w = words[lang];
-  const base = emptyDraft(lang);
-  const typed = { ...base, text: w.typing };
-  const quoting = quoted
-    ? { ...base, kind: "quote" as const, quote: { post: quoted, remote: true }, text: w.quote }
-    : base;
+  const w = locale.startsWith("ja") ? words.ja : words.en;
+  const typed = (d: ComposeDraft) => ({ ...d, text: w.typing });
+  const poll = (multiple: boolean) => (d: ComposeDraft) => ({
+    ...d,
+    text: w.poll,
+    poll: { options: w.options, duration: 259200, multiple, hideTotals: !multiple },
+  });
+  const nw: ComposeTarget = { kind: "new" };
   return [
-    { id: "empty", name: "Empty", draft: base },
-    { id: "typing", name: "Typing", draft: typed },
-    { id: "keyboard", name: "Typing on a phone, the keyboard up", draft: typed, keyboard: true },
-    { id: "near-limit", name: "Near the limit", draft: { ...base, text: cut(w.long, maxChars - 12) } },
-    { id: "over-limit", name: "Over the limit", draft: { ...base, text: cut(w.long, maxChars + 8) } },
-    { id: "audience", name: "Choosing the audience", draft: { ...typed, pop: "audience" } },
+    { id: "empty", name: "Empty", target: nw, draft: (d) => d },
+    { id: "typing", name: "Typing", target: nw, draft: typed },
+    { id: "near-limit", name: "Near the limit", target: nw, draft: (d) => ({ ...d, text: cut(w.long, 488) }) },
+    { id: "over-limit", name: "Over the limit", target: nw, draft: (d) => ({ ...d, text: cut(w.long, 508) }) },
+    { id: "visibility-local", name: "Local", target: nw, draft: (d) => ({ ...typed(d), visibility: "local" }) },
+    {
+      id: "visibility-private",
+      name: "Followers only",
+      target: nw,
+      draft: (d) => ({ ...typed(d), visibility: "private" }),
+    },
     {
       id: "permissions",
-      name: "Who can reply, boost and quote",
-      draft: { ...typed, policy: { reply: "everyone", boost: "followers", quote: "nobody" }, pop: "permissions" },
+      name: "Replies, boosts or quotes limited",
+      target: nw,
+      draft: (d) => ({ ...typed(d), policy: { reply: "everyone", announce: "followers", quote: "nobody" } }),
     },
-    { id: "visibility-local", name: "Local", draft: { ...typed, visibility: "local" } },
-    { id: "visibility-unlisted", name: "Quiet public", draft: { ...typed, visibility: "unlisted" } },
-    { id: "visibility-private", name: "Followers only", draft: { ...typed, visibility: "private" } },
-    { id: "visibility-direct", name: "Direct", draft: { ...base, text: w.direct, visibility: "direct" } },
-    { id: "cw", name: "Content warning", draft: { ...base, cw: w.cw, text: w.cwText } },
+    {
+      id: "visibility-direct",
+      name: "Direct",
+      target: nw,
+      draft: (d) => ({ ...d, text: w.direct, visibility: "direct" }),
+    },
+    { id: "cw", name: "Content warning", target: nw, draft: (d) => ({ ...d, cw: w.cw, text: w.cwText }) },
     {
       id: "images",
-      name: "Images",
-      draft: {
-        ...base,
+      name: "Images: described, not yet, processing, failed",
+      target: nw,
+      draft: (d) => ({
+        ...d,
         text: w.images,
-        images: [
-          { src: scenes[0]?.src ?? "", alt: w.alt },
-          { src: scenes[1]?.src ?? "", alt: "" },
-          { src: scenes[2]?.src ?? "", alt: "", uploading: true },
-        ],
-      },
+        attachments: [image(0, "ready", w.alt), image(1, "ready"), image(2, "processing"), image(3, "failed")],
+      }),
     },
+    { id: "reply", name: "Reply", target: { kind: "reply", id: "alice-reply" }, draft: (d) => d },
     {
-      id: "images-required",
-      name: "A description missing, which the server asks for",
-      draft: {
-        ...base,
-        text: w.images,
-        images: [
-          { src: scenes[0]?.src ?? "", alt: w.alt },
-          { src: scenes[1]?.src ?? "", alt: "" },
-        ],
-        descriptionsRequired: true,
-        checked: true,
-      },
+      id: "quote",
+      name: "Quote of a post on another server",
+      target: { kind: "quote", id: "mika-long" },
+      draft: (d) => ({ ...d, text: w.quote }),
     },
-    { id: "reply", name: "Reply", draft: { ...base, kind: "reply", replyTo: replied, text: w.reply } },
-    { id: "quote", name: "Quote", draft: quoting },
-    { id: "quote-audience", name: "Quote, choosing the audience", draft: { ...quoting, pop: "audience" } },
-    { id: "language", name: "Language", draft: { ...typed, pop: "language" } },
-    {
-      id: "poll",
-      name: "Poll",
-      draft: { ...base, text: w.poll, poll: { options: w.options, duration: 3, multiple: false, hideTotals: true } },
-    },
-    {
-      id: "poll-multiple",
-      name: "Poll, several choices",
-      draft: { ...base, text: w.poll, poll: { options: w.options, duration: 3, multiple: true, hideTotals: false } },
-    },
-    { id: "submitting", name: "Submitting", draft: { ...typed, phase: "submitting" } },
-    { id: "failed", name: "Failed", draft: { ...typed, phase: "failed", failNext: true } },
-    { id: "discarded", name: "Closed with × or Escape: discarded, with Undo", draft: typed, left: "discarded" },
-    { id: "saved", name: "Left by the backdrop: saved as a draft, silently", draft: typed, left: "saved" },
+    { id: "poll", name: "Poll", target: nw, draft: poll(false) },
+    { id: "poll-multiple", name: "Poll, several choices", target: nw, draft: poll(true) },
   ];
 }
 
-/** The places of the app's navigation, as the shell lists them. */
-const places = [
-  { href: "#home", icon: "home", en: "Home", ja: "ホーム" },
-  { href: "#notifications", icon: "notifications", en: "Notifications", ja: "通知" },
-  { href: "#search", icon: "search", en: "Search", ja: "検索" },
-  { href: "#profile", icon: "profile", en: "Profile", ja: "プロフィール" },
-  { href: "#settings", icon: "settings", en: "Settings", ja: "設定" },
-] as const;
-
-function Places({ lang }: { lang: "en" | "ja" }) {
-  return (
-    <NavList>
-      {places.map((place, i) => (
-        <NavItem key={place.href} href={place.href} icon={place.icon} label={place[lang]} current={i === 0} />
-      ))}
-    </NavList>
-  );
-}
-
-/** The app's frame around the sample posts, as the shell places it; New post and `n` call `onCompose`. */
-function Shell({ onCompose, onAction }: { onCompose: () => void; onAction?: (action: PostAction) => void }) {
-  const lang = ja(useLocale().locale) ? "ja" : "en";
-  const label = lang === "ja" ? "投稿する" : "New post";
-  const keys = useAction("compose.open", onCompose, { scope: "screen", label });
-  const action = <FrameAction icon="compose" label={label} onPress={onCompose} {...keys} />;
-  const aboutId = useId();
-  return (
-    <Frame>
-      <FrameSide label="Main">
-        <FrameMark href="#home" label="mycroblog" light={wordmarkLight} dark={wordmarkDark} />
-        {action}
-        <Places lang={lang} />
-      </FrameSide>
-      <FrameMain>
-        <div className="cmp-feed">
-          {behind.map((post) => (
-            <Post key={post.id} status={statusOf(post, post.id)} own={post.own} onAction={onAction} />
-          ))}
-        </div>
-      </FrameMain>
-      <FrameAside label={lang === "ja" ? "まわりのこと" : "Around you"}>
-        <FrameSection id={aboutId} icon="about" href="#about" heading="my.example">
-          <p>{lang === "ja" ? "小さなコミュニティのためのサーバー。" : "A server for a small community."}</p>
-        </FrameSection>
-      </FrameAside>
-      <FrameTabBar label="Main">
-        <Places lang={lang} />
-      </FrameTabBar>
-      <FrameFloat>{action}</FrameFloat>
-    </Frame>
-  );
-}
-
-/** The notice of a discarded post, for a moment, with Undo; neutral, since coral is not for it. */
-function Discarded({ onUndo, live }: { onUndo: () => void; live: boolean }) {
-  const s = stringsFor(useLocale().locale);
-  return (
-    <div className="cmp-notice" role="status" data-live={live ? "" : undefined}>
-      <span>{s.discarded}</span>
-      <button type="button" className="cmp-notice-action" onClick={onUndo}>
-        {s.undo}
-      </button>
-    </div>
-  );
-}
-
-/**
- * The composer over the frame, and what leaving it does: a discard shows the notice with Undo, and a press on the
- * backdrop saves the draft and closes. `live` lays it over the viewport (the flow); else over its specimen.
- */
-function Stage({
-  initial,
-  left,
-  live,
-  onAction,
-  keyboard = false,
-}: {
-  initial: Draft | undefined;
-  left?: "discarded" | "saved" | undefined;
-  live: boolean;
-  onAction?: (open: (d: Draft) => void) => (action: PostAction) => void;
-  keyboard?: boolean;
-}) {
-  const lang: Language = ja(useLocale().locale) ? "ja" : "en";
-  const [open, setOpen] = useState<Draft | undefined>(left === undefined ? initial : undefined);
-  const [discarded, setDiscarded] = useState<Draft | undefined>(left === "discarded" ? initial : undefined);
-  const [opened, setOpened] = useState(0);
-  const show = (d: Draft) => {
-    setOpened((n) => n + 1);
-    setDiscarded(undefined);
-    setOpen(d);
-  };
-  // The notice goes after a moment in the flow; a specimen keeps it, to be seen.
-  useEffect(() => {
-    if (!live || discarded === undefined) return;
-    const t = setTimeout(() => {
-      setDiscarded(undefined);
-    }, 6000);
-    return () => {
-      clearTimeout(t);
-    };
-  }, [live, discarded]);
-  const onLeave = (how: Leave, d: Draft) => {
-    setOpen(undefined);
-    if (how === "discarded") setDiscarded(d);
-  };
-  const shell = (
-    <Shell
-      onCompose={() => {
-        show(emptyDraft(lang));
-      }}
-      {...(onAction ? { onAction: onAction(show) } : {})}
-    />
-  );
-  return (
-    <div className="cmp-stage" data-live={live ? "" : undefined} data-keyboard={keyboard ? "" : undefined}>
-      {live ? (
-        shell
-      ) : (
-        <div className="cmp-behind" data-open={open ? "" : undefined} inert={open !== undefined}>
-          {shell}
-        </div>
-      )}
-      {open && (
-        <div
-          className="cmp-layer"
-          data-live={live ? "" : undefined}
-          onPointerDown={(e) => {
-            // A press on the backdrop, outside the composer, leaves it by accident: the post is kept as a draft.
-            if (e.target === e.currentTarget) setOpen(undefined);
-          }}
-        >
-          <Composer key={opened} initial={open} onLeave={onLeave} />
-        </div>
-      )}
-      {keyboard && open && <div className="cmp-keyboard" aria-hidden="true" />}
-      {discarded && (
-        <Discarded
-          live={live}
-          onUndo={() => {
-            show(discarded);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-/** One state, under its label. */
-function Specimen({ state }: { state: State }) {
+/** One state, under its label, in the flow of the page. */
+function Specimen({ state, locale }: { state: State; locale: string }) {
   const id = `compose-${state.id}`;
+  const lang = locale.startsWith("ja") ? "ja" : "en";
+  const initial = state.draft({ ...emptyComposeDraft(state.target, defaultComposeSettings, id), language: lang });
   return (
-    <section aria-labelledby={id}>
-      <h2 id={id} className="cmp-specimen-label">
-        <a href={`?${new URLSearchParams({ ...Object.fromEntries(params), state: state.id }).toString()}`}>
+    <section aria-labelledby={id} style={{ maxInlineSize: "37.5rem", marginInline: "auto", paddingBlockEnd: "1rem" }}>
+      <h2 id={id} style={label}>
+        <a
+          href={`?${new URLSearchParams({ ...Object.fromEntries(params), state: state.id }).toString()}`}
+          style={{ color: "inherit" }}
+        >
           {state.name}
         </a>
       </h2>
-      <Stage initial={state.draft} left={state.left} live={false} keyboard={state.keyboard === true} />
+      <ComposeLayer target={state.target} initial={initial} inline onOpen={() => undefined} onClose={() => undefined} />
     </section>
   );
 }
 
-/** The live flow: the frame and the posts, where New post, Reply and Quote open the composer over them. */
-function Flow() {
-  const lang: Language = ja(useLocale().locale) ? "ja" : "en";
-  return (
-    <Stage
-      initial={undefined}
-      live
-      onAction={(open) => (action) => {
-        const post = posts.find((p) => p.id === action.id);
-        if (!post) return;
-        if (action.type === "reply")
-          open({ ...emptyDraft(lang), kind: "reply", replyTo: post, text: `${post.author.handle} ` });
-        if (action.type === "quote")
-          open({
-            ...emptyDraft(lang),
-            kind: "quote",
-            quote: { post, remote: !post.author.handle.endsWith("@my.example") },
-          });
-      }}
-    />
-  );
-}
+// The catalog's chrome, not the composer's: a label over each specimen, and the index of the states.
+const label = {
+  margin: 0,
+  padding: "0.25rem 1rem",
+  borderBlockStart: "1px dashed var(--color-muted-text)",
+  color: "var(--color-muted-text)",
+  fontFamily: "ui-monospace, monospace",
+  fontSize: "var(--text-caption)",
+  fontWeight: 400,
+} as const;
 
-function Index() {
-  const { locale } = useLocale();
+function Index({ locale }: { locale: string }) {
   const href = (state?: string) => {
     const next = new URLSearchParams(location.search);
     if (state) next.set("state", state);
     else next.delete("state");
     return `?${next.toString()}`;
   };
+  const link = (state: string | undefined, name: string) => (
+    <a
+      key={state ?? "all"}
+      href={href(state)}
+      aria-current={state === (onlyState ?? undefined) ? "page" : undefined}
+      style={{ color: "inherit" }}
+    >
+      {name}
+    </a>
+  );
   return (
-    <nav className="cmp-index" aria-label="Composer states">
-      <a href={href()} aria-current={onlyState ? undefined : "page"}>
-        All
-      </a>
-      <a href={href("flow")} aria-current={onlyState === "flow" ? "page" : undefined}>
-        Live flow
-      </a>
-      {states(locale).map((state) => (
-        <a key={state.id} href={href(state.id)} aria-current={state.id === onlyState ? "page" : undefined}>
-          {state.name}
-        </a>
-      ))}
+    <nav
+      aria-label="Composer states"
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.25rem 0.75rem",
+        padding: "0.75rem 1rem",
+        color: "var(--color-muted-text)",
+        fontFamily: "var(--font-sans)",
+        fontSize: "var(--text-caption)",
+      }}
+    >
+      {link(undefined, "All")}
+      {link("flow", "Live flow")}
+      {states(locale).map((s) => link(s.id, s.name))}
     </nav>
   );
 }
 
-function Specimens() {
-  const { locale } = useLocale();
-  return states(locale)
-    .filter((state) => !onlyState || state.id === onlyState)
-    .map((state) => <Specimen key={state.id} state={state} />);
-}
+const router = createAppRouter({
+  data,
+  config: { apiOrigin: server, instanceName: "my.example", defaultLocale: "en", clientId: "my-web" },
+  at: "/",
+});
 
 export function ComposePreview(): ReactNode {
+  const { locale } = useLocale();
+  if (onlyState === "flow") return <AppRoot router={router} />;
   return (
-    <ShortcutProvider keymap={keymap} mac={namesCommandKey()}>
-      {onlyState === "flow" ? (
-        <Flow />
-      ) : (
-        <>
-          <Index />
-          <Specimens />
-        </>
-      )}
-    </ShortcutProvider>
+    <AppDataProvider data={data}>
+      <div style={{ background: "var(--color-surface)", minBlockSize: "100dvh" }}>
+        <Index locale={locale} />
+        {states(locale)
+          .filter((s) => !onlyState || s.id === onlyState)
+          .map((s) => (
+            <Specimen key={s.id} state={s} locale={locale} />
+          ))}
+      </div>
+    </AppDataProvider>
   );
 }

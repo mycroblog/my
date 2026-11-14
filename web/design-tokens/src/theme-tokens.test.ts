@@ -14,4 +14,6 @@ test("the avatar's backing and the components' sizes are fixed", () => {
   expect(names).not.toContain("color-avatar-backing");
   expect(names).not.toContain("control-timeline-height");
   expect(names).not.toContain("shadow-overlay");
+  expect(names).not.toContain("composer-thumb");
+  expect(names).not.toContain("dialog-blur");
 });

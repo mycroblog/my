@@ -13,8 +13,8 @@ import { ComposePreview } from "./compose/ComposePreview";
 
 // The catalog's pages (Catalog.tsx), under the shortcuts of the app's keymap; at /app/timeline, /app/post,
 // /app/notifications and /app/profile the app's screens on sample data (app/), which place their own; at /app/auth
-// the auth entry's screens, which are full pages outside the app; at /app/compose the rough composer, which places its
-// own. /timeline, the timeline's former address, which bookmarks and older notes name, leads there.
+// the auth entry's screens, which are full pages outside the app; at /app/compose the post composer, on sample data.
+// /timeline, the timeline's former address, which bookmarks and older notes name, leads there.
 const path = location.pathname.replace(/\/+$/, "");
 if (path === "/timeline") location.replace(`/app/timeline${location.search}${location.hash}`);
 const app = previewsApp(path);

@@ -20,10 +20,13 @@ import {
   useAction,
   type IconName,
 } from "@my/design-system";
+import { ComposeLayer } from "@my/app-features";
 import type { ReactNode } from "react";
 import type { RuntimeConfig } from "../config";
 import { useStrings } from "../locale";
 import { Around } from "./around";
+import { signInPath } from "../sign-in";
+import { useCompose } from "./compose";
 
 /** The places of the navigation, in its order: the same list in the rail, the sidebar and the tab bar. */
 export const places = [
@@ -33,9 +36,6 @@ export const places = [
   { href: "/profile", icon: "profile", label: "app.profile" },
   { href: "/settings", icon: "settings", label: "app.settings" },
 ] as const satisfies readonly { href: string; icon: IconName; label: string }[];
-
-// What the primary action opens: nothing yet, while the composer is not built.
-const openCompose = () => undefined;
 
 function Places({ pathname }: { pathname: string }) {
   const t = useStrings();
@@ -54,17 +54,27 @@ function Places({ pathname }: { pathname: string }) {
   );
 }
 
-/** The shell around the screen at `pathname`. */
+/**
+ * The shell around the screen at `pathname`, and the composer over it, which the primary action opens (a screen of its
+ * own on a phone, a dialog from `tablet`); without a session the primary action leads to the sign-in.
+ */
 export function Shell({
   pathname,
   config,
+  signedIn,
   children,
 }: {
   pathname: string;
   config: RuntimeConfig;
+  signedIn: boolean;
   children: ReactNode;
 }) {
   const t = useStrings();
+  const { target, open, close } = useCompose();
+  const openCompose = () => {
+    if (signedIn) open({ kind: "new" });
+    else location.assign(signInPath);
+  };
   const compose = useAction("compose.open", openCompose, { scope: "screen", label: t("app.compose") });
   const action = <FrameAction icon="compose" label={t("app.compose")} onPress={openCompose} {...compose} />;
   return (
@@ -80,6 +90,7 @@ export function Shell({
         <Places pathname={pathname} />
       </FrameTabBar>
       <FrameFloat>{action}</FrameFloat>
+      {signedIn && <ComposeLayer target={target} onOpen={open} onClose={close} phone="screen" />}
     </Frame>
   );
 }

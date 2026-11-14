@@ -1,0 +1,286 @@
+{
+  "compose.title.new": {
+    "defaultMessage": "新しい投稿",
+    "description": "The title of the post composer when it writes a new post."
+  },
+  "compose.title.reply": {
+    "defaultMessage": "返信",
+    "description": "The title of the post composer when it writes a reply to a post."
+  },
+  "compose.title.quote": {
+    "defaultMessage": "引用",
+    "description": "The title of the post composer when it writes a post that quotes another."
+  },
+  "compose.close": {
+    "defaultMessage": "閉じる",
+    "description": "The button at the end of the composer's head that leaves it; a written post is discarded, with Undo."
+  },
+  "compose.post": {
+    "defaultMessage": "投稿する",
+    "description": "The composer's primary button, which posts what is written."
+  },
+  "compose.text.placeholder": {
+    "defaultMessage": "いまどうしてる？",
+    "description": "The placeholder of the composer's empty text."
+  },
+  "compose.text.label": {
+    "defaultMessage": "本文",
+    "description": "The name of the composer's text field, for assistive technology."
+  },
+  "compose.cw.label": {
+    "defaultMessage": "注意書き",
+    "description": "The name of the content warning field, for assistive technology."
+  },
+  "compose.cw.placeholder": {
+    "defaultMessage": "読む人に前もって伝えること",
+    "description": "The placeholder of the content warning field: the warning readers see before they open the post."
+  },
+  "compose.cw.on": {
+    "defaultMessage": "注意書きを付ける",
+    "description": "The tool of the composer's row that adds a content warning field."
+  },
+  "compose.cw.off": {
+    "defaultMessage": "注意書きを外す",
+    "description": "The same tool while the post has a content warning: it removes it."
+  },
+  "compose.attach": {
+    "defaultMessage": "画像を添付",
+    "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."
+  },
+  "compose.poll.on": {
+    "defaultMessage": "投票を付ける",
+    "description": "The tool of the composer's row that adds a poll to the post."
+  },
+  "compose.poll.off": {
+    "defaultMessage": "投票を外す",
+    "description": "The same tool while the post has a poll, and the remove of the poll's card."
+  },
+  "compose.poll.option": {
+    "defaultMessage": "選択肢 {n}",
+    "description": "The placeholder and the name of a poll's option. n is its place, from 1."
+  },
+  "compose.poll.remove_option": {
+    "defaultMessage": "選択肢 {n} を外す",
+    "description": "The button at the end of a poll's option that takes it out. n is its place, from 1."
+  },
+  "compose.poll.add": {
+    "defaultMessage": "選択肢を足す",
+    "description": "The last line of a poll's options, which adds one."
+  },
+  "compose.poll.duration": {
+    "defaultMessage": "締め切り",
+    "description": "The name of the poll's duration choices."
+  },
+  "compose.poll.ends_in": {
+    "defaultMessage": "{duration}に締め切り",
+    "description": "The poll's duration control, as it reads. duration is one of the choices (5 minutes, 1 day)."
+  },
+  "compose.poll.minutes": {
+    "defaultMessage": "{count, plural, other {# 分後}}",
+    "description": "A choice of the poll's duration, in minutes; also what the duration control reads."
+  },
+  "compose.poll.hours": {
+    "defaultMessage": "{count, plural, other {# 時間後}}",
+    "description": "A choice of the poll's duration, in hours."
+  },
+  "compose.poll.days": {
+    "defaultMessage": "{count, plural, other {# 日後}}",
+    "description": "A choice of the poll's duration, in days."
+  },
+  "compose.poll.multiple": {
+    "defaultMessage": "複数選べるようにする",
+    "description": "The checkbox of the poll that lets a vote choose several options."
+  },
+  "compose.poll.hide_totals": {
+    "defaultMessage": "締め切りまで票数を隠す",
+    "description": "The checkbox of the poll that hides how many voted for each option until it ends."
+  },
+  "compose.poll.invalid": {
+    "defaultMessage": "投票の選択肢は互いに異なる {min}〜{max} 個 (それぞれ {length} 文字以内) にし、期間は 5 分〜30 日にしてください。",
+    "description": "The error before Post when the poll has a blank option or two the same; the server's own words (errors.status.poll_invalid)."
+  },
+  "compose.audience": {
+    "defaultMessage": "見られる人",
+    "description": "The caption of the visibility choices in the audience menu, and the name of the menu's tool."
+  },
+  "compose.audience.tool": {
+    "defaultMessage": "{visibility, select, public {見られる人: 公開} local {見られる人: ローカル限定} unlisted {見られる人: ひかえめな公開} private {見られる人: フォロワー限定} other {見られる人: ダイレクト}}{limited, select, yes {、返信・ブースト・引用を制限中} other {}}",
+    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Local, Quiet public, Followers only, Direct)."
+  },
+  "compose.audience.everyone": {
+    "defaultMessage": "誰でも",
+    "description": "A choice of the permissions submenu: anyone who may see the post."
+  },
+  "compose.audience.followers": {
+    "defaultMessage": "フォロワー",
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions."
+  },
+  "compose.audience.mentioned": {
+    "defaultMessage": "メンションした人",
+    "description": "A choice of the permissions submenu: the accounts the post mentions."
+  },
+  "compose.audience.nobody": {
+    "defaultMessage": "自分だけ",
+    "description": "A choice of the permissions submenu: the author alone."
+  },
+  "compose.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
+  },
+  "compose.visibility.local": {
+    "defaultMessage": "ローカル限定",
+    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere."
+  },
+  "compose.visibility.unlisted": {
+    "defaultMessage": "ひかえめな公開",
+    "description": "A visibility in the audience menu: public, kept out of the public timelines."
+  },
+  "compose.visibility.private": {
+    "defaultMessage": "フォロワー限定",
+    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions."
+  },
+  "compose.visibility.direct": {
+    "defaultMessage": "ダイレクト",
+    "description": "A visibility in the audience menu: the accounts the post mentions alone."
+  },
+  "compose.visibility.public.about": {
+    "defaultMessage": "誰でも、どのサーバーからでも",
+    "description": "The line under Public in the audience menu: who sees the post."
+  },
+  "compose.visibility.local.about": {
+    "defaultMessage": "{server} の全員と、ほかのサーバーのフォロワー",
+    "description": "The line under Local in the audience menu. server is this server's domain."
+  },
+  "compose.visibility.unlisted.about": {
+    "defaultMessage": "誰でも。公開タイムラインには載せない",
+    "description": "The line under Quiet public in the audience menu."
+  },
+  "compose.visibility.private.about": {
+    "defaultMessage": "フォロワーと、メンションした人",
+    "description": "The line under Followers only in the audience menu."
+  },
+  "compose.visibility.direct.about": {
+    "defaultMessage": "メンションした人だけ",
+    "description": "The line under Direct in the audience menu."
+  },
+  "compose.interactions": {
+    "defaultMessage": "交流",
+    "description": "The caption of the audience menu's second group, apart from the visibilities: who may reply to, boost and quote the post."
+  },
+  "compose.permissions": {
+    "defaultMessage": "返信・ブースト・引用できる人",
+    "description": "The title of the submenu of who may reply to, boost and quote the post, beside its back button."
+  },
+  "compose.permissions.item": {
+    "defaultMessage": "返信・ブースト・引用",
+    "description": "The item of the audience menu that opens the submenu of who may reply to, boost and quote the post."
+  },
+  "compose.permissions.open": {
+    "defaultMessage": "誰でも返信・ブースト・引用できる",
+    "description": "The line under the permissions item while anyone may reply to, boost and quote the post."
+  },
+  "compose.permissions.limited": {
+    "defaultMessage": "返信・ブースト・引用を制限中",
+    "description": "The line under the permissions item while someone may not reply to, boost or quote the post."
+  },
+  "compose.interaction.reply": {
+    "defaultMessage": "返信できる人",
+    "description": "The caption of a group of the permissions submenu."
+  },
+  "compose.interaction.announce": {
+    "defaultMessage": "ブーストできる人",
+    "description": "The caption of a group of the permissions submenu."
+  },
+  "compose.interaction.quote": {
+    "defaultMessage": "引用できる人",
+    "description": "The caption of a group of the permissions submenu."
+  },
+  "compose.language": {
+    "defaultMessage": "言語",
+    "description": "The caption of the language menu of the composer, and the start of its tool's name for assistive technology."
+  },
+  "compose.language.tool": {
+    "defaultMessage": "言語: {language}",
+    "description": "The name of the composer's language tool for assistive technology. language is the post's language, by its name in its own words."
+  },
+  "compose.remaining": {
+    "defaultMessage": "{count, plural, other {残り # 文字}}",
+    "description": "What the composer's count says to assistive technology while the post is within its limit."
+  },
+  "compose.over": {
+    "defaultMessage": "{count, plural, other {# 文字超過}}",
+    "description": "What the composer's count says to assistive technology once the post is past its limit."
+  },
+  "compose.too_long": {
+    "defaultMessage": "{max, plural, other {本文と注意書きは合わせて # 文字以内にしてください。}}",
+    "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
+  },
+  "compose.quote_remote": {
+    "defaultMessage": "ローカル限定・フォロワー限定・ダイレクトの投稿では、ほかのサーバーの投稿を引用できません。",
+    "description": "The note under the visibilities when the post quotes a post from another server; the server's own words (errors.status.quote_remote_audience)."
+  },
+  "compose.replying_to": {
+    "defaultMessage": "{handle}さんへの返信",
+    "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
+  },
+  "compose.quote.remove": {
+    "defaultMessage": "引用を外す",
+    "description": "The button on the quoted post in the composer that takes it out of the post."
+  },
+  "compose.description": {
+    "defaultMessage": "説明",
+    "description": "The label of an image's description (alternative text) beside it in the composer."
+  },
+  "compose.description.hint": {
+    "defaultMessage": "見えない人のために、画像に写っているもの",
+    "description": "The placeholder of an image's description in the composer."
+  },
+  "compose.description.missing": {
+    "defaultMessage": "説明がまだありません",
+    "description": "The caution under an image's empty description in the composer."
+  },
+  "compose.description.required": {
+    "defaultMessage": "このサーバーでは、すべての画像に説明 (代替テキスト) が必要です。投稿する前に、それぞれの画像に説明を付けてください。",
+    "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
+  },
+  "compose.uploading": {
+    "defaultMessage": "アップロード中…",
+    "description": "Beside an image while its file uploads."
+  },
+  "compose.processing": {
+    "defaultMessage": "処理中…",
+    "description": "Beside an image while the server processes the uploaded file."
+  },
+  "compose.upload_failed": {
+    "defaultMessage": "アップロードを完了できませんでした。",
+    "description": "Beside an image whose upload failed, before its retry button."
+  },
+  "compose.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button that uploads a failed image again."
+  },
+  "compose.remove": {
+    "defaultMessage": "外す",
+    "description": "The button at the end of an image's row that takes it out of the post."
+  },
+  "compose.wait_uploads": {
+    "defaultMessage": "すべての画像のアップロードが終わるまで待つか、失敗した画像を外してください。",
+    "description": "The error before Post when it is pressed while an image uploads or failed to."
+  },
+  "compose.poll": {
+    "defaultMessage": "投票",
+    "description": "The caption of the poll's card in the composer."
+  },
+  "compose.failed": {
+    "defaultMessage": "投稿を完了できませんでした。もう一度試してください。",
+    "description": "The error before Post when the post got no answer from the server (the network); pressing Post sends it again, once."
+  },
+  "compose.discarded": {
+    "defaultMessage": "投稿を破棄しました",
+    "description": "The notice at the bottom of the page after the composer was closed with a written post, beside Undo."
+  },
+  "compose.undo": {
+    "defaultMessage": "元に戻す",
+    "description": "The action of the discarded post's notice: it opens the composer again with the post."
+  }
+}

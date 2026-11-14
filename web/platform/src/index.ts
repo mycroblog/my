@@ -5,6 +5,7 @@
 // whether something can be done, and hold the screen for when it cannot.
 
 export { namesCommandKey } from "./keyboard";
+export { watchKeyboardInset } from "./keyboard-inset";
 export { oneTimeCodeField } from "./one-time-code";
 export {
   createPasskey,

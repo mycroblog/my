@@ -135,7 +135,7 @@ func TestProfilePreview(t *testing.T) {
 			"fediverse:creator": "@alice@example.org",
 			"link:canonical":    "https://social.example/@alice",
 			"link:alternate":    "https://social.example/ap/actors/" + aliceID,
-			"viewport":          "width=device-width, initial-scale=1, viewport-fit=cover",
+			"viewport":          "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
 			"article:author":    "",
 			"robots":            "",
 		}

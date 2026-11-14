@@ -1,0 +1,286 @@
+{
+  "compose.title.new": {
+    "defaultMessage": "New post",
+    "description": "The title of the post composer when it writes a new post."
+  },
+  "compose.title.reply": {
+    "defaultMessage": "Reply",
+    "description": "The title of the post composer when it writes a reply to a post."
+  },
+  "compose.title.quote": {
+    "defaultMessage": "Quote",
+    "description": "The title of the post composer when it writes a post that quotes another."
+  },
+  "compose.close": {
+    "defaultMessage": "Close",
+    "description": "The button at the end of the composer's head that leaves it; a written post is discarded, with Undo."
+  },
+  "compose.post": {
+    "defaultMessage": "Post",
+    "description": "The composer's primary button, which posts what is written."
+  },
+  "compose.text.placeholder": {
+    "defaultMessage": "What's on your mind?",
+    "description": "The placeholder of the composer's empty text."
+  },
+  "compose.text.label": {
+    "defaultMessage": "Text",
+    "description": "The name of the composer's text field, for assistive technology."
+  },
+  "compose.cw.label": {
+    "defaultMessage": "Content warning",
+    "description": "The name of the content warning field, for assistive technology."
+  },
+  "compose.cw.placeholder": {
+    "defaultMessage": "What the reader is warned of",
+    "description": "The placeholder of the content warning field: the warning readers see before they open the post."
+  },
+  "compose.cw.on": {
+    "defaultMessage": "Add a content warning",
+    "description": "The tool of the composer's row that adds a content warning field."
+  },
+  "compose.cw.off": {
+    "defaultMessage": "Remove the content warning",
+    "description": "The same tool while the post has a content warning: it removes it."
+  },
+  "compose.attach": {
+    "defaultMessage": "Add images",
+    "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."
+  },
+  "compose.poll.on": {
+    "defaultMessage": "Add a poll",
+    "description": "The tool of the composer's row that adds a poll to the post."
+  },
+  "compose.poll.off": {
+    "defaultMessage": "Remove the poll",
+    "description": "The same tool while the post has a poll, and the remove of the poll's card."
+  },
+  "compose.poll.option": {
+    "defaultMessage": "Option {n}",
+    "description": "The placeholder and the name of a poll's option. n is its place, from 1."
+  },
+  "compose.poll.remove_option": {
+    "defaultMessage": "Remove option {n}",
+    "description": "The button at the end of a poll's option that takes it out. n is its place, from 1."
+  },
+  "compose.poll.add": {
+    "defaultMessage": "Add an option",
+    "description": "The last line of a poll's options, which adds one."
+  },
+  "compose.poll.duration": {
+    "defaultMessage": "Ends in",
+    "description": "The name of the poll's duration choices."
+  },
+  "compose.poll.ends_in": {
+    "defaultMessage": "Ends in {duration}",
+    "description": "The poll's duration control, as it reads. duration is one of the choices (5 minutes, 1 day)."
+  },
+  "compose.poll.minutes": {
+    "defaultMessage": "{count, plural, one {# minute} other {# minutes}}",
+    "description": "A choice of the poll's duration, in minutes; also what the duration control reads."
+  },
+  "compose.poll.hours": {
+    "defaultMessage": "{count, plural, one {# hour} other {# hours}}",
+    "description": "A choice of the poll's duration, in hours."
+  },
+  "compose.poll.days": {
+    "defaultMessage": "{count, plural, one {# day} other {# days}}",
+    "description": "A choice of the poll's duration, in days."
+  },
+  "compose.poll.multiple": {
+    "defaultMessage": "Allow several choices",
+    "description": "The checkbox of the poll that lets a vote choose several options."
+  },
+  "compose.poll.hide_totals": {
+    "defaultMessage": "Hide the counts until it ends",
+    "description": "The checkbox of the poll that hides how many voted for each option until it ends."
+  },
+  "compose.poll.invalid": {
+    "defaultMessage": "A poll needs {min} to {max} different options of at most {length} characters each, and must last from 5 minutes to 30 days.",
+    "description": "The error before Post when the poll has a blank option or two the same; the server's own words (errors.status.poll_invalid)."
+  },
+  "compose.audience": {
+    "defaultMessage": "Who can see it",
+    "description": "The caption of the visibility choices in the audience menu, and the name of the menu's tool."
+  },
+  "compose.audience.tool": {
+    "defaultMessage": "{visibility, select, public {Who can see it: Public} local {Who can see it: Local} unlisted {Who can see it: Quiet public} private {Who can see it: Followers only} other {Who can see it: Direct}}{limited, select, yes {, replies, boosts or quotes limited} other {}}",
+    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Local, Quiet public, Followers only, Direct)."
+  },
+  "compose.audience.everyone": {
+    "defaultMessage": "Anyone",
+    "description": "A choice of the permissions submenu: anyone who may see the post."
+  },
+  "compose.audience.followers": {
+    "defaultMessage": "Followers",
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions."
+  },
+  "compose.audience.mentioned": {
+    "defaultMessage": "People you mention",
+    "description": "A choice of the permissions submenu: the accounts the post mentions."
+  },
+  "compose.audience.nobody": {
+    "defaultMessage": "Only you",
+    "description": "A choice of the permissions submenu: the author alone."
+  },
+  "compose.visibility.public": {
+    "defaultMessage": "Public",
+    "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
+  },
+  "compose.visibility.local": {
+    "defaultMessage": "Local",
+    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere."
+  },
+  "compose.visibility.unlisted": {
+    "defaultMessage": "Quiet public",
+    "description": "A visibility in the audience menu: public, kept out of the public timelines."
+  },
+  "compose.visibility.private": {
+    "defaultMessage": "Followers only",
+    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions."
+  },
+  "compose.visibility.direct": {
+    "defaultMessage": "Direct",
+    "description": "A visibility in the audience menu: the accounts the post mentions alone."
+  },
+  "compose.visibility.public.about": {
+    "defaultMessage": "Anyone, on any server",
+    "description": "The line under Public in the audience menu: who sees the post."
+  },
+  "compose.visibility.local.about": {
+    "defaultMessage": "Everyone on {server}, and your followers elsewhere",
+    "description": "The line under Local in the audience menu. server is this server's domain."
+  },
+  "compose.visibility.unlisted.about": {
+    "defaultMessage": "Anyone, kept out of the public timelines",
+    "description": "The line under Quiet public in the audience menu."
+  },
+  "compose.visibility.private.about": {
+    "defaultMessage": "Your followers and the people you mention",
+    "description": "The line under Followers only in the audience menu."
+  },
+  "compose.visibility.direct.about": {
+    "defaultMessage": "Only the people you mention",
+    "description": "The line under Direct in the audience menu."
+  },
+  "compose.interactions": {
+    "defaultMessage": "Interactions",
+    "description": "The caption of the audience menu's second group, apart from the visibilities: who may reply to, boost and quote the post."
+  },
+  "compose.permissions": {
+    "defaultMessage": "Who can reply, boost and quote",
+    "description": "The title of the submenu of who may reply to, boost and quote the post, beside its back button."
+  },
+  "compose.permissions.item": {
+    "defaultMessage": "Replies, boosts and quotes",
+    "description": "The item of the audience menu that opens the submenu of who may reply to, boost and quote the post."
+  },
+  "compose.permissions.open": {
+    "defaultMessage": "Anyone can reply, boost and quote",
+    "description": "The line under the permissions item while anyone may reply to, boost and quote the post."
+  },
+  "compose.permissions.limited": {
+    "defaultMessage": "Replies, boosts or quotes limited",
+    "description": "The line under the permissions item while someone may not reply to, boost or quote the post."
+  },
+  "compose.interaction.reply": {
+    "defaultMessage": "Who can reply",
+    "description": "The caption of a group of the permissions submenu."
+  },
+  "compose.interaction.announce": {
+    "defaultMessage": "Who can boost",
+    "description": "The caption of a group of the permissions submenu."
+  },
+  "compose.interaction.quote": {
+    "defaultMessage": "Who can quote",
+    "description": "The caption of a group of the permissions submenu."
+  },
+  "compose.language": {
+    "defaultMessage": "Language",
+    "description": "The caption of the language menu of the composer, and the start of its tool's name for assistive technology."
+  },
+  "compose.language.tool": {
+    "defaultMessage": "Language: {language}",
+    "description": "The name of the composer's language tool for assistive technology. language is the post's language, by its name in its own words."
+  },
+  "compose.remaining": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "What the composer's count says to assistive technology while the post is within its limit."
+  },
+  "compose.over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "What the composer's count says to assistive technology once the post is past its limit."
+  },
+  "compose.too_long": {
+    "defaultMessage": "{max, plural, one {The text and content warning must be at most # character.} other {The text and content warning must be at most # characters.}}",
+    "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
+  },
+  "compose.quote_remote": {
+    "defaultMessage": "A local, followers-only, or direct post cannot quote a post from another server.",
+    "description": "The note under the visibilities when the post quotes a post from another server; the server's own words (errors.status.quote_remote_audience)."
+  },
+  "compose.replying_to": {
+    "defaultMessage": "Replying to {handle}",
+    "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
+  },
+  "compose.quote.remove": {
+    "defaultMessage": "Remove the quote",
+    "description": "The button on the quoted post in the composer that takes it out of the post."
+  },
+  "compose.description": {
+    "defaultMessage": "Description",
+    "description": "The label of an image's description (alternative text) beside it in the composer."
+  },
+  "compose.description.hint": {
+    "defaultMessage": "What the image shows, for those who cannot see it",
+    "description": "The placeholder of an image's description in the composer."
+  },
+  "compose.description.missing": {
+    "defaultMessage": "No description yet",
+    "description": "The caution under an image's empty description in the composer."
+  },
+  "compose.description.required": {
+    "defaultMessage": "This server requires a description (alt text) for every image. Add one to each image before posting.",
+    "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
+  },
+  "compose.uploading": {
+    "defaultMessage": "Uploading…",
+    "description": "Beside an image while its file uploads."
+  },
+  "compose.processing": {
+    "defaultMessage": "Processing…",
+    "description": "Beside an image while the server processes the uploaded file."
+  },
+  "compose.upload_failed": {
+    "defaultMessage": "The upload did not finish.",
+    "description": "Beside an image whose upload failed, before its retry button."
+  },
+  "compose.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button that uploads a failed image again."
+  },
+  "compose.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button at the end of an image's row that takes it out of the post."
+  },
+  "compose.wait_uploads": {
+    "defaultMessage": "Wait until every image has uploaded, or remove the ones that failed.",
+    "description": "The error before Post when it is pressed while an image uploads or failed to."
+  },
+  "compose.poll": {
+    "defaultMessage": "Poll",
+    "description": "The caption of the poll's card in the composer."
+  },
+  "compose.failed": {
+    "defaultMessage": "Posting did not finish. Try again.",
+    "description": "The error before Post when the post got no answer from the server (the network); pressing Post sends it again, once."
+  },
+  "compose.discarded": {
+    "defaultMessage": "Post discarded",
+    "description": "The notice at the bottom of the page after the composer was closed with a written post, beside Undo."
+  },
+  "compose.undo": {
+    "defaultMessage": "Undo",
+    "description": "The action of the discarded post's notice: it opens the composer again with the post."
+  }
+}
