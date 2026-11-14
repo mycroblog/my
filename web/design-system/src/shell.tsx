@@ -141,10 +141,15 @@ export function FrameMain({ children }: { children: ReactNode }) {
  */
 export function FrameHeading({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <h1 id={id} className={frame().heading()} tabIndex={-1}>
+    <h1 id={id} className={frame().heading()} tabIndex={-1} data-frame-heading="">
       {children}
     </h1>
   );
+}
+
+/** Moves the focus to the screen's heading (FrameHeading) in `doc`, without scrolling the page. */
+export function focusFrameHeading(doc: Document): void {
+  doc.querySelector<HTMLElement>("[data-frame-heading]")?.focus({ preventScroll: true });
 }
 
 /** The column beside the main one, from `wide`: what is around the reader, in sections. */

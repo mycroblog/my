@@ -5,9 +5,19 @@
 // load, that they failed (with a retry), or that there are none (the feature's `empty`, else a plain line), and under
 // the posts that more load or failed to (with a retry); near the end it asks for more. It fetches nothing: it takes a timeline in the shape of @my/app-data's (`useHomeTimeline()`), which a
 // feature passes on as it is, and each post's action goes to `onAction`. `moveFocus` moves the focus between the posts
-// of the column it is in, which the column's shortcuts of the next and the previous post use.
+// of the column it is in, which the column's shortcuts of the next and the previous post use. The feed keeps the
+// reader's place as posts go in above; when they go in, and what the new posts' button says, is the feature's.
 
-import { Feed, FeedItem, FeedNotice, moveFeedFocus, TextButton, useAction, useLocale } from "@my/design-system";
+import {
+  Feed,
+  FeedItem,
+  FeedNotice,
+  moveFeedFocus,
+  TextButton,
+  useAction,
+  useLocale,
+  type NewItems,
+} from "@my/design-system";
 import { stringsIn } from "./locale";
 import { Post, type PostAction, type PostProps } from "./post";
 import type { PostStatus } from "./status";
@@ -38,6 +48,12 @@ export type ColumnProps = ColumnTimeline & {
   postProps?: ((status: PostStatus) => Omit<PostProps, "status" | "onAction">) | undefined;
   /** What the column says when the timeline has no posts, with the feature's next action; a plain line by default. */
   empty?: ReactNode;
+  /** Hears whether the column's top is in view, when that changes. */
+  onTopChange?: ((atTop: boolean) => void) | undefined;
+  /** Hears whether the reader is in the column (focus or a selection inside it), when that changes. */
+  onReaderChange?: ((inside: boolean) => void) | undefined;
+  /** The new posts' button over the column's top, which the feature words; left out while it has nothing to tell. */
+  newPosts?: NewItems | undefined;
 };
 
 /**
@@ -79,6 +95,9 @@ export function Column({
   onAction,
   postProps,
   empty,
+  onTopChange,
+  onReaderChange,
+  newPosts,
 }: ColumnProps) {
   const { t } = stringsIn(useLocale().locale);
   const failedMore = status === "success" && error !== null && !isFetchingNextPage;
@@ -109,10 +128,13 @@ export function Column({
       busy={status === "pending" || isFetchingNextPage}
       onNearEnd={asks ? fetchNextPage : undefined}
       end={end}
+      onTopChange={onTopChange}
+      onReaderChange={onReaderChange}
+      newItems={newPosts}
     >
       <Moves t={t} />
       {statuses.map((s, i) => (
-        <FeedItem key={s.id} position={i + 1}>
+        <FeedItem key={s.id} id={s.id} position={i + 1}>
           <Post {...postProps?.(s)} status={s} onAction={onAction} />
         </FeedItem>
       ))}

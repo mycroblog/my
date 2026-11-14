@@ -8,15 +8,22 @@ import { createRootRouteWithContext, Outlet, useRouter, useRouterState } from "@
 import { useStrings } from "../locale";
 import type { RouterContext } from "../router";
 import { ScreenHeading, useFocusOnNavigation } from "../shell/heading";
+import { useScreenScroll } from "../shell/scroll";
 import { Shell } from "../shell/shell";
 
-export const Route = createRootRouteWithContext<RouterContext>()({ component: Root, notFoundComponent: NotFound });
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: Root,
+  notFoundComponent: NotFound,
+  // An address with no screen opens at the top.
+  staticData: { scroll: "top" },
+});
 
 function Root() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { config } = Route.useRouteContext();
   useFocusOnNavigation(pathname);
+  useScreenScroll();
   return (
     <NavigationProvider
       navigate={(href) => {

@@ -15,6 +15,8 @@ const signInPath = "/auth/sign_in";
 export const Route = createFileRoute("/")({
   loader: ({ context }) => (context.data === null ? undefined : loadHomeTimeline(context.data)),
   component: Home,
+  // Back on the home timeline, the reader is where they left it.
+  staticData: { scroll: "restore" },
 });
 
 function Home() {

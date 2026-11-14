@@ -37,9 +37,10 @@ export type EntryProps = {
 /**
  * An entry of a feed: a focusable article whose parts stand one under another. It marks its surface while hovered or
  * focused from the keyboard (the icon buttons inside step their hover a tone down), and it carries `data-entry`, by
- * which a feed moves the focus between its entries; inside a FeedItem it states its position in the feed. It is the
- * `ActionScope` of the focus actions its parts declare (a post's reply), which act while focus is inside it. A
- * catalog's preview of hover or focus applies to the entry alone, not to the buttons inside it.
+ * which a feed moves the focus between its entries; inside a FeedItem it states its position in the feed and carries
+ * the item's key as `data-scroll-key`, by which a screen restores its position. It is the `ActionScope` of the focus
+ * actions its parts declare (a post's reply), which act while focus is inside it. A catalog's preview of hover or
+ * focus applies to the entry alone, not to the buttons inside it.
  */
 export function Entry({ lang, labelledBy, children }: EntryProps) {
   const position = useFeedPosition();
@@ -60,6 +61,7 @@ export function Entry({ lang, labelledBy, children }: EntryProps) {
       aria-posinset={position?.posinset}
       aria-setsize={position?.setsize}
       data-entry=""
+      data-scroll-key={position?.key}
       data-focus-visible={focus || undefined}
       {...markedSurface(marked)}
       className={entry()}

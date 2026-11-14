@@ -95,6 +95,9 @@ const button = tv({
       // The app frame's primary action (shell.tsx): the width of the rail or the sidebar, or floating over the tab bar.
       side: { base: "h-shell-item w-full px-0", label: "inline-flex items-center gap-shell-inset" },
       float: { base: "size-shell-bar px-0", label: "inline-flex items-center" },
+      // A notice floating over a feed (the new entries' button): a timeline button's type and padding at the full
+      // touch height, since it is pressed over moving content.
+      notice: { base: "h-icon-button-touch px-control-timeline-inline" },
     },
     busy: { true: { label: "text-transparent" } },
   },
@@ -111,7 +114,7 @@ export function ButtonBase({
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
   kind: ButtonKind | "icon" | "chip";
-  size: ButtonSize | "icon" | "chip" | "side" | "float";
+  size: ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
   pressed?: boolean | undefined;
 }) {
   const preview = usePreviewState();
