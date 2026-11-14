@@ -111,8 +111,10 @@ function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
         default_post_language: "und",
         require_media_description: false,
       });
-    if (path === "/instance")
-      return json({ domain: fakeHost, limits: { max_post_characters: 500, require_media_description: false } });
+    if (path === "/instance") {
+      const instance = (await read("/instance")) as Record<string, unknown>;
+      return json({ ...instance, limits: { max_post_characters: 500, require_media_description: false } });
+    }
     if (path === "/statuses" && method === "POST") {
       const body = (await request.json()) as Record<string, unknown>;
       await new Promise((resolve) => setTimeout(resolve, 800));
@@ -290,14 +292,16 @@ function Specimen({ id, text }: { id: StateId; text: string }) {
 
 /** The app itself, on the composer's fake server, at the home timeline. */
 function Flow() {
-  const [router] = useState(() =>
-    createAppRouter({
-      data: createComposeApp().data,
+  const [{ router, data }] = useState(() => {
+    const { data } = createComposeApp();
+    const router = createAppRouter({
+      data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
       at: "/",
-    }),
-  );
-  return <AppRoot router={router} />;
+    });
+    return { router, data };
+  });
+  return <AppRoot router={router} visitor={data} />;
 }
 
 /**

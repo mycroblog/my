@@ -11,6 +11,7 @@
 import { createClient, type TokenSource } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
 import { createAppData, type AppData } from "./app-data";
+import type { ServerWatch } from "./server";
 
 /** The endpoint that trades the cookie for an access token, and the header it requires. */
 const refreshPath = "/oauth/token/refresh";
@@ -208,6 +209,8 @@ export type SessionOptions = {
   fetch?: (request: Request) => Promise<Response>;
   /** The tabs that share the session: the browser's tab group by default; null renews the token in this tab alone. */
   tabs?: TabGroup | null;
+  /** The watch of the server, whose `fetch` sends the requests in place of `fetch`. */
+  watch?: ServerWatch;
 };
 
 /**
@@ -217,11 +220,30 @@ export type SessionOptions = {
 export async function openSession({
   server,
   acceptLanguage,
-  fetch = (request) => globalThis.fetch(request),
+  fetch: given = (request) => globalThis.fetch(request),
   tabs = joinTabGroup(`my:session:${server}`),
+  watch,
 }: SessionOptions): Promise<AppData | null> {
+  const fetch = watch?.fetch ?? given;
   const tokenSource = new SessionTokenSource(server, fetch, { tabs });
   if ((await tokenSource.getAccessToken()) === null) return null;
   const connection = { server, tokenSource, fetch, ...(acceptLanguage === undefined ? {} : { acceptLanguage }) };
-  return { ...createAppData(createClient(connection)), connection };
+  return { ...createAppData(createClient(connection), undefined, watch), connection };
+}
+
+/**
+ * The data of a reader without a session, for what the server shows everyone (the instance, its public pages): the
+ * client API without a token, through the watch of the server.
+ */
+export function visitorData({
+  server,
+  acceptLanguage,
+  watch,
+}: Pick<SessionOptions, "server" | "acceptLanguage" | "watch">): AppData {
+  const fetch = watch?.fetch ?? ((request: Request) => globalThis.fetch(request));
+  return createAppData(
+    createClient({ server, fetch, ...(acceptLanguage === undefined ? {} : { acceptLanguage }) }),
+    undefined,
+    watch,
+  );
 }

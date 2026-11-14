@@ -4,14 +4,16 @@
 // long text, the reader's boost, favourite and bookmark, and whether it is the reader's own), and a story per state:
 // plain, local, boosted, a reply, behind a content warning, with images, quoting, with reactions and with the reader's
 // own, translated (and the notes when the source language, the provider or both are unknown), hovered and focused
-// from the keyboard (shown at rest), and long names and handles in en and ja. Each post answers its actions as the
+// from the keyboard (shown at rest), long names and handles in en and ja, and for a reader without an account, whose
+// actions lead to the sign-in. Each post answers its actions as the
 // timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
 import { Preview, type PreviewState } from "@my/design-system/preview";
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { statusPath } from "./paths";
 import { posts, type TimelinePost } from "./post.samples";
 import { SamplePost } from "./sample-post.samples";
 import type { PostTranslation } from "./status";
@@ -85,6 +87,24 @@ type Translation = ((t: PostTranslation) => PostTranslation) | undefined;
 const Column = ({ children }: { children: ReactNode }) => (
   <div style={{ maxWidth: rem(600), paddingInline: rem(16) }}>{children}</div>
 );
+
+/** A sample post for a reader without an account, and the post the sign-in was last asked for, under it. */
+function VisitorPost() {
+  const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
+  const [asked, setAsked] = useState("");
+  return (
+    <Column>
+      <SamplePost
+        post={byId("lena-quiet")}
+        lang={lang}
+        signIn={(status) => {
+          setAsked(statusPath(status));
+        }}
+      />
+      <output>{asked === "" ? "" : `→ /login?return_to=${asked}`}</output>
+    </Column>
+  );
+}
 
 /** One sample post in the column, in the reader's language (the toolbar's locale), `state` shown at rest. */
 function Shown({
@@ -202,6 +222,11 @@ export const TranslatedNeither: Story = {
   ...fixed,
   render: () => <TranslatedPost translationAs={(t) => withoutProvider(withoutSource(t))} />,
 };
+/**
+ * A reader without an account: the post's actions show as for anyone, and one that needs an account leads to the
+ * sign-in with the post, which the line under it stands in for once one is pressed.
+ */
+export const Visitor: Story = { ...fixed, render: () => <VisitorPost /> };
 export const Hovered: Story = { ...fixed, render: () => <Shown post={byId("alice-reply")} state="hover" /> };
 export const FocusVisible: Story = {
   ...fixed,

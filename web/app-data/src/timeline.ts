@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The home timeline: the query a route's loader reads and the hook its column calls.
-import { infiniteQueryOptions, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  infiniteQueryOptions,
+  useInfiniteQuery,
+  type InfiniteData,
+  type UseInfiniteQueryOptions,
+} from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
 import type { Status, StatusPage } from "./statuses";
@@ -50,9 +55,35 @@ export type HomeTimeline = {
   readonly refetch: () => void;
 };
 
-/** The home timeline of the viewer, for its column. */
-export function useHomeTimeline(): HomeTimeline {
-  const query = useInfiniteQuery(homeTimelineQuery(useAppData()));
+/** A public timeline of the instance: its local posts, or the posts it knows from every server. */
+export type PublicTimelineKind = "local" | "federated";
+
+/**
+ * A public timeline of the instance, newest first, a page per cursor, keyed as its operation; a reader without a
+ * session reads it while the instance shows it to everyone. A route's loader reads it as the home timeline's.
+ */
+export function publicTimelineQuery({ api, queries }: AppData, kind: PublicTimelineKind) {
+  const path = kind === "local" ? "/timelines/local" : "/timelines/federated";
+  return infiniteQueryOptions({
+    queryKey: queries.queryOptions("get", path).queryKey,
+    queryFn: async ({ pageParam, signal }): Promise<StatusPage> => {
+      const { data } = await api.GET(path, {
+        params: { query: pageParam === undefined ? {} : { cursor: pageParam } },
+        signal,
+      });
+      if (data === undefined) throw new Error(`app-data: the ${kind} timeline answered without a page`);
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => nextCursor(page),
+  });
+}
+
+/** A timeline's column of the query `options`. */
+function useTimelineColumn<Key extends readonly unknown[]>(
+  options: UseInfiniteQueryOptions<StatusPage, Error, InfiniteData<StatusPage>, Key, string | undefined>,
+): HomeTimeline {
+  const query = useInfiniteQuery(options);
   return {
     statuses: query.data?.pages.flatMap((page) => page.items) ?? [],
     status: query.status,
@@ -66,4 +97,14 @@ export function useHomeTimeline(): HomeTimeline {
       void query.refetch();
     },
   };
+}
+
+/** The home timeline of the viewer, for its column. */
+export function useHomeTimeline(): HomeTimeline {
+  return useTimelineColumn(homeTimelineQuery(useAppData()));
+}
+
+/** A public timeline of the instance, for its column. */
+export function usePublicTimeline(kind: PublicTimelineKind): HomeTimeline {
+  return useTimelineColumn(publicTimelineQuery(useAppData(), kind));
 }

@@ -15,10 +15,12 @@ import {
   receiveHomeGap,
   receiveHomeStatuses,
   receiveNotification,
+  watchServer,
   type AppData,
   type NotificationItem,
 } from "@my/app-data";
-import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake";
+import { enterCall, leaveCall, type Call } from "@my/app-features";
+import { createFakeApi, fakeHost, fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { StoryContext } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
@@ -31,11 +33,21 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
-  /** The app's path, or the key of a scenario post whose page it opens. */
+  /** The app's path, `announcement:<key>` of an announcement, or the key of a scenario post whose page it opens. */
   at: string;
   state?: ScreenState;
   /** Fails the home timeline's first page during the first second; its retry succeeds. */
   failFirst?: boolean;
+  /** Opens the app without a session, as a visitor. */
+  signedOut?: boolean;
+  /** The scenario's person who reads; yuki by default (hana is the administrator, marco a moderator). */
+  viewer?: string;
+  /** What the server is and says across the screens: its timelines, its closure, its maintenance, being down… */
+  server?: Omit<FakeOptions, "viewer" | "visitor" | "failFirst" | "lateMs">;
+  /** The reader is in a call, which the shell's bar shows. */
+  call?: boolean;
+  /** A newer build of the app waits (the service worker's), which a toast offers. */
+  updateReady?: boolean;
 };
 
 /** What the Stream panel offers a story: new posts and reconnections of the home timeline, or notifications. */
@@ -48,8 +60,12 @@ type Stream = "home" | "notifications";
 const streamEvent = "my/stream:event";
 type StreamEvent = { kind: "posts"; count: number } | { kind: "reconnect" } | { kind: "notification" };
 
-/** What the shell asks for before any screen, which every state answers as normal. */
-const shell = /^\/api\/v1\/(?:accounts\/verify_credentials|instance|preferences)$/;
+/**
+ * What the shell asks for on every screen, which every state answers as normal: the reader, the instance and its
+ * health, the reader's preferences and rights, and what is around them.
+ */
+const shell =
+  /^\/api\/v1\/(?:accounts\/verify_credentials|instance|instance\/health|preferences|announcements|voice\/rooms|events|admin\/counts|notifications\/marker)$/;
 
 const longName = "with a display name long enough to run past any column it is given, in every locale";
 const longText =
@@ -121,8 +137,16 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
   };
 }
 
-/** The app's path of `at`: a path as it is, else the page of the scenario post of that key. */
-const pathOf = (fake: FakeApi, at: string) => (at.startsWith("/") ? at : fake.postPath(at));
+/**
+ * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, else the page of the
+ * scenario post of that key.
+ */
+const pathOf = (fake: FakeApi, at: string) =>
+  at.startsWith("/")
+    ? at
+    : at.startsWith("announcement:")
+      ? fake.announcementPath(at.slice("announcement:".length))
+      : fake.postPath(at);
 
 /** Posts `count` new samples on the fake server and hands them to the timeline as the stream does, as the API's. */
 async function post(data: AppData, fake: FakeApi, count: number) {
@@ -150,21 +174,67 @@ function useStream(data: AppData, fake: FakeApi, stream: Stream | undefined) {
 }
 
 /** The app at a screen in a state, on a fake server of its own, fed by the Stream panel. */
-function StoryApp({ at, state = "normal", failFirst = false, stream }: Fake & { stream: Stream | undefined }) {
-  const [{ fake, data, router }] = useState(() => {
-    const fake = createFakeApi({ failFirst });
+/** The call a story's reader is in. */
+const sampleCall: Call = {
+  roomId: "morning-coffee",
+  room: "Morning coffee chat",
+  host: "Sam Rivera",
+  participants: 12,
+  muted: false,
+};
+
+/** Puts the reader in the sample call while the story shows, when `call` says so. */
+function useSampleCall(call: boolean) {
+  useEffect(() => {
+    if (!call) return;
+    enterCall(sampleCall);
+    return () => {
+      leaveCall();
+    };
+  }, [call]);
+}
+
+function StoryApp({
+  at,
+  state = "normal",
+  failFirst = false,
+  signedOut = false,
+  viewer,
+  server,
+  call = false,
+  updateReady = false,
+  stream,
+}: Fake & { stream: Stream | undefined }) {
+  const [{ fake, data, router, watch }] = useState(() => {
+    const fake = createFakeApi({
+      failFirst,
+      visitor: signedOut,
+      ...(viewer === undefined ? {} : { viewer }),
+      ...server,
+    });
+    const watch = watchServer({ server: fakeOrigin, fetch: staged(fake.serve, state), followDevice: false });
+    if (updateReady) watch.offerUpdate();
     const data = createAppData(
-      createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: staged(fake.serve, state) }),
+      createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: watch.fetch }),
+      undefined,
+      watch,
     );
     const router = createAppRouter({
-      data,
+      data: signedOut ? null : data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
       at: pathOf(fake, at),
     });
-    return { fake, data, router };
+    return { fake, data, router, watch };
   });
+  useEffect(
+    () => () => {
+      watch.stop();
+    },
+    [watch],
+  );
+  useSampleCall(call);
   useStream(data, fake, stream);
-  return <AppRoot router={router} />;
+  return <AppRoot router={router} visitor={data} />;
 }
 
 /** The parameters of a screen's story: the fake server's screen and state, what the Stream panel offers. */
@@ -176,10 +246,27 @@ const fakeOf = (parameters: ScreenParameters): Fake => parameters.fake ?? { at: 
  * Whether the screen in the canvas shows its state: what the fake server's first answers render. A first page that
  * fails once shows its failure, with the retry.
  */
-function shows(canvas: HTMLElement, { state = "normal", failFirst = false }: Fake): boolean {
+function shows(
+  canvas: HTMLElement,
+  { at, state = "normal", failFirst = false, signedOut = false, server = {} }: Fake,
+): boolean {
   const has = (selector: string) => canvas.querySelector(selector) !== null;
   const settled = !has('[aria-busy="true"]');
   if (failFirst) return has('[role="alert"]');
+  // A page in place of every screen shows its title.
+  if (server.maintenance === true) return has("h1:not([data-frame-heading])");
+  // A closed server's page, with the state of the reader's export once it is read.
+  if (server.closure === "closed" && !signedOut)
+    return (
+      has("h1:not([data-frame-heading])") &&
+      (server.dataExport === undefined || server.dataExport === "none" || has('p[role="status"]'))
+    );
+  // A server gone down shows its notice over the screen.
+  if (server.down !== undefined) return has('[role="region"]');
+  // A visitor at / of a server not of one person: the landing page, with its sign-in once the instance answered.
+  if (signedOut && at === "/" && server.singleUser !== true) return has('main a[href="/login"]');
+  // A visitor reads something (a public timeline, the operator's profile), or is asked to sign in.
+  if (signedOut) return settled && (has("article") || has('p[role="status"]'));
   switch (state) {
     case "loading":
       return true;

@@ -2,11 +2,11 @@
 
 // The button: Default, driven by its props in the Controls, a story per kind and state (hover, press and keyboard
 // focus shown at rest), and one sheet, Variants, of every kind in every state with its label's contrast in the
-// toolbar's theme, at the sizes of a timeline and a form, beside a text field.
+// toolbar's theme, at the sizes of a timeline and a form, beside a text field; and the text button and link in a line.
 
 import { color, contrast, mix, press, rootPx, text, type ColorName, type Scheme } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button, type ButtonKind, type ButtonSize } from "./button";
+import { Button, TextButton, TextLink, type ButtonKind, type ButtonSize } from "./button";
 import { Preview, type PreviewState } from "./preview";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -173,4 +173,14 @@ export const FocusVisible: Story = { args: { shown: "focus-visible" } };
 export const Japanese: Story = { args: { label: labels.primary.ja } };
 export const Variants: Story = {
   render: (_, { globals }) => <VariantSheet scheme={globals["theme"] === "dark" ? "dark" : "light"} />,
+};
+
+// The text button and the text link inside a line of muted text, as a feed's notice holds them: they read alike.
+export const InText: Story = {
+  render: () => (
+    <p className="m-0 text-caption text-muted-text">
+      Sign in to see this screen. · <TextLink href="#sign-in">Sign in</TextLink> ·{" "}
+      <TextButton onPress={() => undefined}>Try again</TextButton>
+    </p>
+  ),
 };

@@ -79,6 +79,10 @@
     "defaultMessage": "The notifications could not be loaded.",
     "description": "What the notifications say when the first of them could not be loaded, beside a button to try again."
   },
+  "notifications.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button after the notifications in the column beside the timeline that could not be loaded; it loads them again."
+  },
   "notifications.failed_more": {
     "defaultMessage": "More notifications could not be loaded.",
     "description": "What the notifications say under them when more could not be loaded, beside a button to try again."

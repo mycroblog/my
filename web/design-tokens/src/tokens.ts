@@ -368,7 +368,9 @@ export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
  * between the rail's items, and inside an item of the sidebar before its glyph; the size of a label of the sidebar;
  * the space the frame keeps from the viewport's edge, between its columns (`gapWide` from `desktop`), and below the
  * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
- * main one; and the height of the mark at the top of the rail.
+ * main one; the height of the mark at the top of the rail; the height of the call's bar above the tab bar; the least
+ * size of a count's badge and its inline padding; the height of a meter's bar; and the room the menu's sheet leaves
+ * above it.
  */
 export const shell = {
   rail: 3.5,
@@ -387,6 +389,11 @@ export const shell = {
   inset: 0.5,
   section: 2,
   mark: 1.5,
+  callBar: 3.5,
+  badge: 1.125,
+  badgeInline: 0.3125,
+  meter: 0.375,
+  sheetRoom: 4,
 } as const;
 
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));

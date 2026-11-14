@@ -5,7 +5,9 @@
 // screen, and the footer; from `desktop`, the server's introduction (its banner, its mark and its description) on a
 // raised panel of 5/12 at the start, which stays in view while a long form scrolls, and the column beside it without
 // the mark, so that the reader sees which server they are on. With no banner, the introduction sits in the panel's
-// middle. Fields are raised surfaces; what went wrong takes a glyph and the text's color, never a hue, since the accent
+// middle. The server's front page shows its introduction at every width, at the top of the column on a phone and a
+// tablet, with the server's name as the page's title and what leads on from it (its about page) at its end. Fields
+// are raised surfaces; what went wrong takes a glyph and the text's color, never a hue, since the accent
 // means the primary action and links only. A form's own error sits right before the button that sent it, where the
 // reader is when they send it again; a field's sits under the field. Like the app's frame (shell.tsx), it reads the
 // viewport, and it carries the page's surface onto <html>.
@@ -38,6 +40,7 @@ const page = tv({
     ],
     introBody: "flex w-full max-w-[var(--form-page-intro-width)] flex-col gap-form-page-intro-gap [&_p]:m-0",
     banner: "aspect-banner w-full rounded-overlay object-cover",
+    summary: "grid gap-form-page-head-gap",
     column: [
       "flex w-full max-w-[var(--form-page-column)] flex-col gap-form-page-gap",
       "desktop:box-border desktop:max-w-[var(--form-page-column-wide)] desktop:justify-self-center",
@@ -56,6 +59,16 @@ const page = tv({
   },
   variants: {
     banner: { false: { intro: "desktop:items-center" }, true: { intro: "desktop:items-start" } },
+    // With no server to introduce, the column stands alone in the page's middle at every width.
+    alone: { true: { root: "desktop:flex desktop:px-shell-edge", column: "desktop:px-0" } },
+    // The front page: the introduction heads the column below `desktop`, and the column fills the rest of the page.
+    front: {
+      true: {
+        root: "max-desktop:flex-col max-desktop:items-center max-desktop:gap-form-page-gap",
+        intro: "max-desktop:flex max-desktop:w-full max-desktop:max-w-[var(--form-page-column)]",
+        column: "flex-1",
+      },
+    },
   },
 });
 
@@ -65,7 +78,7 @@ const mark = tv({
     wordmarkLight: "block [:root[data-theme=dark]_&]:hidden dark:[:root:not([data-theme=light])_&]:hidden",
     wordmarkDark: "hidden [:root[data-theme=dark]_&]:block dark:[:root:not([data-theme=light])_&]:block",
     logo: "rounded-control object-contain",
-    name: "text-muted-text",
+    name: "m-0 text-muted-text",
   },
   variants: {
     size: {
@@ -77,22 +90,31 @@ const mark = tv({
         name: "text-title",
       },
     },
-    own: { true: { name: "font-label text-text" } },
+    own: { true: { name: "text-text" } },
+    // The name is the page's title, at the title's weight with any logo.
+    title: { true: { name: "text-text" } },
   },
+  compoundVariants: [{ own: true, title: false, class: { name: "font-label" } }],
 });
 
-/** The server's mark: its own logo (for light and dark) with its name, else the built-in wordmark with its name. */
+/**
+ * The server's mark: its own logo (for light and dark) with its name, else the built-in wordmark with its name; `title`
+ * makes the name the page's h1.
+ */
 function Mark({
   server,
   wordmark,
   size,
+  title = false,
 }: {
   server: FormPageServer;
   wordmark: { light: string; dark: string };
   size: "line" | "intro";
+  title?: boolean;
 }) {
   const own = server.logo !== undefined && server.logo !== "";
-  const s = mark({ size, own });
+  const s = mark({ size, own, title });
+  const Name = title ? "h1" : "span";
   return (
     <div className={s.root()}>
       {own ? (
@@ -106,39 +128,67 @@ function Mark({
           <img className={s.wordmarkDark()} src={wordmark.dark} alt="" />
         </>
       )}
-      <span className={s.name()} dir="auto">
+      <Name className={s.name()} dir="auto">
         {server.name}
-      </span>
+      </Name>
     </div>
   );
 }
 
 export type FormPageProps = {
-  server: FormPageServer;
+  /**
+   * The server the page belongs to. None for a page the server shows while it cannot read itself (its maintenance):
+   * the page is then the one column alone, with no mark and no introduction.
+   */
+  server?: FormPageServer | undefined;
   /** The built-in wordmark, for light and dark, which a server without a logo of its own shows. */
   wordmark: { light: string; dark: string };
   /** The footer (FormPageFooter). */
   footer?: ReactNode;
+  /**
+   * The server's front page: its introduction shows at every width and names the page, and `more` ends it (a link to
+   * the server's about page).
+   */
+  front?: { more?: ReactNode } | undefined;
   children: ReactNode;
 };
 
 /** A page of its own outside the app's frame: the server's mark or introduction, the screen, and the footer. */
-export function FormPage({ server, wordmark, footer, children }: FormPageProps) {
-  const banner = server.banner !== undefined && server.banner !== "";
-  const s = page({ banner });
+export function FormPage({ server, wordmark, footer, front, children }: FormPageProps) {
+  const banner = server?.banner !== undefined && server.banner !== "";
+  const isFront = server !== undefined && front !== undefined;
+  const s = page({ banner, alone: server === undefined, front: isFront });
+  const intro = server !== undefined && (
+    <div className={s.introBody()}>
+      {banner && <img className={s.banner()} src={server.banner} alt="" />}
+      <Mark server={server} wordmark={wordmark} size="intro" title={isFront} />
+      {isFront ? (
+        // What leads on from the summary stays with it.
+        <div className={s.summary()}>
+          {server.description && <p dir="auto">{server.description}</p>}
+          {front.more}
+        </div>
+      ) : (
+        server.description && <p dir="auto">{server.description}</p>
+      )}
+    </div>
+  );
   return (
     <div className={s.root()}>
-      <aside className={s.intro()} aria-label={server.name}>
-        <div className={s.introBody()}>
-          {banner && <img className={s.banner()} src={server.banner} alt="" />}
-          <Mark server={server} wordmark={wordmark} size="intro" />
-          {server.description && <p dir="auto">{server.description}</p>}
-        </div>
-      </aside>
+      {server !== undefined &&
+        (isFront ? (
+          <header className={s.intro()}>{intro}</header>
+        ) : (
+          <aside className={s.intro()} aria-label={server.name}>
+            {intro}
+          </aside>
+        ))}
       <div className={s.column()}>
-        <header className={s.header()}>
-          <Mark server={server} wordmark={wordmark} size="line" />
-        </header>
+        {server !== undefined && !isFront && (
+          <header className={s.header()}>
+            <Mark server={server} wordmark={wordmark} size="line" />
+          </header>
+        )}
         <main className={s.main()}>{children}</main>
         {footer}
       </div>
