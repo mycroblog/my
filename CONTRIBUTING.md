@@ -117,14 +117,15 @@ so no hosts file entry is needed. The server runs with `profile = development` a
 - Translation needs the provider enabled: turn LibreTranslate on in the translation settings of the administration, or
   run `docker compose exec my my instance set translation_providers libretranslate`. Its first start downloads the
   models, and translations fail until it answers.
-- The Go code is not reloaded: `docker compose restart my` builds it again and restarts the server.
+- The Go code and the web client's build are not reloaded: `docker compose restart my` builds both again and restarts
+  the server. `scripts/task.sh web:dev` serves the client with reloading.
 - `GO_TAGS` builds the server with [build tags](docs/reference/build-tags.md), such as `GO_TAGS=e2e_fakes` for the
   test build with the fake push service, payment provider, and search index.
 - Put the variables of the table and `GO_TAGS` in a `.env` file next to `compose.yaml`; it is never committed. A port
   that another program uses must move there.
 - `my` runs as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so
-  the files it writes in it are yours. The Go caches and every `node_modules` are volumes of their own, apart from
-  those of your machine.
+  the files it writes in it are yours. The Go caches, `bin`, and every `node_modules` are volumes of their own, apart
+  from those of your machine.
 - `docker compose down` stops everything and keeps the data in the volumes; `docker compose down -v` removes it too.
 - The secrets in `compose.yaml` (the KEK, the keys of Garage and Meilisearch) are fixed values for development only.
 
@@ -239,8 +240,8 @@ the same way; without a build they are blank.
 
 - `scripts/task.sh web:build` builds `web/app` with Vite into `internal/interface/web/dist`, which Go embeds with
   `//go:embed all:dist`, with the brand assets of `web/brand`. Only a placeholder `.gitkeep` is committed there, so the
-  Go build and tests need no Bun; the Docker image embeds the brand assets alone. `scripts/web-icons.sh` renders the
-  PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
+  Go build and tests need no Bun; the Docker image and `docker compose up` run `web:build` themselves.
+  `scripts/web-icons.sh` renders the PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
 - `scripts/task.sh web:dev` serves `web/app` on `http://localhost:5173` and passes `/api`, `/oauth` and `/auth` on to
   the server of `docker compose up` (`MY_SERVER` names another).
 - `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave unused adapters out of the binary.

@@ -9,11 +9,37 @@
 # update them. The Go and Bun tags must match .tool-versions (docker:dockerfile-check), so they are raised by
 # hand; Dependabot raises the digests.
 
-# The bun binary of the development image.
+# The bun binary of the web client's build and the development image.
 FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS bun
 
-# The Go toolchain, of the build stage and the development image.
+# The Go toolchain, of the build stages and the development image.
 FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:af1bfc2614ebb1dbd31af514b78740fd678850e76498762b425ecee4c5c6ea80 AS go
+
+# What internal/interface/web embeds (ADR-0028): `scripts/task.sh web:build` on Bun (ADR-0025 §10), the Vite build of
+# web/app with its auth entry and the license notices of the npm packages it bundles, and the files of web/brand. The
+# npm packages stay in this stage. Its output is the same on every platform, so it runs once on the build host's. Each
+# layer reads only what the next one needs: go-task, which scripts/task.sh builds from tools/go.mod, then the
+# workspace's manifests and lockfile, then the sources.
+FROM go AS web
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+ENV GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0
+WORKDIR /src
+COPY tools/go.mod tools/go.sum tools/
+COPY scripts/task.sh scripts/
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    scripts/task.sh --version
+COPY --parents package.json bun.lock bunfig.toml web/*/package.json tools/i18n/package.json pkg/mykit/ts/package.json \
+    pkg/mybot/ts/package.json ./
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
+COPY Taskfile.yml tsconfig.base.json ./
+COPY tasks/ tasks/
+COPY locales/ locales/
+COPY tools/i18n/ tools/i18n/
+COPY pkg/mykit/ts/ pkg/mykit/ts/
+COPY web/ web/
+RUN mkdir -p internal/interface/web/dist && scripts/task.sh web:build
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
 FROM go AS build
@@ -32,10 +58,9 @@ RUN --mount=type=bind,source=go.mod,target=go.mod \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=cache,target=/go/pkg/mod \
     go mod download
-# internal/interface/web embeds its dist/ (ADR-0028): the files of web/brand alone, without the client's Vite build that
-# `scripts/task.sh web:build` adds, so the image's shell loads no client script yet.
+# internal/interface/web embeds its dist/ (ADR-0028), the output of the stage web.
 RUN --mount=type=bind,target=. \
-    --mount=type=bind,source=web/brand,target=internal/interface/web/dist \
+    --mount=type=bind,from=web,source=/src/internal/interface/web/dist,target=internal/interface/web/dist \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -tags "${GO_TAGS}" -ldflags "-s -w -X main.version=${VERSION}" -o /out/my ./cmd/my \
