@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/system"
 	"github.com/mycroblog/my/internal/adapter/valkey"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/valkeytest"
 )
 
@@ -24,8 +25,17 @@ func TestServerRunsOnValkeyKV(t *testing.T) {
 		"MY_VALKEY_URL": v.URL, "MY_VALKEY_KEY_PREFIX": v.KeyPrefix,
 	})
 	s := start(t, cfg, platform.ServeOptions{}, nil)
-	if resp, _ := s.do(t, http.MethodGet, platform.PathReadiness, nil); resp.StatusCode != http.StatusOK {
-		t.Fatalf("readiness = %d, want 200", resp.StatusCode)
+	// A readiness check is bounded (3 seconds, ADR-0088 §15) and answers 503 past it, as a probe of a
+	// loaded process may: the server is ready once a check passes, as a probe that tries again sees.
+	var code int
+	var body string
+	ready := testkit.Eventually(t, 15*time.Second, func() bool {
+		resp, b := s.do(t, http.MethodGet, platform.PathReadiness, nil)
+		code, body = resp.StatusCode, b
+		return code == http.StatusOK
+	})
+	if !ready {
+		t.Fatalf("readiness = %d %s, want 200; log:\n%s", code, body, s.logs.String())
 	}
 	ctx := t.Context()
 	if err := s.app.KV.Set(ctx, "test", "k", []byte("v"), time.Hour); err != nil {
