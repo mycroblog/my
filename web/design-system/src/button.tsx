@@ -4,7 +4,8 @@
 // primary is the accent fill, the secondary a neutral raised surface, the quiet one has none until touched. React Aria
 // tells hover, press and keyboard focus apart (data-hovered, data-pressed, data-focus-visible); the classes read only
 // the theme of theme.ts, generated from @my/design-tokens. The icon button (icon-button.tsx) and the chip (chip.tsx)
-// draw on the same base. The text button is an action inside a line of text, underlined in the text's own color.
+// draw on the same base. The text button is an action inside a line of text, underlined in the text's own color, and
+// the text link a link drawn as it is.
 
 import { motion } from "@my/design-tokens";
 import type { ReactNode } from "react";
@@ -195,5 +196,17 @@ export function TextButton({ children, ...rest }: TextButtonProps) {
     >
       {children}
     </AriaButton>
+  );
+}
+
+/**
+ * A link inside a line of text that leads to another screen (a notice's Sign in), drawn as the text button is, so that
+ * an action and a link in a line read alike.
+ */
+export function TextLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <AriaLink href={href} className={textButton()}>
+      {children}
+    </AriaLink>
   );
 }

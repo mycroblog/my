@@ -10,5 +10,13 @@
   "timeline.new_posts_missed": {
     "defaultMessage": "New posts",
     "description": "The button over the home timeline's top when posts may have been missed (after a reconnection); pressing it reads the newest posts again and shows them at the top."
+  },
+  "timeline.local": {
+    "defaultMessage": "Local timeline",
+    "description": "The name of the local timeline (the public posts of this server's people), for assistive technology."
+  },
+  "timeline.federated": {
+    "defaultMessage": "Federated timeline",
+    "description": "The name of the federated timeline (the public posts this server knows from every server), for assistive technology."
   }
 }

@@ -4,6 +4,8 @@
 // reads navigator and the platform's globals (restrict/platform-globals refuses them elsewhere); the others ask it
 // whether something can be done, and hold the screen for when it cannot.
 
+export { isOnline, watchOnline } from "./connection";
+export { readDeviceValue, writeDeviceValue } from "./device-values";
 export { namesCommandKey } from "./keyboard";
 export { watchKeyboardInset } from "./keyboard-inset";
 export { browserLanguages } from "./languages";

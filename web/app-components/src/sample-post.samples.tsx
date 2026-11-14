@@ -52,10 +52,13 @@ export function SamplePost({
   post,
   lang,
   translationAs,
+  signIn,
 }: {
   post: TimelinePost;
   lang: "en" | "ja";
   translationAs?: ((t: PostTranslation) => PostTranslation) | undefined;
+  /** A reader without an account, whom the actions that need one lead to sign in (Post's `signIn`). */
+  signIn?: ((status: PostStatus) => void) | undefined;
 }) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
@@ -75,6 +78,7 @@ export function SamplePost({
       translatable={translation !== undefined}
       translation={translated ? translation : undefined}
       onAction={onAction}
+      signIn={signIn}
     />
   );
 }

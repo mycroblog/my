@@ -5,7 +5,61 @@
 // through the hooks and queries here, and never copy what they return into state or context.
 
 export { createAppData, createQueryClient, type AppData } from "./app-data";
+export {
+  announcementsQuery,
+  markAnnouncementRead,
+  announcementHistoryQuery,
+  announcementQuery,
+  useAnnouncement,
+  useAnnouncementHistory,
+  useAnnouncements,
+  useMarkAnnouncementRead,
+  type Announcement,
+} from "./announcements";
 export { receiveHomeGap, receiveHomeStatuses, useHomeArrivals, type Arrival } from "./arrivals";
+export {
+  aroundLimit,
+  openVoiceRoomsQuery,
+  upcomingEventsQuery,
+  useOpenVoiceRooms,
+  useUpcomingEvents,
+  type FirstOf,
+  type ServerEvent,
+  type VoiceRoom,
+} from "./around";
+export {
+  dataExportsQuery,
+  downloadDataExport,
+  exportCsv,
+  requestDataExport,
+  useDataExports,
+  type CsvKind,
+  type DataExport,
+  type DataExports,
+  type SavedFile,
+} from "./exports";
+export {
+  instanceQuery,
+  useInstance,
+  useServerActions,
+  useServerState,
+  useStatusPageUrl,
+  useWritesInFlight,
+  type Closure,
+  type FundingMeter,
+  type Instance,
+} from "./instance";
+export { moderationCountsQuery, rightsOf, useModerationCount, useRights, type Permission, type Rights } from "./rights";
+export {
+  watchServer,
+  webClientEpoch,
+  type Connection,
+  type Maintenance,
+  type ServerState,
+  type ServerWatch,
+  type ServerWatchOptions,
+  type Update,
+} from "./server";
 export {
   accountQuery,
   accountStatusesQuery,
@@ -69,7 +123,7 @@ export {
 } from "./notifications";
 export type { PagedList } from "./paged";
 export { AppDataProvider } from "./provider";
-export { openSession } from "./session";
+export { openSession, visitorData } from "./session";
 export {
   appPath,
   finishSignIn,
@@ -82,4 +136,11 @@ export {
 export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
 export { startStream } from "./stream";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
-export { homeTimelineQuery, useHomeTimeline, type HomeTimeline } from "./timeline";
+export {
+  homeTimelineQuery,
+  publicTimelineQuery,
+  useHomeTimeline,
+  usePublicTimeline,
+  type HomeTimeline,
+  type PublicTimelineKind,
+} from "./timeline";

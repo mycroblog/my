@@ -6,11 +6,12 @@
 import { loadNotifications, Notifications } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStrings } from "../locale";
+import { screenLoad } from "../screen-load";
 import { ScreenHeading } from "../shell/heading";
 import { SignedOut } from "../shell/signed-out";
 
 export const Route = createFileRoute("/notifications")({
-  loader: ({ context }) => (context.data === null ? undefined : loadNotifications(context.data)),
+  loader: ({ context }) => screenLoad(context, loadNotifications),
   component: NotificationsScreen,
   // A place of the navigation opens at its top, where the newest notifications are.
   staticData: { scroll: "top" },

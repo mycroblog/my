@@ -7,9 +7,11 @@
 // once, before the answer, so asserting what it shows and then reloading or navigating is the flaky pattern: the
 // reload aborts the unanswered request and the server drops the write.
 
+export { HomeAnnouncements } from "./announcements";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
-export { Frame, type Place } from "./frame";
+export { Frame, Menu, type MenuPlace, type Place } from "./frame";
+export { Landing, type LandingPlace } from "./landing";
 export { Notifications } from "./notifications";
 export { Profile } from "./profile";
 export { signInAs, SignIn, type Passkey } from "./sign-in";

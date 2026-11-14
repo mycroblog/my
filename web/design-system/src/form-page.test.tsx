@@ -50,6 +50,24 @@ test("a server with its own logo shows it in place of the wordmark; with no bann
   expect(html).toContain("desktop:items-center");
 });
 
+test("the server's front page shows its introduction at every width, names the page with it, and ends it with more", () => {
+  const html = renderToStaticMarkup(
+    <FormPage
+      server={{ name: "Hanami", description: "A town square." }}
+      wordmark={wordmark}
+      front={{ more: <a href="/about">More</a> }}
+    >
+      x
+    </FormPage>,
+  );
+  // No panel beside the column and no mark at its start: the introduction is the page's header.
+  expect(html).not.toContain("<aside");
+  expect(html).not.toContain('<header class="desktop:hidden">');
+  expect(html).toMatch(/<header class="hidden [^"]*max-desktop:flex[^"]*">/);
+  expect(html).toMatch(/<h1 class="[^"]*text-text[^"]*" dir="auto">Hanami<\/h1>/);
+  expect(html).toMatch(/<p dir="auto">A town square.<\/p><a href="\/about">More<\/a>/);
+});
+
 test("a field's hint and error are read with it, and the error marks it", () => {
   const html = renderToStaticMarkup(
     <TextField id="name" name="username" label="Username" hint="Up to 30." error="Taken." describedBy="prompt" />,

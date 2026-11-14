@@ -4,8 +4,9 @@
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
 // today (the home timeline, the composer, a post and its thread, the notifications, a profile, the sign-in with a
-// password, a two-factor code or a passkey, and the consent to an app), and grows with the screens. It names no ID and
-// no time: the server decides them, so nothing that reads the scenario depends on them. Every item has a key, which the
+// password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and upcoming
+// events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
+// server decides them, so nothing that reads the scenario depends on them. Every item has a key, which the
 // seed sends as `Idempotency-Key: demo:<key>`. The passwords are fixed, which a server takes from the seed only in
 // the `development` profile of a test build (ADR-0015 §6). Links use the reserved `.test` and `.invalid` hosts.
 
@@ -488,6 +489,84 @@ export const apps: readonly App[] = [
     scope: "read write:statuses",
   },
 ];
+
+/**
+ * An announcement of the server to every local user, which the administrator publishes in this order (the last is
+ * the newest); `readBy` names who marked it read.
+ */
+export type ServerAnnouncement = { key: string; title: string; text: string; readBy?: readonly string[] };
+
+/** The server's announcements, which the column beside the timeline shows and a line above the home timeline counts. */
+export const announcements: readonly ServerAnnouncement[] = [
+  {
+    key: "welcome",
+    title: "Welcome to the demo server: read the rules before you post",
+    text: "This server is a place to try mycroblog. Be kind, and mark what others may not want to see.",
+    readBy: ["yuki"],
+  },
+  {
+    key: "emoji-requests",
+    title: "Custom emoji requests are open",
+    text: "Anyone can now ask for a new custom emoji from the settings. The admins review each request.",
+  },
+  {
+    key: "maintenance",
+    title: "Scheduled maintenance on Sunday, 03:00–04:00 UTC",
+    text: "The server will be down for about an hour while we move the database to a larger disk.",
+  },
+];
+
+/**
+ * An event a person organizes, `inDays` days after the seed runs, at `hour` o'clock in its time zone, for
+ * `hours` hours.
+ */
+export type ServerEventPlan = {
+  key: string;
+  organizer: string;
+  title: string;
+  description: string;
+  timeZone: string;
+  inDays: number;
+  hour: number;
+  hours: number;
+};
+
+/** The upcoming events, which the column beside the timeline shows, the nearest first. */
+export const events: readonly ServerEventPlan[] = [
+  {
+    key: "meetup",
+    organizer: "hana",
+    title: "Fediverse meetup in Tokyo",
+    description: "An evening of talks and snacks for everyone on the fediverse.",
+    timeZone: "Asia/Tokyo",
+    inDays: 6,
+    hour: 19,
+    hours: 3,
+  },
+  {
+    key: "office-hours",
+    organizer: "marco",
+    title: "Moderators' office hours",
+    description: "Ask the moderators anything about the rules and how reports are handled.",
+    timeZone: "Europe/Lisbon",
+    inDays: 9,
+    hour: 12,
+    hours: 1,
+  },
+];
+
+/** How far `zone`'s clock is ahead of UTC at the instant `ms`, in ms. */
+function zoneOffset(ms: number, zone: string): number {
+  const local = new Date(ms).toLocaleString("sv-SE", { timeZone: zone }).replace(" ", "T");
+  return Date.parse(`${local}Z`) - ms;
+}
+
+/** When the event `plan` starts, counted from `now` (ms since the Unix epoch). */
+export function eventStart(plan: ServerEventPlan, now: number): Date {
+  const day = new Date(now + plan.inDays * 86_400_000).toLocaleDateString("sv-SE", { timeZone: plan.timeZone });
+  const asUtc = Date.parse(`${day}T${String(plan.hour).padStart(2, "0")}:00:00Z`);
+  return new Date(asUtc - zoneOffset(asUtc, plan.timeZone));
+}
 
 /** The person of the scenario with `username`. */
 export function personOf(username: string): Person {
