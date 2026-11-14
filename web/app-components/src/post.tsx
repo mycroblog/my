@@ -6,8 +6,8 @@
 // warning over it, the images, the quoted post as a reduced preview, the emoji reactions, the translate line, and the
 // actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end), whose keys
 // (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
-// over it (`context`: pinned) and lines under the reactions (`details`: a focused post's date and counts), inside its
-// surface. Its author's name leads to their profile and its time to the post's own page (paths.ts). It shows its
+// over it (`context`: pinned, or the heading of a thread's replies), lines under the reactions (`details`: a focused
+// post's date and counts), and a line after the actions (`after`: a thread's fold), inside its surface. Its author's name leads to their profile and its time to the post's own page (paths.ts). It shows its
 // extent by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
 // action is a callback, and what the action changes comes back in the next status.
 
@@ -38,7 +38,7 @@ import {
 } from "@my/design-system";
 import { Fragment, useId, useState, type ReactNode } from "react";
 import { AccountName as Name, handleOf, nameOf } from "./account";
-import { stringsIn } from "./locale";
+import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
 import { EmojiText, PostContent } from "./post-content";
@@ -85,6 +85,8 @@ export type PostProps = {
   details?: ReactNode;
   /** The visibility and the time at the end of the author's line; false where `details` says them in full. */
   stamp?: boolean | undefined;
+  /** The screen's own line after the actions, inside it (a fold of the posts that follow it in a thread). */
+  after?: ReactNode;
 };
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -212,7 +214,7 @@ function Reactions({ status, t, lang, act }: { status: PostStatus; t: T; lang: s
 /** The note of a translation: the language it was written in and the provider, as far as they are known. */
 function translatedNote(translation: PostTranslation, t: T, lang: string): ReactNode {
   const source = known(translation.source_language);
-  const name = source === undefined ? undefined : new Intl.DisplayNames([lang], { type: "language" }).of(source);
+  const name = source === undefined ? undefined : languageName(source, lang);
   // A provider's name is a proper name, and a language's is the platform's: both isolated, in their own direction.
   const language = name === undefined ? undefined : <bdi>{name}</bdi>;
   const provider = translation.provider === undefined ? undefined : <bdi>{translation.provider.name}</bdi>;
@@ -335,6 +337,7 @@ export function Post({
   context,
   details,
   stamp = true,
+  after,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -404,6 +407,7 @@ export function Post({
       <Reactions status={shown} t={t} lang={lang} act={act} />
       {details}
       <Actions status={shown} own={own} t={t} lang={lang} act={act} />
+      {after}
     </Entry>
   );
 }

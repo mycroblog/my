@@ -4,8 +4,9 @@
 // server renders both as the same HTML (ADR-0019 §2): a local post from its plain text (internal/app/content, text.go),
 // a remote one through its sanitizer. It draws that HTML as React elements (html.ts) with the parts of
 // @my/design-system: paragraphs and line breaks, links, mentions and hashtags, the shortened text of a URL, and each
-// `:shortcode:` of the post's custom emoji as its image (ADR-0051 §4). Each block reads in its own direction
-// (`dir="auto"`), so that a post keeps its punctuation at the right end whatever the page's direction.
+// `:shortcode:` of the post's custom emoji as its image (ADR-0051 §4). Every block reads in its own direction
+// (`dir="auto"`), so that a post keeps its punctuation at the right end whatever the page's direction, and a list
+// puts its indent on the side its markers stand, where a list in the page's direction would leave them hanging out.
 
 import { ContentBody, ContentLink, CustomEmoji, UrlPart, type ContentLinkKind } from "@my/design-system";
 import { createElement, Fragment, type ReactNode } from "react";
@@ -22,9 +23,6 @@ export type PostContentProps = {
   /** The language of the text, when it is known (a BCP 47 tag). */
   lang?: string | undefined;
 };
-
-// The blocks that read in their own direction.
-const directed: ReadonlySet<string> = new Set(["p", "pre", "blockquote", "li"]);
 
 const shortcode = /:([a-zA-Z0-9_]+):/g;
 
@@ -106,6 +104,7 @@ function draw(node: ContentNode, key: number, emojis: ReadonlyMap<string, Conten
         <ol
           key={key}
           lang={lang}
+          dir="auto"
           start={node.attrs.start === undefined ? undefined : Number(node.attrs.start)}
           reversed={node.attrs.reversed === undefined ? undefined : true}
         >
@@ -124,7 +123,7 @@ function draw(node: ContentNode, key: number, emojis: ReadonlyMap<string, Conten
         </li>
       );
     default:
-      return createElement(node.tag, { key, lang, dir: directed.has(node.tag) ? "auto" : undefined }, ...children);
+      return createElement(node.tag, { key, lang, dir: blockTags.has(node.tag) ? "auto" : undefined }, ...children);
   }
 }
 

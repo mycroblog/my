@@ -5,6 +5,7 @@
 
 import { focusFrameHeading, FrameHeading } from "@my/design-system";
 import { useEffect, useRef } from "react";
+import { useShownScreen } from "./screen";
 
 const headingId = "screen-heading";
 
@@ -17,14 +18,15 @@ export function ScreenHeading({ children }: { children: string }) {
 }
 
 /**
- * Moves the focus to the new screen's h1 whenever `pathname` changes, not when the app opens, without moving the
- * position the screen restored.
+ * Moves the focus to the new screen's h1 whenever the shown screen changes (screen.ts), once that screen is on the
+ * page, not when the app opens, without moving the position the screen restored.
  */
-export function useFocusOnNavigation(pathname: string) {
-  const shown = useRef(pathname);
+export function useFocusOnNavigation() {
+  const screen = useShownScreen();
+  const shown = useRef(screen);
   useEffect(() => {
-    if (shown.current === pathname) return;
-    shown.current = pathname;
+    if (shown.current === screen) return;
+    shown.current = screen;
     focusFrameHeading(document);
-  }, [pathname]);
+  }, [screen]);
 }

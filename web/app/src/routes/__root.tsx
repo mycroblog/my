@@ -35,7 +35,7 @@ function Root() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { config, data } = Route.useRouteContext();
-  useFocusOnNavigation(pathname);
+  useFocusOnNavigation();
   useScreenScroll();
   useKeyboardInset();
   return (

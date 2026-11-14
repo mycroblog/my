@@ -10,8 +10,8 @@ import { batchId, feedbackDir, layerOf, readBatches, writeBatch } from "./store"
 let root = "";
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "devtools-"));
-  mkdirSync(join(root, "web", "catalog", "src"), { recursive: true });
-  writeFileSync(join(root, "web", "catalog", "package.json"), JSON.stringify({ name: "@my/catalog" }));
+  mkdirSync(join(root, "web", "design-system", "src"), { recursive: true });
+  writeFileSync(join(root, "web", "design-system", "package.json"), JSON.stringify({ name: "@my/design-system" }));
 });
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });
@@ -32,7 +32,7 @@ const note = (source: string | null): NoteInput => ({
     orientation: null,
     account: null,
   },
-  reproduction: { scenario: null, step: null },
+  story: null,
   accessibility: 'heading "Type" [level=1]',
 });
 
@@ -42,14 +42,14 @@ describe("store", () => {
   });
 
   test("layerOf names the package of the file", () => {
-    expect(layerOf(root, "web/catalog/src/Catalog.tsx")).toBe("@my/catalog");
+    expect(layerOf(root, "web/design-system/src/button.tsx")).toBe("@my/design-system");
     expect(layerOf(root, "elsewhere/x.tsx")).toBeNull();
   });
 
   test("writeBatch numbers the notes, adds their layer, and readBatches reads it back", () => {
-    const batch = writeBatch(root, { page: "/", notes: [note("web/catalog/src/Catalog.tsx:3"), note(null)] });
+    const batch = writeBatch(root, { page: "/", notes: [note("web/design-system/src/button.tsx:3"), note(null)] });
     expect(batch.notes.map((n) => [n.id, n.layer])).toEqual([
-      [`${batch.id}.1`, "@my/catalog"],
+      [`${batch.id}.1`, "@my/design-system"],
       [`${batch.id}.2`, null],
     ]);
     const file = join(feedbackDir(root), `${batch.id}.json`);

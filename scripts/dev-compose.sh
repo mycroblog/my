@@ -17,8 +17,8 @@ cd "$root"
 
 # The node_modules directories of the Bun workspace (the root and each member), each a volume of compose.yaml, as is
 # bin, where scripts/task.sh builds go-task for this image rather than for the developer's machine.
-node_modules=(. web/app web/app-components web/app-data web/app-features web/catalog web/design-system
-	web/design-tokens web/devtools web/docs web/i18n web/platform pkg/mykit/ts pkg/mybot/ts tools/i18n)
+node_modules=(. web/app web/app-components web/app-data web/app-features web/design-system
+	web/design-tokens web/devtools web/docs web/i18n web/platform web/storybook pkg/mykit/ts pkg/mybot/ts tools/i18n)
 
 owner="$(stat -c %u:%g "$root")"
 

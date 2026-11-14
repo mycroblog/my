@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What a note carries about the page (ADR-0168 §2), read from the DOM in the browser. An element in a same-origin
-// iframe (the page at a device size) is read in its own document: its selector, its page coordinates and the state,
-// whose viewport is the iframe's.
+// iframe is read in its own document: its selector, its page coordinates and the state, whose viewport is the
+// iframe's. The story is the one the element's window shows (story.ts).
 
 import type { NoteInput, Rect, State } from "./note";
+import { pageOf, storyOf } from "./story";
 
 const pageRect = (win: Window, r: DOMRect): Rect => ({
   x: Math.round(r.left + win.scrollX),
@@ -41,9 +42,8 @@ function orientationOf(win: Window): string | null {
 
 function stateOf(win: Window): State {
   const html = win.document.documentElement;
-  const { location } = win;
   return {
-    page: location.pathname + location.search + location.hash,
+    page: pageOf(win),
     route: null,
     viewport: { width: win.innerWidth, height: win.innerHeight, devicePixelRatio: win.devicePixelRatio },
     theme: {
@@ -192,7 +192,7 @@ export function noteOf(text: string, el: Element, area: Rect | null): NoteInput 
     source: el.closest("[data-source]")?.getAttribute("data-source") ?? null,
     sources,
     state: stateOf(win),
-    reproduction: { scenario: null, step: null },
+    story: storyOf(win),
     accessibility: accessibilityOf(area && tops.length > 0 ? tops : [el]),
   };
 }

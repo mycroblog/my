@@ -4,7 +4,9 @@
 // first post, then a fold of the posts between it and the two the focused post replies to closest, then those two;
 // the focused post, a step larger, with when it was posted, to whom and its counts inside it (PostDetails) in place of
 // the stamp at the end of its author's line; then its replies, each indented by how deep it replies, the first of them
-// and a fold of the rest. All of it is one feed, so that the keys of the next and the previous entry run through it.
+// and a fold of the rest. All of it is one feed, so that the keys of the next and the previous entry run through it;
+// a feed owns its articles alone, so the replies' heading stands in the first reply, above it, and each fold in the
+// entry before it.
 // A post's actions are answered as on every screen (post-actions.tsx).
 
 import { FeedKeys, Post, PostDetails } from "@my/app-components";
@@ -89,6 +91,30 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     </FeedItem>
   );
   const count = positions.size;
+  // The feed owns its articles alone: the folds and the replies' heading stand inside the entries beside them.
+  const earlierFold = folded > 0 && (
+    <Fold>
+      <TextButton
+        onPress={() => {
+          setEarlier(true);
+        }}
+      >
+        {t("thread.earlier", { count: folded })}
+      </TextButton>
+    </Fold>
+  );
+  const laterFold = replies.length < descendants.length && (
+    <Fold>
+      <TextButton
+        onPress={() => {
+          setShown(shown + repliesShown);
+        }}
+      >
+        {t("thread.more_replies", { count: descendants.length - replies.length })}
+      </TextButton>
+    </Fold>
+  );
+  const lastReply = replies.at(-1);
   return (
     <ScreenStack>
       {back}
@@ -104,18 +130,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         }
       >
         <FeedKeys />
-        {first.map((s) => item(s))}
-        {folded > 0 && (
-          <Fold key="earlier">
-            <TextButton
-              onPress={() => {
-                setEarlier(true);
-              }}
-            >
-              {t("thread.earlier", { count: folded })}
-            </TextButton>
-          </Fold>
-        )}
+        {first.map((s) => item(s, <Post status={s} onAction={onAction} after={earlierFold || undefined} />))}
         {last.map((s) => item(s))}
         <ThreadFocus key="focus">
           {item(
@@ -123,23 +138,19 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <Post status={status} stamp={false} details={<PostDetails status={status} />} onAction={onAction} />,
           )}
         </ThreadFocus>
-        {replies.length > 0 && <GroupHeading key="replies">{t("thread.replies")}</GroupHeading>}
-        {replies.map((s) => (
+        {replies.map((s, i) => (
           <ThreadReply key={s.id} depth={depth.get(s.id) ?? 1}>
-            {item(s)}
+            {item(
+              s,
+              <Post
+                status={s}
+                onAction={onAction}
+                context={i === 0 ? <GroupHeading>{t("thread.replies")}</GroupHeading> : undefined}
+                after={(s === lastReply && laterFold) || undefined}
+              />,
+            )}
           </ThreadReply>
         ))}
-        {replies.length < descendants.length && (
-          <Fold key="later">
-            <TextButton
-              onPress={() => {
-                setShown(shown + repliesShown);
-              }}
-            >
-              {t("thread.more_replies", { count: descendants.length - replies.length })}
-            </TextButton>
-          </Fold>
-        )}
       </Feed>
     </ScreenStack>
   );

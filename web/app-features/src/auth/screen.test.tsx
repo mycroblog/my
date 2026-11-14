@@ -34,7 +34,7 @@ test("a screen is the server's page: its mark, its introduction, the title, and 
   expect(html).toContain("A town square.");
   expect(html).not.toContain("/light.svg");
   expect(html).toMatch(/<h1[^>]*>Sign in<\/h1>/);
-  expect(html).toContain('<a class="text-muted-text" href="/about/terms">Terms of service</a>');
+  expect(html).toMatch(/<a class="text-muted-text[^"]*" href="\/about\/terms">Terms of service<\/a>/);
   expect(html).toContain('href="https://status.example"');
   expect(render({ ...base, screen: "sign_in" })).toContain('src="/light.svg"');
 });

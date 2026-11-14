@@ -272,17 +272,17 @@ describe("the actions", () => {
   test("reply, boost with its menu, favourite and react at the start, more at the end, with their counts", () => {
     const html = bare({ status: status({ boosted: true }) });
     expect(html).toMatch(
-      /aria-label="Reply, 2".*aria-label="Boost, 1,234".*aria-label="Favourite, 12,840".*aria-label="React".*<span><button [^>]*aria-label="More"/,
+      /aria-label="Reply, 2".*aria-label="Boost, 1.2K".*aria-label="Favourite, 12.8K".*aria-label="React".*<span><button [^>]*aria-label="More"/,
     );
-    expect(html).toMatch(/aria-haspopup="true"[^>]*aria-label="Boost, 1,234" aria-pressed="true"/);
-    expect(html).toContain('aria-label="Favourite, 12,840" aria-pressed="false"');
+    expect(html).toMatch(/aria-haspopup="true"[^>]*aria-label="Boost, 1.2K" aria-pressed="true"/);
+    expect(html).toContain('aria-label="Favourite, 12.8K" aria-pressed="false"');
   });
 
   test("they are labelled in the reader's locale, whatever the post's", () => {
     const html = bare({ status: status() }, "ja");
     expect(html).toContain('<div lang="ja"><button ');
     expect(html).toContain('aria-label="返信, 2"');
-    expect(html).toContain('aria-label="お気に入り, 12,840"');
+    expect(html).toContain('aria-label="お気に入り, 1.3万"');
   });
 });
 

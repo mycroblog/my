@@ -42,13 +42,13 @@ x-dev: &dev
     - node-modules-web-app-components:/src/web/app-components/node_modules
     - node-modules-web-app-data:/src/web/app-data/node_modules
     - node-modules-web-app-features:/src/web/app-features/node_modules
-    - node-modules-web-catalog:/src/web/catalog/node_modules
     - node-modules-web-design-system:/src/web/design-system/node_modules
     - node-modules-web-design-tokens:/src/web/design-tokens/node_modules
     - node-modules-web-devtools:/src/web/devtools/node_modules
     - node-modules-docs:/src/web/docs/node_modules
     - node-modules-web-i18n:/src/web/i18n/node_modules
     - node-modules-web-platform:/src/web/platform/node_modules
+    - node-modules-web-storybook:/src/web/storybook/node_modules
     - node-modules-mykit:/src/pkg/mykit/ts/node_modules
     - node-modules-mybot:/src/pkg/mybot/ts/node_modules
     - node-modules-i18n:/src/tools/i18n/node_modules
@@ -379,12 +379,12 @@ volumes:
   node-modules-web-app-components:
   node-modules-web-app-data:
   node-modules-web-app-features:
-  node-modules-web-catalog:
   node-modules-web-design-system:
   node-modules-web-design-tokens:
   node-modules-web-devtools:
   node-modules-web-i18n:
   node-modules-web-platform:
+  node-modules-web-storybook:
   node-modules-docs:
   node-modules-mykit:
   node-modules-mybot:

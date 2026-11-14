@@ -6,6 +6,7 @@
 
 export { namesCommandKey } from "./keyboard";
 export { watchKeyboardInset } from "./keyboard-inset";
+export { browserLanguages } from "./languages";
 export { oneTimeCodeField } from "./one-time-code";
 export {
   createPasskey,

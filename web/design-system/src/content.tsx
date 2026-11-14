@@ -46,9 +46,11 @@ export function ContentBody({ children, lang }: ContentBodyProps) {
 /** What a link in a text is: a link to a page, a mention of an account, or a hashtag. */
 export type ContentLinkKind = "link" | "mention" | "hashtag";
 
-// A link takes the accent with no underline; a mention or a hashtag breaks only around it, never inside.
+// A link takes the accent and is underlined as the design system's text links are, so that it tells from the text
+// around it without its color (WCAG 1.4.1); its target reaches the minimum around its text without moving the line
+// (WCAG 2.5.8); a mention or a hashtag breaks only around it, never inside.
 const link = tv({
-  base: "text-accent-text no-underline",
+  base: "text-accent-text underline underline-offset-[0.15em] py-[calc((var(--target-minimum)-1em)/2)]",
   variants: { kind: { link: "", mention: "whitespace-nowrap", hashtag: "whitespace-nowrap" } },
 });
 

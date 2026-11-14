@@ -24,12 +24,13 @@ const batchJSON = `{
       "id": "%s.1",
       "text": "too tight",
       "target": {"tag": "p", "selector": "main > p", "text": "The quick", "rect": {"x": 24, "y": 120, "width": 900, "height": 40}, "area": null},
-      "source": "web/catalog/src/Catalog.tsx:22",
+      "source": "web/design-system/src/button.stories.tsx:22",
       "sources": [],
-      "layer": "@my/catalog",
-      "state": {"page": "/", "route": null, "viewport": {"width": 1280, "height": 720, "devicePixelRatio": 1},
-        "theme": {"page": null, "system": "light"}, "locale": "en", "direction": "ltr", "orientation": null, "account": null},
-      "reproduction": {"scenario": null, "step": null},
+      "layer": "@my/design-system",
+      "state": {"page": "/iframe.html?id=design-system-button--states", "route": null, "viewport": {"width": 1280, "height": 720, "devicePixelRatio": 1},
+        "theme": {"page": "dark", "system": "light"}, "locale": "en", "direction": "ltr", "orientation": null, "account": null},
+      "story": {"id": "design-system-button--states", "title": "Design system/Button", "name": "States", "args": {},
+        "globals": {"theme": "dark", "locale": "en"}},
       "accessibility": "paragraph\n  text \"The quick\"",
       "extra": {"kept": true}
     }
@@ -160,9 +161,10 @@ func TestPrint(t *testing.T) {
 	Print(&out, b)
 	for _, want := range []string{
 		`20261112-153045-0001.1  "too tight"`,
-		"source: web/catalog/src/Catalog.tsx:22 (layer @my/catalog)",
+		"source: web/design-system/src/button.stories.tsx:22 (layer @my/design-system)",
 		"route none (the page has no router)",
-		"no E2E scenario opens the page",
+		`story: Design system/Button › States (design-system-button--states), args {}, globals {"theme":"dark","locale":"en"}`,
+		"--section design-system-button--states",
 		`      text "The quick"`,
 	} {
 		if !strings.Contains(out.String(), want) {

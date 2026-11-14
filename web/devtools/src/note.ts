@@ -18,6 +18,9 @@ export const optionsEvent = "my-devtools:options";
 /** The attribute that marks the element of an <Options>, holding its id. */
 export const optionsAttribute = "data-my-devtools-options";
 
+/** The DOM event the Storybook addon dispatches when the story shown or its args or globals change. */
+export const storyEvent = "my-devtools:story";
+
 export interface Rect {
   x: number;
   y: number;
@@ -37,9 +40,9 @@ interface Target {
 }
 
 export interface State {
-  /** The URL path, search and hash of the page. */
+  /** The page: a story's (`iframe.html?id=<story id>`), else the URL path, search and hash. */
   page: string;
-  /** The route of the router; null while the page has no router (the catalog page). */
+  /** The route of the router; null while the page has no router of its own (a story). */
   route: string | null;
   viewport: { width: number; height: number; devicePixelRatio: number };
   theme: { page: string | null; system: "light" | "dark" };
@@ -50,10 +53,16 @@ export interface State {
   account: string | null;
 }
 
-interface Reproduction {
-  /** The E2E scenario and its step (ADR-0015 §5); null on a page that no scenario opens. */
-  scenario: string | null;
-  step: string | null;
+/** The story a note was written on, which reproduces what the decider saw: open it with its args and globals. */
+export interface Story {
+  /** Storybook's id of the story (`design-system-button--states`). */
+  id: string;
+  /** Its title, the layer first (`Design system/Button`), and its name (`States`). */
+  title: string;
+  name: string;
+  args: Record<string, unknown>;
+  /** The host toolbar's globals: theme, locale, viewport. */
+  globals: Record<string, unknown>;
 }
 
 interface Reply {
@@ -89,7 +98,8 @@ export interface NoteInput {
   /** For an area, the sources of the elements in it. */
   sources: string[];
   state: State;
-  reproduction: Reproduction;
+  /** The story shown, or null on a page that is no story. */
+  story: Story | null;
   /** An outline of the accessibility tree of the element or area, one node per line. */
   accessibility: string;
   /** On a note that picks a variant, the pick. */

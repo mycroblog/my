@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The design tokens of the web client (ADR-0025 §2, ADR-0059): the values the design system reads. They start from
-// the set the decider picked on the catalog page and grow with the components. `css` writes them as custom
+// the set the decider picked in their stories and grow with the components. `css` writes them as custom
 // properties; `contrastPairs` are the pairs of colors a check holds to their minimum in both schemes.
 
 /** The root font size the rem values are relative to, in px. */
@@ -107,6 +107,12 @@ export const control = {
  * the height its hit area reaches on a touch screen, beyond the tile.
  */
 export const iconButton = { paddingInline: 0.375, gap: 0.25, touch: 2.75 } as const;
+
+/**
+ * The least a target reaches on each side, in rem (WCAG 2.5.8, 24 CSS px): a link in a line of text reaches it around
+ * its text without moving the line.
+ */
+export const target = { minimum: 1.5 } as const;
 
 /**
  * The focus ring, in px: a gap of the surface, a ring of `accent-text`, and a halo of the accent at `haloShare`, so
@@ -444,6 +450,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--icon-button-padding-inline", `${iconButton.paddingInline}rem`],
   ["--icon-button-gap", `${iconButton.gap}rem`],
   ["--icon-button-touch", `${iconButton.touch}rem`],
+  ["--target-minimum", `${target.minimum}rem`],
   ["--focus-ring-gap", `${focusRing.gap}px`],
   ["--focus-ring-width", `${focusRing.width}px`],
   ["--focus-ring-halo", `${focusRing.halo}px`],

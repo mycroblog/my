@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The app's screens for a page other than its entry (the catalog's preview of them, ADR-0168): the router and the
-// root to render under an I18nProvider, the keymap the catalog's parts run under, and the shell, around the catalog's
-// rough of a screen that no route has yet. The app's own entry is main.tsx.
+// What the Storybook host takes from the app: the keymap the components' stories run under. The app's own entry is
+// main.tsx; the screens' stories, beside it, render the app themselves (app.samples.tsx).
 
-export { AppRoot } from "./app";
 export { keymap } from "./keymap";
-export { createAppRouter } from "./router";
-export { Shell } from "./shell/shell";

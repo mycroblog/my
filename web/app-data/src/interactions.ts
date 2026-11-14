@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The reader's own marks on a status (ADR-0028 §6, §7): favourite, boost, bookmark and an emoji reaction, each set or
 // taken back. Every cached copy of the status shows the change at once, the server's answer replaces it, and a failed
-// write puts back what the copies showed before. A user has one favourite or one reaction on a status, so setting one
-// takes back the other. The write is a plain request (no outbox yet, #2892): a failure rejects with mykit's
+// write puts back what the copies showed before, each in the fields of the mark's kind alone, and only for the latest
+// write of that kind on the status. A user has one favourite or one reaction on a status, so setting one takes back
+// the other. The write is a plain request (no outbox yet, #2892): a failure rejects with mykit's
 // ProblemError or NetworkError.
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -104,25 +105,67 @@ export function cachedStatus(data: AppData, id: string): Status | undefined {
 }
 
 /**
+ * The fields of a status each kind of mark sets: a favourite and a reaction share theirs, since setting one takes back
+ * the other.
+ */
+const fieldsOf = (mark: StatusMark): readonly (keyof Marks)[] => {
+  switch (mark.type) {
+    case "favourite":
+    case "reaction":
+      return ["favourited", "favourites_count", "reactions"];
+    case "boost":
+      return ["boosted", "boosts_count"];
+    case "bookmark":
+      return ["bookmarked"];
+  }
+};
+
+/** The marks of `s` among `fields`. */
+const pick = (s: Status, fields: readonly (keyof Marks)[]): Partial<Marks> => {
+  const all = marksOf(s);
+  return Object.fromEntries(fields.map((f) => [f, all[f]]));
+};
+
+/**
+ * The latest write of each status's fields of a kind of mark, by session: the answer to an older one, or its failure,
+ * leaves to the latest what the copies show of those fields.
+ */
+const latestWrites = new WeakMap<AppData, Map<string, object>>();
+
+/**
  * Sets or takes back the reader's mark on the status with the ID given: every cached copy shows it at once, then as
- * the server answered; a failure puts back what they showed and rejects.
+ * the server answered; a failure puts back what they showed and rejects. Each write touches only the fields of its
+ * kind of mark (fieldsOf), so that marks of other kinds in flight on the same status keep what they show: the
+ * server's answer to a favourite carries the boost as it was before a boost sent at the same time.
  */
 export async function markStatus(data: AppData, id: string, mark: StatusMark): Promise<void> {
-  let before: Marks | undefined;
+  const fields = fieldsOf(mark);
+  const key = `${id} ${fields.join(" ")}`;
+  let writes = latestWrites.get(data);
+  if (writes === undefined) {
+    writes = new Map();
+    latestWrites.set(data, writes);
+  }
+  const write = {};
+  writes.set(key, write);
+  const latest = () => writes.get(key) === write;
+  let before: Partial<Marks> | undefined;
   updateCachedStatuses(data.queryClient, id, (s) => {
-    before ??= marksOf(s);
+    before ??= pick(s, fields);
     return marked(s, mark);
   });
   try {
     const answer = await send(data, id, mark);
-    if (answer?.id === id) {
-      const after = marksOf(answer);
+    if (answer?.id === id && latest()) {
+      const after = pick(answer, fields);
       updateCachedStatuses(data.queryClient, id, (s) => ({ ...s, ...after }));
     }
   } catch (e) {
     const put = before;
-    if (put !== undefined) updateCachedStatuses(data.queryClient, id, (s) => ({ ...s, ...put }));
+    if (put !== undefined && latest()) updateCachedStatuses(data.queryClient, id, (s) => ({ ...s, ...put }));
     throw e;
+  } finally {
+    if (latest()) writes.delete(key);
   }
 }
 

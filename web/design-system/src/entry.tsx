@@ -40,7 +40,7 @@ export type EntryProps = {
  * focused from the keyboard (the icon buttons inside step their hover a tone down), and it carries `data-entry`, by
  * which a feed moves the focus between its entries; inside a FeedItem it states its position in the feed and carries
  * the item's key as `data-scroll-key`, by which a screen restores its position. It is the `ActionScope` of the focus
- * actions its parts declare (a post's reply), which act while focus is inside it. A catalog's preview of hover or
+ * actions its parts declare (a post's reply), which act while focus is inside it. A story's preview of hover or
  * focus applies to the entry alone, not to the buttons inside it.
  */
 export function Entry({ lang, labelledBy, children }: EntryProps) {

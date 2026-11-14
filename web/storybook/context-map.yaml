@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0165-ui-preview.md", "docs/adr/0110-web-experience-principles.md", "docs/adr/0169-design-harness.md"]

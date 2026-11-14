@@ -365,10 +365,12 @@ export function Feed({
       </div>
       <div ref={top} aria-hidden="true" className={s.top()} />
       <FeedSize value={more ? -1 : count}>
+        {/* A feed owns its articles: with none yet (loading, failed, empty), the list is no feed, and the notice of
+            `end` tells what it holds. */}
         <div
           ref={list}
-          role="feed"
-          aria-label={label}
+          role={count > 0 ? "feed" : undefined}
+          aria-label={count > 0 ? label : undefined}
           aria-busy={busy}
           className={s.list()}
           onKeyDown={onFeedKeyDown}

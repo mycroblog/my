@@ -7,7 +7,10 @@
 //   app-features ← app, with app-data beside app-components, under app-features, and platform and rtc under app-data;
 //   @my/i18n reaches the app alone. The layer of a file is the package of web/ it is in. It sees `import`, `export …
 //   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
-//   web/ (web/brand, which holds files and no package, is open to all).
+//   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
+//   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake server
+//   that exists for the stories (ADR-0165 §1), and @my/devtools/options, the live options the decider picks from
+//   (ADR-0168 §1), and nothing else of either package.
 //
 // - design-system-props: outside @my/design-system, no element of one of its components gets a `className` or a
 //   `style` (§4). The `Omit` of each component's props refuses them only while the types hold; this also refuses them
@@ -20,6 +23,21 @@
 //   §17): no `navigator` or other global of the platform (as a global or a member of any object), no `"x" in window`
 //   (or self, globalThis, document and their members), and no `matchMedia` of a platform media feature written as a
 //   literal (display-mode, pointer, hover). It does not see a query computed at run time.
+//
+// - e2e-queries: in @my/e2e, no element is found by its position (`.nth()`, `.first()`, `.last()`), its markup
+//   (`.locator()` with a CSS or XPath selector written in the file, `$`, `$$`) or a test ID (`getByTestId`), what a
+//   reader of the screen cannot see. It refuses a method of those names on any object, and does not see a selector
+//   held in a variable.
+//
+// - e2e-flaky: in @my/e2e, none of the patterns that made the E2E tests flaky, each refused with the incidents it
+//   comes from and what to write instead: a one-shot read of the page (`.textContent()`, `.isVisible()`, `.count()`…,
+//   and `expect(await …)`), a name or a text matched as a substring (a string without `exact: true`, a RegExp not
+//   anchored `^…$`), a checkbox set by its state (`.check()`, `.uncheck()`, `.setChecked()`), and motion
+//   (`reducedMotion: "no-preference"`, and a playwright.config.ts whose own `use` does not reduce it). Under specs/
+//   (the specs and specs/screens/) it also refuses a wait for time and a read of the clock (`waitForTimeout`,
+//   `setTimeout`, `setInterval`, `Date.now()`, `new Date()`), a `timeout` option and a forced action (`force: true`);
+//   the demo server and the seed of src/ poll for readiness and remove their files by force. It refuses the methods by
+//   name on any object, and sees a name or a RegExp written in the file, not one held in a variable.
 
 const DESIGN_SYSTEM = /^@my\/design-system(?:\/|$)/;
 const LAYOUT_PROPS = new Set(["className", "style"]);
@@ -182,6 +200,11 @@ const BELOW = {
 /** The directory of web/ that holds files and no package, which every package may read. */
 const SHARED_FILES = "brand";
 
+/** A story, or a sample module beside it: what only the Storybook host loads. */
+const STORY_FILE = /\.(?:stories\.tsx|samples\.tsx?)$/;
+/** What a story may import besides the layers below its own: the fake server of the stories, and live options. */
+const STORY_FAKES = new Set(["@my/e2e/fake", "@my/devtools/options"]);
+
 /** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
 function webDir(/** @type {string} */ path) {
   const at = path.lastIndexOf("/web/");
@@ -204,10 +227,12 @@ function createLayerImports(context) {
   const own = webDir(filename);
   if (own === undefined || !Object.hasOwn(BELOW, own)) return {};
   const below = new Set(BELOW[/** @type {keyof typeof BELOW} */ (own)]);
+  const story = STORY_FILE.test(filename);
 
   function check(/** @type {Node | null | undefined} */ source) {
     if (source?.type !== "Literal" || typeof source.value !== "string") return;
     const specifier = source.value;
+    if (story && STORY_FAKES.has(specifier)) return;
     let target;
     let relative = false;
     if (specifier.startsWith("@my/")) target = specifier.slice("@my/".length).split("/")[0];
@@ -337,9 +362,287 @@ function createPlatformGlobals(context) {
   };
 }
 
+/** The Playwright calls that find an element by its position, its markup or a test ID: what a reader cannot see. */
+const POSITIONAL = new Set(["nth", "first", "last"]);
+const MARKUP = new Set(["$", "$$", "getByTestId"]);
+
+/** Whether `node` is a string written in the file: a literal, a template, or a concatenation of them. */
+function isString(/** @type {Node | undefined} */ node) {
+  if (node === undefined) return false;
+  const expression = unwrap(node);
+  if (expression.type === "Literal") return typeof expression.value === "string";
+  if (expression.type === "TemplateLiteral") return true;
+  if (expression.type === "BinaryExpression" && expression.operator === "+")
+    return isString(expression.left) || isString(expression.right);
+  return false;
+}
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function createE2EQueries(context) {
+  function report(/** @type {Node} */ node, /** @type {string} */ what) {
+    context.report({
+      node,
+      message:
+        `\`${what}\` finds an element by what a reader cannot see. Query by role and accessible name ` +
+        "(getByRole, getByLabel, getByText), narrowed by the region or the item it is in, and put the operations of a " +
+        "screen in @my/e2e for the specs to share.",
+    });
+  }
+  return {
+    CallExpression(/** @type {Node} */ node) {
+      const callee = unwrap(node.callee);
+      if (callee.type !== "MemberExpression" || callee.computed || callee.property.type !== "Identifier") return;
+      const name = callee.property.name;
+      if (POSITIONAL.has(name)) report(callee.property, `.${name}()`);
+      else if (MARKUP.has(name)) report(callee.property, `.${name}()`);
+      else if (name === "locator" && isString(node.arguments[0])) report(callee.property, ".locator(selector)");
+    },
+  };
+}
+
+/** The Playwright reads that take the page's state once, without retrying until it settles. */
+const ONE_SHOT_READS = new Set([
+  "textContent",
+  "innerText",
+  "innerHTML",
+  "isVisible",
+  "isHidden",
+  "isChecked",
+  "isEnabled",
+  "isDisabled",
+  "count",
+  "getAttribute",
+  "inputValue",
+  "allTextContents",
+  "allInnerTexts",
+]);
+/** The queries whose first argument is the text to match, and which match a substring of it unless `exact`. */
+const TEXT_QUERIES = new Set(["getByLabel", "getByText", "getByPlaceholder", "getByTitle", "getByAltText"]);
+/** The calls that set a checkbox or a radio by its state, not as a person does. */
+const SET_CHECKED = new Set(["check", "uncheck", "setChecked"]);
+/** The calls that wait for time to pass. */
+const TIMERS = new Set(["setTimeout", "setInterval"]);
+/** Why a spec does not wait for time or read the clock. */
+const timing =
+  "waits for time to pass or reads the clock, which flakes on a slower or faster run (66d4f3db6, 45883c030, #1588). " +
+  "Wait for the state itself with a retrying assertion or expect.poll, and take times from the scenario.";
+
+/** The value of the property `name` of the object literal `node`, or undefined without one. */
+function propertyValue(/** @type {Node | undefined} */ node, /** @type {string} */ name) {
+  if (node === undefined) return undefined;
+  const object = unwrap(node);
+  if (object.type !== "ObjectExpression") return undefined;
+  for (const property of object.properties)
+    if (property.type === "Property" && keyName(property) === name) return unwrap(property.value);
+  return undefined;
+}
+
+/** Whether `node` is the literal `value`. */
+const isLiteral = (/** @type {Node | undefined} */ node, /** @type {unknown} */ value) =>
+  node?.type === "Literal" && node.value === value;
+
+/**
+ * Whether the pattern of a regular expression matches the whole name: it starts with `^`, ends with an unescaped `$`,
+ * and has no alternative (`|`) outside a group, which would anchor one side alone.
+ */
+function anchored(/** @type {string} */ pattern) {
+  if (!pattern.startsWith("^") || !pattern.endsWith("$")) return false;
+  let depth = 0;
+  let inClass = false;
+  for (let i = 0; i < pattern.length; i += 1) {
+    const c = pattern[i];
+    if (c === "\\") {
+      // The final `$` escaped (`\$`) matches a dollar sign, not the end.
+      if (i === pattern.length - 2) return false;
+      i += 1;
+    } else if (inClass) inClass = c !== "]";
+    else if (c === "[") inClass = true;
+    else if (c === "(") depth += 1;
+    else if (c === ")") depth -= 1;
+    else if (c === "|" && depth === 0) return false;
+  }
+  return true;
+}
+
+/**
+ * The pattern of a regular expression written in the file: a literal (`/^Save$/`) or `new RegExp` of a string or a
+ * template (whose interpolations stand for some text), else undefined.
+ */
+function regexPattern(/** @type {Node | undefined} */ node) {
+  if (node === undefined) return undefined;
+  const expression = unwrap(node);
+  if (expression.type === "Literal" && expression.regex) return expression.regex.pattern;
+  if (
+    expression.type === "NewExpression" &&
+    expression.callee.type === "Identifier" &&
+    expression.callee.name === "RegExp"
+  ) {
+    const source = expression.arguments[0] && unwrap(expression.arguments[0]);
+    if (source?.type === "Literal" && typeof source.value === "string") return source.value;
+    if (source?.type === "TemplateLiteral")
+      return source.quasis.map((/** @type {Node} */ q) => q.value.cooked).join("x");
+  }
+  return undefined;
+}
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function createE2EFlaky(context) {
+  const filename = String(context.filename).replaceAll("\\", "/");
+  // The specs and the operations of the screens (specs/screens/) wait for states alone; the demo server and the seed
+  // (src/) poll for readiness, and the configuration sets the limits of a run.
+  const specs = /\/web\/e2e\/(?:[^/]+\/)*specs\//.test(filename);
+  const config = filename.endsWith("/playwright.config.ts");
+  let reducesMotion = false;
+
+  function report(/** @type {Node} */ node, /** @type {string} */ what, /** @type {string} */ why) {
+    context.report({ node, message: `\`${what}\` ${why}` });
+  }
+
+  const oneShot =
+    "reads the page once, before it may have settled, and does not retry (0ab550727, 07d058a31, cce3243e7). Assert " +
+    "on the locator with a retrying assertion (toHaveText, toHaveCount, toHaveAttribute, toBeVisible, toBeChecked, " +
+    "toHaveValue), or wait for a computed value with expect.poll.";
+  const substring =
+    "matches any name that holds the text, and finds another element once one with a longer name shows " +
+    "(cce3243e7, b6632bd23, #1403).";
+
+  /** Checks the text or the name `node` that a query matches: a string with `exact: true`, a RegExp anchored. */
+  function checkName(
+    /** @type {Node} */ at,
+    /** @type {string} */ query,
+    /** @type {Node | undefined} */ node,
+    /** @type {Node | undefined} */ options,
+  ) {
+    if (node === undefined) return;
+    const pattern = regexPattern(node);
+    if (pattern !== undefined) {
+      if (!anchored(pattern))
+        report(
+          at,
+          `${query}(/unanchored/)`,
+          `${substring} Anchor the RegExp as /^…$/, with no alternative outside a group.`,
+        );
+      return;
+    }
+    if (isString(node) && !isLiteral(propertyValue(options, "exact"), true))
+      report(
+        at,
+        `${query}(string)`,
+        `${substring} Add \`exact: true\`, or match the whole name with an anchored RegExp.`,
+      );
+  }
+
+  return {
+    CallExpression(/** @type {Node} */ node) {
+      const callee = unwrap(node.callee);
+      if (callee.type === "Identifier") {
+        if (callee.name === "expect" && node.arguments[0] && unwrap(node.arguments[0]).type === "AwaitExpression")
+          report(node.arguments[0], "expect(await)", oneShot);
+        else if (specs && TIMERS.has(callee.name)) report(callee, `${callee.name}()`, timing);
+        return;
+      }
+      if (callee.type !== "MemberExpression" || callee.computed || callee.property.type !== "Identifier") return;
+      const name = callee.property.name;
+      const object = unwrap(callee.object);
+      if (ONE_SHOT_READS.has(name)) report(callee.property, `.${name}()`, oneShot);
+      else if (SET_CHECKED.has(name))
+        report(
+          callee.property,
+          `.${name}()`,
+          "sets the state of a checkbox or a radio, not as a person does, and fails when the control re-renders on " +
+            'the change (6bd4f2c17, 5946eba33). Click the control or its label (getByRole("radio", { name, ' +
+            "exact: true }).click()), then assert with toBeChecked().",
+        );
+      else if (name === "getByRole")
+        checkName(callee.property, name, propertyValue(node.arguments[1], "name"), node.arguments[1]);
+      else if (TEXT_QUERIES.has(name)) checkName(callee.property, name, node.arguments[0], node.arguments[1]);
+      else if (specs && name === "waitForTimeout") report(callee.property, ".waitForTimeout()", timing);
+      else if (specs && TIMERS.has(name) && object.type === "Identifier") report(callee.property, `${name}()`, timing);
+      else if (specs && name === "now" && object.type === "Identifier" && object.name === "Date")
+        report(callee, "Date.now()", timing);
+    },
+    NewExpression(/** @type {Node} */ node) {
+      if (specs && node.callee.type === "Identifier" && node.callee.name === "Date" && node.arguments.length === 0)
+        report(node, "new Date()", timing);
+    },
+    Property(/** @type {Node} */ node) {
+      const name = keyName(node);
+      const value = unwrap(node.value);
+      if (specs && name === "force" && isLiteral(value, true))
+        report(
+          node,
+          "force:true",
+          "skips the checks that the element is visible, stable and takes the click, so the click lands on an element " +
+            "still moving or covered (6bd4f2c17, 5946eba33). Wait for the state that lets a person click it with a " +
+            "retrying assertion, then click without force.",
+        );
+      else if (specs && name === "timeout")
+        report(
+          node,
+          "timeout:",
+          "stretches one wait past the defaults, which hides a state the spec does not wait for and flakes again " +
+            "under load (66d4f3db6, #309, #405). Wait for the state that comes first with a retrying assertion, or " +
+            "change the limits of every test in playwright.config.ts.",
+        );
+      else if (name === "reducedMotion") {
+        // The `use` of the configuration itself (defineConfig({ use }), export default { use }, const config = { use }),
+        // not a project's.
+        const use = node.parent?.parent;
+        const top = use?.parent?.parent;
+        if (
+          isLiteral(value, "reduce") &&
+          use?.type === "Property" &&
+          keyName(use) === "use" &&
+          (top?.type === "CallExpression" ||
+            top?.type === "ExportDefaultDeclaration" ||
+            top?.type === "VariableDeclarator")
+        )
+          reducesMotion = true;
+        if (isLiteral(value, "no-preference"))
+          report(
+            node,
+            "reducedMotion",
+            "is no-preference, so the specs assert on a screen in motion; every wait for an animation flaked again, " +
+              "and running without motion settled them (b511410df). Keep the motion reduced, as playwright.config.ts " +
+              "sets it, and test the motion in the stories.",
+          );
+      }
+    },
+    "Program:exit"(/** @type {Node} */ node) {
+      if (!config || reducesMotion) return;
+      const exported = node.body.find((/** @type {Node} */ s) => s.type === "ExportDefaultDeclaration") ?? node;
+      report(
+        exported,
+        "use.reducedMotion",
+        'is not "reduce": with motion the specs assert on screens mid-transition, and every wait for an animation ' +
+          'flaked again until the E2E ran without motion (b511410df). Set `use: { reducedMotion: "reduce" }`.',
+      );
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
+    "e2e-flaky": {
+      meta: {
+        type: "problem",
+        docs: {
+          description:
+            "Disallow the patterns that made the E2E tests flaky: one-shot reads, substring names, waits for time, forced and state-setting actions, and motion",
+        },
+        schema: [],
+      },
+      create: createE2EFlaky,
+    },
+    "e2e-queries": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a query of an element by position, markup or test ID in the E2E tests" },
+        schema: [],
+      },
+      create: createE2EQueries,
+    },
     "platform-globals": {
       meta: {
         type: "problem",

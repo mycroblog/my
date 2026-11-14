@@ -91,3 +91,67 @@ test("the cached status is found wherever a query holds it, and none when none d
   expect(cachedStatus(data, "1")?.bookmarked).toBe(true);
   expect(cachedStatus(data, "2")).toBeUndefined();
 });
+
+/** A server whose answers wait until the test gives them, one per request in the order sent. */
+function held() {
+  const answers = [0, 1].map(() => Promise.withResolvers<Response>());
+  let sent = 0;
+  const handler = () => {
+    const held = answers[sent];
+    sent += 1;
+    return held ? held.promise : json(500, {});
+  };
+  return {
+    handler,
+    answer: (i: number, response: Response) => {
+      answers[i]?.resolve(response);
+    },
+  };
+}
+
+test("a favourite and a boost in flight at once keep each other's mark, whichever the server answers first", async () => {
+  for (const first of [0, 1]) {
+    const { handler, answer } = held();
+    const { data, read } = cached([post()], handler);
+    const favourite = markStatus(data, "1", { type: "favourite", on: true });
+    const boost = markStatus(data, "1", { type: "boost", on: true });
+    // Each answer carries the other mark as the server held it before that write.
+    const answers = [
+      json(200, post({ favourited: true, favourites_count: 1 })),
+      json(200, post({ boosted: true, boosts_count: 1 })),
+    ];
+    answer(first, answers[first] ?? json(500, {}));
+    await (first === 0 ? favourite : boost);
+    expect(read().timeline).toMatchObject({ favourited: true, boosted: true });
+    answer(1 - first, answers[1 - first] ?? json(500, {}));
+    await Promise.all([favourite, boost]);
+    expect(read().timeline).toMatchObject({ favourited: true, favourites_count: 1, boosted: true, boosts_count: 1 });
+    expect(read().thread).toMatchObject({ favourited: true, boosted: true });
+  }
+});
+
+test("the answer to an older write of a mark leaves the copies to the latest one", async () => {
+  const { handler, answer } = held();
+  const { data, read } = cached([post()], handler);
+  const on = markStatus(data, "1", { type: "favourite", on: true });
+  const off = markStatus(data, "1", { type: "favourite", on: false });
+  answer(0, json(200, post({ favourited: true, favourites_count: 1 })));
+  await on;
+  expect(read().timeline?.favourited).toBe(false);
+  answer(1, json(200, post()));
+  await off;
+  expect(read().timeline).toMatchObject({ favourited: false, favourites_count: 0 });
+});
+
+test("a failed write puts back only its own mark, not a boost set meanwhile", async () => {
+  const { handler, answer } = held();
+  const { data, read } = cached([post()], handler);
+  const favourite = markStatus(data, "1", { type: "favourite", on: true }).catch(() => "rejected");
+  const boost = markStatus(data, "1", { type: "boost", on: true });
+  answer(0, json(422, { type: "about:blank", title: "Unprocessable", status: 422 }));
+  expect(await favourite).toBe("rejected");
+  expect(read().timeline).toMatchObject({ favourited: false, boosted: true, boosts_count: 1 });
+  answer(1, json(200, post({ boosted: true, boosts_count: 1 })));
+  await boost;
+  expect(read().timeline).toMatchObject({ favourited: false, boosted: true });
+});

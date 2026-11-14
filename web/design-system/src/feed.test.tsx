@@ -17,11 +17,16 @@ const feed = (props: { count: number; more: boolean; busy: boolean }) =>
   );
 
 describe("the feed's markup", () => {
-  test("it is a named feed, busy while it loads, its notice after it", () => {
+  test("with no entries it is no feed, busy while it loads, its notice after it", () => {
     const html = feed({ count: 0, more: true, busy: true });
-    expect(html).toMatch(/<div role="feed" aria-label="Home" aria-busy="true" class="[^"]*gap-feed[^"]*"><\/div>/);
+    expect(html).toMatch(/<div aria-busy="true" class="[^"]*gap-feed[^"]*"><\/div>/);
+    expect(html).not.toContain('role="feed"');
     expect(html).toMatch(/<\/div><p role="status" [^>]*>Loading<\/p>/);
     expect(feed({ count: 0, more: false, busy: false })).toContain('aria-busy="false"');
+  });
+
+  test("with entries it is a named feed", () => {
+    expect(feed({ count: 1, more: true, busy: true })).toMatch(/<div role="feed" aria-label="Home" aria-busy="true"/);
   });
 
   test("each entry states its position, and the feed's size once nothing more follows", () => {

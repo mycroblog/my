@@ -80,9 +80,6 @@ const theme = {
     // entry's surface reaches past its content and its focus ring past the surface, neither touching what is above.
     "entry-room":
       "calc(var(--entry-reach) + var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo) + var(--screen-air))",
-    // The same room for what stands inside a feed (a group's heading), less the feed's gap after it.
-    "entry-room-in-feed":
-      "calc(var(--entry-reach) + var(--focus-ring-gap) + var(--focus-ring-width) + var(--focus-ring-halo) + var(--screen-air) - var(--feed-gap))",
     "icon-tile-glyph": ref("--icon-tile-glyph"),
     "avatar-inline": ref("--avatar-inline"),
     "avatar-post": ref("--avatar-post"),

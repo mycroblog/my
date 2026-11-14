@@ -5,6 +5,7 @@ done-when, the public interface and the stories, never from the implementation (
 the areas your work touches, each `decisions/<area>.md`, and `exemplars.md`:
 
 - `queries`: how a test finds an element.
+- `flaky`: the patterns that made E2E specs flaky, and what to do instead.
 
 - One test per done-when item, of the cheapest kind ADR-0110 §9 says can catch its failure.
 - A test that fails on the implementation is a finding for the TS developer: never bend it to pass.

@@ -20,7 +20,7 @@ test("the body lays its blocks a paragraph's gap apart in body text that wraps a
   expect(html).not.toMatch(/\b(pl|ml|left)-/);
 });
 
-test("a link takes the accent with no underline, opens in a new tab and sends no referrer", () => {
+test("a link takes the accent and an underline, opens in a new tab and sends no referrer", () => {
   const html = renderToStaticMarkup(
     <ContentLink href="https://example.com/" kind="link">
       example.com
@@ -29,7 +29,7 @@ test("a link takes the accent with no underline, opens in a new tab and sends no
   expect(html).toContain('href="https://example.com/"');
   expect(html).toContain('rel="nofollow noopener noreferrer"');
   expect(html).toContain('target="_blank"');
-  expect(html).toContain("text-accent-text no-underline");
+  expect(html).toContain("text-accent-text underline");
   expect(html).not.toContain("whitespace-nowrap");
 });
 

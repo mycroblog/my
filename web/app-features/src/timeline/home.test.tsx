@@ -70,7 +70,9 @@ test("a failed first page does not fail the loader: the column fetches it again 
   );
   await loadHomeTimeline(data);
   expect(data.queryClient.getQueryState(homeTimelineQuery(data).queryKey)?.status).toBe("error");
-  expect(render(data)).toMatch(/role="feed" aria-label="Home timeline" aria-busy="true"/);
+  const html = render(data);
+  expect(html).toMatch(/aria-busy="true"/);
+  expect(html).not.toContain('role="feed"');
 });
 
 test("a post answers its actions: a boost reaches the server, Quote opens the composer", async () => {

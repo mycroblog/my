@@ -56,7 +56,7 @@ describe("local and remote text, through the one renderer", () => {
     );
     expect(html).toBe(
       '<p dir="auto">مرحبا بالعالم!</p><blockquote dir="auto"><p dir="auto">Hello!</p></blockquote>' +
-        '<ul><li dir="auto">אחד</li><li dir="auto">two</li></ul><pre dir="auto">code</pre>',
+        '<ul dir="auto"><li dir="auto">אחד</li><li dir="auto">two</li></ul><pre dir="auto">code</pre>',
     );
   });
 
@@ -68,7 +68,7 @@ describe("local and remote text, through the one renderer", () => {
 
   test("the elements of the allowlist keep what the server allows of their attributes", () => {
     expect(inner('<ol start="3" reversed><li value="7">x</li></ol>')).toBe(
-      '<ol start="3" reversed=""><li dir="auto" value="7">x</li></ol>',
+      '<ol dir="auto" start="3" reversed=""><li dir="auto" value="7">x</li></ol>',
     );
     expect(
       inner('<p lang="ja"><del>a</del><s>b</s><code>c</code><b>d</b><strong>e</strong><u>f</u><i>g</i><em>h</em></p>'),
@@ -168,7 +168,7 @@ describe("what the server would never let through draws as nothing or as text", 
 
   test("blocks never nest in a paragraph, links never nest in a link, and list items stay in a list", () => {
     expect(inner("<p>a<p>b<ul><li>c<li>d</ul>")).toBe(
-      '<p dir="auto">a</p><p dir="auto">b</p><ul><li dir="auto">c</li><li dir="auto">d</li></ul>',
+      '<p dir="auto">a</p><p dir="auto">b</p><ul dir="auto"><li dir="auto">c</li><li dir="auto">d</li></ul>',
     );
     expect(inner('<p><a href="https://a.example/">a<a href="https://b.example/">b</a></a></p>')).toBe(
       '<p dir="auto"><a href="https://a.example/" rel="nofollow noopener noreferrer" target="_blank">a</a><a href="https://b.example/" rel="nofollow noopener noreferrer" target="_blank">b</a></p>',
@@ -178,7 +178,7 @@ describe("what the server would never let through draws as nothing or as text", 
 
   test("ol and li keep only integers", () => {
     expect(inner('<ol start="x" reversed="yes"><li value="1e9">a</li></ol>')).toBe(
-      '<ol reversed=""><li dir="auto">a</li></ol>',
+      '<ol dir="auto" reversed=""><li dir="auto">a</li></ol>',
     );
   });
 });

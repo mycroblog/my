@@ -18,7 +18,7 @@ export type RouterContext = { data: AppData | null; config: RuntimeConfig };
 
 export type AppRouterOptions = RouterContext & {
   /**
-   * The path to start at in a history of the router's own, apart from the page's address (the catalog's preview);
+   * The path to start at in a history of the router's own, apart from the page's address (a screen's story);
    * without it the router follows the browser's history.
    */
   at?: string;
