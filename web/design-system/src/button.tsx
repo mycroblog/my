@@ -110,12 +110,15 @@ export function ButtonBase({
   busy = false,
   pressed,
   "aria-keyshortcuts": keyshortcuts,
+  "aria-description": description,
   children,
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
   kind: ButtonKind | "icon" | "chip";
   size: ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
   pressed?: boolean | undefined;
+  /** What assistive technology reads after the name (an icon button's exact count). */
+  "aria-description"?: string | undefined;
 }) {
   const preview = usePreviewState();
   const s = button({ kind, size, busy });
@@ -129,6 +132,7 @@ export function ButtonBase({
           {...props}
           aria-pressed={pressed}
           aria-keyshortcuts={keyshortcuts}
+          aria-description={description}
           aria-busy={busy || undefined}
           data-hovered={isHovered || preview === "hover" || undefined}
           data-pressed={isPressed || preview === "pressed" || undefined}

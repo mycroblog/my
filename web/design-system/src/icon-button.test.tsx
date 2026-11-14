@@ -6,10 +6,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { markedSurface } from "./button";
 import { compactCount, IconButton } from "./icon-button";
 
-test("the label carries the exact count, and the visible compact count is hidden", () => {
+test("the name carries the count as shown, the description the exact one, and the visible count is hidden", () => {
   const html = renderToStaticMarkup(<IconButton icon="favourite" label="Favourite" count={12_840} locale="en" />);
-  expect(html).toContain('aria-label="Favourite, 12,840"');
+  expect(html).toContain('aria-label="Favourite, 12.8K"');
+  expect(html).toContain('aria-description="12,840"');
   expect(html).toContain('<span aria-hidden="true" lang="en" class="tabular-nums">12.8K</span>');
+});
+
+test("a count shown whole has no description", () => {
+  const html = renderToStaticMarkup(<IconButton icon="reply" label="Reply" count={999} locale="en" />);
+  expect(html).toContain('aria-label="Reply, 999"');
+  expect(html).not.toContain("aria-description");
 });
 
 test("zero shows no count", () => {
