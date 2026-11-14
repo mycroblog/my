@@ -6,7 +6,6 @@ description: Take an issue, several issues, an epic, or a milestone of mycroblog
 # Work on a goal
 
 Arguments: issue numbers, an epic, or a milestone. Without one, take the next issue nothing blocks of the earliest milestone.
-The commands refuse what must not pass and say the fix; this says the order and where judgment is needed.
 
 ## Plan an epic or a milestone
 
@@ -17,7 +16,7 @@ Given an epic or a milestone, you are the orchestrator. Before building:
    the shared files they touch (`scripts/agentkit.sh map show <path>`), server before client.
 2. If it all fits one pull request, go on to the next section without asking.
 3. Otherwise present the plan and wait for the decider's approval: the pull requests in order, the issues of each,
-   what is left out and why, and the decisions it needs. Revise it until it is approved.
+   what is left out and why, and the decisions it needs. Revise it until approved.
 4. Record the approved plan with `/comment-issue` on the epic (for a milestone, each epic's part on that epic),
    and follow it from there, after a compaction too. Ask again only for a decision that is expensive to undo and
    that no Accepted ADR covers, or when the plan stops holding; then say what changed and propose the new plan.
@@ -28,18 +27,20 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 2. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is blocked.
 3. One worktree and one branch per pull request, `<type>/<issue>-<slug>`, one commit per issue. A spike's report
    is a comment on its issue; its code stays on an unmerged `spike/<issue>-<slug>` branch.
-4. Build: yourself for one small issue; otherwise up to four subagents at once: `builder` for implementation,
-   `routine` for mechanical work; for a UI change, `visual` first on the catalog page (ADR-0169 §9), `copy` for
-   its strings, and a fresh `visual-evaluator` given only `web:shot`'s shots, the task and the constraints, before
-   the decider picks. Hand each its `ctx <n> --quiet` file; rebase their commits onto the branch.
-5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` after a conflict in generated files).
+4. Build: yourself for one small issue; otherwise up to four subagents at once. Across Go and TS, the OpenAPI
+   contract first (ADR-0170 §4); per language, `go-developer` or `ts-developer`, then `go-test-developer` or
+   `ts-test-developer`, given the issue and the developer's report. `routine` for mechanical work; for a
+   UI change, `visual` first on the catalog page (ADR-0169 §9), `copy` for its strings, and a fresh `visual-evaluator`
+   given only `web:shot`'s shots, the task and the constraints, before the decider picks. Hand the others their
+   `ctx <n> --quiet` file; rebase their commits onto the branch.
+5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` on a conflict in generated files).
    Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/redesign-web`), push
-   `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; run the full
-   one only to reproduce a failure.
-6. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background. An epic is one pull
+   `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; run
+   `--full` only to reproduce a failure.
+6. `scripts/agentkit.sh pr open`, then `pr land <pr>` in the background. An epic is one pull
    request: `pr open -draft` with its first commit, `pr open` again after each later one, and
-   `gh pr ready` before `pr land` once the last is in. When `pr land` reports a failure
-   or a conflict, fix it at once (a `routine` agent for a rebase).
+   `gh pr ready` before `pr land` once the last is in. Fix what `pr land` reports at once (`routine` for
+   a rebase).
 7. Finish when the goal is merged and closed. Report what is merged, what is not and why, and what needs a decision.
 
 ## When a decision is needed

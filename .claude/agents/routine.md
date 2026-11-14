@@ -1,6 +1,6 @@
 ---
 name: routine
-description: Mechanical work with no design judgment - translating catalogs or documents, folding a stated decision into an ADR, editing issues, rebasing a branch and regenerating files, fixing what a check reports. Use instead of builder whenever the work is routine.
+description: Mechanical work with no design judgment - translating catalogs or documents, folding a stated decision into an ADR, editing issues, rebasing a branch and regenerating files, fixing what a check reports. Use instead of a developer role whenever the work is routine.
 model: sonnet
 isolation: worktree
 ---

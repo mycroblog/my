@@ -14,7 +14,7 @@ tasks:
       - shellcheck scripts/*.sh deploy/opentofu/*.sh deploy/dev/*.sh
 
   test:
-    desc: Test the scripts of the release and the build checks (scripts/release-libraries-test.sh, scripts/release-notes-test.sh, scripts/previous-minor-test.sh, scripts/release-image-test.sh, scripts/check-release-build-test.sh, scripts/go-build-tags-test.sh, scripts/docs-site-test.sh, scripts/tofu-scripts-test.sh, scripts/changed-contexts-test.sh, scripts/nightly-report-test.sh, scripts/changed-contracts-test.sh, scripts/docs-growth-test.sh, scripts/ci-apt-install-test.sh, scripts/role-hook-test.sh, scripts/visual-agreement-test.sh)
+    desc: Test the scripts of the release and the build checks (scripts/release-libraries-test.sh, scripts/release-notes-test.sh, scripts/previous-minor-test.sh, scripts/release-image-test.sh, scripts/check-release-build-test.sh, scripts/go-build-tags-test.sh, scripts/docs-site-test.sh, scripts/tofu-scripts-test.sh, scripts/changed-contexts-test.sh, scripts/nightly-report-test.sh, scripts/changed-contracts-test.sh, scripts/docs-growth-test.sh, scripts/ci-apt-install-test.sh, scripts/role-hook-test.sh, scripts/visual-agreement-test.sh, scripts/go-test-sleep-test.sh)
     cmds:
       - scripts/release-libraries-test.sh
       - scripts/release-notes-test.sh
@@ -31,3 +31,4 @@ tasks:
       - scripts/ci-apt-install-test.sh
       - scripts/role-hook-test.sh
       - scripts/visual-agreement-test.sh
+      - scripts/go-test-sleep-test.sh

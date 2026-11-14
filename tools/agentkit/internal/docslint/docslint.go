@@ -5,7 +5,7 @@
 // documents for users and operators neither link to nor cite the design records (ADRs, requirements, architecture)
 // and GitHub issues or pull requests, the published documents do not open with a sentence that only names their
 // audience, the index (docs/README.md) links every one of those documents, and the AGENTS.md of a directory below
-// the root holds only pointers to the external documents that govern its code, and the knowledge of each UI role
+// the root holds only pointers to the external documents that govern its code, and the knowledge of each role
 // keeps its shape and its limits.
 // docs/lint.yaml says which files each rule covers and lists the files that do not follow a rule yet; an entry
 // there must be removed once its file follows the rule, so the lists only shrink.
@@ -72,7 +72,7 @@ type Config struct {
 	Inventory struct {
 		Exclude map[string][]string `yaml:"exclude"`
 	} `yaml:"inventory"`
-	// Knowledge is where the UI roles keep their knowledge, and its limits.
+	// Knowledge is where the roles keep their knowledge, and its limits.
 	Knowledge Knowledge `yaml:"knowledge"`
 }
 

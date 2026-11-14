@@ -54,6 +54,12 @@ func isTofu(path string) bool {
 // backend contract, the coverage of the settings, and the module sources against what the modules declare.
 var tofuConsistency = []string{"tofu:env-check", "tofu:backend-fields", "tofu:coverage", "tofu:sources"}
 
+// sleepScript refuses time.Sleep in the Go tests beyond sleepBaseline, the uses that predate it (ADR-0170 §7).
+const (
+	sleepScript   = "go-test-sleep.sh"
+	sleepBaseline = "scripts/go-test-sleep.baseline"
+)
+
 // contextsScript prints the check contexts of a list of changed paths; the merge queue picks its jobs with it.
 const contextsScript = "scripts/changed-contexts.sh"
 
@@ -129,9 +135,12 @@ func fastPlan(root string, changed []string) [][]fastStep {
 	}
 	var goFiles, tsFiles, webTS, shFiles, tofuFiles []string
 	pkgs := map[string]map[string]bool{} // module -> package directories
-	md, maps := false, false
+	md, maps, goTests := false, false, false
 	for _, f := range changed {
 		ext := filepath.Ext(f)
+		if strings.HasSuffix(f, "_test.go") || f == sleepBaseline {
+			goTests = true
+		}
 		switch {
 		case filepath.Base(f) == "context-map.yaml":
 			maps = true
@@ -195,6 +204,9 @@ func fastPlan(root string, changed []string) [][]fastStep {
 		}
 		// vet compiles the packages and their tests, so it is the build too.
 		plan = append(plan, []fastStep{{name: name, dir: m, argv: append([]string{"go", "vet"}, dirs...), env: []string{"GOWORK=off", "CGO_ENABLED=0"}}})
+	}
+	if goTests {
+		plan = append(plan, []fastStep{{name: sleepScript, argv: []string{"scripts/" + sleepScript}}})
 	}
 	if len(tsFiles) > 0 {
 		ts := []fastStep{{name: "bun fmt", argv: append([]string{"bun", "fmt", "--check"}, tsFiles...)}}
@@ -297,7 +309,7 @@ func fastFix(name string) string {
 }
 
 // CheckFast runs the quick checks of the files changed since the merge base with base — formatting, go vet of
-// the changed packages, Oxlint, the catalogs, Markdown, shellcheck, the formatting and the consistency of the OpenTofu modules, and that committed generated files
+// the changed packages, time.Sleep in the Go tests, Oxlint, the catalogs, Markdown, shellcheck, the formatting and the consistency of the OpenTofu modules, and that committed generated files
 // are current — and returns one line per check with the failing lines of those that failed. The tests and the
 // rest of the full check are the merge queue's.
 func CheckFast(r *repo.Repo, base string) (bool, []string, error) {

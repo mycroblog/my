@@ -48,10 +48,11 @@ tasks:
       - go vet ./...
 
   lint:
-    desc: Run golangci-lint (includes the depguard architecture boundaries)
+    desc: Run golangci-lint (includes the depguard architecture boundaries) and refuse time.Sleep in the Go tests beyond its baseline (scripts/go-test-sleep.sh)
     cmds:
       # golangci-lint holds a lock while it runs: wait for it rather than fail beside go:lint or agentkit:lint.
       - golangci-lint run --allow-serial-runners ./...
+      - scripts/go-test-sleep.sh
 
   test:
     desc: Run Go tests (PostgreSQL tests on pgmem, ADR-0015)
