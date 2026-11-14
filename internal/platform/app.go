@@ -12,10 +12,9 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
-
-	"golang.org/x/sync/singleflight"
 
 	"github.com/mycroblog/my/internal/adapter/captcha/siteverify"
 	"github.com/mycroblog/my/internal/adapter/httpclient"
@@ -348,11 +347,15 @@ type App struct {
 	http *httpMetrics
 	// readinessFailures counts the failed readiness checks (ADR-0055 §12).
 	readinessFailures kernel.Counter
+	// readinessShared counts the readiness requests that joined a running check (readyCheck).
+	readinessShared kernel.Counter
 	// originRefused counts the requests that the origin check refused; nil in the maintenance
 	// mode, which measures nothing.
 	originRefused kernel.Counter
-	// readyFlight runs one readiness check for the concurrent requests (readyCheck).
-	readyFlight singleflight.Group
+	// readyMu guards readyRunning, the readiness check that runs for the concurrent requests, nil
+	// between checks (readyCheck).
+	readyMu      sync.Mutex
+	readyRunning *readyRun
 	// metricsHandler serves the Prometheus scrape on metrics_listen; nil unless
 	// metrics_exporter = prometheus. closeMeter flushes and stops the exporter.
 	metricsHandler http.Handler

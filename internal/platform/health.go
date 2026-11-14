@@ -4,6 +4,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -20,20 +21,44 @@ const healthCacheTTL = 60 * time.Second
 // readyCheck runs the readiness check (App.Ready) once for the concurrent calls (ADR-0088 §16),
 // within readinessTimeout. The check runs without the caller's cancellation, since it serves
 // every caller that joined it. It logs and counts a failed check (ADR-0055 §12), once per check
-// rather than per caller.
+// rather than per caller, and counts each caller that joins a running check in ReadinessShared
+// as it joins.
 func (a *App) readyCheck(ctx context.Context) error {
-	_, err, _ := a.readyFlight.Do("ready", func() (any, error) {
-		ctx = context.WithoutCancel(ctx)
-		checkCtx, cancel := context.WithTimeout(ctx, readinessTimeout)
-		defer cancel()
-		err := a.Ready(checkCtx)
-		if err != nil {
-			a.Logger.WarnContext(ctx, "not ready", slog.Any("error", err))
-			a.readinessFailures.Add(ctx, 1, kernel.Labels{})
-		}
-		return nil, err
-	})
-	return err
+	a.readyMu.Lock()
+	if run := a.readyRunning; run != nil {
+		a.readinessShared.Add(ctx, 1, kernel.Labels{})
+		a.readyMu.Unlock()
+		<-run.done
+		return run.err
+	}
+	// A check that panics leaves this error to those who joined it.
+	run := &readyRun{done: make(chan struct{}), err: errReadyCheckUnfinished}
+	a.readyRunning = run
+	a.readyMu.Unlock()
+	defer func() {
+		a.readyMu.Lock()
+		a.readyRunning = nil
+		a.readyMu.Unlock()
+		close(run.done)
+	}()
+
+	ctx = context.WithoutCancel(ctx)
+	checkCtx, cancel := context.WithTimeout(ctx, readinessTimeout)
+	defer cancel()
+	run.err = a.Ready(checkCtx)
+	if run.err != nil {
+		a.Logger.WarnContext(ctx, "not ready", slog.Any("error", run.err))
+		a.readinessFailures.Add(ctx, 1, kernel.Labels{})
+	}
+	return run.err
+}
+
+var errReadyCheckUnfinished = errors.New("the readiness check did not finish")
+
+// readyRun is a readiness check under way: done closes when it ends, with its result in err.
+type readyRun struct {
+	done chan struct{}
+	err  error
 }
 
 // healthCache keeps the result of a check for healthCacheTTL, and runs one check for the

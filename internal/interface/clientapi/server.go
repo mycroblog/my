@@ -455,6 +455,8 @@ type Server struct {
 	o Options
 	// streams counts the open streams.
 	streams kernel.UpDownCounter
+	// signals counts the signals that the open streams handled.
+	signals kernel.Counter
 	// home decides which user streams of the process check a new home entry.
 	home *homeGate
 	// deleted decides which streams of the process, of every kind, send the deletion of a status.
@@ -492,7 +494,9 @@ func New(o Options) *Server {
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate(), deleted: newAudienceGate(), public: newPublicDispatch()}
+	meter := kernel.MeterOrNop(o.Meter)
+	s := &Server{o: o, streams: meter.UpDownCounter(StreamConnections), signals: meter.Counter(StreamSignals),
+		home: newHomeGate(), deleted: newAudienceGate(), public: newPublicDispatch()}
 	if b, ok := o.Authenticator.(bearerBatch); ok {
 		every := o.StreamHeartbeat
 		if every <= 0 {

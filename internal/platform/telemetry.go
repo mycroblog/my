@@ -55,6 +55,7 @@ func (a *App) setUpMeter(ctx context.Context, cfg *config.Config, opts AppOption
 	}
 	a.http = newHTTPMetrics(a.Meter)
 	a.readinessFailures = a.Meter.Counter(ReadinessFailures)
+	a.readinessShared = a.Meter.Counter(ReadinessShared)
 	a.originRefused = a.Meter.Counter(OriginRefused)
 	sysmetrics.RegisterProcess(a.Meter, processStart)
 	return nil
@@ -67,6 +68,12 @@ var processStart = time.Now()
 // never looks at a metric.
 var ReadinessFailures = kernel.Instrument{
 	Name: "my.readiness.failures", Unit: "{check}", Description: "Readiness checks that failed.",
+}
+
+// ReadinessShared counts the readiness requests that took the result of a check that another
+// request had started, rather than starting one (ADR-0088 §16).
+var ReadinessShared = kernel.Instrument{
+	Name: "my.readiness.shared", Unit: "{request}", Description: "Readiness requests that waited for a check already running.",
 }
 
 // MetricsHandler returns the handler of the Prometheus scrape, or nil when metrics_exporter is

@@ -41,11 +41,18 @@ var (
 		Description: "Orders of each host since its current certificate that obtained no certificate.",
 		LabelKeys:   []string{LabelTLSHost},
 	}
+	// TLSRounds counts the rounds of TLSManager.Maintain that ended, each over every host: a
+	// manager whose count stops growing has stopped.
+	TLSRounds = kernel.Instrument{
+		Name: "my.tls.rounds", Unit: "{round}",
+		Description: "Rounds of the ACME certificate manager over its hosts that ended.",
+	}
 )
 
 // registerMetrics declares the metrics of the orders on meter.
 func (m *TLSManager) registerMetrics(meter kernel.Meter) {
 	m.attempts = meter.Counter(TLSOrderAttempts)
+	m.rounds = meter.Counter(TLSRounds)
 	meter.Gauge(TLSOrderConsecutiveFailures, func(_ context.Context, o kernel.GaugeObserver) error {
 		m.mu.Lock()
 		defer m.mu.Unlock()

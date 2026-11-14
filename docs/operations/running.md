@@ -415,9 +415,11 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.job.wait` | Histogram, seconds | `my.job.type` |
 | `my.link_card.host_pauses` | Counter | `http.response.status_code` (`429` / `503`). One per pause of the link card fetches from a host; see [Link previews](link-previews.md#limits-per-host) |
 | `my.translation.requests` | Counter | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). One per request to translate a post that the viewer may see, or a report's post or comment that a moderator asks for: answered from the author's own words, from a kept translation, or by a provider, or refused because no provider may receive the post, a monthly limit is reached, no provider translates the language, or no provider returned a usable translation. |
+| `my.translation.lock_waits` | Counter | None. One per request that waited for another request translating the same post into the same language, instead of asking a provider |
 | `my.translation.characters` | Counter | `my.provider` (the ID of a translation provider). The characters of posts and report comments sent to the provider, without markers, including calls that fail. This is what the [monthly limits](instance-settings.md#admin-screens-and-the-client-api) count, and it can differ from what the provider bills |
 | `my.timeline.delivery.lag` | Histogram, seconds | None (from the creation of a local post to its write into home timelines and the notification to streams) |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` for the streams of the local and federated timelines, `voice` for the streams of the voice chat rooms) |
+| `my.stream.signals` | Counter | `my.stream.kind` (`user` / `timeline`). One per signal that an open stream handled, whether or not it sent the client anything |
 | `my.accounts.registered` | Counter | None |
 | `my.statuses.created` | Counter | `my.visibility` |
 | `my.billing.imports` | Counter | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (only with `failed`: the kind of failure, as in [Importing cloud usage charges](billing-import.md)). Every attempt counts, including the retries and the failures that wait for the next daily import |
@@ -437,6 +439,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.tls.certificate.expiry` | Gauge, seconds | `host` (the time until the certificate that this process serves for one of its hosts expires, with `tls = acme` or `tls = files`; each process reports its own, so a process left with an old certificate shows. See [Commands and metrics](#commands-and-metrics)) |
 | `my.tls.order.attempts` | Counter | `host`, `result` (`issued` / `failed`). One per order of a certificate from the ACME certificate authority, by the process that placed it, `my tls renew` and `my tls revoke` included |
 | `my.tls.order.consecutive_failures` | Gauge | `host` (the orders since the host's current certificate that obtained none: the count that sets the wait before the next order) |
+| `my.tls.rounds` | Counter | None. One per round of the certificate manager over its hosts with `tls = acme`; a count that stops growing means the manager stopped |
 
 Health checks (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) are not measured. No label contains a remote domain, account, URL or client IP.
 `my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` and `my.billing.import.failing` are values for the whole instance: every process reports the same value from one snapshot kept in the key-value store.
@@ -467,6 +470,7 @@ Do not use them to trigger scaling; use them for alerts and for estimating the i
 | `http.client.request.duration` | Histogram, seconds | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`), `http.request.method`, `my.http.status_class` (`2xx` and so on), `error.type` (`forbidden_destination` is a refusal by the SSRF guard) |
 | `http.client.open_connections` | UpDownCounter | None |
 | `my.readiness.failures` | Counter | None |
+| `my.readiness.shared` | Counter | None. One per readiness request that took the result of a check already running instead of starting one |
 | `my.http.origin_refused` | Counter | None. One per request refused because it did not come through the CDN ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Probes of the origin's address raise it slowly; a jump while the traffic stops means the CDN no longer sends the header. The maintenance mode measures nothing, so only its access log shows them |
 
 - Go runtime metrics (`go.*`) are exported only by `prometheus` and `otlp`. With `emf`, a periodic snapshot job writes the process and connection-pool gauges and observable counters.
