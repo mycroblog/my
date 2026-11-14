@@ -34,8 +34,8 @@ type MailUnsubscribe interface {
 // unsubscribeView is the page of an unsubscribe link.
 type unsubscribeView struct {
 	// Prompt asks to stop the emails of the link's category; Done says that they stopped.
-	Prompt string
-	Done   string
+	Prompt string `json:"prompt,omitempty"`
+	Done   string `json:"done,omitempty"`
 }
 
 // unsubscribeGroup names the category of an unsubscribe link: the row of the notification
@@ -60,10 +60,10 @@ func (h *Handler) mailUnsubscribePage(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthMailUnsubscribeTitle)
+	p := h.newPage(r, screenMailUnsubscribe)
 	p.Token = token
 	p.Unsubscribe = &unsubscribeView{Prompt: p.L.ServerAuthMailUnsubscribePrompt(unsubscribeGroup(p.L, category))}
-	h.render(w, r, http.StatusOK, pageMailUnsubscribe, p)
+	h.render(w, r, http.StatusOK, p)
 }
 
 // mailUnsubscribe stops the emails of an unsubscribe link: the one-click POST of RFC 8058, and
@@ -88,7 +88,7 @@ func (h *Handler) mailUnsubscribe(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthMailUnsubscribeDoneTitle)
+	p := h.newPage(r, screenMailUnsubscribed)
 	p.Unsubscribe = &unsubscribeView{Done: p.L.ServerAuthMailUnsubscribeDone(unsubscribeGroup(p.L, category))}
-	h.render(w, r, http.StatusOK, pageMailUnsubscribed, p)
+	h.render(w, r, http.StatusOK, p)
 }

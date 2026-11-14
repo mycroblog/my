@@ -17,12 +17,9 @@ const (
 	manifestPath = ".vite/manifest.json"
 	// entryKey is the manifest key of the SPA's entry: the HTML input of the Vite build.
 	entryKey = "index.html"
-	// serverPagesKey is the manifest key of the stylesheet entry of the pages the server renders
-	// without JavaScript (ADR-0090).
-	serverPagesKey = "src/server-pages.css"
-	// passkeySignInKey is the manifest key of the script entry that signs in with a passkey on the
-	// server-rendered sign-in page (FR-004).
-	passkeySignInKey = "src/server-pages/passkey-sign-in.ts" //nolint:gosec // G101: a file name, not a credential
+	// authEntryKey is the manifest key of the auth entry (ADR-0028 §4, ADR-0090 §16): the HTML
+	// input of the sign-in, registration, and consent screens, which a full page load opens.
+	authEntryKey = "auth.html"
 	// assetsDir holds the content-hashed files of the build (Vite's build.assetsDir).
 	assetsDir = "assets"
 	// licensesDir holds the license notices that the build carries: those of the bundled npm packages
@@ -48,50 +45,51 @@ type chunk struct {
 	CSS     []string `json:"css"`
 }
 
-// entryTags are the URLs the shell loads to start the SPA.
+// entryTags are the URLs a document loads to start an entry of the build.
 type entryTags struct {
 	Script     string   // the entry module
 	Stylesheet []string // CSS of the entry and of every chunk it imports statically
 	Preload    []string // chunks the entry imports statically, for <link rel="modulepreload">
-	// ServerPages is the stylesheet of the server-rendered pages; the shell does not load it.
-	ServerPages string
-	// PasskeySignIn is the module script of the sign-in page's passkey form; the shell does not
-	// load it.
-	PasskeySignIn string
 }
 
 // errNoBuild means the build has no Vite manifest: dist/ holds no build of the web client.
 var errNoBuild = errors.New("web: the build has no " + manifestPath + "; run scripts/task.sh web:build")
 
-// readEntry builds the tags of the SPA entry from the build manifest, following Vite's
-// backend integration guide: the entry's file, the CSS of the entry and of its static
-// imports, and the static imports as module preloads, each once and in import order.
-// URLs are absolute paths, since the shell is served at every SPA route. It also reads the
-// stylesheet and the passkey script entries of the server-rendered pages, which a build may lack.
-func readEntry(build fs.FS) (entryTags, error) {
+// readEntries builds the tags of the SPA entry and of the auth entry from the build manifest; a
+// build without the auth entry leaves its tags empty.
+func readEntries(build fs.FS) (app, auth entryTags, err error) {
 	data, err := fs.ReadFile(build, manifestPath)
 	if errors.Is(err, fs.ErrNotExist) {
-		return entryTags{}, errNoBuild
+		return entryTags{}, entryTags{}, errNoBuild
 	}
 	if err != nil {
-		return entryTags{}, fmt.Errorf("web: read %s: %w", manifestPath, err)
+		return entryTags{}, entryTags{}, fmt.Errorf("web: read %s: %w", manifestPath, err)
 	}
 	var manifest map[string]chunk
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return entryTags{}, fmt.Errorf("web: parse %s: %w", manifestPath, err)
+		return entryTags{}, entryTags{}, fmt.Errorf("web: parse %s: %w", manifestPath, err)
 	}
-	entry, ok := manifest[entryKey]
-	if !ok || !entry.IsEntry || entry.File == "" {
-		return entryTags{}, fmt.Errorf("web: %s has no entry %q", manifestPath, entryKey)
+	if app, err = entryOf(manifest, entryKey); err != nil {
+		return entryTags{}, entryTags{}, err
 	}
+	if _, ok := manifest[authEntryKey]; ok {
+		if auth, err = entryOf(manifest, authEntryKey); err != nil {
+			return entryTags{}, entryTags{}, err
+		}
+	}
+	return app, auth, nil
+}
 
+// entryOf builds the tags of the entry key, following Vite's backend integration guide: the
+// entry's file, the CSS of the entry and of its static imports, and the static imports as module
+// preloads, each once and in import order. URLs are absolute paths, since a document of an entry
+// is served at many paths.
+func entryOf(manifest map[string]chunk, key string) (entryTags, error) {
+	entry, ok := manifest[key]
+	if !ok || !entry.IsEntry || entry.File == "" {
+		return entryTags{}, fmt.Errorf("web: %s has no entry %q", manifestPath, key)
+	}
 	tags := entryTags{Script: fileURL(entry.File)}
-	if c, ok := manifest[serverPagesKey]; ok && c.IsEntry && c.File != "" {
-		tags.ServerPages = fileURL(c.File)
-	}
-	if c, ok := manifest[passkeySignInKey]; ok && c.IsEntry && c.File != "" {
-		tags.PasskeySignIn = fileURL(c.File)
-	}
 	addCSS := func(c chunk) {
 		for _, css := range c.CSS {
 			if u := fileURL(css); !slices.Contains(tags.Stylesheet, u) {
@@ -100,17 +98,17 @@ func readEntry(build fs.FS) (entryTags, error) {
 		}
 	}
 	addCSS(entry)
-	seen := map[string]bool{entryKey: true}
+	seen := map[string]bool{key: true}
 	var visit func(keys []string) error
 	visit = func(keys []string) error {
-		for _, key := range keys {
-			if seen[key] {
+		for _, k := range keys {
+			if seen[k] {
 				continue
 			}
-			seen[key] = true
-			c, ok := manifest[key]
+			seen[k] = true
+			c, ok := manifest[k]
 			if !ok {
-				return fmt.Errorf("web: %s imports the missing chunk %q", manifestPath, key)
+				return fmt.Errorf("web: %s imports the missing chunk %q", manifestPath, k)
 			}
 			tags.Preload = append(tags.Preload, fileURL(c.File))
 			addCSS(c)

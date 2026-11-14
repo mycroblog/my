@@ -14,15 +14,17 @@ import (
 	"github.com/mycroblog/my/internal/interface/web"
 )
 
-// setUpWeb builds the web client's handler (ADR-0028), registers its assets and manifest, and
-// sets a.page to its HTML handler.
-func (a *App) setUpWeb(opts AppOptions) error {
+// setUpWeb builds the web client's handler (ADR-0028), registers its assets and manifest, sets
+// a.page to its HTML handler, and returns its auth entry, which the sign-in screens load.
+func (a *App) setUpWeb(opts AppOptions) (web.Entry, error) {
 	if opts.WebBuild == nil {
 		opts.WebBuild = web.Embedded()
 	}
 	h, err := web.New(web.Options{
 		Build: opts.WebBuild, DevViteOrigin: opts.DevViteOrigin, Version: opts.Version,
-		Host: a.Config.Host, AccountDomain: a.Config.AccountDomain, WebOrigin: a.Config.WebOrigin,
+		// The web client signs in as the first-party client by the authorization code flow (ADR-0090 §16).
+		WebClientID: a.Identity.WebClientID(),
+		Host:        a.Config.Host, AccountDomain: a.Config.AccountDomain, WebOrigin: a.Config.WebOrigin,
 		// Images and media may come from the CDN in front of /media/ (media_origin).
 		MediaOrigin: a.Config.MediaOrigin,
 		// The instance's display name, read per request; the host when it has none.
@@ -54,14 +56,12 @@ func (a *App) setUpWeb(opts AppOptions) error {
 		Logger:   a.Logger,
 	})
 	if err != nil {
-		return err
+		return web.Entry{}, err
 	}
 	h.Register(surfaceRouter{a, surfaceWeb})
-	a.webStylesheet = h.Stylesheet()
-	a.webPasskeyScript = h.PasskeySignInScript()
 	// The ActivityPub handler wraps it for the requests that ask for ActivityPub (activitypub.Handler.Pages).
 	a.page = h
-	return nil
+	return h.AuthEntry(), nil
 }
 
 // themeRevision returns a theme revision for its stylesheet, and false when there is none.
@@ -82,8 +82,8 @@ func (a *App) brandFile(ctx context.Context, revisionID string, r domaininstance
 	return f, rc, err == nil, err
 }
 
-// themeStylesheet returns the path of the current theme's stylesheet for the server-rendered
-// pages, or "" when the theme changes nothing or cannot be read (the pages then show the defaults).
+// themeStylesheet returns the path of the current theme's stylesheet for the auth screens, or ""
+// when the theme changes nothing or cannot be read (the screens then show the defaults).
 func (a *App) themeStylesheet(ctx context.Context) string {
 	rev, ok, err := a.Instance.Theme(ctx)
 	if err != nil {
@@ -96,9 +96,9 @@ func (a *App) themeStylesheet(ctx context.Context) string {
 	return web.ThemeStylesheetPath(rev.ID)
 }
 
-// brandLogos returns the paths of the SVGs of the instance's own logo and dark logo for the
-// server-rendered pages, or "" for each when there is no logo or the brands cannot be read (the
-// pages then show the built-in wordmark).
+// brandLogos returns the paths of the SVGs of the instance's own logo and dark logo for the auth
+// screens, or "" for each when there is no logo or the brands cannot be read (the screens then show
+// the built-in wordmark).
 func (a *App) brandLogos(ctx context.Context) (logo, logoDark string) {
 	b, err := a.Instance.Brands(ctx)
 	if err != nil {

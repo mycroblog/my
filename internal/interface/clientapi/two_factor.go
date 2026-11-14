@@ -17,7 +17,7 @@ import (
 )
 
 // The viewer's two-factor authentication with TOTP (FR-005). The identity module generates and
-// checks the secrets; the sign-in step that asks for a code is the server-rendered page's.
+// checks the secrets; the sign-in step that asks for a code is the auth screens' (authpages).
 
 // Problem types of two-factor authentication.
 const (

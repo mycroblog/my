@@ -6,8 +6,9 @@
 # tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
 # that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
 # development packages web/devtools and web/catalog (ADR-0168), the tokens of web/design-tokens (ADR-0059), the
-# components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the server data of
-# web/app-data (ADR-0028 §6), the features of web/app-features and the app of web/app (ADR-0025 §2) here.
+# components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the platform of
+# web/platform (ADR-0028 §17), the server data of web/app-data (ADR-0028 §6), the features of web/app-features and
+# the app of web/app (ADR-0025 §2) here.
 version: "3"
 
 vars:
@@ -27,7 +28,7 @@ vars:
 
 tasks:
   check:
-    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools and web/catalog in parallel, with the app's build
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/catalog in parallel, with the app's build
     deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, build, devtools-absent]
 
   # The app's Vite dev server on http://localhost:5173, which passes /api, /oauth and /auth on to the server of
@@ -74,45 +75,48 @@ tasks:
       - bun --bun shot.ts {{.CLI_ARGS}}
 
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools and web/catalog with tsc
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/catalog with tsc
     deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
       - cd web/app-components && bun --bun tsc -p .
+      - cd web/platform && bun --bun tsc -p .
       - cd web/app-data && bun --bun tsc -p .
       - cd web/app-features && bun --bun tsc -p .
       - cd web/app && bun --bun tsc -p .
       - cd web/devtools && bun --bun tsc -p .
       - cd web/catalog && bun --bun tsc -p .
 
-  # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3).
+  # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3), and
+  # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17).
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/app-data web/app-features web/app web/devtools web/catalog web/i18n
+      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/catalog web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/catalog and web/i18n, naming the logical one
     cmds:
-      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/app-data web/app-features web/app web/devtools web/catalog web/i18n
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/catalog web/i18n
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/app-data, web/app-features, web/app, web/devtools and web/catalog (knip.json)
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/catalog (knip.json)
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/catalog
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/catalog
 
   test:
-    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/app-data, web/app-features, web/app and web/devtools
+    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools
     deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun test
       - cd web/design-system && bun test
       - cd web/app-components && bun test
+      - cd web/platform && bun test
       # The condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
       - cd web/app-data && bun test --conditions=@mycroblog/source
       - cd web/app-features && bun test --conditions=@mycroblog/source

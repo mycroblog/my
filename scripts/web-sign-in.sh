@@ -19,8 +19,11 @@ url_param() {
 	printf '%b' "${v//%/\\x}"
 }
 
-# A hidden field of an HTML form.
-form_field() { echo "$2" | grep -o "name=\"$1\" value=\"[^\"]*\"" | head -n 1 | sed 's/.*value="//; s/"$//; s/&amp;/\&/g'; }
+# A field of the data of an auth screen: its JSON data block, which the web client's auth entry renders. jq decodes
+# the escapes that html/template writes in it (& for &).
+screen_field() {
+	echo "$2" | sed -n 's|.*<script type="application/json" id="auth">\(.*\)</script>.*|\1|p' | head -n 1 | jq -r ".$1 // empty"
+}
 
 web_sign_in() {
 	local api_origin="$1" web_origin="$2" email="$3" password="$4"
@@ -40,8 +43,8 @@ web_sign_in() {
 		--data-urlencode code_challenge_method=S256 --data-urlencode "state=$state" "$api_origin/oauth/authorize")"
 	[[ "$sign_in" == "$api_origin/auth/sign_in?"* ]] || fail "the authorization endpoint redirects to '$sign_in', want the sign-in page"
 	form="$("${browser[@]}" "$sign_in")"
-	csrf="$(form_field csrf_token "$form")"
-	return_to="$(form_field return_to "$form")"
+	csrf="$(screen_field csrfToken "$form")"
+	return_to="$(screen_field returnTo "$form")"
 	[[ -n "$csrf" && -n "$return_to" ]] || fail "the sign-in page has no csrf_token or return_to: $form"
 	authorize="$("${redirect[@]}" -H "Origin: $api_origin" --data-urlencode "csrf_token=$csrf" --data-urlencode "return_to=$return_to" \
 		--data-urlencode "email=$email" --data-urlencode "password=$password" "$api_origin/auth/sign_in")"

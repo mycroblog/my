@@ -15,6 +15,11 @@
 //   It does not see, for want of other files and of types:
 //   - a component that another package re-exports under another name (`export { Button as X }` in app-components);
 //   - a wrapper that spreads its own props onto a component (`(p) => <Button {...p} />`), whose callers can pass them.
+//
+// - platform-globals: in a layer other than @my/platform, nothing checks the browser, the PWA or the OS (ADR-0028
+//   §17): no `navigator` or other global of the platform (as a global or a member of any object), no `"x" in window`
+//   (or self, globalThis, document and their members), and no `matchMedia` of a platform media feature written as a
+//   literal (display-mode, pointer, hover). It does not see a query computed at run time.
 
 const DESIGN_SYSTEM = /^@my\/design-system(?:\/|$)/;
 const LAYOUT_PROPS = new Set(["className", "style"]);
@@ -240,9 +245,109 @@ function createLayerImports(context) {
   };
 }
 
+/** The globals of the platform: each is read in @my/platform alone, through a global or a member of any object. */
+const PLATFORM_GLOBALS = new Set(["navigator", "PublicKeyCredential", "Notification", "PushManager"]);
+/** The global objects whose members a check of the platform's features (`"ontouchstart" in window`) reads. */
+const GLOBAL_OBJECTS = new Set(["window", "self", "globalThis", "document"]);
+/**
+ * The media features of the platform: the display mode of the PWA and the input devices. The viewport's (width,
+ * orientation) belong to the design system and the app (ADR-0025 §4), the reader's preferences (prefers-*) to the
+ * design system, and stay open.
+ */
+const PLATFORM_MEDIA = /\b(?:display-mode|(?:any-)?pointer|(?:any-)?hover)\b/;
+/** The node types under which an identifier is a type, not a value; the casts around a value are not among them. */
+const VALUE_WRAPPERS = new Set(["TSAsExpression", "TSSatisfiesExpression", "TSNonNullExpression", "TSTypeAssertion"]);
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function createPlatformGlobals(context) {
+  const own = webDir(String(context.filename).replaceAll("\\", "/"));
+  if (own === undefined || own === "platform" || !Object.hasOwn(BELOW, own)) return {};
+  const { sourceCode } = context;
+  const fix = BELOW[/** @type {keyof typeof BELOW} */ (own)].includes("platform")
+    ? "Ask @my/platform whether the browser can (add what it lacks there), and hold the screen for when it cannot."
+    : `@my/${own} cannot import @my/platform: let the app ask it and pass the answer in (a prop or a provider).`;
+
+  function report(/** @type {Node} */ node, /** @type {string} */ what) {
+    context.report({
+      node,
+      message:
+        `\`${what}\` checks the platform outside @my/platform: only it reads navigator, the platform's globals and ` +
+        `media features (ADR-0028 §17). ${fix}`,
+    });
+  }
+
+  /** Whether the identifier `node` names a global as a value: not a type, a key, or a binding of the file. */
+  function isGlobal(/** @type {Node} */ node) {
+    const parent = node.parent;
+    if (parent?.type.startsWith("TS") && !VALUE_WRAPPERS.has(parent.type)) return false;
+    if (parent?.type === "MemberExpression" && parent.property === node && !parent.computed) return false;
+    if ((parent?.type === "Property" || parent?.type === "PropertyDefinition") && parent.key === node)
+      if (!parent.computed && !parent.shorthand) return false;
+    for (let scope = sourceCode.getScope(node); scope; scope = scope.upper) {
+      const variable = scope.set.get(node.name);
+      if (variable && variable.defs.length > 0) return false;
+    }
+    return true;
+  }
+
+  /** Whether `node` is a global object or a member of one (`window`, `document.documentElement`). */
+  function onGlobalObject(/** @type {Node} */ node) {
+    const expression = unwrap(node);
+    if (expression.type === "Identifier") return GLOBAL_OBJECTS.has(expression.name) && isGlobal(expression);
+    if (expression.type === "MemberExpression") return onGlobalObject(expression.object);
+    return false;
+  }
+
+  /** The text of a media query written as a literal, or undefined for one computed at run time. */
+  function queryText(/** @type {Node | undefined} */ node) {
+    if (node === undefined) return undefined;
+    const expression = unwrap(node);
+    if (expression.type === "Literal" && typeof expression.value === "string") return expression.value;
+    if (expression.type === "TemplateLiteral")
+      return expression.quasis.map((/** @type {Node} */ q) => q.value.cooked).join(" ");
+    return undefined;
+  }
+
+  return {
+    Identifier(/** @type {Node} */ node) {
+      if (PLATFORM_GLOBALS.has(node.name) && isGlobal(node)) report(node, node.name);
+    },
+    MemberExpression(/** @type {Node} */ node) {
+      const name = node.computed
+        ? node.property.type === "Literal" && typeof node.property.value === "string"
+          ? node.property.value
+          : undefined
+        : node.property.name;
+      if (name !== undefined && PLATFORM_GLOBALS.has(name)) report(node.property, `.${name}`);
+    },
+    BinaryExpression(/** @type {Node} */ node) {
+      if (node.operator !== "in" || node.left.type !== "Literal" || typeof node.left.value !== "string") return;
+      if (onGlobalObject(node.right)) report(node, `"${node.left.value}" in`);
+    },
+    CallExpression(/** @type {Node} */ node) {
+      const callee = unwrap(node.callee);
+      const named =
+        (callee.type === "Identifier" && callee.name === "matchMedia" && isGlobal(callee)) ||
+        (callee.type === "MemberExpression" && !callee.computed && callee.property.name === "matchMedia");
+      if (!named) return;
+      const query = queryText(node.arguments[0]);
+      const feature = query === undefined ? undefined : PLATFORM_MEDIA.exec(query)?.[0];
+      if (feature !== undefined) report(node, `matchMedia(${feature})`);
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
+    "platform-globals": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a check of the browser, the PWA or the OS outside @my/platform" },
+        schema: [],
+      },
+      create: createPlatformGlobals,
+    },
     "layer-imports": {
       meta: {
         type: "problem",

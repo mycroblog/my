@@ -5,7 +5,7 @@ import { addedWaivers, CAP, loadWaivers, reasonProblem, type Waiver, waiverError
 const reason =
   "The document title separates the page from the server name in a browser tab, where the title bar shows no layout.";
 const waiver = (over: Partial<Waiver> = {}): Waiver => ({
-  id: "server:auth.document_title",
+  id: "appfeatures:auth.document_title",
   locale: "en",
   rule: "dash",
   reason,

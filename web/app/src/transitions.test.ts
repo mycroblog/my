@@ -19,3 +19,9 @@ test("elsewhere a navigation pushes, and going back in the history pops", () => 
   expect(navigationKind({ fromLocation: at("/", 0), toLocation: at("/@alice", 1) })).toBe("push");
   expect(navigationKind({ fromLocation: at("/@alice", 1), toLocation: at("/", 0) })).toBe("pop");
 });
+
+test("the sign-in opens by a page load, as a first screen, and a move to it within the app pushes", () => {
+  expect(navigationKind({ toLocation: at("/login", 0) })).toBe("none");
+  expect(navigationKind({ toLocation: at("/login/callback", 0) })).toBe("none");
+  expect(navigationKind({ fromLocation: at("/", 0), toLocation: at("/login", 1) })).toBe("push");
+});

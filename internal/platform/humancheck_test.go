@@ -91,14 +91,14 @@ func TestHumanCheck(t *testing.T) {
 	t.Run("sign-in", func(t *testing.T) {
 		c := &authClient{t: t, s: s, cookies: map[string]string{}}
 		resp, body := c.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		// The page also admits this site's scripts when the embedded web build has the passkey script, which depends
-		// on whether the web client was built before the test.
+		// The page also admits this site's scripts, the web client's auth entry.
 		if csp := resp.Header.Get("Content-Security-Policy"); !slices.Contains(cspDirective(csp, "script-src"), "https://challenges.cloudflare.com") ||
 			!slices.Equal(cspDirective(csp, "frame-src"), []string{"https://challenges.cloudflare.com"}) || strings.Contains(csp, "unsafe-") {
 			t.Errorf("Content-Security-Policy = %q", csp)
 		}
-		if !strings.Contains(body, `<div class="cf-turnstile" data-sitekey="site-key" data-action="sign_in" data-language="en" data-theme="auto"></div>`) {
-			t.Errorf("sign-in page lacks the widget:\n%s", body)
+		if data := authData(t, body); authText(data, "humanCheck.containerClass") != "cf-turnstile" || authText(data, "humanCheck.siteKey") != "site-key" ||
+			authText(data, "humanCheck.action") != "sign_in" || authText(data, "humanCheck.language") != "en" || authText(data, "humanCheck.theme") != "auto" {
+			t.Errorf("sign-in page lacks the widget: %v", authAt(data, "humanCheck"))
 		}
 		signIn := func(token string) int {
 			t.Helper()
@@ -142,7 +142,7 @@ func TestHumanCheck(t *testing.T) {
 		c := &authClient{t: t, s: s, cookies: map[string]string{}}
 		resp, body := c.do(http.MethodGet, authpages.PathSignUp, nil, nil)
 		if !slices.Contains(cspDirective(resp.Header.Get("Content-Security-Policy"), "script-src"), "https://challenges.cloudflare.com") ||
-			!strings.Contains(body, `data-action="sign_up"`) {
+			authText(authData(t, body), "humanCheck.action") != "sign_up" {
 			t.Errorf("sign-up page lacks the widget: %v\n%s", resp.Header, body)
 		}
 		signUp := func(token string) (int, string) {

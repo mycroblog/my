@@ -36,6 +36,9 @@ type Options struct {
 
 	// Version is the server's version, which the shell gives the client for its error reports.
 	Version string
+	// WebClientID is the client_id of the first-party web client, with which the client signs in by
+	// the authorization code flow (ADR-0090 §16); the shell gives it to the client.
+	WebClientID string
 
 	// Host is the serving domain of the instance (ADR-0018).
 	Host string
@@ -152,8 +155,10 @@ const (
 // Handler serves the web client. Its ServeHTTP serves the shell at SPA routes, and the
 // files at the root of the build (sw.js, icon.svg).
 type Handler struct {
-	o         Options
-	tags      entryTags
+	o    Options
+	tags entryTags
+	// authTags are the tags of the auth entry, which authpages loads (AuthEntry).
+	authTags  entryTags
 	apiOrigin string
 	hasIcon   bool
 	// hasAppleTouchIcon reports whether the build has apple-touch-icon.png.
@@ -247,7 +252,7 @@ func New(o Options) (*Handler, error) {
 		}
 	}
 
-	var tags entryTags
+	var tags, authTags entryTags
 	apiOrigin, onHost, err := serverOrigin(o.Host, o.WebOrigin)
 	if err != nil {
 		return nil, err
@@ -269,8 +274,8 @@ func New(o Options) (*Handler, error) {
 			return nil, err
 		}
 		h.o.DevViteOrigin = dev.String()
-		// Vite serves the stylesheet of the server-rendered pages as CSS to a <link> as well.
-		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx", ServerPages: h.o.DevViteOrigin + "/" + serverPagesKey}
+		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx"}
+		authTags = entryTags{Script: h.o.DevViteOrigin + "/src/auth.tsx"}
 		h.csp = withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin)
 		// A dev server setup is plain HTTP on localhost, unless web_origin names the origin on the host, such as
 		// https://my.localhost behind a TLS proxy.
@@ -278,7 +283,7 @@ func New(o Options) (*Handler, error) {
 			apiOrigin = "http://" + o.Host
 		}
 	} else {
-		tags, err = readEntry(o.Build)
+		tags, authTags, err = readEntries(o.Build)
 		if errors.Is(err, errNoBuild) {
 			o.Logger.Warn("the web client is not built into this binary; the shell loads no client", slog.Any("error", err))
 		} else if err != nil {
@@ -290,7 +295,7 @@ func New(o Options) (*Handler, error) {
 		}
 	}
 
-	h.tags, h.apiOrigin = tags, apiOrigin
+	h.tags, h.authTags, h.apiOrigin = tags, authTags, apiOrigin
 	version := []string{
 		shellSource, h.o.Version, h.o.DevViteOrigin, h.apiOrigin, h.o.Host, h.o.AccountDomain,
 		strconv.FormatBool(h.hasIcon), strconv.FormatBool(h.hasAppleTouchIcon), tags.Script,
@@ -433,7 +438,7 @@ func (h *Handler) renderGeneric(locale, name string, theme themeState, brand bra
 func (h *Handler) runtimeConfig(locale, name string, brand brandState) runtimeConfig {
 	return runtimeConfig{
 		APIOrigin: h.apiOrigin, InstanceName: name, AccountDomain: h.o.AccountDomain, DefaultLocale: locale,
-		Icon: brand.IconImage, Logo: brand.Logo, LogoDark: brand.LogoDark, Version: h.o.Version,
+		Icon: brand.IconImage, Logo: brand.Logo, LogoDark: brand.LogoDark, Version: h.o.Version, ClientID: h.o.WebClientID,
 	}
 }
 
@@ -455,8 +460,8 @@ func devOrigin(s string) (*url.URL, error) {
 }
 
 // buildFiles lists the files of the build that are served as they are, with their ETags:
-// every file except the Vite manifest and other hidden files, and the index.html that Vite
-// writes (the shell replaces it).
+// every file except the Vite manifest and other hidden files, and the index.html and auth.html
+// that Vite writes (the shell and authpages replace them).
 func buildFiles(build fs.FS) (map[string]string, error) {
 	files := map[string]string{}
 	err := fs.WalkDir(build, ".", func(p string, d fs.DirEntry, err error) error {
@@ -469,7 +474,7 @@ func buildFiles(build fs.FS) (map[string]string, error) {
 			}
 			return nil
 		}
-		if d.IsDir() || p == entryKey {
+		if d.IsDir() || p == entryKey || p == authEntryKey {
 			return nil
 		}
 		data, err := fs.ReadFile(build, p)
@@ -679,12 +684,24 @@ func addVary(h http.Header, value string) {
 	}
 }
 
-// Stylesheet returns the URL of the stylesheet that the build makes for the server-rendered
-// pages from the client's design tokens (ADR-0090), or "" when the
-// build has none. With a Vite dev server it is the file on that server, of another origin.
-func (h *Handler) Stylesheet() string { return h.tags.ServerPages }
+// Entry is what a document loads to start an entry of the build.
+type Entry struct {
+	// Script is the entry module; "" when the build has no such entry.
+	Script string
+	// Stylesheets are the CSS of the entry and of the chunks it imports statically, and Preloads
+	// those chunks.
+	Stylesheets, Preloads []string
+	// ViteClient is the client script of a Vite dev server, and DevOrigin that server's origin,
+	// whose scripts, styles, and hot module replacement the document's policy must allow; both are
+	// empty in production.
+	ViteClient, DevOrigin string
+}
 
-// PasskeySignInScript returns the URL of the module script that signs in with a passkey on the
-// server-rendered sign-in page, or "" when the
-// build has none.
-func (h *Handler) PasskeySignInScript() string { return h.tags.PasskeySignIn }
+// AuthEntry returns the auth entry of the build (ADR-0028 §4, ADR-0090 §16), which the sign-in,
+// registration, and consent screens load under their own Content-Security-Policy.
+func (h *Handler) AuthEntry() Entry {
+	return Entry{
+		Script: h.authTags.Script, Stylesheets: h.authTags.Stylesheet, Preloads: h.authTags.Preload,
+		ViteClient: viteClient(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin,
+	}
+}

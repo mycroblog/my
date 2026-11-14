@@ -43,9 +43,6 @@ export const helpAction = "shortcuts.help";
 const StoreContext = createContext<Shortcuts<Element> | null>(null);
 const ScopeContext = createContext<RefObject<HTMLElement | null> | null>(null);
 
-/** The reader's platform names the modifier ⌘ (macOS and iOS), else Ctrl. */
-const onMac = () => typeof navigator !== "undefined" && /mac|iphone|ipad|ipod/i.test(navigator.platform);
-
 // A layer over the screen: while focus is inside one, only the focus actions inside it act.
 const layers = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]';
 
@@ -63,11 +60,11 @@ function placeOf(target: EventTarget | null): Place<Element> {
 
 /**
  * Holds the keymap and the declared actions, runs the action of a key press, and shows the help. `keymap` is the
- * app's and is read once; a chord the browser keeps for itself throws. `mac` names the keys as on macOS (⌘); the
- * reader's platform by default.
+ * app's and is read once; a chord the browser keeps for itself throws. `mac` names the keys as on macOS (⌘): the app
+ * passes what @my/platform says of the reader's keyboard.
  */
-export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; mac?: boolean; children: ReactNode }) {
-  const [store] = useState(() => new Shortcuts<Element>(keymap, mac ?? onMac()));
+export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; mac: boolean; children: ReactNode }) {
+  const [store] = useState(() => new Shortcuts<Element>(keymap, mac));
   const [shown, setShown] = useState<ReturnType<Shortcuts<Element>["list"]> | null>(null);
   const { t } = stringsIn(useReader(undefined).lang);
   const label = t("shortcuts.help");

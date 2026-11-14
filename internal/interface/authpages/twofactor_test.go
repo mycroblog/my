@@ -63,28 +63,20 @@ func TestTwoFactorSignIn(t *testing.T) {
 
 	page = b.do(http.MethodGet, w.Header().Get("Location"), nil, map[string]string{"Accept-Language": "ja"})
 	body := page.Body.String()
-	for _, want := range []string{
-		`<title>二要素認証</title>`,
-		`<label for="two-factor-code">認証コード</label>`,
-		`autocomplete="one-time-code"`,
-		`<form class="form" method="post" action="/auth/sign_in/two_factor">`,
-		`name="return_to" value="/home"`,
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("code form lacks %s:\n%s", want, body)
-		}
+	if data := screenData(t, page); text(data, "screen") != "two_factor" || text(data, "returnTo") != "/home" || text(data, "csrfToken") == "" {
+		t.Errorf("code form data = %v, want the two-factor screen returning to /home", data)
 	}
 	if strings.Contains(body, bobChallenge) {
 		t.Error("the page shows the challenge, which stays in the HttpOnly cookie")
 	}
 
 	w = b.do(http.MethodPost, authpages.PathSignInTwoFactor, b.form(page, "code", "000000", "return_to", "/home"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), `aria-invalid="true"`) ||
-		!strings.Contains(w.Body.String(), "The code is incorrect") {
+	if data := screenData(t, w); w.Code != http.StatusUnprocessableEntity || text(data, "screen") != "two_factor" ||
+		!strings.Contains(text(data, "error"), "The code is incorrect") {
 		t.Errorf("wrong code = %d:\n%s", w.Code, w.Body.String())
 	}
 	w = b.do(http.MethodPost, authpages.PathSignInTwoFactor, b.form(page, "code", " ", "return_to", "/home"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "Enter the code.") {
+	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(text(screenData(t, w), "error"), "Enter the code.") {
 		t.Errorf("empty code = %d", w.Code)
 	}
 	w = b.do(http.MethodPost, authpages.PathSignInTwoFactor, b.form(page, "code", "123456", "return_to", "/home"),
@@ -125,8 +117,8 @@ func TestTwoFactorSignInExpiresAndRateLimits(t *testing.T) {
 	id.limited = false
 	id.challengeUsed = true
 	w = b.do(http.MethodPost, authpages.PathSignInTwoFactor, b.form(page, "code", "123456"), nil)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), `action="/auth/sign_in"`) ||
-		!strings.Contains(w.Body.String(), "Sign in again") {
+	if data := screenData(t, w); w.Code != http.StatusUnprocessableEntity || text(data, "screen") != "sign_in" ||
+		!strings.Contains(text(data, "error"), "Sign in again") {
 		t.Errorf("expired challenge = %d, want the sign-in form:\n%s", w.Code, w.Body.String())
 	}
 	if _, ok := b.cookies[authpages.CookieTwoFactor]; ok {

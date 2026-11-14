@@ -377,7 +377,9 @@ type localClient struct {
 	token string
 }
 
-var csrfToken = regexp.MustCompile(`name="csrf_token" value="([^"]+)"`)
+// csrfToken finds the anti-forgery token in the data of a sign-in screen, which the web client's
+// auth entry posts as the form's csrf_token.
+var csrfToken = regexp.MustCompile(`"csrfToken":"([^"]+)"`)
 
 // signInLocal runs the web client's authorization code flow with PKCE (oauth_test.go in
 // internal/platform does the same) as alice and returns a client with her access token.

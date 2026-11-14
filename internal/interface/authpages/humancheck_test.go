@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -99,11 +101,13 @@ func TestNoHumanCheck(t *testing.T) {
 	b := newBrowser(t, newServer(t, newFakeIdentity()))
 	for _, path := range []string{authpages.PathSignIn, authpages.PathSignUp} {
 		w := b.do(http.MethodGet, path, nil, nil)
-		const want = "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
-		if csp := w.Header().Get("Content-Security-Policy"); csp != want {
-			t.Errorf("%s: Content-Security-Policy = %q, want %q", path, csp, want)
+		csp := w.Header().Get("Content-Security-Policy")
+		if got := directive(csp, "script-src"); fmt.Sprint(got) != "['self']" || directive(csp, "frame-src") != nil || directive(csp, "connect-src") != nil {
+			t.Errorf("%s: Content-Security-Policy = %q, want this site's scripts only", path, csp)
 		}
-		wantLacks(t, w.Body.String(), "<script", "<noscript", "data-sitekey")
+		if data := screenData(t, w); at(data, "humanCheck") != nil {
+			t.Errorf("%s: humanCheck = %v, want none", path, at(data, "humanCheck"))
+		}
 		if w.Header().Get("Accept-CH") != "" {
 			t.Errorf("%s: Accept-CH = %q", path, w.Header().Get("Accept-CH"))
 		}
@@ -113,29 +117,32 @@ func TestNoHumanCheck(t *testing.T) {
 func TestHumanCheckWidget(t *testing.T) {
 	for _, tc := range []struct {
 		widget kernel.HumanCheckWidget
-		want   []string
-		unwant []string
+		// want are the fields of the screen's humanCheck, with ACTION for the form's action;
+		// notice is a part of its notice, and links are its links as "url title".
+		want   map[string]string
+		notice string
+		links  []string
 	}{
-		{turnstile, []string{
-			`<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`,
-			`<div class="cf-turnstile" data-sitekey="turnstile-site-key" data-action="ACTION" data-language="ja" data-theme="auto"></div>`,
-			"このページは Cloudflare Turnstile でボットかどうかを確認します。",
-			`<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Turnstile のプライバシーポリシー<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
-		}, []string{"利用規約</a>"}},
-		{hcaptcha, []string{
-			`<script src="https://js.hcaptcha.com/1/api.js?hl=ja" async defer></script>`,
-			`<div class="h-captcha" data-sitekey="hcaptcha-site-key" data-theme="light"></div>`,
-			"このページは hCaptcha でボットかどうかを確認します。",
-			`<a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">hCaptcha のプライバシーポリシー<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
-			`<a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">hCaptcha の利用規約<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
-		}, []string{"data-action", "data-language"}},
-		{recaptcha, []string{
-			`<script src="https://www.google.com/recaptcha/api.js?hl=ja" async defer></script>`,
-			`<div class="g-recaptcha" data-sitekey="recaptcha-site-key" data-theme="light"></div>`,
-			"このサイトは reCAPTCHA で保護されており、Google のプライバシーポリシーと利用規約が適用されます。",
-			`<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google のプライバシーポリシー<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
-			`<a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Google の利用規約<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
-		}, []string{"data-action", "data-language"}},
+		{turnstile, map[string]string{
+			"scriptSrc": "https://challenges.cloudflare.com/turnstile/v0/api.js", "containerClass": "cf-turnstile",
+			"siteKey": "turnstile-site-key", "action": "ACTION", "language": "ja", "theme": "auto",
+		}, "このページは Cloudflare Turnstile でボットかどうかを確認します。", []string{
+			"https://www.cloudflare.com/privacypolicy/ Cloudflare Turnstile のプライバシーポリシー",
+		}},
+		{hcaptcha, map[string]string{
+			"scriptSrc": "https://js.hcaptcha.com/1/api.js?hl=ja", "containerClass": "h-captcha",
+			"siteKey": "hcaptcha-site-key", "action": "", "language": "", "theme": "light",
+		}, "このページは hCaptcha でボットかどうかを確認します。", []string{
+			"https://www.hcaptcha.com/privacy hCaptcha のプライバシーポリシー",
+			"https://www.hcaptcha.com/terms hCaptcha の利用規約",
+		}},
+		{recaptcha, map[string]string{
+			"scriptSrc": "https://www.google.com/recaptcha/api.js?hl=ja", "containerClass": "g-recaptcha",
+			"siteKey": "recaptcha-site-key", "action": "", "language": "", "theme": "light",
+		}, "このサイトは reCAPTCHA で保護されており、Google のプライバシーポリシーと利用規約が適用されます。", []string{
+			"https://policies.google.com/privacy Google のプライバシーポリシー",
+			"https://policies.google.com/terms Google の利用規約",
+		}},
 	} {
 		t.Run(string(tc.widget.Service), func(t *testing.T) {
 			b := newBrowser(t, newHumanServer(t, newFakeIdentity(), &tc.widget))
@@ -144,14 +151,24 @@ func TestHumanCheckWidget(t *testing.T) {
 				if w.Code != http.StatusOK {
 					t.Fatalf("GET %s = %d", path, w.Code)
 				}
-				body := w.Body.String()
-				want := append([]string{"<noscript><p class=\"alert\">このページではボットかどうかを確認します。"}, tc.want...)
-				for i := range want {
-					want[i] = strings.ReplaceAll(want[i], "ACTION", action)
+				data := screenData(t, w)
+				for key, want := range tc.want {
+					if got := text(data, "humanCheck."+key); got != strings.ReplaceAll(want, "ACTION", action) {
+						t.Errorf("%s: humanCheck.%s = %q, want %q", path, key, got, want)
+					}
 				}
-				wantContains(t, body, want...)
-				wantLacks(t, body, tc.unwant...)
-				wantLacks(t, body, "style=", "<style", "<script>")
+				if !strings.Contains(text(data, "humanCheck.notice"), tc.notice) {
+					t.Errorf("%s: humanCheck.notice = %q, want %q in it", path, text(data, "humanCheck.notice"), tc.notice)
+				}
+				links, _ := at(data, "humanCheck.links").([]any)
+				var got []string
+				for i := range links {
+					p := "humanCheck.links." + strconv.Itoa(i) + "."
+					got = append(got, text(data, p+"url")+" "+text(data, p+"title"))
+				}
+				if !slices.Equal(got, tc.links) {
+					t.Errorf("%s: humanCheck.links = %q, want %q", path, got, tc.links)
+				}
 
 				csp := w.Header().Get("Content-Security-Policy")
 				if strings.Contains(csp, "unsafe-inline") || strings.Contains(csp, "unsafe-eval") {
@@ -162,7 +179,7 @@ func TestHumanCheckWidget(t *testing.T) {
 					want []string
 				}{
 					{"default-src", []string{"'none'"}},
-					{"script-src", tc.widget.CSP.ScriptSrc},
+					{"script-src", append([]string{"'self'"}, tc.widget.CSP.ScriptSrc...)},
 					{"frame-src", tc.widget.CSP.FrameSrc},
 					{"connect-src", tc.widget.CSP.ConnectSrc},
 					{"style-src", append([]string{"'self'"}, tc.widget.CSP.StyleSrc...)},
@@ -189,7 +206,9 @@ func TestHumanCheckTheme(t *testing.T) {
 		!strings.Contains(strings.Join(w.Header().Values("Vary"), ","), "Sec-CH-Prefers-Color-Scheme") {
 		t.Errorf("headers = %v", w.Header())
 	}
-	wantContains(t, w.Body.String(), `data-theme="dark"`)
+	if got := text(screenData(t, w), "humanCheck.theme"); got != "dark" {
+		t.Errorf("humanCheck.theme = %q, want dark", got)
+	}
 }
 
 // TestHumanCheckOnlyOnTheForms checks that the other pages keep their policy and show no
@@ -199,7 +218,7 @@ func TestHumanCheckOnlyOnTheForms(t *testing.T) {
 	b := newBrowser(t, newHumanServer(t, id, &turnstile))
 	id.mode = "closed"
 	w := b.do(http.MethodGet, authpages.PathSignUp, nil, nil)
-	if csp := w.Header().Get("Content-Security-Policy"); strings.Contains(csp, "challenges.cloudflare.com") || strings.Contains(w.Body.String(), "<script") {
+	if csp := w.Header().Get("Content-Security-Policy"); strings.Contains(csp, "challenges.cloudflare.com") || at(screenData(t, w), "humanCheck") != nil {
 		t.Errorf("closed sign-up: %q\n%s", csp, w.Body.String())
 	}
 	w = b.do(http.MethodGet, authpages.PathVerifyEmail, nil, nil)
@@ -219,7 +238,10 @@ func TestHumanCheckSignIn(t *testing.T) {
 		t.Fatalf("sign-in with a bad token = %d", w.Code)
 	}
 	// The form comes back with the widget for another try and keeps the address.
-	wantContains(t, w.Body.String(), "Complete the check that you are not a bot, then try again.", `class="cf-turnstile"`, `value="alice@example.com"`)
+	if data := screenData(t, w); text(data, "error") != "Complete the check that you are not a bot, then try again." ||
+		text(data, "humanCheck.containerClass") != "cf-turnstile" || text(data, "email") != "alice@example.com" {
+		t.Errorf("sign-in with a bad token: %v", data)
+	}
 	if !strings.Contains(w.Header().Get("Content-Security-Policy"), "challenges.cloudflare.com") {
 		t.Errorf("the form shown again lacks the widget's policy")
 	}
@@ -251,7 +273,10 @@ func TestHumanCheckSignUp(t *testing.T) {
 		if w.Code != tc.status || b.cookies[authpages.CookieSession] != "" {
 			t.Errorf("sign-up with %v = %d, want %d", tc.err, w.Code, tc.status)
 		}
-		wantContains(t, w.Body.String(), tc.want, `value="bob"`, `class="h-captcha"`)
+		if data := screenData(t, w); text(data, "error") != tc.want || text(data, "signUp.username") != "bob" ||
+			text(data, "humanCheck.containerClass") != "h-captcha" {
+			t.Errorf("sign-up with %v: %v", tc.err, data)
+		}
 		if len(id.tokens) != 1 || id.tokens[0] != "token" {
 			t.Errorf("tokens = %v", id.tokens)
 		}

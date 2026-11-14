@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
@@ -19,7 +20,7 @@ import (
 )
 
 // fakeBuild is a Vite build with an entry that imports a shared chunk, CSS on both, a
-// lazily loaded chunk that must not be preloaded, and the server pages' stylesheet entry.
+// lazily loaded chunk that must not be preloaded, and the auth entry, which shares the chunk.
 func fakeBuild() fstest.MapFS {
 	return fstest.MapFS{
 		".vite/manifest.json": {Data: []byte(`{
@@ -27,16 +28,18 @@ func fakeBuild() fstest.MapFS {
 				"imports": ["_shared-BBBB.js"], "dynamicImports": ["src/lazy.tsx"], "css": ["assets/index-CCCC.css"]},
 			"_shared-BBBB.js": {"file": "assets/shared-BBBB.js", "css": ["assets/shared-DDDD.css"]},
 			"src/lazy.tsx": {"file": "assets/lazy-EEEE.js", "src": "src/lazy.tsx", "isDynamicEntry": true},
-			"src/server-pages.css": {"file": "assets/server-pages-FFFF.css", "src": "src/server-pages.css", "isEntry": true},
-			"src/server-pages/passkey-sign-in.ts": {"file": "assets/server-pages-passkey-GGGG.js", "src": "src/server-pages/passkey-sign-in.ts", "isEntry": true}
+			"auth.html": {"file": "assets/auth-FFFF.js", "src": "auth.html", "isEntry": true,
+				"imports": ["_shared-BBBB.js"], "css": ["assets/auth-GGGG.css"]}
 		}`)},
 		"index.html":                   {Data: []byte("<!doctype html><title>vite</title>")},
+		"auth.html":                    {Data: []byte("<!doctype html><title>vite auth</title>")},
 		"assets/index-AAAA.js":         {Data: []byte("console.log('entry')")},
 		"assets/shared-BBBB.js":        {Data: []byte("export {}")},
 		"assets/index-CCCC.css":        {Data: []byte("body{}")},
 		"assets/shared-DDDD.css":       {Data: []byte("p{}")},
 		"assets/lazy-EEEE.js":          {Data: []byte("export {}")},
-		"assets/server-pages-FFFF.css": {Data: []byte("main{}")},
+		"assets/auth-FFFF.js":          {Data: []byte("console.log('auth')")},
+		"assets/auth-GGGG.css":         {Data: []byte("main{}")},
 		"icon.svg":                     {Data: []byte("<svg xmlns='http://www.w3.org/2000/svg'/>")},
 		"sw.js":                        {Data: []byte("self.addEventListener('fetch', () => {})")},
 		"theme.js":                     {Data: []byte("document.documentElement.dataset.theme = 'dark'")},
@@ -110,8 +113,8 @@ func TestShellLoadsTheBuildFromTheManifest(t *testing.T) {
 			t.Errorf("shell lacks %s:\n%s", want, body)
 		}
 	}
-	if strings.Contains(body, "lazy-EEEE") || strings.Contains(body, "vite</title>") || strings.Contains(body, "server-pages") {
-		t.Errorf("shell preloads a lazy chunk, loads the server pages' stylesheet, or is Vite's index.html:\n%s", body)
+	if strings.Contains(body, "lazy-EEEE") || strings.Contains(body, "vite</title>") || strings.Contains(body, "auth-") {
+		t.Errorf("shell preloads a lazy chunk, loads the auth entry, or is Vite's index.html:\n%s", body)
 	}
 	h := rec.Header()
 	if h.Get("Cache-Control") != "public, max-age=60, stale-while-revalidate=300" || h.Get("Vary") != "Accept" || h.Get("ETag") == "" {
@@ -125,23 +128,53 @@ func TestShellLoadsTheBuildFromTheManifest(t *testing.T) {
 	}
 }
 
-func TestStylesheetIsTheServerPagesEntry(t *testing.T) {
+// TestAuthEntry checks that the handler reads the auth entry of the build for authpages, that the
+// shell of the app loads none of it, and that Vite's auth.html is never served.
+func TestAuthEntry(t *testing.T) {
 	h, mux := newHandler(t, web.Options{})
-	if got := h.Stylesheet(); got != "/assets/server-pages-FFFF.css" {
-		t.Fatalf("Stylesheet() = %q, want the server pages' entry", got)
+	got := h.AuthEntry()
+	want := web.Entry{
+		Script: "/assets/auth-FFFF.js", Stylesheets: []string{"/assets/auth-GGGG.css", "/assets/shared-DDDD.css"},
+		Preloads: []string{"/assets/shared-BBBB.js"},
 	}
-	if got := h.PasskeySignInScript(); got != "/assets/server-pages-passkey-GGGG.js" {
-		t.Errorf("PasskeySignInScript() = %q, want the passkey entry", got)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("AuthEntry() = %+v, want %+v", got, want)
 	}
-	if rec := get(mux, h.Stylesheet(), nil); rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "text/css; charset=utf-8" {
-		t.Errorf("GET %s = %d %q", h.Stylesheet(), rec.Code, rec.Header().Get("Content-Type"))
+	if rec := get(mux, got.Script, nil); rec.Code != http.StatusOK {
+		t.Errorf("GET %s = %d", got.Script, rec.Code)
+	}
+	if body := get(mux, "/home", nil).Body.String(); strings.Contains(body, "auth-") {
+		t.Errorf("the app's shell loads the auth entry:\n%s", body)
+	}
+	if body := get(mux, "/auth.html", nil).Body.String(); strings.Contains(body, "vite auth") {
+		t.Errorf("GET /auth.html serves Vite's auth.html:\n%s", body)
 	}
 
 	build := fakeBuild()
 	build[".vite/manifest.json"] = &fstest.MapFile{Data: []byte(`{"index.html": {"file": "assets/index-AAAA.js", "isEntry": true}}`)}
 	without, _ := newHandler(t, web.Options{Build: build})
-	if got := without.Stylesheet(); got != "" {
-		t.Errorf("Stylesheet() without the entry = %q, want empty", got)
+	if got := without.AuthEntry(); got.Script != "" {
+		t.Errorf("AuthEntry() without the entry = %+v, want no script", got)
+	}
+
+	dev, _ := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173"})
+	if got, want := dev.AuthEntry(), (web.Entry{
+		Script: "http://localhost:5173/src/auth.tsx", ViteClient: "http://localhost:5173/@vite/client", DevOrigin: "http://localhost:5173",
+	}); !reflect.DeepEqual(got, want) {
+		t.Errorf("AuthEntry() with a dev server = %+v, want %+v", got, want)
+	}
+}
+
+// TestRuntimeConfigClientID checks that the shell names the web client, with which the app signs
+// in, and leaves it out when there is none.
+func TestRuntimeConfigClientID(t *testing.T) {
+	_, mux := newHandler(t, web.Options{WebClientID: "my-web"})
+	if body := get(mux, "/home", nil).Body.String(); !strings.Contains(body, `"clientId":"my-web"`) {
+		t.Errorf("the shell does not name the web client:\n%s", body)
+	}
+	_, mux = newHandler(t, web.Options{})
+	if body := get(mux, "/home", nil).Body.String(); strings.Contains(body, `"clientId"`) {
+		t.Errorf("the shell names a web client without one:\n%s", body)
 	}
 }
 
@@ -470,7 +503,7 @@ func TestDevViteOriginBehindHTTPS(t *testing.T) {
 }
 
 func TestDevViteOrigin(t *testing.T) {
-	h, mux := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", Host: "localhost:8080"})
+	_, mux := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", Host: "localhost:8080"})
 	rec := get(mux, "/", nil)
 	body := rec.Body.String()
 	for _, want := range []string{
@@ -490,9 +523,6 @@ func TestDevViteOrigin(t *testing.T) {
 	}
 	if rec.Header().Get("Cache-Control") != "no-store" {
 		t.Errorf("dev shell Cache-Control = %q, want no-store", rec.Header().Get("Cache-Control"))
-	}
-	if got, want := h.Stylesheet(), "http://localhost:5173/src/server-pages.css"; got != want {
-		t.Errorf("dev Stylesheet() = %q, want %q, the server pages' stylesheet on the dev server", got, want)
 	}
 	for _, bad := range []string{"localhost:5173/", "ftp://localhost", "localhost:5173", "http://user@localhost:5173"} {
 		if _, err := web.New(web.Options{Host: "localhost:8080", Build: fakeBuild(), DevViteOrigin: bad}); err == nil {

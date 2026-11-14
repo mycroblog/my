@@ -8,7 +8,7 @@
 
 import { motion } from "@my/design-tokens";
 import type { ReactNode } from "react";
-import { Button as AriaButton, type ButtonProps as AriaButtonProps } from "react-aria-components";
+import { Button as AriaButton, Link as AriaLink, type ButtonProps as AriaButtonProps } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { usePreviewState } from "./preview";
 
@@ -144,6 +144,26 @@ export function ButtonBase({
 
 export function Button({ kind = "secondary", size = "form", ...rest }: ButtonProps) {
   return <ButtonBase kind={kind} size={size} {...rest} />;
+}
+
+export type LinkButtonProps = {
+  href: string;
+  kind?: ButtonKind;
+  size?: ButtonSize;
+  children: ReactNode;
+};
+
+/**
+ * A link that leads to another page and looks like a button of its kind (signing in with a login provider, whose
+ * start is a page of its own): it keeps a link's semantics, so it opens with a page load and in a new tab.
+ */
+export function LinkButton({ href, kind = "secondary", size = "form", children }: LinkButtonProps) {
+  const s = button({ kind, size });
+  return (
+    <AriaLink href={href} className={`${s.base()} no-underline`}>
+      <span className={s.label()}>{children}</span>
+    </AriaLink>
+  );
 }
 
 // It takes the font and the color of the line it sits in, and keeps no surface, so the line reads as one.

@@ -4,13 +4,6 @@
 
 package i18n
 
-// ServerAuthAuthorizeApprove formats "server:auth.authorize.approve". Button on the authorization (consent) page that lets the application use the account.
-//
-//	en: Allow
-func (l *Localizer) ServerAuthAuthorizeApprove() string {
-	return l.format("server:auth.authorize.approve", nil)
-}
-
 // ServerAuthAuthorizeCautionDm formats "server:auth.authorize.caution.dm". Caution on a permission on the consent page: the application can read direct messages.
 //
 //	en: Can read your direct messages
@@ -32,13 +25,6 @@ func (l *Localizer) ServerAuthAuthorizeCautionProfile() string {
 	return l.format("server:auth.authorize.caution.profile", nil)
 }
 
-// ServerAuthAuthorizeDeny formats "server:auth.authorize.deny". Button on the authorization (consent) page that refuses the application.
-//
-//	en: Deny
-func (l *Localizer) ServerAuthAuthorizeDeny() string {
-	return l.format("server:auth.authorize.deny", nil)
-}
-
 // ServerAuthAuthorizeGroup formats "server:auth.authorize.group". Heading on the consent page over the requested permissions of one weight: {risk} is caution (permissions that read direct messages, act as the user, or administer the server), write (permissions that change something), or read (permissions that only read).
 //
 //	en: {risk, select, caution {Permissions that need your attention} write {Permissions that change things} other {Permissions that only read}}
@@ -58,13 +44,6 @@ func (l *Localizer) ServerAuthAuthorizeImpersonation(target string) string {
 //	en: This application's authorization request is invalid. Contact the application's developer.
 func (l *Localizer) ServerAuthAuthorizeInvalid() string {
 	return l.format("server:auth.authorize.invalid", nil)
-}
-
-// ServerAuthAuthorizeLead formats "server:auth.authorize.lead". Introduces the list of permissions on the authorization (consent) page. {app} is the application's name.
-//
-//	en: {app} wants to use your account with these permissions:
-func (l *Localizer) ServerAuthAuthorizeLead(app string) string {
-	return l.format("server:auth.authorize.lead", map[string]any{"app": app})
 }
 
 // ServerAuthAuthorizeOriginDynamic formats "server:auth.authorize.origin.dynamic". Where the application comes from, on the consent page, for an application that registered itself by dynamic client registration.
@@ -100,13 +79,6 @@ func (l *Localizer) ServerAuthAuthorizeOriginUserUnknown() string {
 //	en: Too many authorization requests were made for this application. Wait a little and try again.
 func (l *Localizer) ServerAuthAuthorizeRateLimited() string {
 	return l.format("server:auth.authorize.rate_limited", nil)
-}
-
-// ServerAuthAuthorizeRedirectNotice formats "server:auth.authorize.redirect_notice". Note under the permissions on the authorization (consent) page. {host} is the host name the application receives the answer at.
-//
-//	en: After you choose, you will be sent back to {host}.
-func (l *Localizer) ServerAuthAuthorizeRedirectNotice(host string) string {
-	return l.format("server:auth.authorize.redirect_notice", map[string]any{"host": host})
 }
 
 // ServerAuthAuthorizeScopeAdmin formats "server:auth.authorize.scope.admin". Permission (OAuth scope admin) listed on the authorization page.
@@ -375,13 +347,6 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteVoice() string {
 	return l.format("server:auth.authorize.scope.write_voice", nil)
 }
 
-// ServerAuthAuthorizeTitle formats "server:auth.authorize.title". Title and heading of the authorization (consent) page. {app} is the name of the application asking for access.
-//
-//	en: Authorize {app}
-func (l *Localizer) ServerAuthAuthorizeTitle(app string) string {
-	return l.format("server:auth.authorize.title", map[string]any{"app": app})
-}
-
 // ServerAuthAuthorizeUnverified formats "server:auth.authorize.unverified". Note on the authorization (consent) page of a third-party application: this server has not checked it; the name and logo are the application's own claim.
 //
 //	en: This server has not verified this application. Its name is the application's own claim.
@@ -403,29 +368,6 @@ func (l *Localizer) ServerAuthCrossOrigin() string {
 	return l.format("server:auth.cross_origin", nil)
 }
 
-// ServerAuthDocumentTitleArgs holds the arguments of ServerAuthDocumentTitle, passed by name.
-//
-//exhaustruct:enforce
-type ServerAuthDocumentTitleArgs struct {
-	_        struct{} // forces keyed fields
-	Instance string
-	Page     string
-}
-
-// ServerAuthDocumentTitle formats "server:auth.document_title". The browser tab title of the sign-in, sign-up, email verification, account status and consent pages: the page's title, then the server's name. {instance} is the server's display name, or its domain name when it has none.
-//
-//	en: {page} | {instance}
-func (l *Localizer) ServerAuthDocumentTitle(args ServerAuthDocumentTitleArgs) string {
-	return l.format("server:auth.document_title", map[string]any{"instance": args.Instance, "page": args.Page})
-}
-
-// ServerAuthDocumentFooterLabel formats "server:auth.document.footer_label". Accessible name of the navigation in the footer of the server-rendered pages that links to the terms of service and the privacy policy.
-//
-//	en: Terms and policies
-func (l *Localizer) ServerAuthDocumentFooterLabel() string {
-	return l.format("server:auth.document.footer_label", nil)
-}
-
 // ServerAuthDocumentPrivacyTitle formats "server:auth.document.privacy_title". Title and heading of the public page of the instance's privacy policy, and the text of links to it.
 //
 //	en: Privacy policy
@@ -438,13 +380,6 @@ func (l *Localizer) ServerAuthDocumentPrivacyTitle() string {
 //	en: Terms of service
 func (l *Localizer) ServerAuthDocumentTermsTitle() string {
 	return l.format("server:auth.document.terms_title", nil)
-}
-
-// ServerAuthErrorTitle formats "server:auth.error.title". Title and heading of the sign-in screens' error pages.
-//
-//	en: Something went wrong
-func (l *Localizer) ServerAuthErrorTitle() string {
-	return l.format("server:auth.error.title", nil)
 }
 
 // ServerAuthExternalDenied formats "server:auth.external.denied". Alert on the sign-in page when the account at the external login provider does not meet the conditions that the administrators set (such as an organization).
@@ -482,20 +417,6 @@ func (l *Localizer) ServerAuthExternalGithubButton() string {
 	return l.format("server:auth.external.github.button", nil)
 }
 
-// ServerAuthExternalHeading formats "server:auth.external.heading". Heading above the buttons of the sign-in and registration pages that sign in with another service (an external login provider) that the server's administrators set up.
-//
-//	en: Or sign in with
-func (l *Localizer) ServerAuthExternalHeading() string {
-	return l.format("server:auth.external.heading", nil)
-}
-
-// ServerAuthExternalHeadingOnly formats "server:auth.external.heading_only". Heading above the buttons of the sign-in and registration pages while only those services sign in: there is no form above them, so it has no "or".
-//
-//	en: Sign in with
-func (l *Localizer) ServerAuthExternalHeadingOnly() string {
-	return l.format("server:auth.external.heading_only", nil)
-}
-
 // ServerAuthExternalNotLinked formats "server:auth.external.not_linked". Alert on the sign-in page when no account is linked to the account at the external login provider and new accounts cannot be created with it.
 //
 //	en: No account on this server is linked to that account of the other service. Sign in another way.
@@ -510,25 +431,11 @@ func (l *Localizer) ServerAuthExternalOtherUser() string {
 	return l.format("server:auth.external.other_user", nil)
 }
 
-// ServerAuthExternalSignUpEmailHint formats "server:auth.external.sign_up.email_hint". Hint under the email address on the registration page of an account at an external login provider, when the provider did not confirm the address.
-//
-//	en: You receive email at this address. We send a link to confirm it.
-func (l *Localizer) ServerAuthExternalSignUpEmailHint() string {
-	return l.format("server:auth.external.sign_up.email_hint", nil)
-}
-
 // ServerAuthExternalSignUpEmailVerified formats "server:auth.external.sign_up.email_verified". Hint under the email address on the registration page of an account at an external login provider, when the provider confirmed the address. {provider} is the provider's name.
 //
 //	en: {provider} confirmed this address. If you change it, we send a link to confirm the new one.
 func (l *Localizer) ServerAuthExternalSignUpEmailVerified(provider string) string {
 	return l.format("server:auth.external.sign_up.email_verified", map[string]any{"provider": provider})
-}
-
-// ServerAuthExternalSignUpTitle formats "server:auth.external.sign_up.title". Title of the registration page for an account at an external login provider. {provider} is the provider's name as the administrators wrote it.
-//
-//	en: Create an account with {provider}
-func (l *Localizer) ServerAuthExternalSignUpTitle(provider string) string {
-	return l.format("server:auth.external.sign_up.title", map[string]any{"provider": provider})
 }
 
 // ServerAuthExternalUnavailable formats "server:auth.external.unavailable". Error page when the user opens the sign-in of an external login provider that does not exist or is turned off.
@@ -538,32 +445,11 @@ func (l *Localizer) ServerAuthExternalUnavailable() string {
 	return l.format("server:auth.external.unavailable", nil)
 }
 
-// ServerAuthForgotPasswordEmailLabel formats "server:auth.forgot_password.email_label". Label of the email address field of the form that asks for a password reset link.
-//
-//	en: Email address
-func (l *Localizer) ServerAuthForgotPasswordEmailLabel() string {
-	return l.format("server:auth.forgot_password.email_label", nil)
-}
-
 // ServerAuthForgotPasswordInvalidEmail formats "server:auth.forgot_password.invalid_email". Error of the form that asks for a password reset link when the email address field is empty or not an email address.
 //
 //	en: Enter an email address.
 func (l *Localizer) ServerAuthForgotPasswordInvalidEmail() string {
 	return l.format("server:auth.forgot_password.invalid_email", nil)
-}
-
-// ServerAuthForgotPasswordLoginProvidersOnly formats "server:auth.forgot_password.login_providers_only". Replaces the form that asks for a password reset link, and answers it, while the instance limits sign-in to login providers. It is the same for every address.
-//
-//	en: This server signs in only through the login providers, so passwords cannot be reset here. If your account has none linked, ask the administrators.
-func (l *Localizer) ServerAuthForgotPasswordLoginProvidersOnly() string {
-	return l.format("server:auth.forgot_password.login_providers_only", nil)
-}
-
-// ServerAuthForgotPasswordPrompt formats "server:auth.forgot_password.prompt". Text above the form that asks for a password reset link.
-//
-//	en: Enter the email address of your account. We send it a link to set a new password.
-func (l *Localizer) ServerAuthForgotPasswordPrompt() string {
-	return l.format("server:auth.forgot_password.prompt", nil)
 }
 
 // ServerAuthForgotPasswordRateLimited formats "server:auth.forgot_password.rate_limited". Error (HTTP 429) after too many requests for a password reset link from the same network. {minutes} is the wait, rounded up to whole minutes.
@@ -589,27 +475,6 @@ func (l *Localizer) ServerAuthForgotPasswordSent(args ServerAuthForgotPasswordSe
 	return l.format("server:auth.forgot_password.sent", map[string]any{"email": args.Email, "minutes": args.Minutes})
 }
 
-// ServerAuthForgotPasswordSubmit formats "server:auth.forgot_password.submit". Button that asks for a password reset link by email.
-//
-//	en: Send the link
-func (l *Localizer) ServerAuthForgotPasswordSubmit() string {
-	return l.format("server:auth.forgot_password.submit", nil)
-}
-
-// ServerAuthForgotPasswordTitle formats "server:auth.forgot_password.title". Title and heading of the page that asks for a password reset link.
-//
-//	en: Forgot your password
-func (l *Localizer) ServerAuthForgotPasswordTitle() string {
-	return l.format("server:auth.forgot_password.title", nil)
-}
-
-// ServerAuthForgotPasswordUnavailable formats "server:auth.forgot_password.unavailable". Text of the page that asks for a password reset link on a server that sends no email; an administrator can issue the link.
-//
-//	en: This server does not send email, so it cannot send you a link. Ask the server's administrators for a link that sets a new password.
-func (l *Localizer) ServerAuthForgotPasswordUnavailable() string {
-	return l.format("server:auth.forgot_password.unavailable", nil)
-}
-
 // ServerAuthFormExpired formats "server:auth.form_expired". Error on the sign-in screens (HTTP 403) when the form's anti-forgery token is missing or does not match, e.g. after cookies were cleared.
 //
 //	en: This form has expired. Please try again.
@@ -622,13 +487,6 @@ func (l *Localizer) ServerAuthFormExpired() string {
 //	en: Complete the check that you are not a bot, then try again.
 func (l *Localizer) ServerAuthHumanCheckFailed() string {
 	return l.format("server:auth.human_check.failed", nil)
-}
-
-// ServerAuthHumanCheckNoscript formats "server:auth.human_check.noscript". Shown on the sign-in and registration forms when the browser runs no JavaScript, which the CAPTCHA widget needs.
-//
-//	en: This page checks that you are not a bot, which needs JavaScript. Turn on JavaScript to continue.
-func (l *Localizer) ServerAuthHumanCheckNoscript() string {
-	return l.format("server:auth.human_check.noscript", nil)
 }
 
 // ServerAuthHumanCheckNotice formats "server:auth.human_check.notice". Notice next to the CAPTCHA widget on the sign-in and registration forms, followed by links to the service's privacy policy. {service} is the service's name, such as Cloudflare Turnstile or hCaptcha.
@@ -666,25 +524,11 @@ func (l *Localizer) ServerAuthHumanCheckUnavailable() string {
 	return l.format("server:auth.human_check.unavailable", nil)
 }
 
-// ServerAuthLinkNewTab formats "server:auth.link.new_tab". Text that only assistive technology reads, after the name of a link on the sign-in and registration pages that opens in a new browser tab (the CAPTCHA service's privacy policy and terms, the server's terms on the registration form). Keep the brackets so that it reads apart from the link's name.
-//
-//	en: (opens in a new tab)
-func (l *Localizer) ServerAuthLinkNewTab() string {
-	return l.format("server:auth.link.new_tab", nil)
-}
-
 // ServerAuthMailUnsubscribeDone formats "server:auth.mail_unsubscribe.done". Body of the page after an unsubscribe link stopped the emails of a kind of notification. {group} is the name of the kind, as the notification settings name it (such as Mentions).
 //
 //	en: You no longer get emails of “{group}” notifications. You can turn them back on in your notification settings.
 func (l *Localizer) ServerAuthMailUnsubscribeDone(group string) string {
 	return l.format("server:auth.mail_unsubscribe.done", map[string]any{"group": group})
-}
-
-// ServerAuthMailUnsubscribeDoneTitle formats "server:auth.mail_unsubscribe.done_title". Title and heading of the page after an unsubscribe link stopped its emails.
-//
-//	en: Emails stopped
-func (l *Localizer) ServerAuthMailUnsubscribeDoneTitle() string {
-	return l.format("server:auth.mail_unsubscribe.done_title", nil)
 }
 
 // ServerAuthMailUnsubscribeInvalid formats "server:auth.mail_unsubscribe.invalid". Error when an unsubscribe link is unknown or expired. Must not say which.
@@ -701,34 +545,6 @@ func (l *Localizer) ServerAuthMailUnsubscribePrompt(group string) string {
 	return l.format("server:auth.mail_unsubscribe.prompt", map[string]any{"group": group})
 }
 
-// ServerAuthMailUnsubscribeSubmit formats "server:auth.mail_unsubscribe.submit". Button that stops the emails of an unsubscribe link.
-//
-//	en: Stop these emails
-func (l *Localizer) ServerAuthMailUnsubscribeSubmit() string {
-	return l.format("server:auth.mail_unsubscribe.submit", nil)
-}
-
-// ServerAuthMailUnsubscribeTitle formats "server:auth.mail_unsubscribe.title". Title and heading of the page that the unsubscribe link of a notification email opens.
-//
-//	en: Stop emails
-func (l *Localizer) ServerAuthMailUnsubscribeTitle() string {
-	return l.format("server:auth.mail_unsubscribe.title", nil)
-}
-
-// ServerAuthResetPasswordDone formats "server:auth.reset_password.done". Body of the page after a new password was set from a reset link.
-//
-//	en: Your password is changed, and every session that used the old one is signed out. Sign in with the new password.
-func (l *Localizer) ServerAuthResetPasswordDone() string {
-	return l.format("server:auth.reset_password.done", nil)
-}
-
-// ServerAuthResetPasswordDoneTitle formats "server:auth.reset_password.done_title". Title and heading of the page after a new password was set from a reset link.
-//
-//	en: Password changed
-func (l *Localizer) ServerAuthResetPasswordDoneTitle() string {
-	return l.format("server:auth.reset_password.done_title", nil)
-}
-
 // ServerAuthResetPasswordInvalid formats "server:auth.reset_password.invalid". Error when a password reset link is unknown, expired, used, or older than the current password. Must not say which.
 //
 //	en: This link is not valid. It may have expired, been used already, or been replaced by a newer password. Ask for a new link.
@@ -743,53 +559,11 @@ func (l *Localizer) ServerAuthResetPasswordLoginProvidersOnly() string {
 	return l.format("server:auth.reset_password.login_providers_only", nil)
 }
 
-// ServerAuthResetPasswordPasswordLabel formats "server:auth.reset_password.password_label". Label of the new password field of the page that a password reset link opens.
-//
-//	en: New password
-func (l *Localizer) ServerAuthResetPasswordPasswordLabel() string {
-	return l.format("server:auth.reset_password.password_label", nil)
-}
-
-// ServerAuthResetPasswordPrompt formats "server:auth.reset_password.prompt". Text above the form that sets a new password from a reset link.
-//
-//	en: Choose a new password. Setting it signs you out everywhere. Your passkeys and two-factor authentication stay as they are.
-func (l *Localizer) ServerAuthResetPasswordPrompt() string {
-	return l.format("server:auth.reset_password.prompt", nil)
-}
-
-// ServerAuthResetPasswordSubmit formats "server:auth.reset_password.submit". Button that sets the new password from a reset link.
-//
-//	en: Set the password
-func (l *Localizer) ServerAuthResetPasswordSubmit() string {
-	return l.format("server:auth.reset_password.submit", nil)
-}
-
-// ServerAuthResetPasswordTitle formats "server:auth.reset_password.title". Title and heading of the page that a password reset link opens.
-//
-//	en: Set a new password
-func (l *Localizer) ServerAuthResetPasswordTitle() string {
-	return l.format("server:auth.reset_password.title", nil)
-}
-
-// ServerAuthSignInEmailLabel formats "server:auth.sign_in.email_label". Label of the email address field on the sign-in form.
-//
-//	en: Email address
-func (l *Localizer) ServerAuthSignInEmailLabel() string {
-	return l.format("server:auth.sign_in.email_label", nil)
-}
-
 // ServerAuthSignInFailed formats "server:auth.sign_in.failed". Error after a failed sign-in. Must not say which of the two was wrong, so that it does not reveal whether an account exists.
 //
 //	en: The email address or password is incorrect.
 func (l *Localizer) ServerAuthSignInFailed() string {
 	return l.format("server:auth.sign_in.failed", nil)
-}
-
-// ServerAuthSignInForgotPasswordLink formats "server:auth.sign_in.forgot_password_link". Link from the sign-in form to the page that asks for a password reset link.
-//
-//	en: Forgot your password?
-func (l *Localizer) ServerAuthSignInForgotPasswordLink() string {
-	return l.format("server:auth.sign_in.forgot_password_link", nil)
 }
 
 // ServerAuthSignInLoginProvidersOnly formats "server:auth.sign_in.login_providers_only". Note on the sign-in page, and the refusal of a sign-in with a password or a passkey, while the instance limits sign-in to login providers. It is the same for every account.
@@ -804,13 +578,6 @@ func (l *Localizer) ServerAuthSignInLoginProvidersOnly() string {
 //	en: Enter your email address and password.
 func (l *Localizer) ServerAuthSignInMissing() string {
 	return l.format("server:auth.sign_in.missing", nil)
-}
-
-// ServerAuthSignInPasskey formats "server:auth.sign_in.passkey". Button on the sign-in page that signs in with a passkey (WebAuthn) instead of the email address and password. Shown only in browsers that support passkeys.
-//
-//	en: Sign in with a passkey
-func (l *Localizer) ServerAuthSignInPasskey() string {
-	return l.format("server:auth.sign_in.passkey", nil)
 }
 
 // ServerAuthSignInPasskeyCancelled formats "server:auth.sign_in.passkey_cancelled". Alert on the sign-in page when the browser's passkey prompt was dismissed or failed before anything was sent to the server.
@@ -834,60 +601,11 @@ func (l *Localizer) ServerAuthSignInPasskeyFailed() string {
 	return l.format("server:auth.sign_in.passkey_failed", nil)
 }
 
-// ServerAuthSignInPasswordLabel formats "server:auth.sign_in.password_label". Label of the password field on the sign-in form.
-//
-//	en: Password
-func (l *Localizer) ServerAuthSignInPasswordLabel() string {
-	return l.format("server:auth.sign_in.password_label", nil)
-}
-
 // ServerAuthSignInRateLimited formats "server:auth.sign_in.rate_limited". Error (HTTP 429) after too many failed sign-ins from the same network or for the same email address. {minutes} is the wait, rounded up to whole minutes.
 //
 //	en: {minutes, plural, one {Too many failed sign-in attempts. Try again in # minute.} other {Too many failed sign-in attempts. Try again in # minutes.}}
 func (l *Localizer) ServerAuthSignInRateLimited(minutes int) string {
 	return l.format("server:auth.sign_in.rate_limited", map[string]any{"minutes": minutes})
-}
-
-// ServerAuthSignInSignUpLink formats "server:auth.sign_in.sign_up_link". Link from the sign-in page to the registration page; hidden while registration is closed.
-//
-//	en: Create an account
-func (l *Localizer) ServerAuthSignInSignUpLink() string {
-	return l.format("server:auth.sign_in.sign_up_link", nil)
-}
-
-// ServerAuthSignInSubmit formats "server:auth.sign_in.submit". Button that submits the sign-in form.
-//
-//	en: Sign in
-func (l *Localizer) ServerAuthSignInSubmit() string {
-	return l.format("server:auth.sign_in.submit", nil)
-}
-
-// ServerAuthSignInTitle formats "server:auth.sign_in.title". Title and heading of the sign-in page.
-//
-//	en: Sign in
-func (l *Localizer) ServerAuthSignInTitle() string {
-	return l.format("server:auth.sign_in.title", nil)
-}
-
-// ServerAuthSignOutSubmit formats "server:auth.sign_out.submit". Button that ends the current browser session.
-//
-//	en: Sign out
-func (l *Localizer) ServerAuthSignOutSubmit() string {
-	return l.format("server:auth.sign_out.submit", nil)
-}
-
-// ServerAuthSignUpAgreement formats "server:auth.sign_up.agreement". Notice above the links to the instance's terms of service and privacy policy (only those it has published) on the registration form, followed by the checkbox that agrees to them.
-//
-//	en: Read these documents of this server before you create an account.
-func (l *Localizer) ServerAuthSignUpAgreement() string {
-	return l.format("server:auth.sign_up.agreement", nil)
-}
-
-// ServerAuthSignUpAgreementLabel formats "server:auth.sign_up.agreement.label". Label of the required checkbox under the links to the instance's terms of service and privacy policy on the registration form.
-//
-//	en: I have read and agree to the documents above
-func (l *Localizer) ServerAuthSignUpAgreementLabel() string {
-	return l.format("server:auth.sign_up.agreement.label", nil)
 }
 
 // ServerAuthSignUpAgreementRequired formats "server:auth.sign_up.agreement.required". Error under the agreement checkbox of the registration form when the form was sent without it.
@@ -897,32 +615,11 @@ func (l *Localizer) ServerAuthSignUpAgreementRequired() string {
 	return l.format("server:auth.sign_up.agreement.required", nil)
 }
 
-// ServerAuthSignUpClosed formats "server:auth.sign_up.closed". Body of the registration page while the server accepts no new accounts.
-//
-//	en: This server is not accepting new accounts.
-func (l *Localizer) ServerAuthSignUpClosed() string {
-	return l.format("server:auth.sign_up.closed", nil)
-}
-
-// ServerAuthSignUpEmailHint formats "server:auth.sign_up.email_hint". Hint under the email address field of the registration form.
-//
-//	en: You sign in with this address.
-func (l *Localizer) ServerAuthSignUpEmailHint() string {
-	return l.format("server:auth.sign_up.email_hint", nil)
-}
-
 // ServerAuthSignUpEmailInvalid formats "server:auth.sign_up.email_invalid". Error under the email address field when it is not a plain address.
 //
 //	en: Enter an email address such as alice@example.com.
 func (l *Localizer) ServerAuthSignUpEmailInvalid() string {
 	return l.format("server:auth.sign_up.email_invalid", nil)
-}
-
-// ServerAuthSignUpEmailLabel formats "server:auth.sign_up.email_label". Label of the email address field on the registration form.
-//
-//	en: Email address
-func (l *Localizer) ServerAuthSignUpEmailLabel() string {
-	return l.format("server:auth.sign_up.email_label", nil)
 }
 
 // ServerAuthSignUpEmailTaken formats "server:auth.sign_up.email_taken". Error under the email address field when another account uses the address.
@@ -965,13 +662,6 @@ func (l *Localizer) ServerAuthSignUpInviteHintOptional() string {
 //	en: This invite code is not valid. It may have expired or been used up.
 func (l *Localizer) ServerAuthSignUpInviteInvalid() string {
 	return l.format("server:auth.sign_up.invite_invalid", nil)
-}
-
-// ServerAuthSignUpInviteLabel formats "server:auth.sign_up.invite_label". Label of the invite code field of the registration form, required while the server accepts sign-ups by invitation only and optional otherwise.
-//
-//	en: Invite code
-func (l *Localizer) ServerAuthSignUpInviteLabel() string {
-	return l.format("server:auth.sign_up.invite_label", nil)
 }
 
 // ServerAuthSignUpInviteRequired formats "server:auth.sign_up.invite_required". Error under the invite code field when it is empty.
@@ -1020,13 +710,6 @@ func (l *Localizer) ServerAuthSignUpPasswordInvalid(args ServerAuthSignUpPasswor
 	return l.format("server:auth.sign_up.password_invalid", map[string]any{"max": args.Max, "min": args.Min})
 }
 
-// ServerAuthSignUpPasswordLabel formats "server:auth.sign_up.password_label". Label of the password field on the registration form.
-//
-//	en: Password
-func (l *Localizer) ServerAuthSignUpPasswordLabel() string {
-	return l.format("server:auth.sign_up.password_label", nil)
-}
-
 // ServerAuthSignUpRateLimited formats "server:auth.sign_up.rate_limited". Error (HTTP 429) after too many sign-ups from the same network. {minutes} is the wait, rounded up to whole minutes.
 //
 //	en: {minutes, plural, one {Too many sign-up attempts from your network. Try again in # minute.} other {Too many sign-up attempts from your network. Try again in # minutes.}}
@@ -1048,32 +731,11 @@ func (l *Localizer) ServerAuthSignUpReasonInvalid(max float64) string {
 	return l.format("server:auth.sign_up.reason_invalid", map[string]any{"max": max})
 }
 
-// ServerAuthSignUpReasonLabel formats "server:auth.sign_up.reason_label". Label of the free-text field asking why the applicant wants to join, shown when sign-ups need a moderator's approval.
-//
-//	en: Why do you want to join? (optional)
-func (l *Localizer) ServerAuthSignUpReasonLabel() string {
-	return l.format("server:auth.sign_up.reason_label", nil)
-}
-
 // ServerAuthSignUpRefused formats "server:auth.sign_up.refused". Error (HTTP 403) when the sign-up block list or the external review refuses the sign-up. It deliberately does not say why.
 //
 //	en: This server cannot accept this sign-up.
 func (l *Localizer) ServerAuthSignUpRefused() string {
 	return l.format("server:auth.sign_up.refused", nil)
-}
-
-// ServerAuthSignUpSubmit formats "server:auth.sign_up.submit". Button that submits the registration form.
-//
-//	en: Create an account
-func (l *Localizer) ServerAuthSignUpSubmit() string {
-	return l.format("server:auth.sign_up.submit", nil)
-}
-
-// ServerAuthSignUpTitle formats "server:auth.sign_up.title". Title and heading of the registration page.
-//
-//	en: Create an account
-func (l *Localizer) ServerAuthSignUpTitle() string {
-	return l.format("server:auth.sign_up.title", nil)
 }
 
 // ServerAuthSignUpUsernameHint formats "server:auth.sign_up.username_hint". Hint under the username field. {max} is the longest allowed username in characters.
@@ -1090,46 +752,11 @@ func (l *Localizer) ServerAuthSignUpUsernameInvalid(max float64) string {
 	return l.format("server:auth.sign_up.username_invalid", map[string]any{"max": max})
 }
 
-// ServerAuthSignUpUsernameLabel formats "server:auth.sign_up.username_label". Label of the username field on the registration form.
-//
-//	en: Username
-func (l *Localizer) ServerAuthSignUpUsernameLabel() string {
-	return l.format("server:auth.sign_up.username_label", nil)
-}
-
 // ServerAuthSignUpUsernameTaken formats "server:auth.sign_up.username_taken". Error under the username field when another account has the username.
 //
 //	en: This username is already taken.
 func (l *Localizer) ServerAuthSignUpUsernameTaken() string {
 	return l.format("server:auth.sign_up.username_taken", nil)
-}
-
-// ServerAuthSignedInContinue formats "server:auth.signed_in.continue". Link on the signed-in page back to where the user was going.
-//
-//	en: Continue
-func (l *Localizer) ServerAuthSignedInContinue() string {
-	return l.format("server:auth.signed_in.continue", nil)
-}
-
-// ServerAuthSignedInTitle formats "server:auth.signed_in.title". Title and heading of the page shown when a signed-in user opens the sign-in page.
-//
-//	en: You are signed in
-func (l *Localizer) ServerAuthSignedInTitle() string {
-	return l.format("server:auth.signed_in.title", nil)
-}
-
-// ServerAuthStatusPageLink formats "server:auth.status_page.link". Text of the link to the instance's status page (ADR-0088) in the footer of the server-rendered pages, shown only when the operator set status_page_url.
-//
-//	en: Service status
-func (l *Localizer) ServerAuthStatusPageLink() string {
-	return l.format("server:auth.status_page.link", nil)
-}
-
-// ServerAuthStatusActionActive formats "server:auth.status.action_active". Badge next to a moderation action on the user's account that is in effect, on the status page of a signed-in user whose account is restricted. The account status page of the app says the same.
-//
-//	en: In effect
-func (l *Localizer) ServerAuthStatusActionActive() string {
-	return l.format("server:auth.status.action_active", nil)
 }
 
 // ServerAuthStatusActionDeletesIn formats "server:auth.status.action_deletes_in". When a ban deletes the user's account, in place of its end, on the page of a signed-in user whose account is restricted. {days} is the time left, rounded up to whole days.
@@ -1160,13 +787,6 @@ func (l *Localizer) ServerAuthStatusActionUntilLifted() string {
 	return l.format("server:auth.status.action_until_lifted", nil)
 }
 
-// ServerAuthStatusAppealAnswer formats "server:auth.status.appeal_answer". Label before the moderators' explanation of their decision on the user's appeal, on the status page of a signed-in user whose account is restricted.
-//
-//	en: The moderators' answer
-func (l *Localizer) ServerAuthStatusAppealAnswer() string {
-	return l.format("server:auth.status.appeal_answer", nil)
-}
-
 // ServerAuthStatusAppealHintArgs holds the arguments of ServerAuthStatusAppealHint, passed by name.
 //
 //exhaustruct:enforce
@@ -1181,13 +801,6 @@ type ServerAuthStatusAppealHintArgs struct {
 //	en: {days, plural, one {You can appeal once, within # day. Up to {max, number} characters.} other {You can appeal once, within # days. Up to {max, number} characters.}}
 func (l *Localizer) ServerAuthStatusAppealHint(args ServerAuthStatusAppealHintArgs) string {
 	return l.format("server:auth.status.appeal_hint", map[string]any{"days": args.Days, "max": args.Max})
-}
-
-// ServerAuthStatusAppealLabel formats "server:auth.status.appeal_label". Label of the field in which a user whose account is restricted writes their appeal of a moderation action (why a moderator should reconsider it).
-//
-//	en: Appeal this action
-func (l *Localizer) ServerAuthStatusAppealLabel() string {
-	return l.format("server:auth.status.appeal_label", nil)
 }
 
 // ServerAuthStatusAppealNotSent formats "server:auth.status.appeal_not_sent". Alert on the status page when the appeal form was sent with an empty or too long appeal; the field's own error follows below.
@@ -1218,53 +831,11 @@ func (l *Localizer) ServerAuthStatusAppealStateLabel(state string) string {
 	return l.format("server:auth.status.appeal_state_label", map[string]any{"state": state})
 }
 
-// ServerAuthStatusAppealSubmit formats "server:auth.status.appeal_submit". Button that sends the user's appeal of a moderation action on their account. The account status page of the app says the same.
-//
-//	en: Send appeal
-func (l *Localizer) ServerAuthStatusAppealSubmit() string {
-	return l.format("server:auth.status.appeal_submit", nil)
-}
-
 // ServerAuthStatusAppealTextInvalid formats "server:auth.status.appeal_text_invalid". Error under the appeal field when it is empty or too long. {max} is the longest allowed appeal in characters.
 //
 //	en: Write your appeal in up to {max, number} characters.
 func (l *Localizer) ServerAuthStatusAppealTextInvalid(max float64) string {
 	return l.format("server:auth.status.appeal_text_invalid", map[string]any{"max": max})
-}
-
-// ServerAuthStatusDeactivated formats "server:auth.status.deactivated". Explains to a signed-in user that they deactivated their account and what that means.
-//
-//	en: You deactivated this account, so it is hidden from everyone and nothing reaches it.
-func (l *Localizer) ServerAuthStatusDeactivated() string {
-	return l.format("server:auth.status.deactivated", nil)
-}
-
-// ServerAuthStatusDeactivatedDelete formats "server:auth.status.deactivated_delete". Label of the button that deletes a deactivated account.
-//
-//	en: Delete account
-func (l *Localizer) ServerAuthStatusDeactivatedDelete() string {
-	return l.format("server:auth.status.deactivated_delete", nil)
-}
-
-// ServerAuthStatusDeactivatedDeleteHeading formats "server:auth.status.deactivated_delete_heading". Heading of the form that deletes a deactivated account at once.
-//
-//	en: Delete it now
-func (l *Localizer) ServerAuthStatusDeactivatedDeleteHeading() string {
-	return l.format("server:auth.status.deactivated_delete_heading", nil)
-}
-
-// ServerAuthStatusDeactivatedDeleteHint formats "server:auth.status.deactivated_delete_hint". Hint of the form that deletes a deactivated account.
-//
-//	en: This cannot be undone. Your posts and account disappear, and your username is never used again.
-func (l *Localizer) ServerAuthStatusDeactivatedDeleteHint() string {
-	return l.format("server:auth.status.deactivated_delete_hint", nil)
-}
-
-// ServerAuthStatusDeactivatedDeletion formats "server:auth.status.deactivated_deletion". States when the deactivated account is deleted. {date} is the date and time with its time zone, such as 2026-12-03 09:00 (UTC).
-//
-//	en: It will be deleted on {date} unless you reactivate it.
-func (l *Localizer) ServerAuthStatusDeactivatedDeletion(date string) string {
-	return l.format("server:auth.status.deactivated_deletion", map[string]any{"date": date})
 }
 
 // ServerAuthStatusDeactivatedExpired formats "server:auth.status.deactivated_expired". Alert when a user tries to reactivate an account after the date of its deletion.
@@ -1274,27 +845,6 @@ func (l *Localizer) ServerAuthStatusDeactivatedExpired() string {
 	return l.format("server:auth.status.deactivated_expired", nil)
 }
 
-// ServerAuthStatusDeactivatedPasswordLabel formats "server:auth.status.deactivated_password_label". Label of the field that confirms the deletion of a deactivated account.
-//
-//	en: Current password
-func (l *Localizer) ServerAuthStatusDeactivatedPasswordLabel() string {
-	return l.format("server:auth.status.deactivated_password_label", nil)
-}
-
-// ServerAuthStatusDeactivatedReactivate formats "server:auth.status.deactivated_reactivate". Label of the button that brings back a deactivated account.
-//
-//	en: Reactivate your account
-func (l *Localizer) ServerAuthStatusDeactivatedReactivate() string {
-	return l.format("server:auth.status.deactivated_reactivate", nil)
-}
-
-// ServerAuthStatusDeactivatedReactivateHint formats "server:auth.status.deactivated_reactivate_hint". Hint under the button that brings back a deactivated account.
-//
-//	en: Your posts, follows, and followers are as you left them. What was sent to you in the meantime does not arrive, and apps must be authorized again.
-func (l *Localizer) ServerAuthStatusDeactivatedReactivateHint() string {
-	return l.format("server:auth.status.deactivated_reactivate_hint", nil)
-}
-
 // ServerAuthStatusDeactivatedSignInAgain formats "server:auth.status.deactivated_sign_in_again". Alert when a user without a password deletes a deactivated account in a session that started too long ago.
 //
 //	en: To confirm the deletion, sign out and sign in again, then delete the account.
@@ -1302,46 +852,11 @@ func (l *Localizer) ServerAuthStatusDeactivatedSignInAgain() string {
 	return l.format("server:auth.status.deactivated_sign_in_again", nil)
 }
 
-// ServerAuthStatusDeactivatedTitle formats "server:auth.status.deactivated_title". Title of the page that a user who deactivated their account sees after signing in.
-//
-//	en: Your account is deactivated
-func (l *Localizer) ServerAuthStatusDeactivatedTitle() string {
-	return l.format("server:auth.status.deactivated_title", nil)
-}
-
 // ServerAuthStatusDeactivatedWrongPassword formats "server:auth.status.deactivated_wrong_password". Alert when the password that confirms the deletion of a deactivated account is wrong.
 //
 //	en: The password is not correct.
 func (l *Localizer) ServerAuthStatusDeactivatedWrongPassword() string {
 	return l.format("server:auth.status.deactivated_wrong_password", nil)
-}
-
-// ServerAuthStatusDeleted formats "server:auth.status.deleted". Message of the page after a user deleted their deactivated account.
-//
-//	en: Your account and your posts are gone, and other servers have been told.
-func (l *Localizer) ServerAuthStatusDeleted() string {
-	return l.format("server:auth.status.deleted", nil)
-}
-
-// ServerAuthStatusDeletedTitle formats "server:auth.status.deleted_title". Title of the page after a user deleted their deactivated account.
-//
-//	en: Your account is deleted
-func (l *Localizer) ServerAuthStatusDeletedTitle() string {
-	return l.format("server:auth.status.deleted_title", nil)
-}
-
-// ServerAuthStatusPending formats "server:auth.status.pending". Explains that a moderator has not yet approved the registration and that the app cannot be used until then.
-//
-//	en: Your registration is waiting for a moderator's approval. You can sign in, but you can use the app only after it is approved.
-func (l *Localizer) ServerAuthStatusPending() string {
-	return l.format("server:auth.status.pending", nil)
-}
-
-// ServerAuthStatusRejected formats "server:auth.status.rejected". Tells a signed-in user that a moderator rejected their registration.
-//
-//	en: Your registration was not approved, so this account cannot be used.
-func (l *Localizer) ServerAuthStatusRejected() string {
-	return l.format("server:auth.status.rejected", nil)
 }
 
 // ServerAuthStatusResendFailed formats "server:auth.status.resend_failed". Error when the confirmation email could not be sent (for example, the mail server is down).
@@ -1358,13 +873,6 @@ func (l *Localizer) ServerAuthStatusResendRateLimited(minutes int) string {
 	return l.format("server:auth.status.resend_rate_limited", map[string]any{"minutes": minutes})
 }
 
-// ServerAuthStatusResendSubmit formats "server:auth.status.resend_submit". Button that sends the email confirmation link again.
-//
-//	en: Send the link again
-func (l *Localizer) ServerAuthStatusResendSubmit() string {
-	return l.format("server:auth.status.resend_submit", nil)
-}
-
 // ServerAuthStatusResent formats "server:auth.status.resent". Notice after the confirmation link was sent again. {email} is the user's email address.
 //
 //	en: We sent a new link to {email}.
@@ -1372,39 +880,11 @@ func (l *Localizer) ServerAuthStatusResent(email string) string {
 	return l.format("server:auth.status.resent", map[string]any{"email": email})
 }
 
-// ServerAuthStatusRestricted formats "server:auth.status.restricted". Explains to a signed-in user that moderation actions (login disabled, suspension) keep them out of the app; the list of the actions follows.
-//
-//	en: A moderator has taken action on your account, so you cannot use the app. These actions are in effect:
-func (l *Localizer) ServerAuthStatusRestricted() string {
-	return l.format("server:auth.status.restricted", nil)
-}
-
-// ServerAuthStatusRestrictedTitle formats "server:auth.status.restricted_title". Title and heading of the page a signed-in user sees while a moderation action keeps their account out of the app.
-//
-//	en: Your account is restricted
-func (l *Localizer) ServerAuthStatusRestrictedTitle() string {
-	return l.format("server:auth.status.restricted_title", nil)
-}
-
-// ServerAuthStatusTitle formats "server:auth.status.title". Title and heading of the page a signed-in user sees while their account cannot be used yet (waiting for approval or email confirmation, or rejected).
-//
-//	en: Your account is not ready yet
-func (l *Localizer) ServerAuthStatusTitle() string {
-	return l.format("server:auth.status.title", nil)
-}
-
 // ServerAuthStatusVerifyEmail formats "server:auth.status.verify_email". Asks the user to open the confirmation link. {email} is their email address.
 //
 //	en: Confirm your email address: open the link we sent to {email}.
 func (l *Localizer) ServerAuthStatusVerifyEmail(email string) string {
 	return l.format("server:auth.status.verify_email", map[string]any{"email": email})
-}
-
-// ServerAuthTwoFactorCodeLabel formats "server:auth.two_factor.code_label". Label of the code field on the second step of signing in, which takes a six-digit code of an authenticator app or a recovery code.
-//
-//	en: Authentication code
-func (l *Localizer) ServerAuthTwoFactorCodeLabel() string {
-	return l.format("server:auth.two_factor.code_label", nil)
 }
 
 // ServerAuthTwoFactorExpired formats "server:auth.two_factor.expired". Error on the sign-in form when the second step (the authentication code) was not completed within five minutes or was already used.
@@ -1428,74 +908,11 @@ func (l *Localizer) ServerAuthTwoFactorMissing() string {
 	return l.format("server:auth.two_factor.missing", nil)
 }
 
-// ServerAuthTwoFactorPrompt formats "server:auth.two_factor.prompt". Text above the code field on the second step of signing in, for users who turned on two-factor authentication.
-//
-//	en: Enter the six-digit code that your authenticator app shows. If you cannot use the app, enter one of your recovery codes instead.
-func (l *Localizer) ServerAuthTwoFactorPrompt() string {
-	return l.format("server:auth.two_factor.prompt", nil)
-}
-
-// ServerAuthTwoFactorRestartLink formats "server:auth.two_factor.restart_link". Link from the second step of signing in back to the sign-in form, to start over.
-//
-//	en: Sign in again
-func (l *Localizer) ServerAuthTwoFactorRestartLink() string {
-	return l.format("server:auth.two_factor.restart_link", nil)
-}
-
-// ServerAuthTwoFactorSubmit formats "server:auth.two_factor.submit". Button that submits the authentication code on the second step of signing in.
-//
-//	en: Verify
-func (l *Localizer) ServerAuthTwoFactorSubmit() string {
-	return l.format("server:auth.two_factor.submit", nil)
-}
-
-// ServerAuthTwoFactorTitle formats "server:auth.two_factor.title". Title and heading of the second step of signing in, which asks for an authentication code.
-//
-//	en: Two-factor authentication
-func (l *Localizer) ServerAuthTwoFactorTitle() string {
-	return l.format("server:auth.two_factor.title", nil)
-}
-
-// ServerAuthVerifyEmailDone formats "server:auth.verify_email.done". Body of the page after the email address was confirmed.
-//
-//	en: Thank you. Your email address is confirmed.
-func (l *Localizer) ServerAuthVerifyEmailDone() string {
-	return l.format("server:auth.verify_email.done", nil)
-}
-
-// ServerAuthVerifyEmailDoneTitle formats "server:auth.verify_email.done_title". Title and heading of the page after the email address was confirmed.
-//
-//	en: Email address confirmed
-func (l *Localizer) ServerAuthVerifyEmailDoneTitle() string {
-	return l.format("server:auth.verify_email.done_title", nil)
-}
-
 // ServerAuthVerifyEmailInvalid formats "server:auth.verify_email.invalid". Error when a confirmation link is unknown, expired, or already used. Must not say which.
 //
 //	en: This link is not valid. It may have expired or been used already. Sign in to get a new one.
 func (l *Localizer) ServerAuthVerifyEmailInvalid() string {
 	return l.format("server:auth.verify_email.invalid", nil)
-}
-
-// ServerAuthVerifyEmailPrompt formats "server:auth.verify_email.prompt". Text above the button that confirms the email address.
-//
-//	en: Select the button below to confirm your email address.
-func (l *Localizer) ServerAuthVerifyEmailPrompt() string {
-	return l.format("server:auth.verify_email.prompt", nil)
-}
-
-// ServerAuthVerifyEmailSubmit formats "server:auth.verify_email.submit". Button that confirms the email address.
-//
-//	en: Confirm email address
-func (l *Localizer) ServerAuthVerifyEmailSubmit() string {
-	return l.format("server:auth.verify_email.submit", nil)
-}
-
-// ServerAuthVerifyEmailTitle formats "server:auth.verify_email.title". Title and heading of the page that a confirmation email links to.
-//
-//	en: Confirm your email address
-func (l *Localizer) ServerAuthVerifyEmailTitle() string {
-	return l.format("server:auth.verify_email.title", nil)
 }
 
 // ServerClosureClosedOn formats "server:closure.closed_on". Label of the server's closing date (closes_at, ADR-0088), shown in UTC next to it on the static closure page.

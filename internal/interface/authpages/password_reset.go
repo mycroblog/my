@@ -42,25 +42,26 @@ type PasswordReset interface {
 // forgotPasswordView is the page that asks for a reset link.
 type forgotPasswordView struct {
 	// Unavailable replaces the form with a note when the server sends no email.
-	Unavailable bool
+	Unavailable bool `json:"unavailable,omitempty"`
 	// LoginProvidersOnly replaces the form with a note while only the login providers sign in.
-	LoginProvidersOnly bool
+	LoginProvidersOnly bool `json:"loginProvidersOnly,omitempty"`
 	// Sent replaces the form with the notice after a request.
-	Sent bool
+	Sent bool `json:"sent,omitempty"`
 }
 
-// newPasswordView is the field of the new password on the page that a reset link opens.
+// newPasswordView is the field of the new password on the screen that a reset link opens.
 type newPasswordView struct {
-	Hint     string
-	Error    string
-	Min, Max int
+	Hint  string `json:"hint"`
+	Error string `json:"error,omitempty"`
+	Min   int    `json:"min"`
+	Max   int    `json:"max"`
 }
 
 func (h *Handler) passwordResetEnabled() bool { return h.o.PasswordReset != nil }
 
 // forgotPasswordPage shows the form that asks for a reset link.
 func (h *Handler) forgotPasswordPage(w http.ResponseWriter, r *http.Request) {
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthForgotPasswordTitle)
+	p := h.newPage(r, screenForgotPassword)
 	limited, ok := h.loginProvidersOnly(w, r)
 	if !ok {
 		return
@@ -78,7 +79,7 @@ func (h *Handler) renderForgotPassword(w http.ResponseWriter, r *http.Request, s
 		p.CSRFToken = h.csrfToken(w, r)
 		p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionPasswordReset)
 	}
-	h.render(w, r, status, pageForgotPassword, p)
+	h.render(w, r, status, p)
 }
 
 // forgotPassword handles the form that asks for a reset link.
@@ -88,7 +89,7 @@ func (h *Handler) forgotPassword(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusBadRequest, (*i18n.Localizer).ServerErrorsBadRequest)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthForgotPasswordTitle)
+	p := h.newPage(r, screenForgotPassword)
 	p.Email = strings.TrimSpace(r.PostForm.Get("email"))
 	if !h.validCSRF(r) {
 		p.Error = p.L.ServerAuthFormExpired()
@@ -156,7 +157,7 @@ func (h *Handler) resetPasswordPage(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthResetPasswordTitle)
+	p := h.newPage(r, screenResetPassword)
 	p.Token = token
 	h.renderResetPassword(w, r, http.StatusOK, p)
 }
@@ -168,7 +169,7 @@ func (h *Handler) renderResetPassword(w http.ResponseWriter, r *http.Request, st
 	}
 	p.NewPassword.Hint = p.L.ServerAuthSignUpPasswordHint(i18n.ServerAuthSignUpPasswordHintArgs{Max: identity.MaxPasswordLength, Min: identity.MinPasswordLength})
 	p.NewPassword.Min, p.NewPassword.Max = identity.MinPasswordLength, identity.MaxPasswordLength
-	h.render(w, r, status, pageResetPassword, p)
+	h.render(w, r, status, p)
 }
 
 // resetPassword sets the new password of a reset link.
@@ -182,7 +183,7 @@ func (h *Handler) resetPassword(w http.ResponseWriter, r *http.Request) {
 	if len(token) > maxTokenLength {
 		token = ""
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthResetPasswordTitle)
+	p := h.newPage(r, screenResetPassword)
 	p.Token = token
 	if !h.validCSRF(r) {
 		p.Error = p.L.ServerAuthFormExpired()
@@ -213,5 +214,5 @@ func (h *Handler) resetPassword(w http.ResponseWriter, r *http.Request) {
 			Name: CookieSession, Value: "", Path: "/", MaxAge: -1, Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
 		})
 	}
-	h.render(w, r, http.StatusOK, pagePasswordReset, h.newPage(r, (*i18n.Localizer).ServerAuthResetPasswordDoneTitle))
+	h.render(w, r, http.StatusOK, h.newPage(r, screenPasswordReset))
 }

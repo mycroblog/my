@@ -234,7 +234,8 @@ scripts/task.sh api:check     # api:spec-check (the root lists every file of api
 
 `my serve` serves the HTML shell embedded in the binary for `/` and the client's routes, with the link previews, the
 icons, and the Web App Manifest. The shell loads the client (`web/app`) when the binary embeds its build, and the
-server-rendered pages (sign-in and the others) render without the client's stylesheet.
+sign-in, registration and consent screens (`/auth/...`, `/oauth/authorize`) load its auth entry (`web/app/auth.html`)
+the same way; without a build they are blank.
 
 - `scripts/task.sh web:build` builds `web/app` with Vite into `internal/interface/web/dist`, which Go embeds with
   `//go:embed all:dist`, with the brand assets of `web/brand`. Only a placeholder `.gitkeep` is committed there, so the
@@ -243,7 +244,8 @@ server-rendered pages (sign-in and the others) render without the client's style
 - `scripts/task.sh web:dev` serves `web/app` on `http://localhost:5173` and passes `/api`, `/oauth` and `/auth` on to
   the server of `docker compose up` (`MY_SERVER` names another).
 - `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave unused adapters out of the binary.
-- `my serve -dev-vite-origin <origin>` loads the client's scripts from the web client's Vite dev server at that origin.
+- `my serve -dev-vite-origin <origin>` loads the client's scripts, and the auth screens', from the web client's Vite
+  dev server at that origin.
   The shell is then never cached (`no-store`), and the CSP is a development one that allows that origin's scripts and
   WebSocket and the `<style>` elements Vite injects.
 - The runtime configuration's `apiOrigin` is the origin of `MY_WEB_ORIGIN` when that is on `host` (such as

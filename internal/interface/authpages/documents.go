@@ -41,9 +41,10 @@ var documentPages = []struct {
 	{instance.TextPrivacyPolicy, PathPrivacyPolicy, (*i18n.Localizer).ServerAuthDocumentPrivacyTitle},
 }
 
-// documentLink is a link to a document page in the footer and on the registration page.
+// documentLink is a link to a document page in the footer and on the registration screen.
 type documentLink struct {
-	Path, Title string
+	Path  string `json:"path"`
+	Title string `json:"title"`
 }
 
 // documentLinks returns the links to the documents that the instance has published, titled in

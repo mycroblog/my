@@ -16,7 +16,6 @@ import (
 const (
 	refusedSignIn = "This server signs in only through the login providers."
 	refusedSignUp = "This server registers new users only through the login providers."
-	refusedReset  = "so passwords cannot be reset here"
 	refusedLink   = "so this link cannot set a password now"
 )
 
@@ -34,7 +33,7 @@ func newLimitedServer(t *testing.T, limited bool) (*fakeIdentity, *fakePasskeys,
 	r := &fakePasswordReset{byEmail: true}
 	m := mux{http.NewServeMux()}
 	authpages.New(authpages.Options{
-		Identity: id, Locales: &i18n.Resolver{Bundle: b}, Passkeys: p, PasskeyScript: passkeyScript, PasswordReset: r,
+		Identity: id, Locales: &i18n.Resolver{Bundle: b}, Passkeys: p, PasswordReset: r,
 		ExternalLogins: &fakeExternalLogins{id: id},
 	}).Register(m)
 	return id, p, r, m
@@ -44,46 +43,36 @@ func newLimitedServer(t *testing.T, limited bool) (*fakeIdentity, *fakePasskeys,
 // only the providers with it on.
 func TestPagesStopOfferingWhatIsRefused(t *testing.T) {
 	_, _, _, on := newLimitedServer(t, true)
-	body := newBrowser(t, on).do(http.MethodGet, authpages.PathSignIn+"?return_to=/home", nil, nil).Body.String()
-	for _, gone := range []string{`action="/auth/sign_in"`, `action="/auth/sign_in/passkey"`, `name="password"`, "<script", "/auth/forgot_password"} {
-		if strings.Contains(body, gone) {
-			t.Errorf("limited sign-in page has %s:\n%s", gone, body)
-		}
+	data := screenData(t, newBrowser(t, on).do(http.MethodGet, authpages.PathSignIn+"?return_to=/home", nil, nil))
+	if at(data, "loginProvidersOnly") != true || at(data, "passkey") != nil || at(data, "canResetPassword") != nil ||
+		at(data, "humanCheck") != nil || at(data, "canSignUp") != true {
+		t.Errorf("limited sign-in page offers a form, or no registration: %v", data)
 	}
-	for _, want := range []string{refusedSignIn, "/auth/external/corp/start?return_to=%2Fhome", "/auth/external/lab/start", `href="/auth/sign_up"`} {
-		if !strings.Contains(body, want) {
-			t.Errorf("limited sign-in page lacks %s:\n%s", want, body)
-		}
+	if got := externalButtons(data); len(got) != 2 || !strings.HasSuffix(got[0], "/auth/external/corp/start?return_to=%2Fhome") ||
+		!strings.HasSuffix(got[1], "/auth/external/lab/start?return_to=%2Fhome") {
+		t.Errorf("limited sign-in page buttons = %q", got)
 	}
-	body = newBrowser(t, on).do(http.MethodGet, authpages.PathSignUp, nil, nil).Body.String()
-	for _, gone := range []string{`action="/auth/sign_up"`, `name="password"`, "/auth/external/lab/start"} {
-		if strings.Contains(body, gone) {
-			t.Errorf("limited registration page has %s:\n%s", gone, body)
-		}
+	data = screenData(t, newBrowser(t, on).do(http.MethodGet, authpages.PathSignUp, nil, nil))
+	if at(data, "signUp.loginProvidersOnly") != true {
+		t.Errorf("limited registration page offers the form: %v", data)
 	}
-	for _, want := range []string{refusedSignUp, "/auth/external/corp/start"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("limited registration page lacks %s:\n%s", want, body)
-		}
+	if got := externalButtons(data); len(got) != 1 || !strings.HasSuffix(got[0], "/auth/external/corp/start") {
+		t.Errorf("limited registration page buttons = %q", got)
 	}
-	body = newBrowser(t, on).do(http.MethodGet, authpages.PathForgotPassword, nil, nil).Body.String()
-	if strings.Contains(body, `action="/auth/forgot_password"`) || !strings.Contains(body, refusedReset) {
-		t.Errorf("limited forgot-password page:\n%s", body)
+	data = screenData(t, newBrowser(t, on).do(http.MethodGet, authpages.PathForgotPassword, nil, nil))
+	if at(data, "forgotPassword.loginProvidersOnly") != true || at(data, "csrfToken") != nil {
+		t.Errorf("limited forgot-password page: %v", data)
 	}
 
 	_, _, _, off := newLimitedServer(t, false)
-	body = newBrowser(t, off).do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String()
-	for _, want := range []string{`action="/auth/sign_in"`, `action="/auth/sign_in/passkey"`, "/auth/forgot_password", "/auth/external/corp/start"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("sign-in page without the limit lacks %s:\n%s", want, body)
-		}
+	data = screenData(t, newBrowser(t, off).do(http.MethodGet, authpages.PathSignIn, nil, nil))
+	if at(data, "loginProvidersOnly") != nil || text(data, "passkey.challenge") == "" || at(data, "canResetPassword") != true ||
+		len(externalButtons(data)) != 2 {
+		t.Errorf("sign-in page without the limit: %v", data)
 	}
-	if strings.Contains(body, refusedSignIn) {
-		t.Errorf("sign-in page without the limit says it is limited:\n%s", body)
-	}
-	body = newBrowser(t, off).do(http.MethodGet, authpages.PathSignUp, nil, nil).Body.String()
-	if !strings.Contains(body, `action="/auth/sign_up"`) || strings.Contains(body, refusedSignUp) {
-		t.Errorf("registration page without the limit:\n%s", body)
+	data = screenData(t, newBrowser(t, off).do(http.MethodGet, authpages.PathSignUp, nil, nil))
+	if at(data, "signUp.loginProvidersOnly") != nil {
+		t.Errorf("registration page without the limit: %v", data)
 	}
 }
 
@@ -102,10 +91,12 @@ func TestRefusalsAreTheSameForEveryone(t *testing.T) {
 		for i, fields := range forms {
 			res := b.do(http.MethodPost, path, b.form(open, fields...), nil)
 			got := res.Body.String()
-			if res.Code != http.StatusForbidden || !strings.Contains(got, want) {
+			data := screenData(t, res)
+			if res.Code != http.StatusForbidden || !strings.Contains(text(data, "error"), want) {
 				t.Errorf("%s %d = %d\n%s", name, i, res.Code, got)
 			}
-			if strings.Contains(got, `name="password"`) || strings.Contains(res.Header().Get("Set-Cookie"), authpages.CookieSession) {
+			limited := at(data, "loginProvidersOnly") == true || at(data, "signUp.loginProvidersOnly") == true
+			if !limited || at(data, "passkey") != nil || strings.Contains(res.Header().Get("Set-Cookie"), authpages.CookieSession) {
 				t.Errorf("%s %d offered the form again or a session:\n%s", name, i, got)
 			}
 			if i == 0 {
@@ -148,14 +139,14 @@ func TestResetLinkIsRefusedWhateverTheToken(t *testing.T) {
 	id.providersOnly = true
 	for _, token := range []string{"my_prt_good", "my_prt_bad", ""} {
 		res := b.do(http.MethodGet, authpages.PathResetPassword+"?token="+token, nil, nil)
-		if res.Code != http.StatusForbidden || !strings.Contains(res.Body.String(), refusedLink) || strings.Contains(res.Body.String(), `name="password"`) {
+		if data := screenData(t, res); res.Code != http.StatusForbidden || !strings.Contains(text(data, "error"), refusedLink) || at(data, "newPassword") != nil {
 			t.Errorf("reset page with %q = %d\n%s", token, res.Code, res.Body)
 		}
 	}
 	// The page that was open before the limit: the service refuses it.
 	r.err = appidentity.ErrLoginProvidersOnly
 	res := b.do(http.MethodPost, authpages.PathResetPassword, b.form(open, "token", "my_prt_good", "password", "correct horse battery"), nil)
-	if res.Code != http.StatusForbidden || !strings.Contains(res.Body.String(), refusedLink) {
+	if res.Code != http.StatusForbidden || !strings.Contains(text(screenData(t, res), "error"), refusedLink) {
 		t.Errorf("reset form = %d\n%s", res.Code, res.Body)
 	}
 	if r.used || len(r.resets) != 0 {
@@ -174,7 +165,8 @@ func TestForgotPasswordRefusedWhateverTheAddress(t *testing.T) {
 	for i, email := range []string{"alice@example.com", "nobody@example.com", "not an address", ""} {
 		res := b.do(http.MethodPost, authpages.PathForgotPassword, b.form(open, "email", email), nil)
 		got := res.Body.String()
-		if res.Code != http.StatusForbidden || !strings.Contains(got, refusedReset) || strings.Contains(got, `action="/auth/forgot_password"`) {
+		data := screenData(t, res)
+		if res.Code != http.StatusForbidden || at(data, "forgotPassword.loginProvidersOnly") != true || at(data, "csrfToken") != nil {
 			t.Errorf("request for %q = %d\n%s", email, res.Code, got)
 		}
 		if strings.Contains(got, email) && email != "" {
@@ -203,11 +195,12 @@ func TestTwoFactorStepOfAPasswordSignInIsRefused(t *testing.T) {
 	id.providersOnly = true
 	id.completeErr = appidentity.ErrLoginProvidersOnly
 	res = b.do(http.MethodPost, authpages.PathSignInTwoFactor, b.form(step, "code", "123456"), nil)
-	if res.Code != http.StatusForbidden || !strings.Contains(res.Body.String(), refusedSignIn) {
+	data := screenData(t, res)
+	if res.Code != http.StatusForbidden || !strings.Contains(text(data, "error"), refusedSignIn) {
 		t.Errorf("code = %d\n%s", res.Code, res.Body)
 	}
-	if strings.Contains(res.Body.String(), `name="password"`) {
-		t.Errorf("the refusal offers the password form:\n%s", res.Body)
+	if text(data, "screen") == "sign_in" && at(data, "loginProvidersOnly") != true {
+		t.Errorf("the refusal offers the password form: %v", data)
 	}
 }
 
@@ -217,19 +210,19 @@ func TestInviteLinkReachesTheProviderForm(t *testing.T) {
 	id, x, h := newExternalServer(t)
 	id.providersOnly = true
 	b := newBrowser(t, h)
-	body := b.do(http.MethodGet, authpages.PathSignUp+"?invite=CODE1", nil, nil).Body.String()
+	data := screenData(t, b.do(http.MethodGet, authpages.PathSignUp+"?invite=CODE1", nil, nil))
 	const want = `/auth/external/corp/start?return_to=%2Fauth%2Fsign_up%3Finvite%3DCODE1`
-	if !strings.Contains(body, want) {
-		t.Fatalf("registration page lacks %s:\n%s", want, body)
+	if got := externalButtons(data); len(got) != 1 || !strings.HasSuffix(got[0], " "+want) {
+		t.Fatalf("registration page buttons = %q, want %s", got, want)
 	}
 	view := corpSignUp
 	x.outcome = appidentity.ExternalLogin{SignUp: &view, ReturnTo: authpages.PathSignUp + "?invite=CODE1"}
 	id.mode = identity.RegistrationInvite
-	body = b.do(http.MethodGet, "/auth/external/corp/callback?state=s&code=c", nil, nil).Body.String()
-	if !strings.Contains(body, `name="invite_code" type="text" value="CODE1"`) {
-		t.Errorf("the provider's sign-up form lost the code:\n%s", body)
+	data = screenData(t, b.do(http.MethodGet, "/auth/external/corp/callback?state=s&code=c", nil, nil))
+	if text(data, "signUp.inviteCode") != "CODE1" || at(data, "signUp.askInvite") != true {
+		t.Errorf("the provider's sign-up form lost the code: %v", data)
 	}
-	if strings.Contains(body, `name="password"`) {
-		t.Errorf("the provider's sign-up form asks for a password:\n%s", body)
+	if text(data, "signUp.external.ticket") == "" {
+		t.Errorf("the provider's sign-up form asks for a password: %v", data)
 	}
 }

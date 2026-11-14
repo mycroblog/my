@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Proves the rules of restrictions.js as the workspace runs them: `bun --bun oxlint` with .oxlintrc.json lints the
 // fixtures (web/devtools/fixtures/restrictions/ and the fixtures/ of the layers), and each finding must be one that a
-// fixture line expects with an `error: <Component> prop` comment (design-system-props) or an `error: layers @my/<x>`
-// comment (layer-imports), and each expected one must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025
+// fixture line expects with an `error: <Component> prop` comment (design-system-props), an `error: layers @my/<x>`
+// comment (layer-imports) or an `error: platform <what>` comment (platform-globals), and each expected one must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025
 // §8, §10). .oxlintrc.json ignores the fixtures, so that no other lint run fails on them; this lints copies of them
 // beside them, under the same overrides, and removes the copies.
 
@@ -11,7 +11,7 @@ import { cpSync, readdirSync, rmSync } from "node:fs";
 
 const root = new URL("../../../", import.meta.url).pathname;
 /** The packages with fixtures, each in the directory whose rules it proves. */
-const dirs = ["web/devtools", "web/design-system", "web/app-components", "web/app-features", "web/app"];
+const dirs = ["web/devtools", "web/design-system", "web/app-components", "web/app-features", "web/app", "web/platform"];
 const fixtures = dirs.flatMap((dir) =>
   readdirSync(`${root}${dir}/fixtures`, { recursive: true, encoding: "utf8" })
     .filter((name) => /\.tsx?$/.test(name))
@@ -26,6 +26,7 @@ const findings = {
   },
   "restrict(layer-imports)": (/** @type {string} */ message) =>
     `layers ${/^@my\/\S+ imports (@my\/[\w-]+)/.exec(message)?.[1]}`,
+  "restrict(platform-globals)": (/** @type {string} */ message) => `platform ${/^`([^`]+)`/.exec(message)?.[1]}`,
 };
 
 /** The findings of the rules, as `file:line <what>`. */
@@ -57,7 +58,7 @@ async function expected() {
   for (const file of fixtures) {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
-      const match = /error: (<\S+> (?:className|style)|layers @my\/[\w-]+)/.exec(line);
+      const match = /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+))/.exec(line);
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
     }
   }
@@ -68,8 +69,10 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
   expect(fixtures).toContain("web/devtools/fixtures/restrictions/allowed.tsx");
   expect(fixtures).toContain("web/design-system/fixtures/inside.tsx");
   expect(fixtures).toContain("web/app/fixtures/layers.tsx");
+  expect(fixtures).toContain("web/platform/fixtures/inside.ts");
   const want = await expected();
   expect(want.some((line) => line.endsWith(" className") || line.endsWith(" style"))).toBe(true);
   expect(want.some((line) => line.includes(" layers @my/"))).toBe(true);
+  expect(want.some((line) => line.includes(" platform "))).toBe(true);
   expect(lint()).toEqual(want);
 }, 60_000);

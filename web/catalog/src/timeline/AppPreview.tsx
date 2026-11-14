@@ -55,7 +55,7 @@ const data = createAppData(createClient({ server, retry: { disabled: true }, fet
 
 const router = createAppRouter({
   data,
-  config: { apiOrigin: server, instanceName: "my.example", defaultLocale: "en" },
+  config: { apiOrigin: server, instanceName: "my.example", defaultLocale: "en", clientId: "my-web" },
   at: "/",
 });
 

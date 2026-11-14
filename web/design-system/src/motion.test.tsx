@@ -8,7 +8,7 @@ import { transitionRules } from "./motion-css";
 const globals = globalThis as Record<string, unknown>;
 
 /** A browser with View Transitions and their types, and the reader's motion preference; the calls it saw. */
-function browser({ types = true, reduce = false }: { types?: boolean; reduce?: boolean } = {}) {
+function browser({ reduce = false }: { reduce?: boolean } = {}) {
   const started: { types: string[] }[] = [];
   globals.document = {
     startViewTransition: ({ update, types }: { update: () => void; types: string[] }) => {
@@ -17,14 +17,12 @@ function browser({ types = true, reduce = false }: { types?: boolean; reduce?: b
       return { updateCallbackDone: Promise.resolve() };
     },
   };
-  globals.CSS = { supports: () => types };
   globals.matchMedia = () => ({ matches: reduce });
   return started;
 }
 
 afterEach(() => {
   delete globals.document;
-  delete globals.CSS;
   delete globals.matchMedia;
 });
 
@@ -42,29 +40,33 @@ test("with reduced motion no kind moves", () => {
 test("runTransition moves by the kind, and changes the screen at once without View Transition types", async () => {
   const started = browser();
   let updates = 0;
-  await runTransition("push", () => void updates++);
+  await runTransition("push", () => void updates++, true);
   expect(started).toEqual([{ types: ["push"] }]);
-  await runTransition("none", () => void updates++);
+  await runTransition("none", () => void updates++, true);
   expect(started).toHaveLength(1);
-  const old = browser({ types: false });
-  await runTransition("push", () => void updates++);
+  const old = browser();
+  await runTransition("push", () => void updates++, false);
   expect(old).toHaveLength(0);
   expect(updates).toBe(3);
 });
 
 test("runTransition changes the screen at once outside a browser", async () => {
   let updated = false;
-  await runTransition("push", () => {
-    updated = true;
-  });
+  await runTransition(
+    "push",
+    () => {
+      updated = true;
+    },
+    false,
+  );
   expect(updated).toBe(true);
 });
 
 test("a router moves by the kind of each navigation, and runs no View Transition where the browser has none", () => {
   const kindOf = (to: string): TransitionKind => (to === "/" ? "replace" : "push");
-  expect(routerTransitions(kindOf)).toBe(false);
+  expect(routerTransitions(kindOf, false)).toBe(false);
   browser();
-  const transitions = routerTransitions(kindOf);
+  const transitions = routerTransitions(kindOf, true);
   if (transitions === false) throw new Error("no transitions in a browser with them");
   expect(transitions.types("/")).toEqual(["replace"]);
   expect(transitions.types("/post")).toEqual(["push"]);

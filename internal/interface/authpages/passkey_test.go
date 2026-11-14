@@ -5,8 +5,9 @@ package authpages_test
 import (
 	"context"
 	"encoding/json"
-	"html"
 	"net/http"
+	"net/http/httptest"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -61,8 +62,6 @@ func (f *fakePasskeys) SignInWithPasskey(_ context.Context, in appidentity.Passk
 	return appidentity.SignedIn{}, appidentity.ErrInvalidPasskey
 }
 
-const passkeyScript = "/assets/server-pages-passkey-FFFF.js"
-
 func newPasskeyServer(t *testing.T) (*fakeIdentity, *fakePasskeys, http.Handler) {
 	t.Helper()
 	b, err := i18n.Load()
@@ -73,58 +72,58 @@ func newPasskeyServer(t *testing.T) (*fakeIdentity, *fakePasskeys, http.Handler)
 	p := &fakePasskeys{used: map[string]bool{}, id: id}
 	m := mux{http.NewServeMux()}
 	authpages.New(authpages.Options{
-		Identity: id, Locales: &i18n.Resolver{Bundle: b}, Passkeys: p, PasskeyScript: passkeyScript,
+		Identity: id, Locales: &i18n.Resolver{Bundle: b}, Passkeys: p,
 	}).Register(m)
 	return id, p, m
 }
 
-// challengeOf reads the challenge of the page's passkey form.
-func challengeOf(t *testing.T, page string) string {
+// challengeOf reads the challenge of the screen's passkey sign-in.
+func challengeOf(t *testing.T, page *httptest.ResponseRecorder) string {
 	t.Helper()
-	const field = `name="challenge" value="`
-	i := strings.Index(page, field)
-	if i < 0 {
-		t.Fatalf("no passkey challenge in %s", page)
+	c := text(screenData(t, page), "passkey.challenge")
+	if c == "" {
+		t.Fatalf("no passkey challenge in %s", page.Body.String())
 	}
-	rest := page[i+len(field):]
-	return rest[:strings.IndexByte(rest, '"')]
+	return c
 }
 
 func TestSignInPageOffersPasskeys(t *testing.T) {
 	_, _, h := newPasskeyServer(t)
 	b := newBrowser(t, h)
 	page := b.do(http.MethodGet, authpages.PathSignIn+"?return_to=%2Fhome", nil, nil)
-	body := page.Body.String()
-	for _, want := range []string{
-		`<form class="form" method="post" action="/auth/sign_in/passkey" data-passkey-options="` + html.EscapeString(passkeyOptions) + `" hidden>`,
-		`<input type="hidden" name="challenge" value="challenge-1">`,
-		`<input type="hidden" name="return_to" value="/home">`,
-		`<script type="module" src="` + passkeyScript + `"></script>`,
-		`>Sign in with a passkey</button>`,
-		`role="alert" data-passkey-error="The passkey was not used.`,
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("sign-in page lacks %s:\n%s", want, body)
-		}
+	data := screenData(t, page)
+	options, err := json.Marshal(at(data, "passkey.options"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !jsonEqual(t, string(options), passkeyOptions) || text(data, "passkey.challenge") != "challenge-1" ||
+		text(data, "returnTo") != "/home" || at(data, "passkey.error") != nil {
+		t.Errorf("sign-in data = %v, want the passkey options, its challenge, and return_to", data)
 	}
 	csp := page.Header().Get("Content-Security-Policy")
 	if !strings.Contains(csp, "script-src 'self'") || strings.Contains(csp, "unsafe") {
 		t.Errorf("CSP = %q, want this site's scripts and nothing unsafe", csp)
 	}
-	// The password form still works alone, before the passkey form.
-	if strings.Index(body, `action="/auth/sign_in"`) > strings.Index(body, `action="/auth/sign_in/passkey"`) {
-		t.Error("the passkey form comes before the password form")
+}
+
+// jsonEqual reports whether the JSON texts a and b hold the same value.
+func jsonEqual(t *testing.T, a, b string) bool {
+	t.Helper()
+	var x, y any
+	if err := json.Unmarshal([]byte(a), &x); err != nil {
+		t.Fatal(err)
 	}
+	if err := json.Unmarshal([]byte(b), &y); err != nil {
+		t.Fatal(err)
+	}
+	return reflect.DeepEqual(x, y)
 }
 
 func TestSignInPageWithoutPasskeys(t *testing.T) {
 	b := newBrowser(t, newServer(t, newFakeIdentity()))
 	page := b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	if body := page.Body.String(); strings.Contains(body, "passkey") || strings.Contains(body, "<script") {
-		t.Errorf("sign-in page without passkeys:\n%s", body)
-	}
-	if csp := page.Header().Get("Content-Security-Policy"); strings.Contains(csp, "script-src") {
-		t.Errorf("CSP without passkeys = %q, want no scripts", csp)
+	if data := screenData(t, page); at(data, "passkey") != nil {
+		t.Errorf("sign-in page without passkeys: %v", data)
 	}
 	w := b.do(http.MethodPost, authpages.PathSignInPasskey, b.form(page, "challenge", "x", "credential", "{}"), nil)
 	if w.Code != http.StatusNotFound && w.Code != http.StatusMethodNotAllowed {
@@ -136,7 +135,7 @@ func TestSignInPageLeavesPasskeysOutWhenTheyFail(t *testing.T) {
 	_, p, h := newPasskeyServer(t)
 	p.broken = true
 	page := newBrowser(t, h).do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	if page.Code != http.StatusOK || strings.Contains(page.Body.String(), "data-passkey-options") {
+	if page.Code != http.StatusOK || at(screenData(t, page), "passkey") != nil {
 		t.Errorf("sign-in page with a failing passkey start = %d:\n%s", page.Code, page.Body.String())
 	}
 }
@@ -145,7 +144,7 @@ func TestPasskeySignIn(t *testing.T) {
 	_, p, h := newPasskeyServer(t)
 	b := newBrowser(t, h)
 	page := b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	challenge := challengeOf(t, page.Body.String())
+	challenge := challengeOf(t, page)
 	w := b.do(http.MethodPost, authpages.PathSignInPasskey,
 		b.form(page, "challenge", challenge, "credential", `{"id":"alice"}`, "return_to", "/home"),
 		map[string]string{"User-Agent": "test-agent"})
@@ -163,7 +162,7 @@ func TestPasskeySignIn(t *testing.T) {
 	// A user with two-factor authentication goes on to the code form.
 	b = newBrowser(t, h)
 	page = b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	w = b.do(http.MethodPost, authpages.PathSignInPasskey, b.form(page, "challenge", challengeOf(t, page.Body.String()), "credential", `{"id":"bob"}`), nil)
+	w = b.do(http.MethodPost, authpages.PathSignInPasskey, b.form(page, "challenge", challengeOf(t, page), "credential", `{"id":"bob"}`), nil)
 	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != authpages.PathSignInTwoFactor || b.cookies[authpages.CookieTwoFactor] != bobChallenge {
 		t.Errorf("POST passkey of bob = %d → %q, want the code form", w.Code, w.Header().Get("Location"))
 	}
@@ -176,7 +175,7 @@ func TestPasskeySignInFailures(t *testing.T) {
 	_, p, h := newPasskeyServer(t)
 	b := newBrowser(t, h)
 	page := b.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-	used := challengeOf(t, page.Body.String())
+	used := challengeOf(t, page)
 	b.do(http.MethodPost, authpages.PathSignInPasskey, b.form(page, "challenge", used, "credential", `{"id":"mallory"}`), nil)
 	b.cookies = map[string]string{authpages.CookieCSRF: b.cookies[authpages.CookieCSRF]}
 
@@ -189,13 +188,13 @@ func TestPasskeySignInFailures(t *testing.T) {
 		{"no credential", "challenge-8", "", "The passkey was not used.", http.StatusUnprocessableEntity},
 	} {
 		w := b.do(http.MethodPost, authpages.PathSignInPasskey, b.form(page, "challenge", tc.challenge, "credential", tc.credential), nil)
-		body := w.Body.String()
-		if w.Code != tc.status || !strings.Contains(body, `<p id="passkey-error" class="alert" role="alert"`) || !strings.Contains(body, tc.want) {
-			t.Errorf("%s = %d, want %d with %q:\n%s", tc.name, w.Code, tc.status, tc.want, body)
+		data := screenData(t, w)
+		if w.Code != tc.status || !strings.Contains(text(data, "passkey.error"), tc.want) {
+			t.Errorf("%s = %d, want %d with %q: %v", tc.name, w.Code, tc.status, tc.want, data)
 		}
-		// The alert belongs to the passkey form, which is shown; the password fields are not marked.
-		if strings.Contains(body, `aria-invalid="true"`) || !strings.Contains(body, `data-passkey-options="`) || strings.Contains(body, `" hidden>`+"\n"+`<input type="hidden" name="csrf_token"`) {
-			t.Errorf("%s marks the password form or hides the passkey form:\n%s", tc.name, body)
+		// The alert belongs to the passkey sign-in, which is offered again; the password form has none.
+		if at(data, "error") != nil || text(data, "passkey.challenge") == "" {
+			t.Errorf("%s alerts the password form or drops the passkey: %v", tc.name, data)
 		}
 		if _, ok := b.cookies[authpages.CookieSession]; ok {
 			t.Errorf("%s started a session", tc.name)

@@ -11,9 +11,11 @@
   "dependencies": {
     "@my/app": "workspace:*",
     "@my/app-components": "workspace:*",
+    "@my/app-features": "workspace:*",
     "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",
     "@my/design-tokens": "workspace:*",
+    "@my/platform": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
     "react": "19.3.1",
     "react-dom": "19.3.1"

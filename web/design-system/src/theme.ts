@@ -10,6 +10,7 @@ import {
   control,
   fontFamily,
   fontWeight,
+  formPage,
   motion,
   properties,
   radius,
@@ -26,7 +27,8 @@ const names = <T extends object>(o: T) => Object.keys(o) as (keyof T & string)[]
 const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
 // The theme's keys, each a token or a value derived from tokens only. The breakpoints (`tablet:`, `desktop:`,
-// `wide:`) are for the app's frame alone (shell.tsx, ADR-0110 §10); a part lays itself out by its container.
+// `wide:`) are for the frames of a page alone: the app's (shell.tsx, ADR-0110 §10) and a page of its own outside it
+// (form-page.tsx); a part lays itself out by its container.
 const theme = {
   screens: Object.fromEntries(names(breakpoint).map((name) => [name, `${breakpoint[name]}rem`])),
   colors: {
@@ -115,7 +117,13 @@ const theme = {
     kbd: ref("--kbd-height"),
     "kbd-inline": ref("--kbd-padding-inline"),
     "kbd-gap": ref("--kbd-gap"),
+    ...Object.fromEntries(
+      names(formPage)
+        .filter((name) => name !== "bannerRatio")
+        .map((name) => [`form-page-${kebab(name)}`, ref(`--form-page-${kebab(name)}`)]),
+    ),
   },
+  aspectRatio: { banner: ref("--form-page-banner-ratio") },
   lineHeight: { entry: ref("--entry-leading") },
   borderWidth: { 0: "0", spinner: ref("--spinner-stroke"), "content-quote": ref("--content-quote-bar") },
   opacity: { disabled: ref("--press-disabled-opacity") },
