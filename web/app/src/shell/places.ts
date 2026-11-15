@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The places of the navigation (ADR-0110 §11, ADR-0058 §2, ADR-0070 §1, ADR-0152 §2): one list in one order, the
-// timelines the instance offers, notifications and search, then the reader's own places (profile, bookmarks,
-// settings), then apart the places of their rights (moderation, admin, finance). The tab bar holds the first part and
-// Menu; the menu's sheet holds the rest, and the announcements. A visitor without a session has the timelines the
-// instance shows everyone, and search.
+// timelines the instance offers, notifications, the direct messages and search, then the reader's own places (profile,
+// bookmarks, settings), then apart the places of their rights (moderation, admin, finance). The tab bar holds the first
+// part but the direct messages, and Menu; the menu's sheet holds the rest, the direct messages first, and the
+// announcements. A visitor without a session has the timelines the instance shows everyone, and search.
 
 import type { Instance, Rights } from "@my/app-data";
 import type { IconName } from "@my/design-system";
@@ -15,7 +15,7 @@ export type Place = {
   readonly href: string;
   readonly icon: IconName;
   readonly label: MessageId;
-  readonly count?: "notifications" | "moderation";
+  readonly count?: "notifications" | "direct" | "moderation";
 };
 
 const home: Place = { href: "/", icon: "home", label: "app.home" };
@@ -28,6 +28,14 @@ const notifications: Place = {
   count: "notifications",
 };
 const search: Place = { href: "/search", icon: "search", label: "app.search" };
+
+/** The direct messages, after notifications in the rail and the sidebar, and first in the menu's sheet on a phone. */
+const directMessages: Place = {
+  href: "/conversations",
+  icon: "directMessages",
+  label: "app.direct_messages",
+  count: "direct",
+};
 
 /** The reader's own places, after the tab bar's in the rail and the sidebar, and in the menu's sheet on a phone. */
 const ownPlaces: readonly Place[] = [
@@ -62,6 +70,7 @@ export const navigationPaths: ReadonlySet<string> = new Set(
     local,
     federated,
     notifications,
+    directMessages,
     search,
     ...ownPlaces,
     listsPlace,
@@ -90,9 +99,14 @@ export function aroundPlacesFor(signedIn: boolean, instance: Instance | undefine
   ];
 }
 
-/** The places of a reader: the tab bar's, their own, and those of their rights. */
+/**
+ * The places of a reader: the tab bar's; the rail's and the sidebar's (the tab bar's with the direct messages after
+ * notifications, then their own); their own that the tab bar has not, as the menu's sheet lists them (the direct
+ * messages first); and those of their rights.
+ */
 export type Places = {
   readonly tabs: readonly Place[];
+  readonly side: readonly Place[];
   readonly own: readonly Place[];
   readonly rights: readonly Place[];
 };
@@ -108,10 +122,11 @@ export function placesFor(signedIn: boolean, instance: Instance | undefined, rig
     ...(offers(instance?.timelines.local) ? [local] : []),
     ...(offers(instance?.timelines.federated) ? [federated] : []),
   ];
-  if (!signedIn) return { tabs: [...timelines, search], own: [], rights: [] };
+  if (!signedIn) return { tabs: [...timelines, search], side: [...timelines, search], own: [], rights: [] };
   return {
     tabs: [home, ...timelines, notifications, search],
-    own: ownPlaces,
+    side: [home, ...timelines, notifications, directMessages, search, ...ownPlaces],
+    own: [directMessages, ...ownPlaces],
     rights: [
       ...(rights.moderation ? [moderation] : []),
       ...(rights.admin ? [admin] : []),

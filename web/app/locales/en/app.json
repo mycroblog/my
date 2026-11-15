@@ -19,6 +19,14 @@
     "defaultMessage": "Notifications",
     "description": "The place of the navigation that shows the reader's notifications."
   },
+  "app.direct_messages": {
+    "defaultMessage": "Direct messages",
+    "description": "The place of the navigation, and the heading of its screen, that lists the reader's conversations of direct messages."
+  },
+  "app.conversation": {
+    "defaultMessage": "Messages",
+    "description": "The heading of the screen of the direct messages with some people, for assistive technology; the list's heading is Direct messages."
+  },
   "app.search": {
     "defaultMessage": "Search",
     "description": "The place of the navigation that searches posts, accounts and hashtags."
@@ -239,6 +247,10 @@
     "defaultMessage": "{count, plural, one {# unread} other {# unread}}",
     "description": "What the badge on Notifications in the navigation says, for assistive technology: how many notifications the reader has not read."
   },
+  "app.direct_messages_count": {
+    "defaultMessage": "{count, plural, one {# unread} other {# unread}}",
+    "description": "What the badge on Direct messages in the navigation says, for assistive technology: how many conversations the reader has not read."
+  },
   "app.moderation_count": {
     "defaultMessage": "{count, plural, one {# waiting} other {# waiting}}",
     "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
@@ -262,6 +274,10 @@
   "app.menu_marked": {
     "defaultMessage": "{count, plural, one {# waiting in moderation} other {# waiting in moderation}}",
     "description": "Said after Menu in the tab bar, for assistive technology, while a place inside the menu (Moderation) has things waiting: how many reports, registrations and appeals wait for a moderator."
+  },
+  "app.menu_direct": {
+    "defaultMessage": "{count, plural, one {# unread in direct messages} other {# unread in direct messages}}",
+    "description": "Said after Menu in the tab bar, for assistive technology, while Direct messages, a place inside the menu, has unread conversations: how many. The number shows on Menu too."
   },
   "app.timeline_off": {
     "defaultMessage": "This server does not show this timeline.",
@@ -318,5 +334,13 @@
   "app.tag": {
     "defaultMessage": "#{name}",
     "description": "The heading of a hashtag's screen, and the document's title. name is the hashtag without #."
+  },
+  "app.compose.menu": {
+    "defaultMessage": "Other things to write",
+    "description": "The name of the menu of the primary action, opened by a long press or right click: what else can be written besides a post."
+  },
+  "app.compose.article": {
+    "defaultMessage": "New article",
+    "description": "The item of the primary action's menu that opens the article editor."
   }
 }

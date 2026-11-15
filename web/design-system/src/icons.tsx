@@ -12,6 +12,7 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
   IconArrowLeft,
+  IconArticle,
   IconAt,
   IconBallFootball,
   IconBan,
@@ -59,6 +60,8 @@ import {
   IconListDetails,
   IconLock,
   IconLogin2,
+  IconMail,
+  IconMailFilled,
   IconMaximize,
   IconMenu2,
   IconMessageCircle,
@@ -151,6 +154,8 @@ export const icons = {
   // The places of the navigation, on where the reader is, and the entry to write a post.
   home: { off: IconHome, on: IconHomeFilled },
   notifications: { off: IconBell, on: IconBellFilled },
+  // The direct messages, by conversation: a letter, apart from reply's bubble and from the visibility's @.
+  directMessages: { off: IconMail, on: IconMailFilled },
   search: { off: IconSearch, on: IconSearchFilled },
   profile: { off: IconUser, on: IconUserFilled },
   settings: { off: IconSettings, on: IconSettingsFilled },
@@ -242,6 +247,8 @@ export const icons = {
   // reader's drafts, a page of notes; and keeping what is written as a draft.
   schedule: { off: IconCalendarTime, on: "tile" },
   drafts: { off: IconNotes },
+  // An article (ADR-0160): a page with a title over its lines.
+  article: { off: IconArticle },
   saveDraft: { off: IconDeviceFloppy },
 } as const satisfies Record<string, Entry>;
 

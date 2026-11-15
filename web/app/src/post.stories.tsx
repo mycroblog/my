@@ -2,7 +2,8 @@
 
 // A post's page, a story per state: a reply in its thread, a post alone with no replies, a post with reactions and who
 // reacted under it, a thread folded (both folds), its posts in another language offered for translation by a provider
-// that answers, and by one that fails, and each state every screen is shown in (app.samples.tsx).
+// that answers, and by one that fails, and each state every screen is shown in (app.samples.tsx); and an article's
+// page, at its width and at the minimum.
 
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -42,6 +43,9 @@ export const TranslationFailed: Story = {
 };
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };
+/** An article's page (ADR-0160): its head, its text in full for long reading, its actions, and its replies under it. */
+export const Article: Story = { parameters: screen({ at: "sam-article" }) };
+export const ArticleMinimumWidth: Story = { parameters: screen({ at: "sam-article" }), globals: minimumWidth };
 
 // The flows of a translation, as the reader of English presses them on Yuki's reply in Japanese, each a story whose
 // play presses and checks it: the server's provider and back to the original, the provider down, and the browser's
@@ -151,6 +155,50 @@ export const TranslateInBrowserNext: Story = {
     await expect(words()).not.toContain("来月");
     await userEvent.click(post.getByRole("button", { name: "このブラウザで翻訳する" }));
     await waitFor(() => expect(words()).toMatch(/\[ja\][^]*That light!/));
+  },
+};
+
+/**
+ * Sam's article on its page, read in en: its head, its cover, its whole text from the post read alone (the headings,
+ * the list, the quote, the table, the link for the image the server did not keep, the code, the rule), and Yuki's reply
+ * under it without the line of whom it replies to.
+ */
+export const ArticleRead: Story = {
+  globals: english,
+  parameters: screen({ at: "sam-article" }),
+  play: async (context) => {
+    await screenMeta.play(context);
+    const main = within(within(context.canvasElement).getByRole("main"));
+    await waitFor(() =>
+      expect(main.getByRole("heading", { level: 1, name: "A sourdough starter in seven days" })).toBeVisible(),
+    );
+    const sam = main.getByRole("article", { name: "Sam Rivera" });
+    const page = within(sam);
+    await expect(page.getByText(/^What I fed it, when it rose, and the three mistakes/)).toBeVisible();
+    await expect(page.getByRole("img", { name: "A round loaf on a wooden board" })).toBeVisible();
+    await expect(page.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
+      "The first three days",
+      "What I fed it",
+    ]);
+    await expect(page.getByRole("heading", { level: 3, name: "The mistakes" })).toBeVisible();
+    await expect(page.getByText("old cheese", { selector: "strong" })).toBeVisible();
+    await expect(page.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Day 1: 50 g flour, 50 g water",
+      "Day 2: the same, at the same hour",
+      "Day 3: half of it out, then the same",
+    ]);
+    await expect(page.getByText("A starter is ready when it doubles within six hours of a feed.")).toBeVisible();
+    const table = within(page.getByRole("table"));
+    await expect(table.getAllByRole("columnheader").map((th) => th.textContent)).toEqual(["Day", "Flour", "Water"]);
+    await expect(table.getAllByRole("row")).toHaveLength(4);
+    await expect(page.getByRole("link", { name: "the shop on a map" })).toBeVisible();
+    await expect(page.queryByRole("img", { name: "the shop on a map" })).toBeNull();
+    await expect(page.getByText(/feed: 1 starter : 1 flour : 1 water/)).toBeVisible();
+    await expect(page.getByRole("separator")).toBeInTheDocument();
+    await expect(page.getByText("Next week: the first loaf.")).toBeVisible();
+    const yuki = within(main.getByRole("article", { name: "Yuki 雪" }));
+    await expect(yuki.getByText(/三日目のにおい/)).toBeVisible();
+    await expect(yuki.queryByText(/Replying to/)).toBeNull();
   },
 };
 

@@ -616,7 +616,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.article_too_long": {
-    "defaultMessage": "‮{max,plural,one{⊥ɥǝ qopʎ oɟ ɐu ɐɹʇıɔʅǝ ɯnsʇ ɯɐʞǝ ɐʇ ɯosʇ # qʎʇǝ oɟ H⊥W⅂.} other{⊥ɥǝ qopʎ oɟ ɐu ɐɹʇıɔʅǝ ɯnsʇ ɯɐʞǝ ɐʇ ɯosʇ # qʎʇǝs oɟ H⊥W⅂.}}‬",
+    "defaultMessage": "‮⊥ɥǝ qopʎ oɟ ʇɥıs ɐɹʇıɔʅǝ ıs ʇoo ʅouƃ. Sɥoɹʇǝu ıʇ ɐup ʇɹʎ ɐƃɐıu.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.article_too_many_images": {

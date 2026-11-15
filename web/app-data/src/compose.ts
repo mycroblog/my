@@ -10,6 +10,7 @@ import { ProblemError, uploadMedia, type components, type MediaAttachment } from
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { prependHomeStatuses } from "./arrivals";
+import { cacheConversationPost } from "./conversations";
 import {
   defaultDraftLimits,
   deleteDraft,
@@ -139,12 +140,13 @@ export async function postStatus(data: AppData, body: CreateStatus, idempotencyK
 /**
  * Writes what a posted status makes certain: it tops the home timeline, and the post it replies to has one more reply
  * than it showed, which its cached threads show; a copy the server answered with the reply counted already keeps its
- * count.
+ * count. A direct reply is the latest post of its conversation (conversations.ts).
  */
 export function cachePostedStatus(data: AppData, status: Status): void {
   prependHomeStatuses(data, [status]);
   const parent = status.in_reply_to_id;
   if (parent === undefined) return;
+  cacheConversationPost(data, status);
   const shown = cachedStatus(data, parent);
   if (shown !== undefined) {
     const count = shown.replies_count + 1;

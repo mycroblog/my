@@ -18,7 +18,7 @@
 // why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. Its
 // state is the hook's (use-composer.ts).
 
-import { isRemote, languageName, QuoteContext, ReplyContext } from "@my/app-components";
+import { isRemote, QuoteContext, ReplyContext } from "@my/app-components";
 import type { Audience, Interaction, Visibility } from "@my/app-data";
 import {
   AttachButton,
@@ -29,7 +29,6 @@ import {
   CharCount,
   CheckField,
   ChoiceBack,
-  FeedNotice,
   ChoiceGroup,
   ChoiceOpens,
   ChoicePopup,
@@ -39,7 +38,6 @@ import {
   ComposerText,
   FormAlert,
   IconButton,
-  localInput,
   MenuButton,
   MenuGroup,
   MenuItem,
@@ -47,25 +45,22 @@ import {
   PollOption,
   PollOptions,
   PollSettings,
-  readerZone,
-  ScheduleForm,
   ScheduleTime,
   scheduleTime,
   ScheduleZone,
   TextButton,
-  ToolText,
   useLocale,
   WarningField,
   type IconName,
 } from "@my/design-system";
 import type { EditorHandle } from "@my/design-system/editor";
-import { useId, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
-import { ChunkBoundary, retryingLazy } from "./chunk";
+import { EditorFailed, PostText, retryEditors, WarningText } from "./editors";
 import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
-import type { PostTextProps, WarningTextProps } from "./text";
+import { Language, Schedule } from "./tools";
 import type { MessageId } from "../messages.gen";
 import {
   maxAttachments,
@@ -82,89 +77,7 @@ import type { Composer } from "./use-composer";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
-/**
- * The editor's module, fetched once: each call after the first gets the same promise, but after a failed fetch, which
- * the next tries again; and the module, once here.
- */
-let loading: Promise<typeof import("./text")> | undefined;
-let loaded: typeof import("./text") | undefined;
-const loadText = () =>
-  (loading ??= import("./text").then(
-    (m) => {
-      loaded = m;
-      return m;
-    },
-    (error: unknown) => {
-      loading = undefined;
-      throw error;
-    },
-  ));
-
-/** Fetches the editor's module with this one, ahead of the composer's first opening. */
-export function preloadComposerText(): void {
-  // A failed fetch is tried again by the next.
-  loadText().catch(() => undefined);
-}
-
-const lazyPostText = retryingLazy(() => loadText().then((m) => m.PostText));
-const lazyWarningText = retryingLazy(() => loadText().then((m) => m.WarningText));
-
-/**
- * In the text's place when the editors' chunk could not be fetched, once for the whole form: that it could not be
- * loaded, and Try again, which fetches both editors again.
- */
-function EditorFailed({ t, retry }: { t: T; retry: () => void }) {
-  return (
-    <FeedNotice alert start action={<TextButton onPress={retry}>{t("compose.load_retry")}</TextButton>}>
-      {t("compose.editor_failed")}
-    </FeedNotice>
-  );
-}
-
-/** An editor chosen once, as it mounts: drawn at once where its module came already, else as it comes. */
-function Chosen<P extends object>({
-  here,
-  fetched,
-  props,
-}: {
-  here: ComponentType<P> | undefined;
-  fetched: () => ComponentType<P>;
-  props: P;
-}) {
-  const [Editor] = useState(() => here ?? fetched());
-  return <Editor {...props} />;
-}
-
-/** Nothing in a failed editor's place: the view says it once, for the whole form (`EditorFailed`). */
-const nothing = () => null;
-
-/** Tries both editors again, as one: they come in one chunk. */
-function retryEditors(): void {
-  lazyPostText.retry();
-  lazyWarningText.retry();
-}
-
-/**
- * The text's editor: drawn at once where its module came already, so that it takes the focus inside the press that
- * opened the composer (a phone opens its keyboard only then), else as it comes; one that could not be fetched tells
- * `onFailed`.
- */
-function PostText({ onFailed, ...props }: PostTextProps & { onFailed: () => void }) {
-  return (
-    <ChunkBoundary fallback={nothing} onRetry={retryEditors} onFailed={onFailed}>
-      <Chosen here={loaded?.PostText} fetched={lazyPostText.get} props={props} />
-    </ChunkBoundary>
-  );
-}
-
-/** The content warning's editor, as the text's. */
-function WarningText({ onFailed, ...props }: WarningTextProps & { onFailed: () => void }) {
-  return (
-    <ChunkBoundary fallback={nothing} onRetry={retryEditors} onFailed={onFailed}>
-      <Chosen here={loaded?.WarningText} fetched={lazyWarningText.get} props={props} />
-    </ChunkBoundary>
-  );
-}
+export { preloadComposerText } from "./editors";
 
 const visibilityIcon: Record<Visibility, IconName> = {
   public: "public",
@@ -181,15 +94,6 @@ const audienceIcon: Record<Audience, IconName> = {
 };
 const audiences: readonly Audience[] = ["everyone", "followers", "mentioned", "nobody"];
 const interactions: readonly Interaction[] = ["reply", "announce", "quote"];
-
-/** The languages offered: the post's, the reader's default and the app's, each once. */
-const appLanguages = ["en", "ja", "de", "es", "fr", "pt-BR", "zh-CN", "zh-TW"];
-
-/** A language by its name in its own words (English, 日本語), its first letter capitalized as a picker lists it. */
-function ownName(tag: string): string {
-  const name = languageName(tag, tag) ?? tag;
-  return name.charAt(0).toLocaleUpperCase(tag) + name.slice(1);
-}
 
 /** How long a poll runs, as its choice reads. */
 function durationName(seconds: number, t: T): string {
@@ -287,60 +191,6 @@ function Audience({
   );
 }
 
-/** The language tool, by the language's name, and its menu. */
-function Language({
-  c,
-  t,
-  lang,
-  open,
-  setOpen,
-}: {
-  c: Composer;
-  t: T;
-  lang: string;
-  open: boolean;
-  setOpen: (o: boolean) => void;
-}) {
-  const current = c.draft.language;
-  const tags = [current, c.settings.language, lang, ...appLanguages].filter(
-    (tag, i, all) => tag !== "" && tag !== "und" && all.indexOf(tag) === i,
-  );
-  const shown = current === "" ? lang : current;
-  return (
-    <ChoicePopup
-      open={open}
-      onClose={() => {
-        setOpen(false);
-      }}
-      label={t("compose.language")}
-      end
-      trigger={
-        <ToolText
-          label={t("compose.language.tool", { language: ownName(shown) })}
-          lang={shown}
-          short={shown.split("-")[0]?.toUpperCase()}
-          expanded={open}
-          onPress={() => {
-            setOpen(!open);
-          }}
-        >
-          {ownName(shown)}
-        </ToolText>
-      }
-    >
-      <ChoiceGroup
-        title={t("compose.language")}
-        items={tags.map((tag) => ({ id: tag, icon: "translate" as const, label: ownName(tag) }))}
-        chosen={shown}
-        onChoose={(language) => {
-          c.change({ language });
-          setOpen(false);
-        }}
-      />
-    </ChoicePopup>
-  );
-}
-
 /** The poll's card: its options headed by their marks, then how long it runs and how it counts. */
 function Poll({
   poll,
@@ -424,90 +274,6 @@ function Poll({
         />
       </PollSettings>
     </PollCard>
-  );
-}
-
-/** A time `minutes` from now, at the next whole hour after it: where the schedule's field starts. */
-function nextHour(minutes = 60): Date {
-  const d = new Date(Date.now() + minutes * 60_000);
-  d.setMinutes(0, 0, 0);
-  d.setHours(d.getHours() + 1);
-  return d;
-}
-
-type Limits = Composer["settings"]["schedule"];
-
-/** What is wrong with a time to post at, by the server's limits; undefined when it is within them. */
-function scheduleProblem(value: string, limits: Limits, t: T): string | undefined {
-  const at = new Date(value);
-  if (value === "" || Number.isNaN(at.getTime())) return t("compose.schedule.invalid");
-  if (at.getTime() < Date.now() + limits.minLeadMinutes * 60_000)
-    return t("compose.schedule.too_soon", { minutes: limits.minLeadMinutes });
-  if (at.getTime() > Date.now() + limits.maxLeadDays * 86_400_000)
-    return t("compose.schedule.too_far", { days: limits.maxLeadDays });
-  return undefined;
-}
-
-/** The form that sets the time the post goes out, in a popover under (or, on a phone, over) its trigger. */
-function Schedule({
-  c,
-  t,
-  locale,
-  open,
-  setOpen,
-  trigger,
-}: {
-  c: Composer;
-  t: T;
-  locale: string;
-  open: boolean;
-  setOpen: (o: boolean) => void;
-  trigger: ReactNode;
-}) {
-  const at = c.draft.scheduledAt;
-  const limits = c.settings.schedule;
-  const [value, setValue] = useState(() => localInput(at === undefined ? nextHour() : new Date(at)));
-  const error = scheduleProblem(value, limits, t);
-  return (
-    <ChoicePopup
-      open={open}
-      onClose={() => {
-        setOpen(false);
-      }}
-      label={t("compose.schedule")}
-      trigger={trigger}
-    >
-      <ScheduleForm
-        title={t("compose.schedule")}
-        label={t("compose.schedule.field")}
-        value={value}
-        onChange={setValue}
-        min={new Date(Date.now() + limits.minLeadMinutes * 60_000)}
-        max={new Date(Date.now() + limits.maxLeadDays * 86_400_000)}
-        zone={readerZone(locale)}
-        hint={t("compose.schedule.limits", { minutes: limits.minLeadMinutes, days: limits.maxLeadDays })}
-        error={error}
-        confirm={{
-          label: t("compose.schedule.set"),
-          onPress: () => {
-            if (error !== undefined) return;
-            c.change({ scheduledAt: new Date(value).toISOString() });
-            setOpen(false);
-          },
-        }}
-        clear={
-          at === undefined
-            ? undefined
-            : {
-                label: t("compose.schedule.clear"),
-                onPress: () => {
-                  c.change({ scheduledAt: undefined });
-                  setOpen(false);
-                },
-              }
-        }
-      />
-    </ChoicePopup>
   );
 }
 
@@ -716,7 +482,11 @@ export function ComposerView({
           )}
           {!editing && (
             <Schedule
-              c={c}
+              at={c.draft.scheduledAt}
+              limits={settings.schedule}
+              onSet={(scheduledAt) => {
+                c.change({ scheduledAt });
+              }}
               t={t}
               locale={locale}
               open={open === "schedule"}
@@ -736,7 +506,11 @@ export function ComposerView({
             />
           )}
           <Language
-            c={c}
+            current={draft.language}
+            preferred={settings.language}
+            onChoose={(language) => {
+              c.change({ language });
+            }}
             t={t}
             lang={lang}
             open={open === "language"}

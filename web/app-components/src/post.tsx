@@ -3,7 +3,8 @@
 // A post of a timeline (#2981's anatomy), drawn from a status as the API gives it (status.ts) with the parts of
 // @my/design-system and the one content renderer: the context line (who boosted it, or whom it replies to), the author
 // header (the avatar, the name with the visibility and the time at the end, and "edited" after the time of an edited
-// post, which opens its edit history, over the handle), the text, or a content warning over it, the poll (open to the
+// post, which opens its edit history, over the handle), the text, or a content warning over it (an article: its card,
+// or on its page the article in full, its author's line, title and summary, cover and text, ADR-0160), the poll (open to the
 // reader's vote, else its results), the media (covered while sensitive; a picture opens the media viewer, which the
 // post holds open), or else the card of its first link, the quoted post as a reduced preview, the emoji reactions, the
 // translate line, and the actions (reply, boost with its menu of boost and quote, favourite, react, and more at the
@@ -16,6 +17,11 @@
 
 import {
   ActionRow,
+  ArticleCard,
+  ArticleCover,
+  ArticleParts,
+  ArticleText,
+  ArticleTitle,
   Avatar,
   Byline,
   CaptionLine,
@@ -48,6 +54,7 @@ import {
   TextButton,
   useAction,
   useLocale,
+  type ArticleCoverImage,
   type EmojiPickerProps,
   type IconName,
   type MediaItem,
@@ -57,8 +64,8 @@ import { AccountName as Name, handleOf, nameOf } from "./account";
 import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
-import { EmojiText, PostContent } from "./post-content";
-import type { PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
+import { EmojiText, excerptHtml, PostContent } from "./post-content";
+import type { PostArticle, PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
 
 /** What the reader asked of a post, on the status it shows (a boost's boosted status). */
 export type PostAction =
@@ -120,8 +127,23 @@ export type PostProps = {
   voting?: readonly number[] | undefined;
   /** The emoji picker the react action opens; without one, react is `onAction`'s. */
   picker?: PostPicker | undefined;
+  /**
+   * Where the reader's own posts are told apart (a conversation of direct messages): what says it is theirs ("You"),
+   * in the handle's place.
+   */
+  self?: string | undefined;
   /** How its link card shows (the reader's preference): the image above the text, or a square beside it. */
   cardSize?: "large" | "small" | undefined;
+  /**
+   * An article in full, on its page: its text, under its author's line, its title and summary, and its cover; without
+   * it, an article shows as its card.
+   */
+  reading?: ReactNode;
+  /**
+   * Its line of whom it replies to; false where the screen shows that already (a reply under the article it answers,
+   * on the article's page, and a post of a conversation of direct messages).
+   */
+  replyingTo?: boolean | undefined;
 };
 
 /**
@@ -206,7 +228,19 @@ export const visibilities: Record<PostVisibility, { icon: IconName; label: Messa
 const known = (tag: string) => (tag === "und" || tag === "" ? undefined : tag);
 
 /** The context line: who boosted it, or whom it replies to; none for a post that is neither. */
-function Context({ status, shown, t, lang }: { status: PostStatus; shown: PostStatus; t: T; lang: string }) {
+function Context({
+  status,
+  shown,
+  t,
+  lang,
+  replyingTo,
+}: {
+  status: PostStatus;
+  shown: PostStatus;
+  t: T;
+  lang: string;
+  replyingTo: boolean;
+}) {
   if (status.boost !== undefined)
     return (
       <CaptionLine icon="boost" lang={lang} oneLine>
@@ -220,7 +254,7 @@ function Context({ status, shown, t, lang }: { status: PostStatus; shown: PostSt
       </CaptionLine>
     );
   const to = shown.in_reply_to_account_id;
-  if (to === undefined) return null;
+  if (to === undefined || !replyingTo) return null;
   const username = to === shown.account.id ? shown.account.username : shown.mentions.find((m) => m.id === to)?.username;
   if (username === undefined) return null;
   return (
@@ -307,6 +341,16 @@ function Card({ status, size }: { status: PostStatus; size: "large" | "small" })
   );
 }
 
+/** An article's cover as the design system draws it; none without a cover or its size. */
+function coverOf(article: PostArticle): ArticleCoverImage | undefined {
+  const cover = article.cover;
+  const src = cover?.url ?? cover?.preview_url;
+  const width = cover?.meta?.width;
+  const height = cover?.meta?.height;
+  if (cover === undefined || src === undefined || width === undefined || height === undefined) return undefined;
+  return { src, width, height, alt: cover.description, blurhash: cover.blurhash };
+}
+
 /** The quoted post, one level deep: its author on one line, its text, and its images as small previews. */
 function Quote({ status }: { status: PostStatus }) {
   const name = useId();
@@ -322,7 +366,7 @@ function Quote({ status }: { status: PostStatus }) {
         handle={handleOf(status.account)}
         end={<Stamp date={status.created_at} />}
       />
-      <PostContent html={status.content} emojis={status.emojis} lang={known(status.language)} />
+      <PostContent html={excerptHtml(status)} emojis={status.emojis} lang={known(status.language)} />
       <MediaGrid
         items={mediaItems(status.media_attachments, undefined)}
         size="preview"
@@ -613,7 +657,7 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
 /**
  * The more menu: what reaches the post (its link, its original page when it came from another server, sharing it),
  * the bookmark, then for one's own edit (none with a poll), and apart and last delete and delete-and-redraft, which ask
- * first.
+ * first; an article is never redrafted, since the composer writes posts.
  */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
   const item = (type: Exclude<PostAction["type"], "reaction" | "vote">, icon: IconName, label: string, on = false) => (
@@ -644,7 +688,7 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
           {/* The server edits no post with a poll: its votes belong to the poll as posted. */}
           {status.poll === undefined && <MenuGroup>{item("edit", "edit", t("post.edit"))}</MenuGroup>}
           <MenuGroup>
-            {item("redraft", "redraft", t("post.redraft"))}
+            {status.article === undefined && item("redraft", "redraft", t("post.redraft"))}
             {item("delete", "delete", t("post.delete"))}
           </MenuGroup>
         </>
@@ -840,6 +884,9 @@ export function Post({
   voting,
   picker,
   cardSize = "large",
+  reading,
+  replyingTo = true,
+  self,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -907,52 +954,106 @@ export function Post({
       )}
     </ModalPresence>
   );
+  const byline = (
+    <Byline
+      avatar={<Avatar name={nameOf(shown.account)} src={shown.account.avatar?.small.url} size="post" decorative />}
+      name={<Name account={shown.account} />}
+      nameId={name}
+      handle={handleOf(shown.account)}
+      href={accountPath(shown.account)}
+      self={own ? self : undefined}
+      end={
+        stamp ? (
+          <Stamp
+            glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
+            date={shown.created_at}
+            href={statusPath(shown)}
+            edited={
+              shown.edited_at === undefined
+                ? undefined
+                : { text: t("post.edited"), label: t("post.edited_mark"), onPress: on("history") }
+            }
+          />
+        ) : undefined
+      }
+    />
+  );
+  const article = shown.article;
+  const cover = article === undefined ? undefined : coverOf(article);
+  const sensitive = shown.sensitive ?? false;
+  // An article in a list is its card, in place of a post's text; on its page, its head and its text, a sensitive
+  // article's cover and text folded under one line, its title and summary shown.
+  let body: ReactNode;
+  if (article !== undefined && reading === undefined)
+    body = (
+      <ArticleCard
+        href={statusPath(shown)}
+        title={article.title}
+        summary={article.summary}
+        cover={cover}
+        sensitive={sensitive}
+        lang={textLang}
+      />
+    );
+  else if (article !== undefined) {
+    const coverPart = cover !== undefined && <ArticleCover cover={cover} folded={sensitive} />;
+    const text = (
+      <ArticleText lang={textLang} folded={sensitive}>
+        {reading}
+      </ArticleText>
+    );
+    body = (
+      <ArticleParts>
+        {byline}
+        <ArticleTitle title={article.title} summary={article.summary} lang={textLang} />
+        {sensitive ? (
+          <Disclosure summary={t("post.article_sensitive")} icon="hidden">
+            <Stack lang={textLang}>
+              {coverPart}
+              {text}
+            </Stack>
+          </Disclosure>
+        ) : (
+          <>
+            {coverPart}
+            {text}
+          </>
+        )}
+      </ArticleParts>
+    );
+  } else
+    body = (
+      <>
+        {byline}
+        {cw ? (
+          <Disclosure
+            summary={
+              translates ? (
+                <Stack gap="line" lang={textLang}>
+                  <span>
+                    <EmojiText text={cw} emojis={shown.emojis} />
+                  </span>
+                  {translateLine}
+                </Stack>
+              ) : (
+                <EmojiText text={cw} emojis={shown.emojis} />
+              )
+            }
+            icon="hidden"
+          >
+            <Stack lang={textLang}>{content}</Stack>
+          </Disclosure>
+        ) : (
+          content
+        )}
+      </>
+    );
   return (
     <Entry lang={known(shown.language)} labelledBy={name}>
       {context}
-      <Context status={status} shown={shown} t={t} lang={lang} />
-      <Byline
-        avatar={<Avatar name={nameOf(shown.account)} src={shown.account.avatar?.small.url} size="post" decorative />}
-        name={<Name account={shown.account} />}
-        nameId={name}
-        handle={handleOf(shown.account)}
-        href={accountPath(shown.account)}
-        end={
-          stamp ? (
-            <Stamp
-              glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
-              date={shown.created_at}
-              href={statusPath(shown)}
-              edited={
-                shown.edited_at === undefined
-                  ? undefined
-                  : { text: t("post.edited"), label: t("post.edited_mark"), onPress: on("history") }
-              }
-            />
-          ) : undefined
-        }
-      />
-      {cw ? (
-        <Disclosure
-          summary={
-            translates ? (
-              <Stack gap="line" lang={textLang}>
-                <span>
-                  <EmojiText text={cw} emojis={shown.emojis} />
-                </span>
-                {translateLine}
-              </Stack>
-            ) : (
-              <EmojiText text={cw} emojis={shown.emojis} />
-            )
-          }
-          icon="hidden"
-        >
-          <Stack lang={textLang}>{content}</Stack>
-        </Disclosure>
-      ) : (
-        content
-      )}
+      <Context status={status} shown={shown} t={t} lang={lang} replyingTo={replyingTo} />
+      {article !== undefined && reading === undefined && byline}
+      {body}
       <Reactions status={shown} t={t} lang={lang} act={act} />
       {details}
       <Actions

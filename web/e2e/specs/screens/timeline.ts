@@ -374,6 +374,20 @@ export class Post {
       .click();
   }
 
+  /**
+   * The card of an article titled `title` (ADR-0160): one link to its page, named "Article", its title, and its summary
+   * when it has one.
+   */
+  articleCard(title: string): Locator {
+    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return this.article.getByRole("link", { name: new RegExp(`^Article ${escaped}( .+)?$`) });
+  }
+
+  /** Opens the page of the article titled `title`, from its card. */
+  async openArticle(title: string): Promise<void> {
+    await this.articleCard(title).click();
+  }
+
   /** Opens the profile of the post's author, from the link of their name. */
   async openAuthor(displayName: string): Promise<void> {
     await this.article.getByRole("link", { name: displayName, exact: true }).click();
@@ -397,6 +411,17 @@ export class Timeline {
         .getByRole("article", { name: author, exact: true })
         .filter({ hasText: text })
         .filter({ hasNotText: "boosted" }),
+    );
+  }
+
+  /** The post of `author` that holds `text`, as it leads a profile's feed, pinned, under the line "Pinned". */
+  pinned(author: string, text: string): Post {
+    return new Post(
+      this.page,
+      this.feed
+        .getByRole("article", { name: author, exact: true })
+        .filter({ hasText: text })
+        .filter({ hasText: /^Pinned[^]*$/ }),
     );
   }
 

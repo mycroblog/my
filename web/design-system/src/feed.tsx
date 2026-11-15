@@ -124,11 +124,13 @@ export function onFeedFocus(e: { target: Element; currentTarget: Element }): voi
 const feed = tv({
   slots: {
     root: "grid grid-cols-[minmax(0,1fr)] gap-feed [overflow-anchor:none]",
-    list: "col-start-1 row-start-1 grid grid-cols-[minmax(0,1fr)] gap-feed",
+    list: "col-start-1 row-start-1 grid grid-cols-[minmax(0,1fr)]",
     top: "pointer-events-none col-start-1 row-start-1 h-px self-start",
     newItems: "sticky top-shell-gap z-2 col-start-1 row-start-1 flex h-0 justify-center self-start",
     newItemsButton: "rounded-control shadow-overlay",
   },
+  // The posts of a conversation of direct messages, one exchange, closer together.
+  variants: { tight: { false: { list: "gap-feed" }, true: { list: "gap-feed-tight" } } },
 });
 
 /** The new entries' button: what it says (how many), and what a press does before the feed goes to the top. */
@@ -162,6 +164,8 @@ export type FeedProps = {
   onPassed?: ((key: string) => void) | undefined;
   /** Hears the key of an entry the reader clicked or tapped, anywhere inside it. */
   onEntryClick?: ((key: string) => void) | undefined;
+  /** Its entries closer together, as one exchange (a conversation of direct messages). */
+  tight?: boolean | undefined;
 };
 
 // What says that the reader scrolls by hand.
@@ -257,8 +261,9 @@ export function Feed({
   newItems,
   onPassed,
   onEntryClick,
+  tight = false,
 }: FeedProps) {
-  const s = feed();
+  const s = feed({ tight });
   const sentinel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const top = useRef<HTMLDivElement>(null);

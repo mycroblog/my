@@ -5,7 +5,7 @@
 // preview on the raised surface, with its remove. Both above the text. The text is drawn by the one content renderer.
 
 import { Avatar, Byline, ComposerQuote, ComposerReply, Embed, MediaGrid, Stamp } from "@my/design-system";
-import { EmojiText, PostContent } from "./post-content";
+import { EmojiText, excerptHtml, PostContent } from "./post-content";
 import type { PostAccount, PostStatus } from "./status";
 
 const handleOf = (account: PostAccount) =>
@@ -30,7 +30,7 @@ export function ReplyContext({ status, note }: { status: PostStatus; note: strin
   const shown = status.boost ?? status;
   return (
     <ComposerReply byline={<AuthorLine status={shown} time={false} />} note={note}>
-      <PostContent html={shown.content} emojis={shown.emojis} lang={known(shown.language)} />
+      <PostContent html={excerptHtml(shown)} emojis={shown.emojis} lang={known(shown.language)} />
     </ComposerReply>
   );
 }
@@ -54,7 +54,7 @@ export function QuoteContext({
     <ComposerQuote removeLabel={removeLabel} onRemove={onRemove}>
       <Embed lang={known(shown.language)}>
         <AuthorLine status={shown} time />
-        <PostContent html={shown.content} emojis={shown.emojis} lang={known(shown.language)} />
+        <PostContent html={excerptHtml(shown)} emojis={shown.emojis} lang={known(shown.language)} />
         <MediaGrid items={media} size="preview" sensitive={shown.sensitive ?? false} />
       </Embed>
     </ComposerQuote>

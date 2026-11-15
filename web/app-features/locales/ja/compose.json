@@ -547,6 +547,10 @@
     "defaultMessage": "投票",
     "description": "A mark on a draft's row: it carries a poll."
   },
+  "compose.drafts.mark.article": {
+    "defaultMessage": "記事",
+    "description": "A mark on a draft's row: it is the draft of an article."
+  },
   "compose.drafts.zone": {
     "defaultMessage": "{zone} の時刻",
     "description": "Over the scheduled posts: the reader's time zone, in which their times read."
@@ -586,5 +590,217 @@
   "compose.drafts.list.scheduled": {
     "defaultMessage": "予約投稿",
     "description": "The name of the list of scheduled posts, for assistive technology."
+  },
+  "compose.article.title.new": {
+    "defaultMessage": "新しい記事",
+    "description": "The title of the article editor, a screen of its own, while it writes a new article."
+  },
+  "compose.article.title.edit": {
+    "defaultMessage": "記事を編集",
+    "description": "The title of the article editor while it edits the reader's published article."
+  },
+  "compose.article.mode": {
+    "defaultMessage": "書く・プレビュー",
+    "description": "The name of the switch, on a narrow screen, between writing the article and its preview."
+  },
+  "compose.article.mode.write": {
+    "defaultMessage": "書く",
+    "description": "The choice of the switch that shows what is written of the article."
+  },
+  "compose.article.mode.preview": {
+    "defaultMessage": "プレビュー",
+    "description": "The choice of the switch that shows the article as it will be published."
+  },
+  "compose.article.preview.caption": {
+    "defaultMessage": "公開したときの表示",
+    "description": "The caption over the preview of the article, beside what is written on a wide screen."
+  },
+  "compose.article.preview.failed": {
+    "defaultMessage": "プレビューを表示できませんでした。",
+    "description": "In the preview's place when the server did not render the body; followed by Try again."
+  },
+  "compose.article.preview.empty": {
+    "defaultMessage": "まだ何も書かれていません。本文を書くと、ここにプレビューが表示されます。",
+    "description": "In the preview's place while the body is empty."
+  },
+  "compose.article.field.title": {
+    "defaultMessage": "タイトル",
+    "description": "The name of the article's title field, and its placeholder."
+  },
+  "compose.article.field.title.over": {
+    "defaultMessage": "タイトルは {max, number} 文字以内にしてください。",
+    "description": "Under the title when it is longer than the limit."
+  },
+  "compose.article.field.title.missing": {
+    "defaultMessage": "記事にタイトルを付けてください。",
+    "description": "Under the title when Publish was pressed without one."
+  },
+  "compose.article.field.left": {
+    "defaultMessage": "{count, plural, other {残り # 文字}}",
+    "description": "What a count near a field's limit says to a screen reader: how many characters are left."
+  },
+  "compose.article.field.over": {
+    "defaultMessage": "{count, plural, other {# 文字超過}}",
+    "description": "What a count past a field's limit says to a screen reader: by how many characters it is over."
+  },
+  "compose.article.body": {
+    "defaultMessage": "本文",
+    "description": "The name of the article's body, written in Markdown."
+  },
+  "compose.article.body.placeholder": {
+    "defaultMessage": "Markdown で書く…",
+    "description": "The placeholder of the article's body."
+  },
+  "compose.article.body.missing": {
+    "defaultMessage": "記事の本文を書いてください。",
+    "description": "Under the body when Publish was pressed with no body."
+  },
+  "compose.article.details": {
+    "defaultMessage": "記事について",
+    "description": "The heading of the article's summary, cover and hashtags, after its body."
+  },
+  "compose.article.summary": {
+    "defaultMessage": "要約",
+    "description": "The name of the article's summary field."
+  },
+  "compose.article.summary.hint": {
+    "defaultMessage": "空欄のときは、本文の書き出しが使われます。",
+    "description": "Under the summary's label: what an empty summary becomes."
+  },
+  "compose.article.summary.placeholder": {
+    "defaultMessage": "記事の内容を一、二行で",
+    "description": "The placeholder of the summary field."
+  },
+  "compose.article.summary.over": {
+    "defaultMessage": "要約は {max, number} 文字以内にしてください。",
+    "description": "Under the summary when it is longer than the limit."
+  },
+  "compose.article.cover": {
+    "defaultMessage": "カバー画像",
+    "description": "The name of the article's cover image."
+  },
+  "compose.article.cover.add": {
+    "defaultMessage": "カバー画像を追加",
+    "description": "The button that picks the article's cover image."
+  },
+  "compose.article.cover.remove": {
+    "defaultMessage": "カバー画像を外す",
+    "description": "The button that takes the cover image off the article."
+  },
+  "compose.article.cover.description": {
+    "defaultMessage": "説明",
+    "description": "The label of the cover image's description, for those who cannot see it."
+  },
+  "compose.article.cover.description.hint": {
+    "defaultMessage": "見えない人のために、画像に写っているもの",
+    "description": "The placeholder of the cover image's description."
+  },
+  "compose.article.cover.waiting": {
+    "defaultMessage": "カバー画像のアップロードが終わるまで待つか、失敗したときは外してください。",
+    "description": "Before Publish when Publish was pressed while the cover uploads or failed to."
+  },
+  "compose.article.tags": {
+    "defaultMessage": "ハッシュタグ",
+    "description": "The name of the article's hashtags."
+  },
+  "compose.article.tags.placeholder": {
+    "defaultMessage": "ハッシュタグを追加",
+    "description": "The placeholder of the field that adds a hashtag."
+  },
+  "compose.article.tags.full": {
+    "defaultMessage": "これ以上は付けられません",
+    "description": "The placeholder of the hashtags' field once the article has as many as it can."
+  },
+  "compose.article.tags.remove": {
+    "defaultMessage": "#{tag} を外す",
+    "description": "The button on a hashtag that takes it off the article."
+  },
+  "compose.article.tags.left": {
+    "defaultMessage": "{count, plural, other {あと # 個}}",
+    "description": "Beside the hashtags' label once near their limit: how many more can be added."
+  },
+  "compose.article.limit.bytes": {
+    "defaultMessage": "長さ: 上限の {ratio, number, percent}",
+    "description": "How much of the length limit of the article's body is used, as a percentage; past 100% the article is too long to publish."
+  },
+  "compose.article.limit.images": {
+    "defaultMessage": "画像 {used, number} / {max, number}",
+    "description": "How many images the article's body has, of the most it may have."
+  },
+  "compose.article.attach": {
+    "defaultMessage": "本文に画像を追加",
+    "description": "The tool that uploads an image and puts it in the body."
+  },
+  "compose.article.attach.uploading": {
+    "defaultMessage": "{count, plural, other {画像を # 枚アップロード中…}}",
+    "description": "Under the body while images for it upload."
+  },
+  "compose.article.attach.failed": {
+    "defaultMessage": "画像をアップロードできませんでした。もう一度追加してください。",
+    "description": "Under the body when an image for it could not be uploaded."
+  },
+  "compose.article.sensitive.on": {
+    "defaultMessage": "センシティブにする",
+    "description": "The tool that folds the article's body and cover behind its title and summary."
+  },
+  "compose.article.sensitive.off": {
+    "defaultMessage": "センシティブの指定を外す",
+    "description": "The same tool while the article is marked sensitive."
+  },
+  "compose.article.publish": {
+    "defaultMessage": "公開する",
+    "description": "The button that publishes the article now."
+  },
+  "compose.article.gone.publish": {
+    "defaultMessage": "新しい記事として公開",
+    "description": "The button that publishes what is written as a new article, once its draft is gone from the server."
+  },
+  "compose.article.over": {
+    "defaultMessage": "記事の一部が上限を超えています。短くするか画像を減らすと公開できます。",
+    "description": "Before Publish when the article is over a limit."
+  },
+  "compose.article.missing": {
+    "defaultMessage": "公開するにはタイトルと本文が必要です。",
+    "description": "Before Publish when Publish was pressed without a title or a body."
+  },
+  "compose.article.failed": {
+    "defaultMessage": "公開を完了できませんでした。もう一度試してください。",
+    "description": "Before Publish when publishing failed with no word from the server."
+  },
+  "compose.article.not_allowed": {
+    "defaultMessage": "このサーバーでは、このアカウントで新しい記事を書けません。これまでに書いた記事は編集できます。",
+    "description": "In place of the editor when the reader may not write new articles."
+  },
+  "compose.article.loading": {
+    "defaultMessage": "記事を読み込んでいます…",
+    "description": "In place of the editor while the article or its draft is read from the server."
+  },
+  "compose.article.load_failed": {
+    "defaultMessage": "記事を読み込めませんでした。",
+    "description": "In place of the editor when the article or its draft could not be read; followed by Try again."
+  },
+  "compose.in_place.to": {
+    "defaultMessage": "宛先: {names}",
+    "description": "Over the reply in place at the end of a conversation of direct messages: whom it goes to. names lists the conversation's other people."
+  },
+  "compose.in_place.form": {
+    "defaultMessage": "{names} へのメッセージ",
+    "description": "The name of the reply in place at the end of a conversation of direct messages, a form, for assistive technology. names lists the conversation's other people."
+  },
+  "compose.in_place.label": {
+    "defaultMessage": "メッセージ",
+    "description": "The name of the text field of the reply in place at the end of a conversation of direct messages, for assistive technology."
+  },
+  "compose.in_place.placeholder": {
+    "defaultMessage": "メッセージを書く",
+    "description": "The placeholder of the empty reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send": {
+    "defaultMessage": "送信する",
+    "description": "The button that sends the reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send_to": {
+    "defaultMessage": "{names} に送信する",
+    "description": "The name of the button that sends the reply in place, for assistive technology, apart from every post's Reply; it starts with, or holds, the button's visible word (compose.in_place.send). names lists the conversation's other people."
   }
 }

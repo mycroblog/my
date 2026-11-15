@@ -15,4 +15,5 @@ Components. One line each:
 - Band and blur lost to caption for sensitive media — one muted line above it, its kind and count, Show turning to Hide in place; a card's image takes the same line outside the link — the orchestrator's pick sensitive-cover (#3081) — 2026-11-15
 - Toggle lost to caption for the viewer's description — always under the picture, one centred group; behind a button it goes unfound — the orchestrator's pick viewer-alt (#3081) — 2026-11-15
 - Under lost to end for a hashtag's or list's head — one row, Follow at the end, the posts close under it, as on a profile — the orchestrator's pick screen-title (#3085) — 2026-11-15
+- Banner and thumb lost to below for an article's card, cover-first and title-first to byline for its page's head — an article is a post: its header first, its text before its media, as every post's — the orchestrator's picks article-card and article-head (#3089) — 2026-11-15
 - Stacked lost to inline for the composer's suggestions — one menu-height row; the handle's server never gives way, it tells same-named people apart — the orchestrator's pick composer-suggestions (#3086) — 2026-11-15

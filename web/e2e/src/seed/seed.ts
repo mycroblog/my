@@ -4,7 +4,7 @@
 // custom emoji with `bin/my`, everything else with the client API through @mycroblog/mykit, signed in as each person
 // (sign-in.ts). It writes no SQL: the timelines and notifications come from the actions. Every creating request carries
 // `Idempotency-Key: demo:<key>`, and what the server already has is found again (people by username, posts with images
-// by their alt text, apps by name, emoji by shortcode, announcements and events by title, drafts by text) and left alone, so a second
+// by their alt text, articles by title, apps by name, emoji by shortcode, announcements and events by title, drafts by text) and left alone, so a second
 // run against one server adds nothing. What the server decides and a test needs (the TOTP secrets, the passkeys' keys, the apps' client IDs) is the
 // seed's state, which it reads before it runs and returns after.
 
@@ -17,6 +17,7 @@ import {
   admin,
   announcements,
   apps,
+  conversationReads,
   drafts,
   draftSchedule,
   emojis,
@@ -30,6 +31,7 @@ import {
   personOf,
   posts,
   restrictions,
+  type Article,
   type Person,
   type Post,
 } from "../scenario";
@@ -354,11 +356,56 @@ class Seeder {
     return status;
   }
 
+  /** Posts the article `post` with its cover, unless an earlier run did: the author's article of its title. */
+  async writeArticle(api: Api, post: Post, article: Article): Promise<Status> {
+    const account = await this.account(post.author);
+    for await (const status of all(async (cursor) =>
+      body(
+        (
+          await api.GET("/accounts/{id}/statuses", {
+            params: {
+              path: { id: account.id },
+              query: { articles: true, ...(cursor === undefined ? {} : { cursor }) },
+            },
+          })
+        ).data,
+        "the articles",
+      ),
+    ))
+      if (status.article?.title === article.title) return status;
+    const cover =
+      article.cover === undefined
+        ? undefined
+        : {
+            id: (
+              await this.upload(api, article.cover.name, article.cover.drawing, article.cover.description, "attachment")
+            ).id,
+            description: article.cover.description,
+          };
+    const { data } = await api.POST("/articles", {
+      params: { header: key(post.key) },
+      body: {
+        title: article.title,
+        summary: article.summary,
+        text: post.text,
+        visibility: post.visibility,
+        language: post.language,
+        ...(post.sensitive === true ? { sensitive: true } : {}),
+        ...(cover === undefined ? {} : { cover }),
+      },
+    });
+    return body(data, `the article ${post.key}`);
+  }
+
   async writePosts() {
     for (const post of posts) {
       // The server takes only real video and sound files, which the scenario does not hold (scenario.ts).
       if (post.attachments !== undefined) continue;
       const api = await this.api(post.author);
+      if (post.article !== undefined) {
+        this.#posts.set(post.key, await this.writeArticle(api, post, post.article));
+        continue;
+      }
       const first = post.images?.[0];
       const found = first === undefined ? undefined : await this.findByImage(post.author, first.description);
       let status = found;
@@ -429,6 +476,19 @@ class Seeder {
           break;
         }
       }
+    }
+  }
+
+  /** Marks read each conversation a person read, found among theirs by its latest post. */
+  async readConversations() {
+    for (const r of conversationReads) {
+      const api = await this.api(r.by);
+      const last = this.post(r.post).id;
+      const found = await until(`the conversation of ${r.post}`, async () => {
+        const { data } = await api.GET("/conversations", { params: { query: { limit: 40 } } });
+        return data?.items.find((c) => c.last_status.id === last);
+      });
+      await api.POST("/conversations/{id}/read", { params: { path: { id: found.id } } });
     }
   }
 
@@ -561,6 +621,9 @@ class Seeder {
               ...(d.spoiler === undefined ? {} : { spoiler_text: d.spoiler }),
               ...(replyTo === undefined ? {} : { in_reply_to_id: replyTo }),
               ...(media.length === 0 ? {} : { media }),
+              ...(d.article === undefined
+                ? {}
+                : { article: { title: d.article.title, summary: d.article.summary, tags: [...d.article.tags] } }),
               ...(d.poll === undefined
                 ? {}
                 : {
@@ -634,6 +697,7 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   await s.makeLists();
   await s.writePosts();
   await s.interact();
+  await s.readConversations();
   await s.restrict();
   await s.registerApps();
   await s.publishAnnouncements();

@@ -5,7 +5,7 @@
 // banner, the avatar with the reader's actions at the other end of its row (follow in its state, more), the name with a
 // locked account's lock and a bot's badge, the handle with "Follows you" and the role badges, the bio, the fields, when
 // it joined and its counts, the lines of its state (blocked, muted, locked, remote), and the featured hashtags. Under
-// it, the tabs of its posts (posts, posts and replies, media), the pinned posts first under the first two. A blocked
+// it, the tabs of its posts (posts, posts and replies, media, articles), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
 import { AccountName, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
@@ -304,13 +304,15 @@ type Item = { readonly status: Status; readonly pinned: boolean };
 
 function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed: boolean; t: T }) {
   const posts = useAccountStatuses(account.id, tab);
-  const pinned = useAccountStatuses(account.id, "pinned", tab !== "media");
+  // The pinned posts lead the lists of all posts, not the filters of some (media, articles).
+  const withPinned = tab === "posts" || tab === "replies";
+  const pinned = useAccountStatuses(account.id, "pinned", withPinned);
   const onAction = usePostActions();
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
   const items: Item[] = [
-    ...(tab === "media" ? [] : pinned.items.map((status) => ({ status, pinned: true }))),
+    ...(withPinned ? pinned.items.map((status) => ({ status, pinned: true })) : []),
     ...posts.items.map((status) => ({ status, pinned: false })),
   ];
   return (
@@ -363,6 +365,7 @@ export function Profile({ acct }: { acct: string }) {
             { id: "posts", name: t("profile.posts") },
             { id: "replies", name: t("profile.posts_and_replies") },
             { id: "media", name: t("profile.media") },
+            { id: "articles", name: t("profile.articles") },
           ]}
           current={tab}
           onChange={setTab}

@@ -396,12 +396,12 @@
     "description": "Detail of the HTTP 422 API error when the summary of an article is too long. {max} is the maximum number of characters."
   },
   "errors.status.article_title_invalid": {
-    "defaultMessage": "{max, plural, other {記事の題は 1 文字以上 # 文字以内にしてください。}}",
+    "defaultMessage": "{max, plural, other {記事のタイトルは 1 文字以上 # 文字以内にしてください。}}",
     "description": "Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters."
   },
   "errors.status.article_too_long": {
-    "defaultMessage": "{max, plural, other {記事の本文は HTML にして # バイト以内にしてください。}}",
-    "description": "Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes."
+    "defaultMessage": "記事の本文が長すぎます。短くしてからもう一度試してください。",
+    "description": "Detail of the HTTP 422 API error when the body of an article is longer than the instance allows."
   },
   "errors.status.article_too_many_images": {
     "defaultMessage": "{max, plural, other {記事の本文に載せられる画像は # 枚までです。}}",

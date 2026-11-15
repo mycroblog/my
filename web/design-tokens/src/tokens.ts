@@ -59,10 +59,16 @@ export type TextStep = {
   letterSpacing?: string;
 };
 
-/** The type scale, from the largest; the tagline reads as a catch copy. */
+/**
+ * The type scale, from the largest; the tagline reads as a catch copy. An article's page sets its title as `headline`,
+ * its headings as `heading` (h2) and `title` (h3), and its text as `reading`, a step up from a post's for long reading.
+ */
 export const text = {
   tagline: { size: 1.875, lineHeight: 1.2, fontWeight: 800, letterSpacing: "-0.01em" },
+  headline: { size: 1.625, lineHeight: 1.3, fontWeight: 700 },
+  heading: { size: 1.3125, lineHeight: 1.35, fontWeight: 700 },
   title: { size: 1.125, lineHeight: 1.35, fontWeight: 700 },
+  reading: { size: 1, lineHeight: 1.75, fontWeight: 400 },
   body: { size: 0.875, lineHeight: 1.55, fontWeight: 400 },
   caption: { size: 0.75, lineHeight: 1.45, fontWeight: 400 },
 } as const satisfies Record<string, TextStep>;
@@ -205,9 +211,10 @@ export const icon = { action: 1.125, caption: 0.875, navigation: 1.5, tile: { ra
 /**
  * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the start of a row of
  * a list on one line (a suggestion), at the head of a post, and in a profile preview; and the size of the initial that
- * stands in for a missing image, as a share of the avatar.
+ * stands in for a missing image, as a share of the avatar, larger on the inline and the row avatars, where a kanji or an
+ * Arabic letter at the share of the larger ones is a few pixels high.
  */
-export const avatar = { inline: 1.25, row: 1.5, post: 2.5, preview: 4, initial: 0.44 } as const;
+export const avatar = { inline: 1.25, row: 1.5, post: 2.5, preview: 4, initial: 0.44, initialSmall: 0.52 } as const;
 
 /**
  * The shadow a surface over the page (a menu) casts, down `y` px and blurred `blur` px, in a share of black that is
@@ -249,6 +256,20 @@ export const content = {
 } as const;
 
 /**
+ * An article (ADR-0160): on its page, the most a line of its text runs, in em of `reading`; the space between its
+ * blocks and above a heading, in rem; and its cover's height as a share of its width, at most `coverMaxHeight` rem.
+ * In a timeline, its card's square cover is `cardThumb` rem wide.
+ */
+export const article = {
+  measure: 38,
+  blockGap: 1,
+  headingGap: 1.75,
+  coverRatio: 0.5625,
+  coverMaxHeight: 22,
+  cardThumb: 5.5,
+} as const;
+
+/**
  * An entry of a feed (a post), in rem: the space between its parts and between the lines of one part; how far its
  * surface reaches past its content when hovered or focused, which holds an action's tile and its focus ring, and that
  * surface's corner; the gap after the avatar, between the name and what ends its line, after a caption's glyph and
@@ -271,9 +292,10 @@ export const entry = {
 /**
  * A feed of entries (a timeline), in rem: the space between its entries, in which their surfaces meet edge to edge
  * (twice an entry's reach), and the room kept above an entry the keyboard brings to the top of the view, which holds
- * its focus ring.
+ * its focus ring; and the space between the posts of a conversation of direct messages, which read as one exchange,
+ * where a hovered post's surface stops short of the next post.
  */
-export const feed = { gap: 1.75, scrollMargin: 0.75 } as const;
+export const feed = { gap: 1.75, scrollMargin: 0.75, tightGap: 1.25 } as const;
 
 /** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */
 export const embed = { padding: 0.75, gap: 0.375 } as const;
@@ -420,7 +442,8 @@ export const formPage = {
  * on its lines (and inside a badge), between its counts, and between its fields; the size of the unread mark; and the
  * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
  * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
- * ring of the page's surface that cuts it out of that one.
+ * ring of the page's surface that cuts it out of that one; and how far a face of a conversation's people tucks under
+ * the one before, little enough that each stays recognisable.
  */
 export const screen = {
   tabGap: 0.25,
@@ -444,6 +467,7 @@ export const screen = {
   facesLead: 3.5,
   faceOverlap: 0.5,
   faceCut: 0.125,
+  faceTuck: 0.25,
 } as const;
 
 /**
@@ -530,7 +554,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -582,6 +606,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--avatar-post", `${avatar.post}rem`],
   ["--avatar-preview", `${avatar.preview}rem`],
   ["--avatar-initial", `${avatar.initial}`],
+  ["--avatar-initial-small", `${avatar.initialSmall}`],
   [
     "--shadow-overlay",
     `0 ${shadow.y}px ${shadow.blur}px light-dark(rgb(0 0 0 / ${percent(shadow.share.light)}), rgb(0 0 0 / ${percent(shadow.share.dark)}))`,
@@ -606,6 +631,12 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--content-code-hang", `${content.codeHang}ch`],
   ["--content-code-inline", `${content.codeInline}em`],
   ["--content-emoji", `${content.emoji}em`],
+  ["--article-measure", `${article.measure}em`],
+  ["--article-block-gap", `${article.blockGap}rem`],
+  ["--article-heading-gap", `${article.headingGap}rem`],
+  ["--article-cover-ratio", `${article.coverRatio}`],
+  ["--article-cover-max-height", `${article.coverMaxHeight}rem`],
+  ["--article-card-thumb", `${article.cardThumb}rem`],
   ["--entry-gap", `${entry.gap}rem`],
   ["--entry-line-gap", `${entry.lineGap}rem`],
   ["--entry-reach", `${entry.reach}rem`],
@@ -618,6 +649,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--entry-scroll-margin", `${entry.scrollMargin}rem`],
   ["--feed-gap", `${feed.gap}rem`],
   ["--feed-scroll-margin", `${feed.scrollMargin}rem`],
+  ["--feed-tight-gap", `${feed.tightGap}rem`],
   ["--embed-padding", `${embed.padding}rem`],
   ["--embed-gap", `${embed.gap}rem`],
   ["--media-gap", `${media.gap}rem`],

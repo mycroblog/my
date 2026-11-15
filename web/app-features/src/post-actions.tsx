@@ -227,10 +227,13 @@ function History({ id, lang, onClose }: { id: string; lang: string | undefined; 
  */
 export function PostActions({
   onCompose,
+  onEditArticle,
   sheet = false,
   children,
 }: {
   onCompose?: ((to: ComposeRequest) => void) | undefined;
+  /** Opens the article editor for the reader's article of `id`, which Edit of an article does. */
+  onEditArticle?: ((id: string) => void) | undefined;
   sheet?: boolean | undefined;
   children: ReactNode;
 }) {
@@ -351,6 +354,11 @@ export function PostActions({
         return;
       case "edit":
         setNotice(undefined);
+        // An article is edited in the article editor, which reads what its author wrote of it.
+        if (status?.article !== undefined) {
+          onEditArticle?.(id);
+          return;
+        }
         own.source(id).then(
           (source) => {
             onCompose?.({ kind: "edit", id, source });

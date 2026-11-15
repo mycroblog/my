@@ -42,13 +42,19 @@ export function featuredHashtagsQuery({ queries }: AppData, id: string) {
 
 /**
  * Which of an account's posts a list holds: its posts without its replies, all of them, or those with media (the API
- * has no filter of media, so its pages are read without replies and the posts without media left out), and its pinned
- * posts.
+ * has no filter of media, so its pages are read without replies and the posts without media left out), its articles
+ * (ADR-0160 §11), and its pinned posts.
  */
-export type AccountPosts = "posts" | "replies" | "media" | "pinned";
+export type AccountPosts = "posts" | "replies" | "media" | "articles" | "pinned";
 
 const postsQuery = (kind: AccountPosts) =>
-  kind === "pinned" ? { pinned: true } : kind === "replies" ? {} : { exclude_replies: true };
+  kind === "pinned"
+    ? { pinned: true }
+    : kind === "articles"
+      ? { articles: true }
+      : kind === "replies"
+        ? {}
+        : { exclude_replies: true };
 
 /** The posts of the account of `id`, newest first, of the kind given. */
 export function accountStatusesQuery({ api, queries }: AppData, id: string, kind: AccountPosts) {

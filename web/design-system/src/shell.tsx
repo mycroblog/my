@@ -26,6 +26,7 @@ import {
   DialogTrigger,
   Heading,
   Link,
+  MenuTrigger,
   Popover,
   ToggleButton,
   Tooltip,
@@ -37,6 +38,7 @@ import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { UnreadMark } from "./list";
 import { useReader } from "./locale";
+import { MenuPanel } from "./menu";
 import { ModalLayer, ModalPresence } from "./modal";
 
 /**
@@ -113,8 +115,9 @@ const nav = tv({
     glyph: "relative inline-flex flex-none",
     label: "",
     // The badge on the glyph's corner, where the label is not shown beside the glyph, and at the line's end, where it
-    // is; each place sets which shows.
-    corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)]",
+    // is; each place sets which shows. The corner's badge is cut out of the glyph by a ring of the surface under it, so
+    // that it reads over a filled glyph (the current place's).
+    corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)] shadow-face-cut",
     end: "ms-auto",
   },
   variants: {
@@ -124,7 +127,11 @@ const nav = tv({
         item: [
           // At the full width of the rail or the sidebar, so that the menu's popover opens beside the navigation.
           "box-border h-shell-item w-full flex-none justify-center gap-shell-edge data-hovered:bg-surface-hover",
+          "data-hovered:[--face-cut-color:var(--color-surface-hover)]",
+          // The body's leading, not the font's `normal`, which the fallback fonts set to the size alone, so that the
+          // label's truncation clips no descender.
           "desktop:justify-start desktop:px-shell-item-inline desktop:text-[length:var(--shell-label)]",
+          "desktop:leading-[var(--text-body--line-height)]",
         ],
         // In the rail, the label names the place for assistive technology alone.
         label: "sr-only desktop:not-sr-only desktop:truncate",
@@ -750,28 +757,37 @@ export function FrameMark({
 /**
  * The screen's primary action in the frame (writing a post, or signing in): under the mark in the rail, with its label
  * in the sidebar, or floating over the tab bar: a glyph alone named by its label, or with its label when `labelled`
- * (signing in, which a glyph alone does not say).
+ * (signing in, which a glyph alone does not say). With `menu`, a long press, a right click or Alt+Down on it opens a
+ * menu of what else it can start (a new article), in a popover beside it; a press still runs the action. `secondary`
+ * is a second thing to start (a new article), tonal under the primary one in `FrameActions`.
  */
 export function FrameAction({
   icon,
   label,
   onPress,
   labelled = false,
+  secondary = false,
+  menu,
   "aria-keyshortcuts": keyshortcuts,
 }: {
   icon: IconName;
   label: string;
   onPress: () => void;
   labelled?: boolean;
+  /** On the raised surface, tonal: a second action under the primary one, which keeps the accent. */
+  secondary?: boolean;
+  /** The menu the action holds besides itself: its name and its items (`MenuItem`s). */
+  menu?: { label: string; children: ReactNode } | undefined;
   /** The keys that run the action (what `useAction` returns), for assistive technology. */
   "aria-keyshortcuts"?: string | undefined;
 }) {
   const place = use(PlaceContext);
   const s = nav({ place });
   const float = place === "float";
-  return (
+  const [open, setOpen] = useState(false);
+  const button = (
     <ButtonBase
-      kind="primary"
+      kind={secondary ? "secondary" : "primary"}
       size={float ? (labelled ? "form" : "float") : "side"}
       aria-label={label}
       aria-keyshortcuts={keyshortcuts}
@@ -785,6 +801,33 @@ export function FrameAction({
       </span>
     </ButtonBase>
   );
+  if (menu === undefined) return button;
+  return (
+    <div
+      className="contents"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setOpen(true);
+      }}
+    >
+      <MenuTrigger trigger="longPress" isOpen={open} onOpenChange={setOpen}>
+        {button}
+        <Popover placement={float ? "top end" : "bottom start"} offset={4} className="outline-hidden">
+          <MenuPanel label={menu.label} own>
+            {menu.children}
+          </MenuPanel>
+        </Popover>
+      </MenuTrigger>
+    </div>
+  );
+}
+
+/**
+ * The actions under the mark in the rail and the sidebar, close together as buttons of one row sit: the primary one
+ * (New post), then a second one (New article), tonal.
+ */
+export function FrameActions({ children }: { children: ReactNode }) {
+  return <div className="grid gap-shell-item-gap">{children}</div>;
 }
 
 /** A list of places of the app, in the rail, the sidebar, the tab bar or the menu's sheet; two lists stand apart. */
@@ -910,6 +953,7 @@ export function NavMenu({
   closeLabel,
   marked = false,
   markLabel,
+  count,
   footer: end,
   children,
 }: {
@@ -917,6 +961,11 @@ export function NavMenu({
   closeLabel: string;
   marked?: boolean;
   markLabel?: string | undefined;
+  /**
+   * How many wait in a place inside it that the reader reads (the unread direct messages): a badge in place of the
+   * mark, which `markLabel` names.
+   */
+  count?: number | undefined;
   footer?: ReactNode;
   children: ReactNode;
 }) {
@@ -925,6 +974,7 @@ export function NavMenu({
   const m = menu();
   const { lang, direction } = useReader(undefined);
   const [open, setOpen] = useState(false);
+  const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
   // A place's press (a link inside) closes the menu, as it leaves the screen.
   const close = () => {
     setOpen(false);
@@ -944,14 +994,25 @@ export function NavMenu({
     >
       <span className={s.glyph()}>
         <Icon name="menu" place="navigation" />
-        {marked && <span className={m.dot()} aria-hidden="true" />}
+        {shown !== undefined ? (
+          <span className={`${badge()} ${s.corner()}`} aria-hidden="true">
+            {shown}
+          </span>
+        ) : (
+          marked && <span className={m.dot()} aria-hidden="true" />
+        )}
       </span>
       <span className={s.label()}>{label}</span>
-      {marked && markLabel !== undefined && (
+      {(marked || shown !== undefined) && markLabel !== undefined && (
         <>
           {" "}
           <span className="sr-only">{markLabel}</span>
         </>
+      )}
+      {shown !== undefined && (
+        <span className={`${badge()} ${s.end()}`} aria-hidden="true">
+          {shown}
+        </span>
       )}
     </AriaButton>
   );

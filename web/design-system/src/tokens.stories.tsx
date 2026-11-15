@@ -12,7 +12,13 @@ import { Preview } from "./preview";
 // The same en/ja sample for every step of the type scale.
 const sample: Record<TextName, [string, string]> = {
   tagline: ["Start small, grow together.", "小さく始めて、みんなで育てる。"],
+  headline: ["Running a small server for a year", "小さなサーバーを一年続けて"],
+  heading: ["What the first month taught us", "最初の一か月で学んだこと"],
   title: ["What happened on your server today", "今日のサーバーのできごと"],
+  reading: [
+    "We opened the server to twelve friends and a cat. By the end of the year, two hundred people called it home, and every one of them had a reason to stay.",
+    "十二人の友だちと一匹の猫のためにサーバーを開きました。一年が終わるころには二百人がここを居場所にしていて、その一人ひとりに残る理由がありました。",
+  ],
   body: [
     "mycroblog is a microblog for the fediverse. Write a short post, follow people on other servers, and reply to them as if they lived next door. It starts small and grows with its community, one server at a time.",
     "mycroblog は、フェディバースのためのマイクロブログです。短い投稿を書き、ほかのサーバーの人をフォローして、隣に住んでいるかのように返信できます。小さく始めて、コミュニティとともに、ひとつのサーバーずつ育っていきます。",

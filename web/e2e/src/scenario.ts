@@ -4,6 +4,7 @@
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
 // today (the home timeline, the composer with its drafts and scheduled posts, a post, its edit history and its thread,
+// an article as its card and on its page,
 // the notifications, a profile, a hashtag, the reader's lists and bookmarks, the sign-in with a password, a two-factor
 // code or a passkey, the consent to an app, and the shell's announcements and upcoming events), and grows with the
 // screens. It names no ID and no time (an event's day is counted from the seed): the
@@ -96,7 +97,12 @@ export type Post = {
    * others, and last to `text`, what it says now; each version stays in its edit history.
    */
   earlier?: readonly string[];
+  /** It is an article (ADR-0160): `text` is its body in Markdown, under this title, summary and cover. */
+  article?: Article;
 };
+
+/** What makes a post an article: its title, its summary, and its cover. */
+export type Article = { title: string; summary: string; cover?: Image };
 
 /** A poll of a post: its options, whether a vote may choose several, and how many days it takes votes. */
 export type Poll = { options: readonly string[]; multiple?: boolean; days: number };
@@ -392,6 +398,41 @@ export const lists: readonly PersonList[] = [
 
 /** The posts, oldest first. */
 export const posts: readonly Post[] = [
+  // An article and its reply come first, older than every other post, so that they push none of those off the first
+  // page of a timeline.
+  {
+    key: "sam-article",
+    author: "sam",
+    language: "en",
+    visibility: "public",
+    article: {
+      title: "A sourdough starter in seven days",
+      summary: "What I fed it, when it rose, and the three mistakes that cost me a week. A diary of a jar of flour.",
+      cover: { name: "starter.png", description: "A round loaf on a wooden board", drawing: loaf },
+    },
+    text: [
+      "Seven days ago I mixed flour and water in a jar. This is what happened next, day by day.",
+      "# The first three days",
+      "Nothing, then bubbles, then a smell like **old cheese**. That smell is normal: keep feeding it.",
+      "- Day 1: 50 g flour, 50 g water\n- Day 2: the same, at the same hour\n- Day 3: half of it out, then the same",
+      "> A starter is ready when it doubles within six hours of a feed.",
+      "# What I fed it",
+      "| Day | Flour | Water |\n| --- | ---: | ---: |\n| 1 | 50 g | 50 g |\n| 4 | 100 g | 100 g |\n| 7 | 100 g | 80 g |",
+      "## The mistakes",
+      "Too warm a kitchen, too cold a fridge, and a lid screwed tight. The map of the shop I bought the flour from: ![the shop on a map](https://maps.test/flour.png)",
+      "```\nfeed: 1 starter : 1 flour : 1 water\n```",
+      "---",
+      "Next week: the first loaf.",
+    ].join("\n\n"),
+  },
+  {
+    key: "yuki-article-reply",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    replyTo: "sam-article",
+    text: "@sam 三日目のにおい、うちでも同じでした。続きを楽しみにしています",
+  },
   {
     key: "hana-welcome",
     author: "hana",
@@ -406,6 +447,54 @@ export const posts: readonly Post[] = [
     language: "en",
     visibility: "public",
     text: "Hi all, I'm one of the moderators here. Reports reach me within a day. The rules: https://demo.test/about :sparkle:",
+  },
+  // The direct messages, before the posts of the timelines, whose first page they would otherwise fill: Sam's to Yuki,
+  // whose newest Yuki has not read, and a group of Hana, Layla and Yuki, which Yuki read (conversationReads).
+  {
+    key: "sam-direct",
+    author: "sam",
+    language: "en",
+    visibility: "direct",
+    text: "@yuki Are you coming to the meetup on Saturday? I can bring the bread.",
+  },
+  {
+    key: "yuki-direct-reply",
+    author: "yuki",
+    language: "en",
+    visibility: "direct",
+    replyTo: "sam-direct",
+    text: "@sam Yes, I'll be there! I'll bring a thermos of tea. Shall we meet at the station?",
+  },
+  {
+    key: "sam-direct-again",
+    author: "sam",
+    language: "en",
+    visibility: "direct",
+    replyTo: "yuki-direct-reply",
+    text: "@yuki The station at nine, then. The dough is already rising.",
+  },
+  {
+    key: "hana-group",
+    author: "hana",
+    language: "ja",
+    visibility: "direct",
+    text: "@yuki @layla サーバーのルールを英語とアラビア語にもしたいです。手伝ってもらえますか？",
+  },
+  {
+    key: "layla-group",
+    author: "layla",
+    language: "en",
+    visibility: "direct",
+    replyTo: "hana-group",
+    text: "@hana @yuki Happy to do the Arabic. I'll send a draft tonight.",
+  },
+  {
+    key: "yuki-group",
+    author: "yuki",
+    language: "ja",
+    visibility: "direct",
+    replyTo: "layla-group",
+    text: "@hana @layla 英語の方はわたしが見ます！",
   },
   {
     key: "yuki-ridge",
@@ -582,13 +671,6 @@ export const posts: readonly Post[] = [
     text: "For this server only: the meetup on Saturday starts at ten.",
   },
   {
-    key: "sam-direct",
-    author: "sam",
-    language: "en",
-    visibility: "direct",
-    text: "@yuki Are you coming to the meetup on Saturday? I can bring the bread.",
-  },
-  {
     key: "yuki-quote",
     author: "yuki",
     language: "ja",
@@ -641,6 +723,12 @@ export const interactions: readonly Interaction[] = [
   { kind: "vote", by: "marco", post: "sam-poll", choices: [2] },
   { kind: "vote", by: "layla", post: "sam-poll", choices: [0] },
 ];
+
+/**
+ * The conversations of the direct messages a person read, each by its latest post: they read it up to that post, on
+ * the server's read marker (POST /conversations/{id}/read), so that it shows read until a newer post by another.
+ */
+export const conversationReads: readonly { by: string; post: string }[] = [{ by: "yuki", post: "yuki-group" }];
 
 /** The blocks and mutes. */
 export const restrictions: readonly Restriction[] = [
@@ -743,6 +831,8 @@ export type DraftPlan = {
   poll?: Poll;
   schedule?: { inDays: number; hour: number };
   fails?: { post: string };
+  /** It is the draft of an article (ADR-0160 §2): `text` is its body in Markdown, under this title and summary. */
+  article?: { title: string; summary: string; tags: readonly string[] };
 };
 
 /** The drafts and scheduled posts, which the composer's list shows. */
@@ -788,6 +878,34 @@ export const drafts: readonly DraftPlan[] = [
     author: "yuki",
     text: "Walked along the river this morning. The first frost turned every leaf on the path silver.",
     language: "en",
+  },
+  {
+    key: "yuki-article-trail",
+    author: "yuki",
+    text:
+      "## Before you go\n\nThe trail starts behind the old station. Bring **water** and a warm layer: the ridge is " +
+      "windy even in summer.\n\n## The route\n\n- Up the stone steps to the shrine\n- Along the ridge to the lookout\n" +
+      "- Down through the cedar forest\n\n> The lookout is the best place for the morning light.",
+    language: "en",
+    article: {
+      title: "A photo walk along the north ridge",
+      summary: "",
+      tags: ["photowalk", "hiking"],
+    },
+  },
+  {
+    key: "yuki-article-scheduled",
+    author: "yuki",
+    text:
+      "## What we did\n\nTwelve of us met at the pier and walked the river path to the old mill.\n\n" +
+      "## Next time\n\nWe start an hour earlier, for the light.",
+    language: "en",
+    schedule: { inDays: 3, hour: 1 },
+    article: {
+      title: "Notes from the November photo walk",
+      summary: "What we saw, what we learned, and when we meet next.",
+      tags: ["photowalk"],
+    },
   },
 ];
 

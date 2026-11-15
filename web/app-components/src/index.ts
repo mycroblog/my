@@ -20,7 +20,7 @@ export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-histor
 export { languageName } from "./locale";
 export { accountPath, hashtagPath, reactorsPath, statusPath, tagPath } from "./paths";
 export { Post, type PostAction, type PostPicker, type PostProps, type TranslationFailure } from "./post";
-export { PostContent, ServerDomain, type ContentEmoji, type PostContentProps } from "./post-content";
+export { excerptHtml, PostContent, ServerDomain, type ContentEmoji, type PostContentProps } from "./post-content";
 export { isRemote, QuoteContext, ReplyContext } from "./post-context";
 export { PostDetails } from "./post-details";
 export type {

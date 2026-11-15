@@ -2,8 +2,8 @@
 
 // The reader's drafts and scheduled posts (ADR-0156), in the composer's frame, which the composer opens: the drafts
 // in one list, the scheduled posts first, soonest first, under their heading and the one line of the reader's zone,
-// each by the time it goes out; then the drafts newest first, under theirs, each with the start of its text, what it
-// carries and when it was saved, and why its last schedule failed if it did (§8). A row
+// each by the time it goes out; then the drafts newest first, under theirs, each with the start of its text (an
+// article's title), what it carries and when it was saved, and why its last schedule failed if it did (§8). A row
 // opens its draft in the composer; its menu changes a scheduled post's time (in the composer), takes it back to a
 // draft, or deletes it after asking. Its state is the caller's: the list, or that it loads or failed.
 
@@ -59,8 +59,9 @@ export type DraftsViewProps = {
 
 /** What a draft carries besides its text, as marks. */
 function marksOf(d: ServerDraft, t: T): DraftMark[] {
-  const images = d.media.length;
+  const images = d.media.length + (d.article?.images.length ?? 0) + (d.article?.cover === undefined ? 0 : 1);
   return [
+    ...(d.article === undefined ? [] : [{ icon: "article" as const, label: t("compose.drafts.mark.article") }]),
     ...(d.in_reply_to_id === undefined ? [] : [{ icon: "reply" as const, label: t("compose.drafts.mark.reply") }]),
     ...(d.quoted_status_id === undefined ? [] : [{ icon: "quote" as const, label: t("compose.drafts.mark.quote") }]),
     ...(images === 0
@@ -104,7 +105,8 @@ function Row({
   return (
     <DraftRow
       lead={lead}
-      text={d.text}
+      // An article's row starts with its title, else with its body.
+      text={d.article !== undefined && d.article.title.trim() !== "" ? d.article.title : d.text}
       blank={t("compose.drafts.blank")}
       warning={d.spoiler_text}
       lang={d.language}
