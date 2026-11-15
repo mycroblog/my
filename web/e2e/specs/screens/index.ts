@@ -19,4 +19,4 @@ export { Reactors } from "./reactors";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
 export { Notice } from "./notice";
-export { homeTimeline, localTimeline, Post, Timeline } from "./timeline";
+export { homeTimeline, line, localTimeline, Post, Timeline } from "./timeline";

@@ -29,6 +29,7 @@ import {
   EmojiPickerSheet,
   Entry,
   IconButton,
+  LivePart,
   MediaGrid,
   MenuButton,
   MenuGroup,
@@ -88,6 +89,13 @@ export type PostProps = {
   translation?: PostTranslation | undefined;
   /** The post may be translated into the reader's language: it offers to. */
   translatable?: boolean | undefined;
+  /**
+   * Its translation is on its way: true, or the share (0 to 1) of the model the browser's translator is downloading
+   * before it translates.
+   */
+  translating?: boolean | number | undefined;
+  /** Why the last translation asked for failed, and where asking again goes, when it may succeed. */
+  translationFailure?: TranslationFailure | undefined;
   /** What the reader asked of it. */
   onAction?: ((action: PostAction) => void) | undefined;
   /**
@@ -125,6 +133,27 @@ export type PostPicker = Omit<EmojiPickerProps, "onSelect" | "current" | "fill" 
   onOpen?: (() => void) | undefined;
 };
 
+/**
+ * Why a translation failed: over the reader's or the server's monthly limit, a visibility the server's provider may
+ * not receive, a language it does not translate, the provider down, or the browser's translator unable to.
+ */
+export type TranslationFailure = {
+  reason: "limit" | "visibility" | "language" | "failed" | "browser";
+  /**
+   * Where another press goes, when it may succeed: to the browser's translator after the server refused
+   * (`browser`), or to the server again, whose provider may answer (`server`); false when nothing may.
+   */
+  retry: "browser" | "server" | false;
+};
+
+const failures: Record<TranslationFailure["reason"], MessageId> = {
+  limit: "post.translation_limit",
+  visibility: "post.translation_visibility",
+  language: "post.translation_language",
+  failed: "post.translation_failed",
+  browser: "post.translation_browser",
+};
+
 type T = ReturnType<typeof stringsIn>["t"];
 
 // The first of the characters no text holds (the private use area), each standing for a part drawn by React inside a
@@ -136,11 +165,23 @@ const slotPattern = /([-])/u;
  * The string `id` with each of `parts` drawn by React in its argument's place, so that a name keeps its custom emoji
  * and its isolation inside a sentence, and no transform of the message (a pseudo-locale's) reaches it.
  */
-export function format(t: T, id: MessageId, parts: Readonly<Record<string, ReactNode>>): ReactNode {
+export function format(
+  t: T,
+  id: MessageId,
+  parts: Readonly<Record<string, ReactNode>>,
+  held: readonly string[] = [],
+): ReactNode {
   const names = Object.keys(parts);
   const text = t(id, Object.fromEntries(names.map((name, i) => [name, String.fromCodePoint(firstSlot + i)])));
-  return text.split(slotPattern).map((piece, i) => {
-    if (i % 2 === 0) return piece;
+  const pieces = text.split(slotPattern);
+  const nameAt = (slot: string | undefined) =>
+    slot === undefined ? undefined : names[(slot.codePointAt(0) ?? firstSlot) - firstSlot];
+  return pieces.map((piece, i) => {
+    // The words beside a held part keep to it ("by LibreTranslate", "LibreTranslate が"): the spaces do not break.
+    if (i % 2 === 0) {
+      const before = held.includes(nameAt(pieces[i + 1]) ?? "") ? piece.replace(/ $/u, " ") : piece;
+      return held.includes(nameAt(pieces[i - 1]) ?? "") ? before.replace(/^ /u, " ") : before;
+    }
     const name = names[(piece.codePointAt(0) ?? firstSlot) - firstSlot] ?? "";
     return <Fragment key={i}>{parts[name]}</Fragment>;
   });
@@ -347,16 +388,130 @@ function Reactions({ status, t, lang, act }: { status: PostStatus; t: T; lang: s
   );
 }
 
+/**
+ * The translate line, in one place under the text whatever its state, which assistive technology hears change: the
+ * translation's note and Show original; else the translation on its way, a spinner in the glyph's place (with the
+ * browser's model downloading, how much has come, which assistive technology hears by quarters); else why it failed,
+ * in the text's color, with Try again when the server may answer next time, or Translate in this browser when the
+ * browser takes over; else Translate, while the post may be translated; else nothing.
+ */
+function TranslateLine({
+  translation,
+  translatable,
+  translating,
+  failure,
+  t,
+  lang,
+  on,
+}: {
+  translation: PostTranslation | undefined;
+  translatable: boolean;
+  translating: boolean | number;
+  failure: TranslationFailure | undefined;
+  t: T;
+  lang: string;
+  on: (type: "translate" | "original") => () => void;
+}) {
+  const line = () => {
+    if (translation !== undefined)
+      return (
+        <CaptionLine
+          icon="translate"
+          lang={lang}
+          action={<TextButton onPress={on("original")}>{t("post.original")}</TextButton>}
+        >
+          {holdEnd(translatedNote(translation, t, lang), lang)}
+        </CaptionLine>
+      );
+    if (translating !== false) {
+      if (typeof translating !== "number")
+        return (
+          <CaptionLine icon="translate" lang={lang} busy>
+            {t("post.translating")}
+          </CaptionLine>
+        );
+      const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 });
+      // Assistive technology hears the download start, then each quarter, never each percent.
+      const step = Math.floor(Math.min(1, Math.max(0, translating)) * 4) / 4;
+      return (
+        <CaptionLine
+          icon="translate"
+          lang={lang}
+          busy
+          spoken={t("post.translation_downloading", { percent: percent.format(step) })}
+        >
+          {t("post.translation_downloading", { percent: percent.format(translating) })}
+        </CaptionLine>
+      );
+    }
+    if (failure !== undefined) {
+      const reason = t(failures[failure.reason]);
+      // Over the limit with nothing else to try, the reader learns when they may again.
+      const text =
+        failure.reason === "limit" && failure.retry === false
+          ? `${reason} ${t("post.translation_next_month")}`
+          : reason;
+      return (
+        <CaptionLine
+          icon="error"
+          lang={lang}
+          alert
+          action={
+            failure.retry === false ? undefined : (
+              <TextButton onPress={on("translate")}>
+                {t(failure.retry === "browser" ? "post.translation_in_browser" : "post.translation_retry")}
+              </TextButton>
+            )
+          }
+        >
+          {failure.retry === false ? text : holdEnd(text, lang)}
+        </CaptionLine>
+      );
+    }
+    if (translatable)
+      return (
+        <CaptionLine
+          icon="translate"
+          lang={lang}
+          action={<TextButton onPress={on("translate")}>{t("post.translate")}</TextButton>}
+        />
+      );
+    return null;
+  };
+  return <LivePart>{line()}</LivePart>;
+}
+
+/**
+ * A caption's text with its last word unbroken (word joiners between its characters), so that the middle dot held to
+ * it before an action never takes part of a word to the next line ("翻訳 ·", not "翻 / 訳 ·").
+ */
+function holdEnd(text: ReactNode, lang: string): ReactNode {
+  if (Array.isArray(text)) {
+    const pieces: ReactNode[] = [...(text as ReactNode[])];
+    pieces[pieces.length - 1] = holdEnd(pieces.at(-1), lang);
+    return pieces;
+  }
+  if (typeof text !== "string") return text;
+  const words = [...new Intl.Segmenter(lang, { granularity: "word" }).segment(text)];
+  const last = words.findLastIndex((w) => w.isWordLike === true);
+  if (last < 0) return text;
+  const start = words[last]?.index ?? 0;
+  const characters = new Intl.Segmenter(lang, { granularity: "grapheme" }).segment(text.slice(start));
+  return text.slice(0, start) + Array.from(characters, (c) => c.segment).join("⁠");
+}
+
 /** The note of a translation: the language it was written in and the provider, as far as they are known. */
 function translatedNote(translation: PostTranslation, t: T, lang: string): ReactNode {
   const source = known(translation.source_language);
   const name = source === undefined ? undefined : languageName(source, lang);
   // A provider's name is a proper name, and a language's is the platform's: both isolated, in their own direction.
   const language = name === undefined ? undefined : <bdi>{name}</bdi>;
-  const provider = translation.provider === undefined ? undefined : <bdi>{translation.provider.name}</bdi>;
+  // The provider's name never breaks inside, and keeps the word before it ("by LibreTranslate").
+  const provider =
+    translation.provider === undefined ? undefined : <bdi>{translation.provider.name.replaceAll(" ", " ")}</bdi>;
   if (language !== undefined && provider !== undefined)
-    return format(t, "post.translated_from_by", { language, provider });
-  if (provider !== undefined) return format(t, "post.translated_by", { provider });
+    return format(t, "post.translated_from_by", { language, provider }, ["provider"]);
+  if (provider !== undefined) return format(t, "post.translated_by", { provider }, ["provider"]);
   if (language !== undefined) return format(t, "post.translated_from", { language });
   return t("post.translated");
 }
@@ -597,6 +752,8 @@ export function Post({
   own = false,
   translation,
   translatable = false,
+  translating = false,
+  translationFailure,
   onAction,
   signIn,
   context,
@@ -619,27 +776,26 @@ export function Post({
   const on = (type: "translate" | "original" | "history") => () => {
     act({ type, id: shown.id });
   };
+  const translateLine = (
+    <TranslateLine
+      translation={translation}
+      translatable={translatable}
+      translating={translating}
+      failure={translationFailure}
+      t={t}
+      lang={lang}
+      on={on}
+    />
+  );
+  // A post behind a content warning has its translate line in the warning's band, under the warning, in one place
+  // folded or open, so that the warning can be translated before it is opened; any other, under its text.
+  const translates =
+    translation !== undefined || translating !== false || translationFailure !== undefined || translatable;
   const content = (
     <>
       <Stack gap="line">
         <PostContent html={translation?.content ?? shown.content} emojis={shown.emojis} lang={textLang} />
-        {translation !== undefined ? (
-          <CaptionLine
-            icon="translate"
-            lang={lang}
-            action={<TextButton onPress={on("original")}>{t("post.original")}</TextButton>}
-          >
-            {translatedNote(translation, t, lang)}
-          </CaptionLine>
-        ) : (
-          translatable && (
-            <CaptionLine
-              icon="translate"
-              lang={lang}
-              action={<TextButton onPress={on("translate")}>{t("post.translate")}</TextButton>}
-            />
-          )
-        )}
+        {!cw && translateLine}
       </Stack>
       <Poll status={shown} translation={translation} own={own} voting={voting} t={t} lang={lang} act={act} />
       <MediaGrid items={mediaItems(shown.media_attachments, translation)} />
@@ -672,7 +828,21 @@ export function Post({
         }
       />
       {cw ? (
-        <Disclosure summary={<EmojiText text={cw} emojis={shown.emojis} />} icon="hidden">
+        <Disclosure
+          summary={
+            translates ? (
+              <Stack gap="line" lang={textLang}>
+                <span>
+                  <EmojiText text={cw} emojis={shown.emojis} />
+                </span>
+                {translateLine}
+              </Stack>
+            ) : (
+              <EmojiText text={cw} emojis={shown.emojis} />
+            )
+          }
+          icon="hidden"
+        >
           <Stack lang={textLang}>{content}</Stack>
         </Disclosure>
       ) : (

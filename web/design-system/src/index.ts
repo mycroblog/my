@@ -86,6 +86,7 @@ export {
   CaptionName,
   Embed,
   Entry,
+  LivePart,
   Stack,
   Stamp,
   type BylineProps,

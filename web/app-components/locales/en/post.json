@@ -55,20 +55,60 @@
     "defaultMessage": "Translate",
     "description": "The action under a post in another language that shows it translated into the reader's language."
   },
+  "post.translating": {
+    "defaultMessage": "Translating…",
+    "description": "The line under a post, heard by assistive technology, while its translation is on its way."
+  },
+  "post.translation_downloading": {
+    "defaultMessage": "Downloading this browser's translation model… {percent}",
+    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads its translation model before translating the post; percent is how much has come, such as 40%."
+  },
+  "post.translation_limit": {
+    "defaultMessage": "This server's monthly translation limit is reached.",
+    "description": "The line under a post when this server refused to translate it because the reader or the whole server used up this month's characters; Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_visibility": {
+    "defaultMessage": "This post cannot be sent to this server's translation service.",
+    "description": "The line under a post when this server may not send it to its translation service because of its visibility (followers only, a direct message, or an author's posts limited to followers); Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_language": {
+    "defaultMessage": "This server's translation service does not translate between these languages.",
+    "description": "The line under a post when this server's translation service does not translate between the post's language and the reader's language (or, when the post's language is not known, cannot tell it), and the reader's browser cannot translate it instead; nothing follows it."
+  },
+  "post.translation_failed": {
+    "defaultMessage": "This server's translation service is not answering.",
+    "description": "The line under a post when this server's translation service is down or did not answer in time; Try again follows."
+  },
+  "post.translation_browser": {
+    "defaultMessage": "This browser cannot translate this post.",
+    "description": "The line under a post when the reader's browser cannot translate it (its model could not be downloaded, or it does not translate between these languages)."
+  },
+  "post.translation_retry": {
+    "defaultMessage": "Try again",
+    "description": "The action after a failed translation's reason that asks this server for the translation again, when its translation service may answer now."
+  },
+  "post.translation_in_browser": {
+    "defaultMessage": "Translate in this browser",
+    "description": "The action after this server refused to translate a post, which asks the reader's browser to translate it instead; the browser sends the post's text nowhere."
+  },
+  "post.translation_next_month": {
+    "defaultMessage": "Translation is available again next month.",
+    "description": "The sentence after the monthly translation limit's reason, when nothing else can translate the post now."
+  },
   "post.translated_from_by": {
-    "defaultMessage": "Translated from {language} by {provider}",
-    "description": "The note under a translated post; language is the name of the language it was written in, provider the name of the translation service."
+    "defaultMessage": "Post translated from {language} by {provider}",
+    "description": "The note under a translated post, heard by assistive technology when it appears; language is the name of the language it was written in, provider the name of this server's translation service, or of the reader's browser when the browser translated it. The reader learns from it who received the post's text."
   },
   "post.translated_by": {
-    "defaultMessage": "Translated by {provider}",
-    "description": "The note under a translated post when the language it was written in is not known; provider is the name of the translation service."
+    "defaultMessage": "Post translated by {provider}",
+    "description": "The note under a translated post when the language it was written in is not known; provider is the name of this server's translation service, or of the reader's browser when the browser translated it."
   },
   "post.translated_from": {
-    "defaultMessage": "Translated from {language}",
+    "defaultMessage": "Post translated from {language}",
     "description": "The note under a translated post when the translation service has no name; language is the name of the language it was written in."
   },
   "post.translated": {
-    "defaultMessage": "Translated",
+    "defaultMessage": "Post translated",
     "description": "The note under a translated post when neither its language nor the translation service is known."
   },
   "post.original": {

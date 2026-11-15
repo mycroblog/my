@@ -39,6 +39,8 @@ export type FreshPostOptions = {
   spoiler?: string;
   /** A poll, which ends `days` days after the post. */
   poll?: Poll;
+  /** The language the post is written in (a BCP 47 tag); the author's locale by default. */
+  language?: string;
 };
 
 /** A post a test made: its ID, and its whole text, by which a spec finds it on the screen. */
@@ -157,7 +159,7 @@ export class Fresh {
       body: {
         text,
         visibility: o.visibility ?? "public",
-        language: author.locale,
+        language: o.language ?? author.locale,
         ...(o.spoiler === undefined ? {} : { spoiler_text: o.spoiler }),
         ...(media.length === 0 ? {} : { media }),
         ...(o.poll === undefined

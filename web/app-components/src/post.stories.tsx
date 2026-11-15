@@ -3,20 +3,23 @@
 // The post of a timeline: Default, a sample post driven by the Controls (its visibility, counts, content warning, a
 // long text, the reader's boost, favourite and bookmark, and whether it is the reader's own), and a story per state:
 // plain, local, boosted, a reply, behind a content warning, with images, quoting, with reactions and with the reader's
-// own, translated (and the notes when the source language, the provider or both are unknown), hovered and focused
+// own, translated (and the notes when the source language, the provider or both are unknown), offered for
+// translation, its translation on its way (and the browser's model downloading), refused for each reason, translated
+// behind a content warning with a poll and an image, hovered and focused
 // from the keyboard (shown at rest), long names and handles in en and ja, for a reader without an account, whose
 // actions lead to the sign-in, with a poll: open, its vote in flight, its results, and ended, the more menu open on
 // one's own post and another's, the confirmations of delete and of delete and redraft, edited posts, and an edit
 // history. Each post answers its actions as the timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
-import { Preview, type PreviewState } from "@my/design-system/preview";
+import { Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
 import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
 import { breakpoint, rootPx } from "@my/design-tokens";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { statusPath } from "./paths";
-import { posts, type TimelinePost } from "./post.samples";
+import type { TranslationFailure } from "./post";
+import { posts, translatedWhole, type TimelinePost } from "./post.samples";
 import { SamplePost, type SampleOpen } from "./sample-post.samples";
 import type { PostTranslation } from "./status";
 
@@ -357,12 +360,89 @@ const openPicker = {
   },
 };
 
-/** A post in the other language than the reader's, shown translated into theirs. */
-function TranslatedPost({ translationAs }: { translationAs?: Translation }) {
-  const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
+/** A post in the other language than the reader's that translates into theirs, without images. */
+function foreignIn(lang: "en" | "ja"): TimelinePost {
   const foreign = posts.find((p) => p.lang !== lang && p.translation?.[lang] !== undefined && p.media === undefined);
   if (foreign === undefined) throw new Error(`no sample post translates into ${lang}`);
-  return <Shown post={{ ...foreign, translated: true }} translationAs={translationAs} />;
+  return foreign;
+}
+
+/** A post in the other language than the reader's, shown translated into theirs. */
+function TranslatedPost({ translationAs }: { translationAs?: Translation }) {
+  return <Shown post={{ ...foreignIn(useLang()), translated: true }} translationAs={translationAs} />;
+}
+
+/**
+ * A post in the other language than the reader's, offered for translation: as it is, its translation on its way
+ * (`translatingAt`: true, or the share of the browser's model downloaded).
+ */
+function ForeignPost({ translatingAt }: { translatingAt?: boolean | number }) {
+  const lang = useLang();
+  const post = { ...foreignIn(lang), translated: false };
+  return (
+    <Column>
+      <SamplePost key={post.id} post={post} lang={lang} translatingAt={translatingAt} />
+    </Column>
+  );
+}
+
+// Each refusal, on a post of the other language than the reader's (the last one followers-only or direct): over the
+// monthly limit with nothing else to try, and with the browser's translator to try; the provider down, where pressing
+// again asks it again; a language it does not translate; the browser unable; and a visibility the provider may not
+// receive, where the next press goes to the browser's translator.
+const refusals: readonly TranslationFailure[] = [
+  { reason: "limit", retry: false },
+  { reason: "limit", retry: "browser" },
+  { reason: "failed", retry: "server" },
+  { reason: "language", retry: false },
+  { reason: "browser", retry: false },
+  { reason: "visibility", retry: "browser" },
+];
+
+/** The posts of the other language than the reader's that a translation was refused for, one per refusal. */
+function RefusedPosts() {
+  const lang = useLang();
+  const plain = (p: TimelinePost) =>
+    p.lang !== lang && p.own !== true && p.media === undefined && p.cw === undefined && p.quote === undefined;
+  const open = posts.filter((p) => plain(p) && (p.visibility === "public" || p.visibility === "unlisted"));
+  const closed = posts.find((p) => plain(p) && (p.visibility === "followers" || p.visibility === "direct"));
+  if (closed === undefined || open.length === 0) throw new Error(`too few sample posts for ${lang}`);
+  // The open posts in turn, as often as the refusals need them.
+  const shown = [...refusals.slice(1).map((_, i) => open[i % open.length] ?? closed), closed];
+  return (
+    <Column>
+      <div style={{ display: "grid", gap: rem(28) }}>
+        {shown.map((post, i) => (
+          <SamplePost
+            key={`${post.id}-${String(i)}`}
+            post={{ ...post, translated: false }}
+            lang={lang}
+            translationFails={refusals[i]}
+          />
+        ))}
+      </div>
+    </Column>
+  );
+}
+
+/**
+ * A post behind a content warning with a poll and an image, in the other language than the reader's: folded and
+ * offered, folded and translated, and open and translated, its translate line in the warning's band.
+ */
+function TranslatedWhole() {
+  const lang = useLang();
+  const post = translatedWhole[lang === "ja" ? "en" : "ja"];
+  return (
+    <Column>
+      <div style={{ display: "grid", gap: rem(28) }}>
+        <SamplePost key="offered" post={post} lang={lang} />
+        <SamplePost key="folded" post={{ ...post, translated: true }} lang={lang} />
+        <PreviewExpanded>
+          <SamplePost key="open" post={{ ...post, translated: true }} lang={lang} />
+        </PreviewExpanded>
+      </div>
+    </Column>
+  );
 }
 
 type Args = {
@@ -497,6 +577,23 @@ export const TranslatedNeither: Story = {
   ...fixed,
   render: () => <TranslatedPost translationAs={(t) => withoutProvider(withoutSource(t))} />,
 };
+/** Offered: Translate under the text; pressing it shows the translation on its way, then the translation. */
+export const Translatable: Story = { ...fixed, render: () => <ForeignPost /> };
+/** The translation on its way: a spinner in the glyph's place. */
+export const Translating: Story = { ...fixed, render: () => <ForeignPost translatingAt /> };
+/** The browser's translator downloading its model before it translates, and how much has come. */
+export const TranslationDownloading: Story = { ...fixed, render: () => <ForeignPost translatingAt={0.4} /> };
+/**
+ * Refused: over the monthly limit (with nothing else to try, and with the browser's translator), the provider down, a
+ * language it does not translate, the browser unable, and a visibility the provider may not receive; Try again where
+ * the provider may answer next time, Translate in this browser where the browser takes over.
+ */
+export const TranslationRefused: Story = { ...fixed, render: () => <RefusedPosts /> };
+/**
+ * Behind a content warning, with a poll and an image: the warning, the options and the alt text translated too, the
+ * translate line in the warning's band, folded or open.
+ */
+export const TranslatedWarning: Story = { ...fixed, render: () => <TranslatedWhole /> };
 /**
  * A reader without an account: the post's actions show as for anyone, and one that needs an account leads to the
  * sign-in with the post, which the line under it stands in for once one is pressed.

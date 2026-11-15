@@ -14,6 +14,20 @@ const counted = (action: string) => new RegExp(`^${action}(, \\d+)?$`);
 /** A vote in a post's poll. */
 const votes = { methods: ["POST"], path: /\/statuses\/[^/]+\/poll\/votes$/ } as const;
 
+/** A request to translate a post. */
+const translation = { methods: ["POST"], path: /\/statuses\/[^/]+\/translation$/ } as const;
+
+/**
+ * The whole of `words` as a line reads it: the joiners that keep a line's last word from breaking alone may sit between
+ * any two letters, and any space may be one that does not break.
+ */
+export function line(words: string): RegExp {
+  const letters = Array.from(words, (c) => c).map((c) =>
+    /\s/.test(c) ? "\\s+" : c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  );
+  return new RegExp(`^${letters.join("⁠?")}$`);
+}
+
 export class Post {
   readonly page: Page;
   readonly article: Locator;
@@ -236,6 +250,41 @@ export class Post {
   /** Reveals the text behind the content warning. */
   async show(): Promise<void> {
     await this.showButton.click();
+  }
+
+  /** The Translate button of a post in another language than the reader's. */
+  get translateButton(): Locator {
+    return this.article.getByRole("button", { name: "Translate", exact: true });
+  }
+
+  /** The button that shows the post's original again, in the note of its translation. */
+  get originalButton(): Locator {
+    return this.article.getByRole("button", { name: "Show original", exact: true });
+  }
+
+  /** The button of a refused translation that asks the server's provider again. */
+  get translateAgainButton(): Locator {
+    return this.article.getByRole("button", { name: "Try again", exact: true });
+  }
+
+  /**
+   * The line of the post's translation whose words begin with `start`: the note of who translated it, or why it was
+   * not; read it whole with `line()`.
+   */
+  translationLine(start: string): Locator {
+    return this.article.getByRole("paragraph").filter({ hasText: new RegExp(`^${start}`) });
+  }
+
+  /** The content warning's words, over the folded text. */
+  warning(text: string): Locator {
+    return this.article.getByText(text, { exact: true });
+  }
+
+  /** Presses Translate (or `button`), and returns once the server has answered the request to translate. */
+  async translate(button: Locator = this.translateButton): Promise<void> {
+    await answered(this.page, translation, async () => {
+      await button.click();
+    });
   }
 
   /** Opens the post's own screen, with its thread, from the link of its time. */

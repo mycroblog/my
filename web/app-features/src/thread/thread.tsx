@@ -9,7 +9,7 @@
 // entry before it. Who reacted to the focused post stands inside it, after its actions (reactors.tsx).
 // A post's actions are answered as on every screen (post-actions.tsx).
 
-import { FeedKeys, Post, PostDetails } from "@my/app-components";
+import { FeedKeys, PostDetails } from "@my/app-components";
 import { statusContextQuery, statusQuery, useStatusGone, useThread, type AppData, type Status } from "@my/app-data";
 import {
   BackButton,
@@ -27,6 +27,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { TranslatablePost as Post } from "../post-translation";
 import { PostReactors } from "./reactors";
 
 /** How many ancestors show around the fold: the first, and as many closest to the focused post. */

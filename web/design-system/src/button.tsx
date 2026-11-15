@@ -171,10 +171,13 @@ export function LinkButton({ href, kind = "secondary", size = "form", children }
   );
 }
 
-// It takes the font and the color of the line it sits in, and keeps no surface, so the line reads as one.
+// It takes the font and the color of the line it sits in, and keeps no surface, so the line reads as one. Its press
+// target reaches the target minimum above and below the text, and a margin as large gives the room back, so the line
+// keeps its height.
 const textButton = tv({
   base: [
-    "cursor-pointer rounded-control border-0 bg-transparent p-0 text-current [font:inherit]",
+    "cursor-pointer rounded-control border-0 bg-transparent px-0 text-current [font:inherit]",
+    "py-[max(0px,calc((var(--target-minimum)-1lh)/2))] -my-[max(0px,calc((var(--target-minimum)-1lh)/2))]",
     "underline underline-offset-[0.15em] outline-hidden data-focus-visible:shadow-focus",
   ],
 });

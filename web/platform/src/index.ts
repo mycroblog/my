@@ -22,4 +22,13 @@ export {
 } from "./passkeys";
 export { copyText, shareLink, type ShareOutcome } from "./share";
 export { joinTabGroup, type TabGroup } from "./tabs";
+export {
+  browserName,
+  browserTranslatorAvailability,
+  hasBrowserTranslator,
+  needsActivation,
+  openBrowserTranslator,
+  type BrowserTranslator,
+  type TranslatorAvailability,
+} from "./translator";
 export { supportsViewTransitions } from "./transitions";

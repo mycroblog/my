@@ -8,6 +8,7 @@
 // and the time) over the handle; a name and a handle are isolated with <bdi>, and the handle reads left-to-right and
 // truncates at its end in either direction. Every part lays out in the reader's direction (locale.ts).
 
+import { motion } from "@my/design-tokens";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
@@ -115,12 +116,32 @@ const caption = tv({
     glyph: "inline-flex h-[1lh] shrink-0 items-center",
     text: "min-w-0 flex-1",
     action: "whitespace-nowrap",
+    // The glyph's place while what the line says is under way: a spinner of the glyph's size.
+    spinner: [
+      "box-border size-icon-caption rounded-full border-spinner border-solid",
+      "border-spinner-track border-t-current animate-spin",
+      motion.spin.reduced === "still" ? "motion-reduce:animate-none" : "",
+    ],
   },
   variants: {
     // On one line: a `CaptionName` in it truncates, and the words around it keep their room and their spaces.
     oneLine: { true: { text: "flex whitespace-pre" } },
+    // What went wrong with what the reader asked for: the text's own color over the muted caption, without a hue.
+    alert: { true: { glyph: "text-text", text: "text-text" } },
   },
 });
+
+/**
+ * A part of an entry that assistive technology hears change (a translation's line, from Translate to its outcome): a
+ * polite live region with no box of its own, which stays while what is in it changes.
+ */
+export function LivePart({ children }: { children: ReactNode }) {
+  return (
+    <div aria-live="polite" className="contents">
+      {children}
+    </div>
+  );
+}
 
 /**
  * A name inside a one-line caption (who boosted a post): isolated (<bdi>), and the part that truncates first, so the
@@ -136,33 +157,57 @@ export type CaptionLineProps = {
   lang?: string | undefined;
   /** The text. */
   children?: ReactNode;
-  /** An action after the text (a `TextButton`), apart from it by a middle dot, and never parted from that dot. */
+  /**
+   * An action after the text (a `TextButton`), apart from it by a middle dot that stays at the end of the text's line,
+   * the action never broken inside.
+   */
   action?: ReactNode;
   /** One line that never wraps: a `CaptionName` in it truncates instead. */
   oneLine?: boolean | undefined;
+  /** What it says is under way (a translation): a spinner stands in the glyph's place. */
+  busy?: boolean | undefined;
+  /** It says what went wrong with what the reader asked for: its text in the text's color. */
+  alert?: boolean | undefined;
+  /**
+   * What assistive technology reads in place of the text, where the text changes more often than it should be heard (a
+   * download's progress, heard by quarters).
+   */
+  spoken?: string | undefined;
 };
 
 /**
  * A caption line: a muted glyph and its text, which wraps between words under itself (who boosted a post, a
  * translation's note), and an optional action at its end.
  */
-export function CaptionLine({ icon, lang, children, action, oneLine = false }: CaptionLineProps) {
-  const s = caption({ oneLine });
+export function CaptionLine({
+  icon,
+  lang,
+  children,
+  action,
+  oneLine = false,
+  busy = false,
+  alert = false,
+  spoken,
+}: CaptionLineProps) {
+  const s = caption({ oneLine, alert });
   const hasText = children !== undefined && children !== null && children !== false;
   return (
     <p className={s.root()} lang={lang}>
       <span className={s.glyph()}>
-        <Icon name={icon} place="caption" />
+        {busy ? <span className={s.spinner()} aria-hidden="true" /> : <Icon name={icon} place="caption" />}
       </span>
       <span className={s.text()}>
-        {children}
-        {hasText && action !== undefined && " "}
-        {action !== undefined && (
-          <span className={s.action()}>
-            {hasText && "· "}
-            {action}
-          </span>
+        {spoken === undefined ? (
+          children
+        ) : (
+          <>
+            <span aria-hidden="true">{children}</span>
+            <span className="sr-only">{spoken}</span>
+          </>
         )}
+        {/* The dot ends the text's last line, held to its last word, so a line never starts with it. */}
+        {hasText && action !== undefined && " · "}
+        {action !== undefined && <span className={s.action()}>{action}</span>}
       </span>
     </p>
   );

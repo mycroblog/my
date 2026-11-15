@@ -9,6 +9,7 @@ import { publicTimelineQuery, usePublicTimeline, type AppData, type PublicTimeli
 import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { TranslatablePost } from "../post-translation";
 
 /** What the route's loader waits for: the timeline's first page, from the cache unless a write marked it stale. */
 export async function loadPublicTimeline(data: AppData, kind: PublicTimelineKind): Promise<void> {
@@ -45,6 +46,7 @@ export function PublicTimeline({
       {...usePublicTimeline(kind)}
       onAction={onAction}
       postProps={(s) => (visitor === undefined ? { voting: votingOf(s), own: ownOf(s), picker } : { signIn: visitor })}
+      postAs={TranslatablePost}
     />
   );
 }

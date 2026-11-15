@@ -175,6 +175,16 @@ export type { Status, StatusPage } from "./statuses";
 export { startStream } from "./stream";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
 export {
+  serverTranslates,
+  translateStatus,
+  TranslationRefusal,
+  translationRefusalOf,
+  useTranslateStatus,
+  type InstanceTranslation,
+  type StatusTranslation,
+  type TranslationRefusalReason,
+} from "./translation";
+export {
   homeTimelineQuery,
   publicTimelineQuery,
   useHomeTimeline,

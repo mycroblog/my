@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import { I18nProvider } from "@my/design-system";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Post, type PostProps } from "./post";
+import { Post, type PostProps, type TranslationFailure } from "./post";
 import type { PostAccount, PostPoll, PostStatus, PostTranslation } from "./status";
 
 const lena: PostAccount = {
@@ -247,18 +247,173 @@ describe("the translate line", () => {
     expect(html).not.toContain("小さなサーバー");
     expect(html).toContain('<div lang="en"><p dir="auto">A small server.</p></div>');
     expect(html).toMatch(
-      /Translated from <bdi>Japanese<\/bdi> by <bdi>LibreTranslate<\/bdi> <span>· <button [^>]*>Show original<\/button><\/span>/,
+      /Post translated from <bdi>Japanese<\/bdi> by <bdi>LibreTranslate<\/bdi> · <span><button [^>]*>Show original<\/button><\/span>/,
+    );
+  });
+
+  test("the note never breaks before or inside the provider's name", () => {
+    const named = { ...translation, provider: { name: "Google Cloud Translation" } };
+    expect(bare({ status: ja, translation: named })).toContain("by <bdi>Google Cloud Translation</bdi>");
+    expect(
+      bare({ status: status(), translation: { ...translation, language: "ja", source_language: "en" } }, "ja"),
+    ).toContain("<bdi>LibreTranslate</bdi> が");
+  });
+
+  test("behind a content warning, the translate line sits in the warning's band, folded or open", () => {
+    const warned = status({ spoiler_text: "ネタバレ" });
+    const html = bare({ status: warned, translatable: true });
+    expect(html).toMatch(
+      /<span>ネタバレ<\/span><div aria-live="polite"><p[^>]*>.*<button [^>]*>Translate<\/button>.*<\/div><\/div><button [^>]*aria-expanded="false"/,
     );
   });
 
   test("the note says what it knows, in the reader's locale", () => {
     const unknown = { ...translation, source_language: "und" };
-    expect(bare({ status: ja, translation: unknown })).toContain("Translated by <bdi>LibreTranslate</bdi> ");
+    expect(bare({ status: ja, translation: unknown })).toContain("Post translated by <bdi>LibreTranslate</bdi> ");
     const { provider: _, ...nameless } = translation;
-    expect(bare({ status: ja, translation: nameless })).toContain("Translated from <bdi>Japanese</bdi> ");
+    expect(bare({ status: ja, translation: nameless })).toContain("Post translated from <bdi>Japanese</bdi> ");
     expect(
       bare({ status: status(), translation: { ...translation, language: "ja", source_language: "en" } }, "ja"),
-    ).toContain("<bdi>LibreTranslate</bdi> が<bdi>英語</bdi>から翻訳");
+    ).toContain("<bdi>LibreTranslate</bdi> が投稿を<bdi>英語</bdi>から翻⁠訳");
+  });
+
+  /** The words of the translate line (the polite live region), the joiners that hold its last word dropped. */
+  const lineOf = (props: PostProps, locale?: string) => {
+    const html = bare(props, locale).replaceAll("⁠", "");
+    const start = html.indexOf('<div aria-live="polite">');
+    return start < 0 ? "" : html.slice(start, html.indexOf("</div>", start));
+  };
+  const words = (line: string) =>
+    line
+      .replace(/<[^>]*>/g, "")
+      .replaceAll("&#x27;", "'")
+      .replaceAll(" ", " ");
+
+  test("on its way, the line says it is translating, and offers nothing to press", () => {
+    const line = lineOf({ status: ja, translatable: true, translating: true });
+    expect(words(line)).toBe("Translating…");
+    expect(line).not.toContain("<button");
+    expect(bare({ status: ja, translatable: true, translating: true })).toContain("小さなサーバー");
+  });
+
+  test("while the browser's model downloads, the line shows its share, and announces it by quarters", () => {
+    const line = lineOf({ status: ja, translatable: true, translating: 0.4 });
+    expect(line).toContain('<span aria-hidden="true">Downloading this browser&#x27;s translation model… 40%</span>');
+    expect(line).toMatch(/<span>Downloading this browser&#x27;s translation model… 25%<\/span>/);
+    const at = (share: number) =>
+      /<span>Downloading[^<]*… (\d+)%<\/span>/.exec(lineOf({ status: ja, translating: share }))?.[1];
+    expect([0.1, 0.26, 0.5, 0.74, 0.99, 1].map(at)).toEqual(["0", "25", "50", "50", "75", "100"]);
+  });
+
+  const failure = (failed: TranslationFailure, locale?: string) =>
+    lineOf({ status: ja, translatable: true, translationFailure: failed }, locale);
+
+  test("over the limit with nothing else to try, the line says when translation comes back, with nothing to press", () => {
+    const line = failure({ reason: "limit", retry: false });
+    expect(words(line)).toBe(
+      "This server's monthly translation limit is reached. Translation is available again next month.",
+    );
+    expect(line).not.toContain("<button");
+  });
+
+  test("over the limit where the browser may translate, the next press goes to the browser", () => {
+    const line = failure({ reason: "limit", retry: "browser" });
+    expect(words(line)).toBe("This server's monthly translation limit is reached. · Translate in this browser");
+    expect(line).toMatch(/<button [^>]*>Translate in this browser<\/button>/);
+    expect(line).not.toContain("next month");
+  });
+
+  test("a visibility the provider may not receive hands the next press to the browser", () => {
+    expect(words(failure({ reason: "visibility", retry: "browser" }))).toBe(
+      "This post cannot be sent to this server's translation service. · Translate in this browser",
+    );
+  });
+
+  test("the provider down says so, and Try again asks it again", () => {
+    const line = failure({ reason: "failed", retry: "server" });
+    expect(words(line)).toBe("This server's translation service is not answering. · Try again");
+    expect(line).toMatch(/<button [^>]*>Try again<\/button>/);
+  });
+
+  test("a language the provider does not translate, and a browser unable to, offer nothing to press", () => {
+    const language = failure({ reason: "language", retry: false });
+    expect(words(language)).toBe("This server's translation service does not translate between these languages.");
+    expect(language).not.toContain("<button");
+    const browser = failure({ reason: "browser", retry: false });
+    expect(words(browser)).toBe("This browser cannot translate this post.");
+    expect(browser).not.toContain("<button");
+  });
+
+  test("a refusal no longer offers Translate itself", () => {
+    for (const failed of [
+      { reason: "limit", retry: false },
+      { reason: "failed", retry: "server" },
+      { reason: "visibility", retry: "browser" },
+    ] as const) {
+      expect(failure(failed)).not.toMatch(/>Translate<\/button>/);
+    }
+  });
+
+  test("the refusals read in the reader's locale", () => {
+    expect(words(failure({ reason: "limit", retry: false }, "ja"))).toBe(
+      "このサーバーの今月の翻訳の上限に達しました。 来月からまた翻訳できます。",
+    );
+    expect(words(failure({ reason: "failed", retry: "server" }, "ja"))).toContain("もう一度試す");
+    expect(words(failure({ reason: "visibility", retry: "browser" }, "ja"))).toContain("このブラウザで翻訳する");
+    expect(words(lineOf({ status: ja, translatable: true, translating: true }, "ja"))).toBe("翻訳しています…");
+  });
+
+  test("behind a content warning, a refusal sits in the warning's band, before Show", () => {
+    const warned = status({ language: "ja", spoiler_text: "ネタバレ" });
+    const html = bare({
+      status: warned,
+      translatable: true,
+      translationFailure: { reason: "visibility", retry: "browser" },
+    });
+    expect(html).toMatch(
+      /<span>ネタバレ<\/span><div aria-live="polite"><p[^>]*>.*This post cannot be sent.*<\/div><\/div><\/div><button [^>]*aria-expanded="false"/,
+    );
+  });
+
+  test("translated behind a content warning: the warning, the text, the poll's options and the alt text", () => {
+    const whole = status({
+      language: "ja",
+      spoiler_text: "ネタバレ",
+      content: "<p>小さなサーバー</p>",
+      media_attachments: [{ id: "m", type: "image", description: "スープ", preview_url: "https://m/s.webp" }],
+      poll: {
+        id: "p",
+        expires_at: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+        expired: false,
+        multiple: false,
+        votes_count: 0,
+        voters_count: 0,
+        options: [
+          { title: "ライ麦", votes_count: 0 },
+          { title: "サワー種", votes_count: 0 },
+        ],
+        voted: false,
+        own_votes: [],
+      },
+    });
+    const html = bare({
+      status: whole,
+      translatable: true,
+      translation: {
+        ...translation,
+        content: "<p>[en] 小さなサーバー</p>",
+        spoiler_text: "[en] ネタバレ",
+        media_attachments: [{ id: "m", description: "[en] スープ" }],
+        poll_options: ["[en] ライ麦", "[en] サワー種"],
+      },
+    });
+    expect(html).toMatch(/<span>\[en\] ネタバレ<\/span><div aria-live="polite">.*Show original/);
+    expect(html).toContain("[en] 小さなサーバー");
+    expect(html).toMatch(/>\[en\] ライ麦<\/span><\/label>.*>\[en\] サワー種<\/span><\/label>/);
+    expect(html).toContain('alt="[en] スープ"');
+    for (const original of ["<span>ネタバレ</span>", '<p dir="auto">小さなサーバー', ">ライ麦<", 'alt="スープ"']) {
+      expect(html).not.toContain(original);
+    }
   });
 
   test("a pseudo-locale transforms the note's words, never the provider's name", () => {

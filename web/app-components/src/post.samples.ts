@@ -47,6 +47,8 @@ export type TimelinePost = {
   reactions?: Reaction[];
   /** The text in the reader's language, by that language, with the provider that translated it (ADR-0148). */
   translation?: Partial<Record<"en" | "ja", string>>;
+  /** The rest of it in the reader's language, by that language: its content warning, poll options and alt texts. */
+  translatedParts?: Partial<Record<"en" | "ja", { cw?: string; poll?: string[]; alt?: string[] }>>;
   /** Shown translated at first, to show that state. */
   translated?: boolean;
   /** Its poll (FR-112). */
@@ -459,12 +461,14 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
 export function translationOf(post: TimelinePost, lang: "en" | "ja"): PostTranslation | undefined {
   const content = post.lang === lang ? undefined : post.translation?.[lang];
   if (content === undefined) return undefined;
+  const parts = post.translatedParts?.[lang];
   return {
     language: lang,
     source_language: post.lang,
     content: serverHtml(content),
-    spoiler_text: "",
-    media_attachments: [],
+    spoiler_text: parts?.cw ?? "",
+    media_attachments: (parts?.alt ?? []).map((description, i) => ({ id: `${post.id}-${i}`, description })),
+    poll_options: parts?.poll ?? [],
     provider: { name: translationProvider },
   };
 }
@@ -493,3 +497,72 @@ export function editsOf(post: TimelinePost): PostEdit[] {
     },
   ];
 }
+
+/**
+ * A post in each language with every part a translation covers: a content warning, a poll, and an image with its
+ * alt text, each translated into the other language.
+ */
+export const translatedWhole: Record<"en" | "ja", TimelinePost> = {
+  en: {
+    id: "whole-en",
+    lang: "en",
+    author: lena,
+    ago: 50 * minute,
+    visibility: "public",
+    cw: "Book club pick, the ending",
+    text: "Finished it last night. The last chapter made the slow first half worth it. Did you see it coming?",
+    media: [
+      { alt: "A paperback open face down on a wooden table, beside a cup of tea", src: plate("#8a5a3c", "#c9a27a") },
+    ],
+    counts: { replies: 6, boosts: 1, favourites: 9 },
+    poll: {
+      options: [
+        { title: "From the first chapter", votes: 3 },
+        { title: "Halfway through", votes: 7 },
+        { title: "Not at all", votes: 12 },
+      ],
+      voters: 22,
+      endsIn: 20 * hour,
+    },
+    translation: {
+      ja: "昨夜読み終えました。最後の章のおかげで、ゆっくりした前半も読んだかいがありました。予想できました？",
+    },
+    translatedParts: {
+      ja: {
+        cw: "読書会の本、結末について",
+        poll: ["最初の章から", "半分くらいで", "まったく"],
+        alt: ["木のテーブルに伏せて開いた文庫本と、その横の紅茶"],
+      },
+    },
+  },
+  ja: {
+    id: "whole-ja",
+    lang: "ja",
+    author: takuya,
+    ago: 2 * hour,
+    visibility: "public",
+    cw: "映画の結末に触れています",
+    text: "二回目に観たら、冒頭の電話のシーンが全部だった。みんなはどこで気づいた？",
+    media: [{ alt: "暗い丘の上に浮かぶ淡い月", src: scenes.night }],
+    counts: { replies: 4, boosts: 0, favourites: 11 },
+    poll: {
+      options: [
+        { title: "冒頭の電話のシーン", votes: 4 },
+        { title: "最後の十分", votes: 9 },
+        { title: "二回目に観てから", votes: 6 },
+      ],
+      voters: 19,
+      endsIn: 6 * hour,
+    },
+    translation: {
+      en: "On a second watch, the phone call at the start was everything. Where did you all notice it?",
+    },
+    translatedParts: {
+      en: {
+        cw: "Mentions the ending of the film",
+        poll: ["The phone call at the start", "The last ten minutes", "Only on a second watch"],
+        alt: ["A pale moon over dark hills"],
+      },
+    },
+  },
+};

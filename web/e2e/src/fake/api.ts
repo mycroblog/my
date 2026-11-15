@@ -12,7 +12,8 @@
 // and its retry succeeds late. What the shell reads (the instance, the reader's rights, the announcements, the
 // voice rooms, the events) answers in the state the options give the server: its timelines, one person's, its closure,
 // its maintenance, down, or newer than the app. The voice rooms are the fake's own, since a room lives only while
-// people are in it and the seed opens none.
+// people are in it and the seed opens none. A post is translated by the provider `translation` names, which answers
+// or refuses as the options say.
 
 import { drawingURL } from "../drawing";
 import {
@@ -82,6 +83,17 @@ export type FakeOptions = {
   voiceOff?: boolean;
   /** The reader's latest export of their data: none by default, one being built, or one ready to download. */
   dataExport?: "none" | "building" | "ready";
+  /**
+   * How posts are translated: not at all by default. `provider` enables one provider of the server, for the posts of
+   * every visibility but followers-only and direct: one that answers (`answers`, each text behind the language it
+   * goes into, "[ja] …", as the server's fake provider does), or one that refuses every request, over the monthly limit
+   * (`limit`), as no provider may receive the post (`unavailable`), for a language it does not translate (`language`),
+   * or failing (`failed`). `browser` lets readers use the browser's own translator.
+   */
+  translation?: {
+    provider?: "answers" | "limit" | "unavailable" | "language" | "failed";
+    browser?: boolean;
+  };
 };
 
 /** The address of the fake's status page. */
@@ -443,6 +455,53 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return { ancestors, descendants };
   }
 
+  /**
+   * The answer to translating `p` into `target`, by the provider of `translation`: the post with each text behind the
+   * language it goes into, or the refusal the provider stands for. A post whose visibility the provider may not receive
+   * is refused as the server refuses it, whatever the provider.
+   */
+  function translationOf(p: Post, target: string): Response {
+    const provider = o.translation?.provider;
+    const refuse = (status: number, type: string, title: string, headers: Record<string, string> = {}) =>
+      new Response(JSON.stringify({ type: `/api/v1/problems/${type}`, title, status }), {
+        status,
+        headers: { "Content-Type": "application/problem+json", ...headers },
+      });
+    if (
+      provider === undefined ||
+      provider === "unavailable" ||
+      !translationProvider.visibilities.includes(p.visibility)
+    )
+      return refuse(422, "translation-unavailable", "No translation provider may receive this post");
+    if (provider === "limit") {
+      const now = new Date();
+      const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1);
+      return refuse(429, "translation-limit", "The monthly translation limit is reached", {
+        "Retry-After": String(Math.ceil((next - now.getTime()) / 1000)),
+      });
+    }
+    if (provider === "language")
+      return refuse(
+        422,
+        "translation-unsupported-language",
+        "The translation providers do not translate this language",
+      );
+    if (provider === "failed") return refuse(503, "translation-failed", "The translation provider did not answer");
+    const into = (text: string) => `[${target}] ${text}`;
+    return json({
+      language: target,
+      source_language: p.language,
+      content: serverHtml(into(p.text), fakeHost),
+      spoiler_text: p.spoiler === undefined ? "" : into(p.spoiler),
+      media_attachments: (p.images ?? []).map((image, i) => ({
+        id: `${statusId.get(p.key) ?? ""}-${i}`,
+        description: into(image.description),
+      })),
+      poll_options: (p.poll?.options ?? []).map(into),
+      provider: { id: translationProvider.id, name: translationProvider.name },
+    });
+  }
+
   // ---- Notifications ---------------------------------------------------------------------------------------------
 
   const notifications: Json[] = [];
@@ -525,6 +584,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ? { local: "off", federated: "off" }
       : (o.timelines ?? { local: "everyone", federated: "everyone" });
   const around = o.around ?? "all";
+  // The translation provider of `translation`, with the visibilities a provider receives by default.
+  const translationProvider = {
+    id: "fake",
+    name: "Demo Translate",
+    visibilities: ["public", "local", "unlisted"],
+  };
   const instanceBody: Json = {
     domain: fakeHost,
     name: "mycroblog demo",
@@ -556,7 +621,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     voice_enabled: o.voiceOff !== true,
     voice_room_starters: "everyone",
     full_text_search: { enabled: true },
-    translation: { enabled: false },
+    translation: {
+      browser: o.translation?.browser === true,
+      providers: o.translation?.provider === undefined ? [] : [translationProvider],
+    },
     single_user: o.singleUser === true,
     ...(o.singleUser === true ? { single_user_account: fullAccount(personOf(admin)) } : {}),
     ...(o.logo === true ? { logo: brandImage(logoSvg("#2f6f8f")), logo_dark: brandImage(logoSvg("#8fc7e0")) } : {}),
@@ -1012,6 +1080,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/translation$/)) && request.method === "POST") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const { target_language: target } = (await request.json()) as { target_language: string };
+      return translationOf(p, target);
     }
     if ((match = m(/^\/statuses\/([^/]+)\/context$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));

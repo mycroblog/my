@@ -10,7 +10,7 @@ import { sampleCustomEmoji } from "@my/design-system/samples";
 import { useState, type ReactNode } from "react";
 import { DeleteConfirm } from "./delete-confirm";
 import { EditHistory } from "./edit-history";
-import { Post, type PostAction, type PostPicker } from "./post";
+import { Post, type PostAction, type PostPicker, type TranslationFailure } from "./post";
 import { editsOf, statusOf, translationOf, type TimelinePost } from "./post.samples";
 import type { PostReaction, PostStatus, PostTranslation } from "./status";
 
@@ -93,17 +93,23 @@ function answered<S extends PostStatus>(status: S, action: PostAction): S {
   }
 }
 
-/**
- * One sample post, with its status and whether it shows translated kept as the server and the reader leave them;
- * `translationAs` changes the translation the server answers (a translation it knows less of).
- */
+/** How long the sample server takes to answer a translation, so that the translation on its way shows. */
+const translateDelay = 1200;
+
 /** What a sample post opens over the page: its edit history, or the confirmation of deleting it. */
 export type SampleOpen = "history" | "delete" | "redraft";
 
+/**
+ * One sample post, with its status and whether it shows translated kept as the server and the reader leave them;
+ * `translationAs` changes the translation the server answers (a translation it knows less of), and `translationFails`
+ * makes it refuse instead, as it answers each Translate pressed.
+ */
 export function SamplePost({
   post,
   lang,
   translationAs,
+  translationFails,
+  translatingAt,
   signIn,
   votingAt,
   open: initial,
@@ -113,6 +119,10 @@ export function SamplePost({
   post: TimelinePost;
   lang: "en" | "ja";
   translationAs?: ((t: PostTranslation) => PostTranslation) | undefined;
+  /** The server refuses to translate it, for this reason: shown at first, and again after each Translate. */
+  translationFails?: TranslationFailure | undefined;
+  /** Its translation on its way at first (Post's `translating`), which the server never answers, to show that state. */
+  translatingAt?: boolean | number | undefined;
   /** A reader without an account, whom the actions that need one lead to sign in (Post's `signIn`). */
   signIn?: ((status: PostStatus) => void) | undefined;
   /** A vote for these choices in flight at first, which the server never answers, to show that state. */
@@ -128,6 +138,8 @@ export function SamplePost({
   const answer = translationOf(post, lang);
   const translation = answer && translationAs ? translationAs(answer) : answer;
   const [translated, setTranslated] = useState(post.translated === true);
+  const [translating, setTranslating] = useState<boolean | number>(translatingAt ?? false);
+  const [failure, setFailure] = useState(translationFails);
   const [voting, setVoting] = useState<readonly number[] | undefined>(votingAt);
   const [open, setOpen] = useState<SampleOpen | undefined>(initial);
   const [deleted, setDeleted] = useState(false);
@@ -135,8 +147,18 @@ export function SamplePost({
     setOpen(undefined);
   };
   const onAction = (action: PostAction) => {
-    if (action.type === "translate" || action.type === "original") {
-      setTranslated(action.type === "translate");
+    if (action.type === "original") {
+      setTranslated(false);
+      return;
+    }
+    if (action.type === "translate") {
+      setFailure(undefined);
+      setTranslating(true);
+      setTimeout(() => {
+        setTranslating(false);
+        if (translationFails === undefined) setTranslated(true);
+        else setFailure(translationFails);
+      }, translateDelay);
       return;
     }
     if (action.type === "vote") {
@@ -161,8 +183,10 @@ export function SamplePost({
       <Post
         status={status}
         own={post.own}
-        translatable={translation !== undefined}
+        translatable={translation !== undefined || translationFails !== undefined}
         translation={translated ? translation : undefined}
+        translating={translating}
+        translationFailure={failure}
         onAction={onAction}
         signIn={signIn}
         voting={voting}

@@ -8,7 +8,7 @@
 // it, the tabs of its posts (posts, posts and replies, media), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
-import { AccountName, handleOf, ListColumn, nameOf, Post, PostContent } from "@my/app-components";
+import { AccountName, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
   accountQuery,
   useAccount,
@@ -48,6 +48,7 @@ import {
 import { useId, useState } from "react";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { TranslatablePost as Post } from "../post-translation";
 
 type T = ReturnType<typeof stringsIn>["t"];
 

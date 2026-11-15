@@ -8,7 +8,10 @@ import { createClient } from "@mycroblog/mykit";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-/** The answers by the path after /api/v1, each a body (200) or a status; any other path is a 404. */
+/**
+ * The answers by the path after /api/v1, each a body (200), a status, or a Response (a problem of a type); any other
+ * path is a 404.
+ */
 export type Answers = Readonly<Record<string, unknown>>;
 
 /**
@@ -44,6 +47,7 @@ export function server(answers: Answers): {
       const text = await request.text();
       bodyOf(`${request.method} ${path}`).resolve(text === "" ? undefined : JSON.parse(text));
       const body = answers[path];
+      if (body instanceof Response) return body.clone();
       if (body === undefined || typeof body === "number") {
         const status = typeof body === "number" ? body : 404;
         return Response.json(

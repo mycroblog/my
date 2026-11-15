@@ -38,6 +38,16 @@ export function PreviewItems({
   return <ItemsContext value={states}>{children}</ItemsContext>;
 }
 
+const ExpandedContext = createContext(false);
+
+/** Whether the disclosures inside show what they fold at first (a content warning opened). */
+export const usePreviewExpanded = () => useContext(ExpandedContext);
+
+/** Shows the disclosures inside expanded at first, so that a page shows a post's content warning open beside it folded. */
+export function PreviewExpanded({ children }: { children: ReactNode }) {
+  return <ExpandedContext value>{children}</ExpandedContext>;
+}
+
 /**
  * The screen a change of screen moves (motion.tsx) outside the app's frame, whose main column it is there: the stage
  * on which a catalog runs each kind between sample screens. One on a page.
