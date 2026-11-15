@@ -5,6 +5,7 @@ import type { StreamEvent } from "@mycroblog/mykit";
 import type { TabGroup } from "@my/platform";
 import type { AppData } from "./app-data";
 import { notificationMarkerQuery } from "./notifications";
+import { shadowed } from "./shadow";
 import { startStream } from "./stream";
 import { fakeAppData, json, page, status } from "./test/fake";
 import { fakeBrowser, fakeStreams } from "./test/tabs";
@@ -23,8 +24,11 @@ async function tab() {
   return { data, requests: fake.requests };
 }
 
+/** The IDs of the statuses that show on each page of the tab's home timeline. */
 const home = (data: AppData) =>
-  data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages.map((p) => p.items.map((s) => s.id));
+  data.queryClient
+    .getQueryData(homeTimelineQuery(data).queryKey)
+    ?.pages.map((p) => p.items.filter((s) => shadowed(data, s) !== undefined).map((s) => s.id));
 const unread = (data: AppData) =>
   data.queryClient.getQueryData<{ unread_count: number }>(notificationMarkerQuery(data).queryKey)?.unread_count;
 /** Whether the tab marked its home timeline and its unread count to be read again. */

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The reader's own marks on a status (ADR-0028 §6, §7): favourite, boost, bookmark and an emoji reaction, each set or
-// taken back. Every cached copy of the status shows the change at once, the server's answer replaces it, and a failed
-// write puts back what the copies showed before, each in the fields of the mark's kind alone, and only for the latest
-// write of that kind on the status. A user has one favourite or one reaction on a status, so setting one takes back
-// the other. The write is a plain request (no outbox yet, #2892): a failure rejects with mykit's
-// ProblemError or NetworkError.
+// The reader's own marks on a status (ADR-0028 §7, §18): favourite, boost, bookmark and an emoji reaction, each set or
+// taken back through the shadow. Every copy of the status shows the change at once, the server's answer replaces it,
+// and a failed write takes it off, each in the fields of the mark's kind alone, and only for the latest write of that
+// kind on the status. A user has one favourite or one reaction on a status, so setting one takes back the other. The
+// write is a plain request (no outbox yet, #2892): a failure rejects with mykit's ProblemError or NetworkError.
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
-import { updateCachedStatuses, type Status } from "./statuses";
+import { cachedStatus, changeStatus } from "./shadow";
+import type { Status } from "./statuses";
 
 /** A mark to set (`on`) or take back: a reaction names its emoji (a Unicode emoji, or a custom one's shortcode). */
 export type StatusMark =
@@ -94,16 +94,6 @@ async function send(data: AppData, id: string, mark: StatusMark): Promise<Status
   }
 }
 
-/** The status with the ID given as some cached query holds it, else undefined. */
-export function cachedStatus(data: AppData, id: string): Status | undefined {
-  let found: Status | undefined;
-  updateCachedStatuses(data.queryClient, id, (s) => {
-    found ??= s;
-    return s;
-  });
-  return found;
-}
-
 /**
  * The fields of a status each kind of mark sets: a favourite and a reaction share theirs, since setting one takes back
  * the other.
@@ -127,49 +117,27 @@ const pick = (s: Status, fields: readonly (keyof Marks)[]): Partial<Marks> => {
 };
 
 /**
- * The latest write of each status's fields of a kind of mark, by session: the answer to an older one, or its failure,
- * leaves to the latest what the copies show of those fields.
- */
-const latestWrites = new WeakMap<AppData, Map<string, object>>();
-
-/**
- * Sets or takes back the reader's mark on the status with the ID given: every cached copy shows it at once, then as
- * the server answered; a failure puts back what they showed and rejects. Each write touches only the fields of its
- * kind of mark (fieldsOf), so that marks of other kinds in flight on the same status keep what they show: the
- * server's answer to a favourite carries the boost as it was before a boost sent at the same time.
+ * Sets or takes back the reader's mark on the status with the ID given: every copy shows it at once, then as the
+ * server answered; a failure takes it off and rejects. Each write shows only the fields of its kind of mark
+ * (fieldsOf), keyed by them, so that marks of other kinds in flight on the same status keep what they show (the
+ * server's answer to a favourite carries the boost as it was before a boost sent at the same time), and the answer to
+ * an older write of a kind leaves the copies to the latest.
  */
 export async function markStatus(data: AppData, id: string, mark: StatusMark): Promise<void> {
   const fields = fieldsOf(mark);
-  const key = `${id} ${fields.join(" ")}`;
-  let writes = latestWrites.get(data);
-  if (writes === undefined) {
-    writes = new Map();
-    latestWrites.set(data, writes);
-  }
-  const write = {};
-  writes.set(key, write);
-  const latest = () => writes.get(key) === write;
-  let before: Partial<Marks> | undefined;
-  updateCachedStatuses(data.queryClient, id, (s) => {
-    before ??= pick(s, fields);
-    return marked(s, mark);
-  });
-  try {
-    const answer = await send(data, id, mark);
-    if (answer?.id === id && latest()) {
+  await changeStatus(data, id, {
+    key: fields.join(" "),
+    change: (s) => marked(s, mark),
+    send: () => send(data, id, mark),
+    answered: (answer) => {
+      if (answer?.id !== id) return undefined;
       const after = pick(answer, fields);
-      updateCachedStatuses(data.queryClient, id, (s) => ({ ...s, ...after }));
-    }
-  } catch (e) {
-    const put = before;
-    if (put !== undefined && latest()) updateCachedStatuses(data.queryClient, id, (s) => ({ ...s, ...put }));
-    throw e;
-  } finally {
-    if (latest()) writes.delete(key);
-  }
+      return (s) => ({ ...s, ...after });
+    },
+  });
 }
 
-/** markStatus for the session of the nearest AppDataProvider, and the status a mark acts on as the cache holds it. */
+/** markStatus for the session of the nearest AppDataProvider, and the status a mark acts on as it shows. */
 export function useStatusMarks(): {
   readonly mark: (id: string, mark: StatusMark) => Promise<void>;
   readonly cached: (id: string) => Status | undefined;

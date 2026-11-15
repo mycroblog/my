@@ -8,6 +8,7 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
+import { showList, useShadow } from "./shadow";
 import type { Status } from "./statuses";
 
 /** An account of the client API. */
@@ -88,9 +89,10 @@ export function useFeaturedHashtags(id: string): readonly FeaturedHashtag[] {
   return useQuery(featuredHashtagsQuery(useAppData(), id)).data?.items ?? [];
 }
 
-/** The posts of the account of `id` of the kind given; nothing is fetched while `enabled` is false. */
+/** The posts of the account of `id` of the kind given, as they show; nothing is fetched while `enabled` is false. */
 export function useAccountStatuses(id: string, kind: AccountPosts, enabled = true): PagedList<Status> {
-  const list = usePagedList(accountStatusesQuery(useAppData(), id, kind), enabled);
+  const paged = usePagedList(accountStatusesQuery(useAppData(), id, kind), enabled);
+  const list = { ...paged, items: showList(useShadow(), paged.items) };
   if (kind !== "media") return list;
   return { ...list, items: list.items.filter((s) => (s.boost ?? s).media_attachments.length > 0) };
 }

@@ -83,7 +83,6 @@ export {
   cachePostedStatus,
   defaultComposeSettings,
   deleteDraft,
-  findCachedStatus,
   MediaFailedError,
   postStatus,
   refusal,
@@ -102,7 +101,7 @@ export {
   type SavedDraft,
   type Visibility,
 } from "./compose";
-export { cachedStatus, markStatus, useStatusMarks, type StatusMark } from "./interactions";
+export { markStatus, useStatusMarks, type StatusMark } from "./interactions";
 export {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
@@ -133,7 +132,21 @@ export {
   type SignInOptions,
   type SignInStorage,
 } from "./sign-in";
-export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
+export {
+  cachedStatus,
+  changeStatus,
+  receiveGone,
+  removeStatus,
+  shadowed,
+  shadowGone,
+  shadowStatus,
+  showList,
+  useShadow,
+  type ShowStatus,
+  type StatusChange,
+  type StatusShadow,
+} from "./shadow";
+export type { Status, StatusPage } from "./statuses";
 export { startStream } from "./stream";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
 export {

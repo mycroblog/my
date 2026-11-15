@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
+import { showList, useShadow } from "./shadow";
 import type { Status, StatusPage } from "./statuses";
 
 /**
@@ -39,7 +40,7 @@ function nextCursor(page: StatusPage): string | undefined {
 
 /** What a column of the home timeline shows and can ask for. */
 export type HomeTimeline = {
-  /** The statuses of the pages fetched so far, newest first; empty until the first page arrives. */
+  /** The statuses of the pages fetched so far as they show (shadow.ts), newest first; empty until the first page arrives. */
   readonly statuses: readonly Status[];
   /** `pending` until the first page arrives, `error` when it failed, then `success`. */
   readonly status: "pending" | "error" | "success";
@@ -84,8 +85,9 @@ function useTimelineColumn<Key extends readonly unknown[]>(
   options: UseInfiniteQueryOptions<StatusPage, Error, InfiniteData<StatusPage>, Key, string | undefined>,
 ): HomeTimeline {
   const query = useInfiniteQuery(options);
+  const show = useShadow();
   return {
-    statuses: query.data?.pages.flatMap((page) => page.items) ?? [],
+    statuses: showList(show, query.data?.pages.flatMap((page) => page.items) ?? []),
     status: query.status,
     error: query.error,
     hasNextPage: query.hasNextPage,

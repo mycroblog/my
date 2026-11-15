@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import type { PostAction } from "@my/app-components";
-import { homeTimelineQuery, type Status } from "@my/app-data";
+import { homeTimelineQuery, shadowed, type Status } from "@my/app-data";
 import { markOf, PostActions, usePostActions, type ComposeRequest } from "./post-actions";
 import { render, server, status } from "./test/server";
 
@@ -38,7 +38,11 @@ function handler(answers: Record<string, unknown>) {
       <Probe />
     </PostActions>,
   );
-  return { act, composed, requests, home: () => data.queryClient.getQueryData(key)?.pages[0]?.items[0] };
+  const home = () => {
+    const copy = data.queryClient.getQueryData(key)?.pages[0]?.items[0];
+    return copy && shadowed(data, copy);
+  };
+  return { act, composed, requests, home };
 }
 
 test("Reply and Quote open the composer for the post, and write nothing", () => {

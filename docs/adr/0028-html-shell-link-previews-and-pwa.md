@@ -92,7 +92,7 @@ Go がルートごとに HTML の外枠を `html/template` で返し、meta タ�
   無効化されていないクエリは loader が即座に返すので、書き込みのない移動はキャッシュから即座に描画する。
   無効化されたクエリがある画面だけ、取り直しが終わるまでいまの画面を残す（遷移は `startTransition` の中、E4）。
 - **書き込みは、確かに分かる変化をキャッシュに書き、一覧は印を付ける**:
-  - 応答で分かる単体のデータ（投稿・閲覧者・関係・設定）は `setQueryData` / `updateCachedStatuses` で書く
+  - 応答で分かる単体のデータ（閲覧者・関係・設定）は `setQueryData` で書く。投稿はキャッシュを書き換えず、影を重ねる（§7・§18）
   - 並びや件数が変わり得る一覧は `invalidateQueries`（既定の `refetchType: "active"`）で印を付ける。表示中のものはその場で取り直し、表示していないものは次に開いたときに loader が取り直して待つ
   - 書き込みの成功表示は、表示中のクエリの取り直しを待ってから出す（`await invalidateQueries(...)`）。表示していないクエリの取り直しは待たない。`refreshQueries`（`refetchType: "all"`）は使わない
 - **書き込みが変えるクエリは、その書き込みの関数の隣に書く**: `features/<x>/api` に書き込みごとのキャッシュ更新関数（`cachePostedStatus` のような）を置き、部品の `onSuccess` はそれを呼ぶだけにする。

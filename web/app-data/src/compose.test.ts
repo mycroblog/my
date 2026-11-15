@@ -2,7 +2,8 @@
 
 import { expect, test } from "bun:test";
 import { NetworkError } from "@mycroblog/mykit";
-import { cachePostedStatus, findCachedStatus, postStatus, refusal, saveDraft, uploadAttachment } from "./compose";
+import { cachePostedStatus, postStatus, refusal, saveDraft, uploadAttachment } from "./compose";
+import { cachedStatus } from "./shadow";
 import { fakeAppData, json, page, status } from "./test/fake";
 import { statusContextQuery, type StatusContext } from "./thread";
 import { homeTimelineQuery } from "./timeline";
@@ -27,7 +28,30 @@ test("a posted status tops the home timeline at once, and its parent counts one 
   await postStatus(data, { text: "hi", visibility: "public" }, "key-1");
   expect(keys).toEqual(["key-1"]);
   expect(ids(data)).toEqual(["new", "1", "2"]);
-  expect(findCachedStatus(data.queryClient, "1")?.replies_count).toBe(3);
+  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
+});
+
+test("a parent the server answered with the reply counted already does not count it again", async () => {
+  // The timeline is read again while the reply is posted, and the server answers with the reply counted.
+  const answers = [json(200, { items: [status("1", { replies_count: 2 })] })];
+  let refetched: (response: Response) => void = () => {};
+  const { data } = fakeAppData((request) => {
+    if (request.method === "POST") return json(201, status("new", { in_reply_to_id: "1" }));
+    return (
+      answers.shift() ??
+      new Promise<Response>((resolve) => {
+        refetched = resolve;
+      })
+    );
+  });
+  await data.queryClient.infiniteQuery(homeTimelineQuery(data));
+  const refetch = data.queryClient.refetchQueries({ queryKey: homeTimelineQuery(data).queryKey });
+  await Bun.sleep(0);
+  await postStatus(data, { text: "hi", visibility: "public" }, "key-1");
+  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
+  refetched(json(200, { items: [status("1", { replies_count: 3 })] }));
+  await refetch;
+  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
 });
 
 test("a posted reply shows in a cached thread of its parent, after the replies already under it", () => {
