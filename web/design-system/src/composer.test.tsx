@@ -30,23 +30,31 @@ test("the frame's head is the title, then close at its end; at its end the alert
   expect(html).toContain("h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))]");
 });
 
-test("the composer is drawn as it mounts, through the modal of modal.tsx, its text focused inside the press", async () => {
-  const source = await Bun.file(new URL("./composer.tsx", import.meta.url)).text();
-  expect(source).toContain('import { ModalLayer } from "./modal";');
-  // The text takes the focus as it mounts, inside the press, so that a phone opens its keyboard.
-  const text = renderToStaticMarkup(
-    <ComposerText value="" onChange={none} label="Text" placeholder="…" over={0} autoFocus />,
-  );
-  expect(text).toContain("autofocus");
+test("while what was written is sent, close stays in its place, disabled, with no spinner of its own", () => {
+  const frame = (busy: boolean) =>
+    renderToStaticMarkup(
+      <ComposerFrame title="New post" closeLabel="Close" onClose={none} onDismiss={none} layer={false} busy={busy}>
+        <p>body</p>
+      </ComposerFrame>,
+    );
+  expect(frame(true)).toMatch(/<button[^>]*aria-label="Close"[^>]*disabled=""|disabled=""[^>]*aria-label="Close"/);
+  expect(frame(true)).not.toContain("aria-busy");
+  expect(frame(false)).not.toMatch(/disabled=""/);
 });
 
-test("the text marks the characters over the limit behind it, and says what is wrong under it", () => {
+test("the composer is drawn as it mounts, through the modal of modal.tsx", async () => {
+  const source = await Bun.file(new URL("./composer.tsx", import.meta.url)).text();
+  expect(source).toContain('import { ModalLayer } from "./modal";');
+});
+
+test("the text holds its editor, and says what is wrong under it by the ID its editor is described by", () => {
   const html = renderToStaticMarkup(
-    <ComposerText value="abcdef" onChange={none} label="Text" placeholder="…" over={2} error="Too long" />,
+    <ComposerText error="Too long" errorId="e1">
+      <div role="textbox" aria-describedby="e1" />
+    </ComposerText>,
   );
-  expect(html).toMatch(/aria-hidden="true">abcd<mark class="[^"]*">ef<\/mark>/);
-  expect(html).toContain('aria-invalid="true"');
-  expect(html).toContain("Too long");
+  expect(html).toContain('role="textbox"');
+  expect(html).toMatch(/id="e1"[^>]*>.*Too long/);
 });
 
 test("the count is muted until near the limit, strong past it, and read as words", () => {

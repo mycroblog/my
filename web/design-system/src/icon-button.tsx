@@ -12,7 +12,7 @@ import { ButtonBase, type ButtonProps } from "./button";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 
-export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "busy" | "children" | "aria-label"> & {
+export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "children" | "aria-label"> & {
   /** The icon, by its meaning. */
   icon: IconName;
   /** The action's name; the accessible name is it and the count as shown. */

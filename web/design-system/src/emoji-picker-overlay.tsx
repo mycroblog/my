@@ -12,6 +12,7 @@ import { Dialog, DialogTrigger, Heading, Popover } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import type { EmojiPickerProps } from "./emoji-picker";
 import { IconButton } from "./icon-button";
+import { whenIdle } from "./idle";
 import { useReader } from "./locale";
 import { ModalLayer, ModalPresence } from "./modal";
 
@@ -33,20 +34,10 @@ export function preloadEmojiPicker(): void {
  * this device before); returns what cancels it.
  */
 export function preloadEmojiPickerWhenIdle(also?: () => void): () => void {
-  const run = () => {
+  return whenIdle(() => {
     preloadEmojiPicker();
     also?.();
-  };
-  if (typeof window.requestIdleCallback === "function") {
-    const handle = window.requestIdleCallback(run, { timeout: 5000 });
-    return () => {
-      window.cancelIdleCallback(handle);
-    };
-  }
-  const timer = setTimeout(run, 2000);
-  return () => {
-    clearTimeout(timer);
-  };
+  });
 }
 
 const Picker = lazy(() => load().then((m) => ({ default: m.EmojiPicker })));

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import type { ComposeTarget } from "@my/app-features";
+import type { ComposeOpening as ComposeTarget } from "@my/app-features";
 import { renderToStaticMarkup } from "react-dom/server";
 import { useCompose } from "./compose";
 

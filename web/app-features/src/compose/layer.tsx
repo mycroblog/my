@@ -1,63 +1,142 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The composer over the screen, and how it is left (#3046's decisions, ADR-0156): the app opens it for a target (a new
-// post, a reply, a quote, an edit of the reader's post, a redraft) and closes it when asked; this decides what leaving
-// does.
+// post, a reply, a quote, an edit of the reader's post, a redraft) or for a draft of the reader's on the server, and
+// closes it when asked; this decides what leaving does.
 //
 // - Post: the post goes into the home timeline at once (app-data), and the composer closes.
 // - Save (an edit): every copy of the post shows the edit (app-data), the composer closes, and a notice says so. An
 //   edit closed goes without a word; left by accident it is kept on this page alone, never as a server draft.
+// - Schedule, or Save as draft: the post is kept on the server, scheduled if it has a time, and the composer closes.
 // - Close or Escape with a written post: the post is discarded, and a notice offers Undo for a moment, which opens the
-//   composer again with the post. Nothing is asked: Escape is often pressed by mistake around an input method.
+//   composer again with the post. Nothing is asked: Escape is often pressed by mistake around an input method. A draft
+//   opened from the server closes without a word, and the server keeps it as it was last saved.
 // - Leaving by accident (the backdrop, or the app closing it without a word): the
 //   post is saved as a draft on the server, without a word, and kept here, so that opening the composer for the same
 //   target (New post, or Reply or Quote on the same post) brings it back.
+// - While a post or a save is in flight, none of these leaves it, nor do the drafts open; a composer the app closed
+//   then hears nothing of its answer.
 //
-// A draft kept for a target lives as long as the page: the server keeps it across devices, which a list of drafts
-// will read (not built yet).
+// The composer's head opens the reader's drafts and scheduled posts in its place (drafts.tsx), which goes back to the
+// post being written, or opens one of them in the composer, read again from the server with its images, so that it
+// goes on from any device; the post being written is then left as by accident. A save refused for a newer draft saved
+// elsewhere opens the newer one in place of what was written (§9).
 
 import {
   useComposeSettings,
   useComposeWrites,
+  useDrafts,
   type ComposeSettings,
   type ComposeWrites,
   type Status,
 } from "@my/app-data";
-import { ModalPresence, UndoNotice, useLocale } from "@my/design-system";
-import { useEffect, useRef, useState } from "react";
+import {
+  ComposerFrame,
+  FeedNotice,
+  ModalPresence,
+  TextButton,
+  UndoNotice,
+  useLocale,
+  whenIdle,
+} from "@my/design-system";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { stringsIn } from "../locale";
-import { ComposerView } from "./composer";
-import { emptyDraft, targetKey, toDraft, written, type Draft, type Target } from "./model";
-import { useComposer } from "./use-composer";
+import { ChunkBoundary, retryingLazy } from "./chunk";
+import type { ComposerViewProps } from "./composer";
+import { DraftsView } from "./drafts";
+import { KeptDrafts } from "./kept";
+import { emptyDraft, fromServer, targetKey, written, type Draft, type Opening } from "./model";
+import { useComposer, type Phase } from "./use-composer";
 
 /** How long the notice of a discarded post offers Undo. */
 const undoMs = 6000;
 
-/** The drafts left by accident, by their target's key. */
-const kept = new Map<string, Draft>();
-
-/** Saves a draft left by accident: kept here at once, and on the server; the server's answer is kept with it. */
-function keep(d: Draft, writes: ComposeWrites, settings: ComposeSettings): void {
-  const key = targetKey(d.target);
-  // An image still uploading, or failed, is not kept: the server has no file of it.
-  const draft = { ...d, attachments: d.attachments.filter((a) => a.state === "ready") };
-  kept.set(key, draft);
-  // An edit is no new post: the server's drafts hold none.
-  if (d.target.kind === "edit") return;
-  writes.saveDraft(toDraft(draft, settings), draft.saved).then(
-    (saved) => {
-      if (kept.get(key) === draft) kept.set(key, { ...draft, saved });
+/**
+ * The composer's view, a chunk of its own apart from the entry, fetched once (each call after the first gets the same
+ * promise, but after a failed fetch, which the next tries again), with its editor; and the module, once here.
+ */
+let loading: Promise<typeof import("./composer")> | undefined;
+let loaded: typeof import("./composer") | undefined;
+const loadView = () =>
+  (loading ??= import("./composer").then(
+    (m) => {
+      loaded = m;
+      m.preloadComposerText();
+      return m;
     },
-    // Not saved on the server: the page still keeps it.
-    () => undefined,
+    (error: unknown) => {
+      loading = undefined;
+      throw error;
+    },
+  ));
+
+/** Fetches the composer's view and its editor ahead of its first opening. */
+function preloadComposer(): void {
+  // A failed fetch is tried again by the next.
+  loadView().catch(() => undefined);
+}
+
+const lazyComposerView = retryingLazy(() => loadView().then((m) => m.ComposerView));
+
+/** The view chosen once, as it mounts: drawn at once where its module came already, else as it comes. */
+function ChosenView(props: ComposerViewProps) {
+  const [View] = useState(() => loaded?.ComposerView ?? lazyComposerView.get());
+  return (
+    <Suspense fallback={null}>
+      <View {...props} />
+    </Suspense>
   );
 }
 
-/** Forgets a draft: here, and on the server. */
-function forget(d: Draft, writes: ComposeWrites): void {
-  kept.delete(targetKey(d.target));
-  if (d.saved) writes.deleteDraft(d.saved.id).catch(() => undefined);
+/**
+ * In the view's place when its chunk could not be fetched: the composer's frame, as tall as what it holds, that it
+ * could not be loaded at the start under its title, and Try again.
+ */
+function ViewFailed({ c, layer, phone, onClose, onDismiss, retry }: ComposerViewProps & { retry: () => void }) {
+  const { t } = stringsIn(useLocale().locale);
+  const kind = c.draft.target.kind;
+  return (
+    <ComposerFrame
+      title={t(`compose.title.${kind === "redraft" ? "new" : kind}`)}
+      closeLabel={t("compose.close")}
+      onClose={onClose}
+      onDismiss={onDismiss}
+      layer={layer}
+      phone={phone}
+      fit
+    >
+      <FeedNotice alert start action={<TextButton onPress={retry}>{t("compose.load_retry")}</TextButton>}>
+        {t("compose.load_failed")}
+      </FeedNotice>
+    </ComposerFrame>
+  );
 }
+
+/**
+ * The composer's view: drawn at once where its module came already, so that its text takes the focus inside the press
+ * that opened it (a phone opens its keyboard only then), else as it comes; one that could not be fetched says so.
+ */
+function ComposerView(props: ComposerViewProps) {
+  if (props.unloaded === "composer") return <ViewFailed {...props} retry={() => undefined} />;
+  return (
+    <ChunkBoundary fallback={(retry) => <ViewFailed {...props} retry={retry} />} onRetry={lazyComposerView.retry}>
+      <ChosenView {...props} />
+    </ChunkBoundary>
+  );
+}
+
+/** The drafts left by accident, by their target's key, with their writes on the server in order. */
+const kept = new KeptDrafts();
+
+/** Reads the reader's draft of `id` from the server, with its images, as the composer's draft. */
+async function load(id: string, writes: ComposeWrites, settings: ComposeSettings): Promise<Draft> {
+  const { draft, saved } = await writes.readDraft(id);
+  const media = await Promise.all(draft.media.map((m) => writes.media(m.id).catch(() => undefined)));
+  return fromServer(draft, saved, media, settings, crypto.randomUUID());
+}
+
+/** How the composer was left. */
+type Leaving = "posted" | "kept" | "close" | "dismiss";
 
 function Open({
   initial,
@@ -66,17 +145,36 @@ function Open({
   pickerSheet,
   track,
   onLeave,
+  onDrafts,
+  onNewer,
+  phase,
+  opened,
+  unloaded,
 }: {
   initial: Draft;
   layer: boolean;
   phone: "screen" | "dialog";
   pickerSheet: boolean;
   track: (d: Draft) => void;
-  onLeave: (how: "posted" | "close" | "dismiss", d: Draft, status?: Status) => void;
+  onLeave: (how: Leaving, d: Draft, status?: Status) => void;
+  onDrafts: (d: Draft) => void;
+  onNewer: (d: Draft) => void;
+  phase: Phase | undefined;
+  opened: ComposerViewProps["opened"];
+  unloaded: ComposerViewProps["unloaded"];
 }) {
-  const c = useComposer(initial, (status, draft) => {
-    onLeave("posted", draft, status);
-  });
+  const c = useComposer(
+    initial,
+    {
+      onPosted: (status, draft) => {
+        onLeave("posted", draft, status);
+      },
+      onKept: (draft) => {
+        onLeave("kept", draft);
+      },
+    },
+    phase,
+  );
   useEffect(() => {
     track(c.draft);
   });
@@ -86,11 +184,66 @@ function Open({
       layer={layer}
       phone={phone}
       pickerSheet={pickerSheet}
+      opened={opened}
+      unloaded={unloaded}
       onClose={() => {
         onLeave("close", c.draft);
       }}
       onDismiss={() => {
         onLeave("dismiss", c.draft);
+      }}
+      onSaveDraft={c.keep}
+      onDrafts={() => {
+        // Not while what was written is being sent: it would be left with its answer unheard.
+        if (c.phase.kind !== "posting") onDrafts(c.draft);
+      }}
+      onNewer={() => {
+        onNewer(c.draft);
+      }}
+    />
+  );
+}
+
+/** The reader's drafts and scheduled posts in the composer's place, as the server lists them. */
+function Drafts({
+  layer,
+  phone,
+  onBack,
+  onClose,
+  onDismiss,
+  onOpen,
+}: {
+  layer: boolean;
+  phone: "screen" | "dialog";
+  onBack: () => void;
+  onClose: () => void;
+  onDismiss: () => void;
+  onOpen: (id: string, schedule: boolean) => void;
+}) {
+  const drafts = useDrafts();
+  const state = drafts.lists
+    ? { kind: "ready" as const, ...drafts.lists }
+    : drafts.failed
+      ? { kind: "failed" as const }
+      : { kind: "loading" as const };
+  return (
+    <DraftsView
+      state={state}
+      layer={layer}
+      phone={phone}
+      onBack={onBack}
+      onClose={onClose}
+      onDismiss={onDismiss}
+      onRetry={drafts.retry}
+      onOpen={(id, schedule = false) => {
+        onOpen(id, schedule);
+      }}
+      // A failure leaves the list as the server reads it again.
+      onUnschedule={(id) => {
+        drafts.unschedule(id).catch(() => undefined);
+      }}
+      onDelete={(id) => {
+        drafts.remove(id).catch(() => undefined);
       }}
     />
   );
@@ -98,9 +251,9 @@ function Open({
 
 export type ComposeLayerProps = {
   /** What the composer is open for; none while it is closed. */
-  target: Target | undefined;
+  target: Opening | undefined;
   /** Opens the composer for a target (Undo). */
-  onOpen: (target: Target) => void;
+  onOpen: (target: Opening) => void;
   /** Closes it, once it was left. */
   onClose: () => void;
   /** A screen of its own on a phone, or a dialog: the app's choice by the viewport. */
@@ -111,7 +264,23 @@ export type ComposeLayerProps = {
   inline?: boolean | undefined;
   /** The draft it opens with, in place of the one kept or an empty one (a story's specimen). */
   initial?: Draft | undefined;
+  /** What a story's specimen opens in: its phase, and what is open in it. */
+  specimen?: ComposeSpecimen | undefined;
 };
+
+/** A story's specimen of the composer: the phase it opens in, what is open in it, and what could not be loaded. */
+export type ComposeSpecimen = {
+  readonly phase?: Phase | undefined;
+  readonly opened?: ComposerViewProps["opened"];
+  readonly unloaded?: ComposerViewProps["unloaded"];
+};
+
+/**
+ * What the layer shows in place of the target's composer: a draft in the composer (`id` tells one opening from the
+ * next), or the drafts, with the post that was being written to go back to.
+ */
+type Screen =
+  { kind: "compose"; draft: Draft; id: string; schedule: boolean } | { kind: "drafts"; back: Draft | undefined };
 
 /** The composer for `target`, over the screen, and the notice of a post discarded from it. */
 export function ComposeLayer({
@@ -122,16 +291,31 @@ export function ComposeLayer({
   pickerSheet = false,
   inline = false,
   initial,
+  specimen = {},
 }: ComposeLayerProps) {
   const { t } = stringsIn(useLocale().locale);
   const settings = useComposeSettings();
   const writes = useComposeWrites();
   const [discarded, setDiscarded] = useState<Draft | undefined>(undefined);
   const [saved, setSaved] = useState(false);
+  // What shows in place of the target's composer, for the target it was opened over.
+  const [screens, setScreens] = useState<{ key: string; screen: Screen } | undefined>(undefined);
   // The draft of the composer shown, as it was last drawn, by its target's key.
   const latest = useRef<{ key: string; draft: Draft } | undefined>(undefined);
   const left = useRef(false);
   const key = target && targetKey(target);
+  const screen = screens !== undefined && screens.key === key ? screens.screen : undefined;
+  const show = (s: Screen) => {
+    if (key !== undefined) setScreens({ key, screen: s });
+  };
+  /** Closes the layer; what showed in place of the composer goes with it, so the next opening starts at the composer. */
+  const close = () => {
+    setScreens(undefined);
+    onClose();
+  };
+
+  // The composer's view and its editor come once the page is idle, so that it opens with its text ready to write.
+  useEffect(() => whenIdle(preloadComposer), []);
 
   // A new target opens a new composer; the one before was left already, or is left by accident now (the app closed it
   // without a word).
@@ -140,10 +324,35 @@ export function ComposeLayer({
     if (shown.current === key) return;
     const before = latest.current;
     if (!left.current && before && before.key === shown.current && written(before.draft))
-      keep(before.draft, writes, settings);
+      kept.keep(before.draft, writes, settings);
     shown.current = key;
     left.current = false;
   });
+
+  // A draft the app opens (a notification of its failed schedule) is read from the server, with the session's writes
+  // and settings, once per opening; one that cannot be read (deleted since) leaves the reader at the list.
+  const session = useRef({ writes, settings });
+  useEffect(() => {
+    session.current = { writes, settings };
+  });
+  const draftId = target?.kind === "draft" ? target.id : undefined;
+  const draftSchedule = target?.kind === "draft" && target.schedule === true;
+  useEffect(() => {
+    if (draftId === undefined || key === undefined) return undefined;
+    const closed = new AbortController();
+    load(draftId, session.current.writes, session.current.settings).then(
+      (draft) => {
+        if (!closed.signal.aborted)
+          setScreens({ key, screen: { kind: "compose", draft, id: draft.key, schedule: draftSchedule } });
+      },
+      () => {
+        if (!closed.signal.aborted) setScreens({ key, screen: { kind: "drafts", back: undefined } });
+      },
+    );
+    return () => {
+      closed.abort();
+    };
+  }, [draftId, key, draftSchedule]);
 
   useEffect(() => {
     if ((discarded === undefined && !saved) || inline) return undefined;
@@ -156,11 +365,11 @@ export function ComposeLayer({
     };
   }, [discarded, saved, inline]);
 
-  const leave = (how: "posted" | "close" | "dismiss", d: Draft) => {
+  const leave = (how: Leaving, d: Draft) => {
     left.current = true;
     const editing = d.target.kind === "edit";
-    if (how === "posted") {
-      kept.delete(targetKey(d.target));
+    if (how === "posted" || how === "kept") {
+      kept.settle(d, writes);
       if (editing) {
         setDiscarded(undefined);
         setSaved(true);
@@ -171,31 +380,88 @@ export function ComposeLayer({
       if (how === "dismiss") kept.set(targetKey(d.target), d);
       else kept.delete(targetKey(d.target));
     } else if (how === "dismiss") {
-      if (written(d)) keep(d, writes, settings);
+      if (written(d)) kept.keep(d, writes, settings);
+    } else if (d.stored === true) {
+      // A draft opened from the server stays there as it was last saved.
+      kept.delete(targetKey(d.target));
     } else {
-      forget(d, writes);
+      kept.forget(d, writes);
       if (written(d)) setDiscarded({ ...d, saved: undefined });
     }
-    onClose();
+    close();
   };
 
-  const start = target && (initial ?? (key && kept.get(key)) ?? emptyDraft(target, settings, crypto.randomUUID()));
+  /** Opens the reader's draft of `id` in the composer once it is read; the post being written, `back`, is left. */
+  const openDraft = (id: string, schedule: boolean, back: Draft | undefined) => {
+    load(id, writes, settings).then(
+      (draft) => {
+        if (back !== undefined && back.saved?.id !== id && written(back)) kept.keep(back, writes, settings);
+        show({ kind: "compose", draft, id: draft.key, schedule });
+      },
+      // Not read (deleted since): the list is read again, without it.
+      () => undefined,
+    );
+  };
+
+  const start =
+    target &&
+    target.kind !== "draft" &&
+    (initial ?? (key && kept.get(key)) ?? emptyDraft(target, settings, crypto.randomUUID()));
+  const composing =
+    screen?.kind === "compose"
+      ? screen
+      : screen === undefined && start
+        ? { kind: "compose" as const, draft: start, id: key ?? "", schedule: false }
+        : undefined;
+  const track = (d: Draft) => {
+    latest.current = { key: targetKey(d.target), draft: d };
+  };
   return (
     <>
       {/* A composer that was left leaves by its motion, then unmounts. */}
       <ModalPresence>
-        {target && start && (
+        {target && composing && (
           <Open
-            // One composer per target: it mounts once when opened, and a closed one comes back as a new one.
-            key={key}
-            initial={start}
+            // One composer per opening: it mounts once when opened, and a closed one comes back as a new one.
+            key={composing.id}
+            initial={composing.draft}
             layer={!inline}
             phone={phone}
             pickerSheet={pickerSheet}
-            track={(d) => {
-              latest.current = { key: targetKey(d.target), draft: d };
-            }}
+            track={track}
             onLeave={leave}
+            onDrafts={(d) => {
+              show({ kind: "drafts", back: d });
+            }}
+            onNewer={(d) => {
+              if (d.saved) openDraft(d.saved.id, false, undefined);
+            }}
+            phase={screen === undefined ? specimen.phase : undefined}
+            opened={composing.schedule ? "schedule" : screen === undefined ? specimen.opened : undefined}
+            unloaded={screen === undefined ? specimen.unloaded : undefined}
+          />
+        )}
+        {target && screen?.kind === "drafts" && (
+          <Drafts
+            key="drafts"
+            layer={!inline}
+            phone={phone}
+            onBack={() => {
+              const back = screen.back;
+              if (back === undefined) close();
+              else show({ kind: "compose", draft: back, id: crypto.randomUUID(), schedule: false });
+            }}
+            onClose={() => {
+              if (screen.back === undefined) close();
+              else leave("close", screen.back);
+            }}
+            onDismiss={() => {
+              if (screen.back === undefined) close();
+              else leave("dismiss", screen.back);
+            }}
+            onOpen={(id, schedule) => {
+              openDraft(id, schedule, screen.back);
+            }}
           />
         )}
       </ModalPresence>

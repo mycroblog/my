@@ -8,8 +8,10 @@
 // those loaded), the first page is read again at once at the top, else when the reader presses the button. The button
 // tells how many are held or went in above; the feed takes the reader to the top and the focus to the heading.
 
-import { useHomeArrivals, type Arrival } from "@my/app-data";
+import { useTimelineArrivals, type Arrival, type StreamedTimeline } from "@my/app-data";
+import { useLocale } from "@my/design-system";
 import { useState } from "react";
+import { stringsIn } from "../locale";
 
 /** Where the reader is: the setting, whether the feed's top is in view, and whether they are in the feed. */
 type Reading = { readonly autoInsert: boolean; readonly atTop: boolean; readonly inside: boolean };
@@ -23,16 +25,19 @@ export function takesNow(arrival: Arrival, { autoInsert, atTop, inside }: Readin
 /** What the button tells: how many posts it brings or went in above, and whether posts may have been missed. */
 type NewPostsCount = { readonly count: number; readonly gap: boolean };
 
-/**
- * The policy of the home timeline's new posts with the setting `autoInsert`: what its feed hears, what its button
- * tells (undefined while it has nothing to tell), and what a press does.
- */
-export function useNewHomePosts(autoInsert: boolean): {
+/** What a streamed timeline's column hears and tells of its new posts. */
+type NewPosts = {
   onTopChange: (atTop: boolean) => void;
   onReaderChange: (inside: boolean) => void;
   told: NewPostsCount | undefined;
   onPress: () => void;
-} {
+};
+
+/**
+ * The policy of the new posts of a streamed timeline (the home timeline, or a list's) with the setting `autoInsert`:
+ * what its feed hears, what its button tells (undefined while it has nothing to tell), and what a press does.
+ */
+function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts {
   const [atTop, setAtTop] = useState(true);
   const [inside, setInside] = useState(false);
   // The posts that went in above since the reader left the top.
@@ -42,7 +47,7 @@ export function useNewHomePosts(autoInsert: boolean): {
     if (now && arrival.kind === "statuses" && !reading.atTop) setAbove((n) => n + arrival.count);
     return now;
   };
-  const arrivals = useHomeArrivals((arrival) => goIn(arrival, { autoInsert, atTop, inside }));
+  const arrivals = useTimelineArrivals(timeline, (arrival) => goIn(arrival, { autoInsert, atTop, inside }));
   const { statuses, gap } = arrivals.held;
   const count = above + statuses.length;
   return {
@@ -64,4 +69,20 @@ export function useNewHomePosts(autoInsert: boolean): {
       void arrivals.take();
     },
   };
+}
+
+/**
+ * What the column of a streamed timeline takes for its new posts, with `timeline_auto_insert` at its default, on
+ * (ADR-0013 §22), until the reader's preferences are read: what its feed hears, and its button, worded.
+ */
+export function useNewPostsColumn(timeline: StreamedTimeline) {
+  const { t } = stringsIn(useLocale().locale);
+  const { onTopChange, onReaderChange, told, onPress } = useNewPosts(timeline, true);
+  const label =
+    told === undefined
+      ? undefined
+      : told.count > 0
+        ? t("timeline.new_posts", { count: told.count })
+        : t("timeline.new_posts_missed");
+  return { onTopChange, onReaderChange, newPosts: label === undefined ? undefined : { label, onPress } };
 }

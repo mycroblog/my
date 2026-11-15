@@ -203,10 +203,11 @@ export const diff = { addedShare: 0.14 } as const;
 export const icon = { action: 1.125, caption: 0.875, navigation: 1.5, tile: { radius: 0.22, glyph: 0.72 } } as const;
 
 /**
- * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the head of a post,
- * and in a profile preview; and the size of the initial that stands in for a missing image, as a share of the avatar.
+ * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the start of a row of
+ * a list on one line (a suggestion), at the head of a post, and in a profile preview; and the size of the initial that
+ * stands in for a missing image, as a share of the avatar.
  */
-export const avatar = { inline: 1.25, post: 2.5, preview: 4, initial: 0.44 } as const;
+export const avatar = { inline: 1.25, row: 1.5, post: 2.5, preview: 4, initial: 0.44 } as const;
 
 /**
  * The shadow a surface over the page (a menu) casts, down `y` px and blurred `blur` px, in a share of black that is
@@ -347,8 +348,10 @@ export const dialog = {
  * The post composer, in rem: the size of an image's thumbnail beside its description; the size and the leading
  * (unitless) of the text, which keeps `textLines` lines of room while nothing follows it; the space above the dialog
  * from `tablet`, and below it; the most width and height of a popover of choices, and its most height on a phone,
- * where it opens over the row above the keyboard; the width of the line of a poll option's mark, in px; and the
- * corner of the part of the text over the limit, in px.
+ * where it opens over the row above the keyboard; the width of the line of a poll option's mark, in px; the corner of
+ * a mark behind the text (what the server will read, the part over the limit), in px; and the share of the coral in
+ * the tint behind what the server will read (the link it becomes), over whichever surface the text is on, heavier in
+ * dark, where a tint of the coral over a dark surface reads less.
  */
 export const composer = {
   thumb: 4.5,
@@ -362,6 +365,7 @@ export const composer = {
   popHeightPhone: 26,
   markLine: 1.5,
   overRadius: 2,
+  markShare: { light: 0.18, dark: 0.32 },
 } as const;
 
 /** A key's cap (a shortcut's key), in rem: its least width, its height, its inline padding, and the gap between caps. */
@@ -574,6 +578,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--icon-tile-radius", percent(icon.tile.radius)],
   ["--icon-tile-glyph", percent(icon.tile.glyph)],
   ["--avatar-inline", `${avatar.inline}rem`],
+  ["--avatar-row", `${avatar.row}rem`],
   ["--avatar-post", `${avatar.post}rem`],
   ["--avatar-preview", `${avatar.preview}rem`],
   ["--avatar-initial", `${avatar.initial}`],
@@ -658,6 +663,12 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--composer-pop-height-phone", `${composer.popHeightPhone}rem`],
   ["--composer-mark-line", `${composer.markLine}px`],
   ["--composer-over-radius", `${composer.overRadius}px`],
+  [
+    "--composer-mark",
+    `light-dark(${(["light", "dark"] as const)
+      .map((s) => `color-mix(in srgb, var(--color-accent) ${percent(composer.markShare[s])}, transparent)`)
+      .join(", ")})`,
+  ],
   ["--kbd-min-width", `${kbd.minWidth}rem`],
   ["--kbd-height", `${kbd.height}rem`],
   ["--kbd-padding-inline", `${kbd.paddingInline}rem`],

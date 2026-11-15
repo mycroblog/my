@@ -100,7 +100,7 @@ React Compiler がルール違反のコンポーネントを黙って最適化�
 
 - React、React Aria Components / React Aria
 - Tailwind CSS と `tailwind-variants`
-- ドメインを持たない振る舞いのライブラリ: 現在は `@tanstack/react-virtual` と `motion`（§1）
+- ドメインを持たない振る舞いのライブラリ: 現在は `@tanstack/react-virtual`・`motion`（§1）と Lexical（`lexical`・`@lexical/*`、編集器、ADR-0092 §4）
 - アイコン: `@tabler/icons-react`（`icons.tsx` からだけ。§6）
 - Lingui の実行時: `@lingui/core`（ADR-0009 §9）
 

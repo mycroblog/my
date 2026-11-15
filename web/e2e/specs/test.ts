@@ -18,6 +18,9 @@
 //   - `fresh.reaction(by, post, emoji)` the emoji reaction of `by` to a fresh post: a Unicode emoji, or a custom one's
 //     shortcode without colons.
 //   - `fresh.deletion(author, post)` the deletion of a fresh post by its author.
+//   - `fresh.source(author, id)` the text and content warning of the author's post `id` as the server keeps them.
+//   - `fresh.draft(author, { text, inSeconds? })` a new draft of `author` whose text is `text` and a word unique to it,
+//     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.themeDraftStylesheet(admin, tokens)` the stylesheet of a draft of the instance theme that a fresh
 //     person made with `fresh.person({ admin: true })` saves, to apply over a page; nothing is published.

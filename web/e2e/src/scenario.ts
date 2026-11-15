@@ -3,9 +3,10 @@
 // The scenario (ADR-0015 §5): the people, posts and relationships of a small server in use, as data only. The seed
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
-// today (the home timeline, the composer, a post, its edit history and its thread, the notifications, a profile, the
-// sign-in with a password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and
-// upcoming events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
+// today (the home timeline, the composer with its drafts and scheduled posts, a post, its edit history and its thread,
+// the notifications, a profile, a hashtag, the reader's lists and bookmarks, the sign-in with a password, a two-factor
+// code or a passkey, the consent to an app, and the shell's announcements and upcoming events), and grows with the
+// screens. It names no ID and no time (an event's day is counted from the seed): the
 // server decides them, so nothing that reads the scenario depends on them. Every item has a key, which the
 // seed sends as `Idempotency-Key: demo:<key>`. The passwords are fixed, which a server takes from the seed only in
 // the `development` profile of a test build (ADR-0015 §6). Links use the reserved `.test` and `.invalid` hosts.
@@ -302,6 +303,8 @@ export const instance: Readonly<Record<string, string>> = {
   // may send 1000 characters a month, which two posts of the default maximum length (500) use up.
   translation_providers: "fake",
   translation_user_monthly_characters: "1000",
+  // A post may be scheduled a minute ahead, so that the schedule the seed makes to fail fails soon after it.
+  scheduled_post_min_lead_minutes: "1",
 };
 
 /** The server's custom emoji, added with `my admin emoji create`. */
@@ -367,6 +370,24 @@ export const follows: readonly Follow[] = [
   { follower: "hana", followee: "ren", accepted: true },
   { follower: "yuki", followee: "ren", accepted: true },
   { follower: "sam", followee: "ren" },
+];
+
+/**
+ * A list a person made of people they follow (ADR-0013 §10, §11), which only they see: its name and its members. The
+ * seed finds it again by its name.
+ */
+export type PersonList = { key: string; owner: string; name: string; members: readonly string[] };
+
+/** The lists, oldest first. */
+export const lists: readonly PersonList[] = [
+  { key: "yuki-bread", owner: "yuki", name: "Bread and coffee", members: ["sam", "hana"] },
+  { key: "yuki-translators", owner: "yuki", name: "翻訳の仲間", members: ["layla"] },
+  {
+    key: "yuki-long",
+    owner: "yuki",
+    name: "A list with a name long enough to wrap on a phone",
+    members: ["sam", "layla", "ren", "hana"],
+  },
 ];
 
 /** The posts, oldest first. */
@@ -443,7 +464,7 @@ export const posts: readonly Post[] = [
     author: "sam",
     language: "en",
     visibility: "public",
-    text: "Bread for Saturday's meetup: which loaf should I bake?",
+    text: "Bread for Saturday's meetup: which loaf should I bake? #baking",
     poll: { options: ["Sourdough", "Rye", "Focaccia"], days: 7 },
   },
   {
@@ -703,6 +724,79 @@ export const events: readonly ServerEventPlan[] = [
     hours: 1,
   },
 ];
+
+/**
+ * A draft a person keeps on the server (ADR-0156), newest last. `replyTo` names the post it answers by key. `schedule`
+ * schedules it `inDays` days after the seed runs, at `hour` o'clock UTC. `fails` makes its schedule fail: the seed
+ * writes it as a reply to a post of its author's of that text, schedules it at the nearest time the server takes
+ * (`scheduled_post_min_lead_minutes`), and deletes that post, so that it is not published for its reply
+ * (`reply_unavailable`) about a minute after the seed, and its author is notified.
+ */
+export type DraftPlan = {
+  key: string;
+  author: string;
+  text: string;
+  language: string;
+  spoiler?: string;
+  replyTo?: string;
+  images?: readonly Image[];
+  poll?: Poll;
+  schedule?: { inDays: number; hour: number };
+  fails?: { post: string };
+};
+
+/** The drafts and scheduled posts, which the composer's list shows. */
+export const drafts: readonly DraftPlan[] = [
+  {
+    key: "yuki-draft-meetup",
+    author: "yuki",
+    text: "Which day works for the next photo walk?",
+    language: "en",
+    poll: { options: ["Saturday morning", "Sunday afternoon"], days: 1 },
+  },
+  {
+    key: "yuki-draft-finale",
+    author: "yuki",
+    text: "I did not expect the lighthouse keeper to be the narrator all along.",
+    language: "en",
+    spoiler: "Spoilers for the season finale",
+  },
+  {
+    key: "yuki-draft-ferry",
+    author: "yuki",
+    text: "Booked two seats. See you at the pier!",
+    language: "en",
+    fails: { post: "Who wants to take the early ferry to the island on Saturday?" },
+  },
+  {
+    key: "yuki-scheduled-weekly",
+    author: "yuki",
+    text: "Weekly photo thread is open. Post one picture from your week, no captions needed.",
+    language: "en",
+    schedule: { inDays: 4, hour: 3 },
+  },
+  {
+    key: "yuki-scheduled-bread",
+    author: "yuki",
+    text: "@sam Tried your overnight proof: the loaf finally rose. Thank you!",
+    language: "en",
+    replyTo: "sam-bread",
+    schedule: { inDays: 2, hour: 0 },
+  },
+  {
+    key: "yuki-draft-river",
+    author: "yuki",
+    text: "Walked along the river this morning. The first frost turned every leaf on the path silver.",
+    language: "en",
+  },
+];
+
+/** When the scheduled draft `plan` is to be published, counted from `now` (ms since the Unix epoch). */
+export function draftSchedule(plan: { inDays: number; hour: number }, now: number): Date {
+  const day = new Date(now + plan.inDays * 86_400_000);
+  day.setUTCHours(plan.hour, 0, 0, 0);
+  return day;
+}
 
 /** How far `zone`'s clock is ahead of UTC at the instant `ms`, in ms. */
 function zoneOffset(ms: number, zone: string): number {

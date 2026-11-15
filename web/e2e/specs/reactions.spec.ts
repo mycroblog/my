@@ -286,7 +286,7 @@ test("the composer's Add emoji button writes the emoji at the caret, and gives t
   await picker.emoji("Custom emoji", ":teacup:").click();
   await expect(picker.dialog).toBeHidden();
   await expect(composer.text).toBeFocused();
-  await expect(composer.text).toHaveValue("Good morning :teacup: ");
+  await composer.holds("Good morning :teacup: ");
 
   // A Unicode emoji goes at the caret as it is, and the caret follows it.
   await composer.text.press("ControlOrMeta+Home");
@@ -295,21 +295,21 @@ test("the composer's Add emoji button writes the emoji at the caret, and gives t
   await picker.emoji("Smileys & emotion", "grinning face").click();
   await expect(composer.text).toBeFocused();
   await page.keyboard.type("!");
-  await expect(composer.text).toHaveValue("Good😀! morning :teacup: ");
+  await composer.holds("Good😀! morning :teacup: ");
 
   // With Shift, the picker stays open for the next emoji, which follows the last at the caret.
   picker = await composer.emoji();
   await picker.emoji("Custom emoji", ":wave:").click({ modifiers: ["Shift"] });
-  await expect(composer.text).toHaveValue("Good😀! :wave: morning :teacup: ");
+  await composer.holds("Good😀! :wave: morning :teacup: ");
   await expect(picker.dialog).toBeVisible();
   await picker.emoji("Smileys & emotion", "grinning face").click();
   await expect(picker.dialog).toBeHidden();
-  await expect(composer.text).toHaveValue("Good😀! :wave:😀 morning :teacup: ");
+  await composer.holds("Good😀! :wave:😀 morning :teacup: ");
   await expect(composer.text).toBeFocused();
 
   // An emoji takes the place of the selection.
   await composer.text.press("ControlOrMeta+a");
   picker = await composer.emoji();
   await picker.emoji("Smileys & emotion", "grinning face").click();
-  await expect(composer.text).toHaveValue("😀");
+  await composer.holds("😀");
 });

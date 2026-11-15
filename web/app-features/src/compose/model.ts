@@ -2,19 +2,21 @@
 
 // What the composer holds while the reader writes, and what it sends: a post's draft as the composer keeps it (the
 // text, the content warning, the audience and who may interact with it, the language, the images or the poll, and the
-// post replied to or quoted), the rules it is checked by before it is sent, and the bodies of a post, of an edit and of
-// a server draft made from it. No React and no server here: the hook (use-composer.ts) holds it, the view shows it.
+// post replied to or quoted), the rules it is checked by before it is sent, the bodies of a post, of an edit and of a
+// server draft made from it, and the draft made from a server draft, to go on writing it. No React and no server here: the hook (use-composer.ts) holds it, the view shows it.
 
 import type {
   Audience,
   ComposeSettings,
   CreateStatus,
+  DraftFailureReason,
   DraftRequest,
   EditStatus,
   Interaction,
   MediaAttachment,
   PostSource,
   SavedDraft,
+  ServerDraft,
   Status,
   Visibility,
 } from "@my/app-data";
@@ -30,8 +32,14 @@ export type Target =
   | { kind: "quote"; id: string }
   | { kind: "edit" | "redraft"; id: string; source: PostSource };
 
+/**
+ * What the app opens the composer for: a target, or a draft of the reader's on the server (ADR-0156), continued from
+ * any device; `schedule` opens it with its time's form open.
+ */
+export type Opening = Target | { kind: "draft"; id: string; schedule?: boolean | undefined };
+
 /** A target as one string, by which a draft left for it is found again. */
-export const targetKey = (target: Target) => (target.kind === "new" ? "new" : `${target.kind}:${target.id}`);
+export const targetKey = (target: Opening) => (target.kind === "new" ? "new" : `${target.kind}:${target.id}`);
 
 /** An image of the post: its file while it uploads, the server's file once ready, and its description. */
 export type Attachment = {
@@ -42,9 +50,17 @@ export type Attachment = {
   /** What the composer shows of it: the file's own preview while it uploads, the server's once ready. */
   readonly preview?: string | undefined;
   readonly media?: MediaAttachment | undefined;
+  /**
+   * The server's ID of a draft's file that could not be read when the draft was opened: the server still holds it, so
+   * a save keeps it, and a retry reads it again.
+   */
+  readonly id?: string | undefined;
   readonly state: "uploading" | "processing" | "failed" | "ready";
   readonly description: string;
 };
+
+/** Whether the server holds an image's file, to keep in a draft: one ready, or a draft's that could not be read. */
+export const onServer = (a: Attachment) => a.state === "ready" || a.id !== undefined;
 
 /** A poll as it is written: its options, how long it runs (seconds), and how it counts. */
 export type PollDraft = {
@@ -71,6 +87,15 @@ export type Draft = {
   readonly quoteRemoved?: boolean | undefined;
   /** The draft on the server it was saved as, to save over or delete. */
   readonly saved?: SavedDraft | undefined;
+  /**
+   * It was opened from the reader's drafts on the server: closing it leaves that draft as it was saved, and a save
+   * refused for a newer one saved elsewhere says so (ADR-0156 §9).
+   */
+  readonly stored?: boolean | undefined;
+  /** When it is to be posted (ISO 8601); undefined to post now. */
+  readonly scheduledAt?: string | undefined;
+  /** Its last schedule failed: the time it was for and why it was not posted (ADR-0156 §8). */
+  readonly failure?: { readonly publishAt: string; readonly reason: DraftFailureReason } | undefined;
   /** The Idempotency-Key of its post, the same for every attempt. */
   readonly key: string;
 };
@@ -133,6 +158,65 @@ export function emptyDraft(target: Target, settings: ComposeSettings, key: strin
             multiple: poll.multiple,
             hideTotals: false,
           },
+  };
+}
+
+/**
+ * The draft of a draft the server keeps, to go on writing it (ADR-0156): a reply or a quote of the post it answers, else
+ * a new post; its images as the server holds them now (`media`, in the draft's order; undefined for one gone), its
+ * schedule, and why its last schedule failed, while it has none.
+ */
+export function fromServer(
+  server: ServerDraft,
+  saved: SavedDraft,
+  media: readonly (MediaAttachment | undefined)[],
+  settings: ComposeSettings,
+  key: string,
+): Draft {
+  const target: Target =
+    server.in_reply_to_id !== undefined
+      ? { kind: "reply", id: server.in_reply_to_id }
+      : server.quoted_status_id !== undefined
+        ? { kind: "quote", id: server.quoted_status_id }
+        : { kind: "new" };
+  const rule = (k: Interaction) => server.interaction_policy?.[k]?.automatic ?? settings.policy[k];
+  const failed = server.scheduled_at === undefined ? server.last_schedule : undefined;
+  return {
+    target,
+    text: server.text,
+    cw: server.spoiler_text === "" ? undefined : server.spoiler_text,
+    sensitive: server.sensitive,
+    visibility: server.visibility,
+    policy: { reply: rule("reply"), announce: rule("announce"), quote: rule("quote") },
+    language: server.language === undefined || server.language === "und" ? "" : server.language,
+    attachments: server.media.map((item, i) => {
+      const file = media[i];
+      return {
+        key: `draft-${item.id}`,
+        media: file,
+        // A file that could not be read is still the server's: kept by its ID, and read again on a retry.
+        ...(file === undefined ? { id: item.id } : {}),
+        preview: file?.preview_url ?? file?.url,
+        // A file not read, or one the server could not process, is no image the post may carry yet.
+        state: file === undefined || file.state === "failed" ? "failed" : "ready",
+        description: item.description ?? "",
+      };
+    }),
+    poll:
+      server.poll === undefined
+        ? undefined
+        : {
+            options: server.poll.options,
+            duration: nearestDuration(server.poll.expires_in),
+            multiple: server.poll.multiple ?? false,
+            hideTotals: server.poll.hide_totals ?? false,
+          },
+    saved,
+    stored: true,
+    scheduledAt: server.scheduled_at,
+    failure:
+      failed?.outcome === "failed" ? { publishAt: failed.publish_at, reason: failed.reason ?? "invalid" } : undefined,
+    key,
   };
 }
 
@@ -215,13 +299,14 @@ const quotes = (d: Draft) => {
   return d.target.kind === "redraft" ? d.target.source.quoted_status_id : undefined;
 };
 
-/** The images of the post that finished uploading, with their descriptions. */
+/** The images of the post the server holds (finished uploading, or a draft's not read), with their descriptions. */
 const mediaOf = (d: Draft) =>
-  d.attachments.flatMap((a) =>
-    a.media === undefined
+  d.attachments.flatMap((a) => {
+    const id = a.media?.id ?? a.id;
+    return id === undefined
       ? []
-      : [{ id: a.media.id, ...(a.description.trim() === "" ? {} : { description: a.description.trim() }) }],
-  );
+      : [{ id, ...(a.description.trim() === "" ? {} : { description: a.description.trim() }) }];
+  });
 
 /** Whether the post's images are marked sensitive: as the draft keeps them, or under a content warning. */
 const marksSensitive = (d: Draft, cw: string, media: readonly unknown[]) =>

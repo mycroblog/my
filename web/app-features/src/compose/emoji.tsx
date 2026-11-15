@@ -16,29 +16,21 @@ import {
   useLocale,
   type PickerEmoji,
 } from "@my/design-system";
+import type { EditorHandle } from "@my/design-system/editor";
 import { useEffect, useState, type RefObject } from "react";
 import { usePickerData } from "../emoji/picker";
 import { emojiStrings } from "../emoji/strings";
 import { stringsIn } from "../locale";
 
 /**
- * `text` with `emoji` written over `start` to `end`: a custom emoji's `:shortcode:` apart from the words beside it by
- * a space where there is none; and where the caret goes after it.
+ * What is written for `emoji` between `before` and `after`: a custom emoji's `:shortcode:` apart from the words beside
+ * it by a space where there is none.
  */
-function written(
-  text: string,
-  start: number,
-  end: number,
-  emoji: PickerEmoji,
-  shown: string,
-): { text: string; caret: number } {
-  const before = text.slice(0, start);
-  const after = text.slice(end);
+function written(before: string, after: string, emoji: PickerEmoji, shown: string): string {
   const custom = "image" in emoji;
   const lead = custom && before !== "" && !/\s$/u.test(before) ? " " : "";
   const trail = custom && !/^\s/u.test(after) ? " " : "";
-  const insert = `${lead}${shown}${trail}`;
-  return { text: `${before}${insert}${after}`, caret: start + insert.length };
+  return `${lead}${shown}${trail}`;
 }
 
 /** After the frame the picker's closing restores focus in, `then` runs. */
@@ -48,17 +40,13 @@ const afterFocusReturns = (then: () => void) => {
   });
 };
 
-/** The emoji button of the text in `textRef`, whose value is `value`; `onChange` takes the text with the emoji. */
+/** The emoji button of the editor of `text`, which writes the emoji picked at its selection. */
 export function ComposerEmoji({
-  textRef,
-  value,
-  onChange,
+  text,
   sheet,
   disabled,
 }: {
-  textRef: RefObject<HTMLTextAreaElement | null>;
-  value: string;
-  onChange: (text: string) => void;
+  text: RefObject<EditorHandle | null>;
   /** The picker opens in a sheet (a phone's viewport), else in a popover. */
   sheet: boolean;
   disabled: boolean;
@@ -81,22 +69,15 @@ export function ComposerEmoji({
     preload();
   };
   const pick = (emoji: PickerEmoji, shown: string, { keep }: { keep: boolean }) => {
-    const area = textRef.current;
-    const start = area?.selectionStart ?? value.length;
-    const end = area?.selectionEnd ?? value.length;
-    const next = written(value, start, end, emoji, shown);
-    onChange(next.text);
-    const caret = () => {
-      textRef.current?.setSelectionRange(next.caret, next.caret);
-    };
+    const write = (before: string, after: string) => written(before, after, emoji, shown);
     if (keep) {
-      afterFocusReturns(caret);
+      // The focus stays on the picker; the editor keeps its selection after what was written.
+      text.current?.insert(write, { focus: false });
       return;
     }
     setOpen(false);
     afterFocusReturns(() => {
-      textRef.current?.focus();
-      caret();
+      text.current?.insert(write);
     });
   };
   const content = <EmojiPicker {...data} fill={sheet} autoFocus onSelect={pick} />;

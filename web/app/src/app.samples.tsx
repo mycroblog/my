@@ -34,8 +34,9 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
   /**
-   * The app's path, `announcement:<key>` of an announcement, `reactions:<key>:<emoji>` of who reacted to a scenario
-   * post with an emoji, or the key of a scenario post whose page it opens.
+   * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index,
+   * `reactions:<key>:<emoji>` of who reacted to a scenario post with an emoji, or the key of a scenario post whose page
+   * it opens.
    */
   at: string;
   state?: ScreenState;
@@ -148,6 +149,7 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("/")) return at;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
+  if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
   if (at.startsWith("reactions:")) {
     const [, key = "", emoji = ""] = at.split(":");
     return `${fake.postPath(key)}/reactions/${encodeURIComponent(emoji)}`;
@@ -287,7 +289,11 @@ function shows(
       // Both folds, each a text button in the entry before what it holds.
       return settled && canvas.querySelectorAll("article > p > button").length >= 2;
     default:
-      // A list of who reacted shows a row per account, each a link to its profile; a screen of posts, its posts.
+      // A list of who reacted shows a row per account, each a link to its profile; the reader's lists, a row per list;
+      // a screen of posts, its posts.
+      if (at === "/lists") return settled && has('main a[href^="/lists/"]');
+      // A list the server has no longer says so.
+      if (at === "/lists/gone") return has('main p[role="status"]');
       return settled && has(at.startsWith("reactions:") ? 'main a[href^="/@"]' : "article");
   }
 }

@@ -145,8 +145,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 
 ### 12. ADR-0092 の強調表示との関係
 
-ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字間・行の高さで文字を並べる。`--font-sans` の先頭の `@font-face` は両方に同じく効く。
-ただし、`font-display: swap` の入れ替えの前後で字の幅が変わる。このため、層の位置合わせは、フォントの読み込み（`document.fonts` の `loadingdone`）の後にも測り直す。
+ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強調をその文字のノードと範囲に付ける。`font-display: swap` の入れ替えの前後で字の幅が変わっても強調は文字と一緒に動く。カーソルの行の下に出す補完の一覧だけは、フォントの読み込み（`document.fonts` の `loadingdone`）の後にも位置を測り直す。
 
 ### 13. フォントのライセンスと表示
 

@@ -10,8 +10,8 @@ import (
 )
 
 // TestScanShortcodesVectors checks the shortcodes of the vectors that internal/app/content's
-// ParseText test and the web client's lib/textTokens.ts read too (ADR-0092 §4): where each one
-// is, and what ScanShortcodes returns.
+// ParseText test and the web client's web/app-features/src/compose/text-tokens.ts read too
+// (ADR-0092 §4): where each one is, and what ScanShortcodes returns.
 func TestScanShortcodesVectors(t *testing.T) {
 	b, err := os.ReadFile("../../../pkg/testkit/fixtures/text/tokens.json")
 	if err != nil {

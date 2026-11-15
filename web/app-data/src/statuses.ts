@@ -18,12 +18,12 @@ type StatusContext = components["schemas"]["StatusContext"];
 type Pages<T> = { readonly pages: readonly { readonly items: readonly T[] }[] };
 
 /**
- * The statuses the data of a query holds, by the path of its operation: the timelines' and an account's pages, the
- * notifications' pages by the status each is about, a status alone, and a thread; none for another query.
+ * The statuses the data of a query holds, by the path of its operation: the timelines', an account's and the bookmarks'
+ * pages, the notifications' pages by the status each is about, a status alone, and a thread; none for another query.
  */
 function* statusesIn(path: unknown, data: unknown): Generator<Status> {
   if (data === undefined || typeof path !== "string") return;
-  if (path.startsWith("/timelines/") || path === "/accounts/{id}/statuses") {
+  if (path.startsWith("/timelines/") || path === "/accounts/{id}/statuses" || path === "/bookmarks") {
     for (const page of (data as Pages<Status>).pages) yield* page.items;
   } else if (path === "/notifications") {
     for (const page of (data as Pages<Notification>).pages)

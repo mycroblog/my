@@ -4,14 +4,21 @@
 // itself, where New post (or `n`), a post's Reply and the boost menu's Quote open the composer over the home timeline,
 // and what is posted tops it. The language is the toolbar's locale (ja, else en).
 //
-// The server is the fake of @my/e2e, which answers the reads from the scenario; this file's own fake takes the writes:
-// posts, uploads (a file whose name has "fail" is refused, so that the retry shows; the others are processed for a
-// moment) and drafts; a post whose text has "#fail" is refused with the server's words, so that a failed post shows.
-// Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as a draft, which New
-// post opens again.
+// The server is the fake of @my/e2e, which answers the reads from the scenario and keeps the reader's drafts and their
+// schedules; this file's own fake takes the other writes: posts and uploads (a file whose name has "fail" is refused,
+// so that the retry shows; the others are processed for a moment); a post whose text has "#fail" is refused with the
+// server's words, so that a failed post shows. Leaving the composer: close and Escape discard a written post, with
+// Undo; the backdrop saves it as a draft, which New post opens again. The drafts' menu in the head saves it as a draft,
+// or opens the drafts and scheduled posts, from which one opens in the composer.
 
 import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource, type Status } from "@my/app-data";
-import { ComposeLayer, emptyComposeDraft, type ComposeDraft, type ComposeTarget } from "@my/app-features";
+import {
+  ComposeLayer,
+  emptyComposeDraft,
+  type ComposeDraft,
+  type ComposeSpecimen,
+  type ComposeTarget,
+} from "@my/app-features";
 import { useLocale } from "@my/design-system";
 import { images } from "@my/design-system/samples";
 import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake";
@@ -144,7 +151,8 @@ function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
     const media = /^\/media\/([^/]+)$/.exec(path);
     if (media?.[1]) {
       const upload = uploads.get(media[1]);
-      if (!upload) return notFound();
+      // Not uploaded here: a file of a draft, which the fake of @my/e2e holds.
+      if (!upload) return fake.serve(request);
       const ready = Date.now() >= upload.ready;
       return json({
         id: media[1],
@@ -154,9 +162,6 @@ function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
         ...(ready ? { url: upload.url, preview_url: upload.url } : {}),
       });
     }
-    if (path === "/drafts" && method === "POST") return json({ id: "draft-1", visibility: "public" }, 201);
-    if (path.startsWith("/drafts/") && method === "PUT") return json({ id: path.slice("/drafts/".length) });
-    if (path.startsWith("/drafts/") && method === "DELETE") return new Response(null, { status: 204 });
     return fake.serve(request);
   };
 }
@@ -181,6 +186,14 @@ const words = {
     options: ["Saturday morning", "Saturday evening", "Sunday afternoon"],
     alt: "Low hills under a dusk sky, a sun just above the ridge",
     edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
+    marked:
+      "Thanks @sam and @layla@social.example for the walk :sparkle: Photos at https://photos.example/ridge #山 #hiking",
+    markedCw: "Trail photos :sparkle: lots of them",
+    suggestAccount: "Lunch tomorrow with @m",
+    suggestHashtag: "Day 4 of the sourdough experiment #ba",
+    suggestEmoji: "Good morning :wa",
+    suggestCw: "Trail photos :sp",
+    later: "@sam The sourdough came out flat again. Trying your overnight proof this weekend.",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -194,6 +207,14 @@ const words = {
     options: ["土曜の午前", "土曜の夜", "日曜の午後"],
     alt: "夕暮れの空の下の低い丘。尾根のすぐ上に太陽",
     edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
+    marked:
+      "@sam さん @layla@social.example さん、今日はありがとう :sparkle: 写真は https://photos.example/ridge に #山 #写真",
+    markedCw: "登山の写真 :sparkle: たくさん",
+    suggestAccount: "明日のお昼は @m",
+    suggestHashtag: "今朝の尾根 #写",
+    suggestEmoji: "おはよう :wa",
+    suggestCw: "登山の写真 :sp",
+    later: "@sam サワードウがまたぺたんこに。週末は教わった一晩発酵でやってみます。",
   },
 };
 
@@ -219,6 +240,16 @@ type State = {
   name: string;
   target: (fake: FakeApi) => ComposeTarget;
   draft: (base: ComposeDraft, w: (typeof words)["en"]) => ComposeDraft;
+  /** What it opens in: its phase, and what is open in it. */
+  specimen?: ComposeSpecimen;
+};
+
+/** A moment `days` days from now at `hour` o'clock, local time, as an ISO 8601 string. */
+const dayAt = (days: number, hour: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, 0, 0, 0);
+  return d.toISOString();
 };
 
 const nw = (): ComposeTarget => ({ kind: "new" });
@@ -261,6 +292,27 @@ const states = {
     draft: (d, w) => ({ ...d, text: w.direct, visibility: "direct" }),
   },
   cw: { name: "Content warning", target: nw, draft: (d, w) => ({ ...d, cw: w.cw, text: w.cwText }) },
+  marks: {
+    name: "Mentions, hashtags, a URL and custom emoji",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.markedCw, text: w.marked }),
+  },
+  "suggest-account": {
+    name: "Suggesting accounts",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.suggestAccount }),
+  },
+  "suggest-hashtag": {
+    name: "Suggesting hashtags",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.suggestHashtag }),
+  },
+  "suggest-emoji": { name: "Suggesting emoji", target: nw, draft: (d, w) => ({ ...d, text: w.suggestEmoji }) },
+  "suggest-cw": {
+    name: "Suggesting emoji in the content warning",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.suggestCw, text: w.cwText }),
+  },
   images: {
     name: "Images: described, not yet, processing, failed",
     target: nw,
@@ -283,6 +335,49 @@ const states = {
     name: "Edit",
     target: (fake) => ({ kind: "edit", id: idOf(fake, "yuki-ridge"), source: sourceOf(idOf(fake, "yuki-ridge")) }),
     draft: (d, w) => ({ ...d, text: w.edit, language: "ja", attachments: [image(0, "ready", w.alt)] }),
+  },
+  // Sending it later (ADR-0156): a time set, the form of the time open, a time too near, the menu of the ways to send
+  // it later open, a draft whose scheduled post failed, and a save refused for a newer draft saved elsewhere.
+  scheduled: {
+    name: "Scheduled",
+    target: nw,
+    draft: (d, w) => ({ ...typed(d, w), scheduledAt: dayAt(1, 9) }),
+  },
+  "schedule-form": { name: "Schedule's form", target: nw, draft: typed, specimen: { opened: "schedule" } },
+  "schedule-change": {
+    name: "Schedule's form, a time set",
+    target: nw,
+    draft: (d, w) => ({ ...typed(d, w), scheduledAt: dayAt(1, 9) }),
+    specimen: { opened: "schedule" },
+  },
+  "schedule-too-soon": {
+    name: "Schedule too soon",
+    target: nw,
+    draft: (d, w) => ({ ...typed(d, w), scheduledAt: new Date(Date.now() + 2 * 60_000).toISOString() }),
+    specimen: { opened: "schedule" },
+  },
+  "drafts-menu": { name: "Drafts' menu", target: nw, draft: typed, specimen: { opened: "drafts" } },
+  "schedule-failed": {
+    name: "Scheduled post failed",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.later, failure: { publishAt: dayAt(-1, 9), reason: "rejected" } }),
+  },
+  conflict: { name: "Newer draft elsewhere", target: nw, draft: typed, specimen: { phase: { kind: "conflict" } } },
+  gone: { name: "Draft gone from the server", target: nw, draft: typed, specimen: { phase: { kind: "gone" } } },
+  // Being sent: Close, Post and the tools wait for the answer.
+  posting: { name: "Posting", target: nw, draft: typed, specimen: { phase: { kind: "posting" } } },
+  // The chunk of the composer's view, or of its editor, could not be fetched (the network).
+  "unloaded-composer": {
+    name: "Post form not loaded",
+    target: nw,
+    draft: typed,
+    specimen: { unloaded: "composer" },
+  },
+  "unloaded-editor": {
+    name: "Editor not loaded",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.cw, text: w.cwText }),
+    specimen: { unloaded: "editor" },
   },
 } satisfies Record<string, State>;
 
@@ -312,6 +407,7 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
           initial={initial}
           inline
           pickerSheet={pickerSheet || narrow}
+          specimen={state.specimen}
           onOpen={() => undefined}
           onClose={() => undefined}
         />
@@ -342,9 +438,11 @@ const settle = async ({ canvasElement, parameters }: StoryContext) => {
   const state = composeOf(parameters);
   // The handle of the author of the post a reply or a quote is of (sam-bread, layla-jokes), which shows once it came.
   const of = state === "reply" ? "@sam" : state === "quote" ? "@layla" : "";
+  // A state whose chunk was not loaded shows its alert in the text field's place.
+  const field = state.startsWith("unloaded-") ? '[role="alert"]' : '[role="textbox"][aria-multiline="true"]';
   await waitFor(
     () => {
-      const ready = canvasElement.querySelector('[role="textbox"], textarea') !== null;
+      const ready = canvasElement.querySelector(field) !== null;
       if (!ready || !canvasElement.textContent.includes(of))
         throw new Error(`the composer does not show its ${state} state yet`);
     },
@@ -367,7 +465,9 @@ const openEmoji = async (context: StoryContext) => {
   await settle(context);
   const doc = context.canvasElement.ownerDocument;
   // The button at the end of the text's first line, in any locale.
-  context.canvasElement.querySelector<HTMLButtonElement>("textarea ~ div button")?.click();
+  context.canvasElement
+    .querySelector<HTMLButtonElement>('div:has(> [role="textbox"][aria-multiline="true"]) ~ div button')
+    ?.click();
   await waitFor(
     () => {
       const grid = doc.querySelector('[role="grid"]');
@@ -377,6 +477,37 @@ const openEmoji = async (context: StoryContext) => {
         throw new Error("the emoji picker shows no emoji yet");
       if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
         throw new Error("the emoji picker has not appeared yet");
+    },
+    { timeout: 5000 },
+  );
+};
+
+/**
+ * Puts the caret at the end of the field whose word is suggested for (the content warning's for `suggest-cw`, else the
+ * text's), as a reader who typed it, and waits until the suggestions list their options.
+ */
+const suggest = async (context: StoryContext) => {
+  await settle(context);
+  const multiline = composeOf(context.parameters) === "suggest-cw" ? "false" : "true";
+  const field = await waitFor(
+    () => {
+      const found = context.canvasElement.querySelector<HTMLElement>(
+        `[role="textbox"][aria-autocomplete][aria-multiline="${multiline}"]`,
+      );
+      if (found === null) throw new Error("the composer has no field to suggest in");
+      return found;
+    },
+    { timeout: 5000 },
+  );
+  // As a reader presses End: the caret goes to the end of the text, which tells the suggestions where it is.
+  field.focus();
+  const selection = field.ownerDocument.getSelection();
+  selection?.selectAllChildren(field);
+  selection?.collapseToEnd();
+  await waitFor(
+    () => {
+      if (context.canvasElement.querySelectorAll('[role="listbox"] [role="option"]').length === 0)
+        throw new Error("the composer suggests nothing yet");
     },
     { timeout: 5000 },
   );
@@ -423,6 +554,21 @@ export const FollowersOnly: Story = shows("visibility-private");
 export const Permissions: Story = shows("permissions");
 export const Direct: Story = shows("visibility-direct");
 export const ContentWarning: Story = shows("cw");
+/**
+ * What the server will read, marked behind the text as it is typed: mentions, hashtags, a URL and a custom emoji; in
+ * the content warning, its custom emoji alone.
+ */
+export const Marks: Story = shows("marks");
+export const MarksRightToLeft: Story = { ...shows("marks"), globals: rightToLeft };
+/** `@m` typed: the accounts the server found, the followed first, under the caret's line, the first active. */
+export const SuggestAccounts: Story = { ...shows("suggest-account"), play: suggest };
+export const SuggestAccountsRightToLeft: Story = { ...shows("suggest-account"), play: suggest, globals: rightToLeft };
+/** `#ba` (`#写` in ja): the hashtags the server found, the most used first, with how many posts carry each. */
+export const SuggestHashtags: Story = { ...shows("suggest-hashtag"), play: suggest };
+/** `:wa`: the custom emoji, then the Unicode ones, that match. */
+export const SuggestEmoji: Story = { ...shows("suggest-emoji"), play: suggest };
+/** `:sp` in the content warning: its emoji, under it. */
+export const SuggestEmojiInWarning: Story = { ...shows("suggest-cw"), play: suggest };
 export const Images: Story = shows("images");
 export const Reply: Story = shows("reply");
 export const Quote: Story = shows("quote");
@@ -433,8 +579,35 @@ export const PollSeveralChoices: Story = shows("poll-multiple");
  * and one muted line over the text says the audience stays as posted.
  */
 export const Edit: Story = shows("edit");
+/** A time set: one line over the row says when it goes out, and Schedule takes Post's place. */
+export const Scheduled: Story = shows("scheduled");
+/** The form of the time open: one field of the date and the time, the reader's zone and the server's limits under it. */
+export const ScheduleForm: Story = shows("schedule-form");
+/** The form of a time already set: Don't schedule beside Set time takes it away. */
+export const ScheduleChange: Story = shows("schedule-change");
+/** A time nearer than the server takes: the field says so in place of the limits. */
+export const ScheduleTooSoon: Story = shows("schedule-too-soon");
+/** The drafts' menu in the head open: keep this post as a draft, or open the drafts and scheduled posts. */
+export const DraftsMenu: Story = shows("drafts-menu");
+/** A draft whose scheduled post failed, opened again: why, before Post. */
+export const ScheduleFailed: Story = shows("schedule-failed");
+/** A save refused for a newer draft saved on another device: it says so, and opens the newer one. */
+export const NewerDraft: Story = shows("conflict");
+/** The draft is no longer on the server: what was written stays, and Post reads Post as new, which posts it so. */
+export const DraftGone: Story = shows("gone");
+/** Being sent: Post shows it is sending, and Close stays in its place, disabled. */
+export const Posting: Story = shows("posting");
+/** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
+export const PostFormNotLoaded: Story = shows("unloaded-composer");
+/**
+ * The editors could not be fetched: once, in the text's place, that it could not be loaded, and Try again; the content
+ * warning's band empty, the count away and Post disabled.
+ */
+export const EditorNotLoaded: Story = shows("unloaded-editor");
 export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
 export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
+/** A time set at the narrowest width: the row keeps its tools, the count and Schedule on one line. */
+export const ScheduledMinimumWidth: Story = { ...shows("scheduled"), globals: minimumWidth };
 /** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
 export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
 /** The same on a phone: the picker in a sheet from the bottom. */

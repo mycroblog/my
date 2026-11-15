@@ -66,6 +66,9 @@ export type FreshPostOptions = {
  */
 export type FreshPost = { id: string; text: string; media: readonly MediaAttachment[] };
 
+/** A draft of a test's: its ID, and its whole text, which finds it on the screen. */
+export type FreshDraft = { id: string; text: string };
+
 /** A person's avatar: a plain square, which no screen of a test reads. */
 const avatar: Drawing = { width: 64, height: 64, top: [120, 144, 168], bottom: [72, 96, 120], shapes: [] };
 
@@ -208,12 +211,38 @@ export class Fresh {
     return { id: status.id, text, media: status.media_attachments };
   }
 
+  /**
+   * A new draft of `author` on the server, whose text ends with a word unique to it, scheduled `inSeconds` from now
+   * when given (the server takes no time nearer than its `scheduled_post_min_lead_minutes`).
+   */
+  async draft(author: Person, o: { text: string; inSeconds?: number }): Promise<FreshDraft> {
+    const api = await this.#api(author);
+    const text = `${o.text} ${unique().slice(0, 8)}`;
+    const { data } = await api.POST("/drafts", { body: { text, visibility: "public", language: author.locale } });
+    const draft = body(data, "the draft");
+    if (o.inSeconds !== undefined) {
+      const { error } = await api.PUT("/drafts/{id}/schedule", {
+        params: { path: { id: draft.id } },
+        body: { publish_at: new Date(Date.now() + o.inSeconds * 1000).toISOString() },
+      });
+      if (error !== undefined) throw new Error(`fresh: the schedule of ${draft.id} was refused`);
+    }
+    return { id: draft.id, text };
+  }
+
   /** `by` reacts to the post `post` with `emoji`: a Unicode emoji, or a custom one's shortcode without colons. */
   async reaction(by: Person, post: FreshPost, emoji: string): Promise<void> {
     const { error } = await (
       await this.#api(by)
     ).PUT("/statuses/{id}/reaction", { params: { path: { id: post.id } }, body: { emoji } });
     if (error !== undefined) throw new Error(`fresh: ${by.username} could not react to ${post.id}`);
+  }
+
+  /** The text and the content warning of `author`'s post `id` as the server keeps them (its source). */
+  async source(author: Person, id: string): Promise<{ text: string; spoiler: string }> {
+    const { data } = await (await this.#api(author)).GET("/statuses/{id}/source", { params: { path: { id } } });
+    const source = body(data, `the source of ${id}`);
+    return { text: source.text, spoiler: source.spoiler_text };
   }
 
   /** `author` deletes their post `post`. */

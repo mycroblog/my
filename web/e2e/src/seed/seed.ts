@@ -4,7 +4,7 @@
 // custom emoji with `bin/my`, everything else with the client API through @mycroblog/mykit, signed in as each person
 // (sign-in.ts). It writes no SQL: the timelines and notifications come from the actions. Every creating request carries
 // `Idempotency-Key: demo:<key>`, and what the server already has is found again (people by username, posts with images
-// by their alt text, apps by name, emoji by shortcode, announcements and events by title) and left alone, so a second
+// by their alt text, apps by name, emoji by shortcode, announcements and events by title, drafts by text) and left alone, so a second
 // run against one server adds nothing. What the server decides and a test needs (the TOTP secrets, the passkeys' keys, the apps' client IDs) is the
 // seed's state, which it reads before it runs and returns after.
 
@@ -17,12 +17,15 @@ import {
   admin,
   announcements,
   apps,
+  drafts,
+  draftSchedule,
   emojis,
   eventStart,
   events,
   follows,
   instance,
   interactions,
+  lists,
   people,
   personOf,
   posts,
@@ -285,6 +288,26 @@ class Seeder {
     }
   }
 
+  /** Each person's lists, found again by their names or made, with their members (adding one again changes nothing). */
+  async makeLists() {
+    for (const l of lists) {
+      const api = await this.api(l.owner);
+      const have = body((await api.GET("/lists")).data, "the lists").items.find((x) => x.name === l.name);
+      const list =
+        have ??
+        body(
+          (await api.POST("/lists", { headers: key(`list-${l.key}`), body: { name: l.name } })).data,
+          `the list ${l.key}`,
+        );
+      for (const member of l.members) {
+        const account = await this.account(member);
+        await api.POST("/lists/{id}/accounts/{account_id}", {
+          params: { path: { id: list.id, account_id: account.id } },
+        });
+      }
+    }
+  }
+
   /** The author's post that carries an image with `description`, from an earlier run. */
   async findByImage(username: string, description: string): Promise<Status | undefined> {
     const api = await this.api(username);
@@ -496,6 +519,78 @@ class Seeder {
     }
   }
 
+  /**
+   * The drafts, each found again by its text among its author's drafts; a scheduled one scheduled, and the one whose
+   * schedule fails written as a reply to a post of its author's that is deleted once it is scheduled.
+   */
+  async writeDrafts() {
+    for (const d of drafts) {
+      const api = await this.api(d.author);
+      const have: string[] = [];
+      for await (const draft of all(async (cursor) =>
+        body((await api.GET("/drafts", { params: { query: cursor === undefined ? {} : { cursor } } })).data, "drafts"),
+      ))
+        have.push(draft.text);
+      if (have.includes(d.text)) continue;
+      const media = [];
+      for (const image of d.images ?? [])
+        media.push({
+          id: (await this.upload(api, image.name, image.drawing, image.description, "attachment")).id,
+          description: image.description,
+        });
+      const answered =
+        d.fails === undefined
+          ? undefined
+          : body(
+              (
+                await api.POST("/statuses", {
+                  params: { header: key(`${d.key}-answered`) },
+                  body: { text: d.fails.post, visibility: "public", language: d.language },
+                })
+              ).data,
+              `the post ${d.key} answers`,
+            );
+      const replyTo = answered?.id ?? (d.replyTo === undefined ? undefined : this.post(d.replyTo).id);
+      const draft = body(
+        (
+          await api.POST("/drafts", {
+            body: {
+              text: d.text,
+              visibility: "public",
+              language: d.language,
+              ...(d.spoiler === undefined ? {} : { spoiler_text: d.spoiler }),
+              ...(replyTo === undefined ? {} : { in_reply_to_id: replyTo }),
+              ...(media.length === 0 ? {} : { media }),
+              ...(d.poll === undefined
+                ? {}
+                : {
+                    poll: {
+                      options: [...d.poll.options],
+                      expires_in: d.poll.days * 86_400,
+                      multiple: d.poll.multiple ?? false,
+                    },
+                  }),
+            },
+          })
+        ).data,
+        `the draft ${d.key}`,
+      );
+      const lead = Number(instance["scheduled_post_min_lead_minutes"] ?? "5");
+      const at =
+        d.schedule !== undefined
+          ? draftSchedule(d.schedule, Date.now())
+          : answered !== undefined
+            ? new Date(Date.now() + (lead * 60 + 15) * 1000)
+            : undefined;
+      if (at !== undefined)
+        await api.PUT("/drafts/{id}/schedule", {
+          params: { path: { id: draft.id } },
+          body: { publish_at: at.toISOString() },
+        });
+      if (answered !== undefined) await api.DELETE("/statuses/{id}", { params: { path: { id: answered.id } } });
+    }
+  }
+
   async registerPasskeys() {
     for (const p of people.filter((x) => x.passkey === true)) {
       const api = await this.api(p.username);
@@ -536,12 +631,14 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   await s.addEmojis();
   await s.setUpProfiles();
   await s.follow();
+  await s.makeLists();
   await s.writePosts();
   await s.interact();
   await s.restrict();
   await s.registerApps();
   await s.publishAnnouncements();
   await s.createEvents();
+  await s.writeDrafts();
   await s.registerPasskeys();
   await s.enableTwoFactor();
   return s.state;

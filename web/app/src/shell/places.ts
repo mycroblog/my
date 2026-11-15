@@ -36,6 +36,12 @@ const ownPlaces: readonly Place[] = [
   { href: "/settings", icon: "settings", label: "app.settings" },
 ];
 
+/**
+ * The reader's lists, which the rail and the sidebar leave to the menu (ADR-0110 §11 names their places): a group of
+ * its own at the top of their menu, and after the reader's own places, with them, in the phone's sheet.
+ */
+export const listsPlace: Place = { href: "/lists", icon: "list", label: "app.lists" };
+
 const moderation: Place = { href: "/moderation", icon: "moderation", label: "app.moderation", count: "moderation" };
 const admin: Place = { href: "/admin", icon: "admin", label: "app.admin" };
 const finance: Place = { href: "/finance", icon: "finance", label: "app.finance" };
@@ -58,6 +64,7 @@ export const navigationPaths: ReadonlySet<string> = new Set(
     notifications,
     search,
     ...ownPlaces,
+    listsPlace,
     moderation,
     admin,
     finance,
@@ -113,7 +120,12 @@ export function placesFor(signedIn: boolean, instance: Instance | undefined, rig
   };
 }
 
-/** Whether the screen at `pathname` is a timeline or a profile, where a new post floats on a phone. */
+/**
+ * Whether the screen at `pathname` is a timeline (a hashtag's and a list's too) or a profile, where a new post floats
+ * on a phone.
+ */
 export const composesAt = (pathname: string) =>
   ["/", "/local", "/public", "/profile"].includes(pathname) ||
+  pathname.startsWith("/tags/") ||
+  /^\/lists\/[^/]+$/.test(pathname) ||
   (pathname.startsWith("/@") && !pathname.includes("/status/"));

@@ -130,8 +130,15 @@ function rank(e: Entry, query: string): number | undefined {
   return undefined;
 }
 
-/** The emoji of `indexes` that match `text`, by rank, in the order given within one (the custom emoji first). */
-export function searchIndex(indexes: readonly (readonly Entry[])[], text: string): PickerEmoji[] {
+/**
+ * The emoji of `indexes` that match `text`, by rank, in the order given within one (the custom emoji first); within a
+ * rank, those that `first` picks (the emoji used often, for the composer's suggestions) before the rest.
+ */
+export function searchIndex(
+  indexes: readonly (readonly Entry[])[],
+  text: string,
+  first?: (emoji: PickerEmoji) => boolean,
+): PickerEmoji[] {
   const query = normalizeQuery(text);
   if (query === "") return [];
   const ranks: PickerEmoji[][] = [[], [], [], []];
@@ -140,5 +147,6 @@ export function searchIndex(indexes: readonly (readonly Entry[])[], text: string
       const r = rank(e, query);
       if (r !== undefined) ranks[r]?.push(e.emoji);
     }
-  return ranks.flat();
+  if (first === undefined) return ranks.flat();
+  return ranks.flatMap((r) => [...r.filter(first), ...r.filter((e) => !first(e))]);
 }

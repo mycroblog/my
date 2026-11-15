@@ -1,8 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { defaultComposeSettings, type ComposeSettings, type PostSource, type Status } from "@my/app-data";
-import { answering, emptyDraft, postable, problemsOf, toDraft, toEdit, toStatus, written, type Draft } from "./model";
+import {
+  defaultComposeSettings,
+  type ComposeSettings,
+  type MediaAttachment,
+  type PostSource,
+  type ServerDraft,
+  type Status,
+} from "@my/app-data";
+import {
+  answering,
+  emptyDraft,
+  fromServer,
+  onServer,
+  postable,
+  problemsOf,
+  toDraft,
+  toEdit,
+  toStatus,
+  written,
+  type Draft,
+} from "./model";
 
 const settings: ComposeSettings = { ...defaultComposeSettings, maxChars: 10, viewer: { id: "me", acct: "kumi" } };
 const draft = (fields: Partial<Draft> = {}): Draft => ({ ...emptyDraft({ kind: "new" }, settings, "key"), ...fields });
@@ -132,4 +151,33 @@ test("a server draft keeps a poll still being written as it is", () => {
   );
   expect(body.poll?.options).toEqual(["Sat", ""]);
   expect(body.text).toBe("when?");
+});
+
+test("a draft's image whose file could not be read stays the server's: kept by its ID in the next save", () => {
+  const server = {
+    id: "d1",
+    created_at: "2026-11-14T00:00:00Z",
+    updated_at: "2026-11-14T01:00:00Z",
+    text: "a walk",
+    spoiler_text: "",
+    sensitive: false,
+    visibility: "public",
+    media: [{ id: "m1", description: "a hill" }, { id: "m2" }],
+  } as unknown as ServerDraft;
+  const read = { id: "m2", type: "image", state: "ready", url: "/m2.png" } as unknown as MediaAttachment;
+  // m1 could not be read (a request that failed), m2 was.
+  const opened = fromServer(server, { id: "d1", etag: '"1"' }, [undefined, read], settings, "key");
+  const [unread, ready] = opened.attachments;
+  expect(unread).toMatchObject({ id: "m1", state: "failed", description: "a hill" });
+  expect(ready).toMatchObject({ state: "ready", media: read });
+  expect(opened.attachments.every(onServer)).toBe(true);
+  expect(toDraft({ ...opened, attachments: opened.attachments.filter(onServer) }, settings).media).toEqual([
+    { id: "m1", description: "a hill" },
+    { id: "m2" },
+  ]);
+  // It is not posted until read again: the post waits for it.
+  expect(problemsOf(opened, settings).waiting).toBe(true);
+  // An image still uploading, or whose upload failed, is no file of the server's.
+  expect(onServer({ key: "a", state: "uploading", description: "" })).toBe(false);
+  expect(onServer({ key: "a", state: "failed", description: "" })).toBe(false);
 });

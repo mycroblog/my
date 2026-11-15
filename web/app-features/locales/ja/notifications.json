@@ -51,6 +51,10 @@
     "defaultMessage": "フォロー",
     "description": "The button of a notification that follows its account (the account a followed account moved to)."
   },
+  "notifications.open_draft": {
+    "defaultMessage": "下書きを開く",
+    "description": "Under a notification that a scheduled post could not be published: opens its draft in the composer, to fix it and post or schedule it again."
+  },
   "notifications.following": {
     "defaultMessage": "フォロー中",
     "description": "What a notification says, in place of its follow button, of an account the reader follows."

@@ -5,13 +5,13 @@
 // and no View Transition runs: the composer rises in with its backdrop, and leaves the same way back, by Motion
 // (@my/design-system's modal). It is a screen of its own on a phone and a dialog from `tablet` (the app's choice by the viewport).
 
-import type { ComposeTarget } from "@my/app-features";
+import type { ComposeOpening } from "@my/app-features";
 import { useState } from "react";
 
-/** The composer's target, none while it is closed, and how to open and close it. */
+/** What the composer is open for (a target, or a draft of the reader's), none while it is closed, and how to open and close it. */
 export function useCompose() {
-  const [target, setTarget] = useState<ComposeTarget | undefined>(undefined);
-  const open = (to: ComposeTarget) => {
+  const [target, setTarget] = useState<ComposeOpening | undefined>(undefined);
+  const open = (to: ComposeOpening) => {
     setTarget(to);
   };
   const close = () => {

@@ -139,6 +139,10 @@ export async function markStatus(data: AppData, id: string, mark: StatusMark): P
   // Who reacted changed with the reader's reaction, which a favourite also takes back: the lists are read again.
   if (mark.type === "reaction" || mark.type === "favourite")
     void data.queryClient.invalidateQueries({ predicate: (q) => reactorsOf(q.queryKey, id) });
+  // The bookmarks are read again when they next open; one shown now leaves a post taken back at once (useBookmarks),
+  // and keeps its place otherwise.
+  if (mark.type === "bookmark")
+    void data.queryClient.invalidateQueries({ queryKey: ["get", "/bookmarks"], refetchType: "none" });
 }
 
 /** Whether `key` is a list of the reactions to the status of `id` (statusReactorsQuery). */

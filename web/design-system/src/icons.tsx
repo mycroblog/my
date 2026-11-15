@@ -26,6 +26,7 @@ import {
   IconBulb,
   IconCalendarEvent,
   IconCalendarEventFilled,
+  IconCalendarTime,
   IconChartBar,
   IconChecks,
   IconChevronDown,
@@ -35,6 +36,7 @@ import {
   IconCloudOff,
   IconCoin,
   IconCoinFilled,
+  IconDeviceFloppy,
   IconDoorExit,
   IconDots,
   IconExternalLink,
@@ -43,6 +45,7 @@ import {
   IconFilePencil,
   IconFlag,
   IconHandStop,
+  IconHash,
   IconHeart,
   IconHeartHandshake,
   IconHistory,
@@ -53,6 +56,7 @@ import {
   IconKey,
   IconLanguage,
   IconLink,
+  IconListDetails,
   IconLock,
   IconLogin2,
   IconMaximize,
@@ -65,6 +69,7 @@ import {
   IconMoodSmile,
   IconMoon,
   IconMusic,
+  IconNotes,
   IconPaperclip,
   IconPaw,
   IconPencil,
@@ -198,6 +203,9 @@ export const icons = {
   follow: { off: IconUserPlus, directional: true },
   moderation: { off: IconShield, on: IconShieldFilled },
   pin: { off: IconPin },
+  // What a timeline is of, off the navigation: a hashtag, and a list of accounts the reader made.
+  hashtag: { off: IconHash },
+  list: { off: IconListDetails },
   // Marking every notification read: two checks.
   read: { off: IconChecks },
   // The auth screens: what went wrong (a round mark), what needs care before agreeing (a triangle), a passkey, and the
@@ -230,6 +238,11 @@ export const icons = {
   zoomIn: { off: IconZoomIn },
   zoomOut: { off: IconZoomOut },
   previous: { off: IconChevronLeft, directional: true },
+  // Drafts and scheduled posts (ADR-0156): a post set to go out at a time (on, while the composer holds one); the
+  // reader's drafts, a page of notes; and keeping what is written as a draft.
+  schedule: { off: IconCalendarTime, on: "tile" },
+  drafts: { off: IconNotes },
+  saveDraft: { off: IconDeviceFloppy },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;

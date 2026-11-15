@@ -7,7 +7,7 @@
 import type { AppData } from "@my/app-data";
 import { routerTransitions } from "@my/design-system";
 import type { ScrollMode } from "@my/design-system";
-import { supportsViewTransitions } from "@my/platform";
+import { settleSkippedTransitions, supportsViewTransitions } from "@my/platform";
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import type { RuntimeConfig } from "./config";
 import { routeTree } from "./routeTree.gen";
@@ -28,6 +28,8 @@ export type AppRouterOptions = Omit<RouterContext, "shown"> & {
 };
 
 export function createAppRouter({ data, config, at }: AppRouterOptions) {
+  // A navigation that skips the previous one's transition leaves no unhandled rejection.
+  settleSkippedTransitions();
   let shown = false;
   const router = createRouter({
     routeTree,

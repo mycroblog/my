@@ -7,10 +7,10 @@ import type { Locator, Page } from "@playwright/test";
 import { Composer } from "./composer";
 
 /** A place the main navigation links to. */
-export type Place = "Home" | "Notifications" | "Profile";
+export type Place = "Home" | "Notifications" | "Profile" | "Bookmarks";
 
 /** A place the menu holds. */
-export type MenuPlace = "Profile" | "Bookmarks" | "Settings" | "Announcements" | "Events";
+export type MenuPlace = "Profile" | "Bookmarks" | "Lists" | "Settings" | "Announcements" | "Events";
 
 /** The menu open over the screen: the places the navigation does not hold, and what is around the reader. */
 export class Menu {

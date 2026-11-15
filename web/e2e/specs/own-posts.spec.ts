@@ -36,7 +36,7 @@ test("an edit shows its new text and the edited mark, and the history lists both
   const before = timeline.post(writer.displayName, text);
   await expect(before.edited).toBeHidden();
   const composer = await before.edit();
-  await expect(composer.text).toHaveValue(text);
+  await composer.holds(text);
   await composer.replace(changed);
   await composer.save();
   await expect(new Notice(page).text("Edit saved")).toBeVisible();
@@ -57,7 +57,7 @@ test("delete and redraft takes the post away and opens it as a new post", async 
   const post = homeTimeline(page).post(writer.displayName, text);
   const composer = await post.redraft();
   await expect(composer.dialog).toBeVisible();
-  await expect(composer.text).toHaveValue(text);
+  await composer.holds(text);
   await expect(post.article).toBeHidden();
 });
 

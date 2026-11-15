@@ -4,7 +4,8 @@
 // tabs (all, or the mentions) with mark-all-read at the row's end, then, under all, the row of the requests the
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
 // read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). The affirmative answer
-// of a notification that asks for one (follow back, accept, approve) is the primary button, its refusal a plain one.
+// of a notification that asks for one (follow back, accept, approve) is the primary button, its refusal a plain one;
+// that of a scheduled post that could not be published opens its draft in the composer.
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
@@ -39,12 +40,13 @@ import {
   ScreenStack,
   StateText,
   TabRow,
+  TextButton,
   useAction,
   useLocale,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
@@ -211,9 +213,27 @@ function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {
     case "boost_request":
     case "quote_request":
       return <InteractionAnswers n={n} t={t} />;
+    case "scheduled_status_failed":
+      return <OpenDraft n={n} t={t} />;
     default:
       return null;
   }
+}
+
+/** The draft of a scheduled post that could not be published, opened in the composer to fix and send again. */
+function OpenDraft({ n, t }: { n: NotificationItem; t: T }) {
+  const compose = useCompose();
+  const id = n.scheduled_status_failure?.draft_id;
+  if (compose === undefined || id === undefined) return null;
+  return (
+    <TextButton
+      onPress={() => {
+        compose({ kind: "draft", id });
+      }}
+    >
+      {t("notifications.open_draft")}
+    </TextButton>
+  );
 }
 
 /**

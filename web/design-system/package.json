@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",
+    "./editor": "./src/editor.tsx",
     "./preview": "./src/preview.tsx",
     "./samples": "./src/samples.tsx",
     "./styles.css": "./src/styles.css",
@@ -17,10 +18,15 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@lexical/history": "0.53.0",
+    "@lexical/plain-text": "0.53.0",
+    "@lexical/react": "0.53.0",
+    "@lexical/utils": "0.53.0",
     "@lingui/core": "6.12.0",
     "@my/design-tokens": "workspace:*",
     "@tabler/icons-react": "3.51.0",
     "@tanstack/react-virtual": "3.14.26",
+    "lexical": "0.53.0",
     "motion": "14.9.0",
     "react-aria": "3.53.1",
     "react-aria-components": "1.22.1",

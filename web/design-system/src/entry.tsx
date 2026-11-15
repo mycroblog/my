@@ -116,6 +116,8 @@ const caption = tv({
     glyph: "inline-flex h-[1lh] shrink-0 items-center",
     text: "min-w-0 flex-1",
     action: "whitespace-nowrap",
+    // An action of its own at the line's end, on the first line, never broken inside.
+    end: "shrink-0 whitespace-nowrap",
     // The glyph's place while what the line says is under way: a spinner of the glyph's size.
     spinner: [
       "box-border size-icon-caption rounded-full border-spinner border-solid",
@@ -162,6 +164,11 @@ export type CaptionLineProps = {
    * the action never broken inside.
    */
   action?: ReactNode;
+  /**
+   * An action at the line's end, apart from the text by space alone, which wraps under itself beside it (Change time);
+   * in place of `action`.
+   */
+  end?: ReactNode;
   /** One line that never wraps: a `CaptionName` in it truncates instead. */
   oneLine?: boolean | undefined;
   /** What it says is under way (a translation): a spinner stands in the glyph's place. */
@@ -184,6 +191,7 @@ export function CaptionLine({
   lang,
   children,
   action,
+  end,
   oneLine = false,
   busy = false,
   alert = false,
@@ -209,6 +217,7 @@ export function CaptionLine({
         {hasText && action !== undefined && " · "}
         {action !== undefined && <span className={s.action()}>{action}</span>}
       </span>
+      {end !== undefined && <span className={s.end()}>{end}</span>}
     </p>
   );
 }

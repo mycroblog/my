@@ -2,18 +2,20 @@
 
 // The parts of the post composer (ADR-0025 §4), from the rough the decider approved (#3046): the frame, a dialog over
 // the dimmed page from `tablet` and a screen of its own on a phone (where the app asks for one), whose row with the
-// action stays right above the software keyboard; the text with its count and the part over the limit marked behind
-// it; the content warning; the replied or quoted post above the text; the images as rows of a thumbnail and its
+// action stays right above the software keyboard; the text with its count, and the content warning, each around its
+// editor (editor.tsx, loaded lazily); the replied or quoted post above the text; the images as rows of a thumbnail and its
 // description; the poll as a raised card whose options are headed by the mark they will be answered with; the popovers
 // of choices, whose groups stand apart under their captions, one opening another as a submenu; and the notice of a
-// discarded post with its Undo. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
-// press on the backdrop (`onDismiss`, by accident). Every word is the caller's.
+// discarded post with its Undo. Its head may hold more before close, and a line over the row may say how the post is
+// sent (when it is scheduled for); with neither tools nor an action (the drafts), it has no row. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
+// press on the backdrop (`onDismiss`, by accident), and neither while what was written is sent (`busy`). Every word is
+// the caller's.
 //
 // On a phone the frame is as tall as the viewport less the keyboard: `--keyboard-inset` where the app measures it
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
+import { Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
@@ -33,11 +35,17 @@ const frame = tv({
       "h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))] px-shell-edge pt-entry-line",
     ],
     head: "flex items-center justify-between gap-entry-caption -me-icon-button-inline",
-    title: "m-0 text-title",
+    title: "m-0 min-w-0 text-title",
+    headEnd: "inline-flex flex-none items-center",
     body: "flex min-h-0 flex-1 flex-col gap-entry overflow-y-auto",
     end: "relative grid gap-entry-line bg-surface py-entry",
     row: "flex items-center gap-entry-caption",
-    tools: "-ms-icon-button-inline flex min-w-0 flex-1 flex-wrap items-center",
+    // On the narrowest phones (under 360 px) the glyphs sit closer, and the language names itself by its tag
+    // (ToolText), so that the tools, the count and Post keep one line.
+    tools: [
+      "-ms-icon-button-inline flex min-w-0 flex-1 flex-wrap items-center",
+      "max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
+    ],
   },
   variants: {
     // From `tablet` a dialog of the main column's width over the dimmed page, which scrolls with what opens below it;
@@ -57,8 +65,9 @@ const frame = tv({
         end: "tablet:py-0",
       },
     },
-    // A specimen in a page is as tall as what it holds.
-    layer: { false: { panel: "h-auto min-h-[24rem]" } },
+    // A specimen in a page is as tall as what it holds, with a form's room unless it fits what it holds (`fit`).
+    layer: { false: { panel: "h-auto" } },
+    room: { true: { panel: "min-h-[24rem]" } },
   },
 });
 
@@ -71,18 +80,32 @@ export type ComposerFrameProps = {
   onClose: () => void;
   /** A press on the backdrop: the reader left by accident. */
   onDismiss: () => void;
+  /**
+   * What was written is being sent or saved: close stays in its place, disabled (the action's spinner says it is sent),
+   * and neither it, Escape nor the backdrop leaves.
+   */
+  busy?: boolean | undefined;
   /** How it shows on a phone: a screen of its own (the composer), or a dialog as from `tablet`. */
   phone?: "screen" | "dialog" | undefined;
   /** Over the page, as the app opens it, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
+  /**
+   * As tall as what it holds, also as a specimen, where a frame otherwise keeps a form's room (one line: the form that
+   * could not be loaded). Over the page from `tablet` it is always as tall as what it holds.
+   */
+  fit?: boolean | undefined;
+  /** What stands in the head before close (the drafts). */
+  headEnd?: ReactNode;
+  /** A line about how it will be sent (when it is scheduled for), right above the row that sends it. */
+  note?: ReactNode;
   /** The form's error, directly before the row that sends it. */
   alert?: ReactNode;
-  /** The tools at the row's start: the glyphs and what they open. */
-  tools: ReactNode;
+  /** The tools at the row's start: the glyphs and what they open; with no tools and no action, there is no row. */
+  tools?: ReactNode;
   /** What stands before the action: the count. */
   count?: ReactNode;
-  /** The action that sends it (Post). */
-  action: ReactNode;
+  /** The action that sends it (Post), and what stands at its end. */
+  action?: ReactNode;
   children: ReactNode;
 };
 
@@ -95,15 +118,22 @@ export function ComposerFrame({
   closeLabel,
   onClose,
   onDismiss,
+  busy = false,
   phone = "screen",
   layer = true,
+  fit = false,
+  headEnd,
+  note,
   alert,
   tools,
   count,
   action,
   children,
 }: ComposerFrameProps) {
-  const s = frame({ dialog: true, layer });
+  const s = frame({ dialog: true, layer, room: !layer && !fit });
+  const leave = (how: () => void) => {
+    if (!busy) how();
+  };
   const { direction } = useReader(undefined);
   const titleId = useId();
   const panel = (
@@ -114,7 +144,7 @@ export function ComposerFrame({
         // Escape means to leave, but not while an input method composes, where it cancels the composition.
         if (e.key === "Escape" && !e.defaultPrevented && !e.nativeEvent.isComposing) {
           e.preventDefault();
-          onClose();
+          leave(onClose);
         }
       }}
     >
@@ -128,17 +158,30 @@ export function ComposerFrame({
             {title}
           </h2>
         )}
-        <IconButton icon="close" label={closeLabel} onPress={onClose} />
+        <span className={s.headEnd()}>
+          {headEnd}
+          <IconButton
+            icon="close"
+            label={closeLabel}
+            isDisabled={busy}
+            onPress={() => {
+              leave(onClose);
+            }}
+          />
+        </span>
       </div>
       <div className={s.body()}>{children}</div>
-      <div className={s.end()}>
-        {alert}
-        <div className={s.row()}>
-          <div className={s.tools()}>{tools}</div>
-          {count}
-          {action}
+      {(tools !== undefined || action !== undefined) && (
+        <div className={s.end()}>
+          {note}
+          {alert}
+          <div className={s.row()}>
+            <div className={s.tools()}>{tools}</div>
+            {count}
+            {action}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
   if (!layer)
@@ -151,7 +194,9 @@ export function ComposerFrame({
   // panel's, which tells it from a press on the backdrop.
   return (
     <ModalLayer
-      onDismiss={onDismiss}
+      onDismiss={() => {
+        leave(onDismiss);
+      }}
       ownEscape
       backdrop={phone === "dialog" ? "always" : "tablet"}
       overlay={s.overlay()}
@@ -180,139 +225,77 @@ export function CharCount({ left, near, label }: { left: number; near: number; l
 const text = tv({
   slots: {
     field: "grid gap-form-page-field-gap",
-    wrap: "relative grid [&>*]:[grid-area:1/1]",
+    wrap: "relative grid",
     // The button at the end of the text's first line (the emoji picker's, ADR-0091 §4), over the text's own room.
     end: "absolute top-0 end-0 z-10",
-    both: [
-      "box-border m-0 border-0 p-0 font-sans text-[length:var(--composer-text-size)]",
-      "leading-[var(--composer-text-leading)] whitespace-pre-wrap [overflow-wrap:anywhere]",
-    ],
-    area: ["resize-none bg-transparent text-text outline-hidden [field-sizing:content] placeholder:text-muted-text"],
-    mirror: "pointer-events-none text-transparent",
-    over: "rounded-[var(--composer-over-radius)] bg-surface-raised-pressed text-transparent",
-  },
-  variants: {
-    // Three lines of room while nothing follows the text; with images or a poll under it, only its own lines.
-    roomy: {
-      true: { both: "min-h-[calc(var(--composer-text-lines)*var(--composer-text-leading)*var(--composer-text-size))]" },
-      false: { both: "min-h-[calc(var(--composer-text-leading)*var(--composer-text-size))]" },
-    },
-    // A button at the end: the text keeps clear of it on every line.
-    ended: {
-      true: { both: "pe-[calc(var(--icon-action)+2*var(--icon-button-padding-inline))]" },
-      false: {},
-    },
   },
 });
 
-/** The text of a post: plain on the composer's surface, the characters over the limit marked behind the text. */
+/** The room the text takes while its editor arrives, so that the composer does not jump when it comes. */
+const waiting = tv({
+  base: "min-h-[calc(var(--composer-text-leading)*var(--composer-text-size))]",
+  variants: {
+    roomy: { true: "min-h-[calc(var(--composer-text-lines)*var(--composer-text-leading)*var(--composer-text-size))]" },
+    line: { true: "h-control-form min-h-0 min-w-0 flex-1" },
+  },
+});
+
+/**
+ * The text of a post on the composer's surface: its editor (`children`, the `PlainTextEditor` of
+ * `@my/design-system/editor` with the composer's look, loaded lazily: its room is held while it arrives), a button at
+ * the end of its first line, and what is wrong with it right under it, by `errorId`, which the editor is described by.
+ */
 export function ComposerText({
-  value,
-  onChange,
-  label,
-  placeholder,
-  over,
   error,
-  readOnly = false,
+  errorId,
   roomy = true,
-  autoFocus = false,
   end,
-  textRef,
+  children,
 }: {
-  value: string;
-  onChange: (value: string) => void;
-  /** A button at the end of the text's first line (the emoji picker's), which the text keeps clear of. */
-  end?: ReactNode;
-  /** The text area itself, for a caller that writes at its caret. */
-  textRef?: RefObject<HTMLTextAreaElement | null> | undefined;
-  /** The field's name, for assistive technology. */
-  label: string;
-  placeholder: string;
-  /** How many characters at its end are over the limit. */
-  over: number;
-  /** What is wrong with it, right under it. */
   error?: string | undefined;
-  readOnly?: boolean | undefined;
+  errorId?: string | undefined;
+  /** Three lines of room while nothing follows the text, while its editor arrives. */
   roomy?: boolean | undefined;
-  autoFocus?: boolean | undefined;
+  /** A button at the end of the text's first line (the emoji picker's), which the editor keeps clear of (`ended`). */
+  end?: ReactNode;
+  children: ReactNode;
 }) {
-  const s = text({ roomy, ended: end !== undefined });
-  const id = useId();
-  const all = Array.from(value);
-  const keep = Math.max(0, all.length - over);
+  const s = text();
   return (
     <div className={s.field()}>
       <div className={s.wrap()}>
-        <div className={`${s.both()} ${s.mirror()}`} aria-hidden="true">
-          {all.slice(0, keep).join("")}
-          {over > 0 && <mark className={s.over()}>{all.slice(keep).join("")}</mark>}
-          {"​"}
-        </div>
-        <textarea
-          ref={textRef}
-          className={`${s.both()} ${s.area()}`}
-          value={value}
-          placeholder={placeholder}
-          aria-label={label}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : undefined}
-          readOnly={readOnly}
-          // The composer opens to write: its text takes the focus at once.
-          autoFocus={autoFocus}
-          dir="auto"
-          onChange={(e) => {
-            onChange(e.target.value);
-          }}
-        />
+        <Suspense fallback={<div className={waiting({ roomy })} aria-busy="true" />}>{children}</Suspense>
         {end !== undefined && <div className={s.end()}>{end}</div>}
       </div>
-      {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
+      {error && <FieldError id={errorId}>{error}</FieldError>}
     </div>
   );
 }
 
 const warning = tv({
   slots: {
-    root: "flex items-center gap-disclosure-gap rounded-control bg-surface-raised ps-disclosure-start",
-    glyph: "inline-flex text-muted-text",
-    input: [
-      "h-control-form min-w-0 flex-1 border-0 bg-transparent pe-control-timeline-inline font-sans text-body",
-      "text-text outline-hidden placeholder:text-muted-text",
+    // The suggestions of its editor open under the band, across its width.
+    // As tall as its editor's line also while it has none (an editor that could not be loaded).
+    root: [
+      "relative flex min-h-control-form items-center gap-disclosure-gap rounded-control bg-surface-raised",
+      "ps-disclosure-start",
     ],
+    glyph: "inline-flex text-muted-text",
   },
 });
 
-/** The content warning: a band of the raised surface, as a post shows it, to type the warning on. */
-export function WarningField({
-  value,
-  onChange,
-  label,
-  placeholder,
-  readOnly = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  label: string;
-  placeholder: string;
-  readOnly?: boolean | undefined;
-}) {
+/**
+ * The content warning: a band of the raised surface, as a post shows it, to type the warning on, with its editor
+ * (`children`, the `PlainTextEditor` with the `line` look, loaded lazily: its room is held while it arrives).
+ */
+export function WarningField({ children }: { children: ReactNode }) {
   const s = warning();
   return (
     <div className={s.root()}>
       <span className={s.glyph()}>
         <Icon name="hidden" place="caption" />
       </span>
-      <input
-        className={s.input()}
-        value={value}
-        placeholder={placeholder}
-        aria-label={label}
-        readOnly={readOnly}
-        dir="auto"
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-      />
+      <Suspense fallback={<div className={waiting({ line: true })} aria-busy="true" />}>{children}</Suspense>
     </div>
   );
 }
@@ -910,14 +893,20 @@ export function ChoiceSelect<T extends string>({
   );
 }
 
-/** A tool of the row that names what it holds in words (the language), muted at the caption's size. */
+/**
+ * A tool of the row that names what it holds in words (the language), muted at the caption's size; on the narrowest
+ * phones (under 360 px) it names it by `short` (EN), so that the row keeps its tools and Post on one line.
+ */
 export function ToolText({
   label,
   lang,
   expanded,
   onPress,
+  short,
   children,
 }: {
+  /** Its words on the narrowest phones (the language's tag). */
+  short?: string | undefined;
   /** Its name for assistive technology: what it is and what it holds. */
   label: string;
   /** The language of its words. */
@@ -927,16 +916,18 @@ export function ToolText({
   children: string;
 }) {
   return (
-    <Button
-      kind="quiet"
-      size="timeline"
-      aria-label={label}
-      aria-haspopup="dialog"
-      aria-expanded={expanded}
-      onPress={onPress}
-    >
-      <span className="text-caption font-label text-muted-text" lang={lang}>
-        {children}
+    <Button kind="quiet" size="timeline" aria-haspopup="dialog" aria-expanded={expanded} onPress={onPress}>
+      {/* Its name is the label alone, read in place of its words, which may be the short tag. */}
+      <span className="sr-only">{label}</span>
+      <span className="text-caption font-label text-muted-text" lang={lang} aria-hidden="true">
+        {short === undefined ? (
+          children
+        ) : (
+          <>
+            <span className="max-[22.5rem]:hidden">{children}</span>
+            <span className="hidden max-[22.5rem]:inline">{short}</span>
+          </>
+        )}
       </span>
     </Button>
   );

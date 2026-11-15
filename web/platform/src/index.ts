@@ -31,4 +31,4 @@ export {
   type BrowserTranslator,
   type TranslatorAvailability,
 } from "./translator";
-export { supportsViewTransitions } from "./transitions";
+export { settleSkippedTransitions, supportsViewTransitions } from "./transitions";
