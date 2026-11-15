@@ -98,9 +98,10 @@ export {
 export {
   cachePostedStatus,
   defaultComposeSettings,
-  deleteDraft,
   MediaFailedError,
   postStatus,
+  publishDraft,
+  readMedia,
   refusal,
   saveDraft,
   uploadAttachment,
@@ -114,9 +115,25 @@ export {
   type DraftRequest,
   type Interaction,
   type MediaAttachment,
-  type SavedDraft,
   type Visibility,
 } from "./compose";
+export {
+  defaultDraftLimits,
+  deleteDraft,
+  DraftConflictError,
+  DraftGoneError,
+  draftListsQuery,
+  readDraft,
+  scheduleDraft,
+  unscheduleDraft,
+  useDrafts,
+  type DraftFailureReason,
+  type DraftLimits,
+  type DraftLists,
+  type Drafts,
+  type SavedDraft,
+  type ServerDraft,
+} from "./drafts";
 export { markStatus, useStatusMarks, type StatusMark } from "./interactions";
 export {
   notificationMarkerQuery,

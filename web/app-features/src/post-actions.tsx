@@ -53,10 +53,11 @@ const noticeMs = 6000;
 
 /**
  * What the composer opens for: a reply to the post, a quote of it, an edit of the reader's post, or a new post written
- * again from the reader's post just deleted (a redraft); the last two with what the post held.
+ * again from the reader's post just deleted (a redraft), the last two with what the post held; or a draft of the
+ * reader's on the server (a notification of its failed schedule).
  */
 export type ComposeRequest =
-  { kind: "reply" | "quote"; id: string } | { kind: "edit" | "redraft"; id: string; source: PostSource };
+  { kind: "reply" | "quote" | "draft"; id: string } | { kind: "edit" | "redraft"; id: string; source: PostSource };
 
 /** A write a post's action asks for: a mark, or a vote in its poll. */
 type Write = { kind: "mark"; mark: StatusMark } | { kind: "vote"; vote: PollVote };
@@ -126,6 +127,11 @@ function useWrite(): (id: string, write: Write) => Promise<void> {
   const { mark } = useStatusMarks();
   const vote = usePollVote();
   return (id, write) => (write.kind === "mark" ? mark(id, write.mark) : vote(id, write.vote));
+}
+
+/** Opens the composer, as the app does; none for a reader without an account, or outside PostActions. */
+export function useCompose(): ((to: ComposeRequest) => void) | undefined {
+  return use(Context)?.onCompose;
 }
 
 /** The handler of a post's actions, for `onAction` of a post or a column. */

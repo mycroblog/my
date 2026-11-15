@@ -10,6 +10,7 @@
 export { HomeAnnouncements } from "./announcements";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
+export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
 export {
   applyTheme,

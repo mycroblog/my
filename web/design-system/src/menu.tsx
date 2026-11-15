@@ -85,7 +85,7 @@ export function MenuItem({
   id: string;
   icon: IconName;
   on?: boolean;
-  onAction?: () => void;
+  onAction?: (() => void) | undefined;
   children: string;
 }) {
   const preview = usePreviewItemState(id);

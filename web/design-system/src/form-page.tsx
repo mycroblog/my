@@ -242,7 +242,7 @@ const form = tv({
       "aria-invalid:outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
     alert: [
-      "m-0 flex items-start gap-form-page-alert-gap rounded-overlay bg-text p-form-page-alert-padding font-label",
+      "m-0 flex items-start gap-form-page-alert-gap rounded-overlay bg-text p-form-page-alert-padding",
       "text-surface outline-hidden focus-visible:shadow-focus [&_svg]:mt-[0.0625rem]",
     ],
     actions: "grid gap-form-page-field-gap [&>a]:w-full [&>button]:w-full",
@@ -264,6 +264,8 @@ const form = tv({
   },
   variants: {
     strong: { true: { caution: "font-label" } },
+    // A sentence that tells what happened rather than what is wrong (a draft gone): in the text's own weight.
+    regular: { true: { alert: "font-normal" }, false: { alert: "font-label" } },
   },
 });
 
@@ -492,11 +494,36 @@ export const focusOnLoadAttribute = "data-focus-on-load";
  * after a refused post moves the focus to the one marked with `focus` (focusOnLoadAttribute), so that the next stop
  * is the button.
  */
-export function FormAlert({ focus = false, children }: { focus?: boolean; children: string }) {
+export function FormAlert({
+  focus = false,
+  regular = false,
+  action,
+  children,
+}: {
+  focus?: boolean;
+  /** In the text's own weight: what happened, which the button after it acts on (a draft gone), rather than what is wrong. */
+  regular?: boolean;
+  /** What the reader may do about it, after the sentence (a `TextButton`: open the newer draft). */
+  action?: ReactNode;
+  children: string;
+}) {
   return (
-    <p className={form().alert()} role="alert" tabIndex={-1} {...{ [focusOnLoadAttribute]: focus ? "" : undefined }}>
+    <p
+      className={form({ regular }).alert()}
+      role="alert"
+      tabIndex={-1}
+      {...{ [focusOnLoadAttribute]: focus ? "" : undefined }}
+    >
       <Icon name="error" place="action" />
-      <span dir="auto">{children}</span>
+      <span dir="auto">
+        {children}
+        {action !== undefined && (
+          <>
+            {" "}
+            <span className="whitespace-nowrap">{action}</span>
+          </>
+        )}
+      </span>
     </p>
   );
 }

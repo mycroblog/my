@@ -6,7 +6,9 @@
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
 // answers of follow requests, the read marker, the announcements read, the reader's bookmarks and followed hashtags,
-// the reader's edits and deletions of their own posts) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as the server's
+// the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft published) are
+// kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as
+// the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
 // and its retry succeeds late. What the shell reads (the instance, the reader's rights, the announcements, the
@@ -19,6 +21,8 @@ import { drawingBlurhash, drawingURL } from "../drawing";
 import {
   admin,
   announcements as scenarioAnnouncements,
+  drafts,
+  draftSchedule,
   emojis,
   eventStart,
   events as scenarioEvents,
@@ -29,6 +33,7 @@ import {
   personOf,
   posts,
   restrictions,
+  type Image,
   type LinkCard,
   type Person,
   type Post,
@@ -638,6 +643,144 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
           : { reaction: { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom } };
     notify(step, i.kind, i.by, { status: statusOf(p), ...reaction });
   });
+  // ---- Drafts and scheduled posts -----------------------------------------------------------------------------------
+
+  // The reader's drafts, newest first, each saved a few hours before the next: the scenario's, then those the reader
+  // saves. One whose schedule `fails` failed yesterday, for the post it replied to that is gone, and the reader was
+  // notified; one with a `schedule` waits for its time.
+  const draftLimits = {
+    max_drafts: 100,
+    max_scheduled_posts: 300,
+    max_scheduled_posts_per_day: 25,
+    scheduled_post_min_lead_minutes: 5,
+    scheduled_post_max_lead_days: 366,
+  };
+  const gonePost = idAt(started - 48 * 60 * minute, 80_999);
+  const ownDrafts: Json[] = drafts
+    .filter((d) => d.author === viewer)
+    .map((d, i, all) => {
+      const id = idAt(started - (all.length - i) * 5 * 60 * minute, 80_000 + i);
+      const saved = new Date(started - (all.length - i) * 5 * 60 * minute).toISOString();
+      const replyTo = d.fails !== undefined ? gonePost : d.replyTo === undefined ? undefined : statusId.get(d.replyTo);
+      const failedAt = new Date(started - 40 * minute).toISOString();
+      return {
+        id,
+        created_at: saved,
+        updated_at: saved,
+        text: d.text,
+        spoiler_text: d.spoiler ?? "",
+        sensitive: false,
+        language: d.language,
+        visibility: "public",
+        ...(replyTo === undefined ? {} : { in_reply_to_id: replyTo }),
+        media: (d.images ?? []).map((image, n) => ({ id: `${id}-${String(n)}`, description: image.description })),
+        ...(d.poll === undefined
+          ? {}
+          : {
+              poll: {
+                options: [...d.poll.options],
+                expires_in: d.poll.days * 86_400,
+                multiple: d.poll.multiple ?? false,
+              },
+            }),
+        ...(d.schedule === undefined ? {} : { scheduled_at: draftSchedule(d.schedule, started).toISOString() }),
+        ...(d.fails === undefined
+          ? {}
+          : {
+              last_schedule: {
+                publish_at: failedAt,
+                outcome: "failed",
+                reason: "reply_unavailable",
+                occurred_at: failedAt,
+              },
+            }),
+      };
+    })
+    .toReversed();
+  /** The images of the scenario's drafts, by the ID of each as the drafts name it. */
+  const draftImages = new Map<string, Image>(
+    drafts
+      .filter((d) => d.author === viewer)
+      .flatMap((d, i, all) => {
+        const id = idAt(started - (all.length - i) * 5 * 60 * minute, 80_000 + i);
+        return (d.images ?? []).map((image, n) => [`${id}-${String(n)}`, image] as const);
+      }),
+  );
+  let draftsMade = 0;
+  const draftOf = (id: string) => ownDrafts.find((d) => d["id"] === id);
+  const etagOf = (d: Json) => `"${String(Date.parse(d["updated_at"] as string))}"`;
+  const draftAnswer = (d: Json, status = 200) =>
+    new Response(JSON.stringify(d), { status, headers: { "Content-Type": "application/json", ETag: etagOf(d) } });
+  /** A draft as a save leaves it: its content replaced by `body`, saved now (a millisecond after its last save at least). */
+  const savedDraft = (d: Json, body: Json): Json => {
+    const last = Date.parse(d["updated_at"] as string);
+    const { scheduled_at: scheduled, last_schedule: outcome } = d;
+    return {
+      id: d["id"],
+      created_at: d["created_at"],
+      updated_at: new Date(Math.max(Date.now(), last + 1)).toISOString(),
+      text: "",
+      spoiler_text: "",
+      sensitive: false,
+      media: [],
+      ...body,
+      ...(scheduled === undefined ? {} : { scheduled_at: scheduled }),
+      ...(outcome === undefined ? {} : { last_schedule: outcome }),
+    };
+  };
+  const putDraft = (d: Json) => {
+    ownDrafts.splice(
+      ownDrafts.findIndex((x) => x["id"] === d["id"]),
+      1,
+      d,
+    );
+  };
+  const unprocessable = (detail: string) =>
+    json({ type: "about:blank", title: "Unprocessable Content", status: 422, detail }, 422);
+  /** The status a draft makes when it is published: the reader's post, newest, on top of their home timeline. */
+  const publish = (d: Json): Json => {
+    draftsMade += 1;
+    const at = Date.now();
+    const status: Json = {
+      id: idAt(at, 950_000 + draftsMade),
+      uri: `${fakeOrigin}/users/${viewer}/statuses/published-${String(draftsMade)}`,
+      url: `${fakeOrigin}/@${viewer}/published-${String(draftsMade)}`,
+      account: accountOf(viewer),
+      content: serverHtml(d["text"] as string, fakeHost),
+      spoiler_text: d["spoiler_text"],
+      sensitive: d["sensitive"],
+      visibility: d["visibility"],
+      language: d["language"] ?? "en",
+      created_at: new Date(at).toISOString(),
+      ...(d["in_reply_to_id"] === undefined ? {} : { in_reply_to_id: d["in_reply_to_id"] }),
+      media_attachments: [],
+      mentions: [],
+      emojis: customEmojis,
+      replies_count: 0,
+      boosts_count: 0,
+      favourites_count: 0,
+      reactions: [],
+      favourited: false,
+      boosted: false,
+      bookmarked: false,
+      pinned: false,
+    };
+    home.unshift(status);
+    return status;
+  };
+  // The notification of each failed schedule, among the others by its time.
+  for (const d of ownDrafts) {
+    const failed = d["last_schedule"] as { publish_at: string; reason: string; occurred_at: string } | undefined;
+    if (failed === undefined) continue;
+    notifications.push({
+      id: idAt(Date.parse(failed.occurred_at), 10_900),
+      type: "scheduled_status_failed",
+      created_at: failed.occurred_at,
+      scheduled_status_failure: { draft_id: d["id"], reason: failed.reason, publish_at: failed.publish_at },
+    });
+  }
+  notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
+
   // The reader read all but the three newest.
   let lastRead = notifications[3]?.["id"] as string | undefined;
   const unreadCount = () =>
@@ -702,7 +845,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       mode: o.singleUser === true || o.closure !== undefined ? "closed" : (o.registrations ?? "open"),
     },
     login_providers_only: false,
-    limits: { max_post_characters: 500, require_media_description: false },
+    limits: { max_post_characters: 500, require_media_description: false, drafts: draftLimits },
     timelines,
     federation: { mode: "off" },
     sends_email: false,
@@ -970,7 +1113,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (from > 0) await late();
       return json(body);
     }
-    if ((match = m(/^\/tags\/([^/]+)(\/follow)?$/))) {
+    // `/tags/search` is the search of hashtags, below.
+    if ((match = m(/^\/tags\/(?!search$)([^/]+)(\/follow)?$/))) {
       // A hashtag as first written in a post, else as asked; whether the reader follows it. One more than the most
       // the reader may follow is refused as the server refuses it.
       const asked = decodeURIComponent(match[1] ?? "").replace(/^#/, "");
@@ -1324,6 +1468,86 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/notifications/requests/summary") return json({ accounts_count: 0, notifications_count: 0 });
     if (path === "/interaction_requests") return json({ items: [] });
+    if (path === "/drafts" && request.method === "GET") {
+      const scheduled = q.get("scheduled");
+      const shown = ownDrafts.filter(
+        (d) => scheduled === null || (d["scheduled_at"] !== undefined) === (scheduled === "true"),
+      );
+      return json(page(shown, q).body);
+    }
+    if (path === "/drafts" && request.method === "POST") {
+      draftsMade += 1;
+      const now = new Date().toISOString();
+      const made = savedDraft(
+        { id: idAt(Date.now(), 85_000 + draftsMade), created_at: now, updated_at: now },
+        (await request.json()) as Json,
+      );
+      ownDrafts.unshift(made);
+      return draftAnswer(made, 201);
+    }
+    if ((match = m(/^\/drafts\/([^/]+)(\/schedule|\/publish)?$/))) {
+      const d = draftOf(decodeURIComponent(match[1] ?? ""));
+      if (d === undefined) return problem(404, "Not Found");
+      const what = `${request.method} ${match[2] ?? ""}`;
+      if (what === "GET ") return draftAnswer(d);
+      if (what === "PUT ") {
+        // A save over a version another device replaced since is refused, as the server does (ADR-0156 §9).
+        if (request.headers.get("If-Match") !== etagOf(d))
+          return json({ type: "about:blank", title: "Precondition Failed", status: 412 }, 412);
+        const saved = savedDraft(d, (await request.json()) as Json);
+        putDraft(saved);
+        return draftAnswer(saved);
+      }
+      if (what === "DELETE ") {
+        ownDrafts.splice(ownDrafts.indexOf(d), 1);
+        return new Response(null, { status: 204 });
+      }
+      if (what === "PUT /schedule") {
+        const { publish_at: at } = (await request.json()) as { publish_at: string };
+        const lead = Date.parse(at) - Date.now();
+        if (lead < draftLimits.scheduled_post_min_lead_minutes * minute)
+          return unprocessable(
+            `A post can be scheduled no sooner than ${String(draftLimits.scheduled_post_min_lead_minutes)} minutes from now.`,
+          );
+        if (lead > draftLimits.scheduled_post_max_lead_days * 24 * 60 * minute)
+          return unprocessable(
+            `A post can be scheduled no later than ${String(draftLimits.scheduled_post_max_lead_days)} days from now.`,
+          );
+        const scheduled = { ...d, scheduled_at: new Date(Date.parse(at)).toISOString() };
+        putDraft(scheduled);
+        return draftAnswer(scheduled);
+      }
+      if (what === "DELETE /schedule") {
+        if (d["scheduled_at"] === undefined) return problem(409, "Conflict");
+        const now = new Date().toISOString();
+        const { scheduled_at: at, ...rest } = d;
+        const unscheduled = { ...rest, last_schedule: { publish_at: at, outcome: "cancelled", occurred_at: now } };
+        putDraft(unscheduled);
+        return draftAnswer(unscheduled);
+      }
+      if (what === "POST /publish") {
+        ownDrafts.splice(ownDrafts.indexOf(d), 1);
+        return json(publish(d), 201);
+      }
+      return problem(405, "Method Not Allowed");
+    }
+    if ((match = m(/^\/media\/([^/]+)$/)) && request.method === "GET") {
+      const id = decodeURIComponent(match[1] ?? "");
+      const image = draftImages.get(id);
+      if (image === undefined) return problem(404, "Not Found");
+      const url = drawingURL(image.drawing);
+      const { width, height } = image.drawing;
+      return json({
+        id,
+        type: "image",
+        state: "ready",
+        description: image.description,
+        url,
+        preview_url: url,
+        blurhash: drawingBlurhash(image.drawing),
+        meta: { width, height, focus: { x: 0, y: 0 } },
+      });
+    }
     if ((match = m(/^\/follow_requests\/([^/]+)\/(accept|reject)$/))) {
       const other = usernameOf.get(decodeURIComponent(match[1] ?? ""));
       if (other === undefined || !requested.delete(`${other}>${viewer}`)) return problem(404, "Not Found");

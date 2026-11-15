@@ -4,14 +4,21 @@
 // itself, where New post (or `n`), a post's Reply and the boost menu's Quote open the composer over the home timeline,
 // and what is posted tops it. The language is the toolbar's locale (ja, else en).
 //
-// The server is the fake of @my/e2e, which answers the reads from the scenario; this file's own fake takes the writes:
-// posts, uploads (a file whose name has "fail" is refused, so that the retry shows; the others are processed for a
-// moment) and drafts; a post whose text has "#fail" is refused with the server's words, so that a failed post shows.
-// Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as a draft, which New
-// post opens again.
+// The server is the fake of @my/e2e, which answers the reads from the scenario and keeps the reader's drafts and their
+// schedules; this file's own fake takes the other writes: posts and uploads (a file whose name has "fail" is refused,
+// so that the retry shows; the others are processed for a moment); a post whose text has "#fail" is refused with the
+// server's words, so that a failed post shows. Leaving the composer: close and Escape discard a written post, with
+// Undo; the backdrop saves it as a draft, which New post opens again. The drafts' menu in the head saves it as a draft,
+// or opens the drafts and scheduled posts, from which one opens in the composer.
 
 import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource, type Status } from "@my/app-data";
-import { ComposeLayer, emptyComposeDraft, type ComposeDraft, type ComposeTarget } from "@my/app-features";
+import {
+  ComposeLayer,
+  emptyComposeDraft,
+  type ComposeDraft,
+  type ComposeSpecimen,
+  type ComposeTarget,
+} from "@my/app-features";
 import { useLocale } from "@my/design-system";
 import { images } from "@my/design-system/samples";
 import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake";
@@ -144,7 +151,8 @@ function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
     const media = /^\/media\/([^/]+)$/.exec(path);
     if (media?.[1]) {
       const upload = uploads.get(media[1]);
-      if (!upload) return notFound();
+      // Not uploaded here: a file of a draft, which the fake of @my/e2e holds.
+      if (!upload) return fake.serve(request);
       const ready = Date.now() >= upload.ready;
       return json({
         id: media[1],
@@ -154,9 +162,6 @@ function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
         ...(ready ? { url: upload.url, preview_url: upload.url } : {}),
       });
     }
-    if (path === "/drafts" && method === "POST") return json({ id: "draft-1", visibility: "public" }, 201);
-    if (path.startsWith("/drafts/") && method === "PUT") return json({ id: path.slice("/drafts/".length) });
-    if (path.startsWith("/drafts/") && method === "DELETE") return new Response(null, { status: 204 });
     return fake.serve(request);
   };
 }
@@ -188,6 +193,7 @@ const words = {
     suggestHashtag: "Day 4 of the sourdough experiment #ba",
     suggestEmoji: "Good morning :wa",
     suggestCw: "Trail photos :sp",
+    later: "@sam The sourdough came out flat again. Trying your overnight proof this weekend.",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -208,6 +214,7 @@ const words = {
     suggestHashtag: "今朝の尾根 #写",
     suggestEmoji: "おはよう :wa",
     suggestCw: "登山の写真 :sp",
+    later: "@sam サワードウがまたぺたんこに。週末は教わった一晩発酵でやってみます。",
   },
 };
 
@@ -233,6 +240,16 @@ type State = {
   name: string;
   target: (fake: FakeApi) => ComposeTarget;
   draft: (base: ComposeDraft, w: (typeof words)["en"]) => ComposeDraft;
+  /** What it opens in: its phase, and what is open in it. */
+  specimen?: ComposeSpecimen;
+};
+
+/** A moment `days` days from now at `hour` o'clock, local time, as an ISO 8601 string. */
+const dayAt = (days: number, hour: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, 0, 0, 0);
+  return d.toISOString();
 };
 
 const nw = (): ComposeTarget => ({ kind: "new" });
@@ -319,6 +336,33 @@ const states = {
     target: (fake) => ({ kind: "edit", id: idOf(fake, "yuki-ridge"), source: sourceOf(idOf(fake, "yuki-ridge")) }),
     draft: (d, w) => ({ ...d, text: w.edit, language: "ja", attachments: [image(0, "ready", w.alt)] }),
   },
+  // Sending it later (ADR-0156): a time set, the form of the time open, a time too near, the menu of the ways to send
+  // it later open, a draft whose scheduled post failed, and a save refused for a newer draft saved elsewhere.
+  scheduled: {
+    name: "Scheduled",
+    target: nw,
+    draft: (d, w) => ({ ...typed(d, w), scheduledAt: dayAt(1, 9) }),
+  },
+  "schedule-form": { name: "Schedule's form", target: nw, draft: typed, specimen: { opened: "schedule" } },
+  "schedule-change": {
+    name: "Schedule's form, a time set",
+    target: nw,
+    draft: (d, w) => ({ ...typed(d, w), scheduledAt: dayAt(1, 9) }),
+    specimen: { opened: "schedule" },
+  },
+  "schedule-too-soon": {
+    name: "Schedule too soon",
+    target: nw,
+    draft: (d, w) => ({ ...typed(d, w), scheduledAt: new Date(Date.now() + 2 * 60_000).toISOString() }),
+    specimen: { opened: "schedule" },
+  },
+  "drafts-menu": { name: "Drafts' menu", target: nw, draft: typed, specimen: { opened: "drafts" } },
+  "schedule-failed": {
+    name: "Scheduled post failed",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.later, failure: { publishAt: dayAt(-1, 9), reason: "rejected" } }),
+  },
+  conflict: { name: "Newer draft elsewhere", target: nw, draft: typed, specimen: { phase: { kind: "conflict" } } },
 } satisfies Record<string, State>;
 
 type StateId = keyof typeof states;
@@ -347,6 +391,7 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
           initial={initial}
           inline
           pickerSheet={pickerSheet || narrow}
+          specimen={state.specimen}
           onOpen={() => undefined}
           onClose={() => undefined}
         />
@@ -506,8 +551,24 @@ export const PollSeveralChoices: Story = shows("poll-multiple");
  * and one muted line over the text says the audience stays as posted.
  */
 export const Edit: Story = shows("edit");
+/** A time set: one line over the row says when it goes out, and Schedule takes Post's place. */
+export const Scheduled: Story = shows("scheduled");
+/** The form of the time open: one field of the date and the time, the reader's zone and the server's limits under it. */
+export const ScheduleForm: Story = shows("schedule-form");
+/** The form of a time already set: Don't schedule beside Set time takes it away. */
+export const ScheduleChange: Story = shows("schedule-change");
+/** A time nearer than the server takes: the field says so in place of the limits. */
+export const ScheduleTooSoon: Story = shows("schedule-too-soon");
+/** The drafts' menu in the head open: keep this post as a draft, or open the drafts and scheduled posts. */
+export const DraftsMenu: Story = shows("drafts-menu");
+/** A draft whose scheduled post failed, opened again: why, before Post. */
+export const ScheduleFailed: Story = shows("schedule-failed");
+/** A save refused for a newer draft saved on another device: it says so, and opens the newer one. */
+export const NewerDraft: Story = shows("conflict");
 export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
 export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
+/** A time set at the narrowest width: the row keeps its tools, the count and Schedule on one line. */
+export const ScheduledMinimumWidth: Story = { ...shows("scheduled"), globals: minimumWidth };
 /** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
 export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
 /** The same on a phone: the picker in a sheet from the bottom. */

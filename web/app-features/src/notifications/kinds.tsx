@@ -9,9 +9,10 @@
 import { AccountName } from "@my/app-components";
 import type { NotificationItem, NotificationType } from "@my/app-data";
 import { SentenceName, type IconName } from "@my/design-system";
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
+import { formatParts } from "../slots";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -53,29 +54,6 @@ const postKinds: ReadonlySet<NotificationType> = new Set(["mention", "quote", "s
 
 export const shapeOf = (n: NotificationItem): Shape =>
   postKinds.has(n.type) && n.status !== undefined ? "post" : "line";
-
-// The first of the characters no text holds (the private use area), each standing for a part drawn by React inside a
-// formatted string.
-const firstSlot = 0xe000;
-const slotPattern = /([\u{E000}-\u{F8FF}])/u;
-
-/** The string `id` with `values`, and each of `parts` drawn by React in its argument's place. */
-function format(
-  t: T,
-  id: MessageId,
-  values: Readonly<Record<string, string | number>>,
-  parts: Readonly<Record<string, ReactNode>>,
-): ReactNode {
-  const names = Object.keys(parts);
-  const slots = Object.fromEntries(names.map((name, i) => [name, String.fromCodePoint(firstSlot + i)]));
-  return t(id, { ...values, ...slots })
-    .split(slotPattern)
-    .map((piece, i) => {
-      if (i % 2 === 0) return piece;
-      const name = names[(piece.codePointAt(0) ?? firstSlot) - firstSlot] ?? "";
-      return <Fragment key={i}>{parts[name]}</Fragment>;
-    });
-}
 
 const day = 86_400_000;
 
@@ -132,5 +110,5 @@ export function sentenceOf(n: NotificationItem, t: T, instance: string, known: (
   ) : (
     ""
   );
-  return format(t, id, message.values, { name });
+  return formatParts(t, id, message.values, { name });
 }

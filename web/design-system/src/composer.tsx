@@ -6,8 +6,10 @@
 // it; the content warning; the replied or quoted post above the text; the images as rows of a thumbnail and its
 // description; the poll as a raised card whose options are headed by the mark they will be answered with; the popovers
 // of choices, whose groups stand apart under their captions, one opening another as a submenu; and the notice of a
-// discarded post with its Undo. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
-// press on the backdrop (`onDismiss`, by accident). Every word is the caller's.
+// discarded post with its Undo. Its head may hold more before close, and a line over the row may say how the post is
+// sent (when it is scheduled for); with neither tools nor an action (the drafts), it has no row. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
+// press on the backdrop (`onDismiss`, by accident), and neither while what was written is sent (`busy`). Every word is
+// the caller's.
 //
 // On a phone the frame is as tall as the viewport less the keyboard: `--keyboard-inset` where the app measures it
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
@@ -43,11 +45,17 @@ const frame = tv({
       "h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))] px-shell-edge pt-entry-line",
     ],
     head: "flex items-center justify-between gap-entry-caption -me-icon-button-inline",
-    title: "m-0 text-title",
+    title: "m-0 min-w-0 text-title",
+    headEnd: "inline-flex flex-none items-center",
     body: "flex min-h-0 flex-1 flex-col gap-entry overflow-y-auto",
     end: "relative grid gap-entry-line bg-surface py-entry",
     row: "flex items-center gap-entry-caption",
-    tools: "-ms-icon-button-inline flex min-w-0 flex-1 flex-wrap items-center",
+    // On the narrowest phones (under 360 px) the glyphs sit closer, and the language names itself by its tag
+    // (ToolText), so that the tools, the count and Post keep one line.
+    tools: [
+      "-ms-icon-button-inline flex min-w-0 flex-1 flex-wrap items-center",
+      "max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
+    ],
   },
   variants: {
     // From `tablet` a dialog of the main column's width over the dimmed page, which scrolls with what opens below it;
@@ -81,18 +89,27 @@ export type ComposerFrameProps = {
   onClose: () => void;
   /** A press on the backdrop: the reader left by accident. */
   onDismiss: () => void;
+  /**
+   * What was written is being sent or saved: close stays in its place, disabled (the action's spinner says it is sent),
+   * and neither it, Escape nor the backdrop leaves.
+   */
+  busy?: boolean | undefined;
   /** How it shows on a phone: a screen of its own (the composer), or a dialog as from `tablet`. */
   phone?: "screen" | "dialog" | undefined;
   /** Over the page, as the app opens it, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
+  /** What stands in the head before close (the drafts). */
+  headEnd?: ReactNode;
+  /** A line about how it will be sent (when it is scheduled for), right above the row that sends it. */
+  note?: ReactNode;
   /** The form's error, directly before the row that sends it. */
   alert?: ReactNode;
-  /** The tools at the row's start: the glyphs and what they open. */
-  tools: ReactNode;
+  /** The tools at the row's start: the glyphs and what they open; with no tools and no action, there is no row. */
+  tools?: ReactNode;
   /** What stands before the action: the count. */
   count?: ReactNode;
-  /** The action that sends it (Post). */
-  action: ReactNode;
+  /** The action that sends it (Post), and what stands at its end. */
+  action?: ReactNode;
   children: ReactNode;
 };
 
@@ -105,8 +122,11 @@ export function ComposerFrame({
   closeLabel,
   onClose,
   onDismiss,
+  busy = false,
   phone = "screen",
   layer = true,
+  headEnd,
+  note,
   alert,
   tools,
   count,
@@ -114,6 +134,9 @@ export function ComposerFrame({
   children,
 }: ComposerFrameProps) {
   const s = frame({ dialog: true, layer });
+  const leave = (how: () => void) => {
+    if (!busy) how();
+  };
   const { direction } = useReader(undefined);
   const titleId = useId();
   const panel = (
@@ -124,7 +147,7 @@ export function ComposerFrame({
         // Escape means to leave, but not while an input method composes, where it cancels the composition.
         if (e.key === "Escape" && !e.defaultPrevented && !e.nativeEvent.isComposing) {
           e.preventDefault();
-          onClose();
+          leave(onClose);
         }
       }}
     >
@@ -138,17 +161,30 @@ export function ComposerFrame({
             {title}
           </h2>
         )}
-        <IconButton icon="close" label={closeLabel} onPress={onClose} />
+        <span className={s.headEnd()}>
+          {headEnd}
+          <IconButton
+            icon="close"
+            label={closeLabel}
+            isDisabled={busy}
+            onPress={() => {
+              leave(onClose);
+            }}
+          />
+        </span>
       </div>
       <div className={s.body()}>{children}</div>
-      <div className={s.end()}>
-        {alert}
-        <div className={s.row()}>
-          <div className={s.tools()}>{tools}</div>
-          {count}
-          {action}
+      {(tools !== undefined || action !== undefined) && (
+        <div className={s.end()}>
+          {note}
+          {alert}
+          <div className={s.row()}>
+            <div className={s.tools()}>{tools}</div>
+            {count}
+            {action}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
   if (!layer)
@@ -161,7 +197,9 @@ export function ComposerFrame({
   // panel's, which tells it from a press on the backdrop.
   return (
     <ModalLayer
-      onDismiss={onDismiss}
+      onDismiss={() => {
+        leave(onDismiss);
+      }}
       ownEscape
       backdrop={phone === "dialog" ? "always" : "tablet"}
       overlay={s.overlay()}
@@ -1264,14 +1302,20 @@ export function ChoiceSelect<T extends string>({
   );
 }
 
-/** A tool of the row that names what it holds in words (the language), muted at the caption's size. */
+/**
+ * A tool of the row that names what it holds in words (the language), muted at the caption's size; on the narrowest
+ * phones (under 360 px) it names it by `short` (EN), so that the row keeps its tools and Post on one line.
+ */
 export function ToolText({
   label,
   lang,
   expanded,
   onPress,
+  short,
   children,
 }: {
+  /** Its words on the narrowest phones (the language's tag). */
+  short?: string | undefined;
   /** Its name for assistive technology: what it is and what it holds. */
   label: string;
   /** The language of its words. */
@@ -1281,16 +1325,18 @@ export function ToolText({
   children: string;
 }) {
   return (
-    <Button
-      kind="quiet"
-      size="timeline"
-      aria-label={label}
-      aria-haspopup="dialog"
-      aria-expanded={expanded}
-      onPress={onPress}
-    >
-      <span className="text-caption font-label text-muted-text" lang={lang}>
-        {children}
+    <Button kind="quiet" size="timeline" aria-haspopup="dialog" aria-expanded={expanded} onPress={onPress}>
+      {/* Its name is the label alone, read in place of its words, which may be the short tag. */}
+      <span className="sr-only">{label}</span>
+      <span className="text-caption font-label text-muted-text" lang={lang} aria-hidden="true">
+        {short === undefined ? (
+          children
+        ) : (
+          <>
+            <span className="max-[22.5rem]:hidden">{children}</span>
+            <span className="hidden max-[22.5rem]:inline">{short}</span>
+          </>
+        )}
       </span>
     </Button>
   );

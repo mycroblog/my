@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // What the post composer reads and writes (ADR-0028 §6, §7, ADR-0156): the settings a new post starts from, the post
-// replied to or quoted, the media uploads, the drafts kept on the server, and the post itself, or the edit of one. A posted status goes
+// replied to or quoted, the media uploads, the drafts kept on the server (drafts.ts) and their schedules, and the post
+// itself (or a draft published), or the edit of one. A posted status goes
 // into the cache at once: at the top of the home timeline, and one more reply on the post it replies to, shown in its
 // cached threads. The write is a plain request with the composer's Idempotency-Key (no outbox yet, #2892): a failure
 // rejects with mykit's ProblemError or NetworkError, and the composer keeps what was written to send again with the
@@ -9,6 +10,19 @@ import { ProblemError, uploadMedia, type components, type MediaAttachment } from
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { prependHomeStatuses } from "./arrivals";
+import {
+  defaultDraftLimits,
+  deleteDraft,
+  DraftConflictError,
+  DraftGoneError,
+  invalidateDrafts,
+  readDraft,
+  savedOf,
+  scheduleDraft,
+  unscheduleDraft,
+  type SavedDraft,
+  type ServerDraft,
+} from "./drafts";
 import { editStatus, type EditStatus } from "./own-posts";
 import { useAppData } from "./provider";
 import { cachedStatus, shadowStatus, useShadow } from "./shadow";
@@ -47,6 +61,8 @@ export type ComposeSettings = {
   readonly domain: string;
   /** The reader's own account, to leave out of a reply's mentions; undefined until it is read. */
   readonly viewer: { readonly id: string; readonly acct: string } | undefined;
+  /** How near and how far ahead a post may be scheduled (ADR-0156 §7). */
+  readonly schedule: { readonly minLeadMinutes: number; readonly maxLeadDays: number };
 };
 
 /** The settings until the server's are read: the server's defaults. */
@@ -58,6 +74,10 @@ export const defaultComposeSettings: ComposeSettings = {
   language: "und",
   domain: "",
   viewer: undefined,
+  schedule: {
+    minLeadMinutes: defaultDraftLimits.scheduled_post_min_lead_minutes,
+    maxLeadDays: defaultDraftLimits.scheduled_post_max_lead_days,
+  },
 };
 
 /** The settings a new post starts from: the reader's preferences and the instance's limits, the defaults until read. */
@@ -78,6 +98,11 @@ export function useComposeSettings(): ComposeSettings {
     language: preferences?.default_post_language ?? defaultComposeSettings.language,
     domain: instance?.domain ?? defaultComposeSettings.domain,
     viewer: viewer && { id: viewer.id, acct: viewer.acct },
+    schedule: {
+      minLeadMinutes:
+        instance?.limits.drafts?.scheduled_post_min_lead_minutes ?? defaultComposeSettings.schedule.minLeadMinutes,
+      maxLeadDays: instance?.limits.drafts?.scheduled_post_max_lead_days ?? defaultComposeSettings.schedule.maxLeadDays,
+    },
   };
 }
 
@@ -162,29 +187,65 @@ export async function uploadAttachment(
   return media;
 }
 
-/** A draft as saved: its ID, and the ETag the next save sends to replace it. */
-export type SavedDraft = { readonly id: string; readonly etag: string };
+/**
+ * Saves a draft on the server (ADR-0156 §9): over the draft saved before, or as a new one when there is none. When
+ * another device saved over it since (412), or it is gone (404), it is saved as a new one, so that nothing is lost
+ * (`onConflict: "new"`, a draft left by accident, which publishes nothing), or refused, so that the reader chooses
+ * (`"refuse"`, the composer's own saves, which may publish or schedule it): with DraftConflictError, or with
+ * DraftGoneError for a draft that may have been published already, which a new one would publish again.
+ */
+export async function saveDraft(
+  data: AppData,
+  body: DraftRequest,
+  saved?: SavedDraft,
+  { onConflict = "new" }: { onConflict?: "new" | "refuse" } = {},
+): Promise<SavedDraft> {
+  try {
+    if (saved !== undefined) {
+      try {
+        const { data: draft, response } = await data.api.PUT("/drafts/{id}", {
+          params: { path: { id: saved.id }, header: { "If-Match": saved.etag } },
+          body,
+        });
+        return savedOf(draft, response);
+      } catch (e) {
+        if (e instanceof ProblemError && e.status === 412 && onConflict === "refuse")
+          throw new DraftConflictError(`app-data: the draft ${saved.id} was saved elsewhere since`);
+        if (e instanceof ProblemError && e.status === 404 && onConflict === "refuse")
+          throw new DraftGoneError(`app-data: the draft ${saved.id} is gone`);
+        if (!(e instanceof ProblemError && (e.status === 412 || e.status === 404))) throw e;
+      }
+    }
+    const { data: draft, response } = await data.api.POST("/drafts", { body });
+    return savedOf(draft, response);
+  } finally {
+    void invalidateDrafts(data);
+  }
+}
 
 /**
- * Saves a draft on the server (ADR-0156 §9): over the draft saved before, or as a new one when there is none, or when
- * another device saved over it since (412), so that neither is lost.
+ * Publishes the draft of `id` now, as the server holds it (ADR-0156 §9): the posted status goes into the cache, and
+ * the draft is gone. One gone already (404) rejects with DraftGoneError: it may have been published.
  */
-export async function saveDraft(data: AppData, body: DraftRequest, saved?: SavedDraft): Promise<SavedDraft> {
-  if (saved !== undefined) {
-    try {
-      const { data: draft, response } = await data.api.PUT("/drafts/{id}", {
-        params: { path: { id: saved.id }, header: { "If-Match": saved.etag } },
-        body,
-      });
-      if (draft === undefined) throw new Error("app-data: the draft answered without a draft");
-      return { id: draft.id, etag: response.headers.get("ETag") ?? "" };
-    } catch (e) {
-      if (!(e instanceof ProblemError && (e.status === 412 || e.status === 404))) throw e;
-    }
+export async function publishDraft(data: AppData, id: string): Promise<Status> {
+  try {
+    const { data: status } = await data.api.POST("/drafts/{id}/publish", { params: { path: { id } } });
+    if (status === undefined) throw new Error("app-data: the draft's publication answered without a status");
+    cachePostedStatus(data, status);
+    return status;
+  } catch (e) {
+    if (e instanceof ProblemError && e.status === 404) throw new DraftGoneError(`app-data: the draft ${id} is gone`);
+    throw e;
+  } finally {
+    void invalidateDrafts(data);
   }
-  const { data: draft, response } = await data.api.POST("/drafts", { body });
-  if (draft === undefined) throw new Error("app-data: the draft answered without a draft");
-  return { id: draft.id, etag: response.headers.get("ETag") ?? "" };
+}
+
+/** A media file of the reader's as the server holds it now: one of a draft, which keeps only its ID. */
+export async function readMedia(data: AppData, id: string): Promise<MediaAttachment> {
+  const { data: media } = await data.api.GET("/media/{id}", { params: { path: { id } } });
+  if (media === undefined) throw new Error("app-data: the media answered without a file");
+  return media;
 }
 
 /**
@@ -202,8 +263,20 @@ export type ComposeWrites = {
   /** Edits the reader's post of `id` (own-posts.ts). */
   readonly edit: (id: string, body: EditStatus) => Promise<Status>;
   readonly upload: (file: File, options?: Parameters<typeof uploadAttachment>[2]) => Promise<MediaAttachment>;
-  readonly saveDraft: (body: DraftRequest, saved?: SavedDraft) => Promise<SavedDraft>;
+  /** Reads a media file of the reader's (a draft's). */
+  readonly media: (id: string) => Promise<MediaAttachment>;
+  readonly saveDraft: (
+    body: DraftRequest,
+    saved?: SavedDraft,
+    options?: Parameters<typeof saveDraft>[3],
+  ) => Promise<SavedDraft>;
   readonly deleteDraft: (id: string) => Promise<void>;
+  readonly readDraft: (id: string) => Promise<{ draft: ServerDraft; saved: SavedDraft }>;
+  /** Schedules the draft of `id` at a time (ISO 8601), or moves its schedule there. */
+  readonly schedule: (id: string, publishAt: string) => Promise<SavedDraft>;
+  readonly unschedule: (id: string) => Promise<SavedDraft>;
+  /** Publishes the draft of `id` now. */
+  readonly publish: (id: string) => Promise<Status>;
 };
 
 /** The composer's writes, for the session of the nearest AppDataProvider. */
@@ -213,16 +286,12 @@ export function useComposeWrites(): ComposeWrites {
     post: (body, key) => postStatus(data, body, key),
     edit: (id, body) => editStatus(data, id, body),
     upload: (file, options) => uploadAttachment(data, file, options),
-    saveDraft: (body, saved) => saveDraft(data, body, saved),
+    media: (id) => readMedia(data, id),
+    saveDraft: (body, saved, options) => saveDraft(data, body, saved, options),
     deleteDraft: (id) => deleteDraft(data, id),
+    readDraft: (id) => readDraft(data, id),
+    schedule: (id, publishAt) => scheduleDraft(data, id, publishAt),
+    unschedule: (id) => unscheduleDraft(data, id),
+    publish: (id) => publishDraft(data, id),
   };
-}
-
-/** Deletes a draft; one already gone is no failure. */
-export async function deleteDraft(data: AppData, id: string): Promise<void> {
-  try {
-    await data.api.DELETE("/drafts/{id}", { params: { path: { id } } });
-  } catch (e) {
-    if (!(e instanceof ProblemError && e.status === 404)) throw e;
-  }
 }

@@ -10,7 +10,12 @@
 // interactions, whose reply, boost and quote permissions open as a submenu. Editing the reader's post, it is titled Edit
 // post and saves with Save; what an edit cannot change leaves the row (the poll, the audience), and one muted line over
 // the text names the audience and that it stays (a post with a poll is never edited: the server refuses it). A
-// redraft is a new post, written from the deleted one. Its state is the hook's (use-composer.ts).
+// redraft is a new post, written from the deleted one. A new post may go out later (ADR-0156): a tool of the row, on
+// while a time is set, opens the form of its time within the server's limits, in the reader's zone; while it has one,
+// a line over the row says when, and Schedule takes Post's place, which stays alone at the row's end. A menu in the
+// head, before close, keeps it as a draft or opens the drafts (drafts.tsx). A draft whose scheduled post failed says
+// why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. Its
+// state is the hook's (use-composer.ts).
 
 import { isRemote, languageName, QuoteContext, ReplyContext } from "@my/app-components";
 import { useCustomEmojis, type Audience, type Interaction, type Visibility } from "@my/app-data";
@@ -32,17 +37,28 @@ import {
   ComposerText,
   FormAlert,
   IconButton,
+  localInput,
+  MenuButton,
+  MenuGroup,
+  MenuItem,
   PollCard,
   PollOption,
   PollOptions,
   PollSettings,
+  readerZone,
+  ScheduleForm,
+  ScheduleTime,
+  scheduleTime,
+  ScheduleZone,
+  TextButton,
   ToolText,
   useLocale,
   WarningField,
   type IconName,
 } from "@my/design-system";
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
+import { formatParts } from "../slots";
 import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
 import { textMarks } from "./text-tokens";
@@ -214,6 +230,7 @@ function Language({
         <ToolText
           label={t("compose.language.tool", { language: ownName(shown) })}
           lang={shown}
+          short={shown.split("-")[0]?.toUpperCase()}
           expanded={open}
           onPress={() => {
             setOpen(!open);
@@ -322,10 +339,105 @@ function Poll({
   );
 }
 
+/** A time `minutes` from now, at the next whole hour after it: where the schedule's field starts. */
+function nextHour(minutes = 60): Date {
+  const d = new Date(Date.now() + minutes * 60_000);
+  d.setMinutes(0, 0, 0);
+  d.setHours(d.getHours() + 1);
+  return d;
+}
+
+type Limits = Composer["settings"]["schedule"];
+
+/** What is wrong with a time to post at, by the server's limits; undefined when it is within them. */
+function scheduleProblem(value: string, limits: Limits, t: T): string | undefined {
+  const at = new Date(value);
+  if (value === "" || Number.isNaN(at.getTime())) return t("compose.schedule.invalid");
+  if (at.getTime() < Date.now() + limits.minLeadMinutes * 60_000)
+    return t("compose.schedule.too_soon", { minutes: limits.minLeadMinutes });
+  if (at.getTime() > Date.now() + limits.maxLeadDays * 86_400_000)
+    return t("compose.schedule.too_far", { days: limits.maxLeadDays });
+  return undefined;
+}
+
+/** The form that sets the time the post goes out, in a popover under (or, on a phone, over) its trigger. */
+function Schedule({
+  c,
+  t,
+  locale,
+  open,
+  setOpen,
+  trigger,
+}: {
+  c: Composer;
+  t: T;
+  locale: string;
+  open: boolean;
+  setOpen: (o: boolean) => void;
+  trigger: ReactNode;
+}) {
+  const at = c.draft.scheduledAt;
+  const limits = c.settings.schedule;
+  const [value, setValue] = useState(() => localInput(at === undefined ? nextHour() : new Date(at)));
+  const error = scheduleProblem(value, limits, t);
+  return (
+    <ChoicePopup
+      open={open}
+      onClose={() => {
+        setOpen(false);
+      }}
+      label={t("compose.schedule")}
+      trigger={trigger}
+    >
+      <ScheduleForm
+        title={t("compose.schedule")}
+        label={t("compose.schedule.field")}
+        value={value}
+        onChange={setValue}
+        min={new Date(Date.now() + limits.minLeadMinutes * 60_000)}
+        max={new Date(Date.now() + limits.maxLeadDays * 86_400_000)}
+        zone={readerZone(locale)}
+        hint={t("compose.schedule.limits", { minutes: limits.minLeadMinutes, days: limits.maxLeadDays })}
+        error={error}
+        confirm={{
+          label: t("compose.schedule.set"),
+          onPress: () => {
+            if (error !== undefined) return;
+            c.change({ scheduledAt: new Date(value).toISOString() });
+            setOpen(false);
+          },
+        }}
+        clear={
+          at === undefined
+            ? undefined
+            : {
+                label: t("compose.schedule.clear"),
+                onPress: () => {
+                  c.change({ scheduledAt: undefined });
+                  setOpen(false);
+                },
+              }
+        }
+      />
+    </ChoicePopup>
+  );
+}
+
+/** Why a scheduled post was not posted, in a sentence with the time it was for. */
+const failureOf = (failure: NonNullable<Composer["draft"]["failure"]>, locale: string, t: T) =>
+  t("compose.schedule.failed", {
+    time: scheduleTime(failure.publishAt, locale),
+    reason: t(`compose.schedule.failed.${failure.reason}`),
+  });
+
 /** The form's error before Post: the first thing that keeps the post from being sent. */
-function alertOf(c: Composer, t: T): string | undefined {
+function alertOf(c: Composer, t: T, locale: string): string | undefined {
+  if (c.phase.kind === "conflict") return t("compose.conflict");
+  if (c.phase.kind === "gone") return t("compose.gone");
   if (c.phase.kind === "failed")
     return c.phase.reason ?? t(c.draft.target.kind === "edit" ? "compose.save_failed" : "compose.failed");
+  if (c.draft.failure !== undefined && c.draft.scheduledAt === undefined)
+    return t("compose.schedule.failed.next", { failure: failureOf(c.draft.failure, locale, t) });
   if (!c.checked) return undefined;
   if (c.problems.waiting) return t("compose.wait_uploads");
   if (c.problems.pollInvalid)
@@ -345,6 +457,14 @@ export type ComposerViewProps = {
   phone?: "screen" | "dialog" | undefined;
   /** The emoji picker opens in a sheet (the app's choice on a phone's viewport), else in a popover. */
   pickerSheet?: boolean | undefined;
+  /** Opens the list of the reader's drafts and scheduled posts. */
+  onDrafts?: (() => void) | undefined;
+  /** Keeps what is written as a draft, and closes. */
+  onSaveDraft?: (() => void) | undefined;
+  /** Opens the newer draft saved elsewhere, in place of this one (a conflict). */
+  onNewer?: (() => void) | undefined;
+  /** A specimen opens with this open: the schedule's form, or the drafts' menu in the head. */
+  opened?: "schedule" | "drafts" | undefined;
 };
 
 export function ComposerView({
@@ -354,35 +474,105 @@ export function ComposerView({
   layer = true,
   phone = "screen",
   pickerSheet = false,
+  onDrafts,
+  onSaveDraft,
+  onNewer,
+  opened,
 }: ComposerViewProps) {
   const { locale } = useLocale();
   const textRef = useRef<HTMLTextAreaElement>(null);
   const cwRef = useRef<HTMLInputElement>(null);
   const { t, lang } = stringsIn(locale);
-  const [open, setOpen] = useState<"audience" | "permissions" | "language" | undefined>(undefined);
+  const [open, setOpen] = useState<"audience" | "permissions" | "language" | "schedule" | undefined>(
+    opened === "schedule" ? "schedule" : undefined,
+  );
+  const [draftsOpen, setDraftsOpen] = useState(opened === "drafts");
   const { draft, settings, answered, problems } = c;
   const busy = c.phase.kind === "posting";
+  // Its draft gone from the server: Post posts what is written as a new post, and says so.
+  const gone = c.phase.kind === "gone";
   const editing = draft.target.kind === "edit";
   const left = settings.maxChars - usedChars(draft);
   // A redraft is a new post; a quote whose quoted post was taken out is one too.
   const kind = draft.target.kind;
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
-  const alert = alertOf(c, t);
+  const alert = alertOf(c, t, locale);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
   const emojis = useCustomEmojis();
   const custom = useMemo(() => new Set(emojis.map((e) => e.shortcode)), [emojis]);
   // The text completes accounts, hashtags and emoji; the content warning, emoji alone (ADR-0092 §5).
   const textSuggest = useSuggestions({ field: textRef, text: draft.text, triggers: ["@", "#", ":"], locale });
   const cwSuggest = useSuggestions({ field: cwRef, text: draft.cw ?? "", triggers: [":"], locale });
+  const scheduled = draft.scheduledAt;
+  const setSchedule = (o: boolean) => {
+    setOpen(o ? "schedule" : undefined);
+  };
+  // The drafts, a place apart from sending this post, in the head: keep this one as a draft, or open the list. An edit
+  // is no draft: it is saved at once, and never scheduled.
+  const draftsMenu = !editing && (
+    <MenuButton icon="drafts" label={t("compose.later")} align="end" open={draftsOpen} onOpenChange={setDraftsOpen}>
+      <MenuGroup>
+        <MenuItem id="save" icon="saveDraft" onAction={onSaveDraft}>
+          {t("compose.drafts.save")}
+        </MenuItem>
+        <MenuItem id="drafts" icon="drafts" onAction={onDrafts}>
+          {t("compose.drafts.open")}
+        </MenuItem>
+      </MenuGroup>
+    </MenuButton>
+  );
   return (
     <ComposerFrame
       title={title}
       closeLabel={t("compose.close")}
       onClose={onClose}
       onDismiss={onDismiss}
+      busy={busy}
       layer={layer}
       phone={phone}
-      alert={alert === undefined ? undefined : <FormAlert>{alert}</FormAlert>}
+      headEnd={draftsMenu || undefined}
+      note={
+        scheduled === undefined ? undefined : (
+          <CaptionLine
+            icon="schedule"
+            lang={lang}
+            end={
+              <TextButton
+                onPress={() => {
+                  setSchedule(true);
+                }}
+              >
+                {t("compose.schedule.change")}
+              </TextButton>
+            }
+          >
+            {/* The zone is stated once on the screen: by the form while it is open, else here. */}
+            {open === "schedule"
+              ? formatParts(t, "compose.schedule.at", {}, { time: <ScheduleTime date={scheduled} /> })
+              : formatParts(
+                  t,
+                  "compose.schedule.at_zone",
+                  {},
+                  { time: <ScheduleTime date={scheduled} />, zone: <ScheduleZone /> },
+                )}
+          </CaptionLine>
+        )
+      }
+      alert={
+        alert === undefined ? undefined : (
+          <FormAlert
+            // A draft gone is told in the text's weight: Post, right after it, posts what is written as a new post.
+            regular={gone}
+            action={
+              c.phase.kind === "conflict" ? (
+                <TextButton onPress={() => onNewer?.()}>{t("compose.conflict.open")}</TextButton>
+              ) : undefined
+            }
+          >
+            {alert}
+          </FormAlert>
+        )
+      }
       tools={
         <>
           <AttachButton
@@ -418,6 +608,27 @@ export function ComposerView({
               setOpen={setOpen}
             />
           )}
+          {!editing && (
+            <Schedule
+              c={c}
+              t={t}
+              locale={locale}
+              open={open === "schedule"}
+              setOpen={setSchedule}
+              trigger={
+                <IconButton
+                  icon="schedule"
+                  label={t(scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set")}
+                  pressed={scheduled !== undefined}
+                  aria-haspopup="dialog"
+                  aria-expanded={open === "schedule"}
+                  onPress={() => {
+                    setSchedule(open !== "schedule");
+                  }}
+                />
+              }
+            />
+          )}
           <Language
             c={c}
             t={t}
@@ -438,7 +649,15 @@ export function ComposerView({
       }
       action={
         <Button kind="primary" size="timeline" busy={busy} onPress={c.submit}>
-          {t(editing ? "compose.save" : "compose.post")}
+          {t(
+            editing
+              ? "compose.save"
+              : gone
+                ? "compose.gone.post"
+                : scheduled === undefined
+                  ? "compose.post"
+                  : "compose.schedule.post",
+          )}
         </Button>
       }
     >
@@ -516,10 +735,12 @@ export function ComposerView({
                   ? "compose.uploading"
                   : a.state === "processing"
                     ? "compose.processing"
-                    : "compose.upload_failed",
+                    : a.id === undefined
+                      ? "compose.upload_failed"
+                      : "compose.media_failed",
               )}
               retry={
-                a.state === "failed" && a.file
+                a.state === "failed" && (a.file !== undefined || a.id !== undefined)
                   ? {
                       label: t("compose.retry"),
                       onPress: () => {

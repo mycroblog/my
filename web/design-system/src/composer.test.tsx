@@ -30,6 +30,18 @@ test("the frame's head is the title, then close at its end; at its end the alert
   expect(html).toContain("h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))]");
 });
 
+test("while what was written is sent, close stays in its place, disabled, with no spinner of its own", () => {
+  const frame = (busy: boolean) =>
+    renderToStaticMarkup(
+      <ComposerFrame title="New post" closeLabel="Close" onClose={none} onDismiss={none} layer={false} busy={busy}>
+        <p>body</p>
+      </ComposerFrame>,
+    );
+  expect(frame(true)).toMatch(/<button[^>]*aria-label="Close"[^>]*disabled=""|disabled=""[^>]*aria-label="Close"/);
+  expect(frame(true)).not.toContain("aria-busy");
+  expect(frame(false)).not.toMatch(/disabled=""/);
+});
+
 test("the composer is drawn as it mounts, through the modal of modal.tsx, its text focused inside the press", async () => {
   const source = await Bun.file(new URL("./composer.tsx", import.meta.url)).text();
   expect(source).toContain('import { ModalLayer } from "./modal";');

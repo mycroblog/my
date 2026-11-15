@@ -26,6 +26,7 @@ import {
   IconBulb,
   IconCalendarEvent,
   IconCalendarEventFilled,
+  IconCalendarTime,
   IconChartBar,
   IconChecks,
   IconChevronDown,
@@ -35,6 +36,7 @@ import {
   IconCloudOff,
   IconCoin,
   IconCoinFilled,
+  IconDeviceFloppy,
   IconDoorExit,
   IconDots,
   IconExternalLink,
@@ -67,6 +69,7 @@ import {
   IconMoodSmile,
   IconMoon,
   IconMusic,
+  IconNotes,
   IconPaperclip,
   IconPaw,
   IconPencil,
@@ -235,6 +238,11 @@ export const icons = {
   zoomIn: { off: IconZoomIn },
   zoomOut: { off: IconZoomOut },
   previous: { off: IconChevronLeft, directional: true },
+  // Drafts and scheduled posts (ADR-0156): a post set to go out at a time (on, while the composer holds one); the
+  // reader's drafts, a page of notes; and keeping what is written as a draft.
+  schedule: { off: IconCalendarTime, on: "tile" },
+  drafts: { off: IconNotes },
+  saveDraft: { off: IconDeviceFloppy },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;
