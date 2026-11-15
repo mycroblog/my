@@ -298,5 +298,9 @@
   "post.reacted_with": {
     "defaultMessage": "{emoji} でリアクションした人",
     "description": "The heading of the list of the accounts that reacted to a post with one emoji. emoji is a Unicode emoji or :shortcode:, which the heading draws as its image."
+  },
+  "post.article_sensitive": {
+    "defaultMessage": "センシティブな記事",
+    "description": "The line on the page of a sensitive article, above its folded cover and text, with a Show button; its title and summary stay shown."
   }
 }

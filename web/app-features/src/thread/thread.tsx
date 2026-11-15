@@ -7,9 +7,10 @@
 // and a fold of the rest. All of it is one feed, so that the keys of the next and the previous entry run through it;
 // a feed owns its articles alone, so the replies' heading stands in the first reply, above it, and each fold in the
 // entry before it. Who reacted to the focused post stands inside it, after its actions (reactors.tsx).
-// A post's actions are answered as on every screen (post-actions.tsx).
+// A post's actions are answered as on every screen (post-actions.tsx). An article (ADR-0160) focused here is its page:
+// its text in full, its replies under it as a thread's.
 
-import { FeedKeys, PostDetails } from "@my/app-components";
+import { FeedKeys, PostContent, PostDetails } from "@my/app-components";
 import { statusContextQuery, statusQuery, useStatusGone, useThread, type AppData, type Status } from "@my/app-data";
 import {
   BackButton,
@@ -130,6 +131,12 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     </Fold>
   );
   const lastReply = replies.at(-1);
+  // An article reads in full on its page (GET /statuses/{id} gives its text; a list gives none), and the replies right
+  // under it do not say whom they reply to, which the page shows already.
+  const article = status.article !== undefined;
+  const reading = article ? (
+    <PostContent html={status.content} emojis={status.emojis} lang={undefined} article />
+  ) : undefined;
   return (
     <ScreenStack>
       {back}
@@ -164,6 +171,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             status,
             <Post
               status={status}
+              reading={reading}
               stamp={false}
               details={
                 <PostDetails
@@ -192,6 +200,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 own={ownOf(s)}
                 picker={picker}
                 context={i === 0 ? <GroupHeading>{t("thread.replies")}</GroupHeading> : undefined}
+                replyingTo={!(article && s.in_reply_to_id === status.id)}
                 after={(s === lastReply && laterFold) || undefined}
               />,
             )}

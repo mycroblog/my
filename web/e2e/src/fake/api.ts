@@ -7,7 +7,8 @@
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
 // answers of follow requests, the read marker, the announcements read, the reader's bookmarks and followed hashtags,
 // the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft published) are
-// kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as
+// kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An article's body
+// comes only with the status read alone, as the server's does. A list pages as
 // the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
@@ -38,7 +39,7 @@ import {
   type Person,
   type Post,
 } from "../scenario";
-import { serverHtml } from "./html";
+import { articleHtml, serverHtml } from "./html";
 
 /** The host the fake answers as. */
 export const fakeHost = "demo.test";
@@ -442,8 +443,38 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       (p.visibility === "private" && follows_(viewer, p.author)) ||
       (p.visibility === "direct" && mentioned(p.text).includes(viewer)));
 
-  function statusOf(p: Post, depth = 0): Json {
+  /** An article's title, summary and cover, as the API's StatusArticle. */
+  const articleOf = (p: Post, id: string): Json | undefined => {
+    const a = p.article;
+    if (a === undefined) return undefined;
+    const cover = a.cover;
+    return {
+      title: a.title,
+      summary: a.summary,
+      ...(cover === undefined
+        ? {}
+        : {
+            cover: {
+              id: `${id}-cover`,
+              type: "image",
+              state: "ready",
+              description: cover.description,
+              url: drawingURL(cover.drawing),
+              preview_url: drawingURL(cover.drawing),
+              blurhash: drawingBlurhash(cover.drawing),
+              meta: { width: cover.drawing.width, height: cover.drawing.height, focus: { x: 0, y: 0 } },
+            },
+          }),
+    };
+  };
+
+  /**
+   * A post as the API's Status; an article with its body only when `full`, as a status read alone gives it, and with
+   * none in a list (ADR-0160 §8).
+   */
+  function statusOf(p: Post, depth = 0, full = false): Json {
     const id = statusId.get(p.key) ?? "";
+    const article = articleOf(p, id);
     const versions = versionsOf(p);
     const now = versions.at(-1) ?? { text: p.text, spoiler: p.spoiler ?? "", at: 0 };
     const parent = p.replyTo === undefined ? undefined : postOf(p.replyTo);
@@ -458,7 +489,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       uri: `${fakeOrigin}/users/${p.author}/statuses/${id}`,
       url: `${fakeOrigin}/@${p.author}/${id}`,
       account: accountOf(p.author),
-      content: serverHtml(now.text, fakeHost),
+      content: article === undefined ? serverHtml(now.text, fakeHost) : full ? articleHtml(now.text, fakeHost) : "",
       spoiler_text: now.spoiler,
       sensitive: now.spoiler !== "" || p.sensitive === true,
       visibility: p.visibility,
@@ -483,6 +514,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       bookmarked: bookmarks.includes(p.key),
       pinned: p.pinned === true && p.author === viewer,
       ...(p.poll === undefined ? {} : { poll: pollOf(p) }),
+      ...(article === undefined ? {} : { article }),
       ...(p.quote === undefined || depth > 0
         ? {}
         : { quote: { state: "accepted", quoted_status: statusOf(postOf(p.quote), depth + 1) } }),
@@ -1309,7 +1341,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const all = profilePosts(username);
       if (q.get("pinned") === "true")
         return json({ items: all.filter((s) => postOf(keyOf.get(s["id"] as string) ?? "").pinned) });
-      const shown = q.get("exclude_replies") === "true" ? all.filter((s) => s["in_reply_to_id"] === undefined) : all;
+      const shown =
+        q.get("articles") === "true"
+          ? all.filter((s) => s["article"] !== undefined)
+          : q.get("exclude_replies") === "true"
+            ? all.filter((s) => s["in_reply_to_id"] === undefined)
+            : all;
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);
@@ -1346,15 +1383,16 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
           : problem(404, "Not Found");
       }
       if (match[2] !== undefined) return problem(404, "Not Found");
-      if (request.method === "GET") return json(statusOf(p));
+      if (request.method === "GET") return json(statusOf(p, 0, true));
       if (!own) return problem(403, "Forbidden");
       if (request.method === "DELETE") {
         deleted.add(p.key);
         return new Response(null, { status: 204 });
       }
       if (request.method === "PUT") {
-        // A post with a poll is never edited: its votes belong to the poll as posted.
-        if (p.poll !== undefined) return problem(422, "Unprocessable Entity");
+        // A post with a poll is never edited: its votes belong to the poll as posted. An article is edited with
+        // PUT /articles/{id}, which the fake does not answer.
+        if (p.poll !== undefined || p.article !== undefined) return problem(422, "Unprocessable Entity");
         const edit = (await request.json()) as { text: string; spoiler_text?: string; media?: { id: string }[] };
         edits.set(p.key, [
           ...(edits.get(p.key) ?? []),

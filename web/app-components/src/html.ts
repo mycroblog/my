@@ -9,6 +9,9 @@
 // allows, unwraps any other element to its children, and drops the elements whose contents the server drops (script,
 // style, iframe…) with their contents. The server writes well-formed HTML that parses back to itself; anything else
 // reads roughly as a browser would read it, and what this misreads becomes text.
+//
+// An article's text (ADR-0160 §4) is read with the article's allowlist, which adds headings, rules, images and tables
+// to a post's; a post's text never keeps them.
 
 /** The elements of the server's allowlist (internal/adapter/htmlsanitizer). */
 const allowed = [
@@ -34,9 +37,18 @@ const allowed = [
   "rp",
 ] as const;
 
-type ContentTag = (typeof allowed)[number];
+/** The elements the article's allowlist adds to a post's (ADR-0160 §4). */
+const articleOnly = ["h2", "h3", "h4", "h5", "h6", "hr", "img", "table", "thead", "tbody", "tr", "th", "td"] as const;
 
-const allowedTags: ReadonlySet<string> = new Set(allowed);
+type ContentTag = (typeof allowed)[number] | (typeof articleOnly)[number];
+
+/** What a text is: a post's (or any other text the server renders as one), or an article's. */
+export type ContentKind = "post" | "article";
+
+const allowedTags: Readonly<Record<ContentKind, ReadonlySet<string>>> = {
+  post: new Set(allowed),
+  article: new Set([...allowed, ...articleOnly]),
+};
 
 /** An element of a text, with only the attributes it may keep. */
 export type ContentElement = {
@@ -55,6 +67,18 @@ export type ContentElement = {
     reversed?: "";
     /** li: an integer. */
     value?: string;
+    /** img (an article's): a URL of http or https. */
+    src?: string;
+    /** img (an article's): its alternative text. */
+    alt?: string;
+    /** img (an article's): a positive integer. */
+    width?: string;
+    /** img (an article's): a positive integer. */
+    height?: string;
+    /** img (an article's): when it loads. */
+    loading?: "lazy" | "eager";
+    /** th, td (an article's): the column's alignment. */
+    align?: "left" | "center" | "right";
   }>;
   children: ContentNode[];
 };
@@ -64,6 +88,18 @@ export type ContentNode = string | ContentElement;
 
 /** The blocks of the allowlist; one of them closes an open paragraph, as in HTML. */
 export const blockTags: ReadonlySet<string> = new Set(["p", "pre", "blockquote", "ul", "ol", "li"]);
+
+/** The blocks of the article's allowlist. */
+export const articleBlockTags: ReadonlySet<string> = new Set([
+  ...blockTags,
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "table",
+]);
 
 /** The elements whose contents are dropped with them, as the server drops them. */
 const droppedTags: ReadonlySet<string> = new Set([
@@ -165,6 +201,20 @@ function linkHref(value: string | undefined): string | undefined {
   return linkSchemes.has(url.protocol.slice(0, -1)) ? url.href : undefined;
 }
 
+/** The src of an image, as an absolute URL of http or https, or undefined. */
+function imageSrc(value: string | undefined): string | undefined {
+  const href = linkHref(value);
+  return href !== undefined && /^https?:/.test(href) ? href : undefined;
+}
+
+const size = /^[1-9][0-9]{0,4}$/;
+
+/** A cell's alignment, or undefined. */
+function alignOf(value: string | undefined): "left" | "center" | "right" | undefined {
+  const v = value?.toLowerCase();
+  return v === "left" || v === "center" || v === "right" ? v : undefined;
+}
+
 const attribute = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
 
 /** What an element keeps of the attributes written in `source`. */
@@ -180,6 +230,12 @@ function attributesOf(tag: ContentTag, source: string): ContentElement["attrs"] 
   const start = raw.get("start");
   const value = raw.get("value");
   const href = linkHref(raw.get("href"));
+  const src = imageSrc(raw.get("src"));
+  const alt = raw.get("alt");
+  const width = raw.get("width");
+  const height = raw.get("height");
+  const loading = raw.get("loading");
+  const align = alignOf(raw.get("align"));
   return {
     ...(lang !== undefined && { lang }),
     ...((tag === "a" || tag === "span") && {
@@ -192,6 +248,14 @@ function attributesOf(tag: ContentTag, source: string): ContentElement["attrs"] 
       ...(raw.has("reversed") && { reversed: "" as const }),
     }),
     ...(tag === "li" && value !== undefined && integer.test(value) && { value }),
+    ...(tag === "img" && {
+      ...(src !== undefined && { src }),
+      ...(alt !== undefined && { alt }),
+      ...(width !== undefined && size.test(width) && { width }),
+      ...(height !== undefined && size.test(height) && { height }),
+      ...((loading === "lazy" || loading === "eager") && { loading }),
+    }),
+    ...((tag === "th" || tag === "td") && align !== undefined && { align }),
   };
 }
 
@@ -201,8 +265,13 @@ type Frame = { name: string; children: ContentNode[]; dropped?: true };
 const tag = /<(\/?)([a-zA-Z][^\s/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/y;
 const bogus = /<(?:[!?]|\/[^a-zA-Z])/y;
 
-/** The text's parts, from the HTML the server rendered and sanitized. */
-export function parseContent(html: string): ContentNode[] {
+/**
+ * The text's parts, from the HTML the server rendered and sanitized, read with the allowlist of its kind: a post's, or
+ * an article's.
+ */
+export function parseContent(html: string, kind: ContentKind = "post"): ContentNode[] {
+  const allowed = allowedTags[kind];
+  const blocks = kind === "article" ? articleBlockTags : blockTags;
   const root: ContentNode[] = [];
   const stack: Frame[] = [];
   const into = () => stack.at(-1)?.children ?? root;
@@ -269,23 +338,46 @@ export function parseContent(html: string): ContentNode[] {
     }
     if (voidTags.has(name)) {
       if (name === "br") into().push({ tag: "br", attrs: {}, children: [] });
+      else if (name === "hr" && allowed.has(name)) {
+        closeFrom(open("p"));
+        into().push({ tag: "hr", attrs: {}, children: [] });
+      } else if (name === "img" && allowed.has(name)) {
+        // An image with no source the reader may load reads as its alternative text.
+        const attrs = attributesOf("img", source);
+        if (attrs.src !== undefined) into().push({ tag: "img", attrs, children: [] });
+        else text(attrs.alt ?? "");
+      }
       continue;
     }
     if (droppedTags.has(name)) {
       stack.push({ name, children: [], dropped: true });
       continue;
     }
-    if (blockTags.has(name)) closeFrom(open("p"));
+    if (blocks.has(name)) closeFrom(open("p"));
     if (name === "li" && open("li") > Math.max(open("ul"), open("ol"))) closeFrom(open("li"));
     if (name === "a") closeFrom(open("a"));
+    // A part of a table closes the open part of its kind in the same table, as in HTML.
+    const section = Math.max(open("thead"), open("tbody"));
+    if ((name === "thead" || name === "tbody") && section > open("table")) closeFrom(section);
+    if (name === "tr" && open("tr") > open("table")) closeFrom(open("tr"));
+    const cell = Math.max(open("td"), open("th"));
+    if ((name === "td" || name === "th") && cell > open("tr")) closeFrom(cell);
     const drawn =
-      allowedTags.has(name) &&
+      allowed.has(name) &&
       (name !== "li" || inside(["ul", "ol"])) &&
-      ((name !== "rt" && name !== "rp") || inside(["ruby"]));
+      ((name !== "rt" && name !== "rp") || inside(["ruby"])) &&
+      (!["thead", "tbody", "tr"].includes(name) || open("table") >= 0) &&
+      ((name !== "td" && name !== "th") || open("tr") >= 0);
     const attrs = drawn ? attributesOf(name as ContentTag, source) : {};
     if (!drawn || (name === "a" && attrs.href === undefined)) {
       stack.push({ name, children: into() });
       continue;
+    }
+    // A row straight in a table stands in a body, as a browser reads it.
+    if (name === "tr" && Math.max(open("thead"), open("tbody")) < open("table")) {
+      const body: ContentElement = { tag: "tbody", attrs: {}, children: [] };
+      into().push(body);
+      stack.push({ name: "tbody", children: body.children });
     }
     const element: ContentElement = { tag: name as ContentTag, attrs, children: [] };
     into().push(element);

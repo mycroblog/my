@@ -12,6 +12,7 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
   IconArrowLeft,
+  IconArticle,
   IconAt,
   IconBallFootball,
   IconBan,
@@ -242,6 +243,8 @@ export const icons = {
   // reader's drafts, a page of notes; and keeping what is written as a draft.
   schedule: { off: IconCalendarTime, on: "tile" },
   drafts: { off: IconNotes },
+  // An article (ADR-0160): a page with a title over its lines.
+  article: { off: IconArticle },
   saveDraft: { off: IconDeviceFloppy },
 } as const satisfies Record<string, Entry>;
 

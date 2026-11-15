@@ -130,6 +130,16 @@ export type PostStatus = {
   quote?: { state: string; quoted_status?: PostStatus | undefined } | undefined;
   /** Its poll, whose options may hold custom emoji of `emojis`. */
   poll?: PostPoll | undefined;
+  /** What makes it an article (ADR-0160): its `content` is the article's text, empty in a list. */
+  article?: PostArticle | undefined;
+};
+
+/** An article's title, summary and cover (the API's StatusArticle); the summary is never a content warning. */
+export type PostArticle = {
+  /** Empty only for an article from another server that has none. */
+  title: string;
+  summary: string;
+  cover?: PostMedia | undefined;
 };
 
 /** A post in the reader's language (the API's StatusTranslation). */

@@ -4,6 +4,7 @@
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
 // today (the home timeline, the composer with its drafts and scheduled posts, a post, its edit history and its thread,
+// an article as its card and on its page,
 // the notifications, a profile, a hashtag, the reader's lists and bookmarks, the sign-in with a password, a two-factor
 // code or a passkey, the consent to an app, and the shell's announcements and upcoming events), and grows with the
 // screens. It names no ID and no time (an event's day is counted from the seed): the
@@ -96,7 +97,12 @@ export type Post = {
    * others, and last to `text`, what it says now; each version stays in its edit history.
    */
   earlier?: readonly string[];
+  /** It is an article (ADR-0160): `text` is its body in Markdown, under this title, summary and cover. */
+  article?: Article;
 };
+
+/** What makes a post an article: its title, its summary, and its cover. */
+export type Article = { title: string; summary: string; cover?: Image };
 
 /** A poll of a post: its options, whether a vote may choose several, and how many days it takes votes. */
 export type Poll = { options: readonly string[]; multiple?: boolean; days: number };
@@ -392,6 +398,41 @@ export const lists: readonly PersonList[] = [
 
 /** The posts, oldest first. */
 export const posts: readonly Post[] = [
+  // An article and its reply come first, older than every other post, so that they push none of those off the first
+  // page of a timeline.
+  {
+    key: "sam-article",
+    author: "sam",
+    language: "en",
+    visibility: "public",
+    article: {
+      title: "A sourdough starter in seven days",
+      summary: "What I fed it, when it rose, and the three mistakes that cost me a week. A diary of a jar of flour.",
+      cover: { name: "starter.png", description: "A round loaf on a wooden board", drawing: loaf },
+    },
+    text: [
+      "Seven days ago I mixed flour and water in a jar. This is what happened next, day by day.",
+      "# The first three days",
+      "Nothing, then bubbles, then a smell like **old cheese**. That smell is normal: keep feeding it.",
+      "- Day 1: 50 g flour, 50 g water\n- Day 2: the same, at the same hour\n- Day 3: half of it out, then the same",
+      "> A starter is ready when it doubles within six hours of a feed.",
+      "# What I fed it",
+      "| Day | Flour | Water |\n| --- | ---: | ---: |\n| 1 | 50 g | 50 g |\n| 4 | 100 g | 100 g |\n| 7 | 100 g | 80 g |",
+      "## The mistakes",
+      "Too warm a kitchen, too cold a fridge, and a lid screwed tight. The map of the shop I bought the flour from: ![the shop on a map](https://maps.test/flour.png)",
+      "```\nfeed: 1 starter : 1 flour : 1 water\n```",
+      "---",
+      "Next week: the first loaf.",
+    ].join("\n\n"),
+  },
+  {
+    key: "yuki-article-reply",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    replyTo: "sam-article",
+    text: "@sam 三日目のにおい、うちでも同じでした。続きを楽しみにしています",
+  },
   {
     key: "hana-welcome",
     author: "hana",

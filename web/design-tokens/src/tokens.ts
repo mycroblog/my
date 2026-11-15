@@ -59,10 +59,16 @@ export type TextStep = {
   letterSpacing?: string;
 };
 
-/** The type scale, from the largest; the tagline reads as a catch copy. */
+/**
+ * The type scale, from the largest; the tagline reads as a catch copy. An article's page sets its title as `headline`,
+ * its headings as `heading` (h2) and `title` (h3), and its text as `reading`, a step up from a post's for long reading.
+ */
 export const text = {
   tagline: { size: 1.875, lineHeight: 1.2, fontWeight: 800, letterSpacing: "-0.01em" },
+  headline: { size: 1.625, lineHeight: 1.3, fontWeight: 700 },
+  heading: { size: 1.3125, lineHeight: 1.35, fontWeight: 700 },
   title: { size: 1.125, lineHeight: 1.35, fontWeight: 700 },
+  reading: { size: 1, lineHeight: 1.75, fontWeight: 400 },
   body: { size: 0.875, lineHeight: 1.55, fontWeight: 400 },
   caption: { size: 0.75, lineHeight: 1.45, fontWeight: 400 },
 } as const satisfies Record<string, TextStep>;
@@ -246,6 +252,20 @@ export const content = {
   codeHang: 2,
   codeInline: 0.25,
   emoji: 1.4,
+} as const;
+
+/**
+ * An article (ADR-0160): on its page, the most a line of its text runs, in em of `reading`; the space between its
+ * blocks and above a heading, in rem; and its cover's height as a share of its width, at most `coverMaxHeight` rem.
+ * In a timeline, its card's square cover is `cardThumb` rem wide.
+ */
+export const article = {
+  measure: 38,
+  blockGap: 1,
+  headingGap: 1.75,
+  coverRatio: 0.5625,
+  coverMaxHeight: 22,
+  cardThumb: 5.5,
 } as const;
 
 /**
@@ -530,7 +550,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -606,6 +626,12 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--content-code-hang", `${content.codeHang}ch`],
   ["--content-code-inline", `${content.codeInline}em`],
   ["--content-emoji", `${content.emoji}em`],
+  ["--article-measure", `${article.measure}em`],
+  ["--article-block-gap", `${article.blockGap}rem`],
+  ["--article-heading-gap", `${article.headingGap}rem`],
+  ["--article-cover-ratio", `${article.coverRatio}`],
+  ["--article-cover-max-height", `${article.coverMaxHeight}rem`],
+  ["--article-card-thumb", `${article.cardThumb}rem`],
   ["--entry-gap", `${entry.gap}rem`],
   ["--entry-line-gap", `${entry.lineGap}rem`],
   ["--entry-reach", `${entry.reach}rem`],

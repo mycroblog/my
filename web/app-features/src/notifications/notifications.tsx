@@ -9,7 +9,7 @@
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
-import { AccountLine, ListColumn, nameOf, PostContent } from "@my/app-components";
+import { AccountLine, excerptHtml, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
@@ -260,7 +260,7 @@ function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string 
       </NoticeLine>
       {n.status !== undefined && (
         <Excerpt>
-          <PostContent html={n.status.content} emojis={n.status.emojis} lang={undefined} />
+          <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
         </Excerpt>
       )}
       <Act n={n} t={t} />

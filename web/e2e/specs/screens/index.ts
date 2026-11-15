@@ -8,6 +8,7 @@
 // reload aborts the unanswered request and the server drops the write.
 
 export { HomeAnnouncements } from "./announcements";
+export { ArticleText } from "./article";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
 export { Drafts } from "./drafts";

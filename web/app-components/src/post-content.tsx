@@ -9,11 +9,12 @@
 // puts its indent on the side its markers stand, where a list in the page's direction would leave them hanging out.
 // A hashtag of this server (its page on the serving domain that ServerDomain gives, or on the page's own host, which
 // serves the app and holds before the instance is read) opens the app's hashtag screen in place; every other link
-// opens in a new tab.
+// opens in a new tab. An article's text (ADR-0160 §4) is drawn the same way with the article's allowlist, as the blocks
+// of ArticleText: its headings, rules and images, and its tables each in an ArticleTable.
 
-import { ContentBody, ContentLink, CustomEmoji, UrlPart, type ContentLinkKind } from "@my/design-system";
+import { ArticleTable, ContentBody, ContentLink, CustomEmoji, UrlPart, type ContentLinkKind } from "@my/design-system";
 import { createContext, createElement, Fragment, use, type ReactNode } from "react";
-import { blockTags, parseContent, type ContentElement, type ContentNode } from "./html";
+import { articleBlockTags, blockTags, parseContent, type ContentElement, type ContentNode } from "./html";
 import { hashtagPath } from "./paths";
 
 /**
@@ -41,6 +42,12 @@ export type PostContentProps = {
   emojis?: readonly ContentEmoji[] | undefined;
   /** The language of the text, when it is known (a BCP 47 tag). */
   lang?: string | undefined;
+  /**
+   * The text is an article's (ADR-0160 §4): read with the article's allowlist (headings, rules, images, tables), and
+   * drawn as the blocks that ArticleText of @my/design-system holds, with no body of a post around them (`lang` is
+   * then the holder's).
+   */
+  article?: boolean | undefined;
 };
 
 const shortcode = /:([a-zA-Z0-9_]+):/g;
@@ -80,6 +87,8 @@ function codeText(text: string): ReactNode {
   return parts.flatMap((part, i) => (i === 0 ? [part] : [<wbr key={i} />, part]));
 }
 
+const tableParts: ReadonlySet<string> = new Set(["table", "thead", "tbody", "tr"]);
+
 const classes = (element: ContentElement) => new Set(element.attrs.class?.split(/\s+/));
 
 /** What a link is, by the classes the server gives it: Mastodon's `mention hashtag` for a hashtag. */
@@ -93,7 +102,11 @@ function draw(node: ContentNode, key: number, drawing: Drawing, code: boolean): 
   if (typeof node === "string")
     return <Fragment key={key}>{code ? codeText(node) : emojiText(node, drawing.emojis)}</Fragment>;
   const inCode = code || node.tag === "code" || node.tag === "pre";
-  const children = node.children.map((child, i) => draw(child, i, drawing, inCode));
+  // A table and its sections and rows hold no text: the line breaks between their parts are left out.
+  const parts = tableParts.has(node.tag)
+    ? node.children.filter((child) => typeof child !== "string" || child.trim() !== "")
+    : node.children;
+  const children = parts.map((child, i) => draw(child, i, drawing, inCode));
   const { lang, href, translate } = node.attrs;
   switch (node.tag) {
     case "br":
@@ -155,13 +168,39 @@ function draw(node: ContentNode, key: number, drawing: Drawing, code: boolean): 
           {children}
         </li>
       );
+    case "img": {
+      const { src, alt, width, height, loading } = node.attrs;
+      return (
+        <img
+          key={key}
+          src={src}
+          alt={alt ?? ""}
+          width={width === undefined ? undefined : Number(width)}
+          height={height === undefined ? undefined : Number(height)}
+          loading={loading ?? "lazy"}
+        />
+      );
+    }
+    case "table":
+      return (
+        <ArticleTable key={key} lang={lang}>
+          {children}
+        </ArticleTable>
+      );
+    case "th":
+    case "td":
+      return createElement(node.tag, { key, lang, align: node.attrs.align }, ...children);
     default:
-      return createElement(node.tag, { key, lang, dir: blockTags.has(node.tag) ? "auto" : undefined }, ...children);
+      return createElement(
+        node.tag,
+        { key, lang, dir: articleBlockTags.has(node.tag) && node.tag !== "hr" ? "auto" : undefined },
+        ...children,
+      );
   }
 }
 
 /** The text's blocks: a run of text or inline elements outside a block is a paragraph of its own. */
-function blocksOf(nodes: ContentNode[]): ContentNode[] {
+function blocksOf(nodes: ContentNode[], blocks: ReadonlySet<string>): ContentNode[] {
   const out: ContentNode[] = [];
   let run: ContentNode[] = [];
   const flush = () => {
@@ -170,7 +209,7 @@ function blocksOf(nodes: ContentNode[]): ContentNode[] {
     run = [];
   };
   for (const node of nodes) {
-    if (typeof node !== "string" && blockTags.has(node.tag)) {
+    if (typeof node !== "string" && blocks.has(node.tag)) {
       flush();
       out.push(node);
     } else run.push(node);
@@ -179,15 +218,28 @@ function blocksOf(nodes: ContentNode[]): ContentNode[] {
   return out;
 }
 
-/** The body of a post, from the HTML the server rendered and sanitized, with its custom emoji. */
-export function PostContent({ html, emojis = [], lang }: PostContentProps) {
+const escapes: Readonly<Record<string, string>> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
+
+/**
+ * The HTML an excerpt of a status draws (a quote, a notice, the post a reply answers): its text, or an article's title,
+ * which a list gives in place of its text (ADR-0160 §8).
+ */
+export function excerptHtml(status: { content: string; article?: { title: string } | undefined }): string {
+  if (status.article === undefined) return status.content;
+  return `<p>${status.article.title.replace(/[&<>]/g, (c) => escapes[c] ?? c)}</p>`;
+}
+
+/**
+ * The body of a post, from the HTML the server rendered and sanitized, with its custom emoji; or, for an article, the
+ * blocks of its text.
+ */
+export function PostContent({ html, emojis = [], lang, article = false }: PostContentProps) {
   const drawing: Drawing = {
     emojis: new Map(emojis.map((emoji) => [emoji.shortcode, emoji])),
     hosts: [use(ServerDomain), pageHost()],
   };
-  return (
-    <ContentBody lang={lang}>
-      {blocksOf(parseContent(html)).map((node, i) => draw(node, i, drawing, false))}
-    </ContentBody>
+  const blocks = blocksOf(parseContent(html, article ? "article" : "post"), article ? articleBlockTags : blockTags).map(
+    (node, i) => draw(node, i, drawing, false),
   );
+  return article ? blocks : <ContentBody lang={lang}>{blocks}</ContentBody>;
 }

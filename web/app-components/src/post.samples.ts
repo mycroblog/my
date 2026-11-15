@@ -123,7 +123,7 @@ const plate = (table: string, food: string) =>
   );
 
 /** The generated scenes the sample posts show. */
-const scenes = {
+export const scenes = {
   dawn: scene("#f6c7a1", "#fbe6cf", "#fff4e0", ["#c98f7b", "#9a6a63", "#5d4448"]),
   sea: scene("#7fb3d5", "#d6ecf5", "#fffbe8", ["#5b8fa8", "#3f6f86", "#2a4d5f"]),
   forest: scene("#a9d0b0", "#e8f2df", "#fff9d9", ["#6f9a6a", "#4c7650", "#2f4f36"]),
@@ -133,7 +133,7 @@ const scenes = {
 };
 
 /** Each scene's blurhash, as the server would give it: its sky, its light and its ridges, top to bottom. */
-const blurhashes = new Map<string, string>([
+export const blurhashes = new Map<string, string>([
   [scenes.dawn, "IuPrad~U8_"],
   [scenes.sea, "IxHWWH%h01"],
   [scenes.forest, "I#K2tg.80K"],

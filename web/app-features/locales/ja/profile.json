@@ -91,6 +91,10 @@
     "defaultMessage": "メディア",
     "description": "The tab of a profile that shows the account's posts with images or other media."
   },
+  "profile.articles": {
+    "defaultMessage": "記事",
+    "description": "The tab of a profile that shows only the account's articles (long posts with a title, a summary and a cover)."
+  },
   "profile.pinned": {
     "defaultMessage": "ピン留め",
     "description": "The line over a post the account pinned to its profile."
