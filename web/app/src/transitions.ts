@@ -10,7 +10,7 @@
 // The composer is no navigation (shell/compose.tsx).
 
 import type { TransitionKind } from "@my/design-system";
-import { places } from "./shell/shell";
+import { navigationPaths } from "./shell/places";
 
 /** What the kind reads of a location of the router: its path and its index in the browser's history. */
 type Location = { pathname: string; state: { __TSR_index: number } };
@@ -18,7 +18,7 @@ type Location = { pathname: string; state: { __TSR_index: number } };
 /** A change of the router's location: from none on the first screen. */
 export type NavigationChange = { fromLocation?: Location | undefined; toLocation: Location };
 
-const isPlace = (pathname: string) => places.some((place) => place.href === pathname);
+const isPlace = (pathname: string) => navigationPaths.has(pathname);
 
 export function navigationKind({ fromLocation: from, toLocation: to }: NavigationChange): TransitionKind {
   if (from === undefined) return "none";

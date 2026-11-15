@@ -4,8 +4,8 @@
 // custom emoji with `bin/my`, everything else with the client API through @mycroblog/mykit, signed in as each person
 // (sign-in.ts). It writes no SQL: the timelines and notifications come from the actions. Every creating request carries
 // `Idempotency-Key: demo:<key>`, and what the server already has is found again (people by username, posts with images
-// by their alt text, apps by name, emoji by shortcode) and left alone, so a second run against one server adds
-// nothing. What the server decides and a test needs (the TOTP secrets, the passkeys' keys, the apps' client IDs) is the
+// by their alt text, apps by name, emoji by shortcode, announcements and events by title) and left alone, so a second
+// run against one server adds nothing. What the server decides and a test needs (the TOTP secrets, the passkeys' keys, the apps' client IDs) is the
 // seed's state, which it reads before it runs and returns after.
 
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -15,8 +15,11 @@ import { all, uploadMedia, type Api, type components } from "@mycroblog/mykit";
 import type { Drawing } from "../drawing";
 import {
   admin,
+  announcements,
   apps,
   emojis,
+  eventStart,
+  events,
   follows,
   instance,
   interactions,
@@ -364,6 +367,57 @@ class Seeder {
     }
   }
 
+  /**
+   * The announcements, published by the administrator in order, each found again by its title; then marked read by
+   * whom the scenario says.
+   */
+  async publishAnnouncements() {
+    const api = await this.api(admin);
+    const have = new Set<string>();
+    for await (const a of all(async (cursor) =>
+      body(
+        (await api.GET("/admin/announcements", { params: { query: cursor === undefined ? {} : { cursor } } })).data,
+        "the announcements",
+      ),
+    ))
+      have.add(a.title);
+    for (const a of announcements)
+      if (!have.has(a.title))
+        await api.POST("/admin/announcements", {
+          headers: key(`announcement-${a.key}`),
+          body: { title: a.title, text: a.text, publish: true },
+        });
+    for (const a of announcements)
+      for (const reader of a.readBy ?? []) {
+        const readerApi = await this.api(reader);
+        const shown = body((await readerApi.GET("/announcements")).data, "the announcements").items;
+        const found = shown.find((x) => x.title === a.title);
+        if (found !== undefined && !found.read)
+          await readerApi.POST("/announcements/{id}/read", { params: { path: { id: found.id } } });
+      }
+  }
+
+  /** The upcoming events, each created by its organizer unless they organize one of its title already. */
+  async createEvents() {
+    for (const e of events) {
+      const api = await this.api(e.organizer);
+      const organizer = await this.account(e.organizer);
+      const { data } = await api.GET("/events", { params: { query: { organizer_id: organizer.id } } });
+      if (body(data, "the events").items.some((x) => x.title === e.title)) continue;
+      const startsAt = eventStart(e, Date.now());
+      await api.POST("/events", {
+        headers: key(`event-${e.key}`),
+        body: {
+          title: e.title,
+          description: e.description,
+          time_zone: e.timeZone,
+          starts_at: startsAt.toISOString(),
+          ends_at: new Date(startsAt.getTime() + e.hours * 3_600_000).toISOString(),
+        },
+      });
+    }
+  }
+
   async registerPasskeys() {
     for (const p of people.filter((x) => x.passkey === true)) {
       const api = await this.api(p.username);
@@ -408,6 +462,8 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   await s.interact();
   await s.restrict();
   await s.registerApps();
+  await s.publishAnnouncements();
+  await s.createEvents();
   await s.registerPasskeys();
   await s.enableTwoFactor();
   return s.state;

@@ -4,10 +4,11 @@
 // configuration in its data block. It renders in the reader's locale (locale.ts), and puts that locale and its
 // direction on the <html>, in place of the shell's, which are those of what a page previews. It opens the browser's
 // session with the server (ADR-0090 §16), with a session its stream (ADR-0028 §18), and starts the router. A server
-// that cannot say whether there is a session leaves the app signed out, as when there is none.
+// that cannot say whether there is a session leaves the app signed out, as when there is none. Every request goes
+// through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028 §12).
 
 import "@my/design-system/styles.css";
-import { openSession, startStream } from "@my/app-data";
+import { openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { I18nProvider, useLocale } from "@my/design-system";
 import { browserLanguages } from "@my/platform";
 import { StrictMode, useLayoutEffect, type ReactNode } from "react";
@@ -19,8 +20,14 @@ import { createAppRouter } from "./router";
 
 const config = parseConfig(document.getElementById("config")?.textContent ?? null, location);
 const locale = readerLocale(browserLanguages(), config.defaultLocale);
-const data = await openSession({ server: config.apiOrigin, acceptLanguage: () => locale }).catch(() => null);
+const server = {
+  server: config.apiOrigin,
+  acceptLanguage: () => locale,
+  watch: watchServer({ server: config.apiOrigin }),
+};
+const data = await openSession(server).catch(() => null);
 if (data !== null) startStream(data);
+const visitor = visitorData(server);
 const router = createAppRouter({ data, config });
 
 /** The page's <html> in the I18nProvider's locale and direction, before the first paint. */
@@ -39,7 +46,7 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider locale={locale}>
       <Html>
-        <AppRoot router={router} />
+        <AppRoot router={router} visitor={visitor} />
       </Html>
     </I18nProvider>
   </StrictMode>,

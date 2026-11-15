@@ -79,6 +79,12 @@ export type PostProps = {
   translatable?: boolean | undefined;
   /** What the reader asked of it. */
   onAction?: ((action: PostAction) => void) | undefined;
+  /**
+   * A reader without an account: the actions that need one (reply, boost, quote, favourite, react, bookmark, and
+   * acting on the author) lead to the sign-in with the post they were pressed on, in place of `onAction`; the others
+   * (translating, the post's link, sharing) stay `onAction`'s. The actions show as for anyone.
+   */
+  signIn?: ((status: PostStatus) => void) | undefined;
   /** A line of the screen's own over the post, inside it (that it is pinned): a `CaptionLine`. */
   context?: ReactNode;
   /** The screen's own lines under the body, before the actions (a focused post's date and counts). */
@@ -227,6 +233,22 @@ function translatedNote(translation: PostTranslation, t: T, lang: string): React
 
 type Act = (action: PostAction) => void;
 
+/** The actions that need an account, which a reader without one is led to sign in for. */
+const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
+  "reply",
+  "boost",
+  "quote",
+  "favourite",
+  "react",
+  "reaction",
+  "bookmark",
+  "edit",
+  "delete",
+  "mute",
+  "block",
+  "report",
+]);
+
 /** The more menu: what reaches the post, the bookmark, then edit and delete for one's own, or the author's account. */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
   const item = (type: Exclude<PostAction["type"], "reaction">, icon: IconName, label: string, on = false) => (
@@ -334,6 +356,7 @@ export function Post({
   translation,
   translatable = false,
   onAction,
+  signIn,
   context,
   details,
   stamp = true,
@@ -343,7 +366,8 @@ export function Post({
   const name = useId();
   const shown = status.boost ?? status;
   const act: Act = (action) => {
-    onAction?.(action);
+    if (signIn !== undefined && needsAccount.has(action.type)) signIn(shown);
+    else onAction?.(action);
   };
   const textLang = known(translation?.language ?? shown.language);
   const cw = translation?.spoiler_text || shown.spoiler_text;

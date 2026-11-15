@@ -1,0 +1,50 @@
+{
+  "closure.closed_title": {
+    "defaultMessage": "{name} は閉鎖しました",
+    "description": "The title of the screen that replaces every other after the server closed (its name in place of {name}); the reader can only take their data away."
+  },
+  "closure.closed_export": {
+    "defaultMessage": "{date} まで、データをダウンロードできます。",
+    "description": "Under the title of the closed server's screen: the last day the reader can still sign in and take their data ({date}, a date written out in the reader's language)."
+  },
+  "closure.request_export": {
+    "defaultMessage": "データのエクスポートを依頼",
+    "description": "The button on the closed server's screen that starts building an archive of everything the reader has (posts, profile, follows), to download when it is ready."
+  },
+  "closure.export_requested": {
+    "defaultMessage": "エクスポートを準備しています。できあがると、ここからダウンロードできます。",
+    "description": "What the closed server's screen says while the archive of the reader's data is being built (after a request, and on every visit until it is ready); the request button waits meanwhile."
+  },
+  "closure.export_failed": {
+    "defaultMessage": "エクスポートを依頼できませんでした。時間をおいてもう一度試してください。",
+    "description": "What the closed server's screen says when the server refused the request of an archive of the reader's data (one already being built, too many today)."
+  },
+  "closure.download_follows": {
+    "defaultMessage": "フォロー中のアカウントを CSV でダウンロード",
+    "description": "The button on the closed server's screen that saves the list of accounts the reader follows as a CSV file, which another server can import."
+  },
+  "closure.download_failed": {
+    "defaultMessage": "CSV をダウンロードできませんでした。もう一度試してください。",
+    "description": "What the closed server's screen says when the download of the reader's follows as CSV failed."
+  },
+  "closure.sign_out": {
+    "defaultMessage": "ログアウト",
+    "description": "The link at the end of the closed server's screen that signs the reader out."
+  },
+  "closure.export_ready": {
+    "defaultMessage": "エクスポートの準備ができました。{date} までダウンロードできます。",
+    "description": "On the closed server's screen once the archive of the reader's data is built: until when it can be downloaded ({date}, a date written out in the reader's language)."
+  },
+  "closure.download_export": {
+    "defaultMessage": "エクスポートをダウンロード",
+    "description": "The button on the closed server's screen that saves the archive of the reader's data once it is ready."
+  },
+  "closure.export_build_failed": {
+    "defaultMessage": "前回のエクスポートを準備できませんでした。もう一度依頼してください。",
+    "description": "On the closed server's screen when the server failed to build the archive the reader requested last."
+  },
+  "closure.export_download_failed": {
+    "defaultMessage": "エクスポートをダウンロードできませんでした。もう一度試してください。",
+    "description": "What the closed server's screen says when the download of the ready archive of the reader's data failed."
+  }
+}

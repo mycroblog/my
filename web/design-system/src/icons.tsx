@@ -8,6 +8,7 @@
 // is the glyph knocked out of a solid tile.
 
 import {
+  IconActivityHeartbeat,
   IconAlertCircle,
   IconAlertTriangle,
   IconArrowLeft,
@@ -19,16 +20,24 @@ import {
   IconBookmarkFilled,
   IconBrandDiscord,
   IconBrandGithub,
+  IconBroadcast,
   IconBuildingCommunity,
+  IconCalendarEvent,
+  IconCalendarEventFilled,
   IconChartBar,
   IconChecks,
   IconChevronDown,
   IconChevronRight,
   IconClock,
+  IconCloudOff,
+  IconCoin,
+  IconCoinFilled,
+  IconDoorExit,
   IconDots,
   IconExternalLink,
   IconEyeOff,
   IconFlag,
+  IconHeartHandshake,
   IconHome,
   IconHomeFilled,
   IconInfoCircle,
@@ -36,8 +45,11 @@ import {
   IconLanguage,
   IconLink,
   IconLock,
+  IconLogin2,
+  IconMenu2,
   IconMessageCircle,
   IconMicrophone,
+  IconMicrophoneOff,
   IconMoodPlus,
   IconMoodSmile,
   IconMoon,
@@ -47,22 +59,27 @@ import {
   IconPin,
   IconPlus,
   IconQuote,
+  IconRefresh,
   IconRepeat,
   IconSearch,
   IconSearchFilled,
+  IconServer2,
   IconSettings,
   IconSettingsFilled,
   IconShare2,
   IconShield,
+  IconShieldFilled,
   IconSpeakerphone,
   IconStar,
   IconStarFilled,
+  IconTool,
   IconTrash,
   IconUser,
   IconUserFilled,
   IconUserPlus,
   IconVolumeOff,
   IconWorld,
+  IconWorldFilled,
   IconX,
   type TablerIcon,
 } from "@tabler/icons-react";
@@ -84,8 +101,8 @@ export const icons = {
   unlisted: { off: IconMoon },
   followers: { off: IconLock },
   direct: { off: IconAt },
-  // Seen on this server alone: its community, not the world.
-  local: { off: IconBuildingCommunity },
+  // Seen on this server alone: its community, not the world; on, where the reader is in the navigation.
+  local: { off: IconBuildingCommunity, on: "tile" },
   bookmark: { off: IconBookmark, on: IconBookmarkFilled },
   share: { off: IconShare2 },
   attach: { off: IconPaperclip },
@@ -109,6 +126,17 @@ export const icons = {
   profile: { off: IconUser, on: IconUserFilled },
   settings: { off: IconSettings, on: IconSettingsFilled },
   compose: { off: IconPencilPlus },
+  // The timeline of every server this one knows: the world, as the public glyph is, filled where the reader is.
+  federated: { off: IconWorld, on: IconWorldFilled },
+  // The places only some readers have: the administrators' screens and the server's money (moderation, below).
+  admin: { off: IconServer2, on: "tile" },
+  finance: { off: IconCoin, on: IconCoinFilled },
+  // The tab bar's entry to the sheet of the places it does not hold.
+  menu: { off: IconMenu2 },
+  // The readers' support of the server (its funding meter), apart from the staff's finance.
+  funding: { off: IconHeartHandshake },
+  // What is coming on the server: its events.
+  events: { off: IconCalendarEvent, on: IconCalendarEventFilled },
   quote: { off: IconQuote },
   // A poll a post carries: bars of its counts; on, while the composer holds one.
   poll: { off: IconChartBar, on: "tile" },
@@ -130,7 +158,7 @@ export const icons = {
   // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll (poll,
   // above), the moderators' notice; and a post its author pinned to their profile.
   follow: { off: IconUserPlus, directional: true },
-  moderation: { off: IconShield },
+  moderation: { off: IconShield, on: IconShieldFilled },
   pin: { off: IconPin },
   // Marking every notification read: two checks.
   read: { off: IconChecks },
@@ -139,6 +167,19 @@ export const icons = {
   error: { off: IconAlertCircle },
   caution: { off: IconAlertTriangle },
   passkey: { off: IconKey },
+  // The frame's notices: the server out of reach, the server down for maintenance, the server's status page, and a
+  // newer version of the app.
+  offline: { off: IconCloudOff },
+  maintenance: { off: IconTool },
+  status: { off: IconActivityHeartbeat },
+  update: { off: IconRefresh },
+  // The call's bar: the call going on (waves from a point, apart from the microphone), the reader's microphone (on,
+  // muted: crossed out), and leaving the room by its door.
+  live: { off: IconBroadcast },
+  microphone: { off: IconMicrophone, on: IconMicrophoneOff },
+  leave: { off: IconDoorExit, directional: true },
+  // Signing in: an arrow into a door.
+  signIn: { off: IconLogin2, directional: true },
   github: { off: IconBrandGithub },
   discord: { off: IconBrandDiscord },
 } as const satisfies Record<string, Entry>;

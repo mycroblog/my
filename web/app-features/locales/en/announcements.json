@@ -1,0 +1,70 @@
+{
+  "announcements.label": {
+    "defaultMessage": "Announcements",
+    "description": "The name of the list of the server's announcements, for assistive technology."
+  },
+  "announcements.loading": {
+    "defaultMessage": "Loading announcements…",
+    "description": "What the list of announcements says while the first of them load."
+  },
+  "announcements.loading_more": {
+    "defaultMessage": "Loading more announcements…",
+    "description": "What the list of announcements says under them while more load."
+  },
+  "announcements.failed": {
+    "defaultMessage": "Announcements could not be loaded.",
+    "description": "What the list of announcements says when they could not be loaded, beside a button to try again."
+  },
+  "announcements.failed_more": {
+    "defaultMessage": "More announcements could not be loaded.",
+    "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
+  },
+  "announcements.empty": {
+    "defaultMessage": "No announcements yet. When the server's administrators post one, it shows here.",
+    "description": "What the list of announcements says when the server has made none."
+  },
+  "announcements.unread": {
+    "defaultMessage": "Unread",
+    "description": "The mark of an announcement the reader has not read, for assistive technology."
+  },
+  "announcements.mark_read": {
+    "defaultMessage": "Mark as read",
+    "description": "The action under an unread announcement in the list that marks it read."
+  },
+  "announcements.ended": {
+    "defaultMessage": "Ended",
+    "description": "Said under an announcement in the list whose showing period is over."
+  },
+  "announcements.untitled": {
+    "defaultMessage": "Announcement",
+    "description": "The title of an announcement whose administrators gave it none."
+  },
+  "announcements.period_open": {
+    "defaultMessage": "Showing since {from}",
+    "description": "Under an announcement on its page: since when it shows ({from}, a date written out in the reader's language), with no end set."
+  },
+  "announcements.period_until": {
+    "defaultMessage": "Showing from {from} until {until}",
+    "description": "Under an announcement on its page: when it started to show and when it stops ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.period_ended": {
+    "defaultMessage": "Shown from {from} to {until}",
+    "description": "Under an announcement on its page whose showing period is over: when it showed ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.back": {
+    "defaultMessage": "Announcements",
+    "description": "The button at the top of an announcement's page that goes back to the list of announcements."
+  },
+  "announcements.loading_one": {
+    "defaultMessage": "Loading the announcement…",
+    "description": "What an announcement's page says while it loads."
+  },
+  "announcements.not_found": {
+    "defaultMessage": "This announcement was not found. It may have been withdrawn.",
+    "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
+  },
+  "announcements.all": {
+    "defaultMessage": "See all announcements",
+    "description": "The link after the not-found notice of an announcement's page that opens the list of announcements."
+  }
+}

@@ -1,11 +1,19 @@
 {
   "app.navigation": {
     "defaultMessage": "メイン",
-    "description": "The name of the app's main navigation (the places: home, notifications, search, profile, settings), for assistive technology."
+    "description": "The name of the app's main navigation (the places: home, local, federated, notifications, search, profile, bookmarks, settings), for assistive technology."
   },
   "app.home": {
     "defaultMessage": "ホーム",
     "description": "The place of the navigation, and the heading of its screen, that shows the home timeline (the posts of the accounts the reader follows)."
+  },
+  "app.local": {
+    "defaultMessage": "ローカル",
+    "description": "The place of the navigation, and the heading of its screen, that shows the local timeline (the public posts of this server's people)."
+  },
+  "app.federated": {
+    "defaultMessage": "連合",
+    "description": "The place of the navigation, and the heading of its screen, that shows the federated timeline (the public posts this server knows from every server)."
   },
   "app.notifications": {
     "defaultMessage": "通知",
@@ -19,25 +27,53 @@
     "defaultMessage": "プロフィール",
     "description": "The place of the navigation that shows the reader's own profile."
   },
+  "app.bookmarks": {
+    "defaultMessage": "ブックマーク",
+    "description": "The place of the navigation, and the heading of its screen, that lists the posts the reader bookmarked."
+  },
   "app.settings": {
     "defaultMessage": "設定",
     "description": "The place of the navigation that shows the reader's settings."
+  },
+  "app.menu": {
+    "defaultMessage": "メニュー",
+    "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, settings, announcements, voice rooms, events)."
+  },
+  "app.menu_close": {
+    "defaultMessage": "閉じる",
+    "description": "The button at the end of the head of the menu's sheet that closes it."
+  },
+  "app.announcements": {
+    "defaultMessage": "お知らせ",
+    "description": "The place in the menu's sheet, and the heading of its screen, that lists the server's announcements."
   },
   "app.compose": {
     "defaultMessage": "投稿する",
     "description": "The primary action of the app, under the logo or floating over the navigation, that starts writing a post; also its keyboard shortcut in the keyboard shortcuts dialog."
   },
+  "app.sign_in_action": {
+    "defaultMessage": "ログイン",
+    "description": "The primary action of the app for a reader who is not signed in, under the logo and in the menu's sheet; it opens the server's sign-in page."
+  },
   "app.around": {
-    "defaultMessage": "まわりのこと",
-    "description": "The name of the column beside the timeline on wide screens, which shows what is happening around the reader (their server, later their notifications), for assistive technology."
+    "defaultMessage": "サーバーの動き",
+    "description": "The name of the column beside the timeline on wide screens, which shows what is around the reader (the server's announcements, voice rooms, events, its funding, and its pages), for assistive technology."
   },
-  "app.about": {
+  "app.footer": {
+    "defaultMessage": "このサーバー",
+    "description": "The name, for assistive technology, of the links to the server's pages (about, terms, privacy) at the end of the column beside the timeline and of the menu's sheet."
+  },
+  "app.footer_about": {
     "defaultMessage": "このサーバーについて",
-    "description": "The heading of the section of the column beside the timeline that names the server the reader is on; it links to the server's about page."
+    "description": "The link to the server's about page, among the links to the server's pages at the end of the column beside the timeline and of the menu's sheet."
   },
-  "app.signed_out": {
-    "defaultMessage": "ログインすると、ホームタイムラインが表示されます。",
-    "description": "In place of the home timeline when the browser is not signed in; a link to the sign-in page follows it."
+  "app.footer_terms": {
+    "defaultMessage": "利用規約",
+    "description": "The link to the server's terms of service, among the links to the server's pages."
+  },
+  "app.footer_privacy": {
+    "defaultMessage": "プライバシーポリシー",
+    "description": "The link to the server's privacy policy, among the links to the server's pages."
   },
   "app.sign_in": {
     "defaultMessage": "ログイン",
@@ -58,5 +94,213 @@
   "app.signed_out_screen": {
     "defaultMessage": "ログインすると、この画面が表示されます。",
     "description": "What a screen that needs a session (the notifications, a post, a profile) says to a reader who is not signed in, beside the sign-in link."
+  },
+  "app.moderation": {
+    "defaultMessage": "モデレーション",
+    "description": "The place of the navigation, for readers with a moderation permission, that leads to the moderation screens (reports, accounts, domains, the audit log)."
+  },
+  "app.admin": {
+    "defaultMessage": "管理",
+    "description": "The place of the navigation, for readers with a permission of the server's administration, that leads to the admin screens (settings, rules, roles, announcements)."
+  },
+  "app.finance": {
+    "defaultMessage": "会計",
+    "description": "The place of the navigation, for readers allowed to read the server's finances, that shows its costs and income."
+  },
+  "app.around_all": {
+    "defaultMessage": "すべて",
+    "description": "The link at the end of a section's heading in the column beside the timeline that opens the whole list, when the section shows only some; each section names it in full for assistive technology (app.around_all_announcements and the like)."
+  },
+  "app.around_all_announcements": {
+    "defaultMessage": "すべてのお知らせ",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the announcements section in the column beside the timeline; it opens the list of announcements. Starts with the words of app.around_all."
+  },
+  "app.around_all_rooms": {
+    "defaultMessage": "すべての通話のルーム",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the voice rooms section in the column beside the timeline; it opens the list of rooms. Starts with the words of app.around_all."
+  },
+  "app.around_all_events": {
+    "defaultMessage": "すべてのイベント",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the events section in the column beside the timeline; it opens the list of events. Starts with the words of app.around_all."
+  },
+  "app.around_all_notifications": {
+    "defaultMessage": "すべての通知",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the notifications section in the column beside the timeline; it opens the notifications. Starts with the words of app.around_all."
+  },
+  "app.unread": {
+    "defaultMessage": "未読",
+    "description": "The mark at the end of an announcement the reader has not read, in the column beside the timeline, for assistive technology."
+  },
+  "app.announcements_unread": {
+    "defaultMessage": "{count, plural, other {未読のお知らせ # 件}}",
+    "description": "The one line above the home timeline, below the width where the column beside it lists the announcements: how many announcements the reader has not read; it links to the list of announcements."
+  },
+  "app.announcement_untitled": {
+    "defaultMessage": "お知らせ",
+    "description": "The title of an announcement whose administrators gave it none, in the column beside the timeline."
+  },
+  "app.voice_rooms": {
+    "defaultMessage": "通話のルーム",
+    "description": "The heading of the section of open voice rooms in the column beside the timeline; it links to the list of rooms."
+  },
+  "app.events": {
+    "defaultMessage": "これからのイベント",
+    "description": "The heading of the section of upcoming events in the column beside the timeline; it links to the list of events."
+  },
+  "app.funding": {
+    "defaultMessage": "運営資金",
+    "description": "The heading of the section of the server's funding meter in the column beside the timeline; it links to the server's about page."
+  },
+  "app.funding_label": {
+    "defaultMessage": "今月の費用をまかなえた割合",
+    "description": "The name of the funding meter, for assistive technology: how much of the server's costs this month its income covers."
+  },
+  "app.funding_caption": {
+    "defaultMessage": "{covered, select, yes {{month}の費用はまかなえています} other {{month}の費用をまかなえた割合}}",
+    "description": "Under the share of the funding meter: the month it is about ({month}, a month name in the reader's language), and whether its costs are covered."
+  },
+  "app.funding_estimated": {
+    "defaultMessage": "費用はまだ確定していないため、変わることがあります。",
+    "description": "Under the funding meter while this month's costs include a bill the provider has not closed yet."
+  },
+  "app.notices": {
+    "defaultMessage": "サーバーと接続の状態",
+    "description": "The name, for assistive technology, of the notices at the top of every screen: the server's closure, the reader offline, the server down."
+  },
+  "app.closure_notice": {
+    "defaultMessage": "このサーバーは {closes} に閉鎖します。{until} までにデータをエクスポートしてください。",
+    "description": "The notice on every screen while the server's closure is announced ({closes}, the closing date; {until}, the last day to take the data away; both dates written out in the reader's language). It cannot be dismissed."
+  },
+  "app.closure_export": {
+    "defaultMessage": "データをエクスポート",
+    "description": "The link in the closure notice that opens the export of the reader's data."
+  },
+  "app.closure_move": {
+    "defaultMessage": "アカウントを移転",
+    "description": "The link in the closure notice that opens moving the reader's account to another server."
+  },
+  "app.offline": {
+    "defaultMessage": "オフラインです。再接続するまで、表示している内容は最新でない場合があります。",
+    "description": "The notice at the top of every screen while the reader's device has no network."
+  },
+  "app.outage": {
+    "defaultMessage": "サーバーが応答していません。応答が戻るまで、表示している内容は最新でない場合があります。",
+    "description": "The notice at the top of every screen while the reader's network works but the server does not answer (an outage)."
+  },
+  "app.status_page": {
+    "defaultMessage": "ステータスページ",
+    "description": "The link to the server's status page, on a service apart from the server, in the offline and outage notices and the maintenance page."
+  },
+  "app.update_ready": {
+    "defaultMessage": "アプリの新しいバージョンがあります。",
+    "description": "The toast at the bottom when a newer version of the web app is ready to load; Update loads it."
+  },
+  "app.update_required": {
+    "defaultMessage": "このバージョンのアプリは、サーバーで使えなくなりました。更新して続けてください。",
+    "description": "The toast at the bottom when the server needs a newer version of the web app than the open one; Update loads it, and it cannot be closed."
+  },
+  "app.update": {
+    "defaultMessage": "更新",
+    "description": "The action of the update toast, which loads the newer version of the app."
+  },
+  "app.toast_close": {
+    "defaultMessage": "閉じる",
+    "description": "The button at the end of a toast that closes it."
+  },
+  "app.call_mute": {
+    "defaultMessage": "ミュート",
+    "description": "The microphone's toggle in the bar of the call the reader is in; pressed while the microphone is off."
+  },
+  "app.call_leave": {
+    "defaultMessage": "退出",
+    "description": "The button in the bar of the call the reader is in that leaves the call."
+  },
+  "app.maintenance_title": {
+    "defaultMessage": "メンテナンス中",
+    "description": "The title of the page that replaces every screen while the server is under maintenance."
+  },
+  "app.maintenance_body": {
+    "defaultMessage": "サーバーはメンテナンス中です。投稿などのデータはそのまま残り、終わるとこのページは自動で読み込み直されます。",
+    "description": "Under the title of the maintenance page. The page cannot read the server's name while the database is down, so it names none."
+  },
+  "app.maintenance_until": {
+    "defaultMessage": "{time} ごろに終了する予定です",
+    "description": "Right under the title of the maintenance page, in bold, when the operators said when it should end ({time}, the weekday and time in the reader's time zone, with the zone's name)."
+  },
+  "app.maintenance_status": {
+    "defaultMessage": "ステータスページで確認する",
+    "description": "The link on the maintenance page to the server's status page."
+  },
+  "app.notifications_count": {
+    "defaultMessage": "{count, plural, other {未読 # 件}}",
+    "description": "What the badge on Notifications in the navigation says, for assistive technology: how many notifications the reader has not read."
+  },
+  "app.moderation_count": {
+    "defaultMessage": "{count, plural, other {対応待ち # 件}}",
+    "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
+  },
+  "app.room_caption": {
+    "defaultMessage": "{host} がホスト · {count, plural, other {# 人が参加中}}",
+    "description": "Under a voice room's name, in the column beside the timeline and in the bar of the call the reader is in: who hosts it ({host}, a display name) and how many are in it."
+  },
+  "app.event_elsewhere": {
+    "defaultMessage": "{here} · {there} ({zone})",
+    "description": "Under an event's title in the column beside the timeline, when the event's time zone is not the reader's: its date and time in the reader's zone ({here}), then its time in the event's own zone ({there}) with the zone's place name ({zone}, such as Tokyo)."
+  },
+  "app.new_tab": {
+    "defaultMessage": "(新しいタブで開きます)",
+    "description": "Said after a link that opens in a new tab, for assistive technology."
+  },
+  "app.events_place": {
+    "defaultMessage": "イベント",
+    "description": "The place in the menu that lists the upcoming events of the server's people."
+  },
+  "app.menu_marked": {
+    "defaultMessage": "{count, plural, other {モデレーションの対応待ち # 件}}",
+    "description": "Said after Menu in the tab bar, for assistive technology, while a place inside the menu (Moderation) has things waiting: how many reports, registrations and appeals wait for a moderator."
+  },
+  "app.timeline_off": {
+    "defaultMessage": "このサーバーはこのタイムラインを公開していません。",
+    "description": "In place of the local or the federated timeline when the server does not offer it (its setting is off)."
+  },
+  "app.landing_sign_up": {
+    "defaultMessage": "アカウントを作成",
+    "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
+  },
+  "app.landing_approval": {
+    "defaultMessage": "新しいアカウントは、モデレーターが確認してから使えるようになります。",
+    "description": "On the landing page, under Create an account and Sign in, when the registration mode is approval."
+  },
+  "app.landing_invite": {
+    "defaultMessage": "アカウントの作成には、このサーバーの人からの招待が必要です。",
+    "description": "On the landing page, under Create an account and Sign in, when the registration mode is invite."
+  },
+  "app.landing_closed": {
+    "defaultMessage": "このサーバーは新しいアカウントを受け付けていません。",
+    "description": "On the landing page, under Sign in, when the server takes no new accounts (registration closed, a one-person server, a closure)."
+  },
+  "app.landing_without_account": {
+    "defaultMessage": "アカウントなしで",
+    "description": "On the landing page, the small heading over the buttons to what a visitor can read without an account (the public timelines, search)."
+  },
+  "app.landing_local": {
+    "defaultMessage": "ローカルタイムラインを読む",
+    "description": "On the landing page, a button under Without an account that opens the local timeline (the public posts of this server's people)."
+  },
+  "app.landing_federated": {
+    "defaultMessage": "連合タイムラインを読む",
+    "description": "On the landing page, a button under Without an account that opens the federated timeline (public posts from across the fediverse)."
+  },
+  "app.landing_search": {
+    "defaultMessage": "検索する",
+    "description": "On the landing page, a button under Without an account that opens search."
+  },
+  "app.landing_about": {
+    "defaultMessage": "このサーバーについて詳しく",
+    "description": "On the landing page, the link after the server's summary to its about page (description, rules, moderation)."
+  },
+  "app.landing_source": {
+    "defaultMessage": "ソースコード",
+    "description": "On the landing page's footer, the link to the source code of the running server (AGPL-3.0 section 13)."
   }
 }

@@ -7,12 +7,13 @@
 import { loadProfile, Profile } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStrings } from "../../locale";
+import { screenLoad } from "../../screen-load";
 import { ScreenHeading } from "../../shell/heading";
 import { ProfileHeading } from "../../shell/profile-heading";
 import { SignedOut } from "../../shell/signed-out";
 
 export const Route = createFileRoute("/@{$acct}/")({
-  loader: ({ context, params }) => (context.data === null ? undefined : loadProfile(context.data, params.acct)),
+  loader: ({ context, params }) => screenLoad(context, (data) => loadProfile(data, params.acct)),
   component: ProfileScreen,
   // Back on a profile, the reader is where they left it.
   staticData: { scroll: "restore" },

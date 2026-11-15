@@ -79,6 +79,10 @@
     "defaultMessage": "通知を読み込めませんでした。",
     "description": "What the notifications say when the first of them could not be loaded, beside a button to try again."
   },
+  "notifications.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after the notifications in the column beside the timeline that could not be loaded; it loads them again."
+  },
   "notifications.failed_more": {
     "defaultMessage": "続きの通知を読み込めませんでした。",
     "description": "What the notifications say under them when more could not be loaded, beside a button to try again."

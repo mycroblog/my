@@ -10,6 +10,7 @@ export {
   LinkButton,
   markedSurface,
   TextButton,
+  TextLink,
   type ButtonKind,
   type ButtonProps,
   type ButtonSize,
@@ -133,19 +134,29 @@ export {
 } from "./motion";
 export type { Binding, Keymap, Scope } from "./keys";
 export {
+  CallBar,
   Frame,
   FrameAction,
   FrameAside,
-  FrameFloat,
+  FrameBanner,
+  FrameBanners,
+  FrameDock,
+  FrameFold,
+  FrameFooter,
   FrameHeading,
   FrameMain,
   FrameMark,
   FrameSection,
   FrameSide,
-  FrameTabBar,
   focusFrameHeading,
+  Meter,
   NavItem,
   NavList,
+  NavMenu,
+  SectionLine,
+  SectionList,
+  SectionNote,
+  Toast,
 } from "./shell";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";

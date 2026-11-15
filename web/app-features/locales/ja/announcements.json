@@ -1,0 +1,70 @@
+{
+  "announcements.label": {
+    "defaultMessage": "お知らせ",
+    "description": "The name of the list of the server's announcements, for assistive technology."
+  },
+  "announcements.loading": {
+    "defaultMessage": "お知らせを読み込んでいます…",
+    "description": "What the list of announcements says while the first of them load."
+  },
+  "announcements.loading_more": {
+    "defaultMessage": "続きのお知らせを読み込んでいます…",
+    "description": "What the list of announcements says under them while more load."
+  },
+  "announcements.failed": {
+    "defaultMessage": "お知らせを読み込めませんでした。",
+    "description": "What the list of announcements says when they could not be loaded, beside a button to try again."
+  },
+  "announcements.failed_more": {
+    "defaultMessage": "続きのお知らせを読み込めませんでした。",
+    "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
+  },
+  "announcements.empty": {
+    "defaultMessage": "まだお知らせはありません。サーバーの管理者がお知らせを出すと、ここに表示されます。",
+    "description": "What the list of announcements says when the server has made none."
+  },
+  "announcements.unread": {
+    "defaultMessage": "未読",
+    "description": "The mark of an announcement the reader has not read, for assistive technology."
+  },
+  "announcements.mark_read": {
+    "defaultMessage": "既読にする",
+    "description": "The action under an unread announcement in the list that marks it read."
+  },
+  "announcements.ended": {
+    "defaultMessage": "終了",
+    "description": "Said under an announcement in the list whose showing period is over."
+  },
+  "announcements.untitled": {
+    "defaultMessage": "お知らせ",
+    "description": "The title of an announcement whose administrators gave it none."
+  },
+  "announcements.period_open": {
+    "defaultMessage": "{from} から表示中",
+    "description": "Under an announcement on its page: since when it shows ({from}, a date written out in the reader's language), with no end set."
+  },
+  "announcements.period_until": {
+    "defaultMessage": "{from} から {until} まで表示",
+    "description": "Under an announcement on its page: when it started to show and when it stops ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.period_ended": {
+    "defaultMessage": "{from} から {until} まで表示されました",
+    "description": "Under an announcement on its page whose showing period is over: when it showed ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.back": {
+    "defaultMessage": "お知らせ",
+    "description": "The button at the top of an announcement's page that goes back to the list of announcements."
+  },
+  "announcements.loading_one": {
+    "defaultMessage": "お知らせを読み込んでいます…",
+    "description": "What an announcement's page says while it loads."
+  },
+  "announcements.not_found": {
+    "defaultMessage": "このお知らせは見つかりませんでした。取り下げられた可能性があります。",
+    "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
+  },
+  "announcements.all": {
+    "defaultMessage": "すべてのお知らせを見る",
+    "description": "The link after the not-found notice of an announcement's page that opens the list of announcements."
+  }
+}
