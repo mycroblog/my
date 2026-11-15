@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { defaultComposeSettings, type ComposeSettings, type Status } from "@my/app-data";
-import { answering, emptyDraft, postable, problemsOf, toDraft, toStatus, written, type Draft } from "./model";
+import { defaultComposeSettings, type ComposeSettings, type PostSource, type Status } from "@my/app-data";
+import { answering, emptyDraft, postable, problemsOf, toDraft, toEdit, toStatus, written, type Draft } from "./model";
 
 const settings: ComposeSettings = { ...defaultComposeSettings, maxChars: 10, viewer: { id: "me", acct: "kumi" } };
 const draft = (fields: Partial<Draft> = {}): Draft => ({ ...emptyDraft({ kind: "new" }, settings, "key"), ...fields });
@@ -103,6 +103,26 @@ test("a quote sends the quoted post until the reader removes it; a poll sends it
     settings,
   );
   expect(poll.poll).toEqual({ options: ["Sat", "Sun"], expires_in: 3600, multiple: true, hide_totals: false });
+});
+
+test("an edit and a redraft keep a post's images marked sensitive without a warning", () => {
+  const media = { id: "m1", type: "image", url: "/m1.png", description: "a hill" } as PostSource["media"][number];
+  const source: PostSource = {
+    id: "9",
+    text: "hi",
+    spoiler_text: "",
+    language: "en",
+    visibility: "public",
+    sensitive: true,
+    media: [media],
+  };
+  const edit = emptyDraft({ kind: "edit", id: "9", source }, settings, "key");
+  expect(toEdit(edit).sensitive).toBe(true);
+  expect(toEdit({ ...edit, attachments: [] }).sensitive).toBe(false);
+  const redraft = emptyDraft({ kind: "redraft", id: "9", source }, settings, "key");
+  expect(toStatus(redraft, settings).sensitive).toBe(true);
+  const plain = emptyDraft({ kind: "edit", id: "9", source: { ...source, sensitive: false } }, settings, "key");
+  expect(toEdit(plain).sensitive).toBe(false);
 });
 
 test("a server draft keeps a poll still being written as it is", () => {

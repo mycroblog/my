@@ -9,7 +9,7 @@
 // truncates at its end in either direction. Every part lays out in the reader's direction (locale.ts).
 
 import { useId, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-aria-components";
+import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
 import { useFeedPosition } from "./feed";
@@ -266,6 +266,16 @@ const stamp = tv({
       "rounded-control text-current no-underline outline-hidden",
       "data-hovered:underline data-focus-visible:shadow-focus",
     ],
+    // The time and the edited mark together: on a touch screen, one target of the touch height over both.
+    when: "relative inline-flex items-baseline",
+    // The edited mark: a word after the time, muted as the time is, apart from it by a middle dot; it opens the
+    // history. On a touch screen its hit area covers the time too, at the touch height.
+    edited: [
+      "inline-flex cursor-pointer items-baseline rounded-control border-0 bg-transparent p-0 font-sans text-caption",
+      "text-current outline-hidden data-hovered:underline data-focus-visible:shadow-focus",
+      "pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2",
+      "pointer-coarse:before:h-icon-button-touch pointer-coarse:before:-translate-y-1/2",
+    ],
   },
 });
 
@@ -276,19 +286,32 @@ export type StampProps = {
   date: Date | string;
   /** Where the time leads: the entry on a page of its own. */
   href?: string | undefined;
+  /**
+   * The entry was edited: `text` (edited) after the time, named `label` for assistive technology, which opens its
+   * history; on a touch screen a press on the time opens it too.
+   */
+  edited?: { text: string; label: string; onPress: () => void } | undefined;
 };
 
 /**
  * A glyph and the relative time, kept together at the end of a byline's line. The time is isolated (<bdi>), so that
  * it keeps its own order beside the glyph in either direction, with words of an RTL locale reading right-to-left.
  */
-export function Stamp({ glyph, date, href }: StampProps) {
+export function Stamp({ glyph, date, href, edited }: StampProps) {
   const s = stamp();
   const time = (
     <bdi>
       <RelativeTime date={date} />
     </bdi>
   );
+  const linked =
+    href === undefined ? (
+      time
+    ) : (
+      <Link href={href} className={s.link()}>
+        {time}
+      </Link>
+    );
   return (
     <span className={s.root()}>
       {glyph !== undefined && (
@@ -296,12 +319,16 @@ export function Stamp({ glyph, date, href }: StampProps) {
           <Icon name={glyph.icon} place="caption" />
         </span>
       )}
-      {href === undefined ? (
-        time
+      {edited === undefined ? (
+        linked
       ) : (
-        <Link href={href} className={s.link()}>
-          {time}
-        </Link>
+        <span className={s.when()}>
+          {linked}
+          <span aria-hidden="true">&nbsp;·&nbsp;</span>
+          <AriaButton aria-label={edited.label} className={s.edited()} onPress={edited.onPress}>
+            {edited.text}
+          </AriaButton>
+        </span>
       )}
     </span>
   );

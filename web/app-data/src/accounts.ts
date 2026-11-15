@@ -73,9 +73,9 @@ export function useAccount(acct: string | undefined): { account: Account | undef
   return { account: query.data, error: query.error as Error | null };
 }
 
-/** The viewer's own account, undefined until the server answered. */
-export function useViewer(): Account | undefined {
-  return useQuery(viewerQuery(useAppData())).data;
+/** The viewer's own account, undefined until the server answered; not read while `enabled` is false (no session). */
+export function useViewer(enabled = true): Account | undefined {
+  return useQuery({ ...viewerQuery(useAppData()), enabled }).data;
 }
 
 /** The viewer's relationship with the account of `id`; undefined until the server answered, or without an id. */

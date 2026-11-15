@@ -119,21 +119,93 @@
     "defaultMessage": "編集",
     "description": "The item of the more menu of the reader's own post that edits it."
   },
+  "post.redraft": {
+    "defaultMessage": "削除して書き直す…",
+    "description": "The item of the more menu of the reader's own post that deletes it and opens its text, images and poll in the composer, after a confirmation (hence the ellipsis)."
+  },
+  "post.edited_mark": {
+    "defaultMessage": "編集済み、履歴を表示",
+    "description": "The name, for assistive technology, of the word \"edited\" after an edited post's time (post.edited), which opens its edit history."
+  },
+  "post.edited": {
+    "defaultMessage": "編集済み",
+    "description": "The word after an edited post's time, in its header, or in its details on its own page; it opens its edit history. Lowercase in English: it follows the time after a middle dot (3h ago · edited)."
+  },
+  "post.history.title": {
+    "defaultMessage": "編集履歴",
+    "description": "The title of the dialog that lists every version of an edited post, newest first."
+  },
+  "post.history.close": {
+    "defaultMessage": "閉じる",
+    "description": "The name of the button that closes the edit history."
+  },
+  "post.history.current": {
+    "defaultMessage": "現在",
+    "description": "The label of the newest version in the edit history, the one the post shows."
+  },
+  "post.history.original": {
+    "defaultMessage": "最初の投稿",
+    "description": "The label of the oldest version in the edit history, as it was first posted."
+  },
+  "post.history.earlier": {
+    "defaultMessage": "以前の編集",
+    "description": "The label of a version in the edit history between the original and the current one."
+  },
+  "post.history.added_start": {
+    "defaultMessage": "追加ここから",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version added to the one before it (shown on a tint); post.history.added_end follows the run."
+  },
+  "post.history.added_end": {
+    "defaultMessage": "追加ここまで",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version added (post.history.added_start)."
+  },
+  "post.history.removed_start": {
+    "defaultMessage": "削除ここから",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version removed from the one before it (shown muted and struck through); post.history.removed_end follows the run."
+  },
+  "post.history.removed_end": {
+    "defaultMessage": "削除ここまで",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version removed (post.history.removed_start)."
+  },
+  "post.history.added_image": {
+    "defaultMessage": "追加された画像",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version added (shown on a tint)."
+  },
+  "post.history.removed_image": {
+    "defaultMessage": "削除された画像",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version removed (shown crossed out)."
+  },
   "post.delete": {
     "defaultMessage": "削除…",
     "description": "The item of the more menu of the reader's own post that deletes it after a confirmation (hence the ellipsis)."
   },
-  "post.mute": {
-    "defaultMessage": "ミュート",
-    "description": "The item of a post's more menu, under the author's handle, that mutes the author."
+  "post.delete.title": {
+    "defaultMessage": "この投稿を削除しますか？",
+    "description": "The question of the confirmation before the reader's post is deleted."
   },
-  "post.block": {
-    "defaultMessage": "ブロック…",
-    "description": "The item of a post's more menu, under the author's handle, that blocks the author after a confirmation (hence the ellipsis)."
+  "post.delete.body": {
+    "defaultMessage": "ブースト、お気に入り、リアクションも消え、ほかのサーバーにも削除を依頼します。取り消せません。",
+    "description": "What follows deleting the reader's post, under the confirmation's question."
   },
-  "post.report": {
-    "defaultMessage": "通報…",
-    "description": "The item of a post's more menu, under the author's handle, that reports the post to the moderators after a form (hence the ellipsis)."
+  "post.delete.confirm": {
+    "defaultMessage": "削除する",
+    "description": "The confirmation that deletes the reader's post."
+  },
+  "post.delete.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The refusal of the confirmation of deleting (or redrafting) a post: nothing is deleted."
+  },
+  "post.redraft.title": {
+    "defaultMessage": "この投稿を削除して書き直しますか？",
+    "description": "The question of the confirmation before the reader's post is deleted and opened in the composer."
+  },
+  "post.redraft.body": {
+    "defaultMessage": "{poll, select, yes {ブースト、お気に入り、リアクション、投票に入った票は消え、返信とのつながりもなくなります。本文と投票は、新しい投稿の下書きになります。} other {ブースト、お気に入り、リアクションは消え、返信とのつながりもなくなります。本文と画像は、新しい投稿の下書きになります。}}",
+    "description": "What follows deleting and redrafting the reader's post, under the confirmation's question. poll is yes when the post has a poll (a post with a poll has no images), whose votes are lost, else no."
+  },
+  "post.redraft.confirm": {
+    "defaultMessage": "削除して書き直す",
+    "description": "The confirmation that deletes the reader's post and opens it in the composer."
   },
   "post.shortcuts": {
     "defaultMessage": "投稿にフォーカスしているとき",

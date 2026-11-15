@@ -934,8 +934,11 @@ const notice = tv({
     "rounded-overlay bg-text py-[0.25rem] ps-control-timeline-inline pe-[0.25rem] font-sans text-body text-surface",
     "shadow-overlay tablet:inset-x-0 tablet:bottom-shell-end tablet:mx-auto tablet:max-w-[calc(100%-2*var(--shell-edge))]",
   ],
-  variants: { inline: { true: "static mx-0" } },
+  variants: { inline: { true: "static mx-0" }, bare: { true: "pe-control-timeline-inline" } },
 });
+
+/** The words of a notice without an action, as tall as an action, so that it keeps the height of one with. */
+const noticeText = tv({ base: "flex min-h-control-timeline items-center" });
 
 const noticeAction = tv({
   base: [
@@ -946,8 +949,9 @@ const noticeAction = tv({
 });
 
 /**
- * A short notice at the bottom of the page with its action (a discarded post, with Undo): knocked out and neutral, at
- * the start on a phone, clear of the action floating at the end. `inline` keeps it in the flow (a specimen).
+ * A short notice at the bottom of the page, with its action when it has one (a discarded post, with Undo): knocked out
+ * and neutral, at the start on a phone, clear of the action floating at the end. `inline` keeps it in the flow (a
+ * specimen).
  */
 export function UndoNotice({
   action,
@@ -955,18 +959,21 @@ export function UndoNotice({
   inline = false,
   children,
 }: {
-  action: string;
-  onAction: () => void;
+  action?: string | undefined;
+  onAction?: (() => void) | undefined;
   inline?: boolean | undefined;
   children: string;
 }) {
   const { direction } = useReader(undefined);
+  const acts = action !== undefined && onAction !== undefined;
   return (
-    <div className={notice({ inline })} role="status" dir={direction}>
-      <span>{children}</span>
-      <button type="button" className={noticeAction()} onClick={onAction}>
-        {action}
-      </button>
+    <div className={notice({ inline, bare: !acts })} role="status" dir={direction}>
+      <span className={acts ? undefined : noticeText()}>{children}</span>
+      {acts && (
+        <button type="button" className={noticeAction()} onClick={onAction}>
+          {action}
+        </button>
+      )}
     </div>
   );
 }

@@ -180,7 +180,8 @@ export function Shell({
       </FrameSide>
       <FrameMain>
         <ServerBanners instance={instance} />
-        {signedIn ? <PostActions onCompose={open}>{children}</PostActions> : children}
+        {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
+        <PostActions onCompose={signedIn ? open : undefined}>{children}</PostActions>
       </FrameMain>
       <Around signedIn={signedIn} pathname={pathname} instance={instance} />
       <FrameDock

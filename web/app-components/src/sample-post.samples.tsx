@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // One sample post of the stories, outside any timeline: it keeps its status and answers its actions as the server
-// would, so that it behaves while nothing is fetched.
+// would, so that it behaves while nothing is fetched; its edited mark opens its edit history, and Delete… and Delete
+// and redraft… their confirmation, which takes it away.
 
+import { ModalPresence } from "@my/design-system";
 import { useState } from "react";
+import { DeleteConfirm } from "./delete-confirm";
+import { EditHistory } from "./edit-history";
 import { Post, type PostAction } from "./post";
-import { statusOf, translationOf, type TimelinePost } from "./post.samples";
+import { editsOf, statusOf, translationOf, type TimelinePost } from "./post.samples";
 import type { PostStatus, PostTranslation } from "./status";
 
 /** The status a toggle leaves: on or off, its count moved with it. */
@@ -70,12 +74,16 @@ function answered<S extends PostStatus>(status: S, action: PostAction): S {
  * One sample post, with its status and whether it shows translated kept as the server and the reader leave them;
  * `translationAs` changes the translation the server answers (a translation it knows less of).
  */
+/** What a sample post opens over the page: its edit history, or the confirmation of deleting it. */
+export type SampleOpen = "history" | "delete" | "redraft";
+
 export function SamplePost({
   post,
   lang,
   translationAs,
   signIn,
   votingAt,
+  open: initial,
 }: {
   post: TimelinePost;
   lang: "en" | "ja";
@@ -84,12 +92,19 @@ export function SamplePost({
   signIn?: ((status: PostStatus) => void) | undefined;
   /** A vote for these choices in flight at first, which the server never answers, to show that state. */
   votingAt?: readonly number[] | undefined;
+  /** What is open over the page at first. */
+  open?: SampleOpen | undefined;
 }) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
   const translation = answer && translationAs ? translationAs(answer) : answer;
   const [translated, setTranslated] = useState(post.translated === true);
   const [voting, setVoting] = useState<readonly number[] | undefined>(votingAt);
+  const [open, setOpen] = useState<SampleOpen | undefined>(initial);
+  const [deleted, setDeleted] = useState(false);
+  const close = () => {
+    setOpen(undefined);
+  };
   const onAction = (action: PostAction) => {
     if (action.type === "translate" || action.type === "original") {
       setTranslated(action.type === "translate");
@@ -105,17 +120,39 @@ export function SamplePost({
       }, voteDelay);
       return;
     }
+    if (action.type === "history" || action.type === "delete" || action.type === "redraft") {
+      setOpen(action.type);
+      return;
+    }
     setStatus((s) => (s.boost === undefined ? answered(s, action) : { ...s, boost: answered(s.boost, action) }));
   };
+  if (deleted) return null;
   return (
-    <Post
-      status={status}
-      own={post.own}
-      translatable={translation !== undefined}
-      translation={translated ? translation : undefined}
-      onAction={onAction}
-      signIn={signIn}
-      voting={voting}
-    />
+    <>
+      <Post
+        status={status}
+        own={post.own}
+        translatable={translation !== undefined}
+        translation={translated ? translation : undefined}
+        onAction={onAction}
+        signIn={signIn}
+        voting={voting}
+      />
+      <ModalPresence>
+        {open === "history" && <EditHistory key="history" edits={editsOf(post)} postLang={post.lang} onClose={close} />}
+        {(open === "delete" || open === "redraft") && (
+          <DeleteConfirm
+            key={open}
+            redraft={open === "redraft"}
+            poll={(status.boost ?? status).poll !== undefined}
+            onCancel={close}
+            onConfirm={() => {
+              setOpen(undefined);
+              setDeleted(true);
+            }}
+          />
+        )}
+      </ModalPresence>
+    </>
   );
 }

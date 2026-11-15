@@ -24,6 +24,19 @@ export class Composer {
     await this.text.pressSequentially(text);
   }
 
+  /** Writes `text` in place of what the composer holds. */
+  async replace(text: string): Promise<void> {
+    await this.text.fill(text);
+  }
+
+  /** Saves the edit of the reader's post, and returns once the server has answered and the composer has closed. */
+  async save(): Promise<void> {
+    await answered(this.dialog.page(), { methods: ["PUT"], path: /\/statuses\/[^/]+$/ }, async () => {
+      await this.dialog.getByRole("button", { name: "Save", exact: true }).click();
+    });
+    await expect(this.dialog).toBeHidden();
+  }
+
   /** Sends the post, and returns once the server has answered and the composer has closed. */
   async post(): Promise<void> {
     await answered(this.dialog.page(), { methods: ["POST"], path: /\/statuses$/ }, async () => {

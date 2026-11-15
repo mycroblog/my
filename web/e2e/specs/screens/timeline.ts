@@ -125,6 +125,66 @@ export class Post {
     return new Composer(this.page.getByRole("dialog", { name: "Reply", exact: true }));
   }
 
+  /** The post's more menu, once open. */
+  get menu(): Locator {
+    return this.page.getByRole("menu", { name: "More", exact: true });
+  }
+
+  /** Opens the post's more menu, and returns its items. */
+  async more(): Promise<Locator> {
+    await this.article.getByRole("button", { name: "More", exact: true }).click();
+    return this.menu.getByRole("menuitem");
+  }
+
+  /** Chooses `item` of the post's more menu, by its English words. */
+  async menuItem(item: string): Promise<void> {
+    await this.more();
+    await this.menu.getByRole("menuitem", { name: item, exact: true }).click();
+  }
+
+  /** Deletes the reader's post from Delete… and its confirmation, and returns once the server has answered. */
+  async delete(): Promise<void> {
+    await this.menuItem("Delete…");
+    const confirm = this.page.getByRole("alertdialog", { name: "Delete this post?", exact: true });
+    await answered(this.page, { methods: ["DELETE"], path: /\/statuses\/[^/]+$/ }, async () => {
+      await confirm.getByRole("button", { name: "Delete", exact: true }).click();
+    });
+  }
+
+  /**
+   * Deletes the reader's post from Delete and redraft… and its confirmation, once the server has answered, and returns
+   * the composer it opens as a new post.
+   */
+  async redraft(): Promise<Composer> {
+    await this.menuItem("Delete and redraft…");
+    const confirm = this.page.getByRole("alertdialog", { name: "Delete and redraft this post?", exact: true });
+    await answered(this.page, { methods: ["DELETE"], path: /\/statuses\/[^/]+$/ }, async () => {
+      await confirm.getByRole("button", { name: "Delete and redraft", exact: true }).click();
+    });
+    return new Composer(this.page.getByRole("dialog", { name: "New post", exact: true }));
+  }
+
+  /** Opens the composer that edits the reader's post. */
+  async edit(): Promise<Composer> {
+    await this.menuItem("Edit");
+    return new Composer(this.page.getByRole("dialog", { name: "Edit post", exact: true }));
+  }
+
+  /** The word "edited" after the time of an edited post, which opens its edit history. */
+  get edited(): Locator {
+    return this.article.getByRole("button", { name: "Edited, show history", exact: true });
+  }
+
+  /** Opens the post's edit history from "edited", and returns its versions, newest first. */
+  async history(): Promise<Locator> {
+    await this.edited.click();
+    return this.page
+      .getByRole("dialog", { name: "Edit history", exact: true })
+      .getByRole("list", { name: "Edit history", exact: true })
+      .getByRole("listitem")
+      .filter({ has: this.page.getByRole("time") });
+  }
+
   /** Reveals the text behind the content warning. */
   async show(): Promise<void> {
     await this.showButton.click();

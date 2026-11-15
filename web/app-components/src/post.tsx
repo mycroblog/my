@@ -2,9 +2,11 @@
 
 // A post of a timeline (#2981's anatomy), drawn from a status as the API gives it (status.ts) with the parts of
 // @my/design-system and the one content renderer: the context line (who boosted it, or whom it replies to), the author
-// header (the avatar, the name with the visibility and the time at the end, over the handle), the text, or a content
-// warning over it, the poll (open to the reader's vote, else its results), the images, the quoted post as a reduced preview, the emoji reactions, the translate line, and the
-// actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end), whose keys
+// header (the avatar, the name with the visibility and the time at the end, and "edited" after the time of an edited
+// post, which opens its edit history, over the handle), the text, or a content warning over it, the poll (open to the
+// reader's vote, else its results), the images, the quoted post as a reduced preview, the emoji reactions, the
+// translate line, and the actions (reply, boost with its menu of boost and quote, favourite, react, and more at the
+// end, whose menu holds edit, delete and redraft on one's own post), whose keys
 // (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
 // over it (`context`: pinned, or the heading of a thread's replies), lines under the reactions (`details`: a focused
 // post's date and counts), and a line after the actions (`after`: a thread's fold), inside its surface. Its author's name leads to their profile and its time to the post's own page (paths.ts). It shows its
@@ -65,9 +67,8 @@ export type PostAction =
         | "bookmark"
         | "edit"
         | "delete"
-        | "mute"
-        | "block"
-        | "report";
+        | "redraft"
+        | "history";
       id: string;
     }
   | { type: "reaction"; id: string; name: string }
@@ -351,13 +352,15 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
   "bookmark",
   "edit",
   "delete",
-  "mute",
-  "block",
-  "report",
+  "redraft",
   "vote",
 ]);
 
-/** The more menu: what reaches the post, the bookmark, then edit and delete for one's own, or the author's account. */
+/**
+ * The more menu: what reaches the post (its link, its original page when it came from another server, sharing it),
+ * the bookmark, then for one's own edit (none with a poll), and apart and last delete and delete-and-redraft, which ask
+ * first.
+ */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
   const item = (type: Exclude<PostAction["type"], "reaction" | "vote">, icon: IconName, label: string, on = false) => (
     <MenuItem
@@ -382,17 +385,15 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
       <MenuGroup>
         {item("bookmark", "bookmark", t(bookmarked ? "post.unbookmark" : "post.bookmark"), bookmarked)}
       </MenuGroup>
-      {own ? (
+      {own && (
         <>
-          <MenuGroup>{item("edit", "edit", t("post.edit"))}</MenuGroup>
-          <MenuGroup>{item("delete", "delete", t("post.delete"))}</MenuGroup>
+          {/* The server edits no post with a poll: its votes belong to the poll as posted. */}
+          {status.poll === undefined && <MenuGroup>{item("edit", "edit", t("post.edit"))}</MenuGroup>}
+          <MenuGroup>
+            {item("redraft", "redraft", t("post.redraft"))}
+            {item("delete", "delete", t("post.delete"))}
+          </MenuGroup>
         </>
-      ) : (
-        <MenuGroup title={`@${status.account.username || status.account.domain}`}>
-          {item("mute", "mute", t("post.mute"))}
-          {item("block", "block", t("post.block"))}
-          {item("report", "report", t("post.report"))}
-        </MenuGroup>
       )}
     </>
   );
@@ -481,7 +482,7 @@ export function Post({
   const textLang = known(translation?.language ?? shown.language);
   const cw = translation?.spoiler_text || shown.spoiler_text;
   const quoted = shown.quote?.quoted_status;
-  const on = (type: "translate" | "original") => () => {
+  const on = (type: "translate" | "original" | "history") => () => {
     act({ type, id: shown.id });
   };
   const content = (
@@ -527,6 +528,11 @@ export function Post({
               glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
               date={shown.created_at}
               href={statusPath(shown)}
+              edited={
+                shown.edited_at === undefined
+                  ? undefined
+                  : { text: t("post.edited"), label: t("post.edited_mark"), onPress: on("history") }
+              }
             />
           ) : undefined
         }

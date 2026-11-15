@@ -2,23 +2,33 @@
 
 // What the composer holds while the reader writes, and what it sends: a post's draft as the composer keeps it (the
 // text, the content warning, the audience and who may interact with it, the language, the images or the poll, and the
-// post replied to or quoted), the rules it is checked by before it is sent, and the bodies of a post and of a server
-// draft made from it. No React and no server here: the hook (use-composer.ts) holds it, the view shows it.
+// post replied to or quoted), the rules it is checked by before it is sent, and the bodies of a post, of an edit and of
+// a server draft made from it. No React and no server here: the hook (use-composer.ts) holds it, the view shows it.
 
 import type {
   Audience,
   ComposeSettings,
   CreateStatus,
   DraftRequest,
+  EditStatus,
   Interaction,
   MediaAttachment,
+  PostSource,
   SavedDraft,
   Status,
   Visibility,
 } from "@my/app-data";
 
-/** What the composer was opened for: a new post, or a reply to or a quote of a post. */
-export type Target = { kind: "new" } | { kind: "reply"; id: string } | { kind: "quote"; id: string };
+/**
+ * What the composer was opened for: a new post, a reply to or a quote of a post, an edit of the reader's post, or a
+ * new post written again from the reader's post that was deleted for it (redraft), each of the last two from what the
+ * post held.
+ */
+export type Target =
+  | { kind: "new" }
+  | { kind: "reply"; id: string }
+  | { kind: "quote"; id: string }
+  | { kind: "edit" | "redraft"; id: string; source: PostSource };
 
 /** A target as one string, by which a draft left for it is found again. */
 export const targetKey = (target: Target) => (target.kind === "new" ? "new" : `${target.kind}:${target.id}`);
@@ -50,6 +60,8 @@ export type Draft = {
   readonly text: string;
   /** The content warning; undefined while it is off. */
   readonly cw?: string | undefined;
+  /** The images are marked sensitive, as the post edited or written again had them; the warning marks them too. */
+  readonly sensitive?: boolean | undefined;
   readonly visibility: Visibility;
   readonly policy: Readonly<Record<Interaction, Audience>>;
   readonly language: string;
@@ -82,16 +94,45 @@ const closed: readonly Visibility[] = ["local", "private", "direct"];
 /** Whether a post of `visibility` may quote a remote post. */
 export const quotesRemote = (visibility: Visibility) => !closed.includes(visibility);
 
-/** The empty draft for `target`, from the reader's settings. */
+/** The duration the composer offers nearest to `seconds`; a day for a poll without an end. */
+const nearestDuration = (seconds: number | undefined) =>
+  seconds === undefined
+    ? newPoll.duration
+    : pollDurations.reduce((best, d) => (Math.abs(d - seconds) < Math.abs(best - seconds) ? d : best));
+
+/**
+ * The draft `target` opens with, from the reader's settings: empty, or for an edit or a redraft what the post held
+ * (its poll only for a redraft, a new post; an edit never has one).
+ */
 export function emptyDraft(target: Target, settings: ComposeSettings, key: string): Draft {
+  const language = settings.language === "und" ? "" : settings.language;
+  const base = { target, visibility: settings.visibility, policy: settings.policy, language, key };
+  if (target.kind !== "edit" && target.kind !== "redraft") return { ...base, text: "", attachments: [] };
+  const { source } = target;
+  const poll = target.kind === "redraft" ? source.poll : undefined;
   return {
-    target,
-    text: "",
-    visibility: settings.visibility,
-    policy: settings.policy,
-    language: settings.language === "und" ? "" : settings.language,
-    attachments: [],
-    key,
+    ...base,
+    text: source.text,
+    cw: source.spoiler_text === "" ? undefined : source.spoiler_text,
+    sensitive: source.sensitive,
+    visibility: source.visibility,
+    language: source.language === "und" ? "" : source.language,
+    attachments: source.media.map((media) => ({
+      key: `source-${media.id}`,
+      media,
+      preview: media.preview_url ?? media.url,
+      state: "ready",
+      description: media.description ?? "",
+    })),
+    poll:
+      poll === undefined
+        ? undefined
+        : {
+            options: poll.options,
+            duration: nearestDuration(poll.duration),
+            multiple: poll.multiple,
+            hideTotals: false,
+          },
   };
 }
 
@@ -164,24 +205,56 @@ function policyChange(d: Draft, settings: ComposeSettings) {
   return Object.fromEntries(kinds.map((k) => [k, { automatic: d.policy[k] }]));
 }
 
-const repliesTo = (d: Draft) => (d.target.kind === "reply" ? d.target.id : undefined);
-const quotes = (d: Draft) => (d.target.kind === "quote" && !d.quoteRemoved ? d.target.id : undefined);
+/** The post it replies to: the target of a reply, or what the deleted post of a redraft replied to. */
+const repliesTo = (d: Draft) =>
+  d.target.kind === "reply" ? d.target.id : d.target.kind === "redraft" ? d.target.source.in_reply_to_id : undefined;
+/** The post it quotes: the target of a quote, or what the deleted post of a redraft quoted. */
+const quotes = (d: Draft) => {
+  if (d.quoteRemoved === true) return undefined;
+  if (d.target.kind === "quote") return d.target.id;
+  return d.target.kind === "redraft" ? d.target.source.quoted_status_id : undefined;
+};
 
-/** The body of the post. */
-export function toStatus(d: Draft, settings: ComposeSettings): CreateStatus {
-  const cw = d.cw?.trim() ?? "";
-  const media = d.attachments.flatMap((a) =>
+/** The images of the post that finished uploading, with their descriptions. */
+const mediaOf = (d: Draft) =>
+  d.attachments.flatMap((a) =>
     a.media === undefined
       ? []
       : [{ id: a.media.id, ...(a.description.trim() === "" ? {} : { description: a.description.trim() }) }],
   );
+
+/** Whether the post's images are marked sensitive: as the draft keeps them, or under a content warning. */
+const marksSensitive = (d: Draft, cw: string, media: readonly unknown[]) =>
+  (d.sensitive === true || cw !== "") && media.length > 0;
+
+/**
+ * The body of an edit: the text, the content warning, the language and the images, all of them, since an edit
+ * replaces each (none left is none).
+ */
+export function toEdit(d: Draft): EditStatus {
+  const cw = d.cw?.trim() ?? "";
+  const media = mediaOf(d);
+  return {
+    text: d.text,
+    spoiler_text: cw,
+    sensitive: marksSensitive(d, cw, media),
+    ...(d.language === "" ? {} : { language: d.language }),
+    media,
+  };
+}
+
+/** The body of the post. */
+export function toStatus(d: Draft, settings: ComposeSettings): CreateStatus {
+  const cw = d.cw?.trim() ?? "";
+  const media = mediaOf(d);
   const policy = policyChange(d, settings);
   const reply = repliesTo(d);
   const quote = quotes(d);
   return {
     text: d.text,
     visibility: d.visibility,
-    ...(cw === "" ? {} : { spoiler_text: cw, sensitive: media.length > 0 }),
+    ...(cw === "" ? {} : { spoiler_text: cw }),
+    ...(marksSensitive(d, cw, media) ? { sensitive: true } : {}),
     ...(d.language === "" ? {} : { language: d.language }),
     ...(reply === undefined ? {} : { in_reply_to_id: reply }),
     ...(quote === undefined ? {} : { quoted_status_id: quote }),

@@ -3,9 +3,9 @@
 // The scenario (ADR-0015 §5): the people, posts and relationships of a small server in use, as data only. The seed
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
-// today (the home timeline, the composer, a post and its thread, the notifications, a profile, the sign-in with a
-// password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and upcoming
-// events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
+// today (the home timeline, the composer, a post, its edit history and its thread, the notifications, a profile, the
+// sign-in with a password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and
+// upcoming events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
 // server decides them, so nothing that reads the scenario depends on them. Every item has a key, which the
 // seed sends as `Idempotency-Key: demo:<key>`. The passwords are fixed, which a server takes from the seed only in
 // the `development` profile of a test build (ADR-0015 §6). Links use the reserved `.test` and `.invalid` hosts.
@@ -59,6 +59,11 @@ export type Post = {
   pinned?: boolean;
   /** Its poll, which ends `days` days after the seed posts it. */
   poll?: Poll;
+  /**
+   * What it said before its author edited it, oldest first: the seed posts the first, then edits it to each of the
+   * others, and last to `text`, what it says now; each version stays in its edit history.
+   */
+  earlier?: readonly string[];
 };
 
 /** A poll of a post: its options, whether a vote may choose several, and how many days it takes votes. */
@@ -353,6 +358,7 @@ export const posts: readonly Post[] = [
     visibility: "public",
     replyTo: "sam-ridge-reply",
     text: "@sam 北側の尾根道です。駐車場から二時間くらい。",
+    earlier: ["@sam 南側の尾根道です。", "@sam 北側の尾根道です。"],
   },
   {
     key: "sam-ridge-reply-2",

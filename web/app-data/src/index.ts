@@ -120,6 +120,21 @@ export {
   type NotificationRequestSummary,
   type NotificationType,
 } from "./notifications";
+export {
+  deleteStatus,
+  editStatus,
+  readPostSource,
+  readStatusHistory,
+  RedraftError,
+  redraftStatus,
+  statusHistoryQuery,
+  useOwnPosts,
+  useStatusHistory,
+  type EditStatus,
+  type OwnPosts,
+  type PostSource,
+  type StatusEdit,
+} from "./own-posts";
 export type { PagedList } from "./paged";
 export { usePollVote, voteInPoll, type PollVote } from "./polls";
 export { AppDataProvider } from "./provider";
@@ -143,6 +158,7 @@ export {
   shadowStatus,
   showList,
   useShadow,
+  useStatusGone,
   type ShowStatus,
   type StatusChange,
   type StatusShadow,

@@ -28,6 +28,7 @@ import {
   posts,
   restrictions,
   type Person,
+  type Post,
 } from "../scenario";
 import { createPasskey, type PasskeyCredential } from "./passkey";
 import { drawPNG } from "./png";
@@ -276,6 +277,34 @@ class Seeder {
     return undefined;
   }
 
+  /**
+   * Edits the post `posted` of `post` from its first version to each of its later ones, then to its text, unless an
+   * earlier run did: it is read as it is now first, since a post sent again with its Idempotency-Key may answer as it
+   * was first posted.
+   */
+  async edit(api: Api, post: Post, posted: Status): Promise<Status> {
+    const path = { id: posted.id };
+    let status = body((await api.GET("/statuses/{id}", { params: { path } })).data, `the post ${post.key}`);
+    if (status.edited_at !== undefined) return status;
+    for (const text of [...(post.earlier ?? []).slice(1), post.text]) {
+      const media = status.media_attachments.map((m) => ({
+        id: m.id,
+        ...(m.description === undefined ? {} : { description: m.description }),
+      }));
+      const { data } = await api.PUT("/statuses/{id}", {
+        params: { path },
+        body: {
+          text,
+          language: post.language,
+          ...(post.spoiler === undefined ? {} : { spoiler_text: post.spoiler }),
+          ...(media.length === 0 ? {} : { media }),
+        },
+      });
+      status = body(data, `the edit of the post ${post.key}`);
+    }
+    return status;
+  }
+
   async writePosts() {
     for (const post of posts) {
       const api = await this.api(post.author);
@@ -293,7 +322,7 @@ class Seeder {
         const { data } = await api.POST("/statuses", {
           params: { header: key(post.key) },
           body: {
-            text: post.text,
+            text: post.earlier?.[0] ?? post.text,
             visibility: post.visibility,
             language: post.language,
             ...(post.spoiler === undefined ? {} : { spoiler_text: post.spoiler }),
@@ -313,6 +342,7 @@ class Seeder {
         });
         status = body(data, `the post ${post.key}`);
       }
+      if (post.earlier !== undefined) status = await this.edit(api, post, status);
       this.#posts.set(post.key, status);
       if (post.pinned === true && status.pinned !== true)
         await api.POST("/statuses/{id}/pin", { params: { path: { id: status.id } } });

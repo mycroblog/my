@@ -55,7 +55,19 @@ export {
   type CustomEmojiProps,
   type UrlPartProps,
 } from "./content";
+export { ConfirmDialog, PanelDialog, type ConfirmDialogProps, type PanelDialogProps } from "./dialog";
 export { Disclosure, type DisclosureProps } from "./disclosure";
+export {
+  DiffMedia,
+  DiffText,
+  Version,
+  VersionList,
+  type DiffImage,
+  type DiffKind,
+  type DiffMarks,
+  type DiffPart,
+  type VersionProps,
+} from "./history";
 export { ModalPresence } from "./modal";
 export {
   ActionRow,

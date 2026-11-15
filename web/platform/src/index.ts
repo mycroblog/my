@@ -20,5 +20,6 @@ export {
   type PasskeyFailure,
   type PasskeyJSON,
 } from "./passkeys";
+export { copyText, shareLink, type ShareOutcome } from "./share";
 export { joinTabGroup, type TabGroup } from "./tabs";
 export { supportsViewTransitions } from "./transitions";

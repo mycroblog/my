@@ -10,7 +10,7 @@
 // A post's actions are answered as on every screen (post-actions.tsx).
 
 import { FeedKeys, Post, PostDetails } from "@my/app-components";
-import { statusContextQuery, statusQuery, useThread, type AppData, type Status } from "@my/app-data";
+import { statusContextQuery, statusQuery, useStatusGone, useThread, type AppData, type Status } from "@my/app-data";
 import {
   BackButton,
   Feed,
@@ -24,9 +24,9 @@ import {
   ThreadReply,
   useLocale,
 } from "@my/design-system";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions, usePostVoting } from "../post-actions";
+import { usePostActions, usePostOwn, usePostVoting } from "../post-actions";
 
 /** How many ancestors show around the fold: the first, and as many closest to the focused post. */
 const closest = 2;
@@ -63,6 +63,17 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [shown, setShown] = useState(repliesShown);
   const onAction = usePostActions();
   const votingOf = usePostVoting();
+  const ownOf = usePostOwn();
+  // The post of the page gone (the reader deleted it, or the stream said so): the page has nothing left to show, so it
+  // goes back, where the notice of the deletion stays.
+  const gone = useStatusGone(id);
+  const left = useRef(false);
+  useEffect(() => {
+    // Once: a render before the page unmounts must not go back a second step.
+    if (!gone || left.current) return;
+    left.current = true;
+    onBack();
+  }, [gone, onBack]);
   const back = <BackButton onPress={onBack}>{t("thread.back")}</BackButton>;
   if (status === undefined)
     return (
@@ -88,7 +99,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const positions = new Map([...first, ...last, status, ...replies].map((s, i) => [s.id, i + 1]));
   const item = (s: Status, children?: ReactNode) => (
     <FeedItem key={s.id} id={s.id} position={positions.get(s.id) ?? 0}>
-      {children ?? <Post status={s} onAction={onAction} voting={votingOf(s)} />}
+      {children ?? <Post status={s} onAction={onAction} voting={votingOf(s)} own={ownOf(s)} />}
     </FeedItem>
   );
   const count = positions.size;
@@ -132,7 +143,16 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       >
         <FeedKeys />
         {first.map((s) =>
-          item(s, <Post status={s} onAction={onAction} voting={votingOf(s)} after={earlierFold || undefined} />),
+          item(
+            s,
+            <Post
+              status={s}
+              onAction={onAction}
+              voting={votingOf(s)}
+              own={ownOf(s)}
+              after={earlierFold || undefined}
+            />,
+          ),
         )}
         {last.map((s) => item(s))}
         <ThreadFocus key="focus">
@@ -141,9 +161,17 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <Post
               status={status}
               stamp={false}
-              details={<PostDetails status={status} />}
+              details={
+                <PostDetails
+                  status={status}
+                  onHistory={() => {
+                    onAction({ type: "history", id: status.id });
+                  }}
+                />
+              }
               onAction={onAction}
               voting={votingOf(status)}
+              own={ownOf(status)}
             />,
           )}
         </ThreadFocus>
@@ -155,6 +183,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 status={s}
                 onAction={onAction}
                 voting={votingOf(s)}
+                own={ownOf(s)}
                 context={i === 0 ? <GroupHeading>{t("thread.replies")}</GroupHeading> : undefined}
                 after={(s === lastReply && laterFold) || undefined}
               />,

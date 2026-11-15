@@ -151,6 +151,12 @@ export const transition = {
 export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
 
 /**
+ * The words a version of a post added in its edit history: the share of the text's color in the tint behind them, a
+ * neutral grey in both schemes, apart from the warm surfaces and from the coral of links.
+ */
+export const diff = { addedShare: 0.14 } as const;
+
+/**
  * An icon's size where it sits, in rem: in an action of a timeline, beside a caption, or in the app's navigation. An
  * on state the icon set cannot draw by shape is the glyph knocked out of a solid tile: the tile's corner radius and the
  * glyph's size within it, as shares of the tile.
@@ -438,7 +444,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -476,6 +482,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--spinner-size", `${spinner.size}em`],
   ["--spinner-stroke", `${spinner.stroke}em`],
   ["--spinner-track-share", percent(spinner.trackShare)],
+  ["--diff-added-share", percent(diff.addedShare)],
   ["--icon-action", `${icon.action}rem`],
   ["--icon-caption", `${icon.caption}rem`],
   ["--icon-navigation", `${icon.navigation}rem`],

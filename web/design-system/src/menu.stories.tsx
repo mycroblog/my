@@ -26,9 +26,7 @@ const labels = {
     bookmark: "Bookmark",
     unbookmark: "Remove bookmark",
     edit: "Edit",
-    mute: "Mute",
-    block: "Block…",
-    report: "Report…",
+    redraft: "Delete and redraft…",
     delete: "Delete…",
   },
   ja: {
@@ -41,9 +39,7 @@ const labels = {
     bookmark: "ブックマーク",
     unbookmark: "ブックマークを外す",
     edit: "編集",
-    mute: "ミュート",
-    block: "ブロック…",
-    report: "通報…",
+    redraft: "削除して書き直す…",
     delete: "削除…",
   },
 } as const;
@@ -52,8 +48,7 @@ const labels = {
 const menuOffset = 4;
 
 // A post's more menu: what reaches the post (copy link, open original, share), then the bookmark toggle on its own;
-// then for another's post the actions on its account (mute, block, report) last and apart, under a caption naming it,
-// or for one's own post edit, then delete last and apart.
+// then for one's own post edit, then delete-and-redraft and delete last and apart.
 function MoreItems({ lang, own, bookmarked }: { lang: Lang; own: boolean; bookmarked: boolean }) {
   const l = labels[lang];
   return (
@@ -76,7 +71,7 @@ function MoreItems({ lang, own, bookmarked }: { lang: Lang; own: boolean; bookma
           {bookmarked ? l.unbookmark : l.bookmark}
         </MenuItem>
       </MenuGroup>
-      {own ? (
+      {own && (
         <>
           <MenuGroup>
             <MenuItem id="edit" icon="edit">
@@ -84,23 +79,14 @@ function MoreItems({ lang, own, bookmarked }: { lang: Lang; own: boolean; bookma
             </MenuItem>
           </MenuGroup>
           <MenuGroup>
+            <MenuItem id="redraft" icon="redraft">
+              {l.redraft}
+            </MenuItem>
             <MenuItem id="delete" icon="delete">
               {l.delete}
             </MenuItem>
           </MenuGroup>
         </>
-      ) : (
-        <MenuGroup title="@mika">
-          <MenuItem id="mute" icon="mute">
-            {l.mute}
-          </MenuItem>
-          <MenuItem id="block" icon="block">
-            {l.block}
-          </MenuItem>
-          <MenuItem id="report" icon="report">
-            {l.report}
-          </MenuItem>
-        </MenuGroup>
       )}
     </>
   );
@@ -170,7 +156,7 @@ export default meta;
 type Story = StoryObj<Meta<{ lang: Lang }>>;
 
 export const OnAnothersPost: Story = {
-  render: ({ lang }) => <MoreMenu lang={lang} states={{ open: "hover", block: "focus-visible" }} />,
+  render: ({ lang }) => <MoreMenu lang={lang} states={{ open: "hover", bookmark: "focus-visible" }} />,
 };
 export const OnOwnPost: Story = { render: ({ lang }) => <MoreMenu lang={lang} own bookmarked /> };
 export const Boost: Story = { render: ({ lang }) => <BoostMenu lang={lang} /> };

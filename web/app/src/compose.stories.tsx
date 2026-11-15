@@ -10,7 +10,7 @@
 // Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as a draft, which New
 // post opens again.
 
-import { AppDataProvider, createAppData, defaultComposeSettings, type Status } from "@my/app-data";
+import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource, type Status } from "@my/app-data";
 import { ComposeLayer, emptyComposeDraft, type ComposeDraft, type ComposeTarget } from "@my/app-features";
 import { useLocale } from "@my/design-system";
 import { images } from "@my/design-system/samples";
@@ -179,6 +179,7 @@ const words = {
     poll: "Which day works for the next meetup?",
     options: ["Saturday morning", "Saturday evening", "Sunday afternoon"],
     alt: "Low hills under a dusk sky, a sun just above the ridge",
+    edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -191,6 +192,7 @@ const words = {
     poll: "次のオフ会、どの日がいい？",
     options: ["土曜の午前", "土曜の夜", "日曜の午後"],
     alt: "夕暮れの空の下の低い丘。尾根のすぐ上に太陽",
+    edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
   },
 };
 
@@ -219,6 +221,16 @@ type State = {
 };
 
 const nw = (): ComposeTarget => ({ kind: "new" });
+/** The source of the post of `id`, bare: the state's draft writes what it holds. */
+const sourceOf = (id: string): PostSource => ({
+  id,
+  text: "",
+  spoiler_text: "",
+  language: "und",
+  visibility: "public",
+  sensitive: false,
+  media: [],
+});
 const typed = (d: ComposeDraft, w: (typeof words)["en"]) => ({ ...d, text: w.typing });
 const poll = (multiple: boolean) => (d: ComposeDraft, w: (typeof words)["en"]) => ({
   ...d,
@@ -265,6 +277,12 @@ const states = {
   },
   poll: { name: "Poll", target: nw, draft: poll(false) },
   "poll-multiple": { name: "Poll, several choices", target: nw, draft: poll(true) },
+  // The reader's (yuki's) post with its image, opened from its source to edit.
+  edit: {
+    name: "Edit",
+    target: (fake) => ({ kind: "edit", id: idOf(fake, "yuki-ridge"), source: sourceOf(idOf(fake, "yuki-ridge")) }),
+    draft: (d, w) => ({ ...d, text: w.edit, language: "ja", attachments: [image(0, "ready", w.alt)] }),
+  },
 } satisfies Record<string, State>;
 
 type StateId = keyof typeof states;
@@ -368,6 +386,11 @@ export const Reply: Story = shows("reply");
 export const Quote: Story = shows("quote");
 export const Poll: Story = shows("poll");
 export const PollSeveralChoices: Story = shows("poll-multiple");
+/**
+ * Editing the reader's post: Edit post and Save tell it; the poll, the audience and who may interact leave the row,
+ * and one muted line over the text says the audience stays as posted.
+ */
+export const Edit: Story = shows("edit");
 export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
 export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */

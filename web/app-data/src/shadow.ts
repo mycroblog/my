@@ -322,6 +322,22 @@ export function cachedStatus(data: AppData, id: string): Status | undefined {
   return copy === undefined ? undefined : shadowed(data, copy);
 }
 
+/** Whether the status of `id` is gone, as the reader's deletion or the server said; renders again when it goes. */
+export function useStatusGone(id: string): boolean {
+  const { queryClient } = useAppData();
+  const shadow = shadowOf(queryClient);
+  return useSyncExternalStore(
+    (listener) => {
+      shadow.listeners.add(listener);
+      return () => {
+        shadow.listeners.delete(listener);
+      };
+    },
+    () => shadow.gone.has(id),
+    () => shadow.gone.has(id),
+  );
+}
+
 /**
  * How a copy of a status shows through the shadow of the nearest AppDataProvider; the component renders again when
  * the shadow changes, and the function returned is a new one then.

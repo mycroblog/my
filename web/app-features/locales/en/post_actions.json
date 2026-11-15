@@ -5,6 +5,30 @@
   },
   "post_actions.retry": {
     "defaultMessage": "Try again",
-    "description": "The action of the notice of a failed favourite, boost, bookmark, emoji reaction or vote: it sends the same change again."
+    "description": "The action of a post's failed notice (a favourite, boost, bookmark, emoji reaction or vote, deleting, loading the edit history or the post to edit): it does the same again."
+  },
+  "post_actions.deleted": {
+    "defaultMessage": "Post deleted",
+    "description": "The notice at the bottom of the page after the reader's post was deleted (Delete…); it is gone from every list and view."
+  },
+  "post_actions.delete_failed": {
+    "defaultMessage": "Deleting the post did not finish.",
+    "description": "The notice at the bottom of the page when deleting the reader's post (Delete… or Delete and redraft…) got no answer from the server (the network), beside Try again. The post stays, and a redraft's composer does not open."
+  },
+  "post_actions.link_copied": {
+    "defaultMessage": "Link copied",
+    "description": "The notice at the bottom of the page after Copy link, or after Share on a device that cannot share, copied the link to the post."
+  },
+  "post_actions.copy_failed": {
+    "defaultMessage": "The link could not be copied.",
+    "description": "The notice at the bottom of the page when the browser refused to copy the link to the post (Copy link, or Share on a device that cannot share); it offers no Try again, since a refused clipboard refuses again."
+  },
+  "post_actions.history_failed": {
+    "defaultMessage": "The edit history could not be loaded.",
+    "description": "The notice at the bottom of the page when an edited post's edit history did not load from the server, beside Try again, which loads it again."
+  },
+  "post_actions.source_failed": {
+    "defaultMessage": "The post could not be loaded for editing.",
+    "description": "The notice at the bottom of the page when the reader's post did not load from the server to edit it (Edit), beside Try again; the composer does not open."
   }
 }

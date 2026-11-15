@@ -86,6 +86,8 @@ export type PostStatus = {
   in_reply_to_account_id?: string | undefined;
   /** When it was posted, as an ISO 8601 date-time. */
   created_at: string;
+  /** When its author last edited it, as an ISO 8601 date-time; none for a post never edited. */
+  edited_at?: string | undefined;
   /** The status this one boosts: what the post shows, `account` being who boosted it. */
   boost?: PostStatus | undefined;
   media_attachments: readonly PostMedia[];

@@ -8,6 +8,7 @@
 
 import { images, type Visibility } from "@my/design-system/samples";
 import { serverHtml } from "@my/e2e/fake";
+import type { PostEdit } from "./edit-history";
 import type { ContentEmoji } from "./post-content";
 import type { PostAccount, PostPoll, PostStatus, PostTranslation, PostVisibility } from "./status";
 
@@ -50,6 +51,12 @@ export type TimelinePost = {
   translated?: boolean;
   /** Its poll (FR-112). */
   poll?: SamplePoll;
+  /**
+   * The versions before the current one, oldest first, each with how long ago it was made (the first: `ago`); the
+   * post was last edited `edited` ms ago.
+   */
+  history?: { ago: number; text: string; cw?: string; media?: Media[] }[];
+  edited?: number;
 };
 
 /**
@@ -442,6 +449,7 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
     quote:
       full.quote === undefined ? undefined : { state: "accepted", quoted_status: statusOf(full.quote, `${id}-quote`) },
     poll: full.poll === undefined ? undefined : pollOf(full.poll, `${id}-poll`),
+    ...(full.edited === undefined ? {} : { edited_at: new Date(Date.now() - full.edited).toISOString() }),
   };
   if (full.boostedBy === undefined) return shown;
   return { ...shown, id: `${id}-boost`, account: accountOf(full.boostedBy), boost: shown };
@@ -459,4 +467,29 @@ export function translationOf(post: TimelinePost, lang: "en" | "ja"): PostTransl
     media_attachments: [],
     provider: { name: translationProvider },
   };
+}
+
+/** The versions of an edited fixture (the API's StatusHistory), oldest first: its history, then itself. */
+export function editsOf(post: TimelinePost): PostEdit[] {
+  const at = (ago: number) => new Date(Date.now() - ago).toISOString();
+  // An image keeps its id across the versions that hold it, as the server's does: here, by its description.
+  const media = (m: Media[] | undefined) =>
+    (m ?? []).map((x) => ({ id: x.alt, type: "image" as const, description: x.alt, preview_url: x.src }));
+  const versions = (post.history ?? []).map((v) => ({
+    content: serverHtml(v.text),
+    spoiler_text: v.cw ?? "",
+    created_at: at(v.ago),
+    media_attachments: media(v.media),
+    emojis,
+  }));
+  return [
+    ...versions,
+    {
+      content: serverHtml(post.text),
+      spoiler_text: post.cw ?? "",
+      created_at: at(post.edited ?? post.ago),
+      media_attachments: media(post.media),
+      emojis,
+    },
+  ];
 }

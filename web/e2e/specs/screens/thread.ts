@@ -15,6 +15,11 @@ export class Thread extends Timeline {
     return this.page.getByRole("main").getByRole("heading", { level: 1, name: "Post", exact: true });
   }
 
+  /** The screen's error, which says the post did not load, beside Try again. */
+  get error(): Locator {
+    return this.page.getByRole("main").getByRole("alert");
+  }
+
   /** Goes back to the screen the post was opened from. */
   async back(): Promise<void> {
     await this.page.getByRole("main").getByRole("button", { name: "Back", exact: true }).click();

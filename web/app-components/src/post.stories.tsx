@@ -5,17 +5,18 @@
 // plain, local, boosted, a reply, behind a content warning, with images, quoting, with reactions and with the reader's
 // own, translated (and the notes when the source language, the provider or both are unknown), hovered and focused
 // from the keyboard (shown at rest), long names and handles in en and ja, for a reader without an account, whose
-// actions lead to the sign-in, and with a poll: open, its vote in flight, its results, and ended. Each post answers its actions as the
-// timeline's do, in a column of the timeline's width.
+// actions lead to the sign-in, with a poll: open, its vote in flight, its results, and ended, the more menu open on
+// one's own post and another's, the confirmations of delete and of delete and redraft, edited posts, and an edit
+// history. Each post answers its actions as the timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
 import { Preview, type PreviewState } from "@my/design-system/preview";
 import { rootPx } from "@my/design-tokens";
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState, type ReactNode } from "react";
+import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { statusPath } from "./paths";
 import { posts, type TimelinePost } from "./post.samples";
-import { SamplePost } from "./sample-post.samples";
+import { SamplePost, type SampleOpen } from "./sample-post.samples";
 import type { PostTranslation } from "./status";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -149,6 +150,56 @@ const talksEnded = withPoll(talks, "poll-several-ended", { endsIn: -day, voted: 
 const ownPoll: TimelinePost = { ...withPoll(tea, "poll-own", {}), own: true };
 const ownHidden: TimelinePost = { ...withPoll(tea, "poll-own-hidden", { hideTotals: true }), own: true };
 
+// The images of the edited post: the one it was posted with, which the first edit took away, and the one the last
+// edit added.
+const [snowRidge = { alt: "", src: "" }, duskRidge = { alt: "", src: "" }] = byId("ravi-two").media ?? [];
+
+// One's own post, edited twice: a day changed and its first image taken away, then the meeting place and another image
+// added; in en and ja.
+const editedOwn: Record<"en" | "ja", TimelinePost> = {
+  en: {
+    ...byId("own"),
+    id: "edited-own",
+    ago: 3 * hour,
+    edited: 40 * minute,
+    text: "Trying the new bakery on Elm Street on Saturday morning. Meet at nine by the fountain, anyone welcome!",
+    media: [duskRidge],
+    reactions: [],
+    history: [
+      {
+        ago: 3 * hour,
+        text: "Trying the new bakery on Elm Street tomorrow morning. Anyone want to come along?",
+        media: [snowRidge],
+      },
+      { ago: 2 * hour, text: "Trying the new bakery on Elm Street on Saturday morning. Anyone want to come along?" },
+    ],
+  },
+  ja: {
+    ...byId("own"),
+    id: "edited-own-ja",
+    lang: "ja",
+    ago: 3 * hour,
+    edited: 40 * minute,
+    text: "土曜の朝、駅前の新しいパン屋に行ってみます。9時に噴水の前で集合、誰でも歓迎です！",
+    media: [duskRidge],
+    reactions: [],
+    history: [
+      { ago: 3 * hour, text: "明日の朝、駅前の新しいパン屋に行ってみます。一緒に行く人いますか？", media: [snowRidge] },
+      { ago: 2 * hour, text: "土曜の朝、駅前の新しいパン屋に行ってみます。一緒に行く人いますか？" },
+    ],
+  },
+};
+
+// Another's post from another server, edited once to fix a word.
+const editedRemote: TimelinePost = {
+  ...byId("lena-quiet"),
+  id: "edited-remote",
+  edited: 5 * hour,
+  history: [
+    { ago: byId("lena-quiet").ago, text: "Quiet morning. Tea, rain, and a book I have meant to finish since sprung." },
+  ],
+};
+
 const longText =
   "\n\nA second paragraph, long enough to wrap many times in a column of the timeline's width: it keeps going past " +
   "the width of any phone, with a link https://example.org/a/very/long/path/that/never/ends and more words after it.";
@@ -188,17 +239,26 @@ function Shown({
   state,
   translationAs,
   votingAt,
+  open,
 }: {
   post: TimelinePost;
   state?: PreviewState;
   translationAs?: Translation;
   votingAt?: readonly number[];
+  open?: SampleOpen | undefined;
 }) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
       <Preview state={state}>
-        <SamplePost key={post.id} post={post} lang={lang} translationAs={translationAs} votingAt={votingAt} />
+        <SamplePost
+          key={post.id}
+          post={post}
+          lang={lang}
+          translationAs={translationAs}
+          votingAt={votingAt}
+          open={open}
+        />
       </Preview>
     </Column>
   );
@@ -215,6 +275,47 @@ function Several({ posts: shown }: { posts: TimelinePost[] }) {
         ))}
       </div>
     </Column>
+  );
+}
+
+/** The reader's language, en or ja, from the toolbar's locale. */
+const useLang = () => (new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en");
+
+/** The reader's edited post, in their language, with `open` over it at first. */
+function EditedOwn({ open }: { open?: SampleOpen }) {
+  return <Shown post={editedOwn[useLang()]} open={open} />;
+}
+
+/** Edited posts, one's own and another's, beside one never edited. */
+function EditedPosts() {
+  const lang = useLang();
+  return (
+    <Column>
+      <div style={{ display: "grid", gap: rem(32) }}>
+        {[editedOwn[lang], editedRemote, byId("alice-reply")].map((p) => (
+          <SamplePost key={p.id} post={p} lang={lang} />
+        ))}
+      </div>
+    </Column>
+  );
+}
+
+/** A sample post with its more menu open, as a pointer opens it: its last button (more) pressed once mounted. */
+function MenuOpen({ post }: { post: TimelinePost }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const buttons = ref.current?.querySelectorAll<HTMLElement>("article button[aria-haspopup]");
+    const more = buttons?.[buttons.length - 1];
+    if (more === undefined) return;
+    const at = { bubbles: true, cancelable: true, pointerType: "mouse", pointerId: 1, button: 0, isPrimary: true };
+    more.dispatchEvent(new PointerEvent("pointerdown", at));
+    more.dispatchEvent(new PointerEvent("pointerup", at));
+    more.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 }));
+  }, []);
+  return (
+    <div ref={ref}>
+      <Shown post={post} />
+    </div>
   );
 }
 
@@ -258,6 +359,24 @@ const postOf = (a: Args): TimelinePost => {
 
 // A story of one state shows a fixed sample, which the Controls do not change.
 const fixed = { parameters: { controls: { disable: true } } };
+
+/**
+ * Waits until the dialog open over the post has moved in (it rises in by Motion, translucent until then), so that the
+ * story tests check it as the reader sees it.
+ */
+const dialogShown = async ({ canvasElement }: StoryContext) => {
+  const shown = () => {
+    const dialog = canvasElement.ownerDocument.querySelector('[role="dialog"], [role="alertdialog"]');
+    for (let e: Element | null = dialog; e !== null; e = e.parentElement)
+      if (getComputedStyle(e).opacity !== "1") return false;
+    return dialog !== null;
+  };
+  for (const until = Date.now() + 5000; !shown();) {
+    if (Date.now() > until) throw new Error("the dialog did not move in");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+};
+const overPost = { ...fixed, play: dialogShown };
 
 // Tagged `themes`: the story tests run it in dark too.
 const meta = {
@@ -324,6 +443,25 @@ export const FocusVisible: Story = {
   ...fixed,
   render: () => <Shown post={byId("alice-reply")} state="focus-visible" />,
 };
+/** The more menu of the reader's own post: its link and sharing, the bookmark, edit, then delete and redraft apart. */
+export const OwnMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("own")} /> };
+/** The more menu of another's post from another server: its link, its original page, sharing, the bookmark. */
+export const OthersMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("lena-quiet")} /> };
+/** The confirmation of Delete…, over the post. */
+export const DeleteConfirmation: Story = { ...overPost, render: () => <EditedOwn open="delete" /> };
+/** The confirmation of Delete and redraft…, over the post. */
+export const RedraftConfirmation: Story = { ...overPost, render: () => <EditedOwn open="redraft" /> };
+/** The confirmation of Delete and redraft… of the reader's post with a poll, whose votes it loses. */
+export const RedraftPollConfirmation: Story = { ...overPost, render: () => <Shown post={ownPoll} open="redraft" /> };
+/** The more menu of the reader's post with a poll: no edit, which the server refuses for a poll. */
+export const OwnPollMenu: Story = { ...fixed, render: () => <MenuOpen post={ownPoll} /> };
+/** Edited posts, one's own and another's, "edited" after their time, beside one never edited. */
+export const Edited: Story = { ...fixed, render: () => <EditedPosts /> };
+/**
+ * The edit history of the reader's post, newest first: each version's words and images marked against the version
+ * before it, an image taken away by the first edit and another added by the last.
+ */
+export const EditHistory: Story = { ...overPost, render: () => <EditedOwn open="history" /> };
 export const LongNames: Story = { ...fixed, render: () => <Shown post={longNameEn} /> };
 export const LongNamesJapanese: Story = { ...fixed, render: () => <Shown post={longNameJa} /> };
 /** A poll open to the reader: one choice, then several; pressing Vote sends it, and the results follow. */

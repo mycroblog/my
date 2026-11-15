@@ -47,7 +47,7 @@ import {
 } from "@my/design-system";
 import { useId, useState } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions, usePostVoting } from "../post-actions";
+import { usePostActions, usePostOwn, usePostVoting } from "../post-actions";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -306,6 +306,7 @@ function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed
   const pinned = useAccountStatuses(account.id, "pinned", tab !== "media");
   const onAction = usePostActions();
   const votingOf = usePostVoting();
+  const ownOf = usePostOwn();
   const items: Item[] = [
     ...(tab === "media" ? [] : pinned.items.map((status) => ({ status, pinned: true }))),
     ...posts.items.map((status) => ({ status, pinned: false })),
@@ -324,6 +325,7 @@ function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed
           context={item.pinned ? <CaptionLine icon="pin">{t("profile.pinned")}</CaptionLine> : undefined}
           onAction={onAction}
           voting={votingOf(item.status)}
+          own={ownOf(item.status)}
         />
       )}
     </ListColumn>

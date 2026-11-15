@@ -37,6 +37,7 @@ const theme = {
     "accent-hover": "color-mix(in srgb, var(--press-shade) var(--press-hover), var(--color-accent))",
     "accent-pressed": "color-mix(in srgb, var(--press-shade) var(--press-pressed), var(--color-accent))",
     "spinner-track": "color-mix(in srgb, currentColor var(--spinner-track-share), transparent)",
+    "diff-added": "color-mix(in srgb, var(--color-text) var(--diff-added-share), transparent)",
     scrim: ref("--dialog-scrim"),
     transparent: "transparent",
     current: "currentColor",

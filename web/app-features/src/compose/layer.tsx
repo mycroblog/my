@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The composer over the screen, and how it is left (#3046's decisions, ADR-0156): the app opens it for a target (a new
-// post, a reply, a quote) and closes it when asked; this decides what leaving does.
+// post, a reply, a quote, an edit of the reader's post, a redraft) and closes it when asked; this decides what leaving
+// does.
 //
 // - Post: the post goes into the home timeline at once (app-data), and the composer closes.
+// - Save (an edit): every copy of the post shows the edit (app-data), the composer closes, and a notice says so. An
+//   edit closed goes without a word; left by accident it is kept on this page alone, never as a server draft.
 // - Close or Escape with a written post: the post is discarded, and a notice offers Undo for a moment, which opens the
 //   composer again with the post. Nothing is asked: Escape is often pressed by mistake around an input method.
 // - Leaving by accident (the backdrop, or the app closing it without a word): the
@@ -39,6 +42,8 @@ function keep(d: Draft, writes: ComposeWrites, settings: ComposeSettings): void 
   // An image still uploading, or failed, is not kept: the server has no file of it.
   const draft = { ...d, attachments: d.attachments.filter((a) => a.state === "ready") };
   kept.set(key, draft);
+  // An edit is no new post: the server's drafts hold none.
+  if (d.target.kind === "edit") return;
   writes.saveDraft(toDraft(draft, settings), draft.saved).then(
     (saved) => {
       if (kept.get(key) === draft) kept.set(key, { ...draft, saved });
@@ -116,6 +121,7 @@ export function ComposeLayer({
   const settings = useComposeSettings();
   const writes = useComposeWrites();
   const [discarded, setDiscarded] = useState<Draft | undefined>(undefined);
+  const [saved, setSaved] = useState(false);
   // The draft of the composer shown, as it was last drawn, by its target's key.
   const latest = useRef<{ key: string; draft: Draft } | undefined>(undefined);
   const left = useRef(false);
@@ -134,19 +140,30 @@ export function ComposeLayer({
   });
 
   useEffect(() => {
-    if (discarded === undefined || inline) return undefined;
+    if ((discarded === undefined && !saved) || inline) return undefined;
     const timer = setTimeout(() => {
       setDiscarded(undefined);
+      setSaved(false);
     }, undoMs);
     return () => {
       clearTimeout(timer);
     };
-  }, [discarded, inline]);
+  }, [discarded, saved, inline]);
 
   const leave = (how: "posted" | "close" | "dismiss", d: Draft) => {
     left.current = true;
+    const editing = d.target.kind === "edit";
     if (how === "posted") {
       kept.delete(targetKey(d.target));
+      if (editing) {
+        setDiscarded(undefined);
+        setSaved(true);
+      }
+    } else if (editing) {
+      // An edit is no post of its own: left by accident it is kept here alone, and closed it goes without a word, the
+      // post as it was.
+      if (how === "dismiss") kept.set(targetKey(d.target), d);
+      else kept.delete(targetKey(d.target));
     } else if (how === "dismiss") {
       if (written(d)) keep(d, writes, settings);
     } else {
@@ -188,6 +205,7 @@ export function ComposeLayer({
           {t("compose.discarded")}
         </UndoNotice>
       )}
+      {saved && <UndoNotice inline={inline}>{t("compose.saved")}</UndoNotice>}
     </>
   );
 }

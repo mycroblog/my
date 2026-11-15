@@ -5,7 +5,8 @@
 // statuses, the home timeline, a thread, a profile, the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
-// answers of follow requests, the read marker, the announcements read) are kept in memory. A list pages as the server's
+// answers of follow requests, the read marker, the announcements read, the reader's edits and deletions of their own
+// posts) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
 // and its retry succeeds late. What the shell reads (the instance, the reader's rights, the announcements, the
@@ -244,16 +245,44 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     };
   }
 
+  // The reader's own posts they deleted, by key, and the versions of each post: those of the scenario (its `earlier`,
+  // then its text), then the reader's edits.
+  const deleted = new Set<string>();
+  type Version = { text: string; spoiler: string; at: number; media?: readonly string[] };
+  const edits = new Map<string, Version[]>();
+  /** The versions of `p`, oldest first: what it was posted with first, the last what it says now. */
+  function versionsOf(p: Post): readonly Version[] {
+    const posted = timeOf(postStep(p.key));
+    const scenario = [...(p.earlier ?? []), p.text].map((text, i) => ({
+      text,
+      spoiler: p.spoiler ?? "",
+      at: posted + i * 2 * minute,
+    }));
+    return [...scenario, ...(edits.get(p.key) ?? [])];
+  }
+
+  /** The images of `p` as a version of it holds them, all of them unless it names which. */
+  function mediaOf(p: Post, id: string, version: Version): Json[] {
+    return (p.images ?? []).flatMap((image, i) => {
+      const url = drawingURL(image.drawing);
+      const media = { id: `${id}-${i}`, type: "image", description: image.description, url, preview_url: url };
+      return version.media === undefined || version.media.includes(media.id) ? [media] : [];
+    });
+  }
+
   const visible = (p: Post) =>
-    p.author === viewer ||
-    p.visibility === "public" ||
-    p.visibility === "unlisted" ||
-    p.visibility === "local" ||
-    (p.visibility === "private" && follows_(viewer, p.author)) ||
-    (p.visibility === "direct" && mentioned(p.text).includes(viewer));
+    !deleted.has(p.key) &&
+    (p.author === viewer ||
+      p.visibility === "public" ||
+      p.visibility === "unlisted" ||
+      p.visibility === "local" ||
+      (p.visibility === "private" && follows_(viewer, p.author)) ||
+      (p.visibility === "direct" && mentioned(p.text).includes(viewer)));
 
   function statusOf(p: Post, depth = 0): Json {
     const id = statusId.get(p.key) ?? "";
+    const versions = versionsOf(p);
+    const now = versions.at(-1) ?? { text: p.text, spoiler: p.spoiler ?? "", at: 0 };
     const parent = p.replyTo === undefined ? undefined : postOf(p.replyTo);
     const reactions = new Map<string, { count: number; me: boolean }>();
     for (const r of interactions)
@@ -266,20 +295,18 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       uri: `${fakeOrigin}/users/${p.author}/statuses/${id}`,
       url: `${fakeOrigin}/@${p.author}/${id}`,
       account: accountOf(p.author),
-      content: serverHtml(p.text, fakeHost),
-      spoiler_text: p.spoiler ?? "",
-      sensitive: p.spoiler !== undefined,
+      content: serverHtml(now.text, fakeHost),
+      spoiler_text: now.spoiler,
+      sensitive: now.spoiler !== "",
       visibility: p.visibility,
       language: p.language,
       created_at: new Date(timeOf(postStep(p.key))).toISOString(),
+      ...(versions.length > 1 ? { edited_at: new Date(now.at).toISOString() } : {}),
       ...(parent === undefined
         ? {}
         : { in_reply_to_id: statusId.get(parent.key), in_reply_to_account_id: idOf(parent.author) }),
-      media_attachments: (p.images ?? []).map((image, i) => {
-        const url = drawingURL(image.drawing);
-        return { id: `${id}-${i}`, type: "image", description: image.description, url, preview_url: url };
-      }),
-      mentions: mentioned(p.text).map((u) => ({ id: idOf(u), username: u, acct: u })),
+      media_attachments: mediaOf(p, id, now),
+      mentions: mentioned(now.text).map((u) => ({ id: idOf(u), username: u, acct: u })),
       emojis: customEmojis,
       replies_count: posts.filter((x) => x.replyTo === p.key).length,
       boosts_count: on(p.key, "boost").length,
@@ -331,6 +358,19 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     homeEntries.push({ at: step, status: boostOf(p, i.by, step) });
   });
   const home: Json[] = homeEntries.toSorted((a, b) => b.at - a.at).map((e) => e.status);
+
+  /**
+   * A status of a list as it is now: a post of the scenario (or a boost of one) as edited since, none once deleted;
+   * another (a post the stream brought) as it was.
+   */
+  function current(s: Json): Json[] {
+    const key = keyOf.get(s["id"] as string);
+    if (key !== undefined) return deleted.has(key) ? [] : [statusOf(postOf(key))];
+    const boosted = s["boost"] as Json | undefined;
+    const boostedKey = boosted === undefined ? undefined : keyOf.get(boosted["id"] as string);
+    if (boostedKey === undefined) return [s];
+    return deleted.has(boostedKey) ? [] : [{ ...s, boost: statusOf(postOf(boostedKey)) }];
+  }
 
   /** A person's posts on their profile, newest first, and the pinned ones. */
   const profilePosts = (username: string) =>
@@ -650,7 +690,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   /** The operations a visitor without a session may call; every other answers 401. */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context)?|timelines\/(?:local|federated))$/;
+    /^\/(?:instance(?:\/health)?|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history)?|timelines\/(?:local|federated))$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 
@@ -695,7 +735,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     let match: RegExpExecArray | null;
 
     if (path === "/timelines/home") {
-      const { from, body } = page(home, q);
+      const { from, body } = page(home.flatMap(current), q);
       if (o.failFirst === true && from === 0 && Date.now() - started < 1000)
         return problem(500, "Internal Server Error");
       // The retry after the first page failed comes late, so that the screen shows it loading again.
@@ -711,6 +751,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (timelines[kind] === "off") return problem(404, "Not Found");
       if (timelines[kind] === "signed_in" && o.visitor === true) return problem(401, "Unauthorized");
       const shown = posts
+        .filter((p) => !deleted.has(p.key))
         .filter((p) => p.visibility === "public" || (kind === "local" && p.visibility === "local"))
         .filter((p) => o.visitor === true || !hidden(p.author))
         .toReversed()
@@ -814,9 +855,53 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const r = change(decodeURIComponent(match[1] ?? ""), verb.replace(/^un/, ""), add);
       return r === undefined ? problem(404, "Not Found") : json(r);
     }
-    if ((match = m(/^\/statuses\/([^/]+)$/))) {
+    if ((match = m(/^\/statuses\/([^/]+)(\/source|\/history)?$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
-      return key === undefined || !visible(postOf(key)) ? problem(404, "Not Found") : json(statusOf(postOf(key)));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const id = statusId.get(p.key) ?? "";
+      const own = p.author === viewer;
+      if (match[2] === "/history" && request.method === "GET")
+        return json({
+          items: versionsOf(p).map((v) => ({
+            content: serverHtml(v.text, fakeHost),
+            spoiler_text: v.spoiler,
+            sensitive: v.spoiler !== "",
+            created_at: new Date(v.at).toISOString(),
+            media_attachments: mediaOf(p, id, v),
+            emojis: customEmojis,
+          })),
+        });
+      // The source of another's post is a 404, as the server's is.
+      if (match[2] === "/source" && request.method === "GET") {
+        const now = versionsOf(p).at(-1);
+        return own
+          ? json({ id, text: now?.text ?? p.text, spoiler_text: now?.spoiler ?? "", language: p.language })
+          : problem(404, "Not Found");
+      }
+      if (match[2] !== undefined) return problem(404, "Not Found");
+      if (request.method === "GET") return json(statusOf(p));
+      if (!own) return problem(403, "Forbidden");
+      if (request.method === "DELETE") {
+        deleted.add(p.key);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PUT") {
+        // A post with a poll is never edited: its votes belong to the poll as posted.
+        if (p.poll !== undefined) return problem(422, "Unprocessable Entity");
+        const edit = (await request.json()) as { text: string; spoiler_text?: string; media?: { id: string }[] };
+        edits.set(p.key, [
+          ...(edits.get(p.key) ?? []),
+          {
+            text: edit.text,
+            spoiler: edit.spoiler_text ?? "",
+            at: Date.now(),
+            media: (edit.media ?? []).map((x) => x.id),
+          },
+        ]);
+        return json(statusOf(p));
+      }
+      return problem(405, "Method Not Allowed");
     }
     if ((match = m(/^\/statuses\/([^/]+)\/poll\/votes$/)) && request.method === "POST") {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
@@ -843,8 +928,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/notifications") {
       const types = q.getAll("types");
-      const shown =
+      const typed =
         types.length === 0 ? notifications : notifications.filter((n) => types.includes(n["type"] as string));
+      // A notification of a post shows it as it is now, and goes with it once it is deleted.
+      const shown = typed.flatMap((n) => {
+        const s = n["status"] as Json | undefined;
+        if (s === undefined) return [n];
+        const now = current(s)[0];
+        return now === undefined ? [] : [{ ...n, status: now }];
+      });
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);

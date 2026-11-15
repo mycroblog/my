@@ -36,8 +36,10 @@ import {
   IconDots,
   IconExternalLink,
   IconEyeOff,
+  IconFilePencil,
   IconFlag,
   IconHeartHandshake,
+  IconHistory,
   IconHome,
   IconHomeFilled,
   IconInfoCircle,
@@ -119,6 +121,10 @@ export const icons = {
   report: { off: IconFlag },
   edit: { off: IconPencil },
   delete: { off: IconTrash },
+  // Deleting a post to write it again: a page being written, the draft it goes back to.
+  redraft: { off: IconFilePencil },
+  // The versions of an edited post: a clock turning back.
+  history: { off: IconHistory },
   // The places of the navigation, on where the reader is, and the entry to write a post.
   home: { off: IconHome, on: IconHomeFilled },
   notifications: { off: IconBell, on: IconBellFilled },

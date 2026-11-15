@@ -14,6 +14,8 @@ export {
   type ListColumnProps,
   type ListWords,
 } from "./column";
+export { DeleteConfirm, type DeleteConfirmProps } from "./delete-confirm";
+export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-history";
 export { languageName } from "./locale";
 export { accountPath, statusPath } from "./paths";
 export { Post, type PostAction, type PostProps } from "./post";
