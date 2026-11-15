@@ -6,15 +6,17 @@
 // person, and no SQL. Each name holds a part of a random UUID, so that it is unique to the test and the run without
 // reading the clock.
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import type { Api, components } from "@mycroblog/mykit";
 import type { Drawing } from "./drawing";
+import { silentMP3, tinyWebM } from "./av";
 import type { Image, Person, Poll, Visibility } from "./scenario";
-import { enrollTOTP, uploadDrawing } from "./seed/seed";
+import { enrollTOTP, uploadDrawing, uploadFile } from "./seed/seed";
 import { signIn } from "./seed/sign-in";
 
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
+type MediaAttachment = components["schemas"]["MediaAttachment"];
 
 /** A person a test made: a Person, and with two-factor authentication its secret and the step its enrollment used. */
 export type FreshPerson = Person & { totp?: { secret: string; step: number } };
@@ -30,11 +32,23 @@ export type FreshPersonOptions = {
   followedBy?: readonly Person[];
 };
 
+/**
+ * A video or a sound to attach (av.ts): a two-second WebM with `poster` as its picture, or a silent MP3 of about three
+ * seconds; `description` is its alt text, empty for none.
+ */
+type FreshFile = { kind: "video"; description: string; poster: Drawing } | { kind: "audio"; description: string };
+
 export type FreshPostOptions = {
   /** The text; the post's own text ends with a word unique to it, so that a spec finds it alone. */
   text: string;
   visibility?: Visibility;
   image?: Image;
+  /** More images, after `image`. */
+  images?: readonly Image[];
+  /** Videos and sounds, after the images. */
+  files?: readonly FreshFile[];
+  /** Its media are sensitive: covered until the reader shows them. */
+  sensitive?: boolean;
   /** The content warning. */
   spoiler?: string;
   /** A poll, which ends `days` days after the post. */
@@ -43,11 +57,23 @@ export type FreshPostOptions = {
   language?: string;
 };
 
-/** A post a test made: its ID, and its whole text, by which a spec finds it on the screen. */
-export type FreshPost = { id: string; text: string };
+/**
+ * A post a test made: its ID, its whole text, by which a spec finds it on the screen, and its media as the server
+ * describes them, in order.
+ */
+export type FreshPost = { id: string; text: string; media: readonly MediaAttachment[] };
 
 /** A person's avatar: a plain square, which no screen of a test reads. */
 const avatar: Drawing = { width: 64, height: 64, top: [120, 144, 168], bottom: [72, 96, 120], shapes: [] };
+
+/**
+ * An address of 198.18.0.0/15 (for tests) that a person's requests come from, as each person comes from their own:
+ * the server limits sign-ins and tokens per client IP, and the tests' people would otherwise share one limit.
+ */
+function clientIP(): string {
+  const [a = 0, b = 0, c = 0] = randomBytes(3);
+  return `198.${String(18 + (a & 1))}.${String(b)}.${String(c)}`;
+}
 
 /** A part of a random UUID: unique to a test and a run, and short enough for a username. */
 const unique = () => randomUUID().replaceAll("-", "").slice(0, 16);
@@ -83,7 +109,7 @@ export class Fresh {
     if (api === undefined) {
       const own = "totp" in p ? p.totp : undefined;
       const secret = own?.secret ?? this.#o.totp?.secrets[p.username];
-      api = await signIn(this.#o.server, p, secret, own?.step ?? this.#o.totp?.steps[p.username]);
+      api = await signIn(this.#o.server, p, secret, own?.step ?? this.#o.totp?.steps[p.username], clientIP());
       this.#apis.set(p.username, api);
     }
     return api;
@@ -144,15 +170,15 @@ export class Fresh {
   async post(author: Person, o: FreshPostOptions): Promise<FreshPost> {
     const id = unique();
     const api = await this.#api(author);
-    const media =
-      o.image === undefined
-        ? []
-        : [
-            {
-              id: (await uploadDrawing(api, o.image.name, o.image.drawing, o.image.description, "attachment")).id,
-              description: o.image.description,
-            },
-          ];
+    const media: MediaAttachment[] = [];
+    for (const image of [...(o.image === undefined ? [] : [o.image]), ...(o.images ?? [])])
+      media.push(await uploadDrawing(api, image.name, image.drawing, image.description, "attachment"));
+    for (const [i, file] of (o.files ?? []).entries()) {
+      const name = `${file.kind}-${String(i)}.${file.kind === "video" ? "webm" : "mp3"}`;
+      const [bytes, type] = file.kind === "video" ? [tinyWebM(), "video/webm"] : [silentMP3(3), "audio/mpeg"];
+      const poster = file.kind === "video" ? file.poster : undefined;
+      media.push(await uploadFile(api, name, new Blob([bytes], { type }), file.description, "attachment", poster));
+    }
     const text = `${o.text} ${id.slice(0, 8)}`;
     const { data } = await api.POST("/statuses", {
       params: { header: { "Idempotency-Key": `fresh:${id}` } },
@@ -161,7 +187,8 @@ export class Fresh {
         visibility: o.visibility ?? "public",
         language: o.language ?? author.locale,
         ...(o.spoiler === undefined ? {} : { spoiler_text: o.spoiler }),
-        ...(media.length === 0 ? {} : { media }),
+        ...(o.sensitive === true ? { sensitive: true } : {}),
+        ...(media.length === 0 ? {} : { media: media.map((m) => ({ id: m.id, description: m.description ?? "" })) }),
         ...(o.poll === undefined
           ? {}
           : {
@@ -174,7 +201,7 @@ export class Fresh {
       },
     });
     const status: Status = body(data, "the post");
-    return { id: status.id, text };
+    return { id: status.id, text, media: status.media_attachments };
   }
 
   /** `by` reacts to the post `post` with `emoji`: a Unicode emoji, or a custom one's shortcode without colons. */

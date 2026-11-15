@@ -11,9 +11,10 @@
 //     to them ("Fresh 1a2b3c4d") and a username `fresh_…`, locked or not, following and followed by the people given
 //     (each follow accepted). With `totp: true` it enables two-factor authentication last and returns `totp: { secret,
 //     step }`: sign them in on the screen with `totpCode(p.totp.secret, { avoidStep: p.totp.step })`.
-//   - `fresh.post(author, { text, visibility?, image?, spoiler?, poll?, language? })` a new post of `author` (a person
-//     of the scenario or a fresh one) whose text is `text` and a word unique to it, in `language` or the author's; it
-//     returns `{ id, text }`, and `text`, the whole text, finds the post on the screen.
+//   - `fresh.post(author, { text, visibility?, image?, images?, files?, sensitive?, spoiler?, poll?, language? })` a new
+//     post of `author` (a person of the scenario or a fresh one) whose text is `text` and a word unique to it, in
+//     `language` or the author's, with images, a video or a sound (src/av.ts); it returns `{ id, text, media }`, and
+//     `text`, the whole text, finds the post on the screen.
 //   - `fresh.reaction(by, post, emoji)` the emoji reaction of `by` to a fresh post: a Unicode emoji, or a custom one's
 //     shortcode without colons.
 //   - `fresh.deletion(author, post)` the deletion of a fresh post by its author.

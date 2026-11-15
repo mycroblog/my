@@ -15,7 +15,7 @@
 // people are in it and the seed opens none. A post is translated by the provider `translation` names, which answers
 // or refuses as the options say.
 
-import { drawingURL } from "../drawing";
+import { drawingBlurhash, drawingURL } from "../drawing";
 import {
   admin,
   announcements as scenarioAnnouncements,
@@ -28,6 +28,7 @@ import {
   personOf,
   posts,
   restrictions,
+  type LinkCard,
   type Person,
   type Post,
 } from "../scenario";
@@ -322,14 +323,73 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return [...scenario, ...(edits.get(p.key) ?? [])];
   }
 
-  /** The images of `p` as a version of it holds them, all of them unless it names which. */
-  function mediaOf(p: Post, id: string, version: Version): Json[] {
-    return (p.images ?? []).flatMap((image, i) => {
-      const url = drawingURL(image.drawing);
-      const media = { id: `${id}-${i}`, type: "image", description: image.description, url, preview_url: url };
-      return version.media === undefined || version.media.includes(media.id) ? [media] : [];
-    });
-  }
+  /**
+   * A post's attachments as a version of it holds them (all of them unless it names which), as the server gives them,
+   * its images then the rest: a picture's drawing served whole and as its preview, with its blurhash; a video's or a
+   * GIF's poster as its preview, with no file the fake could play; a sound with its length and no file; and a file of
+   * another kind as a link to where it would be.
+   */
+  const mediaOf = (p: Post, id: string, version: Version): Json[] =>
+    [
+      ...(p.images ?? []).map((image) => {
+        const url = drawingURL(image.drawing);
+        const { width, height } = image.drawing;
+        return {
+          type: "image",
+          state: "ready",
+          description: image.description,
+          url,
+          preview_url: url,
+          blurhash: drawingBlurhash(image.drawing),
+          meta: { width, height, focus: { x: 0, y: 0 } },
+        };
+      }),
+      ...(p.attachments ?? []).map((a): Json => {
+        const described = a.description === "" ? {} : { description: a.description };
+        if (a.kind === "audio")
+          return { type: "audio", state: "ready", ...described, meta: { duration: a.seconds, focus: { x: 0, y: 0 } } };
+        if (a.kind === "unknown")
+          return {
+            type: "unknown",
+            state: "ready",
+            ...described,
+            url: `${fakeOrigin}/media/${a.name}`,
+            meta: { focus: { x: 0, y: 0 } },
+          };
+        const { width, height } = a.poster;
+        return {
+          type: a.kind,
+          state: "ready",
+          ...described,
+          preview_url: drawingURL(a.poster),
+          blurhash: drawingBlurhash(a.poster),
+          meta: { width, height, ...(a.seconds === undefined ? {} : { duration: a.seconds }), focus: { x: 0, y: 0 } },
+        };
+      }),
+    ]
+      .map((m, i) => ({ id: `${id}-${i}`, ...m }))
+      .filter((m) => version.media === undefined || version.media.includes(m.id));
+
+  /** The card of a post's first link, as the server makes it from the page `text` links to. */
+  const cardOf = (card: LinkCard, text: string): Json => ({
+    url: /https?:\/\/\S+/.exec(text)?.[0] ?? fakeOrigin,
+    title: card.title,
+    description: card.description,
+    site_name: card.site,
+    ...(card.language === undefined ? {} : { language: card.language }),
+    ...(card.image === undefined
+      ? {}
+      : {
+          image: {
+            url: drawingURL(card.image.drawing),
+            width: card.image.drawing.width,
+            height: card.image.drawing.height,
+            blurhash: drawingBlurhash(card.image.drawing),
+            ...(card.image.description === undefined ? {} : { description: card.image.description }),
+          },
+        }),
+    ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
+  });
 
   const visible = (p: Post) =>
     !deleted.has(p.key) &&
@@ -358,7 +418,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       account: accountOf(p.author),
       content: serverHtml(now.text, fakeHost),
       spoiler_text: now.spoiler,
-      sensitive: now.spoiler !== "",
+      sensitive: now.spoiler !== "" || p.sensitive === true,
       visibility: p.visibility,
       language: p.language,
       created_at: new Date(timeOf(postStep(p.key))).toISOString(),
@@ -367,6 +427,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         ? {}
         : { in_reply_to_id: statusId.get(parent.key), in_reply_to_account_id: idOf(parent.author) }),
       media_attachments: mediaOf(p, id, now),
+      ...(p.card === undefined ? {} : { card: cardOf(p.card, now.text) }),
       mentions: mentioned(now.text).map((u) => ({ id: idOf(u), username: u, acct: u })),
       emojis: customEmojis,
       replies_count: posts.filter((x) => x.replyTo === p.key).length,

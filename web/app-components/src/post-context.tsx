@@ -48,14 +48,14 @@ export function QuoteContext({
   const shown = status.boost ?? status;
   const media = shown.media_attachments.flatMap((m) => {
     const src = m.preview_url ?? m.url;
-    return src === undefined ? [] : [{ id: m.id, src, alt: m.description ?? "" }];
+    return src === undefined ? [] : [{ id: m.id, src, alt: m.description ?? "", kind: m.type, blurhash: m.blurhash }];
   });
   return (
     <ComposerQuote removeLabel={removeLabel} onRemove={onRemove}>
       <Embed lang={known(shown.language)}>
         <AuthorLine status={shown} time />
         <PostContent html={shown.content} emojis={shown.emojis} lang={known(shown.language)} />
-        <MediaGrid items={media} size="preview" />
+        <MediaGrid items={media} size="preview" sensitive={shown.sensitive ?? false} />
       </Embed>
     </ComposerQuote>
   );

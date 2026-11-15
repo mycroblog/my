@@ -58,3 +58,43 @@ export function drawSVG(d: Drawing): string {
 
 /** The drawing as a `data:` URL of its SVG, for an `<img>`. */
 export const drawingURL = (d: Drawing) => `data:image/svg+xml,${encodeURIComponent(drawSVG(d))}`;
+
+const base83 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~";
+const digits83 = (v: number, n: number) =>
+  Array.from({ length: n }, (_, i) => base83.charAt(Math.floor(v / 83 ** (n - 1 - i)) % 83)).join("");
+const linear = (v: number) => {
+  const x = v / 255;
+  return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+};
+const srgb = (v: number) => {
+  const x = Math.min(1, Math.max(0, v));
+  return Math.round(x <= 0.0031308 ? x * 12.92 * 255 : (1.055 * x ** (1 / 2.4) - 0.055) * 255);
+};
+
+/**
+ * The drawing's blurhash (https://blurha.sh), as the server gives an attachment's: three bands from top to bottom,
+ * the gradient's top, its bottom, and the color of the front shape, in one column of components.
+ */
+export function drawingBlurhash(d: Drawing): string {
+  const bands = [d.top, d.bottom, d.shapes.at(-1)?.color ?? d.bottom].map((c) => c.map(linear));
+  const components = [0, 1, 2].map((j) =>
+    [0, 1, 2].map((k) =>
+      bands.reduce(
+        (sum, band, y) => sum + ((j === 0 ? 1 : 2) * Math.cos((Math.PI * j * (y + 0.5)) / 3) * (band[k] ?? 0)) / 3,
+        0,
+      ),
+    ),
+  );
+  const [dc = [0, 0, 0], ...ac] = components;
+  const most = Math.max(...ac.flat().map(Math.abs));
+  const quantised = Math.max(0, Math.min(82, Math.floor(most * 166 - 0.5)));
+  const max = (quantised + 1) / 166;
+  const q = (v: number) => Math.max(0, Math.min(18, Math.floor(Math.sign(v) * Math.abs(v / max) ** 0.5 * 9 + 9.5)));
+  const [r = 0, g = 0, b = 0] = dc.map(srgb);
+  return (
+    digits83(2 * 9, 1) +
+    digits83(quantised, 1) +
+    digits83((r << 16) + (g << 8) + b, 4) +
+    ac.map(([x = 0, y = 0, z = 0]) => digits83(q(x) * 19 * 19 + q(y) * 19 + q(z), 2)).join("")
+  );
+}

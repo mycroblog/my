@@ -9,17 +9,20 @@
 // from the keyboard (shown at rest), long names and handles in en and ja, for a reader without an account, whose
 // actions lead to the sign-in, with a poll: open, its vote in flight, its results, and ended, the more menu open on
 // one's own post and another's, the confirmations of delete and of delete and redraft, edited posts, and an edit
-// history. Each post answers its actions as the timeline's do, in a column of the timeline's width.
+// history; and what a post carries besides images: its link card in both sizes, without an image and with its author,
+// a video, a GIF, a sound and a file, the kinds mixed, sensitive media covered and shown, and the media viewer opened
+// from it. Each post answers its actions as the timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
-import { Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
+import { modalShown, Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
 import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
 import { breakpoint, rootPx } from "@my/design-tokens";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { userEvent, within } from "storybook/test";
 import { statusPath } from "./paths";
-import type { TranslationFailure } from "./post";
-import { posts, translatedWhole, type TimelinePost } from "./post.samples";
+import type { PostProps, TranslationFailure } from "./post";
+import { mediaPosts, posts, translatedWhole, type TimelinePost } from "./post.samples";
 import { SamplePost, type SampleOpen } from "./sample-post.samples";
 import type { PostTranslation } from "./status";
 
@@ -27,7 +30,7 @@ const rem = (px: number) => `${px / rootPx}rem`;
 const minute = 60_000;
 
 const byId = (id: string) => {
-  const post = posts.find((p) => p.id === id);
+  const post = [...posts, ...mediaPosts].find((p) => p.id === id);
   if (!post) throw new Error(`no sample post ${id}`);
   return post;
 };
@@ -242,44 +245,62 @@ function Shown({
   post,
   state,
   translationAs,
-  votingAt,
-  open,
+  ...shown
 }: {
   post: TimelinePost;
   state?: PreviewState;
   translationAs?: Translation;
   votingAt?: readonly number[];
   open?: SampleOpen | undefined;
-}) {
+} & Pick<PostProps, "cardSize">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
       <Preview state={state}>
-        <SamplePost
-          key={post.id}
-          post={post}
-          lang={lang}
-          translationAs={translationAs}
-          votingAt={votingAt}
-          open={open}
-        />
+        <SamplePost key={post.id} post={post} lang={lang} translationAs={translationAs} {...shown} />
       </Preview>
     </Column>
   );
 }
 
-/** Several sample posts one after another, as a timeline spaces them. */
-function Several({ posts: shown }: { posts: TimelinePost[] }) {
+/** Several sample posts one after another, a timeline's gap apart, in the column. */
+function Several({ posts: several, ...shown }: { posts: readonly TimelinePost[] } & Pick<PostProps, "cardSize">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
       <div style={{ display: "grid", gap: rem(28) }}>
-        {shown.map((post) => (
-          <SamplePost key={post.id} post={post} lang={lang} />
+        {several.map((post) => (
+          <SamplePost key={post.id} post={post} lang={lang} {...shown} />
         ))}
       </div>
     </Column>
   );
+}
+
+/** The sample posts of these ids, one after another. */
+function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "cardSize">) {
+  return <Several posts={ids.map(byId)} {...shown} />;
+}
+
+/**
+ * The sensitive posts: one picture, four, behind a content warning too, an image with a sound, and a link card's
+ * image.
+ */
+const sensitiveIds = ["sensitive", "sensitive-four", "sensitive-cw", "sensitive-mixed", "sensitive-card"] as const;
+
+/** Presses every Show of the story: the sensitive media and the content warnings, shown. */
+async function showAll(canvasElement: HTMLElement) {
+  // A content warning shown brings the line of its media into view: press again until none is left. The lines and the
+  // content warnings' buttons are the folded disclosures that end in Show.
+  for (let pass = 0; pass < 3; pass++) {
+    const shows = within(canvasElement).queryAllByRole("button", { expanded: false, name: /Show$|表示$/ });
+    if (shows.length === 0) return;
+    for (const show of shows) {
+      await userEvent.click(show);
+      // The pointer leaves, so that no post shows its hovered surface at rest.
+      await userEvent.unhover(show);
+    }
+  }
 }
 
 /** The reader's language, en or ja, from the toolbar's locale. */
@@ -636,3 +657,55 @@ export const PollResults: Story = {
 };
 /** Ended without the reader's vote, and the reader's own poll whose results are hidden until it ends. */
 export const PollEnded: Story = { ...fixed, render: () => <Several posts={[meetupEnded, ownHidden]} /> };
+
+/** The card of the post's first link, its image above its text (the large card, a new reader's preference). */
+export const LinkCard: Story = { ...fixed, render: () => <Posts ids={["card-large", "card-ja"]} /> };
+/** The small card: the image a square beside the text. */
+export const LinkCardSmall: Story = {
+  ...fixed,
+  render: () => <Posts ids={["card-large", "card-ja"]} cardSize="small" />,
+};
+/** A card without an image, and one whose page names its author on the fediverse, in both sizes. */
+export const LinkCardTextAndAuthor: Story = {
+  ...fixed,
+  render: () => (
+    // The two sizes a feed's gap apart, as one post follows another.
+    <div style={{ display: "grid", gap: rem(28) }}>
+      <Posts ids={["card-text", "card-author"]} />
+      <Posts ids={["card-text", "card-author"]} cardSize="small" />
+    </div>
+  ),
+};
+/** A video, its poster with its length; pressed, it plays in place. */
+export const Video: Story = { ...fixed, render: () => <Shown post={byId("video")} /> };
+/** A GIF: it loops, muted, and opens whole; still with reduced motion. */
+export const Gif: Story = { ...fixed, render: () => <Shown post={byId("gif")} /> };
+/** A sound, its description over its progress and length, and a file of a kind the client cannot show. */
+export const AudioAndFile: Story = { ...fixed, render: () => <Posts ids={["audio", "unknown"]} /> };
+/** An image, a GIF, a video and an image together. */
+export const MixedMedia: Story = { ...fixed, render: () => <Shown post={byId("mixed")} /> };
+/**
+ * Sensitive media, covered until the reader shows it, under a line naming it: one picture, four, under a content
+ * warning, an image with a sound (folded), and a card's image.
+ */
+export const Sensitive: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} /> };
+/** The same, every Show pressed: the media shown, the line ending in Hide. */
+export const SensitiveShown: Story = {
+  ...fixed,
+  render: () => <Posts ids={sensitiveIds} />,
+  play: async ({ canvasElement }) => {
+    await showAll(canvasElement);
+  },
+};
+/** The viewer opened from a post at its first picture: the post's media one at a time, whole. */
+export const ViewerFromPost: Story = {
+  ...fixed,
+  render: () => <Shown post={byId("mixed")} />,
+  play: async ({ canvasElement }) => {
+    // Found by its description, the sample's own words, in every locale.
+    const [first] = within(canvasElement).getAllByRole("button", { name: /A sea under a pale blue sky/ });
+    if (first === undefined) throw new Error("no picture opens");
+    await userEvent.click(first);
+    await modalShown();
+  },
+};

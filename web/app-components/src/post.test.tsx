@@ -569,3 +569,152 @@ test("under an RTL locale it lays out right-to-left, and the handle still reads 
   expect(html).toMatch(/^<article lang="en" dir="rtl"/);
   expect(html).toContain('<bdi dir="ltr">@lena@toot.example.eu</bdi>');
 });
+
+describe("the link card", () => {
+  const ann: PostAccount = {
+    id: "4",
+    username: "ann",
+    acct: "ann@blog.example",
+    domain: "blog.example",
+    display_name: "Ann Lee",
+    emojis: [],
+  };
+  const card: NonNullable<PostStatus["card"]> = {
+    url: "https://blog.example/posts/rye",
+    title: "Baking rye at home",
+    description: "What three weeks of starters taught me.",
+    site_name: "Field Notes",
+    image: {
+      url: "https://my.example/proxy/rye.webp",
+      width: 1200,
+      height: 600,
+      description: "A dark loaf on a board",
+      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+    },
+    author: ann,
+  };
+  const linked = (over: Partial<PostStatus> = {}) =>
+    status({ content: '<p>Read <a href="https://blog.example/posts/rye">this</a></p>', card, ...over });
+  const cardOf = (html: string) =>
+    /<a [^>]*href="https:\/\/blog.example\/posts\/rye" target="_blank"[^>]*>.*?<\/a>/.exec(html)?.[0];
+
+  test("a post with a card shows it after its text: the image through the proxy, the site, the title, and by its author", () => {
+    const html = bare({ status: linked() });
+    const shown = cardOf(html) ?? "";
+    expect(shown).toContain('<img src="https://my.example/proxy/rye.webp" alt="A dark loaf on a board"/>');
+    expect(shown).toMatch(/Field Notes.*Baking rye at home.*What three weeks of starters taught me\./);
+    expect(shown).toContain("<span>by Ann Lee</span>");
+    expect(shown).toContain("(opens in a new tab)");
+    expect(html.indexOf(shown)).toBeGreaterThan(html.indexOf("Read "));
+    expect(html.indexOf(shown)).toBeLessThan(html.indexOf('aria-label="Reply'));
+  });
+
+  test("small or large as the reader prefers, the same card", () => {
+    expect(cardOf(bare({ status: linked(), cardSize: "small" }))).toContain("Baking rye at home");
+    expect(cardOf(bare({ status: linked(), cardSize: "large" }))).toContain("Baking rye at home");
+  });
+
+  test("none when the post has media", () => {
+    const html = bare({
+      status: linked({
+        media_attachments: [{ id: "m", type: "image", preview_url: "https://m/s.webp", description: "Soup" }],
+      }),
+    });
+    expect(cardOf(html)).toBeUndefined();
+    expect(html).not.toContain("Baking rye at home");
+    expect(html).toContain('alt="Soup"');
+  });
+
+  test("none when the post quotes another", () => {
+    const quoted = status({ id: "30", account: ken, content: "<p>小さなサーバー</p>" });
+    const html = bare({ status: linked({ quote: { state: "accepted", quoted_status: quoted } }) });
+    expect(cardOf(html)).toBeUndefined();
+    expect(html).not.toContain("Baking rye at home");
+    expect(html).toContain("小さなサーバー");
+  });
+
+  test("a sensitive post covers the card's image, with its line outside the link", () => {
+    const html = bare({ status: linked({ sensitive: true }) });
+    expect(html).not.toContain("proxy/rye.webp");
+    expect(html).toMatch(
+      /Sensitive image<\/span><button [^>]*aria-expanded="false"[^>]*>.*?<span lang="en">Show<\/span>.*?<\/button><\/div><a [^>]*href="https:\/\/blog.example\/posts\/rye"/,
+    );
+  });
+
+  test("behind a content warning, the card folds with the text", () => {
+    const html = bare({ status: linked({ spoiler_text: "Food" }) });
+    expect(html).toMatch(/ hidden="">.*Baking rye at home/);
+  });
+});
+
+describe("every kind of media", () => {
+  const media: PostStatus["media_attachments"] = [
+    {
+      id: "v",
+      type: "video",
+      url: "https://m/v.webm",
+      preview_url: "https://m/v.webp",
+      description: "Waves at dusk",
+      meta: { duration: 92 },
+      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+    },
+    {
+      id: "g",
+      type: "gifv",
+      url: "https://m/g.mp4",
+      preview_url: "https://m/g.webp",
+      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+    },
+    { id: "s", type: "audio", url: "https://m/s.mp3", description: "Rain", meta: { duration: 192 } },
+    { id: "f", type: "unknown", url: "https://files.example.org/slides.key" },
+  ];
+
+  test("a video, a GIF, a sound and a file each draw as their kind, with their descriptions", () => {
+    const html = bare({ status: status({ media_attachments: media }) });
+    expect(html).toContain('aria-label="Play video: Waves at dusk"');
+    expect(html).toContain("<span>1:32</span>");
+    expect(html).toMatch(/<video src="https:\/\/m\/g.mp4"[^>]*muted=""/);
+    expect(html).toContain('aria-label="Open GIF"');
+    expect(html).toContain('aria-label="Play audio"');
+    expect(html).toContain("<span>0:00 of 3:12</span>");
+    expect(html).toMatch(/<a [^>]*href="https:\/\/files.example.org\/slides.key" target="_blank"/);
+  });
+
+  test("sensitive, the line names them all and each picture's blurhash is drawn, its file not asked for", () => {
+    const html = bare({ status: status({ sensitive: true, media_attachments: media }) });
+    expect(html).toMatch(/4 sensitive attachments<\/span><button [^>]*>.*?<span lang="en">Show</);
+    expect(html.match(/<canvas /g)).toHaveLength(2);
+    expect(html).not.toMatch(/(src|poster)="https:\/\/m\//);
+  });
+
+  test("the sensitive line reads in the reader's locale", () => {
+    const html = bare(
+      {
+        status: status({
+          sensitive: true,
+          media_attachments: [
+            { id: "a", type: "image", preview_url: "https://m/a.webp" },
+            { id: "b", type: "image", preview_url: "https://m/b.webp" },
+          ],
+        }),
+      },
+      "ja",
+    );
+    expect(html).toMatch(/センシティブな画像 2 枚<\/span><button [^>]*>.*?<span lang="ja">表示<\/span>/);
+  });
+
+  test("a content warning and the sensitive flag are separate: the warning folds the line and the covered media", () => {
+    const html = bare({
+      status: status({
+        spoiler_text: "Injury",
+        sensitive: true,
+        media_attachments: [
+          { id: "a", type: "image", preview_url: "https://m/a.webp", blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
+        ],
+      }),
+    });
+    expect(html).toMatch(/>Injury<\/div><button [^>]*aria-expanded="false"/);
+    expect(html).toMatch(/ hidden="">.*Sensitive image<\/span><button /);
+    expect(html).not.toContain("https://m/a.webp");
+  });
+});

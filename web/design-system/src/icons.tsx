@@ -29,6 +29,7 @@ import {
   IconChartBar,
   IconChecks,
   IconChevronDown,
+  IconChevronLeft,
   IconChevronRight,
   IconClock,
   IconCloudOff,
@@ -38,6 +39,7 @@ import {
   IconDots,
   IconExternalLink,
   IconEyeOff,
+  IconFile,
   IconFilePencil,
   IconFlag,
   IconHandStop,
@@ -47,11 +49,13 @@ import {
   IconHome,
   IconHomeFilled,
   IconInfoCircle,
+  IconInfoCircleFilled,
   IconKey,
   IconLanguage,
   IconLink,
   IconLock,
   IconLogin2,
+  IconMaximize,
   IconMenu2,
   IconMessageCircle,
   IconMicrophone,
@@ -60,12 +64,15 @@ import {
   IconMoodPlus,
   IconMoodSmile,
   IconMoon,
+  IconMusic,
   IconPaperclip,
   IconPaw,
   IconPencil,
   IconPencilPlus,
   IconPin,
   IconPlane,
+  IconPlayerPauseFilled,
+  IconPlayerPlayFilled,
   IconPlus,
   IconQuote,
   IconRefresh,
@@ -92,6 +99,8 @@ import {
   IconWorld,
   IconWorldFilled,
   IconX,
+  IconZoomIn,
+  IconZoomOut,
   type TablerIcon,
 } from "@tabler/icons-react";
 import { tv } from "tailwind-variants/lite";
@@ -179,7 +188,8 @@ export const icons = {
   // Places with no item in the navigation: a voice chat room, the server's announcements, and the server's own page.
   room: { off: IconMicrophone },
   announcements: { off: IconSpeakerphone },
-  about: { off: IconInfoCircle },
+  // On, while what it tells is shown (the media viewer's description).
+  about: { off: IconInfoCircle, on: IconInfoCircleFilled },
   // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
   // On, while the composer holds a content warning.
   hidden: { off: IconEyeOff, on: "tile" },
@@ -210,6 +220,16 @@ export const icons = {
   signIn: { off: IconLogin2, directional: true },
   github: { off: IconBrandGithub },
   discord: { off: IconBrandDiscord },
+  // Media: playing a video or a sound, pausing it, a file of a kind the client cannot show, a sound, opening a
+  // picture whole, zooming in it, and moving to the previous one in a row of them (`onward` moves to the next).
+  play: { off: IconPlayerPlayFilled },
+  pause: { off: IconPlayerPauseFilled },
+  file: { off: IconFile },
+  audio: { off: IconMusic },
+  whole: { off: IconMaximize },
+  zoomIn: { off: IconZoomIn },
+  zoomOut: { off: IconZoomOut },
+  previous: { off: IconChevronLeft, directional: true },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;

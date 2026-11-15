@@ -4,7 +4,8 @@
 // @my/design-system and the one content renderer: the context line (who boosted it, or whom it replies to), the author
 // header (the avatar, the name with the visibility and the time at the end, and "edited" after the time of an edited
 // post, which opens its edit history, over the handle), the text, or a content warning over it, the poll (open to the
-// reader's vote, else its results), the images, the quoted post as a reduced preview, the emoji reactions, the
+// reader's vote, else its results), the media (covered while sensitive; a picture opens the media viewer, which the
+// post holds open), or else the card of its first link, the quoted post as a reduced preview, the emoji reactions, the
 // translate line, and the actions (reply, boost with its menu of boost and quote, favourite, react, and more at the
 // end, whose menu holds edit, delete and redraft on one's own post), whose keys
 // (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
@@ -29,11 +30,14 @@ import {
   EmojiPickerSheet,
   Entry,
   IconButton,
+  LinkCard,
   LivePart,
   MediaGrid,
+  MediaViewer,
   MenuButton,
   MenuGroup,
   MenuItem,
+  ModalPresence,
   PollBox,
   PollChoices,
   PollFoot,
@@ -48,7 +52,7 @@ import {
   type IconName,
   type MediaItem,
 } from "@my/design-system";
-import { Fragment, useId, useState, type ReactNode } from "react";
+import { Component, Fragment, useId, useState, type ReactNode } from "react";
 import { AccountName as Name, handleOf, nameOf } from "./account";
 import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
@@ -116,6 +120,8 @@ export type PostProps = {
   voting?: readonly number[] | undefined;
   /** The emoji picker the react action opens; without one, react is `onAction`'s. */
   picker?: PostPicker | undefined;
+  /** How its link card shows (the reader's preference): the image above the text, or a square beside it. */
+  cardSize?: "large" | "small" | undefined;
 };
 
 /**
@@ -224,14 +230,81 @@ function Context({ status, shown, t, lang }: { status: PostStatus; shown: PostSt
   );
 }
 
-/** The images: each one's preview rendition, with its description (translated, while the post is) as its text. */
+/**
+ * The media: each one's preview rendition (a video's or a sound's poster), the file itself, its kind and its length,
+ * with its description (translated, while the post is) as its text. An image without either rendition is left out.
+ */
 function mediaItems(media: readonly PostMedia[], translation: PostTranslation | undefined): MediaItem[] {
   return media.flatMap((m) => {
-    const src = m.preview_url ?? m.url;
-    if (src === undefined) return [];
+    const src = m.preview_url ?? (m.type === "image" ? m.url : undefined);
+    if (src === undefined && m.type === "image") return [];
     const alt = translation?.media_attachments.find((a) => a.id === m.id)?.description ?? m.description ?? "";
-    return [{ id: m.id, src, alt }];
+    return [
+      { id: m.id, src: src ?? "", alt, kind: m.type, href: m.url, duration: m.meta?.duration, blurhash: m.blurhash },
+    ];
   });
+}
+
+const isPicture = (m: MediaItem) => m.kind === "image" || m.kind === "gifv" || m.kind === "video";
+
+/** A part of a post that may fail on its own: an error while it draws leaves nothing in its place. */
+class Contained extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/**
+ * The link card, when the post has neither media nor a quote (ADR-0062 §1); its author on an inline avatar. A card
+ * that fails to draw (a page's data the card cannot take) leaves the post without it, never breaks the post (§8).
+ */
+function Card({ status, size }: { status: PostStatus; size: "large" | "small" }) {
+  const card = status.card;
+  if (card === undefined || status.media_attachments.length > 0 || status.quote?.quoted_status !== undefined)
+    return null;
+  const author = card.author;
+  const image = card.image;
+  return (
+    <LinkCard
+      href={card.url}
+      title={card.title}
+      description={card.description}
+      site={card.site_name}
+      size={size}
+      sensitive={status.sensitive ?? false}
+      lang={card.language}
+      image={
+        image === undefined
+          ? undefined
+          : {
+              src: image.url,
+              width: image.width,
+              height: image.height,
+              alt: image.description,
+              blurhash: image.blurhash,
+            }
+      }
+      author={
+        author === undefined
+          ? undefined
+          : {
+              name: nameOf(author),
+              shown: (
+                <>
+                  <Avatar name={nameOf(author)} src={author.avatar?.small.url} size="inline" decorative />
+                  <bdi>
+                    <Name account={author} />
+                  </bdi>
+                </>
+              ),
+            }
+      }
+    />
+  );
 }
 
 /** The quoted post, one level deep: its author on one line, its text, and its images as small previews. */
@@ -250,7 +323,11 @@ function Quote({ status }: { status: PostStatus }) {
         end={<Stamp date={status.created_at} />}
       />
       <PostContent html={status.content} emojis={status.emojis} lang={known(status.language)} />
-      <MediaGrid items={mediaItems(status.media_attachments, undefined)} size="preview" />
+      <MediaGrid
+        items={mediaItems(status.media_attachments, undefined)}
+        size="preview"
+        sensitive={status.sensitive ?? false}
+      />
     </Embed>
   );
 }
@@ -762,6 +839,7 @@ export function Post({
   after,
   voting,
   picker,
+  cardSize = "large",
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -791,6 +869,10 @@ export function Post({
   // folded or open, so that the warning can be translated before it is opened; any other, under its text.
   const translates =
     translation !== undefined || translating !== false || translationFailure !== undefined || translatable;
+  // The media viewer, open at one of the post's pictures; the modal gives the focus back to what opened it.
+  const [viewing, setViewing] = useState<number | null>(null);
+  const media = mediaItems(shown.media_attachments, translation);
+  const pictures = media.filter(isPicture);
   const content = (
     <>
       <Stack gap="line">
@@ -798,9 +880,32 @@ export function Post({
         {!cw && translateLine}
       </Stack>
       <Poll status={shown} translation={translation} own={own} voting={voting} t={t} lang={lang} act={act} />
-      <MediaGrid items={mediaItems(shown.media_attachments, translation)} />
+      <MediaGrid
+        items={media}
+        sensitive={shown.sensitive ?? false}
+        onOpen={(index) => {
+          setViewing(index);
+        }}
+      />
+      <Contained key={shown.card?.url}>
+        <Card status={shown} size={cardSize} />
+      </Contained>
       {quoted !== undefined && <Quote status={quoted} />}
     </>
+  );
+  const viewer = (
+    <ModalPresence>
+      {viewing !== null && (
+        <MediaViewer
+          items={pictures}
+          index={viewing}
+          onIndexChange={setViewing}
+          onClose={() => {
+            setViewing(null);
+          }}
+        />
+      )}
+    </ModalPresence>
   );
   return (
     <Entry lang={known(shown.language)} labelledBy={name}>
@@ -859,6 +964,7 @@ export function Post({
         picker={signIn === undefined ? picker : undefined}
       />
       {after}
+      {viewer}
     </Entry>
   );
 }

@@ -125,7 +125,9 @@ export {
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { catalogReader, type Strings } from "./locale";
-export { MediaGrid, type MediaGridProps, type MediaItem } from "./media";
+export { LinkCard, type LinkCardProps } from "./card";
+export { AudioRow, FileLink, MediaGrid, playTime, type MediaGridProps, type MediaItem, type MediaKind } from "./media";
+export { MediaViewer, type MediaViewerProps } from "./viewer";
 export {
   AccountRow,
   BackButton,

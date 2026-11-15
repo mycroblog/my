@@ -39,6 +39,31 @@ export type Person = {
 /** An image attached to a post: its file name, alt text, and drawing. */
 export type Image = { name: string; description: string; drawing: Drawing };
 
+/**
+ * An attachment other than an image: a video (its poster drawn), a GIF (a short silent loop, its first frame drawn),
+ * a sound, or a file of a kind no client shows, with its alt text (empty for none) and a video's or a sound's length
+ * in seconds. Only the fake API answers them: the server takes only real video and sound files, which the repository
+ * does not hold, so the seed leaves out a post that has them.
+ */
+export type Attachment =
+  | { kind: "video" | "gifv"; name: string; description: string; poster: Drawing; seconds?: number }
+  | { kind: "audio"; name: string; description: string; seconds: number }
+  | { kind: "unknown"; name: string; description: string };
+
+/**
+ * The card of a post's first link, as the server would make it from the page. Only the fake API answers it: the
+ * server fetches a page itself, and the scenario's pages are on hosts that do not exist.
+ */
+export type LinkCard = {
+  title: string;
+  description: string;
+  site: string;
+  language?: string;
+  image?: { description?: string; drawing: Drawing };
+  /** The username of the person the page names as its author, as their server confirms them. */
+  author?: string;
+};
+
 /** Who may see a post (the API's Visibility). */
 export type Visibility = "public" | "local" | "unlisted" | "private" | "direct";
 
@@ -55,6 +80,12 @@ export type Post = {
   /** The content warning. */
   spoiler?: string;
   images?: readonly Image[];
+  /** Its attachments other than images (only the fake's), after its images. */
+  attachments?: readonly Attachment[];
+  /** Its media are sensitive: covered until the reader shows them. */
+  sensitive?: boolean;
+  /** The card of its first link (only the fake's). */
+  card?: LinkCard;
   /** Pinned to its author's profile. */
   pinned?: boolean;
   /** Its poll, which ends `days` days after the seed posts it. */
@@ -428,6 +459,77 @@ export const posts: readonly Post[] = [
     language: "en",
     visibility: "public",
     text: "Translating a short novel this month. The hardest part is always the jokes. https://layla.notes.test/translating-jokes",
+    card: {
+      title: "Why jokes are the hardest thing to translate",
+      description: "A pun lives in one language. Notes from a month of carrying a short novel's humour into English.",
+      site: "Layla's notes",
+      language: "en",
+      image: { description: "Two speech bubbles over a calm sea", drawing: sea },
+      author: "layla",
+    },
+  },
+  {
+    key: "yuki-tide",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    text: "夕方の潮が満ちてくるところ。九十秒だけ",
+    attachments: [
+      {
+        kind: "video",
+        name: "tide.mp4",
+        description: "夕暮れの浜に波が寄せる。空が橙から紫に変わっていく",
+        poster: dawn,
+        seconds: 92,
+      },
+    ],
+  },
+  {
+    key: "sam-gif",
+    author: "sam",
+    language: "en",
+    visibility: "public",
+    text: "Me when the loaf finally rises",
+    attachments: [{ kind: "gifv", name: "rise.mp4", description: "", poster: loaf }],
+  },
+  {
+    key: "marco-rain",
+    author: "marco",
+    language: "en",
+    visibility: "public",
+    text: "Rain on the tin roof of the cabin last night. Headphones recommended.",
+    attachments: [
+      { kind: "audio", name: "rain.mp3", description: "Field recording: steady rain on a tin roof", seconds: 194 },
+    ],
+  },
+  {
+    key: "hana-slides",
+    author: "hana",
+    language: "ja",
+    visibility: "public",
+    text: "先週の勉強会のスライドです",
+    attachments: [{ kind: "unknown", name: "slides.key", description: "" }],
+  },
+  {
+    key: "yuki-walk",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    text: "週末の散歩、三枚。朝の山、昼の海、帰りに買ったパン",
+    images: [
+      { name: "walk-ridge.png", description: "朝の山並み。尾根が三つ重なっている", drawing: dawn },
+      { name: "walk-sea.png", description: "昼の海。空は淡い青", drawing: sea },
+      { name: "walk-loaf.png", description: "丸いパンを上から見たところ", drawing: loaf },
+    ],
+  },
+  {
+    key: "yuki-sensitive",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    text: "転んで擦りむいた膝。苦手な人は開かないでください",
+    sensitive: true,
+    images: [{ name: "knee.png", description: "擦りむいた膝の傷", drawing: dawn }],
   },
   {
     key: "sam-spoiler",

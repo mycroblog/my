@@ -10,7 +10,7 @@ import { sampleCustomEmoji } from "@my/design-system/samples";
 import { useState, type ReactNode } from "react";
 import { DeleteConfirm } from "./delete-confirm";
 import { EditHistory } from "./edit-history";
-import { Post, type PostAction, type PostPicker, type TranslationFailure } from "./post";
+import { Post, type PostAction, type PostPicker, type PostProps, type TranslationFailure } from "./post";
 import { editsOf, statusOf, translationOf, type TimelinePost } from "./post.samples";
 import type { PostReaction, PostStatus, PostTranslation } from "./status";
 
@@ -115,6 +115,7 @@ export function SamplePost({
   open: initial,
   picker,
   details,
+  ...shown
 }: {
   post: TimelinePost;
   lang: "en" | "ja";
@@ -133,7 +134,7 @@ export function SamplePost({
   picker?: PostPicker | undefined;
   /** The focused post's own lines (Post's `details`), with the stamp left out of its author's line. */
   details?: ReactNode;
-}) {
+} & Pick<PostProps, "cardSize">) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
   const translation = answer && translationAs ? translationAs(answer) : answer;
@@ -193,6 +194,7 @@ export function SamplePost({
         picker={picker}
         details={details}
         stamp={details === undefined}
+        {...shown}
       />
       <ModalPresence>
         {open === "history" && <EditHistory key="history" edits={editsOf(post)} postLang={post.lang} onClose={close} />}

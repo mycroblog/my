@@ -92,7 +92,24 @@ type Purpose = "attachment" | "avatar" | "header";
  */
 export async function uploadDrawing(api: Api, name: string, drawing: Drawing, description: string, purpose: Purpose) {
   const file = new Blob([new Uint8Array(drawPNG(drawing))], { type: "image/png" });
-  const media = await uploadMedia(api, { file, fileName: name, purpose, description });
+  return uploadFile(api, name, file, description, purpose);
+}
+
+/**
+ * Uploads `file` (an image, a video or a sound, its type that of the Blob) with `api`, with `poster` as a video's or a
+ * sound's picture, and waits until the server has processed it: the E2E tests' videos and sounds (fresh.ts).
+ */
+export async function uploadFile(
+  api: Api,
+  name: string,
+  file: Blob,
+  description: string,
+  purpose: Purpose,
+  poster?: Drawing,
+) {
+  const thumbnail =
+    poster === undefined ? {} : { thumbnail: new Blob([new Uint8Array(drawPNG(poster))], { type: "image/png" }) };
+  const media = await uploadMedia(api, { file, fileName: name, purpose, description, ...thumbnail });
   return until(`the processing of ${name}`, async () => {
     const { data } = await api.GET("/media/{id}", { params: { path: { id: media.id } } });
     const current = body(data, `the media ${name}`);
@@ -316,6 +333,8 @@ class Seeder {
 
   async writePosts() {
     for (const post of posts) {
+      // The server takes only real video and sound files, which the scenario does not hold (scenario.ts).
+      if (post.attachments !== undefined) continue;
       const api = await this.api(post.author);
       const first = post.images?.[0];
       const found = first === undefined ? undefined : await this.findByImage(post.author, first.description);
@@ -335,6 +354,7 @@ class Seeder {
             visibility: post.visibility,
             language: post.language,
             ...(post.spoiler === undefined ? {} : { spoiler_text: post.spoiler }),
+            ...(post.sensitive === true ? { sensitive: true } : {}),
             ...(post.replyTo === undefined ? {} : { in_reply_to_id: this.post(post.replyTo).id }),
             ...(post.quote === undefined ? {} : { quoted_status_id: this.post(post.quote).id }),
             ...(media.length === 0 ? {} : { media }),

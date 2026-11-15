@@ -13,6 +13,7 @@ export { Consent } from "./consent";
 export { EmojiPicker } from "./emoji-picker";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Landing, type LandingPlace } from "./landing";
+export { MediaViewer } from "./media";
 export { Notifications } from "./notifications";
 export { Profile } from "./profile";
 export { Reactors } from "./reactors";

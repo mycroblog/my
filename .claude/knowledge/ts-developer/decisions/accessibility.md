@@ -1,0 +1,7 @@
+# ts-developer: decisions, accessibility
+
+One line each: `- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N`.
+
+- A button whose name says what it does now (Play audio, then Pause audio) has no pressed state, and a toggle with a pressed state keeps one name — both at once read as "Pause audio, pressed", which contradicts itself — the orchestrator's decision on #3081 — 2026-11-15 — held 0 / missed 0
+- A text shown on screen and also given as a name is read once: the picture under a visible caption takes `alt=""`, a figure written for the eye ("0:07 / 3:12") is hidden and a sentence of the catalog is read in its place ("0:07 of 3:12"), and a view that changes what it shows announces the change in a polite live region, empty until the first change — a screen reader that hears a thing twice, or not at all, loses its place — the orchestrator's decision on #3081 — 2026-11-15 — held 0 / missed 0
+- Media the reader has not chosen to see loads nothing (no image, no poster): its blurhash is drawn in its place — the reader's privacy and bandwidth — the orchestrator's decision on #3081 — 2026-11-15 — held 0 / missed 0

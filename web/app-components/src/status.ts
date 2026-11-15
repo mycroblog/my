@@ -33,6 +33,27 @@ export type PostMedia = {
   description?: string | undefined;
   url?: string | undefined;
   preview_url?: string | undefined;
+  /** Its size and, for a video or a sound, its length in seconds. */
+  meta?: { width?: number | undefined; height?: number | undefined; duration?: number | undefined } | undefined;
+  /** The blurhash of its picture, drawn in its place while it is sensitive and covered. */
+  blurhash?: string | undefined;
+};
+
+/** The card of the first link in a status (the API's LinkCard, ADR-0062 §8). */
+type PostCard = {
+  url: string;
+  title: string;
+  /** Empty when the page has none. */
+  description: string;
+  /** The site's name, or the host of `url`. */
+  site_name: string;
+  language?: string | undefined;
+  /** The image through the media proxy, with the size of the original and its own description. */
+  image?:
+    | { url: string; width: number; height: number; blurhash?: string | undefined; description?: string | undefined }
+    | undefined;
+  /** The page's author, as their server confirms them. */
+  author?: PostAccount | undefined;
 };
 
 /** The reactions to a post with one emoji (the API's StatusReaction). */
@@ -80,6 +101,10 @@ export type PostStatus = {
   content: string;
   /** The content warning; empty when there is none. */
   spoiler_text: string;
+  /** The media are sensitive: covered until the reader shows them. */
+  sensitive?: boolean | undefined;
+  /** The card of its first link; none with media or a quote. */
+  card?: PostCard | undefined;
   visibility: PostVisibility;
   /** The BCP 47 tag of the text's language; `und` when it is unknown. */
   language: string;
