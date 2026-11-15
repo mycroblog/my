@@ -151,6 +151,12 @@ export const transition = {
 export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
 
 /**
+ * The words a version of a post added in its edit history: the share of the text's color in the tint behind them, a
+ * neutral grey in both schemes, apart from the warm surfaces and from the coral of links.
+ */
+export const diff = { addedShare: 0.14 } as const;
+
+/**
  * An icon's size where it sits, in rem: in an action of a timeline, beside a caption, or in the app's navigation. An
  * on state the icon set cannot draw by shape is the glyph knocked out of a solid tile: the tile's corner radius and the
  * glyph's size within it, as shares of the tile.
@@ -233,17 +239,54 @@ export const feed = { gap: 1.75, scrollMargin: 0.75 } as const;
 export const embed = { padding: 0.75, gap: 0.375 } as const;
 
 /**
- * Images: in a grid at the full width, the gap between them, the height as a share of the width (16:9) and the most
+ * Media: in a grid at the full width, the gap between them, the height as a share of the width (16:9) and the most
  * it may reach in rem, so that the next entry shows on the same screen; as small previews, their width and height in
- * rem.
+ * rem. Over a picture, a mark (ALT, GIF, a video's length) sits `badgeInset` rem from its corner on a backing of black
+ * at `badgeShare`, in white at any scheme, and a video's play disc is `play` rem wide. A link card's square image, in
+ * its small size, is `cardThumb` rem wide, and its large image at most `cardMaxHeight` rem tall.
  */
-export const media = { gap: 0.25, ratio: 0.5625, maxHeight: 20, previewWidth: 6, previewHeight: 4.5 } as const;
+export const media = {
+  gap: 0.25,
+  ratio: 0.5625,
+  maxHeight: 20,
+  previewWidth: 6,
+  previewHeight: 4.5,
+  badgeInset: 0.375,
+  badgeShare: 0.6,
+  play: 3,
+  cardThumb: 5.5,
+  cardMaxHeight: 16,
+} as const;
+
+/**
+ * The media viewer: one picture or video whole over the page, always in the dark scheme, its backing black at
+ * `scrim`; its bar's height and the space it keeps around the picture, in rem; the most a picture zooms to, and the
+ * step of a wheel's or a key's zoom.
+ */
+export const viewer = { scrim: 0.92, bar: 3.5, inset: 0.75, maxZoom: 4, zoomStep: 0.5 } as const;
 
 /**
  * A chip (an emoji reaction), in rem: its height, its inline padding, the gap between its glyph and its count, and
  * the space between chips; and its glyph's size, in em of its count.
  */
 export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.375, glyph: 1.25 } as const;
+
+/**
+ * The emoji picker, in rem: a cell of its grid, and on a touch screen; the font size of an emoji in a cell; a button of
+ * its row of categories; the width of its popover and the most height of its grid there; the height of its sheet on a
+ * phone; the space between its parts, and between a heading of its grid and the cells under it.
+ */
+export const emojiPicker = {
+  cell: 2.5,
+  cellCoarse: 2.75,
+  glyph: 1.5,
+  tab: 2,
+  width: 22,
+  height: 16,
+  sheet: 36,
+  gap: 0.5,
+  headingGap: 0.25,
+} as const;
 
 /**
  * A dialog over the page (the keyboard shortcuts), in rem: its padding, the space between its parts and between the
@@ -332,7 +375,9 @@ export const formPage = {
  * lines; a step of a reply's indent, and the width of the column from which replies indent; the room between a profile's avatar and its banner's edge or its actions; the
  * ring of the page's surface around the avatar and its inset; the space between a profile's parts, between the names
  * on its lines (and inside a badge), between its counts, and between its fields; the size of the unread mark; and the
- * space of the row of the requests, between its parts and inside it; and the air left past an entry's focus ring.
+ * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
+ * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
+ * ring of the page's surface that cuts it out of that one.
  */
 export const screen = {
   tabGap: 0.25,
@@ -353,6 +398,9 @@ export const screen = {
   rowBlock: 0.5,
   rowInline: 0.75,
   air: 0.25,
+  facesLead: 3.5,
+  faceOverlap: 0.5,
+  faceCut: 0.125,
 } as const;
 
 /**
@@ -438,7 +486,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -476,6 +524,7 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--spinner-size", `${spinner.size}em`],
   ["--spinner-stroke", `${spinner.stroke}em`],
   ["--spinner-track-share", percent(spinner.trackShare)],
+  ["--diff-added-share", percent(diff.addedShare)],
   ["--icon-action", `${icon.action}rem`],
   ["--icon-caption", `${icon.caption}rem`],
   ["--icon-navigation", `${icon.navigation}rem`],
@@ -528,11 +577,23 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--media-max-height", `${media.maxHeight}rem`],
   ["--media-preview-width", `${media.previewWidth}rem`],
   ["--media-preview-height", `${media.previewHeight}rem`],
+  ["--media-badge-inset", `${media.badgeInset}rem`],
+  ["--media-badge-backing", `rgb(0 0 0 / ${percent(media.badgeShare)})`],
+  ["--media-play", `${media.play}rem`],
+  ["--media-card-thumb", `${media.cardThumb}rem`],
+  ["--media-card-max-height", `${media.cardMaxHeight}rem`],
+  ["--viewer-scrim", `rgb(0 0 0 / ${percent(viewer.scrim)})`],
+  ["--viewer-bar", `${viewer.bar}rem`],
+  ["--viewer-inset", `${viewer.inset}rem`],
   ["--chip-height", `${chip.height}rem`],
   ["--chip-padding-inline", `${chip.paddingInline}rem`],
   ["--chip-gap", `${chip.gap}rem`],
   ["--chip-spacing", `${chip.spacing}rem`],
   ["--chip-glyph", `${chip.glyph}em`],
+  ...Object.entries(emojiPicker).map(([name, value]): [string, string] => [
+    `--emoji-picker-${kebab(name)}`,
+    `${value}rem`,
+  ]),
   ["--dialog-padding", `${dialog.padding}rem`],
   ["--dialog-gap", `${dialog.gap}rem`],
   ["--dialog-row-gap", `${dialog.rowGap}rem`],

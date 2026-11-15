@@ -10,7 +10,7 @@
 // floats over the tab bar on the timelines and the profiles alone, and signing in, with its label, on every screen. The
 // server's notices stand at the top of the main column, the update's toast in the dock; the column beside the main one
 // holds what is around the reader. Where the reader is comes from the router; the frame lays the regions out by the
-// viewport.
+// viewport, and the emoji picker of a post and of the composer opens as a sheet on a phone's (viewport.ts).
 
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
@@ -36,6 +36,7 @@ import { Around, ServerFooter } from "./around";
 import { useCompose } from "./compose";
 import { ServerBanners, UpdateToast } from "./notices";
 import { aroundPlacesFor, composesAt, placesFor, type Place } from "./places";
+import { useNarrowViewport } from "./viewport";
 
 /** A place whose badge counts the reader's unread notifications. */
 function NotificationsPlace({ place, current }: { place: Place; current: boolean }) {
@@ -143,6 +144,7 @@ export function Shell({
   const rights = useRights(signedIn);
   const call = useCall();
   const { target, open, close } = useCompose();
+  const narrow = useNarrowViewport();
   const openCompose = () => {
     open({ kind: "new" });
   };
@@ -180,7 +182,10 @@ export function Shell({
       </FrameSide>
       <FrameMain>
         <ServerBanners instance={instance} />
-        {signedIn ? <PostActions onCompose={open}>{children}</PostActions> : children}
+        {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
+        <PostActions onCompose={signedIn ? open : undefined} sheet={narrow}>
+          {children}
+        </PostActions>
       </FrameMain>
       <Around signedIn={signedIn} pathname={pathname} instance={instance} />
       <FrameDock
@@ -213,7 +218,7 @@ export function Shell({
         }
         toasts={<UpdateToast inCall={call !== null} />}
       />
-      {signedIn && <ComposeLayer target={target} onOpen={open} onClose={close} phone="screen" />}
+      {signedIn && <ComposeLayer target={target} onOpen={open} onClose={close} phone="screen" pickerSheet={narrow} />}
     </Frame>
   );
 }

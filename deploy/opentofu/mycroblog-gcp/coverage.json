@@ -86,6 +86,7 @@
     "mail_ses_*": "Amazon SES, on AWS",
     "stream_sns_*": "Amazon SNS, on AWS",
     "search_opensearch_aws_*": "signing needs AWS credentials, which Cloud Run does not have",
-    "translator_aws_region": "Amazon Translate needs AWS credentials, which Cloud Run does not have"
+    "translator_aws_region": "Amazon Translate needs AWS credentials, which Cloud Run does not have",
+    "translator_fake": "only test builds have it, and the images are not test builds"
   }
 }

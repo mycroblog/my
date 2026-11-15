@@ -68,7 +68,7 @@ la montrent à ces abonnés comme une publication réservée aux abonnés.
 - Les comptes de votre serveur peuvent booster une publication « Ce serveur », et le boost n’est affiché que sur ce serveur.
 - Une réponse à une publication « Ce serveur » commence elle aussi en « Ce serveur » ; vous pouvez la modifier.
 
-<!-- source: other-things-to-know d1f569ac2d1d -->
+<!-- source: other-things-to-know 59d77fd8017f -->
 ### À savoir aussi
 
 - Vous ne pouvez pas changer la visibilité d’une publication après l’avoir publiée. Lorsque vous modifiez une publication, la visibilité et la publication à laquelle elle répond restent inchangées.
@@ -78,27 +78,29 @@ la montrent à ces abonnés comme une publication réservée aux abonnés.
 - L’auteur peut aussi permettre à certaines personnes de répondre ou de booster seulement une fois qu’il l’approuve. Une telle réponse ou un tel boost attend : vous êtes notifié (« … a demandé à répondre à votre publication »), et il reste en dehors de votre publication jusqu’à ce que vous l’approuviez. Une réponse en attente venant d’un autre serveur ne figure pas dans la conversation sous votre publication ni dans son nombre de réponses ; elle apparaît toujours sur le profil de son auteur et sur sa propre page. Un boost en attente n’est pas compté. L’approuver l’ajoute à votre publication ; le refuser le laisse en dehors, et l’autre serveur en est informé dans les deux cas.
 - Une réponse ou un boost venant d’un autre serveur qui sort entièrement de votre choix est tenu à l’écart de votre publication de la même façon, et ne vous notifie de rien.
 - Lorsque vous répondez à une publication dont l’auteur approuve les réponses ou les boosts à la main, ou que vous la boostez, la vôtre attend cette approbation. D’ici là, vous seul voyez votre réponse, sous la publication et sur sa propre page, marquée comme en attente ; les autres n’en voient rien, et rien n’est envoyé aux autres serveurs. Votre boost n’est pas effectué avant d’être approuvé. Vous êtes notifié lorsque l’auteur l’approuve ou le refuse (« … a approuvé votre réponse, boost ou citation »). Supprimer une réponse en attente, ou annuler un boost en attente, retire la demande.
-- Vous pouvez épingler jusqu’à cinq de vos publications à votre profil avec « Épingler au profil ». Une publication « Personnes mentionnées » ne peut pas être épinglée.
 
-<!-- source: who-can-reply-boost-and-quote c9ea034f7416 -->
+<!-- source: who-can-reply-boost-and-quote e207d9971532 -->
 ## Qui peut répondre, booster et citer
 
 Le bouton « Qui peut répondre, booster et citer » parmi les outils du formulaire ouvre les choix pour cette publication. Pour les réponses, les boosts et les citations, choisissez séparément qui peut le faire immédiatement : « Tout le monde », « Vos abonnés et les personnes que vous mentionnez », « Les personnes que vous mentionnez » ou « Vous seul ». Sous chacun, « Les autres peuvent répondre avec votre approbation » (et de même pour les boosts et les citations) permet à tous les autres de demander plutôt que d’être refusés. Dès qu’un choix admet moins que tout le monde, le formulaire en montre le résultat au-dessus de ses outils, par exemple « Réponses : tout le monde. Boosts : vous seul. Citations : tout le monde. », avant que vous publiiez.
 
 - Les personnes qu’une publication mentionne peuvent toujours y répondre. Une publication « Abonnés » ne peut être boostée et citée que par vous, et une publication « Personnes mentionnées » par personne, quel que soit votre choix.
 - Les valeurs par défaut des nouvelles publications se trouvent sous « Qui peut répondre à vos nouvelles publications, les booster et les citer » dans « Affichage, publication et fils » dans les paramètres.
-- Pour les modifier pour une publication déjà envoyée, choisissez « Changer qui peut répondre, booster et citer » dans son menu « Plus d’actions ». Chaque choix est enregistré immédiatement. Les réponses, boosts et citations que vous aviez approuvés restent, et les demandes que le nouveau choix admet sont approuvées.
 - Les demandes qui vous attendent sont listées sous « Demandes d’approbation » dans les paramètres, à côté de « Demandes d’abonnement » ; la notification de chacune y renvoie avec « Examiner les demandes ». « Approuver » ajoute la réponse, le boost ou la citation à votre publication, et la conversation en dessous affiche immédiatement une réponse approuvée ; « Refuser » la laisse en dehors.
 - Sur la publication de quelqu’un d’autre, « Répondre » n’est pas affiché et « Booster » ne peut pas être activé lorsque son auteur ne vous le permet pas. Lorsque l’auteur les approuve à la main, le formulaire l’indique avant que vous répondiez, et après que vous avez boosté, la publication indique « Votre boost attend l’approbation de l’auteur. »
 
-<!-- source: after-posting dc553fa0ead9 -->
+<!-- source: after-posting 8668eb1a5211 -->
 ## Après la publication
 
-Sous une publication, vous trouvez « Répondre », « Booster », « Citer », « Favori » et « Marque-page ». Le menu « Plus d’actions » contient « Copier le lien » et, pour vos propres publications, « Modifier », « Épingler au profil » et « Supprimer ». Une publication modifiée affiche « Modifiée », et ses versions précédentes se trouvent sur sa page « Historique des modifications ». « Supprimer » retire la publication pour tout le monde, avec ses boosts et ses favoris.
+Sous une publication, vous trouvez « Répondre », « Booster », « Citer », « Favori », « Réagir » et « Plus ». « Plus » contient « Copier le lien », « Ouvrir la page d’origine » (pour une publication d’un autre serveur), « Partager » et « Marque-page » ; vos marque-pages sont sur la page « Marque-pages », et vous seul les voyez. Sur votre propre publication, il contient aussi « Modifier » (pas pour une publication avec un sondage), « Supprimer et rédiger à nouveau… » et « Supprimer… ». Les deux suppressions demandent d’abord confirmation. « Supprimer… » retire la publication pour tout le monde, avec ses boosts et ses favoris ; « Supprimer et rédiger à nouveau… » fait de même et ouvre le formulaire avec son texte, ses images et son sondage comme nouvelle publication.
 
-Pour la publication d’une autre personne, le même menu propose de suivre son auteur, de le mettre en sourdine, de le bloquer ou de le signaler, ainsi que « Message direct ». Vos marque-pages sont listés sur la page « Marque-pages » ; vous seul les voyez.
+Une publication modifiée affiche « · modifiée » après son heure ; choisissez-le pour ouvrir « Historique des modifications », la version la plus récente en premier, avec les changements signalés.
 
-Lorsque le serveur propose la traduction, ou que votre navigateur peut traduire, les publications dans d’autres langues ont « Traduire » parmi leurs actions, et dans le menu « Plus d’actions », qui le contient lorsque la publication est trop étroite pour un bouton de plus. Pendant qu’une publication affiche sa traduction, une ligne sous le texte indique de quelle langue elle a été traduite et par qui, avec « Afficher l’original » pour revenir en arrière. Si le serveur envoie le texte des publications à un service de traduction, le sélecteur de visibilité vous indique pour quels choix.
+Un sondage accepte un vote, ou plusieurs lorsque son auteur le permet : faites votre choix, puis « Voter ». Les résultats s’affichent une fois que vous avez voté ou que le sondage est terminé, et à son auteur à tout moment. « Réagir » ouvre un sélecteur d’émojis (recherche, catégories, teinte de peau et émojis personnalisés de ce serveur) ; chaque personne donne à une publication un favori ou une réaction. Sur la page propre de la publication, un émoji liste les personnes qui ont réagi avec lui. Le formulaire a aussi un bouton « Ajouter un émoji ».
+
+Une publication dans une autre langue que la vôtre a « Traduire » lorsque le serveur dispose d’un service de traduction ou que votre navigateur peut traduire ; « Afficher l’original » permet de revenir en arrière. Derrière un avertissement de contenu, la ligne se trouve dans le bandeau de l’avertissement. Si le serveur envoie le texte des publications à un service de traduction, le sélecteur de visibilité vous indique pour quels choix.
+
+Les images, les GIF, les vidéos et les fichiers audio s’affichent dans la publication. Choisissez une image pour ouvrir la visionneuse : faites glisser ou utilisez les flèches, zoomez et lisez sa description. Un média marqué comme sensible reste masqué sous une ligne telle que « Image sensible », jusqu’à ce que vous choisissiez « Afficher ». Un lien dans une publication s’affiche sous forme de carte.
 
 <!-- source: writing-an-article 0dfa0a80bb8e -->
 ## Écrire un article

@@ -55,20 +55,60 @@
     "defaultMessage": "翻訳する",
     "description": "The action under a post in another language that shows it translated into the reader's language."
   },
+  "post.translating": {
+    "defaultMessage": "翻訳しています…",
+    "description": "The line under a post, heard by assistive technology, while its translation is on its way."
+  },
+  "post.translation_downloading": {
+    "defaultMessage": "ブラウザの翻訳モデルをダウンロードしています… {percent}",
+    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads its translation model before translating the post; percent is how much has come, such as 40%."
+  },
+  "post.translation_limit": {
+    "defaultMessage": "このサーバーの今月の翻訳の上限に達しました。",
+    "description": "The line under a post when this server refused to translate it because the reader or the whole server used up this month's characters; Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_visibility": {
+    "defaultMessage": "この投稿は、このサーバーの翻訳サービスには送れません。",
+    "description": "The line under a post when this server may not send it to its translation service because of its visibility (followers only, a direct message, or an author's posts limited to followers); Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_language": {
+    "defaultMessage": "このサーバーの翻訳サービスは、この言語間の翻訳に対応していません。",
+    "description": "The line under a post when this server's translation service does not translate between the post's language and the reader's language (or, when the post's language is not known, cannot tell it), and the reader's browser cannot translate it instead; nothing follows it."
+  },
+  "post.translation_failed": {
+    "defaultMessage": "このサーバーの翻訳サービスが応答していません。",
+    "description": "The line under a post when this server's translation service is down or did not answer in time; Try again follows."
+  },
+  "post.translation_browser": {
+    "defaultMessage": "このブラウザではこの投稿を翻訳できません。",
+    "description": "The line under a post when the reader's browser cannot translate it (its model could not be downloaded, or it does not translate between these languages)."
+  },
+  "post.translation_retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The action after a failed translation's reason that asks this server for the translation again, when its translation service may answer now."
+  },
+  "post.translation_in_browser": {
+    "defaultMessage": "このブラウザで翻訳する",
+    "description": "The action after this server refused to translate a post, which asks the reader's browser to translate it instead; the browser sends the post's text nowhere."
+  },
+  "post.translation_next_month": {
+    "defaultMessage": "来月からまた翻訳できます。",
+    "description": "The sentence after the monthly translation limit's reason, when nothing else can translate the post now."
+  },
   "post.translated_from_by": {
-    "defaultMessage": "{provider} が{language}から翻訳",
-    "description": "The note under a translated post; language is the name of the language it was written in, provider the name of the translation service."
+    "defaultMessage": "{provider} が投稿を{language}から翻訳",
+    "description": "The note under a translated post, heard by assistive technology when it appears; language is the name of the language it was written in, provider the name of this server's translation service, or of the reader's browser when the browser translated it. The reader learns from it who received the post's text."
   },
   "post.translated_by": {
-    "defaultMessage": "{provider} が翻訳",
-    "description": "The note under a translated post when the language it was written in is not known; provider is the name of the translation service."
+    "defaultMessage": "{provider} が投稿を翻訳",
+    "description": "The note under a translated post when the language it was written in is not known; provider is the name of this server's translation service, or of the reader's browser when the browser translated it."
   },
   "post.translated_from": {
-    "defaultMessage": "{language}から翻訳",
+    "defaultMessage": "投稿を{language}から翻訳",
     "description": "The note under a translated post when the translation service has no name; language is the name of the language it was written in."
   },
   "post.translated": {
-    "defaultMessage": "翻訳済み",
+    "defaultMessage": "投稿は翻訳済み",
     "description": "The note under a translated post when neither its language nor the translation service is known."
   },
   "post.original": {
@@ -119,32 +159,144 @@
     "defaultMessage": "編集",
     "description": "The item of the more menu of the reader's own post that edits it."
   },
+  "post.redraft": {
+    "defaultMessage": "削除して書き直す…",
+    "description": "The item of the more menu of the reader's own post that deletes it and opens its text, images and poll in the composer, after a confirmation (hence the ellipsis)."
+  },
+  "post.edited_mark": {
+    "defaultMessage": "編集済み、履歴を表示",
+    "description": "The name, for assistive technology, of the word \"edited\" after an edited post's time (post.edited), which opens its edit history."
+  },
+  "post.edited": {
+    "defaultMessage": "編集済み",
+    "description": "The word after an edited post's time, in its header, or in its details on its own page; it opens its edit history. Lowercase in English: it follows the time after a middle dot (3h ago · edited)."
+  },
+  "post.history.title": {
+    "defaultMessage": "編集履歴",
+    "description": "The title of the dialog that lists every version of an edited post, newest first."
+  },
+  "post.history.close": {
+    "defaultMessage": "閉じる",
+    "description": "The name of the button that closes the edit history."
+  },
+  "post.history.current": {
+    "defaultMessage": "現在",
+    "description": "The label of the newest version in the edit history, the one the post shows."
+  },
+  "post.history.original": {
+    "defaultMessage": "最初の投稿",
+    "description": "The label of the oldest version in the edit history, as it was first posted."
+  },
+  "post.history.earlier": {
+    "defaultMessage": "以前の編集",
+    "description": "The label of a version in the edit history between the original and the current one."
+  },
+  "post.history.added_start": {
+    "defaultMessage": "追加ここから",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version added to the one before it (shown on a tint); post.history.added_end follows the run."
+  },
+  "post.history.added_end": {
+    "defaultMessage": "追加ここまで",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version added (post.history.added_start)."
+  },
+  "post.history.removed_start": {
+    "defaultMessage": "削除ここから",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version removed from the one before it (shown muted and struck through); post.history.removed_end follows the run."
+  },
+  "post.history.removed_end": {
+    "defaultMessage": "削除ここまで",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version removed (post.history.removed_start)."
+  },
+  "post.history.added_image": {
+    "defaultMessage": "追加された画像",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version added (shown on a tint)."
+  },
+  "post.history.removed_image": {
+    "defaultMessage": "削除された画像",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version removed (shown crossed out)."
+  },
   "post.delete": {
     "defaultMessage": "削除…",
     "description": "The item of the more menu of the reader's own post that deletes it after a confirmation (hence the ellipsis)."
   },
-  "post.mute": {
-    "defaultMessage": "ミュート",
-    "description": "The item of a post's more menu, under the author's handle, that mutes the author."
+  "post.delete.title": {
+    "defaultMessage": "この投稿を削除しますか？",
+    "description": "The question of the confirmation before the reader's post is deleted."
   },
-  "post.block": {
-    "defaultMessage": "ブロック…",
-    "description": "The item of a post's more menu, under the author's handle, that blocks the author after a confirmation (hence the ellipsis)."
+  "post.delete.body": {
+    "defaultMessage": "ブースト、お気に入り、リアクションも消え、ほかのサーバーにも削除を依頼します。取り消せません。",
+    "description": "What follows deleting the reader's post, under the confirmation's question."
   },
-  "post.report": {
-    "defaultMessage": "通報…",
-    "description": "The item of a post's more menu, under the author's handle, that reports the post to the moderators after a form (hence the ellipsis)."
+  "post.delete.confirm": {
+    "defaultMessage": "削除する",
+    "description": "The confirmation that deletes the reader's post."
+  },
+  "post.delete.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The refusal of the confirmation of deleting (or redrafting) a post: nothing is deleted."
+  },
+  "post.redraft.title": {
+    "defaultMessage": "この投稿を削除して書き直しますか？",
+    "description": "The question of the confirmation before the reader's post is deleted and opened in the composer."
+  },
+  "post.redraft.body": {
+    "defaultMessage": "{poll, select, yes {ブースト、お気に入り、リアクション、投票に入った票は消え、返信とのつながりもなくなります。本文と投票は、新しい投稿の下書きになります。} other {ブースト、お気に入り、リアクションは消え、返信とのつながりもなくなります。本文と画像は、新しい投稿の下書きになります。}}",
+    "description": "What follows deleting and redrafting the reader's post, under the confirmation's question. poll is yes when the post has a poll (a post with a poll has no images), whose votes are lost, else no."
+  },
+  "post.redraft.confirm": {
+    "defaultMessage": "削除して書き直す",
+    "description": "The confirmation that deletes the reader's post and opens it in the composer."
   },
   "post.shortcuts": {
     "defaultMessage": "投稿にフォーカスしているとき",
     "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
   },
-  "post.boosts_count": {
-    "defaultMessage": "{count, plural, other {ブースト #}}",
-    "description": "The number of boosts of a post, under the post shown on its own page with its thread. count is how many."
+  "post.poll": {
+    "defaultMessage": "投票",
+    "description": "The accessible name of a post's poll; the same word as the poll's card in the composer (compose.poll)."
   },
-  "post.favourites_count": {
-    "defaultMessage": "{count, plural, other {お気に入り #}}",
-    "description": "The number of favourites of a post, under the post shown on its own page with its thread. count is how many."
+  "post.poll_options": {
+    "defaultMessage": "選択肢",
+    "description": "The accessible name of the options of a poll the reader can vote in, a radio group or, where several may be chosen, a group of checkboxes; the composer names one option 'Option {n}' (compose.poll.option)."
+  },
+  "post.poll_several": {
+    "defaultMessage": "複数選べます",
+    "description": "In the line under a poll the reader can vote in, where a vote may choose several options; the composer's checkbox that allows it reads 'Allow several choices' (compose.poll.multiple)."
+  },
+  "post.poll_vote": {
+    "defaultMessage": "投票する",
+    "description": "The button at the end of the line under a poll that sends the reader's chosen options; it waits for a choice, and a reader without an account who presses it is taken to sign in."
+  },
+  "post.poll_voters": {
+    "defaultMessage": "{count, number}人が投票",
+    "description": "In the line under a poll: how many accounts voted. count is how many."
+  },
+  "post.poll_votes": {
+    "defaultMessage": "{count, number}票",
+    "description": "In the line under a poll whose number of voters is unknown (from some servers): how many votes it has, one per chosen option. count is how many."
+  },
+  "post.poll_ends": {
+    "defaultMessage": "{time}に締め切り",
+    "description": "In the line under a poll that has not ended: when it ends. time is a short relative time such as 'in 2d' / '2日後'. The same verb as the composer's duration (compose.poll.ends_in)."
+  },
+  "post.poll_ended": {
+    "defaultMessage": "締め切りました",
+    "description": "In the line under a poll that has ended and takes no more votes."
+  },
+  "post.poll_hidden": {
+    "defaultMessage": "票数は締め切り後に表示",
+    "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
+  },
+  "post.poll_mine": {
+    "defaultMessage": "自分の投票",
+    "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
+  },
+  "post.reacted_row": {
+    "defaultMessage": "{emoji} {count, plural, other {#人がリアクション}}",
+    "description": "The accessible name of the row under a post on its own page that opens the list of who reacted with one emoji. It starts with the emoji and the count, the row's visible text, in that order. emoji is a Unicode emoji or :shortcode:; count is how many."
+  },
+  "post.reacted_with": {
+    "defaultMessage": "{emoji} でリアクションした人",
+    "description": "The heading of the list of the accounts that reacted to a post with one emoji. emoji is a Unicode emoji or :shortcode:, which the heading draws as its image."
   }
 }

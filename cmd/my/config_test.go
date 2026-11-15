@@ -13,6 +13,22 @@ import (
 	"github.com/mycroblog/my/internal/adapter/webpush"
 )
 
+// clearConfigEnv unsets every MY_ variable of the environment for the test, so that the
+// settings of the shell that runs it (a developer's MY_BLOB_FS_DIR) do not change what it checks.
+func clearConfigEnv(t *testing.T) {
+	t.Helper()
+	for _, kv := range os.Environ() {
+		k, _, _ := strings.Cut(kv, "=")
+		if !strings.HasPrefix(k, "MY_") {
+			continue
+		}
+		t.Setenv(k, "") // restores the original value after the test
+		if err := os.Unsetenv(k); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestRunConfigVAPIDKey(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if code := run([]string{"config", "vapid-key"}, &stdout, &stderr); code != 0 {
@@ -206,6 +222,7 @@ func TestRunConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			clearConfigEnv(t)
 			t.Setenv("LANGUAGE", "")
 			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DATABASE", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
 				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_ORIGIN_SECRET", "MY_ORIGIN_SECRET_HEADER", "MY_HSOT", "MY_SERVICE_HOST", "MY_PROFILE", "MY_MAIL", "MY_VAPID_PRIVATE_KEY", "MY_WEB_ORIGIN", "MY_WORKER_JOB_TYPES"} {
@@ -240,6 +257,7 @@ func TestRunConfig(t *testing.T) {
 }
 
 func TestRunConfigInstance(t *testing.T) {
+	clearConfigEnv(t)
 	newAdminEnv(t)
 	t.Setenv("LANGUAGE", "")
 	t.Setenv("LC_ALL", "C")
@@ -281,6 +299,7 @@ func TestRunConfigInstance(t *testing.T) {
 }
 
 func TestRunConfigInstanceUnreachable(t *testing.T) {
+	clearConfigEnv(t)
 	newAdminEnv(t)
 	t.Setenv("LANGUAGE", "")
 	t.Setenv("LC_ALL", "C")

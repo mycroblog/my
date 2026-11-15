@@ -23,7 +23,7 @@ import {
 import { stringsIn } from "./locale";
 import { Post, type PostAction, type PostProps } from "./post";
 import type { PostStatus } from "./status";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 /** A timeline as the column reads it: the shape of what @my/app-data's timeline hooks return. */
 export type ColumnTimeline = {
@@ -46,8 +46,13 @@ export type ColumnProps = ColumnTimeline & {
   label: string;
   /** What the reader asked of a post. */
   onAction?: ((action: PostAction) => void) | undefined;
-  /** The rest of a post's props, by its status: whether the reader wrote it, its translation. */
+  /** The rest of a post's props, by its status: whether the reader wrote it, its vote in flight. */
   postProps?: ((status: PostStatus) => Omit<PostProps, "status" | "onAction">) | undefined;
+  /**
+   * What draws each post, given its props: `Post` by default, or a feature's component around it that keeps a state of
+   * the post's own (its translation).
+   */
+  postAs?: ComponentType<PostProps> | undefined;
   /** What the column says when the timeline has no posts, with the feature's next action; a plain line by default. */
   empty?: ReactNode;
   /** Hears whether the column's top is in view, when that changes. */
@@ -182,10 +187,10 @@ export function ListColumn<T>({
   );
 }
 
-export function Column({ statuses, onAction, postProps, newPosts, ...rest }: ColumnProps) {
+export function Column({ statuses, onAction, postProps, postAs: Shown = Post, newPosts, ...rest }: ColumnProps) {
   return (
     <ListColumn {...rest} items={statuses} keyOf={(s) => s.id} newItems={newPosts}>
-      {(s) => <Post {...postProps?.(s)} status={s} onAction={onAction} />}
+      {(s) => <Shown {...postProps?.(s)} status={s} onAction={onAction} />}
     </ListColumn>
   );
 }

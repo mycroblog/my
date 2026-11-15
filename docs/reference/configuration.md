@@ -178,6 +178,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`translator_google_project`](#translator_google_project) | `MY_TRANSLATOR_GOOGLE_PROJECT` | none | no | no |
 | [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
 | [`translator_aws_region`](#translator_aws_region) | `MY_TRANSLATOR_AWS_REGION` | none | no | no |
+| [`translator_fake`](#translator_fake) | `MY_TRANSLATOR_FAKE` | `false` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`search_elasticsearch_url`](#search_elasticsearch_url) | `MY_SEARCH_ELASTICSEARCH_URL` | none | when `search = elasticsearch` | no |
 | [`search_elasticsearch_api_key`](#search_elasticsearch_api_key) | `MY_SEARCH_ELASTICSEARCH_API_KEY` | none | no | yes |
@@ -1520,6 +1521,19 @@ The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Am
 - Environment variable: `MY_TRANSLATOR_AWS_REGION`
 - Default: none
 - Required: no
+
+### `translator_fake`
+
+Test builds only: registers the stand-in translation provider `fake`, which the instance setting `translation_providers` then enables, for end-to-end tests and demonstrations. It calls no service: it puts the target language before each text, as `[ja] Hello`, and fails as a provider that is down when a text contains `[translation-fails]`.
+
+- Environment variable: `MY_TRANSLATOR_FAKE`
+- Default: `false`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `false` | No such provider. |
+| `true` | The provider `fake`. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). |
 
 ### `search`
 

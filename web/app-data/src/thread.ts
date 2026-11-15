@@ -5,6 +5,7 @@ import type { components } from "@mycroblog/mykit";
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
+import { showList, useShadow, type ShowStatus } from "./shadow";
 import type { Status } from "./statuses";
 
 /** The statuses around a status: what it replies to and what replies to it. */
@@ -45,6 +46,15 @@ export function cacheReply(queryClient: QueryClient, reply: Status): void {
   }
 }
 
+/** The thread as it shows; `context` itself when nothing in it changes. */
+function showContext(show: ShowStatus, context: StatusContext): StatusContext {
+  const ancestors = showList(show, context.ancestors);
+  const descendants = showList(show, context.descendants);
+  return ancestors === context.ancestors && descendants === context.descendants
+    ? context
+    : { ancestors: [...ancestors], descendants: [...descendants] };
+}
+
 /** What a screen shows of a post and its thread. */
 export type Thread = {
   /** The status; undefined until the server answered, or when it failed. */
@@ -57,14 +67,18 @@ export type Thread = {
   readonly refetch: () => void;
 };
 
-/** The status of `id` and its thread. */
+/**
+ * The status of `id` and its thread, as they show (shadow.ts): a status gone leaves the thread, and the status of `id`
+ * gone is undefined until the server answers that it is.
+ */
 export function useThread(id: string): Thread {
   const data = useAppData();
+  const show = useShadow();
   const status = useQuery(statusQuery(data, id));
   const context = useQuery(statusContextQuery(data, id));
   return {
-    status: status.data,
-    context: context.data,
+    status: status.data && show(status.data),
+    context: context.data && showContext(show, context.data),
     // The client rejects with a ProblemError or a NetworkError, which openapi-react-query types as the problem's body.
     error: status.error as Error | null,
     refetch: () => {

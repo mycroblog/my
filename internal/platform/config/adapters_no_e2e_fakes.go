@@ -4,9 +4,10 @@
 
 package config
 
-// Only a test build with the build tag e2e_fakes has the fake payment provider (ADR-0015 §6) and
-// the fake search index (ADR-0149 §3).
+// Only a test build with the build tag e2e_fakes has the fake payment provider (ADR-0015 §6),
+// the fake search index (ADR-0149 §3), and the fake translation provider (ADR-0148).
 func init() {
 	testOnly("e2e_fakes", "payments", "fake")
 	testOnly("e2e_fakes", "search", "fake")
+	testOnly("e2e_fakes", "translator_fake", "true")
 }

@@ -8,8 +8,9 @@
 // and the time) over the handle; a name and a handle are isolated with <bdi>, and the handle reads left-to-right and
 // truncates at its end in either direction. Every part lays out in the reader's direction (locale.ts).
 
+import { motion } from "@my/design-tokens";
 import { useId, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-aria-components";
+import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
 import { useFeedPosition } from "./feed";
@@ -115,12 +116,32 @@ const caption = tv({
     glyph: "inline-flex h-[1lh] shrink-0 items-center",
     text: "min-w-0 flex-1",
     action: "whitespace-nowrap",
+    // The glyph's place while what the line says is under way: a spinner of the glyph's size.
+    spinner: [
+      "box-border size-icon-caption rounded-full border-spinner border-solid",
+      "border-spinner-track border-t-current animate-spin",
+      motion.spin.reduced === "still" ? "motion-reduce:animate-none" : "",
+    ],
   },
   variants: {
     // On one line: a `CaptionName` in it truncates, and the words around it keep their room and their spaces.
     oneLine: { true: { text: "flex whitespace-pre" } },
+    // What went wrong with what the reader asked for: the text's own color over the muted caption, without a hue.
+    alert: { true: { glyph: "text-text", text: "text-text" } },
   },
 });
+
+/**
+ * A part of an entry that assistive technology hears change (a translation's line, from Translate to its outcome): a
+ * polite live region with no box of its own, which stays while what is in it changes.
+ */
+export function LivePart({ children }: { children: ReactNode }) {
+  return (
+    <div aria-live="polite" className="contents">
+      {children}
+    </div>
+  );
+}
 
 /**
  * A name inside a one-line caption (who boosted a post): isolated (<bdi>), and the part that truncates first, so the
@@ -136,33 +157,57 @@ export type CaptionLineProps = {
   lang?: string | undefined;
   /** The text. */
   children?: ReactNode;
-  /** An action after the text (a `TextButton`), apart from it by a middle dot, and never parted from that dot. */
+  /**
+   * An action after the text (a `TextButton`), apart from it by a middle dot that stays at the end of the text's line,
+   * the action never broken inside.
+   */
   action?: ReactNode;
   /** One line that never wraps: a `CaptionName` in it truncates instead. */
   oneLine?: boolean | undefined;
+  /** What it says is under way (a translation): a spinner stands in the glyph's place. */
+  busy?: boolean | undefined;
+  /** It says what went wrong with what the reader asked for: its text in the text's color. */
+  alert?: boolean | undefined;
+  /**
+   * What assistive technology reads in place of the text, where the text changes more often than it should be heard (a
+   * download's progress, heard by quarters).
+   */
+  spoken?: string | undefined;
 };
 
 /**
  * A caption line: a muted glyph and its text, which wraps between words under itself (who boosted a post, a
  * translation's note), and an optional action at its end.
  */
-export function CaptionLine({ icon, lang, children, action, oneLine = false }: CaptionLineProps) {
-  const s = caption({ oneLine });
+export function CaptionLine({
+  icon,
+  lang,
+  children,
+  action,
+  oneLine = false,
+  busy = false,
+  alert = false,
+  spoken,
+}: CaptionLineProps) {
+  const s = caption({ oneLine, alert });
   const hasText = children !== undefined && children !== null && children !== false;
   return (
     <p className={s.root()} lang={lang}>
       <span className={s.glyph()}>
-        <Icon name={icon} place="caption" />
+        {busy ? <span className={s.spinner()} aria-hidden="true" /> : <Icon name={icon} place="caption" />}
       </span>
       <span className={s.text()}>
-        {children}
-        {hasText && action !== undefined && " "}
-        {action !== undefined && (
-          <span className={s.action()}>
-            {hasText && "· "}
-            {action}
-          </span>
+        {spoken === undefined ? (
+          children
+        ) : (
+          <>
+            <span aria-hidden="true">{children}</span>
+            <span className="sr-only">{spoken}</span>
+          </>
         )}
+        {/* The dot ends the text's last line, held to its last word, so a line never starts with it. */}
+        {hasText && action !== undefined && " · "}
+        {action !== undefined && <span className={s.action()}>{action}</span>}
       </span>
     </p>
   );
@@ -266,6 +311,16 @@ const stamp = tv({
       "rounded-control text-current no-underline outline-hidden",
       "data-hovered:underline data-focus-visible:shadow-focus",
     ],
+    // The time and the edited mark together: on a touch screen, one target of the touch height over both.
+    when: "relative inline-flex items-baseline",
+    // The edited mark: a word after the time, muted as the time is, apart from it by a middle dot; it opens the
+    // history. On a touch screen its hit area covers the time too, at the touch height.
+    edited: [
+      "inline-flex cursor-pointer items-baseline rounded-control border-0 bg-transparent p-0 font-sans text-caption",
+      "text-current outline-hidden data-hovered:underline data-focus-visible:shadow-focus",
+      "pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2",
+      "pointer-coarse:before:h-icon-button-touch pointer-coarse:before:-translate-y-1/2",
+    ],
   },
 });
 
@@ -276,19 +331,32 @@ export type StampProps = {
   date: Date | string;
   /** Where the time leads: the entry on a page of its own. */
   href?: string | undefined;
+  /**
+   * The entry was edited: `text` (edited) after the time, named `label` for assistive technology, which opens its
+   * history; on a touch screen a press on the time opens it too.
+   */
+  edited?: { text: string; label: string; onPress: () => void } | undefined;
 };
 
 /**
  * A glyph and the relative time, kept together at the end of a byline's line. The time is isolated (<bdi>), so that
  * it keeps its own order beside the glyph in either direction, with words of an RTL locale reading right-to-left.
  */
-export function Stamp({ glyph, date, href }: StampProps) {
+export function Stamp({ glyph, date, href, edited }: StampProps) {
   const s = stamp();
   const time = (
     <bdi>
       <RelativeTime date={date} />
     </bdi>
   );
+  const linked =
+    href === undefined ? (
+      time
+    ) : (
+      <Link href={href} className={s.link()}>
+        {time}
+      </Link>
+    );
   return (
     <span className={s.root()}>
       {glyph !== undefined && (
@@ -296,12 +364,16 @@ export function Stamp({ glyph, date, href }: StampProps) {
           <Icon name={glyph.icon} place="caption" />
         </span>
       )}
-      {href === undefined ? (
-        time
+      {edited === undefined ? (
+        linked
       ) : (
-        <Link href={href} className={s.link()}>
-          {time}
-        </Link>
+        <span className={s.when()}>
+          {linked}
+          <span aria-hidden="true">&nbsp;·&nbsp;</span>
+          <AriaButton aria-label={edited.label} className={s.edited()} onPress={edited.onPress}>
+            {edited.text}
+          </AriaButton>
+        </span>
       )}
     </span>
   );

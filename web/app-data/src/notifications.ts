@@ -16,6 +16,8 @@ import { cacheRelationship } from "./accounts";
 import type { AppData } from "./app-data";
 import { pagedQuery, usePagedList, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
+import { useShadow } from "./shadow";
+import type { Status } from "./statuses";
 
 /** A notification of the client API (named apart from the browser's Notification). */
 export type NotificationItem = components["schemas"]["Notification"];
@@ -273,9 +275,28 @@ export function useUnreadNotifications(): number | undefined {
   return Math.max(0, marker.unread_count - read);
 }
 
-/** The notifications of a filter, for the list. */
+/** Each notification with the status it is about as it shows, one kept as it is while that does not change. */
+const shownNotifications = new WeakMap<NotificationItem, { status: Status; shown: NotificationItem }>();
+
+/**
+ * The notifications of a filter, for the list, each with the status it is about as it shows (shadow.ts); one about a
+ * status gone leaves the list, as the server leaves it out.
+ */
 export function useNotifications(filter: NotificationFilter): PagedList<NotificationItem> {
-  return usePagedList(notificationsQuery(useAppData(), filter));
+  const list = usePagedList(notificationsQuery(useAppData(), filter));
+  const show = useShadow();
+  const items = list.items.flatMap((n) => {
+    if (n.status === undefined) return [n];
+    const status = show(n.status);
+    if (status === undefined) return [];
+    if (status === n.status) return [n];
+    const memo = shownNotifications.get(n);
+    if (memo?.status === status) return [memo.shown];
+    const shown = { ...n, status };
+    shownNotifications.set(n, { status, shown });
+    return [shown];
+  });
+  return { ...list, items };
 }
 
 /** What the list reads of the marker, and how the reader reads notifications. */

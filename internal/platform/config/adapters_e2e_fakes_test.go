@@ -42,3 +42,20 @@ func TestE2EFakesSearchProfile(t *testing.T) {
 		}
 	}
 }
+
+// TestE2EFakesTranslatorProfile: a test build takes translator_fake = true with profile =
+// development only.
+func TestE2EFakesTranslatorProfile(t *testing.T) {
+	cfg, _, err := Load(source(with(minimal(), "MY_TRANSLATOR_FAKE", "true", "MY_PROFILE", "development"), nil))
+	if err != nil || !cfg.TranslatorFake {
+		t.Fatalf("Load() with translator_fake = true, profile = development: %+v, %v", cfg, err)
+	}
+	for _, profile := range []string{"production", unset} {
+		_, _, err := Load(source(with(minimal(), "MY_TRANSLATOR_FAKE", "true", "MY_PROFILE", profile), nil))
+		var ve *ValidationError
+		want := "translator_fake (MY_TRANSLATOR_FAKE): true is refused in the production profile: the provider fake translates nothing; set profile = development"
+		if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].String() != want {
+			t.Errorf("Load() with translator_fake = true, profile = %q: %v, want %q", profile, err, want)
+		}
+	}
+}

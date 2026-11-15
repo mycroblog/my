@@ -5,15 +5,17 @@
 // statuses, the home timeline, a thread, a profile, the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
-// answers of follow requests, the read marker, the announcements read) are kept in memory. A list pages as the server's
+// answers of follow requests, the read marker, the announcements read, the reader's edits and deletions of their own
+// posts) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
 // and its retry succeeds late. What the shell reads (the instance, the reader's rights, the announcements, the
 // voice rooms, the events) answers in the state the options give the server: its timelines, one person's, its closure,
 // its maintenance, down, or newer than the app. The voice rooms are the fake's own, since a room lives only while
-// people are in it and the seed opens none.
+// people are in it and the seed opens none. A post is translated by the provider `translation` names, which answers
+// or refuses as the options say.
 
-import { drawingURL } from "../drawing";
+import { drawingBlurhash, drawingURL } from "../drawing";
 import {
   admin,
   announcements as scenarioAnnouncements,
@@ -26,6 +28,7 @@ import {
   personOf,
   posts,
   restrictions,
+  type LinkCard,
   type Person,
   type Post,
 } from "../scenario";
@@ -81,6 +84,17 @@ export type FakeOptions = {
   voiceOff?: boolean;
   /** The reader's latest export of their data: none by default, one being built, or one ready to download. */
   dataExport?: "none" | "building" | "ready";
+  /**
+   * How posts are translated: not at all by default. `provider` enables one provider of the server, for the posts of
+   * every visibility but followers-only and direct: one that answers (`answers`, each text behind the language it
+   * goes into, "[ja] …", as the server's fake provider does), or one that refuses every request, over the monthly limit
+   * (`limit`), as no provider may receive the post (`unavailable`), for a language it does not translate (`language`),
+   * or failing (`failed`). `browser` lets readers use the browser's own translator.
+   */
+  translation?: {
+    provider?: "answers" | "limit" | "unavailable" | "language" | "failed";
+    browser?: boolean;
+  };
 };
 
 /** The address of the fake's status page. */
@@ -127,6 +141,26 @@ const customEmojis = emojis.map((e) => {
   const url = drawingURL(e.drawing);
   return { shortcode: e.shortcode, url, static_url: url };
 });
+
+/** The custom emoji as the picker lists them: those without a category first, then by category and shortcode. */
+const pickerEmojis = emojis
+  .map((e, i) => ({
+    ...customEmojis[i],
+    aliases: e.aliases ?? [],
+    ...(e.category === undefined ? {} : { category: e.category }),
+  }))
+  .toSorted(
+    (a, b) =>
+      Number(a.category !== undefined) - Number(b.category !== undefined) ||
+      (a.category ?? "").localeCompare(b.category ?? "") ||
+      (a.shortcode ?? "").localeCompare(b.shortcode ?? ""),
+  );
+
+/** A reaction's emoji as the scenario writes it (`:shortcode:` for a custom one) from what a request names. */
+const scenarioEmoji = (name: string) => {
+  const bare = name.replace(/^:|:$/g, "");
+  return customEmojis.some((e) => e.shortcode === bare) ? `:${bare}:` : name;
+};
 
 /** Creates a fake of the client API as `viewer` reads it. */
 export function createFakeApi(o: FakeOptions = {}): FakeApi {
@@ -219,56 +253,194 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
   const on = (key: string, kind: string) => interactions.filter((i) => i.post === key && i.kind === kind);
 
+  // The reader's favourite and reaction as they set them, by the key of the post, over the scenario's: one or the
+  // other, a reaction's emoji as the scenario writes it, or none (null).
+  const ownFavourite = new Map<string, boolean>();
+  const ownReaction = new Map<string, string | null>();
+  const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  /** Who favourited the post of `key`, in order. */
+  const favouritersOf = (key: string) => [
+    ...on(key, "favourite").flatMap((i) => (i.by === viewer && mineSet(key) ? [] : [i.by])),
+    ...(ownFavourite.get(key) === true ? [viewer] : []),
+  ];
+  /** The reactions to the post of `key`, oldest first: who reacted, with which emoji, at which step. */
+  const reactionsOf = (key: string) => {
+    const list = interactions.flatMap((i, n) =>
+      i.kind === "reaction" && i.post === key && !(i.by === viewer && mineSet(key))
+        ? [{ by: i.by, emoji: i.emoji, step: follows.length + posts.length + n }]
+        : [],
+    );
+    const mine = ownReaction.get(key);
+    if (mine !== undefined && mine !== null) list.push({ by: viewer, emoji: mine, step: steps });
+    return list;
+  };
+  /** A reaction's emoji as the API gives it (ReactionEmoji): a custom one with its image. */
+  const reactionEmojiOf = (emoji: string) => {
+    const custom = customEmojis.find((e) => `:${e.shortcode}:` === emoji);
+    return custom === undefined
+      ? { name: emoji }
+      : { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom };
+  };
+
+  /** The reader's votes, by the key of the post, as the scenario has them and as the reader votes. */
+  const ownVotes = new Map<string, readonly number[]>();
+  for (const i of interactions) if (i.kind === "vote" && i.by === viewer) ownVotes.set(i.post, i.choices);
+
+  /** The poll of `p` as the reader sees it, open for the days the scenario gives it from the start of the fake. */
+  function pollOf(p: Post): Json | undefined {
+    if (p.poll === undefined) return undefined;
+    const own = ownVotes.get(p.key);
+    const votes = [
+      ...interactions.flatMap((i) => (i.kind === "vote" && i.post === p.key && i.by !== viewer ? [i.choices] : [])),
+      ...(own === undefined ? [] : [own]),
+    ];
+    return {
+      id: idAt(timeOf(postStep(p.key)), 60_000 + postStep(p.key)),
+      expires_at: new Date(started + p.poll.days * 24 * 60 * minute).toISOString(),
+      expired: false,
+      multiple: p.poll.multiple ?? false,
+      votes_count: votes.reduce((n, c) => n + c.length, 0),
+      voters_count: votes.length,
+      options: p.poll.options.map((title, i) => ({ title, votes_count: votes.filter((c) => c.includes(i)).length })),
+      voted: own !== undefined,
+      own_votes: own ?? [],
+    };
+  }
+
+  // The reader's own posts they deleted, by key, and the versions of each post: those of the scenario (its `earlier`,
+  // then its text), then the reader's edits.
+  const deleted = new Set<string>();
+  type Version = { text: string; spoiler: string; at: number; media?: readonly string[] };
+  const edits = new Map<string, Version[]>();
+  /** The versions of `p`, oldest first: what it was posted with first, the last what it says now. */
+  function versionsOf(p: Post): readonly Version[] {
+    const posted = timeOf(postStep(p.key));
+    const scenario = [...(p.earlier ?? []), p.text].map((text, i) => ({
+      text,
+      spoiler: p.spoiler ?? "",
+      at: posted + i * 2 * minute,
+    }));
+    return [...scenario, ...(edits.get(p.key) ?? [])];
+  }
+
+  /**
+   * A post's attachments as a version of it holds them (all of them unless it names which), as the server gives them,
+   * its images then the rest: a picture's drawing served whole and as its preview, with its blurhash; a video's or a
+   * GIF's poster as its preview, with no file the fake could play; a sound with its length and no file; and a file of
+   * another kind as a link to where it would be.
+   */
+  const mediaOf = (p: Post, id: string, version: Version): Json[] =>
+    [
+      ...(p.images ?? []).map((image) => {
+        const url = drawingURL(image.drawing);
+        const { width, height } = image.drawing;
+        return {
+          type: "image",
+          state: "ready",
+          description: image.description,
+          url,
+          preview_url: url,
+          blurhash: drawingBlurhash(image.drawing),
+          meta: { width, height, focus: { x: 0, y: 0 } },
+        };
+      }),
+      ...(p.attachments ?? []).map((a): Json => {
+        const described = a.description === "" ? {} : { description: a.description };
+        if (a.kind === "audio")
+          return { type: "audio", state: "ready", ...described, meta: { duration: a.seconds, focus: { x: 0, y: 0 } } };
+        if (a.kind === "unknown")
+          return {
+            type: "unknown",
+            state: "ready",
+            ...described,
+            url: `${fakeOrigin}/media/${a.name}`,
+            meta: { focus: { x: 0, y: 0 } },
+          };
+        const { width, height } = a.poster;
+        return {
+          type: a.kind,
+          state: "ready",
+          ...described,
+          preview_url: drawingURL(a.poster),
+          blurhash: drawingBlurhash(a.poster),
+          meta: { width, height, ...(a.seconds === undefined ? {} : { duration: a.seconds }), focus: { x: 0, y: 0 } },
+        };
+      }),
+    ]
+      .map((m, i) => ({ id: `${id}-${i}`, ...m }))
+      .filter((m) => version.media === undefined || version.media.includes(m.id));
+
+  /** The card of a post's first link, as the server makes it from the page `text` links to. */
+  const cardOf = (card: LinkCard, text: string): Json => ({
+    url: /https?:\/\/\S+/.exec(text)?.[0] ?? fakeOrigin,
+    title: card.title,
+    description: card.description,
+    site_name: card.site,
+    ...(card.language === undefined ? {} : { language: card.language }),
+    ...(card.image === undefined
+      ? {}
+      : {
+          image: {
+            url: drawingURL(card.image.drawing),
+            width: card.image.drawing.width,
+            height: card.image.drawing.height,
+            blurhash: drawingBlurhash(card.image.drawing),
+            ...(card.image.description === undefined ? {} : { description: card.image.description }),
+          },
+        }),
+    ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
+  });
+
   const visible = (p: Post) =>
-    p.author === viewer ||
-    p.visibility === "public" ||
-    p.visibility === "unlisted" ||
-    p.visibility === "local" ||
-    (p.visibility === "private" && follows_(viewer, p.author)) ||
-    (p.visibility === "direct" && mentioned(p.text).includes(viewer));
+    !deleted.has(p.key) &&
+    (p.author === viewer ||
+      p.visibility === "public" ||
+      p.visibility === "unlisted" ||
+      p.visibility === "local" ||
+      (p.visibility === "private" && follows_(viewer, p.author)) ||
+      (p.visibility === "direct" && mentioned(p.text).includes(viewer)));
 
   function statusOf(p: Post, depth = 0): Json {
     const id = statusId.get(p.key) ?? "";
+    const versions = versionsOf(p);
+    const now = versions.at(-1) ?? { text: p.text, spoiler: p.spoiler ?? "", at: 0 };
     const parent = p.replyTo === undefined ? undefined : postOf(p.replyTo);
     const reactions = new Map<string, { count: number; me: boolean }>();
-    for (const r of interactions)
-      if (r.kind === "reaction" && r.post === p.key) {
-        const now = reactions.get(r.emoji) ?? { count: 0, me: false };
-        reactions.set(r.emoji, { count: now.count + 1, me: now.me || r.by === viewer });
-      }
+    for (const r of reactionsOf(p.key)) {
+      const now = reactions.get(r.emoji) ?? { count: 0, me: false };
+      reactions.set(r.emoji, { count: now.count + 1, me: now.me || r.by === viewer });
+    }
+    const favouriters = favouritersOf(p.key);
     return {
       id,
       uri: `${fakeOrigin}/users/${p.author}/statuses/${id}`,
       url: `${fakeOrigin}/@${p.author}/${id}`,
       account: accountOf(p.author),
-      content: serverHtml(p.text, fakeHost),
-      spoiler_text: p.spoiler ?? "",
-      sensitive: p.spoiler !== undefined,
+      content: serverHtml(now.text, fakeHost),
+      spoiler_text: now.spoiler,
+      sensitive: now.spoiler !== "" || p.sensitive === true,
       visibility: p.visibility,
       language: p.language,
       created_at: new Date(timeOf(postStep(p.key))).toISOString(),
+      ...(versions.length > 1 ? { edited_at: new Date(now.at).toISOString() } : {}),
       ...(parent === undefined
         ? {}
         : { in_reply_to_id: statusId.get(parent.key), in_reply_to_account_id: idOf(parent.author) }),
-      media_attachments: (p.images ?? []).map((image, i) => {
-        const url = drawingURL(image.drawing);
-        return { id: `${id}-${i}`, type: "image", description: image.description, url, preview_url: url };
-      }),
-      mentions: mentioned(p.text).map((u) => ({ id: idOf(u), username: u, acct: u })),
+      media_attachments: mediaOf(p, id, now),
+      ...(p.card === undefined ? {} : { card: cardOf(p.card, now.text) }),
+      mentions: mentioned(now.text).map((u) => ({ id: idOf(u), username: u, acct: u })),
       emojis: customEmojis,
       replies_count: posts.filter((x) => x.replyTo === p.key).length,
       boosts_count: on(p.key, "boost").length,
-      favourites_count: on(p.key, "favourite").length,
-      reactions: [...reactions].map(([emoji, r]) => {
-        const custom = customEmojis.find((e) => `:${e.shortcode}:` === emoji);
-        return custom === undefined
-          ? { name: emoji, count: r.count, me: r.me }
-          : { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom, count: r.count, me: r.me };
-      }),
-      favourited: on(p.key, "favourite").some((i) => i.by === viewer),
+      favourites_count: favouriters.length,
+      reactions: [...reactions]
+        .toSorted(([, a], [, b]) => b.count - a.count)
+        .map(([emoji, r]) => ({ ...reactionEmojiOf(emoji), count: r.count, me: r.me })),
+      favourited: favouriters.includes(viewer),
       boosted: on(p.key, "boost").some((i) => i.by === viewer),
       bookmarked: on(p.key, "bookmark").some((i) => i.by === viewer),
       pinned: p.pinned === true && p.author === viewer,
+      ...(p.poll === undefined ? {} : { poll: pollOf(p) }),
       ...(p.quote === undefined || depth > 0
         ? {}
         : { quote: { state: "accepted", quoted_status: statusOf(postOf(p.quote), depth + 1) } }),
@@ -306,6 +478,19 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   });
   const home: Json[] = homeEntries.toSorted((a, b) => b.at - a.at).map((e) => e.status);
 
+  /**
+   * A status of a list as it is now: a post of the scenario (or a boost of one) as edited since, none once deleted;
+   * another (a post the stream brought) as it was.
+   */
+  function current(s: Json): Json[] {
+    const key = keyOf.get(s["id"] as string);
+    if (key !== undefined) return deleted.has(key) ? [] : [statusOf(postOf(key))];
+    const boosted = s["boost"] as Json | undefined;
+    const boostedKey = boosted === undefined ? undefined : keyOf.get(boosted["id"] as string);
+    if (boostedKey === undefined) return [s];
+    return deleted.has(boostedKey) ? [] : [{ ...s, boost: statusOf(postOf(boostedKey)) }];
+  }
+
   /** A person's posts on their profile, newest first, and the pinned ones. */
   const profilePosts = (username: string) =>
     posts
@@ -329,6 +514,53 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     };
     walk(key);
     return { ancestors, descendants };
+  }
+
+  /**
+   * The answer to translating `p` into `target`, by the provider of `translation`: the post with each text behind the
+   * language it goes into, or the refusal the provider stands for. A post whose visibility the provider may not receive
+   * is refused as the server refuses it, whatever the provider.
+   */
+  function translationOf(p: Post, target: string): Response {
+    const provider = o.translation?.provider;
+    const refuse = (status: number, type: string, title: string, headers: Record<string, string> = {}) =>
+      new Response(JSON.stringify({ type: `/api/v1/problems/${type}`, title, status }), {
+        status,
+        headers: { "Content-Type": "application/problem+json", ...headers },
+      });
+    if (
+      provider === undefined ||
+      provider === "unavailable" ||
+      !translationProvider.visibilities.includes(p.visibility)
+    )
+      return refuse(422, "translation-unavailable", "No translation provider may receive this post");
+    if (provider === "limit") {
+      const now = new Date();
+      const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1);
+      return refuse(429, "translation-limit", "The monthly translation limit is reached", {
+        "Retry-After": String(Math.ceil((next - now.getTime()) / 1000)),
+      });
+    }
+    if (provider === "language")
+      return refuse(
+        422,
+        "translation-unsupported-language",
+        "The translation providers do not translate this language",
+      );
+    if (provider === "failed") return refuse(503, "translation-failed", "The translation provider did not answer");
+    const into = (text: string) => `[${target}] ${text}`;
+    return json({
+      language: target,
+      source_language: p.language,
+      content: serverHtml(into(p.text), fakeHost),
+      spoiler_text: p.spoiler === undefined ? "" : into(p.spoiler),
+      media_attachments: (p.images ?? []).map((image, i) => ({
+        id: `${statusId.get(p.key) ?? ""}-${i}`,
+        description: into(image.description),
+      })),
+      poll_options: (p.poll?.options ?? []).map(into),
+      provider: { id: translationProvider.id, name: translationProvider.name },
+    });
   }
 
   // ---- Notifications ---------------------------------------------------------------------------------------------
@@ -357,7 +589,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   });
   interactions.forEach((i, n) => {
     const p = postOf(i.post);
-    if (p.author !== viewer || i.kind === "bookmark") return;
+    if (p.author !== viewer || i.kind === "bookmark" || i.kind === "vote") return;
     const step = follows.length + posts.length + n;
     // A reaction's emoji as the API gives it: a custom one of this server with its shortcode and image, else Unicode.
     const custom = i.kind === "reaction" ? customEmojis.find((e) => `:${e.shortcode}:` === i.emoji) : undefined;
@@ -413,6 +645,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ? { local: "off", federated: "off" }
       : (o.timelines ?? { local: "everyone", federated: "everyone" });
   const around = o.around ?? "all";
+  // The translation provider of `translation`, with the visibilities a provider receives by default.
+  const translationProvider = {
+    id: "fake",
+    name: "Demo Translate",
+    visibilities: ["public", "local", "unlisted"],
+  };
   const instanceBody: Json = {
     domain: fakeHost,
     name: "mycroblog demo",
@@ -444,7 +682,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     voice_enabled: o.voiceOff !== true,
     voice_room_starters: "everyone",
     full_text_search: { enabled: true },
-    translation: { enabled: false },
+    translation: {
+      browser: o.translation?.browser === true,
+      providers: o.translation?.provider === undefined ? [] : [translationProvider],
+    },
     single_user: o.singleUser === true,
     ...(o.singleUser === true ? { single_user_account: fullAccount(personOf(admin)) } : {}),
     ...(o.logo === true ? { logo: brandImage(logoSvg("#2f6f8f")), logo_dark: brandImage(logoSvg("#8fc7e0")) } : {}),
@@ -624,7 +865,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   /** The operations a visitor without a session may call; every other answers 401. */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context)?|timelines\/(?:local|federated))$/;
+    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated))$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 
@@ -669,7 +910,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     let match: RegExpExecArray | null;
 
     if (path === "/timelines/home") {
-      const { from, body } = page(home, q);
+      const { from, body } = page(home.flatMap(current), q);
       if (o.failFirst === true && from === 0 && Date.now() - started < 1000)
         return problem(500, "Internal Server Error");
       // The retry after the first page failed comes late, so that the screen shows it loading again.
@@ -685,6 +926,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (timelines[kind] === "off") return problem(404, "Not Found");
       if (timelines[kind] === "signed_in" && o.visitor === true) return problem(401, "Unauthorized");
       const shown = posts
+        .filter((p) => !deleted.has(p.key))
         .filter((p) => p.visibility === "public" || (kind === "local" && p.visibility === "local"))
         .filter((p) => o.visitor === true || !hidden(p.author))
         .toReversed()
@@ -788,9 +1030,124 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const r = change(decodeURIComponent(match[1] ?? ""), verb.replace(/^un/, ""), add);
       return r === undefined ? problem(404, "Not Found") : json(r);
     }
-    if ((match = m(/^\/statuses\/([^/]+)$/))) {
+    if ((match = m(/^\/statuses\/([^/]+)(\/source|\/history)?$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
-      return key === undefined || !visible(postOf(key)) ? problem(404, "Not Found") : json(statusOf(postOf(key)));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const id = statusId.get(p.key) ?? "";
+      const own = p.author === viewer;
+      if (match[2] === "/history" && request.method === "GET")
+        return json({
+          items: versionsOf(p).map((v) => ({
+            content: serverHtml(v.text, fakeHost),
+            spoiler_text: v.spoiler,
+            sensitive: v.spoiler !== "",
+            created_at: new Date(v.at).toISOString(),
+            media_attachments: mediaOf(p, id, v),
+            emojis: customEmojis,
+          })),
+        });
+      // The source of another's post is a 404, as the server's is.
+      if (match[2] === "/source" && request.method === "GET") {
+        const now = versionsOf(p).at(-1);
+        return own
+          ? json({ id, text: now?.text ?? p.text, spoiler_text: now?.spoiler ?? "", language: p.language })
+          : problem(404, "Not Found");
+      }
+      if (match[2] !== undefined) return problem(404, "Not Found");
+      if (request.method === "GET") return json(statusOf(p));
+      if (!own) return problem(403, "Forbidden");
+      if (request.method === "DELETE") {
+        deleted.add(p.key);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PUT") {
+        // A post with a poll is never edited: its votes belong to the poll as posted.
+        if (p.poll !== undefined) return problem(422, "Unprocessable Entity");
+        const edit = (await request.json()) as { text: string; spoiler_text?: string; media?: { id: string }[] };
+        edits.set(p.key, [
+          ...(edits.get(p.key) ?? []),
+          {
+            text: edit.text,
+            spoiler: edit.spoiler_text ?? "",
+            at: Date.now(),
+            media: (edit.media ?? []).map((x) => x.id),
+          },
+        ]);
+        return json(statusOf(p));
+      }
+      return problem(405, "Method Not Allowed");
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/poll\/votes$/)) && request.method === "POST") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const poll = pollOf(p);
+      const vote = (await request.json()) as { poll_id: string; choices: number[] };
+      if (poll !== undefined && poll["id"] !== vote.poll_id) return problem(409, "Conflict");
+      const { choices } = vote;
+      const taken =
+        poll !== undefined &&
+        poll["voted"] !== true &&
+        choices.length > 0 &&
+        (p.poll?.multiple === true || choices.length === 1) &&
+        new Set(choices).size === choices.length &&
+        choices.every((c) => Number.isInteger(c) && c >= 0 && c < (p.poll?.options.length ?? 0));
+      if (!taken) return problem(422, "Unprocessable Entity");
+      ownVotes.set(p.key, choices);
+      return json(statusOf(p));
+    }
+    if (path === "/custom_emojis") return json({ items: pickerEmojis });
+    if ((match = m(/^\/statuses\/([^/]+)\/(reaction|favourite)$/)) && request.method !== "GET") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      // One favourite or one reaction per post (FR-116): setting one takes back the other. What the reader has now is
+      // kept as theirs first, so that taking back one leaves the other as it was.
+      const favourited = favouritersOf(p.key).includes(viewer);
+      const reacted = reactionsOf(p.key).find((r) => r.by === viewer)?.emoji ?? null;
+      ownFavourite.set(p.key, favourited);
+      ownReaction.set(p.key, reacted);
+      if (match[2] === "favourite") {
+        const add = request.method === "POST";
+        ownFavourite.set(p.key, add);
+        if (add) ownReaction.set(p.key, null);
+      } else if (request.method === "PUT") {
+        const { emoji } = (await request.json()) as { emoji: string };
+        const named = scenarioEmoji(emoji);
+        // A custom emoji of another server, or a shortcode this server has not, is refused as the server does.
+        if (named.includes("@") || /^\w+$/u.test(named)) return problem(422, "Unprocessable Entity");
+        ownReaction.set(p.key, named);
+        ownFavourite.set(p.key, false);
+      } else {
+        ownReaction.set(p.key, null);
+      }
+      return json(statusOf(p));
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/reactions$/))) {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const emoji = q.get("emoji");
+      const shown = reactionsOf(p.key)
+        .filter((r) => emoji === null || reactionEmojiOf(r.emoji).name === emoji)
+        .toReversed()
+        .map((r) => ({
+          id: idAt(timeOf(r.step), 70_000 + r.step),
+          account: accountOf(r.by),
+          emoji: reactionEmojiOf(r.emoji),
+          created_at: new Date(timeOf(r.step)).toISOString(),
+        }));
+      const { from, body } = page(shown, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/translation$/)) && request.method === "POST") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const { target_language: target } = (await request.json()) as { target_language: string };
+      return translationOf(p, target);
     }
     if ((match = m(/^\/statuses\/([^/]+)\/context$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
@@ -798,8 +1155,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/notifications") {
       const types = q.getAll("types");
-      const shown =
+      const typed =
         types.length === 0 ? notifications : notifications.filter((n) => types.includes(n["type"] as string));
+      // A notification of a post shows it as it is now, and goes with it once it is deleted.
+      const shown = typed.flatMap((n) => {
+        const s = n["status"] as Json | undefined;
+        if (s === undefined) return [n];
+        const now = current(s)[0];
+        return now === undefined ? [] : [{ ...n, status: now }];
+      });
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);

@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // What the post composer reads and writes (ADR-0028 §6, §7, ADR-0156): the settings a new post starts from, the post
-// replied to or quoted, the media uploads, the drafts kept on the server, and the post itself. A posted status goes
+// replied to or quoted, the media uploads, the drafts kept on the server, and the post itself, or the edit of one. A posted status goes
 // into the cache at once: at the top of the home timeline, and one more reply on the post it replies to, shown in its
 // cached threads. The write is a plain request with the composer's Idempotency-Key (no outbox yet, #2892): a failure
 // rejects with mykit's ProblemError or NetworkError, and the composer keeps what was written to send again with the
 // same key.
 import { ProblemError, uploadMedia, type components, type MediaAttachment } from "@mycroblog/mykit";
-import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { prependHomeStatuses } from "./arrivals";
+import { editStatus, type EditStatus } from "./own-posts";
 import { useAppData } from "./provider";
-import { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
+import { cachedStatus, shadowStatus, useShadow } from "./shadow";
+import { findCachedCopy, type Status } from "./statuses";
 import { cacheReply } from "./thread";
 
 export type { MediaAttachment };
@@ -79,34 +81,20 @@ export function useComposeSettings(): ComposeSettings {
   };
 }
 
-/** The status with the ID given as some cached timeline holds it (or boosts or quotes it), else undefined. */
-export function findCachedStatus(queryClient: QueryClient, id: string): Status | undefined {
-  const find = (status: Status): Status | undefined => {
-    if (status.id === id) return status;
-    const inner = status.boost ?? status.quote?.quoted_status;
-    return inner && find(inner);
-  };
-  for (const [key, data] of queryClient.getQueriesData<{ pages: StatusPage[] }>({ queryKey: ["get"] })) {
-    if (typeof key[1] !== "string" || !key[1].startsWith("/timelines/") || !data?.pages) continue;
-    for (const page of data.pages)
-      for (const status of page.items) {
-        const found = find(status);
-        if (found) return found;
-      }
-  }
-  return undefined;
-}
-
-/** A status by its ID, at once from a cached timeline that holds it, else from the server; none without an ID. */
+/**
+ * A status by its ID as it shows, at once from a cached query that holds it, else from the server; none without an ID,
+ * or once it is gone.
+ */
 export function useStatus(id: string | undefined): { status: Status | undefined; failed: boolean } {
   const data = useAppData();
+  const show = useShadow();
   const options = data.queries.queryOptions("get", "/statuses/{id}", { params: { path: { id: id ?? "" } } });
   const query = useQuery({
     ...options,
     enabled: id !== undefined,
-    initialData: () => (id === undefined ? undefined : findCachedStatus(data.queryClient, id)),
+    initialData: () => (id === undefined ? undefined : findCachedCopy(data.queryClient, id)),
   });
-  return { status: query.data, failed: query.isError };
+  return { status: query.data && show(query.data), failed: query.isError };
 }
 
 /**
@@ -124,14 +112,19 @@ export async function postStatus(data: AppData, body: CreateStatus, idempotencyK
 }
 
 /**
- * Writes what a posted status makes certain: it tops the home timeline, and the post it replies to has one more reply,
- * which its cached threads show.
+ * Writes what a posted status makes certain: it tops the home timeline, and the post it replies to has one more reply
+ * than it showed, which its cached threads show; a copy the server answered with the reply counted already keeps its
+ * count.
  */
 export function cachePostedStatus(data: AppData, status: Status): void {
   prependHomeStatuses(data, [status]);
   const parent = status.in_reply_to_id;
   if (parent === undefined) return;
-  updateCachedStatuses(data.queryClient, parent, (s) => ({ ...s, replies_count: s.replies_count + 1 }));
+  const shown = cachedStatus(data, parent);
+  if (shown !== undefined) {
+    const count = shown.replies_count + 1;
+    shadowStatus(data, parent, (s) => ({ ...s, replies_count: Math.max(s.replies_count, count) }), "replies").confirm();
+  }
   cacheReply(data.queryClient, status);
 }
 
@@ -206,6 +199,8 @@ export function refusal(error: unknown): string | undefined {
 /** The writes of the composer, bound to the session's data. */
 export type ComposeWrites = {
   readonly post: (body: CreateStatus, idempotencyKey: string) => Promise<Status>;
+  /** Edits the reader's post of `id` (own-posts.ts). */
+  readonly edit: (id: string, body: EditStatus) => Promise<Status>;
   readonly upload: (file: File, options?: Parameters<typeof uploadAttachment>[2]) => Promise<MediaAttachment>;
   readonly saveDraft: (body: DraftRequest, saved?: SavedDraft) => Promise<SavedDraft>;
   readonly deleteDraft: (id: string) => Promise<void>;
@@ -216,6 +211,7 @@ export function useComposeWrites(): ComposeWrites {
   const data = useAppData();
   return {
     post: (body, key) => postStatus(data, body, key),
+    edit: (id, body) => editStatus(data, id, body),
     upload: (file, options) => uploadAttachment(data, file, options),
     saveDraft: (body, saved) => saveDraft(data, body, saved),
     deleteDraft: (id) => deleteDraft(data, id),

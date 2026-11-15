@@ -33,6 +33,27 @@ export type PostMedia = {
   description?: string | undefined;
   url?: string | undefined;
   preview_url?: string | undefined;
+  /** Its size and, for a video or a sound, its length in seconds. */
+  meta?: { width?: number | undefined; height?: number | undefined; duration?: number | undefined } | undefined;
+  /** The blurhash of its picture, drawn in its place while it is sensitive and covered. */
+  blurhash?: string | undefined;
+};
+
+/** The card of the first link in a status (the API's LinkCard, ADR-0062 §8). */
+type PostCard = {
+  url: string;
+  title: string;
+  /** Empty when the page has none. */
+  description: string;
+  /** The site's name, or the host of `url`. */
+  site_name: string;
+  language?: string | undefined;
+  /** The image through the media proxy, with the size of the original and its own description. */
+  image?:
+    | { url: string; width: number; height: number; blurhash?: string | undefined; description?: string | undefined }
+    | undefined;
+  /** The page's author, as their server confirms them. */
+  author?: PostAccount | undefined;
 };
 
 /** The reactions to a post with one emoji (the API's StatusReaction). */
@@ -48,6 +69,27 @@ export type PostReaction = {
   me?: boolean | undefined;
 };
 
+/** A poll of a status (the API's Poll). */
+export type PostPoll = {
+  id: string;
+  /** When it ends, as an ISO 8601 date-time; omitted when it has no end. */
+  expires_at?: string | undefined;
+  /** Whether it has ended: it takes no votes and shows its results. */
+  expired: boolean;
+  /** Whether a vote may choose several options. */
+  multiple: boolean;
+  /** The votes, one per chosen option. */
+  votes_count: number;
+  /** The accounts that voted; omitted when unknown. */
+  voters_count?: number | undefined;
+  /** The options in order, each with its votes, omitted while its author hides them until it ends. */
+  options: readonly { title: string; votes_count?: number | undefined }[];
+  /** Whether the reader voted. */
+  voted?: boolean | undefined;
+  /** The indexes of the options the reader voted for. */
+  own_votes?: readonly number[] | undefined;
+};
+
 /** An account a status mentions (the API's StatusMention). */
 export type PostMention = { id: string; username: string; acct: string };
 
@@ -59,12 +101,18 @@ export type PostStatus = {
   content: string;
   /** The content warning; empty when there is none. */
   spoiler_text: string;
+  /** The media are sensitive: covered until the reader shows them. */
+  sensitive?: boolean | undefined;
+  /** The card of its first link; none with media or a quote. */
+  card?: PostCard | undefined;
   visibility: PostVisibility;
   /** The BCP 47 tag of the text's language; `und` when it is unknown. */
   language: string;
   in_reply_to_account_id?: string | undefined;
   /** When it was posted, as an ISO 8601 date-time. */
   created_at: string;
+  /** When its author last edited it, as an ISO 8601 date-time; none for a post never edited. */
+  edited_at?: string | undefined;
   /** The status this one boosts: what the post shows, `account` being who boosted it. */
   boost?: PostStatus | undefined;
   media_attachments: readonly PostMedia[];
@@ -80,6 +128,8 @@ export type PostStatus = {
   bookmarked?: boolean | undefined;
   /** The status it quotes, shown one level deep. */
   quote?: { state: string; quoted_status?: PostStatus | undefined } | undefined;
+  /** Its poll, whose options may hold custom emoji of `emojis`. */
+  poll?: PostPoll | undefined;
 };
 
 /** A post in the reader's language (the API's StatusTranslation). */
@@ -92,5 +142,7 @@ export type PostTranslation = {
   spoiler_text: string;
   /** The alternative text of the media that has any, in the language of the translation. */
   media_attachments: readonly { id: string; description: string }[];
+  /** The titles of the poll's options in order; empty when it has no poll. */
+  poll_options?: readonly string[] | undefined;
   provider?: { name: string } | undefined;
 };

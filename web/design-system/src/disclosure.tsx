@@ -14,6 +14,7 @@ import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { Icon, type IconName } from "./icons";
 import { stringsIn, useReader } from "./locale";
+import { usePreviewExpanded } from "./preview";
 
 export type DisclosureProps = {
   /** What the folded part is about (a content warning's text); it stays in sight. */
@@ -49,9 +50,10 @@ export function Disclosure({ summary, icon, defaultExpanded = false, locale, chi
   const reader = useReader(locale);
   const { t, lang } = stringsIn(reader.lang);
   const summaryId = useId();
+  const previewExpanded = usePreviewExpanded();
   const s = disclosure();
   return (
-    <AriaDisclosure defaultExpanded={defaultExpanded} className={s.root()} dir={reader.direction}>
+    <AriaDisclosure defaultExpanded={defaultExpanded || previewExpanded} className={s.root()} dir={reader.direction}>
       {({ isExpanded }) => (
         <>
           <div className={s.summary()}>

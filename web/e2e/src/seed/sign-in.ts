@@ -12,13 +12,16 @@ import { totp, totpCode } from "./totp";
 class Browser {
   readonly #cookies = new Map<string, string>();
   readonly #origin: string;
+  readonly #from: string | undefined;
 
-  constructor(origin: string) {
+  constructor(origin: string, from?: string) {
     this.#origin = origin;
+    this.#from = from;
   }
 
   async request(url: string, form?: Record<string, string>): Promise<Response> {
     const headers = new Headers();
+    if (this.#from !== undefined) headers.set("X-Forwarded-For", this.#from);
     if (this.#cookies.size > 0) headers.set("Cookie", [...this.#cookies].map(([k, v]) => `${k}=${v}`).join("; "));
     if (form !== undefined) {
       headers.set("Content-Type", "application/x-www-form-urlencoded");
@@ -67,10 +70,27 @@ async function submit(browser: Browser, url: string, action: string, fields: Rec
 
 /**
  * Signs in as `p` and returns a client of the API as them. `totpSecret` answers the two-factor step of a person who
- * has one, with a code of a step other than `avoidStep`, one whose code was used already (totpCode).
+ * has one, with a code of a step other than `avoidStep`, one whose code was used already (totpCode). With `from`, every
+ * request comes from that client IP (X-Forwarded-For, which the demo server trusts from this machine), so that the
+ * people of the E2E tests do not share one sign-in limit (fresh.ts).
  */
-export async function signIn(server: string, p: Person, totpSecret?: string, avoidStep?: number): Promise<Api> {
-  const browser = new Browser(server);
+export async function signIn(
+  server: string,
+  p: Person,
+  totpSecret?: string,
+  avoidStep?: number,
+  from?: string,
+): Promise<Api> {
+  const browser = new Browser(server, from);
+  const fetchFrom =
+    from === undefined
+      ? {}
+      : {
+          fetch: (request: Request) => {
+            request.headers.set("X-Forwarded-For", from);
+            return fetch(request);
+          },
+        };
   const redirectUri = `${server}/login/callback`;
   const verifier = newCodeVerifier();
   const authorize = `/oauth/authorize?${new URLSearchParams({
@@ -96,6 +116,6 @@ export async function signIn(server: string, p: Person, totpSecret?: string, avo
   if (next.status !== 303) throw new Error(`seed: signing in as ${p.username} answered ${next.status}`);
   const code = new URL(browser.location(await browser.request(authorize))).searchParams.get("code");
   if (code === null) throw new Error(`seed: the authorization of ${p.username} returned no code`);
-  const token = await exchange({ server, clientId: "my-web", redirectUri }, code, verifier);
-  return createClient({ server, tokenSource: staticToken(token.accessToken), acceptLanguage: p.locale });
+  const token = await exchange({ server, clientId: "my-web", redirectUri, ...fetchFrom }, code, verifier);
+  return createClient({ server, tokenSource: staticToken(token.accessToken), acceptLanguage: p.locale, ...fetchFrom });
 }

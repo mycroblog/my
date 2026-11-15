@@ -4,7 +4,7 @@ import { expect, test } from "bun:test";
 import { accountStatusesQuery } from "@my/app-data";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { press } from "../test/actions";
-import { account, render, server, status } from "../test/server";
+import { account, poll, render, server, status } from "../test/server";
 import { loadProfile, Profile } from "./profile";
 
 const alice = account("alice", {
@@ -106,4 +106,23 @@ test("a post and a pinned one answer their actions: a favourite reaches the serv
   await Bun.sleep(0);
   expect(requests).toContain("POST /statuses/p/favourite");
   expect(composed).toEqual([{ kind: "reply", id: "q" }]);
+});
+
+test("a vote in the poll of a post on the profile reaches the server", async () => {
+  const { data, received } = server({
+    "/accounts/lookup": account("hana"),
+    "/accounts/verify_credentials": account("kumi"),
+    "/accounts/hana/statuses": { items: [status("v", "hana", { poll: poll("p", { multiple: true }) })] },
+    "/statuses/v/poll/votes": status("v", "hana", { poll: poll("p", { multiple: true, voted: true }) }),
+  });
+  await loadProfile(data, "hana");
+  await data.queryClient.infiniteQuery(accountStatusesQuery(data, "hana", "posts"));
+  render(
+    data,
+    <PostActions onCompose={() => undefined}>
+      <Profile acct="hana" />
+    </PostActions>,
+  );
+  press({ type: "vote", id: "v", poll: "p", choices: [0, 1] });
+  expect(await received("POST /statuses/v/poll/votes")).toEqual({ poll_id: "p", choices: [0, 1] });
 });

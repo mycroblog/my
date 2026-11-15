@@ -8,33 +8,57 @@ import { createClient } from "@mycroblog/mykit";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-/** The answers by the path after /api/v1, each a body (200) or a status; any other path is a 404. */
+/**
+ * The answers by the path after /api/v1, each a body (200), a status, or a Response (a problem of a type); any other
+ * path is a 404.
+ */
 export type Answers = Readonly<Record<string, unknown>>;
 
-/** A server that answers `answers`, and the requests it got as `METHOD path?query`. */
-export function server(answers: Answers): { data: AppData; requests: string[] } {
+/**
+ * A server that answers `answers`, the requests it got as `METHOD path?query`, and `received(request)`, the JSON body
+ * of the first request it gets of `METHOD path`, once it got it.
+ */
+export function server(answers: Answers): {
+  data: AppData;
+  requests: string[];
+  received: (request: string) => Promise<unknown>;
+} {
   const requests: string[] = [];
+  type Waiting = { promise: Promise<unknown>; resolve: (body: unknown) => void };
+  const bodies = new Map<string, Waiting>();
+  const bodyOf = (request: string): Waiting => {
+    const known = bodies.get(request);
+    if (known !== undefined) return known;
+    let resolve: (body: unknown) => void = () => undefined;
+    const promise = new Promise<unknown>((r) => {
+      resolve = r;
+    });
+    const waiting = { promise, resolve };
+    bodies.set(request, waiting);
+    return waiting;
+  };
   const api = createClient({
     server: "https://example.com",
     retry: { disabled: true },
-    fetch: (request) => {
+    fetch: async (request) => {
       const url = new URL(request.url);
       const path = url.pathname.replace(/^\/api\/v1/, "");
       requests.push(`${request.method} ${path}${url.search}`);
+      const text = await request.text();
+      bodyOf(`${request.method} ${path}`).resolve(text === "" ? undefined : JSON.parse(text));
       const body = answers[path];
+      if (body instanceof Response) return body.clone();
       if (body === undefined || typeof body === "number") {
         const status = typeof body === "number" ? body : 404;
-        return Promise.resolve(
-          Response.json(
-            { type: "about:blank", title: "Problem", status },
-            { status, headers: { "Content-Type": "application/problem+json" } },
-          ),
+        return Response.json(
+          { type: "about:blank", title: "Problem", status },
+          { status, headers: { "Content-Type": "application/problem+json" } },
         );
       }
-      return Promise.resolve(Response.json(body));
+      return Response.json(body);
     },
   });
-  return { data: createAppData(api), requests };
+  return { data: createAppData(api), requests, received: (request) => bodyOf(request).promise };
 }
 
 /** The markup of `children` under the app's providers, in `locale`. */
@@ -60,6 +84,24 @@ export const account = (id: string, fields: Record<string, unknown> = {}) => ({
   created_at: "2025-04-01T00:00:00Z",
   fields: [],
   badges: [],
+  ...fields,
+});
+
+/** An open poll of the API, which the reader has not voted in, with the fields a test sets. */
+export const poll = (id: string, fields: Record<string, unknown> = {}) => ({
+  id,
+  expires_at: "2026-11-21T03:00:00Z",
+  expired: false,
+  multiple: false,
+  votes_count: 0,
+  voters_count: 0,
+  options: [
+    { title: "Sourdough", votes_count: 0 },
+    { title: "Rye", votes_count: 0 },
+  ],
+  voted: false,
+  own_votes: [],
+  emojis: [],
   ...fields,
 });
 

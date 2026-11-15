@@ -1119,6 +1119,16 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.TranslatorAWSRegion = v },
 	},
 	{
+		key: "translator_fake",
+		doc: "Test builds only: registers the stand-in translation provider `fake`, which the instance setting `translation_providers` then enables, for end-to-end tests and demonstrations. It calls no service: it puts the target language before each text, as `[ja] Hello`, and fails as a provider that is down when a text contains `[translation-fails]`.",
+		def: "false",
+		choices: []choice{
+			{value: "false", doc: "No such provider."},
+			{value: "true", doc: "The provider `fake`. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md))."},
+		},
+		set: func(c *Config, v string) { c.TranslatorFake = v == "true" },
+	},
+	{
 		key: "search",
 		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
 		def: "none",
@@ -1717,6 +1727,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	if vals["search"] == "fake" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "search", Message: "fake is refused in the production profile: it is an index in memory for tests; set profile = development"})
+	}
+	if vals["translator_fake"] == "true" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "translator_fake", Message: "true is refused in the production profile: the provider fake translates nothing; set profile = development"})
 	}
 	if vals["http_allow_private_networks"] == "true" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "http_allow_private_networks", Message: "true is refused in the production profile; set profile = development"})

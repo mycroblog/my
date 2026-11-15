@@ -2,8 +2,9 @@
 
 // The composer's logic, without its view (ADR-0025 §4): the draft being written (model.ts), the uploads of its images
 // (each with a failed upload's retry), the post replied to or quoted, read from the cache or the server, and the post
-// itself. A post the server refuses keeps the draft and says why in the server's own words; one that got no answer
-// says that it did not finish, and Post sends it again with the same Idempotency-Key, so that it is posted once.
+// itself, or the edit of the reader's post. A post the server refuses keeps the draft and says why in the server's own
+// words; one that got no answer says that it did not finish, and Post sends it again with the same Idempotency-Key, so
+// that it is posted once (an edit sent again is the same edit).
 
 import {
   refusal,
@@ -19,6 +20,7 @@ import {
   maxAttachments,
   postable,
   problemsOf,
+  toEdit,
   toStatus,
   type Attachment,
   type Draft,
@@ -56,7 +58,7 @@ export function useComposer(initial: Draft, onPosted: (status: Status, draft: Dr
   const [draft, setDraft] = useState(initial);
   const [phase, setPhase] = useState<Phase>({ kind: "editing" });
   const [checked, setChecked] = useState(false);
-  const id = initial.target.kind === "new" ? undefined : initial.target.id;
+  const id = initial.target.kind === "reply" || initial.target.kind === "quote" ? initial.target.id : undefined;
   const { status: answered } = useStatus(id);
 
   // A reply mentions whom it answers, once the post is read; the reader's own writing is never replaced.
@@ -136,7 +138,12 @@ export function useComposer(initial: Draft, onPosted: (status: Status, draft: Dr
         return;
       }
       setPhase({ kind: "posting" });
-      writes.post(toStatus(draft, settings), draft.key).then(
+      const { target } = draft;
+      const sent =
+        target.kind === "edit"
+          ? writes.edit(target.id, toEdit(draft))
+          : writes.post(toStatus(draft, settings), draft.key);
+      sent.then(
         (status) => {
           // The draft it was saved as is published now: it goes, and a failure leaves only a stale draft.
           if (draft.saved) writes.deleteDraft(draft.saved.id).catch(() => undefined);

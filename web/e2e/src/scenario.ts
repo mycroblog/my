@@ -3,9 +3,9 @@
 // The scenario (ADR-0015 §5): the people, posts and relationships of a small server in use, as data only. The seed
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
-// today (the home timeline, the composer, a post and its thread, the notifications, a profile, the sign-in with a
-// password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and upcoming
-// events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
+// today (the home timeline, the composer, a post, its edit history and its thread, the notifications, a profile, the
+// sign-in with a password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and
+// upcoming events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
 // server decides them, so nothing that reads the scenario depends on them. Every item has a key, which the
 // seed sends as `Idempotency-Key: demo:<key>`. The passwords are fixed, which a server takes from the seed only in
 // the `development` profile of a test build (ADR-0015 §6). Links use the reserved `.test` and `.invalid` hosts.
@@ -39,6 +39,31 @@ export type Person = {
 /** An image attached to a post: its file name, alt text, and drawing. */
 export type Image = { name: string; description: string; drawing: Drawing };
 
+/**
+ * An attachment other than an image: a video (its poster drawn), a GIF (a short silent loop, its first frame drawn),
+ * a sound, or a file of a kind no client shows, with its alt text (empty for none) and a video's or a sound's length
+ * in seconds. Only the fake API answers them: the server takes only real video and sound files, which the repository
+ * does not hold, so the seed leaves out a post that has them.
+ */
+export type Attachment =
+  | { kind: "video" | "gifv"; name: string; description: string; poster: Drawing; seconds?: number }
+  | { kind: "audio"; name: string; description: string; seconds: number }
+  | { kind: "unknown"; name: string; description: string };
+
+/**
+ * The card of a post's first link, as the server would make it from the page. Only the fake API answers it: the
+ * server fetches a page itself, and the scenario's pages are on hosts that do not exist.
+ */
+export type LinkCard = {
+  title: string;
+  description: string;
+  site: string;
+  language?: string;
+  image?: { description?: string; drawing: Drawing };
+  /** The username of the person the page names as its author, as their server confirms them. */
+  author?: string;
+};
+
 /** Who may see a post (the API's Visibility). */
 export type Visibility = "public" | "local" | "unlisted" | "private" | "direct";
 
@@ -55,16 +80,36 @@ export type Post = {
   /** The content warning. */
   spoiler?: string;
   images?: readonly Image[];
+  /** Its attachments other than images (only the fake's), after its images. */
+  attachments?: readonly Attachment[];
+  /** Its media are sensitive: covered until the reader shows them. */
+  sensitive?: boolean;
+  /** The card of its first link (only the fake's). */
+  card?: LinkCard;
   /** Pinned to its author's profile. */
   pinned?: boolean;
+  /** Its poll, which ends `days` days after the seed posts it. */
+  poll?: Poll;
+  /**
+   * What it said before its author edited it, oldest first: the seed posts the first, then edits it to each of the
+   * others, and last to `text`, what it says now; each version stays in its edit history.
+   */
+  earlier?: readonly string[];
 };
 
-/** What a person does to a post: a favourite, a boost, an emoji reaction (`:shortcode:` for a custom one), a bookmark. */
+/** A poll of a post: its options, whether a vote may choose several, and how many days it takes votes. */
+export type Poll = { options: readonly string[]; multiple?: boolean; days: number };
+
+/**
+ * What a person does to a post: a favourite, a boost, an emoji reaction (`:shortcode:` for a custom one), a bookmark,
+ * a vote in its poll for the options of `choices` (their indexes).
+ */
 export type Interaction =
   | { kind: "favourite"; by: string; post: string }
   | { kind: "boost"; by: string; post: string }
   | { kind: "reaction"; by: string; post: string; emoji: string }
-  | { kind: "bookmark"; by: string; post: string };
+  | { kind: "bookmark"; by: string; post: string }
+  | { kind: "vote"; by: string; post: string; choices: readonly number[] };
 
 /** A follow; the follow of a locked account waits as a request until the followee accepts it. */
 export type Follow = { follower: string; followee: string; accepted?: boolean };
@@ -72,8 +117,8 @@ export type Follow = { follower: string; followee: string; accepted?: boolean };
 /** A block or a mute of one person by another. */
 export type Restriction = { kind: "block" | "mute"; by: string; target: string };
 
-/** A custom emoji of the server, drawn by code. */
-export type CustomEmoji = { shortcode: string; drawing: Drawing };
+/** A custom emoji of the server, drawn by code, with the picker's category and the other names it finds it by. */
+export type CustomEmoji = { shortcode: string; drawing: Drawing; category?: string; aliases?: readonly string[] };
 
 /** An OAuth app a person registered, which other people consent to at /oauth/authorize. */
 export type App = {
@@ -252,6 +297,11 @@ export const instance: Readonly<Record<string, string>> = {
   default_locale: "en",
   contact_account: admin,
   contact_email: "contact@demo.test",
+  // The fake provider of the test build (MY_TRANSLATOR_FAKE): "[ja] Hello" for "Hello", a provider that is down for a
+  // text with "[translation-fails]". It receives the default visibilities, not private or direct posts. One person
+  // may send 1000 characters a month, which two posts of the default maximum length (500) use up.
+  translation_providers: "fake",
+  translation_user_monthly_characters: "1000",
 };
 
 /** The server's custom emoji, added with `my admin emoji create`. */
@@ -281,6 +331,22 @@ export const emojis: readonly CustomEmoji[] = [
         { kind: "circle", x: 32, y: 32, r: 14, color: [255, 211, 77] },
         { kind: "circle", x: 50, y: 14, r: 5, color: [255, 236, 170] },
         { kind: "circle", x: 14, y: 50, r: 4, color: [255, 236, 170] },
+      ],
+    },
+  },
+  {
+    shortcode: "teacup",
+    category: "Sunday tea",
+    aliases: ["ocha", "tea"],
+    drawing: {
+      width: 64,
+      height: 64,
+      top: [214, 240, 222],
+      bottom: [150, 200, 170],
+      shapes: [
+        { kind: "rect", x: 16, y: 26, w: 30, h: 22, color: [255, 255, 255] },
+        { kind: "circle", x: 48, y: 36, r: 6, color: [255, 255, 255] },
+        { kind: "rect", x: 20, y: 30, w: 22, h: 6, color: [120, 170, 90] },
       ],
     },
   },
@@ -344,6 +410,7 @@ export const posts: readonly Post[] = [
     visibility: "public",
     replyTo: "sam-ridge-reply",
     text: "@sam 北側の尾根道です。駐車場から二時間くらい。",
+    earlier: ["@sam 南側の尾根道です。", "@sam 北側の尾根道です。"],
   },
   {
     key: "sam-ridge-reply-2",
@@ -372,6 +439,14 @@ export const posts: readonly Post[] = [
     ],
   },
   {
+    key: "sam-poll",
+    author: "sam",
+    language: "en",
+    visibility: "public",
+    text: "Bread for Saturday's meetup: which loaf should I bake?",
+    poll: { options: ["Sourdough", "Rye", "Focaccia"], days: 7 },
+  },
+  {
     key: "layla-rtl",
     author: "layla",
     language: "ar",
@@ -384,6 +459,77 @@ export const posts: readonly Post[] = [
     language: "en",
     visibility: "public",
     text: "Translating a short novel this month. The hardest part is always the jokes. https://layla.notes.test/translating-jokes",
+    card: {
+      title: "Why jokes are the hardest thing to translate",
+      description: "A pun lives in one language. Notes from a month of carrying a short novel's humour into English.",
+      site: "Layla's notes",
+      language: "en",
+      image: { description: "Two speech bubbles over a calm sea", drawing: sea },
+      author: "layla",
+    },
+  },
+  {
+    key: "yuki-tide",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    text: "夕方の潮が満ちてくるところ。九十秒だけ",
+    attachments: [
+      {
+        kind: "video",
+        name: "tide.mp4",
+        description: "夕暮れの浜に波が寄せる。空が橙から紫に変わっていく",
+        poster: dawn,
+        seconds: 92,
+      },
+    ],
+  },
+  {
+    key: "sam-gif",
+    author: "sam",
+    language: "en",
+    visibility: "public",
+    text: "Me when the loaf finally rises",
+    attachments: [{ kind: "gifv", name: "rise.mp4", description: "", poster: loaf }],
+  },
+  {
+    key: "marco-rain",
+    author: "marco",
+    language: "en",
+    visibility: "public",
+    text: "Rain on the tin roof of the cabin last night. Headphones recommended.",
+    attachments: [
+      { kind: "audio", name: "rain.mp3", description: "Field recording: steady rain on a tin roof", seconds: 194 },
+    ],
+  },
+  {
+    key: "hana-slides",
+    author: "hana",
+    language: "ja",
+    visibility: "public",
+    text: "先週の勉強会のスライドです",
+    attachments: [{ kind: "unknown", name: "slides.key", description: "" }],
+  },
+  {
+    key: "yuki-walk",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    text: "週末の散歩、三枚。朝の山、昼の海、帰りに買ったパン",
+    images: [
+      { name: "walk-ridge.png", description: "朝の山並み。尾根が三つ重なっている", drawing: dawn },
+      { name: "walk-sea.png", description: "昼の海。空は淡い青", drawing: sea },
+      { name: "walk-loaf.png", description: "丸いパンを上から見たところ", drawing: loaf },
+    ],
+  },
+  {
+    key: "yuki-sensitive",
+    author: "yuki",
+    language: "ja",
+    visibility: "public",
+    text: "転んで擦りむいた膝。苦手な人は開かないでください",
+    sensitive: true,
+    images: [{ name: "knee.png", description: "擦りむいた膝の傷", drawing: dawn }],
   },
   {
     key: "sam-spoiler",
@@ -470,6 +616,9 @@ export const interactions: readonly Interaction[] = [
   { kind: "reaction", by: "yuki", post: "layla-rtl", emoji: "🙏" },
   { kind: "favourite", by: "yuki", post: "layla-jokes" },
   { kind: "boost", by: "yuki", post: "layla-jokes" },
+  { kind: "vote", by: "hana", post: "sam-poll", choices: [0] },
+  { kind: "vote", by: "marco", post: "sam-poll", choices: [2] },
+  { kind: "vote", by: "layla", post: "sam-poll", choices: [0] },
 ];
 
 /** The blocks and mutes. */

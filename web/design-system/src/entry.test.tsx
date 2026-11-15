@@ -75,14 +75,14 @@ test("the stamp names its glyph and isolates the time", () => {
   expect(renderToStaticMarkup(<Stamp date={new Date()} />)).not.toContain('role="img"');
 });
 
-test("a caption line keeps its glyph on the first line, and its action with the middle dot", () => {
+test("a caption line keeps its glyph on the first line, the middle dot on its text's line, its action whole", () => {
   const html = renderToStaticMarkup(
     <CaptionLine icon="translate" lang="en" action={<button type="button">Show original</button>}>
       Translated from Japanese
     </CaptionLine>,
   );
   expect(html).toMatch(/^<p class="[^"]*items-start[^"]*" lang="en">/);
-  expect(html).toContain('Translated from Japanese <span class="whitespace-nowrap">· <button');
+  expect(html).toContain('Translated from Japanese · <span class="whitespace-nowrap"><button');
   const alone = renderToStaticMarkup(
     <CaptionLine icon="translate" action={<button type="button">Translate</button>} />,
   );

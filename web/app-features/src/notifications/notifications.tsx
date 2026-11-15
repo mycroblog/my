@@ -8,7 +8,7 @@
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
-import { AccountLine, ListColumn, nameOf, Post, PostContent } from "@my/app-components";
+import { AccountLine, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
@@ -44,7 +44,8 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions } from "../post-actions";
+import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
 
@@ -250,6 +251,9 @@ function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string 
 function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean; t: T; instance: string }) {
   const mark = unread ? t("notifications.unread") : undefined;
   const onAction = usePostActions();
+  const votingOf = usePostVoting();
+  const ownOf = usePostOwn();
+  const picker = usePostPicker();
   if (shapeOf(n) === "post" && n.status !== undefined)
     return (
       <Post
@@ -260,6 +264,9 @@ function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean;
           </NoticeCaption>
         }
         onAction={onAction}
+        voting={votingOf(n.status)}
+        own={ownOf(n.status)}
+        picker={picker}
       />
     );
   return <Line n={n} unread={mark} t={t} instance={instance} />;

@@ -1023,6 +1023,10 @@
     "env": "MY_TRANSLATOR_DEEPL_URL",
     "secret": false
   },
+  "translator_fake": {
+    "env": "MY_TRANSLATOR_FAKE",
+    "secret": false
+  },
   "translator_google_location": {
     "env": "MY_TRANSLATOR_GOOGLE_LOCATION",
     "secret": false

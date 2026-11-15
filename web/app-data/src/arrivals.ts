@@ -9,7 +9,8 @@
 import { useEffect, useEffectEvent, useSyncExternalStore } from "react";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
-import { removeCachedStatus, type Status, withoutStatus } from "./statuses";
+import { receiveGone, shadowed } from "./shadow";
+import type { Status } from "./statuses";
 import { homeTimelineQuery } from "./timeline";
 
 /** What reached the shown timeline: statuses, as many as would go in now, or a break. */
@@ -115,14 +116,14 @@ export function receiveHomeStatuses(data: AppData, statuses: readonly Status[]):
 }
 
 /**
- * Takes a status that was deleted, from the stream, out of every cached timeline and of what the home timeline holds:
- * the status and the boosts of it go, and a quote of it shows it deleted.
+ * Takes a status that was deleted, from the stream, out of every list and view through the shadow, and out of what
+ * the home timeline holds: the status and the boosts of it go, and a quote of it shows it deleted.
  */
 export function receiveDeletion(data: AppData, id: string): void {
+  receiveGone(data, id);
   const store = storeOf(data);
-  const statuses = withoutStatus(store.held.statuses, id);
-  if (statuses !== store.held.statuses) hold(store, { ...store.held, statuses });
-  removeCachedStatus(data.queryClient, id);
+  const statuses = store.held.statuses.filter((s) => shadowed(data, s) !== undefined);
+  if (statuses.length !== store.held.statuses.length) hold(store, { ...store.held, statuses });
 }
 
 /** Tells the home timeline that statuses may have been missed: the stream connected again. */

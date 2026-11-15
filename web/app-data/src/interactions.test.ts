@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { cachedStatus, marked, markStatus } from "./interactions";
+import { marked, markStatus } from "./interactions";
+import { cachedStatus, shadowed } from "./shadow";
 import type { Status } from "./statuses";
 import { fakeAppData, json, status } from "./test/fake";
 import { homeTimelineQuery } from "./timeline";
@@ -9,7 +10,10 @@ import { homeTimelineQuery } from "./timeline";
 const post = (fields: Partial<Status> = {}) =>
   status("1", { favourites_count: 0, boosts_count: 0, reactions: [], ...fields });
 
-/** AppData whose server answers handler, with the home timeline and the thread of post 0 holding `items`. */
+/**
+ * AppData whose server answers handler, with the home timeline and the thread of post 0 holding `items`, and the first
+ * of each as it shows.
+ */
 function cached(items: Status[], handler: (request: Request) => Response | Promise<Response>) {
   const { data, requests } = fakeAppData(handler);
   const timeline = homeTimelineQuery(data).queryKey;
@@ -17,10 +21,11 @@ function cached(items: Status[], handler: (request: Request) => Response | Promi
     params: { path: { id: "0" } },
   }).queryKey;
   data.queryClient.setQueryData(timeline, { pages: [{ items }], pageParams: [undefined] });
-  data.queryClient.setQueryData(context, { ancestors: [], descendants: items });
+  data.queryClient.setQueryData(context, { ancestors: [], descendants: items.map((s) => ({ ...s })) });
+  const shown = (copy: Status | undefined) => copy && shadowed(data, copy);
   const read = () => ({
-    timeline: data.queryClient.getQueryData(timeline)?.pages[0]?.items[0],
-    thread: data.queryClient.getQueryData<{ descendants: Status[] }>(context)?.descendants[0],
+    timeline: shown(data.queryClient.getQueryData(timeline)?.pages[0]?.items[0]),
+    thread: shown(data.queryClient.getQueryData<{ descendants: Status[] }>(context)?.descendants[0]),
   });
   return { data, requests, read };
 }
@@ -84,6 +89,28 @@ test("a reaction takes back the favourite and the reader's other reaction, as th
   expect(after.reactions).toEqual([{ name: "🎉", count: 3, me: true }]);
   const favourited = marked(after, { type: "favourite", on: true });
   expect(favourited.reactions).toEqual([{ name: "🎉", count: 2, me: false }]);
+});
+
+test("a failed reaction puts back the favourite and the other reaction it took, in every copy", async () => {
+  const before = {
+    favourited: true,
+    favourites_count: 2,
+    reactions: [
+      { name: "👍", count: 1, me: true },
+      { name: "🎉", count: 2, me: false },
+    ],
+  };
+  const { promise: answered, resolve: answer } = Promise.withResolvers<Response>();
+  const { data, read } = cached([post(before)], () => answered);
+  const done = markStatus(data, "1", { type: "reaction", name: "🎉", on: true }).then(
+    () => "resolved",
+    () => "rejected",
+  );
+  expect(read().timeline).toMatchObject({ favourited: false, reactions: [{ name: "🎉", count: 3, me: true }] });
+  answer(json(422, { type: "about:blank", title: "Unprocessable", status: 422 }));
+  expect(await done).toBe("rejected");
+  expect(read().timeline).toMatchObject(before);
+  expect(read().thread).toMatchObject(before);
 });
 
 test("the cached status is found wherever a query holds it, and none when none does", () => {
@@ -150,8 +177,10 @@ test("a failed write puts back only its own mark, not a boost set meanwhile", as
   const boost = markStatus(data, "1", { type: "boost", on: true });
   answer(0, json(422, { type: "about:blank", title: "Unprocessable", status: 422 }));
   expect(await favourite).toBe("rejected");
-  expect(read().timeline).toMatchObject({ favourited: false, boosted: true, boosts_count: 1 });
+  expect(read().timeline?.favourited ?? false).toBe(false);
+  expect(read().timeline).toMatchObject({ boosted: true, boosts_count: 1 });
   answer(1, json(200, post({ boosted: true, boosts_count: 1 })));
   await boost;
-  expect(read().timeline).toMatchObject({ favourited: false, boosted: true });
+  expect(read().timeline?.favourited ?? false).toBe(false);
+  expect(read().timeline?.boosted).toBe(true);
 });

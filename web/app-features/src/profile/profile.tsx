@@ -8,7 +8,7 @@
 // it, the tabs of its posts (posts, posts and replies, media), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
-import { AccountName, handleOf, ListColumn, nameOf, Post, PostContent } from "@my/app-components";
+import { AccountName, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
   accountQuery,
   useAccount,
@@ -47,7 +47,8 @@ import {
 } from "@my/design-system";
 import { useId, useState } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions } from "../post-actions";
+import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { TranslatablePost as Post } from "../post-translation";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -305,6 +306,9 @@ function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed
   const posts = useAccountStatuses(account.id, tab);
   const pinned = useAccountStatuses(account.id, "pinned", tab !== "media");
   const onAction = usePostActions();
+  const votingOf = usePostVoting();
+  const ownOf = usePostOwn();
+  const picker = usePostPicker();
   const items: Item[] = [
     ...(tab === "media" ? [] : pinned.items.map((status) => ({ status, pinned: true }))),
     ...posts.items.map((status) => ({ status, pinned: false })),
@@ -322,6 +326,9 @@ function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed
           status={item.status}
           context={item.pinned ? <CaptionLine icon="pin">{t("profile.pinned")}</CaptionLine> : undefined}
           onAction={onAction}
+          voting={votingOf(item.status)}
+          own={ownOf(item.status)}
+          picker={picker}
         />
       )}
     </ListColumn>

@@ -8,8 +8,9 @@
 
 import { images, type Visibility } from "@my/design-system/samples";
 import { serverHtml } from "@my/e2e/fake";
+import type { PostEdit } from "./edit-history";
 import type { ContentEmoji } from "./post-content";
-import type { PostAccount, PostStatus, PostTranslation, PostVisibility } from "./status";
+import type { PostAccount, PostPoll, PostStatus, PostTranslation, PostVisibility } from "./status";
 
 const minute = 60_000;
 const hour = 60 * minute;
@@ -17,7 +18,25 @@ const day = 24 * hour;
 
 type Account = { name: string; handle: string; avatar?: string };
 
-type Media = { alt: string; src: string };
+/** An attachment: its picture (a video's or a sound's poster), its kind (an image by default), its file and length. */
+type Media = {
+  alt: string;
+  src: string;
+  kind?: "image" | "gifv" | "video" | "audio" | "unknown";
+  href?: string;
+  duration?: number;
+};
+
+/** The card of the post's first link (ADR-0062 §8). */
+type Card = {
+  url: string;
+  title: string;
+  description: string;
+  site: string;
+  lang?: string;
+  image?: { src: string; width: number; height: number; alt?: string };
+  author?: Account;
+};
 
 export type TimelinePost = {
   id: string;
@@ -35,6 +54,10 @@ export type TimelinePost = {
   /** The text as its author wrote it, which the server renders as HTML (serverHtml.ts), with :shortcode: emoji. */
   text: string;
   media?: Media[];
+  /** Its media are sensitive: covered until shown (FR-104). */
+  sensitive?: boolean;
+  /** The card of its first link, which shows when it has neither media nor a quote. */
+  card?: Card;
   counts: { replies: number; boosts: number; favourites: number };
   boosted?: boolean;
   favourited?: boolean;
@@ -46,11 +69,34 @@ export type TimelinePost = {
   reactions?: Reaction[];
   /** The text in the reader's language, by that language, with the provider that translated it (ADR-0148). */
   translation?: Partial<Record<"en" | "ja", string>>;
+  /** The rest of it in the reader's language, by that language: its content warning, poll options and alt texts. */
+  translatedParts?: Partial<Record<"en" | "ja", { cw?: string; poll?: string[]; alt?: string[] }>>;
   /** Shown translated at first, to show that state. */
   translated?: boolean;
+  /** Its poll (FR-112). */
+  poll?: SamplePoll;
+  /**
+   * The versions before the current one, oldest first, each with how long ago it was made (the first: `ago`); the
+   * post was last edited `edited` ms ago.
+   */
+  history?: { ago: number; text: string; cw?: string; media?: Media[] }[];
+  edited?: number;
 };
 
-export type QuotedPost = Pick<TimelinePost, "lang" | "author" | "ago" | "visibility" | "text" | "media">;
+/**
+ * A poll: its options with their votes, how many voted, when it ends (in ms from now; ended when not ahead), the
+ * options the reader voted for, and whether its author hides the votes until it ends.
+ */
+type SamplePoll = {
+  options: { title: string; votes: number }[];
+  multiple?: boolean;
+  voters: number;
+  endsIn: number;
+  voted?: number[];
+  hideTotals?: boolean;
+};
+
+export type QuotedPost = Pick<TimelinePost, "lang" | "author" | "ago" | "visibility" | "text" | "media" | "sensitive">;
 
 type Reaction = { emoji: string; count: number; mine?: boolean };
 
@@ -85,6 +131,16 @@ const scenes = {
   autumn: scene("#f2b56b", "#f9dfb0", "#fff1d0", ["#c2683f", "#94462f", "#5e2d22"]),
   snow: scene("#c9d6e3", "#f3f6f9", "#ffffff", ["#e3e9ef", "#cfd8e1", "#9fb0c0"]),
 };
+
+/** Each scene's blurhash, as the server would give it: its sky, its light and its ridges, top to bottom. */
+const blurhashes = new Map<string, string>([
+  [scenes.dawn, "IuPrad~U8_"],
+  [scenes.sea, "IxHWWH%h01"],
+  [scenes.forest, "I#K2tg.80K"],
+  [scenes.night, "IE68O8WBDz"],
+  [scenes.autumn, "IuPE-V~98y"],
+  [scenes.snow, "IVP7OmR.0L"],
+]);
 
 const me: Account = { name: "Kumi Ito", handle: "@kumi@my.example" };
 
@@ -321,6 +377,225 @@ export const posts: TimelinePost[] = [
   },
 ];
 
+/** A page's image for a link card: a scene at the size the media proxy reports for it. */
+const cardImage = (src: string, alt?: string) => ({ src, width: 640, height: 400, ...(alt ? { alt } : {}) });
+
+/**
+ * The sample posts of what a post carries besides images (FR-104, FR-105, FR-117): link cards, a video, a GIF, a sound,
+ * a file of an unknown kind, the kinds mixed, and sensitive media alone, with a content warning, with a sound, and on a
+ * card.
+ */
+export const mediaPosts: TimelinePost[] = [
+  {
+    id: "card-large",
+    lang: "en",
+    author: lena,
+    ago: 25 * minute,
+    visibility: "public",
+    text: "A long read on how small servers keep their moderation humane, and what it costs. https://fieldnotes.example.org/2026/small-servers",
+    card: {
+      url: "https://fieldnotes.example.org/2026/small-servers",
+      title: "Keeping it humane: moderation on small fediverse servers",
+      description:
+        "Five admins of servers under a thousand people talk about reports, burnout, and the rules they wrote together with their members.",
+      site: "Field Notes",
+      lang: "en",
+      image: cardImage(scenes.sea, "A calm sea under a pale sky"),
+    },
+    counts: { replies: 4, boosts: 21, favourites: 57 },
+  },
+  {
+    id: "card-ja",
+    lang: "ja",
+    author: hana,
+    ago: 2 * hour,
+    visibility: "public",
+    text: "週末のお茶会の会場、ここにしました https://kissa.example.jp/shops/ekimae",
+    card: {
+      url: "https://kissa.example.jp/shops/ekimae",
+      title: "喫茶 えきまえ｜駅から徒歩 1 分、昭和から続く純喫茶",
+      description: "自家焙煎のブレンドと、厚切りのトーストが名物。日曜は 8 時から営業しています。",
+      site: "喫茶ガイド",
+      lang: "ja",
+      image: cardImage(scenes.autumn),
+    },
+    counts: { replies: 2, boosts: 0, favourites: 9 },
+  },
+  {
+    id: "card-text",
+    lang: "en",
+    author: ravi,
+    ago: 5 * hour,
+    visibility: "unlisted",
+    text: "The spec for the new signature scheme is out: https://w3c.example.org/TR/http-signatures-next",
+    card: {
+      url: "https://w3c.example.org/TR/http-signatures-next",
+      title: "HTTP Message Signatures, the next draft",
+      description: "",
+      site: "w3c.example.org",
+    },
+    counts: { replies: 0, boosts: 3, favourites: 5 },
+  },
+  {
+    id: "card-author",
+    lang: "en",
+    author: alice,
+    ago: 1 * day,
+    visibility: "public",
+    text: "Mika wrote up the whole trip, with the photos: https://travel.example.jp/mika/hokkaido-in-winter",
+    card: {
+      url: "https://travel.example.jp/mika/hokkaido-in-winter",
+      title: "Hokkaido in winter, by train and on foot",
+      description: "Ten days from Hakodate to Abashiri: snow, quiet stations, and the best soup curry I have had.",
+      site: "Slow Travel",
+      lang: "en",
+      image: cardImage(scenes.snow, "Snow-covered hills under a white sky"),
+      author: mika,
+    },
+    counts: { replies: 3, boosts: 12, favourites: 40 },
+  },
+  {
+    id: "video",
+    lang: "en",
+    author: ravi,
+    ago: 40 * minute,
+    visibility: "public",
+    text: "The tide coming in at dusk, ninety seconds of it.",
+    media: [
+      {
+        kind: "video",
+        alt: "Waves rolling onto a beach at dusk while the sky turns from orange to purple",
+        src: scenes.dawn,
+        duration: 92,
+      },
+    ],
+    counts: { replies: 1, boosts: 4, favourites: 18 },
+  },
+  {
+    id: "gif",
+    lang: "ja",
+    author: takuya,
+    ago: 3 * hour,
+    visibility: "public",
+    text: "デプロイが通ったときの気持ち",
+    media: [{ kind: "gifv", alt: "", src: scenes.forest }],
+    counts: { replies: 0, boosts: 2, favourites: 11 },
+  },
+  {
+    id: "audio",
+    lang: "en",
+    author: lena,
+    ago: 6 * hour,
+    visibility: "public",
+    text: "Rain on the tin roof of the cabin last night. Headphones recommended.",
+    media: [
+      {
+        kind: "audio",
+        alt: "Field recording: steady rain on a tin roof, with distant thunder",
+        src: "",
+        duration: 194,
+      },
+    ],
+    counts: { replies: 2, boosts: 5, favourites: 22 },
+  },
+  {
+    id: "unknown",
+    lang: "en",
+    author: news,
+    ago: 2 * day,
+    visibility: "public",
+    text: "The slides from this week's talk, as the presenter shared them.",
+    media: [{ kind: "unknown", alt: "", src: "", href: "https://files.social.example.org/media/slides-2026.key" }],
+    counts: { replies: 0, boosts: 6, favourites: 14 },
+  },
+  {
+    id: "mixed",
+    lang: "en",
+    author: alice,
+    ago: 8 * hour,
+    visibility: "public",
+    text: "Weekend at the coast: a photo, a GIF of the gulls, the waves on video, and the sunset.",
+    media: [
+      { alt: "A sea under a pale blue sky", src: scenes.sea },
+      { kind: "gifv", alt: "Gulls circling over the pier", src: scenes.snow },
+      { kind: "video", alt: "", src: scenes.night, duration: 41 },
+      { alt: "The sun setting behind low hills", src: scenes.dawn },
+    ],
+    counts: { replies: 5, boosts: 9, favourites: 61 },
+  },
+  {
+    id: "sensitive",
+    lang: "en",
+    author: ken,
+    ago: 30 * minute,
+    visibility: "public",
+    text: "Finally had the stitches out. Healing well, but not for the squeamish.",
+    sensitive: true,
+    media: [{ alt: "A healing scar along a forearm, a week after surgery", src: scenes.autumn }],
+    counts: { replies: 6, boosts: 0, favourites: 24 },
+  },
+  {
+    id: "sensitive-four",
+    lang: "ja",
+    author: mika,
+    ago: 4 * hour,
+    visibility: "public",
+    text: "解剖学の授業のスケッチ、4 枚",
+    sensitive: true,
+    media: [
+      { alt: "腕の筋肉のスケッチ", src: scenes.dawn },
+      { alt: "手の骨のスケッチ", src: scenes.sea },
+      { alt: "肩の関節のスケッチ", src: scenes.forest },
+      { alt: "脚の筋肉のスケッチ", src: scenes.snow },
+    ],
+    counts: { replies: 1, boosts: 2, favourites: 15 },
+  },
+  {
+    id: "sensitive-cw",
+    lang: "en",
+    author: takuya,
+    ago: 7 * hour,
+    visibility: "public",
+    cw: "Horror film, spoilers",
+    text: "The last scene, which nobody in the cinema was ready for.",
+    sensitive: true,
+    media: [{ alt: "A dark corridor lit by a single flickering bulb", src: scenes.night }],
+    counts: { replies: 3, boosts: 1, favourites: 7 },
+  },
+  {
+    id: "sensitive-mixed",
+    lang: "en",
+    author: alice,
+    ago: 8 * hour,
+    visibility: "public",
+    text: "What the vet showed us, and what she said about it. Not for the squeamish.",
+    sensitive: true,
+    media: [
+      { alt: "An X-ray of a dog's leg with a pin in the bone", src: scenes.snow },
+      { kind: "audio", alt: "The vet explaining the surgery, two minutes", src: "", duration: 131 },
+    ],
+    counts: { replies: 4, boosts: 0, favourites: 19 },
+  },
+  {
+    id: "sensitive-card",
+    lang: "en",
+    author: lena,
+    ago: 9 * hour,
+    visibility: "public",
+    text: "A hard read about what the flood left behind. https://news.example.org/2026/flood-aftermath",
+    sensitive: true,
+    card: {
+      url: "https://news.example.org/2026/flood-aftermath",
+      title: "After the flood: the towns that are still waiting",
+      description: "Six months on, families in the valley are still living in shelters, and the aid has slowed.",
+      site: "The Example News",
+      lang: "en",
+      image: cardImage(scenes.night, "A flooded street at night"),
+    },
+    counts: { replies: 8, boosts: 30, favourites: 45 },
+  },
+];
+
 const tile = (body: string) => svg(32, 32, body);
 
 /** The custom emoji the sample text uses, by shortcode. */
@@ -353,7 +628,7 @@ export const emojis: ContentEmoji[] = Object.entries(emoji).map(([shortcode, src
 const here = "my.example";
 
 /** An account as a status embeds it; its handle is its id. */
-function accountOf(account: Account): PostAccount {
+export function accountOf(account: Account): PostAccount {
   const [, username = "", domain = here] = account.handle.split("@");
   return {
     id: account.handle,
@@ -374,6 +649,23 @@ const visibilities: Record<Visibility | "local", PostVisibility> = {
   direct: "direct",
 };
 
+/** The poll the API would send for a sample: the votes of each option left out while hidden and not ended. */
+function pollOf(poll: SamplePoll, id: string): PostPoll {
+  const expired = poll.endsIn <= 0;
+  const hidden = (poll.hideTotals ?? false) && !expired;
+  return {
+    id,
+    expires_at: new Date(Date.now() + poll.endsIn).toISOString(),
+    expired,
+    multiple: poll.multiple ?? false,
+    votes_count: poll.options.reduce((n, o) => n + o.votes, 0),
+    voters_count: poll.voters,
+    options: poll.options.map((o) => (hidden ? { title: o.title } : { title: o.title, votes_count: o.votes })),
+    voted: poll.voted !== undefined,
+    own_votes: poll.voted ?? [],
+  };
+}
+
 /** The status the API would send for a fixture: its text rendered as the server would, its times before now. */
 export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostStatus {
   const full: Partial<TimelinePost> = post;
@@ -387,11 +679,36 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
     language: post.lang,
     in_reply_to_account_id: replyTo?.id,
     created_at: new Date(Date.now() - post.ago).toISOString(),
+    sensitive: full.sensitive ?? false,
+    card:
+      full.card === undefined
+        ? undefined
+        : {
+            url: full.card.url,
+            title: full.card.title,
+            description: full.card.description,
+            site_name: full.card.site,
+            language: full.card.lang,
+            image:
+              full.card.image === undefined
+                ? undefined
+                : {
+                    url: full.card.image.src,
+                    width: full.card.image.width,
+                    height: full.card.image.height,
+                    description: full.card.image.alt,
+                    blurhash: blurhashes.get(full.card.image.src),
+                  },
+            author: full.card.author === undefined ? undefined : accountOf(full.card.author),
+          },
     media_attachments: (post.media ?? []).map((m, i) => ({
       id: `${id}-${i}`,
-      type: "image",
-      description: m.alt,
-      preview_url: m.src,
+      type: m.kind ?? "image",
+      description: m.alt === "" ? undefined : m.alt,
+      preview_url: m.src === "" ? undefined : m.src,
+      url: m.href ?? (m.src === "" ? undefined : m.src),
+      meta: m.duration === undefined ? undefined : { duration: m.duration },
+      blurhash: blurhashes.get(m.src),
     })),
     mentions: replyTo === undefined ? [] : [{ id: replyTo.id, username: replyTo.username, acct: replyTo.acct }],
     emojis,
@@ -409,6 +726,8 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
     bookmarked: full.bookmarked ?? false,
     quote:
       full.quote === undefined ? undefined : { state: "accepted", quoted_status: statusOf(full.quote, `${id}-quote`) },
+    poll: full.poll === undefined ? undefined : pollOf(full.poll, `${id}-poll`),
+    ...(full.edited === undefined ? {} : { edited_at: new Date(Date.now() - full.edited).toISOString() }),
   };
   if (full.boostedBy === undefined) return shown;
   return { ...shown, id: `${id}-boost`, account: accountOf(full.boostedBy), boost: shown };
@@ -418,12 +737,108 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
 export function translationOf(post: TimelinePost, lang: "en" | "ja"): PostTranslation | undefined {
   const content = post.lang === lang ? undefined : post.translation?.[lang];
   if (content === undefined) return undefined;
+  const parts = post.translatedParts?.[lang];
   return {
     language: lang,
     source_language: post.lang,
     content: serverHtml(content),
-    spoiler_text: "",
-    media_attachments: [],
+    spoiler_text: parts?.cw ?? "",
+    media_attachments: (parts?.alt ?? []).map((description, i) => ({ id: `${post.id}-${i}`, description })),
+    poll_options: parts?.poll ?? [],
     provider: { name: translationProvider },
   };
 }
+
+/** The versions of an edited fixture (the API's StatusHistory), oldest first: its history, then itself. */
+export function editsOf(post: TimelinePost): PostEdit[] {
+  const at = (ago: number) => new Date(Date.now() - ago).toISOString();
+  // An image keeps its id across the versions that hold it, as the server's does: here, by its description.
+  const media = (m: Media[] | undefined) =>
+    (m ?? []).map((x) => ({ id: x.alt, type: "image" as const, description: x.alt, preview_url: x.src }));
+  const versions = (post.history ?? []).map((v) => ({
+    content: serverHtml(v.text),
+    spoiler_text: v.cw ?? "",
+    created_at: at(v.ago),
+    media_attachments: media(v.media),
+    emojis,
+  }));
+  return [
+    ...versions,
+    {
+      content: serverHtml(post.text),
+      spoiler_text: post.cw ?? "",
+      created_at: at(post.edited ?? post.ago),
+      media_attachments: media(post.media),
+      emojis,
+    },
+  ];
+}
+
+/**
+ * A post in each language with every part a translation covers: a content warning, a poll, and an image with its
+ * alt text, each translated into the other language.
+ */
+export const translatedWhole: Record<"en" | "ja", TimelinePost> = {
+  en: {
+    id: "whole-en",
+    lang: "en",
+    author: lena,
+    ago: 50 * minute,
+    visibility: "public",
+    cw: "Book club pick, the ending",
+    text: "Finished it last night. The last chapter made the slow first half worth it. Did you see it coming?",
+    media: [
+      { alt: "A paperback open face down on a wooden table, beside a cup of tea", src: plate("#8a5a3c", "#c9a27a") },
+    ],
+    counts: { replies: 6, boosts: 1, favourites: 9 },
+    poll: {
+      options: [
+        { title: "From the first chapter", votes: 3 },
+        { title: "Halfway through", votes: 7 },
+        { title: "Not at all", votes: 12 },
+      ],
+      voters: 22,
+      endsIn: 20 * hour,
+    },
+    translation: {
+      ja: "昨夜読み終えました。最後の章のおかげで、ゆっくりした前半も読んだかいがありました。予想できました？",
+    },
+    translatedParts: {
+      ja: {
+        cw: "読書会の本、結末について",
+        poll: ["最初の章から", "半分くらいで", "まったく"],
+        alt: ["木のテーブルに伏せて開いた文庫本と、その横の紅茶"],
+      },
+    },
+  },
+  ja: {
+    id: "whole-ja",
+    lang: "ja",
+    author: takuya,
+    ago: 2 * hour,
+    visibility: "public",
+    cw: "映画の結末に触れています",
+    text: "二回目に観たら、冒頭の電話のシーンが全部だった。みんなはどこで気づいた？",
+    media: [{ alt: "暗い丘の上に浮かぶ淡い月", src: scenes.night }],
+    counts: { replies: 4, boosts: 0, favourites: 11 },
+    poll: {
+      options: [
+        { title: "冒頭の電話のシーン", votes: 4 },
+        { title: "最後の十分", votes: 9 },
+        { title: "二回目に観てから", votes: 6 },
+      ],
+      voters: 19,
+      endsIn: 6 * hour,
+    },
+    translation: {
+      en: "On a second watch, the phone call at the start was everything. Where did you all notice it?",
+    },
+    translatedParts: {
+      en: {
+        cw: "Mentions the ending of the film",
+        poll: ["The phone call at the start", "The last ten minutes", "Only on a second watch"],
+        alt: ["A pale moon over dark hills"],
+      },
+    },
+  },
+};

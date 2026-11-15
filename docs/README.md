@@ -10,7 +10,7 @@ reference is there too. The contributing and design documents below are read her
 - [Posting and choosing who sees a post](guide/posting.md) (public, this server, unlisted, followers, and mentioned people)
 - [Following people and reading timelines](guide/following.md)
 - [Notifications](guide/notifications.md)
-- [Blocking, muting, and reporting](guide/safety.md)
+- [Blocking and muting](guide/safety.md)
 - [Keyword filters](guide/keyword-filters.md) (folding or hiding posts by their words, and how words match)
 - [Moving your account](guide/moving-your-account.md)
 - [Voice chat](guide/voice-chat.md)

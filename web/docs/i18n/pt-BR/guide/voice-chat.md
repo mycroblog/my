@@ -6,7 +6,7 @@ voz está ativo: quando está desativado, “Chat de voz” não aparece na nave
 chat de voz”. Só as pessoas com uma conta no servidor podem entrar nas salas dele, e para entrar é preciso um navegador
 que suporte chamadas, em uma conexão segura (HTTPS).
 
-<!-- source: finding-and-joining-a-room efcab8beeee0 -->
+<!-- source: finding-and-joining-a-room e775d4e8ba4a -->
 ## Encontrando e entrando em uma sala
 
 Escolha “Chat de voz” na navegação. “Salas abertas” lista as salas que você pode ver, cada uma com seu anfitrião e com
@@ -20,7 +20,7 @@ entrar em outra sala tira você da primeira (“Mudar para cá”).
 
 Em uma sala, as pessoas são “Falantes” ou “Ouvintes”, e os papéis são Anfitrião, Coanfitrião, Falante e Ouvinte. Use
 “Ativar microfone” e “Desativar microfone” para falar, “Levantar a mão” para pedir a palavra quando a sala não permite
-que todos falem, e “Sair” para ir embora. Para denunciar uma sala, veja [Bloquear, silenciar e denunciar](safety.md).
+que todos falem, e “Sair” para ir embora.
 
 Se sua conexão cair, a chamada mostra “Reconectando…”. Uma chamada também termina quando você entra na mesma sala por
 outro dispositivo, quando um anfitrião remove você, ou quando você e o anfitrião ou um coanfitrião se bloqueiam.

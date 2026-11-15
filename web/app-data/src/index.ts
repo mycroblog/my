@@ -83,7 +83,6 @@ export {
   cachePostedStatus,
   defaultComposeSettings,
   deleteDraft,
-  findCachedStatus,
   MediaFailedError,
   postStatus,
   refusal,
@@ -102,7 +101,7 @@ export {
   type SavedDraft,
   type Visibility,
 } from "./compose";
-export { cachedStatus, markStatus, useStatusMarks, type StatusMark } from "./interactions";
+export { markStatus, useStatusMarks, type StatusMark } from "./interactions";
 export {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
@@ -121,8 +120,32 @@ export {
   type NotificationRequestSummary,
   type NotificationType,
 } from "./notifications";
+export {
+  deleteStatus,
+  editStatus,
+  readPostSource,
+  readStatusHistory,
+  RedraftError,
+  redraftStatus,
+  statusHistoryQuery,
+  useOwnPosts,
+  useStatusHistory,
+  type EditStatus,
+  type OwnPosts,
+  type PostSource,
+  type StatusEdit,
+} from "./own-posts";
 export type { PagedList } from "./paged";
+export { usePollVote, voteInPoll, type PollVote } from "./polls";
 export { AppDataProvider } from "./provider";
+export {
+  customEmojisQuery,
+  statusReactorsQuery,
+  useCustomEmojis,
+  useStatusReactors,
+  type PickerCustomEmoji,
+  type StatusReactor,
+} from "./reactions";
 export { openSession, visitorData } from "./session";
 export {
   appPath,
@@ -133,9 +156,34 @@ export {
   type SignInOptions,
   type SignInStorage,
 } from "./sign-in";
-export { updateCachedStatuses, type Status, type StatusPage } from "./statuses";
+export {
+  cachedStatus,
+  changeStatus,
+  receiveGone,
+  removeStatus,
+  shadowed,
+  shadowGone,
+  shadowStatus,
+  showList,
+  useShadow,
+  useStatusGone,
+  type ShowStatus,
+  type StatusChange,
+  type StatusShadow,
+} from "./shadow";
+export type { Status, StatusPage } from "./statuses";
 export { startStream } from "./stream";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
+export {
+  serverTranslates,
+  translateStatus,
+  TranslationRefusal,
+  translationRefusalOf,
+  useTranslateStatus,
+  type InstanceTranslation,
+  type StatusTranslation,
+  type TranslationRefusalReason,
+} from "./translation";
 export {
   homeTimelineQuery,
   publicTimelineQuery,

@@ -68,7 +68,7 @@ zeigen ihn diesen Followern als Beitrag nur für Follower an.
 - Konten deines Servers können einen „Dieser Server“-Beitrag boosten, und der Boost wird nur auf diesem Server angezeigt.
 - Eine Antwort auf einen „Dieser Server“-Beitrag beginnt ebenfalls als „Dieser Server“; du kannst das ändern.
 
-<!-- source: other-things-to-know d1f569ac2d1d -->
+<!-- source: other-things-to-know 59d77fd8017f -->
 ### Weitere Hinweise
 
 - Du kannst die Sichtbarkeit eines Beitrags nach dem Veröffentlichen nicht ändern. Wenn du einen Beitrag bearbeitest, bleiben die Sichtbarkeit und der Beitrag, auf den er antwortet, unverändert.
@@ -78,27 +78,29 @@ zeigen ihn diesen Followern als Beitrag nur für Follower an.
 - Der Autor kann auch erlauben, dass manche Leute nur antworten oder boosten, wenn er es genehmigt. Eine solche Antwort oder ein solcher Boost wartet: Du wirst benachrichtigt („… hat darum gebeten, auf deinen Beitrag zu antworten“), und sie bleibt von deinem Beitrag fern, bis du sie genehmigst. Eine wartende Antwort von einem anderen Server steht weder in der Unterhaltung unter deinem Beitrag noch in seiner Zahl der Antworten; sie erscheint weiterhin im Profil ihres Autors und auf ihrer eigenen Seite. Ein wartender Boost wird nicht gezählt. Genehmigst du sie, wird sie zu deinem Beitrag hinzugefügt; lehnst du sie ab, bleibt sie fern, und der andere Server wird in beiden Fällen informiert.
 - Eine Antwort oder ein Boost von einem anderen Server, die ganz außerhalb deiner Wahl liegen, wird auf dieselbe Weise von deinem Beitrag ferngehalten und benachrichtigt dich über nichts.
 - Wenn du auf einen Beitrag antwortest oder ihn boostest, dessen Autor Antworten oder Boosts von Hand genehmigt, wartet deine Antwort auf diese Genehmigung. Bis dahin sieht nur du deine Antwort, unter dem Beitrag und auf ihrer eigenen Seite, als wartend markiert; andere sehen nichts davon, und an andere Server wird nichts gesendet. Dein Boost wird erst ausgeführt, wenn er genehmigt ist. Du wirst benachrichtigt, wenn der Autor ihn genehmigt oder ablehnt („… hat deine Antwort, deinen Boost oder dein Zitat genehmigt“). Löschst du eine wartende Antwort oder machst einen wartenden Boost rückgängig, nimmst du die Anfrage zurück.
-- Du kannst bis zu fünf deiner Beiträge mit „An Profil anheften“ an dein Profil heften. Ein Beitrag für „Erwähnte Personen“ kann nicht angeheftet werden.
 
-<!-- source: who-can-reply-boost-and-quote c9ea034f7416 -->
+<!-- source: who-can-reply-boost-and-quote e207d9971532 -->
 ## Wer antworten, boosten und zitieren darf
 
 Die Schaltfläche „Wer antworten, boosten und zitieren darf“ unter den Werkzeugen des Formulars öffnet die Auswahl für diesen Beitrag. Für Antworten, Boosts und Zitate wählst du jeweils, wer es sofort tun darf: „Alle“, „Follower und Personen, die du erwähnst“, „Personen, die du erwähnst“ oder „Nur du“. Darunter lässt „Andere können mit deiner Genehmigung antworten“ (und dasselbe für Boosts und Zitate) alle anderen anfragen, statt abgelehnt zu werden. Sobald eine Auswahl weniger als alle zulässt, zeigt das Formular das Ergebnis über seinen Werkzeugen, bevor du veröffentlichst, zum Beispiel „Antworten: Alle. Boosts: Nur du. Zitate: Alle.“.
 
 - Die Personen, die ein Beitrag erwähnt, können immer darauf antworten. Ein „Follower“-Beitrag kann nur von dir geboostet und zitiert werden und ein Beitrag für „Erwähnte Personen“ von niemandem, was auch immer du wählst.
 - Die Standardwerte für neue Beiträge findest du unter „Wer auf deine neuen Beiträge antworten, sie boosten und zitieren darf“ in „Anzeige, Verfassen und Timelines“ in den Einstellungen.
-- Um sie für einen Beitrag zu ändern, den du schon gesendet hast, wähle „Ändern, wer antworten, boosten und zitieren darf“ in seinem Menü „Weitere Aktionen“. Jede Auswahl wird sofort gespeichert. Antworten, Boosts und Zitate, die du zuvor genehmigt hast, bleiben, und Anfragen, die die neue Auswahl zulässt, werden genehmigt.
 - Anfragen, die auf dich warten, stehen unter „Genehmigungsanfragen“ in den Einstellungen, neben „Folgeanfragen“; die Benachrichtigung jeder einzelnen verlinkt dorthin mit „Anfragen prüfen“. „Genehmigen“ fügt die Antwort, den Boost oder das Zitat zu deinem Beitrag hinzu, und die Unterhaltung darunter zeigt eine genehmigte Antwort sofort; „Ablehnen“ hält sie fern.
 - Unter dem Beitrag einer anderen Person wird „Antworten“ nicht angezeigt und „Boosten“ lässt sich nicht drücken, wenn der Autor es dir nicht erlaubt. Genehmigt der Autor sie von Hand, sagt das Formular das, bevor du antwortest, und nachdem du geboostet hast, steht am Beitrag „Dein Boost wartet auf die Genehmigung des Autors.“
 
-<!-- source: after-posting dc553fa0ead9 -->
+<!-- source: after-posting 8668eb1a5211 -->
 ## Nach dem Veröffentlichen
 
-Unter einem Beitrag findest du „Antworten“, „Boosten“, „Zitieren“, „Favorisieren“ und „Lesezeichen“. Das Menü „Weitere Aktionen“ enthält „Link kopieren“ und für deine eigenen Beiträge „Bearbeiten“, „An Profil anheften“ und „Löschen“. Ein Beitrag, der bearbeitet wurde, zeigt „Bearbeitet“, und seine früheren Versionen stehen auf seiner Seite „Bearbeitungsverlauf“. „Löschen“ entfernt den Beitrag für alle, zusammen mit seinen Boosts und Favoriten.
+Unter einem Beitrag findest du „Antworten“, „Boosten“, „Zitieren“, „Favorisieren“, „Reagieren“ und „Mehr“. „Mehr“ enthält „Link kopieren“, „Originalseite öffnen“ (bei einem Beitrag von einem anderen Server), „Teilen“ und „Lesezeichen“; deine Lesezeichen stehen auf der Seite „Lesezeichen“, und nur du siehst sie. Bei deinem eigenen Beitrag enthält es außerdem „Bearbeiten“ (nicht bei einem Beitrag mit Umfrage), „Löschen und neu verfassen …“ und „Löschen …“. Beide Löschungen fragen vorher nach. „Löschen …“ entfernt den Beitrag für alle, zusammen mit seinen Boosts und Favoriten; „Löschen und neu verfassen …“ tut dasselbe und öffnet das Formular mit seinem Text, seinen Bildern und seiner Umfrage als neuen Beitrag.
 
-Bei einem Beitrag einer anderen Person bietet dasselbe Menü an, dem Autor zu folgen, ihn stummzuschalten, zu blockieren oder zu melden, sowie „Direktnachricht“. Deine Lesezeichen stehen auf der Seite „Lesezeichen“; nur du siehst sie.
+Ein bearbeiteter Beitrag zeigt nach seiner Zeit „· bearbeitet“; wähle es, um den „Bearbeitungsverlauf“ zu öffnen, die neueste Version zuerst, mit markierten Änderungen.
 
-Wenn der Server Übersetzung anbietet oder dein Browser übersetzen kann, haben Beiträge in anderen Sprachen „Übersetzen“ unter ihren Aktionen und im Menü „Weitere Aktionen“, das sie aufnimmt, wenn der Beitrag für eine weitere Schaltfläche zu schmal ist. Solange ein Beitrag seine Übersetzung zeigt, sagt eine Zeile unter dem Text, aus welcher Sprache und von wem er übersetzt wurde, mit „Original anzeigen“, um zurückzugehen. Sendet der Server den Text von Beiträgen an einen Übersetzungsdienst, sagt dir die Auswahl der Sichtbarkeit, bei welchen Auswahlmöglichkeiten.
+Bei einer Umfrage gibst du eine Stimme ab, oder mehrere, wenn ihr Autor es erlaubt: Wähle, dann „Abstimmen“. Die Ergebnisse erscheinen, sobald du abgestimmt hast oder die Umfrage beendet ist, und für ihren Autor jederzeit. „Reagieren“ öffnet eine Auswahl von Emoji (Suche, Kategorien, Hautton und die eigenen Emoji dieses Servers); jede Person gibt einem Beitrag einen Favoriten oder eine Reaktion. Auf der eigenen Seite des Beitrags listet ein Emoji auf, wer damit reagiert hat. Das Formular hat auch eine Schaltfläche „Emoji hinzufügen“.
+
+Ein Beitrag in einer anderen Sprache als deiner hat „Übersetzen“, wenn der Server einen Übersetzungsdienst hat oder dein Browser übersetzen kann; „Original anzeigen“ geht zurück. Hinter einer Inhaltswarnung steht die Zeile im Band der Warnung. Sendet der Server den Text von Beiträgen an einen Übersetzungsdienst, sagt dir die Auswahl der Sichtbarkeit, bei welchen Auswahlmöglichkeiten.
+
+Bilder, GIFs, Videos und Audio werden im Beitrag angezeigt. Wähle ein Bild, um die Ansicht zu öffnen: Wische oder nutze die Pfeile, zoome und lies die Beschreibung. Als sensibel markierte Medien bleiben unter einer Zeile wie „Sensibles Bild“ verborgen, bis du „Anzeigen“ wählst. Ein Link in einem Beitrag wird als Karte angezeigt.
 
 <!-- source: writing-an-article 0dfa0a80bb8e -->
 ## Einen Artikel schreiben

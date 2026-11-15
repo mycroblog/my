@@ -10,7 +10,7 @@
 // Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as a draft, which New
 // post opens again.
 
-import { AppDataProvider, createAppData, defaultComposeSettings, type Status } from "@my/app-data";
+import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource, type Status } from "@my/app-data";
 import { ComposeLayer, emptyComposeDraft, type ComposeDraft, type ComposeTarget } from "@my/app-features";
 import { useLocale } from "@my/design-system";
 import { images } from "@my/design-system/samples";
@@ -22,6 +22,7 @@ import { waitFor } from "storybook/test";
 import { AppRoot } from "./app";
 import { minimumWidth, rightToLeft } from "./app.samples";
 import { createAppRouter } from "./router";
+import { useNarrowViewport } from "./shell/viewport";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -179,6 +180,7 @@ const words = {
     poll: "Which day works for the next meetup?",
     options: ["Saturday morning", "Saturday evening", "Sunday afternoon"],
     alt: "Low hills under a dusk sky, a sun just above the ridge",
+    edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -191,6 +193,7 @@ const words = {
     poll: "次のオフ会、どの日がいい？",
     options: ["土曜の午前", "土曜の夜", "日曜の午後"],
     alt: "夕暮れの空の下の低い丘。尾根のすぐ上に太陽",
+    edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
   },
 };
 
@@ -219,6 +222,16 @@ type State = {
 };
 
 const nw = (): ComposeTarget => ({ kind: "new" });
+/** The source of the post of `id`, bare: the state's draft writes what it holds. */
+const sourceOf = (id: string): PostSource => ({
+  id,
+  text: "",
+  spoiler_text: "",
+  language: "und",
+  visibility: "public",
+  sensitive: false,
+  media: [],
+});
 const typed = (d: ComposeDraft, w: (typeof words)["en"]) => ({ ...d, text: w.typing });
 const poll = (multiple: boolean) => (d: ComposeDraft, w: (typeof words)["en"]) => ({
   ...d,
@@ -265,13 +278,23 @@ const states = {
   },
   poll: { name: "Poll", target: nw, draft: poll(false) },
   "poll-multiple": { name: "Poll, several choices", target: nw, draft: poll(true) },
+  // The reader's (yuki's) post with its image, opened from its source to edit.
+  edit: {
+    name: "Edit",
+    target: (fake) => ({ kind: "edit", id: idOf(fake, "yuki-ridge"), source: sourceOf(idOf(fake, "yuki-ridge")) }),
+    draft: (d, w) => ({ ...d, text: w.edit, language: "ja", attachments: [image(0, "ready", w.alt)] }),
+  },
 } satisfies Record<string, State>;
 
 type StateId = keyof typeof states;
 
-/** One state of the composer in the flow of the page; `text`, when given, is the text written in it. */
-function Specimen({ id, text }: { id: StateId; text: string }) {
+/**
+ * One state of the composer in the flow of the page; `text`, when given, is the text written in it. Its emoji picker
+ * opens in a sheet on a phone's viewport, as the shell decides, or with `pickerSheet`; else in a popover.
+ */
+function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string; pickerSheet?: boolean | undefined }) {
   const { locale } = useLocale();
+  const narrow = useNarrowViewport();
   const [{ fake, data }] = useState(createComposeApp);
   const state: State = states[id];
   const lang = locale.startsWith("ja") ? "ja" : "en";
@@ -284,7 +307,14 @@ function Specimen({ id, text }: { id: StateId; text: string }) {
   return (
     <AppDataProvider data={data}>
       <div style={{ maxInlineSize: "37.5rem", marginInline: "auto" }}>
-        <ComposeLayer target={target} initial={initial} inline onOpen={() => undefined} onClose={() => undefined} />
+        <ComposeLayer
+          target={target}
+          initial={initial}
+          inline
+          pickerSheet={pickerSheet || narrow}
+          onOpen={() => undefined}
+          onClose={() => undefined}
+        />
       </div>
     </AppDataProvider>
   );
@@ -329,6 +359,29 @@ const composeOf = (parameters: StoryContext["parameters"]): StateId =>
 /** A story of the composer in `id`. */
 const shows = (id: StateId): Story => ({ parameters: { compose: id } });
 
+/**
+ * Opens the composer's emoji picker, as a press on its button does, and waits until it shows the Unicode emoji and
+ * (in a sheet) has risen, so that the story tests check it as the reader sees it.
+ */
+const openEmoji = async (context: StoryContext) => {
+  await settle(context);
+  const doc = context.canvasElement.ownerDocument;
+  // The button at the end of the text's first line, in any locale.
+  context.canvasElement.querySelector<HTMLButtonElement>("textarea ~ div button")?.click();
+  await waitFor(
+    () => {
+      const grid = doc.querySelector('[role="grid"]');
+      const panel = grid?.closest('[role="dialog"]')?.parentElement;
+      const style = panel ? getComputedStyle(panel) : undefined;
+      if (grid === null || grid.querySelectorAll('[role="gridcell"]').length < 20)
+        throw new Error("the emoji picker shows no emoji yet");
+      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+        throw new Error("the emoji picker has not appeared yet");
+    },
+    { timeout: 5000 },
+  );
+};
+
 /** Waits until the app shows the home timeline's posts. */
 const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   await waitFor(
@@ -348,7 +401,14 @@ const meta = {
   args: { text: "" },
   argTypes: { text: { control: "text", description: "The text written in the composer, in place of the state's" } },
   play: settle,
-  render: ({ text }, { id, parameters }) => <Specimen key={id} id={composeOf(parameters)} text={text} />,
+  render: ({ text }, { id, parameters }) => (
+    <Specimen
+      key={id}
+      id={composeOf(parameters)}
+      text={text}
+      pickerSheet={(parameters as { pickerSheet?: boolean }).pickerSheet}
+    />
+  ),
 } satisfies Meta<{ text: string }>;
 export default meta;
 
@@ -368,7 +428,20 @@ export const Reply: Story = shows("reply");
 export const Quote: Story = shows("quote");
 export const Poll: Story = shows("poll");
 export const PollSeveralChoices: Story = shows("poll-multiple");
+/**
+ * Editing the reader's post: Edit post and Save tell it; the poll, the audience and who may interact leave the row,
+ * and one muted line over the text says the audience stays as posted.
+ */
+export const Edit: Story = shows("edit");
 export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
 export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
+/** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
+export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
+/** The same on a phone: the picker in a sheet from the bottom. */
+export const EmojiPickerSheet: Story = {
+  parameters: { compose: "typing", pickerSheet: true },
+  play: openEmoji,
+  globals: minimumWidth,
+};
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */
 export const LiveFlow: Story = { render: () => <Flow />, play: settleFlow };

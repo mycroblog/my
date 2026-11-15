@@ -82,12 +82,13 @@ export function ContentLink({ href, kind, children, lang, translate }: ContentLi
 
 // The server shortens the text of a URL as Mastodon does: the scheme and what follows its first characters are
 // hidden, and the shown part ends in an ellipsis when the rest is cut. A hidden part takes no room but stays in the
-// text, so that copying the link copies the whole URL.
+// text, so that copying the link copies the whole URL. The shown part of a cut URL never breaks (after a hyphen or a
+// slash): it moves whole to the next line, and on a line narrower than itself it ends in the ellipsis there.
 const urlPart = tv({
   variants: {
     part: {
       hidden: "absolute inline-block size-0 overflow-hidden text-[0px] leading-[0]",
-      cut: "after:content-['…']",
+      cut: "inline-block max-w-full truncate align-bottom after:content-['…']",
     },
   },
 });

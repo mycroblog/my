@@ -69,6 +69,13 @@ export const b = \`pr-\${1}\`;
   ]);
 });
 
+test("findIn reads a .ts file as TypeScript, where a generic arrow function is not a tag", () => {
+  const source = `const first = <T>(items: T[]): T | undefined => items[0];
+export const c = "pl-1";
+`;
+  expect(findIn("a.ts", source)).toEqual([{ file: "a.ts", line: 2, physical: "pl-1", logical: "ps-1" }]);
+});
+
 test("findIn reads a CSS file's utilities and physical declarations, not its comments or selectors", () => {
   const source = `/* rounded-l; margin-left: 0 */
 .a { @apply rounded-l-md text-right; }

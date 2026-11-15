@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import type { PostAction } from "@my/app-components";
-import { homeTimelineQuery, type Status } from "@my/app-data";
+import { homeTimelineQuery, shadowed, type Status } from "@my/app-data";
 import { markOf, PostActions, usePostActions, type ComposeRequest } from "./post-actions";
 import { render, server, status } from "./test/server";
 
@@ -23,10 +23,13 @@ test("each action asks for the mark the post does not have, or takes back the on
 
 /** The handler as a screen under PostActions gets it, with the home timeline holding post 1. */
 function handler(answers: Record<string, unknown>) {
-  const { data, requests } = server(answers);
+  const { data, requests, received } = server(answers);
   const key = homeTimelineQuery(data).queryKey;
   data.queryClient.setQueryData(key, { pages: [{ items: [post()] }], pageParams: [undefined] });
   const composed: ComposeRequest[] = [];
+  let opened = Promise.withResolvers<ComposeRequest>();
+  /** The next request to open the composer, once it is made. */
+  const nextCompose = () => opened.promise;
   let act: (action: PostAction) => void = () => undefined;
   function Probe() {
     act = usePostActions();
@@ -34,11 +37,21 @@ function handler(answers: Record<string, unknown>) {
   }
   render(
     data,
-    <PostActions onCompose={(to) => composed.push(to)}>
+    <PostActions
+      onCompose={(to) => {
+        composed.push(to);
+        opened.resolve(to);
+        opened = Promise.withResolvers<ComposeRequest>();
+      }}
+    >
       <Probe />
     </PostActions>,
   );
-  return { act, composed, requests, home: () => data.queryClient.getQueryData(key)?.pages[0]?.items[0] };
+  const home = () => {
+    const copy = data.queryClient.getQueryData(key)?.pages[0]?.items[0];
+    return copy && shadowed(data, copy);
+  };
+  return { act, composed, nextCompose, requests, received, home };
 }
 
 test("Reply and Quote open the composer for the post, and write nothing", () => {
@@ -60,6 +73,28 @@ test("favourite reaches the server, and the cache shows it", async () => {
   expect(home()?.favourited).toBe(true);
   await Bun.sleep(0);
   expect(requests).toEqual(["POST /statuses/1/favourite"]);
+});
+
+test("a vote reaches the server with the poll and every choice, and opens no composer", async () => {
+  const { act, composed, received } = handler({ "/statuses/1/poll/votes": status("1", "lena") });
+  act({ type: "vote", id: "1", poll: "p", choices: [0, 2] });
+  expect(await received("POST /statuses/1/poll/votes")).toEqual({ poll_id: "p", choices: [0, 2] });
+  expect(composed).toEqual([]);
+});
+
+test("Edit reads the post's source and opens the composer with it, and writes nothing", async () => {
+  const { act, nextCompose, requests } = handler({
+    "/statuses/1/source": { id: "1", text: "Post 1", spoiler_text: "", language: "en" },
+    "/statuses/1": status("1", "lena"),
+  });
+  act({ type: "edit", id: "1" });
+  expect(await nextCompose()).toMatchObject({
+    kind: "edit",
+    id: "1",
+    source: { id: "1", text: "Post 1", visibility: "public" },
+  });
+  expect(requests).toContain("GET /statuses/1/source");
+  expect(requests.filter((r) => !r.startsWith("GET "))).toEqual([]);
 });
 
 test("an action with no mark, or on a post not in the cache, writes nothing", () => {

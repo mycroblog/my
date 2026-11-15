@@ -120,7 +120,7 @@ so no hosts file entry is needed. The server runs with `profile = development` a
 - The Go code and the web client's build are not reloaded: `docker compose restart my` builds both again and restarts
   the server. `scripts/task.sh web:dev` serves the client with reloading.
 - `GO_TAGS` builds the server with [build tags](docs/reference/build-tags.md), such as `GO_TAGS=e2e_fakes` for the
-  test build with the fake push service, payment provider, and search index.
+  test build with the fake push service, payment provider, search index, and translation provider.
 - Put the variables of the table and `GO_TAGS` in a `.env` file next to `compose.yaml`; it is never committed. A port
   that another program uses must move there.
 - `my` runs as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so

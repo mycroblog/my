@@ -13,7 +13,7 @@
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
@@ -22,6 +22,7 @@ import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 import { ModalLayer } from "./modal";
+import { PollMark } from "./poll";
 
 const frame = tv({
   slots: {
@@ -179,7 +180,9 @@ export function CharCount({ left, near, label }: { left: number; near: number; l
 const text = tv({
   slots: {
     field: "grid gap-form-page-field-gap",
-    wrap: "grid [&>*]:[grid-area:1/1]",
+    wrap: "relative grid [&>*]:[grid-area:1/1]",
+    // The button at the end of the text's first line (the emoji picker's, ADR-0091 §4), over the text's own room.
+    end: "absolute top-0 end-0 z-10",
     both: [
       "box-border m-0 border-0 p-0 font-sans text-[length:var(--composer-text-size)]",
       "leading-[var(--composer-text-leading)] whitespace-pre-wrap [overflow-wrap:anywhere]",
@@ -193,6 +196,11 @@ const text = tv({
     roomy: {
       true: { both: "min-h-[calc(var(--composer-text-lines)*var(--composer-text-leading)*var(--composer-text-size))]" },
       false: { both: "min-h-[calc(var(--composer-text-leading)*var(--composer-text-size))]" },
+    },
+    // A button at the end: the text keeps clear of it on every line.
+    ended: {
+      true: { both: "pe-[calc(var(--icon-action)+2*var(--icon-button-padding-inline))]" },
+      false: {},
     },
   },
 });
@@ -208,9 +216,15 @@ export function ComposerText({
   readOnly = false,
   roomy = true,
   autoFocus = false,
+  end,
+  textRef,
 }: {
   value: string;
   onChange: (value: string) => void;
+  /** A button at the end of the text's first line (the emoji picker's), which the text keeps clear of. */
+  end?: ReactNode;
+  /** The text area itself, for a caller that writes at its caret. */
+  textRef?: RefObject<HTMLTextAreaElement | null> | undefined;
   /** The field's name, for assistive technology. */
   label: string;
   placeholder: string;
@@ -222,7 +236,7 @@ export function ComposerText({
   roomy?: boolean | undefined;
   autoFocus?: boolean | undefined;
 }) {
-  const s = text({ roomy });
+  const s = text({ roomy, ended: end !== undefined });
   const id = useId();
   const all = Array.from(value);
   const keep = Math.max(0, all.length - over);
@@ -235,6 +249,7 @@ export function ComposerText({
           {"​"}
         </div>
         <textarea
+          ref={textRef}
           className={`${s.both()} ${s.area()}`}
           value={value}
           placeholder={placeholder}
@@ -249,6 +264,7 @@ export function ComposerText({
             onChange(e.target.value);
           }}
         />
+        {end !== undefined && <div className={s.end()}>{end}</div>}
       </div>
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </div>
@@ -509,8 +525,6 @@ const poll = tv({
     caption: "inline-flex items-center gap-entry-caption text-caption text-muted-text",
     options: "grid rounded-control bg-surface py-[0.25rem] ps-control-timeline-inline pe-[0.25rem]",
     option: "flex items-center gap-entry-caption",
-    // How the option will be answered in the post: a radio's ring, or a checkbox's square for several choices.
-    mark: "box-border size-form-page-check flex-none rounded-full border-[length:var(--composer-mark-line)] border-solid border-muted-text",
     input: [
       "h-control-form min-w-0 flex-1 rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
       "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
@@ -519,7 +533,6 @@ const poll = tv({
     glyphLabel: "inline-flex items-center gap-entry-caption",
     settings: "grid justify-items-start gap-entry-line",
   },
-  variants: { multiple: { true: { mark: "rounded-[3px]" } } },
 });
 
 /** The poll: a raised card under its caption and its remove; its options, then its settings. */
@@ -593,10 +606,11 @@ export function PollOption({
   maxLength: number;
   remove?: { label: string; onPress: () => void } | undefined;
 }) {
-  const s = poll({ multiple });
+  const s = poll();
   return (
     <div className={s.option()}>
-      <span className={s.mark()} aria-hidden="true" />
+      {/* How the option will be answered in the post (poll.tsx). */}
+      <PollMark multiple={multiple} />
       <input
         className={s.input()}
         value={value}
@@ -935,8 +949,11 @@ const notice = tv({
     "rounded-overlay bg-text py-[0.25rem] ps-control-timeline-inline pe-[0.25rem] font-sans text-body text-surface",
     "shadow-overlay tablet:inset-x-0 tablet:bottom-shell-end tablet:mx-auto tablet:max-w-[calc(100%-2*var(--shell-edge))]",
   ],
-  variants: { inline: { true: "static mx-0" } },
+  variants: { inline: { true: "static mx-0" }, bare: { true: "pe-control-timeline-inline" } },
 });
+
+/** The words of a notice without an action, as tall as an action, so that it keeps the height of one with. */
+const noticeText = tv({ base: "flex min-h-control-timeline items-center" });
 
 const noticeAction = tv({
   base: [
@@ -947,8 +964,9 @@ const noticeAction = tv({
 });
 
 /**
- * A short notice at the bottom of the page with its action (a discarded post, with Undo): knocked out and neutral, at
- * the start on a phone, clear of the action floating at the end. `inline` keeps it in the flow (a specimen).
+ * A short notice at the bottom of the page, with its action when it has one (a discarded post, with Undo): knocked out
+ * and neutral, at the start on a phone, clear of the action floating at the end. `inline` keeps it in the flow (a
+ * specimen).
  */
 export function UndoNotice({
   action,
@@ -956,18 +974,21 @@ export function UndoNotice({
   inline = false,
   children,
 }: {
-  action: string;
-  onAction: () => void;
+  action?: string | undefined;
+  onAction?: (() => void) | undefined;
   inline?: boolean | undefined;
   children: string;
 }) {
   const { direction } = useReader(undefined);
+  const acts = action !== undefined && onAction !== undefined;
   return (
-    <div className={notice({ inline })} role="status" dir={direction}>
-      <span>{children}</span>
-      <button type="button" className={noticeAction()} onClick={onAction}>
-        {action}
-      </button>
+    <div className={notice({ inline, bare: !acts })} role="status" dir={direction}>
+      <span className={acts ? undefined : noticeText()}>{children}</span>
+      {acts && (
+        <button type="button" className={noticeAction()} onClick={onAction}>
+          {action}
+        </button>
+      )}
     </div>
   );
 }

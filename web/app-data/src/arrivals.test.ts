@@ -11,6 +11,7 @@ import {
   showHomeTimeline,
   type Arrival,
 } from "./arrivals";
+import { shadowed } from "./shadow";
 import { fakeAppData, json, page, status } from "./test/fake";
 import { homeTimelineQuery } from "./timeline";
 
@@ -24,9 +25,11 @@ function timeline(first: () => unknown, second: unknown = page(["1"])) {
 
 const load = (data: AppData) => data.queryClient.infiniteQuery({ ...homeTimelineQuery(data), staleTime: Infinity });
 
-/** The IDs of each cached page of the home timeline. */
+/** The IDs of each cached page of the home timeline, of the statuses that show (those gone left out). */
 const cached = (data: AppData) =>
-  data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages.map((p) => p.items.map((s) => s.id));
+  data.queryClient
+    .getQueryData(homeTimelineQuery(data).queryKey)
+    ?.pages.map((p) => p.items.filter((s) => shadowed(data, s) !== undefined).map((s) => s.id));
 
 /** Loads the first two pages: ["3", "2"] and ["1"]. */
 async function twoPages(first: () => unknown = () => page(["3", "2"], "c2")) {

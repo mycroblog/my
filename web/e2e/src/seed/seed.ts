@@ -28,6 +28,7 @@ import {
   posts,
   restrictions,
   type Person,
+  type Post,
 } from "../scenario";
 import { createPasskey, type PasskeyCredential } from "./passkey";
 import { drawPNG } from "./png";
@@ -91,7 +92,24 @@ type Purpose = "attachment" | "avatar" | "header";
  */
 export async function uploadDrawing(api: Api, name: string, drawing: Drawing, description: string, purpose: Purpose) {
   const file = new Blob([new Uint8Array(drawPNG(drawing))], { type: "image/png" });
-  const media = await uploadMedia(api, { file, fileName: name, purpose, description });
+  return uploadFile(api, name, file, description, purpose);
+}
+
+/**
+ * Uploads `file` (an image, a video or a sound, its type that of the Blob) with `api`, with `poster` as a video's or a
+ * sound's picture, and waits until the server has processed it: the E2E tests' videos and sounds (fresh.ts).
+ */
+export async function uploadFile(
+  api: Api,
+  name: string,
+  file: Blob,
+  description: string,
+  purpose: Purpose,
+  poster?: Drawing,
+) {
+  const thumbnail =
+    poster === undefined ? {} : { thumbnail: new Blob([new Uint8Array(drawPNG(poster))], { type: "image/png" }) };
+  const media = await uploadMedia(api, { file, fileName: name, purpose, description, ...thumbnail });
   return until(`the processing of ${name}`, async () => {
     const { data } = await api.GET("/media/{id}", { params: { path: { id: media.id } } });
     const current = body(data, `the media ${name}`);
@@ -190,7 +208,16 @@ class Seeder {
         if (have.has(e.shortcode)) continue;
         const file = join(dir, `${e.shortcode}.png`);
         writeFileSync(file, drawPNG(e.drawing));
-        this.#o.runMy(["admin", "emoji", "create", "-shortcode", e.shortcode, file]);
+        this.#o.runMy([
+          "admin",
+          "emoji",
+          "create",
+          "-shortcode",
+          e.shortcode,
+          ...(e.category === undefined ? [] : ["-category", e.category]),
+          ...(e.aliases ?? []).flatMap((alias) => ["-alias", alias]),
+          file,
+        ]);
       }
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -276,8 +303,38 @@ class Seeder {
     return undefined;
   }
 
+  /**
+   * Edits the post `posted` of `post` from its first version to each of its later ones, then to its text, unless an
+   * earlier run did: it is read as it is now first, since a post sent again with its Idempotency-Key may answer as it
+   * was first posted.
+   */
+  async edit(api: Api, post: Post, posted: Status): Promise<Status> {
+    const path = { id: posted.id };
+    let status = body((await api.GET("/statuses/{id}", { params: { path } })).data, `the post ${post.key}`);
+    if (status.edited_at !== undefined) return status;
+    for (const text of [...(post.earlier ?? []).slice(1), post.text]) {
+      const media = status.media_attachments.map((m) => ({
+        id: m.id,
+        ...(m.description === undefined ? {} : { description: m.description }),
+      }));
+      const { data } = await api.PUT("/statuses/{id}", {
+        params: { path },
+        body: {
+          text,
+          language: post.language,
+          ...(post.spoiler === undefined ? {} : { spoiler_text: post.spoiler }),
+          ...(media.length === 0 ? {} : { media }),
+        },
+      });
+      status = body(data, `the edit of the post ${post.key}`);
+    }
+    return status;
+  }
+
   async writePosts() {
     for (const post of posts) {
+      // The server takes only real video and sound files, which the scenario does not hold (scenario.ts).
+      if (post.attachments !== undefined) continue;
       const api = await this.api(post.author);
       const first = post.images?.[0];
       const found = first === undefined ? undefined : await this.findByImage(post.author, first.description);
@@ -293,17 +350,28 @@ class Seeder {
         const { data } = await api.POST("/statuses", {
           params: { header: key(post.key) },
           body: {
-            text: post.text,
+            text: post.earlier?.[0] ?? post.text,
             visibility: post.visibility,
             language: post.language,
             ...(post.spoiler === undefined ? {} : { spoiler_text: post.spoiler }),
+            ...(post.sensitive === true ? { sensitive: true } : {}),
             ...(post.replyTo === undefined ? {} : { in_reply_to_id: this.post(post.replyTo).id }),
             ...(post.quote === undefined ? {} : { quoted_status_id: this.post(post.quote).id }),
             ...(media.length === 0 ? {} : { media }),
+            ...(post.poll === undefined
+              ? {}
+              : {
+                  poll: {
+                    options: [...post.poll.options],
+                    expires_in: post.poll.days * 86_400,
+                    multiple: post.poll.multiple ?? false,
+                  },
+                }),
           },
         });
         status = body(data, `the post ${post.key}`);
       }
+      if (post.earlier !== undefined) status = await this.edit(api, post, status);
       this.#posts.set(post.key, status);
       if (post.pinned === true && status.pinned !== true)
         await api.POST("/statuses/{id}/pin", { params: { path: { id: status.id } } });
@@ -327,6 +395,16 @@ class Seeder {
         case "reaction":
           await api.PUT("/statuses/{id}/reaction", { params: { path }, body: { emoji: i.emoji } });
           break;
+        case "vote": {
+          // A second vote is refused, so a run after the first one votes only where the voter has not.
+          const poll = body((await api.GET("/statuses/{id}", { params: { path } })).data, `the post ${i.post}`).poll;
+          if (poll !== undefined && poll.voted !== true)
+            await api.POST("/statuses/{id}/poll/votes", {
+              params: { path },
+              body: { poll_id: poll.id, choices: [...i.choices] },
+            });
+          break;
+        }
       }
     }
   }

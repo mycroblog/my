@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defaultClientConditions, defineConfig } from "vite";
+import { bundledLicenses } from "./vite-plugins/licenses.ts";
 import { reactCompiler } from "./vite-plugins/react-compiler.ts";
 
 /** Where the Go server embeds the build from (internal/interface/web, //go:embed all:dist). */
@@ -26,7 +27,8 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // scripts/routes.ts also writes with the same options, each route's components in a chunk of their own; TanStack
 // Router's plugin comes before React's. Tailwind builds the stylesheet of @my/design-system without its own optimizer,
 // for the browsers of light-dark() (ADR-0025 §1). The condition @mycroblog/source reads @mycroblog/mykit (under
-// @my/app-data) from its sources, which need no build.
+// @my/app-data) from its sources, which need no build. The notices of the npm packages and of the bundled data that is
+// none (the Unicode emoji data) go to licenses/.
 export default defineConfig({
   base: "./",
   plugins: [
@@ -34,6 +36,7 @@ export default defineConfig({
     react(),
     reactCompiler(),
     tailwindcss({ optimize: false }),
+    bundledLicenses([fileURLToPath(new URL("../app-features/src/emoji/unicode/LICENSE-Unicode.txt", import.meta.url))]),
   ],
   resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
   build: {

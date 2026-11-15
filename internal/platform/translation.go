@@ -4,11 +4,19 @@ package platform
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 
 	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/platform/config"
 )
+
+// fakeTranslationProviders returns the provider fake of translator_fake. Only the test builds
+// (build tag e2e_fakes, adapters_translator_fake.go) have it; the configuration of any other build
+// refuses translator_fake = true, so this one returns none.
+var fakeTranslationProviders = func(context.Context, *config.Config, *slog.Logger) ([]translation.Provider, error) {
+	return nil, nil
+}
 
 // setUpTranslation builds the translation of posts (ADR-0148): the instance settings choose among
 // the registered providers and set the limits, read per request. It comes after the status reader,
@@ -35,7 +43,11 @@ func (a *App) setUpTranslation(ctx context.Context, cfg *config.Config, repo tra
 	if err != nil {
 		return err
 	}
-	registered := slices.Concat(opts.TranslationRegistered, plugin, libre, deeplTranslationProviders(cfg), google, aws)
+	fake, err := fakeTranslationProviders(ctx, cfg, a.Logger)
+	if err != nil {
+		return err
+	}
+	registered := slices.Concat(opts.TranslationRegistered, plugin, libre, deeplTranslationProviders(cfg), google, aws, fake)
 	var providers translation.Providers = translation.ConfiguredProviders{
 		Registered: registered,
 		Settings: func(ctx context.Context) (translation.ProviderSettings, error) {

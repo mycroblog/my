@@ -30,6 +30,9 @@ const avatar = tv({
     // The initial's own surface, over the backing: the place for a color of the account's own, which would tell two
     // accounts with the same initial apart.
     fallback: "absolute inset-0 flex items-center justify-center bg-surface-raised leading-none font-label text-text",
+    // A decorative avatar's initial is drawn, not written: inside a link named by its own words (a row of faces), a
+    // written initial would be visible text missing from that name.
+    drawn: "before:content-[attr(data-initial)]",
   },
   variants: {
     size: {
@@ -70,6 +73,8 @@ export function Avatar({ name, src, size, decorative = false }: AvatarProps) {
             setFailed(src);
           }}
         />
+      ) : decorative ? (
+        <span className={`${s.fallback()} ${s.drawn()}`} data-initial={initialOf(name)} />
       ) : (
         <span className={s.fallback()}>{initialOf(name)}</span>
       )}

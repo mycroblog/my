@@ -2,10 +2,14 @@
 
 // The composer's view (#3046's rough, ADR-0155, ADR-0156): from the top, the head (the title, then close at its end),
 // the post replied to or quoted (both above the text, as context), the content warning, the text with the part over
-// the limit marked, the images as rows with their descriptions or the poll as a card, the form's error, and the row
+// the limit marked and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
+// descriptions or the poll as a card, the form's error, and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
 // menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
-// interactions, whose reply, boost and quote permissions open as a submenu. Its state is the hook's (use-composer.ts).
+// interactions, whose reply, boost and quote permissions open as a submenu. Editing the reader's post, it is titled Edit
+// post and saves with Save; what an edit cannot change leaves the row (the poll, the audience), and one muted line over
+// the text names the audience and that it stays (a post with a poll is never edited: the server refuses it). A
+// redraft is a new post, written from the deleted one. Its state is the hook's (use-composer.ts).
 
 import { isRemote, languageName, QuoteContext, ReplyContext } from "@my/app-components";
 import type { Audience, Interaction, Visibility } from "@my/app-data";
@@ -14,6 +18,7 @@ import {
   AttachmentList,
   AttachmentRow,
   Button,
+  CaptionLine,
   CharCount,
   CheckField,
   ChoiceBack,
@@ -35,8 +40,9 @@ import {
   WarningField,
   type IconName,
 } from "@my/design-system";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
+import { ComposerEmoji } from "./emoji";
 import type { MessageId } from "../messages.gen";
 import {
   maxAttachments,
@@ -315,7 +321,8 @@ function Poll({
 
 /** The form's error before Post: the first thing that keeps the post from being sent. */
 function alertOf(c: Composer, t: T): string | undefined {
-  if (c.phase.kind === "failed") return c.phase.reason ?? t("compose.failed");
+  if (c.phase.kind === "failed")
+    return c.phase.reason ?? t(c.draft.target.kind === "edit" ? "compose.save_failed" : "compose.failed");
   if (!c.checked) return undefined;
   if (c.problems.waiting) return t("compose.wait_uploads");
   if (c.problems.pollInvalid)
@@ -333,16 +340,29 @@ export type ComposerViewProps = {
   layer?: boolean | undefined;
   /** A screen of its own on a phone (the app's choice), or a dialog. */
   phone?: "screen" | "dialog" | undefined;
+  /** The emoji picker opens in a sheet (the app's choice on a phone's viewport), else in a popover. */
+  pickerSheet?: boolean | undefined;
 };
 
-export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "screen" }: ComposerViewProps) {
+export function ComposerView({
+  c,
+  onClose,
+  onDismiss,
+  layer = true,
+  phone = "screen",
+  pickerSheet = false,
+}: ComposerViewProps) {
   const { locale } = useLocale();
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const { t, lang } = stringsIn(locale);
   const [open, setOpen] = useState<"audience" | "permissions" | "language" | undefined>(undefined);
   const { draft, settings, answered, problems } = c;
   const busy = c.phase.kind === "posting";
+  const editing = draft.target.kind === "edit";
   const left = settings.maxChars - usedChars(draft);
-  const title = t(`compose.title.${draft.target.kind === "quote" && draft.quoteRemoved ? "new" : draft.target.kind}`);
+  // A redraft is a new post; a quote whose quoted post was taken out is one too.
+  const kind = draft.target.kind;
+  const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
   return (
@@ -362,15 +382,17 @@ export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "scr
             isDisabled={draft.poll !== undefined || draft.attachments.length >= maxAttachments}
             onFiles={c.addFiles}
           />
-          <IconButton
-            icon="poll"
-            label={t(draft.poll ? "compose.poll.off" : "compose.poll.on")}
-            pressed={draft.poll !== undefined}
-            isDisabled={draft.attachments.length > 0}
-            onPress={() => {
-              c.change({ poll: draft.poll ? undefined : newPoll });
-            }}
-          />
+          {!editing && (
+            <IconButton
+              icon="poll"
+              label={t(draft.poll ? "compose.poll.off" : "compose.poll.on")}
+              pressed={draft.poll !== undefined}
+              isDisabled={draft.attachments.length > 0}
+              onPress={() => {
+                c.change({ poll: draft.poll ? undefined : newPoll });
+              }}
+            />
+          )}
           <IconButton
             icon="hidden"
             label={t(draft.cw === undefined ? "compose.cw.on" : "compose.cw.off")}
@@ -379,12 +401,14 @@ export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "scr
               c.change({ cw: draft.cw === undefined ? "" : undefined });
             }}
           />
-          <Audience
-            c={c}
-            t={t}
-            open={open === "audience" || open === "permissions" ? open : undefined}
-            setOpen={setOpen}
-          />
+          {!editing && (
+            <Audience
+              c={c}
+              t={t}
+              open={open === "audience" || open === "permissions" ? open : undefined}
+              setOpen={setOpen}
+            />
+          )}
           <Language
             c={c}
             t={t}
@@ -405,10 +429,15 @@ export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "scr
       }
       action={
         <Button kind="primary" size="timeline" busy={busy} onPress={c.submit}>
-          {t("compose.post")}
+          {t(editing ? "compose.save" : "compose.post")}
         </Button>
       }
     >
+      {editing && (
+        <CaptionLine icon={visibilityIcon[draft.visibility]} lang={lang}>
+          {t("compose.edit.fixed", { visibility: t(`compose.visibility.${draft.visibility}`) })}
+        </CaptionLine>
+      )}
       {draft.target.kind === "reply" && answered && (
         <ReplyContext status={answered} note={t("compose.replying_to", { handle })} />
       )}
@@ -441,6 +470,18 @@ export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "scr
         readOnly={busy}
         roomy={draft.attachments.length === 0 && draft.poll === undefined}
         autoFocus={layer}
+        textRef={textRef}
+        end={
+          <ComposerEmoji
+            textRef={textRef}
+            value={draft.text}
+            sheet={pickerSheet}
+            disabled={busy}
+            onChange={(text) => {
+              c.change({ text });
+            }}
+          />
+        }
         onChange={(text) => {
           c.change({ text });
         }}

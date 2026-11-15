@@ -3,7 +3,7 @@
 import { expect, test } from "bun:test";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { press } from "../test/actions";
-import { account, render, server, status } from "../test/server";
+import { account, poll, render, server, status } from "../test/server";
 import { loadNotifications, Notifications } from "./notifications";
 
 /** An ID as the server's: a later one sorts after an earlier one. */
@@ -86,4 +86,22 @@ test("the post of a mention answers its actions: a favourite reaches the server,
   await Bun.sleep(0);
   expect(requests).toContain("POST /statuses/m/favourite");
   expect(composed).toEqual([{ kind: "reply", id: "m" }]);
+});
+
+test("a vote in the poll of a mentioning post reaches the server", async () => {
+  const mention = status("m", "ken", { poll: poll("p") });
+  const { data, received } = server({
+    ...answers,
+    "/notifications": { items: [{ ...notifications[0], status: mention }] },
+    "/statuses/m/poll/votes": { ...mention, poll: poll("p", { voted: true, own_votes: [1] }) },
+  });
+  await loadNotifications(data);
+  render(
+    data,
+    <PostActions onCompose={() => undefined}>
+      <Notifications instance="my.example" />
+    </PostActions>,
+  );
+  press({ type: "vote", id: "m", poll: "p", choices: [1] });
+  expect(await received("POST /statuses/m/poll/votes")).toEqual({ poll_id: "p", choices: [1] });
 });
