@@ -24,6 +24,7 @@ export { LatestNotifications } from "./notifications/latest";
 export { loadNotifications, Notifications } from "./notifications/notifications";
 export { PostActions, type ComposeRequest } from "./post-actions";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
+export { loadReactors, ReactorList } from "./thread/reactors";
 export { loadThread, Thread } from "./thread/thread";
 export { HomeTimeline, loadHomeTimeline } from "./timeline/home";
 export { loadPublicTimeline, PublicTimeline } from "./timeline/public";

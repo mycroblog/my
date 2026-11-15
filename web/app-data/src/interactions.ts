@@ -2,7 +2,8 @@
 // The reader's own marks on a status (ADR-0028 §7, §18): favourite, boost, bookmark and an emoji reaction, each set or
 // taken back through the shadow. Every copy of the status shows the change at once, the server's answer replaces it,
 // and a failed write takes it off, each in the fields of the mark's kind alone, and only for the latest write of that
-// kind on the status. A user has one favourite or one reaction on a status, so setting one takes back the other. The
+// kind on the status. A user has one favourite or one reaction on a status, so setting one takes back the other, and
+// the lists of who reacted to it are read again (reactions.ts). The
 // write is a plain request (no outbox yet, #2892): a failure rejects with mykit's ProblemError or NetworkError.
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -135,6 +136,16 @@ export async function markStatus(data: AppData, id: string, mark: StatusMark): P
       return (s) => ({ ...s, ...after });
     },
   });
+  // Who reacted changed with the reader's reaction, which a favourite also takes back: the lists are read again.
+  if (mark.type === "reaction" || mark.type === "favourite")
+    void data.queryClient.invalidateQueries({ predicate: (q) => reactorsOf(q.queryKey, id) });
+}
+
+/** Whether `key` is a list of the reactions to the status of `id` (statusReactorsQuery). */
+function reactorsOf(key: readonly unknown[], id: string): boolean {
+  if (key[1] !== "/statuses/{id}/reactions") return false;
+  const init = key[2] as { params?: { path?: { id?: string } } } | undefined;
+  return init?.params?.path?.id === id;
 }
 
 /** markStatus for the session of the nearest AppDataProvider, and the status a mark acts on as it shows. */

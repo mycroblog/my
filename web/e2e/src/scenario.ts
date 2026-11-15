@@ -86,8 +86,8 @@ export type Follow = { follower: string; followee: string; accepted?: boolean };
 /** A block or a mute of one person by another. */
 export type Restriction = { kind: "block" | "mute"; by: string; target: string };
 
-/** A custom emoji of the server, drawn by code. */
-export type CustomEmoji = { shortcode: string; drawing: Drawing };
+/** A custom emoji of the server, drawn by code, with the picker's category and the other names it finds it by. */
+export type CustomEmoji = { shortcode: string; drawing: Drawing; category?: string; aliases?: readonly string[] };
 
 /** An OAuth app a person registered, which other people consent to at /oauth/authorize. */
 export type App = {
@@ -295,6 +295,22 @@ export const emojis: readonly CustomEmoji[] = [
         { kind: "circle", x: 32, y: 32, r: 14, color: [255, 211, 77] },
         { kind: "circle", x: 50, y: 14, r: 5, color: [255, 236, 170] },
         { kind: "circle", x: 14, y: 50, r: 4, color: [255, 236, 170] },
+      ],
+    },
+  },
+  {
+    shortcode: "teacup",
+    category: "Sunday tea",
+    aliases: ["ocha", "tea"],
+    drawing: {
+      width: 64,
+      height: 64,
+      top: [214, 240, 222],
+      bottom: [150, 200, 170],
+      shapes: [
+        { kind: "rect", x: 16, y: 26, w: 30, h: 22, color: [255, 255, 255] },
+        { kind: "circle", x: 48, y: 36, r: 6, color: [255, 255, 255] },
+        { kind: "rect", x: 20, y: 30, w: 22, h: 6, color: [120, 170, 90] },
       ],
     },
   },

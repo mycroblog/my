@@ -13,7 +13,7 @@
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
@@ -180,7 +180,9 @@ export function CharCount({ left, near, label }: { left: number; near: number; l
 const text = tv({
   slots: {
     field: "grid gap-form-page-field-gap",
-    wrap: "grid [&>*]:[grid-area:1/1]",
+    wrap: "relative grid [&>*]:[grid-area:1/1]",
+    // The button at the end of the text's first line (the emoji picker's, ADR-0091 §4), over the text's own room.
+    end: "absolute top-0 end-0 z-10",
     both: [
       "box-border m-0 border-0 p-0 font-sans text-[length:var(--composer-text-size)]",
       "leading-[var(--composer-text-leading)] whitespace-pre-wrap [overflow-wrap:anywhere]",
@@ -194,6 +196,11 @@ const text = tv({
     roomy: {
       true: { both: "min-h-[calc(var(--composer-text-lines)*var(--composer-text-leading)*var(--composer-text-size))]" },
       false: { both: "min-h-[calc(var(--composer-text-leading)*var(--composer-text-size))]" },
+    },
+    // A button at the end: the text keeps clear of it on every line.
+    ended: {
+      true: { both: "pe-[calc(var(--icon-action)+2*var(--icon-button-padding-inline))]" },
+      false: {},
     },
   },
 });
@@ -209,9 +216,15 @@ export function ComposerText({
   readOnly = false,
   roomy = true,
   autoFocus = false,
+  end,
+  textRef,
 }: {
   value: string;
   onChange: (value: string) => void;
+  /** A button at the end of the text's first line (the emoji picker's), which the text keeps clear of. */
+  end?: ReactNode;
+  /** The text area itself, for a caller that writes at its caret. */
+  textRef?: RefObject<HTMLTextAreaElement | null> | undefined;
   /** The field's name, for assistive technology. */
   label: string;
   placeholder: string;
@@ -223,7 +236,7 @@ export function ComposerText({
   roomy?: boolean | undefined;
   autoFocus?: boolean | undefined;
 }) {
-  const s = text({ roomy });
+  const s = text({ roomy, ended: end !== undefined });
   const id = useId();
   const all = Array.from(value);
   const keep = Math.max(0, all.length - over);
@@ -236,6 +249,7 @@ export function ComposerText({
           {"​"}
         </div>
         <textarea
+          ref={textRef}
           className={`${s.both()} ${s.area()}`}
           value={value}
           placeholder={placeholder}
@@ -250,6 +264,7 @@ export function ComposerText({
             onChange(e.target.value);
           }}
         />
+        {end !== undefined && <div className={s.end()}>{end}</div>}
       </div>
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </div>

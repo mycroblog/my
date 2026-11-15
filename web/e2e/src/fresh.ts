@@ -175,6 +175,20 @@ export class Fresh {
     return { id: status.id, text };
   }
 
+  /** `by` reacts to the post `post` with `emoji`: a Unicode emoji, or a custom one's shortcode without colons. */
+  async reaction(by: Person, post: FreshPost, emoji: string): Promise<void> {
+    const { error } = await (
+      await this.#api(by)
+    ).PUT("/statuses/{id}/reaction", { params: { path: { id: post.id } }, body: { emoji } });
+    if (error !== undefined) throw new Error(`fresh: ${by.username} could not react to ${post.id}`);
+  }
+
+  /** `author` deletes their post `post`. */
+  async deletion(author: Person, post: FreshPost): Promise<void> {
+    const { error } = await (await this.#api(author)).DELETE("/statuses/{id}", { params: { path: { id: post.id } } });
+    if (error !== undefined) throw new Error(`fresh: ${author.username} could not delete ${post.id}`);
+  }
+
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */
   async followRequest(from: Person, to: Person): Promise<void> {
     if (to.locked !== true) throw new Error(`fresh: ${to.username} is not locked, so a follow is no request`);

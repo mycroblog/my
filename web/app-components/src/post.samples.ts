@@ -375,7 +375,7 @@ export const emojis: ContentEmoji[] = Object.entries(emoji).map(([shortcode, src
 const here = "my.example";
 
 /** An account as a status embeds it; its handle is its id. */
-function accountOf(account: Account): PostAccount {
+export function accountOf(account: Account): PostAccount {
   const [, username = "", domain = here] = account.handle.split("@");
   return {
     id: account.handle,

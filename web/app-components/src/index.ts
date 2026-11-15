@@ -17,8 +17,8 @@ export {
 export { DeleteConfirm, type DeleteConfirmProps } from "./delete-confirm";
 export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-history";
 export { languageName } from "./locale";
-export { accountPath, statusPath } from "./paths";
-export { Post, type PostAction, type PostProps } from "./post";
+export { accountPath, reactorsPath, statusPath } from "./paths";
+export { Post, type PostAction, type PostPicker, type PostProps } from "./post";
 export { PostContent, type ContentEmoji, type PostContentProps } from "./post-content";
 export { isRemote, QuoteContext, ReplyContext } from "./post-context";
 export { PostDetails } from "./post-details";
@@ -31,3 +31,4 @@ export type {
   PostTranslation,
   PostVisibility,
 } from "./status";
+export { ReactorsTitle, WhoReacted, type Reactors } from "./who-reacted";

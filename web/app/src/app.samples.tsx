@@ -33,7 +33,10 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
-  /** The app's path, `announcement:<key>` of an announcement, or the key of a scenario post whose page it opens. */
+  /**
+   * The app's path, `announcement:<key>` of an announcement, `reactions:<key>:<emoji>` of who reacted to a scenario
+   * post with an emoji, or the key of a scenario post whose page it opens.
+   */
   at: string;
   state?: ScreenState;
   /** Fails the home timeline's first page during the first second; its retry succeeds. */
@@ -138,15 +141,19 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 }
 
 /**
- * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, else the page of the
+ * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, the list of who
+ * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), else the page of the
  * scenario post of that key.
  */
-const pathOf = (fake: FakeApi, at: string) =>
-  at.startsWith("/")
-    ? at
-    : at.startsWith("announcement:")
-      ? fake.announcementPath(at.slice("announcement:".length))
-      : fake.postPath(at);
+function pathOf(fake: FakeApi, at: string): string {
+  if (at.startsWith("/")) return at;
+  if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
+  if (at.startsWith("reactions:")) {
+    const [, key = "", emoji = ""] = at.split(":");
+    return `${fake.postPath(key)}/reactions/${encodeURIComponent(emoji)}`;
+  }
+  return fake.postPath(at);
+}
 
 /** Posts `count` new samples on the fake server and hands them to the timeline as the stream does, as the API's. */
 async function post(data: AppData, fake: FakeApi, count: number) {
@@ -280,7 +287,8 @@ function shows(
       // Both folds, each a text button in the entry before what it holds.
       return settled && canvas.querySelectorAll("article > p > button").length >= 2;
     default:
-      return settled && has("article");
+      // A list of who reacted shows a row per account, each a link to its profile; a screen of posts, its posts.
+      return settled && has(at.startsWith("reactions:") ? 'main a[href^="/@"]' : "article");
   }
 }
 

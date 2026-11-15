@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The layout of a thread (FR-106) in a feed: the focused post, a step larger, a group's space before and after it, with
-// its own lines under its body (when it was posted and its counts); and each reply under it, indented by how deep it
+// its own lines under its body (when it was posted, and to whom); and each reply under it, indented by how deep it
 // replies, up to three steps where the column is wide enough and none where it is narrow (a phone's), where the
 // reply's own context line says to whom.
 
@@ -50,10 +50,6 @@ const details = tv({
   slots: {
     root: "grid gap-entry-line text-caption text-muted-text [&_p]:m-0",
     glyph: "inline-flex items-center gap-entry-caption align-bottom",
-    count: [
-      "rounded-control text-body text-text no-underline outline-hidden",
-      "data-hovered:underline data-focus-visible:shadow-focus",
-    ],
   },
 });
 
@@ -70,9 +66,4 @@ export function GlyphText({ icon, children }: { icon: IconName; children: ReactN
       {children}
     </span>
   );
-}
-
-/** A count inside a detail line, in the text's color. */
-export function DetailCount({ children }: { children: ReactNode }) {
-  return <span className={details().count()}>{children}</span>;
 }

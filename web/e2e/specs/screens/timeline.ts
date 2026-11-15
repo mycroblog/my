@@ -5,6 +5,7 @@
 
 import type { Locator, Page } from "@playwright/test";
 import { Composer } from "./composer";
+import { EmojiPicker } from "./emoji-picker";
 import { answered } from "./write";
 
 /** A count button's name: the action, then the count when there is one ("Favourite", "Favourite, 2"). */
@@ -73,6 +74,53 @@ export class Post {
         .getByRole("menuitem", { name: "Boost", exact: true })
         .click();
     });
+  }
+
+  /** The React button, which opens the emoji picker. */
+  get reactButton(): Locator {
+    return this.article.getByRole("button", { name: "React", exact: true });
+  }
+
+  /** The row of the post's emoji reactions, which shows only while it has one. */
+  get reactions(): Locator {
+    return this.article.getByRole("group", { name: "Reactions", exact: true });
+  }
+
+  /** The chips of the post's emoji reactions, each named by its emoji and count ("😀, 2"). */
+  get reactionChips(): Locator {
+    return this.reactions.getByRole("button");
+  }
+
+  /** The reader's own reaction: its chip, pressed, named "{emoji}, {count}, including yours". */
+  get ownReaction(): Locator {
+    return this.reactions.getByRole("button", { pressed: true });
+  }
+
+  /** Opens the emoji picker from the React button, by pointer or with a key pressed on it, and returns it. */
+  async react(by: "pointer" | "Enter" | "Space" = "pointer"): Promise<EmojiPicker> {
+    if (by === "pointer") await this.reactButton.click();
+    else await this.reactButton.press(by);
+    return new EmojiPicker(this.page.getByRole("dialog", { name: "React", exact: true }));
+  }
+
+  /**
+   * Does `act`, a pick in the picker by pointer or key that sets or takes back the reader's reaction, and returns once
+   * the server has answered it.
+   */
+  async reacting(act: () => Promise<void>): Promise<void> {
+    await answered(this.page, { methods: ["PUT", "DELETE"], path: /\/statuses\/[^/]+\/reaction$/ }, act);
+  }
+
+  /** Picks `emoji`, a cell of the picker, with the pointer, and returns once the server has answered the reaction. */
+  async pick(emoji: Locator): Promise<void> {
+    await this.reacting(async () => {
+      await emoji.click();
+    });
+  }
+
+  /** The row under the post on its own page that leads to who reacted with one emoji ("😀 2 people reacted"). */
+  whoReacted(name: string): Locator {
+    return this.article.getByRole("link", { name, exact: true });
   }
 
   /** The post's poll, named "Poll" in en and "投票" in ja. */

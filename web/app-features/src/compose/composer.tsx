@@ -2,7 +2,8 @@
 
 // The composer's view (#3046's rough, ADR-0155, ADR-0156): from the top, the head (the title, then close at its end),
 // the post replied to or quoted (both above the text, as context), the content warning, the text with the part over
-// the limit marked, the images as rows with their descriptions or the poll as a card, the form's error, and the row
+// the limit marked and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
+// descriptions or the poll as a card, the form's error, and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
 // menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
 // interactions, whose reply, boost and quote permissions open as a submenu. Editing the reader's post, it is titled Edit
@@ -39,8 +40,9 @@ import {
   WarningField,
   type IconName,
 } from "@my/design-system";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
+import { ComposerEmoji } from "./emoji";
 import type { MessageId } from "../messages.gen";
 import {
   maxAttachments,
@@ -338,10 +340,20 @@ export type ComposerViewProps = {
   layer?: boolean | undefined;
   /** A screen of its own on a phone (the app's choice), or a dialog. */
   phone?: "screen" | "dialog" | undefined;
+  /** The emoji picker opens in a sheet (the app's choice on a phone's viewport), else in a popover. */
+  pickerSheet?: boolean | undefined;
 };
 
-export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "screen" }: ComposerViewProps) {
+export function ComposerView({
+  c,
+  onClose,
+  onDismiss,
+  layer = true,
+  phone = "screen",
+  pickerSheet = false,
+}: ComposerViewProps) {
   const { locale } = useLocale();
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const { t, lang } = stringsIn(locale);
   const [open, setOpen] = useState<"audience" | "permissions" | "language" | undefined>(undefined);
   const { draft, settings, answered, problems } = c;
@@ -458,6 +470,18 @@ export function ComposerView({ c, onClose, onDismiss, layer = true, phone = "scr
         readOnly={busy}
         roomy={draft.attachments.length === 0 && draft.poll === undefined}
         autoFocus={layer}
+        textRef={textRef}
+        end={
+          <ComposerEmoji
+            textRef={textRef}
+            value={draft.text}
+            sheet={pickerSheet}
+            disabled={busy}
+            onChange={(text) => {
+              c.change({ text });
+            }}
+          />
+        }
         onChange={(text) => {
           c.change({ text });
         }}

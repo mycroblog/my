@@ -68,6 +68,16 @@ export {
   type DiffPart,
   type VersionProps,
 } from "./history";
+// The picker itself is a chunk of its own, loaded when first wanted: the entry holds its types and where it opens.
+export type { EmojiPickerLabels, EmojiPickerProps, EmojiSection, PickerEmoji } from "./emoji-picker";
+export {
+  LazyEmojiPicker as EmojiPicker,
+  EmojiPickerPopover,
+  EmojiPickerSheet,
+  EmojiPickerSurface,
+  preloadEmojiPicker,
+  preloadEmojiPickerWhenIdle,
+} from "./emoji-picker-overlay";
 export { ModalPresence } from "./modal";
 export {
   ActionRow,
@@ -120,8 +130,10 @@ export {
   BackButton,
   ButtonPair,
   Excerpt,
+  FacesRow,
   Fold,
   GroupHeading,
+  ListTitle,
   NoticeCaption,
   NoticeLine,
   OpenRow,
@@ -130,6 +142,7 @@ export {
   StateText,
   TabRow,
   UnreadMark,
+  type FacesRowProps,
   type NoticeLineProps,
   type TabRowProps,
 } from "./list";
@@ -144,7 +157,7 @@ export {
   type PollResultItem,
 } from "./poll";
 export { Badge, FieldList, MetaCount, MetaLine, ProfileHead, TagList, type ProfileHeadProps } from "./profile";
-export { DetailCount, DetailLines, GlyphText, ThreadFocus, ThreadReply } from "./thread";
+export { DetailLines, GlyphText, ThreadFocus, ThreadReply } from "./thread";
 export {
   routerTransitions,
   runTransition,

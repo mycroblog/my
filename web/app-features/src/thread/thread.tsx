@@ -2,11 +2,11 @@
 
 // A post on its own page, in its thread (FR-106, the rough of #3047), from useThread() of @my/app-data: the thread's
 // first post, then a fold of the posts between it and the two the focused post replies to closest, then those two;
-// the focused post, a step larger, with when it was posted, to whom and its counts inside it (PostDetails) in place of
+// the focused post, a step larger, with when it was posted and to whom inside it (PostDetails) in place of
 // the stamp at the end of its author's line; then its replies, each indented by how deep it replies, the first of them
 // and a fold of the rest. All of it is one feed, so that the keys of the next and the previous entry run through it;
 // a feed owns its articles alone, so the replies' heading stands in the first reply, above it, and each fold in the
-// entry before it.
+// entry before it. Who reacted to the focused post stands inside it, after its actions (reactors.tsx).
 // A post's actions are answered as on every screen (post-actions.tsx).
 
 import { FeedKeys, Post, PostDetails } from "@my/app-components";
@@ -26,7 +26,8 @@ import {
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions, usePostOwn, usePostVoting } from "../post-actions";
+import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { PostReactors } from "./reactors";
 
 /** How many ancestors show around the fold: the first, and as many closest to the focused post. */
 const closest = 2;
@@ -74,6 +75,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     left.current = true;
     onBack();
   }, [gone, onBack]);
+  const picker = usePostPicker();
   const back = <BackButton onPress={onBack}>{t("thread.back")}</BackButton>;
   if (status === undefined)
     return (
@@ -99,7 +101,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const positions = new Map([...first, ...last, status, ...replies].map((s, i) => [s.id, i + 1]));
   const item = (s: Status, children?: ReactNode) => (
     <FeedItem key={s.id} id={s.id} position={positions.get(s.id) ?? 0}>
-      {children ?? <Post status={s} onAction={onAction} voting={votingOf(s)} own={ownOf(s)} />}
+      {children ?? <Post status={s} onAction={onAction} voting={votingOf(s)} own={ownOf(s)} picker={picker} />}
     </FeedItem>
   );
   const count = positions.size;
@@ -150,6 +152,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               onAction={onAction}
               voting={votingOf(s)}
               own={ownOf(s)}
+              picker={picker}
               after={earlierFold || undefined}
             />,
           ),
@@ -172,6 +175,8 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               onAction={onAction}
               voting={votingOf(status)}
               own={ownOf(status)}
+              picker={picker}
+              after={<PostReactors status={status} />}
             />,
           )}
         </ThreadFocus>
@@ -184,6 +189,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 onAction={onAction}
                 voting={votingOf(s)}
                 own={ownOf(s)}
+                picker={picker}
                 context={i === 0 ? <GroupHeading>{t("thread.replies")}</GroupHeading> : undefined}
                 after={(s === lastReply && laterFold) || undefined}
               />,

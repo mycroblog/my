@@ -211,14 +211,6 @@
     "defaultMessage": "投稿にフォーカスしているとき",
     "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
   },
-  "post.boosts_count": {
-    "defaultMessage": "{count, plural, other {ブースト #}}",
-    "description": "The number of boosts of a post, under the post shown on its own page with its thread. count is how many."
-  },
-  "post.favourites_count": {
-    "defaultMessage": "{count, plural, other {お気に入り #}}",
-    "description": "The number of favourites of a post, under the post shown on its own page with its thread. count is how many."
-  },
   "post.poll": {
     "defaultMessage": "投票",
     "description": "The accessible name of a post's poll; the same word as the poll's card in the composer (compose.poll)."
@@ -258,5 +250,13 @@
   "post.poll_mine": {
     "defaultMessage": "自分の投票",
     "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
+  },
+  "post.reacted_row": {
+    "defaultMessage": "{emoji} {count, plural, other {#人がリアクション}}",
+    "description": "The accessible name of the row under a post on its own page that opens the list of who reacted with one emoji. It starts with the emoji and the count, the row's visible text, in that order. emoji is a Unicode emoji or :shortcode:; count is how many."
+  },
+  "post.reacted_with": {
+    "defaultMessage": "{emoji} でリアクションした人",
+    "description": "The heading of the list of the accounts that reacted to a post with one emoji. emoji is a Unicode emoji or :shortcode:, which the heading draws as its image."
   }
 }

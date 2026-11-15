@@ -24,6 +24,9 @@ import {
   CustomEmoji,
   Disclosure,
   Embed,
+  EmojiPicker,
+  EmojiPickerPopover,
+  EmojiPickerSheet,
   Entry,
   IconButton,
   MediaGrid,
@@ -34,11 +37,13 @@ import {
   PollChoices,
   PollFoot,
   PollResults,
+  preloadEmojiPicker,
   Stack,
   Stamp,
   TextButton,
   useAction,
   useLocale,
+  type EmojiPickerProps,
   type IconName,
   type MediaItem,
 } from "@my/design-system";
@@ -101,6 +106,23 @@ export type PostProps = {
   after?: ReactNode;
   /** The choices of the reader's vote in its poll while the vote is in flight. */
   voting?: readonly number[] | undefined;
+  /** The emoji picker the react action opens; without one, react is `onAction`'s. */
+  picker?: PostPicker | undefined;
+};
+
+/**
+ * The emoji picker as the app gives it: the emoji (the reader's frequent ones, the server's, Unicode's), their search,
+ * the strings, and where it opens, which the app decides by the viewport: a sheet on a phone, titled with `title` and
+ * closed by `closeLabel`'s button, else a popover beside the react button.
+ */
+export type PostPicker = Omit<EmojiPickerProps, "onSelect" | "current" | "fill" | "defaultQuery" | "autoFocus"> & {
+  sheet: boolean;
+  title: string;
+  closeLabel: string;
+  /** Asked for when the react button is hovered, focused or pressed: the emoji are loaded before the picker opens. */
+  preload?: (() => void) | undefined;
+  /** Told when the picker opens. */
+  onOpen?: (() => void) | undefined;
 };
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -114,7 +136,7 @@ const slotPattern = /([-])/u;
  * The string `id` with each of `parts` drawn by React in its argument's place, so that a name keeps its custom emoji
  * and its isolation inside a sentence, and no transform of the message (a pseudo-locale's) reaches it.
  */
-function format(t: T, id: MessageId, parts: Readonly<Record<string, ReactNode>>): ReactNode {
+export function format(t: T, id: MessageId, parts: Readonly<Record<string, ReactNode>>): ReactNode {
   const names = Object.keys(parts);
   const text = t(id, Object.fromEntries(names.map((name, i) => [name, String.fromCodePoint(firstSlot + i)])));
   return text.split(slotPattern).map((piece, i) => {
@@ -399,8 +421,119 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
   );
 }
 
+/**
+ * The key the picker tells the reader's own reaction by: a Unicode emoji without its skin tone, or a custom one's
+ * `:shortcode:`.
+ */
+const keyOf = (r: PostReaction) =>
+  r.shortcode === undefined ? r.name.replace(/[\u{1F3FB}-\u{1F3FF}]/gu, "") : `:${r.shortcode}:`;
+
+/**
+ * The react action: with a picker, it opens it (a popover beside the button, or a sheet on a phone, as the app says),
+ * the reader's own reaction knocked out in it; picking an emoji reacts with it (moving the reader's reaction there, or
+ * taking it back if it was theirs) and closes it. Without one, it asks the screen.
+ */
+function ReactAction({
+  status,
+  t,
+  act,
+  picker,
+}: {
+  status: PostStatus;
+  t: T;
+  act: Act;
+  picker: PostPicker | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  if (picker === undefined)
+    return (
+      <IconButton
+        icon="react"
+        label={t("post.react")}
+        onPress={() => {
+          act({ type: "react", id: status.id });
+        }}
+      />
+    );
+  const { sheet, title, closeLabel, preload, onOpen, ...rest } = picker;
+  const show = (shown: boolean) => {
+    if (shown) onOpen?.();
+    setOpen(shown);
+  };
+  const mine = status.reactions.find((r) => r.me === true);
+  // A post takes one reaction, so a pick closes the picker even with Shift held (ADR-0051 §6).
+  const content = (
+    <EmojiPicker
+      {...rest}
+      fill={sheet}
+      autoFocus
+      current={mine === undefined ? undefined : keyOf(mine)}
+      onSelect={(emoji, text) => {
+        act({ type: "reaction", id: status.id, name: "image" in emoji ? emoji.key.slice(1, -1) : text });
+        setOpen(false);
+      }}
+    />
+  );
+  // The picker's code and its emoji are fetched as the reader reaches for the button, before it opens.
+  const warm = () => {
+    preloadEmojiPicker();
+    preload?.();
+  };
+  const button = (
+    <IconButton
+      icon="react"
+      label={t("post.react")}
+      onHoverStart={warm}
+      onFocus={warm}
+      onPressStart={warm}
+      {...(sheet
+        ? {
+            onPress: () => {
+              show(true);
+            },
+          }
+        : {})}
+    />
+  );
+  if (sheet)
+    return (
+      <>
+        {button}
+        <EmojiPickerSheet
+          open={open}
+          onClose={() => {
+            setOpen(false);
+          }}
+          title={title}
+          closeLabel={closeLabel}
+        >
+          {content}
+        </EmojiPickerSheet>
+      </>
+    );
+  return (
+    <EmojiPickerPopover label={t("post.react")} trigger={button} open={open} onOpenChange={show}>
+      {content}
+    </EmojiPickerPopover>
+  );
+}
+
 /** The actions: reply, boost (a menu of boost and quote, with its count and on state), favourite and react, more. */
-function Actions({ status, own, t, lang, act }: { status: PostStatus; own: boolean; t: T; lang: string; act: Act }) {
+function Actions({
+  status,
+  own,
+  t,
+  lang,
+  act,
+  picker,
+}: {
+  status: PostStatus;
+  own: boolean;
+  t: T;
+  lang: string;
+  act: Act;
+  picker: PostPicker | undefined;
+}) {
   const on = (type: "reply" | "boost" | "quote" | "favourite" | "react") => () => {
     act({ type, id: status.id });
   };
@@ -454,7 +587,7 @@ function Actions({ status, own, t, lang, act }: { status: PostStatus; own: boole
         onPress={on("favourite")}
         {...favourite}
       />
-      <IconButton icon="react" label={t("post.react")} onPress={on("react")} />
+      <ReactAction status={status} t={t} act={act} picker={picker} />
     </ActionRow>
   );
 }
@@ -471,6 +604,7 @@ export function Post({
   stamp = true,
   after,
   voting,
+  picker,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -546,7 +680,14 @@ export function Post({
       )}
       <Reactions status={shown} t={t} lang={lang} act={act} />
       {details}
-      <Actions status={shown} own={own} t={t} lang={lang} act={act} />
+      <Actions
+        status={shown}
+        own={own}
+        t={t}
+        lang={lang}
+        act={act}
+        picker={signIn === undefined ? picker : undefined}
+      />
       {after}
     </Entry>
   );

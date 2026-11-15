@@ -191,7 +191,16 @@ class Seeder {
         if (have.has(e.shortcode)) continue;
         const file = join(dir, `${e.shortcode}.png`);
         writeFileSync(file, drawPNG(e.drawing));
-        this.#o.runMy(["admin", "emoji", "create", "-shortcode", e.shortcode, file]);
+        this.#o.runMy([
+          "admin",
+          "emoji",
+          "create",
+          "-shortcode",
+          e.shortcode,
+          ...(e.category === undefined ? [] : ["-category", e.category]),
+          ...(e.aliases ?? []).flatMap((alias) => ["-alias", alias]),
+          file,
+        ]);
       }
     } finally {
       rmSync(dir, { recursive: true, force: true });

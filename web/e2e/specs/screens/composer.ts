@@ -3,6 +3,7 @@
 // The composer, a dialog that writes a new post or a reply.
 
 import { expect, type Locator } from "@playwright/test";
+import { EmojiPicker } from "./emoji-picker";
 import { answered } from "./write";
 
 export class Composer {
@@ -27,6 +28,17 @@ export class Composer {
   /** Writes `text` in place of what the composer holds. */
   async replace(text: string): Promise<void> {
     await this.text.fill(text);
+  }
+
+  /** The button at the end of the text that opens the emoji picker, which writes the emoji picked at the caret. */
+  get emojiButton(): Locator {
+    return this.dialog.getByRole("button", { name: "Add emoji", exact: true });
+  }
+
+  /** Opens the emoji picker from the Add emoji button, and returns it. */
+  async emoji(): Promise<EmojiPicker> {
+    await this.emojiButton.click();
+    return new EmojiPicker(this.dialog.page().getByRole("dialog", { name: "Add emoji", exact: true }));
   }
 
   /** Saves the edit of the reader's post, and returns once the server has answered and the composer has closed. */

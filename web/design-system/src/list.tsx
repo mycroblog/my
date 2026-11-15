@@ -307,6 +307,93 @@ export function OpenRow({
   );
 }
 
+const faces = tv({
+  slots: {
+    // The whole row is the link: the surface on hover and the ring on focus, so its chevron reads as part of it. The
+    // ring that cuts a face out takes the surface under it.
+    root: [
+      "-mx-screen-row-inline flex items-center gap-screen-row-gap rounded-control px-screen-row-inline py-screen-row-block",
+      "text-text no-underline outline-hidden [--face-cut-color:var(--color-surface)]",
+      "data-hovered:bg-surface-hover data-hovered:[--face-cut-color:var(--color-surface-hover)]",
+      "data-focus-visible:shadow-focus",
+    ],
+    lead: "inline-flex min-w-screen-faces-lead flex-none items-center gap-chip-gap text-body",
+    glyph: "inline-flex text-[length:var(--chip-glyph)] leading-none text-muted-text",
+    count: "tabular-nums",
+    // As many faces as fit: a face that does not wraps to a second line, which the strip's height hides, so that faces
+    // drop from the end whole, never shrink or scroll. The padding keeps their cut rings inside it.
+    strip: ["box-content flex h-avatar-post min-w-0 flex-1 flex-wrap overflow-hidden", "p-screen-face-cut"],
+    face: "inline-flex flex-none rounded-full shadow-face-cut [&+&]:-ms-screen-face-overlap",
+    chevron: "inline-flex flex-none text-muted-text",
+  },
+});
+
+export type FacesRowProps = {
+  /** Where it leads: the list of every account of its kind. */
+  href: string;
+  /** What it says to assistive technology, and on hover: how many, and of what kind ("6 reacted with :sparkle:"). */
+  label: string;
+  /** The kind's glyph: an icon, or an emoji as text or an image. */
+  glyph: ReactNode;
+  /** How many, as the reader's locale writes it. */
+  count: string;
+  /** The first accounts' avatars, at a post's size, as many as the server gave; those that do not fit are left out. */
+  faces: readonly ReactNode[];
+};
+
+/**
+ * A row of one kind of what was done to a post (a favourite, a boost, a reaction with one emoji): its glyph and count,
+ * the first accounts' faces overlapping, each cut out of the one before, and a chevron; the whole row leads to the
+ * list of every account of that kind.
+ */
+export function FacesRow({ href, label, glyph, count, faces: items }: FacesRowProps) {
+  const s = faces();
+  const { lang } = useReader(undefined);
+  return (
+    <Link href={href} className={s.root()} aria-label={label} {...{ title: label }}>
+      <span className={s.lead()} aria-hidden="true">
+        <span className={s.glyph()}>{glyph}</span>{" "}
+        <bdi dir="ltr" lang={lang} className={s.count()}>
+          {count}
+        </bdi>
+      </span>
+      <span className={s.strip()} aria-hidden="true">
+        {items.map((face, i) => (
+          <span key={i} className={s.face()}>
+            {face}
+          </span>
+        ))}
+      </span>
+      <span className={s.chevron()} aria-hidden="true">
+        <Icon name="onward" place="action" />
+      </span>
+    </Link>
+  );
+}
+
+const title = tv({
+  slots: {
+    root: "m-0 flex flex-wrap items-center gap-x-entry-caption text-title font-normal",
+    glyph: "inline-flex text-muted-text",
+    count: "text-body text-muted-text tabular-nums",
+  },
+});
+
+/**
+ * The title of a list of a screen of its own under its back button (who favourited a post): a glyph, the words, which
+ * may draw an emoji, and how many, muted.
+ */
+export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count?: string; children: ReactNode }) {
+  const s = title();
+  return (
+    <h2 className={s.root()}>
+      {glyph !== undefined && <span className={s.glyph()}>{glyph}</span>}
+      <span>{children}</span>
+      {count !== undefined && <span className={s.count()}>{count}</span>}
+    </h2>
+  );
+}
+
 const back = tv({
   slots: {
     root: "m-0 text-caption",

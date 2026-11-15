@@ -63,12 +63,14 @@ function Open({
   initial,
   layer,
   phone,
+  pickerSheet,
   track,
   onLeave,
 }: {
   initial: Draft;
   layer: boolean;
   phone: "screen" | "dialog";
+  pickerSheet: boolean;
   track: (d: Draft) => void;
   onLeave: (how: "posted" | "close" | "dismiss", d: Draft, status?: Status) => void;
 }) {
@@ -83,6 +85,7 @@ function Open({
       c={c}
       layer={layer}
       phone={phone}
+      pickerSheet={pickerSheet}
       onClose={() => {
         onLeave("close", c.draft);
       }}
@@ -102,6 +105,8 @@ export type ComposeLayerProps = {
   onClose: () => void;
   /** A screen of its own on a phone, or a dialog: the app's choice by the viewport. */
   phone?: "screen" | "dialog" | undefined;
+  /** The emoji picker opens in a sheet: the app's choice on a phone's viewport; else in a popover. */
+  pickerSheet?: boolean | undefined;
   /** In the flow of a page instead of over it (a story's specimen). */
   inline?: boolean | undefined;
   /** The draft it opens with, in place of the one kept or an empty one (a story's specimen). */
@@ -114,6 +119,7 @@ export function ComposeLayer({
   onOpen,
   onClose,
   phone = "screen",
+  pickerSheet = false,
   inline = false,
   initial,
 }: ComposeLayerProps) {
@@ -185,6 +191,7 @@ export function ComposeLayer({
             initial={start}
             layer={!inline}
             phone={phone}
+            pickerSheet={pickerSheet}
             track={(d) => {
               latest.current = { key: targetKey(d.target), draft: d };
             }}

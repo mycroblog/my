@@ -11,7 +11,8 @@
 
 import { useLocale } from "@my/design-system";
 import { Preview, type PreviewState } from "@my/design-system/preview";
-import { rootPx } from "@my/design-tokens";
+import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
+import { breakpoint, rootPx } from "@my/design-tokens";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { statusPath } from "./paths";
@@ -300,6 +301,33 @@ function EditedPosts() {
   );
 }
 
+const pickerTitle = { en: { title: "React", close: "Close" }, ja: { title: "リアクション", close: "閉じる" } } as const;
+
+/**
+ * A post whose react action opens the emoji picker, as the app opens it: a sheet under the tablet width, which the app
+ * decides by the viewport, else a popover under the button. It reacts as the server would answer.
+ */
+function Reacting({ post }: { post: TimelinePost }) {
+  const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
+  const sheet = !window.matchMedia(`(min-width: ${breakpoint.tablet}rem)`).matches;
+  return (
+    <Column>
+      <SamplePost
+        post={post}
+        lang={lang}
+        picker={{
+          sections: pickerSections(lang),
+          search: searchPicker,
+          labels: pickerStrings[lang],
+          sheet,
+          title: pickerTitle[lang].title,
+          closeLabel: pickerTitle[lang].close,
+        }}
+      />
+    </Column>
+  );
+}
+
 /** A sample post with its more menu open, as a pointer opens it: its last button (more) pressed once mounted. */
 function MenuOpen({ post }: { post: TimelinePost }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -318,6 +346,16 @@ function MenuOpen({ post }: { post: TimelinePost }) {
     </div>
   );
 }
+/** Opens the picker of the story's post, as a press on its react action does. */
+const openPicker = {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const button = [...canvasElement.querySelectorAll("button")].find((b) =>
+      ["React", "リアクション"].includes(b.getAttribute("aria-label") ?? ""),
+    );
+    button?.click();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  },
+};
 
 /** A post in the other language than the reader's, shown translated into theirs. */
 function TranslatedPost({ translationAs }: { translationAs?: Translation }) {
@@ -422,6 +460,32 @@ export const Images: Story = { ...fixed, render: () => <Shown post={byId("ravi-t
 export const Quoting: Story = { ...fixed, render: () => <Shown post={byId("ravi-quote")} /> };
 export const Reactions: Story = { ...fixed, render: () => <Shown post={byId("hana-four")} /> };
 export const OwnReaction: Story = { ...fixed, render: () => <Shown post={ownReaction} /> };
+/**
+ * The react action pressed: the emoji picker in a popover under it from the tablet width, in a sheet on a phone, the
+ * reader's own reaction (🎉) knocked out in it. Picking an emoji moves the reaction there, or adds its chip.
+ */
+export const ReactPicker: Story = {
+  ...fixed,
+  ...openPicker,
+  render: () => (
+    <Reacting
+      post={{
+        ...ownReaction,
+        id: "own-party",
+        reactions: [
+          { emoji: "🎉", count: 4, mine: true },
+          { emoji: ":sparkle:", count: 2 },
+        ],
+      }}
+    />
+  ),
+};
+/** The same on a post with no reactions yet: the first pick adds the first chip. */
+export const ReactPickerFirst: Story = {
+  ...fixed,
+  ...openPicker,
+  render: () => <Reacting post={byId("lena-quiet")} />,
+};
 /** In the reader's language, with the language it came from and the provider that translated it. */
 export const Translated: Story = { ...fixed, render: () => <TranslatedPost /> };
 export const TranslatedNoSource: Story = { ...fixed, render: () => <TranslatedPost translationAs={withoutSource} /> };

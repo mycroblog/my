@@ -14,6 +14,9 @@
 //   - `fresh.post(author, { text, visibility?, image?, spoiler? })` a new post of `author` (a person of the scenario or
 //     a fresh one) whose text is `text` and a word unique to it; it returns `{ id, text }`, and `text`, the whole
 //     text, finds the post on the screen.
+//   - `fresh.reaction(by, post, emoji)` the emoji reaction of `by` to a fresh post: a Unicode emoji, or a custom one's
+//     shortcode without colons.
+//   - `fresh.deletion(author, post)` the deletion of a fresh post by its author.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //
 // And what a spec needs of the scenario: `person(username)` the person to sign in as, `announcements` the server's

@@ -63,6 +63,10 @@
     "defaultMessage": "Remove the content warning",
     "description": "The same tool while the post has a content warning: it removes it."
   },
+  "compose.emoji": {
+    "defaultMessage": "Add emoji",
+    "description": "The button at the end of the composer's text that opens the emoji picker, which writes the emoji picked at the caret; also the title of the picker's sheet on a phone."
+  },
   "compose.attach": {
     "defaultMessage": "Add images",
     "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."

@@ -91,6 +91,28 @@ test("a reaction takes back the favourite and the reader's other reaction, as th
   expect(favourited.reactions).toEqual([{ name: "🎉", count: 2, me: false }]);
 });
 
+test("a failed reaction puts back the favourite and the other reaction it took, in every copy", async () => {
+  const before = {
+    favourited: true,
+    favourites_count: 2,
+    reactions: [
+      { name: "👍", count: 1, me: true },
+      { name: "🎉", count: 2, me: false },
+    ],
+  };
+  const { promise: answered, resolve: answer } = Promise.withResolvers<Response>();
+  const { data, read } = cached([post(before)], () => answered);
+  const done = markStatus(data, "1", { type: "reaction", name: "🎉", on: true }).then(
+    () => "resolved",
+    () => "rejected",
+  );
+  expect(read().timeline).toMatchObject({ favourited: false, reactions: [{ name: "🎉", count: 3, me: true }] });
+  answer(json(422, { type: "about:blank", title: "Unprocessable", status: 422 }));
+  expect(await done).toBe("rejected");
+  expect(read().timeline).toMatchObject(before);
+  expect(read().thread).toMatchObject(before);
+});
+
 test("the cached status is found wherever a query holds it, and none when none does", () => {
   const { data } = cached([post({ bookmarked: true })], () => json(500, {}));
   expect(cachedStatus(data, "1")?.bookmarked).toBe(true);

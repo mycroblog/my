@@ -8,6 +8,7 @@ import {
   breakpoint,
   color,
   control,
+  emojiPicker,
   fontFamily,
   fontWeight,
   formPage,
@@ -117,6 +118,9 @@ const theme = {
     "chip-inline": ref("--chip-padding-inline"),
     "chip-gap": ref("--chip-gap"),
     "chip-spacing": ref("--chip-spacing"),
+    ...Object.fromEntries(
+      names(emojiPicker).map((name) => [`emoji-picker-${kebab(name)}`, ref(`--emoji-picker-${kebab(name)}`)]),
+    ),
     dialog: ref("--dialog-padding"),
     "dialog-gap": ref("--dialog-gap"),
     "dialog-row": ref("--dialog-row-gap"),
@@ -148,6 +152,8 @@ const theme = {
     ].join(", "),
     // Inside a menu, whose rows touch, the ring is drawn within the item.
     "focus-inset": "inset 0 0 0 var(--focus-ring-width) var(--color-accent-text)",
+    // A face in a row of faces, cut out of the one before by a ring of the surface under it (`--face-cut-color`).
+    "face-cut": "0 0 0 var(--screen-face-cut) var(--face-cut-color, var(--color-surface))",
     overlay: ref("--shadow-overlay"),
     bar: ref("--shadow-bar"),
   },

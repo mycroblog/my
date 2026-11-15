@@ -5,7 +5,9 @@
 // reaction chip set the reader's mark, or take it back, and Vote sends the reader's vote in the post's poll, each
 // through @my/app-data, which every cached copy of the post shows at once. While a vote is in flight every copy of the
 // post holds its choices (usePostVoting). A mark or a vote that fails shows again as it was, and a notice at the
-// bottom of the page says so, in the server's words when it refused, with Try again for a moment.
+// bottom of the page says so, in the server's words when it refused, with Try again for a moment. The react action
+// opens the emoji picker (emoji/picker.ts, usePostPicker) where the app decides, a sheet on a phone or a popover
+// beside the button, and a reaction counts its emoji as used on this device.
 //
 // The more menu (FR-108, FR-109): Copy link copies the post's address, Open original opens a remote post's page on its
 // own server, and Share hands the address to the system's share sheet, else copies it. On the reader's own post, Edit
@@ -16,7 +18,7 @@
 // browser refused is told without, since it would be refused again. It is shared by the features, not a feature of
 // its own.
 
-import { DeleteConfirm, EditHistory, statusPath, type PostAction } from "@my/app-components";
+import { DeleteConfirm, EditHistory, statusPath, type PostAction, type PostPicker } from "@my/app-components";
 import {
   RedraftError,
   refusal,
@@ -33,6 +35,8 @@ import {
 import { ModalPresence, UndoNotice, useLocale } from "@my/design-system";
 import { copyText, shareLink } from "@my/platform";
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
+import { rememberReaction, usePickerData } from "./emoji/picker";
+import { emojiStrings } from "./emoji/strings";
 import { stringsIn } from "./locale";
 
 /** How long a notice stays. */
@@ -77,6 +81,7 @@ const Context = createContext<{
   menu: (action: MenuAction) => void;
   /** The ID of the reader's account; undefined without one, or until it is read. */
   viewer: string | undefined;
+  picker: PostPicker;
 } | null>(null);
 
 /**
@@ -134,8 +139,19 @@ export function usePostActions(): (action: PostAction) => void {
       return;
     }
     const m = markOf(action, cached(action.id));
-    if (m !== undefined) send(action.id, { kind: "mark", mark: m });
+    if (m === undefined) return;
+    if (m.type === "reaction" && m.on) rememberReaction(m.name);
+    send(action.id, { kind: "mark", mark: m });
   };
+}
+
+/**
+ * The emoji picker of a post's react action, for `picker` of a post: the server's custom emoji and Unicode's, opening
+ * in a sheet or a popover as the app said; none outside PostActions. A post leads a reader without an account to sign
+ * in instead, and opens none.
+ */
+export function usePostPicker(): PostPicker | undefined {
+  return use(Context)?.picker;
 }
 
 /**
@@ -178,16 +194,23 @@ function History({ id, lang, onClose }: { id: string; lang: string | undefined; 
 /**
  * Where the posts of `children` answer their actions: `onCompose` opens the composer (none for a reader without an
  * account, whose posts' actions that need one lead to the sign-in), a vote in flight shows on every copy of its post,
- * the more menu's actions are answered, and what failed is told.
+ * the more menu's actions are answered, what failed is told, and the emoji picker opens in a sheet when `sheet` (the
+ * app's choice by the viewport), else in a popover.
  */
 export function PostActions({
   onCompose,
+  sheet = false,
   children,
 }: {
   onCompose?: ((to: ComposeRequest) => void) | undefined;
+  sheet?: boolean | undefined;
   children: ReactNode;
 }) {
-  const { t } = stringsIn(useLocale().locale);
+  const { locale } = useLocale();
+  const { t } = stringsIn(locale);
+  const words = emojiStrings(locale, []).sheet;
+  const { ahead, ...data } = usePickerData(locale);
+  const picker: PostPicker = { ...data, sheet, title: words.title, closeLabel: words.close };
   const write = useWrite();
   const own = useOwnPosts();
   // Only a reader with an account (whom the composer opens for) has posts of their own.
@@ -196,6 +219,11 @@ export function PostActions({
   const [notice, setNotice] = useState<Notice | undefined>(undefined);
   const [confirm, setConfirm] = useState<Confirm | undefined>(undefined);
   const [history, setHistory] = useState<{ id: string; lang: string | undefined } | undefined>(undefined);
+  // The posts' react action is at hand: the picker's code comes once the page is idle, and its emoji too for a reader
+  // who opened a picker here before; else its emoji come on the reach. A reader without an account (no composer)
+  // reacts after signing in, and gets nothing ahead.
+  const reacts = onCompose !== undefined;
+  useEffect(() => (reacts ? ahead() : undefined), [reacts, ahead]);
   useEffect(() => {
     if (notice === undefined) return undefined;
     const timer = setTimeout(() => {
@@ -326,7 +354,7 @@ export function PostActions({
     }
   };
   return (
-    <Context value={{ onCompose, send, voting, menu, viewer }}>
+    <Context value={{ onCompose, send, voting, menu, viewer, picker }}>
       {children}
       <ModalPresence>
         {confirm && (

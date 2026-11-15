@@ -63,6 +63,10 @@
     "defaultMessage": "注意書きを外す",
     "description": "The same tool while the post has a content warning: it removes it."
   },
+  "compose.emoji": {
+    "defaultMessage": "絵文字を入れる",
+    "description": "The button at the end of the composer's text that opens the emoji picker, which writes the emoji picked at the caret; also the title of the picker's sheet on a phone."
+  },
   "compose.attach": {
     "defaultMessage": "画像を添付",
     "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."

@@ -129,6 +129,26 @@ const customEmojis = emojis.map((e) => {
   return { shortcode: e.shortcode, url, static_url: url };
 });
 
+/** The custom emoji as the picker lists them: those without a category first, then by category and shortcode. */
+const pickerEmojis = emojis
+  .map((e, i) => ({
+    ...customEmojis[i],
+    aliases: e.aliases ?? [],
+    ...(e.category === undefined ? {} : { category: e.category }),
+  }))
+  .toSorted(
+    (a, b) =>
+      Number(a.category !== undefined) - Number(b.category !== undefined) ||
+      (a.category ?? "").localeCompare(b.category ?? "") ||
+      (a.shortcode ?? "").localeCompare(b.shortcode ?? ""),
+  );
+
+/** A reaction's emoji as the scenario writes it (`:shortcode:` for a custom one) from what a request names. */
+const scenarioEmoji = (name: string) => {
+  const bare = name.replace(/^:|:$/g, "");
+  return customEmojis.some((e) => e.shortcode === bare) ? `:${bare}:` : name;
+};
+
 /** Creates a fake of the client API as `viewer` reads it. */
 export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const viewer = personOf(o.viewer ?? "yuki").username;
@@ -220,6 +240,35 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
   const on = (key: string, kind: string) => interactions.filter((i) => i.post === key && i.kind === kind);
 
+  // The reader's favourite and reaction as they set them, by the key of the post, over the scenario's: one or the
+  // other, a reaction's emoji as the scenario writes it, or none (null).
+  const ownFavourite = new Map<string, boolean>();
+  const ownReaction = new Map<string, string | null>();
+  const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  /** Who favourited the post of `key`, in order. */
+  const favouritersOf = (key: string) => [
+    ...on(key, "favourite").flatMap((i) => (i.by === viewer && mineSet(key) ? [] : [i.by])),
+    ...(ownFavourite.get(key) === true ? [viewer] : []),
+  ];
+  /** The reactions to the post of `key`, oldest first: who reacted, with which emoji, at which step. */
+  const reactionsOf = (key: string) => {
+    const list = interactions.flatMap((i, n) =>
+      i.kind === "reaction" && i.post === key && !(i.by === viewer && mineSet(key))
+        ? [{ by: i.by, emoji: i.emoji, step: follows.length + posts.length + n }]
+        : [],
+    );
+    const mine = ownReaction.get(key);
+    if (mine !== undefined && mine !== null) list.push({ by: viewer, emoji: mine, step: steps });
+    return list;
+  };
+  /** A reaction's emoji as the API gives it (ReactionEmoji): a custom one with its image. */
+  const reactionEmojiOf = (emoji: string) => {
+    const custom = customEmojis.find((e) => `:${e.shortcode}:` === emoji);
+    return custom === undefined
+      ? { name: emoji }
+      : { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom };
+  };
+
   /** The reader's votes, by the key of the post, as the scenario has them and as the reader votes. */
   const ownVotes = new Map<string, readonly number[]>();
   for (const i of interactions) if (i.kind === "vote" && i.by === viewer) ownVotes.set(i.post, i.choices);
@@ -285,11 +334,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const now = versions.at(-1) ?? { text: p.text, spoiler: p.spoiler ?? "", at: 0 };
     const parent = p.replyTo === undefined ? undefined : postOf(p.replyTo);
     const reactions = new Map<string, { count: number; me: boolean }>();
-    for (const r of interactions)
-      if (r.kind === "reaction" && r.post === p.key) {
-        const now = reactions.get(r.emoji) ?? { count: 0, me: false };
-        reactions.set(r.emoji, { count: now.count + 1, me: now.me || r.by === viewer });
-      }
+    for (const r of reactionsOf(p.key)) {
+      const now = reactions.get(r.emoji) ?? { count: 0, me: false };
+      reactions.set(r.emoji, { count: now.count + 1, me: now.me || r.by === viewer });
+    }
+    const favouriters = favouritersOf(p.key);
     return {
       id,
       uri: `${fakeOrigin}/users/${p.author}/statuses/${id}`,
@@ -310,14 +359,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       emojis: customEmojis,
       replies_count: posts.filter((x) => x.replyTo === p.key).length,
       boosts_count: on(p.key, "boost").length,
-      favourites_count: on(p.key, "favourite").length,
-      reactions: [...reactions].map(([emoji, r]) => {
-        const custom = customEmojis.find((e) => `:${e.shortcode}:` === emoji);
-        return custom === undefined
-          ? { name: emoji, count: r.count, me: r.me }
-          : { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom, count: r.count, me: r.me };
-      }),
-      favourited: on(p.key, "favourite").some((i) => i.by === viewer),
+      favourites_count: favouriters.length,
+      reactions: [...reactions]
+        .toSorted(([, a], [, b]) => b.count - a.count)
+        .map(([emoji, r]) => ({ ...reactionEmojiOf(emoji), count: r.count, me: r.me })),
+      favourited: favouriters.includes(viewer),
       boosted: on(p.key, "boost").some((i) => i.by === viewer),
       bookmarked: on(p.key, "bookmark").some((i) => i.by === viewer),
       pinned: p.pinned === true && p.author === viewer,
@@ -690,7 +736,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   /** The operations a visitor without a session may call; every other answers 401. */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history)?|timelines\/(?:local|federated))$/;
+    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated))$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 
@@ -921,6 +967,51 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (!taken) return problem(422, "Unprocessable Entity");
       ownVotes.set(p.key, choices);
       return json(statusOf(p));
+    }
+    if (path === "/custom_emojis") return json({ items: pickerEmojis });
+    if ((match = m(/^\/statuses\/([^/]+)\/(reaction|favourite)$/)) && request.method !== "GET") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      // One favourite or one reaction per post (FR-116): setting one takes back the other. What the reader has now is
+      // kept as theirs first, so that taking back one leaves the other as it was.
+      const favourited = favouritersOf(p.key).includes(viewer);
+      const reacted = reactionsOf(p.key).find((r) => r.by === viewer)?.emoji ?? null;
+      ownFavourite.set(p.key, favourited);
+      ownReaction.set(p.key, reacted);
+      if (match[2] === "favourite") {
+        const add = request.method === "POST";
+        ownFavourite.set(p.key, add);
+        if (add) ownReaction.set(p.key, null);
+      } else if (request.method === "PUT") {
+        const { emoji } = (await request.json()) as { emoji: string };
+        const named = scenarioEmoji(emoji);
+        // A custom emoji of another server, or a shortcode this server has not, is refused as the server does.
+        if (named.includes("@") || /^\w+$/u.test(named)) return problem(422, "Unprocessable Entity");
+        ownReaction.set(p.key, named);
+        ownFavourite.set(p.key, false);
+      } else {
+        ownReaction.set(p.key, null);
+      }
+      return json(statusOf(p));
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/reactions$/))) {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const emoji = q.get("emoji");
+      const shown = reactionsOf(p.key)
+        .filter((r) => emoji === null || reactionEmojiOf(r.emoji).name === emoji)
+        .toReversed()
+        .map((r) => ({
+          id: idAt(timeOf(r.step), 70_000 + r.step),
+          account: accountOf(r.by),
+          emoji: reactionEmojiOf(r.emoji),
+          created_at: new Date(timeOf(r.step)).toISOString(),
+        }));
+      const { from, body } = page(shown, q);
+      if (from > 0) await late();
+      return json(body);
     }
     if ((match = m(/^\/statuses\/([^/]+)\/context$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));

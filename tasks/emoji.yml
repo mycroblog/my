@@ -1,27 +1,41 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The server's table of Unicode emoji, generated from a pinned emoji-test.txt that the repository does not hold
-# (ADR-0051 §6). Not part of `check` or `generate`: run it by hand after changing EMOJI_VERSION, and commit what it
-# writes.
+# The Unicode emoji data of the server and of the web client's emoji picker, generated from pinned Unicode and CLDR
+# files that the repository does not hold (ADR-0051 §6, ADR-0091 §1). Not part of `check` or `generate`: run it by hand
+# after changing a version, and commit what it writes.
 version: "3"
 
 vars:
-  # The Unicode emoji that emoji reactions accept and normalize: emoji-test.txt of
+  # The Unicode emoji that emoji reactions accept and normalize and that the picker offers: emoji-test.txt of
   # https://www.unicode.org/Public/<EMOJI_VERSION>/emoji/.
   EMOJI_VERSION: 18.0.0
   EMOJI_TEST_SHA256: 8f3735cda1f92a779d78af67cf86066bb1f07143dc22f2ac29394d9bc57ab21a
+  # The CLDR names and keywords of the emoji: the annotations and derived annotations of the release CLDR_VERSION of
+  # unicode-org/cldr-json, one file per locale of CLDR_LOCALES (en first: the fallback of the others).
+  CLDR_VERSION: 49.0.0
+  CLDR_LOCALES: en ja
+  CLDR_SHA256: |
+    6b6b6e0e5f211bc31cf3fa39f385d80dea6cd19ee19bbc6db9071fce3ae5d360  annotations/en.json
+    e42dacabf2eee0aab36c168c995efeaf8add896f8940c5ee86a809d85c2816e7  annotations/ja.json
+    7aad034f689cb6553f8d7366bfee8c4ea2818c7776907bc5118aab575223dea3  annotationsDerived/en.json
+    3d83cf7e4093f7fe77055dc21b1a3a65cd8f48a0249127552d58d3b058dbe4cd  annotationsDerived/ja.json
+  # Where the web client's data goes, next to its LICENSE-Unicode.txt.
+  WEB_EMOJI_DIR: web/app-features/src/emoji/unicode
 
 tasks:
   generate:
-    desc: Regenerate the server's emoji table from emoji-test.txt (EMOJI_VERSION)
-    deps: [emoji-test]
+    desc: Regenerate the server's emoji table and the web client's emoji data from emoji-test.txt (EMOJI_VERSION) and the CLDR annotations (CLDR_VERSION)
+    deps: [emoji-test, cldr]
     cmds:
       - >-
         go run ./scripts/emoji-table
         -in .tmp/emoji/emoji-test-{{.EMOJI_VERSION}}.txt -version {{.EMOJI_VERSION}}
         -out internal/domain/content/emoji_table.gen.go
+        -cldr .tmp/emoji/cldr-{{.CLDR_VERSION}} -cldr-version {{.CLDR_VERSION}}
+        -locales {{.CLDR_LOCALES | splitList " " | join ","}}
+        -web-out {{.WEB_EMOJI_DIR}}
 
-  # The download prints the digest it got when it differs from the pinned one, for a version update.
+  # Each download prints the digests it got when they differ from the pinned ones, for a version update.
   emoji-test:
     internal: true
     vars:
@@ -33,5 +47,31 @@ tasks:
         if ! echo "{{.EMOJI_TEST_SHA256}}  {{.FILE}}" | sha256sum -c -; then
           echo "the digest of {{.FILE}} differs from EMOJI_TEST_SHA256; it is:" >&2
           sha256sum {{.FILE}} >&2
+          exit 1
+        fi
+
+  cldr:
+    internal: true
+    vars:
+      DIR: .tmp/emoji/cldr-{{.CLDR_VERSION}}
+      BASE: https://raw.githubusercontent.com/unicode-org/cldr-json/{{.CLDR_VERSION}}/cldr-json
+    cmds:
+      - mkdir -p {{.DIR}}/annotations {{.DIR}}/annotationsDerived
+      - for: { var: CLDR_LOCALES, split: " " }
+        cmd: >-
+          curl -fsSL -o {{.DIR}}/annotations/{{.ITEM}}.json
+          {{.BASE}}/cldr-annotations-full/annotations/{{.ITEM}}/annotations.json &&
+          curl -fsSL -o {{.DIR}}/annotationsDerived/{{.ITEM}}.json
+          {{.BASE}}/cldr-annotations-derived-full/annotationsDerived/{{.ITEM}}/annotations.json
+      - |
+        cd {{.DIR}}
+        for l in {{.CLDR_LOCALES}}; do
+          for f in annotations/$l.json annotationsDerived/$l.json; do
+            printf '%s' "{{.CLDR_SHA256}}" | grep -q "  $f\$" || { echo "CLDR_SHA256 has no digest of $f" >&2; exit 1; }
+          done
+        done
+        if ! printf '%s' "{{.CLDR_SHA256}}" | sha256sum -c -; then
+          echo "the digests of {{.DIR}} differ from CLDR_SHA256; they are:" >&2
+          for l in {{.CLDR_LOCALES}}; do sha256sum annotations/$l.json annotationsDerived/$l.json; done >&2
           exit 1
         fi

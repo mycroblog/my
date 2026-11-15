@@ -34,5 +34,33 @@
   "thread.retry": {
     "defaultMessage": "もう一度試す",
     "description": "The button that loads the post again after it failed."
+  },
+  "thread.reactors_loading": {
+    "defaultMessage": "リアクションを読み込んでいます…",
+    "description": "What the list of who reacted to a post with one emoji says while the first of them load."
+  },
+  "thread.reactors_loading_more": {
+    "defaultMessage": "続きのリアクションを読み込んでいます…",
+    "description": "What the list of who reacted to a post with one emoji says under them while more load."
+  },
+  "thread.reactors_failed": {
+    "defaultMessage": "リアクションを読み込めませんでした。",
+    "description": "What the list of who reacted to a post with one emoji says when the first of them could not be loaded, beside a button to try again."
+  },
+  "thread.reactors_failed_more": {
+    "defaultMessage": "続きのリアクションを読み込めませんでした。",
+    "description": "What the list of who reacted to a post with one emoji says under them when more could not be loaded, beside a button to try again."
+  },
+  "thread.reactors_empty": {
+    "defaultMessage": "この絵文字でリアクションした人はまだいません。",
+    "description": "What the list of who reacted to a post with one emoji says when it is empty (the reactions were taken back)."
+  },
+  "thread.reactors_more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under the list of who reacted to a post with one emoji while more of them follow; pressing it loads them."
+  },
+  "thread.reactors_back": {
+    "defaultMessage": "投稿に戻る",
+    "description": "The button at the top of the list of who reacted to a post that goes back to the post's own page."
   }
 }

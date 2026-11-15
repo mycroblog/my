@@ -2,30 +2,48 @@
 
 // One sample post of the stories, outside any timeline: it keeps its status and answers its actions as the server
 // would, so that it behaves while nothing is fetched; its edited mark opens its edit history, and Delete… and Delete
-// and redraft… their confirmation, which takes it away.
+// and redraft… their confirmation, which takes it away. The reader holds one favourite or one reaction per post
+// (FR-116): a reaction takes the favourite back, and a favourite the reaction.
 
 import { ModalPresence } from "@my/design-system";
-import { useState } from "react";
+import { sampleCustomEmoji } from "@my/design-system/samples";
+import { useState, type ReactNode } from "react";
 import { DeleteConfirm } from "./delete-confirm";
 import { EditHistory } from "./edit-history";
-import { Post, type PostAction } from "./post";
+import { Post, type PostAction, type PostPicker } from "./post";
 import { editsOf, statusOf, translationOf, type TimelinePost } from "./post.samples";
-import type { PostStatus, PostTranslation } from "./status";
+import type { PostReaction, PostStatus, PostTranslation } from "./status";
 
 /** The status a toggle leaves: on or off, its count moved with it. */
 const toggled = (on: boolean | undefined, count: number) => ({ on: !(on ?? false), count: count + (on ? -1 : 1) });
 
+/** A reaction the post has none of yet: a Unicode emoji, or a custom one of the samples by its shortcode. */
+function added(name: string): PostReaction {
+  const url = sampleCustomEmoji[name];
+  return url === undefined
+    ? { name, count: 1, me: true }
+    : { name, shortcode: name, emoji: { shortcode: name, url, static_url: url }, count: 1, me: true };
+}
+
+/** The reactions with the reader's taken back. */
+const withoutMine = (reactions: readonly PostReaction[]) =>
+  reactions.map((r) => (r.me === true ? { ...r, me: false, count: r.count - 1 } : r)).filter((r) => r.count > 0);
+
 /** The status after the reader's reaction with `name`: taken back if it was theirs, else moved there. */
 function reacted(status: PostStatus, name: string): PostStatus {
   const was = status.reactions.find((r) => r.me === true)?.name;
-  const reactions = status.reactions
-    .map((r) => {
-      if (r.name === name) return { ...r, me: was !== name, count: r.count + (was === name ? -1 : 1) };
-      if (r.name === was) return { ...r, me: false, count: r.count - 1 };
-      return r;
-    })
-    .filter((r) => r.count > 0);
-  return { ...status, reactions };
+  const rest = withoutMine(status.reactions);
+  if (was === name) return { ...status, reactions: rest };
+  const reactions = rest.some((r) => r.name === name)
+    ? rest.map((r) => (r.name === name ? { ...r, me: true, count: r.count + 1 } : r))
+    : [...rest, added(name)];
+  const favourited = status.favourited ?? false;
+  return {
+    ...status,
+    reactions,
+    favourited: false,
+    favourites_count: status.favourites_count - (favourited ? 1 : 0),
+  };
 }
 
 /** The status after the reader's vote for `choices` in its poll. */
@@ -55,7 +73,12 @@ function answered<S extends PostStatus>(status: S, action: PostAction): S {
   switch (action.type) {
     case "favourite": {
       const t = toggled(status.favourited, status.favourites_count);
-      return { ...status, favourited: t.on, favourites_count: t.count };
+      return {
+        ...status,
+        favourited: t.on,
+        favourites_count: t.count,
+        ...(t.on ? { reactions: withoutMine(status.reactions) } : {}),
+      };
     }
     case "boost": {
       const t = toggled(status.boosted, status.boosts_count);
@@ -84,6 +107,8 @@ export function SamplePost({
   signIn,
   votingAt,
   open: initial,
+  picker,
+  details,
 }: {
   post: TimelinePost;
   lang: "en" | "ja";
@@ -94,6 +119,10 @@ export function SamplePost({
   votingAt?: readonly number[] | undefined;
   /** What is open over the page at first. */
   open?: SampleOpen | undefined;
+  /** The emoji picker the react action opens (Post's `picker`). */
+  picker?: PostPicker | undefined;
+  /** The focused post's own lines (Post's `details`), with the stamp left out of its author's line. */
+  details?: ReactNode;
 }) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
@@ -137,6 +166,9 @@ export function SamplePost({
         onAction={onAction}
         signIn={signIn}
         voting={voting}
+        picker={picker}
+        details={details}
+        stamp={details === undefined}
       />
       <ModalPresence>
         {open === "history" && <EditHistory key="history" edits={editsOf(post)} postLang={post.lang} onClose={close} />}

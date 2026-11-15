@@ -138,6 +138,14 @@ export {
 export type { PagedList } from "./paged";
 export { usePollVote, voteInPoll, type PollVote } from "./polls";
 export { AppDataProvider } from "./provider";
+export {
+  customEmojisQuery,
+  statusReactorsQuery,
+  useCustomEmojis,
+  useStatusReactors,
+  type PickerCustomEmoji,
+  type StatusReactor,
+} from "./reactions";
 export { openSession, visitorData } from "./session";
 export {
   appPath,

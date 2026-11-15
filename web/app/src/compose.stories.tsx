@@ -22,6 +22,7 @@ import { waitFor } from "storybook/test";
 import { AppRoot } from "./app";
 import { minimumWidth, rightToLeft } from "./app.samples";
 import { createAppRouter } from "./router";
+import { useNarrowViewport } from "./shell/viewport";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -287,9 +288,13 @@ const states = {
 
 type StateId = keyof typeof states;
 
-/** One state of the composer in the flow of the page; `text`, when given, is the text written in it. */
-function Specimen({ id, text }: { id: StateId; text: string }) {
+/**
+ * One state of the composer in the flow of the page; `text`, when given, is the text written in it. Its emoji picker
+ * opens in a sheet on a phone's viewport, as the shell decides, or with `pickerSheet`; else in a popover.
+ */
+function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string; pickerSheet?: boolean | undefined }) {
   const { locale } = useLocale();
+  const narrow = useNarrowViewport();
   const [{ fake, data }] = useState(createComposeApp);
   const state: State = states[id];
   const lang = locale.startsWith("ja") ? "ja" : "en";
@@ -302,7 +307,14 @@ function Specimen({ id, text }: { id: StateId; text: string }) {
   return (
     <AppDataProvider data={data}>
       <div style={{ maxInlineSize: "37.5rem", marginInline: "auto" }}>
-        <ComposeLayer target={target} initial={initial} inline onOpen={() => undefined} onClose={() => undefined} />
+        <ComposeLayer
+          target={target}
+          initial={initial}
+          inline
+          pickerSheet={pickerSheet || narrow}
+          onOpen={() => undefined}
+          onClose={() => undefined}
+        />
       </div>
     </AppDataProvider>
   );
@@ -347,6 +359,29 @@ const composeOf = (parameters: StoryContext["parameters"]): StateId =>
 /** A story of the composer in `id`. */
 const shows = (id: StateId): Story => ({ parameters: { compose: id } });
 
+/**
+ * Opens the composer's emoji picker, as a press on its button does, and waits until it shows the Unicode emoji and
+ * (in a sheet) has risen, so that the story tests check it as the reader sees it.
+ */
+const openEmoji = async (context: StoryContext) => {
+  await settle(context);
+  const doc = context.canvasElement.ownerDocument;
+  // The button at the end of the text's first line, in any locale.
+  context.canvasElement.querySelector<HTMLButtonElement>("textarea ~ div button")?.click();
+  await waitFor(
+    () => {
+      const grid = doc.querySelector('[role="grid"]');
+      const panel = grid?.closest('[role="dialog"]')?.parentElement;
+      const style = panel ? getComputedStyle(panel) : undefined;
+      if (grid === null || grid.querySelectorAll('[role="gridcell"]').length < 20)
+        throw new Error("the emoji picker shows no emoji yet");
+      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+        throw new Error("the emoji picker has not appeared yet");
+    },
+    { timeout: 5000 },
+  );
+};
+
 /** Waits until the app shows the home timeline's posts. */
 const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   await waitFor(
@@ -366,7 +401,14 @@ const meta = {
   args: { text: "" },
   argTypes: { text: { control: "text", description: "The text written in the composer, in place of the state's" } },
   play: settle,
-  render: ({ text }, { id, parameters }) => <Specimen key={id} id={composeOf(parameters)} text={text} />,
+  render: ({ text }, { id, parameters }) => (
+    <Specimen
+      key={id}
+      id={composeOf(parameters)}
+      text={text}
+      pickerSheet={(parameters as { pickerSheet?: boolean }).pickerSheet}
+    />
+  ),
 } satisfies Meta<{ text: string }>;
 export default meta;
 
@@ -393,5 +435,13 @@ export const PollSeveralChoices: Story = shows("poll-multiple");
 export const Edit: Story = shows("edit");
 export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
 export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
+/** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
+export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
+/** The same on a phone: the picker in a sheet from the bottom. */
+export const EmojiPickerSheet: Story = {
+  parameters: { compose: "typing", pickerSheet: true },
+  play: openEmoji,
+  globals: minimumWidth,
+};
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */
 export const LiveFlow: Story = { render: () => <Flow />, play: settleFlow };

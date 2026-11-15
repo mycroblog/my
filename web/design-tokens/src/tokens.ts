@@ -252,6 +252,23 @@ export const media = { gap: 0.25, ratio: 0.5625, maxHeight: 20, previewWidth: 6,
 export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.375, glyph: 1.25 } as const;
 
 /**
+ * The emoji picker, in rem: a cell of its grid, and on a touch screen; the font size of an emoji in a cell; a button of
+ * its row of categories; the width of its popover and the most height of its grid there; the height of its sheet on a
+ * phone; the space between its parts, and between a heading of its grid and the cells under it.
+ */
+export const emojiPicker = {
+  cell: 2.5,
+  cellCoarse: 2.75,
+  glyph: 1.5,
+  tab: 2,
+  width: 22,
+  height: 16,
+  sheet: 36,
+  gap: 0.5,
+  headingGap: 0.25,
+} as const;
+
+/**
  * A dialog over the page (the keyboard shortcuts), in rem: its padding, the space between its parts and between the
  * rows of a list in it, its most width, and the margin it keeps from the viewport's edges; the radius of the blur of the
  * page behind it, in px, so that the reader's eye stays on the dialog; and the scrim that dims that page, a share of
@@ -338,7 +355,9 @@ export const formPage = {
  * lines; a step of a reply's indent, and the width of the column from which replies indent; the room between a profile's avatar and its banner's edge or its actions; the
  * ring of the page's surface around the avatar and its inset; the space between a profile's parts, between the names
  * on its lines (and inside a badge), between its counts, and between its fields; the size of the unread mark; and the
- * space of the row of the requests, between its parts and inside it; and the air left past an entry's focus ring.
+ * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
+ * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
+ * ring of the page's surface that cuts it out of that one.
  */
 export const screen = {
   tabGap: 0.25,
@@ -359,6 +378,9 @@ export const screen = {
   rowBlock: 0.5,
   rowInline: 0.75,
   air: 0.25,
+  facesLead: 3.5,
+  faceOverlap: 0.5,
+  faceCut: 0.125,
 } as const;
 
 /**
@@ -444,7 +466,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
@@ -540,6 +562,10 @@ export const properties: Readonly<Record<string, string>> = Object.fromEntries<s
   ["--chip-gap", `${chip.gap}rem`],
   ["--chip-spacing", `${chip.spacing}rem`],
   ["--chip-glyph", `${chip.glyph}em`],
+  ...Object.entries(emojiPicker).map(([name, value]): [string, string] => [
+    `--emoji-picker-${kebab(name)}`,
+    `${value}rem`,
+  ]),
   ["--dialog-padding", `${dialog.padding}rem`],
   ["--dialog-gap", `${dialog.gap}rem`],
   ["--dialog-row-gap", `${dialog.rowGap}rem`],

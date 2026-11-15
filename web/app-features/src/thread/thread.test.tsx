@@ -21,11 +21,12 @@ test("the loader reads the post and its thread", async () => {
   expect(requests).toEqual(["GET /statuses/f", "GET /statuses/f/context"]);
 });
 
-test("the focused post says when it was posted, to whom and its counts inside it, with no stamp", async () => {
+test("the focused post says when it was posted and to whom, its counts only on its actions, with no stamp", async () => {
   const { html } = await shown({ ancestors: [], descendants: [] });
   expect(html).toContain('<time dateTime="2026-11-14T03:00:00Z">');
-  expect(html).toContain("12 boosts");
-  expect(html).toContain("48 favourites");
+  expect(html).not.toContain("12 boosts");
+  expect(html).not.toContain("48 favourites");
+  expect(html).toMatch(/>48</);
   expect(html).not.toContain('href="/@mika/status/f"');
   expect(html).toContain("No replies yet.");
 });
@@ -76,7 +77,7 @@ test("the focused post and a reply answer their actions: a favourite reaches the
   await Bun.sleep(0);
   expect(requests).toContain("POST /statuses/f/favourite");
   expect(composed).toEqual([{ kind: "reply", id: "r" }]);
-  expect(render(data, <Thread id="f" onBack={back} />)).toContain("49 favourites");
+  expect(render(data, <Thread id="f" onBack={back} />)).toMatch(/>49</);
 });
 
 test("the focused post shows its poll, and a vote in it reaches the server", async () => {

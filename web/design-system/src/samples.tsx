@@ -10,6 +10,8 @@ import { Icon } from "./icons";
 import { RelativeTime } from "./time";
 import { rootPx, text } from "@my/design-tokens";
 
+export { pickerSections, pickerStrings, sampleCustomEmoji, searchPicker } from "./emoji.samples";
+
 const rem = (px: number) => `${px / rootPx}rem`;
 
 const svg = (body: string) =>

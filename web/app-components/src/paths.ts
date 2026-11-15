@@ -16,3 +16,7 @@ export const accountPath = (account: Handle) => `/@${handleIn(account)}`;
 /** The address of a post, under its author's profile. */
 export const statusPath = (status: { readonly id: string; readonly account: Handle }) =>
   `${accountPath(status.account)}/status/${status.id}`;
+
+/** The address of the list of who reacted to a post with one emoji (a reaction's name). */
+export const reactorsPath = (status: { readonly id: string; readonly account: Handle }, emoji: string) =>
+  `${statusPath(status)}/reactions/${encodeURIComponent(emoji)}`;
