@@ -394,6 +394,68 @@ export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count
   );
 }
 
+const screenTitle = tv({
+  slots: {
+    // The back button close over the row, so that it reads as part of the head.
+    root: "grid gap-screen-name-gap",
+    // The title at the start, what the reader may do at the end, on the baseline of the title's first line.
+    row: "flex items-baseline gap-screen-head-room",
+    // One run of text, so that a long name wraps under its glyph and the count follows its last line.
+    title: "m-0 min-w-0 flex-1 text-title font-normal [overflow-wrap:anywhere]",
+    glyph: "me-entry-caption inline-flex align-[-0.125em] text-muted-text",
+    count: "ms-entry-caption text-body whitespace-nowrap text-muted-text tabular-nums",
+    actions: "flex flex-none items-center gap-screen-tab-gap",
+  },
+});
+
+/**
+ * A name with a chance to break before each capital or run of digits inside it (#SlowMorningsByTheSea), so that a long
+ * hashtag wraps on whole words; its text is unchanged for copying and for assistive technology.
+ */
+function breakable(name: string): ReactNode {
+  const parts = name.split(/(?<=\p{Ll})(?=[\p{Lu}\p{Nd}])|(?<=\p{Nd})(?=\p{L})/u);
+  if (parts.length === 1) return name;
+  return parts.flatMap((part, i) => (i === 0 ? [part] : [<wbr key={i} />, part]));
+}
+
+export type ScreenTitleProps = {
+  /** The glyph of what the screen lists (a hashtag, a list). */
+  glyph?: IconName | undefined;
+  /** How many, as the reader's locale writes it with its word ("3 members"), muted after the name. */
+  count?: string | undefined;
+  /** What the reader may do with it (follow a hashtag); left out when there is nothing to do. */
+  actions?: ReactNode;
+  /** The back button over the title (`BackButton`). */
+  back?: ReactNode;
+  /** The name, as its author wrote it. */
+  children: string;
+};
+
+/**
+ * The head of a screen of one thing a timeline is of (a hashtag, a list): its back button, then one row of its glyph
+ * and name, how many, muted, at the start, and what the reader may do with it at the end.
+ */
+export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTitleProps) {
+  const s = screenTitle();
+  return (
+    <div className={s.root()}>
+      {back}
+      <div className={s.row()}>
+        <h2 className={s.title()}>
+          {glyph !== undefined && (
+            <span className={s.glyph()}>
+              <Icon name={glyph} place="action" />
+            </span>
+          )}
+          <bdi>{breakable(children)}</bdi>
+          {count !== undefined && <span className={s.count()}>{count}</span>}
+        </h2>
+        {actions !== undefined && actions !== false && actions !== null && <div className={s.actions()}>{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
 const back = tv({
   slots: {
     root: "m-0 text-caption",

@@ -7,7 +7,7 @@
 import { runStream, type StreamEvent, type StreamOptions } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
 import type { AppData } from "./app-data";
-import { receiveDeletion, receiveHomeGap, receiveHomeStatuses } from "./arrivals";
+import { receiveDeletion, receiveHomeGap, receiveHomeStatuses, receiveListsGap, receiveListStatuses } from "./arrivals";
 import { receiveNotification, receiveNotificationGap, receiveNotificationRequests } from "./notifications";
 
 /** What the leading tab passes to the others: an event of the stream, or a break after which they read again. */
@@ -76,12 +76,13 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
 }
 
 /**
- * Puts what the stream says into the cache: new home statuses, a deleted status, a notification, the count of the
- * notification requests, or a break.
+ * Puts what the stream says into the cache: new statuses of the home timeline or of a list, a deleted status, a
+ * notification, the count of the notification requests, or a break.
  */
 function route(data: AppData, message: StreamMessage): void {
   if (message.kind === "gap") {
     receiveHomeGap(data);
+    receiveListsGap(data);
     receiveNotificationGap(data);
     return;
   }
@@ -89,6 +90,9 @@ function route(data: AppData, message: StreamMessage): void {
   switch (event.type) {
     case "update":
       receiveHomeStatuses(data, [event.status]);
+      break;
+    case "list_update":
+      receiveListStatuses(data, event.listId, [event.status]);
       break;
     case "delete":
       receiveDeletion(data, event.id);
@@ -100,7 +104,7 @@ function route(data: AppData, message: StreamMessage): void {
       receiveNotificationRequests(data, event.summary);
       break;
     default:
-      // The lists, the direct messages and the announcements have no screen yet.
+      // The direct messages and the announcements have no screen yet.
       break;
   }
 }

@@ -3,9 +3,9 @@
 // The scenario (ADR-0015 §5): the people, posts and relationships of a small server in use, as data only. The seed
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
 // the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
-// today (the home timeline, the composer, a post, its edit history and its thread, the notifications, a profile, the
-// sign-in with a password, a two-factor code or a passkey, the consent to an app, and the shell's announcements and
-// upcoming events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
+// today (the home timeline, the composer, a post, its edit history and its thread, the notifications, a profile, a
+// hashtag, the reader's lists and bookmarks, the sign-in with a password, a two-factor code or a passkey, the consent to
+// an app, and the shell's announcements and upcoming events), and grows with the screens. It names no ID and no time (an event's day is counted from the seed): the
 // server decides them, so nothing that reads the scenario depends on them. Every item has a key, which the
 // seed sends as `Idempotency-Key: demo:<key>`. The passwords are fixed, which a server takes from the seed only in
 // the `development` profile of a test build (ADR-0015 §6). Links use the reserved `.test` and `.invalid` hosts.
@@ -369,6 +369,24 @@ export const follows: readonly Follow[] = [
   { follower: "sam", followee: "ren" },
 ];
 
+/**
+ * A list a person made of people they follow (ADR-0013 §10, §11), which only they see: its name and its members. The
+ * seed finds it again by its name.
+ */
+export type PersonList = { key: string; owner: string; name: string; members: readonly string[] };
+
+/** The lists, oldest first. */
+export const lists: readonly PersonList[] = [
+  { key: "yuki-bread", owner: "yuki", name: "Bread and coffee", members: ["sam", "hana"] },
+  { key: "yuki-translators", owner: "yuki", name: "翻訳の仲間", members: ["layla"] },
+  {
+    key: "yuki-long",
+    owner: "yuki",
+    name: "A list with a name long enough to wrap on a phone",
+    members: ["sam", "layla", "ren", "hana"],
+  },
+];
+
 /** The posts, oldest first. */
 export const posts: readonly Post[] = [
   {
@@ -443,7 +461,7 @@ export const posts: readonly Post[] = [
     author: "sam",
     language: "en",
     visibility: "public",
-    text: "Bread for Saturday's meetup: which loaf should I bake?",
+    text: "Bread for Saturday's meetup: which loaf should I bake? #baking",
     poll: { options: ["Sourdough", "Rye", "Focaccia"], days: 7 },
   },
   {

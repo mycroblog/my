@@ -5,7 +5,7 @@
   },
   "timeline.new_posts": {
     "defaultMessage": "{count, number} 件の新しい投稿",
-    "description": "The button over the home timeline's top while new posts wait or went in above the reader; pressing it shows them at the top. count is how many."
+    "description": "The button over the top of the home timeline or a list's timeline while new posts wait or went in above the reader; pressing it shows them at the top. count is how many."
   },
   "timeline.new_posts_missed": {
     "defaultMessage": "新しい投稿",
@@ -18,5 +18,89 @@
   "timeline.federated": {
     "defaultMessage": "連合タイムライン",
     "description": "The name of the federated timeline (the public posts this server knows from every server), for assistive technology."
+  },
+  "timeline.tag": {
+    "defaultMessage": "#{name} の投稿",
+    "description": "The name of a hashtag's timeline, for assistive technology. name is the hashtag without #."
+  },
+  "timeline.tag_back": {
+    "defaultMessage": "戻る",
+    "description": "The button at the top of a hashtag's screen that goes back to where the reader came from."
+  },
+  "timeline.tag_follow": {
+    "defaultMessage": "フォロー",
+    "description": "The button at the end of a hashtag's title that follows it, so that its posts join the reader's home timeline."
+  },
+  "timeline.tag_following": {
+    "defaultMessage": "フォロー中",
+    "description": "The button at the end of a hashtag's title while the reader follows it; pressing it stops following."
+  },
+  "timeline.tag_follow_failed": {
+    "defaultMessage": "{follow, select, follow {#{name} のフォロー} other {#{name} のフォローの解除}}を完了できませんでした。",
+    "description": "The notice at the bottom of the page when following a hashtag, or unfollowing it, got no answer from the server (the network), beside Try again. The button stays as it was. follow is follow or unfollow; name is the hashtag without #."
+  },
+  "timeline.tag_empty": {
+    "defaultMessage": "まだ #{name} の投稿はありません。このサーバーに届いた #{name} の投稿がここに表示されます。",
+    "description": "In place of a hashtag's posts when it has none. name is the hashtag without #."
+  },
+  "timeline.lists": {
+    "defaultMessage": "あなたのリスト",
+    "description": "The name of the index of the reader's lists, for assistive technology."
+  },
+  "timeline.lists_title": {
+    "defaultMessage": "リスト",
+    "description": "The title at the top of the index of the reader's lists, beside the list glyph."
+  },
+  "timeline.lists_loading": {
+    "defaultMessage": "リストを読み込んでいます…",
+    "description": "In place of the reader's lists while they are being fetched."
+  },
+  "timeline.lists_failed": {
+    "defaultMessage": "リストを読み込めませんでした。",
+    "description": "In place of the reader's lists when fetching them failed; a retry action follows it."
+  },
+  "timeline.lists_empty": {
+    "defaultMessage": "まだリストはありません。リストはここに表示され、それぞれのメンバーの投稿を読めます。",
+    "description": "In place of the reader's lists when they have made none."
+  },
+  "timeline.list_members": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "How many accounts are in a list, under its name in the index and beside its title on its screen."
+  },
+  "timeline.list_back": {
+    "defaultMessage": "リスト",
+    "description": "The button at the top of a list's screen that goes back to the index of the reader's lists."
+  },
+  "timeline.list": {
+    "defaultMessage": "リスト「{name}」の投稿",
+    "description": "The name of a list's timeline, for assistive technology. name is the list's name, as the reader wrote it."
+  },
+  "timeline.list_loading": {
+    "defaultMessage": "リストを読み込んでいます…",
+    "description": "In place of a list's screen while the list is being fetched."
+  },
+  "timeline.list_failed": {
+    "defaultMessage": "リストを読み込めませんでした。",
+    "description": "In place of a list's screen when fetching the list failed; Try again follows it."
+  },
+  "timeline.list_gone": {
+    "defaultMessage": "このリストはもうありません。",
+    "description": "In place of a list's screen when the server has no such list: the reader deleted it, on this or another device."
+  },
+  "timeline.list_empty": {
+    "defaultMessage": "まだこのリストのメンバーの投稿はありません。メンバーが投稿すると、ここに表示されます。",
+    "description": "In place of a list's posts when its members have none."
+  },
+  "timeline.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The action after a failure to load the reader's lists, or a list, which fetches it again."
+  },
+  "timeline.bookmarks": {
+    "defaultMessage": "ブックマーク",
+    "description": "The name of the column of the posts the reader bookmarked, for assistive technology."
+  },
+  "timeline.bookmarks_empty": {
+    "defaultMessage": "まだブックマークはありません。ブックマークした投稿がここに表示されます。",
+    "description": "In place of the reader's bookmarks when they have none."
   }
 }

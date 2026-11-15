@@ -23,6 +23,7 @@ import {
   follows,
   instance,
   interactions,
+  lists,
   people,
   personOf,
   posts,
@@ -285,6 +286,26 @@ class Seeder {
     }
   }
 
+  /** Each person's lists, found again by their names or made, with their members (adding one again changes nothing). */
+  async makeLists() {
+    for (const l of lists) {
+      const api = await this.api(l.owner);
+      const have = body((await api.GET("/lists")).data, "the lists").items.find((x) => x.name === l.name);
+      const list =
+        have ??
+        body(
+          (await api.POST("/lists", { headers: key(`list-${l.key}`), body: { name: l.name } })).data,
+          `the list ${l.key}`,
+        );
+      for (const member of l.members) {
+        const account = await this.account(member);
+        await api.POST("/lists/{id}/accounts/{account_id}", {
+          params: { path: { id: list.id, account_id: account.id } },
+        });
+      }
+    }
+  }
+
   /** The author's post that carries an image with `description`, from an earlier run. */
   async findByImage(username: string, description: string): Promise<Status | undefined> {
     const api = await this.api(username);
@@ -536,6 +557,7 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   await s.addEmojis();
   await s.setUpProfiles();
   await s.follow();
+  await s.makeLists();
   await s.writePosts();
   await s.interact();
   await s.restrict();

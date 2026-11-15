@@ -80,6 +80,65 @@ export function publicTimelineQuery({ api, queries }: AppData, kind: PublicTimel
   });
 }
 
+/**
+ * The timeline of a hashtag (its name without `#`), newest first, a page per cursor: its public posts, and its local
+ * ones for a reader signed in. A route's loader reads it as the home timeline's.
+ */
+export function tagTimelineQuery({ api, queries }: AppData, hashtag: string) {
+  const init = { params: { path: { hashtag } } };
+  return infiniteQueryOptions({
+    queryKey: queries.queryOptions("get", "/timelines/tag/{hashtag}", init).queryKey,
+    queryFn: async ({ pageParam, signal }): Promise<StatusPage> => {
+      const { data } = await api.GET("/timelines/tag/{hashtag}", {
+        params: { path: { hashtag }, query: pageParam === undefined ? {} : { cursor: pageParam } },
+        signal,
+      });
+      if (data === undefined) throw new Error("app-data: the hashtag's timeline answered without a page");
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => nextCursor(page),
+  });
+}
+
+/**
+ * The timeline of the reader's list of `id`, newest first, a page per cursor: the home timeline's posts by the list's
+ * members (ADR-0013 §13).
+ */
+export function listTimelineQuery({ api, queries }: AppData, id: string) {
+  const init = { params: { path: { id } } };
+  return infiniteQueryOptions({
+    queryKey: queries.queryOptions("get", "/timelines/list/{id}", init).queryKey,
+    queryFn: async ({ pageParam, signal }): Promise<StatusPage> => {
+      const { data } = await api.GET("/timelines/list/{id}", {
+        params: { path: { id }, query: pageParam === undefined ? {} : { cursor: pageParam } },
+        signal,
+      });
+      if (data === undefined) throw new Error("app-data: the list's timeline answered without a page");
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => nextCursor(page),
+  });
+}
+
+/** The posts the reader bookmarked, the newest bookmark first, a page per cursor. */
+export function bookmarksQuery({ api, queries }: AppData) {
+  return infiniteQueryOptions({
+    queryKey: queries.queryOptions("get", "/bookmarks").queryKey,
+    queryFn: async ({ pageParam, signal }): Promise<StatusPage> => {
+      const { data } = await api.GET("/bookmarks", {
+        params: { query: pageParam === undefined ? {} : { cursor: pageParam } },
+        signal,
+      });
+      if (data === undefined) throw new Error("app-data: the bookmarks answered without a page");
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => nextCursor(page),
+  });
+}
+
 /** A timeline's column of the query `options`. */
 function useTimelineColumn<Key extends readonly unknown[]>(
   options: UseInfiniteQueryOptions<StatusPage, Error, InfiniteData<StatusPage>, Key, string | undefined>,
@@ -109,4 +168,23 @@ export function useHomeTimeline(): HomeTimeline {
 /** A public timeline of the instance, for its column. */
 export function usePublicTimeline(kind: PublicTimelineKind): HomeTimeline {
   return useTimelineColumn(publicTimelineQuery(useAppData(), kind));
+}
+
+/** The timeline of a hashtag, for its column. */
+export function useTagTimeline(hashtag: string): HomeTimeline {
+  return useTimelineColumn(tagTimelineQuery(useAppData(), hashtag));
+}
+
+/** The timeline of the reader's list of `id`, for its column. */
+export function useListTimeline(id: string): HomeTimeline {
+  return useTimelineColumn(listTimelineQuery(useAppData(), id));
+}
+
+/**
+ * The posts the reader bookmarked, for their column: a post whose bookmark the reader takes back leaves it at once, as
+ * it shows (shadow.ts).
+ */
+export function useBookmarks(): HomeTimeline {
+  const column = useTimelineColumn(bookmarksQuery(useAppData()));
+  return { ...column, statuses: column.statuses.filter((s) => (s.boost ?? s).bookmarked !== false) };
 }

@@ -37,7 +37,7 @@
   },
   "app.menu": {
     "defaultMessage": "メニュー",
-    "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, settings, announcements, voice rooms, events)."
+    "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, lists, settings, announcements, voice rooms, events)."
   },
   "app.menu_close": {
     "defaultMessage": "閉じる",
@@ -306,5 +306,17 @@
   "app.landing_source": {
     "defaultMessage": "ソースコード",
     "description": "On the landing page's footer, the link to the source code of the running server (AGPL-3.0 section 13)."
+  },
+  "app.lists": {
+    "defaultMessage": "リスト",
+    "description": "The place of the menu, and the heading of its screen, that lists the reader's lists."
+  },
+  "app.list": {
+    "defaultMessage": "リスト",
+    "description": "The heading of a list's screen until the list's name is known."
+  },
+  "app.tag": {
+    "defaultMessage": "#{name}",
+    "description": "The heading of a hashtag's screen, and the document's title. name is the hashtag without #."
   }
 }

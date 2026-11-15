@@ -14,6 +14,9 @@ const counted = (action: string) => new RegExp(`^${action}(, \\d+)?$`);
 /** A vote in a post's poll. */
 const votes = { methods: ["POST"], path: /\/statuses\/[^/]+\/poll\/votes$/ } as const;
 
+/** A bookmark of a post, set or taken back. */
+const bookmark = { methods: ["POST", "DELETE"], path: /\/statuses\/[^/]+\/bookmark$/ } as const;
+
 /** A request to translate a post. */
 const translation = { methods: ["POST"], path: /\/statuses\/[^/]+\/translation$/ } as const;
 
@@ -283,6 +286,25 @@ export class Post {
     return new Composer(this.page.getByRole("dialog", { name: "New post", exact: true }));
   }
 
+  /** Bookmarks the post from its more menu, and returns once the server has answered. */
+  async bookmark(): Promise<void> {
+    await answered(this.page, bookmark, async () => {
+      await this.menuItem("Bookmark");
+    });
+  }
+
+  /** Takes the reader's bookmark of the post back from its more menu, and returns once the server has answered. */
+  async removeBookmark(): Promise<void> {
+    await answered(this.page, bookmark, async () => {
+      await this.menuItem("Remove bookmark");
+    });
+  }
+
+  /** The link of the hashtag `#name` in the post's text. */
+  hashtag(name: string): Locator {
+    return this.article.getByRole("link", { name: `#${name}`, exact: true });
+  }
+
   /** Opens the composer that edits the reader's post. */
   async edit(): Promise<Composer> {
     await this.menuItem("Edit");
@@ -398,6 +420,11 @@ export class Timeline {
 /** The local timeline: the public posts of the server's people, which a visitor reads too. Its name is in ja for ja. */
 export function localTimeline(page: Page, name = "Local timeline"): Timeline {
   return new Timeline(page, page.getByRole("feed", { name, exact: true }));
+}
+
+/** The reader's bookmarks: the posts they bookmarked, the newest bookmark first. */
+export function bookmarks(page: Page): Timeline {
+  return new Timeline(page, page.getByRole("feed", { name: "Bookmarks", exact: true }));
 }
 
 /** The home timeline: the posts of the people the reader follows, and their own. */

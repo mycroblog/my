@@ -142,12 +142,14 @@ export {
   NoticeLine,
   OpenRow,
   ScreenStack,
+  ScreenTitle,
   SentenceName,
   StateText,
   TabRow,
   UnreadMark,
   type FacesRowProps,
   type NoticeLineProps,
+  type ScreenTitleProps,
   type TabRowProps,
 } from "./list";
 export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";

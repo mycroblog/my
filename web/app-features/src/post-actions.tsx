@@ -15,13 +15,22 @@
 // gone at once from every list and view, and a redraft opens the composer with what the post held. The edited mark
 // opens the post's edit history once it was read. A read or a deletion that fails is told with Try again (a redraft's
 // again deletes with what its first attempt read, since a post deleted may not be read again); a copy the
-// browser refused is told without, since it would be refused again. It is shared by the features, not a feature of
-// its own.
+// browser refused is told without, since it would be refused again. A screen's own write around its posts (following
+// a hashtag) tells its failure in the same notice (usePostNotice). It is shared by the features, not a feature of its
+// own.
 
-import { DeleteConfirm, EditHistory, statusPath, type PostAction, type PostPicker } from "@my/app-components";
+import {
+  DeleteConfirm,
+  EditHistory,
+  ServerDomain,
+  statusPath,
+  type PostAction,
+  type PostPicker,
+} from "@my/app-components";
 import {
   RedraftError,
   refusal,
+  useInstance,
   useOwnPosts,
   usePollVote,
   useStatusHistory,
@@ -82,7 +91,11 @@ const Context = createContext<{
   /** The ID of the reader's account; undefined without one, or until it is read. */
   viewer: string | undefined;
   picker: PostPicker;
+  failed: Failed;
 } | null>(null);
+
+/** Tells that `what` failed, in the server's words when it refused (`error`), with Try again doing `again` if given. */
+type Failed = (error: unknown, what: string, again?: () => void) => void;
 
 /**
  * The mark an action asks for, on the status as the cache holds it: the one it does not have, set, or the one it has,
@@ -175,6 +188,15 @@ export function usePostOwn(): (status: {
   return (status) => viewer !== undefined && (status.boost ?? status).account.id === viewer;
 }
 
+/**
+ * Tells a failure of a screen's own write (following a hashtag) in the notice where a post's actions tell theirs: in
+ * the server's words when it refused, else in `what`, with Try again doing `again` where the same may succeed. Outside
+ * PostActions there is no notice, and it tells nothing.
+ */
+export function usePostNotice(): Failed {
+  return use(Context)?.failed ?? (() => undefined);
+}
+
 /** The address of a post to hand on: its own page where it was posted, else its page here. */
 const linkOf = (status: Status) => status.url ?? new URL(statusPath(status), location.href).href;
 
@@ -194,8 +216,8 @@ function History({ id, lang, onClose }: { id: string; lang: string | undefined; 
 /**
  * Where the posts of `children` answer their actions: `onCompose` opens the composer (none for a reader without an
  * account, whose posts' actions that need one lead to the sign-in), a vote in flight shows on every copy of its post,
- * the more menu's actions are answered, what failed is told, and the emoji picker opens in a sheet when `sheet` (the
- * app's choice by the viewport), else in a popover.
+ * the more menu's actions are answered, what failed is told, the emoji picker opens in a sheet when `sheet` (the
+ * app's choice by the viewport), else in a popover, and a hashtag of this server opens the app's hashtag screen.
  */
 export function PostActions({
   onCompose,
@@ -215,6 +237,7 @@ export function PostActions({
   const own = useOwnPosts();
   // Only a reader with an account (whom the composer opens for) has posts of their own.
   const viewer = useViewer(onCompose !== undefined)?.id;
+  const domain = useInstance()?.domain;
   const [voting, setVoting] = useState<Voting>(new Map());
   const [notice, setNotice] = useState<Notice | undefined>(undefined);
   const [confirm, setConfirm] = useState<Confirm | undefined>(undefined);
@@ -262,7 +285,7 @@ export function PostActions({
       });
   };
   /** Tells that `what` failed, in the server's words when it refused, with Try again doing `again`. */
-  const failed = (e: unknown, what: string, again: () => void) => {
+  const failed: Failed = (e, what, again) => {
     setNotice({ text: refusal(e) ?? what, retry: again });
   };
   /** Copies the post's address, and tells whether it was. */
@@ -354,8 +377,8 @@ export function PostActions({
     }
   };
   return (
-    <Context value={{ onCompose, send, voting, menu, viewer, picker }}>
-      {children}
+    <Context value={{ onCompose, send, voting, menu, viewer, picker, failed }}>
+      <ServerDomain value={domain}>{children}</ServerDomain>
       <ModalPresence>
         {confirm && (
           <DeleteConfirm

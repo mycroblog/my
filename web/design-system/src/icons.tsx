@@ -43,6 +43,7 @@ import {
   IconFilePencil,
   IconFlag,
   IconHandStop,
+  IconHash,
   IconHeart,
   IconHeartHandshake,
   IconHistory,
@@ -53,6 +54,7 @@ import {
   IconKey,
   IconLanguage,
   IconLink,
+  IconListDetails,
   IconLock,
   IconLogin2,
   IconMaximize,
@@ -198,6 +200,9 @@ export const icons = {
   follow: { off: IconUserPlus, directional: true },
   moderation: { off: IconShield, on: IconShieldFilled },
   pin: { off: IconPin },
+  // What a timeline is of, off the navigation: a hashtag, and a list of accounts the reader made.
+  hashtag: { off: IconHash },
+  list: { off: IconListDetails },
   // Marking every notification read: two checks.
   read: { off: IconChecks },
   // The auth screens: what went wrong (a round mark), what needs care before agreeing (a triangle), a passkey, and the

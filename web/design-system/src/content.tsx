@@ -7,6 +7,7 @@
 // a break first (after a slash or a question mark, before a pipe).
 
 import type { ReactNode } from "react";
+import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 
 // A quote is marked by a bar at its start and muted text, never by a surface, which means code or a quoted post; its
@@ -62,10 +63,21 @@ export type ContentLinkProps = {
   lang?: string | undefined;
   /** `no` when the link's text is a name or a handle that no translation may change. */
   translate?: "no" | undefined;
+  /** The link is an address of the app (`href` a path), which opens in place through the app's navigation. */
+  inApp?: boolean | undefined;
 };
 
-/** A link in a text, which opens in a new tab and tells the page it leads to nothing of where it came from. */
-export function ContentLink({ href, kind, children, lang, translate }: ContentLinkProps) {
+/**
+ * A link in a text, which opens in a new tab and tells the page it leads to nothing of where it came from; a link of
+ * the app opens in place.
+ */
+export function ContentLink({ href, kind, children, lang, translate, inApp = false }: ContentLinkProps) {
+  if (inApp)
+    return (
+      <Link className={link({ kind })} href={href} lang={lang} translate={translate}>
+        {children}
+      </Link>
+    );
   return (
     <a
       className={link({ kind })}

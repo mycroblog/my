@@ -11,7 +11,7 @@ import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost } from "../post-translation";
-import { useNewHomePosts } from "./new-posts";
+import { useNewPostsColumn } from "./new-posts";
 
 /**
  * What the route's loader waits for: the home timeline's first page, from the cache unless a write marked it stale. A
@@ -28,23 +28,14 @@ export function HomeTimeline() {
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
-  const { onTopChange, onReaderChange, told, onPress } = useNewHomePosts(true);
-  const label =
-    told === undefined
-      ? undefined
-      : told.count > 0
-        ? t("timeline.new_posts", { count: told.count })
-        : t("timeline.new_posts_missed");
   return (
     <Column
       label={t("timeline.home")}
       {...useHomeTimeline()}
-      onTopChange={onTopChange}
-      onReaderChange={onReaderChange}
+      {...useNewPostsColumn("home")}
       onAction={onAction}
       postProps={(s) => ({ voting: votingOf(s), own: ownOf(s), picker })}
       postAs={TranslatablePost}
-      newPosts={label === undefined ? undefined : { label, onPress }}
     />
   );
 }

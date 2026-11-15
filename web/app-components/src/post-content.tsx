@@ -7,10 +7,29 @@
 // `:shortcode:` of the post's custom emoji as its image (ADR-0051 §4). Every block reads in its own direction
 // (`dir="auto"`), so that a post keeps its punctuation at the right end whatever the page's direction, and a list
 // puts its indent on the side its markers stand, where a list in the page's direction would leave them hanging out.
+// A hashtag of this server (its page on the serving domain that ServerDomain gives, or on the page's own host, which
+// serves the app and holds before the instance is read) opens the app's hashtag screen in place; every other link
+// opens in a new tab.
 
 import { ContentBody, ContentLink, CustomEmoji, UrlPart, type ContentLinkKind } from "@my/design-system";
-import { createElement, Fragment, type ReactNode } from "react";
+import { createContext, createElement, Fragment, use, type ReactNode } from "react";
 import { blockTags, parseContent, type ContentElement, type ContentNode } from "./html";
+import { hashtagPath } from "./paths";
+
+/**
+ * The serving domain of this server (the instance's `domain`), which the app places around its screens: a hashtag
+ * link to its page there opens the app's hashtag screen, as one to its page on the page's own host does.
+ */
+export const ServerDomain = createContext<string | undefined>(undefined);
+
+/**
+ * What drawing a text needs besides its nodes: its custom emoji by shortcode, and the hosts whose hashtag pages are
+ * the app's (the server's domain, and the page's own host).
+ */
+type Drawing = { readonly emojis: ReadonlyMap<string, ContentEmoji>; readonly hosts: readonly (string | undefined)[] };
+
+/** The host of the page the app runs on; undefined outside a browser. */
+const pageHost = (): string | undefined => (typeof location === "undefined" ? undefined : location.host);
 
 /** A custom emoji of the text, as the API gives it (CustomEmoji). */
 export type ContentEmoji = { shortcode: string; url: string; static_url: string };
@@ -70,20 +89,34 @@ function linkKind(element: ContentElement): ContentLinkKind {
 }
 
 /** One part as React elements. Code shows what its author typed, colons included. */
-function draw(node: ContentNode, key: number, emojis: ReadonlyMap<string, ContentEmoji>, code: boolean): ReactNode {
-  if (typeof node === "string") return <Fragment key={key}>{code ? codeText(node) : emojiText(node, emojis)}</Fragment>;
+function draw(node: ContentNode, key: number, drawing: Drawing, code: boolean): ReactNode {
+  if (typeof node === "string")
+    return <Fragment key={key}>{code ? codeText(node) : emojiText(node, drawing.emojis)}</Fragment>;
   const inCode = code || node.tag === "code" || node.tag === "pre";
-  const children = node.children.map((child, i) => draw(child, i, emojis, inCode));
+  const children = node.children.map((child, i) => draw(child, i, drawing, inCode));
   const { lang, href, translate } = node.attrs;
   switch (node.tag) {
     case "br":
       return <br key={key} />;
-    case "a":
+    case "a": {
+      const kind = linkKind(node);
+      const inApp =
+        kind === "hashtag"
+          ? drawing.hosts.map((host) => hashtagPath(href ?? "", host)).find((path) => path !== undefined)
+          : undefined;
       return (
-        <ContentLink key={key} href={href ?? ""} kind={linkKind(node)} lang={lang} translate={translate}>
+        <ContentLink
+          key={key}
+          href={inApp ?? href ?? ""}
+          kind={kind}
+          lang={lang}
+          translate={translate}
+          inApp={inApp !== undefined}
+        >
           {children}
         </ContentLink>
       );
+    }
     case "span": {
       const of = classes(node);
       const part = of.has("invisible") ? "hidden" : of.has("ellipsis") ? "cut" : undefined;
@@ -148,8 +181,13 @@ function blocksOf(nodes: ContentNode[]): ContentNode[] {
 
 /** The body of a post, from the HTML the server rendered and sanitized, with its custom emoji. */
 export function PostContent({ html, emojis = [], lang }: PostContentProps) {
-  const byCode = new Map(emojis.map((emoji) => [emoji.shortcode, emoji]));
+  const drawing: Drawing = {
+    emojis: new Map(emojis.map((emoji) => [emoji.shortcode, emoji])),
+    hosts: [use(ServerDomain), pageHost()],
+  };
   return (
-    <ContentBody lang={lang}>{blocksOf(parseContent(html)).map((node, i) => draw(node, i, byCode, false))}</ContentBody>
+    <ContentBody lang={lang}>
+      {blocksOf(parseContent(html)).map((node, i) => draw(node, i, drawing, false))}
+    </ContentBody>
   );
 }

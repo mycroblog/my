@@ -5,8 +5,8 @@
 // statuses, the home timeline, a thread, a profile, the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
-// answers of follow requests, the read marker, the announcements read, the reader's edits and deletions of their own
-// posts) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as the server's
+// answers of follow requests, the read marker, the announcements read, the reader's bookmarks and followed hashtags,
+// the reader's edits and deletions of their own posts) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. A list pages as the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
 // and its retry succeeds late. What the shell reads (the instance, the reader's rights, the announcements, the
@@ -24,6 +24,7 @@ import {
   events as scenarioEvents,
   follows,
   interactions,
+  lists as scenarioLists,
   people,
   personOf,
   posts,
@@ -95,6 +96,10 @@ export type FakeOptions = {
     provider?: "answers" | "limit" | "unavailable" | "language" | "failed";
     browser?: boolean;
   };
+  /** The keys of the posts the reader bookmarked besides the scenario's, the newest bookmark first. */
+  bookmarks?: readonly string[];
+  /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
+  followedTagLimit?: number;
 };
 
 /** The address of the fake's status page. */
@@ -113,6 +118,8 @@ export type FakeApi = {
   postPath: (key: string) => string;
   /** The app's address of the scenario's announcement with `key`, or of the fake's one that ended (`ended`). */
   announcementPath: (key: string) => string;
+  /** The app's address of the reader's list at `index`, oldest first. */
+  listPath: (index: number) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -258,6 +265,36 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const ownFavourite = new Map<string, boolean>();
   const ownReaction = new Map<string, string | null>();
   const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  /** The keys of the posts the reader bookmarked, the newest bookmark first: the options', then the scenario's. */
+  const bookmarks: string[] = [
+    ...new Set([
+      ...(o.bookmarks ?? []),
+      ...interactions
+        .filter((i) => i.kind === "bookmark" && i.by === viewer)
+        .map((i) => i.post)
+        .toReversed(),
+    ]),
+  ];
+  /** The reader's lists of the people they follow, oldest first, with ids of the fake's own. */
+  const lists = scenarioLists
+    .filter((l) => l.owner === viewer)
+    .map((l, n) => ({
+      id: idAt(0, 60_000 + n),
+      name: l.name,
+      members: l.members,
+      created_at: new Date(started - (30 - n) * 24 * 60 * minute).toISOString(),
+    }));
+  const listBody = (l: (typeof lists)[number]): Json => ({
+    id: l.id,
+    name: l.name,
+    members_count: l.members.length,
+    created_at: l.created_at,
+  });
+  /** The hashtags the reader follows, by their names in lowercase. */
+  const followedTags = new Set<string>();
+  /** The hashtags of a text, in lowercase, as the server reads them. */
+  const hashtagsOf = (text: string) =>
+    [...text.matchAll(/#([\p{L}\p{M}\p{N}_]+)/gu)].map((x) => (x[1] ?? "").toLowerCase());
   /** Who favourited the post of `key`, in order. */
   const favouritersOf = (key: string) => [
     ...on(key, "favourite").flatMap((i) => (i.by === viewer && mineSet(key) ? [] : [i.by])),
@@ -438,7 +475,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         .map(([emoji, r]) => ({ ...reactionEmojiOf(emoji), count: r.count, me: r.me })),
       favourited: favouriters.includes(viewer),
       boosted: on(p.key, "boost").some((i) => i.by === viewer),
-      bookmarked: on(p.key, "bookmark").some((i) => i.by === viewer),
+      bookmarked: bookmarks.includes(p.key),
       pinned: p.pinned === true && p.author === viewer,
       ...(p.poll === undefined ? {} : { poll: pollOf(p) }),
       ...(p.quote === undefined || depth > 0
@@ -865,7 +902,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   /** The operations a visitor without a session may call; every other answers 401. */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated))$/;
+    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/[^/]+)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 
@@ -917,6 +954,80 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (o.failFirst === true) await wait(o.lateMs ?? 2000);
       else if (from > 0) await late();
       return json(body);
+    }
+    if ((match = m(/^\/timelines\/tag\/([^/]+)$/))) {
+      // The public posts with the hashtag, newest first, as they read now, and its local ones for a reader signed in.
+      const tag = decodeURIComponent(match[1] ?? "")
+        .replace(/^#/, "")
+        .toLowerCase();
+      const audience = o.visitor === true ? ["public"] : ["public", "local"];
+      const shown = posts
+        .filter((p) => visible(p) && audience.includes(p.visibility) && (o.visitor === true || !hidden(p.author)))
+        .filter((p) => hashtagsOf(versionsOf(p).at(-1)?.text ?? p.text).includes(tag))
+        .toReversed()
+        .map((p) => statusOf(p));
+      const { from, body } = page(shown, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/tags\/([^/]+)(\/follow)?$/))) {
+      // A hashtag as first written in a post, else as asked; whether the reader follows it. One more than the most
+      // the reader may follow is refused as the server refuses it.
+      const asked = decodeURIComponent(match[1] ?? "").replace(/^#/, "");
+      const key = asked.toLowerCase();
+      if (match[2] !== undefined && request.method === "POST" && !followedTags.has(key)) {
+        if (followedTags.size >= (o.followedTagLimit ?? 100))
+          return json(
+            {
+              type: "/api/v1/problems/too-many-followed-tags",
+              title: "Too many followed hashtags",
+              detail: "You follow as many hashtags as you can. Unfollow one to follow another.",
+              status: 422,
+            },
+            422,
+          );
+        followedTags.add(key);
+      }
+      if (match[2] !== undefined && request.method === "DELETE") followedTags.delete(key);
+      const written = posts
+        .flatMap((p) => [...p.text.matchAll(/#([\p{L}\p{M}\p{N}_]+)/gu)].map((x) => x[1] ?? ""))
+        .find((name) => name.toLowerCase() === key);
+      const name = written ?? asked;
+      return json({ name, url: `${fakeOrigin}/tags/${encodeURIComponent(key)}`, following: followedTags.has(key) });
+    }
+    if (path === "/lists") return json({ items: lists.map(listBody) });
+    if ((match = m(/^\/lists\/([^/]+)$/))) {
+      const found = lists.find((l) => l.id === decodeURIComponent(match?.[1] ?? ""));
+      return found === undefined ? problem(404, "Not Found") : json(listBody(found));
+    }
+    if ((match = m(/^\/timelines\/list\/([^/]+)$/))) {
+      // The home timeline's entries by the list's members, never the reader's own (ADR-0013 §13).
+      const found = lists.find((l) => l.id === decodeURIComponent(match?.[1] ?? ""));
+      if (found === undefined) return problem(404, "Not Found");
+      const shown = home
+        .flatMap(current)
+        .filter((s) => found.members.includes((s["account"] as Json)["username"] as string));
+      const { from, body } = page(shown, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if (path === "/bookmarks") {
+      const shown = bookmarks
+        .map(postOf)
+        .filter((p) => visible(p))
+        .map((p) => statusOf(p));
+      const { from, body } = page(shown, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/bookmark$/)) && request.method !== "GET") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const at = bookmarks.indexOf(p.key);
+      if (at >= 0) bookmarks.splice(at, 1);
+      if (request.method === "POST") bookmarks.unshift(p.key);
+      return json(statusOf(p));
     }
     if ((match = m(/^\/timelines\/(local|federated)$/))) {
       // The scenario's people are all this server's, so both public timelines hold their public posts (the local one
@@ -1222,5 +1333,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const announcementPath = (key: string) =>
     `/announcements/${key === "ended" ? String(endedAnnouncement["id"]) : announcementId(key)}`;
 
-  return { serve, newPosts, newNotification, postPath, announcementPath };
+  const listPath = (index: number) => `/lists/${lists[index]?.id ?? "none"}`;
+
+  return { serve, newPosts, newNotification, postPath, announcementPath, listPath };
 }

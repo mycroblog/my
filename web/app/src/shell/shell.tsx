@@ -35,7 +35,7 @@ import { signInPath } from "../sign-in";
 import { Around, ServerFooter } from "./around";
 import { useCompose } from "./compose";
 import { ServerBanners, UpdateToast } from "./notices";
-import { aroundPlacesFor, composesAt, placesFor, type Place } from "./places";
+import { aroundPlacesFor, composesAt, listsPlace, placesFor, type Place } from "./places";
 import { useNarrowViewport } from "./viewport";
 
 /** A place whose badge counts the reader's unread notifications. */
@@ -175,6 +175,7 @@ export function Shell({
         {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
         <NavList>
           <NavMenu label={t("app.menu")} closeLabel={t("app.menu_close")} footer={footer}>
+            <PlaceList items={signedIn ? [listsPlace] : []} pathname={pathname} />
             <PlaceList items={around} pathname={pathname} />
           </NavMenu>
         </NavList>
@@ -200,7 +201,7 @@ export function Shell({
               markLabel={waiting > 0 ? t("app.menu_marked", { count: waiting }) : undefined}
               footer={footer}
             >
-              <PlaceList items={own} pathname={pathname} />
+              <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
               <PlaceList items={staff} pathname={pathname} />
               <PlaceList items={around} pathname={pathname} />
             </NavMenu>
