@@ -131,8 +131,9 @@ export function EmojiPickerPopover({
 }
 
 /**
- * The picker in a sheet from the bottom over the dimmed page, on a phone: titled, its close button at the end of its
- * head, the picker filling the rest. Escape, a press outside and the close button close it.
+ * The picker in a sheet from the bottom over the dimmed page, on a phone, which it does not blur, so that what the
+ * emoji goes into stays legible: titled, its close button at the end of its head, the picker filling the rest. Escape,
+ * a press outside and the close button close it.
  */
 export function EmojiPickerSheet({
   open,
@@ -153,7 +154,7 @@ export function EmojiPickerSheet({
   return (
     <ModalPresence>
       {open && (
-        <ModalLayer key="emoji-picker" onDismiss={onClose} overlay={s.sheetOverlay()} panel={s.sheet()}>
+        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" overlay={s.sheetOverlay()} panel={s.sheet()}>
           <Dialog className={s.sheetDialog()} lang={lang} dir={direction}>
             <div className={s.head()}>
               <Heading slot="title" className={s.title()}>
