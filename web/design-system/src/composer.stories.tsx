@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The composer's text as it is typed, in the reader's language (the toolbar's locale; ar-XB reads right-to-left): what
-// the server will read (mentions, hashtags, URLs, custom emoji) marked behind it, also where a line breaks inside one,
-// and the part over the limit; the content warning's custom emoji; and the suggestions for the word at the caret,
-// under its line across the text's width: accounts for `@` (followed first), hashtags for `#` (by their use), emoji
-// for `:` (custom, then Unicode), the first active; while they are asked for, and when none came. The words are
-// placeholders.
+// The composer's text in its editor, in the reader's language (the toolbar's locale; ar-XB reads right-to-left), with
+// the suggestions for the word at the caret, under its line across the text's width: accounts for `@` (followed
+// first), hashtags for `#` (by their use), emoji for `:` (custom, then Unicode), the first active; while they are
+// asked for, and when none came. The marks of what the server will read are the app's nodes, in its composer stories.
+// The words are placeholders.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
+import { waitFor, within } from "storybook/test";
 import { Button } from "./button";
-import { CharCount, ComposerFrame, ComposerText, WarningField, type TextMark } from "./composer";
+import { CharCount, ComposerFrame, ComposerText } from "./composer";
+import { PlainTextEditor } from "./editor";
 import { sampleCustomEmoji } from "./emoji.samples";
 import { IconButton } from "./icon-button";
 import { images } from "./samples";
@@ -22,20 +23,6 @@ const useLang = (): Lang => {
   const language = new Intl.Locale(useLocale().locale).language;
   return language === "ja" ? "ja" : language === "ar" ? "ar" : "en";
 };
-
-/** The marks of a sample text: a sketch of the server's rules, which the app's own parser follows. */
-function marksOf(text: string): TextMark[] {
-  const marks: TextMark[] = [];
-  const find = (pattern: RegExp, kind: TextMark["kind"], keep: (s: string) => boolean = () => true) => {
-    for (const m of text.matchAll(pattern))
-      if (keep(m[0])) marks.push({ start: m.index, end: m.index + m[0].length, kind });
-  };
-  find(/https?:\/\/[^\s]+/gu, "url");
-  find(/(?<![\p{L}\p{N}_@/])@[A-Za-z0-9_]+(?:@[A-Za-z0-9.-]*[A-Za-z0-9])?/gu, "mention");
-  find(/(?<![\p{L}\p{N}_#/])#[\p{L}\p{N}_]+/gu, "hashtag");
-  find(/(?<![A-Za-z0-9:]):[A-Za-z0-9_]{2,}:/gu, "emoji", (s) => s.slice(1, -1) in sampleCustomEmoji);
-  return marks;
-}
 
 const words = {
   en: {
@@ -175,67 +162,92 @@ function Suggesting({ kind, status }: { kind: Kind; status?: "loading" | "empty"
   const id = `suggest-${kind}`;
   return (
     <Frame>
-      <ComposerText
-        value={value}
-        onChange={() => undefined}
-        label={w.label}
-        placeholder={w.placeholder}
-        over={0}
-        marks={marksOf(value)}
-        completes
-        suggest={{
-          at: value.length,
-          list: (
-            <SuggestionList
-              id={id}
-              label={w.list}
-              items={items}
-              active={active}
-              onChoose={() => undefined}
-              status={status === undefined ? undefined : { kind: status, text: w[status] }}
-            />
-          ),
-          listId: items.length > 0 ? id : undefined,
-          count: items.length,
-          active,
-          announce: status === undefined ? String(items.length) : w[status],
-          onActive: setActive,
-          onAccept: () => undefined,
-          onClose: () => undefined,
-        }}
-      />
+      <ComposerText>
+        <PlainTextEditor
+          namespace="story"
+          look="composer"
+          value={value}
+          onChange={() => undefined}
+          label={w.label}
+          placeholder={w.placeholder}
+          roomy
+          completes
+          suggest={{
+            at: value.length,
+            list: (
+              <SuggestionList
+                id={id}
+                label={w.list}
+                items={items}
+                active={active}
+                onChoose={() => undefined}
+                status={status === undefined ? undefined : { kind: status, text: w[status] }}
+              />
+            ),
+            listId: items.length > 0 ? id : undefined,
+            count: items.length,
+            active,
+            announce: status === undefined ? String(items.length) : w[status],
+            onActive: setActive,
+            onAccept: () => undefined,
+            onClose: () => undefined,
+          }}
+        />
+      </ComposerText>
     </Frame>
   );
 }
 
-/** The marked text, with as much over the limit as `over`, under the content warning when `cw`. */
-function Marked({ over = 0, cw = false, narrow = false }: { over?: number; cw?: boolean; narrow?: boolean }) {
+const against = {
+  ltr: "Walked along the river this morning, and the light on the water was worth the early start.",
+  rtl: "مشيت على طول النهر هذا الصباح، وكان الضوء على الماء يستحق الاستيقاظ المبكر.",
+};
+
+/**
+ * The text in the direction `text` runs, whatever the page's, with the emoji button at the end of its first line in
+ * the page's direction.
+ */
+function Ended({ text }: { text: keyof typeof against }) {
   const w = words[useLang()];
-  const field = (
-    <ComposerText
-      value={w.marked}
-      onChange={() => undefined}
-      label={w.label}
-      placeholder={w.placeholder}
-      over={over}
-      marks={marksOf(w.marked)}
-    />
-  );
   return (
     <Frame>
-      {cw && (
-        <WarningField
-          value={w.cw}
+      <ComposerText end={<IconButton icon="emojiSmileys" label="Add emoji" />}>
+        <PlainTextEditor
+          namespace="story"
+          look="composer"
+          value={against[text]}
           onChange={() => undefined}
-          label={w.cwLabel}
-          placeholder={w.cwLabel}
-          marks={marksOf(w.cw).filter((m) => m.kind === "emoji")}
+          label={w.label}
+          placeholder={w.placeholder}
+          roomy
+          ended
         />
-      )}
-      {narrow ? <div style={{ maxInlineSize: "15rem" }}>{field}</div> : field}
+      </ComposerText>
     </Frame>
   );
 }
+
+/** The emoji button covers no character of the text's first line. */
+const clearOfText: Story["play"] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement);
+  const box = canvas.getByRole("textbox");
+  const button = canvas.getByRole("button", { name: "Add emoji" }).getBoundingClientRect();
+  await waitFor(() => {
+    // The glyphs of its first text, not the boxes of the paragraphs around them.
+    const text = box.ownerDocument.createTreeWalker(box, NodeFilter.SHOW_TEXT).nextNode();
+    if (text === null) throw new Error("the text box holds no text");
+    const range = box.ownerDocument.createRange();
+    range.selectNodeContents(text);
+    const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
+    const top = Math.min(...rects.map((r) => r.top));
+    const first = rects.filter((r) => r.top < top + 1);
+    if (first.length === 0) throw new Error("the text has no first line");
+    for (const r of first) {
+      const covered = r.left < button.right && button.left < r.right && r.top < button.bottom && button.top < r.bottom;
+      if (covered) throw new Error("the emoji button covers the text's first line");
+    }
+  });
+};
 
 // Tagged `themes`: the story tests run each in dark too.
 const meta = {
@@ -247,15 +259,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Mentions, hashtags, a URL and a custom emoji marked behind the text as it is typed. */
-export const Marks: Story = { render: () => <Marked /> };
-/** The same in a narrow text, where the field breaks a line inside a URL or a hashtag: the mark follows it. */
-export const MarksNarrow: Story = { render: () => <Marked narrow /> };
-/** Past the limit: the part over it in a deeper neutral, underlined, over any mark in it. */
-export const MarksOverLimit: Story = { render: () => <Marked over={24} /> };
-/** The content warning marks its custom emoji only. */
-export const MarksContentWarning: Story = { render: () => <Marked cw /> };
-export const MarksRightToLeft: Story = { render: () => <Marked cw />, globals: { locale: "ar-XB" } };
 /** `@sa`: the accounts, the followed first, the first active. */
 export const Accounts: Story = { render: () => <Suggesting kind="accounts" /> };
 /** `#ph` (`#山` in ja): the hashtags by their use. */
@@ -266,6 +269,14 @@ export const AccountsRightToLeft: Story = {
   render: () => <Suggesting kind="accounts" />,
   globals: { locale: "ar-XB" },
 };
+/** A right-to-left page and a text in English: the button at the page's end covers none of it. */
+export const EndedLeftToRightText: Story = {
+  render: () => <Ended text="ltr" />,
+  globals: { locale: "ar-XB" },
+  play: clearOfText,
+};
+/** A left-to-right page and a text in Arabic: the button at the page's end covers none of it. */
+export const EndedRightToLeftText: Story = { render: () => <Ended text="rtl" />, play: clearOfText };
 /** Asked for and not here after a moment. */
 export const Loading: Story = { render: () => <Suggesting kind="accounts" status="loading" /> };
 /** None came. */

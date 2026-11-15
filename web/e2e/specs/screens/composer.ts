@@ -2,10 +2,76 @@
 
 // The composer, a dialog that writes a new post or a reply, keeps it as a draft on the server, or schedules it.
 
-import { expect, type Locator } from "@playwright/test";
+import { expect, type CDPSession, type Locator } from "@playwright/test";
 import { Drafts } from "./drafts";
 import { EmojiPicker } from "./emoji-picker";
 import { answered } from "./write";
+
+/** Waits until `box`, a text box of the editor, holds `text` as the composer sends it. */
+async function holds(box: Locator, text: string | RegExp): Promise<void> {
+  const value = expect.poll(() =>
+    box.evaluate((root) => {
+      const read = (node: Node): string => {
+        if (node instanceof Text) return node.data.replaceAll("​", "");
+        if (!(node instanceof Element) || node.hasAttribute("data-lexical-managed-linebreak")) return "";
+        if (node instanceof HTMLBRElement) return "\n";
+        if (node instanceof HTMLImageElement) return node.alt;
+        return Array.from(node.childNodes, read).join("");
+      };
+      return Array.from(root.children, read).join("\n");
+    }),
+  );
+  await (typeof text === "string" ? value.toBe(text) : value.toMatch(text));
+}
+
+/**
+ * Where each occurrence of `token` in the text of `box` is drawn: on how many lines, and how far its first line is from
+ * the box's left and right content edges. Rects that overlap in height are on one line.
+ */
+async function drawn(box: Locator, token: string): Promise<{ lines: number; fromLeft: number; fromRight: number }[]> {
+  return box.evaluate((root, word) => {
+    // The text nodes of the box in order, and where each starts in their joined text.
+    const nodes: { node: Text; at: number }[] = [];
+    let joined = "";
+    const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
+      const text = n as Text;
+      nodes.push({ node: text, at: joined.length });
+      joined += text.data;
+    }
+    const point = (offset: number, end: boolean): [Text, number] => {
+      const found = nodes.find((n) => (end ? n.at < offset : n.at <= offset) && offset <= n.at + n.node.data.length);
+      if (found === undefined) throw new Error(`no text at ${String(offset)}`);
+      return [found.node, offset - found.at];
+    };
+    const style = getComputedStyle(root);
+    const edges = root.getBoundingClientRect();
+    const left = edges.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+    const right = edges.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+    const result: { lines: number; fromLeft: number; fromRight: number }[] = [];
+    for (let i = joined.indexOf(word); i !== -1; i = joined.indexOf(word, i + word.length)) {
+      const range = root.ownerDocument.createRange();
+      range.setStart(...point(i, false));
+      range.setEnd(...point(i + word.length, true));
+      const rects = Array.from(range.getClientRects())
+        .filter((r) => r.width > 0 && r.height > 0)
+        .sort((a, b) => a.top - b.top);
+      const lines: DOMRect[][] = [];
+      for (const r of rects) {
+        const line = lines.at(-1);
+        if (line !== undefined && r.top < Math.max(...line.map((l) => l.bottom)) - 2) line.push(r);
+        else lines.push([r]);
+      }
+      const first = lines[0] ?? [];
+      result.push({
+        lines: lines.length,
+        fromLeft: Math.min(...first.map((r) => r.left)) - left,
+        fromRight: right - Math.max(...first.map((r) => r.right)),
+      });
+    }
+    return result;
+  }, token);
+}
 
 export class Composer {
   readonly dialog: Locator;
@@ -29,6 +95,140 @@ export class Composer {
   /** Writes `text` in place of what the composer holds. */
   async replace(text: string): Promise<void> {
     await this.text.fill(text);
+  }
+
+  /**
+   * Waits until the text holds `text` as the composer sends it: its lines joined by "\n", and a custom emoji, which
+   * the editor shows as its image, as its `:shortcode:`.
+   */
+  async holds(text: string | RegExp): Promise<void> {
+    await holds(this.text, text);
+  }
+
+  /** The button that adds the content warning's field over the text. */
+  get warningButton(): Locator {
+    return this.dialog.getByRole("button", { name: "Add a content warning", exact: true });
+  }
+
+  /** The content warning's field, one line, once added. */
+  get warning(): Locator {
+    return this.dialog.getByRole("textbox", { name: "Content warning", exact: true });
+  }
+
+  /** Adds the content warning's field with its button, and puts the caret in it. */
+  async addWarning(): Promise<void> {
+    await this.warningButton.click();
+    await this.warning.click();
+    await expect(this.warning).toBeFocused();
+  }
+
+  /** Waits until the content warning holds `text` as the composer sends it (as `holds` reads the text). */
+  async warningHolds(text: string | RegExp): Promise<void> {
+    await holds(this.warning, text);
+  }
+
+  /** The Post button. */
+  get postButton(): Locator {
+    return this.dialog.getByRole("button", { name: "Post", exact: true });
+  }
+
+  /** The count of the characters left, or over the limit, as a screen reader reads it. */
+  get count(): Locator {
+    return this.dialog.getByText(/^\d+ characters? (?:left|over)$/);
+  }
+
+  /**
+   * Sends the post, returns once the server has answered and the composer has closed, and gives the posted status's ID
+   * from the server's answer.
+   */
+  async postedId(): Promise<string> {
+    const page = this.dialog.page();
+    const response = page.waitForResponse(
+      (r) => r.request().method() === "POST" && /\/statuses$/.test(new URL(r.url()).pathname),
+    );
+    response.catch(() => undefined);
+    await this.postButton.click();
+    const { id } = (await (await response).json()) as { id: string };
+    await expect(this.dialog).toBeHidden();
+    return id;
+  }
+
+  /**
+   * How many lines each occurrence of `token` in the text is drawn on, in order: 1 for a token that never breaks inside.
+   * A read of the page at one moment: assert on it with `expect.poll`.
+   */
+  async linesOf(token: string): Promise<number[]> {
+    return (await drawn(this.text, token)).map((d) => d.lines);
+  }
+
+  /**
+   * The side of the text box that the first line of each occurrence of `token` in the text keeps to: "left" for a line
+   * that reads left to right, "right" for one that reads right to left. A read of the page at one moment.
+   */
+  async sideOf(token: string): Promise<("left" | "right")[]> {
+    return (await drawn(this.text, token)).map((d) => (d.fromLeft <= d.fromRight ? "left" : "right"));
+  }
+
+  /**
+   * Composes with an input method in the focused field as Japanese input does, through the browser's own composition
+   * events (CDP Input.imeSetComposition): each of `steps` is the composition as it stands after a key, the caret at its
+   * end. The composition stays open until `commit`.
+   */
+  async compose(steps: readonly string[]): Promise<void> {
+    const cdp = await this.#cdp();
+    for (const step of steps)
+      await cdp.send("Input.imeSetComposition", { text: step, selectionStart: step.length, selectionEnd: step.length });
+  }
+
+  /** Ends the open composition with `text`, as the input method commits it (CDP Input.insertText). */
+  async commit(text: string): Promise<void> {
+    await (await this.#cdp()).send("Input.insertText", { text });
+  }
+
+  #session: CDPSession | undefined;
+
+  async #cdp(): Promise<CDPSession> {
+    const page = this.dialog.page();
+    this.#session ??= await page.context().newCDPSession(page);
+    return this.#session;
+  }
+
+  /**
+   * Puts `plain`, and `html` when given, on the clipboard, and pastes it into the focused field as Ctrl+V (⌘V) does.
+   */
+  async paste(data: { plain: string; html?: string }): Promise<void> {
+    const page = this.dialog.page();
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.evaluate(async ({ plain, html }) => {
+      const items: Record<string, Blob> = { "text/plain": new Blob([plain], { type: "text/plain" }) };
+      if (html !== undefined) items["text/html"] = new Blob([html], { type: "text/html" });
+      await navigator.clipboard.write([new ClipboardItem(items)]);
+    }, data);
+    await page.keyboard.press("ControlOrMeta+v");
+  }
+
+  /** Copies the selection of the focused field as Ctrl+C (⌘C) does, and gives the plain text the clipboard holds. */
+  async copy(): Promise<string> {
+    const page = this.dialog.page();
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.evaluate(() => navigator.clipboard.writeText(""));
+    await page.keyboard.press("ControlOrMeta+c");
+    return page.evaluate(() => navigator.clipboard.readText());
+  }
+
+  /**
+   * The text that each CSS Custom Highlight of the page marks in the text box, its ranges joined: the part over the
+   * limit is one of them. A read of the page at one moment: assert on it with `expect.poll`.
+   */
+  async highlighted(): Promise<string[]> {
+    return this.text.evaluate((root) =>
+      Array.from(CSS.highlights.values(), (highlight) =>
+        Array.from(highlight)
+          .filter((r) => r instanceof Range && root.contains(r.commonAncestorContainer))
+          .map(String)
+          .join(""),
+      ),
+    );
   }
 
   /** The button at the end of the text that opens the emoji picker, which writes the emoji picked at the caret. */

@@ -2,8 +2,9 @@
 
 // The composer's view (#3046's rough, ADR-0155, ADR-0156): from the top, the head (the title, then close at its end),
 // the post replied to or quoted (both above the text, as context), the content warning, the text with what the server
-// will read in it (text-tokens.ts) and the part over the limit marked behind it, the suggestions for the word at its
-// caret (suggest.tsx) and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
+// will read in it and the part over the limit marked (the editor of text.tsx, a chunk of its own that comes with this
+// one, which layer.tsx loads once the page is idle or the composer first opens), the suggestions for the word at its caret
+// (suggest.tsx) and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
 // descriptions or the poll as a card, the form's error, and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
 // menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
@@ -18,7 +19,7 @@
 // state is the hook's (use-composer.ts).
 
 import { isRemote, languageName, QuoteContext, ReplyContext } from "@my/app-components";
-import { useCustomEmojis, type Audience, type Interaction, type Visibility } from "@my/app-data";
+import type { Audience, Interaction, Visibility } from "@my/app-data";
 import {
   AttachButton,
   AttachmentList,
@@ -28,6 +29,7 @@ import {
   CharCount,
   CheckField,
   ChoiceBack,
+  FeedNotice,
   ChoiceGroup,
   ChoiceOpens,
   ChoicePopup,
@@ -56,12 +58,14 @@ import {
   WarningField,
   type IconName,
 } from "@my/design-system";
-import { useId, useMemo, useRef, useState, type ReactNode } from "react";
+import type { EditorHandle } from "@my/design-system/editor";
+import { useId, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
+import { ChunkBoundary, retryingLazy } from "./chunk";
 import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
-import { textMarks } from "./text-tokens";
+import type { PostTextProps, WarningTextProps } from "./text";
 import type { MessageId } from "../messages.gen";
 import {
   maxAttachments,
@@ -77,6 +81,90 @@ import {
 import type { Composer } from "./use-composer";
 
 type T = ReturnType<typeof stringsIn>["t"];
+
+/**
+ * The editor's module, fetched once: each call after the first gets the same promise, but after a failed fetch, which
+ * the next tries again; and the module, once here.
+ */
+let loading: Promise<typeof import("./text")> | undefined;
+let loaded: typeof import("./text") | undefined;
+const loadText = () =>
+  (loading ??= import("./text").then(
+    (m) => {
+      loaded = m;
+      return m;
+    },
+    (error: unknown) => {
+      loading = undefined;
+      throw error;
+    },
+  ));
+
+/** Fetches the editor's module with this one, ahead of the composer's first opening. */
+export function preloadComposerText(): void {
+  // A failed fetch is tried again by the next.
+  loadText().catch(() => undefined);
+}
+
+const lazyPostText = retryingLazy(() => loadText().then((m) => m.PostText));
+const lazyWarningText = retryingLazy(() => loadText().then((m) => m.WarningText));
+
+/**
+ * In the text's place when the editors' chunk could not be fetched, once for the whole form: that it could not be
+ * loaded, and Try again, which fetches both editors again.
+ */
+function EditorFailed({ t, retry }: { t: T; retry: () => void }) {
+  return (
+    <FeedNotice alert start action={<TextButton onPress={retry}>{t("compose.load_retry")}</TextButton>}>
+      {t("compose.editor_failed")}
+    </FeedNotice>
+  );
+}
+
+/** An editor chosen once, as it mounts: drawn at once where its module came already, else as it comes. */
+function Chosen<P extends object>({
+  here,
+  fetched,
+  props,
+}: {
+  here: ComponentType<P> | undefined;
+  fetched: () => ComponentType<P>;
+  props: P;
+}) {
+  const [Editor] = useState(() => here ?? fetched());
+  return <Editor {...props} />;
+}
+
+/** Nothing in a failed editor's place: the view says it once, for the whole form (`EditorFailed`). */
+const nothing = () => null;
+
+/** Tries both editors again, as one: they come in one chunk. */
+function retryEditors(): void {
+  lazyPostText.retry();
+  lazyWarningText.retry();
+}
+
+/**
+ * The text's editor: drawn at once where its module came already, so that it takes the focus inside the press that
+ * opened the composer (a phone opens its keyboard only then), else as it comes; one that could not be fetched tells
+ * `onFailed`.
+ */
+function PostText({ onFailed, ...props }: PostTextProps & { onFailed: () => void }) {
+  return (
+    <ChunkBoundary fallback={nothing} onRetry={retryEditors} onFailed={onFailed}>
+      <Chosen here={loaded?.PostText} fetched={lazyPostText.get} props={props} />
+    </ChunkBoundary>
+  );
+}
+
+/** The content warning's editor, as the text's. */
+function WarningText({ onFailed, ...props }: WarningTextProps & { onFailed: () => void }) {
+  return (
+    <ChunkBoundary fallback={nothing} onRetry={retryEditors} onFailed={onFailed}>
+      <Chosen here={loaded?.WarningText} fetched={lazyWarningText.get} props={props} />
+    </ChunkBoundary>
+  );
+}
 
 const visibilityIcon: Record<Visibility, IconName> = {
   public: "public",
@@ -465,6 +553,8 @@ export type ComposerViewProps = {
   onNewer?: (() => void) | undefined;
   /** A specimen opens with this open: the schedule's form, or the drafts' menu in the head. */
   opened?: "schedule" | "drafts" | undefined;
+  /** A specimen shows this as if its chunk could not be fetched: the whole view (the layer's), or its editors. */
+  unloaded?: "composer" | "editor" | undefined;
 };
 
 export function ComposerView({
@@ -478,15 +568,27 @@ export function ComposerView({
   onSaveDraft,
   onNewer,
   opened,
+  unloaded,
 }: ComposerViewProps) {
   const { locale } = useLocale();
-  const textRef = useRef<HTMLTextAreaElement>(null);
-  const cwRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<EditorHandle>(null);
+  const cwRef = useRef<EditorHandle>(null);
+  const errorId = useId();
   const { t, lang } = stringsIn(locale);
   const [open, setOpen] = useState<"audience" | "permissions" | "language" | "schedule" | undefined>(
     opened === "schedule" ? "schedule" : undefined,
   );
   const [draftsOpen, setDraftsOpen] = useState(opened === "drafts");
+  // The content warning was added by the writer here: it takes the focus as it mounts (one opened with it does not).
+  const [cwFocus, setCwFocus] = useState(false);
+  // The editors' chunk could not be fetched (or a specimen shows so): said once, in the text's place, Post disabled and
+  // the count away until Try again brings them; each try mounts them anew.
+  const [editorsFailed, setEditorsFailed] = useState(false);
+  const [editorsTry, setEditorsTry] = useState(0);
+  const editorsDown = unloaded === "editor" || editorsFailed;
+  const failEditors = () => {
+    setEditorsFailed(true);
+  };
   const { draft, settings, answered, problems } = c;
   const busy = c.phase.kind === "posting";
   // Its draft gone from the server: Post posts what is written as a new post, and says so.
@@ -498,8 +600,8 @@ export function ComposerView({
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t, locale);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
-  const emojis = useCustomEmojis();
-  const custom = useMemo(() => new Set(emojis.map((e) => e.shortcode)), [emojis]);
+  const over = problems.over > 0;
+  const roomy = draft.attachments.length === 0 && draft.poll === undefined;
   // The text completes accounts, hashtags and emoji; the content warning, emoji alone (ADR-0092 §5).
   const textSuggest = useSuggestions({ field: textRef, text: draft.text, triggers: ["@", "#", ":"], locale });
   const cwSuggest = useSuggestions({ field: cwRef, text: draft.cw ?? "", triggers: [":"], locale });
@@ -597,7 +699,11 @@ export function ComposerView({
             label={t(draft.cw === undefined ? "compose.cw.on" : "compose.cw.off")}
             pressed={draft.cw !== undefined}
             onPress={() => {
-              c.change({ cw: draft.cw === undefined ? "" : undefined });
+              // The field added takes the focus, to be written at once; taken out, the focus goes back to the text.
+              const adding = draft.cw === undefined;
+              setCwFocus(adding);
+              c.change({ cw: adding ? "" : undefined });
+              if (!adding) textRef.current?.focus();
             }}
           />
           {!editing && (
@@ -641,14 +747,16 @@ export function ComposerView({
         </>
       }
       count={
-        <CharCount
-          left={left}
-          near={nearChars}
-          label={left < 0 ? t("compose.over", { count: -left }) : t("compose.remaining", { count: left })}
-        />
+        editorsDown ? undefined : (
+          <CharCount
+            left={left}
+            near={nearChars}
+            label={left < 0 ? t("compose.over", { count: -left }) : t("compose.remaining", { count: left })}
+          />
+        )
       }
       action={
-        <Button kind="primary" size="timeline" busy={busy} onPress={c.submit}>
+        <Button kind="primary" size="timeline" busy={busy} isDisabled={editorsDown} onPress={c.submit}>
           {t(
             editing
               ? "compose.save"
@@ -679,50 +787,64 @@ export function ComposerView({
         />
       )}
       {draft.cw !== undefined && (
-        <WarningField
-          value={draft.cw}
-          label={t("compose.cw.label")}
-          placeholder={t("compose.cw.placeholder")}
-          marks={textMarks(draft.cw, custom, ["emoji"])}
-          inputRef={cwRef}
-          completes
-          suggest={cwSuggest.suggest}
-          {...cwSuggest.caret}
-          readOnly={busy}
-          onChange={(cw) => {
-            c.change({ cw });
-          }}
-        />
+        <WarningField>
+          {!editorsDown && (
+            <WarningText
+              key={editorsTry}
+              onFailed={failEditors}
+              value={draft.cw}
+              label={t("compose.cw.label")}
+              placeholder={t("compose.cw.placeholder")}
+              handle={cwRef}
+              autoFocus={cwFocus}
+              suggest={cwSuggest.suggest}
+              {...cwSuggest.caret}
+              readOnly={busy}
+              onChange={(cw) => {
+                c.change({ cw });
+              }}
+            />
+          )}
+        </WarningField>
       )}
       <ComposerText
-        value={draft.text}
-        label={t("compose.text.label")}
-        placeholder={t("compose.text.placeholder")}
-        over={problems.over}
-        marks={textMarks(draft.text, custom)}
-        completes
-        suggest={textSuggest.suggest}
-        {...textSuggest.caret}
-        error={problems.over > 0 ? t("compose.too_long", { max: settings.maxChars }) : undefined}
-        readOnly={busy}
-        roomy={draft.attachments.length === 0 && draft.poll === undefined}
-        autoFocus={layer}
-        textRef={textRef}
-        end={
-          <ComposerEmoji
-            textRef={textRef}
-            value={draft.text}
-            sheet={pickerSheet}
-            disabled={busy}
-            onChange={(text) => {
-              c.change({ text });
+        error={over && !editorsDown ? t("compose.too_long", { max: settings.maxChars }) : undefined}
+        errorId={errorId}
+        roomy={roomy}
+        end={editorsDown ? undefined : <ComposerEmoji text={textRef} sheet={pickerSheet} disabled={busy} />}
+      >
+        {editorsDown ? (
+          <EditorFailed
+            t={t}
+            retry={() => {
+              retryEditors();
+              setEditorsFailed(false);
+              setEditorsTry((n) => n + 1);
             }}
           />
-        }
-        onChange={(text) => {
-          c.change({ text });
-        }}
-      />
+        ) : (
+          <PostText
+            key={editorsTry}
+            onFailed={failEditors}
+            value={draft.text}
+            label={t("compose.text.label")}
+            placeholder={t("compose.text.placeholder")}
+            over={problems.over}
+            describedBy={over ? errorId : undefined}
+            invalid={over}
+            readOnly={busy}
+            roomy={roomy}
+            autoFocus={layer}
+            ended
+            handle={textRef}
+            suggest={textSuggest.suggest}
+            {...textSuggest.caret}
+            onChange={(value) => {
+              c.change({ text: value });
+            }}
+          />
+        )}
+      </ComposerText>
       {draft.attachments.length > 0 && (
         <AttachmentList>
           {draft.attachments.map((a) => (

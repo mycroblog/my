@@ -3,12 +3,10 @@
 // The tokens of the text a writer types, under the server's rules (ADR-0092 §4): mentions, hashtags and URLs as
 // ParseText in internal/app/content/text.go finds them (FR-103), and `:shortcode:`s as ScanShortcodes in
 // internal/domain/content/custom_emoji.go finds them (ADR-0051); the word being typed at the caret, which the
-// suggestions complete; and the marks the composer paints behind its text. Go and this file read the same vectors,
-// pkg/testkit/fixtures/text/tokens.json, so a change to the rules has to change both. Offsets are UTF-16 code units,
-// the offsets of a textarea's value and selection. Go's "word" characters are letters (L), marks (M), decimal digits
-// (Nd only: unicode.IsDigit) and `_`, which is why the patterns use \p{Nd}, not \p{N}.
-
-import type { TextMark } from "@my/design-system";
+// suggestions complete. The composer's editor marks the tokens as its nodes (text.tsx). Go and this file read the same
+// vectors, pkg/testkit/fixtures/text/tokens.json, so a change to the rules has to change both. Offsets are UTF-16 code
+// units, the offsets of the editor's plain text and selection. Go's "word" characters are letters (L), marks (M),
+// decimal digits (Nd only: unicode.IsDigit) and `_`, which is why the patterns use \p{Nd}, not \p{N}.
 
 /** What a token is. */
 type TextTokenKind = "mention" | "hashtag" | "url" | "shortcode";
@@ -287,28 +285,4 @@ export function activeWord(text: string, cursor: number): ActiveWord | null {
     return { trigger, start, end: cursor, query: before.slice(start + 1) };
   }
   return null;
-}
-
-const markOf: Readonly<Record<TextTokenKind, TextMark["kind"]>> = {
-  mention: "mention",
-  hashtag: "hashtag",
-  url: "url",
-  shortcode: "emoji",
-};
-
-/**
- * What the composer marks behind `text` as it is typed: its mentions, hashtags and URLs, and the `:shortcode:`s of the
- * custom emoji in `custom` (others stay plain: the server draws none for them). `kinds` limits them: the content
- * warning marks its custom emoji alone (ADR-0092 §5).
- */
-export function textMarks(
-  text: string,
-  custom: ReadonlySet<string>,
-  kinds: readonly TextMark["kind"][] = ["url", "mention", "hashtag", "emoji"],
-): TextMark[] {
-  return textTokens(text).flatMap((t) => {
-    const kind = markOf[t.kind];
-    if (!kinds.includes(kind) || (t.kind === "shortcode" && !custom.has(t.text.slice(1, -1)))) return [];
-    return [{ start: t.start, end: t.end, kind }];
-  });
 }

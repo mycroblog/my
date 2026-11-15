@@ -23,6 +23,18 @@
     "defaultMessage": "Close",
     "description": "The button at the end of the composer's head that leaves it; a written post is discarded, with Undo."
   },
+  "compose.load_failed": {
+    "defaultMessage": "The post form could not be loaded.",
+    "description": "In place of the post composer when its code could not be loaded (the network), beside compose.load_retry."
+  },
+  "compose.editor_failed": {
+    "defaultMessage": "The text field could not be loaded.",
+    "description": "In place of the composer's text or content warning field when its code could not be loaded (the network), beside compose.load_retry."
+  },
+  "compose.load_retry": {
+    "defaultMessage": "Try again",
+    "description": "After compose.load_failed or compose.editor_failed: loads the composer or its field again."
+  },
   "compose.post": {
     "defaultMessage": "Post",
     "description": "The composer's primary button, which posts what is written."

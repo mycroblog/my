@@ -42,41 +42,19 @@ test("while what was written is sent, close stays in its place, disabled, with n
   expect(frame(false)).not.toMatch(/disabled=""/);
 });
 
-test("the composer is drawn as it mounts, through the modal of modal.tsx, its text focused inside the press", async () => {
+test("the composer is drawn as it mounts, through the modal of modal.tsx", async () => {
   const source = await Bun.file(new URL("./composer.tsx", import.meta.url)).text();
   expect(source).toContain('import { ModalLayer } from "./modal";');
-  // The text takes the focus as it mounts, inside the press, so that a phone opens its keyboard.
-  const text = renderToStaticMarkup(
-    <ComposerText value="" onChange={none} label="Text" placeholder="…" over={0} autoFocus />,
-  );
-  expect(text).toContain("autofocus");
 });
 
-test("the text marks the characters over the limit behind it, and says what is wrong under it", () => {
+test("the text holds its editor, and says what is wrong under it by the ID its editor is described by", () => {
   const html = renderToStaticMarkup(
-    <ComposerText value="abcdef" onChange={none} label="Text" placeholder="…" over={2} error="Too long" />,
+    <ComposerText error="Too long" errorId="e1">
+      <div role="textbox" aria-describedby="e1" />
+    </ComposerText>,
   );
-  expect(html).toMatch(/aria-hidden="true" dir="auto">abcd<mark class="[^"]*">ef<\/mark>/);
-  expect(html).toContain('aria-invalid="true"');
-  expect(html).toContain("Too long");
-});
-
-test("the text marks what the server will read behind it, the part over the limit over any mark in it", () => {
-  const html = renderToStaticMarkup(
-    <ComposerText
-      value="hi @sam #tag"
-      onChange={none}
-      label="Text"
-      placeholder="…"
-      over={2}
-      marks={[
-        { start: 3, end: 7, kind: "mention" },
-        { start: 8, end: 12, kind: "hashtag" },
-      ]}
-    />,
-  );
-  expect(html).toMatch(/>hi <mark class="[^"]*bg-mark[^"]*">@sam<\/mark> <mark class="[^"]*bg-mark[^"]*">#t<\/mark>/);
-  expect(html).toMatch(/<mark class="[^"]*bg-surface-raised-pressed[^"]*">ag<\/mark>/);
+  expect(html).toContain('role="textbox"');
+  expect(html).toMatch(/id="e1"[^>]*>.*Too long/);
 });
 
 test("the count is muted until near the limit, strong past it, and read as words", () => {

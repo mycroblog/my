@@ -41,13 +41,9 @@ export {
   ToolText,
   UndoNotice,
   WarningField,
-  writeInField,
   type AttachmentRowProps,
   type Choice,
   type ComposerFrameProps,
-  type FieldCaret,
-  type FieldSuggest,
-  type TextMark,
 } from "./composer";
 export { SuggestionList, type Suggestion, type SuggestionListProps } from "./suggestions";
 export {
@@ -147,6 +143,7 @@ export {
 } from "./form-page";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
+export { whenIdle } from "./idle";
 export { catalogReader, type Strings } from "./locale";
 export { LinkCard, type LinkCardProps } from "./card";
 export { AudioRow, FileLink, MediaGrid, playTime, type MediaGridProps, type MediaItem, type MediaKind } from "./media";

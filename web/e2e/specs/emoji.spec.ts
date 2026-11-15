@@ -47,7 +47,7 @@ test("an emoji written in the composer is drawn with the self-hosted Noto Color 
   await signIn(writer);
   const composer = await new Frame(page).newPost();
   await composer.write("Lunch on the ridge 🍙");
-  await expect(composer.text).toHaveValue("Lunch on the ridge 🍙");
+  await composer.holds("Lunch on the ridge 🍙");
   await expect.poll(() => fonts.drawing("🍙")).toContainEqual(selfHostedNoto);
   await fonts.settled();
   expect(fonts.fetched).toEqual(["noto-emoji-colrv1-food-drink.woff2"]);

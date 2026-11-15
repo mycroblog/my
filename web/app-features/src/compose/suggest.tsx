@@ -12,14 +12,8 @@
 
 import { AccountName, nameOf } from "@my/app-components";
 import { useAccountSearch, useCustomEmojis, useTagSearch, type PickerCustomEmoji } from "@my/app-data";
-import {
-  SuggestionList,
-  writeInField,
-  type FieldCaret,
-  type FieldSuggest,
-  type PickerEmoji,
-  type Suggestion,
-} from "@my/design-system";
+import { SuggestionList, type PickerEmoji, type Suggestion } from "@my/design-system";
+import type { EditorHandle, FieldCaret, FieldSuggest } from "@my/design-system/editor";
 import { useEffect, useId, useState, type RefObject } from "react";
 import { useFrequentEmojis } from "../emoji/device";
 import { usePickerData, useUnicodeReady } from "../emoji/picker";
@@ -90,7 +84,7 @@ export function useSuggestions({
   triggers,
   locale,
 }: {
-  field: RefObject<HTMLTextAreaElement | HTMLInputElement | null>;
+  field: RefObject<EditorHandle | null>;
   text: string;
   triggers: readonly TokenTrigger[];
   locale: string;
@@ -216,11 +210,16 @@ export function useSuggestions({
   const kind = kindOf[trigger];
   const accept = (index: number) => {
     const option = options?.[index];
-    const element = field.current;
-    if (option === undefined || element === null) return;
+    const editor = field.current;
+    if (option === undefined || editor === null) return;
     // The word as accepted does not open the list again, where no space could follow it (before a line's end).
     setClosed({ start: word.start, query: option.value.slice(1) });
-    writeInField(element, word.start, word.end, option.value);
+    // A space follows unless white space does; the caret goes after that space (not past a line's end).
+    const next = text.charAt(word.end);
+    const spaced = /\s/u.test(next);
+    const insert = spaced ? option.value : `${option.value} `;
+    const after = spaced && next !== "\n" && next !== "\r" ? 1 : 0;
+    editor.write(word.start, word.end, insert, word.start + insert.length + after);
   };
   const status =
     options === undefined

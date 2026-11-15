@@ -238,6 +238,13 @@ export class Fresh {
     if (error !== undefined) throw new Error(`fresh: ${by.username} could not react to ${post.id}`);
   }
 
+  /** The text and the content warning of `author`'s post `id` as the server keeps them (its source). */
+  async source(author: Person, id: string): Promise<{ text: string; spoiler: string }> {
+    const { data } = await (await this.#api(author)).GET("/statuses/{id}/source", { params: { path: { id } } });
+    const source = body(data, `the source of ${id}`);
+    return { text: source.text, spoiler: source.spoiler_text };
+  }
+
   /** `author` deletes their post `post`. */
   async deletion(author: Person, post: FreshPost): Promise<void> {
     const { error } = await (await this.#api(author)).DELETE("/statuses/{id}", { params: { path: { id: post.id } } });

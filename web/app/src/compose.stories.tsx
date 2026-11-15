@@ -363,6 +363,22 @@ const states = {
     draft: (d, w) => ({ ...d, text: w.later, failure: { publishAt: dayAt(-1, 9), reason: "rejected" } }),
   },
   conflict: { name: "Newer draft elsewhere", target: nw, draft: typed, specimen: { phase: { kind: "conflict" } } },
+  gone: { name: "Draft gone from the server", target: nw, draft: typed, specimen: { phase: { kind: "gone" } } },
+  // Being sent: Close, Post and the tools wait for the answer.
+  posting: { name: "Posting", target: nw, draft: typed, specimen: { phase: { kind: "posting" } } },
+  // The chunk of the composer's view, or of its editor, could not be fetched (the network).
+  "unloaded-composer": {
+    name: "Post form not loaded",
+    target: nw,
+    draft: typed,
+    specimen: { unloaded: "composer" },
+  },
+  "unloaded-editor": {
+    name: "Editor not loaded",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.cw, text: w.cwText }),
+    specimen: { unloaded: "editor" },
+  },
 } satisfies Record<string, State>;
 
 type StateId = keyof typeof states;
@@ -422,9 +438,11 @@ const settle = async ({ canvasElement, parameters }: StoryContext) => {
   const state = composeOf(parameters);
   // The handle of the author of the post a reply or a quote is of (sam-bread, layla-jokes), which shows once it came.
   const of = state === "reply" ? "@sam" : state === "quote" ? "@layla" : "";
+  // A state whose chunk was not loaded shows its alert in the text field's place.
+  const field = state.startsWith("unloaded-") ? '[role="alert"]' : '[role="textbox"][aria-multiline="true"]';
   await waitFor(
     () => {
-      const ready = canvasElement.querySelector('[role="textbox"], textarea') !== null;
+      const ready = canvasElement.querySelector(field) !== null;
       if (!ready || !canvasElement.textContent.includes(of))
         throw new Error(`the composer does not show its ${state} state yet`);
     },
@@ -447,7 +465,9 @@ const openEmoji = async (context: StoryContext) => {
   await settle(context);
   const doc = context.canvasElement.ownerDocument;
   // The button at the end of the text's first line, in any locale.
-  context.canvasElement.querySelector<HTMLButtonElement>("textarea ~ div button")?.click();
+  context.canvasElement
+    .querySelector<HTMLButtonElement>('div:has(> [role="textbox"][aria-multiline="true"]) ~ div button')
+    ?.click();
   await waitFor(
     () => {
       const grid = doc.querySelector('[role="grid"]');
@@ -468,14 +488,22 @@ const openEmoji = async (context: StoryContext) => {
  */
 const suggest = async (context: StoryContext) => {
   await settle(context);
-  const field = context.canvasElement.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-    composeOf(context.parameters) === "suggest-cw" ? "input[aria-autocomplete]" : "textarea[aria-autocomplete]",
+  const multiline = composeOf(context.parameters) === "suggest-cw" ? "false" : "true";
+  const field = await waitFor(
+    () => {
+      const found = context.canvasElement.querySelector<HTMLElement>(
+        `[role="textbox"][aria-autocomplete][aria-multiline="${multiline}"]`,
+      );
+      if (found === null) throw new Error("the composer has no field to suggest in");
+      return found;
+    },
+    { timeout: 5000 },
   );
-  if (field === null) throw new Error("the composer has no field to suggest in");
-  // As a reader presses End: the caret moves, and the key's release tells the field where it is.
+  // As a reader presses End: the caret goes to the end of the text, which tells the suggestions where it is.
   field.focus();
-  field.setSelectionRange(field.value.length, field.value.length);
-  field.dispatchEvent(new KeyboardEvent("keyup", { key: "End", bubbles: true }));
+  const selection = field.ownerDocument.getSelection();
+  selection?.selectAllChildren(field);
+  selection?.collapseToEnd();
   await waitFor(
     () => {
       if (context.canvasElement.querySelectorAll('[role="listbox"] [role="option"]').length === 0)
@@ -565,6 +593,17 @@ export const DraftsMenu: Story = shows("drafts-menu");
 export const ScheduleFailed: Story = shows("schedule-failed");
 /** A save refused for a newer draft saved on another device: it says so, and opens the newer one. */
 export const NewerDraft: Story = shows("conflict");
+/** The draft is no longer on the server: what was written stays, and Post reads Post as new, which posts it so. */
+export const DraftGone: Story = shows("gone");
+/** Being sent: Post shows it is sending, and Close stays in its place, disabled. */
+export const Posting: Story = shows("posting");
+/** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
+export const PostFormNotLoaded: Story = shows("unloaded-composer");
+/**
+ * The editors could not be fetched: once, in the text's place, that it could not be loaded, and Try again; the content
+ * warning's band empty, the count away and Post disabled.
+ */
+export const EditorNotLoaded: Story = shows("unloaded-editor");
 export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
 export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
 /** A time set at the narrowest width: the row keeps its tools, the count and Schedule on one line. */

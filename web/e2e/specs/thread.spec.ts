@@ -29,7 +29,7 @@ test("a person replies in a thread and the reply stays there after a reload", as
   await homeTimeline(page).post(author.displayName, post.text).open();
   const thread = new Thread(page);
   const composer = await thread.post(author.displayName, post.text).reply();
-  await expect(composer.text).toHaveValue(new RegExp(`^@${author.username}\\b`));
+  await composer.holds(new RegExp(`^@${author.username}\\b`));
   await composer.write(text);
   await composer.post();
   await expect(thread.post(replier.displayName, text).article).toBeVisible();

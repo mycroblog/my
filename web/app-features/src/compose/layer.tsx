@@ -30,10 +30,19 @@ import {
   type ComposeWrites,
   type Status,
 } from "@my/app-data";
-import { ModalPresence, UndoNotice, useLocale } from "@my/design-system";
-import { useEffect, useRef, useState } from "react";
+import {
+  ComposerFrame,
+  FeedNotice,
+  ModalPresence,
+  TextButton,
+  UndoNotice,
+  useLocale,
+  whenIdle,
+} from "@my/design-system";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { stringsIn } from "../locale";
-import { ComposerView, type ComposerViewProps } from "./composer";
+import { ChunkBoundary, retryingLazy } from "./chunk";
+import type { ComposerViewProps } from "./composer";
 import { DraftsView } from "./drafts";
 import { KeptDrafts } from "./kept";
 import { emptyDraft, fromServer, targetKey, written, type Draft, type Opening } from "./model";
@@ -41,6 +50,80 @@ import { useComposer, type Phase } from "./use-composer";
 
 /** How long the notice of a discarded post offers Undo. */
 const undoMs = 6000;
+
+/**
+ * The composer's view, a chunk of its own apart from the entry, fetched once (each call after the first gets the same
+ * promise, but after a failed fetch, which the next tries again), with its editor; and the module, once here.
+ */
+let loading: Promise<typeof import("./composer")> | undefined;
+let loaded: typeof import("./composer") | undefined;
+const loadView = () =>
+  (loading ??= import("./composer").then(
+    (m) => {
+      loaded = m;
+      m.preloadComposerText();
+      return m;
+    },
+    (error: unknown) => {
+      loading = undefined;
+      throw error;
+    },
+  ));
+
+/** Fetches the composer's view and its editor ahead of its first opening. */
+function preloadComposer(): void {
+  // A failed fetch is tried again by the next.
+  loadView().catch(() => undefined);
+}
+
+const lazyComposerView = retryingLazy(() => loadView().then((m) => m.ComposerView));
+
+/** The view chosen once, as it mounts: drawn at once where its module came already, else as it comes. */
+function ChosenView(props: ComposerViewProps) {
+  const [View] = useState(() => loaded?.ComposerView ?? lazyComposerView.get());
+  return (
+    <Suspense fallback={null}>
+      <View {...props} />
+    </Suspense>
+  );
+}
+
+/**
+ * In the view's place when its chunk could not be fetched: the composer's frame, as tall as what it holds, that it
+ * could not be loaded at the start under its title, and Try again.
+ */
+function ViewFailed({ c, layer, phone, onClose, onDismiss, retry }: ComposerViewProps & { retry: () => void }) {
+  const { t } = stringsIn(useLocale().locale);
+  const kind = c.draft.target.kind;
+  return (
+    <ComposerFrame
+      title={t(`compose.title.${kind === "redraft" ? "new" : kind}`)}
+      closeLabel={t("compose.close")}
+      onClose={onClose}
+      onDismiss={onDismiss}
+      layer={layer}
+      phone={phone}
+      fit
+    >
+      <FeedNotice alert start action={<TextButton onPress={retry}>{t("compose.load_retry")}</TextButton>}>
+        {t("compose.load_failed")}
+      </FeedNotice>
+    </ComposerFrame>
+  );
+}
+
+/**
+ * The composer's view: drawn at once where its module came already, so that its text takes the focus inside the press
+ * that opened it (a phone opens its keyboard only then), else as it comes; one that could not be fetched says so.
+ */
+function ComposerView(props: ComposerViewProps) {
+  if (props.unloaded === "composer") return <ViewFailed {...props} retry={() => undefined} />;
+  return (
+    <ChunkBoundary fallback={(retry) => <ViewFailed {...props} retry={retry} />} onRetry={lazyComposerView.retry}>
+      <ChosenView {...props} />
+    </ChunkBoundary>
+  );
+}
 
 /** The drafts left by accident, by their target's key, with their writes on the server in order. */
 const kept = new KeptDrafts();
@@ -66,6 +149,7 @@ function Open({
   onNewer,
   phase,
   opened,
+  unloaded,
 }: {
   initial: Draft;
   layer: boolean;
@@ -77,6 +161,7 @@ function Open({
   onNewer: (d: Draft) => void;
   phase: Phase | undefined;
   opened: ComposerViewProps["opened"];
+  unloaded: ComposerViewProps["unloaded"];
 }) {
   const c = useComposer(
     initial,
@@ -100,6 +185,7 @@ function Open({
       phone={phone}
       pickerSheet={pickerSheet}
       opened={opened}
+      unloaded={unloaded}
       onClose={() => {
         onLeave("close", c.draft);
       }}
@@ -182,10 +268,11 @@ export type ComposeLayerProps = {
   specimen?: ComposeSpecimen | undefined;
 };
 
-/** A story's specimen of the composer: the phase it opens in, and what is open in it. */
+/** A story's specimen of the composer: the phase it opens in, what is open in it, and what could not be loaded. */
 export type ComposeSpecimen = {
   readonly phase?: Phase | undefined;
   readonly opened?: ComposerViewProps["opened"];
+  readonly unloaded?: ComposerViewProps["unloaded"];
 };
 
 /**
@@ -226,6 +313,9 @@ export function ComposeLayer({
     setScreens(undefined);
     onClose();
   };
+
+  // The composer's view and its editor come once the page is idle, so that it opens with its text ready to write.
+  useEffect(() => whenIdle(preloadComposer), []);
 
   // A new target opens a new composer; the one before was left already, or is left by accident now (the app closed it
   // without a word).
@@ -348,6 +438,7 @@ export function ComposeLayer({
             }}
             phase={screen === undefined ? specimen.phase : undefined}
             opened={composing.schedule ? "schedule" : screen === undefined ? specimen.opened : undefined}
+            unloaded={screen === undefined ? specimen.unloaded : undefined}
           />
         )}
         {target && screen?.kind === "drafts" && (

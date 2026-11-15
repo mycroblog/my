@@ -15,7 +15,8 @@
     "@my/app-components": "workspace:*",
     "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",
-    "@my/platform": "workspace:*"
+    "@my/platform": "workspace:*",
+    "lexical": "0.53.0"
   },
   "peerDependencies": {
     "react": "19.3.1"

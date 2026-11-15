@@ -409,25 +409,30 @@ export function FeedItem({ id, position, children }: { id: string; position: num
 
 const notice = tv({
   slots: {
-    root: "m-0 text-center text-caption text-muted-text",
+    root: "m-0 text-caption text-muted-text",
     action: "whitespace-nowrap",
   },
+  // Centered under a feed; at the start in a form, as its fields read.
+  variants: { start: { true: { root: "text-start" }, false: { root: "text-center" } } },
 });
 
 /**
  * A line after a feed's entries, centered and muted: that it loads, that it failed (`alert`), or that it has none,
- * with an action after it (a `TextButton`, such as trying again), apart from it by a middle dot.
+ * with an action after it (a `TextButton`, such as trying again), apart from it by a middle dot. `start` lines it up
+ * at the start instead, in a form.
  */
 export function FeedNotice({
   alert = false,
+  start = false,
   action,
   children,
 }: {
   alert?: boolean | undefined;
+  start?: boolean | undefined;
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const s = notice();
+  const s = notice({ start });
   return (
     <p role={alert ? "alert" : "status"} className={s.root()}>
       {children}
