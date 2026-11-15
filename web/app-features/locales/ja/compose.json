@@ -67,6 +67,34 @@
     "defaultMessage": "絵文字を入れる",
     "description": "The button at the end of the composer's text that opens the emoji picker, which writes the emoji picked at the caret; also the title of the picker's sheet on a phone."
   },
+  "compose.suggest.list": {
+    "defaultMessage": "{kind, select, account {アカウント} hashtag {ハッシュタグ} other {絵文字}}",
+    "description": "The name, for assistive technology, of the suggestions that open under the line of the composer's text for the word being typed at the caret: accounts for @, hashtags for #, emoji for :. kind is account, hashtag or emoji."
+  },
+  "compose.suggest.account": {
+    "defaultMessage": "{name}、{handle}",
+    "description": "The name, for assistive technology, of an account among the composer's suggestions, which shows its avatar, name and handle on one row. name is its display name in words (custom emoji as their :shortcode:); handle is @user for a local account, @user@domain for another server's."
+  },
+  "compose.suggest.uses": {
+    "defaultMessage": "{count, plural, other {# 件}}",
+    "description": "At the end of a hashtag's row among the composer's suggestions: how many posts carry the hashtag. count is how many."
+  },
+  "compose.suggest.hashtag": {
+    "defaultMessage": "#{name}、{count, plural, other {# 件の投稿}}",
+    "description": "The name, for assistive technology, of a hashtag among the composer's suggestions: the tag with its # sign, and how many posts carry it. name is the tag without #; count is how many."
+  },
+  "compose.suggest.loading": {
+    "defaultMessage": "候補を読み込んでいます…",
+    "description": "The one line in place of the composer's suggestions while they are asked for, after a moment; also announced."
+  },
+  "compose.suggest.none": {
+    "defaultMessage": "{kind, select, account {合うアカウントはありません} hashtag {合うハッシュタグはありません} other {合う絵文字はありません}}",
+    "description": "The one line in place of the composer's suggestions when none match the word being typed at the caret; also announced. The word can still be posted as typed. kind is account, hashtag or emoji."
+  },
+  "compose.suggest.count": {
+    "defaultMessage": "{count, plural, other {候補 # 件}}",
+    "description": "Announced to assistive technology when the composer's suggestions open or change: how many there are (the text field cannot say it is expanded). count is how many, at least 1."
+  },
   "compose.attach": {
     "defaultMessage": "画像を添付",
     "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."

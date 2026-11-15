@@ -35,7 +35,8 @@ import type { UnicodeSet } from "./unicode/set";
 /** What the picker is given, but where it opens and what a pick does. */
 export type PickerData = {
   sections: readonly EmojiSection[];
-  search: (query: string) => readonly PickerEmoji[];
+  /** The emoji that match `query`, best first; within a match as good, those `first` picks first. */
+  search: (query: string, first?: (emoji: PickerEmoji) => boolean) => readonly PickerEmoji[];
   labels: EmojiPickerLabels;
   tone: number;
   onToneChange: (tone: number) => void;
@@ -134,6 +135,9 @@ function useUnicode(locale: string): { set: UnicodeSet; lib: Lib } | undefined {
   return shown.key === key ? shown.ready : readyOf(key);
 }
 
+/** Whether the Unicode emoji of `locale` arrived: the search runs over every emoji; until then it finds none. */
+export const useUnicodeReady = (locale: string): boolean => useUnicode(locale) !== undefined;
+
 /** A custom emoji as the picker offers it, keyed by `:shortcode:`. */
 const customOf = (e: PickerCustomEmoji): PickerEmoji => ({
   key: `:${e.shortcode}:`,
@@ -201,8 +205,8 @@ export function usePickerData(locale: string): PickerData {
     [custom, customEmojis, lib],
   );
   const unicodeIndex = set?.index;
-  const search = (query: string): readonly PickerEmoji[] =>
-    lib === undefined || unicodeIndex === undefined ? [] : lib.searchIndex([customIndex, unicodeIndex()], query);
+  const search = (query: string, first?: (emoji: PickerEmoji) => boolean): readonly PickerEmoji[] =>
+    lib === undefined || unicodeIndex === undefined ? [] : lib.searchIndex([customIndex, unicodeIndex()], query, first);
   return {
     sections,
     search,

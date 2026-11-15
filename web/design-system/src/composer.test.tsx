@@ -44,9 +44,27 @@ test("the text marks the characters over the limit behind it, and says what is w
   const html = renderToStaticMarkup(
     <ComposerText value="abcdef" onChange={none} label="Text" placeholder="…" over={2} error="Too long" />,
   );
-  expect(html).toMatch(/aria-hidden="true">abcd<mark class="[^"]*">ef<\/mark>/);
+  expect(html).toMatch(/aria-hidden="true" dir="auto">abcd<mark class="[^"]*">ef<\/mark>/);
   expect(html).toContain('aria-invalid="true"');
   expect(html).toContain("Too long");
+});
+
+test("the text marks what the server will read behind it, the part over the limit over any mark in it", () => {
+  const html = renderToStaticMarkup(
+    <ComposerText
+      value="hi @sam #tag"
+      onChange={none}
+      label="Text"
+      placeholder="…"
+      over={2}
+      marks={[
+        { start: 3, end: 7, kind: "mention" },
+        { start: 8, end: 12, kind: "hashtag" },
+      ]}
+    />,
+  );
+  expect(html).toMatch(/>hi <mark class="[^"]*bg-mark[^"]*">@sam<\/mark> <mark class="[^"]*bg-mark[^"]*">#t<\/mark>/);
+  expect(html).toMatch(/<mark class="[^"]*bg-surface-raised-pressed[^"]*">ag<\/mark>/);
 });
 
 test("the count is muted until near the limit, strong past it, and read as words", () => {

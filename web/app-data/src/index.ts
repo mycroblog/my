@@ -26,6 +26,14 @@ export {
   type StreamedTimeline,
 } from "./arrivals";
 export {
+  accountSearchQuery,
+  tagSearchQuery,
+  useAccountSearch,
+  useTagSearch,
+  type Searched,
+  type TagSuggestion,
+} from "./completion";
+export {
   aroundLimit,
   openVoiceRoomsQuery,
   upcomingEventsQuery,

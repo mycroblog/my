@@ -41,10 +41,15 @@ export {
   ToolText,
   UndoNotice,
   WarningField,
+  writeInField,
   type AttachmentRowProps,
   type Choice,
   type ComposerFrameProps,
+  type FieldCaret,
+  type FieldSuggest,
+  type TextMark,
 } from "./composer";
+export { SuggestionList, type Suggestion, type SuggestionListProps } from "./suggestions";
 export {
   ContentBody,
   ContentLink,

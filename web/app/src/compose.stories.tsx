@@ -181,6 +181,13 @@ const words = {
     options: ["Saturday morning", "Saturday evening", "Sunday afternoon"],
     alt: "Low hills under a dusk sky, a sun just above the ridge",
     edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
+    marked:
+      "Thanks @sam and @layla@social.example for the walk :sparkle: Photos at https://photos.example/ridge #山 #hiking",
+    markedCw: "Trail photos :sparkle: lots of them",
+    suggestAccount: "Lunch tomorrow with @m",
+    suggestHashtag: "Day 4 of the sourdough experiment #ba",
+    suggestEmoji: "Good morning :wa",
+    suggestCw: "Trail photos :sp",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -194,6 +201,13 @@ const words = {
     options: ["土曜の午前", "土曜の夜", "日曜の午後"],
     alt: "夕暮れの空の下の低い丘。尾根のすぐ上に太陽",
     edit: "今朝の尾根。三時に起きた甲斐がありました #山 #写真",
+    marked:
+      "@sam さん @layla@social.example さん、今日はありがとう :sparkle: 写真は https://photos.example/ridge に #山 #写真",
+    markedCw: "登山の写真 :sparkle: たくさん",
+    suggestAccount: "明日のお昼は @m",
+    suggestHashtag: "今朝の尾根 #写",
+    suggestEmoji: "おはよう :wa",
+    suggestCw: "登山の写真 :sp",
   },
 };
 
@@ -261,6 +275,27 @@ const states = {
     draft: (d, w) => ({ ...d, text: w.direct, visibility: "direct" }),
   },
   cw: { name: "Content warning", target: nw, draft: (d, w) => ({ ...d, cw: w.cw, text: w.cwText }) },
+  marks: {
+    name: "Mentions, hashtags, a URL and custom emoji",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.markedCw, text: w.marked }),
+  },
+  "suggest-account": {
+    name: "Suggesting accounts",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.suggestAccount }),
+  },
+  "suggest-hashtag": {
+    name: "Suggesting hashtags",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.suggestHashtag }),
+  },
+  "suggest-emoji": { name: "Suggesting emoji", target: nw, draft: (d, w) => ({ ...d, text: w.suggestEmoji }) },
+  "suggest-cw": {
+    name: "Suggesting emoji in the content warning",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.suggestCw, text: w.cwText }),
+  },
   images: {
     name: "Images: described, not yet, processing, failed",
     target: nw,
@@ -382,6 +417,29 @@ const openEmoji = async (context: StoryContext) => {
   );
 };
 
+/**
+ * Puts the caret at the end of the field whose word is suggested for (the content warning's for `suggest-cw`, else the
+ * text's), as a reader who typed it, and waits until the suggestions list their options.
+ */
+const suggest = async (context: StoryContext) => {
+  await settle(context);
+  const field = context.canvasElement.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+    composeOf(context.parameters) === "suggest-cw" ? "input[aria-autocomplete]" : "textarea[aria-autocomplete]",
+  );
+  if (field === null) throw new Error("the composer has no field to suggest in");
+  // As a reader presses End: the caret moves, and the key's release tells the field where it is.
+  field.focus();
+  field.setSelectionRange(field.value.length, field.value.length);
+  field.dispatchEvent(new KeyboardEvent("keyup", { key: "End", bubbles: true }));
+  await waitFor(
+    () => {
+      if (context.canvasElement.querySelectorAll('[role="listbox"] [role="option"]').length === 0)
+        throw new Error("the composer suggests nothing yet");
+    },
+    { timeout: 5000 },
+  );
+};
+
 /** Waits until the app shows the home timeline's posts. */
 const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   await waitFor(
@@ -423,6 +481,21 @@ export const FollowersOnly: Story = shows("visibility-private");
 export const Permissions: Story = shows("permissions");
 export const Direct: Story = shows("visibility-direct");
 export const ContentWarning: Story = shows("cw");
+/**
+ * What the server will read, marked behind the text as it is typed: mentions, hashtags, a URL and a custom emoji; in
+ * the content warning, its custom emoji alone.
+ */
+export const Marks: Story = shows("marks");
+export const MarksRightToLeft: Story = { ...shows("marks"), globals: rightToLeft };
+/** `@m` typed: the accounts the server found, the followed first, under the caret's line, the first active. */
+export const SuggestAccounts: Story = { ...shows("suggest-account"), play: suggest };
+export const SuggestAccountsRightToLeft: Story = { ...shows("suggest-account"), play: suggest, globals: rightToLeft };
+/** `#ba` (`#写` in ja): the hashtags the server found, the most used first, with how many posts carry each. */
+export const SuggestHashtags: Story = { ...shows("suggest-hashtag"), play: suggest };
+/** `:wa`: the custom emoji, then the Unicode ones, that match. */
+export const SuggestEmoji: Story = { ...shows("suggest-emoji"), play: suggest };
+/** `:sp` in the content warning: its emoji, under it. */
+export const SuggestEmojiInWarning: Story = { ...shows("suggest-cw"), play: suggest };
 export const Images: Story = shows("images");
 export const Reply: Story = shows("reply");
 export const Quote: Story = shows("quote");

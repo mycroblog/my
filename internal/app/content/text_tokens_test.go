@@ -12,8 +12,8 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 )
 
-// textVectorsPath is the file of vectors that the web client's lib/textTokens.ts reads too
-// (ADR-0092 §4).
+// textVectorsPath is the file of vectors that the web client's
+// web/app-features/src/compose/text-tokens.ts reads too (ADR-0092 §4).
 const textVectorsPath = "../../../pkg/testkit/fixtures/text/tokens.json"
 
 type textTokenCase struct {

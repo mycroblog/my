@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The composer's view (#3046's rough, ADR-0155, ADR-0156): from the top, the head (the title, then close at its end),
-// the post replied to or quoted (both above the text, as context), the content warning, the text with the part over
-// the limit marked and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
+// the post replied to or quoted (both above the text, as context), the content warning, the text with what the server
+// will read in it (text-tokens.ts) and the part over the limit marked behind it, the suggestions for the word at its
+// caret (suggest.tsx) and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
 // descriptions or the poll as a card, the form's error, and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
 // menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
@@ -12,7 +13,7 @@
 // redraft is a new post, written from the deleted one. Its state is the hook's (use-composer.ts).
 
 import { isRemote, languageName, QuoteContext, ReplyContext } from "@my/app-components";
-import type { Audience, Interaction, Visibility } from "@my/app-data";
+import { useCustomEmojis, type Audience, type Interaction, type Visibility } from "@my/app-data";
 import {
   AttachButton,
   AttachmentList,
@@ -40,9 +41,11 @@ import {
   WarningField,
   type IconName,
 } from "@my/design-system";
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { ComposerEmoji } from "./emoji";
+import { useSuggestions } from "./suggest";
+import { textMarks } from "./text-tokens";
 import type { MessageId } from "../messages.gen";
 import {
   maxAttachments,
@@ -354,6 +357,7 @@ export function ComposerView({
 }: ComposerViewProps) {
   const { locale } = useLocale();
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const cwRef = useRef<HTMLInputElement>(null);
   const { t, lang } = stringsIn(locale);
   const [open, setOpen] = useState<"audience" | "permissions" | "language" | undefined>(undefined);
   const { draft, settings, answered, problems } = c;
@@ -365,6 +369,11 @@ export function ComposerView({
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
+  const emojis = useCustomEmojis();
+  const custom = useMemo(() => new Set(emojis.map((e) => e.shortcode)), [emojis]);
+  // The text completes accounts, hashtags and emoji; the content warning, emoji alone (ADR-0092 §5).
+  const textSuggest = useSuggestions({ field: textRef, text: draft.text, triggers: ["@", "#", ":"], locale });
+  const cwSuggest = useSuggestions({ field: cwRef, text: draft.cw ?? "", triggers: [":"], locale });
   return (
     <ComposerFrame
       title={title}
@@ -455,6 +464,11 @@ export function ComposerView({
           value={draft.cw}
           label={t("compose.cw.label")}
           placeholder={t("compose.cw.placeholder")}
+          marks={textMarks(draft.cw, custom, ["emoji"])}
+          inputRef={cwRef}
+          completes
+          suggest={cwSuggest.suggest}
+          {...cwSuggest.caret}
           readOnly={busy}
           onChange={(cw) => {
             c.change({ cw });
@@ -466,6 +480,10 @@ export function ComposerView({
         label={t("compose.text.label")}
         placeholder={t("compose.text.placeholder")}
         over={problems.over}
+        marks={textMarks(draft.text, custom)}
+        completes
+        suggest={textSuggest.suggest}
+        {...textSuggest.caret}
         error={problems.over > 0 ? t("compose.too_long", { max: settings.maxChars }) : undefined}
         readOnly={busy}
         roomy={draft.attachments.length === 0 && draft.poll === undefined}

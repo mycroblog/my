@@ -9,8 +9,11 @@
 import { useState } from "react";
 import { tv } from "tailwind-variants/lite";
 
-/** Where an avatar sits, which gives its size: inline beside a name, at the head of a post, or in a profile preview. */
-export type AvatarSize = "inline" | "post" | "preview";
+/**
+ * Where an avatar sits, which gives its size: inline beside a name, at the start of a list's row on one line (a
+ * suggestion), at the head of a post, or in a profile preview.
+ */
+export type AvatarSize = "inline" | "row" | "post" | "preview";
 
 export type AvatarProps = {
   /** The account's display name: the accessible name, and the initial without an image. */
@@ -40,6 +43,7 @@ const avatar = tv({
         base: "size-avatar-inline",
         fallback: "text-[length:calc(var(--avatar-inline)*var(--avatar-initial))]",
       },
+      row: { base: "size-avatar-row", fallback: "text-[length:calc(var(--avatar-row)*var(--avatar-initial))]" },
       post: { base: "size-avatar-post", fallback: "text-[length:calc(var(--avatar-post)*var(--avatar-initial))]" },
       preview: {
         base: "size-avatar-preview",

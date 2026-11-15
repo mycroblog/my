@@ -26,6 +26,7 @@ import {
   type Draft,
   type Problems,
 } from "./model";
+import { rememberTags } from "./recent-tags";
 
 /** Where the post is: being written, being sent, or refused (with what the server said, if it said anything). */
 type Phase = { kind: "editing" } | { kind: "posting" } | { kind: "failed"; reason: string | undefined };
@@ -147,6 +148,7 @@ export function useComposer(initial: Draft, onPosted: (status: Status, draft: Dr
         (status) => {
           // The draft it was saved as is published now: it goes, and a failure leaves only a stale draft.
           if (draft.saved) writes.deleteDraft(draft.saved.id).catch(() => undefined);
+          rememberTags(draft.text);
           onPosted(status, draft);
         },
         (e: unknown) => {

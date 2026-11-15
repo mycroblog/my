@@ -1114,6 +1114,42 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         },
       });
     }
+    if (path === "/accounts/search") {
+      // As the server finds them (ADR-0092 §1): a username, `username@host` or a word of the display name that starts
+      // with `q`, the blocked and muted left out; the exact username first, then the followed, then the rest.
+      const query = (q.get("q") ?? "").replace(/^@/u, "").normalize("NFKC").toLowerCase();
+      const limit = Number(q.get("limit") ?? "8");
+      const name = (p: Person) => p.displayName.normalize("NFKC").toLowerCase().replace(/:\w+:/gu, "");
+      const found = people
+        .filter((p) => !blocking.has(`${viewer}>${p.username}`) && !muting.has(`${viewer}>${p.username}`))
+        .filter((p) =>
+          [`${p.username}@${fakeHost}`, name(p), ...name(p).split(/\s+/u)].some((w) => w.startsWith(query)),
+        )
+        .toSorted(
+          (a, b) =>
+            Number(b.username === query) - Number(a.username === query) ||
+            Number(follows_(viewer, b.username)) - Number(follows_(viewer, a.username)),
+        );
+      return json({ items: found.slice(0, limit).map(fullAccount) });
+    }
+    if (path === "/tags/search") {
+      // The hashtags of the public, local and unlisted posts that start with `q`: the one equal to it first, then the
+      // most used.
+      const query = (q.get("q") ?? "").replace(/^#/u, "").normalize("NFKC").toLowerCase();
+      const limit = Number(q.get("limit") ?? "8");
+      const uses = new Map<string, { name: string; count: number }>();
+      for (const p of posts)
+        if (!deleted.has(p.key) && p.visibility !== "private" && p.visibility !== "direct")
+          for (const [, tag = ""] of p.text.matchAll(/(?<![\p{L}\p{N}_])#([\p{L}\p{M}\p{N}_]+)/gu)) {
+            const key = tag.normalize("NFKC").toLowerCase();
+            uses.set(key, { name: uses.get(key)?.name ?? tag, count: (uses.get(key)?.count ?? 0) + 1 });
+          }
+      const found = [...uses]
+        .filter(([key]) => key.startsWith(query))
+        .toSorted(([ka, a], [kb, b]) => Number(kb === query) - Number(ka === query) || b.count - a.count)
+        .map(([, t]) => ({ name: t.name, statuses_count: t.count }));
+      return json({ items: found.slice(0, limit) });
+    }
     if (path === "/accounts/lookup") {
       const acct = (q.get("acct") ?? "").replace(new RegExp(`@${fakeHost}$`), "");
       const found = people.find((p) => p.username === acct);
