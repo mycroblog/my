@@ -2,7 +2,7 @@
 
 // The media viewer, a dialog named "Media" over the page that shows a post's pictures and videos whole, one at a time:
 // where it is among them ("2 of 3"), the shown one's description as a caption, what it announces as the reader moves,
-// and its buttons. A swipe is a touch on the page (the browser's context has touch), from one side toward the other.
+// and its buttons. A swipe is a touch on the page (the browser's context has touch), from the picture sideways.
 
 import type { Locator, Page } from "@playwright/test";
 
@@ -34,12 +34,23 @@ export class MediaViewer {
     return this.dialog.getByRole("button", { name, exact: true });
   }
 
-  /** Moves by a swipe across the middle of the viewer: "left" shows the next in a left-to-right page. */
+  /** The picture shown, drawn once it has loaded; it has no name of its own, its caption describes it. */
+  get picture(): Locator {
+    return this.dialog.getByRole("presentation");
+  }
+
+  /**
+   * Moves by a swipe that starts on the shown picture, as a reader's does, once it is drawn: until then the description
+   * may sit where the picture will be, and a touch on the description scrolls it rather than swipes. "left" shows the
+   * next in a left-to-right page.
+   */
   async swipe(direction: "left" | "right"): Promise<void> {
-    const box = await this.dialog.boundingBox();
-    if (box === null) throw new Error("e2e: the media viewer is not shown");
-    const y = box.y + box.height / 2;
-    const steps = [0.7, 0.6, 0.5, 0.4, 0.3].map((f) => box.x + box.width * (direction === "left" ? f : 1 - f));
+    await this.picture.waitFor({ state: "visible" });
+    const [box, picture] = await Promise.all([this.dialog.boundingBox(), this.picture.boundingBox()]);
+    if (box === null || picture === null) throw new Error("e2e: the media viewer is not shown");
+    const x = picture.x + picture.width / 2;
+    const y = picture.y + picture.height / 2;
+    const steps = [0, 0.1, 0.2, 0.3, 0.4].map((f) => x + box.width * (direction === "left" ? -f : f));
     const cdp = await this.page.context().newCDPSession(this.page);
     const [start = 0, ...moves] = steps;
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: start, y }] });
