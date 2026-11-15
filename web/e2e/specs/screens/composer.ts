@@ -231,6 +231,36 @@ export class Composer {
     );
   }
 
+  /**
+   * The suggestions for the word being typed at the caret, open under its line: "Accounts" for `@`, "Hashtags" for
+   * `#`, "Emoji" for `:`. The text keeps the focus; its active option is the text's `aria-activedescendant`.
+   */
+  suggestions(kind: "Accounts" | "Hashtags" | "Emoji"): Locator {
+    return this.dialog.page().getByRole("listbox", { name: kind, exact: true });
+  }
+
+  /**
+   * The name of the text's active suggestion: the option its `aria-activedescendant` names, inside the list its
+   * `aria-controls` names; undefined while it names none.
+   */
+  async activeSuggestion(): Promise<string | undefined> {
+    return this.text.evaluate((text) => {
+      const active = text.ariaActiveDescendantElement;
+      const inList = (text.ariaControlsElements ?? []).some((list) => active !== null && list.contains(active));
+      if (active === null || !inList) return undefined;
+      return active.ariaLabel ?? active.textContent;
+    });
+  }
+
+  /**
+   * The live region of the dialog that announces `words` whole: the text announces how many suggestions opened ("2
+   * suggestions"), or the line in their place ("Loading suggestions…", "No matching accounts").
+   */
+  announced(words: string | RegExp): Locator {
+    const whole = typeof words === "string" ? new RegExp(`^${words.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`) : words;
+    return this.dialog.getByRole("status").filter({ hasText: whole });
+  }
+
   /** The button at the end of the text that opens the emoji picker, which writes the emoji picked at the caret. */
   get emojiButton(): Locator {
     return this.dialog.getByRole("button", { name: "Add emoji", exact: true });
@@ -288,11 +318,6 @@ export class Composer {
       await this.draftsMenu("Save as draft");
     });
     await expect(this.alert).toBeVisible();
-  }
-
-  /** Waits until the text of the post is `text`, all of it. */
-  async holds(text: string): Promise<void> {
-    await expect(this.text).toHaveValue(text);
   }
 
   /** Opens the reader's drafts and scheduled posts in the composer's place. */
