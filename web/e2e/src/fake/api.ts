@@ -6,9 +6,10 @@
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
 // answers of follow requests, the read marker, the announcements read, the reader's bookmarks and followed hashtags,
-// the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft published) are
-// kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An article's body
-// comes only with the status read alone, as the server's does. A list pages as
+// the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft published, the
+// reader's articles posted and edited and the images they upload) are kept in memory; a post's edit history holds the
+// scenario's versions of it, then the reader's edits. An article's body comes only with the status read alone, as the
+// server's does, and its preview renders as publishing would, unless the options make it fail. A list pages as
 // the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
@@ -106,6 +107,12 @@ export type FakeOptions = {
   bookmarks?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
   followedTagLimit?: number;
+  /**
+   * The articles (ADR-0160): who may write new ones, everyone by default or only the roles with `create_articles`
+   * (`authoring: "permission"`, which no person of the scenario has); a preview of a body that fails (`preview:
+   * "fails"`); a publication or an edit the server's review refuses (`publish: "refused"`).
+   */
+  articles?: { authoring?: "everyone" | "permission"; preview?: "fails"; publish?: "refused" };
 };
 
 /** The address of the fake's status page. */
@@ -126,6 +133,8 @@ export type FakeApi = {
   announcementPath: (key: string) => string;
   /** The app's address of the reader's list at `index`, oldest first. */
   listPath: (index: number) => string;
+  /** The ID of the scenario's post of `key`, or of the reader's draft of that key. */
+  idOf: (key: string) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -443,14 +452,18 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       (p.visibility === "private" && follows_(viewer, p.author)) ||
       (p.visibility === "direct" && mentioned(p.text).includes(viewer)));
 
+  /** The title, summary and hashtags of the scenario's articles as the reader edited them, by the key of each. */
+  const articleEdits = new Map<string, { title: string; summary: string; tags: readonly string[] }>();
+
   /** An article's title, summary and cover, as the API's StatusArticle. */
   const articleOf = (p: Post, id: string): Json | undefined => {
     const a = p.article;
     if (a === undefined) return undefined;
     const cover = a.cover;
+    const edited = articleEdits.get(p.key);
     return {
-      title: a.title,
-      summary: a.summary,
+      title: edited?.title ?? a.title,
+      summary: edited?.summary ?? a.summary,
       ...(cover === undefined
         ? {}
         : {
@@ -687,6 +700,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     scheduled_post_min_lead_minutes: 5,
     scheduled_post_max_lead_days: 366,
   };
+  /** The limits of an article's body, the server's defaults (ADR-0160 §5). */
+  const articleLimits = { max_bytes: 100_000, max_images: 20 };
   const gonePost = idAt(started - 48 * 60 * minute, 80_999);
   const ownDrafts: Json[] = drafts
     .filter((d) => d.author === viewer)
@@ -706,6 +721,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         visibility: "public",
         ...(replyTo === undefined ? {} : { in_reply_to_id: replyTo }),
         media: (d.images ?? []).map((image, n) => ({ id: `${id}-${String(n)}`, description: image.description })),
+        ...(d.article === undefined
+          ? {}
+          : { article: { title: d.article.title, summary: d.article.summary, tags: [...d.article.tags], images: [] } }),
         ...(d.poll === undefined
           ? {}
           : {
@@ -743,10 +761,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const etagOf = (d: Json) => `"${String(Date.parse(d["updated_at"] as string))}"`;
   const draftAnswer = (d: Json, status = 200) =>
     new Response(JSON.stringify(d), { status, headers: { "Content-Type": "application/json", ETag: etagOf(d) } });
+  /** The IDs of the reader's uploads a body in Markdown shows as images (`![alt](media:ID)`), each once, in order. */
+  const bodyImages = (text: string) =>
+    [...new Set([...text.matchAll(/!\[[^\]]*\]\(media:([^)\s]+)\)/g)].map((x) => x[1] ?? ""))].toSorted();
   /** A draft as a save leaves it: its content replaced by `body`, saved now (a millisecond after its last save at least). */
   const savedDraft = (d: Json, body: Json): Json => {
     const last = Date.parse(d["updated_at"] as string);
     const { scheduled_at: scheduled, last_schedule: outcome } = d;
+    const article = body["article"] as Json | undefined;
     return {
       id: d["id"],
       created_at: d["created_at"],
@@ -756,6 +778,18 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       sensitive: false,
       media: [],
       ...body,
+      // An article's draft lists the uploads its body shows, as the server finds them at each save.
+      ...(article === undefined
+        ? {}
+        : {
+            article: {
+              title: "",
+              summary: "",
+              tags: [],
+              ...article,
+              images: bodyImages(typeof body["text"] === "string" ? body["text"] : ""),
+            },
+          }),
       ...(scheduled === undefined ? {} : { scheduled_at: scheduled }),
       ...(outcome === undefined ? {} : { last_schedule: outcome }),
     };
@@ -769,24 +803,93 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
   const unprocessable = (detail: string) =>
     json({ type: "about:blank", title: "Unprocessable Content", status: 422, detail }, 422);
-  /** The status a draft makes when it is published: the reader's post, newest, on top of their home timeline. */
+  /** An article the server's automated review refuses, as the server answers it. */
+  const refusedArticle = () =>
+    json(
+      {
+        type: "/api/v1/problems/status-rejected",
+        title: "The post was rejected",
+        status: 422,
+        detail: "This server's review did not accept the article. Change it and try again.",
+      },
+      422,
+    );
+  /** The reader's uploads, by their IDs: the file each was, as the fake serves it. */
+  const uploads = new Map<string, Json>();
+  /** The statuses the fake made (a draft published, an article posted), by their IDs, read alone as the server reads them. */
+  const made = new Map<string, Json>();
+  /**
+   * The summary the server makes of an article's body: the text of its blocks (no headings, code or images) with one
+   * space between blocks and lines, as the server joins them, cut at a word, with an ellipsis.
+   */
+  const summaryOf = (text: string) => {
+    const plain = text
+      .split("\n")
+      .filter((l) => !l.startsWith("#") && !l.startsWith("```"))
+      // A line's block marker (a list item's, a quote's) is no text of it.
+      .map((l) => l.replace(/^\s*(?:[-*+]|\d+[.)]|>)\s+/, ""))
+      .join(" ")
+      .replace(/!\[[^\]]*\]\([^)]*\)|\*\*|`/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (plain.length <= 200) return plain;
+    const cut = plain.slice(0, 200);
+    return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 1))}…`;
+  };
+  /** The HTML of an article's body, its images of the reader's uploads as images, any other as a link of its alt text. */
+  const bodyHtml = (text: string) => {
+    // Each image of an upload stands as a mark the rendering leaves alone, then as its <img>.
+    const images: string[] = [];
+    const marked = text.replace(/!\[([^\]]*)\]\(media:([^)\s]+)\)/g, (whole, alt: string, id: string) => {
+      const file = uploads.get(id) as { url?: string; meta?: { width?: number; height?: number } } | undefined;
+      if (file === undefined) return whole;
+      const { width = 0, height = 0 } = file.meta ?? {};
+      images.push(
+        `<img src="${file.url ?? ""}" alt="${alt.replace(/"/g, "&quot;")}" width="${String(width)}" height="${String(height)}" loading="lazy">`,
+      );
+      return `⟦${String(images.length - 1)}⟧`;
+    });
+    return articleHtml(marked, fakeHost).replace(/⟦(\d+)⟧/g, (_, n: string) => images[Number(n)] ?? "");
+  };
+  /** An article's part of a status, from what its author wrote: its title, its summary, its cover. */
+  const madeArticle = (article: Json, text: string): Json => {
+    const summary = typeof article["summary"] === "string" ? article["summary"].trim() : "";
+    const cover = article["cover"] as { id: string; description?: string } | undefined;
+    const file = cover === undefined ? undefined : uploads.get(cover.id);
+    return {
+      title: article["title"],
+      summary: summary === "" ? summaryOf(text) : summary,
+      ...(file === undefined ? {} : { cover: { ...file, description: cover?.description ?? "" } }),
+    };
+  };
+  /**
+   * A status the reader makes: a draft published, or an article posted (with its body, as read alone), newest, on top
+   * of their home timeline.
+   */
   const publish = (d: Json): Json => {
     draftsMade += 1;
     const at = Date.now();
+    const article = d["article"] as Json | undefined;
+    const text = d["text"] as string;
+    const id = idAt(at, 950_000 + draftsMade);
     const status: Json = {
-      id: idAt(at, 950_000 + draftsMade),
-      uri: `${fakeOrigin}/users/${viewer}/statuses/published-${String(draftsMade)}`,
-      url: `${fakeOrigin}/@${viewer}/published-${String(draftsMade)}`,
+      id,
+      uri: `${fakeOrigin}/users/${viewer}/statuses/${id}`,
+      url: `${fakeOrigin}/@${viewer}/${id}`,
       account: accountOf(viewer),
-      content: serverHtml(d["text"] as string, fakeHost),
-      spoiler_text: d["spoiler_text"],
-      sensitive: d["sensitive"],
+      content: article === undefined ? serverHtml(text, fakeHost) : bodyHtml(text),
+      spoiler_text: d["spoiler_text"] ?? "",
+      sensitive: d["sensitive"] ?? false,
       visibility: d["visibility"],
       language: d["language"] ?? "en",
       created_at: new Date(at).toISOString(),
       ...(d["in_reply_to_id"] === undefined ? {} : { in_reply_to_id: d["in_reply_to_id"] }),
       media_attachments: [],
       mentions: [],
+      tags: ((article?.["tags"] ?? []) as string[]).map((name) => ({
+        name: name.replace(/^#/, ""),
+        url: `${fakeOrigin}/tags/${encodeURIComponent(name.replace(/^#/, "").toLowerCase())}`,
+      })),
       emojis: customEmojis,
       replies_count: 0,
       boosts_count: 0,
@@ -796,9 +899,40 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       boosted: false,
       bookmarked: false,
       pinned: false,
+      ...(article === undefined ? {} : { article: madeArticle(article, text) }),
     };
-    home.unshift(status);
+    made.set(id, status);
+    if (article !== undefined) madeSources.set(id, { text, article });
+    // A list holds no article's body (ADR-0160 §8).
+    home.unshift(article === undefined ? status : { ...status, content: "" });
     return status;
+  };
+  /** What the reader wrote of each article the fake made, by its ID: its body and its article's part. */
+  const madeSources = new Map<string, { text: string; article: Json }>();
+  /** Edits the article of `id` the fake made, as `PUT /articles/{id}` does: its body, title, summary, cover, hashtags. */
+  const editMade = (id: string, edit: Json): Json | undefined => {
+    const before = made.get(id);
+    if (before === undefined) return undefined;
+    const text = edit["text"] as string;
+    const article = {
+      title: edit["title"],
+      summary: edit["summary"] ?? "",
+      tags: edit["tags"] ?? [],
+      ...(edit["cover"] === undefined ? {} : { cover: edit["cover"] }),
+    };
+    const after: Json = {
+      ...before,
+      content: bodyHtml(text),
+      sensitive: edit["sensitive"] ?? before["sensitive"],
+      language: edit["language"] ?? before["language"],
+      edited_at: new Date().toISOString(),
+      article: madeArticle(article, text),
+    };
+    made.set(id, after);
+    madeSources.set(id, { text, article });
+    const at = home.findIndex((s) => s["id"] === id);
+    if (at >= 0) home.splice(at, 1, { ...after, content: "" });
+    return after;
   };
   // The notification of each failed schedule, among the others by its time.
   for (const d of ownDrafts) {
@@ -877,7 +1011,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       mode: o.singleUser === true || o.closure !== undefined ? "closed" : (o.registrations ?? "open"),
     },
     login_providers_only: false,
-    limits: { max_post_characters: 500, require_media_description: false, drafts: draftLimits },
+    limits: {
+      max_post_characters: 500,
+      require_media_description: false,
+      drafts: draftLimits,
+      articles: articleLimits,
+    },
+    article_authoring: o.articles?.authoring ?? "everyone",
     timelines,
     federation: { mode: "off" },
     sends_email: false,
@@ -1358,6 +1498,41 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const r = change(decodeURIComponent(match[1] ?? ""), verb.replace(/^un/, ""), add);
       return r === undefined ? problem(404, "Not Found") : json(r);
     }
+    if ((match = m(/^\/statuses\/([^/]+)(\/source|\/history)?$/)) && made.has(decodeURIComponent(match[1] ?? ""))) {
+      // A status the reader made here: read alone with its body, its source what they wrote, deleted as theirs.
+      const sid = decodeURIComponent(match[1] ?? "");
+      const status = made.get(sid) ?? {};
+      if (match[2] === "/source") {
+        const source = madeSources.get(sid);
+        return json({
+          id: sid,
+          text: source?.text ?? "",
+          spoiler_text: "",
+          language: status["language"],
+          ...(source === undefined
+            ? {}
+            : {
+                article: {
+                  title: source.article["title"],
+                  summary: source.article["summary"] ?? "",
+                  tags: source.article["tags"] ?? [],
+                  ...(source.article["cover"] === undefined ? {} : { cover: source.article["cover"] }),
+                },
+              }),
+        });
+      }
+      if (match[2] === "/history") return json({ items: [] });
+      if (request.method === "GET") return json(status);
+      if (request.method === "DELETE") {
+        made.delete(sid);
+        const at = home.findIndex((s) => s["id"] === sid);
+        if (at >= 0) home.splice(at, 1);
+        return new Response(null, { status: 204 });
+      }
+      return problem(405, "Method Not Allowed");
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/context$/)) && made.has(decodeURIComponent(match[1] ?? "")))
+      return json({ ancestors: [], descendants: [] });
     if ((match = m(/^\/statuses\/([^/]+)(\/source|\/history)?$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
       const p = key === undefined ? undefined : postOf(key);
@@ -1378,8 +1553,27 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       // The source of another's post is a 404, as the server's is.
       if (match[2] === "/source" && request.method === "GET") {
         const now = versionsOf(p).at(-1);
+        const a = p.article;
+        const edited = articleEdits.get(p.key);
         return own
-          ? json({ id, text: now?.text ?? p.text, spoiler_text: now?.spoiler ?? "", language: p.language })
+          ? json({
+              id,
+              text: now?.text ?? p.text,
+              spoiler_text: now?.spoiler ?? "",
+              language: p.language,
+              ...(a === undefined
+                ? {}
+                : {
+                    article: {
+                      title: edited?.title ?? a.title,
+                      summary: edited?.summary ?? a.summary,
+                      tags: [...(edited?.tags ?? [])],
+                      ...(a.cover === undefined
+                        ? {}
+                        : { cover: { id: `${id}-cover`, description: a.cover.description } }),
+                    },
+                  }),
+            })
           : problem(404, "Not Found");
       }
       if (match[2] !== undefined) return problem(404, "Not Found");
@@ -1391,7 +1585,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       }
       if (request.method === "PUT") {
         // A post with a poll is never edited: its votes belong to the poll as posted. An article is edited with
-        // PUT /articles/{id}, which the fake does not answer.
+        // PUT /articles/{id}.
         if (p.poll !== undefined || p.article !== undefined) return problem(422, "Unprocessable Entity");
         const edit = (await request.json()) as { text: string; spoiler_text?: string; media?: { id: string }[] };
         edits.set(p.key, [
@@ -1506,6 +1700,78 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/notifications/requests/summary") return json({ accounts_count: 0, notifications_count: 0 });
     if (path === "/interaction_requests") return json({ items: [] });
+    if (path === "/articles/preview" && request.method === "POST") {
+      // The body as the server would render it, with its size and images; one that fails, as the options say.
+      if (o.articles?.preview === "fails") return problem(500, "Internal Server Error");
+      const { text, summary } = (await request.json()) as { text: string; summary?: string };
+      const content = bodyHtml(text);
+      const blank = summary === undefined || summary.trim() === "";
+      return json({
+        content,
+        summary: blank ? summaryOf(text) : summary.trim(),
+        summary_from_body: blank,
+        bytes: new TextEncoder().encode(content).length,
+        max_bytes: articleLimits.max_bytes,
+        images: bodyImages(text).filter((id) => uploads.has(id)).length,
+        max_images: articleLimits.max_images,
+      });
+    }
+    if (path === "/articles" && request.method === "POST") {
+      if (o.articles?.authoring === "permission" && !permissionsOf(viewer).includes("create_articles"))
+        return problem(403, "Forbidden");
+      if (o.articles?.publish === "refused") return refusedArticle();
+      const body = (await request.json()) as Json;
+      const { title, summary, tags, cover, ...rest } = body;
+      return json(
+        publish({ ...rest, article: { title, summary, tags, ...(cover === undefined ? {} : { cover }) } }),
+        201,
+      );
+    }
+    if ((match = m(/^\/articles\/([^/]+)$/)) && request.method === "PUT") {
+      const sid = decodeURIComponent(match[1] ?? "");
+      if (o.articles?.publish === "refused") return refusedArticle();
+      const edit = (await request.json()) as Json;
+      const after = editMade(sid, edit);
+      if (after !== undefined) return json(after);
+      const key = keyOf.get(sid);
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      if (p.author !== viewer) return problem(403, "Forbidden");
+      if (p.article === undefined) return problem(422, "Unprocessable Entity");
+      articleEdits.set(p.key, {
+        title: edit["title"] as string,
+        summary: (edit["summary"] as string | undefined) ?? "",
+        tags: (edit["tags"] as string[] | undefined) ?? [],
+      });
+      edits.set(p.key, [...(edits.get(p.key) ?? []), { text: edit["text"] as string, spoiler: "", at: Date.now() }]);
+      return json(statusOf(p, 0, true));
+    }
+    if (path === "/media" && request.method === "POST") {
+      // An image the reader uploads, ready at once, served from the browser's own copy of the file.
+      const form = await request.formData();
+      const file = form.get("file");
+      const description = form.get("description");
+      added += 1;
+      const id = idAt(Date.now(), 990_000 + added);
+      const url = file instanceof Blob ? URL.createObjectURL(file) : "";
+      const media: Json = {
+        id,
+        type: "image",
+        state: "ready",
+        ...(typeof description === "string" && description !== "" ? { description } : {}),
+        url,
+        preview_url: url,
+        meta: { width: 1200, height: 800, focus: { x: 0, y: 0 } },
+      };
+      uploads.set(id, media);
+      return json(media, 201);
+    }
+    if (
+      (match = m(/^\/media\/([^/]+)$/)) &&
+      request.method === "GET" &&
+      uploads.has(decodeURIComponent(match[1] ?? ""))
+    )
+      return json(uploads.get(decodeURIComponent(match[1] ?? "")));
     if (path === "/drafts" && request.method === "GET") {
       const scheduled = q.get("scheduled");
       const shown = ownDrafts.filter(
@@ -1564,6 +1830,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         return draftAnswer(unscheduled);
       }
       if (what === "POST /publish") {
+        // The review refuses an article published from its draft as it refuses one posted at once; the draft stays.
+        if (d["article"] !== undefined && o.articles?.publish === "refused") return refusedArticle();
         ownDrafts.splice(ownDrafts.indexOf(d), 1);
         return json(publish(d), 201);
       }
@@ -1633,5 +1901,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   const listPath = (index: number) => `/lists/${lists[index]?.id ?? "none"}`;
 
-  return { serve, newPosts, newNotification, postPath, announcementPath, listPath };
+  const keyedId = (key: string) => {
+    const post = statusId.get(key);
+    if (post !== undefined) return post;
+    const at = drafts.filter((d) => d.author === viewer).findIndex((d) => d.key === key);
+    if (at < 0) throw new Error(`fake: no post or draft ${key} of ${viewer}`);
+    const all = drafts.filter((d) => d.author === viewer).length;
+    return idAt(started - (all - at) * 5 * 60 * minute, 80_000 + at);
+  };
+
+  return { serve, newPosts, newNotification, postPath, announcementPath, listPath, idOf: keyedId };
 }

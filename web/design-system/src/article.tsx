@@ -162,22 +162,28 @@ export function ArticleParts({ children }: { children: ReactNode }) {
   return <div className="grid grid-cols-[minmax(0,1fr)] gap-article-block pb-article-block text-body">{children}</div>;
 }
 
-/** The head of an article's page: its title, the page's h1, over its summary. */
+/**
+ * The head of an article's page: its title, the page's h1, over its summary; an h2 (`level`) where the page has its own
+ * h1, as the article editor's preview shows it under the editor's title.
+ */
 export function ArticleTitle({
   title,
   summary,
   lang,
+  level = 1,
 }: {
   title: ReactNode;
   summary: ReactNode;
   lang?: string | undefined;
+  level?: 1 | 2 | undefined;
 }) {
   const s = head();
+  const Heading = level === 1 ? "h1" : "h2";
   return (
     <hgroup className={s.root()} lang={lang}>
-      <h1 className={s.title()} dir="auto">
+      <Heading className={s.title()} dir="auto">
         {title}
-      </h1>
+      </Heading>
       {summary !== "" && (
         <p className={s.summary()} dir="auto">
           {summary}

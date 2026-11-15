@@ -399,10 +399,6 @@
     "defaultMessage": "{max, plural, one {El título de un artículo debe tener 1 carácter.} other {El título de un artículo debe tener de 1 a # caracteres.}}",
     "description": "Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters."
   },
-  "errors.status.article_too_long": {
-    "defaultMessage": "{max, plural, one {El cuerpo de un artículo debe generar como máximo # byte de HTML.} other {El cuerpo de un artículo debe generar como máximo # bytes de HTML.}}",
-    "description": "Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes."
-  },
   "errors.status.article_too_many_images": {
     "defaultMessage": "{max, plural, one {El cuerpo de un artículo puede mostrar como máximo # imagen.} other {El cuerpo de un artículo puede mostrar como máximo # imágenes.}}",
     "description": "Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images."

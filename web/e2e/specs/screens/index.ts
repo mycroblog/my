@@ -9,6 +9,7 @@
 
 export { HomeAnnouncements } from "./announcements";
 export { ArticleText } from "./article";
+export { ArticleEditor, holdPreviews, holdProcessing, type Upload } from "./article-editor";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
 export { Drafts } from "./drafts";

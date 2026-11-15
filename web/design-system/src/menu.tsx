@@ -7,7 +7,7 @@
 // its label, in rows of a form control's height. Its groups stand apart by space; a group of actions on another
 // account goes under a caption naming it; destructive items sit last and apart, with no color of their own.
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Header, Menu, MenuItem as AriaMenuItem, MenuSection, MenuTrigger, Popover } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { IconButton } from "./icon-button";
@@ -44,16 +44,26 @@ const menu = tv({
 /** The menu's surface and its items, open: inside the popover of a `MenuButton`, or on its own, open at rest. */
 export function MenuPanel({
   label,
+  own = false,
   children,
 }: {
   /** The menu's accessible name. */
   label: string;
+  /** `label` names the menu even inside a trigger whose button has another name (New post's menu, of New article). */
+  own?: boolean | undefined;
   children: ReactNode;
 }) {
   const s = menu();
+  const id = useId();
   return (
     <div className={s.panel()}>
-      <Menu aria-label={label} className={s.list()}>
+      {/* A trigger that names the menu otherwise (React Aria names it by its button) gives way to `label`. */}
+      {own && (
+        <span id={id} hidden>
+          {label}
+        </span>
+      )}
+      <Menu aria-label={label} {...(own ? { "aria-labelledby": id } : {})} className={s.list()}>
         {children}
       </Menu>
     </div>

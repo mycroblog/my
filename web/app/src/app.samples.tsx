@@ -143,11 +143,14 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 
 /**
  * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, the list of who
- * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), else the page of the
- * scenario post of that key.
+ * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
+ * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, else the page of the scenario
+ * post of that key.
  */
 function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("/")) return at;
+  if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
+  if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
   if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
   if (at.startsWith("reactions:")) {
@@ -276,6 +279,9 @@ function shows(
   if (signedOut && at === "/" && server.singleUser !== true) return has('main a[href="/login"]');
   // A visitor reads something (a public timeline, the operator's profile), or is asked to sign in.
   if (signedOut) return settled && (has("article") || has('p[role="status"]'));
+  // The article editor, a screen of its own: its heading, and the article's preview, or why the reader may not write.
+  if (at.startsWith("article-") || at.startsWith("/articles/"))
+    return settled && has("h1[data-frame-heading]") && (has("article") || server.articles?.authoring === "permission");
   switch (state) {
     case "loading":
       // The shell, with the screen's heading and its own state of waiting (a busy list, or its notice that it loads):

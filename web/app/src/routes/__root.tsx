@@ -3,7 +3,8 @@
 // The root of every screen: the app's shell around the screen's route, with the links of the design system's parts
 // navigating through the router (but to the server's own pages, with a page load), unless the server's maintenance or
 // its closure takes the place of every screen (ADR-0088 §2, §10). A visitor at / gets the landing page in place of the
-// shell. An address the app has no screen for shows its own heading inside the shell.
+// shell, and the article editor stands without it. An address the app has no screen for shows its own heading inside
+// the shell.
 
 import { useInstance, useServerState, useWritesInFlight } from "@my/app-data";
 import { FeedNotice, NavigationProvider } from "@my/design-system";
@@ -12,6 +13,7 @@ import { createRootRouteWithContext, Outlet, useRouter, useRouterState } from "@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useStrings } from "../locale";
 import type { RouterContext } from "../router";
+import { isArticleEditor } from "../shell/article";
 import { ScreenHeading, useFocusOnNavigation } from "../shell/heading";
 import { Landing } from "../shell/landing";
 import { ClosedPage, MaintenancePage, pageServer } from "../shell/pages";
@@ -93,6 +95,8 @@ function ServerPage({ signedIn, children }: { signedIn: boolean; children: React
 function Screens({ pathname, signedIn, serverName }: { pathname: string; signedIn: boolean; serverName: string }) {
   const operator = useInstance()?.single_user_account;
   if (!signedIn && pathname === "/" && operator === undefined) return <Landing serverName={serverName} />;
+  // The article editor is a screen of its own, with no navigation around it.
+  if (isArticleEditor(pathname)) return <Outlet />;
   return (
     <Shell pathname={pathname} signedIn={signedIn} serverName={serverName}>
       <Outlet />

@@ -547,6 +547,10 @@
     "defaultMessage": "A poll",
     "description": "A mark on a draft's row: it carries a poll."
   },
+  "compose.drafts.mark.article": {
+    "defaultMessage": "An article",
+    "description": "A mark on a draft's row: it is the draft of an article."
+  },
   "compose.drafts.zone": {
     "defaultMessage": "Times in {zone}",
     "description": "Over the scheduled posts: the reader's time zone, in which their times read."
@@ -586,5 +590,193 @@
   "compose.drafts.list.scheduled": {
     "defaultMessage": "Scheduled posts",
     "description": "The name of the list of scheduled posts, for assistive technology."
+  },
+  "compose.article.title.new": {
+    "defaultMessage": "New article",
+    "description": "The title of the article editor, a screen of its own, while it writes a new article."
+  },
+  "compose.article.title.edit": {
+    "defaultMessage": "Edit article",
+    "description": "The title of the article editor while it edits the reader's published article."
+  },
+  "compose.article.mode": {
+    "defaultMessage": "Write or preview",
+    "description": "The name of the switch, on a narrow screen, between writing the article and its preview."
+  },
+  "compose.article.mode.write": {
+    "defaultMessage": "Write",
+    "description": "The choice of the switch that shows what is written of the article."
+  },
+  "compose.article.mode.preview": {
+    "defaultMessage": "Preview",
+    "description": "The choice of the switch that shows the article as it will be published."
+  },
+  "compose.article.preview.caption": {
+    "defaultMessage": "As it will be published",
+    "description": "The caption over the preview of the article, beside what is written on a wide screen."
+  },
+  "compose.article.preview.failed": {
+    "defaultMessage": "The preview could not be shown.",
+    "description": "In the preview's place when the server did not render the body; followed by Try again."
+  },
+  "compose.article.preview.empty": {
+    "defaultMessage": "Nothing written yet. Write the body, and its preview shows here.",
+    "description": "In the preview's place while the body is empty."
+  },
+  "compose.article.field.title": {
+    "defaultMessage": "Title",
+    "description": "The name of the article's title field, and its placeholder."
+  },
+  "compose.article.field.title.over": {
+    "defaultMessage": "The title must be at most {max, number} characters.",
+    "description": "Under the title when it is longer than the limit."
+  },
+  "compose.article.field.title.missing": {
+    "defaultMessage": "Give the article a title.",
+    "description": "Under the title when Publish was pressed without one."
+  },
+  "compose.article.field.left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "What a count near a field's limit says to a screen reader: how many characters are left."
+  },
+  "compose.article.field.over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "What a count past a field's limit says to a screen reader: by how many characters it is over."
+  },
+  "compose.article.body": {
+    "defaultMessage": "Body",
+    "description": "The name of the article's body, written in Markdown."
+  },
+  "compose.article.body.placeholder": {
+    "defaultMessage": "Write in Markdown…",
+    "description": "The placeholder of the article's body."
+  },
+  "compose.article.body.missing": {
+    "defaultMessage": "Write the body of the article.",
+    "description": "Under the body when Publish was pressed with no body."
+  },
+  "compose.article.details": {
+    "defaultMessage": "About the article",
+    "description": "The heading of the article's summary, cover and hashtags, after its body."
+  },
+  "compose.article.summary": {
+    "defaultMessage": "Summary",
+    "description": "The name of the article's summary field."
+  },
+  "compose.article.summary.hint": {
+    "defaultMessage": "If left empty, the start of the body is used.",
+    "description": "Under the summary's label: what an empty summary becomes."
+  },
+  "compose.article.summary.placeholder": {
+    "defaultMessage": "What the article is about, in a line or two",
+    "description": "The placeholder of the summary field."
+  },
+  "compose.article.summary.over": {
+    "defaultMessage": "The summary must be at most {max, number} characters.",
+    "description": "Under the summary when it is longer than the limit."
+  },
+  "compose.article.cover": {
+    "defaultMessage": "Cover image",
+    "description": "The name of the article's cover image."
+  },
+  "compose.article.cover.add": {
+    "defaultMessage": "Add a cover image",
+    "description": "The button that picks the article's cover image."
+  },
+  "compose.article.cover.remove": {
+    "defaultMessage": "Remove the cover image",
+    "description": "The button that takes the cover image off the article."
+  },
+  "compose.article.cover.description": {
+    "defaultMessage": "Description",
+    "description": "The label of the cover image's description, for those who cannot see it."
+  },
+  "compose.article.cover.description.hint": {
+    "defaultMessage": "What the image shows, for those who cannot see it",
+    "description": "The placeholder of the cover image's description."
+  },
+  "compose.article.cover.waiting": {
+    "defaultMessage": "Wait until the cover image has uploaded, or remove it if the upload failed.",
+    "description": "Before Publish when Publish was pressed while the cover uploads or failed to."
+  },
+  "compose.article.tags": {
+    "defaultMessage": "Hashtags",
+    "description": "The name of the article's hashtags."
+  },
+  "compose.article.tags.placeholder": {
+    "defaultMessage": "Add a hashtag",
+    "description": "The placeholder of the field that adds a hashtag."
+  },
+  "compose.article.tags.full": {
+    "defaultMessage": "No more hashtags",
+    "description": "The placeholder of the hashtags' field once the article has as many as it can."
+  },
+  "compose.article.tags.remove": {
+    "defaultMessage": "Remove #{tag}",
+    "description": "The button on a hashtag that takes it off the article."
+  },
+  "compose.article.tags.left": {
+    "defaultMessage": "{count, plural, one {# more hashtag} other {# more hashtags}}",
+    "description": "Beside the hashtags' label once near their limit: how many more can be added."
+  },
+  "compose.article.limit.bytes": {
+    "defaultMessage": "Length: {ratio, number, percent} of the limit",
+    "description": "How much of the length limit of the article's body is used, as a percentage; past 100% the article is too long to publish."
+  },
+  "compose.article.limit.images": {
+    "defaultMessage": "{used, number} of {max, number} images",
+    "description": "How many images the article's body has, of the most it may have."
+  },
+  "compose.article.attach": {
+    "defaultMessage": "Add an image to the body",
+    "description": "The tool that uploads an image and puts it in the body."
+  },
+  "compose.article.attach.uploading": {
+    "defaultMessage": "{count, plural, one {Uploading an image…} other {Uploading # images…}}",
+    "description": "Under the body while images for it upload."
+  },
+  "compose.article.attach.failed": {
+    "defaultMessage": "An image could not be uploaded. Try adding it again.",
+    "description": "Under the body when an image for it could not be uploaded."
+  },
+  "compose.article.sensitive.on": {
+    "defaultMessage": "Mark as sensitive",
+    "description": "The tool that folds the article's body and cover behind its title and summary."
+  },
+  "compose.article.sensitive.off": {
+    "defaultMessage": "Unmark as sensitive",
+    "description": "The same tool while the article is marked sensitive."
+  },
+  "compose.article.publish": {
+    "defaultMessage": "Publish",
+    "description": "The button that publishes the article now."
+  },
+  "compose.article.gone.publish": {
+    "defaultMessage": "Publish as new",
+    "description": "The button that publishes what is written as a new article, once its draft is gone from the server."
+  },
+  "compose.article.over": {
+    "defaultMessage": "Part of the article is over its limit. Shorten it or take out images to publish.",
+    "description": "Before Publish when the article is over a limit."
+  },
+  "compose.article.missing": {
+    "defaultMessage": "Give the article a title and a body to publish.",
+    "description": "Before Publish when Publish was pressed without a title or a body."
+  },
+  "compose.article.failed": {
+    "defaultMessage": "Publishing did not finish. Try again.",
+    "description": "Before Publish when publishing failed with no word from the server."
+  },
+  "compose.article.not_allowed": {
+    "defaultMessage": "Your account cannot write new articles on this server. You can still edit the articles you wrote before.",
+    "description": "In place of the editor when the reader may not write new articles."
+  },
+  "compose.article.loading": {
+    "defaultMessage": "Loading the article…",
+    "description": "In place of the editor while the article or its draft is read from the server."
+  },
+  "compose.article.load_failed": {
+    "defaultMessage": "The article could not be loaded.",
+    "description": "In place of the editor when the article or its draft could not be read; followed by Try again."
   }
 }

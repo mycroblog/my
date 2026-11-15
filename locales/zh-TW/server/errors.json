@@ -399,10 +399,6 @@
     "defaultMessage": "{max, plural, other {文章的標題必須是 1 到 # 個字元。}}",
     "description": "Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters."
   },
-  "errors.status.article_too_long": {
-    "defaultMessage": "{max, plural, other {文章的內文產生的 HTML 最多 # 位元組。}}",
-    "description": "Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes."
-  },
   "errors.status.article_too_many_images": {
     "defaultMessage": "{max, plural, other {文章的內文最多可顯示 # 張圖片。}}",
     "description": "Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images."

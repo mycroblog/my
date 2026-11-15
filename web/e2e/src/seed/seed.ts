@@ -607,6 +607,9 @@ class Seeder {
               ...(d.spoiler === undefined ? {} : { spoiler_text: d.spoiler }),
               ...(replyTo === undefined ? {} : { in_reply_to_id: replyTo }),
               ...(media.length === 0 ? {} : { media }),
+              ...(d.article === undefined
+                ? {}
+                : { article: { title: d.article.title, summary: d.article.summary, tags: [...d.article.tags] } }),
               ...(d.poll === undefined
                 ? {}
                 : {

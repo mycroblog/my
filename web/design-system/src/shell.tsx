@@ -26,6 +26,7 @@ import {
   DialogTrigger,
   Heading,
   Link,
+  MenuTrigger,
   Popover,
   ToggleButton,
   Tooltip,
@@ -37,6 +38,7 @@ import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { UnreadMark } from "./list";
 import { useReader } from "./locale";
+import { MenuPanel } from "./menu";
 import { ModalLayer, ModalPresence } from "./modal";
 
 /**
@@ -750,28 +752,37 @@ export function FrameMark({
 /**
  * The screen's primary action in the frame (writing a post, or signing in): under the mark in the rail, with its label
  * in the sidebar, or floating over the tab bar: a glyph alone named by its label, or with its label when `labelled`
- * (signing in, which a glyph alone does not say).
+ * (signing in, which a glyph alone does not say). With `menu`, a long press, a right click or Alt+Down on it opens a
+ * menu of what else it can start (a new article), in a popover beside it; a press still runs the action. `secondary`
+ * is a second thing to start (a new article), tonal under the primary one in `FrameActions`.
  */
 export function FrameAction({
   icon,
   label,
   onPress,
   labelled = false,
+  secondary = false,
+  menu,
   "aria-keyshortcuts": keyshortcuts,
 }: {
   icon: IconName;
   label: string;
   onPress: () => void;
   labelled?: boolean;
+  /** On the raised surface, tonal: a second action under the primary one, which keeps the accent. */
+  secondary?: boolean;
+  /** The menu the action holds besides itself: its name and its items (`MenuItem`s). */
+  menu?: { label: string; children: ReactNode } | undefined;
   /** The keys that run the action (what `useAction` returns), for assistive technology. */
   "aria-keyshortcuts"?: string | undefined;
 }) {
   const place = use(PlaceContext);
   const s = nav({ place });
   const float = place === "float";
-  return (
+  const [open, setOpen] = useState(false);
+  const button = (
     <ButtonBase
-      kind="primary"
+      kind={secondary ? "secondary" : "primary"}
       size={float ? (labelled ? "form" : "float") : "side"}
       aria-label={label}
       aria-keyshortcuts={keyshortcuts}
@@ -785,6 +796,33 @@ export function FrameAction({
       </span>
     </ButtonBase>
   );
+  if (menu === undefined) return button;
+  return (
+    <div
+      className="contents"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setOpen(true);
+      }}
+    >
+      <MenuTrigger trigger="longPress" isOpen={open} onOpenChange={setOpen}>
+        {button}
+        <Popover placement={float ? "top end" : "bottom start"} offset={4} className="outline-hidden">
+          <MenuPanel label={menu.label} own>
+            {menu.children}
+          </MenuPanel>
+        </Popover>
+      </MenuTrigger>
+    </div>
+  );
+}
+
+/**
+ * The actions under the mark in the rail and the sidebar, close together as buttons of one row sit: the primary one
+ * (New post), then a second one (New article), tonal.
+ */
+export function FrameActions({ children }: { children: ReactNode }) {
+  return <div className="grid gap-shell-item-gap">{children}</div>;
 }
 
 /** A list of places of the app, in the rail, the sidebar, the tab bar or the menu's sheet; two lists stand apart. */

@@ -318,5 +318,13 @@
   "app.tag": {
     "defaultMessage": "#{name}",
     "description": "The heading of a hashtag's screen, and the document's title. name is the hashtag without #."
+  },
+  "app.compose.menu": {
+    "defaultMessage": "Other things to write",
+    "description": "The name of the menu of the primary action, opened by a long press or right click: what else can be written besides a post."
+  },
+  "app.compose.article": {
+    "defaultMessage": "New article",
+    "description": "The item of the primary action's menu that opens the article editor."
   }
 }

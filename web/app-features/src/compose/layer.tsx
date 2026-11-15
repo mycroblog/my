@@ -20,7 +20,8 @@
 // The composer's head opens the reader's drafts and scheduled posts in its place (drafts.tsx), which goes back to the
 // post being written, or opens one of them in the composer, read again from the server with its images, so that it
 // goes on from any device; the post being written is then left as by accident. A save refused for a newer draft saved
-// elsewhere opens the newer one in place of what was written (§9).
+// elsewhere opens the newer one in place of what was written (§9). A draft of an article opens in the article editor,
+// which the app places, and the layer closes.
 
 import {
   useComposeSettings,
@@ -128,9 +129,13 @@ function ComposerView(props: ComposerViewProps) {
 /** The drafts left by accident, by their target's key, with their writes on the server in order. */
 const kept = new KeptDrafts();
 
-/** Reads the reader's draft of `id` from the server, with its images, as the composer's draft. */
-async function load(id: string, writes: ComposeWrites, settings: ComposeSettings): Promise<Draft> {
+/**
+ * Reads the reader's draft of `id` from the server, with its images, as the composer's draft; the draft of an article,
+ * which the article editor writes, is `"article"`.
+ */
+async function load(id: string, writes: ComposeWrites, settings: ComposeSettings): Promise<Draft | "article"> {
   const { draft, saved } = await writes.readDraft(id);
+  if (draft.article !== undefined) return "article";
   const media = await Promise.all(draft.media.map((m) => writes.media(m.id).catch(() => undefined)));
   return fromServer(draft, saved, media, settings, crypto.randomUUID());
 }
@@ -266,6 +271,8 @@ export type ComposeLayerProps = {
   initial?: Draft | undefined;
   /** What a story's specimen opens in: its phase, and what is open in it. */
   specimen?: ComposeSpecimen | undefined;
+  /** Opens the reader's draft of an article of `id` in the article editor, which the app places; the layer closes. */
+  onOpenArticle?: ((id: string) => void) | undefined;
 };
 
 /** A story's specimen of the composer: the phase it opens in, what is open in it, and what could not be loaded. */
@@ -292,6 +299,7 @@ export function ComposeLayer({
   inline = false,
   initial,
   specimen = {},
+  onOpenArticle,
 }: ComposeLayerProps) {
   const { t } = stringsIn(useLocale().locale);
   const settings = useComposeSettings();
@@ -331,9 +339,9 @@ export function ComposeLayer({
 
   // A draft the app opens (a notification of its failed schedule) is read from the server, with the session's writes
   // and settings, once per opening; one that cannot be read (deleted since) leaves the reader at the list.
-  const session = useRef({ writes, settings });
+  const session = useRef({ writes, settings, onOpenArticle, onClose });
   useEffect(() => {
-    session.current = { writes, settings };
+    session.current = { writes, settings, onOpenArticle, onClose };
   });
   const draftId = target?.kind === "draft" ? target.id : undefined;
   const draftSchedule = target?.kind === "draft" && target.schedule === true;
@@ -342,8 +350,15 @@ export function ComposeLayer({
     const closed = new AbortController();
     load(draftId, session.current.writes, session.current.settings).then(
       (draft) => {
-        if (!closed.signal.aborted)
-          setScreens({ key, screen: { kind: "compose", draft, id: draft.key, schedule: draftSchedule } });
+        if (closed.signal.aborted) return;
+        // The draft of an article opens in the article editor, in the layer's place.
+        if (draft === "article") {
+          setScreens(undefined);
+          session.current.onClose();
+          session.current.onOpenArticle?.(draftId);
+          return;
+        }
+        setScreens({ key, screen: { kind: "compose", draft, id: draft.key, schedule: draftSchedule } });
       },
       () => {
         if (!closed.signal.aborted) setScreens({ key, screen: { kind: "drafts", back: undefined } });
@@ -396,6 +411,13 @@ export function ComposeLayer({
     load(id, writes, settings).then(
       (draft) => {
         if (back !== undefined && back.saved?.id !== id && written(back)) kept.keep(back, writes, settings);
+        // The draft of an article opens in the article editor, in the layer's place.
+        if (draft === "article") {
+          if (back !== undefined) left.current = true;
+          close();
+          onOpenArticle?.(id);
+          return;
+        }
         show({ kind: "compose", draft, id: draft.key, schedule });
       },
       // Not read (deleted since): the list is read again, without it.

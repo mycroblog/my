@@ -14,6 +14,7 @@ import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
 import { FormActions, FormHead, FormLink, FormLinks, FormPage, FormPageFooter, FormText } from "./form-page";
+import { MenuItem } from "./menu";
 import { images } from "./samples";
 import {
   CallBar,
@@ -34,6 +35,7 @@ import {
   NavItem,
   NavList,
   NavMenu,
+  FrameActions,
   SectionLine,
   SectionList,
   SectionNote,
@@ -65,6 +67,8 @@ type ShellState = {
   toast?: "stale" | "required";
   /** The sections of the column beside the main one: all, some (rooms and the meter left out), or none. */
   around?: "all" | "some" | "none";
+  /** The server lets the reader write articles (`article_authoring`); else no entry to the article editor shows. */
+  articles?: boolean;
 };
 
 type Place = {
@@ -78,6 +82,7 @@ type Place = {
     | "/voice"
     | "/events"
     | "/about#funding"
+    | "/articles/new"
     | "/login";
   icon: IconName;
   label: string;
@@ -362,12 +367,29 @@ function Shell(state: ShellState) {
   const [muted, setMuted] = useState(state.muted ?? false);
   const { tabs, rest, rights } = places(state);
   const reader = who !== "visitor";
+  const articles = reader && (state.articles ?? true);
   const composes = reader && (at === "/" || at === "/local" || at === "/public" || at === "/@yuki");
+  // A reader who may write articles: New article, tonal under New post in the rail and the sidebar; on a phone, the
+  // first row of the menu's sheet, and the floating New post's menu (a long press) as a shortcut.
+  const articleMenu = articles
+    ? {
+        label: "Other things to write",
+        children: (
+          <MenuItem id="article" icon="article">
+            New article
+          </MenuItem>
+        ),
+      }
+    : undefined;
   const primary = reader ? (
-    <FrameAction icon="compose" label="New post" onPress={() => undefined} />
+    <FrameActions>
+      <FrameAction icon="compose" label="New post" onPress={() => undefined} />
+      {articles && <FrameAction icon="article" label="New article" secondary onPress={() => undefined} />}
+    </FrameActions>
   ) : (
     <FrameAction icon="signIn" label="Sign in" onPress={() => undefined} />
   );
+  const write: Place[] = articles ? [{ href: "/articles/new", icon: "article", label: "New article" }] : [];
   const callBar = call ? (
     <CallBar
       href="/voice/1"
@@ -466,6 +488,7 @@ function Shell(state: ShellState) {
               markLabel={`${String(reportsToHandle)} waiting in moderation`}
               footer={footer}
             >
+              {list(write)}
               {list(rest)}
               {list(rights)}
               {list(server)}
@@ -476,7 +499,7 @@ function Shell(state: ShellState) {
         action={
           reader ? (
             composes ? (
-              <FrameAction icon="compose" label="New post" onPress={() => undefined} />
+              <FrameAction icon="compose" label="New post" onPress={() => undefined} menu={articleMenu} />
             ) : undefined
           ) : (
             <FrameAction icon="signIn" label="Sign in" labelled onPress={() => undefined} />
@@ -512,6 +535,8 @@ export const InCallMuted: Story = { args: { call: true, muted: true, who: "staff
 export const UpdateReady: Story = { args: { toast: "stale", call: false } };
 export const UpdateRequired: Story = { args: { toast: "required", at: "/notifications" } };
 export const AroundEmpty: Story = { args: { around: "none" } };
+/** The server keeps articles to a role the reader does not have: no New article anywhere. */
+export const ArticlesNotAllowed: Story = { args: { articles: false } };
 /** Waits until a dialog over the page has risen into place, so that the story tests check it as the reader sees it. */
 async function dialogRisen(doc: Document) {
   await waitFor(

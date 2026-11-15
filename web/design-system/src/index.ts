@@ -155,6 +155,22 @@ export {
   type ArticleCardProps,
   type ArticleCoverImage,
 } from "./article";
+export {
+  ArticleDetails,
+  ArticleField,
+  ArticleFrame,
+  ArticleLimits,
+  ArticleMode,
+  ArticlePane,
+  ArticlePreview,
+  ArticleTextArea,
+  ArticleTitleInput,
+  CoverAdd,
+  CoverRemove,
+  CoverRow,
+  TagInput,
+  type ArticleFrameProps,
+} from "./article-editor";
 export { LinkCard, type LinkCardProps } from "./card";
 export { AudioRow, FileLink, MediaGrid, playTime, type MediaGridProps, type MediaItem, type MediaKind } from "./media";
 export { MediaViewer, type MediaViewerProps } from "./viewer";
@@ -206,6 +222,7 @@ export {
   CallBar,
   Frame,
   FrameAction,
+  FrameActions,
   FrameAside,
   FrameBanner,
   FrameBanners,

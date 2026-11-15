@@ -784,6 +784,8 @@ export type DraftPlan = {
   poll?: Poll;
   schedule?: { inDays: number; hour: number };
   fails?: { post: string };
+  /** It is the draft of an article (ADR-0160 §2): `text` is its body in Markdown, under this title and summary. */
+  article?: { title: string; summary: string; tags: readonly string[] };
 };
 
 /** The drafts and scheduled posts, which the composer's list shows. */
@@ -829,6 +831,34 @@ export const drafts: readonly DraftPlan[] = [
     author: "yuki",
     text: "Walked along the river this morning. The first frost turned every leaf on the path silver.",
     language: "en",
+  },
+  {
+    key: "yuki-article-trail",
+    author: "yuki",
+    text:
+      "## Before you go\n\nThe trail starts behind the old station. Bring **water** and a warm layer: the ridge is " +
+      "windy even in summer.\n\n## The route\n\n- Up the stone steps to the shrine\n- Along the ridge to the lookout\n" +
+      "- Down through the cedar forest\n\n> The lookout is the best place for the morning light.",
+    language: "en",
+    article: {
+      title: "A photo walk along the north ridge",
+      summary: "",
+      tags: ["photowalk", "hiking"],
+    },
+  },
+  {
+    key: "yuki-article-scheduled",
+    author: "yuki",
+    text:
+      "## What we did\n\nTwelve of us met at the pier and walked the river path to the old mill.\n\n" +
+      "## Next time\n\nWe start an hour earlier, for the light.",
+    language: "en",
+    schedule: { inDays: 3, hour: 1 },
+    article: {
+      title: "Notes from the November photo walk",
+      summary: "What we saw, what we learned, and when we meet next.",
+      tags: ["photowalk"],
+    },
   },
 ];
 

@@ -8,7 +8,7 @@ import { EmojiPicker } from "./emoji-picker";
 import { answered } from "./write";
 
 /** Waits until `box`, a text box of the editor, holds `text` as the composer sends it. */
-async function holds(box: Locator, text: string | RegExp): Promise<void> {
+export async function holds(box: Locator, text: string | RegExp): Promise<void> {
   const value = expect.poll(() =>
     box.evaluate((root) => {
       const read = (node: Node): string => {

@@ -2070,11 +2070,11 @@ func (l *Localizer) ServerErrorsStatusArticleTitleInvalid(max int) string {
 	return l.format("server:errors.status.article_title_invalid", map[string]any{"max": max})
 }
 
-// ServerErrorsStatusArticleTooLong formats "server:errors.status.article_too_long". Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes.
+// ServerErrorsStatusArticleTooLong formats "server:errors.status.article_too_long". Detail of the HTTP 422 API error when the body of an article is longer than the instance allows.
 //
-//	en: {max, plural, one {The body of an article must make at most # byte of HTML.} other {The body of an article must make at most # bytes of HTML.}}
-func (l *Localizer) ServerErrorsStatusArticleTooLong(max int) string {
-	return l.format("server:errors.status.article_too_long", map[string]any{"max": max})
+//	en: The body of this article is too long. Shorten it and try again.
+func (l *Localizer) ServerErrorsStatusArticleTooLong() string {
+	return l.format("server:errors.status.article_too_long", nil)
 }
 
 // ServerErrorsStatusArticleTooManyImages formats "server:errors.status.article_too_many_images". Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images.

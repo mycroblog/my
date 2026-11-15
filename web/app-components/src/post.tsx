@@ -652,7 +652,7 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
 /**
  * The more menu: what reaches the post (its link, its original page when it came from another server, sharing it),
  * the bookmark, then for one's own edit (none with a poll), and apart and last delete and delete-and-redraft, which ask
- * first.
+ * first; an article is never redrafted, since the composer writes posts.
  */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
   const item = (type: Exclude<PostAction["type"], "reaction" | "vote">, icon: IconName, label: string, on = false) => (
@@ -683,7 +683,7 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
           {/* The server edits no post with a poll: its votes belong to the poll as posted. */}
           {status.poll === undefined && <MenuGroup>{item("edit", "edit", t("post.edit"))}</MenuGroup>}
           <MenuGroup>
-            {item("redraft", "redraft", t("post.redraft"))}
+            {status.article === undefined && item("redraft", "redraft", t("post.redraft"))}
             {item("delete", "delete", t("post.delete"))}
           </MenuGroup>
         </>
