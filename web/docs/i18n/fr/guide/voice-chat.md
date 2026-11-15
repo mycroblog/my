@@ -3,14 +3,14 @@
 
 Le chat vocal permet aux membres d’un serveur de se parler dans des salons. Ce sont les opérateurs du serveur qui décident s’il est activé : lorsqu’il est désactivé, « Chat vocal » est absent de la navigation et la page affiche « Ce serveur ne propose pas de salon vocal. ». Seules les personnes disposant d’un compte sur le serveur peuvent rejoindre ses salons, et il faut un navigateur compatible avec les appels, sur une connexion sécurisée (HTTPS).
 
-<!-- source: finding-and-joining-a-room efcab8beeee0 -->
+<!-- source: finding-and-joining-a-room e775d4e8ba4a -->
 ## Trouver et rejoindre un salon
 
 Choisissez « Chat vocal » dans la navigation. « Salons ouverts » liste les salons que vous pouvez voir, avec leur hôte et le nombre de personnes présentes. Un salon n’y apparaît que tant qu’il est ouvert. Un salon peut aussi être lié depuis une publication ou depuis une page de hashtag.
 
 Ouvrez un salon et choisissez « Rejoindre ». Les commandes d’appel proposent alors « Parler » et « Écouter seulement ». Votre navigateur vous demande l’autorisation d’utiliser le micro la première fois que vous l’activez ; si vous l’avez refusée, autorisez-la dans les paramètres du site du navigateur. Lorsque vous rejoignez un salon, votre nom apparaît pour toutes les personnes qui peuvent voir le salon. Vous ne pouvez être que dans un salon à la fois : en rejoindre un autre vous fait quitter le premier (« Passer ici »).
 
-Dans un salon, les personnes sont des « Intervenants » ou des « Auditeurs », et les rôles sont hôte, co-hôte, intervenant et auditeur. Utilisez « Activer le micro » et « Couper le micro » pour parler, « Lever la main » pour demander la parole lorsque le salon ne permet pas à tout le monde de parler, et « Quitter » pour partir. Pour signaler un salon, consultez [Bloquer, mettre en sourdine et signaler](safety.md).
+Dans un salon, les personnes sont des « Intervenants » ou des « Auditeurs », et les rôles sont hôte, co-hôte, intervenant et auditeur. Utilisez « Activer le micro » et « Couper le micro » pour parler, « Lever la main » pour demander la parole lorsque le salon ne permet pas à tout le monde de parler, et « Quitter » pour partir.
 
 Si votre connexion est interrompue, l’appel affiche « Reconnexion… ». Un appel prend aussi fin lorsque vous rejoignez le même salon depuis un autre appareil, lorsqu’un hôte vous retire, ou lorsque vous et l’hôte ou un co-hôte vous bloquez mutuellement.
 

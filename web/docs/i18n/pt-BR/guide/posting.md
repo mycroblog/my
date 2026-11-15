@@ -63,7 +63,7 @@ Uma publicação definida como “Este servidor” fica no seu servidor. As pess
 - Contas do seu servidor podem impulsionar uma publicação de “Este servidor”, e o impulso aparece somente neste servidor.
 - Uma resposta a uma publicação de “Este servidor” também começa como “Este servidor”; você pode mudar isso.
 
-<!-- source: other-things-to-know d1f569ac2d1d -->
+<!-- source: other-things-to-know 59d77fd8017f -->
 ### Outras coisas a saber
 
 - Você não pode mudar a visibilidade de uma publicação depois de publicá-la. Ao editar uma publicação, a visibilidade e a publicação à qual ela responde permanecem como estão.
@@ -73,27 +73,29 @@ Uma publicação definida como “Este servidor” fica no seu servidor. As pess
 - O autor também pode permitir que algumas pessoas respondam ou impulsionem apenas depois que ele aprovar. Uma resposta ou um impulso assim fica aguardando: você é notificado (“… pediu para responder à sua publicação”), e ele fica fora da sua publicação até você aprová-lo. Uma resposta em espera vinda de outro servidor não está na conversa sob a sua publicação nem na contagem de respostas dela; ela ainda aparece no perfil do autor e na própria página. Um impulso em espera não é contado. Aprová-lo o adiciona à sua publicação; recusá-lo o mantém fora, e o outro servidor é informado nos dois casos.
 - Uma resposta ou um impulso vindo de outro servidor que esteja totalmente fora da sua escolha é mantido fora da sua publicação do mesmo modo, e não notifica você de nada.
 - Quando você responde ou impulsiona uma publicação cujo autor aprova respostas ou impulsos manualmente, a sua fica aguardando essa aprovação. Até lá, só você vê a sua resposta, sob a publicação e na própria página, marcada como em espera; os outros não veem nada dela, e nada é enviado a outros servidores. O seu impulso não é feito até ser aprovado. Você é notificado quando o autor aprova ou recusa (“… aprovou a sua resposta, o seu impulso ou a sua citação”). Excluir uma resposta em espera, ou desfazer um impulso em espera, retira o pedido.
-- Você pode fixar até cinco das suas publicações no seu perfil com “Fixar no perfil”. Uma publicação de “Pessoas mencionadas” não pode ser fixada.
 
-<!-- source: who-can-reply-boost-and-quote c9ea034f7416 -->
+<!-- source: who-can-reply-boost-and-quote e207d9971532 -->
 ## Quem pode responder, impulsionar e citar
 
 O botão “Quem pode responder, impulsionar e citar”, entre as ferramentas do formulário, abre as escolhas para aquela publicação. Para cada um entre respostas, impulsos e citações, escolha quem pode fazê-lo de imediato: “Qualquer pessoa”, “Seguidores e pessoas que você menciona”, “Pessoas que você menciona” ou “Somente você”. Abaixo de cada um, “Outras pessoas podem responder com a sua aprovação” (e o mesmo para impulsos e citações) permite que todas as outras pessoas peçam em vez de serem recusadas. Quando uma escolha admite menos que qualquer pessoa, o formulário mostra o resultado acima das ferramentas, por exemplo “Respostas: qualquer pessoa. Impulsos: somente você. Citações: qualquer pessoa.”, antes de você publicar.
 
 - As pessoas que uma publicação menciona sempre podem responder a ela. Uma publicação de “Seguidores” só pode ser impulsionada e citada por você, e uma de “Pessoas mencionadas” por ninguém, qualquer que seja a sua escolha.
 - Os padrões para novas publicações ficam em “Quem pode responder, impulsionar e citar suas novas publicações” em “Exibição, publicação e linhas do tempo” nas configurações.
-- Para alterá-los em uma publicação que você já enviou, escolha “Alterar quem pode responder, impulsionar e citar” no menu “Mais ações” dela. Cada escolha é salva na hora. As respostas, os impulsos e as citações que você aprovou antes permanecem, e os pedidos que a nova escolha admite são aprovados.
 - Os pedidos que aguardam você são listados em “Solicitações de aprovação” nas configurações, ao lado de “Pedidos para seguir”; a notificação de cada um leva até lá com “Analisar as solicitações”. “Aprovar” adiciona a resposta, o impulso ou a citação à sua publicação, e a conversa sob ela mostra na hora uma resposta aprovada; “Recusar” a mantém fora.
 - Na publicação de outra pessoa, “Responder” não é mostrado e “Impulsionar” não pode ser pressionado quando o autor não permite. Quando o autor os aprova manualmente, o formulário avisa antes de você responder, e depois que você impulsiona, a publicação diz “Seu impulso aguarda a aprovação do autor.”
 
-<!-- source: after-posting dc553fa0ead9 -->
+<!-- source: after-posting 8668eb1a5211 -->
 ## Depois de publicar
 
-Sob uma publicação você encontra “Responder”, “Impulsionar”, “Citar”, “Favoritar” e “Salvar”. O menu “Mais ações” tem “Copiar link” e, para as suas publicações, “Editar”, “Fixar no perfil” e “Excluir”. Uma publicação que foi editada mostra “Editada”, e as versões anteriores estão na página “Histórico de edições”. “Excluir” remove a publicação para todos, junto com os seus impulsos e favoritos.
+Sob uma publicação você encontra “Responder”, “Impulsionar”, “Citar”, “Favoritar”, “Reagir” e “Mais”. “Mais” tem “Copiar link”, “Abrir página original” (para uma publicação de outro servidor), “Compartilhar” e “Salvar”; os seus itens salvos aparecem na página “Itens salvos”, e somente você os vê. Em uma publicação sua, ele também tem “Editar” (não para uma publicação com enquete), “Excluir e reescrever…” e “Excluir…”. As duas exclusões pedem confirmação antes. “Excluir…” remove a publicação para todos, junto com os seus impulsos e favoritos; “Excluir e reescrever…” faz o mesmo e abre o formulário com o texto, as imagens e a enquete dela como uma nova publicação.
 
-Para uma publicação de outra pessoa, o mesmo menu oferece seguir, silenciar, bloquear ou denunciar o autor, além de “Enviar mensagem direta a …”. Os seus itens salvos aparecem na página “Itens salvos”; somente você os vê.
+Uma publicação editada mostra “· editada” depois do horário; escolha-o para abrir o “Histórico de edições”, com a versão mais recente primeiro e as alterações marcadas.
 
-Quando o servidor oferece tradução, ou o seu navegador pode traduzir, as publicações em outros idiomas têm “Traduzir” entre as ações e no menu “Mais ações”, que o contém quando a publicação é estreita demais para mais um botão. Enquanto uma publicação mostra a tradução, uma linha sob o texto diz de que idioma ela foi traduzida e por quem, com “Mostrar original” para voltar. Se o servidor envia o texto das publicações a um serviço de tradução, o seletor de visibilidade informa para quais escolhas isso acontece.
+Uma enquete aceita um voto, ou vários quando o autor permite: escolha e depois “Votar”. Os resultados aparecem depois que você vota ou que a enquete termina, e para o autor dela a qualquer momento. “Reagir” abre um seletor de emojis (busca, categorias, tom de pele e os emojis personalizados deste servidor); cada pessoa dá a uma publicação um favorito ou uma reação. Na página da própria publicação, um emoji lista quem reagiu com ele. O formulário também tem um botão “Adicionar emoji”.
+
+Uma publicação em outro idioma que não o seu tem “Traduzir” quando o servidor tem um serviço de tradução ou o seu navegador pode traduzir; “Mostrar original” volta ao texto. Atrás de um aviso de conteúdo, a linha fica na faixa do aviso. Se o servidor envia o texto das publicações a um serviço de tradução, o seletor de visibilidade informa para quais escolhas isso acontece.
+
+Imagens, GIFs, vídeos e áudios aparecem na publicação. Escolha uma imagem para abrir o visualizador: deslize ou use as setas, aplique zoom e leia a descrição dela. Uma mídia marcada como sensível fica oculta sob uma linha como “Imagem sensível”, até você escolher “Mostrar”. Um link em uma publicação aparece como um cartão.
 
 <!-- source: writing-an-article 0dfa0a80bb8e -->
 ## Escrever um artigo

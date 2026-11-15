@@ -123,7 +123,7 @@ moderador ha limitado o suspendido, y las cuentas que se han mudado, no tienen f
 «Listas» reúne a personas a las que sigues en una lista, para que leas sus publicaciones aparte de tu cronología de
 inicio. Solo tú ves tus listas, y nadie sabe que lo has puesto en una. Solo puedes añadir a personas a las que sigues.
 
-<!-- source: hiding-what-you-do-not-want-to-read 3c90167dc8d3 -->
+<!-- source: hiding-what-you-do-not-want-to-read 29d63089083e -->
 ## Ocultar lo que no quieres leer
 
-Silencia cuentas, silencia servidores enteros o bloquea cuentas: consulta [Bloquear, silenciar y denunciar](safety.md).
+Silencia cuentas, silencia servidores enteros o bloquea cuentas: consulta [Bloquear y silenciar](safety.md).

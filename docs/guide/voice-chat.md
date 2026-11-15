@@ -18,7 +18,7 @@ room leaves the first ("Move here").
 
 In a room, people are "Speakers" or "Listeners", and the roles are Host, Co-host, Speaker, and Listener. Use "Turn
 microphone on" and "Turn microphone off" to talk, "Raise hand" to ask to speak when the room does not let everyone speak,
-and "Leave" to go. To report a room, see [Blocking, muting, and reporting](safety.md).
+and "Leave" to go.
 
 If your connection drops, the call shows "Reconnecting...". A call also ends when you join the same room from another
 device, when a host removes you, or when you and the host or a co-host block each other.

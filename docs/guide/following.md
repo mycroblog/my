@@ -115,4 +115,4 @@ lists, and nobody is told that you put them in one. You can add only the people 
 
 ## Hiding what you do not want to read
 
-Mute accounts, mute whole servers, or block accounts: see [Blocking, muting, and reporting](safety.md).
+Mute accounts, mute whole servers, or block accounts: see [Blocking and muting](safety.md).

@@ -86,7 +86,6 @@ show it to those followers as a post for followers only.
 - The author may also let some people reply or boost only once they approve it. Such a reply or boost waits: you are notified ("... asked to reply to your post"), and it stays off your post until you approve it. A waiting reply from another server is not in the conversation under your post or in its count of replies; it still appears on its author's profile and on its own page. A waiting boost is not counted. Approving it adds it to your post; declining it keeps it off, and the other server is told either way.
 - A reply or a boost from another server that is outside your choice altogether is kept off your post in the same way, and notifies you of nothing.
 - When you reply to or boost a post whose author approves replies or boosts by hand, yours waits for that approval. Until then, only you see your reply, under the post and on its own page, marked as waiting; others see nothing of it, and nothing is sent to other servers. Your boost is not made until it is approved. You are notified when the author approves or declines it ("... approved your reply, boost, or quote"). Deleting a waiting reply, or undoing a waiting boost, takes the request back.
-- You can pin up to five of your posts to your profile with "Pin to profile". A "Mentioned people" post cannot be pinned.
 
 ## Who can reply, boost, and quote
 
@@ -98,24 +97,32 @@ tools, for example "Replies: Anyone. Boosts: Only you. Quotes: Anyone.", before 
 
 - The people a post mentions can always reply to it. A "Followers" post can be boosted and quoted only by you, and a "Mentioned people" post by no one, whatever you choose.
 - The defaults for new posts are under "Who can reply to, boost, and quote your new posts" in "Display, posting, and timelines" in the settings.
-- To change them for a post you already sent, choose "Change who can reply, boost, and quote" in its "More actions" menu. Each choice is saved at once. Replies, boosts, and quotes you approved before stay, and requests that the new choice admits are approved.
 - Requests that wait for you are listed under "Approval requests" in the settings, next to "Follow requests"; the notification of each one links there with "Review the requests". "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
 - On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Your boost waits for the author's approval."
 
 ## After posting
 
-Under a post you find "Reply", "Boost", "Quote", "Favourite", and "Bookmark". The menu "More actions" has "Copy link",
-and for your own posts "Edit", "Pin to profile", and "Delete". A post that was edited shows "Edited", and its earlier
-versions are on its "Edit history" page. "Delete" removes the post for everyone, along with its boosts and favourites.
+Under a post you find "Reply", "Boost", "Quote", "Favourite", "React", and "More". "More" has "Copy link", "Open
+original page" (for a post from another server), "Share", and "Bookmark"; your bookmarks are on the "Bookmarks" page,
+and only you see them. On your own post it also has "Edit" (not for a post with a poll), "Delete and redraft…", and
+"Delete…". Both deletions ask first. "Delete…" removes the post for everyone, along with its boosts and favourites;
+"Delete and redraft…" does the same and opens the form with its text, images, and poll as a new post.
 
-For a post by another person, the same menu offers to follow, mute, block, or report its author, and "Direct message".
-Your bookmarks are listed on the "Bookmarks" page; only you see them.
+An edited post shows "· edited" after its time; choose it to open "Edit history", newest version first, with the
+changes marked.
 
-When the server offers translation, or your browser can translate, posts in other languages have "Translate" among
-their actions, and in the "More actions" menu, which holds it when the post is too narrow for one more button. While a
-post shows its translation, a line under the text says which language it was translated from and by whom, with "Show
-original" to go back. If the server sends the text of posts to a translation service, the visibility picker tells you
-for which choices.
+A poll takes one vote, or several when its author allows it: choose, then "Vote". The results show once you voted or
+the poll ended, and to its author at any time. "React" opens a picker of emoji (search, categories, skin tone, and this
+server's custom emoji); each person gives a post one favourite or one reaction. On the post's own page, an emoji lists
+who reacted with it. The form has an "Add emoji" button too.
+
+A post in another language than yours has "Translate" when the server has a translation service or your browser can
+translate; "Show original" goes back. Behind a content warning, the line sits in the warning's band. If the server sends
+the text of posts to a translation service, the visibility picker tells you for which choices.
+
+Images, GIFs, video, and audio show in the post. Choose an image to open the viewer: swipe or use the arrows, zoom, and
+read its description. Media marked sensitive stays hidden under a line such as "Sensitive image", until you choose "Show". A link in a
+post shows as a card.
 
 ## Writing an article
 

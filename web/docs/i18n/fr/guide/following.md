@@ -79,4 +79,4 @@ Le fait que vos propres publications figurent dans les flux se règle avec « 
 <!-- source: hiding-what-you-do-not-want-to-read 3c90167dc8d3 -->
 ## Masquer ce que vous ne souhaitez pas lire
 
-Mettez des comptes en sourdine, mettez des serveurs entiers en sourdine, ou bloquez des comptes : consultez [Bloquer, mettre en sourdine et signaler](safety.md).
+Mettez des comptes en sourdine, mettez des serveurs entiers en sourdine, ou bloquez des comptes : consultez [Bloquer et mettre en sourdine](safety.md).

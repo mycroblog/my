@@ -29,7 +29,7 @@ Cada notificação tem um link para o que ela se refere, por exemplo “Abrir pu
 
 A página “Todas” lista tudo, da mais nova para a mais antiga. As abas “Menções”, “Favoritos”, “Impulsos”, “Novos seguidores” e “Novas publicações” mostram um tipo de cada vez. Ao abrir a página com “Todas”, as notificações visíveis na tela são marcadas como lidas; uma lista filtrada não faz isso. Novas notificações entram na lista enquanto a página estiver aberta.
 
-<!-- source: choosing-how-they-reach-you a8ded9a072a9 -->
+<!-- source: choosing-how-they-reach-you c5c8f95f2dd1 -->
 ## Escolher como elas chegam até você
 
 Em “Notificações” nas configurações, você escolhe, para cada tipo de notificação, se ela chega “No app”, por “Push”, por “E-mail” ou com “Som”. Um tipo que você desativa no app não é criado, por isso também não chega até você por nenhum outro meio.
@@ -38,7 +38,7 @@ Em “Notificações” nas configurações, você escolhe, para cada tipo de no
 - **Som**: “Tocar um som para novas notificações” toca um som neste dispositivo enquanto o app estiver aberto.
 - **E-mail**: somente em servidores que enviam e-mails. O link no fim de um e-mail de notificação para de enviar e-mails desse tipo (“Parar de receber estes e-mails”); as notificações continuam aparecendo no app. Se os e-mails para o seu endereço forem devolvidos ou marcados como spam, a página de configurações informa isso (“Entrega de e-mail”) e explica como voltar a receber os e-mails.
 
-Contas que você silencia não notificam você (veja [Bloquear, silenciar e denunciar](safety.md)). Um filtro de palavras-chave que se aplica às notificações deixa de fora uma notificação sobre uma publicação que ele oculta, da lista, da contagem de não lidas, das notificações push e do e-mail; uma notificação sobre uma publicação que ele apenas recolhe cita o filtro na notificação push e no e-mail em vez de dizer mais.
+Contas que você silencia não notificam você (veja [Bloquear e silenciar](safety.md)). Um filtro de palavras-chave que se aplica às notificações deixa de fora uma notificação sobre uma publicação que ele oculta, da lista, da contagem de não lidas, das notificações push e do e-mail; uma notificação sobre uma publicação que ele apenas recolhe cita o filtro na notificação push e no e-mail em vez de dizer mais.
 
 <!-- source: holding-notifications-from-people-you-dont-know eb17a1be6d5b -->
 ## Reter notificações de pessoas que você não conhece
@@ -55,8 +55,3 @@ Quando há notificações retidas, o topo da página de notificações mostra �
 
 - **Aceitar** move as notificações retidas para as suas notificações e deixa passar as notificações posteriores daquela pessoa, qualquer que seja a política. Não dá para desfazer; silencie ou bloqueie a pessoa para impedi-la de novo.
 - **Dispensar** remove as notificações retidas. A pessoa não é aceita: uma notificação retida depois cria uma nova solicitação.
-
-<!-- source: muting-a-thread d8f2d7430fc9 -->
-## Silenciar uma conversa
-
-“Silenciar esta conversa”, no menu “Mais ações” de uma publicação, interrompe as notificações da conversa dela: respostas e menções nela, e impulsos, favoritos, reações e citações das publicações dela, incluindo as suas. As publicações continuam aparecendo nas suas linhas do tempo, e as notificações que você já recebeu permanecem. “Reativar esta conversa”, no mesmo menu, encerra o silêncio; o que aconteceu enquanto ela estava silenciada não notifica você depois.

@@ -32,7 +32,7 @@ La page « Toutes » liste tout, de la plus récente à la plus ancienne. Le
 n’affichent qu’un seul type. Ouvrir la page « Toutes » marque comme lues les notifications affichées à l’écran ; une liste filtrée ne le fait pas. Les nouvelles
 notifications s’ajoutent à la liste tant que la page est ouverte.
 
-<!-- source: choosing-how-they-reach-you a8ded9a072a9 -->
+<!-- source: choosing-how-they-reach-you c5c8f95f2dd1 -->
 ## Choisir comment elles vous parviennent
 
 Sous « Notifications » dans les paramètres, vous choisissez, pour chaque type de notification, si elle arrive « Dans l’application », par « Push », par « E-mail » ou avec « Son ». Un type que vous désactivez dans l’application n’est pas créé du tout ; il ne vous parvient donc par aucun autre moyen non plus.
@@ -41,7 +41,7 @@ Sous « Notifications » dans les paramètres, vous choisissez, pour chaque 
 - **Son** : « Jouer un son pour les nouvelles notifications » joue un son sur cet appareil tant que l’application est ouverte.
 - **E-mail** : uniquement sur les serveurs qui envoient des e-mails. Le lien en bas d’un e-mail de notification arrête les e-mails de ce type (« Arrêter ces e-mails ») ; les notifications apparaissent toujours dans l’application. Si les e-mails envoyés à votre adresse sont rejetés ou marqués comme spam, la page des paramètres l’indique (« Envoi d’e-mails ») et explique comment recommencer à les recevoir.
 
-Les comptes que vous mettez en sourdine ne vous notifient pas (voir [Bloquer, mettre en sourdine et signaler](safety.md)). Un filtre de mots-clés qui s’applique aux notifications écarte une notification à propos d’une publication qu’il masque, de la liste, du compteur de non-lus, des notifications push et des e-mails ; une notification à propos d’une publication qu’il ne fait que replier nomme le filtre dans sa notification push et son e-mail au lieu d’en dire plus.
+Les comptes que vous mettez en sourdine ne vous notifient pas (voir [Bloquer et mettre en sourdine](safety.md)). Un filtre de mots-clés qui s’applique aux notifications écarte une notification à propos d’une publication qu’il masque, de la liste, du compteur de non-lus, des notifications push et des e-mails ; une notification à propos d’une publication qu’il ne fait que replier nomme le filtre dans sa notification push et son e-mail au lieu d’en dire plus.
 
 <!-- source: holding-notifications-from-people-you-dont-know eb17a1be6d5b -->
 ## Retenir les notifications de personnes que vous ne connaissez pas
@@ -58,8 +58,3 @@ Lorsque des notifications sont retenues, le haut de la page des notifications af
 
 - **Accepter** déplace les notifications retenues dans vos notifications et laisse passer les notifications ultérieures de cette personne, quelle que soit la politique. On ne peut pas l’annuler ; mettez la personne en sourdine ou bloquez-la pour l’arrêter de nouveau.
 - **Écarter** supprime les notifications retenues. La personne n’est pas acceptée : une notification retenue plus tard crée une nouvelle demande.
-
-<!-- source: muting-a-thread d8f2d7430fc9 -->
-## Mettre un fil en sourdine
-
-« Mettre ce fil en sourdine », dans le menu « Plus d’actions » d’une publication, arrête les notifications de son fil : les réponses et les mentions qu’il contient, ainsi que les boosts, favoris, réactions et citations de ses publications, y compris les vôtres. Les publications continuent d’apparaître dans vos fils, et les notifications que vous avez déjà reçues restent. « Réactiver ce fil » dans le même menu met fin à la sourdine ; ce qui s’est passé pendant qu’elle était active ne vous notifie pas ensuite.

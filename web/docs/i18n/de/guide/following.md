@@ -83,7 +83,7 @@ Ob deine eigenen Beiträge in Feeds stehen, bestimmt „Einen Feed meiner öffen
 Mit „Listen“ legst du Personen, denen du folgst, in eine Liste, damit du ihre Beiträge getrennt von deiner Home-Timeline liest. Nur du siehst deine
 Listen, und niemand erfährt, dass du ihn in eine gesetzt hast. Du kannst nur Personen hinzufügen, denen du folgst.
 
-<!-- source: hiding-what-you-do-not-want-to-read 3c90167dc8d3 -->
+<!-- source: hiding-what-you-do-not-want-to-read 29d63089083e -->
 ## Ausblenden, was du nicht lesen möchtest
 
-Du kannst Konten stummschalten, ganze Server stummschalten oder Konten sperren: Siehe [Blockieren, Stummschalten und Melden](safety.md).
+Du kannst Konten stummschalten, ganze Server stummschalten oder Konten sperren: Siehe [Blockieren und Stummschalten](safety.md).

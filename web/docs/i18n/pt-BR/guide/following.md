@@ -75,7 +75,7 @@ Pessoas sem uma conta no fediverso podem seguir um perfil ou uma hashtag em um l
 
 “Listas” reúne as pessoas que você segue em uma lista, para que você leia as publicações delas separadamente da sua linha do tempo inicial. Somente você vê as suas listas, e ninguém é avisado de que você as criou. Você pode adicionar apenas pessoas que segue.
 
-<!-- source: hiding-what-you-do-not-want-to-read 3c90167dc8d3 -->
+<!-- source: hiding-what-you-do-not-want-to-read 29d63089083e -->
 ## Ocultar o que você não quer ler
 
-Para silenciar contas, silenciar servidores inteiros ou bloquear contas, veja [Bloquear, silenciar e denunciar](safety.md).
+Para silenciar contas, silenciar servidores inteiros ou bloquear contas, veja [Bloquear e silenciar](safety.md).

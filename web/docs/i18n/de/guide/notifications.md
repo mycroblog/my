@@ -32,7 +32,7 @@ Die Seite „Alle“ listet alles auf, die neueste zuerst. Die Tabs „Erwähnun
 zeigen jeweils eine Art. Wenn du die Seite mit „Alle“ öffnest, werden die Benachrichtigungen auf dem Bildschirm als gelesen markiert; eine gefilterte Liste
 tut das nicht. Neue Benachrichtigungen erscheinen in der Liste, solange die Seite geöffnet ist.
 
-<!-- source: choosing-how-they-reach-you a8ded9a072a9 -->
+<!-- source: choosing-how-they-reach-you c5c8f95f2dd1 -->
 ## Festlegen, wie sie dich erreichen
 
 Unter „Benachrichtigungen“ in den Einstellungen wählst du für jede Art von Benachrichtigung, ob sie „In der App“, per „Push“, per „E-Mail“ oder mit „Ton“ ankommt. Eine Art, die du in der App ausschaltest, wird gar nicht erst erzeugt und erreicht dich daher auch auf keinem anderen Weg.
@@ -41,7 +41,7 @@ Unter „Benachrichtigungen“ in den Einstellungen wählst du für jede Art von
 - **Ton**: „Bei neuen Benachrichtigungen einen Ton abspielen“ spielt auf diesem Gerät einen Ton ab, solange die App geöffnet ist.
 - **E-Mail**: nur auf Servern, die E-Mails senden. Der Link am Ende einer Benachrichtigungs-E-Mail beendet die E-Mails dieser Art („Diese E-Mails beenden“); die Benachrichtigungen erscheinen weiterhin in der App. Wenn E-Mails an deine Adresse zurückkommen oder als Spam markiert werden, sagt die Einstellungsseite das („E-Mail-Zustellung“) und erklärt, wie du sie wieder erhältst.
 
-Konten, die du stummschaltest, benachrichtigen dich nicht (siehe [Blockieren, Stummschalten und Melden](safety.md)). Ein Stichwortfilter, der für Benachrichtigungen gilt, lässt eine Benachrichtigung über einen Beitrag, den er ausblendet, aus der Liste, dem Zähler für Ungelesenes, den Push-Benachrichtigungen und den E-Mails weg; eine Benachrichtigung über einen Beitrag, den er nur einklappt, nennt in ihrer Push-Benachrichtigung und E-Mail den Filter, statt mehr zu verraten.
+Konten, die du stummschaltest, benachrichtigen dich nicht (siehe [Blockieren und Stummschalten](safety.md)). Ein Stichwortfilter, der für Benachrichtigungen gilt, lässt eine Benachrichtigung über einen Beitrag, den er ausblendet, aus der Liste, dem Zähler für Ungelesenes, den Push-Benachrichtigungen und den E-Mails weg; eine Benachrichtigung über einen Beitrag, den er nur einklappt, nennt in ihrer Push-Benachrichtigung und E-Mail den Filter, statt mehr zu verraten.
 
 <!-- source: holding-notifications-from-people-you-dont-know eb17a1be6d5b -->
 ## Benachrichtigungen von Leuten zurückhalten, die du nicht kennst
@@ -58,8 +58,3 @@ Wenn Benachrichtigungen zurückgehalten werden, zeigt der Kopf der Benachrichtig
 
 - **Annehmen** verschiebt die zurückgehaltenen Benachrichtigungen in deine Benachrichtigungen und lässt spätere Benachrichtigungen dieser Person durch, was auch immer die Richtlinie sagt. Das lässt sich nicht rückgängig machen; schalte die Person stumm oder blockiere sie, um sie wieder zu stoppen.
 - **Verwerfen** entfernt die zurückgehaltenen Benachrichtigungen. Die Person wird nicht angenommen: Eine später zurückgehaltene Benachrichtigung erzeugt eine neue Anfrage.
-
-<!-- source: muting-a-thread d8f2d7430fc9 -->
-## Einen Thread stummschalten
-
-„Diesen Thread stummschalten“ im Menü „Weitere Aktionen“ eines Beitrags stoppt die Benachrichtigungen seines Threads: Antworten und Erwähnungen darin sowie Boosts, Favoriten, Reaktionen und Zitate seiner Beiträge, auch deiner eigenen. Die Beiträge erscheinen weiterhin in deinen Timelines, und die Benachrichtigungen, die du schon erhalten hast, bleiben. „Stummschaltung dieses Threads aufheben“ im selben Menü beendet die Stummschaltung; was geschah, während sie galt, benachrichtigt dich danach nicht.

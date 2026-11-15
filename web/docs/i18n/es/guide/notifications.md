@@ -33,7 +33,7 @@ La página «Todas» lista todo, de lo más reciente a lo más antiguo. Las pest
 notificaciones que aparecen en pantalla; una lista filtrada no lo hace. Las notificaciones nuevas se añaden a la lista
 mientras la página está abierta.
 
-<!-- source: choosing-how-they-reach-you a8ded9a072a9 -->
+<!-- source: choosing-how-they-reach-you c5c8f95f2dd1 -->
 ## Elegir cómo te llegan
 
 En «Notificaciones», dentro de los ajustes, eliges para cada tipo de notificación si llega «En la aplicación», por
@@ -44,7 +44,7 @@ ningún otro medio.
 - **Sonido**: «Reproducir un sonido con las notificaciones nuevas» reproduce un sonido en este dispositivo mientras la aplicación está abierta.
 - **Correo electrónico**: solo en servidores que envían correo. El enlace al pie de un correo de notificación detiene los correos de ese tipo («Dejar de recibir estos correos»); las notificaciones siguen apareciendo en la aplicación. Si los correos a tu dirección rebotan o se marcan como spam, la página de ajustes lo indica («Entrega de correo electrónico») y explica cómo volver a recibirlos.
 
-Las cuentas que silencias no te notifican (consulta [Bloquear, silenciar y denunciar](safety.md)). Un filtro de palabras clave que se aplica a
+Las cuentas que silencias no te notifican (consulta [Bloquear y silenciar](safety.md)). Un filtro de palabras clave que se aplica a
 las notificaciones deja fuera una notificación sobre una publicación que oculta, de la lista, del recuento de no leídas, de las notificaciones push y del
 correo; una notificación sobre una publicación que solo pliega nombra el filtro en su notificación push y en el correo, en lugar de decir más.
 
@@ -69,11 +69,3 @@ lista de solicitudes, una por cada persona que las envió. «Ver las notificacio
 
 - **Aceptar** mueve las notificaciones retenidas a tus notificaciones y deja pasar las notificaciones posteriores de esa persona, diga lo que diga la política. No se puede deshacer; silencia o bloquea a la persona para detenerla de nuevo.
 - **Descartar** elimina las notificaciones retenidas. La persona no queda aceptada: una notificación retenida más adelante crea una nueva solicitud.
-
-<!-- source: muting-a-thread d8f2d7430fc9 -->
-## Silenciar un hilo
-
-«Silenciar este hilo», en el menú «Más acciones» de una publicación, detiene las notificaciones de su hilo: respuestas y menciones en
-él, y impulsos, favoritos, reacciones y citas de sus publicaciones, incluidas las tuyas. Las publicaciones siguen apareciendo en tus
-cronologías, y las notificaciones que ya recibiste permanecen. «Dejar de silenciar este hilo» en el mismo menú termina el silencio; lo que ocurrió
-mientras estaba silenciado no te notifica después.

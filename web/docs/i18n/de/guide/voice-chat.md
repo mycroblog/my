@@ -3,14 +3,14 @@
 
 Im Sprachchat unterhalten sich die Leute eines Servers in Räumen. Die Betreiber des Servers entscheiden, ob der Sprachchat eingeschaltet ist: Ist er ausgeschaltet, fehlt „Sprachchat“ in der Navigation, und die Seite zeigt „Dieser Server bietet keinen Sprachchat an.“. Nur Leute mit einem Konto auf dem Server können seinen Räumen beitreten, und für den Beitritt brauchst du einen Browser, der Anrufe unterstützt, und eine sichere (HTTPS-)Verbindung.
 
-<!-- source: finding-and-joining-a-room efcab8beeee0 -->
+<!-- source: finding-and-joining-a-room e775d4e8ba4a -->
 ## Einen Raum finden und betreten
 
 Wähle in der Navigation „Sprachchat“. „Offene Räume“ listet die Räume auf, die du sehen kannst, jeweils mit ihrem Host und der Zahl der Leute darin. Ein Raum erscheint dort nur, solange er offen ist. Ein Raum kann auch aus einem Beitrag oder von einer Hashtag-Seite verlinkt sein.
 
 Öffne einen Raum und wähle „Beitreten“. Die Anrufsteuerung bietet dann „Sprechen“ und „Nur zuhören“ an. Dein Browser fragt beim ersten Einschalten nach der Erlaubnis, das Mikrofon zu verwenden; hast du sie verweigert, erlaube es in den Website-Einstellungen des Browsers. Wenn du beitrittst, wird dein Name für alle aufgeführt, die den Raum sehen können. Du kannst immer nur in einem Raum sein: Wenn du einem anderen Raum beitrittst, verlässt du den ersten („Hierher wechseln“).
 
-In einem Raum sind die Leute „Speakers“ oder „Listeners“, und die Rollen sind Host, Co-Host, Sprecher und Zuhörer. Mit „Mikrofon einschalten“ und „Mikrofon ausschalten“ sprichst du, mit „Hand heben“ bittest du ums Wort, wenn der Raum nicht alle sprechen lässt, und mit „Verlassen“ gehst du. Wie du einen Raum meldest, steht unter [Blockieren, Stummschalten und Melden](safety.md).
+In einem Raum sind die Leute „Speakers“ oder „Listeners“, und die Rollen sind Host, Co-Host, Sprecher und Zuhörer. Mit „Mikrofon einschalten“ und „Mikrofon ausschalten“ sprichst du, mit „Hand heben“ bittest du ums Wort, wenn der Raum nicht alle sprechen lässt, und mit „Verlassen“ gehst du.
 
 Wenn deine Verbindung abbricht, zeigt der Anruf „Verbindung wird wiederhergestellt …“. Ein Anruf endet auch, wenn du demselben Raum von einem anderen Gerät aus beitrittst, wenn ein Host dich entfernt oder wenn du und der Host oder ein Co-Host einander blockiert.
 

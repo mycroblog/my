@@ -84,7 +84,7 @@ solo para tus seguidores allí, y se la muestran a esos seguidores como una publ
 - Las cuentas de tu servidor pueden impulsar una publicación de «Este servidor», y el impulso solo se muestra en este servidor.
 - Una respuesta a una publicación de «Este servidor» empieza también como «Este servidor»; puedes cambiarlo.
 
-<!-- source: other-things-to-know d1f569ac2d1d -->
+<!-- source: other-things-to-know 59d77fd8017f -->
 ### Otras cosas que conviene saber
 
 - No puedes cambiar la visibilidad de una publicación después de publicarla. Cuando editas una publicación, la visibilidad y la publicación a la que responde se mantienen.
@@ -94,9 +94,8 @@ solo para tus seguidores allí, y se la muestran a esos seguidores como una publ
 - El autor también puede permitir que algunas personas respondan o impulsen solo cuando él lo apruebe. Esa respuesta o ese impulso espera: recibes una notificación («… ha pedido responder a tu publicación») y permanece fuera de tu publicación hasta que lo apruebes. Una respuesta en espera de otro servidor no aparece en la conversación bajo tu publicación ni en su recuento de respuestas; sigue apareciendo en el perfil de su autor y en su propia página. Un impulso en espera no se cuenta. Aprobarlo lo añade a tu publicación; rechazarlo lo mantiene fuera, y se avisa al otro servidor en ambos casos.
 - Una respuesta o un impulso de otro servidor que queda del todo fuera de tu opción se mantiene fuera de tu publicación del mismo modo y no te notifica nada.
 - Cuando respondes a una publicación, o la impulsas, cuyo autor aprueba a mano las respuestas o los impulsos, la tuya espera esa aprobación. Hasta entonces, solo tú ves tu respuesta, bajo la publicación y en su propia página, marcada como en espera; los demás no ven nada de ella, y no se envía nada a otros servidores. Tu impulso no se realiza hasta que se aprueba. Recibes una notificación cuando el autor lo aprueba o lo rechaza («… ha aprobado tu respuesta, impulso o cita»). Eliminar una respuesta en espera, o deshacer un impulso en espera, retira la solicitud.
-- Puedes fijar hasta cinco de tus publicaciones en tu perfil con «Fijar en el perfil». Una publicación de «Personas mencionadas» no se puede fijar.
 
-<!-- source: who-can-reply-boost-and-quote c9ea034f7416 -->
+<!-- source: who-can-reply-boost-and-quote e207d9971532 -->
 ## Quién puede responder, impulsar y citar
 
 El botón «Quién puede responder, impulsar y citar» entre las herramientas del formulario abre las opciones de esa publicación. Para cada una de
@@ -107,25 +106,34 @@ herramientas, por ejemplo «Respuestas: Cualquiera. Impulsos: Solo tú. Citas: C
 
 - Las personas que menciona una publicación siempre pueden responderle. Una publicación de «Seguidores» solo puedes impulsarla y citarla tú, y una de «Personas mencionadas» nadie, elijas lo que elijas.
 - Los valores predeterminados de las publicaciones nuevas están en «Quién puede responder, impulsar y citar tus publicaciones nuevas» dentro de «Visualización, publicación y cronologías» en los ajustes.
-- Para cambiarlos en una publicación que ya enviaste, elige «Cambiar quién puede responder, impulsar y citar» en su menú «Más acciones». Cada opción se guarda al instante. Las respuestas, los impulsos y las citas que aprobaste antes se mantienen, y las solicitudes que admite la nueva opción se aprueban.
 - Las solicitudes que esperan tu respuesta están en «Solicitudes de aprobación» en los ajustes, junto a «Solicitudes de seguimiento»; la notificación de cada una enlaza allí con «Revisar las solicitudes». «Aprobar» añade la respuesta, el impulso o la cita a tu publicación, y la conversación bajo ella muestra de inmediato una respuesta aprobada; «Rechazar» la mantiene fuera.
 - En la publicación de otra persona, «Responder» no se muestra y «Impulsar» no se puede pulsar cuando su autor no te lo permite. Cuando el autor los aprueba a mano, el formulario lo indica antes de que respondas, y después de impulsar, la publicación dice «Tu impulso espera la aprobación del autor.»
 
-<!-- source: after-posting dc553fa0ead9 -->
+<!-- source: after-posting 8668eb1a5211 -->
 ## Después de publicar
 
-Bajo una publicación encuentras «Responder», «Impulsar», «Citar», «Favorito» y «Marcador». El menú «Más acciones» tiene «Copiar enlace»
-y, para tus propias publicaciones, «Editar», «Fijar en el perfil» y «Eliminar». Una publicación que se editó muestra «Editada», y sus versiones
-anteriores están en su página «Historial de ediciones». «Eliminar» borra la publicación para todos, junto con sus impulsos y favoritos.
+Bajo una publicación encuentras «Responder», «Impulsar», «Citar», «Favorito», «Reaccionar» y «Más». «Más» tiene «Copiar enlace»,
+«Abrir la página original» (para una publicación de otro servidor), «Compartir» y «Marcador»; tus marcadores están en la página
+«Marcadores», y solo tú los ves. En tu propia publicación tiene además «Editar» (no en una publicación con encuesta),
+«Eliminar y volver a redactar…» y «Eliminar…». Ambas eliminaciones piden confirmación antes. «Eliminar…» borra la publicación para
+todos, junto con sus impulsos y favoritos; «Eliminar y volver a redactar…» hace lo mismo y abre el formulario con su texto, sus
+imágenes y su encuesta como una publicación nueva.
 
-Para la publicación de otra persona, el mismo menú ofrece seguir, silenciar, bloquear o denunciar a su autor, y «Mensaje directo».
-Tus marcadores se enumeran en la página «Marcadores»; solo tú los ves.
+Una publicación editada muestra «· editada» después de su hora; selecciónalo para abrir «Historial de ediciones», con la versión más
+reciente primero y los cambios marcados.
 
-Cuando el servidor ofrece traducción, o tu navegador puede traducir, las publicaciones en otros idiomas tienen «Traducir» entre
-sus acciones, y en el menú «Más acciones», que lo contiene cuando la publicación es demasiado estrecha para un botón más. Mientras una
-publicación muestra su traducción, una línea bajo el texto indica de qué idioma se tradujo y quién lo hizo, con «Mostrar
-original» para volver. Si el servidor envía el texto de las publicaciones a un servicio de traducción, el selector de visibilidad te dice
-para qué opciones.
+Una encuesta admite un voto, o varios cuando su autor lo permite: elige y luego «Votar». Los resultados se muestran cuando has votado o
+la encuesta ha terminado, y a su autor en cualquier momento. «Reaccionar» abre un selector de emojis (búsqueda, categorías, tono de piel y
+los emojis personalizados de este servidor); cada persona da a una publicación un favorito o una reacción. En la página propia de la
+publicación, un emoji enumera quién reaccionó con él. El formulario también tiene un botón «Añadir emoji».
+
+Una publicación en un idioma distinto del tuyo tiene «Traducir» cuando el servidor tiene un servicio de traducción o tu navegador puede
+traducir; «Mostrar original» vuelve al texto original. Tras una advertencia de contenido, la línea está en la banda de la advertencia. Si el
+servidor envía el texto de las publicaciones a un servicio de traducción, el selector de visibilidad te dice para qué opciones.
+
+Las imágenes, los GIF, los vídeos y el audio se muestran en la publicación. Selecciona una imagen para abrir el visor: desliza o usa las
+flechas, haz zoom y lee su descripción. El contenido multimedia marcado como sensible permanece oculto bajo una línea como «Imagen
+sensible», hasta que eliges «Mostrar». Un enlace en una publicación se muestra como una tarjeta.
 
 <!-- source: writing-an-article 0dfa0a80bb8e -->
 ## Escribir un artículo

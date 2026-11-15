@@ -1,27 +1,23 @@
-<!-- source: blocking-muting-and-reporting 0cd495fa1cdf -->
-# Blockieren, Stummschalten und Melden
+<!-- source: blocking-and-muting 455b1bbe0af4 -->
+# Blockieren und Stummschalten
 
-Du entscheidest, was du liest und wer dich erreichen kann. Blockieren, Stummschalten und Stichwortfilter gehören allein dir; eine Meldung geht an die Moderatoren des Servers.
+Du entscheidest, was du liest und wer dich erreichen kann. Blockieren, Stummschalten und Stichwortfilter gehören allein dir.
 
-<!-- source: blocking-an-account 2804abdbd6d1 -->
+<!-- source: blocking-an-account a663f393c724 -->
 ## Ein Konto blockieren
 
-Öffne das Menü „Weitere Aktionen“ im Profil des Kontos (oder bei einem seiner Beiträge) und wähle „Blockieren“. Der
-Client fragt „… blockieren?“ und sagt, was folgt: Ihr folgt einander nicht mehr, und keiner von euch kann dem anderen
-folgen, bis du die Blockierung aufhebst. Die Follows, die der Block beendet hat, kommen nicht zurück, wenn du die
-Blockierung aufhebst.
+Öffne „Mehr“ im Profil des Kontos und wähle „Blockieren“. Der Client fragt „… blockieren?“ und sagt, was folgt: Ihr folgt einander nicht mehr, und keiner von euch kann dem anderen folgen, bis du die Blockierung aufhebst. Die Follows, die der Block beendet hat, kommen nicht zurück, wenn du die Blockierung aufhebst.
 
 Ein Block blendet außerdem die Beiträge von euch beiden füreinander aus.
 
-„Blockierte Konten“ unter „Beziehungen“ in den Einstellungen listet die Konten auf, die du blockierst, und lässt dich
-die „Blockierung aufheben“.
+„Blockierte Konten“ unter „Beziehungen“ in den Einstellungen listet die Konten auf, die du blockierst, und lässt dich die „Blockierung aufheben“.
 
-<!-- source: muting-an-account a1cd044e5bfd -->
+<!-- source: muting-an-account 85439ae52d1f -->
 ## Ein Konto stummschalten
 
 „Stummschalten“ im selben Menü blendet die Beiträge des Kontos und seine Benachrichtigungen für dich aus. Es ändert nichts daran, wer wem folgt. „Stummgeschaltete Konten“ unter „Beziehungen“ in den Einstellungen listet sie auf, zeigt, wann eine Stummschaltung endet („Bis …“) und ob „Benachrichtigungen ebenfalls ausgeblendet“ sind, und lässt dich die „Stummschaltung aufheben“.
 
-Um nur die Benachrichtigungen einer Unterhaltung zu stoppen und ihre Beiträge weiter zu lesen, schalte stattdessen den Thread stumm (siehe [Einen Thread stummschalten](notifications.md#muting-a-thread)). Um die Benachrichtigungen von Leuten, die du nicht kennst, zurückzuhalten, bis du sie annimmst, nutze die Benachrichtigungsregel (siehe [Benachrichtigungen von Leuten zurückhalten, die du nicht kennst](notifications.md#holding-notifications-from-people-you-dont-know)).
+Um die Benachrichtigungen von Leuten, die du nicht kennst, zurückzuhalten, bis du sie annimmst, nutze die Benachrichtigungsregel (siehe [Benachrichtigungen von Leuten zurückhalten, die du nicht kennst](notifications.md#holding-notifications-from-people-you-dont-know)).
 
 <!-- source: muting-a-server 71b077a8504c -->
 ## Einen Server stummschalten
@@ -37,27 +33,7 @@ informiert.
 
 „Stichwortfilter“ unter „Anzeige und Benachrichtigungen“ in den Einstellungen klappt Beiträge ein oder blendet sie aus, die Wörter enthalten, die du wählst, egal wer sie geschrieben hat. [Stichwortfilter](keyword-filters.md) erklärt, wie du sie einrichtest und wie ihre Wörter passen.
 
-<!-- source: reporting-an-account-or-a-post 9218da02d103 -->
-## Ein Konto oder einen Beitrag melden
-
-Melde, was gegen die Regeln des Servers oder gegen das Gesetz verstößt. Wähle im Menü „Weitere Aktionen“ bei einem
-Beitrag oder einem Profil „Melden“. Ein Dialog führt dich durch die Schritte:
-
-1. **Warum meldest du dieses Konto?** Wähle „Spam“, „Illegale Inhalte“, „Verstößt gegen die Serverregeln“ (wird angeboten, wenn der Server Regeln veröffentlicht hat) oder „Etwas anderes“.
-2. **Gegen welche Regeln verstößt es?** Nur bei „Verstößt gegen die Serverregeln“: Wähle alle Regeln, die zutreffen. Die Regeln sind die, die die Betreiber des Servers veröffentlicht haben.
-3. **Welche Beiträge meldest du?** Wähle die Beiträge, die sich die Moderatoren ansehen sollen. Du kannst das Konto auch ohne Beiträge melden. Wenn du bei einem Beitrag beginnst, ist er schon ausgewählt.
-4. **Gibt es noch etwas, das die Moderatoren wissen sollten?** Ein optionaler Kommentar, den nur die Moderatoren lesen.
-
-Bei einem Konto auf einem anderen Server bietet der letzte Schritt außerdem „Meldung auch an … senden“ an. Die
-Moderatoren dieses Servers erhalten dann eine Kopie ohne deinen Namen. Wähle „Meldung senden“, um abzuschließen.
-
-Die Moderatoren deines Servers prüfen die Meldung. Das Konto erfährt nicht, wer es gemeldet hat. Sobald die Meldung
-erledigt ist, erhältst du eine Benachrichtigung („Eine Meldung von dir wurde erledigt“).
-
-Auch ein Sprachchat-Raum kann gemeldet werden, und zwar auf seiner Seite („Raum melden“); die Meldung betrifft den Raum
-und seinen Host.
-
-<!-- source: when-a-moderator-acts-on-your-account a2526d228fa0 -->
+<!-- source: when-a-moderator-acts-on-your-account 953c67a332c0 -->
 ## Wenn ein Moderator gegen dein Konto vorgeht
 
 Die Moderatoren eines Servers können ein Konto einschränken oder sperren. „Kontostatus“ unter „Konto und Daten“ in den
@@ -66,4 +42,4 @@ einmal Einspruch gegen eine Maßnahme einlegen („Einspruch einlegen“). Du wi
 das Ergebnis eines Einspruchs benachrichtigt.
 
 Was die Moderatoren tun dürfen und welche Regeln gelten, entscheidet jeder Server selbst: Lies seine Regeln, bevor du
-meldest oder Einspruch einlegst.
+Einspruch einlegst.

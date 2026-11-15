@@ -39,7 +39,7 @@ other way either.
 - **Sound**: "Play a sound for new notifications" plays a sound on this device while the app is open.
 - **Email**: only on servers that send email. The link at the bottom of a notification email stops the emails of that kind ("Stop these emails"); the notifications still appear in the app. If emails to your address bounce or are marked as spam, the settings page says so ("Email delivery") and explains how to start receiving them again.
 
-Accounts you mute do not notify you (see [Blocking, muting, and reporting](safety.md)). A keyword filter that applies to
+Accounts you mute do not notify you (see [Blocking and muting](safety.md)). A keyword filter that applies to
 notifications leaves out a notification about a post it hides, from the list, the unread count, push notifications, and
 email; a notification about a post it only folds names the filter in its push notification and email instead of saying more.
 
@@ -63,10 +63,3 @@ list of requests, one per person who sent them. "View the notifications" shows w
 
 - **Accept** moves the held notifications into your notifications and lets that person's later notifications through, whatever the policy says. It cannot be undone; mute or block the person to stop them again.
 - **Dismiss** removes the held notifications. The person is not accepted: a notification held later makes a new request.
-
-## Muting a thread
-
-"Mute this thread", in the "More actions" menu of a post, stops the notifications of its thread: replies and mentions in
-it, and boosts, favourites, reactions, and quotes of its posts, your own posts included. The posts still appear in your
-timelines, and the notifications you already got stay. "Unmute this thread" in the same menu ends the mute; what happened
-while it was muted does not notify you afterwards.

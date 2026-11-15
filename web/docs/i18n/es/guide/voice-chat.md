@@ -6,7 +6,7 @@ voz está activado: cuando está desactivado, «Chat de voz» no aparece en la n
 ofrece chat de voz». Solo las personas con una cuenta en el servidor pueden unirse a sus salas, y unirse requiere un
 navegador compatible con llamadas, con una conexión segura (HTTPS).
 
-<!-- source: finding-and-joining-a-room efcab8beeee0 -->
+<!-- source: finding-and-joining-a-room e775d4e8ba4a -->
 ## Encontrar una sala y unirte
 
 Elige «Chat de voz» en la navegación. «Salas abiertas» lista las salas que puedes ver, cada una con su anfitrión y
@@ -20,7 +20,7 @@ puedes estar en una sala a la vez: unirte a otra sala te saca de la primera («P
 
 En una sala, las personas son «Oradores» u «Oyentes», y los roles son anfitrión, coanfitrión, orador y oyente. Usa
 «Activar micrófono» y «Desactivar micrófono» para hablar, «Levantar la mano» para pedir la palabra cuando la sala no
-permite que todos hablen, y «Salir» para irte. Para denunciar una sala, consulta [Bloquear, silenciar y denunciar](safety.md).
+permite que todos hablen, y «Salir» para irte.
 
 Si se interrumpe tu conexión, la llamada muestra «Reconectando…». Una llamada también termina cuando te unes a la
 misma sala desde otro dispositivo, cuando un anfitrión te expulsa, o cuando tú y el anfitrión o un coanfitrión se
