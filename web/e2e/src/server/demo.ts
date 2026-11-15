@@ -71,6 +71,7 @@ function serverEnv(dir: string, port: number): Record<string, string> {
     MY_KEK_FILE: join(dir, "kek"),
     MY_MAIL: "none",
     MY_PAYMENTS: "fake",
+    MY_TRANSLATOR_FAKE: "true",
     MY_VOICE: "p2p",
     // The client IP that keys the rate limits comes from the X-Forwarded-For of a request from this machine: each E2E
     // test sends an address of its own (specs/test.ts), as each person comes from their own, so that the tests do not

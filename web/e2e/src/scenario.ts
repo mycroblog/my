@@ -266,6 +266,11 @@ export const instance: Readonly<Record<string, string>> = {
   default_locale: "en",
   contact_account: admin,
   contact_email: "contact@demo.test",
+  // The fake provider of the test build (MY_TRANSLATOR_FAKE): "[ja] Hello" for "Hello", a provider that is down for a
+  // text with "[translation-fails]". It receives the default visibilities, not private or direct posts. One person
+  // may send 1000 characters a month, which two posts of the default maximum length (500) use up.
+  translation_providers: "fake",
+  translation_user_monthly_characters: "1000",
 };
 
 /** The server's custom emoji, added with `my admin emoji create`. */

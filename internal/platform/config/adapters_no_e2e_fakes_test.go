@@ -53,3 +53,27 @@ func TestLoadRejectsFakeSearchWithoutTheTag(t *testing.T) {
 		t.Errorf("Load() with no search: %q, %v, want none", cfg.Search, err)
 	}
 }
+
+// A build without the tag e2e_fakes rejects translator_fake = true before start, in any profile,
+// and does not offer it among the values. The default is false.
+func TestLoadRejectsFakeTranslatorWithoutTheTag(t *testing.T) {
+	for _, profile := range []string{"development", "production"} {
+		_, _, err := Load(source(with(minimal(), "MY_TRANSLATOR_FAKE", "true", "MY_PROFILE", profile), nil))
+		var ve *ValidationError
+		if !errors.As(err, &ve) || len(ve.Issues) != 1 {
+			t.Fatalf("Load() with translator_fake = true, profile = %s: %v, want one issue", profile, err)
+		}
+		want := `translator_fake (MY_TRANSLATOR_FAKE): "true" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (https://mycroblog.dev/next/reference/build-tags/)`
+		if got := ve.Issues[0].String(); got != want {
+			t.Errorf("issue = %q, want %q", got, want)
+		}
+	}
+	_, _, err := Load(source(with(minimal(), "MY_TRANSLATOR_FAKE", "yes"), nil))
+	if err == nil || strings.Contains(err.Error(), "true") {
+		t.Errorf("Load() with translator_fake = yes: %v, want an error that does not offer true", err)
+	}
+	cfg, _, err := Load(source(minimal(), nil))
+	if err != nil || cfg.TranslatorFake {
+		t.Errorf("Load() with no translator_fake: %v, %v, want false", cfg.TranslatorFake, err)
+	}
+}

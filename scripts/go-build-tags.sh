@@ -5,7 +5,7 @@
 # ADR-0010, ADR-0015 §1) and the test-only tag e2e_fakes, which adds the fakes (ADR-0015 §6, ADR-0015 §9). For each
 # representative set of tags, it builds every package with CGO_ENABLED=0, runs go vet, and fails when cmd/my still
 # depends on a package that a tag of the set leaves out. It fails as well when cmd/my without e2e_fakes (the default
-# build with no tags among them) depends on a fake: a fake that records payments as paid, accepts any push message, or keeps a search index in memory must never reach a released
+# build with no tags among them) depends on a fake: a fake that records payments as paid, accepts any push message, keeps a search index in memory, or translates nothing must never reach a released
 # binary. The set with e2e_fakes also runs the tests that only that build has (named *E2EFakes*), and each tag of the sets
 # runs, alone, the tests of the packages with a test file that only a build with that tag has (such as no_plugins).
 #
@@ -81,6 +81,7 @@ fake_packages() {
   echo "github.com/mycroblog/my/internal/adapter/payment/fake"
   echo "github.com/mycroblog/my/internal/adapter/pushservice/fake"
   echo "github.com/mycroblog/my/internal/adapter/search/fake"
+  echo "github.com/mycroblog/my/internal/adapter/translator/fake"
 }
 
 # never_linked_packages prints the packages that only tests link, which no build of cmd/my may depend on.

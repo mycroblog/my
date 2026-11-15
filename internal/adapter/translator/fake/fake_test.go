@@ -70,3 +70,21 @@ func TestFailNextQueuesInOrder(t *testing.T) {
 		}
 	}
 }
+
+// A fragment with FailOn fails the whole request as a provider that is down; without it, the
+// request translates.
+func TestFailOn(t *testing.T) {
+	t.Parallel()
+	f := New(Options{FailOn: FailMarker})
+	failing := translation.Request{Fragments: []string{"Hello", "a " + FailMarker + " b"}, SourceLanguage: "en", TargetLanguage: "ja"}
+	if _, err := f.Translate(t.Context(), failing); !errors.Is(err, translation.ErrTemporary) {
+		t.Errorf("Translate() with %q = %v, want ErrTemporary", FailMarker, err)
+	}
+	got, err := f.Translate(t.Context(), translation.Request{Fragments: []string{"Hello"}, SourceLanguage: "en", TargetLanguage: "ja"})
+	if err != nil || !slices.Equal(got.Translations, []string{"[ja] Hello"}) {
+		t.Errorf("Translate() = %q, %v, want [ja] Hello", got.Translations, err)
+	}
+	if _, err := New(Options{}).Translate(t.Context(), failing); err != nil {
+		t.Errorf("Translate() without FailOn = %v, want a translation", err)
+	}
+}
