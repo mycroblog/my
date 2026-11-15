@@ -13,3 +13,23 @@ export function supportsViewTransitions(): boolean {
     CSS.supports("selector(:active-view-transition-type(a))")
   );
 }
+
+const settled = new WeakSet<Document>();
+
+/**
+ * Handles the `ready` of every View Transition the page starts. A navigation that starts before the previous one's
+ * transition has captured the old screen skips it, and Chromium rejects the skipped one's `ready` unhandled, although
+ * the specification marks it handled; the router keeps only `updateCallbackDone`, so it cannot catch it. Call once
+ * before the router's first navigation; a second call changes nothing.
+ */
+export function settleSkippedTransitions(): void {
+  if (typeof document === "undefined" || typeof document.startViewTransition !== "function") return;
+  if (settled.has(document)) return;
+  settled.add(document);
+  const start = document.startViewTransition.bind(document);
+  document.startViewTransition = (options?: Parameters<Document["startViewTransition"]>[0]) => {
+    const transition = start(options);
+    transition.ready.catch(() => undefined);
+    return transition;
+  };
+}
