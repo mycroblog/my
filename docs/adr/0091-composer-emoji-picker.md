@@ -107,11 +107,11 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 - **道具**: fontTools（MIT）、brotli（MIT）、SVG の部分集合に要る lxml（BSD-3-Clause）を、生成のときだけ使う。どれも AGPL-3.0 と両立する。
   リポジトリの道具に Python は無い（`.tool-versions`）。そこで、`scripts/emoji-fonts` を `uv` のロックファイルで版を固定した使い捨ての環境で動かす。
   生成した WOFF2 と `@font-face` の CSS はコミットする。`scripts/task.sh check` とビルドに Python は要らない。サーバーには何も足さない。
-- 置き場所は `@my/ui`（`app/ui/src/fonts/emoji/` と `app/ui/src/emoji.css`、`@my/ui/emoji.css` として公開）にする。タイポグラフィは `@my/ui` が持ち、Storybook も同じフォントで描ける。
-  Vite が URL にハッシュを付けて `dist/assets/` に出す。
-- **`emoji.css` を読み込む場所**: Web クライアントの `app/web/src/index.css` と Storybook の `app/ui/src/storybook.css` が、`theme.css` の後に `emoji.css` を読み込む。
-  - `theme.css` は `emoji.css` を読み込まない。`--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置くのは `theme.css` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
-  - サーバーが描画する画面（`server-pages.css`）は `emoji.css` を読み込まず、OS の絵文字のフォントで描く。ファミリー名は `--font-sans` に残るが、face が無いので飛ばされる。
+- 置き場所は `@my/design-system`（`web/design-system/src/fonts/emoji/` と `web/design-system/src/emoji.css`、`@my/design-system/emoji.css` として公開）にする。タイポグラフィは `@my/design-system` が持ち、Storybook も同じフォントで描ける。
+  Vite が URL にハッシュを付けて、分割ごとに別のファイルとしてビルドの `assets/` に出す。
+- **`emoji.css` を読み込む場所**: Web クライアントの入口（`web/app/src/main.tsx` と `web/app/src/auth.tsx`）と Storybook の `web/storybook/.storybook/preview.tsx` が、`@my/design-system/styles.css` の後に `emoji.css` を読み込む。
+  - `styles.css` は `emoji.css` を読み込まない。`--font-sans` の先頭に `"my Noto Color Emoji"` を置くのは `@my/design-tokens` の `fontFamily` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
+  - Web クライアントの外の画面（メンテナンスの画面）は `emoji.css` を読み込まず、OS の絵文字のフォントで描く。
 
 ### 10. `@font-face` とフォントの並び
 
@@ -126,14 +126,12 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
   | COLRv1 | 98 | 107 | TP まで未対応 | iOS の Safari も 27.2 まで未対応。Android の Chrome・WebView は対応 |
 
 - **`unicode-range`**: 次の符号位置は、本文の文字として使われるので外す。`#`・`*`・`0`〜`9`（キーキャップの基）と、`©`・`®`・`™`・`‼`・`⁉`・`↔` など `emoji-test.txt` で既定がテキストの表示の記号のうち、本文の記号として使われるものである。
-  外した字の絵文字の表示（`#️⃣`、`©️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
+  外した字の絵文字の表示（`#️⃣`、`©️`）と、外した字を含む並び（`🙂‍↔️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
 - **並び**: `--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置く。`unicode-range` が絵文字の符号位置だけなので、ほかの字には効かない。
   先頭に置かないと、`☀`・`♠`・`❤` のように CJK のフォントや Segoe UI が字形を持つ字が、そちらのフォントで描かれる。末尾の OS の絵文字のフォント（`"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"`）は、フォントを読めないときのために残す。
-  ADR-0009 の「フォントは OS フォントを優先し」は、絵文字の符号位置についてだけこの ADR が置き換える。本文の文字は OS のフォントのままにする。
+  その後ろに、サーバー単位のテーマのフォント（ADR-0059 §2）、本文の Noto Sans CJK と OS のフォント（ADR-0009 §5）が続く。並びは固定で、テーマは絵文字のフォントを落とせない。
 - **`font-display: swap`**: 読み込み中は OS の絵文字で描き、届いたら入れ替える。`block` にすると、遅い回線で絵文字が最大 3 秒見えない。
   入れ替えで行の高さが変わらないように、`@font-face` に `ascent-override`・`descent-override` を付けて OS の絵文字に近づける。
-- **キャッシュ**: Service Worker（ADR-0028）は `**/*.woff2` を precache するが、絵文字の WOFF2 を `globIgnores` で外す。2 つの形式の約 5.7 MB を、インストールのたびに取らないためである。
-  代わりに、実行時に cache-first で持つ。URL にハッシュが付くので、内容が変わらない限り再取得しない。ほかの WOFF2 の precache はそのままにする。
 - **使えないとき**: フォントを読めない場合は、OS の絵文字に落ちる。この場合、新しい絵文字が豆腐になり得る。
   Safari 16 以前（`tech()` を知らない）も OS の絵文字に落ちることを想定するが、振る舞いは要検証である（Open Questions）。
 
@@ -271,7 +269,7 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
   - 新しい npm の依存を足さない。ADR-0092 の補完が同じデータと検索を使える。
   - 端末・OS の版に関わらず、絵文字が同じ形になる。古い OS でも `EMOJI_VERSION` の絵文字が豆腐にならない（`tech()` に対応するブラウザーでは）。
   - Storybook と E2E が、CI のコンテナの OS の絵文字に左右されない。第三者のオリジンに閲覧を知らせない。
-  - サーバーが描画する画面は、絵文字のフォントを読み込まず、見た目も変わらない。トークンとフォントの並びは `theme.css` 1 か所で済む。
+  - サーバーが描画する画面は、絵文字のフォントを読み込まず、見た目も変わらない。トークンとフォントの並びは `@my/design-tokens` 1 か所で済む。
   - 開いたピッカーの要素の数が、全集合の大きさに依らず、見える行と前後の数行の分（百数十のセル）になる。描いていない行があっても、総数と位置が支援技術に伝わる。
 - 悪い影響・トレードオフ
   - 生成器と生成したデータ（ロケールごとの JSON）を自前で保守する。CLDR の構造が変わると生成器を直す。
@@ -284,8 +282,7 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
   - フォントの出所が 2 つ（noto-emoji と google/fonts）あり、版（2.057 と 2.055）が違い得る。細部の形が形式によって違うことがある。
   - リポジトリに約 5.7 MB のバイナリが入り、Unicode の版を上げるたびに増える。生成に Python の道具（fontTools・brotli・lxml・uharfbuzz）が要る。
   - 通知（Web Push）・`document.title`・OS のネイティブの UI（`select` の一覧など）は OS のフォントで描かれ、Noto にならない。
-  - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/ui/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
-  - サーバー単位のテーマで `font-sans` / `font-mono` を上書きすると、`"my Noto Color Emoji"` を先頭に残さない限り、Web クライアントの絵文字も OS のフォントになる（[運用の手引き](../operations/instance-settings.md#theme)）。
+  - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/design-system/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
   - グリッドのキー操作・フォーカスの移動・ARIA の属性を自前で持つ。`GridList` が持っていた細かな扱い（typeahead など）は持たない。テスト（Testing Library のキー操作と Storybook の実ブラウザ）で固める。
   - React Compiler から外すフックが `Feed` のほかにもう 1 つある。
   - ブラウザーのページ内検索（Ctrl+F）は、描いていない絵文字を見つけない。名前で探すのはピッカーの検索欄が受け持つ。

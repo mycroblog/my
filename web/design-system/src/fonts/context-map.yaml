@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0091-composer-emoji-picker.md", "docs/adr/0009-internationalization.md"]

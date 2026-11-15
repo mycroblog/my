@@ -7,10 +7,49 @@
 /** The root font size the rem values are relative to, in px. */
 export const rootPx = 16;
 
-/** Latin from the system's sans, Japanese from a gothic; system stacks only, since the CSP allows no font CDN. */
+/**
+ * The regions of Noto Sans CJK, the self-hosted web font of @my/design-system/cjk.css (ADR-0009 §5), with the
+ * languages whose Han characters each draws, as `:lang()` matches them: the region of a text is the last whose
+ * language matches it. A text in no CJK language keeps the region of the text around it, and the page's default is
+ * the first region.
+ */
+export const cjkRegions = [
+  { family: "my Noto Sans CJK JP", langs: ["ja"] },
+  { family: "my Noto Sans CJK SC", langs: ["zh"] },
+  { family: "my Noto Sans CJK TC", langs: ["zh-Hant", "zh-TW", "zh-HK", "zh-MO"] },
+  { family: "my Noto Sans CJK KR", langs: ["ko"] },
+] as const;
+
+/** The emoji font first (ADR-0091 §10), and the system's emoji fonts last, for when it cannot load. */
+const emoji = { first: '"my Noto Color Emoji"', last: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"' };
+
+/**
+ * The self-hosted Noto Sans of @my/design-system/noto-sans.css (ADR-0009 §5), which draws Latin, Greek and Cyrillic
+ * before Noto Sans CJK, which lacks letters such as ą ł ї: "my Noto Sans" for a text in no CJK language, and beside a
+ * CJK region's font the family that leaves to it the punctuation it draws full-width (… ※ ×).
+ */
+export const latinFamily = { family: "my Noto Sans", besideCjk: "my Noto Sans beside CJK" } as const;
+
+/**
+ * The stacks of the text, fixed: "my Noto Color Emoji", whose unicode-range holds only emoji, so that it wins over the
+ * fonts that have their own glyphs of symbols such as ☀ ♠ ❤; then a theme's own fonts (`--font-*-override`, the
+ * tokens a server theme sets, ADR-0059 §2); then Noto Sans for Latin, Greek and Cyrillic (`--font-latin`); then Noto
+ * Sans CJK of the text's region (`--font-cjk`); then the system's fonts for the scripts neither has (Arabic, Hebrew,
+ * Thai, …). The mono stack puts the system's monospace fonts, which have no CJK, before Noto Sans CJK, whose Latin is
+ * proportional, and has no Noto Sans, which is proportional too: the monospace fonts and the generic family at the end
+ * have the letters of Latin, Greek and Cyrillic. A page that does not load the web fonts has no such faces and skips
+ * them. No font from a CDN, which the CSP does not allow.
+ */
 export const fontFamily = {
-  sans: 'system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", sans-serif',
+  sans: `${emoji.first}, var(--font-sans-override), var(--font-latin), var(--font-cjk), system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif, ${emoji.last}`,
+  mono: `${emoji.first}, var(--font-mono-override), ui-monospace, "SF Mono", Menlo, Consolas, "Cascadia Mono", "Liberation Mono", "DejaVu Sans Mono", var(--font-cjk), monospace, ${emoji.last}`,
 } as const;
+
+/**
+ * The defaults of the overrides: a family name that no system has, which the browser skips. A custom property left
+ * unset or empty would make the whole stack invalid.
+ */
+export const fontOverride = { sans: '"my no font"', mono: '"my no font"' } as const;
 
 export type TextStep = {
   /** The font size, in rem. */
@@ -483,14 +522,18 @@ const percent = (share: number) => `${share * 100}%`;
 const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
 /**
- * The tokens as custom properties, each name with its value: `--font-*`, `--text-*` (with Tailwind's
+ * The tokens as custom properties, each name with its value: `--font-*` (the stacks, their overrides and the CJK
+ * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
  * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
-export const properties: Readonly<Record<string, string>> = Object.fromEntries<string>([
+export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
   ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
+  ...Object.entries(fontOverride).map(([name, value]): [string, string] => [`--font-${name}-override`, value]),
+  ["--font-latin", `"${latinFamily.family}"`],
+  ["--font-cjk", `"${cjkRegions[0].family}"`],
   ...Object.entries(text).flatMap(([name, step]) => textProperties(name, step)),
   ...Object.entries(color).map(([name, c]): [string, string] => [
     `--color-${name}`,

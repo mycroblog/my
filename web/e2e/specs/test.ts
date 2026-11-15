@@ -19,6 +19,8 @@
 //     shortcode without colons.
 //   - `fresh.deletion(author, post)` the deletion of a fresh post by its author.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
+//   - `fresh.themeDraftStylesheet(admin, tokens)` the stylesheet of a draft of the instance theme that a fresh
+//     person made with `fresh.person({ admin: true })` saves, to apply over a page; nothing is published.
 //
 // And what a spec needs of the scenario: `person(username)` the person to sign in as, `announcements` the server's
 // announcements (the last published is the newest), `secrets()` what the seed made that the server decided (a TOTP

@@ -28,6 +28,7 @@ vars:
 includes:
   agentkit: ./tasks/agentkit.yml
   api: ./tasks/api.yml
+  cjk: ./tasks/cjk.yml
   db: ./tasks/db.yml
   docker: ./tasks/docker.yml
   docs: ./tasks/docs.yml

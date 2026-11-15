@@ -28,7 +28,7 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 <!-- source: keys ae25d36239c2 -->
 ## Chaves
 
-<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
+<!-- source: settings-one-key-one-value a3d12269943c -->
 ### Configurações (uma chave, um valor)
 
 | Chave | Tipo | Padrão | Descrição |
@@ -85,6 +85,7 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 | `require_media_description` | `true` / `false` | `false` | Se todo arquivo de mídia (imagem, vídeo ou áudio) anexado a uma publicação local precisa de uma descrição. Quando `true`, uma publicação ou edição com um arquivo cuja descrição está ausente ou só tem espaços é rejeitada com 422. Ela é publicada como `limits.require_media_description` em `GET /api/v1/instance`, e o cliente web torna o campo de descrição obrigatório. É separada da configuração por usuário `require_media_description`, que só verifica antes de enviar |
 | `link_cards` | `true` / `false` | `true` | Se devem ser exibidos cartões para os links nas publicações. Quando `true`, o servidor busca a página do link para montar um cartão. Quando `false`, ele para de buscar e também oculta os cartões já montados. Para parar apenas em alguns domínios, veja [domínios de cartões de link](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Se as buscas de cartões de link ignoram o `robots.txt`. Quando `false`, o servidor obedece ao `robots.txt` dos sites linkados, então um site que proíbe `my-linkcard` ou `*` não recebe cartão ([prévias de link](link-previews.md#cards-of-links-in-posts)). `/about/crawler` informa aos sites linkados qual é ele. Quando `true`, o servidor não busca nem usa o `robots.txt`, e um site linkado não pode mais recusar essas buscas por ele; o servidor ainda se identifica como `my-linkcard`. Ative apenas quando faltarem cartões demais. Os cartões montados enquanto estava ativado são verificados na próxima nova busca depois que for desativado. As diretivas de uma página e os domínios de cartões de link valem nos dois casos |
+| `ux_measurement` | `true` / `false` | `false` | Se o cliente web envia amostras de quão rápido responde e este servidor as guarda ([medições de UX](error-reporting.md#ux-measurements)). As amostras não levam conta, endereço nem URL. Com `false`, o servidor não coleta nenhuma, e `ux_measurement` em `GET /api/v1/instance` diz ao cliente para não enviá-las |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Se devem ser aceitos clientes com Client ID Metadata Document. Quando `true`, para uma requisição de autorização cujo `client_id` é uma URL `https`, o servidor busca os metadados nessa URL e os trata como o cliente (sem registro prévio). A busca não segue redirecionamentos, lê no máximo 5 KB e reutiliza a resposta por no máximo 24 horas, seguindo suas diretivas de cache. Quando `false`, ele para de buscar e recusa requisições de autorização, trocas de token e renovações desses clientes |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | Quanto dos custos de operação (registrados em `/admin/finance/costs` e definidos em `/admin/finance/publication`) publicar. `private`: nada é publicado (`GET /api/v1/instance/cost_totals` é 404). `totals`: apenas o total por período e moeda. `breakdown`: os totais e uma divisão por provedor e categoria, mostrados a todos nas páginas de informação (`/about` e `/about/costs`) e na API. `breakdown` revela em qual provedor (por exemplo, qual nuvem) você opera. Em todos os níveis, os nomes dos itens, as anotações e os pagamentos individuais permanecem privados. Os períodos até o que contém hoje (UTC), inclusive, são publicados |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Se os usuários com a permissão `view_finance` veem os nomes dos itens de custo e os nomes dos serviços dos custos importados na tela de finanças (`/finance`, `GET /api/v1/finance/cost_totals`). Os totais e a divisão por provedor e categoria sempre são mostrados, qualquer que seja esta configuração |
@@ -522,49 +523,45 @@ modos. Uma regra é escolha do operador e se aplica além do que os próprios si
 - A API de administração é `/api/v1/admin/link_card_domains` (listar, definir; um `DELETE` com o domínio o remove) e exige a permissão de função `manage_settings`. Um servidor mantém no máximo 1.000 regras, cada uma com uma anotação de até 5.000 caracteres.
 - Toda alteração é registrada no registro de auditoria (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme 380636a0e583 -->
+<!-- source: theme d3ebe5db33cb -->
 ## Tema
 
-O tema de todo o servidor é um conjunto de sobrescritas dos design tokens do cliente web mais um trecho opcional de CSS (CSS personalizado). Ele
-se aplica ao cliente web de todo visitante e às telas que o servidor renderiza (entrada, cadastro, termos e assim por diante), tanto no
-modo claro quanto no escuro.
+O tema do servidor inteiro é um conjunto de substituições dos tokens de design do cliente web, com um valor claro e um escuro para cada cor. Ele vale para o cliente web de todos os visitantes e para as telas que o servidor renderiza (login, cadastro, termos etc.). Não há CSS personalizado.
 
-- Você pode sobrescrever todos os tokens de design, exceto as cores primitivas (`--palette-*`). Uma cor é `#rrggbb` para o claro e para o escuro
-  (`color-overlay` também pode ser `#rrggbbaa`); os outros tokens aceitam um valor do formato de seu tipo (comprimento, número,
-  duração, easing, lista de nomes de fontes, sombra) dentro do intervalo. Ao sobrescrever `font-sans` ou `font-mono`, mantenha
-  `"my Noto Color Emoji"` em primeiro lugar; caso contrário, os emojis do cliente web são desenhados com a fonte do sistema operacional.
-- Ao salvar, o servidor verifica o formato e o intervalo dos valores, o contraste de cada par de tokens de cor (os tokens que você
-  não sobrescreve usam seus padrões; WCAG 2.2 AA tanto no claro quanto no escuro) e o tamanho do CSS personalizado (64 KiB). Se qualquer verificação
-  falhar, nada é salvo.
-- O servidor não lê o CSS personalizado. Ele o coloca na mesma folha de estilo depois das regras dos tokens, fora de qualquer `@layer`. Ele roda
-  sob a mesma CSP do cliente web, então imagens, fontes e `@import` de outra origem não podem ser carregados.
-  **O servidor não verifica os efeitos do CSS personalizado (contraste, rolagem horizontal, tamanho da área de toque, indicação de foco,
-  idiomas da direita para a esquerda); isso é responsabilidade do administrador.** Os nomes de classe e a estrutura das páginas mudam entre
-  versões, então apenas os tokens são estáveis para se confiar.
-- Um tema é mantido como revisões (`instance_theme_revisions`), e a folha de estilo da revisão atual é servida em
-  `/theme/{revision ID}.css` (`immutable`, em cache por muito tempo). O shell HTML tem um cache compartilhado (60 segundos mais 300
-  segundos de revalidação), então leva alguns minutos depois que você salva para que todos o recebam. Uma página que já está aberta mantém
-  a aparência antiga até ser recarregada.
-- `<meta name="theme-color">` (claro e escuro) no shell e `theme_color` / `background_color` (claro) do Web App
-  Manifest assumem o valor de `color-surface` do tema.
-- Salvar uma revisão sem tokens e sem CSS personalizado redefine o tema para o padrão, e a folha de estilo deixa de ser carregada.
-- Você pode alterá-lo na tela de administração do cliente web (“Tema”, `/admin/theme`), com a API de cliente (`GET` / `PUT
-  /api/v1/admin/theme`) e com a CLI. A tela de administração e a API de cliente exigem a permissão de função `manage_settings`, e
-  as alterações são registradas no registro de auditoria (`setting_changed`, alvo `theme`).
+- Você pode substituir estes tokens de design; o espaçamento, os tamanhos dos componentes, os pesos do texto, as sombras e as cores dos gráficos de dados continuam fixos:
+
+  | Tokens | Tipo | Substituição |
+  | --- | --- | --- |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | cor | `#rrggbb` para claro e para escuro |
+  | `font-sans-override`, `font-mono-override` | família de fonte | Nomes de família, separados por vírgulas (no máximo 30), sem família genérica como `sans-serif`; coloque entre aspas um nome com uma palavra que comece com um dígito, como `"M PLUS 1p"` |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | comprimento | `0` ou rem / px, de 0,625rem a 3rem |
+  | `text-*--line-height` dos mesmos quatro | número | de 1 a 2,5 |
+  | `radius-control`, `radius-overlay` | comprimento | de 0 a 2rem |
+  | `duration-spin` | duração | ms / s, de 0 a 1000ms |
+
+- O cliente web desenha o texto com fontes próprias: Noto Color Emoji para os emojis, Noto Sans para o alfabeto latino, o grego e o cirílico, e Noto Sans CJK com os glifos do idioma do texto para o resto. As fontes de `font-sans-override` (texto) e `font-mono-override` (código) vêm logo depois da fonte de emoji, e as fontes do cliente web desenham os caracteres que faltam nas suas. Um tema não pode substituir essas fontes.
+- Você salva um conjunto como rascunho, o visualiza e depois o publica; o tema em vigor não muda até você publicar. Cada salvamento substitui o rascunho inteiro, e cada publicação é uma nova revisão. Restaurar publica de novo o conjunto que estava em vigor antes do atual e deixa o rascunho como está.
+- Ao salvar e ao publicar, o servidor confere o formato e a faixa dos valores e o contraste de cada par de tokens de cor (os tokens que você não substitui usam seus valores padrão; WCAG 2.2 AA em claro e em escuro). Se alguma conferência falhar, nada é salvo nem publicado.
+- A substituição de um token que uma nova versão renomeia ou aposenta, ou cujo valor não serve mais ao token, nunca faz uma atualização falhar. Ela continua no conjunto salvo, mas deixa de valer: a API de administração a lista em `stale_tokens`, `my instance theme get` a nomeia e o próximo salvamento do rascunho a descarta.
+- A folha de estilo da revisão publicada é servida em `/theme/{revision ID}.css` (`immutable`, em cache por muito tempo). O shell HTML tem um cache compartilhado (60 segundos mais 300 de revalidação), então leva alguns minutos depois de você publicar para todos receberem. Uma página que já está aberta mantém o visual antigo até ser recarregada.
+- `<meta name="theme-color">` (claro e escuro) no shell e `theme_color` / `background_color` (claro) do Web App Manifest tomam o valor de `color-surface` do tema. Os e-mails usam as cores padrão dos tokens, seja qual for o tema.
+- Publicar um conjunto sem tokens volta o tema ao padrão, e a folha de estilo deixa de ser carregada.
+- Você pode alterá-lo com a API de cliente e com a CLI. A API de cliente exige a permissão de função `manage_settings`: `GET /api/v1/admin/theme` lê o rascunho e o conjunto em vigor, `PUT /api/v1/admin/theme/draft` salva o rascunho, `GET /api/v1/admin/theme/draft/stylesheet` devolve a folha de estilo do rascunho para visualização, e `POST /api/v1/admin/theme/publish` e `POST /api/v1/admin/theme/restore` publicam. As publicações ficam registradas no log de auditoria (`setting_changed`, alvo `theme`).
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
+  ]
 }
 ```
 

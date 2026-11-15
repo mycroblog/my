@@ -6,6 +6,9 @@
 // what the server refused, and nothing else: no router, no session, no Service Worker; its forms post to the server.
 
 import "@my/design-system/styles.css";
+import "@my/design-system/emoji.css";
+import "@my/design-system/noto-sans.css";
+import "@my/design-system/cjk.css";
 import { AuthScreen, parseAuthPage, type AuthPage } from "@my/app-features";
 import { I18nProvider } from "@my/design-system";
 import { StrictMode, useEffect } from "react";

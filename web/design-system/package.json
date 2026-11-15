@@ -7,7 +7,10 @@
     ".": "./src/index.ts",
     "./preview": "./src/preview.tsx",
     "./samples": "./src/samples.tsx",
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./emoji.css": "./src/emoji.css",
+    "./cjk.css": "./src/cjk.css",
+    "./noto-sans.css": "./src/noto-sans.css"
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",

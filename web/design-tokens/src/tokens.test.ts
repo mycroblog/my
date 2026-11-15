@@ -22,6 +22,7 @@ import {
   icon,
   iconButton,
   kbd,
+  latinFamily,
   menu,
   mix,
   motion,
@@ -62,6 +63,19 @@ test("a control without a surface stays lighter on hover than one with a surface
       contrast(color["surface-raised"][scheme], surface),
     );
   }
+});
+
+test("the sans stack starts with the self-hosted emoji and ends with the system's emoji fonts (ADR-0091 §10)", () => {
+  const families = fontFamily.sans.split(",").map((f) => f.trim());
+  expect(families[0]).toBe('"my Noto Color Emoji"');
+  expect(families.slice(-3)).toEqual(['"Apple Color Emoji"', '"Segoe UI Emoji"', '"Noto Color Emoji"']);
+});
+
+test("the sans stack puts Noto Sans before Noto Sans CJK, and the mono stack has no Noto Sans (ADR-0009 §5)", () => {
+  const sans = fontFamily.sans.split(",").map((f) => f.trim());
+  expect(sans.slice(1, 4)).toEqual(["var(--font-sans-override)", "var(--font-latin)", "var(--font-cjk)"]);
+  expect(fontFamily.mono).not.toContain("--font-latin");
+  expect(properties["--font-latin"]).toBe(`"${latinFamily.family}"`);
 });
 
 test("mix blends in sRGB as color-mix does", () => {

@@ -28,7 +28,7 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 <!-- source: keys ae25d36239c2 -->
 ## Schlüssel
 
-<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
+<!-- source: settings-one-key-one-value a3d12269943c -->
 ### Einstellungen (ein Schlüssel, ein Wert)
 
 | Schlüssel | Typ | Standard | Beschreibung |
@@ -85,6 +85,7 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 | `require_media_description` | `true` / `false` | `false` | Ob jede Mediendatei (Bild, Video oder Audio), die an einen lokalen Beitrag angehängt wird, eine Beschreibung braucht. Bei `true` wird ein Beitrag oder eine Bearbeitung mit einer Datei, deren Beschreibung fehlt oder nur aus Leerraum besteht, mit 422 abgelehnt. Sie wird als `limits.require_media_description` in `GET /api/v1/instance` veröffentlicht, und der Webclient macht das Beschreibungsfeld zur Pflicht. Sie ist getrennt von der Einstellung `require_media_description` pro Benutzer, die nur vor dem Senden prüft |
 | `link_cards` | `true` / `false` | `true` | Ob Karten für Links in Beiträgen angezeigt werden. Bei `true` ruft der Server die verlinkte Seite ab, um eine Karte zu bauen. Bei `false` hört er auf abzurufen und blendet auch bereits gebaute Karten aus. Um es nur bei manchen Domains zu stoppen, siehe [Domains für Link-Karten](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Ob die Abrufe von Link-Karten `robots.txt` überspringen. Bei `false` befolgt der Server die `robots.txt` der verlinkten Websites, sodass eine Website, die `my-linkcard` oder `*` verbietet, keine Karte erhält ([Link-Vorschauen](link-previews.md#cards-of-links-in-posts)). `/about/crawler` sagt verlinkten Websites, welcher er ist. Bei `true` ruft der Server `robots.txt` weder ab noch verwendet er sie, und eine verlinkte Website kann diese Abrufe damit nicht mehr ablehnen; der Server nennt sich weiterhin `my-linkcard`. Schalte es nur ein, wenn zu viele Karten fehlen. Karten, die gebaut wurden, während es eingeschaltet war, werden beim nächsten erneuten Abruf geprüft, nachdem es ausgeschaltet ist. Die Direktiven einer Seite und die Domains für Link-Karten gelten in beiden Fällen |
+| `ux_measurement` | `true` / `false` | `false` | Ob der Webclient Stichproben darüber sendet, wie schnell er antwortet, und dieser Server sie aufbewahrt ([UX-Messungen](error-reporting.md#ux-measurements)). Die Stichproben enthalten weder Konto noch Adresse noch URL. Bei `false` nimmt der Server keine auf, und `ux_measurement` in `GET /api/v1/instance` sagt dem Client, dass er keine senden soll |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Ob Clients mit Client ID Metadata Document akzeptiert werden. Bei `true` ruft der Server bei einer Autorisierungsanfrage, deren `client_id` eine `https`-URL ist, die Metadaten unter dieser URL ab und behandelt sie als den Client (ohne vorherige Registrierung). Der Abruf folgt keinen Weiterleitungen, liest höchstens 5 KB und verwendet die Antwort höchstens 24 Stunden lang gemäß ihren Cache-Direktiven wieder. Bei `false` hört er auf abzurufen und lehnt Autorisierungsanfragen, Token-Austausche und Erneuerungen dieser Clients ab |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | Wie viel der laufenden Kosten (erfasst unter `/admin/finance/costs` und festgelegt unter `/admin/finance/publication`) veröffentlicht wird. `private`: Nichts wird veröffentlicht (`GET /api/v1/instance/cost_totals` ist 404). `totals`: nur die Summe pro Zeitraum und Währung. `breakdown`: die Summen und eine Aufschlüsselung nach Anbieter und Kategorie, allen auf den Informationsseiten (`/about` und `/about/costs`) und in der API gezeigt. `breakdown` verrät, bei welchem Anbieter (zum Beispiel welcher Cloud) du betreibst. Auf jeder Stufe bleiben Postennamen, Notizen und einzelne Zahlungen privat. Zeiträume bis einschließlich dem, der den heutigen Tag (UTC) enthält, werden veröffentlicht |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Ob Benutzer mit der Berechtigung `view_finance` auf dem Finanzbildschirm (`/finance`, `GET /api/v1/finance/cost_totals`) die Namen von Kostenposten und die Dienstnamen importierter Kosten sehen. Summen und die Aufschlüsselung nach Anbieter und Kategorie werden immer gezeigt, was auch immer diese Einstellung ist |
@@ -570,49 +571,45 @@ Modi. Eine Regel ist die Entscheidung des Betreibers, und sie gilt zusätzlich z
 - Die Admin-API ist `/api/v1/admin/link_card_domains` (auflisten, festlegen; ein `DELETE` mit der Domain entfernt sie) und braucht die Rollenberechtigung `manage_settings`. Ein Server behält höchstens 1.000 Regeln, jede mit einer Notiz von bis zu 5.000 Zeichen.
 - Jede Änderung wird im Audit-Log festgehalten (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme 380636a0e583 -->
+<!-- source: theme d3ebe5db33cb -->
 ## Design
 
-Das serverweite Design ist eine Menge von Überschreibungen der Design-Tokens des Webclients plus ein optionales Stück CSS (eigenes CSS). Es
-gilt für den Webclient jedes Betrachters und für die Bildschirme, die der Server rendert (Anmeldung, Registrierung, Bedingungen und so weiter), sowohl
-hell als auch dunkel.
+Das serverweite Design ist ein Satz von Überschreibungen der Design-Tokens des Webclients, mit je einem hellen und einem dunklen Wert für jede Farbe. Es gilt für den Webclient jedes Betrachters und für die Seiten, die der Server selbst rendert (Anmeldung, Registrierung, Nutzungsbedingungen usw.). Es gibt kein eigenes CSS.
 
-- Du kannst jedes Design-Token überschreiben, außer den primitiven Farben (`--palette-*`). Eine Farbe ist `#rrggbb` für hell und für dunkel
-  (`color-overlay` darf auch `#rrggbbaa` sein); die anderen Tokens nehmen einen Wert der Form ihrer Art (Länge, Zahl,
-  Dauer, Easing, Schriftnamenliste, Schatten) in ihrem Bereich. Wenn du `font-sans` oder `font-mono` überschreibst, lass
-  `"my Noto Color Emoji"` an erster Stelle; andernfalls werden die Emojis des Webclients mit der Schrift des Betriebssystems gezeichnet.
-- Beim Speichern prüft der Server die Form und den Bereich der Werte, den Kontrast jedes Paars von Farb-Tokens (Tokens, die du nicht
-  überschreibst, verwenden ihre Standardwerte; WCAG 2.2 AA in hell und dunkel) und die Länge des eigenen CSS (64 KiB). Schlägt eine Prüfung
-  fehl, wird nichts gespeichert.
-- Der Server liest das eigene CSS nicht. Er legt es nach den Token-Regeln, außerhalb jedes `@layer`, in dasselbe Stylesheet. Es läuft
-  unter derselben CSP wie der Webclient, daher können Bilder, Schriften und `@import` von einem anderen Origin nicht geladen werden.
-  **Der Server prüft die Auswirkungen von eigenem CSS nicht (Kontrast, horizontales Scrollen, Größe der Tippziele, Fokusanzeige,
-  Rechts-nach-links-Sprachen); das liegt in der Verantwortung des Administrators.** Klassennamen und die Seitenstruktur ändern sich zwischen
-  Versionen, daher sind nur die Tokens stabil genug, um sich darauf zu verlassen.
-- Ein Design wird als Revisionen aufbewahrt (`instance_theme_revisions`), und das Stylesheet der aktuellen Revision wird unter
-  `/theme/{revision ID}.css` ausgeliefert (`immutable`, lange gecacht). Die HTML-Shell hat einen gemeinsamen Cache (60 Sekunden plus 300
-  Sekunden Revalidierung), es dauert also nach dem Speichern einige Minuten, bis alle es erhalten. Eine Seite, die bereits geöffnet ist, behält
-  das alte Aussehen, bis sie neu geladen wird.
-- `<meta name="theme-color">` (hell und dunkel) in der Shell und `theme_color` / `background_color` (hell) des Web App
-  Manifests übernehmen den Wert von `color-surface` des Designs.
-- Das Speichern einer Revision ohne Tokens und ohne eigenes CSS setzt das Design auf den Standard zurück, und das Stylesheet wird nicht mehr geladen.
-- Du kannst es auf dem Admin-Bildschirm des Webclients („Design“, `/admin/theme`), mit der Client-API (`GET` / `PUT
-  /api/v1/admin/theme`) und mit der CLI ändern. Der Admin-Bildschirm und die Client-API brauchen die Rollenberechtigung `manage_settings`, und
-  Änderungen werden im Audit-Log festgehalten (`setting_changed`, Ziel `theme`).
+- Diese Design-Tokens kannst du überschreiben; Abstände, Größen der Komponenten, Schriftstärken, Schatten und die Farben der Datendiagramme bleiben fest:
+
+  | Tokens | Art | Überschreibung |
+  | --- | --- | --- |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | Farbe | `#rrggbb` für hell und für dunkel |
+  | `font-sans-override`, `font-mono-override` | Schriftfamilie | Familiennamen, durch Kommas getrennt (höchstens 30), ohne generische Familie wie `sans-serif`; setze einen Namen mit einem Wort, das mit einer Ziffer beginnt, in Anführungszeichen, etwa `"M PLUS 1p"` |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | Länge | `0` oder rem / px, 0,625rem bis 3rem |
+  | `text-*--line-height` derselben vier | Zahl | 1 bis 2,5 |
+  | `radius-control`, `radius-overlay` | Länge | 0 bis 2rem |
+  | `duration-spin` | Dauer | ms / s, 0 bis 1000ms |
+
+- Der Webclient zeichnet Text mit eigenen Schriften: Noto Color Emoji für Emoji, Noto Sans für lateinische, griechische und kyrillische Schrift und Noto Sans CJK in den Glyphen der Sprache des Textes für den Rest. Die Schriften von `font-sans-override` (Text) und `font-mono-override` (Code) stehen direkt hinter der Emoji-Schrift, und die Schriften des Webclients zeichnen die Zeichen, die deinen fehlen. Ein Design kann diese Schriften nicht ersetzen.
+- Du speicherst einen Satz als Entwurf, siehst ihn in der Vorschau an und veröffentlichst ihn dann; das wirksame Design ändert sich erst mit der Veröffentlichung. Jedes Speichern ersetzt den ganzen Entwurf, und jede Veröffentlichung ist eine neue Revision. Beim Wiederherstellen wird der Satz, der vor dem aktuellen wirksam war, erneut veröffentlicht; der Entwurf bleibt, wie er ist.
+- Beim Speichern und beim Veröffentlichen prüft der Server Form und Bereich der Werte und den Kontrast jedes Paars von Farb-Tokens (Tokens, die du nicht überschreibst, verwenden ihre Standardwerte; WCAG 2.2 AA in Hell und Dunkel). Schlägt eine Prüfung fehl, wird nichts gespeichert oder veröffentlicht.
+- Die Überschreibung eines Tokens, das eine neue Version umbenennt oder abschafft oder dessen Wert nicht mehr zum Token passt, lässt ein Upgrade nie scheitern. Sie bleibt im gespeicherten Satz, gilt aber nicht mehr: Die Admin-API führt sie unter `stale_tokens` auf, `my instance theme get` nennt sie, und das nächste Speichern des Entwurfs entfernt sie.
+- Das Stylesheet der veröffentlichten Revision wird unter `/theme/{revision ID}.css` ausgeliefert (`immutable`, lange im Cache). Die HTML-Hülle hat einen gemeinsamen Cache (60 Sekunden plus 300 Sekunden Revalidierung); es dauert also einige Minuten nach dem Veröffentlichen, bis alle es erhalten. Eine bereits geöffnete Seite behält das alte Aussehen, bis sie neu geladen wird.
+- `<meta name="theme-color">` (hell und dunkel) in der Hülle sowie `theme_color` / `background_color` (hell) des Web App Manifest übernehmen den Wert von `color-surface` des Designs. E-Mails verwenden die Standardfarben der Tokens, unabhängig vom Design.
+- Wer einen Satz ohne Tokens veröffentlicht, setzt das Design auf den Standard zurück, und das Stylesheet wird nicht mehr geladen.
+- Du kannst es mit der Client-API und mit der CLI ändern. Die Client-API braucht die Rollenberechtigung `manage_settings`: `GET /api/v1/admin/theme` liest den Entwurf und den wirksamen Satz, `PUT /api/v1/admin/theme/draft` speichert den Entwurf, `GET /api/v1/admin/theme/draft/stylesheet` liefert das Stylesheet des Entwurfs für die Vorschau, und `POST /api/v1/admin/theme/publish` sowie `POST /api/v1/admin/theme/restore` veröffentlichen. Veröffentlichungen werden im Audit-Log festgehalten (`setting_changed`, Ziel `theme`).
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
+  ]
 }
 ```
 

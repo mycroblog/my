@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## キー
 
-<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
+<!-- source: settings-one-key-one-value a3d12269943c -->
 ### 設定（1 つのキーに 1 つの値）
 
 | キー | 型 | 既定値 | 説明 |
@@ -82,6 +82,7 @@
 | `require_media_description` | `true` / `false` | `false` | ローカルの投稿に添付するメディアのファイル（画像、動画、音声）すべてに説明を必須にするかどうか。`true` のとき、説明がないか空白だけのファイルを含む投稿や編集は 422 で拒否されます。`GET /api/v1/instance` の `limits.require_media_description` として公開され、Web クライアントは説明の欄を必須にします。送信前に確認するだけの利用者ごとの設定 `require_media_description` とは別のものです |
 | `link_cards` | `true` / `false` | `true` | 投稿のリンクにカードを表示するかどうか。`true` のとき、サーバーはリンク先のページを取得してカードを作ります。`false` のときは取得をやめ、すでに作ったカードも隠します。一部のドメインでだけ止めるには、[リンクのカードのドメイン](#link-card-domains)を参照してください |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | リンクのカードの取得で `robots.txt` を無視するかどうか。`false` のとき、サーバーはリンク先のサイトの `robots.txt` に従うので、`my-linkcard` か `*` を拒否しているサイトにはカードが付きません（[リンクプレビュー](link-previews.md#cards-of-links-in-posts)）。`/about/crawler` がリンク先のサイトにそのクローラーが何かを伝えます。`true` のとき、サーバーは `robots.txt` を取得も使用もせず、リンク先のサイトはそれでこの取得を拒めなくなります。それでもサーバーは `my-linkcard` と名乗ります。カードが欠けすぎるときにだけオンにしてください。オンの間に作ったカードは、オフにしたあとの次の取得し直しのときに確認されます。ページの指示とリンクのカードのドメインは、どちらの場合も適用されます |
+| `ux_measurement` | `true` / `false` | `false` | Web クライアントが応答の速さのサンプルを送り、このサーバーがそれを保存するかどうか（[UX の計測](error-reporting.md#ux-measurements)）。サンプルにはアカウント、アドレス、URL が含まれません。`false` のとき、サーバーはサンプルを取らず、`GET /api/v1/instance` の `ux_measurement` がクライアントに送らないよう伝えます |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Client ID Metadata Document のクライアントを受け入れるかどうか。`true` のとき、`client_id` が `https` の URL である認可リクエストについて、サーバーはその URL のメタデータを取得し、それをクライアントとして扱います（事前の登録は不要です）。取得はリダイレクトをたどらず、読み込むのは最大 5 KB で、応答はキャッシュの指示に従って最長 24 時間再利用します。`false` のときは取得をやめ、これらのクライアントの認可リクエスト、トークンの交換、更新を拒否します |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | 運営費（`/admin/finance/costs` で記録し、`/admin/finance/publication` で設定します）をどこまで公開するか。`private`: 何も公開しません（`GET /api/v1/instance/cost_totals` は 404 です）。`totals`: 期間と通貨ごとの合計だけ。`breakdown`: 合計と、プロバイダーとカテゴリーごとの内訳。情報ページ（`/about` と `/about/costs`）と API で誰にでも表示されます。`breakdown` では、どのプロバイダー（たとえば、どのクラウド）で運用しているかがわかります。どの段階でも、項目の名前、メモ、個々の支払いは公開されません。今日（UTC）を含む期間までが公開されます |
 | `finance_viewer_item_names` | `true` / `false` | `false` | 権限 `view_finance` を持つ利用者が、会計の画面（`/finance`、`GET /api/v1/finance/cost_totals`）で費用の項目の名前と、取り込んだ費用のサービス名を見られるかどうか。合計と、プロバイダーとカテゴリーごとの内訳は、この設定にかかわらず常に表示されます |
@@ -403,33 +404,45 @@ my instance rule list                                  # active rules (-all incl
 - 管理 API は `/api/v1/admin/link_card_domains`（一覧、設定。ドメインを指定した `DELETE` で外します）で、ロールの権限 `manage_settings` が必要です。サーバーが持てるルールは最大 1,000 個で、それぞれに最大 5,000 文字のメモを付けられます。
 - 変更はすべて監査ログに記録されます（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme 380636a0e583 -->
+<!-- source: theme d3ebe5db33cb -->
 ## テーマ
 
-サーバー全体のテーマは、Web クライアントのデザイントークンの上書きと、任意の 1 つの CSS（カスタム CSS）の組み合わせです。すべての閲覧者の Web クライアントと、サーバーが描画する画面（ログイン、登録、規約など）に、ライトとダークの両方で適用されます。
+サーバー全体のテーマは、Web クライアントのデザイントークンを上書きする 1 組の設定で、色ごとにライトとダークの値を持ちます。すべての閲覧者の Web クライアントと、サーバーが描画する画面（ログイン、登録、規約など）に適用されます。カスタム CSS はありません。
 
-- デザイントークンは、基本の色（`--palette-*`）を除いてすべて上書きできます。色はライトとダークのそれぞれについて `#rrggbb` で指定します（`color-overlay` は `#rrggbbaa` でもかまいません）。ほかのトークンは、その種類（長さ、数値、時間、イージング、フォント名のリスト、影）の形の値を、その範囲内で受け付けます。`font-sans` や `font-mono` を上書きするときは、`"my Noto Color Emoji"` を先頭に残してください。そうしないと、Web クライアントの絵文字が OS のフォントで描かれます。
-- 保存すると、サーバーは値の形と範囲、色のトークンのすべての組のコントラスト（上書きしていないトークンは既定値を使います。ライトとダークの両方で WCAG 2.2 AA）、カスタム CSS の長さ（64 KiB）を確認します。どれか 1 つでも通らなければ、何も保存されません。
-- サーバーはカスタム CSS を読みません。トークンの規則のあとに、どの `@layer` の外にも置いて、同じスタイルシートに入れます。Web クライアントと同じ CSP のもとで動くので、ほかのオリジンの画像、フォント、`@import` は読み込めません。
-  **サーバーはカスタム CSS の効果（コントラスト、横スクロール、タップの対象の大きさ、フォーカスの表示、右から左に書く言語）を確認しません。それは管理者の責任です。** クラス名とページの構造はバージョンによって変わるので、安定して頼れるのはトークンだけです。
-- テーマはリビジョン（`instance_theme_revisions`）として残り、現在のリビジョンのスタイルシートは `/theme/{revision ID}.css`（`immutable`、長期間キャッシュされます）で配信されます。HTML のシェルには共有キャッシュ（60 秒と、再検証の 300 秒）があるので、保存してから全員に行き渡るまで数分かかります。すでに開いているページは、再読み込みするまで古い見た目のままです。
-- シェルの `<meta name="theme-color">`（ライトとダーク）と、Web App Manifest の `theme_color` / `background_color`（ライト）には、テーマの `color-surface` の値が入ります。
-- トークンもカスタム CSS もないリビジョンを保存すると、テーマは既定に戻り、スタイルシートは読み込まれなくなります。
-- テーマは、Web クライアントの管理画面（「テーマ」、`/admin/theme`）、クライアント API（`GET` / `PUT /api/v1/admin/theme`）、CLI で変えられます。管理画面とクライアント API にはロールの権限 `manage_settings` が必要で、変更は監査ログに記録されます（`setting_changed`、対象は `theme`）。
+- 上書きできるデザイントークンは次のとおりです。余白、部品の大きさ、文字の太さ、影、データのグラフの色は固定です。
+
+  | トークン | 種類 | 上書き |
+  | --- | --- | --- |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 色 | ライトとダークのそれぞれについて `#rrggbb` |
+  | `font-sans-override`, `font-mono-override` | フォントファミリー | ファミリー名をカンマ区切りで指定します（最大 30）。`sans-serif` のような総称のファミリーは使えません。数字で始まる単語を含む名前は、`"M PLUS 1p"` のように引用符で囲みます |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | 長さ | `0` か rem / px、0.625rem から 3rem |
+  | `text-*--line-height`（上の 4 つのそれぞれ） | 数値 | 1 から 2.5 |
+  | `radius-control`, `radius-overlay` | 長さ | 0 から 2rem |
+  | `duration-spin` | 時間 | ms / s、0 から 1000ms |
+
+- Web クライアントは、自前のフォントで文字を描きます。絵文字は Noto Color Emoji、ラテン文字・ギリシャ文字・キリル文字は Noto Sans、それ以外は文章の言語の字形の Noto Sans CJK です。`font-sans-override`（本文）と `font-mono-override`（コード）のフォントは絵文字のフォントのすぐ後に入り、指定したフォントに無い文字は Web クライアントのフォントが描きます。テーマでこれらのフォントを置き換えることはできません。
+- セットは下書きとして保存し、プレビューしてから公開します。公開するまで、有効なテーマは変わりません。保存のたびに下書き全体が置き換わり、公開のたびに新しいリビジョンになります。復元は、現在のものより前に有効だったセットをもう一度公開し、下書きはそのままにします。
+- 保存するときと公開するときに、サーバーは値の形と範囲、色のトークンのすべての組のコントラストを確認します（上書きしていないトークンは既定値を使います。ライトとダークの両方で WCAG 2.2 AA）。どれか 1 つでも通らなければ、何も保存も公開もされません。
+- 新しいバージョンで名前が変わったり廃止されたりしたトークンの上書き、または値がもうトークンに合わなくなった上書きがあっても、アップグレードは失敗しません。その上書きは保存済みのセットに残りますが、もう適用されません。管理 API は `stale_tokens` の下にそれを一覧し、`my instance theme get` はその名前を示し、下書きを次に保存すると取り除かれます。
+- 公開したリビジョンのスタイルシートは `/theme/{revision ID}.css`（`immutable`、長期間キャッシュされます）で配信されます。HTML のシェルには共有キャッシュ（60 秒と、再検証の 300 秒）があるので、公開してから全員に行き渡るまで数分かかります。すでに開いているページは、再読み込みするまで古い見た目のままです。
+- シェルの `<meta name="theme-color">`（ライトとダーク）と、Web App Manifest の `theme_color` / `background_color`（ライト）には、テーマの `color-surface` の値が入ります。メールは、テーマにかかわらず、トークンの既定の色を使います。
+- トークンのないセットを公開すると、テーマは既定に戻り、スタイルシートは読み込まれなくなります。
+- テーマはクライアント API と CLI で変えられます。クライアント API にはロールの権限 `manage_settings` が必要です。`GET /api/v1/admin/theme` は下書きと有効なセットを読み、`PUT /api/v1/admin/theme/draft` は下書きを保存し、`GET /api/v1/admin/theme/draft/stylesheet` はプレビュー用に下書きのスタイルシートを返し、`POST /api/v1/admin/theme/publish` と `POST /api/v1/admin/theme/restore` は公開します。公開は監査ログに記録されます（`setting_changed`、対象は `theme`）。
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
+  ]
 }
 ```
 

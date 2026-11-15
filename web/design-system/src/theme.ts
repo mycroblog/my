@@ -6,7 +6,9 @@
 
 import {
   breakpoint,
+  cjkRegions,
   color,
+  latinFamily,
   control,
   emojiPicker,
   fontFamily,
@@ -176,6 +178,26 @@ export default plugin(
   (api) => {
     api.addBase({
       ":root": { colorScheme: "light dark", ...properties },
+      // Noto Sans CJK of the text's language (ADR-0009 §5): an element with a language sets the stacks again, from its
+      // own region, and draws its text with them, since an inherited font-family keeps the region of the parent's. In
+      // a CJK language, Noto Sans leaves to Noto Sans CJK the punctuation it draws full-width.
+      ...Object.fromEntries(
+        cjkRegions.map(({ family, langs }) => [
+          langs.map((lang) => `:lang(${lang})`).join(", "),
+          { "--font-cjk": `"${family}"`, "--font-latin": `"${latinFamily.besideCjk}"` },
+        ]),
+      ),
+      "[lang]": {
+        "--font-sans": fontFamily.sans,
+        "--font-mono": fontFamily.mono,
+        fontFamily: "var(--font-sans)",
+      },
+      // Code draws with the mono stack, its emoji and Han with the self-hosted fonts, also where it or a part inside it
+      // has a language, which the rule above would turn back to the sans stack. A part that wants the sans stack, such
+      // as a key of the shortcuts, says so with its class.
+      "code, pre, kbd, samp, :is(code, pre, kbd, samp)[lang], :is(code, pre, kbd, samp) [lang]": {
+        fontFamily: "var(--font-mono)",
+      },
       ':root[data-theme="light"]': { colorScheme: "light" },
       ':root[data-theme="dark"]': { colorScheme: "dark" },
       "@keyframes my-spin": { to: { transform: "rotate(360deg)" } },

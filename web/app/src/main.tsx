@@ -8,6 +8,9 @@
 // through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028 §12).
 
 import "@my/design-system/styles.css";
+import "@my/design-system/emoji.css";
+import "@my/design-system/noto-sans.css";
+import "@my/design-system/cjk.css";
 import { openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { I18nProvider, useLocale } from "@my/design-system";
 import { browserLanguages } from "@my/platform";

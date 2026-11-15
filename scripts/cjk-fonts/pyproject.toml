@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# The generation-time tools of the CJK text fonts (ADR-0009 §5), which `scripts/task.sh cjk:generate` runs through uv
+# with the versions of uv.lock. Nothing here is part of the server, the client's build, or `scripts/task.sh check`.
+[project]
+name = "my-cjk-fonts"
+version = "0.0.0"
+requires-python = "==3.13.*"
+license = "AGPL-3.0-only"
+dependencies = [
+  "brotli==1.2.1",
+  "fonttools==4.67.0",
+]
+
+[tool.uv]
+package = false

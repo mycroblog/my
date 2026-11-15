@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 键
 
-<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
+<!-- source: settings-one-key-one-value a3d12269943c -->
 ### 设置（一个键对应一个值）
 
 | 键 | 类型 | 默认值 | 说明 |
@@ -82,6 +82,7 @@
 | `require_media_description` | `true` / `false` | `false` | 本站帖子所附的每个媒体文件（图片、视频或音频）是否都需要描述。为 `true` 时，若帖子或编辑中有文件的描述缺失或只有空白，会以 422 拒绝。它在 `GET /api/v1/instance` 中以 `limits.require_media_description` 公开，Web 客户端会将描述字段设为必填。它与用户个人的设置 `require_media_description` 是分开的，后者只在发送前检查 |
 | `link_cards` | `true` / `false` | `true` | 是否为帖子中的链接显示卡片。为 `true` 时，服务器会获取链接的页面来生成卡片。为 `false` 时，服务器停止获取，并隐藏已经生成的卡片。如果只想对部分域名停止，参见[链接卡片域名](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | 获取链接卡片时是否跳过 `robots.txt`。为 `false` 时，服务器遵守被链接网站的 `robots.txt`，因此禁止 `my-linkcard` 或 `*` 的网站不会得到卡片（[链接预览](link-previews.md#cards-of-links-in-posts)）。`/about/crawler` 会告诉被链接的网站它是什么。为 `true` 时，服务器既不获取也不使用 `robots.txt`，被链接的网站也就无法再用它拒绝这些获取；服务器仍以 `my-linkcard` 自称。只有在缺失的卡片过多时才开启它。开启期间生成的卡片，会在关闭后的下一次重新获取时检查。无论哪种情况，页面的指令和链接卡片域名都会生效 |
+| `ux_measurement` | `true` / `false` | `false` | Web 客户端是否发送其响应速度的样本，以及本服务器是否保存这些样本（[UX 测量](error-reporting.md#ux-measurements)）。样本不含账号、地址或 URL。为 `false` 时，服务器不采集任何样本，`GET /api/v1/instance` 中的 `ux_measurement` 会告诉客户端不要发送 |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | 是否接受 Client ID Metadata Document 客户端。为 `true` 时，对于 `client_id` 是 `https` URL 的授权请求，服务器会获取该 URL 上的元数据并将其视为客户端（无需事先注册）。获取不跟随重定向，最多读取 5 KB，并按照响应的缓存指令最多复用 24 小时。为 `false` 时，服务器停止获取，并拒绝这些客户端的授权请求、令牌交换和刷新 |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | 公开多少运营成本（在 `/admin/finance/costs` 记录，在 `/admin/finance/publication` 设置）。`private`：不公开任何内容（`GET /api/v1/instance/cost_totals` 为 404）。`totals`：只公开每个周期和每种货币的合计。`breakdown`：公开合计以及按服务商和类别的明细，在信息页面（`/about` 和 `/about/costs`）和 API 中向所有人显示。`breakdown` 会暴露你在哪个服务商（例如哪家云）上运行。无论哪个级别，项目名称、备注和单笔付款都不公开。公开截至并包括今天（UTC）所在周期的数据 |
 | `finance_viewer_item_names` | `true` / `false` | `false` | 拥有权限 `view_finance` 的用户能否在财务界面（`/finance`、`GET /api/v1/finance/cost_totals`）上看到成本项目名称和导入成本的服务名称。无论此设置如何，合计以及按服务商和类别的明细总是显示 |
@@ -390,33 +391,45 @@ my instance rule list                                  # active rules (-all incl
 - 管理 API 是 `/api/v1/admin/link_card_domains`（列出、设置；对域名发送 `DELETE` 即可移除），需要角色权限 `manage_settings`。一个服务器最多保存 1,000 条规则，每条的备注最多 5,000 个字符。
 - 每次更改都会记录在审计日志中（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme 380636a0e583 -->
+<!-- source: theme d3ebe5db33cb -->
 ## 主题
 
-服务器全局主题是一组对 Web 客户端设计令牌的覆盖，外加一段可选的 CSS（自定义 CSS）。它适用于每位查看者的 Web 客户端以及服务器渲染的界面（登录、注册、条款等），浅色和深色都适用。
+服务器范围的主题是一组对 Web 客户端设计令牌的覆盖，每种颜色都有浅色和深色两个值。它适用于每位访问者的 Web 客户端，也适用于服务器自己渲染的页面（登录、注册、条款等）。没有自定义 CSS。
 
-- 你可以覆盖除基础颜色（`--palette-*`）以外的所有设计令牌。颜色分别为浅色和深色指定 `#rrggbb`（`color-overlay` 也可以是 `#rrggbbaa`）；其他令牌接受符合其类型格式（长度、数字、时长、缓动、字体名称列表、阴影）且在其范围内的值。覆盖 `font-sans` 或 `font-mono` 时，请将 `"my Noto Color Emoji"` 保留在最前面；否则 Web 客户端的表情会使用操作系统的字体绘制。
-- 保存时，服务器会检查值的格式和范围、每一对颜色令牌的对比度（未覆盖的令牌使用默认值；浅色和深色都需满足 WCAG 2.2 AA），以及自定义 CSS 的长度（64 KiB）。只要有一项检查失败，就不会保存任何内容。
-- 服务器不解读自定义 CSS。它把自定义 CSS 放在同一个样式表中令牌规则之后，位于任何 `@layer` 之外。它与 Web 客户端在相同的 CSP 下运行，因此无法加载来自其他源的图片、字体和 `@import`。**服务器不检查自定义 CSS 的效果（对比度、横向滚动、点击目标大小、焦点指示、从右到左的语言）；这是管理员的责任。** 类名和页面结构会随版本变化，因此只有令牌是可以稳定依赖的。
-- 主题以修订版本保存（`instance_theme_revisions`），当前修订版本的样式表在 `/theme/{revision ID}.css` 提供（`immutable`，长期缓存）。HTML 外壳使用共享缓存（60 秒，外加 300 秒的重新验证），因此保存后需要几分钟才能让所有人都拿到。已经打开的页面在重新加载之前会保持旧的外观。
-- 外壳中的 `<meta name="theme-color">`（浅色和深色）以及 Web App Manifest 的 `theme_color` / `background_color`（浅色）取主题的 `color-surface` 的值。
-- 保存一个没有令牌也没有自定义 CSS 的修订版本，会将主题重置为默认值，样式表也不再加载。
-- 可以在 Web 客户端的管理界面（“主题”，`/admin/theme`）上、通过客户端 API（`GET` / `PUT
-  /api/v1/admin/theme`）以及通过 CLI 更改它。管理界面和客户端 API 需要角色权限 `manage_settings`，更改会记录在审计日志中（`setting_changed`，对象为 `theme`）。
+- 你可以覆盖下列设计令牌；间距、组件的尺寸、文字的字重、阴影和数据图表的颜色保持固定：
+
+  | 令牌 | 种类 | 覆盖 |
+  | --- | --- | --- |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 颜色 | 浅色和深色各一个 `#rrggbb` |
+  | `font-sans-override`, `font-mono-override` | 字体族 | 字体族名称，以逗号分隔（最多 30 个），不能包含 `sans-serif` 这样的通用字体族；名称中含有以数字开头的单词时要加引号，例如 `"M PLUS 1p"` |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | 长度 | `0` 或 rem / px，0.625rem 到 3rem |
+  | 上述四个令牌各自的 `text-*--line-height` | 数字 | 1 到 2.5 |
+  | `radius-control`, `radius-overlay` | 长度 | 0 到 2rem |
+  | `duration-spin` | 时长 | ms / s，0 到 1000ms |
+
+- Web 客户端用自带的字体绘制文字：表情符号用 Noto Color Emoji，拉丁字母、希腊字母和西里尔字母用 Noto Sans，其余文字用与文本语言相应字形的 Noto Sans CJK。`font-sans-override`（正文）和 `font-mono-override`（代码）中的字体紧排在表情符号字体之后，你的字体所缺少的字符由 Web 客户端的字体绘制。主题不能替换这些字体。
+- 你把一组设置保存为草稿，预览之后再发布；发布之前，生效的主题不会变。每次保存都会替换整个草稿，每次发布都是一个新的修订。恢复会再次发布当前这组之前生效的那一组，草稿保持不变。
+- 保存和发布时，服务器会检查值的形式和范围，以及每一对颜色令牌的对比度（你没有覆盖的令牌使用默认值；浅色和深色下都要达到 WCAG 2.2 AA）。只要有一项检查不通过，就不会保存或发布任何内容。
+- 如果新版本重命名或淘汰了某个令牌，或者某个覆盖的值不再适合该令牌，升级不会因此失败。该覆盖仍保留在已保存的设置中，但不再生效：管理 API 会把它列在 `stale_tokens` 下，`my instance theme get` 会指出它的名称，下次保存草稿时会将它丢弃。
+- 已发布修订的样式表通过 `/theme/{revision ID}.css` 提供（`immutable`，长期缓存）。HTML 外壳有共享缓存（60 秒加 300 秒的重新验证），所以发布之后需要几分钟才会传到所有人。已经打开的页面在重新加载之前保持旧的外观。
+- 外壳中的 `<meta name="theme-color">`（浅色和深色）以及 Web App Manifest 的 `theme_color` / `background_color`（浅色）取主题的 `color-surface` 的值。无论主题如何，电子邮件都使用令牌的默认颜色。
+- 发布一组不含任何令牌的设置，会把主题重置为默认，样式表也不再加载。
+- 你可以用客户端 API 和 CLI 更改它。客户端 API 需要角色权限 `manage_settings`：`GET /api/v1/admin/theme` 读取草稿和生效的设置，`PUT /api/v1/admin/theme/draft` 保存草稿，`GET /api/v1/admin/theme/draft/stylesheet` 返回草稿的样式表以供预览，`POST /api/v1/admin/theme/publish` 和 `POST /api/v1/admin/theme/restore` 负责发布。发布会记录在审计日志中（`setting_changed`，目标为 `theme`）。
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
+  ]
 }
 ```
 

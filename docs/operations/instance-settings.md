@@ -562,12 +562,16 @@ There is no custom CSS.
   | Tokens | Kind | Override |
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | color | `#rrggbb` for light and for dark |
-  | `font-sans` | font family | Family names, quoted or plain, comma-separated (at most 30) |
+  | `font-sans-override`, `font-mono-override` | font family | Family names, comma-separated (at most 30), with no generic family such as `sans-serif`; quote a name with a word that starts with a digit, such as `"M PLUS 1p"` |
   | `text-tagline`, `text-title`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
   | `text-*--line-height` of the same four | number | 1 to 2.5 |
   | `radius-control`, `radius-overlay` | length | 0 to 2rem |
   | `duration-spin` | duration | ms / s, 0 to 1000ms |
 
+- The web client draws text with its own fonts: Noto Color Emoji for emoji, Noto Sans for Latin, Greek and Cyrillic, and
+  Noto Sans CJK in the glyphs of the text's language for the rest. The fonts of `font-sans-override` (text) and
+  `font-mono-override` (code) come right after the emoji font, and the web client's fonts draw the characters yours lack.
+  A theme cannot replace these fonts.
 - You save a set as a draft, preview it, and then publish it; the theme in effect does not change until you publish. Each save
   replaces the whole draft, and each publication is a new revision. Restoring publishes again the set that was in effect
   before the current one, and leaves the draft as it is.

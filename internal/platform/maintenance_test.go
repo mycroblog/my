@@ -45,11 +45,11 @@ func TestMaintenanceApp(t *testing.T) {
 func TestMaintenancePageTheme(t *testing.T) {
 	p := platform.MaintenancePage(&config.Config{Host: "example.test", MaintenanceServerName: "Example"}, []instance.ThemeTokenValue{
 		{Token: "color-accent-text", Light: "#112233", Dark: "#445566"},
-		{Token: "font-sans", Value: "Georgia, serif"},
+		{Token: "font-sans-override", Value: "Georgia"}, //nolint:gosec // a design token, not a credential
 		{Token: "radius-control", Value: "1rem"},
 	})
 	if p.ServerName != "Example" || p.Theme.Light["color-accent-text"] != "#112233" || p.Theme.Dark["color-accent-text"] != "#445566" ||
-		p.Theme.Dark["font-sans"] != "Georgia, serif" {
+		p.Theme.Dark["font-sans-override"] != "Georgia" {
 		t.Errorf("page = %+v", p)
 	}
 	if _, ok := p.Theme.Light["radius-control"]; ok {

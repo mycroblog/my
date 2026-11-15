@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What every story renders under: the stylesheet of @my/design-system, the page's color scheme (data-theme on <html>,
+// What every story renders under: the stylesheet of @my/design-system and its emoji and CJK fonts, the page's color scheme (data-theme on <html>,
 // as the server's shell sets it) on the theme's surface and text (preview.css), so that a story shows one theme, the
 // toolbar's, and its locale, whose direction the parts read from the I18nProvider and <html>
 // carries; ar-XB, the pseudo-locale made from en, reads from right to left. The toolbar switches both, and the viewport
@@ -13,6 +13,9 @@
 // and, in a test run alone, the afterEach fails one whose page scrolls sideways.
 
 import "@my/design-system/styles.css";
+import "@my/design-system/emoji.css";
+import "@my/design-system/noto-sans.css";
+import "@my/design-system/cjk.css";
 import "./preview.css";
 import { keymap } from "@my/app";
 import { I18nProvider, ShortcutProvider, useLocale } from "@my/design-system";
