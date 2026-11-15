@@ -62,12 +62,12 @@
 - **ロール**: 編集器の入力欄は `role="textbox"`（`aria-multiline`）のまま `combobox` にせず、`aria-autocomplete="list"`・`aria-controls`（候補の `listbox`）・`aria-activedescendant` を付ける（いずれも WAI-ARIA 1.2 の `textbox` が持てる属性、[WAI-ARIA 1.2 §5.4 textbox](https://www.w3.org/TR/wai-aria-1.2/#textbox)、2026-10-23 確認）。
   `textbox` は `aria-expanded` を持てないので、開いたことと件数は `role="status"` の告知（「候補 5 件」）で伝える。候補は `role="listbox"` の `role="option"` で、選ばれた候補に `aria-selected="true"` を付ける（APG の combobox の listbox の部分）。
 - **作り方**: 入力中の語は編集器のカーソルの位置と値から読み、候補のキーは編集器のキーのコマンドとして優先して受け、候補の `listbox` は visual の役割が決めた見た目で描く。候補を閉じている間は上下の矢印を本文の行の移動に残す。
-- **キーボード**: 開いている間、上下の矢印で候補を移り（端で止まる）、Enter と Tab で確定し、Esc で閉じる。IME の変換中（下の IME の項）は、どのキーでも確定しない。開いたときは先頭の候補を選んだ状態にする。
+- **キーボード**: 開いている間、上下の矢印で候補を移り（端で止まる）、Enter と Tab で確定し、Esc で閉じる。IME の変換中（下の IME の項）は、どのキーでも確定せず、押した候補だけを確定する。開いたときは先頭の候補を選んだ状態にする。
   Esc は候補を閉じるだけで、投稿のシート（`Sheet`）を閉じない（イベントの伝播を止める）。開いていないときのキーは変えない。Ctrl / Cmd + Enter の送信は開いていても送信にする。
 - **確定**: 入力中の語（`@` / `#` / `:` からカーソルまで）を候補の値（`@user` か `@user@domain`、`#Tag`、`:shortcode:`）で置き換え、後ろに空白がなければ半角空白を 1 つ足してカーソルをその後に置く。
   ローカルのアカウントは `@user`、ほかのサーバーのアカウントは `@user@domain`（Punycode でなく、`acct` のまま）にする。置き換えは編集器の更新で行い、編集器の取り消しの履歴に残す。
-- **IME**: `compositionstart` から `compositionend` までは候補を開かず、問い合わせず、キーを処理しない（`KeyboardEvent.isComposing` と `keyCode === 229` の両方を見る）。
-  `compositionend` の後に入力中の語を読み直して開く。Safari は変換の確定の Enter の `keydown` を `compositionend` の後に `isComposing: false`・`keyCode: 229` で送る（UI Events に反する）ので、`keyCode === 229` の `keydown` は確定に使わない。
+- **IME**: 変換中の語でも候補を開き、問い合わせる。Android のキーボードは英字の語も変換として打つので、変換の終わりを待つと候補が開かない。
+  変換中はキーを処理せず（`KeyboardEvent.isComposing` と `keyCode === 229` の両方を見る）、候補を押したときは変換を確定してから語を置き換える。Safari は変換の確定の Enter の `keydown` を `compositionend` の後に `isComposing: false`・`keyCode: 229` で送る（UI Events に反する）ので、`keyCode === 229` の `keydown` は確定に使わない。
   WebKit の main では直っている（2026-10-23 に [WebKit bug 165004](https://bugs.webkit.org/show_bug.cgi?id=165004) で確認。bug 311717 の重複として解決）が、直る前の Safari が残るので、229 の判定を保つ。
   全角の `＠`・`＃`・`：` は起点にしない（サーバーも読まない）。
 - **位置**: 候補はカーソルの行の直下に、入力欄と同じ幅で出す。カーソルの行の位置は、編集器の選択範囲の矩形で求める。

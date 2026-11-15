@@ -56,8 +56,10 @@ export function modalStates(reduced: boolean) {
     : ({ initial: "hidden", animate: "shown", exit: "hidden" } as const);
 }
 
-/** The backdrop: at every width, or from `tablet`. */
+/** The backdrop: at every width, or from `tablet`; or dimmed alone, unblurred, at every width. */
 export const modalBackdrop = {
+  // A sheet that keeps what it writes into in sight (the emoji picker's).
+  dim: "fixed inset-0 bg-scrim",
   always:
     "fixed inset-0 bg-scrim backdrop-blur-[var(--dialog-blur)] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none",
   // Under `tablet` the modal is a screen of its own, with nothing to dim behind it.
@@ -75,8 +77,11 @@ export type ModalLayerProps = {
   onDismiss: () => void;
   /** The caller handles Escape itself (the composer, which tells leaving on purpose from by accident). */
   ownEscape?: boolean | undefined;
-  /** The backdrop at every width, or from `tablet`, under which the panel is a screen of its own. */
-  backdrop?: "always" | "tablet" | undefined;
+  /**
+   * The backdrop at every width, or from `tablet`, under which the panel is a screen of its own; or `dim`, at every
+   * width with no blur.
+   */
+  backdrop?: "always" | "tablet" | "dim" | undefined;
   /** The layout of the overlay over the viewport, which places the panel and scrolls. */
   overlay: string;
   /** The panel's box. */

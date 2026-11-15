@@ -90,36 +90,44 @@ test("a writer completes a hashtag with Tab, which one undo takes back", async (
   await composer.holds("Bread #ba");
 });
 
-test("no suggestions open while an input method composes; they open for the word it commits", async ({
+test("the suggestions open while an input method composes, and a press picks one over the composition", async ({
   page,
   signIn,
   fresh,
 }) => {
-  await page.clock.install();
   await signIn(await fresh.person());
   const composer = await new Frame(page).newPost();
-  const asked: string[] = [];
-  page.on("request", (request) => {
-    const url = new URL(request.url());
-    if (url.pathname.endsWith("/tags/search")) asked.push(url.searchParams.get("q") ?? "");
-  });
-  await composer.write("#");
+  await composer.write("Lunch #");
   const hashtags = composer.suggestions("Hashtags");
 
-  // The input method composes 写 after #: the text shows it, and nothing is suggested, however long it takes.
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Input.imeSetComposition", { text: "しゃ", selectionStart: 2, selectionEnd: 2 });
-  await cdp.send("Input.imeSetComposition", { text: "写", selectionStart: 1, selectionEnd: 1 });
-  await composer.holds("#写");
-  await page.clock.runFor(2_000);
-  await expect(hashtags).toBeHidden();
-  await expect(composer.announced(/suggestion/)).toHaveCount(0);
-  expect(asked).toEqual([]);
+  // The input method composes 写 after #, as an Android keyboard composes every word: the hashtags for it open.
+  await composer.compose(["しゃ", "写"]);
+  await composer.holds("Lunch #写");
+  const photo = hashtags.getByRole("option", { name: /^#写真, \d+ posts?$/ });
+  await expect(photo).toHaveAttribute("aria-selected", "true");
 
-  // The commit ends the composition: the hashtags for 写 open, and Enter writes the one picked.
-  await cdp.send("Input.insertText", { text: "写" });
+  // A press writes it in place of the composition, which the input method does not write again; what is typed next
+  // goes after its space.
+  await photo.click();
+  await expect(hashtags).toBeHidden();
+  await expect(composer.text).toBeFocused();
+  await composer.holds("Lunch #写真 ");
+  await page.keyboard.type("today");
+  await composer.holds("Lunch #写真 today");
+});
+
+test("the word an input method commits keeps its suggestions, and Enter then picks one", async ({
+  page,
+  signIn,
+  fresh,
+}) => {
+  await signIn(await fresh.person());
+  const composer = await new Frame(page).newPost();
+  await composer.write("#");
+  const hashtags = composer.suggestions("Hashtags");
+  await composer.compose(["しゃ", "写"]);
+  await composer.commit("写");
   await composer.holds("#写");
-  await page.clock.runFor(2_000);
   const photo = hashtags.getByRole("option", { name: /^#写真, \d+ posts?$/ });
   await expect(photo).toHaveAttribute("aria-selected", "true");
   await composer.text.press("Enter");

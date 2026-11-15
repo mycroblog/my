@@ -8,5 +8,5 @@ Example Social
 https://social.example
 連絡先: admin@social.example
 
-通知の設定で「終了した投票」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+通知の設定で「締切済みの投票」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
 このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

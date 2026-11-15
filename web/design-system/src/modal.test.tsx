@@ -41,3 +41,9 @@ test("the backdrop dims and blurs the page, only dims with reduced transparency,
   }
   expect(modalBackdrop.tablet).toContain("max-tablet:hidden");
 });
+
+test("the dim backdrop dims the page at every width and never blurs it", () => {
+  expect(modalBackdrop.dim).toContain("bg-scrim");
+  expect(modalBackdrop.dim).not.toContain("blur");
+  expect(modalBackdrop.dim).not.toContain("hidden");
+});

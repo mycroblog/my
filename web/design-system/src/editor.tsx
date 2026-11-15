@@ -188,12 +188,10 @@ export type FieldSuggest = {
   onClose: () => void;
 };
 
-/** What an editor tells the suggestions: where its caret is, and when an input method composes in it. */
+/** What an editor tells the suggestions: where its caret is. */
 export type FieldCaret = {
   /** The caret's UTF-16 offset as it moves or the text changes; undefined when a range is selected or it left. */
   onCaret?: ((caret: number | undefined) => void) | undefined;
-  /** An input method's composition starts or ends: nothing is suggested meanwhile. */
-  onComposing?: ((composing: boolean) => void) | undefined;
 };
 
 /** The text to the caller as it changes, and the caller's value into the editor where it is not what it holds. */
@@ -260,6 +258,9 @@ function HandlePlugin({ handle }: { handle: Ref<EditorHandle> }) {
         if (focus) editor.focus();
       },
       write: (start, end, text, caret) => {
+        // A press on a suggestion while an input method composes: the blur commits the composition first, so that the
+        // input method does not write it again over what replaces it (ADR-0092 §3).
+        if (editor.isComposing()) editor.getRootElement()?.blur();
         editor.update(() => {
           $selectOffsets(start, end);
           const selection = $getSelection();
@@ -275,18 +276,15 @@ function HandlePlugin({ handle }: { handle: Ref<EditorHandle> }) {
 }
 
 /**
- * Tells the suggestions where the caret is and when an input method composes, and gives them the keys while they are
- * open: the arrows move the active option, Enter and Tab accept it, Escape closes the list alone. An input method's
- * keys are its own: Lexical dispatches no key command while it composes, nor for the Enter Safari sends with the
- * keyCode 229 after the composition ended (ADR-0092 §3).
+ * Tells the suggestions where the caret is, also while an input method composes, and gives them the keys while they
+ * are open: the arrows move the active option, Enter and Tab accept it, Escape closes the list alone. An input
+ * method's keys are its own: Lexical dispatches no key command while it composes, nor for the Enter Safari sends with
+ * the keyCode 229 after the composition ended, so that only a press picks an option then (ADR-0092 §3).
  */
-function SuggestPlugin({ suggest, onCaret, onComposing }: FieldCaret & { suggest: FieldSuggest | undefined }) {
+function SuggestPlugin({ suggest, onCaret }: FieldCaret & { suggest: FieldSuggest | undefined }) {
   const editor = useEditor();
   const caret = useEffectEvent((at: number | undefined) => {
     onCaret?.(at);
-  });
-  const composing = useEffectEvent((on: boolean) => {
-    onComposing?.(on);
   });
   const key = useEffectEvent((name: "down" | "up" | "accept" | "escape", event: KeyboardEvent | null): boolean => {
     if (suggest === undefined || event === null) return false;
@@ -335,18 +333,6 @@ function SuggestPlugin({ suggest, onCaret, onComposing }: FieldCaret & { suggest
         },
         COMMAND_PRIORITY_CRITICAL,
       ),
-      editor.registerRootListener((root, previous) => {
-        const start = () => {
-          composing(true);
-        };
-        const end = () => {
-          composing(false);
-        };
-        previous?.removeEventListener("compositionstart", start);
-        previous?.removeEventListener("compositionend", end);
-        root?.addEventListener("compositionstart", start);
-        root?.addEventListener("compositionend", end);
-      }),
       editor.registerCommand(KEY_ARROW_DOWN_COMMAND, (e) => key("down", e), COMMAND_PRIORITY_CRITICAL),
       editor.registerCommand(KEY_ARROW_UP_COMMAND, (e) => key("up", e), COMMAND_PRIORITY_CRITICAL),
       editor.registerCommand(KEY_ENTER_COMMAND, (e) => key("accept", e), COMMAND_PRIORITY_CRITICAL),
@@ -699,7 +685,6 @@ export function PlainTextEditor({
   completes = false,
   suggest,
   onCaret,
-  onComposing,
   children,
 }: PlainTextEditorProps) {
   const listed = suggest !== undefined && suggest.listId !== undefined && suggest.count > 0;
@@ -745,9 +730,7 @@ export function PlainTextEditor({
           </span>
         )}
       </div>
-      {(completes || onCaret !== undefined || onComposing !== undefined) && (
-        <SuggestPlugin suggest={suggest} onCaret={onCaret} onComposing={onComposing} />
-      )}
+      {(completes || onCaret !== undefined) && <SuggestPlugin suggest={suggest} onCaret={onCaret} />}
       <ValuePlugin value={value} onChange={onChange} />
       <EditablePlugin editable={!readOnly} />
       <OverPlugin over={over} />

@@ -132,11 +132,11 @@
     "description": "The last line of a poll's options, which adds one."
   },
   "compose.poll.duration": {
-    "defaultMessage": "締め切り",
+    "defaultMessage": "締切",
     "description": "The name of the poll's duration choices."
   },
   "compose.poll.ends_in": {
-    "defaultMessage": "{duration}に締め切り",
+    "defaultMessage": "{duration}に締切",
     "description": "The poll's duration control, as it reads. duration is one of the choices (5 minutes, 1 day)."
   },
   "compose.poll.minutes": {
@@ -156,7 +156,7 @@
     "description": "The checkbox of the poll that lets a vote choose several options."
   },
   "compose.poll.hide_totals": {
-    "defaultMessage": "締め切りまで票数を隠す",
+    "defaultMessage": "締切まで票数を隠す",
     "description": "The checkbox of the poll that hides how many voted for each option until it ends."
   },
   "compose.poll.invalid": {

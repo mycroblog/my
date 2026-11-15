@@ -57,7 +57,7 @@
   },
   "push.filtered": {
     "defaultMessage": "{title} (フィルタ「{filter}」に一致)",
-    "description": "Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as \u201cAlice mentioned you\u201d; {filter} is the title of the filter, as the user wrote it."
+    "description": "Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as “Alice mentioned you”; {filter} is the title of the filter, as the user wrote it."
   },
   "push.follow": {
     "defaultMessage": "{name}さんにフォローされました",
@@ -84,7 +84,7 @@
     "description": "Web Push notification of a kind without its own sentence. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.poll_closed": {
-    "defaultMessage": "参加した投票が終了しました",
+    "defaultMessage": "参加した投票が締切を迎えました",
     "description": "Web Push notification: a poll that the user created or voted in has ended."
   },
   "push.quote": {

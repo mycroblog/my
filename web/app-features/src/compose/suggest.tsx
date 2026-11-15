@@ -2,8 +2,8 @@
 
 // The suggestions for the word being typed at the caret of a composer's field (ADR-0092 §1–§3): accounts for `@`,
 // hashtags for `#`, emoji for `:`, each where the field reads it (§5: the text all three, the content warning `:`
-// alone). A word opens them once it holds a character after its trigger (two after `:`), never while an input method
-// composes; the accounts and the hashtags are asked of the server once typing has paused for 200 ms (the server puts
+// alone). A word opens them once it holds a character after its trigger (two after `:`), also while an input method
+// composes it (as Android keyboards compose every word), where only a press picks one; the accounts and the hashtags are asked of the server once typing has paused for 200 ms (the server puts
 // the followed first, leaves the blocked and muted out, and ranks the hashtags by use), the hashtags posted lately on
 // this device then first; the emoji come from the device, the custom ones and the Unicode ones of the picker (its own
 // chunk, fetched as `:` is first typed), those used often first among matches as good. While they are asked for more
@@ -92,10 +92,9 @@ export function useSuggestions({
   const { t } = stringsIn(locale);
   const listId = useId();
   const [caret, setCaret] = useState<number>();
-  const [composing, setComposing] = useState(false);
   // The word the list was closed or accepted on, which opens it again once it changes.
   const [closed, setClosed] = useState<{ start: number; query: string }>();
-  const found = caret === undefined || composing ? null : activeWord(text, caret);
+  const found = caret === undefined ? null : activeWord(text, caret);
   const word =
     found !== null &&
     triggers.includes(found.trigger) &&
@@ -204,7 +203,7 @@ export function useSuggestions({
   const count = options?.length ?? 0;
   const active = chosen !== undefined && chosen.key === listKey ? Math.min(chosen.index, count - 1) : 0;
 
-  const caretProps: FieldCaret = { onCaret: setCaret, onComposing: setComposing };
+  const caretProps: FieldCaret = { onCaret: setCaret };
   if (word === null || trigger === undefined || failed || (options === undefined && !loading))
     return { caret: caretProps, suggest: undefined };
   const kind = kindOf[trigger];
