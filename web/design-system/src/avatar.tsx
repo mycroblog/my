@@ -41,9 +41,9 @@ const avatar = tv({
     size: {
       inline: {
         base: "size-avatar-inline",
-        fallback: "text-[length:calc(var(--avatar-inline)*var(--avatar-initial))]",
+        fallback: "text-[length:calc(var(--avatar-inline)*var(--avatar-initial-small))]",
       },
-      row: { base: "size-avatar-row", fallback: "text-[length:calc(var(--avatar-row)*var(--avatar-initial))]" },
+      row: { base: "size-avatar-row", fallback: "text-[length:calc(var(--avatar-row)*var(--avatar-initial-small))]" },
       post: { base: "size-avatar-post", fallback: "text-[length:calc(var(--avatar-post)*var(--avatar-initial))]" },
       preview: {
         base: "size-avatar-preview",

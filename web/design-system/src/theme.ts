@@ -122,6 +122,7 @@ const theme = {
     "entry-scroll": ref("--entry-scroll-margin"),
     feed: ref("--feed-gap"),
     "feed-scroll": ref("--feed-scroll-margin"),
+    "feed-tight": ref("--feed-tight-gap"),
     embed: ref("--embed-padding"),
     "embed-gap": ref("--embed-gap"),
     media: ref("--media-gap"),

@@ -448,6 +448,54 @@ export const posts: readonly Post[] = [
     visibility: "public",
     text: "Hi all, I'm one of the moderators here. Reports reach me within a day. The rules: https://demo.test/about :sparkle:",
   },
+  // The direct messages, before the posts of the timelines, whose first page they would otherwise fill: Sam's to Yuki,
+  // whose newest Yuki has not read, and a group of Hana, Layla and Yuki, which Yuki read (conversationReads).
+  {
+    key: "sam-direct",
+    author: "sam",
+    language: "en",
+    visibility: "direct",
+    text: "@yuki Are you coming to the meetup on Saturday? I can bring the bread.",
+  },
+  {
+    key: "yuki-direct-reply",
+    author: "yuki",
+    language: "en",
+    visibility: "direct",
+    replyTo: "sam-direct",
+    text: "@sam Yes, I'll be there! I'll bring a thermos of tea. Shall we meet at the station?",
+  },
+  {
+    key: "sam-direct-again",
+    author: "sam",
+    language: "en",
+    visibility: "direct",
+    replyTo: "yuki-direct-reply",
+    text: "@yuki The station at nine, then. The dough is already rising.",
+  },
+  {
+    key: "hana-group",
+    author: "hana",
+    language: "ja",
+    visibility: "direct",
+    text: "@yuki @layla サーバーのルールを英語とアラビア語にもしたいです。手伝ってもらえますか？",
+  },
+  {
+    key: "layla-group",
+    author: "layla",
+    language: "en",
+    visibility: "direct",
+    replyTo: "hana-group",
+    text: "@hana @yuki Happy to do the Arabic. I'll send a draft tonight.",
+  },
+  {
+    key: "yuki-group",
+    author: "yuki",
+    language: "ja",
+    visibility: "direct",
+    replyTo: "layla-group",
+    text: "@hana @layla 英語の方はわたしが見ます！",
+  },
   {
     key: "yuki-ridge",
     author: "yuki",
@@ -623,13 +671,6 @@ export const posts: readonly Post[] = [
     text: "For this server only: the meetup on Saturday starts at ten.",
   },
   {
-    key: "sam-direct",
-    author: "sam",
-    language: "en",
-    visibility: "direct",
-    text: "@yuki Are you coming to the meetup on Saturday? I can bring the bread.",
-  },
-  {
     key: "yuki-quote",
     author: "yuki",
     language: "ja",
@@ -682,6 +723,12 @@ export const interactions: readonly Interaction[] = [
   { kind: "vote", by: "marco", post: "sam-poll", choices: [2] },
   { kind: "vote", by: "layla", post: "sam-poll", choices: [0] },
 ];
+
+/**
+ * The conversations of the direct messages a person read, each by its latest post: they read it up to that post, on
+ * the server's read marker (POST /conversations/{id}/read), so that it shows read until a newer post by another.
+ */
+export const conversationReads: readonly { by: string; post: string }[] = [{ by: "yuki", post: "yuki-group" }];
 
 /** The blocks and mutes. */
 export const restrictions: readonly Restriction[] = [

@@ -5,11 +5,12 @@
 // statuses, the home timeline, a thread, a profile, the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
-// answers of follow requests, the read marker, the announcements read, the reader's bookmarks and followed hashtags,
-// the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft published, the
-// reader's articles posted and edited and the images they upload) are kept in memory; a post's edit history holds the
-// scenario's versions of it, then the reader's edits. An article's body comes only with the status read alone, as the
-// server's does, and its preview renders as publishing would, unless the options make it fail. A list pages as
+// answers of follow requests, the read marker, the announcements read, the conversations of the direct messages read
+// and hidden, the reader's bookmarks and followed hashtags, the reader's edits and deletions of their own posts, the
+// reader's drafts and their schedules, a draft published, the reader's articles posted and edited and the images they
+// upload) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An
+// article's body comes only with the status read alone, as the server's does, and its preview renders as publishing
+// would, unless the options make it fail. A list pages as
 // the server's
 // do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later
 // page comes late only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second,
@@ -23,6 +24,7 @@ import { drawingBlurhash, drawingURL } from "../drawing";
 import {
   admin,
   announcements as scenarioAnnouncements,
+  conversationReads,
   drafts,
   draftSchedule,
   emojis,
@@ -135,6 +137,8 @@ export type FakeApi = {
   listPath: (index: number) => string;
   /** The ID of the scenario's post of `key`, or of the reader's draft of that key. */
   idOf: (key: string) => string;
+  /** The app's address of the reader's conversation at `index` of their direct messages, newest first. */
+  conversationPath: (index: number) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -649,6 +653,51 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       provider: { id: translationProvider.id, name: translationProvider.name },
     });
   }
+
+  // ---- Direct messages -------------------------------------------------------------------------------------------
+
+  // The reader's conversations: their direct posts by thread, each by its root's key, newest first. One is unread while
+  // a post by another is newer than where the reader read it to (the scenario's reads, then the reader's), as the
+  // server says, whoever wrote the latest; one hidden stays out until a newer post.
+  const rootOf = (p: Post): Post => (p.replyTo === undefined ? p : rootOf(postOf(p.replyTo)));
+  const conversationIdOf = (root: Post) => idAt(0, 95_000 + posts.indexOf(root));
+  const readTo = new Map<string, string>(
+    conversationReads
+      .filter((r) => r.by === viewer)
+      .map((r) => [conversationIdOf(rootOf(postOf(r.post))), statusId.get(r.post) ?? ""]),
+  );
+  const hiddenTo = new Map<string, string>();
+  type HeldConversation = { at: string; hidden: boolean; body: Json };
+  const conversationsNow = (): HeldConversation[] => {
+    const threads = new Map<Post, Post[]>();
+    for (const p of posts)
+      if (p.visibility === "direct" && visible(p) && !hidden(p.author))
+        threads.set(rootOf(p), [...(threads.get(rootOf(p)) ?? []), p]);
+    return [...threads]
+      .flatMap(([root, thread]): HeldConversation[] => {
+        const last = thread.at(-1);
+        if (last === undefined) return [];
+        const id = conversationIdOf(root);
+        const lastId = statusId.get(last.key) ?? "";
+        const others = [...new Set(thread.flatMap((p) => [p.author, ...mentioned(p.text)]))].filter(
+          (u) => u !== viewer,
+        );
+        return [
+          {
+            at: lastId,
+            hidden: hiddenTo.get(id) === lastId,
+            body: {
+              id,
+              accounts: others.map(accountOf),
+              last_status: statusOf(last),
+              unread: thread.some((p) => p.author !== viewer && (readTo.get(id) ?? "") < (statusId.get(p.key) ?? "")),
+            },
+          },
+        ];
+      })
+      .toSorted((a, b) => (b.at > a.at ? 1 : -1));
+  };
+  const conversationOf = (id: string) => conversationsNow().find((c) => c.body["id"] === id);
 
   // ---- Notifications ---------------------------------------------------------------------------------------------
 
@@ -1698,6 +1747,31 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       }
       return json({ ...(lastRead === undefined ? {} : { last_read_id: lastRead }), unread_count: unreadCount() });
     }
+    if (path === "/conversations") {
+      const { from, body } = page(
+        conversationsNow()
+          .filter((c) => !c.hidden)
+          .map((c) => c.body),
+        q,
+      );
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/conversations\/([^/]+)(\/read|\/hide)?$/))) {
+      const found = conversationOf(decodeURIComponent(match[1] ?? ""));
+      if (found === undefined) return problem(404, "Not Found");
+      const id = found.body["id"] as string;
+      if (match[2] === undefined && request.method === "GET") return json(found.body);
+      if (match[2] === "/read" && request.method === "POST") {
+        readTo.set(id, found.at);
+        return json({ ...found.body, unread: false });
+      }
+      if (match[2] === "/hide" && request.method === "POST") {
+        hiddenTo.set(id, found.at);
+        return new Response(null, { status: 204 });
+      }
+      return problem(405, "Method Not Allowed");
+    }
     if (path === "/notifications/requests/summary") return json({ accounts_count: 0, notifications_count: 0 });
     if (path === "/interaction_requests") return json({ items: [] });
     if (path === "/articles/preview" && request.method === "POST") {
@@ -1910,5 +1984,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return idAt(started - (all - at) * 5 * 60 * minute, 80_000 + at);
   };
 
-  return { serve, newPosts, newNotification, postPath, announcementPath, listPath, idOf: keyedId };
+  const conversationPath = (index: number) => {
+    const id = conversationsNow()[index]?.body["id"];
+    return `/conversations/${typeof id === "string" ? id : "none"}`;
+  };
+
+  return { serve, newPosts, newNotification, postPath, announcementPath, listPath, idOf: keyedId, conversationPath };
 }

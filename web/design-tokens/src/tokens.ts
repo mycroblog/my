@@ -211,9 +211,10 @@ export const icon = { action: 1.125, caption: 0.875, navigation: 1.5, tile: { ra
 /**
  * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the start of a row of
  * a list on one line (a suggestion), at the head of a post, and in a profile preview; and the size of the initial that
- * stands in for a missing image, as a share of the avatar.
+ * stands in for a missing image, as a share of the avatar, larger on the inline and the row avatars, where a kanji or an
+ * Arabic letter at the share of the larger ones is a few pixels high.
  */
-export const avatar = { inline: 1.25, row: 1.5, post: 2.5, preview: 4, initial: 0.44 } as const;
+export const avatar = { inline: 1.25, row: 1.5, post: 2.5, preview: 4, initial: 0.44, initialSmall: 0.52 } as const;
 
 /**
  * The shadow a surface over the page (a menu) casts, down `y` px and blurred `blur` px, in a share of black that is
@@ -291,9 +292,10 @@ export const entry = {
 /**
  * A feed of entries (a timeline), in rem: the space between its entries, in which their surfaces meet edge to edge
  * (twice an entry's reach), and the room kept above an entry the keyboard brings to the top of the view, which holds
- * its focus ring.
+ * its focus ring; and the space between the posts of a conversation of direct messages, which read as one exchange,
+ * where a hovered post's surface stops short of the next post.
  */
-export const feed = { gap: 1.75, scrollMargin: 0.75 } as const;
+export const feed = { gap: 1.75, scrollMargin: 0.75, tightGap: 1.25 } as const;
 
 /** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */
 export const embed = { padding: 0.75, gap: 0.375 } as const;
@@ -440,7 +442,8 @@ export const formPage = {
  * on its lines (and inside a badge), between its counts, and between its fields; the size of the unread mark; and the
  * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
  * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
- * ring of the page's surface that cuts it out of that one.
+ * ring of the page's surface that cuts it out of that one; and how far a face of a conversation's people tucks under
+ * the one before, little enough that each stays recognisable.
  */
 export const screen = {
   tabGap: 0.25,
@@ -464,6 +467,7 @@ export const screen = {
   facesLead: 3.5,
   faceOverlap: 0.5,
   faceCut: 0.125,
+  faceTuck: 0.25,
 } as const;
 
 /**
@@ -602,6 +606,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--avatar-post", `${avatar.post}rem`],
   ["--avatar-preview", `${avatar.preview}rem`],
   ["--avatar-initial", `${avatar.initial}`],
+  ["--avatar-initial-small", `${avatar.initialSmall}`],
   [
     "--shadow-overlay",
     `0 ${shadow.y}px ${shadow.blur}px light-dark(rgb(0 0 0 / ${percent(shadow.share.light)}), rgb(0 0 0 / ${percent(shadow.share.dark)}))`,
@@ -644,6 +649,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--entry-scroll-margin", `${entry.scrollMargin}rem`],
   ["--feed-gap", `${feed.gap}rem`],
   ["--feed-scroll-margin", `${feed.scrollMargin}rem`],
+  ["--feed-tight-gap", `${feed.tightGap}rem`],
   ["--embed-padding", `${embed.padding}rem`],
   ["--embed-gap", `${embed.gap}rem`],
   ["--media-gap", `${media.gap}rem`],

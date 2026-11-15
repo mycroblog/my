@@ -58,6 +58,8 @@ export type FreshPostOptions = {
   poll?: Poll;
   /** The language the post is written in (a BCP 47 tag); the author's locale by default. */
   language?: string;
+  /** The ID of the post it replies to. */
+  replyTo?: string;
 };
 
 /**
@@ -193,6 +195,7 @@ export class Fresh {
         text,
         visibility: o.visibility ?? "public",
         language: o.language ?? author.locale,
+        ...(o.replyTo === undefined ? {} : { in_reply_to_id: o.replyTo }),
         ...(o.spoiler === undefined ? {} : { spoiler_text: o.spoiler }),
         ...(o.sensitive === true ? { sensitive: true } : {}),
         ...(media.length === 0 ? {} : { media: media.map((m) => ({ id: m.id, description: m.description ?? "" })) }),

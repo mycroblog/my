@@ -29,7 +29,6 @@ import {
   CharCount,
   CheckField,
   ChoiceBack,
-  FeedNotice,
   ChoiceGroup,
   ChoiceOpens,
   ChoicePopup,
@@ -55,13 +54,12 @@ import {
   type IconName,
 } from "@my/design-system";
 import type { EditorHandle } from "@my/design-system/editor";
-import { useId, useRef, useState, type ComponentType } from "react";
+import { useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
-import { ChunkBoundary, retryingLazy } from "./chunk";
+import { EditorFailed, PostText, retryEditors, WarningText } from "./editors";
 import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
-import type { PostTextProps, WarningTextProps } from "./text";
 import { Language, Schedule } from "./tools";
 import type { MessageId } from "../messages.gen";
 import {
@@ -79,89 +77,7 @@ import type { Composer } from "./use-composer";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
-/**
- * The editor's module, fetched once: each call after the first gets the same promise, but after a failed fetch, which
- * the next tries again; and the module, once here.
- */
-let loading: Promise<typeof import("./text")> | undefined;
-let loaded: typeof import("./text") | undefined;
-const loadText = () =>
-  (loading ??= import("./text").then(
-    (m) => {
-      loaded = m;
-      return m;
-    },
-    (error: unknown) => {
-      loading = undefined;
-      throw error;
-    },
-  ));
-
-/** Fetches the editor's module with this one, ahead of the composer's first opening. */
-export function preloadComposerText(): void {
-  // A failed fetch is tried again by the next.
-  loadText().catch(() => undefined);
-}
-
-const lazyPostText = retryingLazy(() => loadText().then((m) => m.PostText));
-const lazyWarningText = retryingLazy(() => loadText().then((m) => m.WarningText));
-
-/**
- * In the text's place when the editors' chunk could not be fetched, once for the whole form: that it could not be
- * loaded, and Try again, which fetches both editors again.
- */
-function EditorFailed({ t, retry }: { t: T; retry: () => void }) {
-  return (
-    <FeedNotice alert start action={<TextButton onPress={retry}>{t("compose.load_retry")}</TextButton>}>
-      {t("compose.editor_failed")}
-    </FeedNotice>
-  );
-}
-
-/** An editor chosen once, as it mounts: drawn at once where its module came already, else as it comes. */
-function Chosen<P extends object>({
-  here,
-  fetched,
-  props,
-}: {
-  here: ComponentType<P> | undefined;
-  fetched: () => ComponentType<P>;
-  props: P;
-}) {
-  const [Editor] = useState(() => here ?? fetched());
-  return <Editor {...props} />;
-}
-
-/** Nothing in a failed editor's place: the view says it once, for the whole form (`EditorFailed`). */
-const nothing = () => null;
-
-/** Tries both editors again, as one: they come in one chunk. */
-function retryEditors(): void {
-  lazyPostText.retry();
-  lazyWarningText.retry();
-}
-
-/**
- * The text's editor: drawn at once where its module came already, so that it takes the focus inside the press that
- * opened the composer (a phone opens its keyboard only then), else as it comes; one that could not be fetched tells
- * `onFailed`.
- */
-function PostText({ onFailed, ...props }: PostTextProps & { onFailed: () => void }) {
-  return (
-    <ChunkBoundary fallback={nothing} onRetry={retryEditors} onFailed={onFailed}>
-      <Chosen here={loaded?.PostText} fetched={lazyPostText.get} props={props} />
-    </ChunkBoundary>
-  );
-}
-
-/** The content warning's editor, as the text's. */
-function WarningText({ onFailed, ...props }: WarningTextProps & { onFailed: () => void }) {
-  return (
-    <ChunkBoundary fallback={nothing} onRetry={retryEditors} onFailed={onFailed}>
-      <Chosen here={loaded?.WarningText} fetched={lazyWarningText.get} props={props} />
-    </ChunkBoundary>
-  );
-}
+export { preloadComposerText } from "./editors";
 
 const visibilityIcon: Record<Visibility, IconName> = {
   public: "public",

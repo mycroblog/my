@@ -127,6 +127,11 @@ export type PostProps = {
   voting?: readonly number[] | undefined;
   /** The emoji picker the react action opens; without one, react is `onAction`'s. */
   picker?: PostPicker | undefined;
+  /**
+   * Where the reader's own posts are told apart (a conversation of direct messages): what says it is theirs ("You"),
+   * in the handle's place.
+   */
+  self?: string | undefined;
   /** How its link card shows (the reader's preference): the image above the text, or a square beside it. */
   cardSize?: "large" | "small" | undefined;
   /**
@@ -136,7 +141,7 @@ export type PostProps = {
   reading?: ReactNode;
   /**
    * Its line of whom it replies to; false where the screen shows that already (a reply under the article it answers,
-   * on the article's page).
+   * on the article's page, and a post of a conversation of direct messages).
    */
   replyingTo?: boolean | undefined;
 };
@@ -881,6 +886,7 @@ export function Post({
   cardSize = "large",
   reading,
   replyingTo = true,
+  self,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -955,6 +961,7 @@ export function Post({
       nameId={name}
       handle={handleOf(shown.account)}
       href={accountPath(shown.account)}
+      self={own ? self : undefined}
       end={
         stamp ? (
           <Stamp

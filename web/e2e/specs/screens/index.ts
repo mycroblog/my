@@ -12,6 +12,14 @@ export { ArticleText } from "./article";
 export { ArticleEditor, holdPreviews, holdProcessing, type Upload } from "./article-editor";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
+export {
+  Conversation,
+  conversationRead,
+  Conversations,
+  failingReads,
+  heldWrite,
+  nextReplyTarget,
+} from "./conversations";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
 export {

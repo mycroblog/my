@@ -9,19 +9,35 @@ const hrefs = (places: readonly Place[]) => places.map((p) => p.href);
 const none: Rights = rightsOf([]);
 const staff: Rights = rightsOf(["manage_reports", "manage_settings", "manage_finance"]);
 
-test("a signed-in reader's tab bar is Home, Local, Federated, Notifications, Search, then Profile, Bookmarks, Settings", () => {
+test("a signed-in reader's tab bar is Home, Local, Federated, Notifications, Search, then Direct messages, Profile, Bookmarks, Settings", () => {
   const places = placesFor(true, instance(), none);
   expect(hrefs(places.tabs)).toEqual(["/", "/local", "/public", "/notifications", "/search"]);
-  expect(hrefs(places.own)).toEqual(["/profile", "/bookmarks", "/settings"]);
+  expect(hrefs(places.own)).toEqual(["/conversations", "/profile", "/bookmarks", "/settings"]);
   expect(places.rights).toEqual([]);
 });
 
-test("Notifications carries the unread count and Moderation the unhandled count", () => {
+test("the rail and the sidebar put Direct messages after Notifications (ADR-0110 §11)", () => {
+  expect(hrefs(placesFor(true, instance(), none).side)).toEqual([
+    "/",
+    "/local",
+    "/public",
+    "/notifications",
+    "/conversations",
+    "/search",
+    "/profile",
+    "/bookmarks",
+    "/settings",
+  ]);
+});
+
+test("Notifications and Direct messages carry the unread counts and Moderation the unhandled count", () => {
   const places = placesFor(true, instance(), staff);
   expect(places.tabs.find((p) => p.href === "/notifications")?.count).toBe("notifications");
+  expect(places.own.find((p) => p.href === "/conversations")?.count).toBe("direct");
   expect(places.rights.find((p) => p.href === "/moderation")?.count).toBe("moderation");
-  expect([...places.tabs, ...places.own].filter((p) => p.count !== undefined).map((p) => p.href)).toEqual([
+  expect(places.side.filter((p) => p.count !== undefined).map((p) => p.href)).toEqual([
     "/notifications",
+    "/conversations",
   ]);
 });
 

@@ -35,6 +35,7 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 export type Fake = {
   /**
    * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index,
+   * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
    * `reactions:<key>:<emoji>` of who reacted to a scenario post with an emoji, or the key of a scenario post whose page
    * it opens.
    */
@@ -153,6 +154,7 @@ function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
   if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
+  if (at.startsWith("conversation:")) return fake.conversationPath(Number(at.slice("conversation:".length)));
   if (at.startsWith("reactions:")) {
     const [, key = "", emoji = ""] = at.split(":");
     return `${fake.postPath(key)}/reactions/${encodeURIComponent(emoji)}`;

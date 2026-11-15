@@ -8,6 +8,7 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { holds } from "./composer";
 import { Drafts } from "./drafts";
+import { Frame } from "./frame";
 import { answered } from "./write";
 
 /** A file to upload, as the file picker hands it to the page. */
@@ -81,14 +82,8 @@ export class ArticleEditor {
 
   /** Opens the editor from the place New article that starts the phone's Menu sheet. */
   async openFromMenuSheet(): Promise<void> {
-    await this.page
-      .getByRole("navigation", { name: "Main", exact: true })
-      .getByRole("button", { name: "Menu", exact: true })
-      .click();
-    await this.page
-      .getByRole("dialog", { name: "Menu", exact: true })
-      .getByRole("link", { name: "New article", exact: true })
-      .click();
+    const menu = await new Frame(this.page).openMenu();
+    await menu.dialog.getByRole("link", { name: "New article", exact: true }).click();
     await expect(this.heading("New article")).toBeVisible();
   }
 

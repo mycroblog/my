@@ -778,5 +778,29 @@
   "compose.article.load_failed": {
     "defaultMessage": "The article could not be loaded.",
     "description": "In place of the editor when the article or its draft could not be read; followed by Try again."
+  },
+  "compose.in_place.to": {
+    "defaultMessage": "To {names}",
+    "description": "Over the reply in place at the end of a conversation of direct messages: whom it goes to. names lists the conversation's other people."
+  },
+  "compose.in_place.form": {
+    "defaultMessage": "Your message to {names}",
+    "description": "The name of the reply in place at the end of a conversation of direct messages, a form, for assistive technology. names lists the conversation's other people."
+  },
+  "compose.in_place.label": {
+    "defaultMessage": "Message",
+    "description": "The name of the text field of the reply in place at the end of a conversation of direct messages, for assistive technology."
+  },
+  "compose.in_place.placeholder": {
+    "defaultMessage": "Write a message",
+    "description": "The placeholder of the empty reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send": {
+    "defaultMessage": "Send",
+    "description": "The button that sends the reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send_to": {
+    "defaultMessage": "Send to {names}",
+    "description": "The name of the button that sends the reply in place, for assistive technology, apart from every post's Reply; it starts with, or holds, the button's visible word (compose.in_place.send). names lists the conversation's other people."
   }
 }

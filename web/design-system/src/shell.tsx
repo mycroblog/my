@@ -115,8 +115,9 @@ const nav = tv({
     glyph: "relative inline-flex flex-none",
     label: "",
     // The badge on the glyph's corner, where the label is not shown beside the glyph, and at the line's end, where it
-    // is; each place sets which shows.
-    corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)]",
+    // is; each place sets which shows. The corner's badge is cut out of the glyph by a ring of the surface under it, so
+    // that it reads over a filled glyph (the current place's).
+    corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)] shadow-face-cut",
     end: "ms-auto",
   },
   variants: {
@@ -126,7 +127,11 @@ const nav = tv({
         item: [
           // At the full width of the rail or the sidebar, so that the menu's popover opens beside the navigation.
           "box-border h-shell-item w-full flex-none justify-center gap-shell-edge data-hovered:bg-surface-hover",
+          "data-hovered:[--face-cut-color:var(--color-surface-hover)]",
+          // The body's leading, not the font's `normal`, which the fallback fonts set to the size alone, so that the
+          // label's truncation clips no descender.
           "desktop:justify-start desktop:px-shell-item-inline desktop:text-[length:var(--shell-label)]",
+          "desktop:leading-[var(--text-body--line-height)]",
         ],
         // In the rail, the label names the place for assistive technology alone.
         label: "sr-only desktop:not-sr-only desktop:truncate",
@@ -948,6 +953,7 @@ export function NavMenu({
   closeLabel,
   marked = false,
   markLabel,
+  count,
   footer: end,
   children,
 }: {
@@ -955,6 +961,11 @@ export function NavMenu({
   closeLabel: string;
   marked?: boolean;
   markLabel?: string | undefined;
+  /**
+   * How many wait in a place inside it that the reader reads (the unread direct messages): a badge in place of the
+   * mark, which `markLabel` names.
+   */
+  count?: number | undefined;
   footer?: ReactNode;
   children: ReactNode;
 }) {
@@ -963,6 +974,7 @@ export function NavMenu({
   const m = menu();
   const { lang, direction } = useReader(undefined);
   const [open, setOpen] = useState(false);
+  const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
   // A place's press (a link inside) closes the menu, as it leaves the screen.
   const close = () => {
     setOpen(false);
@@ -982,14 +994,25 @@ export function NavMenu({
     >
       <span className={s.glyph()}>
         <Icon name="menu" place="navigation" />
-        {marked && <span className={m.dot()} aria-hidden="true" />}
+        {shown !== undefined ? (
+          <span className={`${badge()} ${s.corner()}`} aria-hidden="true">
+            {shown}
+          </span>
+        ) : (
+          marked && <span className={m.dot()} aria-hidden="true" />
+        )}
       </span>
       <span className={s.label()}>{label}</span>
-      {marked && markLabel !== undefined && (
+      {(marked || shown !== undefined) && markLabel !== undefined && (
         <>
           {" "}
           <span className="sr-only">{markLabel}</span>
         </>
+      )}
+      {shown !== undefined && (
+        <span className={`${badge()} ${s.end()}`} aria-hidden="true">
+          {shown}
+        </span>
       )}
     </AriaButton>
   );

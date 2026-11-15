@@ -81,12 +81,18 @@ export const NavigationJapanesePC: Story = {
   play: async (context) => navigationEntry(context, "ja"),
 };
 
+/**
+ * The tab bar's Menu by its name: the word, then what it counts and what waits inside it when anything does (the
+ * unread direct messages).
+ */
+const menuNamed = (w: { menu: string }) => new RegExp(`^${w.menu}(?: |$)`);
+
 /** On a phone: New article starts the Menu sheet, and opens the editor. */
 async function menuSheetEntry(context: StoryContext, lang: Lang) {
   const { canvas, w } = await home(context, lang);
   await expect(canvas.queryByRole("button", { name: w.newArticle })).toBeNull();
   await userEvent.click(
-    within(canvas.getByRole("navigation", { name: w.navigation })).getByRole("button", { name: w.menu }),
+    within(canvas.getByRole("navigation", { name: w.navigation })).getByRole("button", { name: menuNamed(w) }),
   );
   const sheet = within(await within(document.body).findByRole("dialog", { name: w.menu }));
   const [first] = sheet.getAllByRole("link");
@@ -153,7 +159,7 @@ async function noPhoneEntry(context: StoryContext, lang: Lang) {
   const newPost = canvas.getByRole("button", { name: w.newPost });
   await expect(newPost).not.toHaveAttribute("aria-haspopup");
   await userEvent.click(
-    within(canvas.getByRole("navigation", { name: w.navigation })).getByRole("button", { name: w.menu }),
+    within(canvas.getByRole("navigation", { name: w.navigation })).getByRole("button", { name: menuNamed(w) }),
   );
   const dialog = await within(document.body).findByRole("dialog", { name: w.menu });
   await expect(within(dialog).queryByRole("link", { name: w.newArticle })).toBeNull();

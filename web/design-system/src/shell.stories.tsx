@@ -5,7 +5,8 @@
 // reader at home with every section around them; a moderator, whose places end with moderation (its count), admin and
 // finance; a server with its local and federated timelines off; a single-user server; a visitor not signed in; the
 // closure announced; the reader offline and the server down; a call; the toasts of a newer version; the column beside
-// the main one with none of its sections but the notifications, which have none yet; and the menu's sheet open. Its words are samples in English.
+// the main one with none of its sections but the notifications, which have none yet; the reader in their direct
+// messages, whose place counts the unread conversations; and the menu's sheet open. Its words are samples in English.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
@@ -48,7 +49,7 @@ const wordmark = (fill: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 24" width="44" height="24"><text x="2" y="19" font-family="system-ui, sans-serif" font-size="21" font-style="italic" font-weight="800" fill="${fill}">my</text></svg>`)}`;
 
 type Who = "reader" | "staff" | "visitor";
-type At = "/" | "/local" | "/public" | "/notifications" | "/search" | "/@yuki" | "/settings";
+type At = "/" | "/local" | "/public" | "/notifications" | "/direct" | "/search" | "/@yuki" | "/settings";
 
 /** A state of the shell: who reads, what the server offers, and what crosses the screens now. */
 type ShellState = {
@@ -89,9 +90,27 @@ type Place = {
 };
 
 const unreadNotifications = 3;
+const unreadConversations = 2;
 const reportsToHandle = 12;
 
-function places({ who = "reader", timelines = ["local", "federated"], singleUser = false }: ShellState) {
+const directMessages: Place = {
+  href: "/direct",
+  icon: "directMessages",
+  label: "Direct messages",
+};
+
+/**
+ * The places: the tab bar's, the rest the menu's sheet holds (the direct messages first), the rights' and the rail's
+ * and the sidebar's, one list in one order with the direct messages after the notifications.
+ */
+function places(state: ShellState) {
+  const { tabs, rest, rights } = placesOf(state);
+  if (state.who === "visitor") return { tabs, rest, rights, side: [...tabs, ...rest] };
+  const side = [...tabs, ...rest].flatMap((p) => (p.href === "/notifications" ? [p, directMessages] : [p]));
+  return { tabs, rest: [directMessages, ...rest], rights, side };
+}
+
+function placesOf({ who = "reader", timelines = ["local", "federated"], singleUser = false }: ShellState) {
   const offered = singleUser ? [] : timelines;
   const timeline: Place[] = [
     ...(offered.includes("local") ? [{ href: "/local", icon: "local", label: "Local" } as const] : []),
@@ -128,7 +147,13 @@ function places({ who = "reader", timelines = ["local", "federated"], singleUser
 
 function Item({ place, at }: { place: Place; at: At }) {
   const count =
-    place.href === "/notifications" ? unreadNotifications : place.href === "/moderation" ? reportsToHandle : undefined;
+    place.href === "/notifications"
+      ? unreadNotifications
+      : place.href === "/direct"
+        ? unreadConversations
+        : place.href === "/moderation"
+          ? reportsToHandle
+          : undefined;
   return (
     <NavItem
       href={place.href}
@@ -137,7 +162,7 @@ function Item({ place, at }: { place: Place; at: At }) {
       current={place.href === at}
       count={count}
       countLabel={
-        count === undefined ? undefined : `${String(count)} ${place.href === "/notifications" ? "unread" : "waiting"}`
+        count === undefined ? undefined : `${String(count)} ${place.href === "/moderation" ? "waiting" : "unread"}`
       }
     />
   );
@@ -155,9 +180,24 @@ const footer = (
 );
 
 const announcements = [
-  { id: "a1", title: "Scheduled maintenance on Sunday, 03:00–04:00 UTC", unread: true, when: "2h ago" },
-  { id: "a2", title: "Custom emoji requests are open", unread: true, when: "1d ago" },
-  { id: "a3", title: "Welcome to the server: read the rules before you post", unread: false, when: "12d ago" },
+  {
+    id: "a1",
+    title: "Scheduled maintenance on Sunday, 03:00–04:00 UTC",
+    unread: true,
+    when: "2h ago",
+  },
+  {
+    id: "a2",
+    title: "Custom emoji requests are open",
+    unread: true,
+    when: "1d ago",
+  },
+  {
+    id: "a3",
+    title: "Welcome to the server: read the rules before you post",
+    unread: false,
+    when: "12d ago",
+  },
 ];
 
 /** The unread announcements alone; the menu leads to all of them. */
@@ -344,7 +384,13 @@ function Banners({ closure, connection }: ShellState) {
       {connection === "offline" && (
         <FrameBanner
           icon="offline"
-          links={[{ href: "https://status.my.example", label: "Status page", newTab: "(opens in a new tab)" }]}
+          links={[
+            {
+              href: "https://status.my.example",
+              label: "Status page",
+              newTab: "(opens in a new tab)",
+            },
+          ]}
         >
           You are offline. What you see may be out of date until you reconnect.
         </FrameBanner>
@@ -353,7 +399,13 @@ function Banners({ closure, connection }: ShellState) {
         <FrameBanner
           icon="error"
           strong
-          links={[{ href: "https://status.my.example", label: "Status page", newTab: "(opens in a new tab)" }]}
+          links={[
+            {
+              href: "https://status.my.example",
+              label: "Status page",
+              newTab: "(opens in a new tab)",
+            },
+          ]}
         >
           The server is not answering. What you see may be out of date until it is back.
         </FrameBanner>
@@ -365,7 +417,7 @@ function Banners({ closure, connection }: ShellState) {
 function Shell(state: ShellState) {
   const { who = "reader", at = "/", call, toast, logo, around = "all" } = state;
   const [muted, setMuted] = useState(state.muted ?? false);
-  const { tabs, rest, rights } = places(state);
+  const { tabs, rest, rights, side } = places(state);
   const reader = who !== "visitor";
   const articles = reader && (state.articles ?? true);
   const composes = reader && (at === "/" || at === "/local" || at === "/public" || at === "/@yuki");
@@ -416,10 +468,22 @@ function Shell(state: ShellState) {
   // their screens at every width (the funding meter's while the server shows it).
   const server: Place[] = reader
     ? [
-        { href: "/announcements", icon: "announcements", label: "Announcements" },
+        {
+          href: "/announcements",
+          icon: "announcements",
+          label: "Announcements",
+        },
         { href: "/voice", icon: "room", label: "Voice rooms" },
         { href: "/events", icon: "events", label: "Events" },
-        ...(around === "all" ? [{ href: "/about#funding", icon: "funding", label: "Funding" } as const] : []),
+        ...(around === "all"
+          ? [
+              {
+                href: "/about#funding",
+                icon: "funding",
+                label: "Funding",
+              } as const,
+            ]
+          : []),
       ]
     : [
         { href: "/login", icon: "signIn", label: "Sign in" },
@@ -458,7 +522,7 @@ function Shell(state: ShellState) {
           logo={logo ? images.logo : undefined}
         />
         {primary}
-        {list([...tabs, ...rest])}
+        {list(side)}
         {list(rights)}
         {sideMenu}
         {callBar}
@@ -485,7 +549,11 @@ function Shell(state: ShellState) {
               label="Menu"
               closeLabel="Close"
               marked={staff}
-              markLabel={`${String(reportsToHandle)} waiting in moderation`}
+              count={reader ? unreadConversations : undefined}
+              markLabel={[
+                ...(reader ? [`${String(unreadConversations)} unread in direct messages`] : []),
+                ...(staff ? [`${String(reportsToHandle)} waiting in moderation`] : []),
+              ].join(", ")}
               footer={footer}
             >
               {list(write)}
@@ -526,17 +594,29 @@ export const Home: Story = { args: {} };
 export const Staff: Story = { args: { who: "staff", at: "/notifications" } };
 export const TimelinesOff: Story = { args: { timelines: [], at: "/@yuki" } };
 export const SingleUser: Story = { args: { singleUser: true, logo: true } };
-export const SignedOut: Story = { args: { who: "visitor", at: "/local", around: "some" } };
+export const SignedOut: Story = {
+  args: { who: "visitor", at: "/local", around: "some" },
+};
 export const ClosureAnnounced: Story = { args: { closure: true } };
-export const Offline: Story = { args: { closure: true, connection: "offline" } };
-export const Outage: Story = { args: { connection: "outage", at: "/notifications" } };
+export const Offline: Story = {
+  args: { closure: true, connection: "offline" },
+};
+export const Outage: Story = {
+  args: { connection: "outage", at: "/notifications" },
+};
 export const InCall: Story = { args: { call: true } };
-export const InCallMuted: Story = { args: { call: true, muted: true, who: "staff" } };
+export const InCallMuted: Story = {
+  args: { call: true, muted: true, who: "staff" },
+};
 export const UpdateReady: Story = { args: { toast: "stale", call: false } };
-export const UpdateRequired: Story = { args: { toast: "required", at: "/notifications" } };
+export const UpdateRequired: Story = {
+  args: { toast: "required", at: "/notifications" },
+};
 export const AroundEmpty: Story = { args: { around: "none" } };
 /** The server keeps articles to a role the reader does not have: no New article anywhere. */
 export const ArticlesNotAllowed: Story = { args: { articles: false } };
+/** The direct messages' place, where the reader is, with the unread conversations' count. */
+export const DirectMessages: Story = { args: { at: "/direct" } };
 /** Waits until a dialog over the page has risen into place, so that the story tests check it as the reader sees it. */
 async function dialogRisen(doc: Document) {
   await waitFor(
@@ -555,7 +635,9 @@ async function dialogRisen(doc: Document) {
 export const MenuOpen: Story = {
   args: { who: "staff" },
   play: async ({ canvasElement }) => {
-    const [menu] = within(canvasElement).getAllByRole("button", { name: /^Menu/ });
+    const [menu] = within(canvasElement).getAllByRole("button", {
+      name: /^Menu/,
+    });
     if (menu === undefined) throw new Error("no menu shows");
     await userEvent.click(menu);
     await dialogRisen(canvasElement.ownerDocument);

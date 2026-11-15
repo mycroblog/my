@@ -17,6 +17,7 @@ import {
   admin,
   announcements,
   apps,
+  conversationReads,
   drafts,
   draftSchedule,
   emojis,
@@ -478,6 +479,19 @@ class Seeder {
     }
   }
 
+  /** Marks read each conversation a person read, found among theirs by its latest post. */
+  async readConversations() {
+    for (const r of conversationReads) {
+      const api = await this.api(r.by);
+      const last = this.post(r.post).id;
+      const found = await until(`the conversation of ${r.post}`, async () => {
+        const { data } = await api.GET("/conversations", { params: { query: { limit: 40 } } });
+        return data?.items.find((c) => c.last_status.id === last);
+      });
+      await api.POST("/conversations/{id}/read", { params: { path: { id: found.id } } });
+    }
+  }
+
   async restrict() {
     for (const r of restrictions) {
       const api = await this.api(r.by);
@@ -683,6 +697,7 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   await s.makeLists();
   await s.writePosts();
   await s.interact();
+  await s.readConversations();
   await s.restrict();
   await s.registerApps();
   await s.publishAnnouncements();

@@ -8,6 +8,7 @@ import { runStream, type StreamEvent, type StreamOptions } from "@mycroblog/myki
 import { joinTabGroup, type TabGroup } from "@my/platform";
 import type { AppData } from "./app-data";
 import { receiveDeletion, receiveHomeGap, receiveHomeStatuses, receiveListsGap, receiveListStatuses } from "./arrivals";
+import { receiveConversation, receiveConversationsGap } from "./conversations";
 import { receiveNotification, receiveNotificationGap, receiveNotificationRequests } from "./notifications";
 
 /** What the leading tab passes to the others: an event of the stream, or a break after which they read again. */
@@ -77,13 +78,14 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
 
 /**
  * Puts what the stream says into the cache: new statuses of the home timeline or of a list, a deleted status, a
- * notification, the count of the notification requests, or a break.
+ * notification, the count of the notification requests, a conversation of the direct messages, or a break.
  */
 function route(data: AppData, message: StreamMessage): void {
   if (message.kind === "gap") {
     receiveHomeGap(data);
     receiveListsGap(data);
     receiveNotificationGap(data);
+    receiveConversationsGap(data);
     return;
   }
   const { event } = message;
@@ -103,8 +105,11 @@ function route(data: AppData, message: StreamMessage): void {
     case "notification_requests":
       receiveNotificationRequests(data, event.summary);
       break;
+    case "conversation":
+      receiveConversation(data, event.conversation);
+      break;
     default:
-      // The direct messages and the announcements have no screen yet.
+      // The announcements are read again as the shell lists them.
       break;
   }
 }

@@ -12,6 +12,7 @@ export type Status = components["schemas"]["Status"];
 export type StatusPage = components["schemas"]["StatusPage"];
 
 type Notification = components["schemas"]["Notification"];
+type Conversation = components["schemas"]["Conversation"];
 type StatusContext = components["schemas"]["StatusContext"];
 
 /** The cached pages of a list. */
@@ -19,7 +20,8 @@ type Pages<T> = { readonly pages: readonly { readonly items: readonly T[] }[] };
 
 /**
  * The statuses the data of a query holds, by the path of its operation: the timelines', an account's and the bookmarks'
- * pages, the notifications' pages by the status each is about, a status alone, and a thread; none for another query.
+ * pages, the notifications' pages by the status each is about, the conversations' pages and a conversation by its
+ * latest post, a status alone, and a thread; none for another query.
  */
 function* statusesIn(path: unknown, data: unknown): Generator<Status> {
   if (data === undefined || typeof path !== "string") return;
@@ -28,6 +30,10 @@ function* statusesIn(path: unknown, data: unknown): Generator<Status> {
   } else if (path === "/notifications") {
     for (const page of (data as Pages<Notification>).pages)
       for (const n of page.items) if (n.status !== undefined) yield n.status;
+  } else if (path === "/conversations") {
+    for (const page of (data as Pages<Conversation>).pages) for (const c of page.items) yield c.last_status;
+  } else if (path === "/conversations/{id}") {
+    yield (data as Conversation).last_status;
   } else if (path === "/statuses/{id}") {
     yield data as Status;
   } else if (path === "/statuses/{id}/context") {

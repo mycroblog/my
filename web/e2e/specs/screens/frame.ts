@@ -7,7 +7,7 @@ import type { Locator, Page } from "@playwright/test";
 import { Composer } from "./composer";
 
 /** A place the main navigation links to. */
-export type Place = "Home" | "Notifications" | "Profile" | "Bookmarks";
+export type Place = "Home" | "Notifications" | "Direct messages" | "Profile" | "Bookmarks";
 
 /** A place the menu holds. */
 export type MenuPlace = "Profile" | "Bookmarks" | "Lists" | "Settings" | "Announcements" | "Events";
@@ -65,9 +65,12 @@ export class Frame {
     await this.link(place).click();
   }
 
-  /** The main navigation's button that opens the menu (a reader without staff rights: nothing in it is marked). */
+  /**
+   * The main navigation's button that opens the menu (a reader without staff rights: nothing in it is marked), whose
+   * name says the unread direct messages it holds while there are any ("Menu 2 unread in direct messages").
+   */
   get menuButton(): Locator {
-    return this.navigation.getByRole("button", { name: "Menu", exact: true });
+    return this.navigation.getByRole("button", { name: /^Menu(?: \d+ unread in direct messages)?$/ });
   }
 
   /** Opens the menu. */

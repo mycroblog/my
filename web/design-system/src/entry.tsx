@@ -263,10 +263,15 @@ export type BylineProps = {
   compact?: boolean | undefined;
   /** Where the name leads: the account's profile. */
   href?: string | undefined;
+  /**
+   * The reader wrote it (in a conversation of direct messages): what says so ("You"), muted in the handle's place,
+   * which the reader knows; the handle is then heard after it.
+   */
+  self?: string | undefined;
 };
 
 /** Who wrote an entry: the avatar, the name and what ends its line, and the handle. */
-export function Byline({ avatar, name, nameId, handle, end, compact = false, href }: BylineProps) {
+export function Byline({ avatar, name, nameId, handle, end, compact = false, href, self }: BylineProps) {
   const s = byline({ compact });
   const own = useId();
   const bdi = (
@@ -282,13 +287,19 @@ export function Byline({ avatar, name, nameId, handle, end, compact = false, hre
         {bdi}
       </Link>
     );
-  const handleEl = (
-    <span className={s.handleLine()}>
-      <bdi dir="ltr" className={s.handle()}>
-        {handle}
-      </bdi>
-    </span>
-  );
+  const handleEl =
+    self === undefined ? (
+      <span className={s.handleLine()}>
+        <bdi dir="ltr" className={s.handle()}>
+          {handle}
+        </bdi>
+      </span>
+    ) : (
+      <span className={s.handleLine()}>
+        <span className={s.handle()}>{self}</span>
+        <span className="sr-only"> {handle}</span>
+      </span>
+    );
   const endEl = end !== undefined && <span className={s.end()}>{end}</span>;
   return (
     <div className={s.root()}>

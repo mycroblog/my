@@ -74,6 +74,11 @@ export type PollDraft = {
 export type Draft = {
   readonly target: Target;
   readonly text: string;
+  /**
+   * What goes before the text when it is sent, which the writer does not write: the mentions of a conversation's
+   * people, whom its reply in place names apart (in-place.tsx).
+   */
+  readonly mentions?: string | undefined;
   /** The content warning; undefined while it is off. */
   readonly cw?: string | undefined;
   /** The images are marked sensitive, as the post edited or written again had them; the warning marks them too. */
@@ -230,7 +235,7 @@ const mention = (acct: string) => `@${acct}`;
  */
 export function answering(draft: Draft, status: Status, viewer: ComposeSettings["viewer"]): Draft {
   const shown = status.boost ?? status;
-  if (draft.target.kind === "reply" && draft.text === "") {
+  if (draft.target.kind === "reply" && draft.text === "" && draft.mentions === undefined) {
     const accts = [shown.account.acct, ...shown.mentions.map((m) => m.acct)].filter(
       (acct, i, all) => acct !== viewer?.acct && all.indexOf(acct) === i,
     );
@@ -247,8 +252,9 @@ export function answering(draft: Draft, status: Status, viewer: ComposeSettings[
 export const written = (d: Draft) =>
   d.text.trim() !== "" || d.attachments.length > 0 || d.poll !== undefined || (d.cw ?? "").trim() !== "";
 
-/** How many characters the text and the content warning use together, as the server counts them. */
-export const usedChars = (d: Draft) => Array.from(d.text).length + Array.from(d.cw ?? "").length;
+/** How many characters the text, its mentions and the content warning use together, as the server counts them. */
+export const usedChars = (d: Draft) =>
+  Array.from(d.mentions ?? "").length + Array.from(d.text).length + Array.from(d.cw ?? "").length;
 
 /** What keeps a draft from being posted. */
 export type Problems = {
@@ -336,7 +342,7 @@ export function toStatus(d: Draft, settings: ComposeSettings): CreateStatus {
   const reply = repliesTo(d);
   const quote = quotes(d);
   return {
-    text: d.text,
+    text: `${d.mentions ?? ""}${d.text}`,
     visibility: d.visibility,
     ...(cw === "" ? {} : { spoiler_text: cw }),
     ...(marksSensitive(d, cw, media) ? { sensitive: true } : {}),

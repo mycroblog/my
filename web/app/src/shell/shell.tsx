@@ -2,13 +2,13 @@
 
 // The app's shell (ADR-0025 §3, §4, ADR-0110 §11): what goes in each region of the design system's frame. The places
 // are one list in one order (places.ts), by the timelines the instance offers and the reader's rights, with the unread
-// notifications and what awaits the moderators on their places. The rail and the sidebar hold the mark (the instance's
-// logo when it has one), the primary action under it (a new post, or signing in without a session; New article under
-// it for a reader who may write articles, who on a phone finds it first in the menu's sheet and in the floating new
-// post's menu, by a long press or a right click), the whole list,
-// Menu with what is around the reader (announcements, voice rooms, events, funding) and the server's pages, and the
-// bar of the call the reader is in at their end; the tab bar on a phone holds its first part and Menu, which holds the
-// rest too, marked while something waits inside, with the call's bar above it. On a phone a new post
+// notifications, the unread direct messages and what awaits the moderators on their places. The rail and the sidebar
+// hold the mark (the instance's logo when it has one), the primary action under it (a new post, or signing in without
+// a session; New article under it for a reader who may write articles, who on a phone finds it first in the menu's
+// sheet and in the floating new post's menu, by a long press or a right click), the whole list, Menu with what is
+// around the reader (announcements, voice rooms, events, funding) and the server's pages, and the bar of the call the
+// reader is in at their end; the tab bar on a phone holds its first part and Menu, which holds the rest too, counting
+// the unread direct messages and marked while something waits inside, with the call's bar above it. On a phone a new post
 // floats over the tab bar on the timelines and the profiles alone, and signing in, with its label, on every screen. The
 // server's notices stand at the top of the main column, the update's toast in the dock; the column beside the main one
 // holds what is around the reader. Where the reader is comes from the router; the frame lays the regions out by the
@@ -21,6 +21,7 @@ import {
   useInstance,
   useModerationCount,
   useRights,
+  useUnreadConversations,
   useUnreadNotifications,
   type Instance,
 } from "@my/app-data";
@@ -39,6 +40,7 @@ import {
   NavList,
   NavMenu,
   useAction,
+  useLocale,
 } from "@my/design-system";
 import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -70,6 +72,49 @@ function NotificationsPlace({ place, current }: { place: Place; current: boolean
   );
 }
 
+/** A place whose badge counts the reader's unread conversations of direct messages. */
+function DirectPlace({ place, current }: { place: Place; current: boolean }) {
+  const t = useStrings();
+  const count = useUnreadConversations();
+  return (
+    <NavItem
+      href={place.href}
+      icon={place.icon}
+      label={t(place.label)}
+      current={current}
+      count={count}
+      countLabel={count === undefined ? undefined : t("app.direct_messages_count", { count })}
+    />
+  );
+}
+
+/**
+ * Menu of the tab bar, which counts the reader's unread conversations of direct messages, a place inside it, and is
+ * marked while something waits for them as a moderator; what it counts and what waits are said after its name.
+ */
+function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: ReactNode; children: ReactNode }) {
+  const t = useStrings();
+  const { locale } = useLocale();
+  const waiting = useModerationCount(signedIn) ?? 0;
+  const unread = useUnreadConversations(signedIn) ?? 0;
+  const said = [
+    ...(unread > 0 ? [t("app.menu_direct", { count: unread })] : []),
+    ...(waiting > 0 ? [t("app.menu_marked", { count: waiting })] : []),
+  ];
+  return (
+    <NavMenu
+      label={t("app.menu")}
+      closeLabel={t("app.menu_close")}
+      marked={waiting > 0}
+      count={unread > 0 ? unread : undefined}
+      markLabel={said.length === 0 ? undefined : new Intl.ListFormat(locale, { type: "conjunction" }).format(said)}
+      footer={footer}
+    >
+      {children}
+    </NavMenu>
+  );
+}
+
 /** A place whose badge counts what awaits the reader as a moderator. */
 function ModerationPlace({ place, current }: { place: Place; current: boolean }) {
   const t = useStrings();
@@ -92,6 +137,7 @@ function Places({ items, pathname }: { items: readonly Place[]; pathname: string
   return items.map((place) => {
     const current = place.href === pathname;
     if (place.count === "notifications") return <NotificationsPlace key={place.href} place={place} current={current} />;
+    if (place.count === "direct") return <DirectPlace key={place.href} place={place} current={current} />;
     if (place.count === "moderation") return <ModerationPlace key={place.href} place={place} current={current} />;
     return <NavItem key={place.href} href={place.href} icon={place.icon} label={t(place.label)} current={current} />;
   });
@@ -214,9 +260,8 @@ export function Shell({
   ) : (
     newPost(undefined)
   );
-  const { tabs, own, rights: staff } = placesFor(signedIn, instance, rights);
+  const { tabs, side, own, rights: staff } = placesFor(signedIn, instance, rights);
   const around = aroundPlacesFor(signedIn, instance, signInPath);
-  const waiting = useModerationCount(signedIn) ?? 0;
   const callBar = call === null ? undefined : <CallSlot call={call} />;
   const footer = <ServerFooter instance={instance} />;
   return (
@@ -224,7 +269,7 @@ export function Shell({
       <FrameSide label={t("app.navigation")}>
         <Mark instance={instance} serverName={serverName} />
         {primary}
-        <PlaceList items={[...tabs, ...own]} pathname={pathname} />
+        <PlaceList items={side} pathname={pathname} />
         <PlaceList items={staff} pathname={pathname} />
         {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
         <NavList>
@@ -254,18 +299,12 @@ export function Shell({
         tabs={
           <NavList>
             <Places items={tabs} pathname={pathname} />
-            <NavMenu
-              label={t("app.menu")}
-              closeLabel={t("app.menu_close")}
-              marked={waiting > 0}
-              markLabel={waiting > 0 ? t("app.menu_marked", { count: waiting }) : undefined}
-              footer={footer}
-            >
+            <TabMenu signedIn={signedIn} footer={footer}>
               <PlaceList items={writesArticles ? [articlePlace] : []} pathname={pathname} />
               <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
               <PlaceList items={staff} pathname={pathname} />
               <PlaceList items={around} pathname={pathname} />
-            </NavMenu>
+            </TabMenu>
           </NavList>
         }
         call={callBar}
