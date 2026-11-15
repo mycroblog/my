@@ -3,7 +3,7 @@
 import { expect, test } from "bun:test";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { press } from "../test/actions";
-import { render, server, status } from "../test/server";
+import { poll, render, server, status } from "../test/server";
 import { loadThread, Thread } from "./thread";
 
 const back = () => undefined;
@@ -77,4 +77,24 @@ test("the focused post and a reply answer their actions: a favourite reaches the
   expect(requests).toContain("POST /statuses/f/favourite");
   expect(composed).toEqual([{ kind: "reply", id: "r" }]);
   expect(render(data, <Thread id="f" onBack={back} />)).toContain("49 favourites");
+});
+
+test("the focused post shows its poll, and a vote in it reaches the server", async () => {
+  const polled = status("f", "mika", { poll: poll("p") });
+  const { data, received } = server({
+    "/statuses/f": polled,
+    "/statuses/f/context": { ancestors: [], descendants: [] },
+    "/statuses/f/poll/votes": { ...polled, poll: poll("p", { voted: true, own_votes: [0] }) },
+  });
+  await loadThread(data, "f");
+  const html = render(
+    data,
+    <PostActions onCompose={() => undefined}>
+      <Thread id="f" onBack={back} />
+    </PostActions>,
+  );
+  expect(html).toContain('aria-label="Poll"');
+  expect(html).toContain(">Vote<");
+  press({ type: "vote", id: "f", poll: "p", choices: [0] });
+  expect(await received("POST /statuses/f/poll/votes")).toEqual({ poll_id: "p", choices: [0] });
 });

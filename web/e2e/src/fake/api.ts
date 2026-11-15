@@ -219,6 +219,31 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
   const on = (key: string, kind: string) => interactions.filter((i) => i.post === key && i.kind === kind);
 
+  /** The reader's votes, by the key of the post, as the scenario has them and as the reader votes. */
+  const ownVotes = new Map<string, readonly number[]>();
+  for (const i of interactions) if (i.kind === "vote" && i.by === viewer) ownVotes.set(i.post, i.choices);
+
+  /** The poll of `p` as the reader sees it, open for the days the scenario gives it from the start of the fake. */
+  function pollOf(p: Post): Json | undefined {
+    if (p.poll === undefined) return undefined;
+    const own = ownVotes.get(p.key);
+    const votes = [
+      ...interactions.flatMap((i) => (i.kind === "vote" && i.post === p.key && i.by !== viewer ? [i.choices] : [])),
+      ...(own === undefined ? [] : [own]),
+    ];
+    return {
+      id: idAt(timeOf(postStep(p.key)), 60_000 + postStep(p.key)),
+      expires_at: new Date(started + p.poll.days * 24 * 60 * minute).toISOString(),
+      expired: false,
+      multiple: p.poll.multiple ?? false,
+      votes_count: votes.reduce((n, c) => n + c.length, 0),
+      voters_count: votes.length,
+      options: p.poll.options.map((title, i) => ({ title, votes_count: votes.filter((c) => c.includes(i)).length })),
+      voted: own !== undefined,
+      own_votes: own ?? [],
+    };
+  }
+
   const visible = (p: Post) =>
     p.author === viewer ||
     p.visibility === "public" ||
@@ -269,6 +294,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       boosted: on(p.key, "boost").some((i) => i.by === viewer),
       bookmarked: on(p.key, "bookmark").some((i) => i.by === viewer),
       pinned: p.pinned === true && p.author === viewer,
+      ...(p.poll === undefined ? {} : { poll: pollOf(p) }),
       ...(p.quote === undefined || depth > 0
         ? {}
         : { quote: { state: "accepted", quoted_status: statusOf(postOf(p.quote), depth + 1) } }),
@@ -357,7 +383,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   });
   interactions.forEach((i, n) => {
     const p = postOf(i.post);
-    if (p.author !== viewer || i.kind === "bookmark") return;
+    if (p.author !== viewer || i.kind === "bookmark" || i.kind === "vote") return;
     const step = follows.length + posts.length + n;
     // A reaction's emoji as the API gives it: a custom one of this server with its shortcode and image, else Unicode.
     const custom = i.kind === "reaction" ? customEmojis.find((e) => `:${e.shortcode}:` === i.emoji) : undefined;
@@ -791,6 +817,25 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     if ((match = m(/^\/statuses\/([^/]+)$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
       return key === undefined || !visible(postOf(key)) ? problem(404, "Not Found") : json(statusOf(postOf(key)));
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/poll\/votes$/)) && request.method === "POST") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      const poll = pollOf(p);
+      const vote = (await request.json()) as { poll_id: string; choices: number[] };
+      if (poll !== undefined && poll["id"] !== vote.poll_id) return problem(409, "Conflict");
+      const { choices } = vote;
+      const taken =
+        poll !== undefined &&
+        poll["voted"] !== true &&
+        choices.length > 0 &&
+        (p.poll?.multiple === true || choices.length === 1) &&
+        new Set(choices).size === choices.length &&
+        choices.every((c) => Number.isInteger(c) && c >= 0 && c < (p.poll?.options.length ?? 0));
+      if (!taken) return problem(422, "Unprocessable Entity");
+      ownVotes.set(p.key, choices);
+      return json(statusOf(p));
     }
     if ((match = m(/^\/statuses\/([^/]+)\/context$/))) {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));

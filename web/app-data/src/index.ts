@@ -121,6 +121,7 @@ export {
   type NotificationType,
 } from "./notifications";
 export type { PagedList } from "./paged";
+export { usePollVote, voteInPoll, type PollVote } from "./polls";
 export { AppDataProvider } from "./provider";
 export { openSession, visitorData } from "./session";
 export {

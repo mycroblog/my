@@ -44,7 +44,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions } from "../post-actions";
+import { usePostActions, usePostVoting } from "../post-actions";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
 
@@ -250,6 +250,7 @@ function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string 
 function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean; t: T; instance: string }) {
   const mark = unread ? t("notifications.unread") : undefined;
   const onAction = usePostActions();
+  const votingOf = usePostVoting();
   if (shapeOf(n) === "post" && n.status !== undefined)
     return (
       <Post
@@ -260,6 +261,7 @@ function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean;
           </NoticeCaption>
         }
         onAction={onAction}
+        voting={votingOf(n.status)}
       />
     );
   return <Line n={n} unread={mark} t={t} instance={instance} />;

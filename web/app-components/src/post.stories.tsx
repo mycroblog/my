@@ -4,8 +4,8 @@
 // long text, the reader's boost, favourite and bookmark, and whether it is the reader's own), and a story per state:
 // plain, local, boosted, a reply, behind a content warning, with images, quoting, with reactions and with the reader's
 // own, translated (and the notes when the source language, the provider or both are unknown), hovered and focused
-// from the keyboard (shown at rest), long names and handles in en and ja, and for a reader without an account, whose
-// actions lead to the sign-in. Each post answers its actions as the
+// from the keyboard (shown at rest), long names and handles in en and ja, for a reader without an account, whose
+// actions lead to the sign-in, and with a poll: open, its vote in flight, its results, and ended. Each post answers its actions as the
 // timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
@@ -73,6 +73,82 @@ const local: TimelinePost = {
   text: "このサーバーの人だけに。日曜のお茶会、今週は駅前の喫茶店でやります。",
 };
 
+const hour = 60 * minute;
+const day = 24 * hour;
+
+// Polls (FR-112): open, in flight, voted, hidden until the end, ended, and the reader's own, in en and ja.
+const meetup: TimelinePost = {
+  id: "poll-one",
+  lang: "en",
+  author: { name: "Lena Novak", handle: "@lena@toot.example.eu" },
+  ago: 25 * minute,
+  visibility: "public",
+  text: "Which day works for the next meetup? :wave:",
+  counts: { replies: 3, boosts: 1, favourites: 4 },
+  poll: {
+    options: [
+      { title: "Saturday morning", votes: 9 },
+      { title: "Saturday evening", votes: 17 },
+      { title: "Sunday afternoon :party:", votes: 6 },
+    ],
+    voters: 32,
+    endsIn: 2 * day + 3 * hour,
+  },
+};
+
+const talks: TimelinePost = {
+  id: "poll-several",
+  lang: "en",
+  author: { name: "Open Source Weekly", handle: "@news@social.example.org" },
+  ago: 2 * hour,
+  visibility: "public",
+  text: "Which talks should we record this year? Pick as many as you like.",
+  counts: { replies: 12, boosts: 30, favourites: 51 },
+  poll: {
+    multiple: true,
+    options: [
+      { title: "Federation from scratch", votes: 64 },
+      { title: "Moderating a small server without burning out, a field report from three years of it", votes: 88 },
+      { title: "Custom emoji :mycro: and how they travel", votes: 23 },
+      { title: "Polls over ActivityPub", votes: 41 },
+    ],
+    voters: 120,
+    endsIn: 5 * hour,
+  },
+};
+
+const tea: TimelinePost = {
+  id: "poll-ja",
+  lang: "ja",
+  author: { name: "山田 はな", handle: "@hana@my.example" },
+  ago: 3 * hour,
+  visibility: "public",
+  text: "日曜のお茶会、どのお菓子にしましょう？",
+  counts: { replies: 2, boosts: 0, favourites: 6 },
+  poll: {
+    options: [
+      { title: "どら焼き", votes: 5 },
+      { title: "駅前の喫茶店の季節のタルト（予約が要るので早めに決めたいです）", votes: 11 },
+      { title: "おせんべい", votes: 2 },
+    ],
+    voters: 18,
+    endsIn: 40 * minute,
+  },
+};
+
+const withPoll = (post: TimelinePost, id: string, poll: Partial<NonNullable<TimelinePost["poll"]>>): TimelinePost => {
+  if (post.poll === undefined) throw new Error(`sample post ${post.id} has no poll`);
+  return { ...post, id, poll: { ...post.poll, ...poll } };
+};
+
+const meetupVoted = withPoll(meetup, "poll-voted", { voted: [1] });
+const talksVoted = withPoll(talks, "poll-several-voted", { voted: [0, 3] });
+const meetupHidden = withPoll(meetup, "poll-hidden", { hideTotals: true, voted: [2] });
+const meetupEnded = withPoll(meetup, "poll-ended", { endsIn: -3 * hour });
+const talksEnded = withPoll(talks, "poll-several-ended", { endsIn: -day, voted: [1, 2] });
+const ownPoll: TimelinePost = { ...withPoll(tea, "poll-own", {}), own: true };
+const ownHidden: TimelinePost = { ...withPoll(tea, "poll-own-hidden", { hideTotals: true }), own: true };
+
 const longText =
   "\n\nA second paragraph, long enough to wrap many times in a column of the timeline's width: it keeps going past " +
   "the width of any phone, with a link https://example.org/a/very/long/path/that/never/ends and more words after it.";
@@ -111,17 +187,33 @@ function Shown({
   post,
   state,
   translationAs,
+  votingAt,
 }: {
   post: TimelinePost;
   state?: PreviewState;
   translationAs?: Translation;
+  votingAt?: readonly number[];
 }) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
       <Preview state={state}>
-        <SamplePost key={post.id} post={post} lang={lang} translationAs={translationAs} />
+        <SamplePost key={post.id} post={post} lang={lang} translationAs={translationAs} votingAt={votingAt} />
       </Preview>
+    </Column>
+  );
+}
+
+/** Several sample posts one after another, as a timeline spaces them. */
+function Several({ posts: shown }: { posts: TimelinePost[] }) {
+  const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
+  return (
+    <Column>
+      <div style={{ display: "grid", gap: rem(28) }}>
+        {shown.map((post) => (
+          <SamplePost key={post.id} post={post} lang={lang} />
+        ))}
+      </div>
     </Column>
   );
 }
@@ -234,3 +326,14 @@ export const FocusVisible: Story = {
 };
 export const LongNames: Story = { ...fixed, render: () => <Shown post={longNameEn} /> };
 export const LongNamesJapanese: Story = { ...fixed, render: () => <Shown post={longNameJa} /> };
+/** A poll open to the reader: one choice, then several; pressing Vote sends it, and the results follow. */
+export const Poll: Story = { ...fixed, render: () => <Several posts={[meetup, talks, tea]} /> };
+/** The reader's vote in flight: its choices held, Vote spinning. */
+export const PollVoting: Story = { ...fixed, render: () => <Shown post={meetup} votingAt={[1]} /> };
+/** Results: after the reader's vote, hidden until the end, ended, and the reader's own poll. */
+export const PollResults: Story = {
+  ...fixed,
+  render: () => <Several posts={[meetupVoted, talksVoted, meetupHidden, talksEnded, ownPoll]} />,
+};
+/** Ended without the reader's vote, and the reader's own poll whose results are hidden until it ends. */
+export const PollEnded: Story = { ...fixed, render: () => <Several posts={[meetupEnded, ownHidden]} /> };

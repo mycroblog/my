@@ -26,7 +26,7 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions } from "../post-actions";
+import { usePostActions, usePostVoting } from "../post-actions";
 
 /** How many ancestors show around the fold: the first, and as many closest to the focused post. */
 const closest = 2;
@@ -62,6 +62,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [earlier, setEarlier] = useState(false);
   const [shown, setShown] = useState(repliesShown);
   const onAction = usePostActions();
+  const votingOf = usePostVoting();
   const back = <BackButton onPress={onBack}>{t("thread.back")}</BackButton>;
   if (status === undefined)
     return (
@@ -87,7 +88,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const positions = new Map([...first, ...last, status, ...replies].map((s, i) => [s.id, i + 1]));
   const item = (s: Status, children?: ReactNode) => (
     <FeedItem key={s.id} id={s.id} position={positions.get(s.id) ?? 0}>
-      {children ?? <Post status={s} onAction={onAction} />}
+      {children ?? <Post status={s} onAction={onAction} voting={votingOf(s)} />}
     </FeedItem>
   );
   const count = positions.size;
@@ -130,12 +131,20 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         }
       >
         <FeedKeys />
-        {first.map((s) => item(s, <Post status={s} onAction={onAction} after={earlierFold || undefined} />))}
+        {first.map((s) =>
+          item(s, <Post status={s} onAction={onAction} voting={votingOf(s)} after={earlierFold || undefined} />),
+        )}
         {last.map((s) => item(s))}
         <ThreadFocus key="focus">
           {item(
             status,
-            <Post status={status} stamp={false} details={<PostDetails status={status} />} onAction={onAction} />,
+            <Post
+              status={status}
+              stamp={false}
+              details={<PostDetails status={status} />}
+              onAction={onAction}
+              voting={votingOf(status)}
+            />,
           )}
         </ThreadFocus>
         {replies.map((s, i) => (
@@ -145,6 +154,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               <Post
                 status={s}
                 onAction={onAction}
+                voting={votingOf(s)}
                 context={i === 0 ? <GroupHeading>{t("thread.replies")}</GroupHeading> : undefined}
                 after={(s === lastReply && laterFold) || undefined}
               />,

@@ -9,7 +9,7 @@
 import { randomUUID } from "node:crypto";
 import type { Api, components } from "@mycroblog/mykit";
 import type { Drawing } from "./drawing";
-import type { Image, Person, Visibility } from "./scenario";
+import type { Image, Person, Poll, Visibility } from "./scenario";
 import { enrollTOTP, uploadDrawing } from "./seed/seed";
 import { signIn } from "./seed/sign-in";
 
@@ -37,6 +37,8 @@ export type FreshPostOptions = {
   image?: Image;
   /** The content warning. */
   spoiler?: string;
+  /** A poll, which ends `days` days after the post. */
+  poll?: Poll;
 };
 
 /** A post a test made: its ID, and its whole text, by which a spec finds it on the screen. */
@@ -158,6 +160,15 @@ export class Fresh {
         language: author.locale,
         ...(o.spoiler === undefined ? {} : { spoiler_text: o.spoiler }),
         ...(media.length === 0 ? {} : { media }),
+        ...(o.poll === undefined
+          ? {}
+          : {
+              poll: {
+                options: [...o.poll.options],
+                expires_in: o.poll.days * 86_400,
+                multiple: o.poll.multiple ?? false,
+              },
+            }),
       },
     });
     const status: Status = body(data, "the post");

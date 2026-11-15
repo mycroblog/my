@@ -57,14 +57,23 @@ export type Post = {
   images?: readonly Image[];
   /** Pinned to its author's profile. */
   pinned?: boolean;
+  /** Its poll, which ends `days` days after the seed posts it. */
+  poll?: Poll;
 };
 
-/** What a person does to a post: a favourite, a boost, an emoji reaction (`:shortcode:` for a custom one), a bookmark. */
+/** A poll of a post: its options, whether a vote may choose several, and how many days it takes votes. */
+export type Poll = { options: readonly string[]; multiple?: boolean; days: number };
+
+/**
+ * What a person does to a post: a favourite, a boost, an emoji reaction (`:shortcode:` for a custom one), a bookmark,
+ * a vote in its poll for the options of `choices` (their indexes).
+ */
 export type Interaction =
   | { kind: "favourite"; by: string; post: string }
   | { kind: "boost"; by: string; post: string }
   | { kind: "reaction"; by: string; post: string; emoji: string }
-  | { kind: "bookmark"; by: string; post: string };
+  | { kind: "bookmark"; by: string; post: string }
+  | { kind: "vote"; by: string; post: string; choices: readonly number[] };
 
 /** A follow; the follow of a locked account waits as a request until the followee accepts it. */
 export type Follow = { follower: string; followee: string; accepted?: boolean };
@@ -372,6 +381,14 @@ export const posts: readonly Post[] = [
     ],
   },
   {
+    key: "sam-poll",
+    author: "sam",
+    language: "en",
+    visibility: "public",
+    text: "Bread for Saturday's meetup: which loaf should I bake?",
+    poll: { options: ["Sourdough", "Rye", "Focaccia"], days: 7 },
+  },
+  {
     key: "layla-rtl",
     author: "layla",
     language: "ar",
@@ -470,6 +487,9 @@ export const interactions: readonly Interaction[] = [
   { kind: "reaction", by: "yuki", post: "layla-rtl", emoji: "🙏" },
   { kind: "favourite", by: "yuki", post: "layla-jokes" },
   { kind: "boost", by: "yuki", post: "layla-jokes" },
+  { kind: "vote", by: "hana", post: "sam-poll", choices: [0] },
+  { kind: "vote", by: "marco", post: "sam-poll", choices: [2] },
+  { kind: "vote", by: "layla", post: "sam-poll", choices: [0] },
 ];
 
 /** The blocks and mutes. */

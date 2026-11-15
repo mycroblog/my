@@ -8,7 +8,7 @@ import { Column, statusPath, type PostStatus } from "@my/app-components";
 import { publicTimelineQuery, usePublicTimeline, type AppData, type PublicTimelineKind } from "@my/app-data";
 import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { usePostActions } from "../post-actions";
+import { usePostActions, usePostVoting } from "../post-actions";
 
 /** What the route's loader waits for: the timeline's first page, from the cache unless a write marked it stale. */
 export async function loadPublicTimeline(data: AppData, kind: PublicTimelineKind): Promise<void> {
@@ -30,6 +30,7 @@ export function PublicTimeline({
 }) {
   const { t } = stringsIn(useLocale().locale);
   const onAction = usePostActions();
+  const votingOf = usePostVoting();
   const visitor =
     signIn === undefined
       ? undefined
@@ -41,7 +42,7 @@ export function PublicTimeline({
       label={kind === "local" ? t("timeline.local") : t("timeline.federated")}
       {...usePublicTimeline(kind)}
       onAction={onAction}
-      postProps={visitor === undefined ? undefined : () => ({ signIn: visitor })}
+      postProps={(s) => (visitor === undefined ? { voting: votingOf(s) } : { signIn: visitor })}
     />
   );
 }

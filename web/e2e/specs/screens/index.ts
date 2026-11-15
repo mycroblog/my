@@ -16,4 +16,5 @@ export { Notifications } from "./notifications";
 export { Profile } from "./profile";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
-export { homeTimeline, Post, Timeline } from "./timeline";
+export { Notice } from "./notice";
+export { homeTimeline, localTimeline, Post, Timeline } from "./timeline";

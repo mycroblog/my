@@ -9,7 +9,7 @@ import { Column } from "@my/app-components";
 import { homeTimelineQuery, useHomeTimeline, type AppData } from "@my/app-data";
 import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { usePostActions } from "../post-actions";
+import { usePostActions, usePostVoting } from "../post-actions";
 import { useNewHomePosts } from "./new-posts";
 
 /**
@@ -24,6 +24,7 @@ export async function loadHomeTimeline(data: AppData): Promise<void> {
 export function HomeTimeline() {
   const { t } = stringsIn(useLocale().locale);
   const onAction = usePostActions();
+  const votingOf = usePostVoting();
   const { onTopChange, onReaderChange, told, onPress } = useNewHomePosts(true);
   const label =
     told === undefined
@@ -38,6 +39,7 @@ export function HomeTimeline() {
       onTopChange={onTopChange}
       onReaderChange={onReaderChange}
       onAction={onAction}
+      postProps={(s) => ({ voting: votingOf(s) })}
       newPosts={label === undefined ? undefined : { label, onPress }}
     />
   );

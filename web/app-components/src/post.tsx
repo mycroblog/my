@@ -3,7 +3,7 @@
 // A post of a timeline (#2981's anatomy), drawn from a status as the API gives it (status.ts) with the parts of
 // @my/design-system and the one content renderer: the context line (who boosted it, or whom it replies to), the author
 // header (the avatar, the name with the visibility and the time at the end, over the handle), the text, or a content
-// warning over it, the images, the quoted post as a reduced preview, the emoji reactions, the translate line, and the
+// warning over it, the poll (open to the reader's vote, else its results), the images, the quoted post as a reduced preview, the emoji reactions, the translate line, and the
 // actions (reply, boost with its menu of boost and quote, favourite, react, and more at the end), whose keys
 // (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
 // over it (`context`: pinned, or the heading of a thread's replies), lines under the reactions (`details`: a focused
@@ -28,6 +28,10 @@ import {
   MenuButton,
   MenuGroup,
   MenuItem,
+  PollBox,
+  PollChoices,
+  PollFoot,
+  PollResults,
   Stack,
   Stamp,
   TextButton,
@@ -66,7 +70,8 @@ export type PostAction =
         | "report";
       id: string;
     }
-  | { type: "reaction"; id: string; name: string };
+  | { type: "reaction"; id: string; name: string }
+  | { type: "vote"; id: string; poll: string; choices: number[] };
 
 export type PostProps = {
   /** The status, as the API gives it; a boost shows the status it boosts. */
@@ -93,6 +98,8 @@ export type PostProps = {
   stamp?: boolean | undefined;
   /** The screen's own line after the actions, inside it (a fold of the posts that follow it in a thread). */
   after?: ReactNode;
+  /** The choices of the reader's vote in its poll while the vote is in flight. */
+  voting?: readonly number[] | undefined;
 };
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -184,6 +191,106 @@ function Quote({ status }: { status: PostStatus }) {
   );
 }
 
+/** How long until `end` as the platform says it in `lang`, narrow, in whole units: "in 2d", "2日後". */
+function timeUntil(end: Date, now: Date, lang: string): string {
+  const minutes = Math.max(1, Math.floor((end.getTime() - now.getTime()) / 60_000));
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "always", style: "narrow" });
+  if (minutes < 60) return rtf.format(minutes, "minute");
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return rtf.format(hours, "hour");
+  return rtf.format(Math.floor(hours / 24), "day");
+}
+
+/**
+ * The poll (FR-112): open to the reader, its options to choose and Vote; voted, ended or the reader's own, its results,
+ * each option's share unless its author hides them until it ends. Its line says who voted and when it ends.
+ */
+function Poll({
+  status,
+  translation,
+  own,
+  voting,
+  t,
+  lang,
+  act,
+}: {
+  status: PostStatus;
+  translation: PostTranslation | undefined;
+  own: boolean;
+  voting: readonly number[] | undefined;
+  t: T;
+  lang: string;
+  act: Act;
+}) {
+  const [chosen, setChosen] = useState<number[]>([]);
+  const poll = status.poll;
+  if (poll === undefined) return null;
+  const title = (i: number, text: string) => (
+    <EmojiText text={translation?.poll_options?.[i] ?? text} emojis={status.emojis} />
+  );
+  const answered = poll.expired || (poll.voted ?? false) || own;
+  const people =
+    poll.voters_count === undefined
+      ? t("post.poll_votes", { count: poll.votes_count })
+      : t("post.poll_voters", { count: poll.voters_count });
+  const hidden = poll.options.some((o) => o.votes_count === undefined);
+  const when = poll.expired
+    ? t("post.poll_ended")
+    : poll.expires_at === undefined
+      ? undefined
+      : t("post.poll_ends", { time: timeUntil(new Date(poll.expires_at), new Date(), lang) });
+  const line = (parts: (string | undefined)[]) => parts.filter((p) => p !== undefined);
+  if (!answered) {
+    const picked = voting ?? chosen;
+    return (
+      <PollBox label={t("post.poll")}>
+        <PollChoices
+          label={t("post.poll_options")}
+          multiple={poll.multiple}
+          items={poll.options.map((o, i) => ({ key: String(i), label: title(i, o.title) }))}
+          chosen={picked}
+          onChange={setChosen}
+          disabled={voting !== undefined}
+        />
+        <PollFoot
+          vote={{
+            label: t("post.poll_vote"),
+            disabled: picked.length === 0,
+            busy: voting !== undefined,
+            onPress: () => {
+              act({ type: "vote", id: status.id, poll: poll.id, choices: chosen });
+            },
+          }}
+          parts={line([poll.multiple ? t("post.poll_several") : undefined, people, when])}
+        />
+      </PollBox>
+    );
+  }
+  const total = poll.multiple ? (poll.voters_count ?? poll.votes_count) : poll.votes_count;
+  const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 });
+  const most = Math.max(...poll.options.map((o) => o.votes_count ?? 0));
+  const mine = poll.own_votes ?? [];
+  return (
+    <PollBox label={t("post.poll")}>
+      <PollResults
+        multiple={poll.multiple}
+        mineLabel={t("post.poll_mine")}
+        items={poll.options.map((o, i) => {
+          const value = o.votes_count === undefined ? undefined : total === 0 ? 0 : o.votes_count / total;
+          return {
+            key: String(i),
+            label: title(i, o.title),
+            share: value === undefined ? undefined : { value, text: percent.format(value) },
+            mine: mine.includes(i),
+            leading: poll.expired && most > 0 && o.votes_count === most,
+          };
+        })}
+      />
+      <PollFoot parts={line([hidden ? t("post.poll_hidden") : undefined, people, when])} />
+    </PollBox>
+  );
+}
+
 /** A reaction's emoji: a custom one as its image, a Unicode one as text. */
 const glyphOf = (r: PostReaction) =>
   r.emoji === undefined ? (
@@ -247,11 +354,12 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
   "mute",
   "block",
   "report",
+  "vote",
 ]);
 
 /** The more menu: what reaches the post, the bookmark, then edit and delete for one's own, or the author's account. */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
-  const item = (type: Exclude<PostAction["type"], "reaction">, icon: IconName, label: string, on = false) => (
+  const item = (type: Exclude<PostAction["type"], "reaction" | "vote">, icon: IconName, label: string, on = false) => (
     <MenuItem
       id={type}
       icon={icon}
@@ -361,6 +469,7 @@ export function Post({
   details,
   stamp = true,
   after,
+  voting,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -397,6 +506,7 @@ export function Post({
           )
         )}
       </Stack>
+      <Poll status={shown} translation={translation} own={own} voting={voting} t={t} lang={lang} act={act} />
       <MediaGrid items={mediaItems(shown.media_attachments, translation)} />
       {quoted !== undefined && <Quote status={quoted} />}
     </>

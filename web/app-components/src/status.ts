@@ -48,6 +48,27 @@ export type PostReaction = {
   me?: boolean | undefined;
 };
 
+/** A poll of a status (the API's Poll). */
+export type PostPoll = {
+  id: string;
+  /** When it ends, as an ISO 8601 date-time; omitted when it has no end. */
+  expires_at?: string | undefined;
+  /** Whether it has ended: it takes no votes and shows its results. */
+  expired: boolean;
+  /** Whether a vote may choose several options. */
+  multiple: boolean;
+  /** The votes, one per chosen option. */
+  votes_count: number;
+  /** The accounts that voted; omitted when unknown. */
+  voters_count?: number | undefined;
+  /** The options in order, each with its votes, omitted while its author hides them until it ends. */
+  options: readonly { title: string; votes_count?: number | undefined }[];
+  /** Whether the reader voted. */
+  voted?: boolean | undefined;
+  /** The indexes of the options the reader voted for. */
+  own_votes?: readonly number[] | undefined;
+};
+
 /** An account a status mentions (the API's StatusMention). */
 export type PostMention = { id: string; username: string; acct: string };
 
@@ -80,6 +101,8 @@ export type PostStatus = {
   bookmarked?: boolean | undefined;
   /** The status it quotes, shown one level deep. */
   quote?: { state: string; quoted_status?: PostStatus | undefined } | undefined;
+  /** Its poll, whose options may hold custom emoji of `emojis`. */
+  poll?: PostPoll | undefined;
 };
 
 /** A post in the reader's language (the API's StatusTranslation). */
@@ -92,5 +115,7 @@ export type PostTranslation = {
   spoiler_text: string;
   /** The alternative text of the media that has any, in the language of the translation. */
   media_attachments: readonly { id: string; description: string }[];
+  /** The titles of the poll's options in order; empty when it has no poll. */
+  poll_options?: readonly string[] | undefined;
   provider?: { name: string } | undefined;
 };

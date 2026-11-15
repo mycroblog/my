@@ -300,6 +300,15 @@ class Seeder {
             ...(post.replyTo === undefined ? {} : { in_reply_to_id: this.post(post.replyTo).id }),
             ...(post.quote === undefined ? {} : { quoted_status_id: this.post(post.quote).id }),
             ...(media.length === 0 ? {} : { media }),
+            ...(post.poll === undefined
+              ? {}
+              : {
+                  poll: {
+                    options: [...post.poll.options],
+                    expires_in: post.poll.days * 86_400,
+                    multiple: post.poll.multiple ?? false,
+                  },
+                }),
           },
         });
         status = body(data, `the post ${post.key}`);
@@ -327,6 +336,16 @@ class Seeder {
         case "reaction":
           await api.PUT("/statuses/{id}/reaction", { params: { path }, body: { emoji: i.emoji } });
           break;
+        case "vote": {
+          // A second vote is refused, so a run after the first one votes only where the voter has not.
+          const poll = body((await api.GET("/statuses/{id}", { params: { path } })).data, `the post ${i.post}`).poll;
+          if (poll !== undefined && poll.voted !== true)
+            await api.POST("/statuses/{id}/poll/votes", {
+              params: { path },
+              body: { poll_id: poll.id, choices: [...i.choices] },
+            });
+          break;
+        }
       }
     }
   }

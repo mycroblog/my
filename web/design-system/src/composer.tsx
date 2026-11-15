@@ -22,6 +22,7 @@ import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 import { ModalLayer } from "./modal";
+import { PollMark } from "./poll";
 
 const frame = tv({
   slots: {
@@ -509,8 +510,6 @@ const poll = tv({
     caption: "inline-flex items-center gap-entry-caption text-caption text-muted-text",
     options: "grid rounded-control bg-surface py-[0.25rem] ps-control-timeline-inline pe-[0.25rem]",
     option: "flex items-center gap-entry-caption",
-    // How the option will be answered in the post: a radio's ring, or a checkbox's square for several choices.
-    mark: "box-border size-form-page-check flex-none rounded-full border-[length:var(--composer-mark-line)] border-solid border-muted-text",
     input: [
       "h-control-form min-w-0 flex-1 rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
       "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
@@ -519,7 +518,6 @@ const poll = tv({
     glyphLabel: "inline-flex items-center gap-entry-caption",
     settings: "grid justify-items-start gap-entry-line",
   },
-  variants: { multiple: { true: { mark: "rounded-[3px]" } } },
 });
 
 /** The poll: a raised card under its caption and its remove; its options, then its settings. */
@@ -593,10 +591,11 @@ export function PollOption({
   maxLength: number;
   remove?: { label: string; onPress: () => void } | undefined;
 }) {
-  const s = poll({ multiple });
+  const s = poll();
   return (
     <div className={s.option()}>
-      <span className={s.mark()} aria-hidden="true" />
+      {/* How the option will be answered in the post (poll.tsx). */}
+      <PollMark multiple={multiple} />
       <input
         className={s.input()}
         value={value}

@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { I18nProvider } from "@my/design-system";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Post, type PostProps } from "./post";
-import type { PostAccount, PostStatus, PostTranslation } from "./status";
+import type { PostAccount, PostPoll, PostStatus, PostTranslation } from "./status";
 
 const lena: PostAccount = {
   id: "1",
@@ -283,6 +283,129 @@ describe("the actions", () => {
     expect(html).toContain('<div lang="ja"><button ');
     expect(html).toContain('aria-label="返信, 2"');
     expect(html).toContain('aria-label="お気に入り, 1.3万"');
+  });
+});
+
+describe("the poll", () => {
+  const inTwoDays = () => new Date(Date.now() + 2 * 86_400_000 + 3_600_000).toISOString();
+  const poll = (over: Partial<PostPoll> = {}): PostPoll => ({
+    id: "p",
+    expires_at: inTwoDays(),
+    expired: false,
+    multiple: false,
+    votes_count: 4,
+    voters_count: 4,
+    options: [
+      { title: "Sourdough", votes_count: 3 },
+      { title: "Rye", votes_count: 1 },
+    ],
+    voted: false,
+    own_votes: [],
+    ...over,
+  });
+  const withPoll = (over: Partial<PostPoll> = {}) => status({ poll: poll(over) });
+  /** The markup of the poll alone, from its group to the post's actions. */
+  const pollOf = (props: PostProps, locale?: string) => {
+    const html = bare(props, locale);
+    const start = html.indexOf('<div role="group" aria-label="Poll"');
+    const ja = html.indexOf('<div role="group" aria-label="投票"');
+    const from = start >= 0 ? start : ja;
+    return from < 0 ? "" : html.slice(from, html.indexOf('<div lang="', from));
+  };
+  const vote = /<button [^>]*>(<span>)?Vote</;
+
+  test("a post without a poll draws none", () => {
+    expect(bare({ status: status() })).not.toContain('aria-label="Poll"');
+  });
+
+  test("open to the reader: one choice is a radio per option, Vote waits for a choice, then who voted and the end", () => {
+    const html = pollOf({ status: withPoll() });
+    expect(html).toContain('<div role="radiogroup" aria-label="Options">');
+    expect(html.match(/<input type="radio"/g)).toHaveLength(2);
+    expect(html).toMatch(/<label>.*Sourdough<\/span><\/label><label>.*Rye<\/span><\/label>/);
+    expect(html).toMatch(/<button [^>]*disabled=""[^>]*><span>Vote<\/span><\/button>/);
+    expect(html).toMatch(/4 people voted.* · .*Ends in 2d/);
+    expect(html).not.toContain("%");
+  });
+
+  test("several choices are a checkbox per option, and the line says several may be chosen", () => {
+    const html = pollOf({ status: withPoll({ multiple: true }) });
+    expect(html).toContain('<div role="group" aria-label="Options">');
+    expect(html.match(/<input type="checkbox"/g)).toHaveLength(2);
+    expect(html).not.toContain('type="radio"');
+    expect(html).toMatch(/Several choices allowed.* · .*4 people voted.* · .*Ends in 2d/);
+  });
+
+  test("in flight, the reader's choices stay held and Vote is busy, with nothing to change", () => {
+    const html = pollOf({ status: withPoll({ multiple: true }), voting: [1] });
+    expect(html.match(/<input type="checkbox" disabled=""/g)).toHaveLength(2);
+    expect(html).toMatch(/<input type="checkbox" disabled=""[^>]*checked=""[^>]*\/>.*Rye/);
+    expect(html).not.toMatch(/<input [^>]*checked=""[^>]*\/>.*Sourdough.*Rye/);
+    expect(html).toMatch(/<button [^>]*aria-disabled="true"[^>]*aria-busy="true"[^>]*><span>Vote<\/span>/);
+    expect(html).not.toContain("%");
+  });
+
+  test("after the reader's vote, each option's share, the reader's choice marked, and no Vote", () => {
+    const html = pollOf({ status: withPoll({ voted: true, own_votes: [0] }) });
+    expect(html).toMatch(
+      /<li>.*Sourdough<span> \(your vote\)<\/span><\/span><span>75%<\/span>.*<\/li><li>.*Rye<\/span><span>25%</,
+    );
+    expect(html).not.toMatch(/Rye<span> \(your vote\)/);
+    expect(html).not.toContain("<input");
+    expect(html).not.toMatch(vote);
+    expect(html).toMatch(/4 people voted.* · .*Ends in 2d/);
+  });
+
+  test("several choices voted mark each of them", () => {
+    const html = pollOf({ status: withPoll({ multiple: true, voted: true, own_votes: [0, 1] }) });
+    expect(html.match(/ \(your vote\)/g)).toHaveLength(2);
+  });
+
+  test("ended, it shows the results without a vote, and says it ended", () => {
+    const html = pollOf({
+      status: withPoll({ expired: true, expires_at: new Date(Date.now() - 3_600_000).toISOString() }),
+    });
+    expect(html).toMatch(/Sourdough<\/span><span>75%<\/span>.*Rye<\/span><span>25%</);
+    expect(html).not.toContain("<input");
+    expect(html).not.toMatch(vote);
+    expect(html).not.toContain("your vote");
+    expect(html).toMatch(/4 people voted.* · .*Ended</);
+    expect(html).not.toContain("Ends in");
+  });
+
+  test("the reader's own poll shows its results, never a vote", () => {
+    const html = pollOf({ status: withPoll(), own: true });
+    expect(html).toContain("75%");
+    expect(html).not.toContain("<input");
+    expect(html).not.toMatch(vote);
+  });
+
+  test("counts hidden until it ends: no share of any option, and the line says when they show", () => {
+    const hidden = { options: [{ title: "Sourdough" }, { title: "Rye" }] };
+    const voted = pollOf({ status: withPoll({ ...hidden, voted: true, own_votes: [1] }) });
+    expect(voted).not.toContain("%");
+    expect(voted).toMatch(/Rye<span> \(your vote\)<\/span>/);
+    expect(voted).toContain("Counts show when it ends");
+    expect(pollOf({ status: withPoll(hidden), own: true })).toContain("Counts show when it ends");
+  });
+
+  test("a poll whose voters are unknown counts its votes instead", () => {
+    const html = pollOf({ status: withPoll({ voters_count: undefined }) });
+    expect(html).toContain("4 votes");
+    expect(html).not.toContain("people voted");
+  });
+
+  test("it reads in the reader's locale: the group, the options, the line and Vote", () => {
+    const open = pollOf({ status: withPoll({ multiple: true, voters_count: undefined }) }, "ja");
+    expect(open).toContain('<div role="group" aria-label="投票">');
+    expect(open).toContain('aria-label="選択肢"');
+    expect(open).toMatch(/複数選べます.* · .*4票.* · .*2日後に締め切り/);
+    expect(open).toMatch(/<span>投票する<\/span><\/button>/);
+    const ended = pollOf({ status: withPoll({ expired: true, voted: true, own_votes: [0] }) }, "ja");
+    expect(ended).toMatch(/4人が投票.* · .*締め切りました/);
+    expect(ended).toMatch(/Sourdough<span>[^<]*自分の投票[^<]*<\/span><\/span><span>75%/);
+    const hidden = pollOf({ status: withPoll({ options: [{ title: "A" }, { title: "B" }] }), own: true }, "ja");
+    expect(hidden).toContain("票数は締め切り後に表示");
   });
 });
 

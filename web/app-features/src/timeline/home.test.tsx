@@ -7,7 +7,7 @@ import { createClient } from "@mycroblog/mykit";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { press } from "../test/actions";
-import { render as renderUnder, server as fake, status } from "../test/server";
+import { poll, render as renderUnder, server as fake, status } from "../test/server";
 import { HomeTimeline, loadHomeTimeline } from "./home";
 
 /** A server whose home timeline answers `answer`, and the paths of the requests it got. */
@@ -93,4 +93,20 @@ test("a post answers its actions: a boost reaches the server, Quote opens the co
   await Bun.sleep(0);
   expect(requests).toContain("POST /statuses/h/boost");
   expect(composed).toEqual([{ kind: "quote", id: "h" }]);
+});
+
+test("a vote in a post's poll reaches the server", async () => {
+  const { data, received } = fake({
+    "/timelines/home": { items: [status("v", "sam", { poll: poll("p") })] },
+    "/statuses/v/poll/votes": status("v", "sam", { poll: poll("p", { voted: true, own_votes: [1] }) }),
+  });
+  await loadHomeTimeline(data);
+  renderUnder(
+    data,
+    <PostActions onCompose={() => undefined}>
+      <HomeTimeline />
+    </PostActions>,
+  );
+  press({ type: "vote", id: "v", poll: "p", choices: [1] });
+  expect(await received("POST /statuses/v/poll/votes")).toEqual({ poll_id: "p", choices: [1] });
 });

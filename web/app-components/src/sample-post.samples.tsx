@@ -24,6 +24,28 @@ function reacted(status: PostStatus, name: string): PostStatus {
   return { ...status, reactions };
 }
 
+/** The status after the reader's vote for `choices` in its poll. */
+function voted(status: PostStatus, choices: readonly number[]): PostStatus {
+  const poll = status.poll;
+  if (poll === undefined) return status;
+  return {
+    ...status,
+    poll: {
+      ...poll,
+      voted: true,
+      own_votes: choices,
+      votes_count: poll.votes_count + choices.length,
+      voters_count: (poll.voters_count ?? 0) + 1,
+      options: poll.options.map((o, i) =>
+        o.votes_count === undefined || !choices.includes(i) ? o : { ...o, votes_count: o.votes_count + 1 },
+      ),
+    },
+  };
+}
+
+/** How long the sample server takes to answer a vote, so that the vote in flight shows. */
+const voteDelay = 1200;
+
 /** What the server would answer to an action: the status a favourite, a boost, a bookmark or a reaction leaves. */
 function answered<S extends PostStatus>(status: S, action: PostAction): S {
   switch (action.type) {
@@ -53,20 +75,34 @@ export function SamplePost({
   lang,
   translationAs,
   signIn,
+  votingAt,
 }: {
   post: TimelinePost;
   lang: "en" | "ja";
   translationAs?: ((t: PostTranslation) => PostTranslation) | undefined;
   /** A reader without an account, whom the actions that need one lead to sign in (Post's `signIn`). */
   signIn?: ((status: PostStatus) => void) | undefined;
+  /** A vote for these choices in flight at first, which the server never answers, to show that state. */
+  votingAt?: readonly number[] | undefined;
 }) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
   const translation = answer && translationAs ? translationAs(answer) : answer;
   const [translated, setTranslated] = useState(post.translated === true);
+  const [voting, setVoting] = useState<readonly number[] | undefined>(votingAt);
   const onAction = (action: PostAction) => {
     if (action.type === "translate" || action.type === "original") {
       setTranslated(action.type === "translate");
+      return;
+    }
+    if (action.type === "vote") {
+      setVoting(action.choices);
+      setTimeout(() => {
+        setVoting(undefined);
+        setStatus((s) =>
+          s.boost === undefined ? voted(s, action.choices) : { ...s, boost: voted(s.boost, action.choices) },
+        );
+      }, voteDelay);
       return;
     }
     setStatus((s) => (s.boost === undefined ? answered(s, action) : { ...s, boost: answered(s.boost, action) }));
@@ -79,6 +115,7 @@ export function SamplePost({
       translation={translated ? translation : undefined}
       onAction={onAction}
       signIn={signIn}
+      voting={voting}
     />
   );
 }

@@ -23,7 +23,7 @@ test("each action asks for the mark the post does not have, or takes back the on
 
 /** The handler as a screen under PostActions gets it, with the home timeline holding post 1. */
 function handler(answers: Record<string, unknown>) {
-  const { data, requests } = server(answers);
+  const { data, requests, received } = server(answers);
   const key = homeTimelineQuery(data).queryKey;
   data.queryClient.setQueryData(key, { pages: [{ items: [post()] }], pageParams: [undefined] });
   const composed: ComposeRequest[] = [];
@@ -42,7 +42,7 @@ function handler(answers: Record<string, unknown>) {
     const copy = data.queryClient.getQueryData(key)?.pages[0]?.items[0];
     return copy && shadowed(data, copy);
   };
-  return { act, composed, requests, home };
+  return { act, composed, requests, received, home };
 }
 
 test("Reply and Quote open the composer for the post, and write nothing", () => {
@@ -64,6 +64,13 @@ test("favourite reaches the server, and the cache shows it", async () => {
   expect(home()?.favourited).toBe(true);
   await Bun.sleep(0);
   expect(requests).toEqual(["POST /statuses/1/favourite"]);
+});
+
+test("a vote reaches the server with the poll and every choice, and opens no composer", async () => {
+  const { act, composed, received } = handler({ "/statuses/1/poll/votes": status("1", "lena") });
+  act({ type: "vote", id: "1", poll: "p", choices: [0, 2] });
+  expect(await received("POST /statuses/1/poll/votes")).toEqual({ poll_id: "p", choices: [0, 2] });
+  expect(composed).toEqual([]);
 });
 
 test("an action with no mark, or on a post not in the cache, writes nothing", () => {

@@ -9,7 +9,7 @@
 import { images, type Visibility } from "@my/design-system/samples";
 import { serverHtml } from "@my/e2e/fake";
 import type { ContentEmoji } from "./post-content";
-import type { PostAccount, PostStatus, PostTranslation, PostVisibility } from "./status";
+import type { PostAccount, PostPoll, PostStatus, PostTranslation, PostVisibility } from "./status";
 
 const minute = 60_000;
 const hour = 60 * minute;
@@ -48,6 +48,21 @@ export type TimelinePost = {
   translation?: Partial<Record<"en" | "ja", string>>;
   /** Shown translated at first, to show that state. */
   translated?: boolean;
+  /** Its poll (FR-112). */
+  poll?: SamplePoll;
+};
+
+/**
+ * A poll: its options with their votes, how many voted, when it ends (in ms from now; ended when not ahead), the
+ * options the reader voted for, and whether its author hides the votes until it ends.
+ */
+type SamplePoll = {
+  options: { title: string; votes: number }[];
+  multiple?: boolean;
+  voters: number;
+  endsIn: number;
+  voted?: number[];
+  hideTotals?: boolean;
 };
 
 export type QuotedPost = Pick<TimelinePost, "lang" | "author" | "ago" | "visibility" | "text" | "media">;
@@ -374,6 +389,23 @@ const visibilities: Record<Visibility | "local", PostVisibility> = {
   direct: "direct",
 };
 
+/** The poll the API would send for a sample: the votes of each option left out while hidden and not ended. */
+function pollOf(poll: SamplePoll, id: string): PostPoll {
+  const expired = poll.endsIn <= 0;
+  const hidden = (poll.hideTotals ?? false) && !expired;
+  return {
+    id,
+    expires_at: new Date(Date.now() + poll.endsIn).toISOString(),
+    expired,
+    multiple: poll.multiple ?? false,
+    votes_count: poll.options.reduce((n, o) => n + o.votes, 0),
+    voters_count: poll.voters,
+    options: poll.options.map((o) => (hidden ? { title: o.title } : { title: o.title, votes_count: o.votes })),
+    voted: poll.voted !== undefined,
+    own_votes: poll.voted ?? [],
+  };
+}
+
 /** The status the API would send for a fixture: its text rendered as the server would, its times before now. */
 export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostStatus {
   const full: Partial<TimelinePost> = post;
@@ -409,6 +441,7 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
     bookmarked: full.bookmarked ?? false,
     quote:
       full.quote === undefined ? undefined : { state: "accepted", quoted_status: statusOf(full.quote, `${id}-quote`) },
+    poll: full.poll === undefined ? undefined : pollOf(full.poll, `${id}-poll`),
   };
   if (full.boostedBy === undefined) return shown;
   return { ...shown, id: `${id}-boost`, account: accountOf(full.boostedBy), boost: shown };

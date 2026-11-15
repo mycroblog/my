@@ -10,6 +10,9 @@ import { answered } from "./write";
 /** A count button's name: the action, then the count when there is one ("Favourite", "Favourite, 2"). */
 const counted = (action: string) => new RegExp(`^${action}(, \\d+)?$`);
 
+/** A vote in a post's poll. */
+const votes = { methods: ["POST"], path: /\/statuses\/[^/]+\/poll\/votes$/ } as const;
+
 export class Post {
   readonly page: Page;
   readonly article: Locator;
@@ -69,6 +72,50 @@ export class Post {
         .getByRole("menu", { name: "Boost", exact: true })
         .getByRole("menuitem", { name: "Boost", exact: true })
         .click();
+    });
+  }
+
+  /** The post's poll, named "Poll" in en and "投票" in ja. */
+  poll(name = "Poll"): Locator {
+    return this.article.getByRole("group", { name, exact: true });
+  }
+
+  /** The option of the open poll titled `title`: a radio, or a checkbox where several may be chosen. */
+  option(title: string, kind: "radio" | "checkbox" = "radio"): Locator {
+    return this.poll().getByRole(kind, { name: title, exact: true });
+  }
+
+  /** The poll's Vote button, named in the reader's language. */
+  voteButton(name = "Vote"): Locator {
+    return this.poll().getByRole("button", { name, exact: true });
+  }
+
+  /** The poll's results, an item per option: its title, "(your vote)" after the reader's choice, and its share. */
+  get results(): Locator {
+    return this.poll().getByRole("listitem");
+  }
+
+  /** The line under the poll: who voted, and when it ends. */
+  pollLine(name = "Poll"): Locator {
+    return this.poll(name).getByRole("paragraph");
+  }
+
+  /** Chooses the option of the poll titled `title`, from its label. */
+  async choose(title: string): Promise<void> {
+    await this.poll().getByText(title, { exact: true }).click();
+  }
+
+  /** Presses Vote, and returns once the server has answered the vote. */
+  async vote(): Promise<void> {
+    await answered(this.page, votes, async () => {
+      await this.voteButton().click();
+    });
+  }
+
+  /** Sends the vote again from `tryAgain`, the notice's action, and returns once the server has answered it. */
+  async voteAgain(tryAgain: Locator): Promise<void> {
+    await answered(this.page, votes, async () => {
+      await tryAgain.click();
     });
   }
 
@@ -132,6 +179,11 @@ export class Timeline {
   get posts(): Locator {
     return this.feed.getByRole("article");
   }
+}
+
+/** The local timeline: the public posts of the server's people, which a visitor reads too. Its name is in ja for ja. */
+export function localTimeline(page: Page, name = "Local timeline"): Timeline {
+  return new Timeline(page, page.getByRole("feed", { name, exact: true }));
 }
 
 /** The home timeline: the posts of the people the reader follows, and their own. */

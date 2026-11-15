@@ -146,5 +146,45 @@
   "post.favourites_count": {
     "defaultMessage": "{count, plural, other {お気に入り #}}",
     "description": "The number of favourites of a post, under the post shown on its own page with its thread. count is how many."
+  },
+  "post.poll": {
+    "defaultMessage": "投票",
+    "description": "The accessible name of a post's poll; the same word as the poll's card in the composer (compose.poll)."
+  },
+  "post.poll_options": {
+    "defaultMessage": "選択肢",
+    "description": "The accessible name of the options of a poll the reader can vote in, a radio group or, where several may be chosen, a group of checkboxes; the composer names one option 'Option {n}' (compose.poll.option)."
+  },
+  "post.poll_several": {
+    "defaultMessage": "複数選べます",
+    "description": "In the line under a poll the reader can vote in, where a vote may choose several options; the composer's checkbox that allows it reads 'Allow several choices' (compose.poll.multiple)."
+  },
+  "post.poll_vote": {
+    "defaultMessage": "投票する",
+    "description": "The button at the end of the line under a poll that sends the reader's chosen options; it waits for a choice, and a reader without an account who presses it is taken to sign in."
+  },
+  "post.poll_voters": {
+    "defaultMessage": "{count, number}人が投票",
+    "description": "In the line under a poll: how many accounts voted. count is how many."
+  },
+  "post.poll_votes": {
+    "defaultMessage": "{count, number}票",
+    "description": "In the line under a poll whose number of voters is unknown (from some servers): how many votes it has, one per chosen option. count is how many."
+  },
+  "post.poll_ends": {
+    "defaultMessage": "{time}に締め切り",
+    "description": "In the line under a poll that has not ended: when it ends. time is a short relative time such as 'in 2d' / '2日後'. The same verb as the composer's duration (compose.poll.ends_in)."
+  },
+  "post.poll_ended": {
+    "defaultMessage": "締め切りました",
+    "description": "In the line under a poll that has ended and takes no more votes."
+  },
+  "post.poll_hidden": {
+    "defaultMessage": "票数は締め切り後に表示",
+    "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
+  },
+  "post.poll_mine": {
+    "defaultMessage": "自分の投票",
+    "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
   }
 }
