@@ -7,7 +7,7 @@ package instance
 
 // themeTokens are the tokens a server theme may override, in the order of @my/design-tokens.
 var themeTokens = []ThemeToken{
-	{Name: "font-sans", Kind: ThemeTokenFontFamily, Default: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Hiragino Sans\", \"Noto Sans CJK JP\", \"Noto Sans JP\", \"Yu Gothic UI\", \"Yu Gothic\", sans-serif"},
+	{Name: "font-sans", Kind: ThemeTokenFontFamily, Default: "\"my Noto Color Emoji\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Hiragino Sans\", \"Noto Sans CJK JP\", \"Noto Sans JP\", \"Yu Gothic UI\", \"Yu Gothic\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\""},
 	{Name: "text-tagline", Kind: ThemeTokenLength, Default: "1.875rem", Min: 0.625, Max: 3},
 	{Name: "text-tagline--line-height", Kind: ThemeTokenNumber, Default: "1.2", Min: 1, Max: 2.5},
 	{Name: "text-title", Kind: ThemeTokenLength, Default: "1.125rem", Min: 0.625, Max: 3},

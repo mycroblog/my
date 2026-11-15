@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The Unicode emoji data of the server and of the web client's emoji picker, generated from pinned Unicode and CLDR
-# files that the repository does not hold (ADR-0051 §6, ADR-0091 §1). Not part of `check` or `generate`: run it by hand
-# after changing a version, and commit what it writes.
+# The Unicode emoji data of the server and of the web client's emoji picker, and the web client's emoji fonts,
+# generated from pinned Unicode, CLDR and Noto Color Emoji files that the repository does not hold (ADR-0051 §6,
+# ADR-0091 §1, §8, §9). Not part of `check` or `generate`: run it by hand after changing a version, and commit what it
+# writes. The fonts are split by scripts/emoji-fonts, which runs in a throwaway Python environment that uv builds from
+# scripts/emoji-fonts/uv.lock (uv must be on PATH); nothing else needs Python.
 version: "3"
 
 vars:
@@ -21,11 +23,25 @@ vars:
     3d83cf7e4093f7fe77055dc21b1a3a65cd8f48a0249127552d58d3b058dbe4cd  annotationsDerived/ja.json
   # Where the web client's data goes, next to its LICENSE-Unicode.txt.
   WEB_EMOJI_DIR: web/app-features/src/emoji/unicode
+  # Noto Color Emoji (ADR-0091 §8), which must draw every emoji of EMOJI_VERSION: the COLRv1 font of the release
+  # NOTO_EMOJI_RELEASE of googlefonts/noto-emoji (at commit NOTO_EMOJI_COMMIT), and the OpenType-SVG font with its
+  # OFL.txt from google/fonts at GOOGLE_FONTS_COMMIT (noto-emoji builds no SVG font).
+  NOTO_EMOJI_RELEASE: v2026-09-24-unicode18_0
+  NOTO_EMOJI_COMMIT: e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e
+  GOOGLE_FONTS_COMMIT: e7db6ca603fd4862010383ff17ffd6cc4ffac1c0
+  NOTO_SHA256: |
+    b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c  Noto-COLRv1.ttf
+    4d82a18d8d95f60ba883ce242bbadbf84a576e987745dd7ba38d71c67cff2d73  NotoColorEmoji-Regular.ttf
+    ac564676d10054a8445923dfc2dfb13c042d97888bd27c1b6ec6dfe89a9d8d62  OFL.txt
+  # Where the split WOFF2 files and their OFL.txt go, and the stylesheet of their @font-face rules
+  # (@my/design-system/emoji.css).
+  EMOJI_FONTS_DIR: web/design-system/src/fonts/emoji
+  EMOJI_CSS: web/design-system/src/emoji.css
 
 tasks:
   generate:
-    desc: Regenerate the server's emoji table and the web client's emoji data from emoji-test.txt (EMOJI_VERSION) and the CLDR annotations (CLDR_VERSION)
-    deps: [emoji-test, cldr]
+    desc: Regenerate the server's emoji table, the web client's emoji data and its Noto Color Emoji fonts from emoji-test.txt (EMOJI_VERSION), the CLDR annotations (CLDR_VERSION) and the pinned Noto fonts
+    deps: [emoji-test, cldr, noto]
     cmds:
       - >-
         go run ./scripts/emoji-table
@@ -34,6 +50,15 @@ tasks:
         -cldr .tmp/emoji/cldr-{{.CLDR_VERSION}} -cldr-version {{.CLDR_VERSION}}
         -locales {{.CLDR_LOCALES | splitList " " | join ","}}
         -web-out {{.WEB_EMOJI_DIR}}
+      - mkdir -p {{.EMOJI_FONTS_DIR}}
+      - cp .tmp/emoji/noto/OFL.txt {{.EMOJI_FONTS_DIR}}/OFL.txt
+      - >-
+        UV_PROJECT_ENVIRONMENT="{{.ROOT_DIR}}/.tmp/emoji/venv"
+        uv run --frozen --project scripts/emoji-fonts python -I scripts/emoji-fonts/emoji_fonts.py
+        --emoji-test .tmp/emoji/emoji-test-{{.EMOJI_VERSION}}.txt --version {{.EMOJI_VERSION}}
+        --colrv1 .tmp/emoji/noto/Noto-COLRv1.ttf
+        --svg .tmp/emoji/noto/NotoColorEmoji-Regular.ttf
+        --out {{.EMOJI_FONTS_DIR}} --css {{.EMOJI_CSS}}
 
   # Each download prints the digests it got when they differ from the pinned ones, for a version update.
   emoji-test:
@@ -73,5 +98,28 @@ tasks:
         if ! printf '%s' "{{.CLDR_SHA256}}" | sha256sum -c -; then
           echo "the digests of {{.DIR}} differ from CLDR_SHA256; they are:" >&2
           for l in {{.CLDR_LOCALES}}; do sha256sum annotations/$l.json annotationsDerived/$l.json; done >&2
+          exit 1
+        fi
+
+  noto:
+    internal: true
+    vars:
+      DIR: .tmp/emoji/noto
+    cmds:
+      - mkdir -p {{.DIR}}
+      - >-
+        curl -fsSL -o {{.DIR}}/Noto-COLRv1.ttf
+        https://raw.githubusercontent.com/googlefonts/noto-emoji/{{.NOTO_EMOJI_COMMIT}}/2D/fonts/Noto-COLRv1.ttf
+      - >-
+        curl -fsSL -o {{.DIR}}/NotoColorEmoji-Regular.ttf
+        https://raw.githubusercontent.com/google/fonts/{{.GOOGLE_FONTS_COMMIT}}/ofl/notocoloremoji/NotoColorEmoji-Regular.ttf
+      - >-
+        curl -fsSL -o {{.DIR}}/OFL.txt
+        https://raw.githubusercontent.com/google/fonts/{{.GOOGLE_FONTS_COMMIT}}/ofl/notocoloremoji/OFL.txt
+      - |
+        cd {{.DIR}}
+        if ! printf '%s' "{{.NOTO_SHA256}}" | sha256sum -c -; then
+          echo "the digests of {{.DIR}} differ from NOTO_SHA256; they are:" >&2
+          sha256sum Noto-COLRv1.ttf NotoColorEmoji-Regular.ttf OFL.txt >&2
           exit 1
         fi

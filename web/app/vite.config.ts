@@ -12,6 +12,15 @@ import { reactCompiler } from "./vite-plugins/react-compiler.ts";
 const embedDir = fileURLToPath(new URL("../../internal/interface/web/dist", import.meta.url));
 
 /**
+ * The license notices of shipped files that are not npm packages: the Unicode emoji data of the picker (ADR-0091 §1)
+ * and the Noto Color Emoji fonts (ADR-0091 §13).
+ */
+const licenseFiles = [
+  fileURLToPath(new URL("../app-features/src/emoji/unicode/LICENSE-Unicode.txt", import.meta.url)),
+  fileURLToPath(new URL("../design-system/src/fonts/emoji/OFL.txt", import.meta.url)),
+];
+
+/**
  * The server that Vite's dev server passes the client API, the token endpoints and the server's own pages on to, so
  * that the app on http://localhost:5173 talks to it as on its own origin: the server of `docker compose up` unless
  * MY_SERVER names another.
@@ -26,17 +35,18 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // which fails the build on a function it skips. The routes of src/routes compile into src/routeTree.gen.ts, which
 // scripts/routes.ts also writes with the same options, each route's components in a chunk of their own; TanStack
 // Router's plugin comes before React's. Tailwind builds the stylesheet of @my/design-system without its own optimizer,
-// for the browsers of light-dark() (ADR-0025 §1). The condition @mycroblog/source reads @mycroblog/mykit (under
-// @my/app-data) from its sources, which need no build. The notices of the npm packages and of the bundled data that is
-// none (the Unicode emoji data) go to licenses/.
+// for the browsers of light-dark() (ADR-0025 §1). The licenses/ of the build holds the notices of the npm packages and,
+// through vite-plugins/licenses.ts, of the Unicode emoji data and the emoji fonts, each split of which is an asset of
+// its own. The condition @mycroblog/source reads @mycroblog/mykit (under @my/app-data) from its sources, which need no
+// build.
 export default defineConfig({
   base: "./",
   plugins: [
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     reactCompiler(),
+    bundledLicenses(licenseFiles),
     tailwindcss({ optimize: false }),
-    bundledLicenses([fileURLToPath(new URL("../app-features/src/emoji/unicode/LICENSE-Unicode.txt", import.meta.url))]),
   ],
   resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
   build: {

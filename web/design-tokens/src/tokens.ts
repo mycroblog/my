@@ -7,9 +7,16 @@
 /** The root font size the rem values are relative to, in px. */
 export const rootPx = 16;
 
-/** Latin from the system's sans, Japanese from a gothic; system stacks only, since the CSP allows no font CDN. */
+/**
+ * Emoji first, then Latin from the system's sans and Japanese from a gothic. "my Noto Color Emoji" is the self-hosted
+ * web font of @my/design-system/emoji.css (ADR-0091 §10), whose unicode-range holds only emoji code points, so the
+ * system fonts still draw every other character; ahead of them, it also wins over the CJK and UI fonts that have their
+ * own glyphs of symbols such as ☀ ♠ ❤. A page that does not load emoji.css has no such face, and the family is
+ * skipped; the system's emoji fonts come last, for that page and for when the web font cannot load. No font from a
+ * CDN, which the CSP does not allow.
+ */
 export const fontFamily = {
-  sans: 'system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", sans-serif',
+  sans: '"my Noto Color Emoji", system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"',
 } as const;
 
 export type TextStep = {

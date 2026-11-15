@@ -107,11 +107,11 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 - **道具**: fontTools（MIT）、brotli（MIT）、SVG の部分集合に要る lxml（BSD-3-Clause）を、生成のときだけ使う。どれも AGPL-3.0 と両立する。
   リポジトリの道具に Python は無い（`.tool-versions`）。そこで、`scripts/emoji-fonts` を `uv` のロックファイルで版を固定した使い捨ての環境で動かす。
   生成した WOFF2 と `@font-face` の CSS はコミットする。`scripts/task.sh check` とビルドに Python は要らない。サーバーには何も足さない。
-- 置き場所は `@my/ui`（`app/ui/src/fonts/emoji/` と `app/ui/src/emoji.css`、`@my/ui/emoji.css` として公開）にする。タイポグラフィは `@my/ui` が持ち、Storybook も同じフォントで描ける。
-  Vite が URL にハッシュを付けて `dist/assets/` に出す。
-- **`emoji.css` を読み込む場所**: Web クライアントの `app/web/src/index.css` と Storybook の `app/ui/src/storybook.css` が、`theme.css` の後に `emoji.css` を読み込む。
-  - `theme.css` は `emoji.css` を読み込まない。`--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置くのは `theme.css` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
-  - サーバーが描画する画面（`server-pages.css`）は `emoji.css` を読み込まず、OS の絵文字のフォントで描く。ファミリー名は `--font-sans` に残るが、face が無いので飛ばされる。
+- 置き場所は `@my/design-system`（`web/design-system/src/fonts/emoji/` と `web/design-system/src/emoji.css`、`@my/design-system/emoji.css` として公開）にする。タイポグラフィは `@my/design-system` が持ち、Storybook も同じフォントで描ける。
+  Vite が URL にハッシュを付けて、分割ごとに別のファイルとしてビルドの `assets/` に出す。
+- **`emoji.css` を読み込む場所**: Web クライアントの入口（`web/app/src/main.tsx` と `web/app/src/auth.tsx`）と Storybook の `web/storybook/.storybook/preview.tsx` が、`@my/design-system/styles.css` の後に `emoji.css` を読み込む。
+  - `styles.css` は `emoji.css` を読み込まない。`--font-sans` の先頭に `"my Noto Color Emoji"` を置くのは `@my/design-tokens` の `fontFamily` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
+  - Web クライアントの外の画面（メンテナンスの画面）は `emoji.css` を読み込まず、OS の絵文字のフォントで描く。
 
 ### 10. `@font-face` とフォントの並び
 
@@ -126,7 +126,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
   | COLRv1 | 98 | 107 | TP まで未対応 | iOS の Safari も 27.2 まで未対応。Android の Chrome・WebView は対応 |
 
 - **`unicode-range`**: 次の符号位置は、本文の文字として使われるので外す。`#`・`*`・`0`〜`9`（キーキャップの基）と、`©`・`®`・`™`・`‼`・`⁉`・`↔` など `emoji-test.txt` で既定がテキストの表示の記号のうち、本文の記号として使われるものである。
-  外した字の絵文字の表示（`#️⃣`、`©️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
+  外した字の絵文字の表示（`#️⃣`、`©️`）と、外した字を含む並び（`🙂‍↔️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
 - **並び**: `--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置く。`unicode-range` が絵文字の符号位置だけなので、ほかの字には効かない。
   先頭に置かないと、`☀`・`♠`・`❤` のように CJK のフォントや Segoe UI が字形を持つ字が、そちらのフォントで描かれる。末尾の OS の絵文字のフォント（`"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"`）は、フォントを読めないときのために残す。
   ADR-0009 の「フォントは OS フォントを優先し」は、絵文字の符号位置についてだけこの ADR が置き換える。本文の文字は OS のフォントのままにする。

@@ -11,3 +11,7 @@ internal/adapter/plugin/gen/** linguist-generated=true
 # request diffs.
 web/app-features/src/emoji/unicode/*.gen.json linguist-generated=true
 internal/domain/content/emoji_table.gen.go linguist-generated=true
+
+# The Noto Color Emoji web font that `scripts/task.sh emoji:generate` writes (ADR-0091 §9).
+web/design-system/src/emoji.css linguist-generated=true
+web/design-system/src/fonts/emoji/*.woff2 binary linguist-generated=true

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Copies the license notices of the third-party data the client bundles but that are not npm dependencies (and so are
-// outside `web:licenses`), such as the Unicode emoji data of the picker (@my/app-features'
-// emoji/unicode/LICENSE-Unicode.txt, ADR-0091 §1), into licenses/ of the build under their own names, beside the
-// notices of the npm packages: the build carries each notice with the data it covers.
-
+// Copies the license notices of the third-party data and files the client ships but that are not npm dependencies (and
+// so are outside `web:licenses`) — the Unicode emoji data of the picker (@my/app-features'
+// emoji/unicode/LICENSE-Unicode.txt, ADR-0091 §1) and the OFL.txt of the Noto Color Emoji fonts of @my/design-system
+// (ADR-0091 §13) — into the build's licenses/ under their own names, next to the notices of the npm packages: Go serves
+// them at /licenses/.
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import type { Plugin } from "vite";
