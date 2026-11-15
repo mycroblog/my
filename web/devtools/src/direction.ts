@@ -52,7 +52,8 @@ export function logicalOf(token: string): string | null {
   return null;
 }
 
-const transpiler = new Bun.Transpiler({ loader: "tsx" });
+// A .ts file is read as TypeScript, not TSX, where a generic arrow function (`<T>(`) would read as a tag.
+const transpilers = { ts: new Bun.Transpiler({ loader: "ts" }), tsx: new Bun.Transpiler({ loader: "tsx" }) };
 
 const inline = (s: string | undefined) => (s === "left" ? "start" : "end");
 
@@ -133,7 +134,7 @@ function styleSpans(code: string): [number, number][] {
  * left or right in a style object written in place. Each is named once, at the line of its first use.
  */
 function findInTS(file: string, source: string): Finding[] {
-  const code = transpiler.transformSync(source);
+  const code = transpilers[file.endsWith(".tsx") ? "tsx" : "ts"].transformSync(source);
   const seen = new Set<string>();
   const found: Finding[] = [];
   const add = (physical: string, logical: string, at: number) => {
