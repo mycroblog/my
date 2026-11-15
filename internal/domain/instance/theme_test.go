@@ -66,11 +66,17 @@ func TestContrastRatio(t *testing.T) {
 	}
 }
 
+// tokenValue is the value of a token that is not a color. Built here, gosec's G101, which takes a field named Token
+// set to a constant for a credential, does not read the table's font values as one.
+func tokenValue(token, value string) instance.ThemeTokenValue {
+	return instance.ThemeTokenValue{Token: token, Value: value}
+}
+
 func TestNormalizeThemeCanonicalizes(t *testing.T) {
 	got, err := instance.NormalizeTheme([]instance.ThemeTokenValue{
 		{Token: "radius-control", Value: " 4px "},
 		{Token: "color-accent", Light: "#FF8A80", Dark: "#FF8A80"},
-		{Token: "font-sans", Value: `"Noto Sans JP",  sans-serif`},
+		tokenValue("font-sans-override", `"Noto Sans JP",  Inter`),
 		{Token: "duration-spin", Value: "0.5s"},
 		{Token: "text-body--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
 	})
@@ -78,7 +84,7 @@ func TestNormalizeThemeCanonicalizes(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []instance.ThemeTokenValue{
-		{Token: "font-sans", Value: `"Noto Sans JP", sans-serif`},
+		tokenValue("font-sans-override", `"Noto Sans JP", Inter`),
 		{Token: "text-body--line-height", Value: "1.8"}, //nolint:gosec // a design token, not a credential
 		{Token: "color-accent", Light: "#ff8a80", Dark: "#ff8a80"},
 		{Token: "radius-control", Value: "4px"},
@@ -110,16 +116,60 @@ func TestNormalizeThemeRejects(t *testing.T) {
 		{"text too small", instance.ThemeTokenValue{Token: "text-caption", Value: "8px"}, instance.ThemeOutOfRange},
 		{"line height", instance.ThemeTokenValue{Token: "text-body--line-height", Value: "3"}, instance.ThemeOutOfRange}, //nolint:gosec // a design token, not a credential
 		{"duration", instance.ThemeTokenValue{Token: "duration-spin", Value: "2s"}, instance.ThemeOutOfRange},
-		{"font url", instance.ThemeTokenValue{Token: "font-sans", Value: `url(https://example.com/f.woff)`}, instance.ThemeInvalidValue},
-		{"font comment", instance.ThemeTokenValue{Token: "font-sans", Value: `a /* b */`}, instance.ThemeInvalidValue},
-		{"font escape", instance.ThemeTokenValue{Token: "font-sans", Value: `"a\"; }"`}, instance.ThemeInvalidValue},
-		{"empty font", instance.ThemeTokenValue{Token: "font-sans", Value: ""}, instance.ThemeInvalidValue},
+		{"font url", tokenValue("font-sans-override", `url(https://example.com/f.woff)`), instance.ThemeInvalidValue},
+		{"font comment", tokenValue("font-sans-override", `a /* b */`), instance.ThemeInvalidValue},
+		{"font escape", tokenValue("font-sans-override", `"a\"; }"`), instance.ThemeInvalidValue},
+		{"empty font", tokenValue("font-sans-override", ""), instance.ThemeInvalidValue},
+		// The stacks are fixed (ADR-0059 §2): a theme adds its fonts through the overrides alone.
+		{"fixed sans stack", tokenValue("font-sans", `"Noto Sans JP", sans-serif`), instance.ThemeUnknownToken},
+		{"fixed mono stack", tokenValue("font-mono", `"Fira Code", monospace`), instance.ThemeUnknownToken},
+		// An override names families: a generic family would draw before the emoji and CJK fonts' fallbacks, and a
+		// CSS-wide keyword would break the stack it sits in.
+		{"generic family", tokenValue("font-sans-override", "sans-serif"), instance.ThemeInvalidValue},
+		{"generic family in a list", tokenValue("font-sans-override", "Inter, system-ui"), instance.ThemeInvalidValue},
+		{"generic mono family", tokenValue("font-mono-override", "monospace"), instance.ThemeInvalidValue},
+		{"keyword inherit", tokenValue("font-sans-override", "inherit"), instance.ThemeInvalidValue},
+		{"keyword initial", tokenValue("font-sans-override", "initial"), instance.ThemeInvalidValue},
+		{"keyword unset", tokenValue("font-mono-override", "unset"), instance.ThemeInvalidValue},
+		{"keyword revert", tokenValue("font-sans-override", "revert"), instance.ThemeInvalidValue},
+		{"keyword revert-layer", tokenValue("font-sans-override", "revert-layer"), instance.ThemeInvalidValue},
+		{"keyword in capitals", tokenValue("font-sans-override", "INHERIT"), instance.ThemeInvalidValue},
+		// Every word of an unquoted name is an identifier and no CSS-wide keyword, or the declaration that holds the
+		// stack is invalid and the page draws with the browser's default font.
+		{"word starting with a digit", tokenValue("font-sans-override", "M PLUS 1p"), instance.ThemeInvalidValue},
+		{"number word", tokenValue("font-sans-override", "Font Awesome 6 Free"), instance.ThemeInvalidValue},
+		{"keyword as a later word", tokenValue("font-sans-override", "Foo inherit"), instance.ThemeInvalidValue},
+		{"default as a later word", tokenValue("font-mono-override", "Arial Default"), instance.ThemeInvalidValue},
+		{"keyword word in a list", tokenValue("font-sans-override", "Inter, Noto unset"), instance.ThemeInvalidValue},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := instance.NormalizeTheme([]instance.ThemeTokenValue{tt.token})
 			ps := problemsOf(t, err)
 			if len(ps) == 0 || ps[0].Code != tt.code || ps[0].Token != tt.token.Token {
 				t.Errorf("problems = %+v, want %s for %s", ps, tt.code, tt.token.Token)
+			}
+		})
+	}
+}
+
+func TestNormalizeThemeAcceptsFontOverrideFamilies(t *testing.T) {
+	// A list of family names, quoted or not, and a quoted name that only looks like a generic family or a keyword.
+	for _, tt := range []instance.ThemeTokenValue{
+		tokenValue("font-sans-override", `"Liberation Sans", Inter, "Noto Sans JP"`),
+		tokenValue("font-sans-override", `"sans-serif"`),
+		tokenValue("font-sans-override", `"inherit"`),
+		tokenValue("font-mono-override", `"Fira Code", Menlo`),
+		tokenValue("font-sans-override", `'Noto Sans JP', "Liberation Sans"`),
+		tokenValue("font-sans-override", `"M PLUS 1p", "Foo inherit"`),
+		tokenValue("font-sans-override", `Foo serif, -apple-system`),
+	} {
+		t.Run(tt.Token+" "+tt.Value, func(t *testing.T) {
+			got, err := instance.NormalizeTheme([]instance.ThemeTokenValue{tt})
+			if err != nil {
+				t.Fatalf("NormalizeTheme(%s: %s) = %v", tt.Token, tt.Value, err)
+			}
+			if len(got) != 1 || got[0].Token != tt.Token {
+				t.Errorf("got %+v, want the one override %s", got, tt.Token)
 			}
 		})
 	}

@@ -12,12 +12,14 @@ import { reactCompiler } from "./vite-plugins/react-compiler.ts";
 const embedDir = fileURLToPath(new URL("../../internal/interface/web/dist", import.meta.url));
 
 /**
- * The license notices of shipped files that are not npm packages: the Unicode emoji data of the picker (ADR-0091 §1)
- * and the Noto Color Emoji fonts (ADR-0091 §13).
+ * The license notices of shipped files that are not npm packages: the Unicode emoji data of the picker (ADR-0091 §1),
+ * the Noto Color Emoji fonts (ADR-0091 §13) and the Noto Sans CJK and Noto Sans fonts (ADR-0009 §5).
  */
 const licenseFiles = [
   fileURLToPath(new URL("../app-features/src/emoji/unicode/LICENSE-Unicode.txt", import.meta.url)),
   fileURLToPath(new URL("../design-system/src/fonts/emoji/OFL.txt", import.meta.url)),
+  fileURLToPath(new URL("../design-system/src/fonts/cjk/OFL-NotoSansCJK.txt", import.meta.url)),
+  fileURLToPath(new URL("../design-system/src/fonts/noto-sans/OFL-NotoSans.txt", import.meta.url)),
 ];
 
 /**
@@ -36,9 +38,9 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // scripts/routes.ts also writes with the same options, each route's components in a chunk of their own; TanStack
 // Router's plugin comes before React's. Tailwind builds the stylesheet of @my/design-system without its own optimizer,
 // for the browsers of light-dark() (ADR-0025 §1). The licenses/ of the build holds the notices of the npm packages and,
-// through vite-plugins/licenses.ts, of the Unicode emoji data and the emoji fonts, each split of which is an asset of
-// its own. The condition @mycroblog/source reads @mycroblog/mykit (under @my/app-data) from its sources, which need no
-// build.
+// through vite-plugins/licenses.ts, of the Unicode emoji data and the emoji and text fonts, each slice of which is an
+// asset of its own. The condition @mycroblog/source reads @mycroblog/mykit (under @my/app-data) from its sources, which
+// need no build.
 export default defineConfig({
   base: "./",
   plugins: [

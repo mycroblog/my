@@ -30,7 +30,8 @@ const (
 	ThemeTokenLength ThemeTokenKind = "length"
 	// ThemeTokenNumber is a unitless number, such as a line height.
 	ThemeTokenNumber ThemeTokenKind = "number"
-	// ThemeTokenFontFamily is a comma-separated list of font family names.
+	// ThemeTokenFontFamily is a comma-separated list of font family names, with no generic family
+	// or keyword.
 	ThemeTokenFontFamily ThemeTokenKind = "font-family"
 	// ThemeTokenDuration is a time in ms or s, bounded in ms.
 	ThemeTokenDuration ThemeTokenKind = "duration"
@@ -366,14 +367,31 @@ func normalizeTokenValue(t ThemeToken, v ThemeTokenValue) (ThemeTokenValue, []Th
 }
 
 var (
-	hexColorPattern     = regexp.MustCompile(`^#[0-9a-f]{6}$`)
-	lengthPattern       = regexp.MustCompile(`^(?:0|(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
-	numberPattern       = regexp.MustCompile(`^\d{1,2}(?:\.\d{1,4})?$`)
-	durationPattern     = regexp.MustCompile(`^(\d{1,5}(?:\.\d{1,3})?)(ms|s)$`)
-	quotedFamilyPattern = regexp.MustCompile(`^"[^"\\;{}<>\x00-\x1f]{1,100}"$`)
-	// An unquoted family name is a CSS identifier, which may start with a hyphen (-apple-system).
-	plainFamilyPattern = regexp.MustCompile(`^-?[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z0-9-]+)*$`)
+	hexColorPattern = regexp.MustCompile(`^#[0-9a-f]{6}$`)
+	lengthPattern   = regexp.MustCompile(`^(?:0|(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
+	numberPattern   = regexp.MustCompile(`^\d{1,2}(?:\.\d{1,4})?$`)
+	durationPattern = regexp.MustCompile(`^(\d{1,5}(?:\.\d{1,3})?)(ms|s)$`)
+	// A quoted family name, in double or single quotes, as CSS writes either.
+	quotedFamilyPattern = regexp.MustCompile(`^(?:"[^"\\;{}<>\x00-\x1f]{1,100}"|'[^'\\;{}<>\x00-\x1f]{1,100}')$`)
+	// An unquoted family name is a sequence of CSS identifiers, each of which may start with a hyphen
+	// (-apple-system) but not with a digit: "M PLUS 1p" must be quoted.
+	plainFamilyPattern = regexp.MustCompile(`^-?[A-Za-z_][A-Za-z0-9_-]*(?: -?[A-Za-z_][A-Za-z0-9_-]*)*$`)
 )
+
+// genericFamilies are the unquoted names of a font-family value that name no family but match every character, and
+// so would hide the emoji and CJK fonts after the theme's in the stacks. Each is generic only as a whole name.
+// Quoted, each is a family name like any other.
+var genericFamilies = map[string]bool{
+	"serif": true, "sans-serif": true, "monospace": true, "cursive": true, "fantasy": true, "system-ui": true,
+	"ui-serif": true, "ui-sans-serif": true, "ui-monospace": true, "ui-rounded": true, "math": true, "emoji": true,
+	"fangsong": true,
+}
+
+// reservedFamilyWords are the CSS-wide keywords and default, which CSS refuses as any word of an unquoted family
+// name: "Noto inherit" makes the whole declaration invalid, and the page draws with the browser's font.
+var reservedFamilyWords = map[string]bool{
+	"inherit": true, "initial": true, "unset": true, "revert": true, "revert-layer": true, "default": true,
+}
 
 func normalizeColor(s string) (string, bool) {
 	c := strings.ToLower(strings.TrimSpace(s))
@@ -447,8 +465,16 @@ func validFontFamily(v string) bool {
 	}
 	for _, f := range families {
 		f = strings.TrimSpace(f)
-		if !quotedFamilyPattern.MatchString(f) && (!plainFamilyPattern.MatchString(f) || len(f) > 100) {
+		if quotedFamilyPattern.MatchString(f) {
+			continue
+		}
+		if !plainFamilyPattern.MatchString(f) || len(f) > 100 || genericFamilies[strings.ToLower(f)] {
 			return false
+		}
+		for _, w := range strings.Split(f, " ") {
+			if reservedFamilyWords[strings.ToLower(w)] {
+				return false
+			}
 		}
 	}
 	return true

@@ -9,6 +9,8 @@
 
 import "@my/design-system/styles.css";
 import "@my/design-system/emoji.css";
+import "@my/design-system/noto-sans.css";
+import "@my/design-system/cjk.css";
 import { openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { I18nProvider, useLocale } from "@my/design-system";
 import { browserLanguages } from "@my/platform";

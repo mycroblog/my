@@ -20,7 +20,10 @@ const rules: readonly Rule[] = [
   // Fixed: a pair with an avatar holds its contrast only with this value.
   { pattern: /^--color-avatar-/ },
   { pattern: /^--color-/, kind: "color" },
-  { pattern: /^--font-sans$/, kind: "font-family" },
+  // A theme adds its fonts to the stacks; the stacks, the Latin family and the CJK region are fixed, so that a theme
+  // never drops the emoji and text web fonts.
+  { pattern: /^--font-(sans|mono)-override$/, kind: "font-family" },
+  { pattern: /^--font-(sans|mono|latin|cjk)$/ },
   { pattern: /^--text-[a-z]+$/, kind: "length", min: 0.625, max: 3 },
   { pattern: /^--text-[a-z]+--line-height$/, kind: "number", min: 1, max: 2.5 },
   { pattern: /^--radius-/, kind: "length", min: 0, max: 2 },

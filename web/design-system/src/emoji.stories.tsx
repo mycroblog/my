@@ -78,7 +78,7 @@ export const All: StoryObj = {
 
 /** Running text with no emoji, which loads none of the splits. */
 export const WithoutEmoji: StoryObj = {
-  render: () => <p style={body}>A post with no emoji draws every character with the system fonts.</p>,
+  render: () => <p style={body}>A post with no emoji draws every character with the text fonts.</p>,
   play: async ({ canvasElement }) => {
     const paragraph = canvasElement.querySelector("p");
     if (paragraph === null) throw new Error("no paragraph");

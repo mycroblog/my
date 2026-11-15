@@ -40,7 +40,8 @@ type Theme struct {
 // TokenNames are the design tokens of the theme that the page's CSS reads; the
 // callers fill Theme with their defaults and the instance's overrides.
 var TokenNames = []string{
-	"color-surface", "color-surface-raised", "color-text", "color-muted-text", "color-accent-text", "font-sans",
+	"color-surface", "color-surface-raised", "color-text", "color-muted-text", "color-accent-text",
+	"font-sans-override",
 }
 
 //go:embed templates/page.html templates/closure
@@ -180,7 +181,7 @@ func safeValue(v string) bool {
 }
 
 const baseCSS = `html{color-scheme:light dark;background:var(--color-surface,Canvas);color:var(--color-text,CanvasText);` +
-	`font-family:var(--font-sans,system-ui,sans-serif);line-height:1.7}` +
+	`font-family:var(--font-sans-override,system-ui),system-ui,sans-serif;line-height:1.7}` +
 	`body{margin:0}` +
 	`main{box-sizing:border-box;max-inline-size:40rem;margin-inline:auto;padding-block:3rem;padding-inline:1rem;display:grid;gap:1.5rem}` +
 	`section{background:var(--color-surface-raised,Canvas);border-radius:1rem;` +

@@ -28,7 +28,7 @@ langue par défaut, qui peut voir les fils, nom de l’instance, description, co
 <!-- source: keys ae25d36239c2 -->
 ## Clés
 
-<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
+<!-- source: settings-one-key-one-value a3d12269943c -->
 ### Paramètres (une clé, une valeur)
 
 | Clé | Type | Valeur par défaut | Description |
@@ -85,6 +85,7 @@ langue par défaut, qui peut voir les fils, nom de l’instance, description, co
 | `require_media_description` | `true` / `false` | `false` | Si chaque fichier média (image, vidéo ou audio) joint à une publication locale exige une description. Lorsque `true`, une publication ou une modification avec un fichier dont la description est absente ou ne contient que des espaces est rejetée avec 422. Il est publié comme `limits.require_media_description` dans `GET /api/v1/instance`, et le client web rend le champ de description obligatoire. Il est distinct du paramètre par utilisateur `require_media_description`, qui ne vérifie qu’avant l’envoi |
 | `link_cards` | `true` / `false` | `true` | S’il faut afficher des cartes pour les liens dans les publications. Lorsque `true`, le serveur récupère la page liée pour construire une carte. Lorsque `false`, il cesse de récupérer et masque aussi les cartes déjà construites. Pour ne l’arrêter que sur certains domaines, voir [domaines des cartes de liens](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Si les récupérations de cartes de liens ignorent `robots.txt`. Lorsque `false`, le serveur obéit au `robots.txt` des sites liés ; un site qui interdit `my-linkcard` ou `*` n’obtient donc aucune carte ([aperçus de liens](link-previews.md#cards-of-links-in-posts)). `/about/crawler` indique aux sites liés de quel robot il s’agit. Lorsque `true`, le serveur ne récupère ni n’utilise `robots.txt`, et un site lié ne peut plus refuser ces récupérations avec lui ; le serveur continue de se nommer `my-linkcard`. Activez-le uniquement lorsque trop de cartes manquent. Les cartes construites pendant qu’il était activé sont vérifiées à leur prochaine récupération une fois qu’il est désactivé. Les directives d’une page et les domaines des cartes de liens s’appliquent dans les deux cas |
+| `ux_measurement` | `true` / `false` | `false` | Si le client web envoie des échantillons de sa rapidité de réponse et si ce serveur les conserve ([mesures d’UX](error-reporting.md#ux-measurements)). Les échantillons ne portent ni compte, ni adresse, ni URL. Avec `false`, le serveur n’en prend aucun, et `ux_measurement` dans `GET /api/v1/instance` indique au client de ne pas en envoyer |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | S’il faut accepter les clients Client ID Metadata Document. Lorsque `true`, pour une demande d’autorisation dont le `client_id` est une URL `https`, le serveur récupère les métadonnées à cette URL et les traite comme le client (sans enregistrement préalable). La récupération ne suit aucune redirection, lit au plus 5 Ko et réutilise la réponse au plus 24 heures selon ses directives de cache. Lorsque `false`, il cesse de récupérer et refuse les demandes d’autorisation, les échanges de jetons et les actualisations de ces clients |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | Quelle part des coûts d’exploitation (enregistrés sur `/admin/finance/costs`, et définis sur `/admin/finance/publication`) publier. `private` : rien n’est publié (`GET /api/v1/instance/cost_totals` renvoie 404). `totals` : uniquement le total par période et par devise. `breakdown` : les totaux et une répartition par fournisseur et par catégorie, montrés à tout le monde sur les pages d’informations (`/about` et `/about/costs`) et dans l’API. `breakdown` révèle sur quel fournisseur (par exemple, quel cloud) vous fonctionnez. À chaque niveau, les noms des éléments, les mémos et les paiements individuels restent privés. Les périodes jusqu’à celle qui contient aujourd’hui (UTC) incluse sont publiées |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Si les utilisateurs ayant la permission `view_finance` voient les noms des éléments de coût et les noms de services des coûts importés sur l’écran des finances (`/finance`, `GET /api/v1/finance/cost_totals`). Les totaux et la répartition par fournisseur et par catégorie sont toujours montrés, quel que soit ce réglage |
@@ -491,49 +492,45 @@ modes. Une règle est le choix de l’opérateur, et elle s’applique en plus d
 - L’API d’administration est `/api/v1/admin/link_card_domains` (lister, définir ; un `DELETE` avec le domaine le supprime) et exige la permission de rôle `manage_settings`. Un serveur conserve au plus 1 000 règles, chacune avec une note d’au plus 5 000 caractères.
 - Chaque modification est enregistrée dans le journal d’audit (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme 380636a0e583 -->
+<!-- source: theme d3ebe5db33cb -->
 ## Thème
 
-Le thème du serveur est un ensemble de remplacements des jetons de conception du client web plus un élément optionnel de CSS (CSS personnalisé). Il
-s’applique au client web de chaque visiteur et aux écrans que rend le serveur (connexion, inscription, conditions, etc.), en
-clair comme en sombre.
+Le thème de tout le serveur est un ensemble de surcharges des jetons de design du client web, avec une valeur claire et une valeur sombre pour chaque couleur. Il s’applique au client web de chaque visiteur et aux écrans que le serveur affiche lui-même (connexion, inscription, conditions, etc.). Il n’y a pas de CSS personnalisé.
 
-- Vous pouvez remplacer chaque jeton de design sauf les couleurs primitives (`--palette-*`). Une couleur est `#rrggbb` pour le clair et pour le sombre
-  (`color-overlay` peut aussi être `#rrggbbaa`) ; les autres jetons prennent une valeur de la forme de leur type (longueur, nombre,
-  durée, courbe d’accélération, liste de noms de polices, ombre) dans sa plage. Lorsque vous remplacez `font-sans` ou `font-mono`, gardez
-  `"my Noto Color Emoji"` en premier ; sinon les émojis du client web sont dessinés avec la police du système.
-- Lorsque vous enregistrez, le serveur vérifie la forme et la plage des valeurs, le contraste de chaque paire de jetons de couleur (les jetons que vous ne
-  remplacez pas utilisent leurs valeurs par défaut ; WCAG 2.2 AA en clair comme en sombre) et la longueur du CSS personnalisé (64 Kio). Si une vérification
-  échoue, rien n’est enregistré.
-- Le serveur ne lit pas le CSS personnalisé. Il le place dans la même feuille de style après les règles de jetons, en dehors de tout `@layer`. Il s’exécute
-  sous la même CSP que le client web ; les images, polices et `@import` d’une autre origine ne peuvent donc pas être chargés.
-  **Le serveur ne vérifie pas les effets du CSS personnalisé (contraste, défilement horizontal, taille des cibles tactiles, indication du focus,
-  langues s’écrivant de droite à gauche) ; c’est la responsabilité de l’administrateur.** Les noms de classes et la structure des pages changent d’une
-  version à l’autre ; seuls les jetons sont donc stables.
-- Un thème est conservé sous forme de révisions (`instance_theme_revisions`), et la feuille de style de la révision courante est servie à
-  `/theme/{revision ID}.css` (`immutable`, mise en cache longtemps). L’enveloppe HTML a un cache partagé (60 secondes plus 300
-  secondes de revalidation) ; il faut donc quelques minutes après l’enregistrement pour que tout le monde l’obtienne. Une page déjà ouverte conserve
-  l’ancien aspect jusqu’à son rechargement.
-- `<meta name="theme-color">` (clair et sombre) dans l’enveloppe et `theme_color` / `background_color` (clair) du Web App
-  Manifest prennent la valeur du `color-surface` du thème.
-- Enregistrer une révision sans jetons et sans CSS personnalisé rétablit le thème par défaut, et la feuille de style n’est plus chargée.
-- Vous pouvez le modifier sur l’écran d’administration du client web (« Thème », `/admin/theme`), avec l’API client (`GET` / `PUT
-  /api/v1/admin/theme`) et avec la CLI. L’écran d’administration et l’API client exigent la permission de rôle `manage_settings`, et les
-  modifications sont enregistrées dans le journal d’audit (`setting_changed`, cible `theme`).
+- Vous pouvez surcharger ces jetons de design ; l’espacement, les tailles des composants, les graisses du texte, les ombres et les couleurs des graphiques de données restent fixes :
+
+  | Jetons | Nature | Surcharge |
+  | --- | --- | --- |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | couleur | `#rrggbb` pour le clair et pour le sombre |
+  | `font-sans-override`, `font-mono-override` | famille de polices | Noms de famille, séparés par des virgules (30 au plus), sans famille générique comme `sans-serif` ; mettez entre guillemets un nom contenant un mot qui commence par un chiffre, comme `"M PLUS 1p"` |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | longueur | `0` ou rem / px, de 0,625rem à 3rem |
+  | `text-*--line-height` des mêmes quatre | nombre | de 1 à 2,5 |
+  | `radius-control`, `radius-overlay` | longueur | de 0 à 2rem |
+  | `duration-spin` | durée | ms / s, de 0 à 1000ms |
+
+- Le client web dessine le texte avec ses propres polices : Noto Color Emoji pour les emoji, Noto Sans pour l’alphabet latin, le grec et le cyrillique, et Noto Sans CJK avec les glyphes de la langue du texte pour le reste. Les polices de `font-sans-override` (texte) et de `font-mono-override` (code) viennent juste après la police d’emoji, et les polices du client web dessinent les caractères que les vôtres n’ont pas. Un thème ne peut pas remplacer ces polices.
+- Vous enregistrez un ensemble comme brouillon, vous le prévisualisez, puis vous le publiez ; le thème en vigueur ne change qu’à la publication. Chaque enregistrement remplace tout le brouillon, et chaque publication est une nouvelle révision. La restauration publie de nouveau l’ensemble qui était en vigueur avant l’actuel et laisse le brouillon tel quel.
+- À l’enregistrement et à la publication, le serveur vérifie la forme et la plage des valeurs, ainsi que le contraste de chaque paire de jetons de couleur (les jetons que vous ne surchargez pas gardent leurs valeurs par défaut ; WCAG 2.2 AA en clair et en sombre). Si une vérification échoue, rien n’est enregistré ni publié.
+- La surcharge d’un jeton qu’une nouvelle version renomme ou retire, ou dont la valeur ne convient plus au jeton, ne fait jamais échouer une mise à niveau. Elle reste dans l’ensemble enregistré mais ne s’applique plus : l’API d’administration la liste sous `stale_tokens`, `my instance theme get` la nomme, et le prochain enregistrement du brouillon la supprime.
+- La feuille de style de la révision publiée est servie à `/theme/{revision ID}.css` (`immutable`, mise en cache longtemps). L’enveloppe HTML a un cache partagé (60 secondes plus 300 secondes de revalidation), donc il faut quelques minutes après la publication pour que tout le monde la reçoive. Une page déjà ouverte garde l’ancien aspect jusqu’à son rechargement.
+- `<meta name="theme-color">` (clair et sombre) dans l’enveloppe et `theme_color` / `background_color` (clair) du Web App Manifest prennent la valeur de `color-surface` du thème. Les e-mails utilisent les couleurs par défaut des jetons, quel que soit le thème.
+- Publier un ensemble sans jetons rétablit le thème par défaut, et la feuille de style n’est plus chargée.
+- Vous pouvez le modifier avec l’API client et avec la CLI. L’API client exige la permission de rôle `manage_settings` : `GET /api/v1/admin/theme` lit le brouillon et l’ensemble en vigueur, `PUT /api/v1/admin/theme/draft` enregistre le brouillon, `GET /api/v1/admin/theme/draft/stylesheet` renvoie la feuille de style du brouillon pour la prévisualiser, et `POST /api/v1/admin/theme/publish` et `POST /api/v1/admin/theme/restore` publient. Les publications sont consignées dans le journal d’audit (`setting_changed`, cible `theme`).
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
+  ]
 }
 ```
 

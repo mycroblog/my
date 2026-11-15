@@ -17,6 +17,7 @@ import { signIn } from "./seed/sign-in";
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
 type MediaAttachment = components["schemas"]["MediaAttachment"];
+type ThemeTokenValue = components["schemas"]["ThemeTokenValue"];
 
 /** A person a test made: a Person, and with two-factor authentication its secret and the step its enrollment used. */
 export type FreshPerson = Person & { totp?: { secret: string; step: number } };
@@ -30,6 +31,8 @@ export type FreshPersonOptions = {
   follows?: readonly Person[];
   /** The people who follow the person, accepted at once when the person is locked. */
   followedBy?: readonly Person[];
+  /** Keeps the administrator role that `my admin create` gives, for a test of the administrators' API. */
+  admin?: boolean;
 };
 
 /**
@@ -153,8 +156,9 @@ export class Fresh {
       ...(o.totp === true ? { twoFactor: true } : {}),
     };
     this.#o.runMy(["admin", "create", "-username", p.username, "-email", p.email], `${p.password}\n`);
-    // `my admin create` makes an administrator; a person of a test is none.
-    this.#o.runMy(["admin", "role", "revoke", p.username, "admin"]);
+    // `my admin create` makes an administrator; a person of a test is none unless it asks to be.
+    if (o.admin === true) p.staff = "admin";
+    else this.#o.runMy(["admin", "role", "revoke", p.username, "admin"]);
     const api = await this.#api(p);
     const { error } = await api.PATCH("/accounts/update_credentials", {
       body: { display_name: p.displayName, locked: o.locked === true },
@@ -216,6 +220,21 @@ export class Fresh {
   async deletion(author: Person, post: FreshPost): Promise<void> {
     const { error } = await (await this.#api(author)).DELETE("/statuses/{id}", { params: { path: { id: post.id } } });
     if (error !== undefined) throw new Error(`fresh: ${author.username} could not delete ${post.id}`);
+  }
+
+  /**
+   * The stylesheet of a draft of the instance theme with `tokens` overridden, which `admin` saves and the server would
+   * serve once published: an administrator applies it over a page to preview the draft. Nothing is published, so no
+   * other test sees the theme.
+   */
+  async themeDraftStylesheet(admin: FreshPerson, tokens: readonly ThemeTokenValue[]): Promise<string> {
+    if (admin.staff !== "admin") throw new Error(`fresh: ${admin.username} is no administrator`);
+    const api = await this.#api(admin);
+    const saved = await api.PUT("/admin/theme/draft", { body: { tokens: [...tokens] } });
+    if (saved.error !== undefined)
+      throw new Error(`fresh: the theme draft was refused: ${JSON.stringify(saved.error)}`);
+    const { data } = await api.GET("/admin/theme/draft/stylesheet", { parseAs: "text" });
+    return body(data, "the stylesheet of the theme draft");
   }
 
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */

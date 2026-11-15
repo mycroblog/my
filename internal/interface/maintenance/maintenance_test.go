@@ -36,7 +36,7 @@ func testPage() maintenance.Page {
 		ServerName: "social.example", Message: "Upgrading <the> database.", Until: now.Add(2 * time.Hour),
 		StatusPageURL: "https://status.example.org/",
 		Theme: maintenance.Theme{
-			Light: map[string]string{"color-surface": "#fcf9f6", "color-text": "#2e2e2e", "font-sans": `"Noto Sans", sans-serif`},
+			Light: map[string]string{"color-surface": "#fcf9f6", "color-text": "#2e2e2e", "font-sans-override": `"Noto Sans", Inter`},
 			Dark:  map[string]string{"color-surface": "#241f20", "color-text": "#f5ebea"},
 		},
 	}
@@ -212,7 +212,7 @@ func TestPageCSP(t *testing.T) {
 		!strings.Contains(csp, "default-src 'none'") || !strings.Contains(csp, "frame-ancestors 'none'") {
 		t.Errorf("CSP = %q, want style-src %s", csp, hash)
 	}
-	for _, want := range []string{"--color-surface:#fcf9f6;", "--color-surface:#241f20;", `--font-sans:"Noto Sans", sans-serif;`, "prefers-color-scheme: dark"} {
+	for _, want := range []string{"--color-surface:#fcf9f6;", "--color-surface:#241f20;", `--font-sans-override:"Noto Sans", Inter;`, "prefers-color-scheme: dark"} {
 		if !strings.Contains(m[1], want) {
 			t.Errorf("CSS lacks %s: %s", want, m[1])
 		}

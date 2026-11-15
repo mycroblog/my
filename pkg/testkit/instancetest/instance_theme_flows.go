@@ -5,10 +5,12 @@ package instancetest
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
@@ -23,6 +25,7 @@ var instanceThemeCases = []struct {
 	{"HasNoThemeUntilPublished", instanceHasNoTheme},
 	{"KeepsTheDraftApart", instanceKeepsTheThemeDraftApart},
 	{"RestoresThePreviousTheme", instanceRestoresThePreviousTheme},
+	{"PublishesSetsWithRetiredTokens", instancePublishesSetsWithRetiredTokens},
 	{"RejectsInvalidThemes", instanceRejectsInvalidThemes},
 	{"ThemeProjectionEqualsRebuild", instanceThemeProjectionEqualsRebuild},
 }
@@ -157,6 +160,40 @@ func instanceRestoresThePreviousTheme(t *testing.T, e *instanceEnv) {
 	e.clock.Advance(time.Second)
 	if again, err := e.service.RestoreTheme(t.Context(), ruleModerator); err != nil || again.SetID != b.ID {
 		t.Errorf("RestoreTheme again = %+v, %v; want set %s", again, err, b.ID)
+	}
+}
+
+// instancePublishesSetsWithRetiredTokens publishes and restores a set stored before an upgrade
+// retired some of its overrides (font-sans and font-mono, an override the font check now refuses):
+// they are left out of the theme, never carried over, and never fail the publication.
+func instancePublishesSetsWithRetiredTokens(t *testing.T, e *instanceEnv) {
+	old := instance.ThemeSet{
+		ID: e.ids.NewID(), SavedByUserID: ruleModerator, SavedAt: e.clock.Now(),
+		Tokens: []instance.ThemeTokenValue{{Token: "radius-control", Value: "2px"}},
+		Stale: []instance.StaleOverride{
+			{ThemeTokenValue: instance.ThemeTokenValue{Token: "font-sans", Value: `"Noto Sans JP", sans-serif`}, Reason: instance.ThemeUnknownToken},
+			{ThemeTokenValue: instance.ThemeTokenValue{Token: "font-mono", Value: `"Fira Code", monospace`}, Reason: instance.ThemeUnknownToken},
+			{ThemeTokenValue: instance.ThemeTokenValue{Token: "font-sans-override", Value: "M PLUS 1p"}, Reason: instance.ThemeInvalidValue}, //nolint:gosec // a design token, not a credential
+		},
+	}
+	if err := e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		return errors.Join(e.h.Instance.InsertThemeSet(t.Context(), tx, old), e.h.Instance.UpsertThemeDraftHead(t.Context(), tx, old.ID))
+	}); err != nil {
+		t.Fatal(err)
+	}
+	wantTokens := []instance.ThemeTokenValue{{Token: "radius-control", Value: "2px"}}
+	if rev := e.publishTheme(t); rev.SetID != old.ID || !reflect.DeepEqual(rev.Set.Tokens, wantTokens) {
+		t.Errorf("PublishTheme(old draft) = %+v, want set %s with %+v", rev, old.ID, wantTokens)
+	}
+	e.saveThemeDraft(t, instance.ThemeTokenValue{Token: "radius-control", Value: "3px"})
+	e.publishTheme(t)
+	e.clock.Advance(time.Second)
+	restored, err := e.service.RestoreTheme(t.Context(), ruleModerator)
+	if err != nil || restored.SetID != old.ID || !reflect.DeepEqual(restored.Set.Tokens, wantTokens) {
+		t.Fatalf("RestoreTheme = %+v, %v; want set %s with %+v", restored, err, old.ID, wantTokens)
+	}
+	if css := string(restored.Stylesheet()); strings.Contains(css, "font") {
+		t.Errorf("the restored stylesheet carries a retired override:\n%s", css)
 	}
 }
 
