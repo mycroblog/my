@@ -276,15 +276,15 @@
     "description": "In the line under a poll whose number of voters is unknown (from some servers): how many votes it has, one per chosen option. count is how many."
   },
   "post.poll_ends": {
-    "defaultMessage": "{time}に締め切り",
+    "defaultMessage": "{time}に締切",
     "description": "In the line under a poll that has not ended: when it ends. time is a short relative time such as 'in 2d' / '2日後'. The same verb as the composer's duration (compose.poll.ends_in)."
   },
   "post.poll_ended": {
-    "defaultMessage": "締め切りました",
+    "defaultMessage": "締切済み",
     "description": "In the line under a poll that has ended and takes no more votes."
   },
   "post.poll_hidden": {
-    "defaultMessage": "票数は締め切り後に表示",
+    "defaultMessage": "票数は締切後に表示",
     "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
   },
   "post.poll_mine": {

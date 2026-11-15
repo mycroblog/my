@@ -180,7 +180,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.poll_closed": {
-    "defaultMessage": "参加した投票が終了しました",
+    "defaultMessage": "参加した投票が締切を迎えました",
     "description": "The sentence of a notification in the reader's list of notifications: a poll that the user created or voted in has ended. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.quote": {

@@ -554,13 +554,13 @@ describe("the poll", () => {
     const open = pollOf({ status: withPoll({ multiple: true, voters_count: undefined }) }, "ja");
     expect(open).toContain('<div role="group" aria-label="投票">');
     expect(open).toContain('aria-label="選択肢"');
-    expect(open).toMatch(/複数選べます.* · .*4票.* · .*2日後に締め切り/);
+    expect(open).toMatch(/複数選べます.* · .*4票.* · .*2日後に締切/);
     expect(open).toMatch(/<span>投票する<\/span><\/button>/);
     const ended = pollOf({ status: withPoll({ expired: true, voted: true, own_votes: [0] }) }, "ja");
-    expect(ended).toMatch(/4人が投票.* · .*締め切りました/);
+    expect(ended).toMatch(/4人が投票.* · .*締切済み/);
     expect(ended).toMatch(/Sourdough<span>[^<]*自分の投票[^<]*<\/span><\/span><span>75%/);
     const hidden = pollOf({ status: withPoll({ options: [{ title: "A" }, { title: "B" }] }), own: true }, "ja");
-    expect(hidden).toContain("票数は締め切り後に表示");
+    expect(hidden).toContain("票数は締切後に表示");
   });
 });
 

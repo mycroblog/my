@@ -480,7 +480,7 @@
     "description": "Detail of the HTTP 409 API error when a user votes in a poll that an edit of the post replaced."
   },
   "errors.status.poll_closed": {
-    "defaultMessage": "この投票は締め切られました。",
+    "defaultMessage": "この投票は締切済みです。",
     "description": "Detail of the HTTP 422 API error when a user votes in a poll whose end has passed."
   },
   "errors.status.poll_invalid": {

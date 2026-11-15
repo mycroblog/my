@@ -116,7 +116,7 @@ test.describe("in Japanese", () => {
     });
     await page.goto("/local");
     const post = localTimeline(page, "ローカルタイムライン").post(author.displayName, text);
-    await expect(post.pollLine("投票")).toHaveText(/^0人が投票 · .+に締め切り$/);
+    await expect(post.pollLine("投票")).toHaveText(/^0人が投票 · .+に締切$/);
     await expect(post.poll("投票").getByRole("button", { name: "投票する", exact: true })).toBeVisible();
   });
 });
