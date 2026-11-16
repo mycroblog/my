@@ -36,7 +36,7 @@ Under "Notifications" in the settings you choose, for each kind of notification,
 "Push", by "Email", or with "Sound". A kind that you turn off in the app is not created at all, so it reaches you in no
 other way either.
 
-- **Push**: choose "Notify me on this device" to get notifications on this device even while the app is closed. Your browser asks for permission first. On an iPhone or iPad, add the site to the Home Screen and open it from there.
+- **Push**: "Turn on" over your notifications gets them on this device even while the app is closed. Your browser asks for permission first. On an iPhone or iPad, add the site to the Home Screen and open it from there.
 - **Sound**: "Play a sound for new notifications" plays a sound on this device while the app is open.
 - **Email**: only on servers that send email. The link at the bottom of a notification email stops the emails of that kind ("Stop these emails"); the notifications still appear in the app. If emails to your address bounce or are marked as spam, the settings page says so ("Email delivery") and explains how to start receiving them again.
 
