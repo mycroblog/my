@@ -2,9 +2,9 @@
 
 // The reader's lists, which the menu leads to, a list's timeline and its members: a story per state every screen is
 // shown in (app.samples.tsx), of each; a list deleted; the minimum width and right to left; and managing them (#3124):
-// a list made in place and refused at the limit of lists, renamed, its deletion's confirmation, an account added to
-// its members and refused at the limit of members, and Add to list on a profile, for an account the reader follows and
-// one they do not.
+// a list made in place and refused at the limit of lists, renamed, its deletion confirmed, an account added to its
+// members and refused at the limit of members, a member removed, and Add to list on a profile, for an account the
+// reader follows (and a list checked there) and one they do not.
 
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -109,6 +109,36 @@ export const Renaming: Story = {
   },
 };
 
+/** A new name saved: the list's title says it, the field gone. */
+export const Renamed: Story = {
+  globals: en,
+  parameters: screen({ at: list }),
+  play: async (context) => {
+    const { main } = await fromMenu(context, "Rename");
+    const field = await main.findByRole("textbox", { name: "List name" });
+    await userEvent.clear(field);
+    await userEvent.type(field, "Bakers");
+    await userEvent.click(main.getByRole("button", { name: "Save" }));
+    await expect(await main.findByRole("heading", { level: 1, name: "Bakers" })).toBeVisible();
+    await waitFor(() => expect(main.queryByRole("textbox", { name: "List name" })).toBeNull());
+  },
+};
+
+/** The deletion confirmed: back on the index, which no longer holds the list. */
+export const Deleted: Story = {
+  globals: en,
+  parameters: screen({ at: list }),
+  play: async (context) => {
+    const { main, page } = await fromMenu(context, "Delete list…");
+    const confirm = await page.findByRole("alertdialog", { name: "Delete the list Bread and coffee?" });
+    await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
+    await expect(await main.findByRole("heading", { level: 1, name: "Lists" })).toBeVisible();
+    const index = await main.findByRole("navigation", { name: "Your lists" });
+    await expect(within(index).getByRole("link", { name: /^翻訳の仲間 \d+ members?$/ })).toBeVisible();
+    await expect(within(index).queryByRole("link", { name: /^Bread and coffee \d+ members?$/ })).toBeNull();
+  },
+};
+
 /** Delete list… chosen from the list's menu: its confirmation over the page. */
 export const DeleteConfirm: Story = {
   globals: en,
@@ -157,6 +187,28 @@ export const MembersLimit: Story = {
   },
 };
 
+/** Sam removed from the first list's members: gone from them, and the count down to one. */
+export const MembersRemoving: Story = {
+  globals: en,
+  parameters: screen({ at: "members:0" }),
+  play: async (context) => {
+    const { main } = await screenOf(context);
+    const sam = await main.findByRole("link", { name: /Sam Rivera/ });
+    // Each member's Remove is named Remove alone: Sam's is the one whose row, the nearest box around it with a link,
+    // holds Sam's.
+    const remove = main.getAllByRole("button", { name: "Remove" }).find((button) => {
+      let row = button.parentElement;
+      while (row !== null && row.querySelector("a") === null) row = row.parentElement;
+      return row?.contains(sam) === true;
+    });
+    if (remove === undefined) throw new Error("no Remove beside Sam");
+    await userEvent.click(remove);
+    await waitFor(() => expect(main.queryByRole("link", { name: /Sam Rivera/ })).toBeNull());
+    await expect(main.getByText("1 member")).toBeVisible();
+    await expect(main.getByRole("link", { name: /Hana 花/ })).toBeVisible();
+  },
+};
+
 /** Opens the profile's menu, and Add to list when `into`. */
 async function profileMenu(context: StoryContext, into: boolean) {
   const { main, page } = await screenOf(context);
@@ -178,6 +230,24 @@ export const AddToListFollowed: Story = {
         "aria-checked",
         "true",
       ),
+    );
+    await risen(menu);
+  },
+};
+
+/** A list that did not hold sam checked in Add to list: it holds sam at once, the submenu still open. */
+export const AddToListAdding: Story = {
+  globals: en,
+  parameters: screen({ at: "/@sam" }),
+  play: async (context) => {
+    const { menu } = await profileMenu(context, true);
+    const translators = await within(menu).findByRole("menuitemcheckbox", { name: "翻訳の仲間" });
+    await expect(translators).toHaveAttribute("aria-checked", "false");
+    await userEvent.click(translators);
+    await waitFor(() => expect(translators).toHaveAttribute("aria-checked", "true"));
+    await expect(within(menu).getByRole("menuitemcheckbox", { name: "Bread and coffee" })).toHaveAttribute(
+      "aria-checked",
+      "true",
     );
     await risen(menu);
   },

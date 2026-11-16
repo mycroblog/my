@@ -93,6 +93,28 @@ export class Profile {
     });
   }
 
+  /** The checkbox of the reader's list `name` in the submenu Add to list, checked while the list holds the person. */
+  listChoice(name: string): Locator {
+    return this.page
+      .getByRole("menu", { name: "Add to list", exact: true })
+      .getByRole("menuitemcheckbox", { name, exact: true });
+  }
+
+  /**
+   * Puts the person in the reader's list `name` from the card's More, Add to list, and returns once the server has
+   * answered, the submenu still open.
+   */
+  async addToList(name: string): Promise<void> {
+    await this.card.getByRole("button", { name: "More", exact: true }).click();
+    await this.page
+      .getByRole("menu", { name: "More", exact: true })
+      .getByRole("menuitem", { name: "Add to list", exact: true })
+      .click();
+    await answered(this.page, { methods: ["POST"], path: /\/lists\/[^/]+\/accounts\/[^/]+$/ }, async () => {
+      await this.listChoice(name).click();
+    });
+  }
+
   /** The tabs of the profile's posts, in their order. */
   get tabs(): Locator {
     return this.page
