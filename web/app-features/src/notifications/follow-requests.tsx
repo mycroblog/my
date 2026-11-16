@@ -13,6 +13,7 @@ import {
   useAnswerFollowRequest,
   useFollowRequestCount,
   useFollowRequests,
+  useStillAsking,
   useRelationship,
   type Account,
   type AppData,
@@ -116,6 +117,8 @@ export function FollowRequests({ onBack }: { onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
   const requests = useFollowRequests();
   const { items, status } = requests;
+  // The title counts those that still wait: one answered here leaves the count, though its row stays.
+  const asking = useStillAsking(items);
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("notifications.retry")}</TextButton>;
   const failedMore = status === "success" && requests.error !== null && !requests.isFetchingNextPage;
   const end =
@@ -140,7 +143,7 @@ export function FollowRequests({ onBack }: { onBack: () => void }) {
     <ScreenStack busy={status === "pending"}>
       <ScreenTitle
         glyph="follow"
-        count={status === "success" && items.length > 0 ? String(items.length) : undefined}
+        count={status === "success" && asking > 0 ? String(asking) : undefined}
         back={<BackButton onPress={onBack}>{t("notifications.label")}</BackButton>}
       >
         {t("notifications.follow_requests")}

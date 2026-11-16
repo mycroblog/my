@@ -2,8 +2,8 @@
 // The follow requests to the reader (FR-302), newest first: how many wait (the first page's), and the list a page at a
 // time, each page with the reader's relationships with its accounts, by which a request answered here shows the answer
 // (no longer requested; followed by the account once approved) where it stood.
-import { useQuery } from "@tanstack/react-query";
-import { cacheRelationship, type Account } from "./accounts";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { cacheRelationship, relationshipQuery, type Account } from "./accounts";
 import type { AppData } from "./app-data";
 import { readRelationships } from "./follows";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
@@ -61,6 +61,18 @@ export function useFollowRequestCount(): number | undefined {
 /** The follow requests, newest first, those answered here staying in place. */
 export function useFollowRequests(): PagedList<Account> {
   return usePagedList(followRequestsQuery(useAppData()));
+}
+
+/**
+ * How many of `accounts` (the requests listed) still ask, by the relationships their pages brought: one answered here
+ * no longer does.
+ */
+export function useStillAsking(accounts: readonly Account[]): number {
+  const data = useAppData();
+  return useQueries({
+    queries: accounts.map((a) => ({ ...relationshipQuery(data, a.id), enabled: false })),
+    combine: (results) => results.filter((r) => r.data?.items[0]?.requested_by !== false).length,
+  });
 }
 
 /** Approves (`accept`) or declines the follow request of the account of `id`, from a screen. */
