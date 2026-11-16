@@ -61,8 +61,6 @@ export type NotificationTarget = {
   readonly account?: Handle | undefined;
   readonly account_move?: { readonly target?: Handle | undefined } | undefined;
   readonly announcement?: { readonly id: string } | undefined;
-  readonly event_id?: string | undefined;
-  readonly voice_room_id?: string | undefined;
 };
 
 const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request", "quote_request"]);
@@ -70,16 +68,18 @@ const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request",
 /**
  * Where a notification leads, the one place that decides it for every list of them: what waits for the reader's
  * approval for a request to reply, boost or quote; the follow requests for one; the post it is about; the account an
- * account moved to; the announcement, the event or the room; the account that acted; else the notifications.
+ * account moved to; the announcement; the account that acted; else the notifications. An event's and a voice chat
+ * room's lead to the notifications until the client has their screens.
  */
 export function notificationPath(n: NotificationTarget): string {
   if (requests.has(n.type)) return waitingPath;
+  // The events domain adds /events/{id}, and the voice domain /voice/{id}, of the redesign; until then the
+  // notifications of an event and of a room lead nowhere else, rather than to a screen the client lacks.
+  if (n.type.startsWith("event_") || n.type.startsWith("voice_room_")) return "/notifications";
   if (n.type === "follow_request") return followRequestsPath;
   if (n.status !== undefined) return statusPath(n.status);
   if (n.type === "account_moved" && n.account_move?.target !== undefined) return accountPath(n.account_move.target);
   if (n.announcement !== undefined) return `/announcements/${n.announcement.id}`;
-  if (n.event_id !== undefined) return `/events/${n.event_id}`;
-  if (n.voice_room_id !== undefined) return `/voice/${n.voice_room_id}`;
   if (n.account !== undefined) return accountPath(n.account);
   return "/notifications";
 }

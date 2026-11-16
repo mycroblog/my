@@ -168,7 +168,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that boosted the user's post. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.favourite": {
-    "defaultMessage": "{name}さんがあなたの投稿をお気に入りに登録しました",
+    "defaultMessage": "{name}さんがあなたの投稿をお気に⁠入りに登録しました",
     "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that favourited the user's post. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.follow": {
@@ -404,7 +404,7 @@
     "description": "What the screen of one account's held-back notifications says when it holds none (they were answered elsewhere, or about posts gone)."
   },
   "notifications.held_gone": {
-    "defaultMessage": "この人からの保留中の通知はありません。",
+    "defaultMessage": "この人からの保留中の通知は、いまはありません。",
     "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
   }
 }

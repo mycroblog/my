@@ -375,8 +375,11 @@ export function RowItem({ children }: { children: ReactNode }) {
 
 const account = tv({
   slots: {
-    root: "flex items-center gap-screen-row-gap",
-    who: "grid min-w-0 flex-1 gap-entry-line",
+    // What the reader may do goes under the name, at the end, where beside it the name and the handle would keep less
+    // than 12rem (a 320 px row with two buttons), so that the handle stays readable.
+    root: "flex flex-wrap items-center gap-screen-row-gap",
+    who: "grid min-w-0 flex-[1_1_12rem] gap-entry-line",
+    end: "ms-auto",
     // A line under the byline at the name's start (how many notifications an account's request holds).
     note: "m-0 ps-[calc(var(--avatar-post)+var(--entry-avatar-gap))] text-caption text-muted-text",
   },
@@ -410,7 +413,11 @@ export function AccountRow({
         <Byline avatar={avatar} name={accountName} handle={handle} href={href} />
         {note !== undefined && <p className={s.note()}>{note}</p>}
       </div>
-      {end !== undefined && <ButtonPair>{end}</ButtonPair>}
+      {end !== undefined && (
+        <div className={s.end()}>
+          <ButtonPair>{end}</ButtonPair>
+        </div>
+      )}
     </div>
   );
 }
