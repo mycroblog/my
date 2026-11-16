@@ -44,6 +44,7 @@ export {
 export { LatestNotifications } from "./notifications/latest";
 export { loadNotifications, Notifications } from "./notifications/notifications";
 export { loadWaitingRequests, WaitingRequests } from "./notifications/waiting";
+export { FollowRequests, loadFollowRequests } from "./notifications/follow-requests";
 export { PostActions, type ComposeRequest } from "./post-actions";
 export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTranslationState } from "./post-translation";
 export { Follows, loadFollows } from "./profile/follows";

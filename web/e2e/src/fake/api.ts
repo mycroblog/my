@@ -205,6 +205,11 @@ export type FakeOptions = {
   approvals?: boolean;
   /** The lists of an account's follows and followers fail (`fails`, a 500) or never answer (`waits`). */
   followsLists?: "fails" | "waits";
+  /**
+   * The follow requests to the reader: those of the scenario (sam's to ren) and, after them, of the people named in
+   * `from`, the last the newest; their list fails (`fails`, a 500) or never answers (`waits`).
+   */
+  followRequests?: { from?: readonly string[]; answer?: "fails" | "waits" };
   /** The reader's private notes on people at the start, by username. */
   notes?: Readonly<Record<string, string>>;
   /** The people whose new posts notify the reader at the start. */
@@ -397,6 +402,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     if (personOf(f.followee).locked === true && f.accepted !== true) requested.add(edge);
     else following.add(edge);
   }
+  for (const from of o.followRequests?.from ?? []) requested.add(`${personOf(from).username}>${viewer}`);
   const blocking = new Set(restrictions.filter((r) => r.kind === "block").map((r) => `${r.by}>${r.target}`));
   const muting = new Set(restrictions.filter((r) => r.kind === "mute").map((r) => `${r.by}>${r.target}`));
   const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
@@ -2403,6 +2409,19 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         blurhash: drawingBlurhash(image.drawing),
         meta: { width, height, focus: { x: 0, y: 0 } },
       });
+    }
+    if (path === "/follow_requests") {
+      // The accounts that ask to follow the reader, newest first.
+      if (o.followRequests?.answer === "waits") return new Promise<Response>(() => undefined);
+      if (o.followRequests?.answer === "fails") return problem(500, "Internal Server Error");
+      const asking = [...requested]
+        .toReversed()
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([, to]) => to === viewer)
+        .map(([from]) => accountOf(from));
+      const { from, body } = page(asking, q);
+      if (from > 0) await late();
+      return json(body);
     }
     if ((match = m(/^\/follow_requests\/([^/]+)\/(accept|reject)$/))) {
       const other = usernameOf.get(decodeURIComponent(match[1] ?? ""));

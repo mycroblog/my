@@ -35,16 +35,17 @@ export class Notifications {
     return this.notification(`${from} requested to follow you`);
   }
 
-  /** The button of the follow request of `from` that accepts it; gone once the request is decided. */
-  acceptButton(from: string): Locator {
-    return this.followRequest(from).getByRole("button", { name: "Accept", exact: true });
+  /** The row over the notifications that counts the follow requests ("1 follow request"), a link to their screen. */
+  followRequestsRow(count: number): Locator {
+    return this.page
+      .getByRole("main")
+      .getByRole("link", { name: `${String(count)} follow ${count === 1 ? "request" : "requests"}`, exact: true });
   }
 
-  /** Accepts the follow request of `from`, and returns once the server has answered. */
-  async accept(from: string): Promise<void> {
-    await answered(this.page, { methods: ["POST"], path: /\/follow_requests\/[^/]+\/accept$/ }, async () => {
-      await this.acceptButton(from).click();
-    });
+  /** Opens the screen of the follow requests from the row that counts `count` of them. */
+  async openFollowRequests(count: number): Promise<FollowRequests> {
+    await this.followRequestsRow(count).click();
+    return new FollowRequests(this.page);
   }
 
   /**
@@ -61,6 +62,45 @@ export class Notifications {
   async openWaiting(count: number): Promise<WaitingRequests> {
     await this.waitingRow(count).click();
     return new WaitingRequests(this.page);
+  }
+}
+
+/**
+ * The screen of the follow requests, under Notifications: each account that asks, a row with its name, and Decline and
+ * Approve until it is answered, its answer after. A fresh person has one request at a time here.
+ */
+export class FollowRequests {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  get heading(): Locator {
+    return this.page.getByRole("main").getByRole("heading", { level: 2, name: "Follow requests", exact: true });
+  }
+
+  /** The name of `from` (a display name) on its request's row, a link to their profile. */
+  requester(from: string): Locator {
+    return this.page.getByRole("main").getByRole("link", { name: from });
+  }
+
+  /** The button that answers the one request on the screen; gone once it is answered. */
+  button(name: "Approve" | "Decline"): Locator {
+    return this.page.getByRole("main").getByRole("button", { name, exact: true });
+  }
+
+  /** What the reader answered, in place of the buttons. */
+  answer(said: "Approved" | "Declined"): Locator {
+    return this.page.getByRole("main").getByText(said, { exact: true });
+  }
+
+  /** Approves (`Approve`) or declines (`Decline`) the one request, and returns once the server has answered. */
+  async decide(name: "Approve" | "Decline"): Promise<void> {
+    const path = /\/follow_requests\/[^/]+\/(?:accept|reject)$/;
+    await answered(this.page, { methods: ["POST"], path }, async () => {
+      await this.button(name).click();
+    });
   }
 }
 

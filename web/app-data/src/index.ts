@@ -194,11 +194,17 @@ export {
   type InteractionRequest,
 } from "./approvals";
 export {
+  followRequestCountQuery,
+  followRequestsQuery,
+  useAnswerFollowRequest,
+  useFollowRequestCount,
+  useFollowRequests,
+} from "./follow-requests";
+export {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
   receiveNotification,
-  useAnswerRequest,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,

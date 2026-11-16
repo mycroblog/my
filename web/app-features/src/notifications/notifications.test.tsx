@@ -23,6 +23,7 @@ const answers = {
   "/notifications/requests/summary": { accounts_count: 3, notifications_count: 5 },
   "/accounts/relationships": { items: [{ id: "takuya", requested_by: true }] },
   "/interaction_requests": { items: [] },
+  "/follow_requests": { items: [account("takuya")] },
 };
 
 async function shown(locale = "en") {
@@ -31,13 +32,14 @@ async function shown(locale = "en") {
   return { html: render(data, <Notifications instance="my.example" />, locale), requests };
 }
 
-test("the loader reads the notifications, the read marker, the count of the requests and what waits for approval", async () => {
+test("the loader reads the notifications, the read marker, the count of the requests, what waits for approval and the follow requests", async () => {
   const { requests } = await shown();
   expect(requests).toEqual([
     "GET /notifications",
     "GET /notifications/marker",
     "GET /notifications/requests/summary",
     "GET /interaction_requests",
+    "GET /follow_requests",
   ]);
 });
 
@@ -66,15 +68,15 @@ test("over the list, the tabs, mark-all-read, and the row of the requests", asyn
   expect(html).toContain("5 held-back notifications · from 3 people");
 });
 
-test("a follow request asks to accept, its refusal beside it", async () => {
+test("a row over the list counts the follow requests and opens their screen; a request's notification has no buttons", async () => {
   const { data } = server(answers);
   await loadNotifications(data);
   await data.queryClient.query(
     data.queries.queryOptions("get", "/accounts/relationships", { params: { query: { id: ["takuya"] } } }),
   );
   const html = render(data, <Notifications instance="my.example" />);
-  expect(html.indexOf(">Decline<")).toBeGreaterThan(0);
-  expect(html.indexOf(">Decline<")).toBeLessThan(html.indexOf(">Accept<"));
+  expect(html).toMatch(/href="\/notifications\/follow_requests"[^>]*>.*1 follow request/);
+  expect(html).not.toContain(">Decline<");
 });
 
 test("over the list, a row counts what waits for the reader's approval; a request's notification has no buttons", async () => {

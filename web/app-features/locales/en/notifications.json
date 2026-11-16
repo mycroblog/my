@@ -55,10 +55,6 @@
     "defaultMessage": "Mark all as read",
     "description": "The button over the notifications that marks every notification read."
   },
-  "notifications.accept": {
-    "defaultMessage": "Accept",
-    "description": "The button of a follow request notification that lets the account follow the reader."
-  },
   "notifications.approve": {
     "defaultMessage": "Approve",
     "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."
@@ -86,10 +82,6 @@
   "notifications.requested": {
     "defaultMessage": "Requested",
     "description": "What a notification says, in place of its follow button, of an account whose approval the reader's follow request awaits."
-  },
-  "notifications.accepted": {
-    "defaultMessage": "Accepted",
-    "description": "What a follow request's notification says once the reader accepted it (notifications.accept)."
   },
   "notifications.approved": {
     "defaultMessage": "Approved",

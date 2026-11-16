@@ -12,9 +12,9 @@
 import type { components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
-import { cacheRelationship } from "./accounts";
 import type { AppData } from "./app-data";
 import { receiveInteractionRequests } from "./approvals";
+import { receiveFollowRequests } from "./follow-requests";
 import { pagedQuery, usePagedList, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
 import { useShadow } from "./shadow";
@@ -182,6 +182,7 @@ export function receiveNotification(data: AppData, notification?: NotificationIt
   const fetching = (queryKey: readonly unknown[]) =>
     queryClient.getQueryCache().find({ queryKey, exact: true })?.state.fetchStatus === "fetching";
   if (notification !== undefined && requestTypes.has(notification.type)) receiveInteractionRequests(data);
+  if (notification?.type === "follow_request") receiveFollowRequests(data);
   if (notification !== undefined) {
     for (const { filter, queryKey } of lists(data)) {
       const types = filters[filter];
@@ -219,21 +220,8 @@ export function receiveNotificationGap(data: AppData): void {
   void queryClient.invalidateQueries({ queryKey: notificationMarkerQuery(data).queryKey, exact: true });
   void queryClient.invalidateQueries({ queryKey: notificationRequestSummaryQuery(data).queryKey, exact: true });
   receiveInteractionRequests(data);
+  receiveFollowRequests(data);
   for (const { queryKey } of lists(data)) void queryClient.invalidateQueries({ queryKey, exact: true });
-}
-
-// ---- The writes of the requests ------------------------------------------------------------------------------------
-
-/**
- * Answers the follow request of the account of `id`, and resolves once the cache holds the relationship the server
- * answered. It rejects with the server's problem.
- */
-async function answerFollowRequest(data: AppData, id: string, accept: boolean): Promise<void> {
-  const path = { params: { path: { id } } };
-  const { data: relationship } = accept
-    ? await data.api.POST("/follow_requests/{id}/accept", path)
-    : await data.api.POST("/follow_requests/{id}/reject", path);
-  if (relationship !== undefined) await cacheRelationship(data, relationship);
 }
 
 // ---- The hooks -----------------------------------------------------------------------------------------------------
@@ -316,17 +304,4 @@ export function useNotificationReads(): NotificationReads {
 /** How many notification requests wait; undefined until the server answered. */
 export function useNotificationRequestSummary(): NotificationRequestSummary | undefined {
   return useQuery(notificationRequestSummaryQuery(useAppData())).data;
-}
-
-/**
- * The answers of the requests a notification carries, from a screen: a follow request's. Those of the requests to
- * reply, boost and quote are given on their own screen (approvals.ts).
- */
-export function useAnswerRequest(): {
-  readonly follow: (accountId: string, accept: boolean) => Promise<void>;
-} {
-  const data = useAppData();
-  return {
-    follow: (accountId, accept) => answerFollowRequest(data, accountId, accept),
-  };
 }

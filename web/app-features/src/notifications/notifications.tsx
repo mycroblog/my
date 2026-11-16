@@ -4,10 +4,10 @@
 // tabs (all, or the mentions) with mark-all-read at the row's end, then, under all, the row of the requests the
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
 // read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). Over them all, a row
-// counts what waits for the reader's approval and opens its screen (waiting.tsx), where those are answered: their
-// notifications here are plain lines. The affirmative answer of a notification that asks for one (follow back, accept)
-// is the primary button, its refusal a plain one; that of a scheduled post that could not be published opens its draft
-// in the composer.
+// counts the follow requests and opens their screen (follow-requests.tsx), and one under it what waits for the reader's
+// approval (waiting.tsx), where those are answered: their notifications here are plain lines. A notification that
+// asks for an answer of its own (follow back) has it as the primary button; that of a scheduled post that could not be
+// published opens its draft in the composer.
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
@@ -16,7 +16,6 @@ import {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
-  useAnswerRequest,
   useChangeRelationship,
   useNotificationReads,
   useNotificationRequestSummary,
@@ -49,6 +48,7 @@ import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } 
 import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
+import { FollowRequestsRow, loadFollowRequestCount } from "./follow-requests";
 import { loadWaitingCount, WaitingRow } from "./waiting";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -67,6 +67,7 @@ export async function loadNotifications(data: AppData): Promise<void> {
     queryClient.query({ ...notificationMarkerQuery(data), staleTime: Infinity }),
     queryClient.query({ ...notificationRequestSummaryQuery(data), staleTime: Infinity }),
     loadWaitingCount(data),
+    loadFollowRequestCount(data),
   ]).catch(() => undefined);
 }
 
@@ -110,61 +111,6 @@ function FollowButton({ id, label, t }: { id: string; label: string; t: T }) {
   );
 }
 
-/** The answers of a request: its refusal, then its confirmation; once answered, what the reader answered. */
-function Answers({
-  answer,
-  open,
-  t,
-  accept,
-}: {
-  answer: (accept: boolean) => Promise<void>;
-  open: boolean;
-  t: T;
-  accept: string;
-}) {
-  const [busy, press] = usePress();
-  const [answered, setAnswered] = useState<boolean | undefined>(undefined);
-  if (answered !== undefined)
-    return <StateText>{t(answered ? "notifications.accepted" : "notifications.declined")}</StateText>;
-  if (!open) return null;
-  const on = (yes: boolean) => () => {
-    press(async () => {
-      await answer(yes);
-      setAnswered(yes);
-    });
-  };
-  return (
-    <>
-      <Button size="timeline" isDisabled={busy} onPress={on(false)}>
-        {t("notifications.decline")}
-      </Button>
-      <Button size="timeline" kind="primary" busy={busy} onPress={on(true)}>
-        {accept}
-      </Button>
-    </>
-  );
-}
-
-function FollowRequest({ n, t }: { n: NotificationItem; t: T }) {
-  const id = n.account?.id ?? "";
-  const relationship = useRelationship(id);
-  const answer = useAnswerRequest();
-  if (n.account === undefined) return null;
-  return (
-    <AccountLine
-      account={n.account}
-      end={
-        <Answers
-          open={relationship?.requested_by ?? false}
-          answer={(yes) => answer.follow(id, yes)}
-          t={t}
-          accept={t("notifications.accept")}
-        />
-      }
-    />
-  );
-}
-
 /** What the reader may do with a notification of its kind, under its line. */
 function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {
   switch (n.type) {
@@ -177,8 +123,6 @@ function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {
           />
         )
       );
-    case "follow_request":
-      return <FollowRequest n={n} t={t} />;
     case "account_moved": {
       const target = n.account_move?.target;
       return (
@@ -333,6 +277,7 @@ export function Notifications({ instance }: { instance: string }) {
         }
       >
         <ScreenStack>
+          <FollowRequestsRow t={t} />
           <WaitingRow t={t} />
           {filter === "all" && <Requests t={t} />}
           <List filter={filter} t={t} instance={instance} />

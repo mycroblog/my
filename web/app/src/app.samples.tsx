@@ -301,9 +301,10 @@ function shows(
       return settled && canvas.querySelectorAll("article > p > button").length >= 2;
     default:
       // A list of who reacted shows a row per account, each a link to its profile; the reader's lists, a row per list;
-      // a screen of posts, its posts. An account's list of follows shows its rows, or that its owner keeps it.
+      // a screen of posts, its posts. An account's list of follows, and the follow requests, show their rows, or that
+      // the owner keeps the list.
       if (at === "/lists") return settled && has('main a[href^="/lists/"]');
-      if (/\/follow(?:ers|ing)$/.test(at)) return settled && has('main a[href^="/@"], main p[role="status"]');
+      if (/\/follow(?:ers|ing|_requests)$/.test(at)) return settled && has('main a[href^="/@"], main p[role="status"]');
       // A list the server has no longer says so, and so does the profile of an account that is not there.
       if (at === "/lists/gone") return has('main p[role="status"]');
       if (at === "/@nao") return settled && has('main p[role="status"]');

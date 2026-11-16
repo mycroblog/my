@@ -41,7 +41,7 @@ export { streamOpened } from "./stream";
 export { Landing, type LandingPlace } from "./landing";
 export { MediaViewer } from "./media";
 export { Moved } from "./moved";
-export { Notifications, WaitingRequests } from "./notifications";
+export { FollowRequests, Notifications, WaitingRequests } from "./notifications";
 export { heldAccountReads, Profile } from "./profile";
 export { Reactors } from "./reactors";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
