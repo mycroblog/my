@@ -259,6 +259,36 @@ export function ButtonPair({ children }: { children: ReactNode }) {
   return <div className={pair()}>{children}</div>;
 }
 
+const found = tv({ base: "grid gap-entry-room rounded-overlay bg-surface-raised p-[0.75rem]" });
+
+/**
+ * What a field found, under it, on the raised surface in the rhythm of the rows (the accounts a list's members may
+ * take), apart from the rows below; `label` names the group.
+ */
+export function FoundRows({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className={found()}>
+      {children}
+    </div>
+  );
+}
+
+const rows = tv({ base: "m-0 grid list-none gap-entry-room p-0" });
+
+/** Rows of one kind (a list's members) as a list, named by `label`, in the rhythm of the rows: each a `RowItem`. */
+export function RowList({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <ul aria-label={label} className={rows()}>
+      {children}
+    </ul>
+  );
+}
+
+/** A row of a `RowList` (an `AccountRow`). */
+export function RowItem({ children }: { children: ReactNode }) {
+  return <li>{children}</li>;
+}
+
 const account = tv({
   slots: { root: "flex items-center gap-screen-row-gap", who: "min-w-0 flex-1" },
 });
@@ -428,7 +458,7 @@ const screenTitle = tv({
     // One run of text, so that a long name wraps under its glyph and the count follows its last line.
     title: "m-0 min-w-0 flex-1 text-title font-normal [overflow-wrap:anywhere]",
     glyph: "me-entry-caption inline-flex align-[-0.125em] text-muted-text",
-    count: "ms-entry-caption text-body whitespace-nowrap text-muted-text tabular-nums",
+    count: "text-body whitespace-nowrap text-muted-text tabular-nums",
     actions: "flex flex-none items-center gap-screen-tab-gap",
   },
 });
@@ -473,7 +503,13 @@ export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTit
             </span>
           )}
           <bdi>{breakable(children)}</bdi>
-          {count !== undefined && <span className={s.count()}>{count}</span>}
+          {/* A space apart from the name, read so too: "Bread and coffee 2 members", never "coffee2 members". */}
+          {count !== undefined && (
+            <>
+              {" "}
+              <span className={s.count()}>{count}</span>
+            </>
+          )}
         </h2>
         {actions !== undefined && actions !== false && actions !== null && <div className={s.actions()}>{actions}</div>}
       </div>

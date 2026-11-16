@@ -28,12 +28,12 @@ test("a long name may break before each capital inside it, and not inside a word
   expect(renderToStaticMarkup(<ScreenTitle>#slowmornings</ScreenTitle>)).toContain("<bdi>#slowmornings</bdi>");
 });
 
-test("the count follows the name in the heading, muted, and none shows without one", () => {
+test("the count follows the name in the heading, muted, apart by a space, and none shows without one", () => {
   const html = renderToStaticMarkup(
     <ScreenTitle back={back} glyph="list" count="3 members">
       Close friends
     </ScreenTitle>,
   );
-  expect(html).toMatch(/<bdi>Close friends<\/bdi><span class="[^"]*text-muted-text[^"]*">3 members<\/span><\/h2>/);
+  expect(html).toMatch(/<bdi>Close friends<\/bdi> <span class="[^"]*text-muted-text[^"]*">3 members<\/span><\/h2>/);
   expect(bare(renderToStaticMarkup(<ScreenTitle>#baking</ScreenTitle>))).toMatch(/<h2><bdi>#baking<\/bdi><\/h2>/);
 });

@@ -25,7 +25,7 @@ const words = {
     newPost: "New post",
     newArticle: "New article",
     menu: "Menu",
-    postMenu: "Other things to write",
+    postMenu: "New",
     editor: "New article",
   },
   ja: {
@@ -33,7 +33,7 @@ const words = {
     newPost: "投稿する",
     newArticle: "新しい記事",
     menu: "メニュー",
-    postMenu: "ほかに書けるもの",
+    postMenu: "新規作成",
     editor: "新しい記事",
   },
 } as const;
@@ -94,10 +94,10 @@ async function menuSheetEntry(context: StoryContext, lang: Lang) {
   await userEvent.click(
     within(canvas.getByRole("navigation", { name: w.navigation })).getByRole("button", { name: menuNamed(w) }),
   );
-  const sheet = within(await within(document.body).findByRole("dialog", { name: w.menu }));
-  const [first] = sheet.getAllByRole("link");
+  const sheet = within(await within(document.body).findByRole("menu", { name: w.menu }));
+  const [first] = sheet.getAllByRole("menuitem");
   await expect(first).toHaveAccessibleName(w.newArticle);
-  await userEvent.click(sheet.getByRole("link", { name: w.newArticle }));
+  await userEvent.click(sheet.getByRole("menuitem", { name: w.newArticle }));
   await opened(canvas, w);
 }
 
@@ -111,14 +111,14 @@ export const MenuSheetJapaneseMinimumWidth: Story = {
   play: async (context) => menuSheetEntry(context, "ja"),
 };
 
-/** On a phone: Alt+ArrowDown on the floating New post opens the menu of other things to write, whose New article opens the editor. */
+/** On a phone: Alt+ArrowDown on the floating New post opens the menu of what to write, whose New article opens the editor. */
 async function postMenuEntry(context: StoryContext, lang: Lang) {
   const { canvas, w } = await home(context, lang);
   const newPost = canvas.getByRole("button", { name: w.newPost });
   newPost.focus();
   await userEvent.keyboard("{Alt>}{ArrowDown}{/Alt}");
   const menu = within(await within(document.body).findByRole("menu", { name: w.postMenu }));
-  await expect(menu.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([w.newArticle]);
+  await expect(menu.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([w.newPost, w.newArticle]);
   await userEvent.click(menu.getByRole("menuitem", { name: w.newArticle }));
   await opened(canvas, w);
 }
@@ -161,22 +161,23 @@ async function noPhoneEntry(context: StoryContext, lang: Lang) {
   await userEvent.click(
     within(canvas.getByRole("navigation", { name: w.navigation })).getByRole("button", { name: menuNamed(w) }),
   );
-  const dialog = await within(document.body).findByRole("dialog", { name: w.menu });
-  await expect(within(dialog).queryByRole("link", { name: w.newArticle })).toBeNull();
-  await risen(dialog);
+  const menu = await within(document.body).findByRole("menu", { name: w.menu });
+  await expect(within(menu).queryByRole("menuitem", { name: w.newArticle })).toBeNull();
+  await risen(menu);
 }
 
 /**
- * Waits until the sheet has risen into place (its panel opaque and unmoved), so that the story tests check it as the
- * reader sees it, not its colors mid-fade.
+ * Waits until the sheet has risen into place (each box around the menu opaque and unmoved), so that the story tests
+ * check it as the reader sees it, not its colors mid-fade.
  */
-async function risen(dialog: HTMLElement) {
+async function risen(menu: HTMLElement) {
   await waitFor(
     () => {
-      const panel = dialog.parentElement;
-      const style = panel === null ? undefined : getComputedStyle(panel);
-      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-        throw new Error("the sheet is still rising");
+      for (let el: HTMLElement | null = menu; el !== null; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+          throw new Error("the sheet is still rising");
+      }
     },
     { timeout: 5000 },
   );

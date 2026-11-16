@@ -48,7 +48,7 @@ const words = {
     replyDialog: "Reply",
     replyWaits: named("Others see your reply once ", "@layla", " approves it"),
     approval: /approv/i,
-    audienceMenu: "Who can see it",
+    back: "Back",
     audience: /^Who can see it: Public(, replies, boosts or quotes limited)?$/,
     limited: "Who can see it: Public, replies, boosts or quotes limited",
     permissions: "Who can reply, boost and quote",
@@ -82,7 +82,7 @@ const words = {
     replyDialog: "返信",
     replyWaits: named("", "@layla", "さんが承認すると、ほかの人にも表示されます"),
     approval: /承認/,
-    audienceMenu: "見られる人",
+    back: "戻る",
     audience: /^見られる人: 公開(、返信・ブースト・引用を制限中)?$/,
     limited: "見られる人: 公開、返信・ブースト・引用を制限中",
     permissions: "返信・ブースト・引用できる人",
@@ -247,35 +247,49 @@ export const ReplyAtOnce: Story = {
   play: async (c) => replyAtOnce(c, "en"),
 };
 
+/** A row of a menu by its label and the value it holds now, which it reads after it. */
+const holding = (label: string, value: string) => {
+  const quote = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${quote(label)}\\s*${quote(value)}$`);
+};
+
 /**
- * In the composer's audience menu, who may reply, boost and quote: a row per kind with who may now, each opening its
- * audiences, and under any audience but Anyone whether others may ask for approval. Approval chosen for each kind shows
- * in its row, and the audience tool's name says the post is limited, before it is sent; Anyone again takes the check
- * away with its approval.
+ * In the composer's audience menu, who may reply, boost and quote: a submenu with a row per kind with who may now, each
+ * opening its audiences, and under any audience but Anyone whether others may ask for approval. Approval chosen for
+ * each kind shows in its row, and the audience tool's name says the post is limited, before it is sent; Anyone again
+ * takes the check away with its approval.
  */
 async function choosesApproval(context: StoryContext, lang: Lang) {
   const { w, dialog, body } = await replyComposer(context, lang, "Translating a poem");
   await userEvent.click(dialog.getByRole("button", { name: w.audience }));
-  const menu = () => within(body.getByRole("dialog", { name: w.audienceMenu }));
-  await userEvent.click(await body.findByRole("button", { name: w.permissions }));
-  const row = (kind: Kind) => menu().getByRole("button", { name: new RegExp(`^${w.kind[kind]} `) });
+  await userEvent.click(await body.findByRole("menuitem", { name: new RegExp(`^${w.permissions}`) }));
+  const menu = (name: string) => within(body.getByRole("menu", { name }));
+  const row = (kind: Kind) => menu(w.permissions).getByRole("menuitem", { name: new RegExp(`^${w.kind[kind]}`) });
   await waitFor(() => expect(row("reply")).toBeVisible());
   for (const kind of ["reply", "announce", "quote"] as const)
-    await expect(row(kind)).toHaveAccessibleName(`${w.kind[kind]} ${w.everyone}`);
+    await expect(row(kind)).toHaveAccessibleName(holding(w.kind[kind], w.everyone));
 
-  /** Opens the panel of `kind`, chooses `audience` and sets the check to `approval` (none: it must not show), back. */
+  /** Opens the submenu of `kind`, chooses `audience` and sets the check to `approval` (none: it must not show), back. */
   const choose = async (kind: Kind, audience: string, approval: boolean | undefined) => {
     await userEvent.click(row(kind));
-    const audiences = within(await body.findByRole("radiogroup", { name: w.kind[kind] }));
-    await userEvent.click(audiences.getByRole("radio", { name: audience }));
-    await expect(audiences.getByRole("radio", { name: audience })).toHaveAttribute("aria-checked", "true");
-    if (approval === undefined) await expect(menu().queryByRole("checkbox", { name: w.asks })).toBeNull();
+    await waitFor(() => expect(body.getByRole("menu", { name: w.kind[kind] })).toBeVisible());
+    const chosen = () => menu(w.kind[kind]).getByRole("menuitemradio", { name: audience });
+    await userEvent.click(chosen());
+    await waitFor(() => expect(chosen()).toHaveAttribute("aria-checked", "true"));
+    const check = () => menu(w.kind[kind]).queryByRole("menuitemcheckbox", { name: w.asks });
+    if (approval === undefined) await expect(check()).toBeNull();
     else {
-      const check = menu().getByRole("checkbox", { name: w.asks });
-      if ((check.getAttribute("aria-checked") === "true") !== approval) await userEvent.click(check);
-      await expect(check).toHaveAttribute("aria-checked", String(approval));
+      if ((check()?.getAttribute("aria-checked") === "true") !== approval) {
+        const box = check();
+        if (box === null) throw new Error("no approval to check");
+        await userEvent.click(box);
+      }
+      await waitFor(() => expect(check()).toHaveAttribute("aria-checked", String(approval)));
     }
-    await userEvent.click(menu().getByRole("button", { name: w.kind[kind] }));
+    // Back heads the submenu, beside its items.
+    const surface = body.getByRole("menu", { name: w.kind[kind] }).parentElement;
+    if (surface === null) throw new Error("the submenu has no head");
+    await userEvent.click(within(surface).getByRole("button", { name: w.back }));
     await waitFor(() => expect(row(kind)).toBeVisible());
   };
 
@@ -284,16 +298,16 @@ async function choosesApproval(context: StoryContext, lang: Lang) {
   await choose("reply", w.followers, true);
   await choose("announce", w.followers, true);
   await choose("quote", w.nobody, true);
-  await expect(row("reply")).toHaveAccessibleName(`${w.kind.reply} ${w.withApproval(w.followers)}`);
-  await expect(row("announce")).toHaveAccessibleName(`${w.kind.announce} ${w.withApproval(w.followers)}`);
-  await expect(row("quote")).toHaveAccessibleName(`${w.kind.quote} ${w.withApproval(w.nobody)}`);
-  await expect(dialog.getByRole("button", { name: w.limited })).toBeInTheDocument();
+  await expect(row("reply")).toHaveAccessibleName(holding(w.kind.reply, w.withApproval(w.followers)));
+  await expect(row("announce")).toHaveAccessibleName(holding(w.kind.announce, w.withApproval(w.followers)));
+  await expect(row("quote")).toHaveAccessibleName(holding(w.kind.quote, w.withApproval(w.nobody)));
+  await expect(dialog.getByRole("button", { name: w.limited, hidden: true })).toBeInTheDocument();
 
   // Anyone again: the check goes, and so does the approval it held; Only you without it admits no one else.
   await choose("announce", w.everyone, undefined);
-  await expect(row("announce")).toHaveAccessibleName(`${w.kind.announce} ${w.everyone}`);
+  await expect(row("announce")).toHaveAccessibleName(holding(w.kind.announce, w.everyone));
   await choose("quote", w.nobody, false);
-  await expect(row("quote")).toHaveAccessibleName(`${w.kind.quote} ${w.nobody}`);
+  await expect(row("quote")).toHaveAccessibleName(holding(w.kind.quote, w.nobody));
   await atRest(context.canvasElement);
 }
 

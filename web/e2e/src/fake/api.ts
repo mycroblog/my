@@ -205,6 +205,16 @@ export type FakeOptions = {
   approvals?: boolean;
   /** The lists of an account's follows and followers fail (`fails`, a 500) or never answer (`waits`). */
   followsLists?: "fails" | "waits";
+  /**
+   * The most lists the reader may have (the server's 50 by default) and members a list may (1,000): a smaller one shows
+   * the server's refusal at its limit (the reader has 3 lists, the first holds 2 accounts).
+   */
+  listLimits?: { lists?: number; members?: number };
+  /**
+   * The follow requests to the reader: those of the scenario (sam's to ren) and, after them, of the people named in
+   * `from`, the last the newest; their list fails (`fails`, a 500) or never answers (`waits`).
+   */
+  followRequests?: { from?: readonly string[]; answer?: "fails" | "waits" };
   /** The reader's private notes on people at the start, by username. */
   notes?: Readonly<Record<string, string>>;
   /** The people whose new posts notify the reader at the start. */
@@ -397,6 +407,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     if (personOf(f.followee).locked === true && f.accepted !== true) requested.add(edge);
     else following.add(edge);
   }
+  for (const from of o.followRequests?.from ?? []) requested.add(`${personOf(from).username}>${viewer}`);
   const blocking = new Set(restrictions.filter((r) => r.kind === "block").map((r) => `${r.by}>${r.target}`));
   const muting = new Set(restrictions.filter((r) => r.kind === "mute").map((r) => `${r.by}>${r.target}`));
   const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
@@ -598,15 +609,40 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         .toReversed(),
     ]),
   ];
-  /** The reader's lists of the people they follow, oldest first, with ids of the fake's own. */
-  const lists = scenarioLists
+  /**
+   * The reader's lists of the people they follow, oldest first, with ids of the fake's own; the reader makes, renames
+   * and deletes them and changes their members (ADR-0013 §11, §14).
+   */
+  const lists: { id: string; name: string; members: string[]; created_at: string }[] = scenarioLists
     .filter((l) => l.owner === viewer)
     .map((l, n) => ({
       id: idAt(0, 60_000 + n),
       name: l.name,
-      members: l.members,
+      members: [...l.members],
       created_at: new Date(started - (30 - n) * 24 * 60 * minute).toISOString(),
     }));
+  /** How many lists the reader may have, and members a list. */
+  const listLimit = o.listLimits?.lists ?? 50;
+  const memberLimit = o.listLimits?.members ?? 1000;
+  /** How many lists the reader made here, for the ids of new ones. */
+  let madeLists = 0;
+  /** Whether `name` is a list's name: 1 to 50 characters (grapheme clusters) without control characters. */
+  const listName = (name: string) => {
+    const length = [...new Intl.Segmenter().segment(name)].length;
+    return length > 0 && length <= 50 && !/\p{Cc}/u.test(name);
+  };
+  /** The server's refusal of a list's name that is not one: blank, too long, or with control characters. */
+  const listNameRefused = () =>
+    json(
+      {
+        type: "/api/v1/problems/validation",
+        title: "The list could not be saved",
+        status: 422,
+        field: "name",
+        detail: "Write a name of 1 to 50 characters on one line.",
+      },
+      422,
+    );
   const listBody = (l: (typeof lists)[number]): Json => ({
     id: l.id,
     name: l.name,
@@ -1639,6 +1675,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (what === "mute" && add) muting.add(edge);
     if (what === "mute" && !add) muting.delete(edge);
+    // An account the reader no longer follows leaves every list of theirs (ADR-0013 §11).
+    if (!following.has(edge)) for (const l of lists) l.members = l.members.filter((x) => x !== other);
     return relationshipOf(id);
   }
 
@@ -1743,10 +1781,79 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const name = written ?? asked;
       return json({ name, url: `${fakeOrigin}/tags/${encodeURIComponent(key)}`, following: followedTags.has(key) });
     }
+    if (path === "/lists" && request.method === "POST") {
+      // A name of 1 to 50 characters on one line; at the limit of lists, the server's refusal.
+      const name = (((await request.json()) as { name?: string }).name ?? "").trim();
+      if (!listName(name)) return listNameRefused();
+      if (lists.length >= listLimit)
+        return json(
+          { type: "/api/v1/problems/too-many-lists", title: "You have as many lists as you may", status: 422 },
+          422,
+        );
+      madeLists += 1;
+      const made = {
+        id: idAt(Date.now(), 61_000 + madeLists),
+        name,
+        members: [],
+        created_at: new Date().toISOString(),
+      };
+      lists.push(made);
+      return json(listBody(made), 201);
+    }
     if (path === "/lists") return json({ items: lists.map(listBody) });
-    if ((match = m(/^\/lists\/([^/]+)$/))) {
+    if ((match = m(/^\/accounts\/([^/]+)\/lists$/))) {
+      const username = usernameOf.get(decodeURIComponent(match[1] ?? ""));
+      return json({ items: lists.filter((l) => username !== undefined && l.members.includes(username)).map(listBody) });
+    }
+    if ((match = m(/^\/lists\/([^/]+)\/accounts\/([^/]+)$/))) {
       const found = lists.find((l) => l.id === decodeURIComponent(match?.[1] ?? ""));
-      return found === undefined ? problem(404, "Not Found") : json(listBody(found));
+      const username = usernameOf.get(decodeURIComponent(match[2] ?? ""));
+      if (found === undefined || username === undefined) return problem(404, "Not Found");
+      if (request.method === "DELETE") {
+        found.members = found.members.filter((x) => x !== username);
+        return new Response(null, { status: 204 });
+      }
+      if (found.members.includes(username)) return new Response(null, { status: 204 });
+      if (!follows_(viewer, username))
+        return json(
+          { type: "/api/v1/problems/not-followed", title: "You can add only accounts you follow", status: 422 },
+          422,
+        );
+      if (found.members.length >= memberLimit)
+        return json(
+          {
+            type: "/api/v1/problems/too-many-list-members",
+            title: "The list has as many members as it may",
+            status: 422,
+          },
+          422,
+        );
+      found.members.push(username);
+      return new Response(null, { status: 204 });
+    }
+    if ((match = m(/^\/lists\/([^/]+)\/accounts$/))) {
+      // The members in the order of their IDs.
+      const found = lists.find((l) => l.id === decodeURIComponent(match?.[1] ?? ""));
+      if (found === undefined) return problem(404, "Not Found");
+      const members = found.members.map(accountOf).toSorted((a, b) => String(a["id"]).localeCompare(String(b["id"])));
+      const { from, body } = page(members, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/lists\/([^/]+)$/))) {
+      const at = lists.findIndex((l) => l.id === decodeURIComponent(match?.[1] ?? ""));
+      const found = lists[at];
+      if (found === undefined) return problem(404, "Not Found");
+      if (request.method === "DELETE") {
+        lists.splice(at, 1);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PATCH") {
+        const name = (((await request.json()) as { name?: string }).name ?? "").trim();
+        if (!listName(name)) return listNameRefused();
+        found.name = name;
+      }
+      return json(listBody(found));
     }
     if ((match = m(/^\/timelines\/list\/([^/]+)$/))) {
       // The home timeline's entries by the list's members, never the reader's own (ADR-0013 §13).
@@ -2403,6 +2510,19 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         blurhash: drawingBlurhash(image.drawing),
         meta: { width, height, focus: { x: 0, y: 0 } },
       });
+    }
+    if (path === "/follow_requests") {
+      // The accounts that ask to follow the reader, newest first.
+      if (o.followRequests?.answer === "waits") return new Promise<Response>(() => undefined);
+      if (o.followRequests?.answer === "fails") return problem(500, "Internal Server Error");
+      const asking = [...requested]
+        .toReversed()
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([, to]) => to === viewer)
+        .map(([from]) => accountOf(from));
+      const { from, body } = page(asking, q);
+      if (from > 0) await late();
+      return json(body);
     }
     if ((match = m(/^\/follow_requests\/([^/]+)\/(accept|reject)$/))) {
       const other = usernameOf.get(decodeURIComponent(match[1] ?? ""));

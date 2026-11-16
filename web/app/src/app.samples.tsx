@@ -34,7 +34,8 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
   /**
-   * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index,
+   * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
+   * `members:<index>` of its members,
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
    * `reactions:<key>:<emoji>` of who reacted to a scenario post with an emoji, or the key of a scenario post whose page
    * it opens.
@@ -154,6 +155,7 @@ function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
   if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
+  if (at.startsWith("members:")) return `${fake.listPath(Number(at.slice("members:".length)))}/members`;
   if (at.startsWith("conversation:")) return fake.conversationPath(Number(at.slice("conversation:".length)));
   if (at.startsWith("reactions:")) {
     const [, key = "", emoji = ""] = at.split(":");
@@ -301,9 +303,11 @@ function shows(
       return settled && canvas.querySelectorAll("article > p > button").length >= 2;
     default:
       // A list of who reacted shows a row per account, each a link to its profile; the reader's lists, a row per list;
-      // a screen of posts, its posts. An account's list of follows shows its rows, or that its owner keeps it.
+      // a screen of posts, its posts. An account's list of follows, the follow requests and a list's members show their
+      // rows, or a line in their place.
       if (at === "/lists") return settled && has('main a[href^="/lists/"]');
-      if (/\/follow(?:ers|ing)$/.test(at)) return settled && has('main a[href^="/@"], main p[role="status"]');
+      if (/\/follow(?:ers|ing|_requests)$/.test(at) || at.startsWith("members:"))
+        return settled && has('main a[href^="/@"], main p[role="status"]');
       // A list the server has no longer says so, and so does the profile of an account that is not there.
       if (at === "/lists/gone") return has('main p[role="status"]');
       if (at === "/@nao") return settled && has('main p[role="status"]');

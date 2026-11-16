@@ -73,7 +73,7 @@ describe("the feed's markup", () => {
       </FeedNotice>,
     );
     expect(html).toMatch(
-      /^<p role="alert" [^>]*>Failed <span [^>]*>· <button type="button">Try again<\/button><\/span><\/p>$/,
+      /^<p role="alert" [^>]*>Failed · <span [^>]*><button type="button">Try again<\/button><\/span><\/p>$/,
     );
   });
 });

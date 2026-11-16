@@ -11,17 +11,19 @@ import { useNotificationReads, useNotifications, type NotificationItem } from "@
 import { RelativeTime, SectionLine, SectionList, SectionNote, TextButton, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { messages } from "../messages.gen";
+import { followRequestsPath } from "./follow-requests";
 import { glyphOf, sentenceOf } from "./kinds";
 import { waitingPath } from "./waiting";
 
 const known = (id: string) => id in (messages["en"] ?? {});
 
 /**
- * Where a notification leads: what waits for the reader's approval for a request to reply, boost or quote; the post it
- * is about, the account, the announcement, event or room; else the list.
+ * Where a notification leads: what waits for the reader's approval for a request to reply, boost or quote; the follow
+ * requests for one; the post it is about, the account, the announcement, event or room; else the list.
  */
 function pathOf(n: NotificationItem): string {
   if (n.type === "reply_request" || n.type === "boost_request" || n.type === "quote_request") return waitingPath;
+  if (n.type === "follow_request") return followRequestsPath;
   if (n.status !== undefined) return statusPath(n.status);
   if (n.type === "account_moved" && n.account_move?.target !== undefined) return accountPath(n.account_move.target);
   if (n.announcement !== undefined) return `/announcements/${n.announcement.id}`;

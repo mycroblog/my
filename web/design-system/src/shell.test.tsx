@@ -87,7 +87,7 @@ const screen = renderToStaticMarkup(
       tabs={
         <NavList>
           <NavItem href="/" icon="home" label="Home" current />
-          <NavMenu label="Menu" closeLabel="Close" marked markLabel="Something waits">
+          <NavMenu label="Menu" marked markLabel="Something waits">
             <NavList>
               <NavItem href="/settings" icon="settings" label="Settings" />
             </NavList>
@@ -126,8 +126,8 @@ test("a place with a count is named by its label and the count's label, its badg
   expect(screen.match(/<span class="[^"]*bg-text[^"]*" aria-hidden="true">3<\/span>/g)).toHaveLength(2);
 });
 
-test("the menu's place is a button that opens a dialog, marked while something inside waits", () => {
-  expect(screen).toMatch(/<button [^>]*aria-haspopup="dialog"[^>]*aria-expanded="false"/);
+test("the menu's place is a button that opens a menu, marked while something inside waits", () => {
+  expect(screen).toMatch(/<button [^>]*aria-haspopup="true"[^>]*aria-expanded="false"/);
   expect(screen).toMatch(/>Menu<\/span> <span class="sr-only">Something waits<\/span><\/button>/);
 });
 

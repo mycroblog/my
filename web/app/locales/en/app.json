@@ -47,10 +47,6 @@
     "defaultMessage": "Menu",
     "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, lists, settings, announcements, voice rooms, events)."
   },
-  "app.menu_close": {
-    "defaultMessage": "Close",
-    "description": "The button at the end of the head of the menu's sheet that closes it."
-  },
   "app.announcements": {
     "defaultMessage": "Announcements",
     "description": "The place in the menu's sheet, and the heading of its screen, that lists the server's announcements."
@@ -336,8 +332,8 @@
     "description": "The heading of a hashtag's screen, and the document's title. name is the hashtag without #."
   },
   "app.compose.menu": {
-    "defaultMessage": "Other things to write",
-    "description": "The name of the menu of the primary action, opened by a long press or right click: what else can be written besides a post."
+    "defaultMessage": "New",
+    "description": "The name of the menu of the primary action, opened by a long press or right click: the things that can be written (a post, an article). Read before its first item, which may be New post, so it does not say other."
   },
   "app.compose.article": {
     "defaultMessage": "New article",

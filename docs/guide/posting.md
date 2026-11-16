@@ -50,7 +50,7 @@ sees your posts by default" under "Display, posting, and timelines" in the setti
 | Followers only | Only your followers and the people you mention. |
 | Direct | Only the people you mention. |
 
-![Who can see a post on this server and on other servers, for each of the five visibilities. The list below says the same.](images/visibility.svg)
+![Who can see a post on this server and on other servers, for each of the five choices. The list below says the same.](images/visibility.svg)
 
 Row by row, on this server and then on other servers:
 
@@ -61,9 +61,8 @@ Row by row, on this server and then on other servers:
 - **Direct**: only the people you mention, on this server and on other servers.
 
 On a server of one person, where nobody else is signed in, "Local" means no more than "Followers only": new posts
-cannot have it, and a default of "Local" works as "Followers only". The visibility menu and the default in "Display,
-posting, and timelines" leave it out, and a reply to a "Local" post is "Followers only". Posts that already have it
-keep it.
+cannot have it, and a default of "Local" works as "Followers only". "Who can see it" and the default in the settings
+leave it out, and a reply to a "Local" post is "Followers only". Posts that already have it keep it.
 
 A block always wins: someone who blocks you, or whom you block, does not see your post whatever you chose.
 
@@ -79,7 +78,7 @@ show it to those followers as a post for followers only.
 
 ### Other things to know
 
-- You cannot change the visibility of a post after posting it. When you edit a post, the visibility and the post it replies to stay as they are.
+- You cannot change who can see a post after posting it. An edit keeps who can see it and the post it replies to.
 - A moderator can limit how widely an account posts. The form then says "Your account can post at most as ..." and a wider choice is posted at the widest level allowed.
 - Anyone who can see a "Public", "Local", or "Quiet public" post can boost it. Only you can boost your own "Followers only" posts, and only your followers see that boost. "Direct" posts cannot be boosted.
 - The author of a post can choose who may reply to it and who may boost it; posts from some other servers carry such a choice too. A reply or a boost outside it is refused, with a message such as "The author of this post does not let you reply to it." The author, the people the post mentions, and the author of the post it replies to can always reply.
@@ -117,7 +116,7 @@ who reacted with it. The form has an "Add emoji" button too.
 
 A post in another language than yours has "Translate" when the server has a translation service or your browser can
 translate; "Show original" goes back. Behind a content warning, the line sits in the warning's band. If the server sends
-the text of posts to a translation service, the visibility picker tells you for which choices.
+the text of posts to a translation service, "Who can see it" tells you for which choices.
 
 Images, GIFs, video, and audio show in the post. Choose an image to open the viewer: swipe or use the arrows, zoom, and
 read its description. Media marked sensitive stays hidden under a line such as "Sensitive image", until you choose "Show". A link in a
@@ -137,7 +136,7 @@ brackets. Only images you upload show in an article; an image from another addre
 - "Mark as sensitive" shows readers the title and summary first and folds the cover and the body. An article cannot be "Direct".
 - While you write, the article is saved as a draft every time you pause ("Draft saved"), so it opens on any device from "Drafts and scheduled posts", where "Edit" brings it back to the editor. If the draft was changed on another device meanwhile, nothing is overwritten: your text stays in the editor, and "Save as a new draft" keeps it as another draft.
 - "Publish" publishes the article now and opens its page; "Schedule" publishes it at the time you choose, as for a post.
-- To change an article you published, choose "Edit" in its "More actions" menu. The editor opens with what you wrote; "Save changes" replaces it, and the earlier version stays in its "Edit history". The visibility of an article does not change.
+- To change an article you published, choose "Edit" in its "More actions" menu. The editor opens with what you wrote; "Save changes" replaces it, and the earlier version stays in its "Edit history". Who can see an article does not change.
 
 A server may let only some people write new articles; then "Write an article" is not shown to the others, who can still
 edit the articles they published.
@@ -170,7 +169,7 @@ the settings.
 
 "Delete old posts" in the settings deletes your posts once they are older than the age you choose, as if you had
 deleted them yourself: they go here and on the servers they were sent to, and cannot be restored. The posts you keep
-(pinned, bookmarked, or favourited by you, with media or a poll, articles, of some visibilities, or with many boosts or
+(pinned, bookmarked, or favourited by you, with media or a poll, articles, by who can see them, or with many boosts or
 favourites) stay. Your boosts of other people's posts are never deleted. The server checks every hour and deletes at
 most 100 of your posts each time, so many old posts take several hours to go.
 

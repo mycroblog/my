@@ -12,7 +12,8 @@
 // floats over the tab bar on the timelines and the profiles alone, and signing in, with its label, on every screen. The
 // server's notices stand at the top of the main column, the update's toast in the dock; the column beside the main one
 // holds what is around the reader. Where the reader is comes from the router; the frame lays the regions out by the
-// viewport, and the emoji picker of a post and of the composer opens as a sheet on a phone's (viewport.ts).
+// viewport, and every menu and the emoji picker of a post and of the composer open as a sheet on a phone's
+// (viewport.ts).
 
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
@@ -35,7 +36,9 @@ import {
   FrameMain,
   FrameMark,
   FrameSide,
+  MenuGroup,
   MenuItem,
+  MenuSheet,
   NavItem,
   NavList,
   NavMenu,
@@ -104,7 +107,6 @@ function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: Re
   return (
     <NavMenu
       label={t("app.menu")}
-      closeLabel={t("app.menu_close")}
       marked={waiting > 0}
       count={unread > 0 ? unread : undefined}
       markLabel={said.length === 0 ? undefined : new Intl.ListFormat(locale, { type: "conjunction" }).format(said)}
@@ -222,20 +224,25 @@ export function Shell({
     scope: "screen",
     label: t("app.compose"),
   });
-  // What else the primary action writes, in its menu: an article, for a reader the server lets write them.
+  // What the primary action writes, in its menu: a post, and an article, for a reader the server lets write them.
   const composeMenu = writesArticles
     ? {
         label: t("app.compose.menu"),
         children: (
-          <MenuItem
-            id="article"
-            icon="article"
-            onAction={() => {
-              go(newArticlePath());
-            }}
-          >
-            {t("app.compose.article")}
-          </MenuItem>
+          <MenuGroup>
+            <MenuItem id="post" icon="compose" onAction={openCompose}>
+              {t("app.compose")}
+            </MenuItem>
+            <MenuItem
+              id="article"
+              icon="article"
+              onAction={() => {
+                go(newArticlePath());
+              }}
+            >
+              {t("app.compose.article")}
+            </MenuItem>
+          </MenuGroup>
         ),
       }
     : undefined;
@@ -265,73 +272,75 @@ export function Shell({
   const callBar = call === null ? undefined : <CallSlot call={call} />;
   const footer = <ServerFooter instance={instance} />;
   return (
-    <Frame>
-      <FrameSide label={t("app.navigation")}>
-        <Mark instance={instance} serverName={serverName} />
-        {primary}
-        <PlaceList items={side} pathname={pathname} />
-        <PlaceList items={staff} pathname={pathname} />
-        {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
-        <NavList>
-          <NavMenu label={t("app.menu")} closeLabel={t("app.menu_close")} footer={footer}>
-            <PlaceList items={signedIn ? [listsPlace] : []} pathname={pathname} />
-            <PlaceList items={around} pathname={pathname} />
-          </NavMenu>
-        </NavList>
-        {callBar}
-      </FrameSide>
-      <FrameMain>
-        <ServerBanners instance={instance} />
-        {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
-        <PostActions
-          onCompose={signedIn ? open : undefined}
-          onEditArticle={(id) => {
-            go(editArticlePath(id));
-          }}
-          sheet={narrow}
-        >
-          {children}
-        </PostActions>
-      </FrameMain>
-      <Around signedIn={signedIn} pathname={pathname} instance={instance} />
-      <FrameDock
-        label={t("app.navigation")}
-        tabs={
+    <MenuSheet sheet={narrow}>
+      <Frame>
+        <FrameSide label={t("app.navigation")}>
+          <Mark instance={instance} serverName={serverName} />
+          {primary}
+          <PlaceList items={side} pathname={pathname} />
+          <PlaceList items={staff} pathname={pathname} />
+          {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
           <NavList>
-            <Places items={tabs} pathname={pathname} />
-            <TabMenu signedIn={signedIn} footer={footer}>
-              <PlaceList items={writesArticles ? [articlePlace] : []} pathname={pathname} />
-              <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
-              <PlaceList items={staff} pathname={pathname} />
+            <NavMenu label={t("app.menu")} footer={footer}>
+              <PlaceList items={signedIn ? [listsPlace] : []} pathname={pathname} />
               <PlaceList items={around} pathname={pathname} />
-            </TabMenu>
+            </NavMenu>
           </NavList>
-        }
-        call={callBar}
-        action={
-          signedIn ? (
-            composesAt(pathname) ? (
-              // On a phone, New post floats alone; its menu, and the menu's sheet, hold New article.
-              newPost(composeMenu)
-            ) : undefined
-          ) : (
-            <FrameAction icon="signIn" label={t("app.sign_in_action")} labelled onPress={signIn} />
-          )
-        }
-        toasts={<UpdateToast inCall={call !== null} />}
-      />
-      {signedIn && (
-        <ComposeLayer
-          target={target}
-          onOpen={open}
-          onClose={close}
-          onOpenArticle={(id) => {
-            go(newArticlePath(id));
-          }}
-          phone="screen"
-          pickerSheet={narrow}
+          {callBar}
+        </FrameSide>
+        <FrameMain>
+          <ServerBanners instance={instance} />
+          {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
+          <PostActions
+            onCompose={signedIn ? open : undefined}
+            onEditArticle={(id) => {
+              go(editArticlePath(id));
+            }}
+            sheet={narrow}
+          >
+            {children}
+          </PostActions>
+        </FrameMain>
+        <Around signedIn={signedIn} pathname={pathname} instance={instance} />
+        <FrameDock
+          label={t("app.navigation")}
+          tabs={
+            <NavList>
+              <Places items={tabs} pathname={pathname} />
+              <TabMenu signedIn={signedIn} footer={footer}>
+                <PlaceList items={writesArticles ? [articlePlace] : []} pathname={pathname} />
+                <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
+                <PlaceList items={staff} pathname={pathname} />
+                <PlaceList items={around} pathname={pathname} />
+              </TabMenu>
+            </NavList>
+          }
+          call={callBar}
+          action={
+            signedIn ? (
+              composesAt(pathname) ? (
+                // On a phone, New post floats alone; its menu (New post, New article) and the menu's sheet hold New article.
+                newPost(composeMenu)
+              ) : undefined
+            ) : (
+              <FrameAction icon="signIn" label={t("app.sign_in_action")} labelled onPress={signIn} />
+            )
+          }
+          toasts={<UpdateToast inCall={call !== null} />}
         />
-      )}
-    </Frame>
+        {signedIn && (
+          <ComposeLayer
+            target={target}
+            onOpen={open}
+            onClose={close}
+            onOpenArticle={(id) => {
+              go(newArticlePath(id));
+            }}
+            phone="screen"
+            pickerSheet={narrow}
+          />
+        )}
+      </Frame>
+    </MenuSheet>
   );
 }

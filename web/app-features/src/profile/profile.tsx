@@ -19,8 +19,11 @@ import {
   accountNoteLimit,
   loadAccount,
   useAccount,
+  useAccountLists,
   useAccountStatuses,
   useChangeRelationship,
+  useLists,
+  useListWrites,
   useFeaturedHashtags,
   useMutedDomain,
   useMuteDomain,
@@ -158,7 +161,17 @@ function Follow({ account, relationship, t }: { account: Account; relationship: 
 
 /** Which action on an account failed, as profile.action_failed names it. */
 type Failure =
-  "mute" | "unmute" | "block" | "unblock" | "remove_follower" | "notify" | "note" | "mute_server" | "unmute_server";
+  | "mute"
+  | "unmute"
+  | "block"
+  | "unblock"
+  | "remove_follower"
+  | "notify"
+  | "note"
+  | "mute_server"
+  | "unmute_server"
+  | "list_add"
+  | "list_remove";
 
 /**
  * Runs a write on the account, and tells its failure at the bottom of the page, in the server's words when it refused,
@@ -224,6 +237,12 @@ function More({
   const muteServer = useMuteDomain();
   const write = useAccountWrite(t);
   const [asking, setAsking] = useState<Asking | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState<"more" | "lists">("more");
+  const following = relationship.following ?? false;
+  const lists = useLists(open && panel === "lists");
+  const held = useAccountLists(account.id, open && panel === "lists");
+  const listWrites = useListWrites();
   const muting = relationship.muting ?? false;
   const blocking = relationship.blocking ?? false;
   const remote = account.acct.includes("@");
@@ -237,65 +256,124 @@ function More({
       setAsking(undefined);
     });
   };
+  // Add to list, a submenu in the menu's place: each of the reader's lists a toggle, on while it holds the account,
+  // then New list, which opens the index with a new list's name.
+  const toLists =
+    panel === "lists" ? (
+      <>
+        <MenuGroup
+          checked={held === undefined ? [] : [...held]}
+          stay
+          onCheck={(listId, on) => {
+            void write(on ? "list_add" : "list_remove", () => listWrites.member(listId, account, on));
+          }}
+        >
+          {lists.lists.map((l) => (
+            <MenuItem key={l.id} id={l.id} icon="included" disabled={held === undefined}>
+              {l.name}
+            </MenuItem>
+          ))}
+        </MenuGroup>
+        <MenuGroup>
+          <MenuItem id="new-list" icon="add" href="/lists?create=1">
+            {t("timeline.list_new")}
+          </MenuItem>
+        </MenuGroup>
+      </>
+    ) : undefined;
   return (
     <>
-      <MenuButton icon="more" label={t("profile.more")}>
-        {remote && (
-          <MenuGroup>
-            <MenuItem id="open" icon="open" onAction={openOriginal(account)}>
-              {t("profile.open_original")}
-            </MenuItem>
-          </MenuGroup>
-        )}
-        <MenuGroup title={handle}>
-          <MenuItem
-            id="mute"
-            icon="mute"
-            on={muting}
-            onAction={() => {
-              void write(muting ? "unmute" : "mute", () => change(account.id, muting ? "unmute" : "mute"));
-            }}
-          >
-            {t(muting ? "profile.unmute" : "profile.mute")}
-          </MenuItem>
-          <MenuItem
-            id="block"
-            icon="block"
-            on={blocking}
-            onAction={() => {
-              if (blocking) void write("unblock", () => change(account.id, "unblock"));
-              else setAsking({ kind: "block", busy: false });
-            }}
-          >
-            {t(blocking ? "profile.unblock" : "profile.block")}
-          </MenuItem>
-          {relationship.followed_by === true && (
-            <MenuItem
-              id="remove-follower"
-              icon="removeFollower"
-              onAction={() => {
-                setAsking({ kind: "remove", busy: false });
-              }}
-            >
-              {t("profile.remove_follower")}
-            </MenuItem>
-          )}
-        </MenuGroup>
-        {remote && (
-          <MenuGroup title={account.domain}>
-            <MenuItem
-              id="mute-server"
-              icon="mute"
-              on={mutedDomain !== undefined}
-              onAction={() => {
-                void (mutedDomain === undefined
-                  ? write("mute_server", () => muteServer(account.domain, true))
-                  : write("unmute_server", () => muteServer(mutedDomain, false)));
-              }}
-            >
-              {t(mutedDomain === undefined ? "profile.mute_server" : "profile.unmute_server")}
-            </MenuItem>
-          </MenuGroup>
+      <MenuButton
+        icon="more"
+        label={t("profile.more")}
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setPanel("more");
+        }}
+        sub={
+          panel === "lists"
+            ? {
+                title: t("profile.add_to_list"),
+                onBack: () => {
+                  setPanel("more");
+                },
+              }
+            : undefined
+        }
+      >
+        {toLists ?? (
+          <>
+            {remote && (
+              <MenuGroup>
+                <MenuItem id="open" icon="open" onAction={openOriginal(account)}>
+                  {t("profile.open_original")}
+                </MenuItem>
+              </MenuGroup>
+            )}
+            <MenuGroup title={handle}>
+              <MenuItem
+                id="add-to-list"
+                icon="list"
+                opens=""
+                disabled={!following}
+                about={following ? undefined : t("profile.add_to_list_followed_only")}
+                onAction={() => {
+                  setPanel("lists");
+                }}
+              >
+                {t("profile.add_to_list")}
+              </MenuItem>
+              <MenuItem
+                id="mute"
+                icon="mute"
+                on={muting}
+                onAction={() => {
+                  void write(muting ? "unmute" : "mute", () => change(account.id, muting ? "unmute" : "mute"));
+                }}
+              >
+                {t(muting ? "profile.unmute" : "profile.mute")}
+              </MenuItem>
+              <MenuItem
+                id="block"
+                icon="block"
+                on={blocking}
+                onAction={() => {
+                  if (blocking) void write("unblock", () => change(account.id, "unblock"));
+                  else setAsking({ kind: "block", busy: false });
+                }}
+              >
+                {t(blocking ? "profile.unblock" : "profile.block")}
+              </MenuItem>
+              {relationship.followed_by === true && (
+                <MenuItem
+                  id="remove-follower"
+                  icon="removeFollower"
+                  onAction={() => {
+                    setAsking({ kind: "remove", busy: false });
+                  }}
+                >
+                  {t("profile.remove_follower")}
+                </MenuItem>
+              )}
+            </MenuGroup>
+            {remote && (
+              <MenuGroup title={account.domain}>
+                <MenuItem
+                  id="mute-server"
+                  icon="mute"
+                  on={mutedDomain !== undefined}
+                  onAction={() => {
+                    void (mutedDomain === undefined
+                      ? write("mute_server", () => muteServer(account.domain, true))
+                      : write("unmute_server", () => muteServer(mutedDomain, false)));
+                  }}
+                >
+                  {t(mutedDomain === undefined ? "profile.mute_server" : "profile.unmute_server")}
+                </MenuItem>
+              </MenuGroup>
+            )}
+          </>
         )}
       </MenuButton>
       <ModalPresence>

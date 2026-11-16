@@ -172,8 +172,8 @@
     "description": "The action after the line that an account's list of follows or followers failed to load, which loads it again."
   },
   "profile.action_failed": {
-    "defaultMessage": "{action, select, mute {The mute} unmute {Unmuting} block {The block} unblock {Unblocking} remove_follower {Removing the follower} notify {The notification setting} note {Saving the note} mute_server {Muting the server} other {Unmuting the server}} did not finish.",
-    "description": "The notice at the bottom of the page when the reader's action on an account, from its profile or a post's menu, got no answer from the server (the network), beside Try again: muting or unmuting it, blocking or unblocking it, removing it from their followers, being notified of its new posts or not, saving their private note on it, muting or unmuting its server. action is which of them."
+    "defaultMessage": "{action, select, mute {The mute} unmute {Unmuting} block {The block} unblock {Unblocking} remove_follower {Removing the follower} notify {The notification setting} note {Saving the note} mute_server {Muting the server} list_add {Adding to the list} list_remove {Removing from the list} other {Unmuting the server}} did not finish.",
+    "description": "The notice at the bottom of the page when the reader's action on an account, from its profile or a post's menu, got no answer from the server (the network), beside Try again: muting or unmuting it, blocking or unblocking it, removing it from their followers, being notified of its new posts or not, saving their private note on it, muting or unmuting its server, putting it in one of their lists or taking it out. action is which of them."
   },
   "profile.follows_more": {
     "defaultMessage": "Show more",
@@ -274,5 +274,13 @@
   "profile.not_found_back": {
     "defaultMessage": "Back",
     "description": "The button over the line that an account is not here, which goes back to where the reader came from."
+  },
+  "profile.add_to_list": {
+    "defaultMessage": "Add to list",
+    "description": "The item of a profile's menu, and the title of what it opens, that puts the account in the reader's lists."
+  },
+  "profile.add_to_list_followed_only": {
+    "defaultMessage": "You can add only accounts you follow",
+    "description": "Under Add to list, muted, on a profile of an account the reader does not follow."
   }
 }

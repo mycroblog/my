@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The plays of the Profile stories that press something before the story shows its state, in the story's locale: the
-// note's editor opened, a confirmation of the profile's menu open, a post's menu open on another's post, and that post
+// note's editor opened, the profile's menu open, a confirmation of it open, a post's menu open on another's post, and that post
 // once the reader muted or blocked its author or muted its server from it. They find what to press by the features'
 // words, in the locale the story renders.
 
@@ -43,6 +43,29 @@ async function still(element: HTMLElement): Promise<void> {
   });
 }
 
+/**
+ * The profile's menu left open (a sheet on a phone, a popover from a tablet), once it has risen into place: no box
+ * around it fading in or moving.
+ */
+export async function menuOpen(context: StoryContext): Promise<void> {
+  const { t, main } = await settled(context);
+  const [more] = await main.findAllByRole("button", { name: t("profile.more") });
+  if (more === undefined) throw new Error("the profile offers no menu");
+  await userEvent.click(more);
+  await risen(await screen.findByRole("menu", { name: t("profile.more") }));
+}
+
+/** Waits until no box around the menu is fading in or moving (a sheet rising on a phone), as it will stay. */
+async function risen(menu: HTMLElement): Promise<void> {
+  await waitFor(() => {
+    for (let e: HTMLElement | null = menu; e !== null; e = e.parentElement) {
+      const style = getComputedStyle(e);
+      if (Number(style.opacity) < 1 || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+        throw new Error("the menu is still coming in");
+    }
+  });
+}
+
 /** The confirmation of blocking the account. */
 export const blockConfirm = (context: StoryContext) => confirming(context, "profile.block");
 
@@ -71,6 +94,7 @@ async function postMenu(context: StoryContext) {
 export async function postMenuOpen(context: StoryContext): Promise<void> {
   const { t } = await postMenu(context);
   await expect(await screen.findByRole("menuitem", { name: t("profile.mute_server") })).toBeVisible();
+  await risen(screen.getByRole("menu"));
 }
 
 /** The post of another server once the reader did `item` from its menu: a line in its place, with its undoing. */

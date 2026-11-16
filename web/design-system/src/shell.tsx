@@ -20,37 +20,21 @@
 // frame navigates through the app's router when the app places NavigationProvider.
 
 import { createContext, use, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import {
-  Button as AriaButton,
-  Dialog,
-  DialogTrigger,
-  Heading,
-  Link,
-  MenuTrigger,
-  Popover,
-  ToggleButton,
-  Tooltip,
-  TooltipTrigger,
-} from "react-aria-components";
+import { Button as AriaButton, Link, ToggleButton, Tooltip, TooltipTrigger } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
-import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { UnreadMark } from "./list";
 import { useReader } from "./locale";
-import { MenuPanel } from "./menu";
-import { ModalLayer, ModalPresence } from "./modal";
+import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 
 /**
- * Where a part of the frame sits: in the rail or sidebar, in the tab bar, floating over it, in the menu's sheet on a
- * phone or its popover from `tablet`, or in the dock above the tab bar (the call's bar).
+ * Where a part of the frame sits: in the rail or sidebar, in the tab bar, floating over it, in the Menu (the one menu,
+ * a sheet on a phone and a popover from `tablet`), or in the dock above the tab bar (the call's bar).
  */
-type Place = "side" | "tabs" | "float" | "sheet" | "popover" | "dock";
+type Place = "side" | "tabs" | "float" | "menu" | "dock";
 
 const PlaceContext = createContext<Place>("side");
-
-/** What closes the menu a link sits in, which its press leaves for another screen; none outside a menu. */
-const CloseContext = createContext<(() => void) | null>(null);
 
 const frame = tv({
   slots: {
@@ -153,29 +137,8 @@ const nav = tv({
         end: "hidden",
       },
       float: { label: "hidden", corner: "hidden", end: "hidden" },
-      // A row of the sheet, as a menu's: the glyph and the label at a form control's height.
-      // Its glyphs line up with the sheet's title, the rows' surfaces reaching past them.
-      sheet: {
-        list: "-mx-control-timeline-inline flex-col",
-        item: [
-          "h-control-form gap-menu-icon-gap px-control-timeline-inline text-body text-text",
-          "data-hovered:bg-surface-raised data-pressed:bg-surface-raised-hover",
-        ],
-        glyph: "text-muted-text",
-        corner: "hidden",
-        end: "inline-flex",
-      },
-      // A row of the menu's popover from `tablet`, as a menu's, inside its padding.
-      popover: {
-        list: "flex-col",
-        item: [
-          "h-control-form gap-menu-icon-gap px-control-timeline-inline text-body whitespace-nowrap text-text",
-          "data-hovered:bg-surface-raised data-pressed:bg-surface-raised-hover",
-        ],
-        glyph: "text-muted-text",
-        corner: "hidden",
-        end: "inline-flex",
-      },
+      // The Menu's items are the menu's own (MenuItem).
+      menu: {},
       dock: { corner: "hidden", end: "hidden" },
     },
   },
@@ -567,17 +530,35 @@ const footer = tv({
   },
 });
 
-/** The server's pages (about, terms, privacy) at the end of the column beside the main one or of the menu's sheet. */
-export function FrameFooter({ label, links }: { label: string; links: { href: string; label: string }[] }) {
+/**
+ * The server's pages (about, terms, privacy) at the end of the column beside the main one, or of the Menu, where they
+ * are its last group of items, each by its glyph.
+ */
+export function FrameFooter({
+  label,
+  links,
+}: {
+  label: string;
+  links: { href: string; label: string; icon: IconName }[];
+}) {
   const s = footer();
-  const close = use(CloseContext);
+  if (use(PlaceContext) === "menu")
+    return (
+      <MenuGroup>
+        {links.map((l) => (
+          <MenuItem key={l.href} id={`footer:${l.href}`} icon={l.icon} href={l.href}>
+            {l.label}
+          </MenuItem>
+        ))}
+      </MenuGroup>
+    );
   return (
     <footer className={s.root()}>
       <nav aria-label={label}>
         <ul className={s.list()}>
           {links.map((l) => (
             <li key={l.href}>
-              <Link className={s.link()} href={l.href} {...(close === null ? {} : { onPress: close })}>
+              <Link className={s.link()} href={l.href}>
                 {l.label}
               </Link>
             </li>
@@ -759,7 +740,7 @@ export function FrameMark({
  * The screen's primary action in the frame (writing a post, or signing in): under the mark in the rail, with its label
  * in the sidebar, or floating over the tab bar: a glyph alone named by its label, or with its label when `labelled`
  * (signing in, which a glyph alone does not say). With `menu`, a long press, a right click or Alt+Down on it opens a
- * menu of what else it can start (a new article), in a popover beside it; a press still runs the action. `secondary`
+ * menu of what it can start (a new post, a new article), the one menu; a press still runs the action. `secondary`
  * is a second thing to start (a new article), tonal under the primary one in `FrameActions`.
  */
 export function FrameAction({
@@ -811,14 +792,16 @@ export function FrameAction({
         setOpen(true);
       }}
     >
-      <MenuTrigger trigger="longPress" isOpen={open} onOpenChange={setOpen}>
-        {button}
-        <Popover placement={float ? "top end" : "bottom start"} offset={4} className="outline-hidden">
-          <MenuPanel label={menu.label} own>
-            {menu.children}
-          </MenuPanel>
-        </Popover>
-      </MenuTrigger>
+      <MenuSurface
+        trigger={button}
+        label={menu.label}
+        longPress
+        placement={float ? "top end" : "bottom start"}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        {menu.children}
+      </MenuSurface>
     </div>
   );
 }
@@ -831,9 +814,11 @@ export function FrameActions({ children }: { children: ReactNode }) {
   return <div className="grid gap-shell-item-gap">{children}</div>;
 }
 
-/** A list of places of the app, in the rail, the sidebar, the tab bar or the menu's sheet; two lists stand apart. */
+/** A list of places of the app, in the rail, the sidebar, the tab bar or the Menu (a group); two lists stand apart. */
 export function NavList({ children }: { children: ReactNode }) {
-  return <ul className={nav({ place: use(PlaceContext) }).list()}>{children}</ul>;
+  const place = use(PlaceContext);
+  if (place === "menu") return <MenuGroup>{children}</MenuGroup>;
+  return <ul className={nav({ place }).list()}>{children}</ul>;
 }
 
 /** The glyph of a place with its count's badge on its corner, and the badge again at the line's end in the sidebar. */
@@ -857,7 +842,7 @@ function Counted({
   return (
     <>
       <span className={s.glyph()}>
-        <Icon name={icon} place={place === "sheet" || place === "popover" ? "action" : "navigation"} on={on} />
+        <Icon name={icon} place="navigation" on={on} />
         {shown !== undefined && (
           <span className={`${badge()} ${s.corner()}`} aria-hidden="true">
             {shown}
@@ -902,16 +887,35 @@ export function NavItem({
   /** What the count is, for assistive technology ("3 unread"). */
   countLabel?: string | undefined;
 }) {
-  const s = nav({ place: use(PlaceContext) });
-  const close = use(CloseContext);
+  const place = use(PlaceContext);
+  const { lang } = useReader(undefined);
+  const s = nav({ place });
+  if (place === "menu") {
+    const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
+    return (
+      <MenuItem
+        id={href}
+        icon={icon}
+        href={href}
+        current={current}
+        badge={
+          shown === undefined ? undefined : (
+            <>
+              <span className={`${badge()} inline-flex`} aria-hidden="true">
+                {shown}
+              </span>
+              {countLabel !== undefined && <span className="sr-only">{countLabel}</span>}
+            </>
+          )
+        }
+      >
+        {label}
+      </MenuItem>
+    );
+  }
   return (
     <li className={s.li()}>
-      <Link
-        className={s.item()}
-        href={href}
-        {...(current ? { "aria-current": "page" as const } : {})}
-        {...(close === null ? {} : { onPress: close })}
-      >
+      <Link className={s.item()} href={href} {...(current ? { "aria-current": "page" as const } : {})}>
         <Counted icon={icon} on={current} count={count} label={label} countLabel={countLabel} />
       </Link>
     </li>
@@ -922,36 +926,19 @@ const menu = tv({
   slots: {
     // The neutral mark on the menu's glyph while a place inside it has a count.
     dot: "absolute -top-[0.125rem] start-[calc(100%-0.25rem)] size-screen-unread rounded-[50%] bg-text",
-    overlay: "fixed inset-0 z-50 box-border flex flex-col justify-end pt-shell-sheet-room",
-    sheet: [
-      "relative box-border grid max-h-full w-full content-start gap-dialog-gap overflow-y-auto rounded-t-overlay bg-surface",
-      "px-dialog pt-shell-inset pb-[calc(var(--dialog-padding)+env(safe-area-inset-bottom))] font-sans text-body",
-      "text-text shadow-overlay outline-hidden",
-    ],
-    dialog: "grid gap-dialog-gap outline-hidden",
-    head: "flex items-center justify-between gap-dialog-gap",
-    title: "m-0 text-title",
-    groups: "grid gap-menu-group-gap",
-    // From `tablet`: a menu's surface beside its entry, as wide as its rows, never wider than a menu may be.
-    popover: [
-      "box-border min-w-[var(--menu-min-width)] overflow-y-auto rounded-overlay",
-      "bg-surface p-menu-padding font-sans text-body text-text shadow-overlay outline-hidden",
-    ],
-    popoverDialog: "grid gap-menu-group-gap outline-hidden",
-    popoverFooter: "px-control-timeline-inline",
   },
 });
 
 /**
- * The menu: a place of the tab bar on a phone, and the last place of the rail and the sidebar, that opens what the
- * navigation does not hold (NavLists, apart, and the footer at the end). On a phone it opens a sheet from the bottom over
- * the dimmed page, titled, with its close button at the end of its head; from `tablet`, a popover beside its entry,
- * bounded as a menu is. Escape, a press outside and a place's press close either. `marked` puts a neutral mark on its
- * glyph while a place inside it has a count, which `markLabel` names for assistive technology.
+ * The Menu: a place of the tab bar on a phone, and the last place of the rail and the sidebar, that opens what the
+ * navigation does not hold, the one menu (menu.tsx): its places a group per NavList, then the footer's pages, as items
+ * that lead there; a sheet from the bottom over the dimmed page on a phone, a popover beside its entry from `tablet`,
+ * toward the content and never flipped over the navigation. Escape, a press outside, close and a place's press close
+ * it. `marked` puts a neutral mark on its glyph while a place inside it has a count, which `markLabel` names for
+ * assistive technology.
  */
 export function NavMenu({
   label,
-  closeLabel,
   marked = false,
   markLabel,
   count,
@@ -959,7 +946,6 @@ export function NavMenu({
   children,
 }: {
   label: string;
-  closeLabel: string;
   marked?: boolean;
   markLabel?: string | undefined;
   /**
@@ -973,26 +959,10 @@ export function NavMenu({
   const place = use(PlaceContext);
   const s = nav({ place });
   const m = menu();
-  const { lang, direction } = useReader(undefined);
-  const [open, setOpen] = useState(false);
+  const { lang } = useReader(undefined);
   const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
-  // A place's press (a link inside) closes the menu, as it leaves the screen.
-  const close = () => {
-    setOpen(false);
-  };
   const entry = (
-    <AriaButton
-      className={`${s.item()} cursor-pointer border-0 bg-transparent font-sans`}
-      {...(place === "tabs"
-        ? {
-            "aria-haspopup": "dialog" as const,
-            "aria-expanded": open,
-            onPress: () => {
-              setOpen(true);
-            },
-          }
-        : {})}
-    >
+    <AriaButton className={`${s.item()} cursor-pointer border-0 bg-transparent font-sans`}>
       <span className={s.glyph()}>
         <Icon name="menu" place="navigation" />
         {shown !== undefined ? (
@@ -1017,48 +987,15 @@ export function NavMenu({
       )}
     </AriaButton>
   );
-  if (place === "tabs")
-    return (
-      <li className={s.li()}>
-        {entry}
-        <ModalPresence>
-          {open && (
-            <ModalLayer key="menu" onDismiss={close} overlay={m.overlay()} panel={m.sheet()}>
-              <Dialog className={m.dialog()}>
-                <div className={m.dialog()} lang={lang} dir={direction}>
-                  <div className={m.head()}>
-                    <Heading slot="title" className={m.title()}>
-                      {label}
-                    </Heading>
-                    <IconButton icon="close" label={closeLabel} slot="close" />
-                  </div>
-                  <CloseContext value={close}>
-                    <div className={m.groups()}>
-                      <PlaceContext value="sheet">{children}</PlaceContext>
-                    </div>
-                    {end}
-                  </CloseContext>
-                </div>
-              </Dialog>
-            </ModalLayer>
-          )}
-        </ModalPresence>
-      </li>
-    );
   return (
     <li className={s.li()}>
-      <DialogTrigger isOpen={open} onOpenChange={setOpen}>
-        {entry}
-        {/* Toward the content, its end at the entry's, never flipped over the navigation; it mirrors from right to left. */}
-        <Popover className={m.popover()} placement="end bottom" offset={8} shouldFlip={false}>
-          <Dialog className={m.popoverDialog()} aria-label={label}>
-            <CloseContext value={close}>
-              <PlaceContext value="popover">{children}</PlaceContext>
-              {end !== undefined && <div className={m.popoverFooter()}>{end}</div>}
-            </CloseContext>
-          </Dialog>
-        </Popover>
-      </DialogTrigger>
+      {/* From `tablet`, toward the content, its end at the entry's; it mirrors from right to left. */}
+      <MenuSurface trigger={entry} label={label} placement="end bottom" offset={8}>
+        <PlaceContext value="menu">
+          {children}
+          {end}
+        </PlaceContext>
+      </MenuSurface>
     </li>
   );
 }
@@ -1124,8 +1061,7 @@ const call = tv({
       },
       tabs: {},
       float: {},
-      sheet: {},
-      popover: {},
+      menu: {},
     },
   },
 });

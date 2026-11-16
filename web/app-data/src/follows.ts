@@ -17,7 +17,7 @@ export type FollowsList = "following" | "followers";
 const followsHidden = "/api/v1/problems/follows-hidden";
 
 /** Puts the viewer's relationships with `ids` into the cache, each where useRelationship reads it; a failure is left. */
-async function readRelationships(data: AppData, ids: readonly string[], signal: AbortSignal): Promise<void> {
+export async function readRelationships(data: AppData, ids: readonly string[], signal: AbortSignal): Promise<void> {
   if (ids.length === 0) return;
   const { data: answer } = await data.api
     .GET("/accounts/relationships", { params: { query: { id: [...ids] } }, signal })

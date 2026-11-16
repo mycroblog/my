@@ -8,7 +8,7 @@
 // (who opens any other server on the landing page, landing.stories.tsx); the closure announced, and the
 // server closed with no export, one being built and one ready; the maintenance; the reader offline and the server down;
 // a call; the toasts of a newer version and of one the server needs; the voice rooms off; the column beside the main
-// one with none of its sections; and the menu open.
+// one with none of its sections; and the menu open, as the phone's sheet too, and the floating New post's menu open.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, waitFor } from "storybook/test";
@@ -70,10 +70,13 @@ export const AroundEmpty: Story = { parameters: screen({ at: "/", server: { arou
 async function menuRisen(doc: Document) {
   await waitFor(
     () => {
-      const panel = doc.querySelector('[role="dialog"]')?.parentElement;
-      const style = panel === null || panel === undefined ? undefined : getComputedStyle(panel);
-      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-        throw new Error("the menu is still rising");
+      const menu = doc.querySelector('[role="menu"]');
+      if (menu === null) throw new Error("no menu is open");
+      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+          throw new Error("the menu is still rising");
+      }
     },
     { timeout: 5000 },
   );
@@ -90,6 +93,26 @@ export const MenuOpen: Story = {
     const [menu] = menus.filter((m) => m.getClientRects().length > 0);
     if (menu === undefined) throw new Error("no menu shows");
     await userEvent.click(menu);
+    await menuRisen(context.canvasElement.ownerDocument);
+  },
+};
+
+/** The phone's Menu left open: the tab bar's sheet over the dimmed and blurred page, at the minimum width. */
+export const MenuSheet: Story = { ...MenuOpen, globals: minimumWidth };
+
+/**
+ * The floating New post's menu left open on a phone (a long press, here its right click): New post and New article,
+ * in a sheet over the page. From a tablet no New post floats, and the shell shows as it is.
+ */
+export const NewPostMenu: Story = {
+  play: async (context) => {
+    await screenMeta.play(context);
+    // The floating New post is the dock's one button with a menu, found so in every locale.
+    const float = [
+      ...context.canvasElement.querySelectorAll<HTMLElement>('button[aria-haspopup="true"]:not(article *)'),
+    ].find((b) => b.getClientRects().length > 0 && b.closest("nav") === null);
+    if (float === undefined) return;
+    await userEvent.pointer({ keys: "[MouseRight]", target: float });
     await menuRisen(context.canvasElement.ownerDocument);
   },
 };

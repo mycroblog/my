@@ -15,7 +15,7 @@ import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
 import { FormActions, FormHead, FormLink, FormLinks, FormPage, FormPageFooter, FormText } from "./form-page";
-import { MenuItem } from "./menu";
+import { MenuGroup, MenuItem } from "./menu";
 import { images } from "./samples";
 import {
   CallBar,
@@ -172,9 +172,9 @@ const footer = (
   <FrameFooter
     label="This server"
     links={[
-      { href: "/about", label: "About" },
-      { href: "/terms", label: "Terms" },
-      { href: "/privacy", label: "Privacy" },
+      { href: "/about", label: "About", icon: "about" },
+      { href: "/terms", label: "Terms", icon: "file" },
+      { href: "/privacy", label: "Privacy", icon: "file" },
     ]}
   />
 );
@@ -425,11 +425,16 @@ function Shell(state: ShellState) {
   // first row of the menu's sheet, and the floating New post's menu (a long press) as a shortcut.
   const articleMenu = articles
     ? {
-        label: "Other things to write",
+        label: "New",
         children: (
-          <MenuItem id="article" icon="article">
-            New article
-          </MenuItem>
+          <MenuGroup>
+            <MenuItem id="post" icon="compose">
+              New post
+            </MenuItem>
+            <MenuItem id="article" icon="article">
+              New article
+            </MenuItem>
+          </MenuGroup>
         ),
       }
     : undefined;
@@ -493,7 +498,7 @@ function Shell(state: ShellState) {
   // The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest.
   const sideMenu = (
     <NavList>
-      <NavMenu label="Menu" closeLabel="Close" footer={footer}>
+      <NavMenu label="Menu" footer={footer}>
         {list(server)}
       </NavMenu>
     </NavList>
@@ -547,7 +552,6 @@ function Shell(state: ShellState) {
             ))}
             <NavMenu
               label="Menu"
-              closeLabel="Close"
               marked={staff}
               count={reader ? unreadConversations : undefined}
               markLabel={[
@@ -617,21 +621,27 @@ export const AroundEmpty: Story = { args: { around: "none" } };
 export const ArticlesNotAllowed: Story = { args: { articles: false } };
 /** The direct messages' place, where the reader is, with the unread conversations' count. */
 export const DirectMessages: Story = { args: { at: "/direct" } };
-/** Waits until a dialog over the page has risen into place, so that the story tests check it as the reader sees it. */
-async function dialogRisen(doc: Document) {
+/**
+ * Waits until the menu over the page has risen into place (a sheet's; a popover does not move), so that the story
+ * tests check it as the reader sees it.
+ */
+async function menuRisen(doc: Document) {
   await waitFor(
     () => {
-      const panel = doc.querySelector('[role="dialog"]')?.parentElement;
-      const style = panel === null || panel === undefined ? undefined : getComputedStyle(panel);
-      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-        throw new Error("the dialog is still rising");
+      const menu = doc.querySelector('[role="menu"]');
+      if (menu === null) throw new Error("no menu is open");
+      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+          throw new Error("the menu is still rising");
+      }
     },
     { timeout: 5000 },
   );
 }
 
 // The menu pressed where it shows: the tab bar's sheet on a phone, the popover beside the rail's or the sidebar's
-// entry from `tablet`.
+// entry from `tablet`, the one menu either way.
 export const MenuOpen: Story = {
   args: { who: "staff" },
   play: async ({ canvasElement }) => {
@@ -640,7 +650,7 @@ export const MenuOpen: Story = {
     });
     if (menu === undefined) throw new Error("no menu shows");
     await userEvent.click(menu);
-    await dialogRisen(canvasElement.ownerDocument);
+    await menuRisen(canvasElement.ownerDocument);
   },
 };
 

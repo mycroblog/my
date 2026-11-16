@@ -40,8 +40,6 @@ import {
   Button,
   CaptionLine,
   CharCount,
-  ChoiceGroup,
-  ChoicePopup,
   ComposerText,
   CoverAdd,
   CoverRemove,
@@ -122,39 +120,33 @@ const visibilityIcon: Record<ArticleVisibility, IconName> = {
 function Visibility({ e, t, open, setOpen }: { e: ArticleEditor; t: T; open: boolean; setOpen: (o: boolean) => void }) {
   const { visibility } = e.draft;
   return (
-    <ChoicePopup
+    <MenuButton
+      icon={visibilityIcon[visibility]}
+      label={t("compose.audience.tool", { visibility, limited: "no" })}
+      menuLabel={t("compose.audience")}
+      align="start"
       open={open}
-      onClose={() => {
-        setOpen(false);
-      }}
-      label={t("compose.audience")}
-      trigger={
-        <IconButton
-          icon={visibilityIcon[visibility]}
-          label={t("compose.audience.tool", { visibility, limited: "no" })}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          onPress={() => {
-            setOpen(!open);
-          }}
-        />
-      }
+      onOpenChange={setOpen}
     >
-      <ChoiceGroup
-        title={t("compose.audience")}
-        items={articleVisibilities.map((v) => ({
-          id: v,
-          icon: visibilityIcon[v],
-          label: t(`compose.visibility.${v}`),
-          about: t(`compose.visibility.${v}.about` as MessageId, { server: e.settings.domain }),
-        }))}
+      <MenuGroup
         chosen={visibility}
-        onChoose={(v) => {
-          e.change({ visibility: v });
-          setOpen(false);
+        onChoose={(id) => {
+          const v = articleVisibilities.find((x) => x === id);
+          if (v !== undefined) e.change({ visibility: v });
         }}
-      />
-    </ChoicePopup>
+      >
+        {articleVisibilities.map((v) => (
+          <MenuItem
+            key={v}
+            id={v}
+            icon={visibilityIcon[v]}
+            about={t(`compose.visibility.${v}.about` as MessageId, { server: e.settings.domain })}
+          >
+            {t(`compose.visibility.${v}`)}
+          </MenuItem>
+        ))}
+      </MenuGroup>
+    </MenuButton>
   );
 }
 

@@ -83,13 +83,13 @@ export class ArticleEditor {
   /** Opens the editor from the place New article that starts the phone's Menu sheet. */
   async openFromMenuSheet(): Promise<void> {
     const menu = await new Frame(this.page).openMenu();
-    await menu.dialog.getByRole("link", { name: "New article", exact: true }).click();
+    await menu.dialog.getByRole("menuitem", { name: "New article", exact: true }).click();
     await expect(this.heading("New article")).toBeVisible();
   }
 
-  /** The menu of what else can be written, which the phone's floating New post opens on a long press or right click. */
+  /** The menu of what can be written, which the phone's floating New post opens on a long press or right click. */
   get postMenu(): Locator {
-    return this.page.getByRole("menu", { name: "Other things to write", exact: true });
+    return this.page.getByRole("menu", { name: "New", exact: true });
   }
 
   /** Opens the phone's floating New post's menu with a right click, and the editor from its New article. */

@@ -55,10 +55,6 @@
     "defaultMessage": "すべて既読にする",
     "description": "The button over the notifications that marks every notification read."
   },
-  "notifications.accept": {
-    "defaultMessage": "承認",
-    "description": "The button of a follow request notification that lets the account follow the reader."
-  },
   "notifications.approve": {
     "defaultMessage": "承認",
     "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."
@@ -86,10 +82,6 @@
   "notifications.requested": {
     "defaultMessage": "リクエスト済み",
     "description": "What a notification says, in place of its follow button, of an account whose approval the reader's follow request awaits."
-  },
-  "notifications.accepted": {
-    "defaultMessage": "承認しました",
-    "description": "What a follow request's notification says once the reader accepted it (notifications.accept)."
   },
   "notifications.approved": {
     "defaultMessage": "承認しました",
@@ -350,5 +342,25 @@
   "notifications.requests": {
     "defaultMessage": "{count, plural, other {保留中の通知 #件}} · {people, plural, other {#人から}}",
     "description": "The row at the top of the notifications that opens the requests: notifications the reader's notification policy held back, one request per account. people is how many accounts, count how many notifications."
+  },
+  "notifications.follow_requests": {
+    "defaultMessage": "フォローリクエスト",
+    "description": "The title of the screen of the accounts that ask to follow the reader."
+  },
+  "notifications.follow_requests_count": {
+    "defaultMessage": "{count, plural, other {フォローリクエスト #件}}",
+    "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
+  },
+  "notifications.follow_requests_empty": {
+    "defaultMessage": "誰かがフォローをリクエストすると、ここに表示されます。",
+    "description": "In place of the follow requests when there are none."
+  },
+  "notifications.follow_requests_loading": {
+    "defaultMessage": "フォローリクエストを読み込んでいます…",
+    "description": "While the follow requests load."
+  },
+  "notifications.follow_requests_failed": {
+    "defaultMessage": "フォローリクエストを読み込めませんでした。",
+    "description": "When the follow requests failed to load; Try again follows it."
   }
 }

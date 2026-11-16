@@ -30,7 +30,7 @@ import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
 import { anchoring, scrollerOf, scrollToTop, viewTopOf, type Anchoring } from "./scroll";
 import { focusFrameHeading } from "./shell";
-import { splitStop } from "./sentence";
+import { actionJoint } from "./sentence";
 import { ActionScope } from "./shortcuts";
 
 /** Where an entry stands in its feed, for aria-posinset and aria-setsize, and its key; undefined outside a feed. */
@@ -426,8 +426,8 @@ const notice = tv({
 /**
  * A line after a feed's entries, centered and muted: that it loads, that it failed (`alert`), or that it has none,
  * with an action after it (a `TextButton`, such as trying again), apart from words by a middle dot and from a full
- * sentence by its stop alone, held to it (sentence.ts); wrapping between phrases. `start` lines it up
- * at the start instead, in a form.
+ * sentence by its stop alone (sentence.ts); wrapping between phrases. `start` lines it up at the start instead, in a
+ * form.
  */
 export function FeedNotice({
   alert = false,
@@ -441,23 +441,15 @@ export function FeedNotice({
   children: ReactNode;
 }) {
   const s = notice({ start });
-  // After a full sentence, no dot: its stop goes into the action's run (sentence.ts).
-  const split = action === undefined ? undefined : splitStop(children);
   return (
     <p role={alert ? "alert" : "status"} className={s.root()}>
-      {split?.[0] ?? children}
-      {action !== undefined &&
-        (split !== undefined ? (
-          <span className={s.action()}>
-            {split[1]}
-            {action}
-          </span>
-        ) : (
-          <>
-            {" "}
-            <span className={s.action()}>· {action}</span>
-          </>
-        ))}
+      {children}
+      {action !== undefined && (
+        <>
+          {actionJoint(children)}
+          <span className={s.action()}>{action}</span>
+        </>
+      )}
     </p>
   );
 }

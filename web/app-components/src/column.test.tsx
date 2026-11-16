@@ -69,7 +69,7 @@ describe("its states", () => {
 
   test("when the first posts failed, it alerts with a retry", () => {
     expect(render({ status: "error", error: new Error("x") })).toMatch(
-      /<p role="alert">The posts could not be loaded<span>\. <button [^>]*>Try again<\/button>/,
+      /<p role="alert">The posts could not be loaded\. <span><button [^>]*>Try again<\/button>/,
     );
   });
 
@@ -91,7 +91,7 @@ describe("its states", () => {
 
   test("when more failed, it alerts with a retry, and asks for no more by itself", () => {
     const html = render({ statuses: [status("a")], hasNextPage: true, error: new Error("x") });
-    expect(html).toMatch(/<p role="alert">More posts could not be loaded<span>\. <button [^>]*>Try again<\/button>/);
+    expect(html).toMatch(/<p role="alert">More posts could not be loaded\. <span><button [^>]*>Try again<\/button>/);
     // The mark the feed watches to ask for more, the last thing in it, is gone.
     expect(html).not.toMatch(/<div aria-hidden="true"><\/div><\/div>$/);
   });

@@ -20,23 +20,24 @@ export class Menu {
     this.page = page;
   }
 
+  /** The menu itself, a sheet on a phone and a popover from a tablet's width. */
   get dialog(): Locator {
-    return this.page.getByRole("dialog", { name: "Menu", exact: true });
+    return this.page.getByRole("menu", { name: "Menu", exact: true });
   }
 
-  /** The menu's link to `place`. */
+  /** The menu's item that leads to `place`. */
   link(place: MenuPlace): Locator {
-    return this.dialog.getByRole("link", { name: place, exact: true });
+    return this.dialog.getByRole("menuitem", { name: place, exact: true });
   }
 
-  /** Follows the menu's link to `place`. */
+  /** Follows the menu's item to `place`. */
   async goTo(place: MenuPlace): Promise<void> {
     await this.link(place).click();
   }
 
-  /** Closes the menu with its Close button. */
+  /** Closes the menu's sheet with its Close button, at the end of its head. */
   async close(): Promise<void> {
-    await this.dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await this.page.getByRole("button", { name: "Close", exact: true }).click();
   }
 }
 
