@@ -3,7 +3,7 @@
 // The addresses of an account's profile and of a post in the web client: the server's own (ADR-0018), which its HTML
 // shell serves with their link previews (internal/interface/web/preview.go), so that a link the client draws is the
 // link the reader shares. A local account is `/@user`, a remote one `/@user@domain`, a post is under its author, and a
-// hashtag is `/tags/{name}`.
+// hashtag is `/tags/{name}`. Where a notification leads is decided here alone, for every list of them.
 
 /** What an address of an account reads: its handle. */
 type Handle = { readonly acct: string; readonly username: string; readonly domain: string };
@@ -40,4 +40,40 @@ export function hashtagPath(href: string, domain: string | undefined): string | 
   const match = /^\/tags\/([^/]+)\/?$/.exec(url.pathname);
   if (url.host !== domain.toLowerCase() || match?.[1] === undefined) return undefined;
   return `/tags/${match[1]}`;
+}
+
+/** The address of what waits for the reader's approval: the replies, boosts and quotes of their posts they hold. */
+export const waitingPath = "/notifications/waiting";
+
+/** The address of the follow requests that wait for the reader's answer. */
+export const followRequestsPath = "/notifications/follow_requests";
+
+/** What a notification reads to decide where it leads: its kind and what it is about. */
+export type NotificationTarget = {
+  readonly type: string;
+  readonly status?: { readonly id: string; readonly account: Handle } | undefined;
+  readonly account?: Handle | undefined;
+  readonly account_move?: { readonly target?: Handle | undefined } | undefined;
+  readonly announcement?: { readonly id: string } | undefined;
+  readonly event_id?: string | undefined;
+  readonly voice_room_id?: string | undefined;
+};
+
+const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request", "quote_request"]);
+
+/**
+ * Where a notification leads, the one place that decides it for every list of them: what waits for the reader's
+ * approval for a request to reply, boost or quote; the follow requests for one; the post it is about; the account an
+ * account moved to; the announcement, the event or the room; the account that acted; else the notifications.
+ */
+export function notificationPath(n: NotificationTarget): string {
+  if (requests.has(n.type)) return waitingPath;
+  if (n.type === "follow_request") return followRequestsPath;
+  if (n.status !== undefined) return statusPath(n.status);
+  if (n.type === "account_moved" && n.account_move?.target !== undefined) return accountPath(n.account_move.target);
+  if (n.announcement !== undefined) return `/announcements/${n.announcement.id}`;
+  if (n.event_id !== undefined) return `/events/${n.event_id}`;
+  if (n.voice_room_id !== undefined) return `/voice/${n.voice_room_id}`;
+  if (n.account !== undefined) return accountPath(n.account);
+  return "/notifications";
 }

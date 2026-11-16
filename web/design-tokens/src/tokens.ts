@@ -334,6 +334,12 @@ export const viewer = { scrim: 0.92, bar: 3.5, inset: 0.75, maxZoom: 4, zoomStep
 export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.375, glyph: 1.25 } as const;
 
 /**
+ * A switch (a setting on or off), in rem: its track's width and height, the thumb's size, and the gap between the
+ * track and its label.
+ */
+export const toggle = { width: 2.5, height: 1.5, thumb: 1.125, gap: 0.75 } as const;
+
+/**
  * The emoji picker, in rem: a cell of its grid, and on a touch screen; the font size of an emoji in a cell; a button of
  * its row of categories; the width of its popover and the most height of its grid there; the height of its sheet on a
  * phone; the space between its parts, and between a heading of its grid and the cells under it.
@@ -550,7 +556,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -666,6 +672,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--chip-gap", `${chip.gap}rem`],
   ["--chip-spacing", `${chip.spacing}rem`],
   ["--chip-glyph", `${chip.glyph}em`],
+  ...Object.entries(toggle).map(([name, value]): [string, string] => [`--toggle-${name}`, `${value}rem`]),
   ...Object.entries(emojiPicker).map(([name, value]): [string, string] => [
     `--emoji-picker-${kebab(name)}`,
     `${value}rem`,

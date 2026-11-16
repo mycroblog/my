@@ -121,7 +121,7 @@ export function UnreadMark({ label }: { label: string }) {
 
 const notice = tv({
   slots: {
-    root: "flex items-start gap-entry-avatar",
+    root: "relative flex items-start gap-entry-avatar",
     // The glyph and the avatar stand on the text's first line, so that a sentence that wraps keeps them at its start.
     glyph: [
       "inline-flex h-[1lh] min-w-icon-action flex-none items-center justify-center text-muted-text",
@@ -131,12 +131,27 @@ const notice = tv({
     // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り).
     text: "m-0 min-w-0 flex-1 [word-break:auto-phrase]",
     end: "inline-flex h-[1lh] flex-none items-center gap-entry-avatar",
+    // The sentence as the link to what it tells of, in the line's own color, underlined while hovered.
+    link: [
+      "rounded-control text-current no-underline outline-hidden data-hovered:underline",
+      "data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
+    ],
   },
   variants: {
     // Unread, the line is in the text's color with the mark at its end; read, it is muted.
     read: { true: { text: "text-muted-text" } },
+    // Where its link sits: on the sentence; on the sentence, reaching over the whole line, so that a press anywhere on
+    // it follows the link; or on the time at its end, as a post's.
+    linkOn: {
+      sentence: {},
+      line: { link: "after:absolute after:inset-0 after:content-['']" },
+      time: {},
+    },
   },
 });
+
+/** Where a notice line's link sits (NoticeLine's `linkOn`). */
+export type NoticeLinkOn = "sentence" | "line" | "time";
 
 export type NoticeLineProps = {
   /** The glyph of its kind. */
@@ -153,21 +168,50 @@ export type NoticeLineProps = {
   unread?: string | undefined;
   /** The sentence of its kind. */
   children: ReactNode;
+  /** Where it leads: what it tells of (the post, the account, the follow requests). */
+  href?: string | undefined;
+  /** What runs as its link is followed (it is read). */
+  onFollow?: (() => void) | undefined;
+  /** Where its link sits. */
+  linkOn?: NoticeLinkOn | undefined;
 };
 
-/** The line of a notice's kind: its glyph, the account's avatar, the sentence, which wraps, the unread mark and the time. */
-export function NoticeLine({ icon, emoji, avatar, date, id, unread: mark, children }: NoticeLineProps) {
-  const s = notice({ read: mark === undefined });
+/**
+ * The line of a notice's kind: its glyph, the account's avatar, the sentence, which wraps, the unread mark and the time.
+ * With `href`, it leads to what it tells of, by its link on `linkOn`.
+ */
+export function NoticeLine({
+  icon,
+  emoji,
+  avatar,
+  date,
+  id,
+  unread: mark,
+  children,
+  href,
+  onFollow,
+  linkOn = "sentence",
+}: NoticeLineProps) {
+  const s = notice({ read: mark === undefined, linkOn });
+  const follow = onFollow === undefined ? {} : { onPress: onFollow };
+  const sentence =
+    href === undefined || linkOn === "time" ? (
+      children
+    ) : (
+      <Link href={href} className={s.link()} {...follow}>
+        {children}
+      </Link>
+    );
   return (
     <div className={s.root()}>
       <span className={s.glyph()}>{emoji ?? <Icon name={icon} place="action" />}</span>
       {avatar !== undefined && <span className={s.avatar()}>{avatar}</span>}
       <p id={id} className={s.text()}>
-        {children}
+        {sentence}
       </p>
       <span className={s.end()}>
         {mark !== undefined && <UnreadMark label={mark} />}
-        <Stamp date={date} />
+        <Stamp date={date} {...(href !== undefined && linkOn === "time" ? { href, ...follow } : {})} />
       </span>
     </div>
   );
