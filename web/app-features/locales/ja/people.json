@@ -8,8 +8,8 @@
     "description": "The title of the accounts the server suggests to follow, where they show on another screen (the search before anything is written)."
   },
   "people.home": {
-    "defaultMessage": "ホームはまだ空です。人をフォローすると、その投稿がここに表示されます。",
-    "description": "In place of the home timeline's posts while it has none (a new account), over the accounts the server suggests to follow."
+    "defaultMessage": "まだ誰もフォローしていません。人をフォローすると、その投稿がホームに表示されます。",
+    "description": "Over the accounts the server suggests to follow, on the home timeline while the reader follows no one (a new account)."
   },
   "people.loading": {
     "defaultMessage": "おすすめを読み込んでいます…",

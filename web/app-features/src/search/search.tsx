@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Search (FR-305–FR-307, FR-309, ADR-0092 §1, ADR-0149 §9): a field that finds as the reader writes, what it finds
-// under it. People (accounts by the start of a handle or a word of their name, and this server's by any part of
-// them), each a row with its follow; a remote account named by `@user@host` or by its address, looked up on its
-// server and put first, the field saying while it is fetched and when none is there; hashtags by their start, each a
+// Search (FR-305–FR-307, FR-309, ADR-0092 §1, ADR-0149 §9): a field that finds as the reader writes (the design
+// system's SearchField), what it finds under it. People (accounts by the start of a handle or a word of their name,
+// and this server's by any part of them), each a row with its follow; a remote account named by `@user@host` or by its
+// address, looked up on its server and put first, the field busy while it is fetched; hashtags by their start, each a
 // row that opens its timeline with how many posts carry it; and posts by their words, only where the server has a
-// search engine, nothing of them shown elsewhere. The kinds stand in sections one under another or in tabs
-// (`DiscoveryLayout`). Before anything is written, the field says what it finds, over the suggested people where
-// finding people is reached from here. Each kind says that it loads, that it failed with Try again, or that it found
-// none; one line says when nothing at all was found.
+// search engine, nothing of them shown elsewhere. The kinds that found something stand in sections one under another
+// or in tabs, each named with how many, the first that found something open (`DiscoveryLayout`). One line says that
+// the search runs, that it failed (Try again asks again what failed), that the account named is not there, or that
+// nothing was found. Before anything is written, the suggested people show under the field where finding people is
+// reached from here and the server suggests anyone.
 
 import { Column } from "@my/app-components";
 import { useSearch, usePostSearchOffered, type SearchResults } from "@my/app-data";
@@ -19,12 +20,12 @@ import {
   RowItem,
   RowList,
   ScreenStack,
+  SearchField,
   TabRow,
   TextButton,
-  TextField,
   useLocale,
 } from "@my/design-system";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState } from "react";
 import { stringsIn } from "../locale";
 import { AccountRows, SuggestedPeople, useDiscoveryLayout } from "../people/people";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
@@ -51,47 +52,11 @@ function useSettled(words: string): string {
 
 type Kind = "people" | "hashtags" | "posts";
 
-/** What a kind says in place of its results while they load, when they failed, or when there are none. */
-function Notice({
-  status,
-  none,
-  refetch,
-  t,
-}: {
-  status: "pending" | "error" | "success";
-  none: string;
-  refetch: () => void;
-  t: T;
-}): ReactNode {
-  if (status === "pending") return <FeedNotice start>{t("search.searching")}</FeedNotice>;
-  if (status === "error")
-    return (
-      <FeedNotice start alert action={<TextButton onPress={refetch}>{t("search.retry")}</TextButton>}>
-        {t("search.failed")}
-      </FeedNotice>
-    );
-  return <FeedNotice start>{none}</FeedNotice>;
-}
-
-/** The people found, the remote one named by the words first, or what stands in their place. */
-function People({ results, t }: { results: SearchResults; t: T }) {
-  const { accounts, remote } = results;
-  if (accounts.items.length > 0) return <AccountRows label={t("search.people")} accounts={accounts.items} t={t} />;
-  if (remote?.status === "pending")
-    return <FeedNotice start>{t("search.looking_up", { handle: remote.acct })}</FeedNotice>;
-  if (remote !== undefined && remote.status === "success" && !remote.found && accounts.status !== "error")
-    return <FeedNotice start>{t("search.remote_none", { handle: remote.acct })}</FeedNotice>;
-  return <Notice status={accounts.status} none={t("search.people_none")} refetch={accounts.refetch} t={t} />;
-}
-
-/** The hashtags found, each opening its timeline, or what stands in their place. */
+/** The hashtags found, each opening its timeline with how many posts carry it. */
 function Hashtags({ results, t }: { results: SearchResults; t: T }) {
-  const { tags } = results;
-  if (tags.items.length === 0)
-    return <Notice status={tags.status} none={t("search.hashtags_none")} refetch={tags.refetch} t={t} />;
   return (
     <RowList label={t("search.hashtags")}>
-      {tags.items.map((tag) => (
+      {results.tags.items.map((tag) => (
         <RowItem key={tag.name}>
           <OpenRow
             href={`/tags/${encodeURIComponent(tag.name)}`}
@@ -121,69 +86,78 @@ function Posts({ results, t }: { results: SearchResults; t: T }) {
       onAction={onAction}
       postProps={(s) => ({ voting: votingOf(s), own: ownOf(s), picker })}
       postAs={TranslatablePost}
-      empty={<FeedNotice start>{t("search.posts_none")}</FeedNotice>}
     />
   );
 }
 
-/** Whether the words found nothing of any kind, every kind having answered. */
-function foundNothing(results: SearchResults): boolean {
-  const { accounts, tags, posts, remote } = results;
-  const tagsDone = remote !== undefined || (tags.status === "success" && tags.items.length === 0);
-  const postsDone = posts === undefined || (posts.status === "success" && posts.items.length === 0);
-  const remoteDone = remote === undefined || remote.status !== "pending";
-  return accounts.status === "success" && accounts.items.length === 0 && tagsDone && postsDone && remoteDone;
+/** One line that stands for the whole search: that it runs, failed, found no account at the address, or nothing. */
+function SearchLine({ q, results, t }: { q: string; results: SearchResults; t: T }) {
+  const { status, remote } = results;
+  if (status === "pending")
+    return (
+      <ScreenStack busy>
+        <FeedNotice start>
+          {remote === undefined ? t("search.searching") : t("search.looking_up", { handle: remote.acct })}
+        </FeedNotice>
+      </ScreenStack>
+    );
+  if (status === "error")
+    return (
+      <FeedNotice start alert action={<TextButton onPress={results.retry}>{t("search.retry")}</TextButton>}>
+        {t("search.failed")}
+      </FeedNotice>
+    );
+  if (remote !== undefined && !remote.found && results.accounts.items.length === 0)
+    return <FeedNotice start>{t("search.remote_none", { handle: remote.acct })}</FeedNotice>;
+  return <FeedNotice start>{t("search.none", { q })}</FeedNotice>;
 }
 
-/** What the words find, in sections one under another or in tabs. */
-function Results({ q, t }: { q: string; t: T }) {
+/** What the words found: the kinds that found something, in sections one under another or in tabs; else one line. */
+function Results({ q, results, t }: { q: string; results: SearchResults; t: T }) {
   const { results: layout } = useDiscoveryLayout();
-  const results = useSearch(q);
-  const [tab, setTab] = useState<Kind>("people");
-  // A handle or an address names one account: only people are searched for it.
-  const kinds: readonly Kind[] =
-    results.remote !== undefined
-      ? ["people"]
-      : results.posts === undefined
-        ? ["people", "hashtags"]
-        : ["people", "hashtags", "posts"];
+  const [chosen, setChosen] = useState<Kind | undefined>(undefined);
+  const counts: Record<Kind, number> = {
+    people: results.accounts.items.length,
+    hashtags: results.tags.items.length,
+    posts: results.posts?.items.length ?? 0,
+  };
+  const kinds = (["people", "hashtags", "posts"] as const).filter((kind) => counts[kind] > 0);
+  if (results.status !== "success" || kinds.length === 0) return <SearchLine q={q} results={results} t={t} />;
   const name = { people: t("search.people"), hashtags: t("search.hashtags"), posts: t("search.posts") };
   const body = (kind: Kind) =>
     kind === "people" ? (
-      <People results={results} t={t} />
+      <AccountRows label={name.people} accounts={results.accounts.items} />
     ) : kind === "hashtags" ? (
       <Hashtags results={results} t={t} />
     ) : (
       <Posts results={results} t={t} />
     );
-  // Busy while any kind is still asked for, so that assistive technology (and a story) waits for all of them.
-  const busy =
-    results.accounts.status === "pending" ||
-    (results.remote === undefined && results.tags.status === "pending") ||
-    results.remote?.status === "pending" ||
-    results.posts?.status === "pending";
-  if (foundNothing(results)) return <FeedNotice start>{t("search.none", { q })}</FeedNotice>;
-  if (layout === "tabs" && kinds.length > 1)
+  if (layout === "tabs") {
+    // Open on the first kind that found something, until the reader chooses another.
+    const current = chosen !== undefined && kinds.includes(chosen) ? chosen : (kinds[0] ?? "people");
+    const more = results.posts?.hasNextPage === true;
     return (
-      <ScreenStack busy={busy}>
-        <TabRow
-          label={t("search.kinds")}
-          tabs={kinds.map((id) => ({ id, name: name[id] }))}
-          current={kinds.includes(tab) ? tab : "people"}
-          onChange={setTab}
-        >
-          {body(kinds.includes(tab) ? tab : "people")}
-        </TabRow>
-      </ScreenStack>
+      <TabRow
+        label={t("search.kinds")}
+        tabs={kinds.map((id) => ({
+          id,
+          name: t("search.tab", { kind: name[id], count: counts[id], more: id === "posts" && more ? "yes" : "no" }),
+        }))}
+        current={current}
+        onChange={setChosen}
+      >
+        {body(current)}
+      </TabRow>
     );
+  }
   return (
-    <ScreenStack busy={busy}>
+    <>
       {kinds.map((kind) => (
         <ResultGroup key={kind} title={name[kind]}>
           {body(kind)}
         </ResultGroup>
       ))}
-    </ScreenStack>
+    </>
   );
 }
 
@@ -198,23 +172,23 @@ export function Search({ q, onQuery }: { q: string; onQuery: (q: string) => void
   const settled = useSettled(words.trim());
   const posts = usePostSearchOffered() === true;
   const { people } = useDiscoveryLayout();
+  const results = useSearch(settled);
   useEffect(() => {
     if (settled !== q.trim()) onQuery(settled);
   }, [settled, q, onQuery]);
   return (
     <ScreenStack>
-      <TextField
+      <SearchField
         id={id}
-        name="q"
-        type="search"
         label={t("search.field")}
         hint={t("search.hint", { posts: posts ? "yes" : "no" })}
         defaultValue={q}
-        autoComplete="off"
         autoFocus={q === ""}
         onChange={setWords}
+        busy={results.remote?.status === "pending"}
+        clearLabel={t("search.clear")}
       />
-      {settled === "" ? people !== "menu" && <SuggestedPeople /> : <Results q={settled} t={t} />}
+      {settled === "" ? people !== "menu" && <SuggestedPeople /> : <Results q={settled} results={results} t={t} />}
     </ScreenStack>
   );
 }

@@ -3,6 +3,10 @@
     "defaultMessage": "検索",
     "description": "The label of the search screen's field, where the reader writes what to find."
   },
+  "search.clear": {
+    "defaultMessage": "消去",
+    "description": "The button at the end of a search field that empties it."
+  },
   "search.hint": {
     "defaultMessage": "{posts, select, yes {名前やハンドルで人を、ハッシュタグを、言葉で投稿を探せます} other {名前やハンドルで人を、ハッシュタグを探せます}}",
     "description": "The hint under the search field: what it finds. posts is yes where the server searches posts too."
@@ -10,6 +14,10 @@
   "search.kinds": {
     "defaultMessage": "検索結果",
     "description": "The name, for assistive technology, of the row of tabs that shows one kind of result (people, hashtags, posts)."
+  },
+  "search.tab": {
+    "defaultMessage": "{kind} {count}{more, select, yes {+} other {}}",
+    "description": "A tab of the search's results: the kind (search.people, search.hashtags, search.posts) and how many it found; + while more posts follow than were read."
   },
   "search.people": {
     "defaultMessage": "人",
@@ -38,18 +46,6 @@
   "search.none": {
     "defaultMessage": "「{q}」に一致するものは見つかりませんでした。",
     "description": "When a search found nothing of any kind. q is what the reader wrote."
-  },
-  "search.people_none": {
-    "defaultMessage": "人は見つかりませんでした。",
-    "description": "In place of the accounts when the search found none."
-  },
-  "search.hashtags_none": {
-    "defaultMessage": "ハッシュタグは見つかりませんでした。",
-    "description": "In place of the hashtags when the search found none."
-  },
-  "search.posts_none": {
-    "defaultMessage": "投稿は見つかりませんでした。",
-    "description": "In place of the posts when the search found none."
   },
   "search.tag_posts": {
     "defaultMessage": "{count, plural, other {# 件の投稿}}",

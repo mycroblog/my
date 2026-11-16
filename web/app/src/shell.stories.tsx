@@ -10,7 +10,9 @@
 // a call; the toasts of a newer version and of one the server needs; the voice rooms off; the column beside the main
 // one with none of its sections; and the menu open, as the phone's sheet too, and the floating New post's menu open.
 
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import { DiscoveryLayoutProvider, type DiscoveryLayout } from "@my/app-features";
+import { Options } from "@my/devtools/options";
+import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { userEvent, waitFor } from "storybook/test";
 import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
 import { callAcrossScreens } from "./shell.plays";
@@ -98,7 +100,20 @@ export const MenuOpen: Story = {
 };
 
 /** The phone's Menu left open: the tab bar's sheet over the dimmed and blurred page, at the minimum width. */
-export const MenuSheet: Story = { ...MenuOpen, globals: minimumWidth };
+export const MenuSheet: Story = {
+  ...MenuOpen,
+  globals: minimumWidth,
+  // Where finding people is reached is open to the decider (`find-people`, as in the Search stories): each variant's
+  // menu, with Find people in it or not.
+  render: (args: unknown, context: StoryContext) => {
+    const as = (people: DiscoveryLayout["people"]) => (
+      <DiscoveryLayoutProvider value={{ results: "sections", people }}>
+        {screenMeta.render(args, context)}
+      </DiscoveryLayoutProvider>
+    );
+    return <Options id="find-people" variants={{ both: as("both"), search: as("search"), menu: as("menu") }} />;
+  },
+};
 
 /**
  * The floating New post's menu left open on a phone (a long press, here its right click): New post and New article,

@@ -3,14 +3,14 @@
 // The home timeline (ADR-0025 §2, §4): the column of @my/app-components fed by useHomeTimeline() of @my/app-data, and
 // what a route's loader reads before the column shows (ADR-0028 §6). Its new posts follow the policy of new-posts.ts,
 // with `timeline_auto_insert` at its default, on (ADR-0013 §22), until the reader's preferences are read. A post's
-// actions are answered as on every screen (post-actions.tsx). Empty, as a new account's is right after it signed up,
-// it offers people to follow (people.tsx).
+// actions are answered as on every screen (post-actions.tsx). While the reader follows no one, as a new account right
+// after it signed up, it offers people to follow over its posts (people.tsx).
 
 import { Column } from "@my/app-components";
-import { homeTimelineQuery, useHomeTimeline, type AppData } from "@my/app-data";
-import { useLocale } from "@my/design-system";
+import { homeTimelineQuery, useHomeTimeline, useViewer, type AppData } from "@my/app-data";
+import { ScreenStack, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { SuggestedPeople, useSuggestionsOffered } from "../people/people";
+import { SuggestedPeople } from "../people/people";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost } from "../post-translation";
 import { useNewPostsColumn } from "./new-posts";
@@ -30,20 +30,25 @@ export function HomeTimeline() {
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
-  const timeline = useHomeTimeline();
-  // The suggestions are asked only for an empty home.
-  const offered = useSuggestionsOffered(timeline.status === "success" && timeline.statuses.length === 0);
-  return (
+  const newPosts = useNewPostsColumn("home");
+  // A reader who follows no one yet (a new account) is offered people to follow over the column (FR-308), where the
+  // server suggests anyone; the suggestions are asked only for them.
+  const alone = useViewer()?.following_count === 0;
+  const column = (
     <Column
       label={t("timeline.home")}
-      {...timeline}
-      {...useNewPostsColumn("home")}
+      {...useHomeTimeline()}
+      {...newPosts}
       onAction={onAction}
       postProps={(s) => ({ voting: votingOf(s), own: ownOf(s), picker })}
       postAs={TranslatablePost}
-      // A new account follows no one yet: its empty home offers people to follow (FR-308), where the server suggests
-      // anyone; else it says it is empty as every timeline does.
-      empty={offered === false ? undefined : <SuggestedPeople intro={t("people.home")} />}
     />
+  );
+  if (!alone) return column;
+  return (
+    <ScreenStack>
+      <SuggestedPeople intro={t("people.home")} />
+      {column}
+    </ScreenStack>
   );
 }

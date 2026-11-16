@@ -118,6 +118,13 @@ export type SearchResults = {
   /** The remote account the words name (`@user@host`, a URL): undefined for other words. */
   readonly remote:
     { readonly acct: string; readonly status: "pending" | "error" | "success"; readonly found: boolean } | undefined;
+  /**
+   * The search as one: `pending` while any kind it asks for is, `error` when any failed (a screen says it once), else
+   * `success`.
+   */
+  readonly status: "pending" | "error" | "success";
+  /** Asks again every kind that failed. */
+  readonly retry: () => void;
 };
 
 const found = <T>(query: {
@@ -151,13 +158,31 @@ export function useSearch(q: string): SearchResults {
   const looked = remote.data ?? null;
   const accountItems =
     looked === null ? accounts.data : [looked, ...(accounts.data ?? []).filter((a) => a.id !== looked.id)];
+  // What this search asks for: a handle or an address names one account, which neither hashtags nor posts are asked
+  // for; posts only where the server searches them.
+  const shownPosts = offered && acct === undefined ? posts : undefined;
+  const statuses = [
+    accounts.status,
+    ...(acct === undefined ? [tags.status] : [remote.status]),
+    ...(shownPosts === undefined ? [] : [shownPosts.status]),
+  ];
   return {
     accounts: found({ ...accounts, data: accountItems }),
-    tags: found({ ...tags, data: tags.data?.items }),
-    posts: offered && acct === undefined ? posts : undefined,
+    tags:
+      acct === undefined
+        ? found({ ...tags, data: tags.data?.items })
+        : { items: [], status: "success", refetch: () => undefined },
+    posts: shownPosts,
     remote:
       acct === undefined
         ? undefined
         : { acct, status: remote.status, found: remote.data !== null && remote.data !== undefined },
+    status: statuses.includes("error") ? "error" : statuses.includes("pending") ? "pending" : "success",
+    retry: () => {
+      if (accounts.isError) void accounts.refetch();
+      if (tags.isError) void tags.refetch();
+      if (remote.isError) void remote.refetch();
+      if (shownPosts?.status === "error") shownPosts.refetch();
+    },
   };
 }

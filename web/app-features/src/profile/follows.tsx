@@ -12,26 +12,14 @@ import {
   loadAccount,
   useAccount,
   useAccountFollows,
-  useChangeRelationship,
-  useRelationship,
   useViewer,
   viewerQuery,
   type Account,
   type AppData,
   type FollowsList,
 } from "@my/app-data";
-import {
-  BackButton,
-  Button,
-  FeedNotice,
-  Fold,
-  ScreenStack,
-  StateText,
-  TabRow,
-  TextButton,
-  useLocale,
-} from "@my/design-system";
-import { useState } from "react";
+import { BackButton, FeedNotice, Fold, ScreenStack, TabRow, TextButton, useLocale } from "@my/design-system";
+import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -47,35 +35,6 @@ export async function loadFollows(data: AppData, acct: string, list: FollowsList
     ),
     data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }),
   ]).catch(() => undefined);
-}
-
-/** The follow of a row: follow (back, or ask to) until the reader follows the account or asked to, then what is so. */
-function RowFollow({ account, t }: { account: Account; t: T }) {
-  const relationship = useRelationship(account.id);
-  const change = useChangeRelationship();
-  const [busy, setBusy] = useState(false);
-  if (relationship === undefined || relationship.blocking === true) return null;
-  if (relationship.following === true) return <StateText>{t("profile.following")}</StateText>;
-  if (relationship.requested === true) return <StateText>{t("profile.requested")}</StateText>;
-  return (
-    <Button
-      size="timeline"
-      kind="primary"
-      busy={busy}
-      onPress={() => {
-        setBusy(true);
-        change(account.id, "follow")
-          .catch(() => undefined)
-          .finally(() => {
-            setBusy(false);
-          });
-      }}
-    >
-      {t(
-        account.locked ? "profile.request_follow" : relationship.followed_by ? "profile.follow_back" : "profile.follow",
-      )}
-    </Button>
-  );
 }
 
 /** The rows of the list, then its line: loading, failed, empty, kept from the reader, or the fold of more. */
@@ -110,7 +69,7 @@ function Rows({ account, list, t }: { account: Account; list: FollowsList; t: T 
   return (
     <ScreenStack busy={follows.status === "pending"}>
       {follows.items.map((a) => (
-        <AccountLine key={a.id} account={a} end={a.id === viewer ? undefined : <RowFollow account={a} t={t} />} />
+        <AccountLine key={a.id} account={a} end={a.id === viewer ? undefined : <FollowOf account={a} />} />
       ))}
       {end}
     </ScreenStack>

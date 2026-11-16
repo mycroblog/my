@@ -8,17 +8,8 @@
 // no one to suggest. Where the discovery's places go is `DiscoveryLayout`'s.
 
 import { AccountLine } from "@my/app-components";
+import { suggestionsQuery, useInstance, useSuggestions, type Account, type AppData } from "@my/app-data";
 import {
-  suggestionsQuery,
-  useChangeRelationship,
-  useInstance,
-  useRelationship,
-  useSuggestions,
-  type Account,
-  type AppData,
-} from "@my/app-data";
-import {
-  Button,
   FeedNotice,
   Fold,
   ResultGroup,
@@ -26,12 +17,12 @@ import {
   RowList,
   ScreenStack,
   ScreenTitle,
-  StateText,
   TextButton,
   TextLink,
   useLocale,
 } from "@my/design-system";
-import { createContext, use, useRef, type ReactNode } from "react";
+import { createContext, use, type ReactNode } from "react";
+import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -63,46 +54,13 @@ export async function loadPeople(data: AppData): Promise<void> {
   await data.queryClient.query({ ...suggestionsQuery(data), staleTime: Infinity }).catch(() => undefined);
 }
 
-/**
- * The follow of an account's row: follow (back, or ask to) until the reader follows it or asked to, then what is so. A
- * press while the server answers does nothing; no button shows itself busy, which React Aria would announce by an id
- * the answer takes away.
- */
-function FollowAction({ account, t }: { account: Account; t: T }) {
-  const relationship = useRelationship(account.id);
-  const change = useChangeRelationship();
-  const sending = useRef(false);
-  if (relationship === undefined || relationship.blocking === true) return null;
-  if (relationship.following === true) return <StateText>{t("profile.following")}</StateText>;
-  if (relationship.requested === true) return <StateText>{t("profile.requested")}</StateText>;
-  return (
-    <Button
-      size="timeline"
-      kind="primary"
-      onPress={() => {
-        if (sending.current) return;
-        sending.current = true;
-        change(account.id, "follow")
-          .catch(() => undefined)
-          .finally(() => {
-            sending.current = false;
-          });
-      }}
-    >
-      {t(
-        account.locked ? "profile.request_follow" : relationship.followed_by ? "profile.follow_back" : "profile.follow",
-      )}
-    </Button>
-  );
-}
-
 /** Accounts as a list named by `label`, each a row with its follow. */
-export function AccountRows({ label, accounts, t }: { label: string; accounts: readonly Account[]; t: T }) {
+export function AccountRows({ label, accounts }: { label: string; accounts: readonly Account[] }) {
   return (
     <RowList label={label}>
       {accounts.map((a) => (
         <RowItem key={a.id}>
-          <AccountLine account={a} end={<FollowAction account={a} t={t} />} />
+          <AccountLine account={a} end={<FollowOf account={a} />} />
         </RowItem>
       ))}
     </RowList>
@@ -128,7 +86,7 @@ function Suggested({ label, limit, t }: { label: string; limit?: number | undefi
   const few = limit === undefined ? items : items.slice(0, limit);
   return (
     <>
-      <AccountRows label={label} accounts={few} t={t} />
+      <AccountRows label={label} accounts={few} />
       {limit !== undefined && items.length > limit && (
         <Fold>
           <TextLink href={peoplePath}>{t("people.more")}</TextLink>

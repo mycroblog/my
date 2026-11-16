@@ -93,13 +93,29 @@ const holds =
   };
 
 PostsNotOffered.play = holds(
-  "people and hashtags alone",
-  (main) => main.querySelector('a[href^="/@sam"]') !== null && main.querySelectorAll("section").length === 2,
+  "people found, and no post",
+  (main) => main.querySelector('a[href^="/@sam"]') !== null && main.querySelector("article") === null,
 );
-Results.play = holds(
-  "people, hashtags and posts",
-  (main) => main.querySelectorAll("section").length === 3 && main.querySelector("article") !== null,
-);
+Results.play = holds("posts found", (main) => main.querySelector("article") !== null);
+/** The kinds in tabs, open on the first that found something, each named with how many. */
+export const ResultsInTabs: Story = {
+  parameters: screen({ at: "/search?q=bread", server: posts }),
+  render: (args: unknown, context: StoryContext) => (
+    <DiscoveryLayoutProvider value={{ results: "tabs", people: "both" }}>
+      {screenMeta.render(args, context)}
+    </DiscoveryLayoutProvider>
+  ),
+  play: holds("tabs named with how many, the first open", (main) => {
+    const tabs = [...main.querySelectorAll('[role="tab"]')];
+    return (
+      tabs.length > 0 &&
+      tabs.every((tab) => /\d/u.test(tab.textContent)) &&
+      tabs[0]?.getAttribute("aria-selected") === "true"
+    );
+  }),
+};
+/** One failure: one line with one Try again, at the column's start. */
+Failed.play = holds("one failure", (main) => main.querySelectorAll('[role="alert"]').length === 1);
 RemoteLookup.play = holds(
   "the account looked up",
   (main) => main.querySelector('a[href^="/@kiri@far.example"]') !== null,

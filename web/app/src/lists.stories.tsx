@@ -159,7 +159,7 @@ export const MembersMinimumWidth: Story = { parameters: screen({ at: "members:2"
 /** Finds `q` among the accounts the reader follows, and adds the first found. */
 async function adding(context: StoryContext, q: string) {
   const { main } = await screenOf(context);
-  await userEvent.type(await main.findByRole("textbox", { name: "Add an account you follow" }), q);
+  await userEvent.type(await main.findByRole("searchbox", { name: "Add an account you follow" }), q);
   const found = await main.findByRole("group", { name: "Add an account you follow" });
   await userEvent.click(await within(found).findByRole("button", { name: "Add" }));
   return { main, found };

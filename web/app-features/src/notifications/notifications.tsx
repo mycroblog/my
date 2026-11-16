@@ -16,18 +16,15 @@ import {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
-  useChangeRelationship,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,
-  useRelationship,
   type AppData,
   type NotificationFilter,
   type NotificationItem,
 } from "@my/app-data";
 import {
   Avatar,
-  Button,
   CustomEmoji,
   Entry,
   Excerpt,
@@ -36,13 +33,13 @@ import {
   NoticeLine,
   OpenRow,
   ScreenStack,
-  StateText,
   TabRow,
   TextButton,
   useAction,
   useLocale,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
+import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
@@ -73,63 +70,15 @@ export async function loadNotifications(data: AppData): Promise<void> {
 
 const known = (id: string) => id in (messages["en"] ?? {});
 
-/** A press that waits for the server: busy until it answered, then as the cache says. */
-function usePress(): [boolean, (run: () => Promise<void>) => void] {
-  const [busy, setBusy] = useState(false);
-  return [
-    busy,
-    (run) => {
-      setBusy(true);
-      run()
-        .catch(() => undefined)
-        .finally(() => {
-          setBusy(false);
-        });
-    },
-  ];
-}
-
-/** Follow back, or follow, the account: the primary button until the reader follows it or asked to. */
-function FollowButton({ id, label, t }: { id: string; label: string; t: T }) {
-  const relationship = useRelationship(id);
-  const change = useChangeRelationship();
-  const [busy, press] = usePress();
-  if (relationship === undefined) return null;
-  if (relationship.following || relationship.requested)
-    return <StateText>{t(relationship.following ? "notifications.following" : "notifications.requested")}</StateText>;
-  return (
-    <Button
-      size="timeline"
-      kind="primary"
-      busy={busy}
-      onPress={() => {
-        press(() => change(id, "follow"));
-      }}
-    >
-      {label}
-    </Button>
-  );
-}
-
-/** What the reader may do with a notification of its kind, under its line. */
+/** What the reader may do with a notification of its kind, under its line (`FollowOf`: account-follow.tsx). */
 function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {
   switch (n.type) {
     case "follow":
-      return (
-        n.account && (
-          <AccountLine
-            account={n.account}
-            end={<FollowButton id={n.account.id} label={t("notifications.follow_back")} t={t} />}
-          />
-        )
-      );
+      // Follow back, from the relationship, as every row of an account follows.
+      return n.account && <AccountLine account={n.account} end={<FollowOf account={n.account} />} />;
     case "account_moved": {
       const target = n.account_move?.target;
-      return (
-        target && (
-          <AccountLine account={target} end={<FollowButton id={target.id} label={t("notifications.follow")} t={t} />} />
-        )
-      );
+      return target && <AccountLine account={target} end={<FollowOf account={target} />} />;
     }
     case "scheduled_status_failed":
       return <OpenDraft n={n} t={t} />;
