@@ -3,7 +3,7 @@
 // at once from the copy its posts carry and fetched again by its ID in the background, its posts, its featured hashtags, the viewer's own account, and the relationship that the viewer's writes change. A
 // write puts the relationship the server answered into the cache, and marks what the change may reorder or recount:
 // the account's counts, the home timeline, and the account's posts.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery, type Query, type QueryClient } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
@@ -139,16 +139,23 @@ export function accountStatusesQuery({ api, queries }: AppData, id: string, kind
 /**
  * The account of a handle, and its failure (a ProblemError of mykit): at once from a copy the cache holds, fetched
  * again by its ID in the background once stale (accountByIdQuery), else from its lookup; undefined until the server
- * answered, or without a handle.
+ * answered, or without a handle. `missing` once the server says the account is not there (404 or 410: never was,
+ * deleted, or deactivated, which it does not tell apart), even over a copy the cache held.
  */
-export function useAccount(acct: string | undefined): { account: Account | undefined; error: Error | null } {
+export function useAccount(acct: string | undefined): {
+  account: Account | undefined;
+  error: Error | null;
+  missing: boolean;
+} {
   const data = useAppData();
   const id = acct === undefined ? undefined : cachedAccount(data, acct)?.id;
   const byId = useQuery({ ...accountByIdQuery(data, id ?? ""), enabled: id !== undefined });
   const lookup = useQuery({ ...accountQuery(data, acct ?? ""), enabled: acct !== undefined && id === undefined });
   const query = id === undefined ? lookup : byId;
   // The client rejects with a ProblemError or a NetworkError, which openapi-react-query types as the problem's body.
-  return { account: query.data, error: query.error as Error | null };
+  const error = query.error as Error | null;
+  const missing = error instanceof ProblemError && (error.status === 404 || error.status === 410);
+  return { account: query.data, error, missing };
 }
 
 /** The viewer's own account, undefined until the server answered; not read while `enabled` is false (no session). */

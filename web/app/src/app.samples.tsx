@@ -304,8 +304,9 @@ function shows(
       // a screen of posts, its posts. An account's list of follows shows its rows, or that its owner keeps it.
       if (at === "/lists") return settled && has('main a[href^="/lists/"]');
       if (/\/follow(?:ers|ing)$/.test(at)) return settled && has('main a[href^="/@"], main p[role="status"]');
-      // A list the server has no longer says so.
+      // A list the server has no longer says so, and so does the profile of an account that is not there.
       if (at === "/lists/gone") return has('main p[role="status"]');
+      if (at === "/@nao") return settled && has('main p[role="status"]');
       return settled && has(at.startsWith("reactions:") ? 'main a[href^="/@"]' : "article");
   }
 }

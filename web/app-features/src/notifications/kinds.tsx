@@ -29,7 +29,7 @@ const glyphs: Partial<Record<NotificationType, IconName>> = {
   follow: "follow",
   follow_request: "followers",
   follow_accepted: "follow",
-  account_moved: "open",
+  account_moved: "moved",
   poll_closed: "poll",
   moderation_notice: "moderation",
   report_resolved: "moderation",

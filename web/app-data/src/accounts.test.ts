@@ -280,7 +280,7 @@ describe("useAccount", () => {
 
   test("without a handle, has nothing and asks nothing", () => {
     const { data, requests } = slowServer(alice());
-    expect(probe(data, () => useAccount(undefined))).toEqual({ account: undefined, error: null });
+    expect(probe(data, () => useAccount(undefined))).toEqual({ account: undefined, error: null, missing: false });
     expect(requests).toHaveLength(0);
   });
 
@@ -296,5 +296,41 @@ describe("useAccount", () => {
     expect(byId?.dataUpdatedAt).toBe(lookup?.dataUpdatedAt ?? Number.NaN);
     expect(byId?.isInvalidated).toBe(false);
     expect(requests.map((r) => r.pathname)).toEqual(["/api/v1/accounts/lookup"]);
+  });
+
+  /**
+   * A server that answers every read of an account with `status`, and the account's state as a screen that read it
+   * holds it: a render alone would ask again (retryOnMount) and show the account pending.
+   */
+  function failing(status: number) {
+    const fake = fakeAppData(() => json(status, { type: "about:blank", title: "Failed", status }));
+    const queries = fake.data.queryClient.getDefaultOptions().queries;
+    fake.data.queryClient.setDefaultOptions({ queries: { ...queries, retryOnMount: false } });
+    return fake;
+  }
+
+  for (const status of [404, 410])
+    test(`an account the server answers ${String(status)} for is missing`, async () => {
+      const { data } = failing(status);
+      await loadAccount(data, "nao").catch(() => undefined);
+      const shown = probe(data, () => useAccount("nao"));
+      expect(shown.missing).toBe(true);
+      expect(shown.account).toBeUndefined();
+    });
+
+  test("an account that failed otherwise is not missing: its failure shows, to try again", async () => {
+    const { data } = failing(500);
+    await loadAccount(data, "nao").catch(() => undefined);
+    const shown = probe(data, () => useAccount("nao"));
+    expect(shown.missing).toBe(false);
+    expect(shown.error).toBeInstanceOf(ProblemError);
+  });
+
+  test("an account is missing once the server says so, over the copy a post carried", async () => {
+    const { data } = failing(404);
+    cacheHome(data, alice(), Date.now() - 60_000);
+    expect(probe(data, () => useAccount("alice")).missing).toBe(false);
+    await data.queryClient.query({ ...accountByIdQuery(data, "a"), staleTime: 0 }).catch(() => undefined);
+    expect(probe(data, () => useAccount("alice")).missing).toBe(true);
   });
 });

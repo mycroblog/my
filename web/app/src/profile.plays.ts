@@ -170,3 +170,28 @@ export async function homeAfterServerMute(context: StoryContext): Promise<void> 
     { timeout: 5000 },
   );
 }
+
+/**
+ * The profile of an account that moved: its main action opens the new account, a line names it with a link, and it
+ * offers no follow.
+ */
+export async function moved(context: StoryContext): Promise<void> {
+  const { t, card: c } = await card(context);
+  const go = c.getByRole("link", { name: t("profile.go_to_new") });
+  await expect(go).toHaveAttribute("href", "/@sora@photos.example");
+  const line = t("profile.moved_to", { handle: "@sora@photos.example" });
+  const named = c.getByRole("link", { name: (n: string) => plain(n) === "@sora@photos.example" });
+  await expect(named).toHaveAttribute("href", "/@sora@photos.example");
+  await expect(plain(named.closest("p")?.textContent ?? "")).toBe(line);
+  for (const follow of ["profile.follow", "profile.follow_back", "profile.request_follow"] as const)
+    await expect(c.queryByRole("button", { name: t(follow) })).toBeNull();
+}
+
+/** The profile of an account that is not there (deactivated, as deleted): the not-found page, with a way back. */
+export async function notFound(context: StoryContext): Promise<void> {
+  const { t, main } = await settled(context);
+  await expect(main.getByRole("button", { name: t("profile.not_found_back") })).toBeEnabled();
+  const said = t("profile.not_found", { handle: "@nao" });
+  await expect(main.getAllByRole("status").map((s) => plain(s.textContent))).toContain(said);
+  await expect(main.queryByRole("region")).toBeNull();
+}

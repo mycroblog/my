@@ -2,7 +2,8 @@
 
 // A profile, a story per relationship the reader (yuki) meets it in: their own, following each other (the bell of new
 // posts off, then on), locked and followed, following them, blocked and muted, an account of another server that
-// follows them, and the same with its server muted; the reader's private note on it, written and in its editor; the
+// follows them, and the same with its server muted; one that moved, and one that is not there (nao's, deactivated);
+// the reader's private note on it, written and in its editor; the
 // confirmations of its menu (block, remove a follower); a post's menu on another's post, and that post once the reader
 // muted or blocked its author or muted its server from it (profile.plays.ts); and a story per state every screen is
 // shown in (app.samples.tsx), on a profile of another.
@@ -39,6 +40,8 @@ export const ServerMuted: Story = {
   parameters: screen({ at: remote, server: { domainMutes: ["photos.example"] } }),
   play: plays.serverMuted,
 };
+export const Moved: Story = { parameters: screen({ at: "/@sora@social.example" }), play: plays.moved };
+export const NotFound: Story = { parameters: screen({ at: "/@nao" }), play: plays.notFound };
 export const NoteWritten: Story = {
   parameters: screen({ at: other, server: { notes: { sam: note } } }),
   play: plays.noteWritten,

@@ -259,10 +259,6 @@
     "defaultMessage": "元に戻す",
     "description": "The action after a line that says the reader just muted an account or a server from a post's menu, which undoes it."
   },
-  "profile.moved": {
-    "defaultMessage": "{name}さんは別のアカウントに移転しました。",
-    "description": "The line of the profile of an account that moved, over the account it moved to. name is the account's name."
-  },
   "profile.moved_to": {
     "defaultMessage": "移転先: {handle}",
     "description": "The line of the profile of an account that moved, naming the account it moved to; the handle is a link to it. handle is that account's @handle."

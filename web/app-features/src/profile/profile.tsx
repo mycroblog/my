@@ -7,11 +7,14 @@
 // the last two after a confirmation, and mute its server), the name with a locked account's lock and a bot's badge, the
 // handle with "Follows you" and the role badges, the bio, the fields, when it joined and its counts (each opening its
 // list, follows.tsx), the reader's private note on it, the lines of its state (blocked, muted, its server muted, locked,
-// remote), and the featured hashtags. A failed action is told at the bottom of the page (usePostNotice). Under
+// remote), and the featured hashtags. A moved account (ADR-0089 §4) says where it moved, its main action leading
+// there, with neither follow nor "Follows you"; an account that is not there (§15) shows back and a line, whatever
+// the reason. A failed action is told at the bottom of the page (usePostNotice). Under
 // it, the tabs of its posts (posts, posts and replies, media, articles), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
 import { AccountName, accountPath, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
+import { formatParts } from "../slots";
 import {
   accountNoteLimit,
   loadAccount,
@@ -34,6 +37,7 @@ import {
 } from "@my/app-data";
 import {
   Avatar,
+  BackButton,
   Badge,
   Button,
   CaptionLine,
@@ -55,6 +59,8 @@ import {
   TabRow,
   TagList,
   TextButton,
+  TextLink,
+  LinkButton,
   useLocale,
 } from "@my/design-system";
 import { useId, useState } from "react";
@@ -384,6 +390,8 @@ function Head({
   const muteServer = useMuteDomain();
   const write = useAccountWrite(t);
   const avatar = account.avatar?.medium.url ?? account.avatar?.small.url;
+  // A moved account's main action leads to the account it moved to, which offers follow; its followers moved with it.
+  const moved = account.moved;
   return (
     <ProfileHead
       nameId={nameId}
@@ -393,10 +401,16 @@ function Head({
         !own &&
         relationship !== undefined && (
           <>
-            {relationship.following === true && !blocked && (
+            {moved === undefined && relationship.following === true && !blocked && (
               <Bell account={account} relationship={relationship} t={t} />
             )}
-            <Follow account={account} relationship={relationship} t={t} />
+            {moved === undefined ? (
+              <Follow account={account} relationship={relationship} t={t} />
+            ) : (
+              <LinkButton href={accountPath(moved)} kind="primary" size="timeline">
+                {t("profile.go_to_new")}
+              </LinkButton>
+            )}
             <More account={account} relationship={relationship} mutedDomain={mutedDomain} t={t} />
           </>
         )
@@ -415,13 +429,29 @@ function Head({
       handle={handleOf(account)}
       badges={
         <>
-          {relationship?.followed_by && <Badge>{t("profile.follows_you")}</Badge>}
+          {moved === undefined && relationship?.followed_by && <Badge>{t("profile.follows_you")}</Badge>}
           {account.badges.map((b) => (
             <Badge key={b.role_id}>{b.label}</Badge>
           ))}
         </>
       }
     >
+      {moved !== undefined && (
+        <CaptionLine icon="moved">
+          {formatParts(
+            t,
+            "profile.moved_to",
+            {},
+            {
+              handle: (
+                <bdi dir="ltr">
+                  <TextLink href={accountPath(moved)}>{handleOf(moved)}</TextLink>
+                </bdi>
+              ),
+            },
+          )}
+        </CaptionLine>
+      )}
       {blocked ? (
         <CaptionLine icon="block">{t("profile.blocked")}</CaptionLine>
       ) : (
@@ -548,17 +578,37 @@ function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed
   );
 }
 
-/** The profile of the account of a handle (`user`, or `user@domain` for a remote one). */
-export function Profile({ acct }: { acct: string }) {
+/**
+ * What a profile shows of an account that is not there, whether it never was, was deleted or is deactivated, which
+ * the server does not tell apart (ADR-0089 §15): back (`onBack`), then a line that names the handle opened.
+ */
+function NotFound({ acct, onBack }: { acct: string; onBack: (() => void) | undefined }) {
+  const { t } = stringsIn(useLocale().locale);
+  return (
+    <ScreenStack>
+      {onBack !== undefined && <BackButton onPress={onBack}>{t("profile.not_found_back")}</BackButton>}
+      <FeedNotice start>{t("profile.not_found", { handle: `@${acct}` })}</FeedNotice>
+    </ScreenStack>
+  );
+}
+
+/**
+ * The profile of the account of a handle (`user`, or `user@domain` for a remote one); `onBack` leaves the profile of
+ * an account that is not there.
+ */
+export function Profile({ acct, onBack }: { acct: string; onBack?: (() => void) | undefined }) {
   const { t, lang } = stringsIn(useLocale().locale);
-  const { account, error } = useAccount(acct);
+  const { account, error, missing } = useAccount(acct);
   const viewer = useViewer();
   const own = account !== undefined && viewer?.id === account.id;
-  const relationship = useRelationship(account === undefined || own ? undefined : account.id);
+  const relationship = useRelationship(account === undefined || own || missing ? undefined : account.id);
   const [tab, setTab] = useState<Tab>("posts");
+  if (missing) return <NotFound acct={acct} onBack={onBack} />;
   if (account === undefined)
     return error === null ? (
-      <FeedNotice>{t("profile.loading")}</FeedNotice>
+      <ScreenStack busy>
+        <FeedNotice>{t("profile.loading")}</FeedNotice>
+      </ScreenStack>
     ) : (
       <FeedNotice alert>{t("profile.failed")}</FeedNotice>
     );

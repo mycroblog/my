@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The lists of an account's follows, as the reader (yuki) opens them from its profile's counts: sam's followers and
-// follows; mio's, which she shows to her followers only, and kai's, which he shows to nobody; and a story per state
+// follows; mio's, shown to mio's followers only, and kai's, shown to nobody; and a story per state
 // every screen is shown in (app.samples.tsx), on sam's followers.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";

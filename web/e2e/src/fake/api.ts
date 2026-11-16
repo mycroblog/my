@@ -6,7 +6,8 @@
 // them), the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order; a person of another server is the fake's own, since the
-// seed's server federates with none. The writes of those screens (follow, block, mute, a private note, being notified
+// seed's server federates with none, one of them moved, and so is a person of this server who deactivated their
+// account. The writes of those screens (follow, block, mute, a private note, being notified
 // of a person's posts, a follower removed, a server muted as ADR-0013 §30 hides it, the
 // answers of follow requests, the read marker, the announcements read, the conversations of the direct messages read
 // and hidden, the reader's bookmarks and followed hashtags, the reader's edits and deletions of their own posts, the
@@ -54,9 +55,10 @@ import { articleHtml, serverHtml } from "./html";
 
 /**
  * The people of other servers, the fake's own, since the seed's server federates with none: each `username` is their
- * whole handle, `user@domain`. sora, on photos.example, follows the reader; sam boosts her post.
+ * whole handle, `user@domain`, and `movedTo` the handle of the account one moved to. sora, on photos.example, follows
+ * the reader, and sam boosts a post of sora's; sora's account on social.example moved to it, and keeps its posts.
  */
-const remotePeople: readonly Person[] = [
+const remotePeople: readonly (Person & { movedTo?: string })[] = [
   {
     username: "sora@photos.example",
     email: "",
@@ -67,11 +69,38 @@ const remotePeople: readonly Person[] = [
     locale: "en",
     avatar: portrait([60, 140, 170]),
   },
+  {
+    username: "sora@social.example",
+    email: "",
+    password: "",
+    displayName: "Sora そら",
+    note: "This account moved. 引っ越しました。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([60, 140, 170]),
+    movedTo: "sora@photos.example",
+  },
 ];
+
+/**
+ * A person of this server who deactivated their account, whom the server answers as not there (ADR-0089 §15): a 404,
+ * and in no list.
+ */
+const deactivated = "nao";
+
+/** The handle of the account a person moved to, if they moved. */
+const movedOf = (username: string) => remotePeople.find((p) => p.username === username)?.movedTo;
 
 const remoteFollows: readonly Follow[] = [{ follower: "sora@photos.example", followee: "yuki" }];
 
 const remotePosts: readonly Post[] = [
+  {
+    key: "sora-moving",
+    author: "sora@social.example",
+    text: "Moving to photos.example, where the darkroom is. See you there.",
+    visibility: "public",
+    language: "en",
+  },
   {
     key: "sora-film",
     author: "sora@photos.example",
@@ -373,7 +402,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
   /**
    * Who may read a person's lists of follows and followers (FR-311), the fake's own, since the seed sets none: mio
-   * shows them to her followers only, kai to nobody, everyone else to everyone.
+   * shows them to mio's followers only, kai to nobody, everyone else to everyone.
    */
   /**
    * The follows a person's counts take in beyond the scenario's people (with people of servers the seed's federates
@@ -383,6 +412,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     mio: { followers: 48, following: 35 },
     kai: { followers: 127, following: 64 },
     "sora@photos.example": { followers: 1284, following: 312 },
+    // Its followers moved with it; it still follows those it did.
+    "sora@social.example": { followers: 3, following: 298 },
   };
   const followsVisibility: Readonly<Record<string, "public" | "followers" | "private">> = {
     mio: "followers",
@@ -416,6 +447,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       fields: p.fields.map(([name, value]) => ({ name, value: serverHtml(value, fakeHost) })),
       badges: [],
       ...(header === undefined ? {} : { header: { small: { url: header }, medium: { url: header } } }),
+      // The account it moved to, without a move of its own: moves are not followed in chains.
+      ...(movedOf(p.username) === undefined ? {} : { moved: fullAccount(personOf(movedOf(p.username) ?? "")) }),
       followers_count:
         people.filter((x) => follows_(x.username, p.username)).length + (beyond[p.username]?.followers ?? 0),
       following_count:
@@ -1870,7 +1903,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/accounts/lookup") {
       const acct = (q.get("acct") ?? "").replace(new RegExp(`@${fakeHost}$`), "");
-      const found = people.find((p) => p.username === acct);
+      const found = acct === deactivated ? undefined : people.find((p) => p.username === acct);
       return found === undefined ? problem(404, "Not Found") : json(fullAccount(found));
     }
     if (path === "/accounts/relationships") return json({ items: q.getAll("id").map(relationshipOf) });

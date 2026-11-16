@@ -133,8 +133,16 @@ export function Follows({
   onBack: () => void;
 }) {
   const { t, lang } = stringsIn(useLocale().locale);
-  const { account, error } = useAccount(acct);
+  const { account, error, missing } = useAccount(acct);
   const back = <BackButton onPress={onBack}>{t("profile.follows_back")}</BackButton>;
+  // An account that is not there has no lists either.
+  if (missing)
+    return (
+      <ScreenStack>
+        {back}
+        <FeedNotice start>{t("profile.not_found", { handle: `@${acct}` })}</FeedNotice>
+      </ScreenStack>
+    );
   if (account === undefined)
     return (
       <ScreenStack busy={error === null}>

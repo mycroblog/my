@@ -287,6 +287,24 @@ export class Fresh {
     return body(data, "the stylesheet of the theme draft");
   }
 
+  /**
+   * `from` moves their account to `to`, both of this server (ADR-0089 §3): `to` names `from` as an alias first, then
+   * `from` moves with their password.
+   */
+  async move(from: FreshPerson, to: FreshPerson): Promise<void> {
+    const aliased = await (await this.#api(to)).POST("/accounts/aliases", { body: { acct: from.username } });
+    if (aliased.error !== undefined)
+      throw new Error(
+        `fresh: ${to.username} could not name ${from.username} as an alias: ${JSON.stringify(aliased.error)}`,
+      );
+    const target = await this.#account(to);
+    const moved = await (
+      await this.#api(from)
+    ).POST("/accounts/move", { body: { target_account_id: target.id, password: from.password } });
+    if (moved.error !== undefined)
+      throw new Error(`fresh: ${from.username} could not move to ${to.username}: ${JSON.stringify(moved.error)}`);
+  }
+
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */
   async followRequest(from: Person, to: Person): Promise<void> {
     if (to.locked !== true) throw new Error(`fresh: ${to.username} is not locked, so a follow is no request`);
