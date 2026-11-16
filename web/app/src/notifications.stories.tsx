@@ -3,7 +3,7 @@
 // The notifications, a story per state every screen is shown in (app.samples.tsx), fed new notifications from the
 // Stream panel.
 
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
 
@@ -58,10 +58,69 @@ export const Dismissed: Story = {
     });
   },
 };
-/**
- * On a server that sends Web Push, for a reader with no subscription who has not closed it: the prompt to turn it on,
- * over the tabs (ADR-0086 §18). It shows only where the browser lets the site ask; one that blocks it shows none.
- */
-export const PushOffered: Story = { parameters: screen({ at, server: { push: true } }, "notifications") };
+// The prompt to turn Web Push on (ADR-0086 §18–§19), on a server that sends it, for a reader with no subscription who
+// has not closed it. The browser's notifications are stubbed, as a headless one blocks them: a site never asked yet,
+// whose question then closes without a choice, or is refused.
+
+/** The browser's notifications as a site never asked yet sees them, the question answering `answer`. */
+const notificationsAsk = (answer: NotificationPermission) => () => {
+  const notifications = Reflect.get(window, "Notification") as object;
+  let permission: NotificationPermission = "default";
+  const before = Object.getOwnPropertyDescriptors(notifications);
+  Object.defineProperty(notifications, "permission", { configurable: true, get: () => permission });
+  Object.defineProperty(notifications, "requestPermission", {
+    configurable: true,
+    value: () => {
+      permission = answer;
+      return Promise.resolve(answer);
+    },
+  });
+  return () => {
+    for (const name of ["permission", "requestPermission"] as const) {
+      const was = before[name];
+      if (was === undefined) Reflect.deleteProperty(notifications, name);
+      else Object.defineProperty(notifications, name, was);
+    }
+  };
+};
+
+const push = screen({ at, server: { push: true } }, "notifications");
+
+/** The prompt's buttons, Turn on first while it is there, in any locale. */
+async function promptButtons(context: StoryContext) {
+  const prompt = await within(context.canvasElement).findByRole("region", { name: /./ });
+  return within(prompt).getAllByRole("button");
+}
+
+/** Presses Turn on in the prompt. */
+async function turnOn(context: StoryContext) {
+  await screenMeta.play(context);
+  const [first] = await promptButtons(context);
+  if (first === undefined) throw new Error("the prompt has no button");
+  await userEvent.click(first);
+}
+
+/** Offered over the tabs, with Turn on and Not now. */
+export const PushOffered: Story = { parameters: push, beforeEach: notificationsAsk("default") };
+/** The browser's question closed without a choice: the prompt says so, and stays to be pressed again. */
+export const PushQuestionClosed: Story = {
+  parameters: push,
+  beforeEach: notificationsAsk("default"),
+  play: async (context) => {
+    await turnOn(context);
+    await within(context.canvasElement).findByRole("alert");
+    await expect(await promptButtons(context)).toHaveLength(2);
+  },
+};
+/** The site's notifications refused: the prompt says so, and keeps only Not now. */
+export const PushBlocked: Story = {
+  parameters: push,
+  beforeEach: notificationsAsk("denied"),
+  play: async (context) => {
+    await turnOn(context);
+    await within(context.canvasElement).findByRole("alert");
+    await expect(await promptButtons(context)).toHaveLength(1);
+  },
+};
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };
