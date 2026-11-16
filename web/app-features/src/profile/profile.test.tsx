@@ -68,8 +68,8 @@ test("a remote account the reader follows: Following, Follows you, its counts an
   expect(html).toContain("Runs a small server.");
   expect(html).toContain("Website");
   expect(html).toMatch(/Followers <strong[^>]*>2,910<\/strong>/);
-  // The sentence's stop sits with the action after it.
-  expect(html).toContain("Information from example.social may be incomplete<span");
+  // After a full sentence, no dot before the action.
+  expect(html).toContain("Information from example.social may be incomplete. <span");
   expect(html).toMatch(/aria-label="Posts of the account" role="tablist"/);
 });
 
@@ -94,8 +94,8 @@ test("a blocked account shows its head and no posts, and offers to unblock", asy
 
 test("a muted account says so, with an unmute", async () => {
   const { html } = await shown(account("lena"), { muting: true, following: true });
-  // The sentence's stop sits with the action after it.
-  expect(html).toContain("You muted this account. Its posts stay out of your timelines<span");
+  // After a full sentence, no dot before the action.
+  expect(html).toContain("You muted this account. Its posts stay out of your timelines. <span");
   expect(html).toContain("Unmute");
 });
 

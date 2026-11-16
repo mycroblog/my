@@ -102,5 +102,81 @@
   "timeline.bookmarks_empty": {
     "defaultMessage": "まだブックマークはありません。ブックマークした投稿がここに表示されます。",
     "description": "In place of the reader's bookmarks when they have none."
+  },
+  "timeline.list_new": {
+    "defaultMessage": "新しいリスト",
+    "description": "The button of the lists' screen that opens the field to make a list."
+  },
+  "timeline.list_name": {
+    "defaultMessage": "リスト名",
+    "description": "The label of the field of a list's name, when it is made or renamed."
+  },
+  "timeline.list_create": {
+    "defaultMessage": "作成",
+    "description": "The button that makes a list of the name written."
+  },
+  "timeline.list_cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button that closes the field of a list's name without keeping it."
+  },
+  "timeline.list_save": {
+    "defaultMessage": "保存",
+    "description": "The button that keeps a list's new name."
+  },
+  "timeline.list_more": {
+    "defaultMessage": "その他",
+    "description": "The button that opens the menu of what may be done with a list."
+  },
+  "timeline.list_rename": {
+    "defaultMessage": "名前を変更",
+    "description": "The item of a list's menu that changes its name in place."
+  },
+  "timeline.list_members_open": {
+    "defaultMessage": "メンバー",
+    "description": "The item of a list's menu, and the title of its screen, of the accounts in the list."
+  },
+  "timeline.list_delete": {
+    "defaultMessage": "リストを削除…",
+    "description": "The item of a list's menu that deletes it after a confirmation."
+  },
+  "timeline.list_limit": {
+    "defaultMessage": "作れるリストは 50 個までです。先にどれかのリストを削除してください。",
+    "description": "When the server refuses a new list because the reader has 50, the most there may be: under the name's field, as its error, while Create is dimmed."
+  },
+  "timeline.list_delete_title": {
+    "defaultMessage": "リスト「{name}」を削除しますか？",
+    "description": "The question of the confirmation before deleting a list. name is the list's name."
+  },
+  "timeline.list_delete_text": {
+    "defaultMessage": "リストとそのタイムラインは消えますが、メンバーのフォローはそのままです。取り消せません。",
+    "description": "What deleting a list does, in its confirmation."
+  },
+  "timeline.list_delete_confirm": {
+    "defaultMessage": "削除",
+    "description": "The button of the confirmation that deletes the list."
+  },
+  "timeline.list_add": {
+    "defaultMessage": "フォロー中のアカウントを追加",
+    "description": "The label of the field on a list's members that finds an account the reader follows by its name or handle."
+  },
+  "timeline.list_add_button": {
+    "defaultMessage": "追加",
+    "description": "The button of an account found on a list's members that puts it in the list."
+  },
+  "timeline.list_added": {
+    "defaultMessage": "追加済み",
+    "description": "In place of Add, for an account found that is in the list already."
+  },
+  "timeline.list_remove": {
+    "defaultMessage": "外す",
+    "description": "The button of a member of a list that takes it out of the list."
+  },
+  "timeline.list_members_empty": {
+    "defaultMessage": "このリストにはまだ誰もいません。フォロー中のアカウントを追加すると、その投稿をここで読めます。",
+    "description": "In place of a list's members when it has none."
+  },
+  "timeline.list_members_limit": {
+    "defaultMessage": "リストのメンバーは 1000 人までです。先にどれかのメンバーを外してください。",
+    "description": "When the server refuses to add an account to a list that has 1,000 members, the most there may be: under the field that finds accounts, as its error, while Add is dimmed."
   }
 }

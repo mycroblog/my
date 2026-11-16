@@ -234,7 +234,7 @@ const form = tv({
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
     textarea: "h-auto resize-y py-control-timeline-inline",
-    fieldError: "m-0 flex items-start gap-entry-caption font-label [&_svg]:mt-[0.2em]",
+    fieldError: "m-0 flex items-start gap-entry-caption font-label [word-break:auto-phrase] [&_svg]:mt-[0.2em]",
     check: "flex items-start gap-form-page-alert-gap",
     checkInput: [
       "m-0 size-form-page-check flex-none accent-text",
@@ -243,7 +243,7 @@ const form = tv({
     ],
     alert: [
       "m-0 flex items-start gap-form-page-alert-gap rounded-overlay bg-text p-form-page-alert-padding",
-      "text-surface outline-hidden focus-visible:shadow-focus [&_svg]:mt-[0.0625rem]",
+      "text-surface outline-hidden focus-visible:shadow-focus [word-break:auto-phrase] [&_svg]:mt-[0.0625rem]",
     ],
     actions: "grid gap-form-page-field-gap [&>a]:w-full [&>button]:w-full",
     choice: "flex gap-form-page-field-gap [&>button]:flex-1",

@@ -102,5 +102,81 @@
   "timeline.bookmarks_empty": {
     "defaultMessage": "No bookmarks yet. Posts you bookmark show here.",
     "description": "In place of the reader's bookmarks when they have none."
+  },
+  "timeline.list_new": {
+    "defaultMessage": "New list",
+    "description": "The button of the lists' screen that opens the field to make a list."
+  },
+  "timeline.list_name": {
+    "defaultMessage": "List name",
+    "description": "The label of the field of a list's name, when it is made or renamed."
+  },
+  "timeline.list_create": {
+    "defaultMessage": "Create",
+    "description": "The button that makes a list of the name written."
+  },
+  "timeline.list_cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button that closes the field of a list's name without keeping it."
+  },
+  "timeline.list_save": {
+    "defaultMessage": "Save",
+    "description": "The button that keeps a list's new name."
+  },
+  "timeline.list_more": {
+    "defaultMessage": "More",
+    "description": "The button that opens the menu of what may be done with a list."
+  },
+  "timeline.list_rename": {
+    "defaultMessage": "Rename",
+    "description": "The item of a list's menu that changes its name in place."
+  },
+  "timeline.list_members_open": {
+    "defaultMessage": "Members",
+    "description": "The item of a list's menu, and the title of its screen, of the accounts in the list."
+  },
+  "timeline.list_delete": {
+    "defaultMessage": "Delete list…",
+    "description": "The item of a list's menu that deletes it after a confirmation."
+  },
+  "timeline.list_limit": {
+    "defaultMessage": "You can have at most 50 lists. Delete one first.",
+    "description": "When the server refuses a new list because the reader has 50, the most there may be: under the name's field, as its error, while Create is dimmed."
+  },
+  "timeline.list_delete_title": {
+    "defaultMessage": "Delete the list {name}?",
+    "description": "The question of the confirmation before deleting a list. name is the list's name."
+  },
+  "timeline.list_delete_text": {
+    "defaultMessage": "The list and its timeline go; you keep following its members. This cannot be undone.",
+    "description": "What deleting a list does, in its confirmation."
+  },
+  "timeline.list_delete_confirm": {
+    "defaultMessage": "Delete",
+    "description": "The button of the confirmation that deletes the list."
+  },
+  "timeline.list_add": {
+    "defaultMessage": "Add an account you follow",
+    "description": "The label of the field on a list's members that finds an account the reader follows by its name or handle."
+  },
+  "timeline.list_add_button": {
+    "defaultMessage": "Add",
+    "description": "The button of an account found on a list's members that puts it in the list."
+  },
+  "timeline.list_added": {
+    "defaultMessage": "Added",
+    "description": "In place of Add, for an account found that is in the list already."
+  },
+  "timeline.list_remove": {
+    "defaultMessage": "Remove",
+    "description": "The button of a member of a list that takes it out of the list."
+  },
+  "timeline.list_members_empty": {
+    "defaultMessage": "No one in this list yet. Add accounts you follow to read their posts here.",
+    "description": "In place of a list's members when it has none."
+  },
+  "timeline.list_members_limit": {
+    "defaultMessage": "A list can have at most 1,000 members. Remove one first.",
+    "description": "When the server refuses to add an account to a list that has 1,000 members, the most there may be: under the field that finds accounts, as its error, while Add is dimmed."
   }
 }

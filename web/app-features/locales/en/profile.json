@@ -274,5 +274,17 @@
   "profile.not_found_back": {
     "defaultMessage": "Back",
     "description": "The button over the line that an account is not here, which goes back to where the reader came from."
+  },
+  "profile.add_to_list": {
+    "defaultMessage": "Add to list",
+    "description": "The item of a profile's menu, and the title of what it opens, that puts the account in the reader's lists."
+  },
+  "profile.add_to_list_followed_only": {
+    "defaultMessage": "You can add only accounts you follow",
+    "description": "Under Add to list, muted, on a profile of an account the reader does not follow."
+  },
+  "profile.add_to_list_close": {
+    "defaultMessage": "Close",
+    "description": "The button that closes the reader's lists for Add to list."
   }
 }

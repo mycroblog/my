@@ -274,5 +274,17 @@
   "profile.not_found_back": {
     "defaultMessage": "戻る",
     "description": "The button over the line that an account is not here, which goes back to where the reader came from."
+  },
+  "profile.add_to_list": {
+    "defaultMessage": "リストに追加",
+    "description": "The item of a profile's menu, and the title of what it opens, that puts the account in the reader's lists."
+  },
+  "profile.add_to_list_followed_only": {
+    "defaultMessage": "フォロー中のアカウントだけ追加できます",
+    "description": "Under Add to list, muted, on a profile of an account the reader does not follow."
+  },
+  "profile.add_to_list_close": {
+    "defaultMessage": "閉じる",
+    "description": "The button that closes the reader's lists for Add to list."
   }
 }

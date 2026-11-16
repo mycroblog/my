@@ -48,6 +48,8 @@ const menu = tv({
     },
     // Inside a menu, whose rows touch, the focus ring is drawn within the item.
     ring: { true: { item: "shadow-focus-inset" } },
+    // What cannot be done now (add to a list an account the reader does not follow): muted, its line saying why.
+    disabled: { true: { item: "text-muted-text" } },
   },
 });
 
@@ -102,6 +104,7 @@ export function MenuItem({
   on = false,
   onAction,
   about,
+  disabled = false,
   children,
 }: {
   id: string;
@@ -109,6 +112,8 @@ export function MenuItem({
   on?: boolean;
   onAction?: (() => void) | undefined;
   about?: string | undefined;
+  /** It cannot be done now; `about` says why. */
+  disabled?: boolean | undefined;
   children: string;
 }) {
   const preview = usePreviewItemState(id);
@@ -118,17 +123,20 @@ export function MenuItem({
     <AriaMenuItem
       id={id}
       textValue={children}
+      isDisabled={disabled}
       {...(onAction ? { onAction } : {})}
       className={({ isHovered, isFocused, isFocusVisible, isPressed }) =>
         menu({
-          state:
-            isPressed || preview === "pressed"
+          state: disabled
+            ? "rest"
+            : isPressed || preview === "pressed"
               ? "pressed"
               : isHovered || isFocused || preview !== undefined
                 ? "hover"
                 : "rest",
           ring: isFocusVisible || preview === "focus-visible",
           described,
+          disabled,
         }).item()
       }
     >

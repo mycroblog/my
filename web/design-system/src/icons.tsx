@@ -97,6 +97,8 @@ import {
   IconShieldFilled,
   IconSparkles,
   IconSpeakerphone,
+  IconSquare,
+  IconSquareCheckFilled,
   IconStar,
   IconStarFilled,
   IconTool,
@@ -106,6 +108,7 @@ import {
   IconUserFilled,
   IconUserMinus,
   IconUserPlus,
+  IconUsers,
   IconVolumeOff,
   IconWorld,
   IconWorldFilled,
@@ -220,6 +223,11 @@ export const icons = {
   // What a timeline is of, off the navigation: a hashtag, and a list of accounts the reader made.
   hashtag: { off: IconHash },
   list: { off: IconListDetails },
+  // Whether something is in a set the reader keeps (an account in one of their lists): a box, filled and checked when
+  // it is, so that on differs from off by shape.
+  included: { off: IconSquare, on: IconSquareCheckFilled },
+  // The accounts in a list: people, apart from followers' lock.
+  members: { off: IconUsers },
   // Marking every notification read: two checks.
   read: { off: IconChecks },
   // The auth screens: what went wrong (a round mark), what needs care before agreeing (a triangle), a passkey, and the

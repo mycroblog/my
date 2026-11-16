@@ -350,5 +350,25 @@
   "notifications.requests": {
     "defaultMessage": "{count, plural, one {# held-back notification} other {# held-back notifications}} · {people, plural, one {from # person} other {from # people}}",
     "description": "The row at the top of the notifications that opens the requests: notifications the reader's notification policy held back, one request per account. people is how many accounts, count how many notifications."
+  },
+  "notifications.follow_requests": {
+    "defaultMessage": "Follow requests",
+    "description": "The title of the screen of the accounts that ask to follow the reader."
+  },
+  "notifications.follow_requests_count": {
+    "defaultMessage": "{count, plural, one {# follow request} other {# follow requests}}",
+    "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
+  },
+  "notifications.follow_requests_empty": {
+    "defaultMessage": "When someone asks to follow you, they appear here.",
+    "description": "In place of the follow requests when there are none."
+  },
+  "notifications.follow_requests_loading": {
+    "defaultMessage": "Loading the follow requests…",
+    "description": "While the follow requests load."
+  },
+  "notifications.follow_requests_failed": {
+    "defaultMessage": "The follow requests could not be loaded.",
+    "description": "When the follow requests failed to load; Try again follows it."
   }
 }
