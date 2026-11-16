@@ -149,6 +149,7 @@ export {
   publishDraft,
   readMedia,
   refusal,
+  refusalDetail,
   refusedField,
   ruleOf,
   saveDraft,
