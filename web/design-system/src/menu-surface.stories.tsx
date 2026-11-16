@@ -555,19 +555,27 @@ function Live({ kind }: { kind: "actions" | "values" | "submenu" }) {
     );
   else if (panel === "lists")
     items = (
-      <MenuGroup
-        checked={on}
-        stay
-        onCheck={(id, checked) => {
-          setOn(checked ? [...on, id] : on.filter((x) => x !== id));
-        }}
-      >
-        {w.lists.map((name, i) => (
-          <MenuItem key={name} id={`l-${String(i)}`} icon="included">
-            {name}
+      <>
+        <MenuGroup
+          checked={on}
+          stay
+          onCheck={(id, checked) => {
+            setOn(checked ? [...on, id] : on.filter((x) => x !== id));
+          }}
+        >
+          {w.lists.map((name, i) => (
+            <MenuItem key={name} id={`l-${String(i)}`} icon="included">
+              {name}
+            </MenuItem>
+          ))}
+        </MenuGroup>
+        {/* New list, a group of its own after the lists, as Add to list on a profile has it. */}
+        <MenuGroup>
+          <MenuItem id="new" icon="add">
+            {w.newList}
           </MenuItem>
-        ))}
-      </MenuGroup>
+        </MenuGroup>
+      </>
     );
   else
     items = (

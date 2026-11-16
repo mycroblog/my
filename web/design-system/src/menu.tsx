@@ -248,7 +248,7 @@ export function MenuItem({
   about,
   disabled = false,
   chosen = false,
-  opens,
+  opens: opensValue,
   href,
   current = false,
   badge,
@@ -292,7 +292,7 @@ export function MenuItem({
             render: (props: object) => (href === undefined ? <div {...props} /> : <a {...props} aria-current="page" />),
           }
         : {})}
-      {...(opens === undefined ? {} : { shouldCloseOnSelect: false })}
+      {...(opensValue === undefined ? {} : { shouldCloseOnSelect: false })}
       className={({ isHovered, isFocused, isFocusVisible, isPressed }) =>
         menu({
           state: disabled
@@ -310,6 +310,8 @@ export function MenuItem({
     >
       {({ isSelected, selectionMode }) => {
         const checked = (selectionMode === "single" && isSelected) || chosen;
+        // A submenu that cannot be opened now shows neither what it holds nor ›: its line says why instead.
+        const opens = disabled ? undefined : opensValue;
         return (
           <>
             <span className={s.glyph()}>
