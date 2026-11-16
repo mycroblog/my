@@ -105,7 +105,7 @@ test("while only the login providers sign in, the screen offers them alone", () 
     external: [{ label: "Example ID", url: "/auth/external/2/start", kind: "oidc" }],
   });
   expect(html).not.toContain("<form");
-  expect(html).toContain("This server signs in only through the login providers.");
+  expect(html).toContain("On this server, you sign in only with another service.");
   expect(html).toContain("Example ID");
 });
 
@@ -180,7 +180,7 @@ const consent: Consent = {
 
 test("the consent names the granting account and waits before Deny, at the start, and Allow, at the end", () => {
   const html = render({ ...base, screen: "authorize", consent });
-  expect(html).toMatch(/<h1[^>]*>Authorize Tusky<\/h1>/);
+  expect(html).toMatch(/<h1[^>]*>Allow Tusky to use your account<\/h1>/);
   expect(html).toContain("Allowing as @kumi@my.example");
   expect(html).toContain("Another app may claim it.");
   expect(html).toContain(`you can choose in ${consentWaitSeconds} s.`);

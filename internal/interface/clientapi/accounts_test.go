@@ -30,7 +30,7 @@ func TestGetAccount(t *testing.T) {
 	if res.StatusCode != http.StatusNotFound || res.Header.Get("Content-Language") != "ja" || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("unknown account = %d (Content-Language %q)", res.StatusCode, res.Header.Get("Content-Language"))
 	}
-	if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "指定されたリソースが見つかりません。" {
+	if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。" {
 		t.Errorf("problem = %+v", p)
 	}
 }

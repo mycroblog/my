@@ -11,10 +11,6 @@
     "defaultMessage": "Encerrado – {server}",
     "description": "<title> of the static closure page. {server} is the server's name, or its host name."
   },
-  "closure.notice": {
-    "defaultMessage": "Mensagem dos administradores",
-    "description": "Heading over the administrators' message of the closure announcement on the static closure page."
-  },
   "closure.status_page": {
     "defaultMessage": "Ver o status do serviço",
     "description": "Text of the link to the instance's status page (status_page_url) on the static closure page."

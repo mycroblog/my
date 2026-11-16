@@ -1,4 +1,4 @@
-Example Social の管理者がサーバーの終了を予告したため、サポーターのプラン「Supporter」の加入が解約されます。
+Example Social の管理者がサーバーの閉鎖を予告したため、サポーターのプラン「Supporter」の加入が解約されます。
 
 加入は更新されません。支払いが遅れていなければ、支払い済みの期間の終わりまでプランの特典が続きます。
 
@@ -10,4 +10,4 @@ Example Social
 https://social.example
 連絡先: admin@social.example
 
-Example Social のサポーターのプランに加入している、または加入していたため、このメールが届いています。
+Example Social のサポーターのプランに加入している、または加入していたため、このメールを送りました。

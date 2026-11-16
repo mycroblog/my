@@ -128,7 +128,7 @@
     "description": "The button at the end of a poll's option that takes it out. n is its place, from 1."
   },
   "compose.poll.add": {
-    "defaultMessage": "選択肢を足す",
+    "defaultMessage": "選択肢を追加",
     "description": "The last line of a poll's options, which adds one."
   },
   "compose.poll.duration": {
@@ -216,7 +216,7 @@
     "description": "The line under Local in the audience menu. server is this server's domain."
   },
   "compose.visibility.unlisted.about": {
-    "defaultMessage": "誰でも。公開タイムラインには載せない",
+    "defaultMessage": "誰でも。ローカルと連合のタイムラインには載せない",
     "description": "The line under Quiet public in the audience menu."
   },
   "compose.visibility.private.about": {
@@ -228,7 +228,7 @@
     "description": "The line under Direct in the audience menu."
   },
   "compose.interactions": {
-    "defaultMessage": "交流",
+    "defaultMessage": "返信・ブースト・引用できる人",
     "description": "The caption of the audience menu's second group, apart from the visibilities: who may reply to, boost and quote the post."
   },
   "compose.permissions": {
@@ -280,8 +280,8 @@
     "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
   },
   "compose.quote_remote": {
-    "defaultMessage": "ローカル限定・フォロワー限定・ダイレクトの投稿では、ほかのサーバーの投稿を引用できません。",
-    "description": "The note under the visibilities when the post quotes a post from another server; the server's own words (errors.status.quote_remote_audience)."
+    "defaultMessage": "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひかえめな公開」にしてください。",
+    "description": "The note under the visibilities when the post quotes a post from another server, whose other visibilities are disabled: which ones to choose."
   },
   "compose.replying_to": {
     "defaultMessage": "{handle}さんへの返信",
@@ -424,7 +424,7 @@
     "description": "A draft whose scheduled post failed: time is when it was to go out, reason one of compose.schedule.failed.*."
   },
   "compose.schedule.failed.restricted": {
-    "defaultMessage": "今はアカウントから投稿できません",
+    "defaultMessage": "今はこのアカウントで投稿できません",
     "description": "Why a scheduled post failed: the account may not post (a moderation action or a suspension)."
   },
   "compose.schedule.failed.reply_unavailable": {
@@ -444,15 +444,15 @@
     "description": "Why a scheduled post failed: it does not pass the checks of a post, such as its length."
   },
   "compose.schedule.failed.rejected": {
-    "defaultMessage": "サーバーの自動審査で断られました",
-    "description": "Why a scheduled post failed: the server's automated review refused it."
+    "defaultMessage": "サーバーの自動審査で受け付けられませんでした",
+    "description": "Why a scheduled post failed: the server's automated review did not accept it."
   },
   "compose.schedule.failed.next": {
     "defaultMessage": "{failure}。必要なら直してから、投稿するか予約し直してください。",
     "description": "The composer's alert on a draft whose scheduled post failed: failure is compose.schedule.failed (when and why), followed by what the reader may do now."
   },
   "compose.conflict": {
-    "defaultMessage": "別の端末でこの下書きの新しい版が保存されたため、ここでの変更は保存されませんでした。",
+    "defaultMessage": "この下書きがあとから別の端末で保存されたため、ここでの変更は保存されませんでした。",
     "description": "The composer's error when a save of a draft is refused for a newer one saved elsewhere."
   },
   "compose.conflict.open": {
@@ -464,7 +464,7 @@
     "description": "The composer's error when the draft it posts or schedules is no longer on the server (deleted elsewhere, or posted already by its schedule or by a post whose answer was lost); what was written stays in the composer, and its Post button reads compose.gone.post."
   },
   "compose.gone.post": {
-    "defaultMessage": "新しい投稿として送る",
+    "defaultMessage": "新しく投稿する",
     "description": "The composer's Post button after compose.gone: lets the draft that is no longer on the server go, and posts what is written now as a new post."
   },
   "compose.drafts": {

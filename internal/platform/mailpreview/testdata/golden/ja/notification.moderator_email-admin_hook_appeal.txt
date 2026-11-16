@@ -1,4 +1,4 @@
-Example Social の利用者が、自動の審査に拒否された投稿に異議を申し立て、モデレーターの審査を待っています。
+Example Social の利用者が、自動審査で拒否された投稿に異議を申し立て、モデレーターの審査を待っています。
 
 通知を開く
 https://social.example/notifications

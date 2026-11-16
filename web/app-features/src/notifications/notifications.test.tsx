@@ -57,7 +57,7 @@ test("over the list, the tabs, mark-all-read, and the row of the requests", asyn
   const { html } = await shown();
   expect(html).toMatch(/aria-label="Show" role="tablist"/);
   expect(html).toContain("Mark all as read");
-  expect(html).toContain("Requests from 3 people · 5 notifications");
+  expect(html).toContain("5 held-back notifications · from 3 people");
 });
 
 test("a follow request asks to accept, its refusal beside it", async () => {

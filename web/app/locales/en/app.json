@@ -92,7 +92,7 @@
     "description": "In place of the home timeline when the sign-in came back to the app but could not finish (an old or second tab, the server refused it); a link to sign in again follows it."
   },
   "app.not_found": {
-    "defaultMessage": "There is nothing here yet.",
+    "defaultMessage": "This page does not exist. Check the address, or go to Home.",
     "description": "The heading of the screen at an address the app has no screen for, such as a place of the navigation that is not built yet."
   },
   "app.post": {
@@ -128,7 +128,7 @@
     "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the announcements section in the column beside the timeline; it opens the list of announcements. Starts with the words of app.around_all."
   },
   "app.around_all_rooms": {
-    "defaultMessage": "All voice rooms",
+    "defaultMessage": "All voice chat rooms",
     "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the voice rooms section in the column beside the timeline; it opens the list of rooms. Starts with the words of app.around_all."
   },
   "app.around_all_events": {
@@ -152,7 +152,7 @@
     "description": "The title of an announcement whose administrators gave it none, in the column beside the timeline."
   },
   "app.voice_rooms": {
-    "defaultMessage": "Voice rooms",
+    "defaultMessage": "Voice chat rooms",
     "description": "The heading of the section of open voice rooms in the column beside the timeline; it links to the list of rooms."
   },
   "app.events": {
@@ -200,7 +200,7 @@
     "description": "The notice at the top of every screen while the reader's network works but the server does not answer (an outage)."
   },
   "app.status_page": {
-    "defaultMessage": "Status page",
+    "defaultMessage": "Service status",
     "description": "The link to the server's status page, on a service apart from the server, in the offline and outage notices and the maintenance page."
   },
   "app.update_ready": {
@@ -240,7 +240,7 @@
     "description": "Right under the title of the maintenance page, in bold, when the operators said when it should end ({time}, the weekday and time in the reader's time zone, with the zone's name)."
   },
   "app.maintenance_status": {
-    "defaultMessage": "Check the status page",
+    "defaultMessage": "Check the service status",
     "description": "The link on the maintenance page to the server's status page."
   },
   "app.notifications_count": {
@@ -296,7 +296,7 @@
     "description": "On the landing page, under Create an account and Sign in, when the registration mode is invite."
   },
   "app.landing_closed": {
-    "defaultMessage": "This server is not taking new accounts.",
+    "defaultMessage": "This server is not accepting new accounts.",
     "description": "On the landing page, under Sign in, when the server takes no new accounts (registration closed, a one-person server, a closure)."
   },
   "app.landing_without_account": {

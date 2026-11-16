@@ -40,7 +40,7 @@
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: someone reported an account that had no open report. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_service_closure_due.body": {
-    "defaultMessage": "{instance} の閉鎖日を過ぎました。サーバーは自動ではクローズしません。管理画面か my admin closure close でクローズしてください。",
+    "defaultMessage": "{instance} の閉鎖日を過ぎました。サーバーは自動では閉鎖されません。管理画面か my admin closure close で閉鎖してください。",
     "description": "Paragraph of the email to an administrator: the closing date of the announced closure has passed, and an administrator closes the server. {instance} is the server's display name, or its domain name when it has none. Keep the command my admin closure close as it is."
   },
   "mail.admin_service_closure_due.subject": {
@@ -48,7 +48,7 @@
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the closing date of the announced closure of the server has passed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_error_group.body": {
-    "defaultMessage": "{instance} のサーバーか Web クライアントが新しいエラーを報告したか、解決にしたエラーが再び起きました。管理画面のエラーを確認してください。",
+    "defaultMessage": "{instance} のサーバーか Web クライアントが新しいエラーを報告したか、解決済みにしたエラーが再び起きました。管理画面のエラーを確認してください。",
     "description": "Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_error_group.subject": {
@@ -60,11 +60,11 @@
     "description": "Paragraph of the email to a moderator about a sign-up that awaits approval. It never names the user. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_sign_up.subject": {
-    "defaultMessage": "{instance} に承認待ちの登録があります",
+    "defaultMessage": "{instance} で新しい登録が承認を待っています",
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a new user signed up and waits for a moderator to approve the registration. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_webhook_disabled.body": {
-    "defaultMessage": "{instance} の webhook のひとつを、サーバーが無効にしました。宛先への送信が失敗し続けたか、宛先がなくなったと答えました。",
+    "defaultMessage": "{instance} の webhook を 1 つ、サーバーが無効にしました。宛先への送信が失敗し続けたか、宛先からもう存在しないと返されたためです。",
     "description": "First paragraph of the email to an administrator about a webhook endpoint that the server turned off. It never names the endpoint or its URL. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_webhook_disabled.detail": {
@@ -76,7 +76,7 @@
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_changed.body": {
-    "defaultMessage": "{instance} のアカウントのパスワードが変更され、ほかのセッションとアプリはログアウトしました。",
+    "defaultMessage": "{instance} のアカウントのパスワードが変更され、ほかの端末とアプリからはログアウトしました。",
     "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_changed.detail": {
@@ -88,7 +88,7 @@
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.body": {
-    "defaultMessage": "{instance} のアカウントのパスワードが削除され、ほかのセッションとアプリはログアウトしました。これからはパスキーでログインします。",
+    "defaultMessage": "{instance} のアカウントのパスワードが削除され、ほかの端末とアプリからはログアウトしました。これからはパスキーでログインします。",
     "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
@@ -116,23 +116,23 @@
     "description": "Subject of the email with a password reset link. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.reason.account": {
-    "defaultMessage": "{instance} のアカウントのメールアドレスに送っています。",
+    "defaultMessage": "{instance} のアカウントのメールアドレスなので、このメールを送りました。",
     "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.reason.supporter": {
-    "defaultMessage": "{instance} のサポーターのプランに加入している、または加入していたため、このメールが届いています。",
+    "defaultMessage": "{instance} のサポーターのプランに加入している、または加入していたため、このメールを送りました。",
     "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure.action_export": {
-    "defaultMessage": "エクスポートする",
+    "defaultMessage": "データをエクスポートする",
     "description": "Label of the button of a service closure email that opens the page where the user exports their data."
   },
   "mail.service_closure.export": {
-    "defaultMessage": "{exportUntil} まで、ログインしてデータをエクスポートできます。その後、運営者がサーバーのデータを消します。",
+    "defaultMessage": "{exportUntil} まで、ログインしてデータをエクスポートできます。その後、管理者がサーバーのデータを削除します。",
     "description": "Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure.message": {
-    "defaultMessage": "運営者からのメッセージ: {message}",
+    "defaultMessage": "管理者からのメッセージ: {message}",
     "description": "Paragraph of a service closure email: the message that the administrators wrote with the announcement. {message} is their text, written in any language."
   },
   "mail.service_closure.move": {
@@ -140,35 +140,35 @@
     "description": "Paragraph of a service closure email during the notice: the user may move their account (ActivityPub Move) to another server before the closing date."
   },
   "mail.service_closure.reason": {
-    "defaultMessage": "{instance} のアカウントのメールアドレスに送っています。サーバーの終了はあなたのデータに関わるため、このメールは止められません。",
+    "defaultMessage": "{instance} のアカウントのメールアドレスなので、このメールを送りました。サーバーの閉鎖はあなたのデータに関わるため、このメールは止められません。",
     "description": "Sentence of the signature of a service closure email: why it comes, and that the user cannot unsubscribe from it. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure_announced.body": {
-    "defaultMessage": "{instance} の運営者が、サーバーを {closesAt} に終了すると告知しました。その後は、ログインしてデータをエクスポートすることだけができます。",
+    "defaultMessage": "{instance} の管理者が、サーバーを {closesAt} に閉鎖すると予告しました。閉鎖後は、ログインしてデータをエクスポートすることだけができます。",
     "description": "First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_announced.subject": {
-    "defaultMessage": "{instance} は {closesAt} に終了します",
+    "defaultMessage": "{instance} は {closesAt} に閉鎖します",
     "description": "Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_closed.body": {
-    "defaultMessage": "{instance} は終了しました。{exportUntil} までは、ログインしてデータをエクスポートできます。ほかの操作はできません。",
+    "defaultMessage": "{instance} は閉鎖しました。{exportUntil} までは、ログインしてデータをエクスポートできます。ほかの操作はできません。",
     "description": "First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_closed.detail": {
-    "defaultMessage": "その後、運営者がサーバーのデータを消し、元には戻せません。",
+    "defaultMessage": "その後、管理者がサーバーのデータを削除します。削除したデータは元に戻せません。",
     "description": "Second paragraph of the email of the closed server: what happens after the deadline of the export."
   },
   "mail.service_closure_closed.subject": {
-    "defaultMessage": "{instance} は終了しました",
+    "defaultMessage": "{instance} は閉鎖しました",
     "description": "Subject of the email of the service closure to every user with a verified address: the server has closed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure_day_before.body": {
-    "defaultMessage": "{instance} は 1 日以内の {closesAt} に終了します。閉鎖日の前の最後のお知らせです。",
+    "defaultMessage": "{instance} は {closesAt} に閉鎖します。残りは 1 日を切りました。閉鎖日の前の最後のお知らせです。",
     "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_day_before.subject": {
-    "defaultMessage": "{instance} は 1 日以内 ({closesAt}) に終了します",
+    "defaultMessage": "{instance} の閉鎖 ({closesAt}) まで 1 日を切りました",
     "description": "Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_export_week_before.body": {
@@ -176,31 +176,31 @@
     "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_export_week_before.subject": {
-    "defaultMessage": "{instance} のデータのエクスポートの期限まで 1 週間です",
+    "defaultMessage": "{instance} のデータをエクスポートできるのはあと 1 週間です",
     "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export after the server closed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure_rescheduled.body": {
-    "defaultMessage": "{instance} の運営者が、サーバーの終了の日付を変えました。サーバーは {closesAt} に終了します。",
+    "defaultMessage": "{instance} の管理者が閉鎖日を変更しました。サーバーは {closesAt} に閉鎖します。",
     "description": "First paragraph of the email of the service closure to every user with a verified address: the dates of the announced closure changed. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_rescheduled.subject": {
-    "defaultMessage": "{instance} の終了日が {closesAt} に変わりました",
+    "defaultMessage": "{instance} の閉鎖日が {closesAt} に変わりました",
     "description": "Subject of the email of the service closure to every user with a verified address: the administrators changed the dates of the announced closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_week_before.body": {
-    "defaultMessage": "{instance} は 1 週間後の {closesAt} に終了します。データを失う前にエクスポートしてください。",
+    "defaultMessage": "{instance} は 1 週間後の {closesAt} に閉鎖します。データを失う前にエクスポートしてください。",
     "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_week_before.subject": {
-    "defaultMessage": "{instance} の終了 ({closesAt}) まで 1 週間です",
+    "defaultMessage": "{instance} の閉鎖 ({closesAt}) まで 1 週間です",
     "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_withdrawn.body": {
-    "defaultMessage": "{instance} の運営者が、サーバーの終了の告知を取り消しました。サーバーはこれまでどおり続きます。何もする必要はありません。",
+    "defaultMessage": "{instance} の管理者が、サーバーの閉鎖の予告を取り消しました。サーバーはこれまでどおり続きます。何もする必要はありません。",
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure_withdrawn.subject": {
-    "defaultMessage": "{instance} の終了は取り消されました",
+    "defaultMessage": "{instance} の閉鎖は取り消されました",
     "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.signature.contact": {
@@ -212,7 +212,7 @@
     "description": "Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link."
   },
   "mail.supporter_payment_failed.action": {
-    "defaultMessage": "支払い方法を直す",
+    "defaultMessage": "支払い方法を更新する",
     "description": "Label of the link in the email about a failed payment that opens the supporter page, where the payment method is fixed."
   },
   "mail.supporter_payment_failed.body": {
@@ -240,7 +240,7 @@
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_service_closure.body": {
-    "defaultMessage": "{instance} の管理者がサーバーの終了を予告したため、サポーターのプラン「{plan}」の加入が解約されます。",
+    "defaultMessage": "{instance} の管理者がサーバーの閉鎖を予告したため、サポーターのプラン「{plan}」の加入が解約されます。",
     "description": "First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
   "mail.supporter_service_closure.detail": {
@@ -248,11 +248,11 @@
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
   },
   "mail.supporter_service_closure.subject": {
-    "defaultMessage": "{instance} の終了のため、サポーターの加入が解約されます",
+    "defaultMessage": "{instance} が閉鎖するため、サポーターの加入は解約されます",
     "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "{instance} のサポーターのプラン「{plan}」の加入が終わり、特典もなくなりました。{reason, select, lapsed {支払いの失敗から 7 日のうちに支払いが成功しなかったか、加入が一時停止されました。} reversed {支払いが全額返金されたか、チャージバックされました。} plan_retired {管理者がプランを廃止しました。} account_suspended {アカウントが凍結されました。} staff {管理者が加入を解約しました。} other {加入が解約されました。}}",
+    "defaultMessage": "{instance} のサポーターのプラン「{plan}」の加入が終わり、特典もなくなりました。{reason, select, lapsed {支払いの失敗から 7 日のうちに支払いが成功しなかったか、加入が一時停止されました。} reversed {支払いが全額返金されたか、カード会社への申し立てで取り消されました。} plan_retired {管理者がプランを廃止しました。} account_suspended {アカウントが凍結されました。} staff {管理者が加入を解約しました。} other {加入が解約されました。}}",
     "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
@@ -364,7 +364,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_webhook_disabled": {
-    "defaultMessage": "止まった Webhook",
+    "defaultMessage": "無効になった webhook",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_custom_emoji_request": {
@@ -376,7 +376,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_service_closure_due": {
-    "defaultMessage": "閉鎖日の経過",
+    "defaultMessage": "閉鎖日を過ぎたとき",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_error_group": {
@@ -392,7 +392,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the notices that the server's maximum of the automatic deletion of old posts applies to the user's posts. Matches the row of the web client's notification settings."
   },
   "mail.auto_delete_limit.detail": {
-    "defaultMessage": "それまではあなたの設定のとおりです。どの投稿が削除されるかは自動削除の設定で確かめられ、設定はサーバーの上限の内で変えられます。削除した投稿は元に戻せません。",
+    "defaultMessage": "それまでは、あなたの設定がそのまま使われます。どの投稿が削除されるかは自動削除の設定で確認でき、サーバーの上限までの範囲で設定を変えられます。削除した投稿は元に戻せません。",
     "description": "Second paragraph of the email that tells a local user that the server's maximum of the automatic deletion of old posts will apply to their posts; the first paragraph is the notification itself, with the days. The button below opens the user's settings of the automatic deletion."
   },
   "mail.action.sign_in": {
@@ -400,19 +400,19 @@
     "description": "Label of the link in an email that opens the sign-in page."
   },
   "mail.account_deactivated.subject": {
-    "defaultMessage": "{instance} のアカウントを無効化しました",
+    "defaultMessage": "{instance} のアカウントは無効化されています",
     "description": "Subject of the one email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.account_deactivated.body": {
-    "defaultMessage": "{instance} のアカウントを無効化しました。{date} までに再有効化しないと、アカウントは削除されます。",
+    "defaultMessage": "{instance} のアカウントは無効化されています。{date} までにもとに戻さないと、アカウントは削除されます。",
     "description": "First paragraph of the email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none. {date} is the date and time of the deletion with its time zone, such as 2026-12-03 09:00 (UTC)."
   },
   "mail.account_deactivated.detail": {
-    "defaultMessage": "再有効化するには、ログインしてください。削除の前にこの件のメールをもう一度送ることはありません。心当たりがない場合は、ログインして再有効化し、パスワードを変更してください。",
+    "defaultMessage": "もとに戻すには、ログインしてください。削除の前にこの件のメールをもう一度送ることはありません。心当たりがない場合は、ログインしてアカウントをもとに戻し、パスワードを変更してください。",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
   },
   "mail.admin_hook_failing.body": {
-    "defaultMessage": "サーバー {instance} の外部の審査の呼び出しが失敗し続けています。動くようになるまで、審査の対象は失敗時の動作に従います。既定では審査なしで通ります。",
+    "defaultMessage": "{instance} の外部の審査が失敗し続けています。直るまでは、審査の対象は失敗時の動作の設定どおりに扱われます。既定では審査なしで通ります。",
     "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_failing.detail": {
@@ -424,7 +424,7 @@
     "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_domain_list_failing.body": {
-    "defaultMessage": "サーバー {instance} が購読しているブロックリストを、3 回続けて取得できませんでした。取得できるようになるまで、このリストはドメインの処分を変えません。リストが下した処分はそのまま残ります。",
+    "defaultMessage": "{instance} が購読しているブロックリストを、3 回続けて取得できませんでした。取得できるまで、このリストによるドメインへの処分は変わりません。すでにある処分はそのまま残ります。",
     "description": "First paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_domain_list_failing.detail": {
@@ -432,11 +432,11 @@
     "description": "Second paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing, before the link."
   },
   "mail.admin_domain_list_failing.subject": {
-    "defaultMessage": "{instance} のブロックリストの購読で取得の失敗が続いています",
+    "defaultMessage": "{instance} が購読しているブロックリストの取得に失敗し続けています",
     "description": "Subject of the email to a moderator who gets moderator notifications by email: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_appeal.body": {
-    "defaultMessage": "{instance} の利用者が、自動の審査に拒否された投稿に異議を申し立て、モデレーターの審査を待っています。",
+    "defaultMessage": "{instance} の利用者が、自動審査で拒否された投稿に異議を申し立て、モデレーターの審査を待っています。",
     "description": "Paragraph of the email to a moderator about a new appeal of a post that the automated review refused. It never names the user or the post. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_appeal.subject": {

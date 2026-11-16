@@ -438,18 +438,18 @@ func TestStatusProblems(t *testing.T) {
 		{&appcontent.TextTooLongError{Length: 501, Max: 500}, http.StatusUnprocessableEntity, "", "本文と注意書きは合わせて 500 文字以内にしてください。"},
 		{appcontent.ErrEmptyText, http.StatusUnprocessableEntity, "", "投稿の本文がありません。"},
 		{fmt.Errorf("x: %w", appcontent.ErrMediaNotFound), http.StatusUnprocessableEntity, "", "添付したファイルがあなたのアップロードの中に見つかりません。"},
-		{fmt.Errorf("x: %w", appcontent.ErrMediaNotReady), http.StatusUnprocessableEntity, "", "添付したファイルは処理中か、処理できませんでした。"},
+		{fmt.Errorf("x: %w", appcontent.ErrMediaNotReady), http.StatusUnprocessableEntity, "", "添付したファイルは処理中か、処理できませんでした。少し待つか、いったん外してから添付し直してください。"},
 		{appcontent.ErrTooManyMedia, http.StatusUnprocessableEntity, "", "1 件の投稿に添付できるファイルは重複なしで 4 個までです。"},
 		{appcontent.ErrReplyTargetNotFound, http.StatusUnprocessableEntity, "", "返信先の投稿が見つかりません。"},
-		{fmt.Errorf("x: %w", appcontent.ErrReplyNotAllowed), http.StatusUnprocessableEntity, "", "この投稿の作者は、あなたが返信することを認めていません。"},
+		{fmt.Errorf("x: %w", appcontent.ErrReplyNotAllowed), http.StatusUnprocessableEntity, "", "この投稿の投稿者は、あなたの返信を許可していません。"},
 		{fmt.Errorf("x: %w", content.ErrInvalidPoll), http.StatusUnprocessableEntity, "", "投票の選択肢は互いに異なる 2〜4 個 (それぞれ 50 文字以内) にし、期間は 5 分〜30 日にしてください。"},
 		{appcontent.ErrPollWithMedia, http.StatusUnprocessableEntity, "", "投票のある投稿にはファイルを添付できません。"},
 		{appcontent.ErrPollNotEditable, http.StatusUnprocessableEntity, "", "投票のある投稿は編集できません。"},
 		{content.ErrInvalidVisibility, http.StatusUnprocessableEntity, "", ""},
-		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、ローカルの公開範囲で投稿できません。"},
+		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、ローカル限定で投稿できません。"},
 		{fmt.Errorf("x: %w", content.ErrInvalidIdempotencyKey), http.StatusUnprocessableEntity, "", "Idempotency-Key の値が正しくありません。"},
-		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "現在、あなたのアカウントは投稿できません。"},
-		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "現在、あなたのアカウントはフォロー・お気に入り・ブースト・返信ができません。"},
+		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントで投稿できません。"},
+		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。"},
 		{appcontent.ErrAlreadyDeleted, http.StatusConflict, "", "この Idempotency-Key で作成された投稿は削除されています。"},
 		{appcontent.ErrAccountUnavailable, http.StatusForbidden, clientapi.ProblemTypeAccountUnavailable, ""},
 		{errors.New("boom"), http.StatusInternalServerError, "", ""},
@@ -473,13 +473,13 @@ func TestStatusProblems(t *testing.T) {
 		detail       string
 	}{
 		{http.MethodPost, "/boost", content.ErrNotBoostable, "この投稿はブーストできません。"},
-		{http.MethodPost, "/boost", fmt.Errorf("x: %w", appcontent.ErrBoostNotAllowed), "この投稿の作者は、あなたがブーストすることを認めていません。"},
-		{http.MethodPost, "/pin", content.ErrNotPinnable, "固定できるのは、ダイレクト以外の自分の投稿だけです。"},
-		{http.MethodPost, "/pin", content.ErrPinLimit, "固定できる投稿は 5 件までです。"},
+		{http.MethodPost, "/boost", fmt.Errorf("x: %w", appcontent.ErrBoostNotAllowed), "この投稿の投稿者は、あなたのブーストを許可していません。"},
+		{http.MethodPost, "/pin", content.ErrNotPinnable, "ピン留めできるのは、ダイレクト以外の自分の投稿だけです。"},
+		{http.MethodPost, "/pin", content.ErrPinLimit, "ピン留めできる投稿は 5 件までです。先にどれかのピン留めを外してください。"},
 		{http.MethodPost, "/favourite", errNotFound, ""},
 		{http.MethodDelete, "/bookmark", errNotFound, ""},
-		{http.MethodPost, "/favourite", appcontent.ErrInteractionRestricted, "現在、あなたのアカウントはフォロー・お気に入り・ブースト・返信ができません。"},
-		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "現在、あなたのアカウントは投稿できません。"},
+		{http.MethodPost, "/favourite", appcontent.ErrInteractionRestricted, "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。"},
+		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "モデレーションの処分により、今はこのアカウントで投稿できません。"},
 	}
 	for _, tc := range interactions {
 		e := newStatusEnv(t, &fakeStatuses{view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil }, interact: func(string, string, string) error { return tc.err }})
@@ -745,7 +745,7 @@ func TestCreateStatusQuoteRemoteAudience(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用できません") {
+	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひかえめな公開」にしてください。") {
 		t.Errorf("create = %d %s, want 422 with the reason", res.StatusCode, body)
 	}
 }

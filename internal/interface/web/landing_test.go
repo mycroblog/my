@@ -128,7 +128,7 @@ func TestCrawlerPagePreview(t *testing.T) {
 	want := map[string]string{
 		"og:type":        "website",
 		"og:site_name":   "例のサーバー",
-		"og:title":       "リンクのカードのクローラー | 例のサーバー",
+		"og:title":       "リンクカードのクローラー | 例のサーバー",
 		"og:url":         "https://social.example/about/crawler",
 		"link:canonical": "https://social.example/about/crawler",
 	}

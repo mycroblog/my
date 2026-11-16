@@ -30,7 +30,7 @@ func (e *externalEnv) limitToProviders(on bool) {
 	}
 }
 
-const refusedOnThePage = "This server signs in only through the login providers."
+const refusedOnThePage = "On this server, you sign in only with another service."
 
 // TestLoginProvidersOnlyPasswordSignIn drives the sign-in page on the real server: the limit
 // follows the setting and the providers from one request to the next, with no restart.

@@ -28,11 +28,11 @@
     "description": "API error title for HTTP 422 when the user appeals a moderation action after the instance's appeal window."
   },
   "errors.bad_gateway": {
-    "defaultMessage": "リモートのサーバーに接続できないか、リモートのサーバーがエラーを返しました。",
+    "defaultMessage": "ほかのサーバーに接続できないか、そのサーバーでエラーが起きました。しばらくしてからもう一度試してください。",
     "description": "Error title for HTTP 502 when the server could not get a resource from a remote server, e.g. the media proxy could not reach the remote file or the remote server answered with a 5xx."
   },
   "errors.bad_request": {
-    "defaultMessage": "リクエストが正しくありません。",
+    "defaultMessage": "アプリの問題で、この操作を行えませんでした。アプリを読み込み直すか更新してから、もう一度試してください。",
     "description": "API error message for HTTP 400 when no more specific message applies."
   },
   "errors.blocking": {
@@ -40,7 +40,7 @@
     "description": "API error title for HTTP 409 when the user tries to follow an account that they block."
   },
   "errors.conflict": {
-    "defaultMessage": "このリクエストはリソースの現在の状態と矛盾しています。",
+    "defaultMessage": "操作している間に内容が変わりました。読み込み直してから、もう一度試してください。",
     "description": "API error title for HTTP 409 when no more specific message applies."
   },
   "errors.email.already_verified": {
@@ -52,19 +52,19 @@
     "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
   },
   "errors.export.in_progress": {
-    "defaultMessage": "データのアーカイブをすでに作成中です。完了するまでお待ちください。",
+    "defaultMessage": "データのエクスポートはすでに準備中です。準備ができるまでお待ちください。",
     "description": "API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built."
   },
   "errors.export.not_ready": {
-    "defaultMessage": "このアーカイブはダウンロードできません。",
+    "defaultMessage": "このエクスポートはダウンロードできません。準備中なら準備ができるまで待ち、失敗したか期限が切れたなら、もう一度依頼してください。",
     "description": "API error title for HTTP 409 when the user downloads an archive of their data that is still being built, failed, or has expired."
   },
   "errors.federation_restricted": {
-    "defaultMessage": "このサーバーの連合の向きの設定では、この操作はできません。",
+    "defaultMessage": "このサーバーでは、ほかのサーバーのアカウントや投稿に対してこの操作はできません。",
     "description": "API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post."
   },
   "errors.first_party_only": {
-    "defaultMessage": "この操作はこのサーバー自身のアプリだけが行えます。",
+    "defaultMessage": "この操作は、このサーバー自身のアプリでしか行えません。ブラウザでこのサーバーを開いて行ってください。",
     "description": "API error title for HTTP 403 when an app that is not this server's own client calls an account security operation (password, two-factor authentication, passkeys, deleting the account)."
   },
   "errors.forbidden": {
@@ -72,7 +72,7 @@
     "description": "API error title for HTTP 403 when the user may not perform the operation, e.g. edit another account's post."
   },
   "errors.gone": {
-    "defaultMessage": "このサーバーは終了しました。リソースはもうありません。",
+    "defaultMessage": "このサーバーは閉鎖しました。リソースはもうありません。",
     "description": "Error title for HTTP 410 from the federation endpoints of a server that has closed (ADR-0088)."
   },
   "errors.hook_decision.not_overridable": {
@@ -84,7 +84,7 @@
     "description": "API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out."
   },
   "errors.import.invalid_csv": {
-    "defaultMessage": "ファイルを CSV として読み込めません。",
+    "defaultMessage": "ファイルを CSV として読み込めません。CSV ファイルを選んで、もう一度試してください。",
     "description": "Detail of an API error (HTTP 422) when the file the user imports is not a valid CSV file, e.g. it has an unterminated quoted field."
   },
   "errors.insufficient_scope": {
@@ -96,7 +96,7 @@
     "description": "Detail of the HTTP 403 insufficient-scope API error. {scope} is the missing OAuth scope, e.g. read:accounts (not translated)."
   },
   "errors.interaction_restricted": {
-    "defaultMessage": "現在、あなたのアカウントはフォロー・お気に入り・ブースト・返信ができません。",
+    "defaultMessage": "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。",
     "description": "Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying)."
   },
   "errors.internal": {
@@ -124,7 +124,7 @@
     "description": "Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated)."
   },
   "errors.media_attached": {
-    "defaultMessage": "この添付ファイルは投稿に添付済みのため、変更できません。",
+    "defaultMessage": "このファイルは投稿に添付されているため、変更できません。",
     "description": "API error title for HTTP 409 when the user tries to change the description or focal point of an uploaded media file that a post already attaches."
   },
   "errors.media_attached_detail": {
@@ -132,7 +132,7 @@
     "description": "Detail of the HTTP 409 media-attached API error."
   },
   "errors.media_corrupt": {
-    "defaultMessage": "ファイルを画像として読み込めませんでした。",
+    "defaultMessage": "ファイルを画像として読み込めませんでした。ほかのファイルを選んでください。",
     "description": "API error title for HTTP 422 when an uploaded file has the signature of an image format but does not decode."
   },
   "errors.media_description_too_long": {
@@ -144,7 +144,7 @@
     "description": "Detail of the HTTP 422 API error for a description that is too long. {max} is the maximum number of characters."
   },
   "errors.media_dimensions": {
-    "defaultMessage": "画像の幅・高さ・フレーム数が上限を超えています。",
+    "defaultMessage": "画像の幅・高さ・フレーム数が上限を超えています。もっと小さい画像を選んでください。",
     "description": "API error title for HTTP 422 when an uploaded image is too wide or tall, or has too many pixels or animation frames."
   },
   "errors.media_invalid_focus": {
@@ -152,11 +152,11 @@
     "description": "API error title for HTTP 422 when the focal point of a media file is outside the image."
   },
   "errors.media_too_large": {
-    "defaultMessage": "ファイルが大きすぎます。",
+    "defaultMessage": "ファイルが大きすぎます。もっと小さいファイルを選んでください。",
     "description": "API error title for HTTP 413 when an uploaded media file is larger than the server accepts."
   },
   "errors.media_too_long": {
-    "defaultMessage": "動画または音声が長すぎます。",
+    "defaultMessage": "動画または音声が長すぎます。短くしてからもう一度試してください。",
     "description": "API error title for HTTP 422 when an uploaded video or audio file is longer than the server accepts."
   },
   "errors.media_unsupported_codec": {
@@ -176,11 +176,11 @@
     "description": "Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated)."
   },
   "errors.not_found": {
-    "defaultMessage": "指定されたリソースが見つかりません。",
+    "defaultMessage": "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。",
     "description": "API error message for HTTP 404."
   },
   "errors.rate_limited": {
-    "defaultMessage": "リクエストが多すぎます。",
+    "defaultMessage": "短い時間に操作が多すぎます。少し待ってから、もう一度試してください。",
     "description": "API error title for HTTP 429 when a client sent more requests than the rate limit allows."
   },
   "errors.rate_limited_detail": {
@@ -192,7 +192,7 @@
     "description": "API error title for HTTP 422 when a relay cannot be registered, joined, left, or deleted; the detail says why."
   },
   "errors.relay.invalid_detail": {
-    "defaultMessage": "{reason, select, url {URL は 2048 バイト以内の https の URL にしてください。} exists {この URL のリレーはすでに登録されています。} domain_suspended {リレーのサーバーはドメインへの処分で停止されています。} not_actor {URL が、inbox を持つリレーの Actor を返しません。} state {リレーがこの操作をできる状態にありません。削除する前に脱退し、参加し直すのは脱退したか拒否されたリレーだけにしてください。} other {リレーをそのように変更できません。}}",
+    "defaultMessage": "{reason, select, url {URL は 2048 文字以内の https の URL にしてください。} exists {この URL のリレーはすでに登録されています。} domain_suspended {リレーのサーバーはドメインへの処分で停止されています。} not_actor {この URL はリレーのアドレスではありません。} state {リレーがこの操作をできる状態にありません。削除する前に脱退し、参加し直すのは脱退したか拒否されたリレーだけにしてください。} other {リレーをそのように変更できません。}}",
     "description": "API error detail for HTTP 422 when a relay operation is refused. {reason} is url, exists, domain_suspended, not_actor, or state."
   },
   "errors.refetch.not_remote": {
@@ -200,7 +200,7 @@
     "description": "API error detail for HTTP 422 when an administrator asks to refetch a local post, a local account, or this server's own domain from its origin."
   },
   "errors.remote_account": {
-    "defaultMessage": "他のサーバーのアカウントにはこの操作を行えません。",
+    "defaultMessage": "ほかのサーバーのアカウントにはこの操作を行えません。",
     "description": "Detail of the HTTP 422 API error when a block targets an account on another server, which the operation does not support."
   },
   "errors.report.not_resolved": {
@@ -208,11 +208,11 @@
     "description": "Detail of the HTTP 409 API error when a moderator reopens a report that is still open."
   },
   "errors.report.not_forwardable": {
-    "defaultMessage": "転送できるのは、このサーバーで受け付けた、ほかのサーバーのアカウントへの通報で、通話のルームの通報でないものだけです。",
+    "defaultMessage": "転送できるのは、このサーバーで受け付けた、ほかのサーバーのアカウントへの通報だけです。通話のルームの通報は転送できません。",
     "description": "Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target."
   },
   "errors.request_too_large": {
-    "defaultMessage": "リクエストが大きすぎます。",
+    "defaultMessage": "送信した内容が大きすぎます。小さくしてから、もう一度試してください。",
     "description": "API error title for HTTP 413 when a request body is larger than the server accepts."
   },
   "errors.role.invalid": {
@@ -220,47 +220,47 @@
     "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which."
   },
   "errors.role.invalid_detail": {
-    "defaultMessage": "{reason, select, key {キーは 1〜64 文字の英小文字・数字・アンダースコア・ハイフンにしてください。} key_taken {このキーのロールがすでにあります。} position {位置は 0〜999 にしてください。} permissions {同じ権限は 1 回だけ選んでください。} builtin {admin のロールは変えられず、組み込みのロールは削除できません。} held {先に、このロールを持つ全員から剥奪してください。} missing_permission {付けたり外したりできるのは、自分が持つ権限だけです。} badge_label {バッジの名前は 1〜32 文字の 1 行にしてください。} badge_color {バッジの色は決まった色から選んでください。} other {変更が規則に反しています。}}",
+    "defaultMessage": "{reason, select, key {キーは 1〜64 文字の英小文字・数字・アンダースコア・ハイフンにしてください。} key_taken {このキーのロールがすでにあります。} position {位置は 0〜999 にしてください。} permissions {同じ権限は 1 回だけ選んでください。} builtin {管理者のロールは変更できず、組み込みのロールは削除できません。} held {先に、このロールを持つ全員からロールを外してください。} missing_permission {付けたり外したりできるのは、自分が持つ権限だけです。} badge_label {バッジの名前は 1〜32 文字の 1 行にしてください。} badge_color {バッジの色は決まった色から選んでください。} other {変更が規則に反しています。}}",
     "description": "API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color."
   },
   "errors.role.managed_by_plan": {
-    "defaultMessage": "このロールは課金のプランのロールです。",
+    "defaultMessage": "このロールはサポーターのプランのロールです。",
     "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5)."
   },
   "errors.role.managed_by_plan_detail": {
-    "defaultMessage": "付け外しはプランの加入だけが行い、権限と位置はプランの画面から変えます。",
+    "defaultMessage": "このロールは、プランへの加入で付き、加入の終了で外れます。権限と位置はプランの設定で変えてください。",
     "description": "API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand."
   },
   "errors.role.breaks_supporter_roles": {
-    "defaultMessage": "スタッフのロールは課金のプランのロールより上に置きます。",
+    "defaultMessage": "スタッフのロールは、サポーターのプランのロールより上に置いてください。",
     "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5)."
   },
   "errors.subscription_blocked": {
-    "defaultMessage": "このアカウントの新しい投稿は通知できません。",
+    "defaultMessage": "このアカウントの新しい投稿の通知は受け取れません。",
     "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of an account that they block or that blocks them."
   },
   "errors.subscription_limit": {
-    "defaultMessage": "新しい投稿を通知するアカウントが多すぎます。先にいくつかを止めてください。",
+    "defaultMessage": "新しい投稿の通知を受け取っているアカウントが多すぎます。先にいくつかの通知を止めてください。",
     "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of more accounts than the server allows (1,000)."
   },
   "errors.subscription_requires_follow": {
-    "defaultMessage": "フォローすると新しい投稿を通知できます。",
+    "defaultMessage": "フォローすると新しい投稿の通知を受け取れます。",
     "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of an account on another server that they do not follow; subscribing to such an account needs a follow."
   },
   "errors.supporters.unavailable": {
-    "defaultMessage": "このサーバーでは課金の機能を使えません。",
+    "defaultMessage": "このサーバーではサポーターを使えません。",
     "description": "API error title for HTTP 409 when the supporter program cannot be enabled or used: no payment provider is configured, the server sends no email, or the configured provider is not the program's (ADR-0072 §2)."
   },
   "errors.supporters.unavailable_detail": {
-    "defaultMessage": "{reason, select, no_provider {先にサーバーの設定で決済の事業者を設定してください。} no_email {加入者がメールアドレスを確認できるよう、サーバーがメールを送る必要があります。} provider_mismatch {設定されている決済の事業者が、課金を有効にしたときの事業者と違います。いったん無効にしてから有効にし直してください。} other {いまは課金の機能を使えません。}}",
+    "defaultMessage": "{reason, select, no_provider {先にサーバーの設定で決済サービスを設定してください。} no_email {加入者がメールアドレスを確認できるよう、先にサーバーがメールを送れるように設定してください。} provider_mismatch {設定されている決済サービスが、サポーターを有効にしたときと違います。いったん無効にしてから有効にし直してください。} other {いまはサポーターを使えません。}}",
     "description": "API error detail for HTTP 409 when the supporter program is unavailable. {reason} is no_provider, no_email, or provider_mismatch."
   },
   "errors.supporters.live_subscriptions": {
-    "defaultMessage": "課金のプランの加入が続いています。",
+    "defaultMessage": "サポーターのプランにまだ加入している人がいます。",
     "description": "API error title for HTTP 409 when an administrator disables the supporter program while subscriptions go on (ADR-0072 §2)."
   },
   "errors.supporters.live_subscriptions_detail": {
-    "defaultMessage": "プランを廃止し、加入が終わってから無効にしてください。",
+    "defaultMessage": "プランを廃止し、すべての加入が終わってからサポーターを無効にしてください。",
     "description": "API error detail for HTTP 409 when the supporter program is disabled while subscriptions go on."
   },
   "errors.supporters.plan_invalid": {
@@ -268,7 +268,7 @@
     "description": "API error title for HTTP 422 when a supporter plan breaks a rule; the detail says which (ADR-0072 §3 to §5)."
   },
   "errors.supporters.plan_invalid_detail": {
-    "defaultMessage": "{reason, select, name {名前は 1 行で 1〜50 文字にしてください。} description {説明は 1000 文字以内にしてください。} monthly_price {金額は、年払いの金額も含めて、決済の事業者の最低の請求額以上にしてください。} currency {決済の事業者はこの通貨を扱いません。} annual_discount_percent {年払いの割引率は 0〜90% にしてください。} emoji_limit {絵文字の作成数の上限は 0〜10000 にしてください。} rank {順位は 0〜1000000 にしてください。} visibility {公開か非公開を選んでください。} role_builtin {組み込みのロールはプランのロールにできません。} role_taken {ほかのプランがこのロールを使っています。} role_held {誰も持っていないロールを選んでください。} role_permissions {プランのロールは利用者の権限だけを持てます。} role_position {プランのロールはスタッフのどのロールよりも下に置きます。} order_rank {ほかのプランがこの順位を使っています。} order_position {上位のプランのロールは、下位のプランのロールより上に置きます。} order_permissions {上位のプランのロールは、下位のプランのロールの権限をすべて持ちます。} order_emoji_limit {上位のプランの絵文字の作成数の上限は、下位のプラン以上にします。} other {プランが規則に合いません。}}",
+    "defaultMessage": "{reason, select, name {名前は 1 行で 1〜50 文字にしてください。} description {説明は 1000 文字以内にしてください。} monthly_price {金額は、年払いの金額も含めて、決済サービスの最低額以上にしてください。} currency {決済サービスがこの通貨を扱っていません。} annual_discount_percent {年払いの割引率は 0〜90% にしてください。} emoji_limit {絵文字の作成数の上限は 0〜10000 にしてください。} rank {順位は 0〜1000000 にしてください。} visibility {公開か非公開を選んでください。} role_builtin {組み込みのロールはプランのロールにできません。} role_taken {ほかのプランがこのロールを使っています。} role_held {誰も持っていないロールを選んでください。} role_permissions {プランのロールには利用者の権限だけを付けてください。} role_position {プランのロールは、スタッフのどのロールよりも下に置いてください。} order_rank {ほかのプランがこの順位を使っています。} order_position {上位のプランのロールは、下位のプランのロールより上に置いてください。} order_permissions {上位のプランのロールには、下位のプランのロールの権限をすべて付けてください。} order_emoji_limit {上位のプランの絵文字の作成数の上限は、下位のプラン以上にしてください。} other {プランが規則に反しています。}}",
     "description": "API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit."
   },
   "errors.supporters.plan_retired": {
@@ -292,23 +292,23 @@
     "description": "API error title for HTTP 409 when a user who has a subscription to a supporter plan starts another one (ADR-0072 §6: one plan at a time)."
   },
   "errors.supporters.subscribed_detail": {
-    "defaultMessage": "代わりに、いまの加入のプランを変更してください。",
+    "defaultMessage": "代わりに、加入中のプランを変更してください。",
     "description": "API error detail for HTTP 409 when a user who has a subscription starts another one."
   },
   "errors.supporters.plan_unavailable": {
-    "defaultMessage": "このサポーターのプランは加入を受け付けていません。",
+    "defaultMessage": "このサポーターのプランは加入を受け付けていません。ほかのプランを選んでください。",
     "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
   },
   "errors.service_closed": {
-    "defaultMessage": "このサーバーはクローズしました。",
+    "defaultMessage": "このサーバーは閉鎖しました。",
     "description": "API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports."
   },
   "errors.service_closed_detail": {
-    "defaultMessage": "サーバーはクローズしました。ログインして、データをエクスポートすることはできます。",
+    "defaultMessage": "まだログインして、データをエクスポートできます。",
     "description": "API error detail for HTTP 403 when the server is closed: what the users can still do."
   },
   "errors.service_closure.state": {
-    "defaultMessage": "いまのサービスの終了の状態ではこの操作はできません。",
+    "defaultMessage": "閉鎖の手続きのいまの段階では、この操作はできません。",
     "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes."
   },
   "errors.supporters.subscription_state": {
@@ -316,7 +316,7 @@
     "description": "API error title for HTTP 409 when the state of a user's subscription to a supporter plan does not allow the operation (ADR-0072 §8): a change needs an active subscription, a cancellation an active or past-due one, a resumption a canceling one."
   },
   "errors.supporters.same_plan": {
-    "defaultMessage": "いまの加入がすでにこのプランと支払いの間隔です。",
+    "defaultMessage": "すでにこのプランとこの支払い間隔で加入しています。",
     "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
   "errors.supporters.tip_amount": {
@@ -332,7 +332,7 @@
     "description": "API error title for HTTP 409 when two starts of a tip of one user run at the same time (ADR-0162 §13)."
   },
   "errors.supporters.tip_pending_detail": {
-    "defaultMessage": "少し待ってからやり直してください。",
+    "defaultMessage": "少し待ってからもう一度試してください。",
     "description": "API error detail for HTTP 409 when another start of a tip of the user runs."
   },
   "errors.supporters.tips_unavailable": {
@@ -340,7 +340,7 @@
     "description": "API error title for HTTP 409 when an administrator enables the tips while the supporter program is disabled or the payment provider takes no one-time payments (ADR-0162 §3)."
   },
   "errors.supporters.tips_unavailable_detail": {
-    "defaultMessage": "先に、1 回の支払いを受けられる決済の事業者で課金の機能を有効にしてください。",
+    "defaultMessage": "先に、1 回だけの支払いを受け付ける決済サービスで、サポーターを有効にしてください。",
     "description": "API error detail for HTTP 409 when the tips cannot be enabled."
   },
   "errors.supporters.tip_amounts_invalid": {
@@ -348,7 +348,7 @@
     "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
   },
   "errors.supporters.tip_amounts_invalid_detail": {
-    "defaultMessage": "{reason, select, count {1 つの通貨で、異なる金額を 1〜6 つ選んでください。} currency {チップは円か米ドルで受け、決済の事業者がその通貨を受けられる必要があります。} range {各金額は 100 円〜10 万円か 1〜1000 米ドルで、決済の事業者の最低額以上にしてください。} other {金額が決まりを満たしていません。}}",
+    "defaultMessage": "{reason, select, count {1 つの通貨で、異なる金額を 1〜6 個選んでください。} currency {円か米ドルのうち、決済サービスが扱える通貨にしてください。} range {各金額は 100 円〜10 万円か 1〜1000 米ドルで、決済サービスの最低額以上にしてください。} other {金額が規則に反しています。}}",
     "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
   },
   "errors.supporters.payment_failed": {
@@ -356,7 +356,7 @@
     "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."
   },
   "errors.supporters.payment_failed_detail": {
-    "defaultMessage": "請求はしていません。カードを更新してもう一度試してください。支払いのたびに認証を求めるカードでは変更の支払いができません。",
+    "defaultMessage": "料金は請求されていません。カードを変更して、もう一度試してください。支払いのたびに認証を求めるカードでは、変更の支払いはできません。",
     "description": "API error detail for HTTP 402 when the payment of a change of supporter plan failed."
   },
   "errors.supporters.payment_processing": {
@@ -412,7 +412,7 @@
     "description": "Detail of the HTTP 422 API error when an article is given more hashtags than allowed. {max} is the maximum number of hashtags."
   },
   "errors.status.boost_not_allowed": {
-    "defaultMessage": "この投稿の作者は、あなたがブーストすることを認めていません。",
+    "defaultMessage": "この投稿の投稿者は、あなたのブーストを許可していません。",
     "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
   },
   "errors.status.empty_text": {
@@ -444,7 +444,7 @@
     "description": "Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded."
   },
   "errors.status.media_not_ready": {
-    "defaultMessage": "添付したファイルは処理中か、処理できませんでした。",
+    "defaultMessage": "添付したファイルは処理中か、処理できませんでした。少し待つか、いったん外してから添付し直してください。",
     "description": "Detail of the HTTP 422 API error when a post attaches a media file whose processing has not finished or failed."
   },
   "errors.status.missing_media_description": {
@@ -464,19 +464,19 @@
     "description": "Detail of the HTTP 422 API error when the visibility of a post does not allow boosting it (followers-only or direct posts)."
   },
   "errors.status.not_pinnable": {
-    "defaultMessage": "固定できるのは、ダイレクト以外の自分の投稿だけです。",
+    "defaultMessage": "ピン留めできるのは、ダイレクト以外の自分の投稿だけです。",
     "description": "Detail of the HTTP 422 API error when a user tries to pin another account's post or a direct post."
   },
   "errors.status.pin_limit": {
-    "defaultMessage": "{max, plural, other {固定できる投稿は # 件までです。}}",
+    "defaultMessage": "{max, plural, other {ピン留めできる投稿は # 件までです。先にどれかのピン留めを外してください。}}",
     "description": "Detail of the HTTP 422 API error when a user pins more posts than allowed. {max} is the maximum number of pinned posts."
   },
   "errors.status.poll_already_voted": {
-    "defaultMessage": "この投票にはすでに回答しています。",
+    "defaultMessage": "この投票にはすでに投票しています。",
     "description": "Detail of the HTTP 422 API error when a user votes in a poll a second time."
   },
   "errors.status.poll_changed": {
-    "defaultMessage": "投稿の編集で投票が変わりました。読み込み直してから回答してください。",
+    "defaultMessage": "投稿の編集で投票が変わりました。読み込み直してから、もう一度投票してください。",
     "description": "Detail of the HTTP 409 API error when a user votes in a poll that an edit of the post replaced."
   },
   "errors.status.poll_closed": {
@@ -504,7 +504,7 @@
     "description": "Detail of the HTTP 422 API error when a new post has both a poll and attached media."
   },
   "errors.status.posting_restricted": {
-    "defaultMessage": "現在、あなたのアカウントは投稿できません。",
+    "defaultMessage": "モデレーションの処分により、今はこのアカウントで投稿できません。",
     "description": "Detail of the HTTP 403 API error when a moderator restricted the account from posting."
   },
   "errors.status.quote_not_found": {
@@ -516,7 +516,7 @@
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
   },
   "errors.status.quote_remote_audience": {
-    "defaultMessage": "ローカル限定・フォロワー限定・ダイレクトの投稿では、ほかのサーバーの投稿を引用できません。",
+    "defaultMessage": "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひかえめな公開」にしてください。",
     "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
   },
   "errors.status.reply_not_found": {
@@ -524,7 +524,7 @@
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."
   },
   "errors.status.reply_not_allowed": {
-    "defaultMessage": "この投稿の作者は、あなたが返信することを認めていません。",
+    "defaultMessage": "この投稿の投稿者は、あなたの返信を許可していません。",
     "description": "Detail of the HTTP 422 API error when the author of a post chose who may reply to it and the user is not among them."
   },
   "errors.status.text_too_long": {
@@ -552,11 +552,11 @@
     "description": "API error title for HTTP 422 when no translation service of the server translates between the post's language and the language asked for."
   },
   "errors.streaming.too_many": {
-    "defaultMessage": "開いているストリームが多すぎます。どれかを閉じてからやり直してください。",
+    "defaultMessage": "リアルタイム更新を開いているタブやアプリが多すぎます。どれかを閉じてからもう一度試してください。",
     "description": "Detail of the HTTP 429 API error when the user already has as many real-time update streams (open tabs or devices) as the server allows."
   },
   "errors.streaming.unavailable": {
-    "defaultMessage": "リアルタイム更新は現在利用できません。しばらくしてからやり直してください。",
+    "defaultMessage": "リアルタイム更新は現在利用できません。しばらくしてからもう一度試してください。",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
   },
   "errors.target_outranks_actor": {
@@ -588,15 +588,15 @@
     "description": "Title of the HTTP 422 API error when the user confirms the setup of an authenticator app after it expired (15 minutes) or with an unknown setup."
   },
   "errors.passkey.invalid": {
-    "defaultMessage": "パスキーを確認できませんでした。",
+    "defaultMessage": "パスキーを追加できませんでした。すでに追加されている可能性があります。そうでなければ、端末の画面ロックを有効にしてから、もう一度試してください。",
     "description": "Title of the HTTP 422 API error when the browser's answer to a passkey registration does not verify (another site, no screen lock or biometrics, or a passkey that is registered already)."
   },
   "errors.passkey.confirmation_expired": {
-    "defaultMessage": "パスキーでの確認の有効期限が切れました。もう一度やり直してください。",
+    "defaultMessage": "パスキーでの確認の有効期限が切れました。もう一度試してください。",
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account (such as deleting it or removing the password) with a passkey after the confirmation expired (5 minutes) or was already used."
   },
   "errors.passkey.last_sign_in_method": {
-    "defaultMessage": "これはログインに使える最後の手段です。先にパスキーを追加するか、パスワードを設定するか、アカウントをひも付けてください。",
+    "defaultMessage": "これはログインに使える最後の手段です。先にパスキーを追加するか、パスワードを設定するか、ほかのサービスのアカウントを連携してください。",
     "description": "Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in."
   },
   "errors.passkey.registration_expired": {
@@ -640,7 +640,7 @@
     "description": "API error title for HTTP 401 when the request carries no access token and the operation needs one."
   },
   "errors.unprocessable": {
-    "defaultMessage": "リクエストを処理できません。",
+    "defaultMessage": "この操作はできませんでした。",
     "description": "API error title for HTTP 422; the detail says what is wrong with the request."
   },
   "errors.unsupported_media_type": {
@@ -652,15 +652,15 @@
     "description": "Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. {name} is the property name, e.g. avatar_media_id (not translated)."
   },
   "errors.webhook.invalid": {
-    "defaultMessage": "webhook を保存できません。",
+    "defaultMessage": "Webhook を保存できません。",
     "description": "API error title for HTTP 422 when the settings of a webhook endpoint break a rule; the detail says which."
   },
   "errors.webhook.invalid_detail": {
-    "defaultMessage": "{reason, select, url {URL は、ユーザー情報とフラグメントを含まない 2048 バイト以内の http か https の絶対 URL にしてください。} description {説明は制御文字を含まない 200 文字以内にしてください。} events {イベントを 1 つ以上、重複なく選んでください。} missing_permission {選んだすべてのイベントの権限が必要です。} other {設定が規則に反しています。}}",
+    "defaultMessage": "{reason, select, url {URL は、ユーザー情報とフラグメントを含まない 2048 文字以内の http か https の絶対 URL にしてください。} description {説明は制御文字を含まない 200 文字以内にしてください。} events {イベントを 1 つ以上、重複なく選んでください。} missing_permission {選んだすべてのイベントの権限が必要です。} other {設定が規則に反しています。}}",
     "description": "API error detail for HTTP 422 when the settings of a webhook endpoint break a rule. {reason} is url, description, events, or missing_permission."
   },
   "errors.wrong_password": {
-    "defaultMessage": "パスワードが違います。",
+    "defaultMessage": "パスワードが違います。現在のパスワードを入力してください。",
     "description": "API error title for HTTP 422 when the password the user typed to confirm an operation on their own account (such as deleting it) is not their current password."
   },
   "errors.invalid_custom_emoji": {
@@ -668,7 +668,7 @@
     "description": "API error title for HTTP 422 when a custom emoji, or a request for one, breaks a rule; the detail and the reason property say which."
   },
   "errors.invalid_custom_emoji_detail": {
-    "defaultMessage": "{reason, select, invalid_shortcode {ショートコードは、2〜30 文字の英字 (A〜Z)・数字・アンダースコアです。} shortcode_taken {このサーバーのカスタム絵文字に、同じショートコードのものがあります。} invalid_alias {別名は 2〜30 文字の英字 (A〜Z)・数字・アンダースコアで、1 つの絵文字に 10 個までです。} invalid_category {カテゴリは 64 文字までです。} media_not_found {アップロードした画像の中に見つかりません。} media_not_ready {画像はまだ処理中です。少し待ってからもう一度試してください。} unsupported_format {画像は PNG・GIF・WebP のどれかにしてください。} too_large {画像がこのサーバーの上限より大きいです。} too_big {画像は縦横とも 1024 ピクセル以下にしてください。} remote_emoji {この操作は、このサーバーのカスタム絵文字にだけ行えます。} local_emoji {この操作は、ほかのサーバーのカスタム絵文字にだけ行えます。} fetch_failed {カスタム絵文字の画像を、そのサーバーから取得できませんでした。} limit_reached {今月のカスタム絵文字の申請の数が、毎月の上限に達しています。数は毎月 1 日 (UTC) にリセットされます。} request_pending {このカスタム絵文字には、審査中の画像の差し替えの申請があります。} invalid_reason {理由は 500 文字までです。} other {カスタム絵文字が規則に合いません。}}",
+    "defaultMessage": "{reason, select, invalid_shortcode {ショートコードは、2〜30 文字の英字 (A〜Z)・数字・アンダースコアです。} shortcode_taken {このサーバーのカスタム絵文字に、同じショートコードのものがあります。} invalid_alias {別名は 2〜30 文字の英字 (A〜Z)・数字・アンダースコアで、1 つの絵文字に 10 個までです。} invalid_category {カテゴリは 64 文字までです。} media_not_found {アップロードした画像の中に見つかりません。} media_not_ready {画像はまだ処理中です。少し待ってからもう一度試してください。} unsupported_format {画像は PNG・GIF・WebP のどれかにしてください。} too_large {画像がこのサーバーの上限より大きいです。もっと小さい画像を選んでください。} too_big {画像は縦横とも 1024 ピクセル以下にしてください。} remote_emoji {この操作は、このサーバーのカスタム絵文字にだけ行えます。} local_emoji {この操作は、ほかのサーバーのカスタム絵文字にだけ行えます。} fetch_failed {カスタム絵文字の画像を、そのサーバーから取得できませんでした。} limit_reached {今月のカスタム絵文字の申請の数が、毎月の上限に達しています。数は毎月 1 日 (UTC) にリセットされます。} request_pending {このカスタム絵文字には、審査中の画像の差し替えの申請があります。} invalid_reason {理由は 500 文字までです。} other {カスタム絵文字が規則に合いません。}}",
     "description": "Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule."
   },
   "errors.custom_emoji_request_conflict": {
@@ -692,7 +692,7 @@
     "description": "API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list."
   },
   "errors.last_administrator": {
-    "defaultMessage": "このサーバーの管理者はこのアカウントだけです。先に別のユーザーを管理者にしてください。",
+    "defaultMessage": "このサーバーの管理者はこのアカウントだけです。先にほかの利用者を管理者にしてください。",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
   "errors.featured_tags.too_many": {
@@ -720,15 +720,15 @@
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
   },
   "errors.service_closing": {
-    "defaultMessage": "このサーバーは終了が予告されています。",
+    "defaultMessage": "このサーバーは閉鎖が予告されています。",
     "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
   },
   "errors.service_closing_detail": {
-    "defaultMessage": "終了の予告の間は、新しい登録とサポーターの加入を受け付けません。",
+    "defaultMessage": "閉鎖が予告されている間は、新しい登録とサポーターの加入を受け付けません。",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
   },
   "errors.account_moved": {
-    "defaultMessage": "このアカウントは移転しました。",
+    "defaultMessage": "このアカウントは別のアカウントへ移転しました。この操作をするには、先に移転を取り消してください。",
     "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."
   },
   "errors.account_not_moved": {
@@ -736,11 +736,11 @@
     "description": "API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved."
   },
   "errors.current_session": {
-    "defaultMessage": "今お使いのブラウザです。通常のログアウトを使ってください。",
+    "defaultMessage": "今お使いのブラウザです。代わりにログアウトしてください。",
     "description": "API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it."
   },
   "errors.move_alias_missing": {
-    "defaultMessage": "移転先のアカウントの別名に、このアカウントがありません。",
+    "defaultMessage": "移転先のアカウントの別名に、このアカウントがありません。先に移転先のアカウントで、このアカウントを別名に追加してください。",
     "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."
   },
   "errors.move_target_moved": {
@@ -752,7 +752,7 @@
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
   },
   "errors.move_too_soon": {
-    "defaultMessage": "前回の移転から時間が経っていません。",
+    "defaultMessage": "アカウントは、前回の移転から 30 日たつと再び移転できます。以前に移転したことのあるアカウントには移転できません。",
     "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
   },
   "errors.voice.not_eligible": {
@@ -776,7 +776,7 @@
     "description": "API error title for HTTP 409 when the host of an open voice chat room opens or joins another room."
   },
   "errors.voice.hosting_elsewhere_detail": {
-    "defaultMessage": "先にそのルームを退出し、次のホストを選ぶか解散してください。",
+    "defaultMessage": "先にホストをしているルームを退出し、次のホストを選ぶか解散してください。",
     "description": "API error detail for HTTP 409 when the host of an open voice chat room opens or joins another room."
   },
   "errors.voice.host_must_choose": {
@@ -784,11 +784,11 @@
     "description": "API error title for HTTP 409 when the host leaves a voice chat room that has other participants without choosing the next host or ending the room."
   },
   "errors.voice.invalid_next_host": {
-    "defaultMessage": "次のホストは、ルームを開けるルームの参加者から選んでください。",
+    "defaultMessage": "次のホストは、ルームを開ける参加者から選んでください。",
     "description": "API error title for HTTP 422 when the host of a voice chat room chooses as the next host someone who is not in the room or may not host rooms."
   },
   "errors.voice.conflict": {
-    "defaultMessage": "ルームが変わりました。もう一度試してください。",
+    "defaultMessage": "その間にルームが変わりました。もう一度試してください。",
     "description": "API error title for HTTP 409 when a change of a voice chat room raced another change of the same user."
   },
   "errors.voice.unavailable": {
@@ -820,19 +820,19 @@
     "description": "API error title for HTTP 409 when the host or a co-host of a voice chat room invites a user a second time (a user is invited to a room once, even after a revocation)."
   },
   "errors.external_confirmation.expired": {
-    "defaultMessage": "ひも付けたアカウントでの確認の有効期限が切れたか、すでに使われています。もう一度やり直してください。",
+    "defaultMessage": "連携したアカウントでの確認の有効期限が切れたか、すでに使われています。もう一度試してください。",
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account with a linked account at an external login provider after the confirmation expired (10 minutes), was already used, or was made for another operation."
   },
   "errors.login_provider.unavailable": {
-    "defaultMessage": "そのログインサービスは使えません。",
+    "defaultMessage": "そのサービスでのログインは使えません。",
     "description": "Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at."
   },
   "errors.login_provider.linked": {
-    "defaultMessage": "そのログインサービスのアカウントはすでにひも付けています。",
+    "defaultMessage": "そのサービスのアカウントはすでに連携しています。",
     "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
   },
   "errors.login_providers_only": {
-    "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスワードやパスキーはここでは設定できません。",
+    "defaultMessage": "このサーバーでは、ほかのサービスでしかログインできないため、パスワードの設定やパスキーの追加はできません。",
     "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
   },
   "errors.deactivation.refused": {
@@ -844,7 +844,7 @@
     "description": "API error detail: the account cannot be deactivated because a moderation action disables its login."
   },
   "errors.deactivation.deletion_scheduled": {
-    "defaultMessage": "このアカウントは削除を待っています。",
+    "defaultMessage": "このアカウントは削除される予定です。",
     "description": "API error detail: the account cannot be deactivated because its deletion is scheduled."
   },
   "errors.deactivation.already_deactivated": {
@@ -856,15 +856,15 @@
     "description": "API error detail: the account cannot be deactivated because it moved to another account."
   },
   "errors.deactivation.registration_pending": {
-    "defaultMessage": "このアカウントの登録は審査を待っています。",
+    "defaultMessage": "このアカウントの登録はモデレーターの承認待ちです。",
     "description": "API error detail: the account cannot be deactivated because its registration waits for review."
   },
   "errors.deactivation.paid_subscription": {
-    "defaultMessage": "先にサポーターの登録を解約してください。",
+    "defaultMessage": "先にサポーターのプランを解約してください。",
     "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
   },
   "errors.deactivation.recently_reactivated": {
-    "defaultMessage": "このアカウントは再有効化から 24 時間たっていません。",
+    "defaultMessage": "このアカウントは、もとに戻してから 24 時間たっていません。",
     "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
   },
   "errors.deactivation.last_administrator": {
@@ -884,7 +884,7 @@
     "description": "API error title for HTTP 422 when the server's automated review of posts refused a post and nothing was posted. Fixed text: it never says why."
   },
   "errors.status.rejected.detail": {
-    "defaultMessage": "このサーバーの自動の審査が、この投稿を受け付けませんでした。誤りだと思うときは、異議を申し立てられます。",
+    "defaultMessage": "このサーバーの自動審査で、この投稿は受け付けられませんでした。誤りだと思うときは、異議を申し立てられます。",
     "description": "API error detail for HTTP 422 when the server's automated review of posts refused a post; says that the author may appeal."
   },
   "errors.status.edit_rejected": {
@@ -892,7 +892,7 @@
     "description": "API error title for HTTP 422 when the server's automated review of posts refused an edit of a post. Fixed text: it never says why."
   },
   "errors.status.edit_rejected.detail": {
-    "defaultMessage": "このサーバーの自動の審査が、この編集を受け付けませんでした。投稿は編集前のままです。",
+    "defaultMessage": "このサーバーの自動審査で、この編集は受け付けられませんでした。投稿は編集前のままです。",
     "description": "API error detail for HTTP 422 when the server's automated review refused an edit; the post keeps its previous version, and an edit cannot be appealed."
   },
   "errors.profile.rejected": {
@@ -900,7 +900,7 @@
     "description": "API error title for HTTP 422 when the server's automated review of profiles refused a change of the user's profile. Fixed text: it never says why."
   },
   "errors.profile.rejected.detail": {
-    "defaultMessage": "このサーバーの自動の審査が、この変更を受け付けませんでした。プロフィールは変更前のままです。",
+    "defaultMessage": "このサーバーの自動審査で、この変更は受け付けられませんでした。プロフィールは変更前のままです。",
     "description": "API error detail for HTTP 422 when the server's automated review refused a change of the profile; the profile keeps its previous version, and the refusal cannot be appealed."
   },
   "errors.hook_appeal.already_appealed": {
@@ -928,15 +928,15 @@
     "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
   },
   "errors.status.local_unavailable": {
-    "defaultMessage": "一人のためのサーバーでは、ローカルの公開範囲で投稿できません。",
+    "defaultMessage": "一人のためのサーバーでは、ローカル限定で投稿できません。",
     "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
   "errors.interaction_request.answered": {
-    "defaultMessage": "この依頼にはすでに答えています。",
+    "defaultMessage": "この返信・ブースト・引用は、すでに承認または拒否しています。",
     "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
   },
   "errors.precondition_failed": {
-    "defaultMessage": "読み込んだあとにリソースが変更されました。",
+    "defaultMessage": "開いたあとに内容が変わりました。読み込み直してから、もう一度試してください。",
     "description": "API error title for HTTP 412 when the If-Match of a request names an older version of the resource."
   },
   "errors.precondition_required": {
@@ -952,7 +952,7 @@
     "description": "Detail of the HTTP 428 API error when a save of a draft has no If-Match header."
   },
   "errors.draft.invalid": {
-    "defaultMessage": "下書きを保存できません。本文・メディア・投票のいずれかが、下書きに保存できる範囲を超えています。",
+    "defaultMessage": "下書きを保存できません。本文・添付したファイル・投票のどれかが、下書きに保存できる範囲を超えています。",
     "description": "Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range."
   },
   "errors.draft.not_scheduled": {
@@ -964,7 +964,7 @@
     "description": "Detail of the HTTP 422 API error when the user saves a new draft while at the limit. {max} is the number of drafts without a schedule a user may keep."
   },
   "errors.draft.max_scheduled_posts": {
-    "defaultMessage": "{max, plural, other {予約投稿は # 件まで待機させられます。}}",
+    "defaultMessage": "{max, plural, other {予約投稿は # 件までです。}}",
     "description": "Detail of the HTTP 422 API error when the user schedules a post while at the limit. {max} is the number of scheduled posts a user may have waiting."
   },
   "errors.draft.max_scheduled_posts_per_day": {
@@ -992,7 +992,7 @@
     "description": "API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it."
   },
   "errors.event.closed": {
-    "defaultMessage": "このイベントはもう変更できません。",
+    "defaultMessage": "このイベントは中止されたか始まっているため、変更も出欠の回答もできません。",
     "description": "API error title for HTTP 409 when an event was cancelled, or an answer comes after it started."
   },
   "errors.event.full": {

@@ -290,8 +290,8 @@ function Around({ who = "reader", at = "/", around = "all" }: ShellState) {
           id="around-rooms"
           icon="room"
           href="/voice"
-          heading="Voice rooms"
-          all={{ text: "All", name: "All voice rooms" }}
+          heading="Voice chat rooms"
+          all={{ text: "All", name: "All voice chat rooms" }}
         >
           <SectionList>
             <SectionLine href="/voice/1" title="Morning coffee chat" caption="Hosted by Mika · 12 in the room" />
@@ -387,7 +387,7 @@ function Banners({ closure, connection }: ShellState) {
           links={[
             {
               href: "https://status.my.example",
-              label: "Status page",
+              label: "Service status",
               newTab: "(opens in a new tab)",
             },
           ]}
@@ -402,7 +402,7 @@ function Banners({ closure, connection }: ShellState) {
           links={[
             {
               href: "https://status.my.example",
-              label: "Status page",
+              label: "Service status",
               newTab: "(opens in a new tab)",
             },
           ]}
@@ -653,7 +653,7 @@ const statusFooter = (
   <FormPageFooter
     label="This server"
     links={[
-      { href: "https://status.my.example", label: "Status page" },
+      { href: "https://status.my.example", label: "Service status" },
       { href: "/about", label: "About" },
     ]}
   />
@@ -687,7 +687,7 @@ export const Maintenance: Story = {
       <FormText>Moving the database to a larger disk. Thanks for your patience! — the admins</FormText>
       <FormLinks>
         <FormLink href="https://status.my.example" newTab="(opens in a new tab)">
-          Check the status page
+          Check the service status
         </FormLink>
       </FormLinks>
     </FormPage>

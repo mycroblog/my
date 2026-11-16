@@ -166,7 +166,7 @@ test("a save from an older copy of a draft is refused, and the composer opens th
   await stale.replace(`${draft.text} Third version, written on the older copy.`);
   await stale.saveAsDraftRefused();
   await expect(stale.alert).toHaveText(
-    "A newer version of this draft was saved on another device, so your changes here were not saved. Open the newer one",
+    "This draft was saved later on another device, so your changes here were not saved. Open the newer one",
   );
   await stale.openNewer();
   await stale.holds(newerText);

@@ -80,7 +80,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_hook_failing.body": {
-    "defaultMessage": "‮Ↄɐʅʅs oɟ ɐu ǝxʇǝɹuɐʅ ɹǝʌıǝʍ ou ʇɥǝ sǝɹʌǝɹ {instance} ʞǝǝd ɟɐıʅıuƃ. ∩uʇıʅ ıʇ ʍoɹʞs ɐƃɐıu, ʍɥɐʇ ıʇ ɹǝʌıǝʍs ɟoʅʅoʍs ıʇs ɟɐıʅnɹǝ qǝɥɐʌıonɹ: qʎ pǝɟɐnʅʇ ıʇ ƃoǝs ʇɥɹonƃɥ nuɹǝʌıǝʍǝp.‬",
+    "defaultMessage": "‮∀u ǝxʇǝɹuɐʅ ɹǝʌıǝʍ oɟ {instance} ʞǝǝds ɟɐıʅıuƃ. ∩uʇıʅ ıʇ ʍoɹʞs ɐƃɐıu, ʍɥɐʇ ıʇ ɹǝʌıǝʍs ɟoʅʅoʍs ıʇs ɟɐıʅnɹǝ qǝɥɐʌıonɹ: qʎ pǝɟɐnʅʇ ıʇ ƃoǝs ʇɥɹonƃɥ nuɹǝʌıǝʍǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_hook_failing.detail": {
@@ -248,7 +248,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_changed.body": {
-    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɔɥɐuƃǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ.‬",
+    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɔɥɐuƃǝp, ɐup ʎon ʍǝɹǝ sıƃuǝp onʇ ou ʎonɹ oʇɥǝɹ pǝʌıɔǝs ɐup ɐdds.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_changed.detail": {
@@ -260,7 +260,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_removed.body": {
-    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɹǝɯoʌǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ. Ⅎɹoɯ uoʍ ou ʎon sıƃu ıu ʍıʇɥ ʎonɹ dɐssʞǝʎs.‬",
+    "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɹǝɯoʌǝp, ɐup ʎon ʍǝɹǝ sıƃuǝp onʇ ou ʎonɹ oʇɥǝɹ pǝʌıɔǝs ɐup ɐdds. Ⅎɹoɯ uoʍ ou ʎon sıƃu ıu ʍıʇɥ ʎonɹ dɐssʞǝʎs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.password_removed.detail": {
@@ -376,7 +376,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.service_closure_withdrawn.subject": {
-    "defaultMessage": "‮{instance} ıs uoʇ ɔʅosıuƃ‬",
+    "defaultMessage": "‮⊥ɥǝ ɔʅosnɹǝ oɟ {instance} ʍɐs ʍıʇɥpɹɐʍu‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.signature.contact": {
@@ -408,7 +408,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_plan_retired.detail": {
-    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ıs ɔɐuɔǝʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
+    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ıs ɔɐuɔǝʅʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_plan_retired.subject": {
@@ -424,11 +424,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_service_closure.subject": {
-    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ snqsɔɹıdʇıou ou {instance} ǝups ʍıʇɥ ʇɥǝ ɔʅosnɹǝ oɟ ʇɥǝ sǝɹʌǝɹ‬",
+    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ snqsɔɹıdʇıou ou {instance} ıs ɔɐuɔǝʅʅǝp qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ ɔʅosǝs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu “{plan}” ou {instance} ǝupǝp, ɐup ıʇs qǝuǝɟıʇs ʍıʇɥ ıʇ. {reason,select,account_suspended{⅄onɹ ɐɔɔonuʇ ʍɐs snsdǝupǝp.} lapsed{No dɐʎɯǝuʇ snɔɔǝǝpǝp ʍıʇɥıu 7 pɐʎs ɐɟʇǝɹ ɐ dɐʎɯǝuʇ ɟɐıʅǝp, oɹ ʇɥǝ snqsɔɹıdʇıou ʍɐs dɐnsǝp.} other{⊥ɥǝ snqsɔɹıdʇıou ʍɐs ɔɐuɔǝʅǝp.} plan_retired{⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs ɹǝʇıɹǝp ʇɥǝ dʅɐu.} reversed{∀ dɐʎɯǝuʇ ʍɐs ɹǝɟnupǝp ıu ɟnʅʅ oɹ ɔɥɐɹƃǝp qɐɔʞ.} staff{∀u ɐpɯıuısʇɹɐʇoɹ ɔɐuɔǝʅǝp ʇɥǝ snqsɔɹıdʇıou.}}‬",
+    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ dʅɐu “{plan}” ou {instance} ǝupǝp, ɐup ıʇs qǝuǝɟıʇs ʍıʇɥ ıʇ. {reason,select,account_suspended{⅄onɹ ɐɔɔonuʇ ʍɐs snsdǝupǝp.} lapsed{No dɐʎɯǝuʇ snɔɔǝǝpǝp ʍıʇɥıu 7 pɐʎs ɐɟʇǝɹ ɐ dɐʎɯǝuʇ ɟɐıʅǝp, oɹ ʇɥǝ snqsɔɹıdʇıou ʍɐs dɐnsǝp.} other{⊥ɥǝ snqsɔɹıdʇıou ʍɐs ɔɐuɔǝʅʅǝp.} plan_retired{⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs ɹǝʇıɹǝp ʇɥǝ dʅɐu.} reversed{∀ dɐʎɯǝuʇ ʍɐs ɹǝɟnupǝp ıu ɟnʅʅ, oɹ ɹǝʌǝɹsǝp qʎ ʇɥǝ ɔɐɹp ɔoɯdɐuʎ ɐɟʇǝɹ ɐ pısdnʇǝ.} staff{∀u ɐpɯıuısʇɹɐʇoɹ ɔɐuɔǝʅʅǝp ʇɥǝ snqsɔɹıdʇıou.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_subscription_ended.subject": {

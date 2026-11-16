@@ -62,8 +62,8 @@ const words = {
     ja: "そのパスキーではログインできませんでした。別のパスキーかパスワードを使ってください。",
   },
   providersOnly: {
-    en: "This server signs in only through the login providers. If your account has none linked, ask the administrators.",
-    ja: "このサーバーではログインプロバイダーでのみログインできます。アカウントにプロバイダーを連携していない場合は、管理者にお問い合わせください。",
+    en: "On this server, you sign in only with another service. If your account is not linked to one, ask the administrators.",
+    ja: "このサーバーでは、ほかのサービスでしかログインできません。アカウントをどのサービスともひも付けていない場合は、管理者に問い合わせてください。",
   },
   wrongCode: { en: "The code is incorrect or was already used.", ja: "コードが正しくないか、すでに使われています。" },
   usernameHint: {
@@ -80,10 +80,13 @@ const words = {
     en: "A moderator reviews new accounts before they can be used. Up to 500 characters.",
     ja: "新しいアカウントは、モデレーターの承認後に使えるようになります。500 文字まで。",
   },
-  usernameTaken: { en: "This username is already taken.", ja: "このユーザー名はすでに使われています。" },
+  usernameTaken: {
+    en: "This username is already taken. Choose another.",
+    ja: "このユーザー名はすでに使われています。別のユーザー名にしてください。",
+  },
   agreementRequired: {
-    en: "Agree to the documents above to create an account.",
-    ja: "アカウントを作成するには、上の文書に同意してください。",
+    en: "Agree to the terms and policies above to create an account.",
+    ja: "アカウントを作成するには、上の規約とポリシーに同意してください。",
   },
   signUpSummary: {
     en: "Fix the marked fields to create the account.",
@@ -103,8 +106,8 @@ const words = {
     ja: `${email} を使っているアカウントがあれば、新しいパスワードを設定するリンクを送りました。リンクの有効期限は 60 分です。メールが届かないときは、迷惑メールのフォルダーとアドレスを確かめてください。`,
   },
   forgotLocked: {
-    en: "Too many requests from your network: try again in 10 minutes.",
-    ja: "このネットワークからの要求が多すぎるため、10 分後にもう一度試してください。",
+    en: "Too many links to set a new password were asked for from your network. Try again in 10 minutes.",
+    ja: "このネットワークから、新しいパスワードを設定するリンクを求めた回数が多すぎます。10 分後にもう一度試してください。",
   },
   verifyInvalid: {
     en: "This link is not valid. It may have expired or been used already. Sign in to get a new one.",
@@ -112,21 +115,21 @@ const words = {
   },
   resetInvalid: {
     en: "This link is not valid. It may have expired, been used already, or been replaced by a newer password. Ask for a new link.",
-    ja: "このリンクは使えません。期限切れか、すでに使われたか、その後にパスワードが変わった可能性があります。新しいリンクを受け取ってください。",
+    ja: "このリンクは使えません。期限切れか、すでに使われたか、その後にパスワードが変わった可能性があります。新しいリンクを求めてください。",
   },
   formExpired: {
-    en: "This form has expired. Please try again.",
+    en: "This form has expired. Try again.",
     ja: "フォームの有効期限が切れました。もう一度試してください。",
   },
   unverified: {
-    en: "This server has not verified this application. Its name is the application's own claim.",
+    en: "This server has not verified this app. Its name is the app's own claim.",
     ja: "このサーバーが確認していないアプリです。名前はアプリ自身の申告です。",
   },
-  origin: { en: `Comes from ${appHost}`, ja: `出どころ: ${appHost}` },
+  origin: { en: `Comes from ${appHost}`, ja: `提供元: ${appHost}` },
   website: { en: `Website it declared: ${app.website}`, ja: `申告されたサイト: ${app.website}` },
   impersonation: {
-    en: "After you allow, the answer goes to tidepool, which other apps on your device can also claim. It may be a different app from the one named above. Allow only if you started this from that app.",
-    ja: "許可すると、答えは tidepool に送られます。これはあなたの端末のほかのアプリも名乗れる宛先で、上に出ている名前とは別のアプリかもしれません。そのアプリから始めた場合だけ許可してください。",
+    en: "If you allow, access to your account goes to tidepool, an address that any app on your device can claim. It may not be the app named above. Allow only if you started this from that app.",
+    ja: "許可すると、アカウントを使う権限が tidepool に渡されます。この宛先は端末のどのアプリでも受け取れるため、上に出ているアプリとは別のアプリかもしれません。そのアプリから始めた場合だけ許可してください。",
   },
   groupCaution: { en: "Permissions that need your attention", ja: "特に注意が必要な権限" },
   groupWrite: { en: "Permissions that change things", ja: "変更できる権限" },
@@ -156,7 +159,7 @@ const words = {
   spam: { en: "Reason: Spam", ja: "理由: スパム" },
   appealHint: {
     en: "You can appeal once, within 14 days. Up to 2,000 characters.",
-    ja: "異議の申し立ては 1 回だけ、あと 14 日以内にできます。2,000 文字まで。",
+    ja: "異議申し立ては 1 回だけ、あと 14 日以内にできます。2,000 文字まで。",
   },
   deletionDate: { en: "2026-12-14 09:00 (UTC)", ja: "2026-12-14 09:00 (UTC)" },
   unsubscribePrompt: {

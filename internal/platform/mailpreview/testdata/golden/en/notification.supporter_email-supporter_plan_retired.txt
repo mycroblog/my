@@ -1,6 +1,6 @@
 The administrators of Example Social retired the supporter plan “Supporter” that you subscribe to.
 
-Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
+Your subscription is cancelled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
 
 Open your notifications
 https://social.example/notifications

@@ -4,7 +4,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_account_moved": {
-    "defaultMessage": "[Ȧƞ ȧȧƈƈǿǿŭŭƞŧ ŧħȧȧŧ ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} ŀīḿīŧ ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ]",
+    "defaultMessage": "[Ȧƞ ȧȧƈƈǿǿŭŭƞŧ ŀīḿīŧḗḗḓ ǿǿƞ {instance} ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_appeal": {
@@ -32,7 +32,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_hook_appeal": {
-    "defaultMessage": "[Ȧ řḗḗƒŭŭşḗḗḓ ƥǿǿşŧ ẇȧȧş ȧȧƥƥḗḗȧȧŀḗḗḓ ŧǿǿ ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance}]",
+    "defaultMessage": "[Ȧƞ ȧȧƥƥḗḗȧȧŀ ǿǿƒ ȧȧ řḗḗƒŭŭşḗḗḓ ƥǿǿşŧ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_hook_failing": {
@@ -60,7 +60,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.appeal_decided": {
-    "defaultMessage": "[Ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} ḓḗḗƈīḓḗḗḓ ẏǿǿŭŭř ȧȧƥƥḗḗȧȧŀ]",
+    "defaultMessage": "[Ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} řḗḗṽīḗḗẇḗḗḓ ẏǿǿŭŭř ȧȧƥƥḗḗȧȧŀ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.auto_delete_limit": {
@@ -136,11 +136,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.interaction_accepted": {
-    "defaultMessage": "[{name} ȧȧƥƥřǿǿṽḗḗḓ ẏǿǿŭŭř īƞŧḗḗřȧȧƈŧīǿǿƞ ẇīŧħ ŧħḗḗīř ƥǿǿşŧ]",
+    "defaultMessage": "[{name} ȧȧƥƥřǿǿṽḗḗḓ ẏǿǿŭŭř řḗḗƥŀẏ, ƀǿǿǿǿşŧ, ǿǿř ɋŭŭǿǿŧḗḗ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.interaction_rejected": {
-    "defaultMessage": "[{name} ḓḗḗƈŀīƞḗḗḓ ẏǿǿŭŭř īƞŧḗḗřȧȧƈŧīǿǿƞ ẇīŧħ ŧħḗḗīř ƥǿǿşŧ]",
+    "defaultMessage": "[{name} ḓḗḗƈŀīƞḗḗḓ ẏǿǿŭŭř řḗḗƥŀẏ, ƀǿǿǿǿşŧ, ǿǿř ɋŭŭǿǿŧḗḗ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.mention": {
@@ -184,7 +184,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.scheduled_status_failed": {
-    "defaultMessage": "[{instance}: ẏǿǿŭŭř şƈħḗḗḓŭŭŀḗḗḓ ƥǿǿşŧ ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƥŭŭƀŀīşħḗḗḓ {reason,select,invalid{ƀḗḗƈȧȧŭŭşḗḗ īŧ ḓǿǿḗḗş ƞǿǿŧ ḿḗḗḗḗŧ ŧħḗḗ řḗḗɋŭŭīřḗḗḿḗḗƞŧş ƒǿǿř ȧȧ ƥǿǿşŧ} media_unavailable{ƀḗḗƈȧȧŭŭşḗḗ ȧȧƞ ȧȧŧŧȧȧƈħḗḗḓ ƒīŀḗḗ īş ƞǿǿ ŀǿǿƞɠḗḗř ȧȧṽȧȧīŀȧȧƀŀḗḗ} other{} quote_unavailable{ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ ƥǿǿşŧ īŧ ɋŭŭǿǿŧḗḗş īş ƞǿǿ ŀǿǿƞɠḗḗř ȧȧṽȧȧīŀȧȧƀŀḗḗ} rejected{ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ şḗḗřṽḗḗř'ş ȧȧŭŭŧǿǿḿȧȧŧḗḗḓ řḗḗṽīḗḗẇ řḗḗƒŭŭşḗḗḓ īŧ} reply_unavailable{ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ ƥǿǿşŧ īŧ řḗḗƥŀīḗḗş ŧǿǿ īş ƞǿǿ ŀǿǿƞɠḗḗř ȧȧṽȧȧīŀȧȧƀŀḗḗ} restricted{ƀḗḗƈȧȧŭŭşḗḗ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞƞǿǿŧ ƥǿǿşŧ ƞǿǿẇ}}]",
+    "defaultMessage": "[{instance}: ẏǿǿŭŭř şƈħḗḗḓŭŭŀḗḗḓ ƥǿǿşŧ ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƥŭŭƀŀīşħḗḗḓ{reason,select,invalid{ ƀḗḗƈȧȧŭŭşḗḗ īŧ ḓǿǿḗḗş ƞǿǿŧ ḿḗḗḗḗŧ ŧħḗḗ řḗḗɋŭŭīřḗḗḿḗḗƞŧş ƒǿǿř ȧȧ ƥǿǿşŧ} media_unavailable{ ƀḗḗƈȧȧŭŭşḗḗ ȧȧƞ ȧȧŧŧȧȧƈħḗḗḓ ƒīŀḗḗ īş ƞǿǿ ŀǿǿƞɠḗḗř ȧȧṽȧȧīŀȧȧƀŀḗḗ} other{} quote_unavailable{ ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ ƥǿǿşŧ īŧ ɋŭŭǿǿŧḗḗş īş ƞǿǿ ŀǿǿƞɠḗḗř ȧȧṽȧȧīŀȧȧƀŀḗḗ} rejected{ ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ şḗḗřṽḗḗř'ş ȧȧŭŭŧǿǿḿȧȧŧḗḗḓ řḗḗṽīḗḗẇ ḓīḓ ƞǿǿŧ ȧȧƈƈḗḗƥŧ īŧ} reply_unavailable{ ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ ƥǿǿşŧ īŧ řḗḗƥŀīḗḗş ŧǿǿ īş ƞǿǿ ŀǿǿƞɠḗḗř ȧȧṽȧȧīŀȧȧƀŀḗḗ} restricted{ ƀḗḗƈȧȧŭŭşḗḗ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞƞǿǿŧ ƥǿǿşŧ ƞǿǿẇ}}; īŧ şŧȧȧẏş īƞ ẏǿǿŭŭř ḓřȧȧƒŧş]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.service_closure_announced": {
@@ -196,7 +196,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.service_closure_withdrawn": {
-    "defaultMessage": "[{instance} ẇīŀŀ ƞǿǿŧ ƈŀǿǿşḗḗ: ŧħḗḗ ƈŀǿǿşŭŭřḗḗ ẇȧȧş ẇīŧħḓřȧȧẇƞ]",
+    "defaultMessage": "[Ŧħḗḗ ƈŀǿǿşŭŭřḗḗ ǿǿƒ {instance} ẇȧȧş ẇīŧħḓřȧȧẇƞ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.status": {
@@ -212,7 +212,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.supporter_service_closure": {
-    "defaultMessage": "[Ẏǿǿŭŭř şŭŭƥƥǿǿřŧḗḗř şŭŭƀşƈřīƥŧīǿǿƞ ǿǿƞ {instance} ḗḗƞḓş ẇīŧħ ŧħḗḗ ƈŀǿǿşŭŭřḗḗ ǿǿƒ ŧħḗḗ şḗḗřṽḗḗř]",
+    "defaultMessage": "[Ẏǿǿŭŭř şŭŭƥƥǿǿřŧḗḗř şŭŭƀşƈřīƥŧīǿǿƞ ǿǿƞ {instance} īş ƈȧȧƞƈḗḗŀŀḗḗḓ ƀḗḗƈȧȧŭŭşḗḗ ŧħḗḗ şḗḗřṽḗḗř ƈŀǿǿşḗḗş]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.supporter_subscription_ended": {

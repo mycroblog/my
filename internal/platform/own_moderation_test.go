@@ -55,7 +55,7 @@ func TestOwnModerationActions(t *testing.T) {
 		t.Fatalf("moderation notices = %+v, want the warning only", notices.Items)
 	}
 	if a := notices.Items[0].ModerationAction; a == nil || a.Id != warn.ID || a.Kind != clientapi.AdminAccountActionKindWarn ||
-		a.PublicReason == nil || *a.PublicReason != "Please be kind." || a.KindLabel != "Warning" || a.ReasonCategoryLabel != "Violation of the instance's rules" {
+		a.PublicReason == nil || *a.PublicReason != "Please be kind." || a.KindLabel != "Warning" || a.ReasonCategoryLabel != "Violation of the server's rules" {
 		t.Errorf("the action of the notice = %+v", notices.Items[0].ModerationAction)
 	}
 

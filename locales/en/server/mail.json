@@ -76,7 +76,7 @@
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_changed.body": {
-    "defaultMessage": "The password of your account on {instance} was changed, and your other sessions and apps were signed out.",
+    "defaultMessage": "The password of your account on {instance} was changed, and you were signed out on your other devices and apps.",
     "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_changed.detail": {
@@ -88,7 +88,7 @@
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.body": {
-    "defaultMessage": "The password of your account on {instance} was removed, and your other sessions and apps were signed out. From now on you sign in with your passkeys.",
+    "defaultMessage": "The password of your account on {instance} was removed, and you were signed out on your other devices and apps. From now on you sign in with your passkeys.",
     "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
@@ -200,7 +200,7 @@
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure_withdrawn.subject": {
-    "defaultMessage": "{instance} is not closing",
+    "defaultMessage": "The closure of {instance} was withdrawn",
     "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.signature.contact": {
@@ -232,7 +232,7 @@
     "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
   "mail.supporter_plan_retired.detail": {
-    "defaultMessage": "Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.",
+    "defaultMessage": "Your subscription is cancelled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.",
     "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
   },
   "mail.supporter_plan_retired.subject": {
@@ -248,11 +248,11 @@
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
   },
   "mail.supporter_service_closure.subject": {
-    "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
+    "defaultMessage": "Your supporter subscription on {instance} is cancelled because the server closes",
     "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}",
+    "defaultMessage": "Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full, or reversed by the card company after a dispute.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator cancelled the subscription.} other {The subscription was cancelled.}}",
     "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
@@ -412,7 +412,7 @@
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
   },
   "mail.admin_hook_failing.body": {
-    "defaultMessage": "Calls of an external review on the server {instance} keep failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.",
+    "defaultMessage": "An external review of {instance} keeps failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.",
     "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_failing.detail": {

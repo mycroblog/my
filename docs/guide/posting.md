@@ -39,49 +39,49 @@ schedule it again.
 
 ## Who can see a post
 
-The "Visibility" button of the form opens "Who can see this post?" for that post. The default for new posts is the
-setting "Who sees your posts by default" under "Display, posting, and timelines" in the settings.
+The tool "Who can see it" of the form opens the choices for that post. The default for new posts is the setting "Who
+sees your posts by default" under "Display, posting, and timelines" in the settings.
 
 | Choice | Who can see it |
 | --- | --- |
 | Public | Anyone, here and on other servers. It is shown on the public timelines. |
-| This server | People signed in to this server, and your followers on other servers. It is shown on this server's local timeline. |
-| Unlisted | Anyone with the link, but it is not shown on the public timelines. |
-| Followers | Only your followers and the people you mention. |
-| Mentioned people | Only the people you mention. |
+| Local | People signed in to this server, and your followers on other servers. It is shown on this server's local timeline. |
+| Quiet public | Anyone with the link, but it is not shown on the public timelines. |
+| Followers only | Only your followers and the people you mention. |
+| Direct | Only the people you mention. |
 
 ![Who can see a post on this server and on other servers, for each of the five visibilities. The list below says the same.](images/visibility.svg)
 
 Row by row, on this server and then on other servers:
 
 - **Public**: anyone, also people who are not signed in, and the post is shown on the local and federated timelines. On other servers anyone can read it, and it is sent to your followers and the people you mention.
-- **This server**: the people signed in to this server, and the post is shown on the local timeline. Other servers receive it only for your followers there, who see it as a "Followers" post; it is not sent to anyone else.
-- **Unlisted**: anyone with the link, but the post is not shown on the public timelines. On other servers too, anyone with the link can read it, and it is sent to your followers and the people you mention.
-- **Followers**: your followers and the people you mention, on this server and on other servers.
-- **Mentioned people**: only the people you mention, on this server and on other servers.
+- **Local**: the people signed in to this server, and the post is shown on the local timeline. Other servers receive it only for your followers there, who see it as a "Followers only" post; it is not sent to anyone else.
+- **Quiet public**: anyone with the link, but the post is not shown on the public timelines. On other servers too, anyone with the link can read it, and it is sent to your followers and the people you mention.
+- **Followers only**: your followers and the people you mention, on this server and on other servers.
+- **Direct**: only the people you mention, on this server and on other servers.
 
-On a server of one person, where nobody else is signed in, "This server" means no more than "Followers": new posts
-cannot have it, and a default of "This server" works as "Followers". The visibility menu and the default in "Display,
-posting, and timelines" leave it out, and a reply to a "This server" post is for "Followers". Posts that already have it
+On a server of one person, where nobody else is signed in, "Local" means no more than "Followers only": new posts
+cannot have it, and a default of "Local" works as "Followers only". The visibility menu and the default in "Display,
+posting, and timelines" leave it out, and a reply to a "Local" post is "Followers only". Posts that already have it
 keep it.
 
 A block always wins: someone who blocks you, or whom you block, does not see your post whatever you chose.
 
-### "This server"
+### "Local"
 
-A post set to "This server" stays on your server. People who are not signed in to it cannot read it, even with the
+A post set to "Local" stays on your server. People who are not signed in to it cannot read it, even with the
 link, and it never appears on the federated timeline. Other servers receive it only for your followers there, and they
 show it to those followers as a post for followers only.
 
 - If you mention someone on another server who does not follow you, they do not receive the post, and your followers there see the mention as a plain link. The form warns you about this.
-- Accounts of your server can boost a "This server" post, and the boost is shown only on this server.
-- A reply to a "This server" post starts as "This server" too; you can change it.
+- Accounts of your server can boost a "Local" post, and the boost is shown only on this server.
+- A reply to a "Local" post starts as "Local" too; you can change it.
 
 ### Other things to know
 
 - You cannot change the visibility of a post after posting it. When you edit a post, the visibility and the post it replies to stay as they are.
 - A moderator can limit how widely an account posts. The form then says "Your account can post at most as ..." and a wider choice is posted at the widest level allowed.
-- Anyone who can see a public, "This server", or unlisted post can boost it. Only you can boost your own "Followers" posts, and only your followers see that boost. "Mentioned people" posts cannot be boosted.
+- Anyone who can see a "Public", "Local", or "Quiet public" post can boost it. Only you can boost your own "Followers only" posts, and only your followers see that boost. "Direct" posts cannot be boosted.
 - The author of a post can choose who may reply to it and who may boost it; posts from some other servers carry such a choice too. A reply or a boost outside it is refused, with a message such as "The author of this post does not let you reply to it." The author, the people the post mentions, and the author of the post it replies to can always reply.
 - The author may also let some people reply or boost only once they approve it. Such a reply or boost waits: you are notified ("... asked to reply to your post"), and it stays off your post until you approve it. A waiting reply from another server is not in the conversation under your post or in its count of replies; it still appears on its author's profile and on its own page. A waiting boost is not counted. Approving it adds it to your post; declining it keeps it off, and the other server is told either way.
 - A reply or a boost from another server that is outside your choice altogether is kept off your post in the same way, and notifies you of nothing.
@@ -89,13 +89,12 @@ show it to those followers as a post for followers only.
 
 ## Who can reply, boost, and quote
 
-The button "Who can reply, boost, and quote" among the tools of the form opens the choices for that post. For each of
-replies, boosts, and quotes, choose who can do it at once: "Anyone", "Followers and people you mention", "People you
-mention", or "Only you". Below each, "Others can reply with your approval" (and the same for boosts and quotes) lets
+"Replies, boosts and quotes" in the menu "Who can see it" opens the choices for that post. For each of replies, boosts,
+and quotes, choose who can do it at once: "Anyone", "Followers", "People you mention", or "Only you". Below each, "Others can reply with your approval" (and the same for boosts and quotes) lets
 everyone else ask instead of being refused. Once a choice admits less than anyone, the form shows the result above its
 tools, for example "Replies: Anyone. Boosts: Only you. Quotes: Anyone.", before you post.
 
-- The people a post mentions can always reply to it. A "Followers" post can be boosted and quoted only by you, and a "Mentioned people" post by no one, whatever you choose.
+- The people a post mentions can always reply to it. A "Followers only" post can be boosted and quoted only by you, and a "Direct" post by no one, whatever you choose.
 - The defaults for new posts are under "Who can reply to, boost, and quote your new posts" in "Display, posting, and timelines" in the settings.
 - Requests that wait for you are listed under "Approval requests" in the settings, next to "Follow requests"; the notification of each one links there with "Review the requests". "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
 - On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Your boost waits for the author's approval."
@@ -135,7 +134,7 @@ brackets. Only images you upload show in an article; an image from another addre
 
 - Hashtags go in their own field, separated by spaces; the article is listed under them, and a `#` in the body stays text. Mentions in the body link to the people but do not notify them.
 - "Preview" shows the article as readers will see it, rendered by the server exactly as it will be published, with the size of the body and the number of its images against this server's limits.
-- "Mark as sensitive" shows readers the title and summary first and folds the cover and the body. An article cannot be "Mentioned people" only.
+- "Mark as sensitive" shows readers the title and summary first and folds the cover and the body. An article cannot be "Direct".
 - While you write, the article is saved as a draft every time you pause ("Draft saved"), so it opens on any device from "Drafts and scheduled posts", where "Edit" brings it back to the editor. If the draft was changed on another device meanwhile, nothing is overwritten: your text stays in the editor, and "Save as a new draft" keeps it as another draft.
 - "Publish" publishes the article now and opens its page; "Schedule" publishes it at the time you choose, as for a post.
 - To change an article you published, choose "Edit" in its "More actions" menu. The editor opens with what you wrote; "Save changes" replaces it, and the earlier version stays in its "Edit history". The visibility of an article does not change.
@@ -157,13 +156,13 @@ received.
 
 ## Direct messages
 
-"Direct messages" in the navigation gathers your "Mentioned people" posts and those you receive, one row per
+"Direct messages" in the navigation gathers your "Direct" posts and those you receive, one row per
 conversation, the one with the newest post first. Each row shows who is in the conversation, when its newest post was
 written, and the start of that post. The number beside "Direct messages" is how many conversations have a post you
 have not read yet; each of them has a dot before its names.
 
 Choose the start of a post to open the conversation's thread; this marks the conversation read on all your devices. A
-reply to a "Mentioned people" post is always "Mentioned people" too, so it reaches no one the conversation did not. On
+reply to a "Direct" post is always "Direct" too, so it reaches no one the conversation did not. On
 phones, "Direct messages" is in "Menu" unless you move it into the tab bar under "Display, posting, and timelines" in
 the settings.
 

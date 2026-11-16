@@ -36,7 +36,7 @@ test("the index lists the reader's lists, each a link to its timeline with how m
   expect(en).toMatch(/<a [^>]*href="\/lists\/l1"[^>]*>.*Bread and coffee.*2 members.*?<\/a>/);
   expect(en).toMatch(/<a [^>]*href="\/lists\/l2"[^>]*>.*翻訳の仲間.*1 member<.*?<\/a>/);
   const ja = bare(render(data, <ListIndex />, "ja"));
-  expect(ja).toMatch(/<nav aria-label="あなたのリスト">/);
+  expect(ja).toMatch(/<nav aria-label="自分のリスト">/);
   expect(ja).toContain("2 人");
 });
 

@@ -52,11 +52,11 @@
     "description": "Title of the error page of the PAY.JP checkout and card pages."
   },
   "payments.error.unavailable": {
-    "defaultMessage": "PAY.JP が応答しません。しばらくしてから試してください。",
+    "defaultMessage": "PAY.JP が応答しません。しばらくしてからもう一度試してください。",
     "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.fake.cancel": {
-    "defaultMessage": "取り消す",
+    "defaultMessage": "キャンセル",
     "description": "Button of the fake provider's checkout page that goes back without subscribing."
   },
   "payments.fake.fail": {
@@ -64,11 +64,11 @@
     "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
   },
   "payments.fake.failed": {
-    "defaultMessage": "指示どおり支払いを失敗させました。支払うか取り消してください。",
+    "defaultMessage": "指示どおり支払いを失敗させました。支払うかキャンセルしてください。",
     "description": "Alert of the fake provider's checkout page after its fail button."
   },
   "payments.fake.notice": {
-    "defaultMessage": "試験用のビルドの決済です。事業者の画面の代わりで、お金は動きません。",
+    "defaultMessage": "テスト用ビルドの決済画面です。決済サービスの代わりなので、お金は動きません。",
     "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
   },
   "payments.fake.pay": {
@@ -76,7 +76,7 @@
     "description": "Button of the fake provider's checkout page that records the subscription as paid."
   },
   "payments.fake.portal": {
-    "defaultMessage": "試験用のビルドには、管理する支払い方法や請求書がありません。",
+    "defaultMessage": "テスト用ビルドには、管理する支払い方法や請求書はありません。",
     "description": "Text of the fake provider's portal page."
   },
   "payments.fake.price_month": {
@@ -140,11 +140,11 @@
     "description": "Text of the PAY.JP card page without a card."
   },
   "payments.portal.paused": {
-    "defaultMessage": "直近の支払いに失敗したため、加入が止まっています。カードを変更すると支払って再開します。",
+    "defaultMessage": "直近の支払いに失敗したため、加入が止まっています。カードを変更すると支払いが行われ、加入が再開します。",
     "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
   },
   "payments.portal.refunded": {
-    "defaultMessage": "返金",
+    "defaultMessage": "返金額",
     "description": "Column heading of the payments table of the PAY.JP card page: the refunded amount."
   },
   "payments.portal.resume_failed": {
@@ -160,11 +160,11 @@
     "description": "Title of the PAY.JP card page (the customer portal)."
   },
   "payments.test_mode": {
-    "defaultMessage": "テストのモードです (課金されません)。",
+    "defaultMessage": "テストモードです (課金されません)。",
     "description": "Banner of the PAY.JP checkout and card pages with test keys."
   },
   "payments.tip_description": {
-    "defaultMessage": "{server} の運営へのチップ",
+    "defaultMessage": "{server} へのチップ",
     "description": "Line item of the payment provider's checkout of a tip, a one-time payment to the server's operation with nothing in return (ADR-0162 §1). {server} is the name of the server. Never word it as a donation."
   }
 }
