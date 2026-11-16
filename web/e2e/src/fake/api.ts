@@ -309,24 +309,21 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
   const hidden = (author: string) => blocking.has(`${viewer}>${author}`) || muting.has(`${viewer}>${author}`);
 
-  const accountOf = (username: string): Json => {
-    const p = personOf(username);
+  // Every account the server answers is a whole one, as the client API's Account is: a post's author too, which the
+  // client shows a profile from at once.
+  const accountOf = (username: string): Json => fullAccount(personOf(username));
+
+  const fullAccount = (p: Person): Json => {
+    const header = p.header === undefined ? undefined : drawingURL(p.header);
     const avatar = drawingURL(p.avatar);
     return {
-      id: idOf(username),
-      username,
-      acct: username,
+      id: idOf(p.username),
+      username: p.username,
+      acct: p.username,
       domain: fakeHost,
       display_name: p.displayName,
       emojis: [],
       avatar: { small: { url: avatar }, medium: { url: avatar } },
-    };
-  };
-
-  const fullAccount = (p: Person): Json => {
-    const header = p.header === undefined ? undefined : drawingURL(p.header);
-    return {
-      ...accountOf(p.username),
       uri: `${fakeOrigin}/users/${p.username}`,
       url: `${fakeOrigin}/@${p.username}`,
       note: serverHtml(p.note, fakeHost),

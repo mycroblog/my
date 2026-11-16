@@ -114,10 +114,13 @@ export {
   type Update,
 } from "./server";
 export {
+  accountByIdQuery,
   accountQuery,
   accountStatusesQuery,
+  cachedAccount,
   changeRelationship,
   featuredHashtagsQuery,
+  loadAccount,
   relationshipQuery,
   useAccount,
   useAccountStatuses,

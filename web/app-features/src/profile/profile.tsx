@@ -10,7 +10,7 @@
 
 import { AccountName, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
-  accountQuery,
+  loadAccount,
   useAccount,
   useAccountStatuses,
   useChangeRelationship,
@@ -55,14 +55,13 @@ type T = ReturnType<typeof stringsIn>["t"];
 type Tab = Exclude<AccountPosts, "pinned">;
 
 /**
- * What the route's loader waits for: the account of the handle and the viewer's own, from the cache unless a write
- * marked them stale. A failure is left to the screen.
+ * What the route's loader waits for: the account of the handle, at once from a copy a post carries, and the viewer's
+ * own, from the cache unless a write marked them stale. A failure is left to the screen.
  */
 export async function loadProfile(data: AppData, acct: string): Promise<void> {
-  const { queryClient } = data;
   await Promise.all([
-    queryClient.query({ ...accountQuery(data, acct), staleTime: Infinity }),
-    queryClient.query({ ...viewerQuery(data), staleTime: Infinity }),
+    loadAccount(data, acct),
+    data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }),
   ]).catch(() => undefined);
 }
 

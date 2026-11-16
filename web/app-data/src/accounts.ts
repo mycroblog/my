@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Accounts and the viewer's relationships with them (ADR-0028 §7): the account a profile shows, found by its handle,
-// its posts, its featured hashtags, the viewer's own account, and the relationship that the viewer's writes change. A
+// at once from the copy its posts carry and fetched again by its ID in the background, its posts, its featured hashtags, the viewer's own account, and the relationship that the viewer's writes change. A
 // write puts the relationship the server answered into the cache, and marks what the change may reorder or recount:
 // the account's counts, the home timeline, and the account's posts.
 import type { components } from "@mycroblog/mykit";
-import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { useQuery, type Query, type QueryClient } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 import { showList, useShadow } from "./shadow";
-import type { Status } from "./statuses";
+import { copiesIn, type Status } from "./statuses";
 
 /** An account of the client API. */
 export type Account = components["schemas"]["Account"];
@@ -23,6 +23,73 @@ export type FeaturedHashtag = components["schemas"]["FeaturedHashtag"];
 /** The account of a handle (`user` or `user@domain`), fetched from its server when this one does not know it yet. */
 export function accountQuery({ queries }: AppData, acct: string) {
   return queries.queryOptions("get", "/accounts/lookup", { params: { query: { acct, resolve: true } } });
+}
+
+/**
+ * The account of `id`. Without data, its first data is the newest copy of the account the cache holds (cachedAccount),
+ * as fetched when that copy was: it shows at once, and is fetched again in the background once it is stale (ADR-0028
+ * §7). A copy never replaces data the query holds.
+ */
+export function accountByIdQuery(data: AppData, id: string) {
+  let copy: AccountCopy | undefined | null = null;
+  const seed = () => (copy ??= newestCopy(data.queryClient, (a) => a.id === id));
+  return {
+    ...data.queries.queryOptions("get", "/accounts/{id}", { params: { path: { id } } }),
+    initialData: () => seed()?.account,
+    initialDataUpdatedAt: () => seed()?.at,
+  };
+}
+
+/** A copy of an account that a cached query holds, and when that query's data was fetched. */
+type AccountCopy = { readonly account: Account; readonly at: number };
+
+/** The accounts a query holds: an account's own data, and the author of each status it holds, boosted or quoted too. */
+function* accountsIn(query: Query): Generator<Account> {
+  const [method, path] = query.queryKey;
+  if (method === "get" && (path === "/accounts/{id}" || path === "/accounts/lookup")) {
+    const account = query.state.data as Account | undefined;
+    if (account !== undefined) yield account;
+    return;
+  }
+  for (const status of copiesIn(query)) yield status.account;
+}
+
+/** The copy of an account that `match` picks, from the query fetched last among those that hold one. */
+function newestCopy(queryClient: QueryClient, match: (account: Account) => boolean): AccountCopy | undefined {
+  let newest: AccountCopy | undefined;
+  for (const query of queryClient.getQueryCache().getAll()) {
+    const at = query.state.dataUpdatedAt;
+    if (newest !== undefined && at <= newest.at) continue;
+    for (const account of accountsIn(query))
+      if (match(account)) {
+        newest = { account, at };
+        break;
+      }
+  }
+  return newest;
+}
+
+/** Whether `account` is the account of a handle: `user` for a local account, `user@domain` for any. */
+const hasHandle = (account: Account, acct: string) => {
+  const handle = acct.toLowerCase();
+  return account.acct.toLowerCase() === handle || `${account.username}@${account.domain}`.toLowerCase() === handle;
+};
+
+/** The newest copy of the account of a handle that the cache holds, from a post, its lookup, or itself; else undefined. */
+export function cachedAccount(data: AppData, acct: string): Account | undefined {
+  return newestCopy(data.queryClient, (a) => hasHandle(a, acct))?.account;
+}
+
+/**
+ * What a route's loader waits for of the account of a handle: nothing when the cache holds a copy of it, which the
+ * account's query (accountByIdQuery) starts from, else its lookup; either again when a write marked it stale. It
+ * rejects with the server's problem.
+ */
+export async function loadAccount(data: AppData, acct: string): Promise<Account> {
+  const id = cachedAccount(data, acct)?.id;
+  return id === undefined
+    ? data.queryClient.query({ ...accountQuery(data, acct), staleTime: Infinity })
+    : data.queryClient.query({ ...accountByIdQuery(data, id), staleTime: Infinity });
 }
 
 /** The viewer's own account. */
@@ -70,11 +137,16 @@ export function accountStatusesQuery({ api, queries }: AppData, id: string, kind
 }
 
 /**
- * The account of a handle; undefined until the server answered, or without a handle, and its failure (a ProblemError
- * of mykit).
+ * The account of a handle, and its failure (a ProblemError of mykit): at once from a copy the cache holds, fetched
+ * again by its ID in the background once stale (accountByIdQuery), else from its lookup; undefined until the server
+ * answered, or without a handle.
  */
 export function useAccount(acct: string | undefined): { account: Account | undefined; error: Error | null } {
-  const query = useQuery({ ...accountQuery(useAppData(), acct ?? ""), enabled: acct !== undefined });
+  const data = useAppData();
+  const id = acct === undefined ? undefined : cachedAccount(data, acct)?.id;
+  const byId = useQuery({ ...accountByIdQuery(data, id ?? ""), enabled: id !== undefined });
+  const lookup = useQuery({ ...accountQuery(data, acct ?? ""), enabled: acct !== undefined && id === undefined });
+  const query = id === undefined ? lookup : byId;
   // The client rejects with a ProblemError or a NetworkError, which openapi-react-query types as the problem's body.
   return { account: query.data, error: query.error as Error | null };
 }
@@ -138,6 +210,7 @@ export async function cacheRelationship(data: AppData, relationship: Relationshi
 async function markAccountLists(queryClient: QueryClient, id: string): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/accounts/lookup"] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/accounts/{id}"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/timelines/home"] }),
     queryClient.invalidateQueries({
       predicate: ({ queryKey }) =>

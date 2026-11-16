@@ -2,8 +2,27 @@
 
 // A person reads another person's profile, and follows and unfollows them.
 
-import { Frame, homeTimeline, Profile } from "./screens";
+import { Frame, heldAccountReads, homeTimeline, Profile } from "./screens";
 import { expect, person, test } from "./test";
+
+test("a profile opened from a post in the home timeline shows its author at once, and the rest after", async ({
+  page,
+  signIn,
+}) => {
+  const sam = person("sam");
+  await signIn(person("marco"));
+  const post = homeTimeline(page).post(sam.displayName, "Day 3 of the sourdough");
+  await expect(post.article).toBeVisible();
+  const held = await heldAccountReads(page);
+  await post.openAuthor(sam.displayName);
+  const profile = new Profile(page, sam);
+  await expect(profile.heading).toBeVisible();
+  await expect(profile.paragraph(sam.note)).toBeVisible();
+  await expect(profile.fieldName("Blog")).toBeVisible();
+  held.release();
+  await expect(profile.followingButton).toBeVisible();
+  await expect(profile.posts.post(sam.displayName, "Day 3 of the sourdough").article).toBeVisible();
+});
 
 test("another person's profile shows their note, fields and posts", async ({ page, signIn }) => {
   const sam = person("sam");

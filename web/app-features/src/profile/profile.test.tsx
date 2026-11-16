@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { accountStatusesQuery } from "@my/app-data";
+import { accountByIdQuery, accountStatusesQuery, homeTimelineQuery } from "@my/app-data";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { press } from "../test/actions";
 import { account, poll, render, server, status } from "../test/server";
@@ -39,6 +39,26 @@ test("the loader reads the account of the handle and the viewer's own", async ()
     "GET /accounts/lookup?acct=alice%40example.social&resolve=true",
     "GET /accounts/verify_credentials",
   ]);
+});
+
+test("the profile of a post's author shows at once from the post's copy, and the counts the account's fetch brings", async () => {
+  const { data, requests } = server({
+    "/accounts/verify_credentials": account("kumi"),
+    "/accounts/lookup": account("hana", { followers_count: 30 }),
+    "/accounts/hana": account("hana", { followers_count: 30 }),
+    "/timelines/home": { items: [status("1", "hana", { account: account("hana", { followers_count: 12 }) })] },
+  });
+  const home = homeTimelineQuery(data).queryKey;
+  await data.queryClient.infiniteQuery(homeTimelineQuery(data));
+  // The home timeline was fetched a minute ago: its copy of hana is stale.
+  data.queryClient.setQueryData(home, (pages) => pages, { updatedAt: Date.now() - 60_000 });
+  requests.length = 0;
+  await loadProfile(data, "hana");
+  expect(requests).toEqual(["GET /accounts/verify_credentials"]);
+  expect(render(data, <Profile acct="hana" />)).toMatch(/Followers <strong[^>]*>12<\/strong>/);
+  await data.queryClient.query(accountByIdQuery(data, "hana"));
+  expect(requests).toEqual(["GET /accounts/verify_credentials", "GET /accounts/hana"]);
+  expect(render(data, <Profile acct="hana" />)).toMatch(/Followers <strong[^>]*>30<\/strong>/);
 });
 
 test("a remote account the reader follows: Following, Follows you, its counts and the line of its server", async () => {
