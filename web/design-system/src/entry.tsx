@@ -360,8 +360,6 @@ export type StampProps = {
   date: Date | string;
   /** Where the time leads: the entry on a page of its own. */
   href?: string | undefined;
-  /** What runs as the time's link is followed (a notification read). */
-  onPress?: (() => void) | undefined;
   /**
    * The entry was edited: `text` (edited) after the time, named `label` for assistive technology, which opens its
    * history; on a touch screen a press on the time opens it too.
@@ -373,7 +371,7 @@ export type StampProps = {
  * A glyph and the relative time, kept together at the end of a byline's line. The time is isolated (<bdi>), so that
  * it keeps its own order beside the glyph in either direction, with words of an RTL locale reading right-to-left.
  */
-export function Stamp({ glyph, date, href, onPress, edited }: StampProps) {
+export function Stamp({ glyph, date, href, edited }: StampProps) {
   const s = stamp();
   const time = (
     <bdi>
@@ -384,7 +382,7 @@ export function Stamp({ glyph, date, href, onPress, edited }: StampProps) {
     href === undefined ? (
       time
     ) : (
-      <Link href={href} className={s.link()} {...(onPress === undefined ? {} : { onPress })}>
+      <Link href={href} className={s.link()}>
         {time}
       </Link>
     );

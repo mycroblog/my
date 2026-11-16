@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The line of a notification that leads to what it tells of (#3141), in the reader's language (the toolbar's locale;
-// ja, else en): unread and read, with the account's avatar and without one (a notice of the server), and a sentence
-// long enough to wrap at 320 px. Live options (`notice-link`) place its link: on the sentence, on the sentence reaching
-// over the whole line, or on the time at its end. The words are placeholders of the notifications'.
+// ja, else en): unread and read, with the account's avatar and without one (a notice of the server), with the post it
+// is about under the sentence, and a sentence long enough to wrap at 320 px; the whole line leads there. The words are
+// placeholders of the notifications'.
 
 import { rootPx } from "@my/design-tokens";
-import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
@@ -14,7 +13,7 @@ import { expect, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import { Entry } from "./entry";
 import { type IconName } from "./icons";
-import { Excerpt, NoticeLine, SentenceName, type NoticeLinkOn } from "./list";
+import { Excerpt, NoticeLine, SentenceName } from "./list";
 import { ago } from "./samples";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -50,7 +49,6 @@ function Notice({
   at,
   unread,
   href,
-  linkOn,
   excerpt,
 }: {
   icon: IconName;
@@ -59,7 +57,6 @@ function Notice({
   at: number;
   unread?: string | undefined;
   href: string;
-  linkOn: NoticeLinkOn;
   excerpt?: string;
 }) {
   const id = useId();
@@ -72,17 +69,16 @@ function Notice({
         id={id}
         unread={unread}
         href={href}
-        linkOn={linkOn}
+        excerpt={excerpt === undefined ? undefined : <Excerpt>{excerpt}</Excerpt>}
       >
         {name !== undefined && <SentenceName>{name}</SentenceName>}
         {sentence}
       </NoticeLine>
-      {excerpt !== undefined && <Excerpt>{excerpt}</Excerpt>}
     </Entry>
   );
 }
 
-function Feed({ linkOn }: { linkOn: NoticeLinkOn }) {
+function Feed() {
   const w = useWords();
   return (
     <div style={{ maxWidth: rem(600), padding: rem(16), display: "grid", gap: rem(24) }}>
@@ -93,19 +89,11 @@ function Feed({ linkOn }: { linkOn: NoticeLinkOn }) {
         at={4 * minute}
         unread={w.unread}
         href="/@ren/status/1"
-        linkOn={linkOn}
         excerpt={w.post}
       />
-      <Notice icon="follow" name="Kiri" sentence={w.followed} at={40 * minute} href="/@kiri" linkOn={linkOn} />
-      <Notice
-        icon="accepted"
-        name="Mio 澪"
-        sentence={w.accepted}
-        at={3 * 60 * minute}
-        href="/@mio/status/2"
-        linkOn={linkOn}
-      />
-      <Notice icon="autoDelete" sentence={w.autoDelete} at={26 * 60 * minute} href="/notifications" linkOn={linkOn} />
+      <Notice icon="follow" name="Kiri" sentence={w.followed} at={40 * minute} href="/@kiri" />
+      <Notice icon="accepted" name="Mio 澪" sentence={w.accepted} at={3 * 60 * minute} href="/@mio/status/2" />
+      <Notice icon="autoDelete" sentence={w.autoDelete} at={26 * 60 * minute} href="/notifications" />
     </div>
   );
 }
@@ -116,21 +104,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** The decider's choice of where the link sits. */
+/** Each line leads to what it tells of, and its sentence alone names its entry. */
 export const Linked: Story = {
-  render: () => (
-    <Options
-      id="notice-link"
-      variants={{
-        sentence: <Feed linkOn="sentence" />,
-        line: <Feed linkOn="line" />,
-        time: <Feed linkOn="time" />,
-      }}
-    />
-  ),
+  render: () => <Feed />,
   play: async ({ canvasElement }) => {
-    const links = within(canvasElement).getAllByRole("link");
+    const canvas = within(canvasElement);
+    const links = canvas.getAllByRole("link");
     await expect(links).toHaveLength(4);
     await expect(links[0]).toHaveAttribute("href", "/@ren/status/1");
+    await expect(canvas.getAllByRole("article")[1]).toHaveAccessibleName(/^Kiri|^Kiri があなた/);
   },
 };

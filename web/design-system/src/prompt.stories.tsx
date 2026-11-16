@@ -2,12 +2,10 @@
 
 // A prompt inside a screen (#3141), as the Web Push prompt over the notifications will be (ADR-0086 §18–§19), in the
 // reader's language (the toolbar's locale; ja, else en), above the first notification: offered; with the reason the
-// browser's question was closed, the action still there; and blocked, with only its dismiss left. Live options
-// (`prompt-look`) set how it stands: on the raised surface with a close at its end, as words on the page, or on the
-// raised surface with two buttons under it. The words are placeholders of the feature's.
+// browser's question was closed, the action still there; and blocked, with only its dismiss left. The words are
+// placeholders of the feature's.
 
 import { rootPx } from "@my/design-tokens";
-import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, useState } from "react";
 import { useLocale } from "react-aria-components";
@@ -15,7 +13,7 @@ import { expect, userEvent, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import { Entry } from "./entry";
 import { NoticeLine, SentenceName } from "./list";
-import { InlinePrompt, type PromptLook } from "./prompt";
+import { InlinePrompt } from "./prompt";
 import { ago } from "./samples";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -46,7 +44,7 @@ const useWords = () => words[new Intl.Locale(useLocale().locale).language === "j
 type State = "offered" | "closed" | "blocked";
 
 /** The top of the notifications: the prompt in `state`, then a notification under it. */
-function Top({ look, state }: { look: PromptLook; state: State }) {
+function Top({ state }: { state: State }) {
   const w = useWords();
   const id = useId();
   const [shown, setShown] = useState(true);
@@ -55,7 +53,6 @@ function Top({ look, state }: { look: PromptLook; state: State }) {
       {shown && (
         <InlinePrompt
           icon="notifications"
-          look={look}
           action={state === "blocked" ? undefined : { label: w.turnOn, onPress: () => undefined }}
           dismiss={{
             label: w.notNow,
@@ -84,12 +81,6 @@ function Top({ look, state }: { look: PromptLook; state: State }) {
   );
 }
 
-const looks = (state: State) => ({
-  raised: <Top look="raised" state={state} />,
-  line: <Top look="line" state={state} />,
-  stacked: <Top look="stacked" state={state} />,
-});
-
 // Tagged `themes`: the story tests run it in dark too.
 const meta = { title: "Inline prompt", tags: ["themes"] } satisfies Meta;
 export default meta;
@@ -98,7 +89,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Offered: its action and its dismiss; dismissing it takes it away. */
 export const Offered: Story = {
-  render: () => <Options id="prompt-look" variants={looks("offered")} />,
+  render: () => <Top state="offered" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const prompt = canvas.getByRole("region", { name: /notified|通知を届け/ });
@@ -110,7 +101,7 @@ export const Offered: Story = {
 
 /** The browser's question closed without a choice: the reason under it, its action still there. */
 export const QuestionClosed: Story = {
-  render: () => <Options id="prompt-look" variants={looks("closed")} />,
+  render: () => <Top state="closed" />,
   play: async ({ canvasElement }) => {
     const prompt = within(canvasElement).getByRole("region");
     await expect(within(prompt).getByRole("alert")).toBeVisible();
@@ -120,7 +111,7 @@ export const QuestionClosed: Story = {
 
 /** The site's notifications blocked: the reason, and only its dismiss. */
 export const Blocked: Story = {
-  render: () => <Options id="prompt-look" variants={looks("blocked")} />,
+  render: () => <Top state="blocked" />,
   play: async ({ canvasElement }) => {
     const prompt = within(canvasElement).getByRole("region");
     await expect(within(prompt).queryByRole("button", { name: /Turn on|有効にする/ })).toBeNull();

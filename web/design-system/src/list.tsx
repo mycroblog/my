@@ -121,37 +121,35 @@ export function UnreadMark({ label }: { label: string }) {
 
 const notice = tv({
   slots: {
-    root: "relative flex items-start gap-entry-avatar",
+    // The glyph, the avatar's place and the body, which holds the sentence and what it is about under it. The link, when
+    // there is one, reaches over the whole line from the sentence. Its parts stand close, so that a short sentence
+    // keeps to one line beside the time at 320 px.
+    root: "relative flex items-start gap-entry-caption",
     // The glyph and the avatar stand on the text's first line, so that a sentence that wraps keeps them at its start.
     glyph: [
       "inline-flex h-[1lh] min-w-icon-action flex-none items-center justify-center text-muted-text",
       "text-[length:var(--icon-action)] leading-none",
     ],
-    avatar: "inline-flex h-[1lh] flex-none items-center",
-    // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り).
-    text: "m-0 min-w-0 flex-1 [word-break:auto-phrase]",
-    end: "inline-flex h-[1lh] flex-none items-center gap-entry-avatar",
-    // The sentence as the link to what it tells of, in the line's own color, underlined while hovered.
+    // Held empty where no account acted (a notice of the server), so that every sentence starts in one column.
+    avatar: "inline-flex h-[1lh] w-avatar-inline flex-none items-center",
+    body: "grid min-w-0 flex-1 gap-entry-line",
+    // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り), its lines
+    // kept even; the time floats at its first line's end, and the lines under it run to the column's end.
+    text: "m-0 [text-wrap:pretty] [word-break:auto-phrase]",
+    end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-entry-caption",
+    // The sentence as the link to what it tells of, in the line's own color, underlined while hovered; it reaches over
+    // the whole line, so that a press anywhere on it follows the link.
     link: [
       "rounded-control text-current no-underline outline-hidden data-hovered:underline",
       "data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
+      "after:absolute after:inset-0 after:content-['']",
     ],
   },
   variants: {
     // Unread, the line is in the text's color with the mark at its end; read, it is muted.
     read: { true: { text: "text-muted-text" } },
-    // Where its link sits: on the sentence; on the sentence, reaching over the whole line, so that a press anywhere on
-    // it follows the link; or on the time at its end, as a post's.
-    linkOn: {
-      sentence: {},
-      line: { link: "after:absolute after:inset-0 after:content-['']" },
-      time: {},
-    },
   },
 });
-
-/** Where a notice line's link sits (NoticeLine's `linkOn`). */
-export type NoticeLinkOn = "sentence" | "line" | "time";
 
 export type NoticeLineProps = {
   /** The glyph of its kind. */
@@ -168,17 +166,17 @@ export type NoticeLineProps = {
   unread?: string | undefined;
   /** The sentence of its kind. */
   children: ReactNode;
+  /** What it is about, under the sentence in its column (an `Excerpt` of the reader's post). */
+  excerpt?: ReactNode;
   /** Where it leads: what it tells of (the post, the account, the follow requests). */
   href?: string | undefined;
   /** What runs as its link is followed (it is read). */
   onFollow?: (() => void) | undefined;
-  /** Where its link sits. */
-  linkOn?: NoticeLinkOn | undefined;
 };
 
 /**
- * The line of a notice's kind: its glyph, the account's avatar, the sentence, which wraps, the unread mark and the time.
- * With `href`, it leads to what it tells of, by its link on `linkOn`.
+ * The line of a notice's kind: its glyph, the account's avatar, the sentence, which wraps, the unread mark and the time
+ * at its end, and what it is about under the sentence. With `href`, the whole line leads to what it tells of.
  */
 export function NoticeLine({
   icon,
@@ -188,31 +186,34 @@ export function NoticeLine({
   id,
   unread: mark,
   children,
+  excerpt,
   href,
   onFollow,
-  linkOn = "sentence",
 }: NoticeLineProps) {
-  const s = notice({ read: mark === undefined, linkOn });
-  const follow = onFollow === undefined ? {} : { onPress: onFollow };
-  const sentence =
-    href === undefined || linkOn === "time" ? (
-      children
-    ) : (
-      <Link href={href} className={s.link()} {...follow}>
-        {children}
-      </Link>
-    );
+  const s = notice({ read: mark === undefined });
   return (
     <div className={s.root()}>
       <span className={s.glyph()}>{emoji ?? <Icon name={icon} place="action" />}</span>
-      {avatar !== undefined && <span className={s.avatar()}>{avatar}</span>}
-      <p id={id} className={s.text()}>
-        {sentence}
-      </p>
-      <span className={s.end()}>
-        {mark !== undefined && <UnreadMark label={mark} />}
-        <Stamp date={date} {...(href !== undefined && linkOn === "time" ? { href, ...follow } : {})} />
-      </span>
+      <span className={s.avatar()}>{avatar}</span>
+      <div className={s.body()}>
+        <p className={s.text()}>
+          <span className={s.end()}>
+            {mark !== undefined && <UnreadMark label={mark} />}
+            <Stamp date={date} />
+          </span>
+          {/* The sentence alone names the entry, not the time before it. */}
+          <span id={id}>
+            {href === undefined ? (
+              children
+            ) : (
+              <Link href={href} className={s.link()} {...(onFollow === undefined ? {} : { onPress: onFollow })}>
+                {children}
+              </Link>
+            )}
+          </span>
+        </p>
+        {excerpt}
+      </div>
     </div>
   );
 }

@@ -5,8 +5,8 @@
 // end beside both; the label and the track press it. On differs from off by shape and fill, with no hue (the accent
 // is the primary action's and the links'): off, a muted thumb at the track's start on the raised surface; on, the
 // thumb of the page's color at its end, on a track knocked out of the text's color. The thumb's side follows the
-// reading direction. Disabled, the label and the track fade, and the line under the label says why; assistive
-// technology reads the line as the switch's description.
+// reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
+// why; assistive technology reads the line as the switch's description.
 
 import type { ReactNode } from "react";
 import { SwitchButton, SwitchField, Text } from "react-aria-components";
@@ -18,20 +18,23 @@ const toggle = tv({
     root: "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-toggle-gap text-body text-text",
     // The button's box is its parts', placed in the root's grid; the label and the track take its presses.
     button: "group contents cursor-pointer data-disabled:cursor-not-allowed",
-    label: "col-start-1 row-start-1 group-data-disabled:opacity-disabled",
-    // A description that wraps breaks between phrases, never inside a word of ja.
+    // The label and its description wrap between phrases, never inside a word of ja (フォロワー); disabled, the label
+    // turns muted, as every disabled label does.
+    label: "col-start-1 row-start-1 [word-break:auto-phrase] group-data-disabled:text-muted-text",
     description: "col-start-1 row-start-2 text-caption text-muted-text [word-break:auto-phrase]",
     track: [
       "relative col-start-2 row-span-2 row-start-1 box-border inline-flex h-toggle-height w-toggle-width",
       "rounded-[calc(var(--toggle-height)/2)] bg-surface-raised-hover group-data-hovered:bg-surface-raised-pressed",
       "group-data-selected:bg-text group-data-selected:group-data-hovered:bg-text",
-      "group-data-focus-visible:shadow-focus group-data-disabled:opacity-disabled",
+      "group-data-focus-visible:shadow-focus",
+      // Disabled, it keeps its surface, so that it shows in either scheme: on turns muted, and the thumb dims.
+      "group-data-disabled:group-data-selected:bg-muted-text",
     ],
     thumb: [
       "absolute inset-y-0 my-auto size-toggle-thumb rounded-full bg-muted-text",
       "start-[calc((var(--toggle-height)-var(--toggle-thumb))/2)]",
       "group-data-selected:start-[calc(var(--toggle-width)-(var(--toggle-height)+var(--toggle-thumb))/2)]",
-      "group-data-selected:bg-surface",
+      "group-data-selected:bg-surface group-data-disabled:opacity-disabled",
     ],
   },
 });

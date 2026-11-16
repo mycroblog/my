@@ -44,9 +44,11 @@ test("a notice's line is in the text's color with its mark while unread, and mut
     </NoticeLine>,
   );
   expect(unread).toContain('aria-label="Unread"');
-  expect(unread).not.toMatch(/text-muted-text">Lena followed you/);
+  // The sentence's paragraph, which holds the time floated at its end before the sentence.
+  const sentence = /<p class="([^"]*)">(?:(?!<\/p>).)*Lena followed you/;
+  expect(unread.match(sentence)?.[1]).not.toContain("text-muted-text");
   expect(read).not.toContain('aria-label="Unread"');
-  expect(read).toMatch(/text-muted-text">Lena followed you/);
+  expect(read.match(sentence)?.[1]).toContain("text-muted-text");
   const caption = renderToStaticMarkup(
     <NoticeCaption icon="reply" unread="Unread">
       Ken mentioned you
