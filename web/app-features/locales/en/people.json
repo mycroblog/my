@@ -8,7 +8,7 @@
     "description": "The title of the accounts the server suggests to follow, where they show on another screen (the search before anything is written)."
   },
   "people.home": {
-    "defaultMessage": "You follow no one yet. Follow people to read their posts in your home.",
+    "defaultMessage": "You follow no one yet. Follow people to read their posts in your home timeline.",
     "description": "Over the accounts the server suggests to follow, on the home timeline while the reader follows no one (a new account)."
   },
   "people.loading": {

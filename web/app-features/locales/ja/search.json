@@ -36,7 +36,7 @@
     "description": "The action that asks a failed search again."
   },
   "search.none": {
-    "defaultMessage": "「{q}」に一致するものは見つかりませんでした。",
+    "defaultMessage": "「{q}」に一致するものは見つかりませんでした。別の言葉で試してください。",
     "description": "When a search found nothing of any kind. q is what the reader wrote."
   },
   "search.tag_posts": {
@@ -48,7 +48,7 @@
     "description": "While the account of another server that the reader named by its handle or address is fetched. handle is what they wrote."
   },
   "search.remote_none": {
-    "defaultMessage": "{handle} にアカウントは見つかりませんでした。",
+    "defaultMessage": "{handle} にアカウントは見つかりませんでした。ハンドルを確かめてください。",
     "description": "When the account of another server that the reader named by its handle or address was not found. handle is what they wrote."
   }
 }
