@@ -144,7 +144,7 @@ const light = (c: RGB): RGB => [
 ];
 
 /** A person's avatar: a figure in white on a gradient of their color. */
-const portrait = (color: RGB): Drawing => ({
+export const portrait = (color: RGB): Drawing => ({
   width: 256,
   height: 256,
   top: light(color),

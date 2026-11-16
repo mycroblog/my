@@ -175,12 +175,22 @@ export function useAccountStatuses(id: string, kind: AccountPosts, enabled = tru
   return { ...list, items: list.items.filter((s) => (s.boost ?? s).media_attachments.length > 0) };
 }
 
-/** What the viewer may do to their relationship with an account. */
-export type RelationshipChange = "follow" | "unfollow" | "block" | "unblock" | "mute" | "unmute";
+/**
+ * What the viewer may do to their relationship with an account: follow it, block it, mute it, be notified of its new
+ * posts (subscribe), each or its undoing, and remove it from their followers.
+ */
+export type RelationshipChange =
+  "follow" | "unfollow" | "block" | "unblock" | "mute" | "unmute" | "subscribe" | "unsubscribe" | "remove-follower";
 
 async function send({ api }: AppData, id: string, change: RelationshipChange): Promise<Relationship | undefined> {
   const path = { params: { path: { id } } };
   switch (change) {
+    case "subscribe":
+      return (await api.POST("/accounts/{id}/subscribe", path)).data;
+    case "unsubscribe":
+      return (await api.DELETE("/accounts/{id}/subscribe", path)).data;
+    case "remove-follower":
+      return (await api.DELETE("/accounts/{id}/follower", path)).data;
     case "follow":
       return (await api.POST("/accounts/{id}/follow", path)).data;
     case "unfollow":
@@ -196,40 +206,86 @@ async function send({ api }: AppData, id: string, change: RelationshipChange): P
   }
 }
 
+/**
+ * How a write marks what it may change: `shown` reads the shown screens' lists now; `later` leaves them as they are
+ * until they open again, so that what the reader pressed stays where it is (a post they muted the author of).
+ */
+export type Marking = "shown" | "later";
+
 /** Puts a relationship the server answered into the cache, and marks what it may change. */
-export async function cacheRelationship(data: AppData, relationship: Relationship): Promise<void> {
+export async function cacheRelationship(
+  data: AppData,
+  relationship: Relationship,
+  marking: Marking = "shown",
+): Promise<void> {
   const { queryClient } = data;
   queryClient.setQueryData(relationshipQuery(data, relationship.id).queryKey, { items: [relationship] });
-  await markAccountLists(queryClient, relationship.id);
+  await markAccountLists(queryClient, relationship.id, marking);
 }
 
 /**
- * Marks what a change of a relationship may change: the accounts with their counts, the home timeline, and the posts
- * of the account. The marks of screens not shown are read when one opens; the shown ones are read now.
+ * Marks what a change of a relationship may change: the accounts with their counts and their lists of follows, the
+ * timelines and the notifications, and the posts of the account. The marks of screens not shown are read when one
+ * opens; the shown ones are read now, or with `later` when they open again.
  */
-async function markAccountLists(queryClient: QueryClient, id: string): Promise<void> {
+async function markAccountLists(queryClient: QueryClient, id: string, marking: Marking): Promise<void> {
+  const refetchType = marking === "shown" ? "active" : "none";
+  const lists = ["/accounts/{id}/followers", "/accounts/{id}/following", "/notifications"];
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/accounts/lookup"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/accounts/{id}"] }),
-    queryClient.invalidateQueries({ queryKey: ["get", "/timelines/home"] }),
+    queryClient.invalidateQueries({
+      predicate: ({ queryKey }) =>
+        typeof queryKey[1] === "string" && (queryKey[1].startsWith("/timelines/") || lists.includes(queryKey[1])),
+      refetchType,
+    }),
     queryClient.invalidateQueries({
       predicate: ({ queryKey }) =>
         queryKey[1] === "/accounts/{id}/statuses" && JSON.stringify(queryKey[2]).includes(`"${id}"`),
+      refetchType,
     }),
   ]);
 }
 
 /**
  * Changes the viewer's relationship with the account of `id`, and resolves once the cache holds what the server
- * answered and the shown screens read what it marked. It rejects with the server's problem.
+ * answered and the shown screens read what it marked (`marking`). It rejects with the server's problem.
  */
-export async function changeRelationship(data: AppData, id: string, change: RelationshipChange): Promise<void> {
+export async function changeRelationship(
+  data: AppData,
+  id: string,
+  change: RelationshipChange,
+  marking: Marking = "shown",
+): Promise<void> {
   const relationship = await send(data, id, change);
-  if (relationship !== undefined) await cacheRelationship(data, relationship);
+  if (relationship !== undefined) await cacheRelationship(data, relationship, marking);
 }
 
 /** Changes the viewer's relationship with an account, from a screen (`changeRelationship`). */
-export function useChangeRelationship(): (id: string, change: RelationshipChange) => Promise<void> {
+export function useChangeRelationship(): (id: string, change: RelationshipChange, marking?: Marking) => Promise<void> {
   const data = useAppData();
-  return (id, change) => changeRelationship(data, id, change);
+  return (id, change, marking) => changeRelationship(data, id, change, marking);
+}
+
+/** The most characters of the viewer's private note on an account (Unicode code points). */
+export const accountNoteLimit = 2000;
+
+/**
+ * Writes the viewer's private note on the account of `id`; an empty note removes it. Resolves once the cache holds
+ * the relationship the server answered, which carries the note; rejects with the server's problem.
+ */
+export async function writeAccountNote(data: AppData, id: string, note: string): Promise<void> {
+  const path = { params: { path: { id } } };
+  const relationship =
+    note === ""
+      ? (await data.api.DELETE("/accounts/{id}/note", path)).data
+      : (await data.api.PUT("/accounts/{id}/note", { ...path, body: { note } })).data;
+  if (relationship !== undefined)
+    data.queryClient.setQueryData(relationshipQuery(data, relationship.id).queryKey, { items: [relationship] });
+}
+
+/** Writes the viewer's private note on an account, from a screen (`writeAccountNote`). */
+export function useWriteAccountNote(): (id: string, note: string) => Promise<void> {
+  const data = useAppData();
+  return (id, note) => writeAccountNote(data, id, note);
 }

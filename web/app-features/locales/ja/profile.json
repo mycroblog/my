@@ -171,6 +171,10 @@
     "defaultMessage": "もう一度試す",
     "description": "The action after the line that an account's list of follows or followers failed to load, which loads it again."
   },
+  "profile.action_failed": {
+    "defaultMessage": "{action, select, mute {ミュート} unmute {ミュートの解除} block {ブロック} unblock {ブロックの解除} remove_follower {フォロワーからの削除} notify {通知の設定} note {メモの保存} mute_server {サーバーのミュート} other {サーバーのミュートの解除}}を完了できませんでした。",
+    "description": "The notice at the bottom of the page when the reader's action on an account, from its profile or a post's menu, got no answer from the server (the network), beside Try again: muting or unmuting it, blocking or unblocking it, removing it from their followers, being notified of its new posts or not, saving their private note on it, muting or unmuting its server. action is which of them."
+  },
   "profile.follows_more": {
     "defaultMessage": "さらに表示",
     "description": "The button under an account's list of follows or followers that loads the next accounts."
@@ -190,6 +194,10 @@
   "profile.note_save": {
     "defaultMessage": "保存",
     "description": "The button that keeps the reader's private note on an account."
+  },
+  "profile.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the editor of the reader's private note on an account, and of the confirmations of blocking an account and removing a follower, that closes them and keeps everything as it was."
   },
   "profile.notify": {
     "defaultMessage": "新しい投稿を通知",

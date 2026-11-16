@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A profile (FR-006, the rough of #3047): the account of a handle, from useAccount() of @my/app-data, in its state
-// for the reader: their own, another local account, a remote one, a locked one, one they block or mute. Its head: the
-// banner, the avatar with the reader's actions at the other end of its row (follow in its state, more), the name with a
-// locked account's lock and a bot's badge, the handle with "Follows you" and the role badges, the bio, the fields, when
-// it joined and its counts, the lines of its state (blocked, muted, locked, remote), and the featured hashtags. Under
+// for the reader: their own, another local account, a remote one, a locked one, one they block or mute, one whose
+// server they mute. Its head: the banner, the avatar with the reader's actions at the other end of its row (the bell
+// of its new posts while the reader follows it, follow in its state, more: mute, block and remove a follower, each of
+// the last two after a confirmation, and mute its server), the name with a locked account's lock and a bot's badge, the
+// handle with "Follows you" and the role badges, the bio, the fields, when it joined and its counts (each opening its
+// list, follows.tsx), the reader's private note on it, the lines of its state (blocked, muted, its server muted, locked,
+// remote), and the featured hashtags. A failed action is told at the bottom of the page (usePostNotice). Under
 // it, the tabs of its posts (posts, posts and replies, media, articles), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
 import { AccountName, accountPath, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
+  accountNoteLimit,
   loadAccount,
   useAccount,
   useAccountStatuses,
   useChangeRelationship,
   useFeaturedHashtags,
+  useMutedDomain,
+  useMuteDomain,
   useRelationship,
   useViewer,
+  useWriteAccountNote,
   viewerQuery,
   type Account,
   type AccountPosts,
@@ -30,14 +37,19 @@ import {
   Badge,
   Button,
   CaptionLine,
+  ConfirmDialog,
   FeedNotice,
   FieldList,
   Icon,
+  IconButton,
   MenuButton,
   MenuGroup,
   MenuItem,
   MetaCount,
   MetaLine,
+  ModalPresence,
+  NoteEditor,
+  NoteLine,
   ProfileHead,
   ScreenStack,
   TabRow,
@@ -47,7 +59,7 @@ import {
 } from "@my/design-system";
 import { useId, useState } from "react";
 import { stringsIn } from "../locale";
-import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -138,44 +150,213 @@ function Follow({ account, relationship, t }: { account: Account; relationship: 
   );
 }
 
-/** The menu of what else the reader may do: open the original page of a remote account, mute and block. */
-function More({ account, relationship, t }: { account: Account; relationship: Relationship; t: T }) {
+/** Which action on an account failed, as profile.action_failed names it. */
+type Failure =
+  "mute" | "unmute" | "block" | "unblock" | "remove_follower" | "notify" | "note" | "mute_server" | "unmute_server";
+
+/**
+ * Runs a write on the account, and tells its failure at the bottom of the page, in the server's words when it refused,
+ * with Try again.
+ */
+function useAccountWrite(t: T): (failure: Failure, write: () => Promise<void>) => Promise<boolean> {
+  const failed = usePostNotice();
+  const run = (failure: Failure, write: () => Promise<void>): Promise<boolean> =>
+    write().then(
+      () => true,
+      (e: unknown) => {
+        failed(e, t("profile.action_failed", { action: failure }), () => {
+          void run(failure, write);
+        });
+        return false;
+      },
+    );
+  return run;
+}
+
+/** The bell of the account's new posts, beside follow while the reader follows it: an outline off, filled on. */
+function Bell({ account, relationship, t }: { account: Account; relationship: Relationship; t: T }) {
   const change = useChangeRelationship();
+  const write = useAccountWrite(t);
+  const [busy, setBusy] = useState(false);
+  const on = relationship.notify ?? false;
+  return (
+    <IconButton
+      icon="notifications"
+      label={t("profile.notify")}
+      pressed={on}
+      isDisabled={busy}
+      onPress={() => {
+        setBusy(true);
+        void write("notify", () => change(account.id, on ? "unsubscribe" : "subscribe")).finally(() => {
+          setBusy(false);
+        });
+      }}
+    />
+  );
+}
+
+/** A confirmation the profile's menu asks before it acts: of blocking the account, or of removing a follower. */
+type Asking = { readonly kind: "block" | "remove"; readonly busy: boolean };
+
+/**
+ * The menu of what else the reader may do: open the original page of a remote account; mute the account, block it
+ * after a confirmation, remove it from their followers (while it follows them) after another; mute its server, or
+ * stop muting it (`mutedDomain`, the domain muted that the account's falls under).
+ */
+function More({
+  account,
+  relationship,
+  mutedDomain,
+  t,
+}: {
+  account: Account;
+  relationship: Relationship;
+  mutedDomain: string | undefined;
+  t: T;
+}) {
+  const change = useChangeRelationship();
+  const muteServer = useMuteDomain();
+  const write = useAccountWrite(t);
+  const [asking, setAsking] = useState<Asking | undefined>(undefined);
   const muting = relationship.muting ?? false;
   const blocking = relationship.blocking ?? false;
   const remote = account.acct.includes("@");
+  const handle = `@${account.username || account.domain}`;
+  const confirm = () => {
+    if (asking === undefined || asking.busy) return;
+    setAsking({ ...asking, busy: true });
+    void write(asking.kind === "block" ? "block" : "remove_follower", () =>
+      change(account.id, asking.kind === "block" ? "block" : "remove-follower"),
+    ).finally(() => {
+      setAsking(undefined);
+    });
+  };
   return (
-    <MenuButton icon="more" label={t("profile.more")}>
-      {remote && (
-        <MenuGroup>
-          <MenuItem id="open" icon="open" onAction={openOriginal(account)}>
-            {t("profile.open_original")}
+    <>
+      <MenuButton icon="more" label={t("profile.more")}>
+        {remote && (
+          <MenuGroup>
+            <MenuItem id="open" icon="open" onAction={openOriginal(account)}>
+              {t("profile.open_original")}
+            </MenuItem>
+          </MenuGroup>
+        )}
+        <MenuGroup title={handle}>
+          <MenuItem
+            id="mute"
+            icon="mute"
+            on={muting}
+            onAction={() => {
+              void write(muting ? "unmute" : "mute", () => change(account.id, muting ? "unmute" : "mute"));
+            }}
+          >
+            {t(muting ? "profile.unmute" : "profile.mute")}
           </MenuItem>
+          <MenuItem
+            id="block"
+            icon="block"
+            on={blocking}
+            onAction={() => {
+              if (blocking) void write("unblock", () => change(account.id, "unblock"));
+              else setAsking({ kind: "block", busy: false });
+            }}
+          >
+            {t(blocking ? "profile.unblock" : "profile.block")}
+          </MenuItem>
+          {relationship.followed_by === true && (
+            <MenuItem
+              id="remove-follower"
+              icon="removeFollower"
+              onAction={() => {
+                setAsking({ kind: "remove", busy: false });
+              }}
+            >
+              {t("profile.remove_follower")}
+            </MenuItem>
+          )}
         </MenuGroup>
-      )}
-      <MenuGroup title={`@${account.username || account.domain}`}>
-        <MenuItem
-          id="mute"
-          icon="mute"
-          on={muting}
-          onAction={() => {
-            void change(account.id, muting ? "unmute" : "mute").catch(() => undefined);
-          }}
-        >
-          {t(muting ? "profile.unmute" : "profile.mute")}
-        </MenuItem>
-        <MenuItem
-          id="block"
-          icon="block"
-          on={blocking}
-          onAction={() => {
-            void change(account.id, blocking ? "unblock" : "block").catch(() => undefined);
-          }}
-        >
-          {t(blocking ? "profile.unblock" : "profile.block")}
-        </MenuItem>
-      </MenuGroup>
-    </MenuButton>
+        {remote && (
+          <MenuGroup title={account.domain}>
+            <MenuItem
+              id="mute-server"
+              icon="mute"
+              on={mutedDomain !== undefined}
+              onAction={() => {
+                void (mutedDomain === undefined
+                  ? write("mute_server", () => muteServer(account.domain, true))
+                  : write("unmute_server", () => muteServer(mutedDomain, false)));
+              }}
+            >
+              {t(mutedDomain === undefined ? "profile.mute_server" : "profile.unmute_server")}
+            </MenuItem>
+          </MenuGroup>
+        )}
+      </MenuButton>
+      <ModalPresence>
+        {asking && (
+          <ConfirmDialog
+            key={asking.kind}
+            title={t(asking.kind === "block" ? "profile.block_confirm_title" : "profile.remove_follower_title", {
+              handle,
+            })}
+            cancel={t("profile.cancel")}
+            confirm={t(asking.kind === "block" ? "profile.block_confirm" : "profile.remove_follower_confirm")}
+            busy={asking.busy}
+            onCancel={() => {
+              if (!asking.busy) setAsking(undefined);
+            }}
+            onConfirm={confirm}
+          >
+            {t(asking.kind === "block" ? "profile.block_confirm_text" : "profile.remove_follower_text")}
+          </ConfirmDialog>
+        )}
+      </ModalPresence>
+    </>
+  );
+}
+
+/**
+ * The reader's private note on the account, a line under the counts that opens its editor in place: the note, or with
+ * none, what adding one does. Saving an empty note removes it; Cancel keeps it as it was.
+ */
+function Note({ account, note, t }: { account: Account; note: string; t: T }) {
+  const save = useWriteAccountNote();
+  const write = useAccountWrite(t);
+  const [editing, setEditing] = useState<{ text: string; busy: boolean } | undefined>(undefined);
+  if (editing === undefined)
+    return (
+      <NoteLine
+        note={note}
+        placeholder={t("profile.note_add")}
+        label={t("profile.note_edit")}
+        onPress={() => {
+          setEditing({ text: note, busy: false });
+        }}
+      />
+    );
+  return (
+    <NoteEditor
+      label={t("profile.note")}
+      value={editing.text}
+      onChange={(text) => {
+        setEditing({ ...editing, text });
+      }}
+      maxLength={accountNoteLimit}
+      cancel={t("profile.cancel")}
+      save={t("profile.note_save")}
+      busy={editing.busy}
+      onCancel={() => {
+        setEditing(undefined);
+      }}
+      onSave={() => {
+        const text = editing.text.trim();
+        setEditing({ ...editing, busy: true });
+        void write("note", () => save(account.id, text)).then((saved) => {
+          // A note that failed stays in its editor, as the reader wrote it.
+          setEditing(saved ? undefined : { ...editing, busy: false });
+        });
+      }}
+    />
   );
 }
 
@@ -199,6 +380,9 @@ function Head({
   const joined = new Intl.DateTimeFormat(lang, { year: "numeric", month: "long" }).format(new Date(account.created_at));
   const blocked = relationship?.blocking ?? false;
   const remote = account.acct.includes("@");
+  const mutedDomain = useMutedDomain(remote && !own ? account.domain : undefined);
+  const muteServer = useMuteDomain();
+  const write = useAccountWrite(t);
   const avatar = account.avatar?.medium.url ?? account.avatar?.small.url;
   return (
     <ProfileHead
@@ -209,8 +393,11 @@ function Head({
         !own &&
         relationship !== undefined && (
           <>
-            <More account={account} relationship={relationship} t={t} />
+            {relationship.following === true && !blocked && (
+              <Bell account={account} relationship={relationship} t={t} />
+            )}
             <Follow account={account} relationship={relationship} t={t} />
+            <More account={account} relationship={relationship} mutedDomain={mutedDomain} t={t} />
           </>
         )
       }
@@ -245,7 +432,7 @@ function Head({
               action={
                 <TextButton
                   onPress={() => {
-                    void change(account.id, "unmute").catch(() => undefined);
+                    void write("unmute", () => change(account.id, "unmute"));
                   }}
                 >
                   {t("profile.unmute")}
@@ -283,6 +470,23 @@ function Head({
           />
         )}
       </MetaLine>
+      {!own && relationship?.note !== undefined && <Note account={account} note={relationship.note} t={t} />}
+      {mutedDomain !== undefined && (
+        <CaptionLine
+          icon="mute"
+          action={
+            <TextButton
+              onPress={() => {
+                void write("unmute_server", () => muteServer(mutedDomain, false));
+              }}
+            >
+              {t("profile.unmute_server")}
+            </TextButton>
+          }
+        >
+          {t("profile.server_muted", { domain: mutedDomain })}
+        </CaptionLine>
+      )}
       {account.locked && <CaptionLine icon="followers">{t("profile.locked")}</CaptionLine>}
       {remote && (
         <CaptionLine

@@ -4,8 +4,9 @@ You decide what you read and who can reach you. Blocking, muting, and keyword fi
 
 ## Blocking an account
 
-Open "More" on the profile of the account and choose "Block". The client asks "Block ...?" and says what follows: you
-stop following each other, and neither of you can follow the other until you unblock them. The follows that the block ended do not come back when you unblock.
+Open "More" on the account's profile or one of its posts and choose "Block…". The client asks "Block ...?" and says
+what follows: you stop following each other, and neither of you can follow the other until you unblock them. The
+follows that the block ended do not come back when you unblock.
 
 A block also hides the posts of the two of you from each other.
 
@@ -22,10 +23,10 @@ To hold the notifications of people you don't know until you accept them, use th
 
 ## Muting a server
 
-"Muted domains", under "Relationships" in the settings, mutes a whole server (for example `mastodon.example`; its
-subdomains are muted too). It hides the posts of its accounts from your timelines other than home, their boosts from
-your home timeline, and their notifications. The accounts of that server you follow stay on your home timeline. Only you
-are affected, and the server is not told.
+"Mute server" in the same menu, for an account of another server, mutes its whole server and subdomains; "Muted
+domains", under "Relationships" in the settings, lists and adds them. It hides the posts of its accounts from your
+timelines other than home, their boosts from your home timeline, and their notifications. The accounts of that server
+you follow stay on your home timeline. Only you are affected, and the server is not told.
 
 ## Filtering posts by keyword
 

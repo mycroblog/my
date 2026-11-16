@@ -115,6 +115,7 @@ export {
 } from "./server";
 export {
   accountByIdQuery,
+  accountNoteLimit,
   accountQuery,
   accountStatusesQuery,
   cachedAccount,
@@ -128,13 +129,17 @@ export {
   useFeaturedHashtags,
   useRelationship,
   useViewer,
+  useWriteAccountNote,
   viewerQuery,
+  writeAccountNote,
   type Account,
   type AccountPosts,
   type FeaturedHashtag,
+  type Marking,
   type Relationship,
   type RelationshipChange,
 } from "./accounts";
+export { domainMutesQuery, muteDomain, useMutedDomain, useMuteDomain } from "./domains";
 export {
   cachePostedStatus,
   choiceOf,

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
+import { ProblemError } from "@mycroblog/mykit";
 import { QueryObserver } from "@tanstack/react-query";
 import {
   accountByIdQuery,
@@ -9,8 +10,11 @@ import {
   cachedAccount,
   changeRelationship,
   loadAccount,
+  accountNoteLimit,
   relationshipQuery,
   useAccount,
+  useRelationship,
+  writeAccountNote,
   type Account,
   type Relationship,
 } from "./accounts";
@@ -191,6 +195,78 @@ describe("cachedAccount", () => {
     const fetched = slowServer(bob({ followers_count: 8 }));
     await fetched.data.queryClient.query(accountByIdQuery(fetched.data, "b"));
     expect(cachedAccount(fetched.data, "bob@remote.example")?.followers_count).toBe(8);
+  });
+});
+
+/**
+ * A server that keeps the viewer's relationship with the account `a` (`relationship` at the start), changes it as the
+ * writes of a note, a subscription and a follower ask, refuses a note longer than the limit, and records each write.
+ */
+function relationships(relationship: Partial<Relationship> = {}) {
+  let now: Relationship = { id: "a", following: true, followed_by: true, notify: false, note: "", ...relationship };
+  const writes: { method: string; path: string; body: unknown }[] = [];
+  const fake = fakeAppData(async (request) => {
+    const path = new URL(request.url).pathname;
+    if (path === "/api/v1/accounts/relationships") return json(200, { items: [now] });
+    const body = request.method === "PUT" ? ((await request.json()) as unknown) : undefined;
+    writes.push({ method: request.method, path, body });
+    if (path.endsWith("/note")) {
+      const note = request.method === "PUT" ? (body as { note: string }).note : "";
+      if (Array.from(note).length > accountNoteLimit)
+        return json(422, { type: "about:blank", title: "Unprocessable", status: 422 });
+      now = { ...now, note };
+    } else if (path.endsWith("/subscribe")) now = { ...now, notify: request.method === "POST" };
+    else if (path.endsWith("/follower")) now = { ...now, followed_by: false };
+    return json(200, now);
+  });
+  return { ...fake, writes };
+}
+
+describe("the viewer's relationship with an account", () => {
+  const shown = (data: AppData) => probe(data, () => useRelationship("a"));
+
+  for (const [change, method, path, field, value] of [
+    ["subscribe", "POST", "/api/v1/accounts/a/subscribe", "notify", true],
+    ["unsubscribe", "DELETE", "/api/v1/accounts/a/subscribe", "notify", false],
+    ["remove-follower", "DELETE", "/api/v1/accounts/a/follower", "followed_by", false],
+  ] as const)
+    test(`${change} sends ${method} ${path}, and the cache holds the relationship the server answered`, async () => {
+      const { data, writes } = relationships({ notify: change === "unsubscribe" });
+      await data.queryClient.query(relationshipQuery(data, "a"));
+      await changeRelationship(data, "a", change);
+      expect(writes).toEqual([{ method, path, body: undefined }]);
+      expect(shown(data)?.[field]).toBe(value);
+    });
+
+  test("a private note is written, and the cache holds it once the write resolves", async () => {
+    const { data, writes } = relationships();
+    await data.queryClient.query(relationshipQuery(data, "a"));
+    await writeAccountNote(data, "a", "Met at the bakery.");
+    expect(writes).toEqual([{ method: "PUT", path: "/api/v1/accounts/a/note", body: { note: "Met at the bakery." } }]);
+    expect(shown(data)?.note).toBe("Met at the bakery.");
+  });
+
+  test("an empty note deletes the note", async () => {
+    const { data, writes } = relationships({ note: "Met at the bakery." });
+    await data.queryClient.query(relationshipQuery(data, "a"));
+    await writeAccountNote(data, "a", "");
+    expect(writes).toEqual([{ method: "DELETE", path: "/api/v1/accounts/a/note", body: undefined }]);
+    expect(shown(data)?.note).toBe("");
+  });
+
+  test("a note of the limit's characters (code points) is written; one more is refused, and the note stays", async () => {
+    expect(accountNoteLimit).toBe(2000);
+    const { data } = relationships({ note: "before" });
+    await data.queryClient.query(relationshipQuery(data, "a"));
+    const full = "🍞".repeat(accountNoteLimit);
+    await writeAccountNote(data, "a", full);
+    expect(shown(data)?.note).toBe(full);
+    const refused = await writeAccountNote(data, "a", `${full}!`).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(refused).toBeInstanceOf(ProblemError);
+    expect(shown(data)?.note).toBe(full);
   });
 });
 

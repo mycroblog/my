@@ -144,6 +144,11 @@ export type PostProps = {
    * on the article's page, and a post of a conversation of direct messages).
    */
   replyingTo?: boolean | undefined;
+  /**
+   * The groups of the more menu that act on another's post's author and its server (`MenuGroup`s), after the post's
+   * own; the screen's, which answers them.
+   */
+  authorMenu?: ReactNode;
 };
 
 /**
@@ -802,6 +807,7 @@ function Actions({
   lang,
   act,
   picker,
+  authorMenu,
 }: {
   status: PostStatus;
   own: boolean;
@@ -809,6 +815,7 @@ function Actions({
   lang: string;
   act: Act;
   picker: PostPicker | undefined;
+  authorMenu: ReactNode;
 }) {
   const on = (type: "reply" | "boost" | "quote" | "favourite" | "react") => () => {
     act({ type, id: status.id });
@@ -840,6 +847,7 @@ function Actions({
       end={
         <MenuButton icon="more" label={t("post.more")} open={moreOpen} onOpenChange={setMoreOpen} {...more}>
           <MoreItems status={status} own={own} t={t} act={act} />
+          {!own && authorMenu}
         </MenuButton>
       }
     >
@@ -904,6 +912,7 @@ export function Post({
   reading,
   replyingTo = true,
   self,
+  authorMenu,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -1080,6 +1089,7 @@ export function Post({
         lang={lang}
         act={act}
         picker={signIn === undefined ? picker : undefined}
+        authorMenu={authorMenu}
       />
       {after}
       {viewer}
