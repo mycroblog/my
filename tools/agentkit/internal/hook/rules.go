@@ -642,7 +642,6 @@ func mergeReason() string {
 		"(then `git add` them and `git commit`), and push with a plain `git push`."
 }
 
-
 // ---- CI --------------------------------------------------------------------------------------------------
 
 // issueCreate denies `gh issue create`: an issue made that way is in no epic and no milestone.
@@ -669,4 +668,3 @@ func issueCreate(pc command) *denial {
 		"sub-issues, not a list in the description. Order between issues is `--blocked-by <n>`; the Area and Priority fields are " +
 		"`--area` and `--priority`."}
 }
-
