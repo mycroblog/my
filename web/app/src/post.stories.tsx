@@ -43,7 +43,7 @@ export const TranslationFailed: Story = {
 };
 /**
  * The thread's mute (ADR-0158 §8) from a post's more menu: Mute thread stops its notifications, and the menu then offers
- * to unmute it, on. It reads in en, whatever the toolbar's locale.
+ * to unmute it, which offers Mute thread again. It reads in en, whatever the toolbar's locale.
  */
 export const ThreadMuted: Story = {
   globals: { locale: "en" },
@@ -56,8 +56,16 @@ export const ThreadMuted: Story = {
       await expect(body.queryByRole("menu")).toBeNull();
     });
     await userEvent.click(post.getByRole("button", { name: "More" }));
-    await expect(await body.findByRole("menuitem", { name: "Unmute thread" })).toBeVisible();
+    await userEvent.click(await body.findByRole("menuitem", { name: "Unmute thread" }));
+    await waitFor(async () => {
+      await expect(body.queryByRole("menu")).toBeNull();
+    });
+    await userEvent.click(post.getByRole("button", { name: "More" }));
+    await expect(await body.findByRole("menuitem", { name: "Mute thread" })).toBeVisible();
     await userEvent.keyboard("{Escape}");
+    await waitFor(async () => {
+      await expect(body.queryByRole("menu")).toBeNull();
+    });
   },
 };
 export const RightToLeft: Story = { globals: rightToLeft };

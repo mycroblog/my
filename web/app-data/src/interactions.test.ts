@@ -208,3 +208,45 @@ test("a boost of a post that admits the reader at once does not wait", async () 
   expect(read().timeline?.boost_approval).toBeUndefined();
   expect(read().timeline).toMatchObject({ boosted: true, boosts_count: 1 });
 });
+
+test("muting a thread shows at once in every cached copy, then as the server answered", async () => {
+  const { promise: answered, resolve: answer } = Promise.withResolvers<Response>();
+  const sent: string[] = [];
+  const { data, read } = cached([post()], (request) => {
+    sent.push(`${request.method} ${new URL(request.url).pathname.replace("/api/v1", "")}`);
+    return answered;
+  });
+  const done = markStatus(data, "1", { type: "mute", on: true });
+  expect(read().timeline?.muted).toBe(true);
+  expect(read().thread?.muted).toBe(true);
+  // The server's answer is what stands: here it says the thread is not muted.
+  answer(json(200, post({ muted: false })));
+  await done;
+  expect(sent).toEqual(["POST /statuses/1/mute"]);
+  expect(read().timeline?.muted).toBe(false);
+  expect(read().thread?.muted).toBe(false);
+});
+
+test("unmuting a thread asks the server to end the mute", async () => {
+  const sent: string[] = [];
+  const { data, read } = cached([post({ muted: true })], (request) => {
+    sent.push(`${request.method} ${new URL(request.url).pathname.replace("/api/v1", "")}`);
+    return json(200, post({ muted: false }));
+  });
+  await markStatus(data, "1", { type: "mute", on: false });
+  expect(sent).toEqual(["DELETE /statuses/1/mute"]);
+  expect(read().timeline?.muted).toBe(false);
+});
+
+test("a mute the server refused is taken back in every copy, and rejects", async () => {
+  const { data, read } = cached([post({ muted: false })], () =>
+    json(422, { type: "about:blank", title: "Unprocessable", status: 422 }),
+  );
+  const outcome = await markStatus(data, "1", { type: "mute", on: true }).then(
+    () => "resolved",
+    () => "rejected",
+  );
+  expect(outcome).toBe("rejected");
+  expect(read().timeline?.muted).toBe(false);
+  expect(read().thread?.muted).toBe(false);
+});
