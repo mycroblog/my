@@ -44,7 +44,7 @@ export { Moved } from "./moved";
 export { FollowRequests, Notifications, WaitingRequests } from "./notifications";
 export { heldAccountReads, Profile } from "./profile";
 export { Reactors } from "./reactors";
-export { People, Search } from "./search";
+export { homeSuggestions, People, Search } from "./search";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
 export { Notice } from "./notice";

@@ -89,7 +89,6 @@ export const NewAccountFindsMore: Story = {
   },
 };
 People.play = holds("the suggested people", (main) => main.querySelector('a[href^="/@"]') !== null);
-NewAccountHome.play = holds("the suggested people", (main) => main.querySelector('a[href^="/@"]') !== null);
 PeopleSingleUser.play = holds("no one", (main) => main.querySelector('a[href^="/@"]') === null);
 /** Nothing of finding people: no heading over suggestions, no account to follow, no link to all of them. */
 const noFinding = (main: HTMLElement) =>
@@ -112,6 +111,7 @@ const copy = {
     none: "Nothing was found for “zzqx”. Try other words.",
     remoteNone: "No account was found at @nobody@far.example. Check the handle.",
     lookingUp: "Looking up @kiri@far.example on its server…",
+    noOne: "No one to suggest right now. Search for people by name instead.",
     tagPosts: /^\d+ posts?$/u,
   },
   ja: {
@@ -125,6 +125,7 @@ const copy = {
     none: "「zzqx」に一致するものは見つかりませんでした。別の言葉で試してください。",
     remoteNone: "@nobody@far.example にアカウントは見つかりませんでした。ハンドルを確かめてください。",
     lookingUp: "@kiri@far.example をそのサーバーに問い合わせています…",
+    noOne: "今はおすすめできる人がいません。名前で人を検索してください。",
     tagPosts: /^\d+ 件の投稿$/u,
   },
 };
@@ -163,6 +164,48 @@ const kindsOf = (main: HTMLElement) =>
         el.getAttribute("aria-label") ??
         textOf(main.ownerDocument.getElementById(el.getAttribute("aria-labelledby") ?? "")),
     );
+
+/** Up to five suggested people, each with its follow. */
+Start.play = plays(async (main) => {
+  const rows = accountRows(main);
+  await expect(rows.length).toBeGreaterThan(0);
+  await expect(rows.length).toBeLessThanOrEqual(5);
+  for (const row of rows) await expect(within(row).getAllByRole("button").length).toBeGreaterThan(0);
+});
+
+/**
+ * Before anything is written, for a reader who follows no one, whom the fake suggests more than five: five of them,
+ * then the way to the rest, finding people.
+ */
+export const StartMoreThanFive: Story = {
+  parameters: screen({ at: "/search", viewer: "quickdeals" }),
+  play: plays(async (main) => {
+    await expect(accountRows(main)).toHaveLength(5);
+    await expect(main.querySelector('a[href="/people"]')).not.toBeNull();
+  }),
+};
+
+/** The home of a reader who follows no one: up to five suggested people, over any post. */
+NewAccountHome.play = plays(async (main) => {
+  const rows = accountRows(main);
+  await expect(rows.length).toBeGreaterThan(0);
+  await expect(rows.length).toBeLessThanOrEqual(5);
+  for (const post of main.querySelectorAll("article"))
+    await expect(rows[0]?.compareDocumentPosition(post) ?? 0).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+});
+
+/** Finding people by its address where the server suggests no one: one line that says so, no account. */
+PeopleEmpty.play = plays(async (main, w) => {
+  await expect(main.querySelector('a[href^="/@"]')).toBeNull();
+  await expect(main.querySelector('p[role="status"]')).not.toBeNull();
+  if (w !== undefined) await expect(textOf(main.querySelector('p[role="status"]'))).toBe(w.noOne);
+});
+
+/** The suggestions that failed: one failure with one Try again. */
+PeopleFailed.play = plays(async (main, w) => {
+  await expect(main.querySelectorAll('[role="alert"]')).toHaveLength(1);
+  if (w !== undefined) await expect(within(main).getAllByRole("button", { name: w.retry })).toHaveLength(1);
+});
 
 /** People and hashtags, and nothing of posts: no kind named Posts, a hint that names none. */
 PostsNotOffered.play = plays(async (main, w) => {

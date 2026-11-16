@@ -72,6 +72,11 @@ export class Search {
   }
 }
 
+/** The suggested people over the home of a reader who follows no one, a list named Suggested for you. */
+export function homeSuggestions(page: Page): Locator {
+  return page.getByRole("main").getByRole("list", { name: "Suggested for you", exact: true });
+}
+
 export class People {
   readonly page: Page;
 
