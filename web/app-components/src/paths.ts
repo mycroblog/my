@@ -48,6 +48,12 @@ export const waitingPath = "/notifications/waiting";
 /** The address of the follow requests that wait for the reader's answer. */
 export const followRequestsPath = "/notifications/follow_requests";
 
+/** The address of the notifications the reader's notification policy holds back, by the account that sent them. */
+export const heldPath = "/notifications/requests";
+
+/** The address of the held-back notifications of the account of `id`. */
+export const heldOfPath = (id: string) => `${heldPath}/${id}`;
+
 /** What a notification reads to decide where it leads: its kind and what it is about. */
 export type NotificationTarget = {
   readonly type: string;

@@ -43,6 +43,7 @@ export {
 } from "./compose/model";
 export { LatestNotifications } from "./notifications/latest";
 export { DismissLookProvider, loadNotifications, Notifications, type DismissLook } from "./notifications/notifications";
+export { Held, HeldOf, loadHeld, loadHeldOf } from "./notifications/held";
 export { loadWaitingRequests, WaitingRequests } from "./notifications/waiting";
 export { FollowRequests, loadFollowRequests } from "./notifications/follow-requests";
 export { PostActions, type ComposeRequest } from "./post-actions";

@@ -374,22 +374,33 @@ export function RowItem({ children }: { children: ReactNode }) {
 }
 
 const account = tv({
-  slots: { root: "flex items-center gap-screen-row-gap", who: "min-w-0 flex-1" },
+  slots: {
+    root: "flex items-center gap-screen-row-gap",
+    who: "grid min-w-0 flex-1 gap-entry-line",
+    // A line under the byline at the name's start (how many notifications an account's request holds).
+    note: "m-0 ps-[calc(var(--avatar-post)+var(--entry-avatar-gap))] text-caption text-muted-text",
+  },
 });
 
-/** An account on a row of its own: its avatar, its name over its handle, and what the reader may do at the end. */
+/**
+ * An account on a row of its own: its avatar, its name over its handle, a note under them, and what the reader may do
+ * at the end.
+ */
 export function AccountRow({
   avatar,
   name: accountName,
   handle,
   href,
+  note,
   end,
 }: {
   avatar: ReactNode;
   name: ReactNode;
   handle: string;
-  /** Where the name leads: the account's profile. */
+  /** Where the name leads: the account's profile, or what is of it elsewhere (its held-back notifications). */
   href?: string | undefined;
+  /** A line under the name and the handle. */
+  note?: ReactNode;
   end?: ReactNode;
 }) {
   const s = account();
@@ -397,6 +408,7 @@ export function AccountRow({
     <div className={s.root()}>
       <div className={s.who()}>
         <Byline avatar={avatar} name={accountName} handle={handle} href={href} />
+        {note !== undefined && <p className={s.note()}>{note}</p>}
       </div>
       {end !== undefined && <ButtonPair>{end}</ButtonPair>}
     </div>

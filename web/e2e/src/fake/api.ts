@@ -255,6 +255,11 @@ export type FakeOptions = {
   domainMutes?: readonly string[];
   /** Besides the scenario's notifications, one of every other kind the server sends, from people and from the server. */
   everyKind?: boolean;
+  /**
+   * The notifications the reader's notification policy holds back (ADR-0158 §7), by account: a mention and a favourite
+   * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
+   */
+  held?: boolean;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -358,6 +363,8 @@ export type FakeApi = {
   idOf: (key: string) => string;
   /** The app's address of the reader's conversation at `index` of their direct messages, newest first. */
   conversationPath: (index: number) => string;
+  /** The app's address of the held-back notifications of the person of `username` (`held`). */
+  heldPath: (username: string) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -1756,6 +1763,37 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
   }
 
+  // With `held`, the notifications the policy holds back, by the account that sent them, the newest account first.
+  const held = new Map<string, Json[]>();
+  if (o.held === true) {
+    const own = posts.find((p) => p.author === viewer);
+    const about = own === undefined ? {} : { status: statusOf(own) };
+    const hold = (from: string, type: string, minutesAgo: number, n: number, more: Json = {}) => {
+      const at = started - minutesAgo * minute;
+      const list = held.get(from) ?? [];
+      list.push({
+        id: idAt(at, 12_000 + n),
+        type,
+        created_at: new Date(at).toISOString(),
+        account: accountOf(from),
+        ...more,
+      });
+      held.set(from, list);
+    };
+    hold("kiri@far.example", "favourite", 20, 0, about);
+    hold("kiri@far.example", "mention", 45, 1, about);
+    hold("kobo@bread.example", "follow", 90, 2);
+  }
+  const heldRequestOf = (username: string): Json => {
+    const list = held.get(username) ?? [];
+    return {
+      id: idOf(username),
+      account: accountOf(username),
+      notifications_count: list.length,
+      ...(list[0] === undefined ? {} : { last_notification: list[0] }),
+    };
+  };
+
   // ---- Answers ---------------------------------------------------------------------------------------------------
 
   /** The page of `items` that the request's `cursor` and `limit` ask for, as the server pages a list. */
@@ -2519,7 +2557,34 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       }
       return problem(405, "Method Not Allowed");
     }
-    if (path === "/notifications/requests/summary") return json({ accounts_count: 0, notifications_count: 0 });
+    if (path === "/notifications/requests/summary")
+      return json({
+        accounts_count: held.size,
+        notifications_count: [...held.values()].reduce((sum, list) => sum + list.length, 0),
+      });
+    if (path === "/notifications/requests" && request.method === "GET") {
+      const { from, body } = page([...held.keys()].map(heldRequestOf), q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/notifications\/requests\/([^/]+)(\/notifications|\/accept|\/dismiss)?$/))) {
+      const username = usernameOf.get(decodeURIComponent(match[1] ?? ""));
+      const list = username === undefined ? undefined : held.get(username);
+      if (username === undefined || list === undefined) return problem(404, "Not Found");
+      if (match[2] === undefined && request.method === "GET") return json(heldRequestOf(username));
+      if (match[2] === "/notifications" && request.method === "GET") return json(page(list, q).body);
+      if (match[2] === "/accept" && request.method === "POST") {
+        notifications.push(...list);
+        notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
+        held.delete(username);
+        return new Response(null, { status: 204 });
+      }
+      if (match[2] === "/dismiss" && request.method === "POST") {
+        held.delete(username);
+        return new Response(null, { status: 204 });
+      }
+      return problem(405, "Method Not Allowed");
+    }
     if (path === "/interaction_requests" && request.method === "GET") {
       // Those of the reader's posts that wait, newest first, of one kind when it is asked.
       const kind = q.get("kind");
@@ -2770,5 +2835,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return `/conversations/${typeof id === "string" ? id : "none"}`;
   };
 
-  return { serve, newPosts, newNotification, postPath, announcementPath, listPath, idOf: keyedId, conversationPath };
+  const heldPath = (username: string) => `/notifications/requests/${idOf(username)}`;
+
+  return {
+    serve,
+    newPosts,
+    newNotification,
+    postPath,
+    announcementPath,
+    listPath,
+    idOf: keyedId,
+    conversationPath,
+    heldPath,
+  };
 }

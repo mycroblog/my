@@ -22,6 +22,8 @@ export {
   accountPath,
   followRequestsPath,
   hashtagPath,
+  heldOfPath,
+  heldPath,
   notificationPath,
   reactorsPath,
   statusPath,

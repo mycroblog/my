@@ -146,8 +146,8 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 /**
  * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
- * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, else the page of the scenario
- * post of that key.
+ * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the held-back notifications of the
+ * person of `held:<username>`, else the page of the scenario post of that key.
  */
 function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("/")) return at;
@@ -157,6 +157,7 @@ function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
   if (at.startsWith("members:")) return `${fake.listPath(Number(at.slice("members:".length)))}/members`;
   if (at.startsWith("conversation:")) return fake.conversationPath(Number(at.slice("conversation:".length)));
+  if (at.startsWith("held:")) return fake.heldPath(at.slice("held:".length));
   if (at.startsWith("reactions:")) {
     const [, key = "", emoji = ""] = at.split(":");
     return `${fake.postPath(key)}/reactions/${encodeURIComponent(emoji)}`;
@@ -308,6 +309,9 @@ function shows(
       // a screen of posts, its posts. An account's list of follows, the follow requests and a list's members show their
       // rows, or a line in their place.
       if (at === "/lists") return settled && has('main a[href^="/lists/"]');
+      // The held-back notifications, a row per account that sent them, or a line in their place.
+      if (at === "/notifications/requests")
+        return settled && has('main a[href^="/notifications/requests/"], main p[role="status"]');
       // Search shows what it found by kind, or one line of none; finding people, its rows or a line.
       if (at.startsWith("/search?"))
         return settled && has('main section, main [role="tablist"], main p[role="status"]');
