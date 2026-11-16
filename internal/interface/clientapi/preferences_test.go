@@ -160,7 +160,7 @@ func TestUpdatePreferences(t *testing.T) {
 		err        error
 		wantDetail string
 	}{
-		{&appidentity.PreferenceError{Preference: "time_zone", Err: identity.ErrInvalidTimeZone}, "time_zone の値が正しくありません。"},
+		{&appidentity.PreferenceError{Preference: "time_zone", Err: identity.ErrInvalidTimeZone}, "time_zone の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。"},
 		{&appidentity.PreferenceError{Preference: "timeline_languages", Err: fmt.Errorf("%w: at most 64", identity.ErrTooManyLanguages)},
 			"timeline_languages は 64 個までにしてください。"},
 	} {

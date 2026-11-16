@@ -88,7 +88,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.deactivation.recently_reactivated": {
-    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ ẇȧȧş řḗḗȧȧƈŧīṽȧȧŧḗḗḓ ŀḗḗşş ŧħȧȧƞ 24 ħǿǿŭŭřş ȧȧɠǿǿ.]",
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ ẇȧȧş řḗḗȧȧƈŧīṽȧȧŧḗḗḓ ŀḗḗşş ŧħȧȧƞ 24 ħǿǿŭŭřş ȧȧɠǿǿ. Ŧřẏ ȧȧɠȧȧīƞ 24 ħǿǿŭŭřş ȧȧƒŧḗḗř řḗḗȧȧƈŧīṽȧȧŧīƞɠ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.deactivation.refused": {
@@ -296,7 +296,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invalid_custom_emoji_detail": {
-    "defaultMessage": "[{reason,select,fetch_failed{Ŧħḗḗ īḿȧȧɠḗḗ ǿǿƒ ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƒḗḗŧƈħḗḗḓ ƒřǿǿḿ īŧş şḗḗřṽḗḗř.} invalid_alias{Ȧƞ ȧȧŀīȧȧş īş 2 ŧǿǿ 30 ŀḗḗŧŧḗḗřş (Ȧ ŧǿǿ Ẑ), ḓīɠīŧş, ȧȧƞḓ ŭŭƞḓḗḗřşƈǿǿřḗḗş, ȧȧƞḓ ȧȧƞ ḗḗḿǿǿĵī ħȧȧş ȧȧŧ ḿǿǿşŧ 10.} invalid_category{Ȧ ƈȧȧŧḗḗɠǿǿřẏ īş ȧȧŧ ḿǿǿşŧ 64 ƈħȧȧřȧȧƈŧḗḗřş.} invalid_reason{Ȧ řḗḗȧȧşǿǿƞ īş ȧȧŧ ḿǿǿşŧ 500 ƈħȧȧřȧȧƈŧḗḗřş.} invalid_shortcode{Ȧ şħǿǿřŧƈǿǿḓḗḗ īş 2 ŧǿǿ 30 ŀḗḗŧŧḗḗřş (Ȧ ŧǿǿ Ẑ), ḓīɠīŧş, ȧȧƞḓ ŭŭƞḓḗḗřşƈǿǿřḗḗş.} limit_reached{Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ řḗḗɋŭŭḗḗşŧḗḗḓ ȧȧş ḿȧȧƞẏ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ŧħīş ḿǿǿƞŧħ ȧȧş ẏǿǿŭŭř ḿǿǿƞŧħŀẏ ŀīḿīŧ. Ŧħḗḗ ƈǿǿŭŭƞŧ řḗḗşḗḗŧş ǿǿƞ ŧħḗḗ ƒīřşŧ ḓȧȧẏ ǿǿƒ ḗḗȧȧƈħ ḿǿǿƞŧħ (ŬŦƇ).} local_emoji{Ŧħīş ƈȧȧƞ ƀḗḗ ḓǿǿƞḗḗ ǿǿƞŀẏ ẇīŧħ ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ǿǿŧħḗḗř şḗḗřṽḗḗřş.} media_not_found{Ŧħḗḗ īḿȧȧɠḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ ȧȧḿǿǿƞɠ ẏǿǿŭŭř ŭŭƥŀǿǿȧȧḓş.} media_not_ready{Ŧħḗḗ īḿȧȧɠḗḗ īş şŧīŀŀ ƀḗḗīƞɠ ƥřǿǿƈḗḗşşḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ īƞ ȧȧ ḿǿǿḿḗḗƞŧ.} other{Ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ƀřḗḗȧȧķş ȧȧ řŭŭŀḗḗ.} remote_emoji{Ŧħīş ƈȧȧƞ ƀḗḗ ḓǿǿƞḗḗ ǿǿƞŀẏ ẇīŧħ ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ŧħīş şḗḗřṽḗḗř.} request_pending{Ŧħīş ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ȧȧŀřḗḗȧȧḓẏ ħȧȧş ȧȧ ƥḗḗƞḓīƞɠ řḗḗɋŭŭḗḗşŧ ƒǿǿř ȧȧ ƞḗḗẇ īḿȧȧɠḗḗ.} shortcode_taken{Ȧ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ŧħīş şḗḗřṽḗḗř ȧȧŀřḗḗȧȧḓẏ ħȧȧş ŧħīş şħǿǿřŧƈǿǿḓḗḗ.} too_big{Ŧħḗḗ īḿȧȧɠḗḗ ḿŭŭşŧ ƀḗḗ ȧȧŧ ḿǿǿşŧ 1,024 ƥīẋḗḗŀş ǿǿƞ ḗḗȧȧƈħ şīḓḗḗ.} too_large{Ŧħḗḗ īḿȧȧɠḗḗ īş ŀȧȧřɠḗḗř ŧħȧȧƞ ŧħḗḗ ŀīḿīŧ ǿǿƒ ŧħīş şḗḗřṽḗḗř. Ƈħǿǿǿǿşḗḗ ȧȧ şḿȧȧŀŀḗḗř īḿȧȧɠḗḗ.} unsupported_format{Ŧħḗḗ īḿȧȧɠḗḗ ḿŭŭşŧ ƀḗḗ ȧȧ ƤȠƓ, ȧȧ ƓĪƑ, ǿǿř ȧȧ ẆḗḗƀƤ.}}]",
+    "defaultMessage": "[{reason,select,fetch_failed{Ŧħḗḗ īḿȧȧɠḗḗ ǿǿƒ ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƒḗḗŧƈħḗḗḓ ƒřǿǿḿ īŧş şḗḗřṽḗḗř. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.} invalid_alias{Ȧƞ ȧȧŀīȧȧş īş 2 ŧǿǿ 30 ŀḗḗŧŧḗḗřş (Ȧ ŧǿǿ Ẑ), ḓīɠīŧş, ȧȧƞḓ ŭŭƞḓḗḗřşƈǿǿřḗḗş, ȧȧƞḓ ȧȧƞ ḗḗḿǿǿĵī ħȧȧş ȧȧŧ ḿǿǿşŧ 10.} invalid_category{Ȧ ƈȧȧŧḗḗɠǿǿřẏ īş ȧȧŧ ḿǿǿşŧ 64 ƈħȧȧřȧȧƈŧḗḗřş.} invalid_reason{Ȧ řḗḗȧȧşǿǿƞ īş ȧȧŧ ḿǿǿşŧ 500 ƈħȧȧřȧȧƈŧḗḗřş.} invalid_shortcode{Ŭşḗḗ 2 ŧǿǿ 30 ŀḗḗŧŧḗḗřş (Ȧ ŧǿǿ Ẑ), ḓīɠīŧş, ȧȧƞḓ ŭŭƞḓḗḗřşƈǿǿřḗḗş ƒǿǿř ŧħḗḗ şħǿǿřŧƈǿǿḓḗḗ.} limit_reached{Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ řḗḗɋŭŭḗḗşŧḗḗḓ ȧȧş ḿȧȧƞẏ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ŧħīş ḿǿǿƞŧħ ȧȧş ẏǿǿŭŭř ḿǿǿƞŧħŀẏ ŀīḿīŧ. Ŧřẏ ȧȧɠȧȧīƞ ƞḗḗẋŧ ḿǿǿƞŧħ: ŧħḗḗ ƈǿǿŭŭƞŧ řḗḗşḗḗŧş ǿǿƞ ŧħḗḗ ƒīřşŧ ḓȧȧẏ ǿǿƒ ḗḗȧȧƈħ ḿǿǿƞŧħ (ŬŦƇ).} local_emoji{Ŧħīş ƈȧȧƞ ƀḗḗ ḓǿǿƞḗḗ ǿǿƞŀẏ ẇīŧħ ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ǿǿŧħḗḗř şḗḗřṽḗḗřş.} media_not_found{Ŧħḗḗ īḿȧȧɠḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ ȧȧḿǿǿƞɠ ẏǿǿŭŭř ŭŭƥŀǿǿȧȧḓş. Ŭƥŀǿǿȧȧḓ ŧħḗḗ īḿȧȧɠḗḗ ȧȧɠȧȧīƞ.} media_not_ready{Ŧħḗḗ īḿȧȧɠḗḗ īş şŧīŀŀ ƀḗḗīƞɠ ƥřǿǿƈḗḗşşḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ īƞ ȧȧ ḿǿǿḿḗḗƞŧ.} other{Ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ƀřḗḗȧȧķş ȧȧ řŭŭŀḗḗ.} remote_emoji{Ŧħīş ƈȧȧƞ ƀḗḗ ḓǿǿƞḗḗ ǿǿƞŀẏ ẇīŧħ ŧħḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ŧħīş şḗḗřṽḗḗř.} request_pending{Ŧħīş ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ȧȧŀřḗḗȧȧḓẏ ħȧȧş ȧȧ ƥḗḗƞḓīƞɠ řḗḗɋŭŭḗḗşŧ ƒǿǿř ȧȧ ƞḗḗẇ īḿȧȧɠḗḗ. Ẇȧȧīŧ ŭŭƞŧīŀ īŧ īş řḗḗṽīḗḗẇḗḗḓ.} shortcode_taken{Ȧ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ŧħīş şḗḗřṽḗḗř ȧȧŀřḗḗȧȧḓẏ ħȧȧş ŧħīş şħǿǿřŧƈǿǿḓḗḗ. Ƈħǿǿǿǿşḗḗ ȧȧƞǿǿŧħḗḗř şħǿǿřŧƈǿǿḓḗḗ.} too_big{Ŧħḗḗ īḿȧȧɠḗḗ ḿŭŭşŧ ƀḗḗ ȧȧŧ ḿǿǿşŧ 1,024 ƥīẋḗḗŀş ǿǿƞ ḗḗȧȧƈħ şīḓḗḗ.} too_large{Ŧħḗḗ īḿȧȧɠḗḗ īş ŀȧȧřɠḗḗř ŧħȧȧƞ ŧħḗḗ ŀīḿīŧ ǿǿƒ ŧħīş şḗḗřṽḗḗř. Ƈħǿǿǿǿşḗḗ ȧȧ şḿȧȧŀŀḗḗř īḿȧȧɠḗḗ.} unsupported_format{Ŧħḗḗ īḿȧȧɠḗḗ ḿŭŭşŧ ƀḗḗ ȧȧ ƤȠƓ, ȧȧ ƓĪƑ, ǿǿř ȧȧ ẆḗḗƀƤ.}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invalid_parameter": {
@@ -312,7 +312,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invalid_value": {
-    "defaultMessage": "[Ŧħḗḗ ṽȧȧŀŭŭḗḗ ǿǿƒ {name} īş īƞṽȧȧŀīḓ.]",
+    "defaultMessage": "[Ŧħḗḗ ṽȧȧŀŭŭḗḗ ǿǿƒ {name} īş īƞṽȧȧŀīḓ. Řḗḗŀǿǿȧȧḓ ǿǿř ŭŭƥḓȧȧŧḗḗ ŧħḗḗ ȧȧƥƥ, ŧħḗḗƞ ŧřẏ ȧȧɠȧȧīƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invites.not_allowed": {
@@ -340,7 +340,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.list_members.not_followed": {
-    "defaultMessage": "[Ǿƞŀẏ ȧȧƈƈǿǿŭŭƞŧş ẏǿǿŭŭ ƒǿǿŀŀǿǿẇ ƈȧȧƞ ƀḗḗ ȧȧḓḓḗḗḓ ŧǿǿ ȧȧ ŀīşŧ.]",
+    "defaultMessage": "[Ǿƞŀẏ ȧȧƈƈǿǿŭŭƞŧş ẏǿǿŭŭ ƒǿǿŀŀǿǿẇ ƈȧȧƞ ƀḗḗ ȧȧḓḓḗḗḓ ŧǿǿ ȧȧ ŀīşŧ. Ƒǿǿŀŀǿǿẇ ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ƒīřşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.list_members.too_many": {
@@ -420,7 +420,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.move_target_moved": {
-    "defaultMessage": "[Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ḿǿǿṽḗḗ ŧǿǿ ħȧȧş ḿǿǿṽḗḗḓ īŧşḗḗŀƒ.]",
+    "defaultMessage": "[Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ḿǿǿṽḗḗ ŧǿǿ ħȧȧş ḿǿǿṽḗḗḓ īŧşḗḗŀƒ. Ḿǿǿṽḗḗ ŧǿǿ ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ īŧ ḿǿǿṽḗḗḓ ŧǿǿ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.move_target_unavailable": {
@@ -432,7 +432,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.not_found": {
-    "defaultMessage": "[Ŧħīş ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƒǿǿŭŭƞḓ. Īŧ ḿȧȧẏ ħȧȧṽḗḗ ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ, ǿǿř ŧħḗḗ ŀīƞķ ḿȧȧẏ ƀḗḗ ẇřǿǿƞɠ.]",
+    "defaultMessage": "[Ŧħīş ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƒǿǿŭŭƞḓ. Īŧ ḿȧȧẏ ħȧȧṽḗḗ ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ, ǿǿř ŧħḗḗ ŀīƞķ ḿȧȧẏ ƀḗḗ ẇřǿǿƞɠ. Ƈħḗḗƈķ ŧħḗḗ ŀīƞķ, ǿǿř ɠǿǿ ƀȧȧƈķ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.disabled": {
@@ -504,7 +504,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.relay.invalid_detail": {
-    "defaultMessage": "[{reason,select,domain_suspended{Ŧħḗḗ řḗḗŀȧȧẏ'ş şḗḗřṽḗḗř īş şŭŭşƥḗḗƞḓḗḗḓ ƀẏ ȧȧ ḓǿǿḿȧȧīƞ ȧȧƈŧīǿǿƞ.} exists{Ȧ řḗḗŀȧȧẏ ẇīŧħ ŧħīş ŬŘĿ īş ȧȧŀřḗḗȧȧḓẏ řḗḗɠīşŧḗḗřḗḗḓ.} not_actor{Ŧħīş ŬŘĿ īş ƞǿǿŧ ŧħḗḗ ȧȧḓḓřḗḗşş ǿǿƒ ȧȧ řḗḗŀȧȧẏ.} other{Ŧħḗḗ řḗḗŀȧȧẏ ƈȧȧƞƞǿǿŧ ƀḗḗ ƈħȧȧƞɠḗḗḓ ŧħȧȧŧ ẇȧȧẏ.} state{Ŧħḗḗ řḗḗŀȧȧẏ īş ƞǿǿŧ īƞ ȧȧ şŧȧȧŧḗḗ ŧħȧȧŧ ȧȧŀŀǿǿẇş ŧħīş: ŀḗḗȧȧṽḗḗ ȧȧ řḗḗŀȧȧẏ ƀḗḗƒǿǿřḗḗ ẏǿǿŭŭ ḓḗḗŀḗḗŧḗḗ īŧ, ȧȧƞḓ ĵǿǿīƞ ǿǿƞŀẏ ǿǿƞḗḗ ŧħȧȧŧ ẏǿǿŭŭ ŀḗḗƒŧ ǿǿř ŧħȧȧŧ řḗḗĵḗḗƈŧḗḗḓ ẏǿǿŭŭ.} url{Ŧħḗḗ ŬŘĿ ḿŭŭşŧ ƀḗḗ ȧȧƞ ħŧŧƥş ŬŘĿ ǿǿƒ ȧȧŧ ḿǿǿşŧ 2048 ƈħȧȧřȧȧƈŧḗḗřş.}}]",
+    "defaultMessage": "[{reason,select,domain_suspended{Ŧħḗḗ řḗḗŀȧȧẏ'ş şḗḗřṽḗḗř īş şŭŭşƥḗḗƞḓḗḗḓ ƀẏ ȧȧ ḓǿǿḿȧȧīƞ ȧȧƈŧīǿǿƞ. Řḗḗḿǿǿṽḗḗ ŧħȧȧŧ ḓǿǿḿȧȧīƞ ȧȧƈŧīǿǿƞ ƒīřşŧ ŧǿǿ ŭŭşḗḗ ŧħḗḗ řḗḗŀȧȧẏ.} exists{Ȧ řḗḗŀȧȧẏ ẇīŧħ ŧħīş ŬŘĿ īş ȧȧŀřḗḗȧȧḓẏ řḗḗɠīşŧḗḗřḗḗḓ.} not_actor{Ŧħīş ŬŘĿ īş ƞǿǿŧ ŧħḗḗ ȧȧḓḓřḗḗşş ǿǿƒ ȧȧ řḗḗŀȧȧẏ. Ƈħḗḗƈķ ŧħḗḗ ŬŘĿ.} other{Ŧħḗḗ řḗḗŀȧȧẏ ƈȧȧƞƞǿǿŧ ƀḗḗ ƈħȧȧƞɠḗḗḓ ŧħȧȧŧ ẇȧȧẏ.} state{Ŧħḗḗ řḗḗŀȧȧẏ īş ƞǿǿŧ īƞ ȧȧ şŧȧȧŧḗḗ ŧħȧȧŧ ȧȧŀŀǿǿẇş ŧħīş: ŀḗḗȧȧṽḗḗ ȧȧ řḗḗŀȧȧẏ ƀḗḗƒǿǿřḗḗ ẏǿǿŭŭ ḓḗḗŀḗḗŧḗḗ īŧ, ȧȧƞḓ ĵǿǿīƞ ǿǿƞŀẏ ǿǿƞḗḗ ŧħȧȧŧ ẏǿǿŭŭ ŀḗḗƒŧ ǿǿř ŧħȧȧŧ řḗḗĵḗḗƈŧḗḗḓ ẏǿǿŭŭ.} url{Ŧħḗḗ ŬŘĿ ḿŭŭşŧ ƀḗḗ ȧȧƞ ħŧŧƥş ŬŘĿ ǿǿƒ ȧȧŧ ḿǿǿşŧ 2048 ƈħȧȧřȧȧƈŧḗḗřş.}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.remote_account": {
@@ -532,7 +532,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.role.invalid_detail": {
-    "defaultMessage": "[{reason,select,badge_color{Ƈħǿǿǿǿşḗḗ ǿǿƞḗḗ ǿǿƒ ŧħḗḗ ƀȧȧḓɠḗḗ ƈǿǿŀǿǿřş.} badge_label{Ŧħḗḗ ƀȧȧḓɠḗḗ ƞȧȧḿḗḗ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ 32 ƈħȧȧřȧȧƈŧḗḗřş ǿǿƞ ǿǿƞḗḗ ŀīƞḗḗ.} builtin{Ŧħḗḗ ȧȧḓḿīƞ řǿǿŀḗḗ ƈȧȧƞƞǿǿŧ ƀḗḗ ƈħȧȧƞɠḗḗḓ, ȧȧƞḓ ŧħḗḗ ƀŭŭīŀŧ-īƞ řǿǿŀḗḗş ƈȧȧƞƞǿǿŧ ƀḗḗ ḓḗḗŀḗḗŧḗḗḓ.} held{Řḗḗḿǿǿṽḗḗ ŧħḗḗ řǿǿŀḗḗ ƒřǿǿḿ ḗḗṽḗḗřẏǿǿƞḗḗ ẇħǿǿ ħȧȧş īŧ ƒīřşŧ.} key{Ŧħḗḗ ķḗḗẏ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ 64 ŀǿǿẇḗḗřƈȧȧşḗḗ ŀḗḗŧŧḗḗřş, ḓīɠīŧş, ŭŭƞḓḗḗřşƈǿǿřḗḗş, ǿǿř ħẏƥħḗḗƞş.} key_taken{Ȧƞǿǿŧħḗḗř řǿǿŀḗḗ ħȧȧş ŧħīş ķḗḗẏ.} missing_permission{Ẏǿǿŭŭ ƈȧȧƞ ɠīṽḗḗ ǿǿř ŧȧȧķḗḗ ǿǿƞŀẏ ŧħḗḗ ƥḗḗřḿīşşīǿǿƞş ẏǿǿŭŭ ħǿǿŀḓ.} other{Ŧħḗḗ ƈħȧȧƞɠḗḗ ƀřḗḗȧȧķş ȧȧ řŭŭŀḗḗ.} permissions{Ƈħǿǿǿǿşḗḗ ḗḗȧȧƈħ ƥḗḗřḿīşşīǿǿƞ ȧȧŧ ḿǿǿşŧ ǿǿƞƈḗḗ.} position{Ŧħḗḗ ƥǿǿşīŧīǿǿƞ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 999.}}]",
+    "defaultMessage": "[{reason,select,badge_color{Ƈħǿǿǿǿşḗḗ ǿǿƞḗḗ ǿǿƒ ŧħḗḗ ƀȧȧḓɠḗḗ ƈǿǿŀǿǿřş.} badge_label{Ŧħḗḗ ƀȧȧḓɠḗḗ ƞȧȧḿḗḗ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ 32 ƈħȧȧřȧȧƈŧḗḗřş ǿǿƞ ǿǿƞḗḗ ŀīƞḗḗ.} builtin{Ŧħḗḗ ȧȧḓḿīƞ řǿǿŀḗḗ ƈȧȧƞƞǿǿŧ ƀḗḗ ƈħȧȧƞɠḗḗḓ, ȧȧƞḓ ŧħḗḗ ƀŭŭīŀŧ-īƞ řǿǿŀḗḗş ƈȧȧƞƞǿǿŧ ƀḗḗ ḓḗḗŀḗḗŧḗḗḓ.} held{Řḗḗḿǿǿṽḗḗ ŧħḗḗ řǿǿŀḗḗ ƒřǿǿḿ ḗḗṽḗḗřẏǿǿƞḗḗ ẇħǿǿ ħȧȧş īŧ ƒīřşŧ.} key{Ŧħḗḗ ķḗḗẏ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ 64 ŀǿǿẇḗḗřƈȧȧşḗḗ ŀḗḗŧŧḗḗřş, ḓīɠīŧş, ŭŭƞḓḗḗřşƈǿǿřḗḗş, ǿǿř ħẏƥħḗḗƞş.} key_taken{Ȧƞǿǿŧħḗḗř řǿǿŀḗḗ ħȧȧş ŧħīş ķḗḗẏ. Ƈħǿǿǿǿşḗḗ ȧȧƞǿǿŧħḗḗř ķḗḗẏ.} missing_permission{Ẏǿǿŭŭ ƈȧȧƞ ɠīṽḗḗ ǿǿř ŧȧȧķḗḗ ǿǿƞŀẏ ŧħḗḗ ƥḗḗřḿīşşīǿǿƞş ẏǿǿŭŭ ħǿǿŀḓ.} other{Ŧħḗḗ ƈħȧȧƞɠḗḗ ƀřḗḗȧȧķş ȧȧ řŭŭŀḗḗ.} permissions{Ƈħǿǿǿǿşḗḗ ḗḗȧȧƈħ ƥḗḗřḿīşşīǿǿƞ ȧȧŧ ḿǿǿşŧ ǿǿƞƈḗḗ.} position{Ŧħḗḗ ƥǿǿşīŧīǿǿƞ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 999.}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.role.managed_by_plan": {
@@ -600,11 +600,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.article_direct": {
-    "defaultMessage": "[Ȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧ ḓīřḗḗƈŧ ƥǿǿşŧ.]",
+    "defaultMessage": "[Ȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧ ḓīřḗḗƈŧ ƥǿǿşŧ. Ƈħȧȧƞɠḗḗ ẇħǿǿ ƈȧȧƞ şḗḗḗḗ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.article_edited_as_post": {
-    "defaultMessage": "[Ȧƞ ȧȧřŧīƈŀḗḗ īş ḗḗḓīŧḗḗḓ ȧȧş ȧȧƞ ȧȧřŧīƈŀḗḗ.]",
+    "defaultMessage": "[Ŧħīş ƥǿǿşŧ īş ȧȧƞ ȧȧřŧīƈŀḗḗ. Ḗḓīŧ īŧ ȧȧş ȧȧƞ ȧȧřŧīƈŀḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.article_summary_invalid": {
@@ -640,11 +640,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.empty_text": {
-    "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ħȧȧş ƞǿǿ ŧḗḗẋŧ.]",
+    "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ħȧȧş ƞǿǿ ŧḗḗẋŧ. Ẇřīŧḗḗ ŧħḗḗ ŧḗḗẋŧ ǿǿƒ ŧħḗḗ ƥǿǿşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.invalid_hashtag": {
-    "defaultMessage": "[Ȧ ħȧȧşħŧȧȧɠ ǿǿƒ ŧħḗḗ ȧȧřŧīƈŀḗḗ ħȧȧş ƈħȧȧřȧȧƈŧḗḗřş ŧħȧȧŧ ȧȧ ħȧȧşħŧȧȧɠ ƈȧȧƞƞǿǿŧ ŭŭşḗḗ.]",
+    "defaultMessage": "[Ȧ ħȧȧşħŧȧȧɠ ǿǿƒ ŧħḗḗ ȧȧřŧīƈŀḗḗ ħȧȧş ƈħȧȧřȧȧƈŧḗḗřş ŧħȧȧŧ ȧȧ ħȧȧşħŧȧȧɠ ƈȧȧƞƞǿǿŧ ŭŭşḗḗ. Řḗḗḿǿǿṽḗḗ ŧħḗḗḿ ƒřǿǿḿ ŧħḗḗ ħȧȧşħŧȧȧɠ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.invalid_language": {
@@ -664,11 +664,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.local_unavailable": {
-    "defaultMessage": "[Ƥǿǿşŧş ǿǿƞ ȧȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř ƈȧȧƞƞǿǿŧ ƀḗḗ ŀǿǿƈȧȧŀ.]",
+    "defaultMessage": "[Ƥǿǿşŧş ǿǿƞ ȧȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř ƈȧȧƞƞǿǿŧ ƀḗḗ ŀǿǿƈȧȧŀ. Ƈħȧȧƞɠḗḗ ẇħǿǿ ƈȧȧƞ şḗḗḗḗ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.media_not_found": {
-    "defaultMessage": "[Ȧƞ ȧȧŧŧȧȧƈħḗḗḓ ƒīŀḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ ȧȧḿǿǿƞɠ ẏǿǿŭŭř ŭŭƥŀǿǿȧȧḓş.]",
+    "defaultMessage": "[Ȧƞ ȧȧŧŧȧȧƈħḗḗḓ ƒīŀḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ ȧȧḿǿǿƞɠ ẏǿǿŭŭř ŭŭƥŀǿǿȧȧḓş. Ŭƥŀǿǿȧȧḓ ŧħḗḗ ƒīŀḗḗ ȧȧɠȧȧīƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.media_not_ready": {
@@ -728,7 +728,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.poll_with_media": {
-    "defaultMessage": "[Ȧ ƥǿǿşŧ ẇīŧħ ȧȧ ƥǿǿŀŀ ƈȧȧƞƞǿǿŧ ȧȧŧŧȧȧƈħ ƒīŀḗḗş.]",
+    "defaultMessage": "[Ȧ ƥǿǿşŧ ẇīŧħ ȧȧ ƥǿǿŀŀ ƈȧȧƞƞǿǿŧ ȧȧŧŧȧȧƈħ ƒīŀḗḗş. Řḗḗḿǿǿṽḗḗ ŧħḗḗ ƥǿǿŀŀ ǿǿř ŧħḗḗ ƒīŀḗḗş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.posting_restricted": {
@@ -740,7 +740,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.quote_not_found": {
-    "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ẏǿǿŭŭ ȧȧřḗḗ ɋŭŭǿǿŧīƞɠ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]",
+    "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ẏǿǿŭŭ ȧȧřḗḗ ɋŭŭǿǿŧīƞɠ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ. Řḗḗḿǿǿṽḗḗ ŧħḗḗ ɋŭŭǿǿŧḗḗ, ŧħḗḗƞ ƥǿǿşŧ ȧȧɠȧȧīƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.quote_remote_audience": {
@@ -828,7 +828,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.supporters.plan_invalid_detail": {
-    "defaultMessage": "[{reason,select,annual_discount_percent{Ŧħḗḗ ẏḗḗȧȧřŀẏ ḓīşƈǿǿŭŭƞŧ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 90 ƥḗḗřƈḗḗƞŧ.} currency{Ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř ḓǿǿḗḗş ƞǿǿŧ ŧȧȧķḗḗ ŧħīş ƈŭŭřřḗḗƞƈẏ.} description{Ŧħḗḗ ḓḗḗşƈřīƥŧīǿǿƞ ḿŭŭşŧ ƀḗḗ ȧȧŧ ḿǿǿşŧ 1,000 ƈħȧȧřȧȧƈŧḗḗřş.} emoji_limit{Ŧħḗḗ ḗḗḿǿǿĵī ŀīḿīŧ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 10,000.} monthly_price{Ŧħḗḗ ƥřīƈḗḗ ḿŭŭşŧ ƀḗḗ ȧȧŧ ŀḗḗȧȧşŧ ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř'ş ḿīƞīḿŭŭḿ ƈħȧȧřɠḗḗ, ƒǿǿř ŧħḗḗ ẏḗḗȧȧřŀẏ ƥřīƈḗḗ ŧǿǿǿǿ.} name{Ŧħḗḗ ƞȧȧḿḗḗ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ 50 ƈħȧȧřȧȧƈŧḗḗřş ǿǿƞ ǿǿƞḗḗ ŀīƞḗḗ.} order_emoji_limit{Ȧ ħīɠħḗḗř ƥŀȧȧƞ ḿŭŭşŧ ŀḗḗŧ īŧş ḿḗḗḿƀḗḗřş ƈřḗḗȧȧŧḗḗ ȧȧŧ ŀḗḗȧȧşŧ ȧȧş ḿȧȧƞẏ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ȧȧş ŧħḗḗ ƥŀȧȧƞ ƀḗḗŀǿǿẇ īŧ.} order_permissions{Ȧ ħīɠħḗḗř ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿŭŭşŧ ħȧȧṽḗḗ ḗḗṽḗḗřẏ ƥḗḗřḿīşşīǿǿƞ ǿǿƒ ŧħḗḗ ƥŀȧȧƞ ƀḗḗŀǿǿẇ īŧ.} order_position{Ȧ ħīɠħḗḗř ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿŭŭşŧ ƀḗḗ ȧȧƀǿǿṽḗḗ ŧħḗḗ řǿǿŀḗḗ ǿǿƒ ŧħḗḗ ƥŀȧȧƞ ƀḗḗŀǿǿẇ īŧ.} order_rank{Ȧƞǿǿŧħḗḗř ƥŀȧȧƞ ħȧȧş ŧħīş řȧȧƞķ.} other{Ŧħḗḗ ƥŀȧȧƞ ƀřḗḗȧȧķş ȧȧ řŭŭŀḗḗ.} rank{Ŧħḗḗ řȧȧƞķ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 1,000,000.} role_builtin{Ŧħḗḗ ƀŭŭīŀŧ-īƞ řǿǿŀḗḗş ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧ ƥŀȧȧƞ'ş řǿǿŀḗḗ.} role_held{Ƈħǿǿǿǿşḗḗ ȧȧ řǿǿŀḗḗ ŧħȧȧŧ ƞǿǿƀǿǿḓẏ ħǿǿŀḓş.} role_permissions{Ȧ ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿȧȧẏ ħȧȧṽḗḗ ǿǿƞŀẏ ḿḗḗḿƀḗḗř ƥḗḗřḿīşşīǿǿƞş.} role_position{Ȧ ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿŭŭşŧ ƀḗḗ ƀḗḗŀǿǿẇ ḗḗṽḗḗřẏ şŧȧȧƒƒ řǿǿŀḗḗ.} role_taken{Ȧƞǿǿŧħḗḗř ƥŀȧȧƞ ħȧȧş ŧħīş řǿǿŀḗḗ.} visibility{Ƈħǿǿǿǿşḗḗ ƥŭŭƀŀīƈ ǿǿř ħīḓḓḗḗƞ.}}]",
+    "defaultMessage": "[{reason,select,annual_discount_percent{Ŧħḗḗ ẏḗḗȧȧřŀẏ ḓīşƈǿǿŭŭƞŧ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 90 ƥḗḗřƈḗḗƞŧ.} currency{Ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř ḓǿǿḗḗş ƞǿǿŧ ŧȧȧķḗḗ ŧħīş ƈŭŭřřḗḗƞƈẏ. Ƈħǿǿǿǿşḗḗ ȧȧƞǿǿŧħḗḗř ƈŭŭřřḗḗƞƈẏ.} description{Ŧħḗḗ ḓḗḗşƈřīƥŧīǿǿƞ ḿŭŭşŧ ƀḗḗ ȧȧŧ ḿǿǿşŧ 1,000 ƈħȧȧřȧȧƈŧḗḗřş.} emoji_limit{Ŧħḗḗ ḗḗḿǿǿĵī ŀīḿīŧ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 10,000.} monthly_price{Ŧħḗḗ ƥřīƈḗḗ ḿŭŭşŧ ƀḗḗ ȧȧŧ ŀḗḗȧȧşŧ ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř'ş ḿīƞīḿŭŭḿ ƈħȧȧřɠḗḗ, ƒǿǿř ŧħḗḗ ẏḗḗȧȧřŀẏ ƥřīƈḗḗ ŧǿǿǿǿ.} name{Ŧħḗḗ ƞȧȧḿḗḗ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ 50 ƈħȧȧřȧȧƈŧḗḗřş ǿǿƞ ǿǿƞḗḗ ŀīƞḗḗ.} order_emoji_limit{Ȧ ħīɠħḗḗř ƥŀȧȧƞ ḿŭŭşŧ ŀḗḗŧ īŧş ḿḗḗḿƀḗḗřş ƈřḗḗȧȧŧḗḗ ȧȧŧ ŀḗḗȧȧşŧ ȧȧş ḿȧȧƞẏ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ȧȧş ŧħḗḗ ƥŀȧȧƞ ƀḗḗŀǿǿẇ īŧ.} order_permissions{Ȧ ħīɠħḗḗř ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿŭŭşŧ ħȧȧṽḗḗ ḗḗṽḗḗřẏ ƥḗḗřḿīşşīǿǿƞ ǿǿƒ ŧħḗḗ ƥŀȧȧƞ ƀḗḗŀǿǿẇ īŧ.} order_position{Ȧ ħīɠħḗḗř ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿŭŭşŧ ƀḗḗ ȧȧƀǿǿṽḗḗ ŧħḗḗ řǿǿŀḗḗ ǿǿƒ ŧħḗḗ ƥŀȧȧƞ ƀḗḗŀǿǿẇ īŧ.} order_rank{Ȧƞǿǿŧħḗḗř ƥŀȧȧƞ ħȧȧş ŧħīş řȧȧƞķ. Ƈħǿǿǿǿşḗḗ ȧȧƞǿǿŧħḗḗř řȧȧƞķ.} other{Ŧħḗḗ ƥŀȧȧƞ ƀřḗḗȧȧķş ȧȧ řŭŭŀḗḗ.} rank{Ŧħḗḗ řȧȧƞķ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 0 ŧǿǿ 1,000,000.} role_builtin{Ŧħḗḗ ƀŭŭīŀŧ-īƞ řǿǿŀḗḗş ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧ ƥŀȧȧƞ'ş řǿǿŀḗḗ. Ƈħǿǿǿǿşḗḗ ȧȧ řǿǿŀḗḗ ŧħȧȧŧ īş ƞǿǿŧ ƀŭŭīŀŧ īƞ.} role_held{Ƈħǿǿǿǿşḗḗ ȧȧ řǿǿŀḗḗ ŧħȧȧŧ ƞǿǿƀǿǿḓẏ ħǿǿŀḓş.} role_permissions{Ɠīṽḗḗ ȧȧ ƥŀȧȧƞ'ş řǿǿŀḗḗ ǿǿƞŀẏ ḿḗḗḿƀḗḗř ƥḗḗřḿīşşīǿǿƞş.} role_position{Ȧ ƥŀȧȧƞ'ş řǿǿŀḗḗ ḿŭŭşŧ ƀḗḗ ƀḗḗŀǿǿẇ ḗḗṽḗḗřẏ şŧȧȧƒƒ řǿǿŀḗḗ.} role_taken{Ȧƞǿǿŧħḗḗř ƥŀȧȧƞ ħȧȧş ŧħīş řǿǿŀḗḗ. Ƈħǿǿǿǿşḗḗ ȧȧƞǿǿŧħḗḗř řǿǿŀḗḗ.} visibility{Ƈħǿǿǿǿşḗḗ ƥŭŭƀŀīƈ ǿǿř ħīḓḓḗḗƞ.}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.supporters.plan_retired": {
@@ -928,7 +928,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.two_factor.code_invalid": {
-    "defaultMessage": "[Ŧħḗḗ ƈǿǿḓḗḗ īş īƞƈǿǿřřḗḗƈŧ ǿǿř ẇȧȧş ȧȧŀřḗḗȧȧḓẏ ŭŭşḗḗḓ.]",
+    "defaultMessage": "[Ŧħḗḗ ƈǿǿḓḗḗ īş īƞƈǿǿřřḗḗƈŧ ǿǿř ẇȧȧş ȧȧŀřḗḗȧȧḓẏ ŭŭşḗḗḓ. Ḗƞŧḗḗř ŧħḗḗ ƈǿǿḓḗḗ ẏǿǿŭŭř ȧȧŭŭŧħḗḗƞŧīƈȧȧŧǿǿř ȧȧƥƥ şħǿǿẇş ƞǿǿẇ, ǿǿř ȧȧ řḗḗƈǿǿṽḗḗřẏ ƈǿǿḓḗḗ ẏǿǿŭŭ ħȧȧṽḗḗ ƞǿǿŧ ŭŭşḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.two_factor.enabled": {
@@ -1008,7 +1008,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.room_full": {
-    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ īş ƒŭŭŀŀ.]",
+    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ īş ƒŭŭŀŀ. Ŧřẏ ȧȧɠȧȧīƞ ẇħḗḗƞ şǿǿḿḗḗǿǿƞḗḗ ŀḗḗȧȧṽḗḗş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.too_many_cohosts": {
@@ -1016,11 +1016,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.too_many_rooms": {
-    "defaultMessage": "[Ƞǿǿ ḿǿǿřḗḗ řǿǿǿǿḿş ƈȧȧƞ ƀḗḗ ǿǿƥḗḗƞḗḗḓ ƞǿǿẇ.]",
+    "defaultMessage": "[Ƞǿǿ ḿǿǿřḗḗ řǿǿǿǿḿş ƈȧȧƞ ƀḗḗ ǿǿƥḗḗƞḗḗḓ ƞǿǿẇ. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.unavailable": {
-    "defaultMessage": "[Ṽǿǿīƈḗḗ ƈħȧȧŧ īş ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ řīɠħŧ ƞǿǿẇ.]",
+    "defaultMessage": "[Ṽǿǿīƈḗḗ ƈħȧȧŧ īş ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ řīɠħŧ ƞǿǿẇ. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.webhook.invalid": {

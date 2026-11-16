@@ -88,7 +88,7 @@
     "description": "API error title for HTTP 401 when the access token is malformed, unknown, expired, or revoked."
   },
   "errors.invalid_value": {
-    "defaultMessage": "Der Wert von {name} ist ungültig.",
+    "defaultMessage": "Der Wert von {name} ist ungültig. Lade die App neu oder aktualisiere sie und versuche es erneut.",
     "description": "Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated)."
   },
   "errors.media_attached_detail": {
@@ -121,10 +121,10 @@
   },
   "errors.missing_permission_detail": {
     "defaultMessage": "Deine Rollen brauchen die Berechtigung {permission}.",
-    "description": "Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated)."
+    "description": "Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated). Read by administrators."
   },
   "errors.not_found": {
-    "defaultMessage": "Das wurde nicht gefunden. Vielleicht wurde es gelöscht, oder der Link ist falsch.",
+    "defaultMessage": "Das wurde nicht gefunden. Vielleicht wurde es gelöscht, oder der Link ist falsch. Prüfe den Link, oder geh zurück.",
     "description": "API error message for HTTP 404."
   },
   "errors.rate_limited_detail": {
@@ -149,15 +149,15 @@
   },
   "errors.role.invalid": {
     "defaultMessage": "Die Rolle kann nicht gespeichert werden.",
-    "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which."
+    "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which. Read by administrators."
   },
   "errors.role.managed_by_plan": {
     "defaultMessage": "Die Rolle gehört zu einem Unterstützungsplan.",
-    "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5)."
+    "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5). Read by administrators."
   },
   "errors.role.breaks_supporter_roles": {
     "defaultMessage": "Teamrollen müssen über den Rollen der Unterstützungspläne bleiben.",
-    "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5)."
+    "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5). Read by administrators."
   },
   "errors.subscription_blocked": {
     "defaultMessage": "Du kannst nicht über die neuen Beiträge dieses Kontos benachrichtigt werden.",
@@ -182,10 +182,6 @@
   "errors.supporters.plan_invalid": {
     "defaultMessage": "Der Unterstützungsplan kann nicht gespeichert werden.",
     "description": "API error title for HTTP 422 when a supporter plan breaks a rule; the detail says which (ADR-0072 §3 to §5)."
-  },
-  "errors.supporters.plan_invalid_detail": {
-    "defaultMessage": "{reason, select, name {Der Name muss 1 bis 50 Zeichen in einer Zeile lang sein.} description {Die Beschreibung darf höchstens 1.000 Zeichen lang sein.} monthly_price {Der Preis muss mindestens dem Mindestbetrag des Zahlungsanbieters entsprechen, auch beim Jahrespreis.} currency {Der Zahlungsanbieter nimmt diese Währung nicht an.} annual_discount_percent {Der Jahresrabatt muss zwischen 0 und 90 Prozent liegen.} emoji_limit {Das Emoji-Limit muss zwischen 0 und 10.000 liegen.} rank {Der Rang muss zwischen 0 und 1.000.000 liegen.} visibility {Wähle öffentlich oder verborgen.} role_builtin {Die eingebauten Rollen können nicht die Rolle eines Plans sein.} role_taken {Ein anderer Plan hat diese Rolle.} role_held {Wähle eine Rolle, die niemand hat.} role_permissions {Die Rolle eines Plans darf nur Mitgliedsberechtigungen haben.} role_position {Die Rolle eines Plans muss unter jeder Teamrolle stehen.} order_rank {Ein anderer Plan hat diesen Rang.} order_position {Die Rolle eines höheren Plans muss über der Rolle des darunterliegenden Plans stehen.} order_permissions {Die Rolle eines höheren Plans muss alle Berechtigungen des darunterliegenden Plans haben.} order_emoji_limit {Ein höherer Plan muss seinen Mitgliedern mindestens so viele eigene Emoji erlauben wie der darunterliegende Plan.} other {Der Plan verstößt gegen eine Regel.}}",
-    "description": "API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit."
   },
   "errors.supporters.plan_retired": {
     "defaultMessage": "Der Unterstützungsplan ist zurückgezogen.",
@@ -271,10 +267,6 @@
     "defaultMessage": "Der mit diesem Idempotency-Key erstellte Beitrag wurde gelöscht.",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
   },
-  "errors.status.article_direct": {
-    "defaultMessage": "Ein Artikel kann kein direkter Beitrag sein.",
-    "description": "Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have."
-  },
   "errors.status.article_edited_as_post": {
     "defaultMessage": "Ein Artikel wird als Artikel bearbeitet.",
     "description": "Detail of the HTTP 422 API error when the user edits an article as a short post."
@@ -303,10 +295,6 @@
     "defaultMessage": "Der Autor dieses Beitrags erlaubt dir nicht, ihn zu boosten.",
     "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
   },
-  "errors.status.empty_text": {
-    "defaultMessage": "Der Beitrag hat keinen Text.",
-    "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
-  },
   "errors.status.invalid_language": {
     "defaultMessage": "Die Sprache ist kein gültiges Sprach-Tag.",
     "description": "Detail of the HTTP 422 API error when a post's language is not a well-formed BCP 47 tag such as en or ja."
@@ -322,10 +310,6 @@
   "errors.status.invalid_text": {
     "defaultMessage": "Der Text enthält Zeichen, die nicht veröffentlicht werden können.",
     "description": "Detail of the HTTP 422 API error when a post's text or content warning is not valid UTF-8 or contains a NUL character."
-  },
-  "errors.status.media_not_found": {
-    "defaultMessage": "Eine angehängte Datei wurde unter deinen Uploads nicht gefunden.",
-    "description": "Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded."
   },
   "errors.status.missing_media_description": {
     "defaultMessage": "Dieser Server verlangt für jedes Bild eine Beschreibung (Alternativtext). Füge vor dem Veröffentlichen zu jedem Bild eine hinzu.",
@@ -375,14 +359,6 @@
     "defaultMessage": "Ein Beitrag mit einer Umfrage kann nicht bearbeitet werden.",
     "description": "Detail of the HTTP 422 API error when a user edits a post that has a poll: the votes belong to the poll as it was posted."
   },
-  "errors.status.poll_with_media": {
-    "defaultMessage": "An einen Beitrag mit einer Umfrage können keine Dateien angehängt werden.",
-    "description": "Detail of the HTTP 422 API error when a new post has both a poll and attached media."
-  },
-  "errors.status.quote_not_found": {
-    "defaultMessage": "Der Beitrag, den du zitierst, wurde nicht gefunden.",
-    "description": "Detail of the HTTP 422 API error when a post quotes a post that does not exist, was deleted, or that the user cannot see."
-  },
   "errors.status.quote_not_allowed": {
     "defaultMessage": "Du kannst diesen Beitrag nicht zitieren.",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
@@ -425,7 +401,7 @@
   },
   "errors.target_outranks_actor": {
     "defaultMessage": "Die Rolle dieses Kontos steht nicht unter deiner, daher kannst du das damit nicht tun.",
-    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included."
+    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included. Read by staff."
   },
   "errors.too_long": {
     "defaultMessage": "{max, plural, one {{name} darf höchstens # Zeichen lang sein.} other {{name} darf höchstens # Zeichen lang sein.}}",
@@ -434,10 +410,6 @@
   "errors.too_many": {
     "defaultMessage": "{max, plural, one {{name} darf höchstens # Eintrag enthalten.} other {{name} darf höchstens # Einträge enthalten.}}",
     "description": "Detail of an API error (HTTP 422) when a list property of the request body has too many items. {name} is the property name, e.g. fields (not translated); {max} is the limit."
-  },
-  "errors.two_factor.code_invalid": {
-    "defaultMessage": "Der Code ist falsch oder wurde bereits verwendet.",
-    "description": "Title of the HTTP 422 API error when a two-factor authentication code (six digits from an authenticator app, or a recovery code) is wrong, was used before, or is not a code."
   },
   "errors.two_factor.enabled": {
     "defaultMessage": "Die Zwei-Faktor-Authentifizierung ist bereits aktiviert.",
@@ -555,10 +527,6 @@
     "defaultMessage": "Ein Stichwortfilter hat höchstens 100 Wörter, und alle deine Filter zusammen höchstens 1.000. Entferne zuerst einige.",
     "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
   },
-  "errors.list_members.not_followed": {
-    "defaultMessage": "Zu einer Liste können nur Konten hinzugefügt werden, denen du folgst.",
-    "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
-  },
   "errors.service_closing_detail": {
     "defaultMessage": "Neue Registrierungen und Unterstützer-Abos enden, solange die Einstellung angekündigt ist.",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
@@ -571,10 +539,6 @@
     "defaultMessage": "Das ist der Browser, den du gerade verwendest. Melde dich stattdessen ab.",
     "description": "API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it."
   },
-  "errors.move_target_moved": {
-    "defaultMessage": "Das Konto, zu dem du umziehen willst, ist selbst umgezogen.",
-    "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
-  },
   "errors.move_target_unavailable": {
     "defaultMessage": "Du kannst nicht zu diesem Konto umziehen.",
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
@@ -586,14 +550,6 @@
   "errors.voice.not_host": {
     "defaultMessage": "Nur der Host des Raums darf das tun.",
     "description": "API error title for HTTP 403 when a participant who is not the host of a voice chat room changes its settings, ends it, or hands it over."
-  },
-  "errors.voice.room_full": {
-    "defaultMessage": "Der Raum ist voll.",
-    "description": "API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows."
-  },
-  "errors.voice.too_many_rooms": {
-    "defaultMessage": "Es können derzeit keine weiteren Räume geöffnet werden.",
-    "description": "API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows."
   },
   "errors.voice.hosting_elsewhere": {
     "defaultMessage": "Du hostest einen anderen Raum.",
@@ -610,10 +566,6 @@
   "errors.voice.conflict": {
     "defaultMessage": "Der Raum hat sich in der Zwischenzeit geändert. Versuche es erneut.",
     "description": "API error title for HTTP 409 when a change of a voice chat room raced another change of the same user."
-  },
-  "errors.voice.unavailable": {
-    "defaultMessage": "Der Sprachchat ist derzeit nicht verfügbar.",
-    "description": "API error title for HTTP 503 when the server could not prepare the connection of a voice chat room."
   },
   "errors.voice.not_host_or_cohost": {
     "defaultMessage": "Nur der Host oder ein Co-Host des Raums darf das tun.",
@@ -662,10 +614,6 @@
   "errors.deactivation.moved": {
     "defaultMessage": "Dieses Konto ist zu einem anderen Konto umgezogen.",
     "description": "API error detail: the account cannot be deactivated because it moved to another account."
-  },
-  "errors.deactivation.recently_reactivated": {
-    "defaultMessage": "Dieses Konto wurde vor weniger als 24 Stunden reaktiviert.",
-    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
   },
   "errors.deactivation.last_administrator": {
     "defaultMessage": "Das ist das einzige Administratorkonto, das sich anmelden kann. Mache zuerst eine andere Person zum Administrator.",
@@ -726,10 +674,6 @@
   "errors.single_user_requires_one_account_detail": {
     "defaultMessage": "{count, plural, one {Dieser Server hat # lokales Konto.} other {Dieser Server hat # lokale Konten.}}",
     "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
-  },
-  "errors.status.local_unavailable": {
-    "defaultMessage": "Beiträge auf einem Ein-Personen-Server können nicht lokal sein.",
-    "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
   "errors.precondition_required": {
     "defaultMessage": "Diese Anfrage braucht die Version, die du gelesen hast.",

@@ -125,7 +125,7 @@ func TestCreateReportProblems(t *testing.T) {
 		name, detail string
 		err          error
 	}{
-		{"field", "status_ids の値が正しくありません。", &appmoderation.ReportFieldError{Field: "status_ids"}},
+		{"field", "status_ids の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。", &appmoderation.ReportFieldError{Field: "status_ids"}},
 		{"count", "", &moderation.CountError{Field: "rule_ids", Max: 20}},
 		{"too long", "", &moderation.TextError{Field: "comment", Max: 1000}},
 		{"not text", "", &moderation.TextError{Field: "comment"}},

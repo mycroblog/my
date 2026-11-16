@@ -24,7 +24,9 @@
 //   error: key of the source missing in ja, which is written in the same change as en (`scripts/i18n.sh set`)
 //   error, answer: the copy lint of en and ja (copy.ts): a finding of a blocking rule, or of a waivable rule that
 //          tools/i18n/waivers.json does not waive, is an error, a waiver it refuses too (waivers.ts); the rest is
-//          printed for the author to answer
+//          printed for the author to answer; an error with no next step that tools/i18n/no-step.json does not hold,
+//          and an entry of that list with nothing to hold, are errors (here, not in `scripts/i18n.sh set`, as an
+//          error and its detail are two keys)
 //   warn:  untranslated key in a machine-translated locale (falls back to en at runtime)
 //   warn:  a machine-translated locale drops a source argument (sometimes legitimate)
 //   warn:  key not referenced from code
@@ -43,7 +45,20 @@ import {
   REQUIRED_LOCALES,
   SOURCE,
 } from "./catalog";
-import { COPY_LOCALES, type CopyFinding, copyFindings, copyText, loadWords, type Word } from "./copy";
+import {
+  ADMIN,
+  branchTexts,
+  COPY_LOCALES,
+  type CopyFinding,
+  copyFindings,
+  copyText,
+  type ErrorTexts,
+  errorOf,
+  loadNoStep,
+  loadWords,
+  nextStepErrors,
+  type Word,
+} from "./copy";
 import { generate, goName, pseudoCatalogs } from "./generate";
 import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
@@ -56,8 +71,8 @@ const error = (m: string) => void findings.push({ level: "error", message: m });
 const warn = (m: string) => void findings.push({ level: "warn", message: m });
 const answer = (m: string) => void findings.push({ level: "answer", message: m });
 
-/** The word decisions and the waivers of the copy lint, and why they could not be read. */
-const { words, waivers, unreadable } = (() => {
+/** The word decisions, the waivers and the errors with no possible step of the copy lint, and why they could not be read. */
+const { words, waivers, noStep, unreadable } = (() => {
   const unreadable: string[] = [];
   const read = <T>(load: () => T[]): T[] => {
     try {
@@ -67,7 +82,12 @@ const { words, waivers, unreadable } = (() => {
       return [];
     }
   };
-  return { words: read<Word>(loadWords), waivers: read<Waiver>(loadWaivers), unreadable };
+  return {
+    words: read<Word>(loadWords),
+    waivers: read<Waiver>(loadWaivers),
+    noStep: new Map(read<[string, string]>(() => [...loadNoStep()])),
+    unreadable,
+  };
 })();
 
 export const NAMESPACE = /^[a-z][a-z0-9]*$/;
@@ -80,7 +100,8 @@ const glossary = loadGlossary();
  * The errors of one message on its own (ICU syntax, the shared subset, the copy rules, the plural categories of its
  * locale) and of its arguments against the source message `source`, without the path they are reported under.
  * `dropped` lists the source arguments it leaves out. In en and ja, the errors include the findings of the copy lint
- * that block, and the waivable ones tools/i18n/waivers.json does not waive for the key `key`.
+ * that block, and the waivable ones tools/i18n/waivers.json does not waive for the key `key`, whose en description is
+ * `description`.
  */
 export function messageFindings(
   locale: string,
@@ -88,6 +109,7 @@ export function messageFindings(
   message: string,
   source?: string,
   key = "",
+  description = "",
 ): { errors: string[]; dropped: string[] } {
   const collected = findings;
   findings = [];
@@ -102,7 +124,7 @@ export function messageFindings(
       if (want) dropped.push(...compareArgs("", want, got));
     }
     const waived = new Set(waivers.map(waiverKey));
-    for (const f of copyOf(locale, message, source)) {
+    for (const f of copyOf(locale, message, source, description)) {
       // A dropped argument is the caller's to refuse (`--drop-args`).
       if (f.tier === "block") error(f.message);
       else if (
@@ -121,8 +143,11 @@ export function messageFindings(
 const waivable = (f: CopyFinding): string =>
   `${f.message} (${f.rule}: change the text, or waive it in ${WAIVERS} with the reason)`;
 
-/** The copy findings of an en or ja message; for ja, against the en message `source`. */
-function copyOf(locale: string, message: string, source?: string): CopyFinding[] {
+/**
+ * The copy findings of an en or ja message; for ja, against the en message `source`. `description` is the en
+ * description, which tells a string only administrators read (ADMIN).
+ */
+function copyOf(locale: string, message: string, source?: string, description = ""): CopyFinding[] {
   if (!COPY_LOCALES.includes(locale)) return [];
   try {
     const ast = parseMessage(message);
@@ -132,7 +157,7 @@ function copyOf(locale: string, message: string, source?: string): CopyFinding[]
       const got = extractArgs(ast);
       en = { text: copyText(sourceAst), missing: [...extractArgs(sourceAst).keys()].filter((n) => !got.has(n)) };
     }
-    return copyFindings(words, locale, copyText(ast), en);
+    return copyFindings(words, locale, copyText(ast), en, ADMIN.test(description));
   } catch {
     // analyze reports the syntax.
     return [];
@@ -147,14 +172,26 @@ function checkCopy(catalog: Catalog, only?: Set<string>, locales?: string[]) {
   for (const message of unreadable) error(message);
   const found = new Set<string>();
   const waived = new Set(waivers.map(waiverKey));
+  const errors = new Map<string, ErrorTexts>();
   for (const [ns, entries] of Object.entries(catalog[SOURCE] ?? {})) {
     for (const [key, e] of Object.entries(entries)) {
       const id = `${ns}:${key}`;
+      const err = errorOf(ns, key);
       for (const locale of COPY_LOCALES) {
         if (locale !== SOURCE && locales && !locales.includes(locale)) continue;
         const message = locale === SOURCE ? e.defaultMessage : catalog[locale]?.[ns]?.[key]?.defaultMessage;
         if (typeof message !== "string") continue;
-        for (const f of copyOf(locale, message, locale === SOURCE ? undefined : e.defaultMessage)) {
+        if (err) {
+          const group = errors.get(err.group) ?? { texts: [], retry: err.retry, checked: false };
+          try {
+            group.texts.push({ locale, key, branches: branchTexts(parseMessage(message)) });
+          } catch {
+            // analyze reports the syntax.
+          }
+          group.checked ||= !only || only.has(id);
+          errors.set(err.group, group);
+        }
+        for (const f of copyOf(locale, message, locale === SOURCE ? undefined : e.defaultMessage, e.description)) {
           const k = waiverKey({ id, locale, rule: f.rule });
           if (f.tier === "waive") found.add(k);
           if (only && !only.has(id)) continue;
@@ -167,6 +204,7 @@ function checkCopy(catalog: Catalog, only?: Set<string>, locales?: string[]) {
     }
   }
   for (const message of waiverErrors(waivers, found)) error(message);
+  for (const message of nextStepErrors(errors, noStep)) error(message);
 }
 
 /** Reports the arguments of a translation the source does not have or types differently; returns the ones it drops. */

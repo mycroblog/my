@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { catalogFile, type Entry, isPseudo, rel, repoRoot, REQUIRED_LOCALES, SOURCE, tsNamespaces } from "./catalog";
 import { KEY, messageFindings, printFindings, runCheck } from "./check";
-import { DECISIONS } from "./copy";
+import { DECISIONS, NO_STEP, renameNoStep } from "./copy";
 import { writeGenerated } from "./gen";
 import { goName } from "./generate";
 import { type Ref, References } from "./refs";
@@ -77,7 +77,10 @@ function checkNewKey(store: Store, ns: string, key: string, ignoring: string[] =
   if (clash) refuse(`${id} and ${clash} both map to the accessor ${goName(id)}; pick another key`);
 }
 
-/** The errors of `text` as the `locale` message of the key, against the source text when it is a translation. */
+/**
+ * The errors of `text` as the `locale` message of the key, against the source text when it is a translation;
+ * `description` is the key's description.
+ */
 function textErrors(
   locale: string,
   ns: string,
@@ -85,8 +88,16 @@ function textErrors(
   text: string,
   source: string,
   dropArgs: boolean,
+  description: string,
 ): string[] {
-  const { errors, dropped } = messageFindings(locale, ns, text, locale === SOURCE ? undefined : source, key);
+  const { errors, dropped } = messageFindings(
+    locale,
+    ns,
+    text,
+    locale === SOURCE ? undefined : source,
+    key,
+    description,
+  );
   if (!dropArgs) {
     for (const name of dropped)
       errors.push(
@@ -117,9 +128,11 @@ async function add(argv: string[]) {
       `usage: scripts/i18n.sh add ${id} --en "<text>" --ja "<text>" --desc "<note for translators>"`,
     );
   const text = (locale: string) => flags.get(locale) as string;
-  const errors = locales.flatMap((l) => textErrors(l, ns, key, text(l), text(SOURCE), flags.has("drop-args")));
-  if (errors.length) refuse(...errors);
   const description = (flags.get("desc") as string).trim();
+  const errors = locales.flatMap((l) =>
+    textErrors(l, ns, key, text(l), text(SOURCE), flags.has("drop-args"), description),
+  );
+  if (errors.length) refuse(...errors);
   try {
     for (const l of locales) store.set(l, ns, key, { defaultMessage: text(l), description }, flags.get("after"));
   } catch (e) {
@@ -158,10 +171,12 @@ async function set(argv: string[]) {
   const followers = store.locales.filter((l) => l !== SOURCE && !REQUIRED_LOCALES.includes(l) && !flags.has(l));
   const kept = sourceChanged && flags.has("keep-translations") ? followers.filter((l) => store.get(l, ns, key)) : [];
   const text = (l: string) => flags.get(l) ?? (store.get(l, ns, key) as Entry).defaultMessage;
-  const errors = [...given, ...kept].flatMap((l) => textErrors(l, ns, key, text(l), next, flags.has("drop-args")));
+  const description = flags.get("desc")?.trim() || source.description;
+  const errors = [...given, ...kept].flatMap((l) =>
+    textErrors(l, ns, key, text(l), next, flags.has("drop-args"), description ?? ""),
+  );
   if (errors.length) refuse(...errors);
 
-  const description = flags.get("desc")?.trim() || source.description;
   for (const l of given) store.set(l, ns, key, { defaultMessage: text(l), ...(description ? { description } : {}) });
   if (flags.has("desc")) {
     for (const l of store.localesWith(ns, key))
@@ -242,6 +257,7 @@ async function mv(argv: string[]) {
   const references = new References(store.namespaces());
   for (const [old, id] of renames) store.rename(ns, splitId(old)[1], splitId(id)[1]);
   for (const path of references.rewrite(renames)) console.log(`rewrote ${path}`);
+  if (renameNoStep(renames)) console.log(`rewrote ${NO_STEP}`);
   await commit(store);
   for (const [old, id] of renames) console.log(`renamed ${old} -> ${id}`);
   const left = leftovers(renames, references);
