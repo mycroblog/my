@@ -33,6 +33,7 @@ import {
   PostActions,
   useCall,
   useDiscoveryLayout,
+  useSuggestionsOffered,
   type Call,
 } from "@my/app-features";
 import {
@@ -278,8 +279,10 @@ export function Shell({
   );
   const { tabs, side, own, rights: staff } = placesFor(signedIn, instance, rights);
   const around = aroundPlacesFor(signedIn, instance, signInPath);
-  // Finding people, in the menu after the lists where the discovery's layout puts it, never on a one-person server.
-  const people = discovery.people !== "search" && instance?.single_user === false ? [peoplePlace] : [];
+  // Finding people, in the menu after the lists where the discovery's layout puts it, only while the server suggests
+  // at least one account (never on a one-person server).
+  const suggests = useSuggestionsOffered(signedIn && discovery.people !== "search");
+  const people = suggests === true ? [peoplePlace] : [];
   const callBar = call === null ? undefined : <CallSlot call={call} />;
   const footer = <ServerFooter instance={instance} />;
   return (

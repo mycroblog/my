@@ -2,8 +2,10 @@
 
 // Finding people (FR-308): the accounts the server suggests the reader follow, each a row with its follow, on a screen
 // of its own; the first few of them where the reader starts out (the home timeline while it is empty, the search before
-// anything is written), with a link to all. A one-person server suggests no one (ADR-0152): there the few show nothing
-// at all, and the screen says there is no one to suggest. Where the discovery's places go is `DiscoveryLayout`'s.
+// anything is written), with a link to all. Finding people shows nowhere (no place of the menu, no suggestions where
+// the reader starts out) unless the server suggests at least one account: a one-person server suggests no one
+// (ADR-0152), and any server may have none to suggest. Its screen, reached by its address, then says plainly there is
+// no one to suggest. Where the discovery's places go is `DiscoveryLayout`'s.
 
 import { AccountLine } from "@my/app-components";
 import {
@@ -152,14 +154,28 @@ export function FindPeople() {
 const fewSuggestions = 5;
 
 /**
+ * Whether the server suggests anyone to follow: true once it answered with at least one account, false when it
+ * suggests none (a one-person server, an empty answer, a failure), undefined while it is asked. Finding people shows
+ * nowhere but at its address unless it is true. `enabled` false asks nothing and answers false.
+ */
+export function useSuggestionsOffered(enabled = true): boolean | undefined {
+  const instance = useInstance();
+  const asks = enabled && instance !== undefined && !instance.single_user;
+  const { items, status } = useSuggestions(asks);
+  if (!enabled || instance?.single_user === true) return false;
+  if (instance === undefined || status === "pending") return undefined;
+  return status === "success" && items.length > 0;
+}
+
+/**
  * The first few suggestions under their heading, where the reader starts out (`intro` says why, on an empty home);
- * nothing on a one-person server.
+ * nothing at all while the server suggests no one, busy while it is asked.
  */
 export function SuggestedPeople({ intro }: { intro?: string | undefined }) {
   const { t } = stringsIn(useLocale().locale);
-  const instance = useInstance();
-  if (instance === undefined || instance.single_user)
-    return intro === undefined ? null : <FeedNotice>{intro}</FeedNotice>;
+  const offered = useSuggestionsOffered();
+  if (offered === undefined) return <ScreenStack busy>{null}</ScreenStack>;
+  if (!offered) return null;
   return (
     <ScreenStack>
       {intro !== undefined && <FeedNotice start>{intro}</FeedNotice>}

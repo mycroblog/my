@@ -42,6 +42,8 @@ type Story = StoryObj<typeof meta>;
 
 /** Before anything is written: what the field finds, over the suggested people. */
 export const Start: Story = {};
+/** Before anything is written, on a server that suggests no one: the field alone, nothing of finding people. */
+export const StartNoSuggestions: Story = { parameters: screen({ at: "/search", state: "empty" }) };
 /** People and hashtags on a server without a search engine: nothing of posts shows. */
 export const PostsNotOffered: Story = { parameters: screen({ at: "/search?q=sa" }) };
 /** People, hashtags and posts on a server with a search engine. */
@@ -63,6 +65,7 @@ export const MinimumWidth: Story = { parameters: screen({ at: "/search?q=sa", se
 
 /** The screen of the suggested accounts, each with its follow. */
 export const People: Story = { parameters: screen({ at: "/people" }) };
+/** Finding people reached by its address on a server that suggests no one: it says so plainly. */
 export const PeopleEmpty: Story = { parameters: screen({ at: "/people", state: "empty" }) };
 export const PeopleLoading: Story = { parameters: screen({ at: "/people", state: "loading" }) };
 export const PeopleFailed: Story = { parameters: screen({ at: "/people", state: "error" }) };
@@ -73,6 +76,10 @@ export const PeopleSingleUser: Story = {
 };
 /** The home of a reader who follows no one yet, as right after signing up: the suggested people to follow. */
 export const NewAccountHome: Story = { parameters: screen({ at: "/", viewer: "quickdeals" }) };
+/** The same home on a server that suggests no one: empty as every timeline is, nothing of finding people. */
+export const NewAccountHomeNoSuggestions: Story = {
+  parameters: screen({ at: "/", viewer: "quickdeals", state: "empty" }),
+};
 
 /** Waits until the screen shows its state, then that `check` holds of its main region. */
 const holds =
@@ -100,3 +107,10 @@ RemoteLookup.play = holds(
 People.play = holds("the suggested people", (main) => main.querySelector('a[href^="/@"]') !== null);
 NewAccountHome.play = holds("the suggested people", (main) => main.querySelector('a[href^="/@"]') !== null);
 PeopleSingleUser.play = holds("no one", (main) => main.querySelector('a[href^="/@"]') === null);
+/** Nothing of finding people: no heading over suggestions, no account to follow, no link to all of them. */
+const noFinding = (main: HTMLElement) =>
+  main.querySelector("section") === null &&
+  main.querySelector('a[href^="/@"]') === null &&
+  main.querySelector('a[href="/people"]') === null;
+StartNoSuggestions.play = holds("nothing of finding people", noFinding);
+NewAccountHomeNoSuggestions.play = holds("nothing of finding people", noFinding);

@@ -10,7 +10,7 @@ import { Column } from "@my/app-components";
 import { homeTimelineQuery, useHomeTimeline, type AppData } from "@my/app-data";
 import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { SuggestedPeople } from "../people/people";
+import { SuggestedPeople, useSuggestionsOffered } from "../people/people";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost } from "../post-translation";
 import { useNewPostsColumn } from "./new-posts";
@@ -30,16 +30,20 @@ export function HomeTimeline() {
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
+  const timeline = useHomeTimeline();
+  // The suggestions are asked only for an empty home.
+  const offered = useSuggestionsOffered(timeline.status === "success" && timeline.statuses.length === 0);
   return (
     <Column
       label={t("timeline.home")}
-      {...useHomeTimeline()}
+      {...timeline}
       {...useNewPostsColumn("home")}
       onAction={onAction}
       postProps={(s) => ({ voting: votingOf(s), own: ownOf(s), picker })}
       postAs={TranslatablePost}
-      // A new account follows no one yet: its empty home offers people to follow (FR-308).
-      empty={<SuggestedPeople intro={t("people.home")} />}
+      // A new account follows no one yet: its empty home offers people to follow (FR-308), where the server suggests
+      // anyone; else it says it is empty as every timeline does.
+      empty={offered === false ? undefined : <SuggestedPeople intro={t("people.home")} />}
     />
   );
 }

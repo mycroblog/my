@@ -63,6 +63,7 @@ export {
   FindPeople,
   loadPeople,
   useDiscoveryLayout,
+  useSuggestionsOffered,
   type DiscoveryLayout,
 } from "./people/people";
 export { Search } from "./search/search";
