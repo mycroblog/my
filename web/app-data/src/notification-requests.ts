@@ -4,7 +4,7 @@
 // a request, which moves its notifications into the list and lets the account's later ones through, or dismisses it,
 // which drops them. An answered request keeps its place on the screens open now, with the answer, until they open
 // again; the count of the requests and the notifications are read again at once.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { notificationRequestSummaryQuery, notificationsQuery, type NotificationItem } from "./notifications";
@@ -79,10 +79,30 @@ export function useNotificationRequests(): PagedList<NotificationRequest> {
   return usePagedList(notificationRequestsQuery(useAppData()));
 }
 
+/** The request of one account as a screen reads it, and how it came. */
+export type OneRequest = {
+  readonly request: NotificationRequest | undefined;
+  /** `gone` once the server says it lists no request of the account (404); `error` for any other failure. */
+  readonly status: "pending" | "success" | "error" | "gone";
+  readonly refetch: () => void;
+};
+
 /** The request of the account of `id`; undefined until the server answered. */
-export function useNotificationRequest(id: string): { request: NotificationRequest | undefined; status: string } {
+export function useNotificationRequest(id: string): OneRequest {
   const query = useQuery(notificationRequestQuery(useAppData(), id));
-  return { request: query.data, status: query.status };
+  const { error } = query;
+  return {
+    request: query.data,
+    status:
+      query.status === "error"
+        ? error instanceof ProblemError && error.status === 404
+          ? "gone"
+          : "error"
+        : query.status,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
 }
 
 /** The held-back notifications of the account of `id`. */

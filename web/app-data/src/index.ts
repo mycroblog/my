@@ -211,6 +211,7 @@ export {
   useRequestAnswer,
   useRequestNotifications,
   type NotificationRequest,
+  type OneRequest,
   type RequestAnswer,
 } from "./notification-requests";
 export {

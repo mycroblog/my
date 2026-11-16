@@ -166,22 +166,33 @@ export function Held({ onBack }: { onBack: () => void }) {
  */
 export function HeldOf({ id, instance, onBack }: { id: string; instance: string; onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
-  const { request, status } = useNotificationRequest(id);
+  const { request, status, refetch } = useNotificationRequest(id);
   const list = useRequestNotifications(id);
   const answered = useRequestAnswer(id);
   const back = <BackButton onPress={onBack}>{t("notifications.held")}</BackButton>;
-  if (status === "error" && answered === undefined)
+  // The server lists no request of the account (answered elsewhere): it says so. A read that failed otherwise says so,
+  // with Try again.
+  if (status === "gone" && answered === undefined)
     return (
       <ScreenStack>
         <ScreenTitle back={back}>{t("notifications.held")}</ScreenTitle>
         <FeedNotice start>{t("notifications.held_gone")}</FeedNotice>
       </ScreenStack>
     );
+  if (status === "error" && answered === undefined)
+    return (
+      <ScreenStack>
+        <ScreenTitle back={back}>{t("notifications.held")}</ScreenTitle>
+        <FeedNotice start alert action={<TextButton onPress={refetch}>{t("notifications.retry")}</TextButton>}>
+          {t("notifications.held_failed")}
+        </FeedNotice>
+      </ScreenStack>
+    );
   return (
     <ScreenStack busy={request === undefined}>
       {/* The account's row is the screen's head, under the way back. */}
       <ScreenHead back={back}>
-        {request !== undefined && <AccountLine account={request.account} end={<Answers id={id} t={t} />} />}
+        {request !== undefined && <AccountLine account={request.account} end={<Answers id={id} t={t} />} heading />}
       </ScreenHead>
       <ListColumn
         {...list}

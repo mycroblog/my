@@ -89,6 +89,7 @@ function Titles() {
       </ScreenTitle>
       <ScreenHead back={back(w.held)}>
         <AccountRow
+          heading
           avatar={<Avatar name="Kiri" src={images.dusk} size="post" decorative />}
           name="Kiri 霧"
           handle="@kiri@far.example"

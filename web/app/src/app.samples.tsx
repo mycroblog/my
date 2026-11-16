@@ -312,6 +312,8 @@ function shows(
       // The held-back notifications, a row per account that sent them, or a line in their place.
       if (at === "/notifications/requests")
         return settled && has('main a[href^="/notifications/requests/"], main p[role="status"]');
+      // One account's, its notifications, or a line that it holds none.
+      if (at.startsWith("held:")) return settled && has('main article, main p[role="status"]');
       // Search shows what it found by kind, or one line of none; finding people, its rows or a line.
       if (at.startsWith("/search?"))
         return settled && has('main section, main [role="tablist"], main p[role="status"]');

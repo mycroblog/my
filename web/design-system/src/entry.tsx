@@ -247,6 +247,8 @@ const byline = tv({
     // in it reads left-to-right and, as wide as it is up to the line, truncates at its own end.
     handleLine: "block min-w-0 text-caption leading-entry text-muted-text",
     handle: "inline-block max-w-full truncate align-top",
+    // The name as the heading of a screen of the account's things: the name's own look, in a heading's place.
+    heading: "m-0 flex min-w-0 shrink [font:inherit]",
   },
   variants: {
     // The author over the handle beside the post's avatar, or all on one line beside an inline one (a quoted post).
@@ -277,10 +279,22 @@ export type BylineProps = {
    * which the reader knows; the handle is then heard after it.
    */
   self?: string | undefined;
+  /** The name is the heading of the screen it heads (an `h2`), as it shows. */
+  heading?: boolean | undefined;
 };
 
 /** Who wrote an entry: the avatar, the name and what ends its line, and the handle. */
-export function Byline({ avatar, name, nameId, handle, end, compact = false, href, self }: BylineProps) {
+export function Byline({
+  avatar,
+  name,
+  nameId,
+  handle,
+  end,
+  compact = false,
+  href,
+  self,
+  heading = false,
+}: BylineProps) {
   const s = byline({ compact });
   const own = useId();
   const bdi = (
@@ -288,7 +302,7 @@ export function Byline({ avatar, name, nameId, handle, end, compact = false, hre
       {name}
     </bdi>
   );
-  const nameEl =
+  const linked =
     href === undefined ? (
       bdi
     ) : (
@@ -296,6 +310,7 @@ export function Byline({ avatar, name, nameId, handle, end, compact = false, hre
         {bdi}
       </Link>
     );
+  const nameEl = heading ? <h2 className={s.heading()}>{linked}</h2> : linked;
   const handleEl =
     self === undefined ? (
       <span className={s.handleLine()}>

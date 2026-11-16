@@ -400,6 +400,7 @@ export function AccountRow({
   handle,
   href,
   note,
+  heading = false,
   end,
 }: {
   avatar: ReactNode;
@@ -409,13 +410,15 @@ export function AccountRow({
   href?: string | undefined;
   /** A line under the name and the handle. */
   note?: ReactNode;
+  /** The name is the heading of the screen the row heads (`ScreenHead`). */
+  heading?: boolean | undefined;
   end?: ReactNode;
 }) {
   const s = account();
   return (
     <div className={s.root()}>
       <div className={s.who()}>
-        <Byline avatar={avatar} name={accountName} handle={handle} href={href} />
+        <Byline avatar={avatar} name={accountName} handle={handle} href={href} heading={heading} />
         {note !== undefined && <p className={s.note()}>{note}</p>}
       </div>
       {end !== undefined && (
@@ -558,8 +561,8 @@ export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count
 }
 
 /**
- * The head of a screen of one account's things (its held-back notifications): its back button close over what stands
- * for the title, the account's row, as the screen's title stands under it.
+ * The head of a screen of one account's things (its held-back notifications): its back button close over the account's
+ * row, whose name is the screen's heading (an `AccountRow` with `heading`), as a screen's title stands under it.
  */
 export function ScreenHead({ back, children }: { back: ReactNode; children: ReactNode }) {
   return (
