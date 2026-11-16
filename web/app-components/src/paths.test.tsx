@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { hashtagPath, tagPath } from "./paths";
+import { hashtagPath, notificationPath, tagPath, type NotificationTarget } from "./paths";
 import { PostContent, ServerDomain } from "./post-content";
 
 describe("tagPath", () => {
@@ -65,5 +65,71 @@ describe("a hashtag in a post", () => {
     const markup = render(undefined);
     expect(link(markup, "fediverse")).toContain('href="https://my.example/tags/fediverse"');
     expect(link(markup, "fediverse")).toContain('target="_blank"');
+  });
+});
+
+describe("notificationPath", () => {
+  const sora = { acct: "sora@photos.example", username: "sora", domain: "photos.example" } as const;
+  const yuki = { acct: "yuki", username: "yuki", domain: "my.example" } as const;
+  const post = { id: "9", account: yuki };
+  const of = (type: string, fields: Omit<NotificationTarget, "type"> = {}) => notificationPath({ type, ...fields });
+
+  test("a notification about a post opens the post", () => {
+    for (const type of [
+      "mention",
+      "boost",
+      "favourite",
+      "reaction",
+      "quote",
+      "poll_closed",
+      "status",
+      "interaction_accepted",
+      "interaction_rejected",
+    ])
+      expect([type, of(type, { account: sora, status: post })]).toEqual([type, "/@yuki/status/9"]);
+  });
+
+  test("a follow, an accepted follow and a new account open the account that acted", () => {
+    for (const type of ["follow", "follow_accepted", "admin_sign_up"])
+      expect([type, of(type, { account: sora })]).toEqual([type, "/@sora@photos.example"]);
+  });
+
+  test("a follow request opens the follow requests, and a request to reply, boost or quote what waits for approval", () => {
+    expect(of("follow_request", { account: sora })).toBe("/notifications/follow_requests");
+    for (const type of ["reply_request", "boost_request", "quote_request"])
+      expect([type, of(type, { account: sora, status: post })]).toEqual([type, "/notifications/waiting"]);
+  });
+
+  test("a move opens the account moved to, and an announcement its page", () => {
+    expect(of("account_moved", { account: yuki, account_move: { target: sora } })).toBe("/@sora@photos.example");
+    expect(of("announcement", { announcement: { id: "a1" } })).toBe("/announcements/a1");
+  });
+
+  test("an event's and a voice chat room's lead nowhere else yet, even with an account or a post", () => {
+    for (const type of [
+      "event_invited",
+      "event_schedule_confirmed",
+      "event_changed",
+      "event_cancelled",
+      "event_reminder",
+      "event_started",
+      "event_room_unavailable",
+      "voice_room_started",
+      "voice_room_invited",
+    ])
+      expect([type, of(type, { account: sora, status: post })]).toEqual([type, "/notifications"]);
+  });
+
+  test("a notice with nothing to open stays on the notifications", () => {
+    for (const type of [
+      "moderation_notice",
+      "report_resolved",
+      "service_closure",
+      "auto_delete_limit",
+      "scheduled_status_failed",
+      "supporter_payment_failed",
+      "admin_webhook_disabled",
+    ])
+      expect([type, of(type)]).toEqual([type, "/notifications"]);
   });
 });

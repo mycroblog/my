@@ -281,8 +281,16 @@ export async function readMedia(data: AppData, id: string): Promise<MediaAttachm
  * problem's detail, else its title; undefined for a failure without an answer (the network), which the caller words.
  */
 export function refusal(error: unknown): string | undefined {
+  return refusalDetail(error) ?? ((error instanceof ProblemError && error.title) || undefined);
+}
+
+/**
+ * What the server said of a refused write in its own words, the problem's detail; undefined for one that has none (a
+ * bare HTTP status, whose title names no reason) or for a failure without an answer, which the caller words.
+ */
+export function refusalDetail(error: unknown): string | undefined {
   if (!(error instanceof ProblemError)) return undefined;
-  return error.detail !== undefined && error.detail !== "" ? error.detail : error.title || undefined;
+  return error.detail !== undefined && error.detail !== "" ? error.detail : undefined;
 }
 
 /**

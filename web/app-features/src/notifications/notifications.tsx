@@ -26,6 +26,7 @@ import {
   pushSubscriptionQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
+  refusalDetail,
   useDismissNotification,
   useNotificationReads,
   useNotificationRequestSummary,
@@ -143,7 +144,8 @@ function Dismiss({ n, t }: { n: NotificationItem; t: T }) {
     flying.current = true;
     dismiss(n.id)
       .catch((error: unknown) => {
-        failed(error, t("notifications.dismiss_failed"), run);
+        // The server's own reason where it gives one; never a bare HTTP title.
+        failed(undefined, refusalDetail(error) ?? t("notifications.dismiss_failed"), run);
       })
       .finally(() => {
         flying.current = false;
