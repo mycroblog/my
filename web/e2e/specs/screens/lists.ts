@@ -23,9 +23,9 @@ export class ListIndex {
     return this.page.getByRole("main").getByRole("heading", { level: 1, name: "Lists", exact: true });
   }
 
-  /** The index of the reader's lists. */
+  /** The index of the reader's lists, a list of rows each leading to one. */
   get index(): Locator {
-    return this.page.getByRole("navigation", { name: "Your lists", exact: true });
+    return this.page.getByRole("main").getByRole("list", { name: "Your lists", exact: true });
   }
 
   /** The link to the list named `name`, which says how many members it has ("Bread and coffee 2 members"). */

@@ -133,7 +133,7 @@ export const Deleted: Story = {
     const confirm = await page.findByRole("alertdialog", { name: "Delete the list Bread and coffee?" });
     await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
     await expect(await main.findByRole("heading", { level: 1, name: "Lists" })).toBeVisible();
-    const index = await main.findByRole("navigation", { name: "Your lists" });
+    const index = await main.findByRole("list", { name: "Your lists" });
     await expect(within(index).getByRole("link", { name: /^翻訳の仲間 \d+ members?$/ })).toBeVisible();
     await expect(within(index).queryByRole("link", { name: /^Bread and coffee \d+ members?$/ })).toBeNull();
   },

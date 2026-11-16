@@ -34,6 +34,8 @@ import {
   MenuItem,
   ModalPresence,
   OpenRow,
+  RowItem,
+  RowList,
   ScreenStack,
   ScreenTitle,
   TextButton,
@@ -208,20 +210,18 @@ function ListRows() {
     );
   if (lists.length === 0) return <FeedNotice>{t("timeline.lists_empty")}</FeedNotice>;
   return (
-    <nav aria-label={t("timeline.lists")}>
-      <ul className="m-0 grid list-none p-0">
-        {lists.map((list) => (
-          <li key={list.id}>
-            <OpenRow
-              href={`/lists/${encodeURIComponent(list.id)}`}
-              icon="list"
-              title={list.name}
-              hint={t("timeline.list_members", { count: list.members_count })}
-            />
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <RowList label={t("timeline.lists")}>
+      {lists.map((list) => (
+        <RowItem key={list.id}>
+          <OpenRow
+            href={`/lists/${encodeURIComponent(list.id)}`}
+            icon="list"
+            title={list.name}
+            hint={t("timeline.list_members", { count: list.members_count })}
+          />
+        </RowItem>
+      ))}
+    </RowList>
   );
 }
 
