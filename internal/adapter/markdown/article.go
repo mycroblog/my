@@ -11,6 +11,7 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	extast "github.com/yuin/goldmark/extension/ast"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/renderer/html"
@@ -157,13 +158,16 @@ func (r *ArticleRenderer) RenderArticle(source string, res appcontent.ArticleRes
 }
 
 // bodyText returns the text of doc without its headings, code, raw HTML, and images (and the
-// images that became links), with a space between blocks and lines.
+// images that became links): its blocks joined by content.JoinArticleText, with a space between
+// the lines of a block.
 func bodyText(doc ast.Node, src []byte, skip map[ast.Node]bool) string {
 	var b strings.Builder
+	var blocks []content.ArticleTextBlock
 	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			if n.Type() == ast.TypeBlock {
-				b.WriteByte(' ')
+				blocks = append(blocks, content.ArticleTextBlock{Text: b.String(), Item: inItem(n)})
+				b.Reset()
 			}
 			return ast.WalkContinue, nil
 		}
@@ -186,7 +190,17 @@ func bodyText(doc ast.Node, src []byte, skip map[ast.Node]bool) string {
 		}
 		return ast.WalkContinue, nil
 	})
-	return b.String()
+	return content.JoinArticleText(blocks)
+}
+
+// inItem reports whether n is or is inside an item of a list or a cell of a table.
+func inItem(n ast.Node) bool {
+	for ; n != nil; n = n.Parent() {
+		if n.Kind() == ast.KindListItem || n.Kind() == extast.KindTableCell {
+			return true
+		}
+	}
+	return false
 }
 
 // plainText returns the text of n's descendants, as goldmark writes an image's alt text.
