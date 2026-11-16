@@ -212,7 +212,7 @@ jobs:
                 echo "A Dependabot update or the merge of main: skipped."
                 exit 0
               fi
-              git fetch --no-tags --quiet --filter=tree:0 --unshallow origin "$BASE_SHA" "$HEAD_SHA"
+              git fetch --no-tags --quiet --deepen=500 origin "$BASE_SHA" "$HEAD_SHA"
               scripts/task.sh docs:pr-commits BASE="$BASE_SHA" HEAD="$HEAD_SHA"
 
   lint:
