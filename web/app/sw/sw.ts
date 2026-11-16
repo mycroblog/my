@@ -3,7 +3,8 @@
 // The Service Worker of the web client (ADR-0028 §3), which `my serve` serves at /sw.js: for now it only shows the Web
 // Push messages (FR-206, push.ts) and opens what a click on one tells of, in an open window of the app, or in a new
 // one. It answers no request (no fetch handler), so it caches nothing: every page and file comes from the network as
-// without it. A new version takes over at once, which holds nothing to keep consistent.
+// without it; the precache, the offline shell and the runtime caches of ADR-0028 §3 come with #3147. A new version
+// takes over at once, which holds nothing to keep consistent.
 
 import { clickedURL, notificationFor } from "./push";
 

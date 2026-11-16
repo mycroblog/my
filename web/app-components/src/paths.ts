@@ -91,7 +91,9 @@ const pushPages = [/^\/@[^/?#\\]+(?:\/status\/[^/?#\\]+)?$/, /^\/announcements\/
  * Where a click on a Web Push notification leads, as notificationPath decides for the lists, from what the push carries
  * (its kind, and the page the server names): what waits for the reader's approval, the follow requests, the
  * notifications for an event's or a room's; else the server's page when it is one of this client's (an account, a post,
- * an announcement), and the notifications for any other, which this client has no screen for.
+ * an announcement), and the notifications for any other, which this client has no screen for. The server still names
+ * the pages of the client before this one (/settings/follow-requests, /moderation/…), hence the kind decides first;
+ * #3148 has it name this client's pages.
  */
 export function pushTargetPath(push: { readonly type: string; readonly path: string }): string {
   if (requests.has(push.type)) return waitingPath;
