@@ -172,7 +172,7 @@
     "description": "The button of a member of a list that takes it out of the list."
   },
   "timeline.list_remove_member": {
-    "defaultMessage": "{name}を外す",
+    "defaultMessage": "{name}さんを外す",
     "description": "The name, for assistive technology, of the button of a member of a list that takes it out of the list; it holds the button's visible word (timeline.list_remove). name is the member's display name."
   },
   "timeline.list_members_empty": {
