@@ -7,6 +7,7 @@ import {
   notificationMarkerQuery,
   notificationsQuery,
   receiveNotification,
+  useDismissNotification,
   useNotificationReads,
   useUnreadNotifications,
   type NotificationItem,
@@ -14,6 +15,7 @@ import {
 } from "./notifications";
 import { AppDataProvider } from "./provider";
 import { fakeAppData, json } from "./test/fake";
+import { probe } from "./test/probe";
 
 /** An ID as the server's: a later one sorts after an earlier one. */
 const id = (n: number) => `0190a5d0-0000-7000-8000-${n.toString().padStart(12, "0")}`;
@@ -143,4 +145,77 @@ test("a notification from the stream goes to the top of the lists it belongs to,
   const { reads, count } = read(data);
   expect(reads.unread(id(4))).toBe(true);
   expect(count).toBe(3);
+});
+
+test("the Mentions list asks for the mentions, the quotes and the new posts of subscribed accounts", async () => {
+  const { data, requests } = fakeAppData(() => json(200, { items: [] }));
+  await data.queryClient.infiniteQuery(notificationsQuery(data, "mentions"));
+  expect(requests.map((u) => u.searchParams.getAll("types").toSorted())).toEqual([["mention", "quote", "status"]]);
+});
+
+test("a new post of a subscribed account and a quote from the stream go to the Mentions list", async () => {
+  const { data } = await server([2, 1], 1);
+  await data.queryClient.infiniteQuery(notificationsQuery(data, "mentions"));
+  receiveNotification(data, notification(3, "status"));
+  receiveNotification(data, notification(4, "quote"));
+  receiveNotification(data, notification(5, "follow"));
+  const mentions = data.queryClient
+    .getQueryData(notificationsQuery(data, "mentions").queryKey)
+    ?.pages.flatMap((p) => p.items.map((n) => n.id));
+  expect(mentions?.slice(0, 2)).toEqual([id(4), id(3)]);
+  expect(mentions).not.toContain(id(5));
+});
+
+/**
+ * A server with notifications 3, 2 and 1 in both lists, whose answer to a dismissal waits for the test, and the paths
+ * of the dismissals it was sent.
+ */
+async function dismissable() {
+  const { promise: answered, resolve: answer } = Promise.withResolvers<Response>();
+  const dismissed: string[] = [];
+  const { data } = fakeAppData((request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/dismiss")) {
+      dismissed.push(`${request.method} ${url.pathname.replace("/api/v1", "")}`);
+      return answered;
+    }
+    if (url.pathname.endsWith("/notifications/marker")) return json(200, { unread_count: 0 });
+    const type = url.searchParams.has("types") ? "mention" : "favourite";
+    return json(200, { items: [3, 2, 1].map((n) => notification(n, type)) });
+  });
+  await data.queryClient.infiniteQuery(notificationsQuery(data, "all"));
+  await data.queryClient.infiniteQuery(notificationsQuery(data, "mentions"));
+  const ids = (filter: "all" | "mentions") =>
+    data.queryClient
+      .getQueryData(notificationsQuery(data, filter).queryKey)
+      ?.pages.flatMap((p) => p.items.map((n) => n.id));
+  return { data, dismissed, answer, ids };
+}
+
+test("a dismissed notification leaves every list at once, and the server is told", async () => {
+  const { data, dismissed, answer, ids } = await dismissable();
+  const done = probe(data, useDismissNotification)(id(2));
+  expect(ids("all")).toEqual([id(3), id(1)]);
+  expect(ids("mentions")).toEqual([id(3), id(1)]);
+  answer(new Response(null, { status: 204 }));
+  await done;
+  expect(dismissed).toEqual([`POST /notifications/${id(2)}/dismiss`]);
+  expect(ids("all")).toEqual([id(3), id(1)]);
+  expect(ids("mentions")).toEqual([id(3), id(1)]);
+});
+
+test("a dismissal the server refuses puts the notification back where it was in every list, and rejects", async () => {
+  const { data, answer, ids } = await dismissable();
+  const done = probe(
+    data,
+    useDismissNotification,
+  )(id(2)).then(
+    () => "resolved",
+    () => "rejected",
+  );
+  expect(ids("all")).toEqual([id(3), id(1)]);
+  answer(json(500, { type: "about:blank", title: "Internal Server Error", status: 500 }));
+  expect(await done).toBe("rejected");
+  expect(ids("all")).toEqual([id(3), id(2), id(1)]);
+  expect(ids("mentions")).toEqual([id(3), id(2), id(1)]);
 });

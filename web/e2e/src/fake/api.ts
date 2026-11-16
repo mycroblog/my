@@ -263,6 +263,8 @@ export type FakeOptions = {
    * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
    */
   held?: boolean;
+  /** The first dismissal of a notification fails (a 500); the next is kept, as a try again finds it. */
+  dismissFails?: boolean;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -1792,6 +1794,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     lastRead = notifications[3]?.["id"] as string | undefined;
   }
 
+  // With `dismissFails`, the dismissals of a notification still to fail before one is kept.
+  let dismissFailures = o.dismissFails === true ? 1 : 0;
+
   // With `held`, the notifications the policy holds back, by the account that sent them, the newest account first.
   const held = new Map<string, Json[]>();
   if (o.held === true) {
@@ -2549,6 +2554,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return json(body);
     }
     if ((match = m(/^\/notifications\/([^/]+)\/dismiss$/)) && request.method === "POST") {
+      if (dismissFailures > 0) {
+        dismissFailures -= 1;
+        return problem(500, "Internal Server Error");
+      }
       const at = notifications.findIndex((n) => n["id"] === decodeURIComponent(match?.[1] ?? ""));
       if (at < 0) return problem(404, "Not Found");
       notifications.splice(at, 1);
