@@ -25,17 +25,16 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 
 1. A red Nightly stops the line: fix it before starting more (`gh issue list --label ci:nightly-failure`).
 2. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is blocked.
-3. One worktree and one branch per pull request, `<type>/<issue>-<slug>`, one commit per issue. A spike's report
+3. One worktree and one branch per pull request, `<type>/<issue>-<slug>`; commit as the work goes. A spike's report
    is a comment on its issue; its code stays on an unmerged `spike/<issue>-<slug>` branch.
 4. Build: yourself for one small issue; otherwise up to four subagents at once. Across Go and TS, the OpenAPI
    contract first (ADR-0170 §4); per language, `go-developer` or `ts-developer`, then `go-test-developer` or
    `ts-test-developer`, given the issue and the developer's report. `routine` for mechanical work; for a
    UI change, `visual` first in a story (ADR-0169 §9), `copy` for its strings, and a fresh `visual-evaluator`
    given only `web:shot`'s shots, the task and the constraints, before the decider picks. Hand the others their
-   `ctx <n> --quiet` file; rebase their commits onto the branch.
-5. Keep the branch on `origin/redesign-web` (the trunk during #2863) by rebase (`agentkit regen` on a conflict in generated files).
-   Fold a correction into its commit (`git commit --fixup`, `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/redesign-web`), push
-   `--force-with-lease`. `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; run
+   `ctx <n> --quiet` file.
+5. Bring the branch up to date with `git merge origin/redesign-web` (the trunk during #2863; `agentkit regen` on a conflict in generated
+   files). `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; run
    `--full` only to reproduce a failure.
 6. `scripts/agentkit.sh pr open`, then `pr land <pr>` in the background. An epic is one pull
    request: `pr open -draft` with its first commit, `pr open` again after each later one, and

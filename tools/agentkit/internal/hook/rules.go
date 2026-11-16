@@ -3,7 +3,6 @@
 package hook
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -190,7 +189,7 @@ func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 	segs := splitCommand(cmd)
 	loop, sleeps, long := false, false, false
 	vars := map[string]string{}
-	for i, seg := range segs {
+	for _, seg := range segs {
 		pc := parseCommand(seg.text, vars)
 		// url=$(gh issue create ...) creates the issue just the same.
 		if depth < 3 && strings.Contains(seg.text, "=$(") {
@@ -243,26 +242,8 @@ func (c *checker) checkIn(cwd, cmd string, depth int) *denial {
 			d = c.search(cwd, pc, seg)
 		case "git":
 			d = c.git(cwd, pc, seg)
-		case "sed":
-			d = c.sed(cwd, pc, seg)
-		case "awk", "gawk":
-			d = c.awk(cwd, pc, seg)
-		case "head", "tail":
-			d = c.headTail(cwd, pc, seg)
-		case "cat":
-			var next *segment
-			if seg.pipedOut && i+1 < len(segs) {
-				next = &segs[i+1]
-			}
-			d = c.cat(cwd, pc, seg, next)
-		case "perl":
-			d = c.perl(cwd, pc)
-		case "python3", "python", "node", "bun", "ruby", "deno":
-			d = c.script(cwd, pc, seg)
 		case "gh":
-			if d = issueCreate(pc); d == nil {
-				d = ci(pc)
-			}
+			d = issueCreate(pc)
 		}
 		if d != nil {
 			return d
@@ -628,20 +609,16 @@ sub:
 		}
 		g.targets = paths
 		return c.searchCall(cwd, g)
-	case "merge":
-		if has("--ff-only", "--abort", "--continue", "--quit") {
-			return nil
-		}
-		for _, a := range rest {
-			if isMain(a.text) {
-				return &denial{"merge-main", rebaseReason()}
-			}
-		}
 	case "pull":
 		if has("--rebase", "-r", "--ff-only") {
 			return nil
 		}
-		return &denial{"merge-main", "`git pull` makes a merge commit when the branch has its own commits. " + rebaseReason() +
+		for _, a := range rest {
+			if isTrunk(a.text) {
+				return nil
+			}
+		}
+		return &denial{"merge-main", "`git pull` merges the branch's upstream, not the trunk. " + mergeReason() +
 			" On a checkout of " + repo.Trunk + " itself, `git pull --ff-only`."}
 	}
 	return nil
@@ -649,9 +626,8 @@ sub:
 
 var reRev = regexp.MustCompile(`^([0-9a-f]{7,40}|HEAD.*|origin/.*|main|v\d.*|\$.*)$`)
 
-// isMain reports whether ref names the trunk (repo.Trunk), the branch every branch is rebased onto. While the trunk
-// is not the default branch, merging the default branch is allowed: that is how the trunk keeps up with it.
-func isMain(ref string) bool {
+// isTrunk reports whether ref names the trunk (repo.Trunk), the branch every branch merges in to keep up with it.
+func isTrunk(ref string) bool {
 	t := repo.Trunk
 	switch ref {
 	case t, "origin/" + t, "upstream/" + t, "refs/heads/" + t, "refs/remotes/origin/" + t:
@@ -660,367 +636,10 @@ func isMain(ref string) bool {
 	return false
 }
 
-func rebaseReason() string {
-	return "Bring a branch up to date by rebasing, not by merging " + repo.Trunk + " into it: " +
-		"`git fetch origin && git rebase origin/" + repo.Trunk + "`, resolve conflicts in generated files with `scripts/agentkit.sh regen` " +
-		"(then `git add` them and `git rebase --continue`), and push with `git push --force-with-lease`."
-}
-
-// ---- reading ---------------------------------------------------------------------------------------------
-
-var reSedPrint = regexp.MustCompile(`^\s*(\d+)\s*(?:,\s*(\+?)(\d+|\$))?\s*([pq])\s*$`)
-
-func (c *checker) readReason(t target, from, to int) string {
-	ak, p := c.agentkit(t.root), c.show(t)
-	rng := "<from>-<to>"
-	read := "offset and limit"
-	if from > 0 {
-		if to >= from {
-			rng = fmt.Sprintf("%d-%d", from, to)
-			read = fmt.Sprintf("offset %d and limit %d", from, to-from+1)
-		} else {
-			rng = fmt.Sprintf("%d-<to>", from)
-			read = fmt.Sprintf("offset %d", from)
-		}
-	}
-	return fmt.Sprintf("Read part of a file with the Read tool (file_path %s, %s) or `%s show %s:%s`; "+
-		"`%s outline %s` lists its declarations or sections with their line ranges, and `%s show <Name>` prints one declaration.",
-		t.abs, read, ak, p, rng, ak, p, ak)
-}
-
-func (c *checker) sed(cwd string, pc command, seg segment) *denial {
-	var scripts, files []word
-	quiet, inPlace := false, false
-	for i := 0; i < len(pc.args); i++ {
-		t := pc.args[i].text
-		switch {
-		case t == "--in-place" || strings.HasPrefix(t, "--in-place="):
-			inPlace = true
-		case t == "--quiet" || t == "--silent":
-			quiet = true
-		case t == "-e" || t == "--expression":
-			if i+1 < len(pc.args) {
-				i++
-				scripts = append(scripts, pc.args[i])
-			}
-		case t == "-f":
-			i++
-		case strings.HasPrefix(t, "--"):
-		case strings.HasPrefix(t, "-") && len(t) > 1:
-			for j := 1; j < len(t); j++ {
-				switch t[j] {
-				case 'n':
-					quiet = true
-				case 'i':
-					inPlace = true
-					j = len(t) // -i.bak
-				case 'e':
-					if i+1 < len(pc.args) {
-						i++
-						scripts = append(scripts, pc.args[i])
-					}
-				}
-			}
-		case len(scripts) == 0:
-			scripts = append(scripts, pc.args[i])
-		default:
-			files = append(files, pc.args[i])
-		}
-	}
-	if inPlace {
-		if pc.has("xargs") {
-			return nil
-		}
-		for _, f := range files {
-			if t, ok := c.locate(cwd, f); ok {
-				return c.writeDenial(t, "sed -i")
-			}
-		}
-		return nil
-	}
-	if !quiet || seg.pipedIn || len(files) == 0 || len(scripts) == 0 {
-		return nil
-	}
-	from, to := 0, 0
-	for _, s := range scripts {
-		for _, part := range strings.Split(s.text, ";") {
-			if strings.TrimSpace(part) == "" {
-				continue
-			}
-			m := reSedPrint.FindStringSubmatch(part)
-			if m == nil {
-				return nil // not a plain line range
-			}
-			if m[4] != "p" || from > 0 {
-				continue
-			}
-			from, _ = strconv.Atoi(m[1])
-			to = from
-			if n, err := strconv.Atoi(m[3]); err == nil {
-				to = n
-				if m[2] == "+" {
-					to = from + n
-				}
-			} else if m[3] == "$" {
-				to = 0
-			}
-		}
-	}
-	if from == 0 {
-		return nil
-	}
-	for _, f := range files {
-		if t, ok := c.locate(cwd, f); ok {
-			return &denial{"read-range", c.readReason(t, from, to)}
-		}
-	}
-	return nil
-}
-
-var reAwkRange = regexp.MustCompile(`^\s*NR\s*(>=?|==)\s*(\d+)\s*(?:&&\s*NR\s*(<=?)\s*(\d+)\s*)?(?:\{\s*print\s*(?:\$0)?\s*;?\s*\})?\s*$`)
-
-func (c *checker) awk(cwd string, pc command, seg segment) *denial {
-	if seg.pipedIn || len(pc.args) < 2 || strings.HasPrefix(pc.args[0].text, "-") {
-		return nil
-	}
-	m := reAwkRange.FindStringSubmatch(pc.args[0].text)
-	if m == nil {
-		return nil
-	}
-	from, _ := strconv.Atoi(m[2])
-	to, _ := strconv.Atoi(m[4])
-	if m[1] == "==" {
-		to = from
-	}
-	for _, f := range pc.args[1:] {
-		if t, ok := c.locate(cwd, f); ok {
-			return &denial{"read-range", c.readReason(t, from, to)}
-		}
-	}
-	return nil
-}
-
-func (c *checker) headTail(cwd string, pc command, seg segment) *denial {
-	if seg.pipedIn || pc.has("xargs") {
-		return nil
-	}
-	n, fromStart := 10, false
-	var files []word
-	for i := 0; i < len(pc.args); i++ {
-		t := pc.args[i].text
-		switch {
-		case t == "-f" || t == "-F" || t == "--follow" || strings.HasPrefix(t, "-c") || strings.HasPrefix(t, "--bytes"):
-			return nil
-		case t == "-n" || t == "--lines":
-			if i+1 < len(pc.args) {
-				i++
-				v := pc.args[i].text
-				fromStart = strings.HasPrefix(v, "+")
-				n, _ = strconv.Atoi(strings.TrimLeft(v, "+-"))
-			}
-		case strings.HasPrefix(t, "--lines="):
-			n, _ = strconv.Atoi(strings.TrimLeft(strings.TrimPrefix(t, "--lines="), "+-"))
-		case strings.HasPrefix(t, "-n"):
-			fromStart = strings.HasPrefix(t[2:], "+")
-			n, _ = strconv.Atoi(strings.TrimLeft(t[2:], "+-"))
-		case strings.HasPrefix(t, "-") && len(t) > 1:
-			if v, err := strconv.Atoi(t[1:]); err == nil {
-				n = v
-			}
-		case strings.HasPrefix(t, "+") && pc.tool == "tail":
-			fromStart = true
-			n, _ = strconv.Atoi(t[1:])
-		default:
-			files = append(files, pc.args[i])
-		}
-	}
-	for _, f := range files {
-		t, ok := c.locate(cwd, f)
-		if !ok {
-			continue
-		}
-		if st, err := os.Stat(t.abs); err == nil && st.IsDir() {
-			continue
-		}
-		switch {
-		case pc.tool == "head":
-			return &denial{"read-range", c.readReason(t, 1, n)}
-		case fromStart:
-			return &denial{"read-range", c.readReason(t, n, 0)}
-		}
-		return &denial{"read-range", c.readReason(t, 0, 0)}
-	}
-	return nil
-}
-
-func (c *checker) cat(cwd string, pc command, seg segment, next *segment) *denial {
-	if seg.pipedIn || pc.has("xargs") {
-		return nil
-	}
-	var files []target
-	for _, a := range pc.args {
-		if strings.HasPrefix(a.text, "-") {
-			continue
-		}
-		if t, ok := c.locate(cwd, a); ok {
-			if st, err := os.Stat(t.abs); err == nil && st.IsDir() {
-				continue
-			}
-			files = append(files, t)
-		}
-	}
-	if len(files) == 0 {
-		return nil
-	}
-	if !seg.pipedOut {
-		if len(pc.writes) > 0 {
-			return nil
-		}
-		for _, t := range files {
-			if reason := bigDoc(t, c.agentkit(t.root), c.show(t)); reason != "" {
-				return &denial{"big-file", reason}
-			}
-		}
-		return nil
-	}
-	t := files[0]
-	ak, p := c.agentkit(t.root), c.show(t)
-	if next != nil {
-		nc := parseCommand(next.text, nil)
-		switch nc.tool {
-		case "grep", "egrep", "fgrep", "rg":
-			g := parseGrep(nc.tool, nc.args, false)
-			if g.quiet || g.unsupp || g.count {
-				return nil
-			}
-			if g.hasPattern && len(g.targets) == 0 {
-				g.targets = []word{{text: t.abs}}
-				if d := c.searchCall(cwd, g); d != nil {
-					return d
-				}
-			}
-		case "head", "tail", "sed":
-			return &denial{"read-range", "`cat <file> |` copies the whole file through a pipe. " + c.readReason(t, 0, 0)}
-		}
-	}
-	return &denial{"read-range", fmt.Sprintf("`cat <file> |` copies the whole file through a pipe: give %s to the next command as "+
-		"an argument (`jq . %s`, `wc -l %s`), search it with `%s grep <pattern> %s`, or read it with the Read tool.", p, p, p, ak, p)}
-}
-
-// ---- writing ---------------------------------------------------------------------------------------------
-
-func (c *checker) writeDenial(t target, how string) *denial {
-	p := c.show(t)
-	if strings.HasPrefix(t.rel, "locales/") {
-		return &denial{"write", fmt.Sprintf("Message catalogs are not edited by hand or with %s: add, rename and remove messages with "+
-			"`scripts/i18n.sh add|mv|rm` (they keep every locale of %s in step), then `scripts/task.sh i18n:gen`.", how, t.rel)}
-	}
-	return &denial{"write", fmt.Sprintf("Change %s with the Edit tool (old_string / new_string; replace_all for every occurrence), not "+
-		"%s: the edit is checked against the file's current text and shown as a diff. Write a new file with the Write tool.", p, how)}
-}
-
-func (c *checker) perl(cwd string, pc command) *denial {
-	if pc.has("xargs") {
-		return nil
-	}
-	inPlace, script := false, false
-	var files []word
-	for i := 0; i < len(pc.args); i++ {
-		t := pc.args[i].text
-		switch {
-		case strings.HasPrefix(t, "-") && !strings.HasPrefix(t, "--") && len(t) > 1:
-			flags := t[1:]
-			if j := strings.IndexByte(flags, 'i'); j >= 0 && !strings.ContainsAny(flags[:j], "eEIM") {
-				inPlace = true
-			}
-			if strings.ContainsAny(flags, "eE") && strings.IndexAny(flags, "eE") == len(flags)-1 {
-				i++
-				script = true
-			}
-		case !script:
-			script = true
-		default:
-			files = append(files, pc.args[i])
-		}
-	}
-	if !inPlace {
-		return nil
-	}
-	for _, f := range files {
-		if t, ok := c.locate(cwd, f); ok {
-			return c.writeDenial(t, "perl -pi")
-		}
-	}
-	return nil
-}
-
-var (
-	// A write whose target is a string literal, in Python, JavaScript and Ruby.
-	reWriteLit = regexp.MustCompile("\\bopen\\(\\s*f?[\"']([^\"'\\n]+)[\"']\\s*,\\s*[\"'][wa]" +
-		"|(?:writeFileSync|writeFile|Bun\\.write|File\\.write)\\(\\s*[\"'`]([^\"'`\\n]+)[\"'`]" +
-		"|Path\\(\\s*f?[\"']([^\"'\\n]+)[\"']\\s*\\)\\.write_(?:text|bytes)\\(")
-	// Any write.
-	reWriteAny = regexp.MustCompile(`\bopen\([^()\n]*,\s*["'][wa]\+?b?["']|\.write_(?:text|bytes)\(|writeFileSync\(|\bwriteFile\(|Bun\.write\(|File\.write\(`)
-	// A string that looks like a path; the {parts} of an f-string or a template stand for anything.
-	rePathLit = regexp.MustCompile("[\"'`]([\\w@.~/*{}$-]*\\.\\w{1,12})[\"'`]")
-	reSubst   = regexp.MustCompile(`\$?\{[^{}]*\}`)
-)
-
-func (c *checker) script(cwd string, pc command, seg segment) *denial {
-	code := seg.heredoc
-	for i := 0; i+1 < len(pc.args); i++ {
-		if t := pc.args[i].text; t == "-c" || t == "-e" || t == "--eval" || t == "-p" {
-			code = pc.args[i+1].text
-			break
-		}
-	}
-	if code == "" || !reWriteAny.MatchString(code) {
-		return nil
-	}
-	how := "a " + pc.tool + " script"
-	file := func(s string) (target, bool) {
-		w := word{text: reSubst.ReplaceAllString(s, "*")}
-		w.glob = strings.ContainsAny(w.text, "*?[")
-		if strings.Contains(w.text, "$") {
-			return target{}, false
-		}
-		t, ok := c.locate(cwd, w)
-		return t, ok && (w.glob || c.isFile(t))
-	}
-	lits := 0
-	for _, m := range reWriteLit.FindAllStringSubmatch(code, -1) {
-		lits++
-		if t, ok := file(m[1] + m[2] + m[3]); ok {
-			return c.writeDenial(t, how)
-		}
-	}
-	if len(reWriteAny.FindAllString(code, -1)) <= lits {
-		return nil // every write names its target, and none is the repository's
-	}
-	// A write to a variable: the files the script names, or is given as arguments, are what it rewrites.
-	for _, m := range rePathLit.FindAllStringSubmatch(code, -1) {
-		if t, ok := file(m[1]); ok {
-			return c.writeDenial(t, how)
-		}
-	}
-	for _, a := range pc.args {
-		if strings.HasPrefix(a.text, "-") || a.text == code || a.text == "/dev/stdin" {
-			continue
-		}
-		if t, ok := c.locate(cwd, a); ok && c.isFile(t) {
-			return c.writeDenial(t, how)
-		}
-	}
-	return nil
-}
-
-// isFile reports whether t is an existing file (or, when missing paths count, not a known directory).
-func (c *checker) isFile(t target) bool {
-	st, err := os.Stat(t.abs)
-	if err != nil {
-		return c.missingIsRepo
-	}
-	return !st.IsDir()
+func mergeReason() string {
+	return "Bring a branch up to date by merging the trunk into it: " +
+		"`git fetch origin && git merge origin/" + repo.Trunk + "`, resolve conflicts in generated files with `scripts/agentkit.sh regen` " +
+		"(then `git add` them and `git commit`), and push with a plain `git push`."
 }
 
 // ---- CI --------------------------------------------------------------------------------------------------
@@ -1048,65 +667,4 @@ func issueCreate(pc command) *denial {
 		"`--milestone <title>` instead of `--parent`; an epic takes `--type epic --milestone <title>`, and its tasks are " +
 		"sub-issues, not a list in the description. Order between issues is `--blocked-by <n>`; the Area and Priority fields are " +
 		"`--area` and `--priority`."}
-}
-
-const ciReason = "Polling CI prints its status into your context on every call. Run `scripts/agentkit.sh pr wait <pr>` " +
-	"in the background (Bash run_in_background): it prints one line when CI passes, or the failing lines of the failed " +
-	"jobs (exit 3 on a conflict). After it reports a failure, `gh run view <run> --log-failed` reads more of the log. " +
-	"An orchestrator watching many PRs uses `scripts/agentkit.sh pr watch` with the Monitor tool."
-
-const jobsReason = "The jobs of a run as JSON fill your context. Run `scripts/agentkit.sh pr jobs <pr>` (`--run <id>` for one " +
-	"run): it prints each run's wall time and its jobs with their durations and results, slowest first, with the slowest " +
-	"steps of a slow job, reads once, and is bounded. To wait for CI, run `scripts/agentkit.sh pr wait <pr>` in the background."
-
-// reJobsField matches the jobs field of `gh run view --json`.
-var reJobsField = regexp.MustCompile(`--json[ =](\S*,)?jobs(,|\s|$)`)
-
-func ci(pc command) *denial {
-	var pos []string
-	text := ""
-	for _, a := range pc.args {
-		text += " " + a.text
-		if !strings.HasPrefix(a.text, "-") {
-			pos = append(pos, a.text)
-		}
-	}
-	if len(pos) < 2 {
-		return nil
-	}
-	has := func(names ...string) bool {
-		for _, a := range pc.args {
-			for _, n := range names {
-				if a.text == n || strings.HasPrefix(a.text, n+"=") {
-					return true
-				}
-			}
-		}
-		return false
-	}
-	deny := &denial{"ci-poll", ciReason}
-	if (pos[0] == "api" && strings.Contains(text, "/jobs")) || (has("--json") && reJobsField.MatchString(text)) {
-		deny = &denial{"ci-poll", jobsReason}
-	}
-	switch pos[0] + " " + pos[1] {
-	case "pr checks", "run watch":
-		return deny
-	case "run view":
-		if !has("--log-failed", "--log") {
-			return deny
-		}
-	case "run list":
-		if !has("--workflow", "-w") {
-			return deny
-		}
-	case "pr view", "pr list":
-		if strings.Contains(text, "statusCheckRollup") {
-			return deny
-		}
-	}
-	if pos[0] == "api" && (strings.Contains(text, "/check-runs") || strings.Contains(text, "/check-suites") ||
-		strings.Contains(text, "/actions/runs")) && !strings.Contains(text, "/logs") && !strings.Contains(text, "/artifacts") {
-		return deny
-	}
-	return nil
 }

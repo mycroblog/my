@@ -57,7 +57,7 @@ import { useId, useRef, useState } from "react";
 import { fieldError } from "../field-errors";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
-import { EditorFailed, PostText, retryEditors, WarningText } from "./editors";
+import { EditorFailed, editorsHere, PostText, retryEditors, WarningText } from "./editors";
 import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
 import { Language, Schedule } from "./tools";
@@ -465,6 +465,9 @@ export function ComposerView({
   const [draftsOpen, setDraftsOpen] = useState(opened === "drafts");
   // The content warning was added by the writer here: it takes the focus as it mounts (one opened with it does not).
   const [cwFocus, setCwFocus] = useState(false);
+  // The text's editor had not come as the composer opened: drawn as it comes, it leaves the focus where the reader has
+  // put it meanwhile (the audience's button, which its menu gave the focus back to).
+  const [textLate] = useState(() => !editorsHere());
   // The editors' chunk could not be fetched (or a specimen shows so): said once, in the text's place, Post disabled and
   // the count away until Try again brings them; each try mounts them anew.
   const [editorsFailed, setEditorsFailed] = useState(false);
@@ -738,6 +741,7 @@ export function ComposerView({
             readOnly={busy}
             roomy={roomy}
             autoFocus={layer}
+            late={textLate}
             ended
             handle={textRef}
             suggest={textSuggest.suggest}

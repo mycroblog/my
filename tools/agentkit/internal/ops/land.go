@@ -25,9 +25,9 @@ const (
 	LandTimeout   = 124 // still open after the timeout
 )
 
-// rebaseFix is what brings a branch back to a state the merge queue takes.
-func rebaseFix() string {
-	return "in the branch's worktree: git fetch origin && git rebase " + trunkRef() + " && scripts/agentkit.sh regen && git push --force-with-lease; then run pr land again"
+// trunkFix is what brings a branch back to a state the merge queue takes.
+func trunkFix() string {
+	return "in the branch's worktree: " + mergeFix(trunkRef()) + ", git push; then run pr land again"
 }
 
 // LandOptions are the waits of Land.
@@ -64,7 +64,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 		say("PR #%d is closed without merging", n)
 		return 1
 	case p.Mergeable == "CONFLICTING":
-		say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix())
+		say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, trunkFix())
 		return LandConflict
 	}
 	autoMerge := func() bool {
@@ -98,7 +98,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 			say("PR #%d is closed without merging", n)
 			return 1
 		case p.Mergeable == "CONFLICTING":
-			say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, rebaseFix())
+			say("PR #%d conflicts with its base: the merge queue does not take it\nfix: %s", n, trunkFix())
 			return LandConflict
 		default:
 			behind, from := follow.observe(p.HeadRefOid, pushedHead(main, p.HeadRefName))
@@ -148,7 +148,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 				for _, l := range mergeGroupFailure(n, o.LogDir) {
 					say("%s", l)
 				}
-				say("fix: %s", rebaseFix())
+				say("fix: %s", trunkFix())
 				return LandDropped
 			}
 			for _, e := range transitions(old, had, cur) {

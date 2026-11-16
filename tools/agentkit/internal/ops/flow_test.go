@@ -152,20 +152,22 @@ func TestGateHistory(t *testing.T) {
 	commit(t, merged.Root, "a.txt", "a\n", "feat: a")
 	advanceMain(t, main, "m.txt", "m\n")
 	git(t, merged.Root, "merge", "-q", "-m", "Merge origin/main", "origin/main")
-	err := gate(merged, "feat/1-merge", "origin/main")
-	wantRefusal(t, err, "origin/main..HEAD has 1 merge commit(s)", "Merge origin/main", "fix: git rebase origin/main")
+	if err := history(merged, "feat/1-merge", "origin/main"); err != nil {
+		t.Errorf("a merge of the trunk: %v, want none", err)
+	}
 
 	fix := addWorktree(t, main, "feat/2-fixup")
 	commit(t, fix.Root, "b.txt", "b\n", "feat: b")
 	commit(t, fix.Root, "b.txt", "bb\n", "fixup! feat: b")
-	err = gate(fix, "feat/2-fixup", "origin/main")
-	wantRefusal(t, err, `1 commit(s) to fold`, `"fixup! feat: b"`, "fix: GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash origin/main")
+	if err := history(fix, "feat/2-fixup", "origin/main"); err != nil {
+		t.Errorf("a fixup commit: %v, want none", err)
+	}
 
 	conflict := addWorktree(t, main, "feat/3-conflict")
 	commit(t, conflict.Root, "c.txt", "mine\n", "feat: c")
 	advanceMain(t, main, "c.txt", "theirs\n")
-	err = gate(conflict, "feat/3-conflict", "origin/main")
-	wantRefusal(t, err, "feat/3-conflict conflicts with origin/main in c.txt", "fix: git rebase origin/main")
+	err := gate(conflict, "feat/3-conflict", "origin/main")
+	wantRefusal(t, err, "feat/3-conflict conflicts with origin/main in c.txt", "fix: git fetch origin && git merge origin/main")
 
 	// Behind main without a conflict, and nothing a quick check covers: the gate passes.
 	clean := addWorktree(t, main, "feat/4-clean")
@@ -755,7 +757,7 @@ func TestLandFailures(t *testing.T) {
 	}{
 		{"conflict", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "CONFLICTING", head, "", false))
-		}, LandConflict, []string{"PR #20 conflicts with its base", "fix: in the branch's worktree: git fetch origin && git rebase origin/main"}},
+		}, LandConflict, []string{"PR #20 conflicts with its base", "fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
 		{"ci failed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, failed, true))
 		}, 1, []string{"PR #20: CI failed: preflight\n", "--- FAIL: TestThing", "fix: repair it in the branch's worktree"}},
@@ -769,7 +771,7 @@ func TestLandFailures(t *testing.T) {
 		{"dropped by the queue", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, "", false))
 			write(t, filepath.Join(state, "pr2"), prJSON("OPEN", "MERGEABLE", head, "", true))
-		}, LandDropped, []string{"PR #20 left the merge queue without merging", "== server-test (merge group", "--- FAIL: TestThing", "fix: in the branch's worktree: git fetch origin && git rebase origin/main"}},
+		}, LandDropped, []string{"PR #20 left the merge queue without merging", "== server-test (merge group", "--- FAIL: TestThing", "fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
 		{"closed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("CLOSED", "UNKNOWN", head, "", false))
 		}, 1, []string{"PR #20 is closed without merging"}},

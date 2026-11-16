@@ -24,7 +24,6 @@ english:
   - "*.md"
   - "**/AGENTS.md"
   - "docs/README.md"
-  - ".claude/**/*.md"
   - "docs/operations/**"
   - "docs/guide/**"
   - "docs/reference/**"
