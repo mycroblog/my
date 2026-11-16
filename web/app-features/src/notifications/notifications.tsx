@@ -11,11 +11,12 @@
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
-import { AccountLine, excerptHtml, ListColumn, nameOf, PostContent } from "@my/app-components";
+import { AccountLine, excerptHtml, ListColumn, nameOf, notificationPath, PostContent } from "@my/app-components";
 import {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
+  useDismissNotification,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,
@@ -29,6 +30,8 @@ import {
   Entry,
   Excerpt,
   IconButton,
+  MenuButton,
+  MenuItem,
   NoticeCaption,
   NoticeLine,
   OpenRow,
@@ -38,10 +41,10 @@ import {
   useAction,
   useLocale,
 } from "@my/design-system";
-import { useId, useState, type ReactNode } from "react";
+import { createContext, use, useId, useRef, useState, type ReactNode } from "react";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
-import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { useCompose, usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
@@ -115,6 +118,51 @@ function emojiOf(n: NotificationItem): ReactNode {
   return r.shortcode === undefined ? r.name : undefined;
 }
 
+/** How a notification is dismissed: by a button of its own at the line's end, or from a menu there. */
+export type DismissLook = "button" | "menu";
+
+const DismissLookContext = createContext<DismissLook>("button");
+
+/** Sets how the notifications below are dismissed (DismissLook). */
+export const DismissLookProvider = DismissLookContext;
+
+/**
+ * Dismisses the notification: it leaves the list at once; a failure puts it back and says so, with Try again. A second
+ * press while the first is in flight does nothing.
+ */
+function Dismiss({ n, t }: { n: NotificationItem; t: T }) {
+  const look = use(DismissLookContext);
+  const dismiss = useDismissNotification();
+  const failed = usePostNotice();
+  const flying = useRef(false);
+  const run = () => {
+    if (flying.current) return;
+    flying.current = true;
+    dismiss(n.id)
+      .catch((error: unknown) => {
+        failed(error, t("notifications.dismiss_failed"), run);
+      })
+      .finally(() => {
+        flying.current = false;
+      });
+  };
+  if (look === "menu")
+    return (
+      <MenuButton icon="more" label={t("notifications.more")}>
+        <MenuItem id="dismiss" icon="close" onAction={run}>
+          {t("notifications.dismiss")}
+        </MenuItem>
+      </MenuButton>
+    );
+  return <IconButton icon="close" label={t("notifications.dismiss")} onPress={run} />;
+}
+
+/** Where a notification's line leads, when it leads elsewhere than the notifications themselves. */
+function targetOf(n: NotificationItem): string | undefined {
+  const path = notificationPath(n);
+  return path === "/notifications" ? undefined : path;
+}
+
 function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string | undefined; t: T; instance: string }) {
   const id = useId();
   const avatar = n.account && (
@@ -122,14 +170,25 @@ function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string 
   );
   return (
     <Entry labelledBy={id}>
-      <NoticeLine icon={glyphOf(n.type)} emoji={emojiOf(n)} avatar={avatar} date={n.created_at} id={id} unread={unread}>
+      <NoticeLine
+        icon={glyphOf(n.type)}
+        emoji={emojiOf(n)}
+        avatar={avatar}
+        date={n.created_at}
+        id={id}
+        unread={unread}
+        href={targetOf(n)}
+        action={<Dismiss n={n} t={t} />}
+        excerpt={
+          n.status !== undefined && (
+            <Excerpt>
+              <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
+            </Excerpt>
+          )
+        }
+      >
         {sentenceOf(n, t, instance, known)}
       </NoticeLine>
-      {n.status !== undefined && (
-        <Excerpt>
-          <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
-        </Excerpt>
-      )}
       <Act n={n} t={t} />
     </Entry>
   );
@@ -146,7 +205,7 @@ function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean;
       <Post
         status={n.status}
         context={
-          <NoticeCaption icon={glyphOf(n.type)} unread={mark}>
+          <NoticeCaption icon={glyphOf(n.type)} unread={mark} action={<Dismiss n={n} t={t} />}>
             {sentenceOf(n, t, instance, known)}
           </NoticeCaption>
         }

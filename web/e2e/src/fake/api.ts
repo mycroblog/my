@@ -253,6 +253,8 @@ export type FakeOptions = {
   subscriptions?: readonly string[];
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
+  /** Besides the scenario's notifications, one of every other kind the server sends, from people and from the server. */
+  everyKind?: boolean;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -1681,6 +1683,72 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     };
   };
 
+  // With `everyKind`, a notification of each kind the scenario makes none of, an hour apart before the newest: from
+  // people, about the reader's post, or from the server, each with what its sentence and its target read.
+  if (o.everyKind === true) {
+    const own = posts.find((p) => p.author === viewer);
+    const status = own === undefined ? {} : { status: statusOf(own) };
+    const event = scenarioEvents[0] === undefined ? undefined : eventOf(scenarioEvents[0], 0);
+    const about = event === undefined ? {} : { event_id: event["id"], event };
+    const room = rooms[0];
+    const kinds: [string, string | undefined, Json][] = [
+      ["status", "sam", status],
+      ["follow_accepted", "hana", {}],
+      ["poll_closed", undefined, status],
+      ["interaction_accepted", "layla", status],
+      ["interaction_rejected", "marco", status],
+      ["account_moved", "sora@social.example", { account_move: { target: accountOf("sora@photos.example") } }],
+      ["voice_room_started", "hana", room === undefined ? {} : { voice_room_id: room.id, voice_room: room }],
+      ["voice_room_invited", "sam", room === undefined ? {} : { voice_room_id: room.id }],
+      ["event_invited", "mio", about],
+      ["event_schedule_confirmed", undefined, about],
+      ["event_changed", undefined, about],
+      ["event_cancelled", undefined, about],
+      ["event_reminder", undefined, about],
+      ["event_started", undefined, about],
+      ["event_room_unavailable", undefined, about],
+      ["announcement", undefined, { announcement: announcementOf(scenarioAnnouncements[0]?.key ?? "") }],
+      ["moderation_notice", undefined, {}],
+      ["report_resolved", undefined, {}],
+      ["appeal_decided", undefined, {}],
+      ["hook_appeal_decided", undefined, {}],
+      ["relationships_severed", undefined, {}],
+      ["custom_emoji_request_decided", undefined, {}],
+      ["supporter_payment_failed", undefined, {}],
+      ["supporter_subscription_ended", undefined, {}],
+      ["supporter_plan_retired", undefined, {}],
+      ["service_closure", undefined, { service_closure: { change: "announced" } }],
+      ["supporter_service_closure", undefined, { service_closure: { change: "announced" } }],
+      [
+        "auto_delete_limit",
+        undefined,
+        { auto_delete_limit: { max_age_days: 365, enforce_from: new Date(started + 30 * day).toISOString() } },
+      ],
+      ["admin_report", undefined, { report_id: idAt(started, 60_000) }],
+      ["admin_sign_up", "kiri@far.example", {}],
+      ["admin_appeal", undefined, { appeal_id: idAt(started, 60_001) }],
+      ["admin_webhook_disabled", undefined, {}],
+      ["admin_hook_failing", undefined, {}],
+      ["admin_domain_list_failing", undefined, {}],
+      ["admin_custom_emoji_request", "mio", {}],
+      ["admin_account_moved", undefined, { account_move: { target: accountOf("sora@photos.example") } }],
+      ["admin_service_closure_due", undefined, { service_closure: { change: "announced" } }],
+      ["admin_error_group", undefined, { error_group: { change: "created" } }],
+      ["admin_hook_appeal", undefined, { hook_appeal_id: idAt(started, 60_002) }],
+    ];
+    kinds.forEach(([type, from, more], i) => {
+      const at = started - (i + 1) * 60 * minute;
+      notifications.push({
+        id: idAt(at, 11_000 + i),
+        type,
+        created_at: new Date(at).toISOString(),
+        ...(from === undefined ? {} : { account: accountOf(from) }),
+        ...more,
+      });
+    });
+    notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
+  }
+
   // ---- Answers ---------------------------------------------------------------------------------------------------
 
   /** The page of `items` that the request's `cursor` and `limit` ask for, as the server pages a list. */
@@ -2397,6 +2465,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);
+    }
+    if ((match = m(/^\/notifications\/([^/]+)\/dismiss$/)) && request.method === "POST") {
+      const at = notifications.findIndex((n) => n["id"] === decodeURIComponent(match?.[1] ?? ""));
+      if (at < 0) return problem(404, "Not Found");
+      notifications.splice(at, 1);
+      return new Response(null, { status: 204 });
     }
     if (path === "/notifications/marker") {
       if (request.method === "PUT") {

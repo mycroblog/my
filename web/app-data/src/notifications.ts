@@ -31,12 +31,15 @@ type NotificationMarker = components["schemas"]["NotificationMarker"];
 /** How many notification requests wait, by account and by notification (ADR-0158 §7). */
 export type NotificationRequestSummary = components["schemas"]["NotificationRequestSummary"];
 
-/** Which notifications a list holds: all of them, or those that speak to the reader (a mention, a quote). */
+/**
+ * Which notifications a list holds: all of them, or those that speak to the reader (a mention, a quote, a new post of
+ * an account they subscribe to, ADR-0086 §17).
+ */
 export type NotificationFilter = "all" | "mentions";
 
 const filters: Readonly<Record<NotificationFilter, readonly NotificationType[] | undefined>> = {
   all: undefined,
-  mentions: ["mention", "quote"],
+  mentions: ["mention", "quote", "status"],
 };
 
 /** The notifications that tell of a reply, boost or quote waiting for the reader's approval (approvals.ts). */
@@ -169,6 +172,42 @@ async function readAllNotifications(data: AppData): Promise<void> {
   }
   if (newest === undefined || !newer(newest, markerOf(data)?.last_read_id)) return;
   await putMarker(data, newest);
+}
+
+// ---- Dismissing ----------------------------------------------------------------------------------------------------
+
+/** The cached lists with the notification of `id` taken out, and puts back what they held before. */
+function takeOut(data: AppData, id: string): () => void {
+  const before = lists(data).map(({ queryKey }) => ({
+    queryKey,
+    cached: data.queryClient.getQueryData<Pages<NotificationItem>>(queryKey),
+  }));
+  for (const { queryKey, cached } of before) {
+    if (cached === undefined) continue;
+    data.queryClient.setQueryData<Pages<NotificationItem>>(queryKey, {
+      ...cached,
+      pages: cached.pages.map((page) => ({ ...page, items: page.items.filter((n) => n.id !== id) })),
+    });
+  }
+  return () => {
+    for (const { queryKey, cached } of before)
+      if (cached !== undefined) data.queryClient.setQueryData(queryKey, cached);
+  };
+}
+
+/**
+ * Dismisses the notification of `id`: it leaves every list at once, and the server takes it out of the list and the
+ * unread count, which is read again. A failure puts it back and rejects with the problem.
+ */
+async function dismissNotification(data: AppData, id: string): Promise<void> {
+  const putBack = takeOut(data, id);
+  try {
+    await data.api.POST("/notifications/{id}/dismiss", { params: { path: { id } } });
+  } catch (e) {
+    putBack();
+    throw e;
+  }
+  void data.queryClient.invalidateQueries({ queryKey: notificationMarkerQuery(data).queryKey, exact: true });
 }
 
 // ---- The stream ----------------------------------------------------------------------------------------------------
@@ -304,4 +343,10 @@ export function useNotificationReads(): NotificationReads {
 /** How many notification requests wait; undefined until the server answered. */
 export function useNotificationRequestSummary(): NotificationRequestSummary | undefined {
   return useQuery(notificationRequestSummaryQuery(useAppData())).data;
+}
+
+/** Dismisses a notification for the session of the nearest AppDataProvider (dismissNotification). */
+export function useDismissNotification(): (id: string) => Promise<void> {
+  const data = useAppData();
+  return (id) => dismissNotification(data, id);
 }

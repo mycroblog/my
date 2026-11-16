@@ -30,6 +30,25 @@ export class Notifications {
       .filter({ hasText: text });
   }
 
+  /** Opens what the notification named `what` tells of, by its line's link. */
+  async open(what: string): Promise<void> {
+    await this.notification(what).getByRole("link", { name: what, exact: true }).click();
+  }
+
+  /** Opens the post by `author` that mentions the reader and holds `text`, by its time ("2m ago"), a link to it. */
+  async openMention(author: string, text: string): Promise<void> {
+    await this.mention(author, text)
+      .getByRole("link", { name: /^(?:.+ ago|now)$/ })
+      .click();
+  }
+
+  /** Dismisses the notification named `what`, and returns once the server has answered. */
+  async dismiss(what: string): Promise<void> {
+    await answered(this.page, { methods: ["POST"], path: /\/notifications\/[^/]+\/dismiss$/ }, async () => {
+      await this.notification(what).getByRole("button", { name: "Dismiss notification", exact: true }).click();
+    });
+  }
+
   /** The follow request of `from` (a display name). */
   followRequest(from: string): Locator {
     return this.notification(`${from} requested to follow you`);

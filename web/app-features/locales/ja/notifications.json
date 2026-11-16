@@ -13,7 +13,7 @@
   },
   "notifications.mentions": {
     "defaultMessage": "メンション",
-    "description": "The tab that shows only the notifications that speak to the reader: mentions and quotes."
+    "description": "The tab that shows only the notifications that speak to the reader: mentions, quotes and new posts of the accounts they asked to be notified of."
   },
   "notifications.waiting": {
     "defaultMessage": "承認待ち",
@@ -54,6 +54,18 @@
   "notifications.read_all": {
     "defaultMessage": "すべて既読にする",
     "description": "The button over the notifications that marks every notification read."
+  },
+  "notifications.dismiss": {
+    "defaultMessage": "この通知を消す",
+    "description": "The button or menu item at the end of a notification that takes it out of the list for good."
+  },
+  "notifications.more": {
+    "defaultMessage": "通知のメニュー",
+    "description": "The button at the end of a notification that opens the menu of what may be done with it (dismissing it)."
+  },
+  "notifications.dismiss_failed": {
+    "defaultMessage": "通知を消せませんでした。",
+    "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
   },
   "notifications.approve": {
     "defaultMessage": "承認",

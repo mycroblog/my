@@ -137,6 +137,8 @@ const notice = tv({
     // kept even; the time floats at its first line's end, and the lines under it run to the column's end.
     text: "m-0 [text-wrap:pretty] [word-break:auto-phrase]",
     end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-entry-caption",
+    // A control at the end, over the line's link, at a timeline control's height on the first line's.
+    action: "relative z-1 -my-[calc((var(--control-timeline-height)-1lh)/2)] -me-icon-button-inline inline-flex",
     // The sentence as the link to what it tells of, in the line's own color, underlined while hovered; it reaches over
     // the whole line, so that a press anywhere on it follows the link.
     link: [
@@ -168,6 +170,8 @@ export type NoticeLineProps = {
   children: ReactNode;
   /** What it is about, under the sentence in its column (an `Excerpt` of the reader's post). */
   excerpt?: ReactNode;
+  /** A control at the line's end, after the time (dismissing it). */
+  action?: ReactNode;
   /** Where it leads: what it tells of (the post, the account, the follow requests). */
   href?: string | undefined;
   /** What runs as its link is followed (it is read). */
@@ -187,6 +191,7 @@ export function NoticeLine({
   unread: mark,
   children,
   excerpt,
+  action,
   href,
   onFollow,
 }: NoticeLineProps) {
@@ -200,6 +205,7 @@ export function NoticeLine({
           <span className={s.end()}>
             {mark !== undefined && <UnreadMark label={mark} />}
             <Stamp date={date} />
+            {action !== undefined && <span className={s.action()}>{action}</span>}
           </span>
           {/* The sentence alone names the entry, not the time before it. */}
           <span id={id}>
@@ -223,21 +229,27 @@ const noticeCaption = tv({
     root: "flex items-center gap-entry-avatar text-caption",
     text: "m-0 flex min-w-0 flex-1 items-start gap-entry-caption [word-break:auto-phrase]",
     glyph: "inline-flex h-[1lh] flex-none items-center text-muted-text",
+    // A control at the end, its whole height in the line, so that it keeps clear of the post's byline under it.
+    action: "-me-icon-button-inline inline-flex flex-none",
   },
   variants: { read: { true: { text: "text-muted-text" }, false: { text: "text-text" } } },
 });
 
 /**
  * A notice's kind over the entry it is about, inside it (a post that mentions the reader): a caption's glyph and
- * sentence, in the text's color with the unread mark at the line's end while unread, muted once read.
+ * sentence, in the text's color with the unread mark at the line's end while unread, muted once read, and a control
+ * after the mark.
  */
 export function NoticeCaption({
   icon,
   unread: mark,
+  action,
   children,
 }: {
   icon: IconName;
   unread?: string | undefined;
+  /** A control at the line's end (dismissing it). */
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const s = noticeCaption({ read: mark === undefined });
@@ -250,6 +262,7 @@ export function NoticeCaption({
         <span>{children}</span>
       </p>
       {mark !== undefined && <UnreadMark label={mark} />}
+      {action !== undefined && <span className={s.action()}>{action}</span>}
     </div>
   );
 }

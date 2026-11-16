@@ -206,6 +206,7 @@ export {
   notificationRequestSummaryQuery,
   notificationsQuery,
   receiveNotification,
+  useDismissNotification,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,
