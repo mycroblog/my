@@ -273,6 +273,7 @@ export {
   SectionNote,
   Toast,
 } from "./shell";
+export { SearchField, type SearchFieldProps } from "./search-field";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";
