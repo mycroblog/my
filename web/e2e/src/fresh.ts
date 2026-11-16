@@ -33,6 +33,8 @@ export type FreshPersonOptions = {
   followedBy?: readonly Person[];
   /** Keeps the administrator role that `my admin create` gives, for a test of the administrators' API. */
   admin?: boolean;
+  /** Who may read the person's lists of follows and followers (FR-311); everyone by default. */
+  followsVisibility?: components["schemas"]["FollowsVisibility"];
 };
 
 /**
@@ -171,7 +173,11 @@ export class Fresh {
     else this.#o.runMy(["admin", "role", "revoke", p.username, "admin"]);
     const api = await this.#api(p);
     const { error } = await api.PATCH("/accounts/update_credentials", {
-      body: { display_name: p.displayName, locked: o.locked === true },
+      body: {
+        display_name: p.displayName,
+        locked: o.locked === true,
+        ...(o.followsVisibility === undefined ? {} : { follows_visibility: o.followsVisibility }),
+      },
     });
     if (error !== undefined) throw new Error(`fresh: the profile of ${p.username} was refused`);
     for (const followee of o.follows ?? []) await this.#follow(p, followee, true);

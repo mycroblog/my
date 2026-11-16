@@ -179,8 +179,8 @@ export const Variants: Story = {
 export const InText: Story = {
   render: () => (
     <p className="m-0 text-caption text-muted-text">
-      Sign in to see this screen. · <TextLink href="#sign-in">Sign in</TextLink> ·{" "}
-      <TextButton onPress={() => undefined}>Try again</TextButton>
+      Sign in to see this screen.{" "}
+      <TextLink href="#sign-in">Sign in</TextLink> · <TextButton onPress={() => undefined}>Try again</TextButton>
     </p>
   ),
 };

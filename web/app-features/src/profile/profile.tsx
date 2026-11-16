@@ -8,7 +8,7 @@
 // it, the tabs of its posts (posts, posts and replies, media, articles), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
-import { AccountName, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
+import { AccountName, accountPath, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
 import {
   loadAccount,
   useAccount,
@@ -269,10 +269,18 @@ function Head({
       <MetaLine>
         <span>{t("profile.joined", { date: joined })}</span>
         {account.following_count !== undefined && (
-          <MetaCount label={t("profile.following_count")} value={n(account.following_count)} />
+          <MetaCount
+            label={t("profile.following_count")}
+            value={n(account.following_count)}
+            href={`${accountPath(account)}/following`}
+          />
         )}
         {account.followers_count !== undefined && (
-          <MetaCount label={t("profile.followers_count")} value={n(account.followers_count)} />
+          <MetaCount
+            label={t("profile.followers_count")}
+            value={n(account.followers_count)}
+            href={`${accountPath(account)}/followers`}
+          />
         )}
       </MetaLine>
       {account.locked && <CaptionLine icon="followers">{t("profile.locked")}</CaptionLine>}

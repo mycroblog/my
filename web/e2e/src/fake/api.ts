@@ -2,7 +2,8 @@
 
 // A fake of the client API for the screens' stories, where no server runs: a `fetch`-compatible `serve(request)` that
 // answers as the server would after the seed applied the scenario (scenario.ts), as one person of it reads it. The
-// statuses, the home timeline, a thread, a profile, the relationships and the notifications are derived from the
+// statuses, the home timeline, a thread, a profile with its lists of follows and followers (as far as their owner shows
+// them), the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
 // decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
 // answers of follow requests, the read marker, the announcements read, the conversations of the direct messages read
@@ -126,6 +127,8 @@ export type FakeOptions = {
    * are answered as the server answers them.
    */
   approvals?: boolean;
+  /** The lists of an account's follows and followers fail (`fails`, a 500) or never answer (`waits`). */
+  followsLists?: "fails" | "waits";
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -307,6 +310,22 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const blocking = new Set(restrictions.filter((r) => r.kind === "block").map((r) => `${r.by}>${r.target}`));
   const muting = new Set(restrictions.filter((r) => r.kind === "mute").map((r) => `${r.by}>${r.target}`));
   const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
+  /**
+   * Who may read a person's lists of follows and followers (FR-311), the fake's own, since the seed sets none: mio
+   * shows them to her followers only, kai to nobody, everyone else to everyone.
+   */
+  /**
+   * The follows a person's counts take in beyond the scenario's people (with people of servers the seed's federates
+   * with none), the fake's own: an account whose lists its owner keeps (FR-311) still shows how many they hold.
+   */
+  const beyond: Readonly<Record<string, { followers: number; following: number }>> = {
+    mio: { followers: 48, following: 35 },
+    kai: { followers: 127, following: 64 },
+  };
+  const followsVisibility: Readonly<Record<string, "public" | "followers" | "private">> = {
+    mio: "followers",
+    kai: "private",
+  };
   const hidden = (author: string) => blocking.has(`${viewer}>${author}`) || muting.has(`${viewer}>${author}`);
 
   // Every account the server answers is a whole one, as the client API's Account is: a post's author too, which the
@@ -333,8 +352,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       fields: p.fields.map(([name, value]) => ({ name, value: serverHtml(value, fakeHost) })),
       badges: [],
       ...(header === undefined ? {} : { header: { small: { url: header }, medium: { url: header } } }),
-      followers_count: people.filter((x) => follows_(x.username, p.username)).length,
-      following_count: people.filter((x) => follows_(p.username, x.username)).length,
+      followers_count:
+        people.filter((x) => follows_(x.username, p.username)).length + (beyond[p.username]?.followers ?? 0),
+      following_count:
+        people.filter((x) => follows_(p.username, x.username)).length + (beyond[p.username]?.following ?? 0),
       statuses_count: posts.filter((x) => x.author === p.username).length,
     };
   };
@@ -1774,6 +1795,32 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return json(body);
     }
     if ((match = m(/^\/accounts\/([^/]+)\/featured_tags$/))) return json({ items: [] });
+    if ((match = m(/^\/accounts\/([^/]+)\/(followers|following)$/))) {
+      // The accounts of the list, newest follow first; a list the owner keeps from the reader is a 403.
+      if (o.followsLists === "waits") return new Promise<Response>(() => undefined);
+      if (o.followsLists === "fails") return problem(500, "Internal Server Error");
+      const username = usernameOf.get(decodeURIComponent(match[1] ?? ""));
+      if (username === undefined) return problem(404, "Not Found");
+      const shown = followsVisibility[username] ?? "public";
+      if (username !== viewer && shown !== "public" && !(shown === "followers" && follows_(viewer, username)))
+        return json(
+          {
+            type: "/api/v1/problems/follows-hidden",
+            title: "This account's follows are not shown",
+            status: 403,
+          },
+          403,
+        );
+      const followers = match[2] === "followers";
+      const listed = [...following]
+        .toReversed()
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([from, to]) => (followers ? to === username : from === username))
+        .map(([from, to]) => accountOf(followers ? from : to));
+      const { from, body } = page(listed, q);
+      if (from > 0) await late();
+      return json(body);
+    }
     if ((match = m(/^\/accounts\/([^/]+)\/(follow|unfollow|block|unblock|mute|unmute)$/))) {
       const verb = match[2] ?? "";
       const add = request.method === "POST" && !verb.startsWith("un");

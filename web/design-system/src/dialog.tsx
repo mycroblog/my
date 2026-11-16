@@ -23,8 +23,9 @@ const confirm = tv({
       "font-sans text-body text-text shadow-overlay outline-hidden",
     ],
     dialog: "grid gap-dialog-gap outline-hidden",
-    title: "m-0 text-title",
-    text: "m-0 text-muted-text",
+    // Wrapping between phrases, never inside a word of ja.
+    title: "m-0 text-title [word-break:auto-phrase]",
+    text: "m-0 text-muted-text [word-break:auto-phrase]",
     row: "flex flex-wrap items-center justify-end gap-dialog-row",
   },
 });

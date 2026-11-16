@@ -275,6 +275,9 @@ function shows(
       has("h1:not([data-frame-heading])") &&
       (server.dataExport === undefined || server.dataExport === "none" || has('p[role="status"]'))
     );
+  // An account's lists of follows that fail show it with the retry; those that never answer, their tabs over a busy list.
+  if (server.followsLists === "fails") return has('main [role="alert"]');
+  if (server.followsLists === "waits") return has('main [role="tab"]') && has('main [aria-busy="true"]');
   // A server gone down shows its notice over the screen.
   if (server.down !== undefined) return has('[role="region"]');
   // A visitor at / of a server not of one person: the landing page, with its sign-in once the instance answered.
@@ -298,8 +301,9 @@ function shows(
       return settled && canvas.querySelectorAll("article > p > button").length >= 2;
     default:
       // A list of who reacted shows a row per account, each a link to its profile; the reader's lists, a row per list;
-      // a screen of posts, its posts.
+      // a screen of posts, its posts. An account's list of follows shows its rows, or that its owner keeps it.
       if (at === "/lists") return settled && has('main a[href^="/lists/"]');
+      if (/\/follow(?:ers|ing)$/.test(at)) return settled && has('main a[href^="/@"], main p[role="status"]');
       // A list the server has no longer says so.
       if (at === "/lists/gone") return has('main p[role="status"]');
       return settled && has(at.startsWith("reactions:") ? 'main a[href^="/@"]' : "article");

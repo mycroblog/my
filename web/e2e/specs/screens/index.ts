@@ -32,6 +32,7 @@ export {
   type CjkRegion,
   type DrawnWith,
 } from "./fonts";
+export { countLink, Follows } from "./follows";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";
 export { ListIndex, ListScreen } from "./lists";

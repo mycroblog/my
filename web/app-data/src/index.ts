@@ -219,6 +219,7 @@ export {
   type PostSource,
   type StatusEdit,
 } from "./own-posts";
+export { accountFollowsQuery, useAccountFollows, type AccountFollows, type FollowsList } from "./follows";
 export type { PagedList } from "./paged";
 export { usePollVote, voteInPoll, type PollVote } from "./polls";
 export { AppDataProvider } from "./provider";

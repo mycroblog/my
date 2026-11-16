@@ -44,13 +44,13 @@ test("a composer or an editor whose code could not be fetched says so, and Try a
   await signIn(await fresh.person());
   const frame = new Frame(page);
   const composer = await frame.newPost();
-  await expect(composer.dialog.getByRole("alert")).toHaveText("The post form could not be loaded. · Try again");
+  await expect(composer.dialog.getByRole("alert")).toHaveText("The post form could not be loaded. Try again");
   await page.unroute(chunks);
   // Only the editor fails now.
   const text = /\/assets\/text-[\w-]{8}\.js$/;
   await page.route(text, (route) => route.abort("failed"));
   await composer.dialog.getByRole("button", { name: "Try again", exact: true }).click();
-  await expect(composer.dialog.getByRole("alert")).toHaveText("The text field could not be loaded. · Try again");
+  await expect(composer.dialog.getByRole("alert")).toHaveText("The text field could not be loaded. Try again");
   await expect(composer.postButton).toBeVisible();
   await page.unroute(text);
   await composer.dialog.getByRole("button", { name: "Try again", exact: true }).click();

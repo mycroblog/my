@@ -46,6 +46,7 @@ export { loadNotifications, Notifications } from "./notifications/notifications"
 export { loadWaitingRequests, WaitingRequests } from "./notifications/waiting";
 export { PostActions, type ComposeRequest } from "./post-actions";
 export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTranslationState } from "./post-translation";
+export { Follows, loadFollows } from "./profile/follows";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
 export { loadReactors, ReactorList } from "./thread/reactors";
 export { loadThread, Thread } from "./thread/thread";

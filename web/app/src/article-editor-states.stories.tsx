@@ -204,8 +204,11 @@ async function previewFailed(context: StoryContext, lang: Lang, narrow: boolean)
       within(canvas.getByRole("radiogroup", { name: w.mode })).getByRole("radio", { name: w.preview }),
     );
   const preview = within(await canvas.findByRole("article"));
-  await waitFor(() => expect(preview.getByText(w.failed, { exact: true })).toBeVisible(), answered);
-  await expect(preview.getByRole("button", { name: w.tryAgain })).toBeVisible();
+  // The notice, its sentence then Try again, which holds the sentence's stop (sentence.ts).
+  const notice = await waitFor(() => preview.getByRole("alert"), answered);
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveTextContent(w.failed);
+  await expect(within(notice).getByRole("button", { name: w.tryAgain })).toBeVisible();
   await expect(preview.queryByRole("heading", { level: 3 })).toBeNull();
 }
 
