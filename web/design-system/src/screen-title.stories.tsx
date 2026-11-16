@@ -2,7 +2,8 @@
 
 // The head of a screen of one thing a timeline is of, in the reader's language (the toolbar's locale): a hashtag the
 // reader does not follow, one they follow, one whose name runs long (it breaks before its capitals), and a list of
-// theirs, which has nothing to do yet (making and changing lists comes later). A post under the first shows where the
+// theirs, which has nothing to do yet (making and changing lists comes later); and the head of a screen of one account's
+// things, its row under the way back (its held-back notifications). A post under the first shows where the
 // column starts. The words are placeholders of the features'.
 
 import { rootPx } from "@my/design-tokens";
@@ -12,7 +13,7 @@ import { useLocale } from "react-aria-components";
 import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
-import { BackButton, ScreenStack, ScreenTitle } from "./list";
+import { AccountRow, BackButton, ScreenHead, ScreenStack, ScreenTitle } from "./list";
 import { images } from "./samples";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -29,6 +30,9 @@ const words = {
     members: (n: number) => `${String(n)} members`,
     post: "Day 3 of the sourdough experiment. The crumb is finally open enough to call it bread. #baking",
     list: "Close friends",
+    held: "Held-back notifications",
+    dismiss: "Dismiss",
+    accept: "Accept",
   },
   ja: {
     back: "戻る",
@@ -38,6 +42,9 @@ const words = {
     members: (n: number) => `${String(n)} 人`,
     post: "サワードウの実験 3 日目。やっとパンと呼べるくらい気泡が開いた。#baking",
     list: "親しい友だち",
+    held: "保留中の通知",
+    dismiss: "消す",
+    accept: "受け入れる",
   },
 } as const;
 
@@ -80,6 +87,22 @@ function Titles() {
       <ScreenTitle back={back(w.lists)} glyph="list" count={w.members(12)}>
         {w.list}
       </ScreenTitle>
+      <ScreenHead back={back(w.held)}>
+        <AccountRow
+          avatar={<Avatar name="Kiri" src={images.dusk} size="post" decorative />}
+          name="Kiri 霧"
+          handle="@kiri@far.example"
+          href="/@kiri@far.example"
+          end={
+            <>
+              <Button size="timeline">{w.dismiss}</Button>
+              <Button size="timeline" kind="primary">
+                {w.accept}
+              </Button>
+            </>
+          }
+        />
+      </ScreenHead>
     </Column>
   );
 }

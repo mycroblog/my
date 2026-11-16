@@ -127,7 +127,8 @@ const notice = tv({
     root: "relative flex items-start gap-entry-caption",
     // The glyph and the avatar stand on the text's first line, so that a sentence that wraps keeps them at its start.
     glyph: [
-      "inline-flex h-[1lh] min-w-icon-action flex-none items-center justify-center text-muted-text",
+      // At the icon's width whatever it holds (a reaction's emoji too), so that every sentence starts in one column.
+      "inline-flex h-[1lh] w-icon-action flex-none items-center justify-center text-muted-text",
       "text-[length:var(--icon-action)] leading-none",
     ],
     // Held empty where no account acted (a notice of the server), so that every sentence starts in one column.
@@ -136,7 +137,8 @@ const notice = tv({
     // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り), its lines
     // kept even; the time floats at its first line's end, and the lines under it run to the column's end.
     text: "m-0 [text-wrap:pretty] [word-break:auto-phrase]",
-    end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-entry-caption",
+    // The unread mark, the time and the control stand close, so that the first line keeps more of its measure.
+    end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-chip-gap",
     // A control at the end, over the line's link, at a timeline control's height on the first line's.
     action: "relative z-1 -my-[calc((var(--control-timeline-height)-1lh)/2)] -me-icon-button-inline inline-flex",
     // The sentence as the link to what it tells of, in the line's own color, underlined while hovered; it reaches over
@@ -274,7 +276,10 @@ export function SentenceName({ children }: { children: ReactNode }) {
   return <bdi className={name()}>{children}</bdi>;
 }
 
-const excerpt = tv({ base: "line-clamp-2 text-muted-text [&_p]:inline [&_p+p]:before:content-['_']" });
+// Wrapping between phrases, never inside a word of ja, as the sentence over it does.
+const excerpt = tv({
+  base: "line-clamp-2 text-muted-text [word-break:auto-phrase] [&_p]:inline [&_p+p]:before:content-['_']",
+});
 
 /**
  * The first words of something a line is about (the reader's post a notice is about): muted, its paragraphs run on,
@@ -549,6 +554,19 @@ export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count
       <span>{children}</span>
       {count !== undefined && <span className={s.count()}>{count}</span>}
     </h2>
+  );
+}
+
+/**
+ * The head of a screen of one account's things (its held-back notifications): its back button close over what stands
+ * for the title, the account's row, as the screen's title stands under it.
+ */
+export function ScreenHead({ back, children }: { back: ReactNode; children: ReactNode }) {
+  return (
+    <div className={screenTitle().root()}>
+      {back}
+      {children}
+    </div>
   );
 }
 

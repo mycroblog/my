@@ -1,28 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The notifications, a story per state every screen is shown in (app.samples.tsx), fed new notifications from the
-// Stream panel. Live options (`notification-dismiss`) set how a notification is dismissed: by a button of its own at
-// its line's end, or from a menu there.
+// Stream panel.
 
-import { DismissLookProvider, type DismissLook } from "@my/app-features";
-import { Options } from "@my/devtools/options";
-import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
 
 const at = "/notifications";
 
-/** The app in each way a notification is dismissed. */
-function Variants({ app }: { app: () => ReactNode }) {
-  const as = (look: DismissLook) => <DismissLookProvider value={look}>{app()}</DismissLookProvider>;
-  return <Options id="notification-dismiss" variants={{ button: as("button"), menu: as("menu") }} />;
-}
-
 const meta = {
   title: "Notifications",
   ...screenMeta,
-  render: (args: unknown, context: StoryContext) => <Variants app={() => screenMeta.render(args, context)} />,
   parameters: { ...screenMeta.parameters, ...screen({ at }, "notifications") },
 } satisfies Meta;
 export default meta;
@@ -63,12 +52,7 @@ export const Dismissed: Story = {
     const first = within(feed).getAllByRole("article")[0];
     if (first === undefined) throw new Error("no notification");
     const name = first.getAttribute("aria-labelledby");
-    const dismiss = within(first).queryByRole("button", { name: "Dismiss notification" });
-    if (dismiss !== null) await userEvent.click(dismiss);
-    else {
-      await userEvent.click(within(first).getByRole("button", { name: "Notification menu" }));
-      await userEvent.click(await within(document.body).findByRole("menuitem", { name: "Dismiss notification" }));
-    }
+    await userEvent.click(within(first).getByRole("button", { name: "Dismiss notification" }));
     await waitFor(async () => {
       await expect(name === null ? null : context.canvasElement.ownerDocument.getElementById(name)).toBeNull();
     });

@@ -29,6 +29,7 @@ import {
   FeedNotice,
   Fold,
   FormText,
+  ScreenHead,
   ScreenStack,
   ScreenTitle,
   StateText,
@@ -160,8 +161,8 @@ export function Held({ onBack }: { onBack: () => void }) {
 }
 
 /**
- * The screen of the held-back notifications of the account of `id`, back to the requests at its top: the account with
- * the answer, then its notifications as the list draws them.
+ * The screen of the held-back notifications of the account of `id`: under the way back to the requests, the account's
+ * row with the answer as its head, then its notifications as the list draws them.
  */
 export function HeldOf({ id, instance, onBack }: { id: string; instance: string; onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
@@ -178,10 +179,10 @@ export function HeldOf({ id, instance, onBack }: { id: string; instance: string;
     );
   return (
     <ScreenStack busy={request === undefined}>
-      <ScreenTitle glyph="followers" back={back}>
-        {request === undefined ? t("notifications.held") : nameOf(request.account)}
-      </ScreenTitle>
-      {request !== undefined && <AccountLine account={request.account} end={<Answers id={id} t={t} />} />}
+      {/* The account's row is the screen's head, under the way back. */}
+      <ScreenHead back={back}>
+        {request !== undefined && <AccountLine account={request.account} end={<Answers id={id} t={t} />} />}
+      </ScreenHead>
       <ListColumn
         {...list}
         label={t("notifications.held")}

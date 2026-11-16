@@ -59,10 +59,6 @@
     "defaultMessage": "この通知を消す",
     "description": "The button or menu item at the end of a notification that takes it out of the list for good."
   },
-  "notifications.more": {
-    "defaultMessage": "通知のメニュー",
-    "description": "The button at the end of a notification that opens the menu of what may be done with it (dismissing it)."
-  },
   "notifications.dismiss_failed": {
     "defaultMessage": "通知を消せませんでした。",
     "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
@@ -148,7 +144,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.auto_delete_limit": {
-    "defaultMessage": "{instance}: 公開から{days, plural, other {# 日}}を過ぎた投稿が{daysLeft, plural, =0 {これから} other {# 日後から}}自動で削除されます",
+    "defaultMessage": "{instance}: 公開から{days, plural, other {#日}}を過ぎた投稿が{daysLeft, plural, =0 {これから} other {#日後から}}自動で削除されます",
     "description": "The sentence of a notification in the reader's list of notifications: {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.scheduled_status_failed": {
@@ -324,7 +320,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.event_reminder": {
-    "defaultMessage": "{unit, select, day {「{title}」は{count, plural, other {# 日}}後に始まります} hour {「{title}」は{count, plural, other {# 時間}}後に始まります} other {「{title}」は{count, plural, other {# 分}}後に始まります}}",
+    "defaultMessage": "{unit, select, day {「{title}」は{count, plural, other {#日}}後に始まります} hour {「{title}」は{count, plural, other {#時間}}後に始まります} other {「{title}」は{count, plural, other {#分}}後に始まります}}",
     "description": "The sentence of a notification in the reader's list of notifications: {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.event_started": {

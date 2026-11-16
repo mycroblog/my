@@ -59,10 +59,6 @@
     "defaultMessage": "Dismiss notification",
     "description": "The button or menu item at the end of a notification that takes it out of the list for good."
   },
-  "notifications.more": {
-    "defaultMessage": "Notification menu",
-    "description": "The button at the end of a notification that opens the menu of what may be done with it (dismissing it)."
-  },
   "notifications.dismiss_failed": {
     "defaultMessage": "The notification could not be dismissed.",
     "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."

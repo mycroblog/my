@@ -38,8 +38,6 @@ import {
   Entry,
   Excerpt,
   IconButton,
-  MenuButton,
-  MenuItem,
   NoticeCaption,
   NoticeLine,
   OpenRow,
@@ -49,7 +47,7 @@ import {
   useAction,
   useLocale,
 } from "@my/design-system";
-import { createContext, use, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 import { useCompose, usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
@@ -123,20 +121,11 @@ function emojiOf(n: NotificationItem): ReactNode {
   return r.shortcode === undefined ? r.name : undefined;
 }
 
-/** How a notification is dismissed: by a button of its own at the line's end, or from a menu there. */
-export type DismissLook = "button" | "menu";
-
-const DismissLookContext = createContext<DismissLook>("button");
-
-/** Sets how the notifications below are dismissed (DismissLook). */
-export const DismissLookProvider = DismissLookContext;
-
 /**
- * Dismisses the notification: it leaves the list at once; a failure puts it back and says so, with Try again. A second
+ * Dismisses the notification by its button at the line's end: it leaves the list at once; a failure puts it back and says so, with Try again. A second
  * press while the first is in flight does nothing.
  */
 function Dismiss({ n, t }: { n: NotificationItem; t: T }) {
-  const look = use(DismissLookContext);
   const dismiss = useDismissNotification();
   const failed = usePostNotice();
   const flying = useRef(false);
@@ -151,14 +140,6 @@ function Dismiss({ n, t }: { n: NotificationItem; t: T }) {
         flying.current = false;
       });
   };
-  if (look === "menu")
-    return (
-      <MenuButton icon="more" label={t("notifications.more")}>
-        <MenuItem id="dismiss" icon="close" onAction={run}>
-          {t("notifications.dismiss")}
-        </MenuItem>
-      </MenuButton>
-    );
   return <IconButton icon="close" label={t("notifications.dismiss")} onPress={run} />;
 }
 
