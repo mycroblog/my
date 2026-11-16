@@ -181,6 +181,7 @@ export { AudioRow, FileLink, MediaGrid, playTime, type MediaGridProps, type Medi
 export { MediaViewer, type MediaViewerProps } from "./viewer";
 export {
   AccountRow,
+  FoundRows,
   BackButton,
   ButtonPair,
   Excerpt,

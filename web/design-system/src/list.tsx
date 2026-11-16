@@ -259,6 +259,20 @@ export function ButtonPair({ children }: { children: ReactNode }) {
   return <div className={pair()}>{children}</div>;
 }
 
+const found = tv({ base: "grid gap-entry-room rounded-overlay bg-surface-raised p-[0.75rem]" });
+
+/**
+ * What a field found, under it, on the raised surface in the rhythm of the rows (the accounts a list's members may
+ * take), apart from the rows below; `label` names the group.
+ */
+export function FoundRows({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className={found()}>
+      {children}
+    </div>
+  );
+}
+
 const account = tv({
   slots: { root: "flex items-center gap-screen-row-gap", who: "min-w-0 flex-1" },
 });

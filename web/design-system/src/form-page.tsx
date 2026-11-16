@@ -350,6 +350,10 @@ export type TextFieldProps = {
   end?: ReactNode;
   /** Further ids that describe the field (a prompt above the form). */
   describedBy?: string | undefined;
+  /** It takes the focus as it mounts (a field the reader just opened: a list's name). */
+  autoFocus?: boolean | undefined;
+  /** Its value as the reader types it (a search as they type); else the form reads it as it posts. */
+  onChange?: ((value: string) => void) | undefined;
 };
 
 /**
@@ -374,6 +378,8 @@ export function TextField({
   readOnly,
   end,
   describedBy,
+  autoFocus,
+  onChange,
 }: TextFieldProps) {
   const s = form();
   const described =
@@ -383,6 +389,14 @@ export function TextField({
     name,
     defaultValue,
     readOnly,
+    autoFocus,
+    ...(onChange === undefined
+      ? {}
+      : {
+          onChange: (e: { currentTarget: { value: string } }) => {
+            onChange(e.currentTarget.value);
+          },
+        }),
     required,
     maxLength,
     "aria-invalid": error ? true : undefined,

@@ -178,5 +178,9 @@
   "timeline.list_members_limit": {
     "defaultMessage": "リストのメンバーは 1000 人までです。先にどれかのメンバーを外してください。",
     "description": "When the server refuses to add an account to a list that has 1,000 members, the most there may be: under the field that finds accounts, as its error, while Add is dimmed."
+  },
+  "timeline.list_write_failed": {
+    "defaultMessage": "保存できませんでした。もう一度試してください。",
+    "description": "When making, renaming or deleting a list, or putting an account in it or taking one out, got no answer from the server (the network): under the field of the name or of the accounts found, or at the bottom of the page."
   }
 }

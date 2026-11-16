@@ -58,4 +58,5 @@ export { HomeTimeline, loadHomeTimeline } from "./timeline/home";
 export { loadPublicTimeline, PublicTimeline } from "./timeline/public";
 export { Bookmarks, loadBookmarks } from "./timeline/bookmarks";
 export { ListIndex, ListTimeline, loadLists, loadListTimeline } from "./timeline/lists";
+export { ListMembers, loadListMembers } from "./timeline/list-members";
 export { loadTagTimeline, TagTimeline } from "./timeline/tag";

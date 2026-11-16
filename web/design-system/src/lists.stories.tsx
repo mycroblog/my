@@ -17,7 +17,7 @@ import { Button, TextButton } from "./button";
 import { ConfirmDialog } from "./dialog";
 import { FeedNotice } from "./feed";
 import { TextField } from "./form-page";
-import { AccountRow, BackButton, ButtonPair, OpenRow, ScreenStack, ScreenTitle, StateText } from "./list";
+import { AccountRow, BackButton, ButtonPair, FoundRows, OpenRow, ScreenStack, ScreenTitle, StateText } from "./list";
 import { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
 import { images } from "./samples";
 
@@ -357,33 +357,31 @@ function Members({ state = "normal" }: { state?: "normal" | "searching" | "empty
           error={state === "limit" ? w.limitMembers : undefined}
         />
         {searching && (
-          <div style={{ padding: rem(12), borderRadius: rem(12), background: "var(--color-surface-raised)" }}>
-            <ScreenStack>
-              {found.map((p) => (
-                <AccountRow
-                  key={p.handle}
-                  avatar={avatar(p)}
-                  name={p.name}
-                  handle={p.handle}
-                  end={
-                    inList(p) ? (
-                      <StateText>{w.added}</StateText>
-                    ) : (
-                      <Button
-                        size="timeline"
-                        isDisabled={state === "limit"}
-                        onPress={() => {
-                          setMembers((m) => [p, ...m]);
-                        }}
-                      >
-                        {w.addButton}
-                      </Button>
-                    )
-                  }
-                />
-              ))}
-            </ScreenStack>
-          </div>
+          <FoundRows label={w.add}>
+            {found.map((p) => (
+              <AccountRow
+                key={p.handle}
+                avatar={avatar(p)}
+                name={p.name}
+                handle={p.handle}
+                end={
+                  inList(p) ? (
+                    <StateText>{w.added}</StateText>
+                  ) : (
+                    <Button
+                      size="timeline"
+                      isDisabled={state === "limit"}
+                      onPress={() => {
+                        setMembers((m) => [p, ...m]);
+                      }}
+                    >
+                      {w.addButton}
+                    </Button>
+                  )
+                }
+              />
+            ))}
+          </FoundRows>
         )}
         {members.length === 0 ? (
           <FeedNotice start>{w.membersEmpty}</FeedNotice>
