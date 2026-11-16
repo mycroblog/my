@@ -6,32 +6,14 @@
 // there are none, and when they failed (with a try again), one line in a caption's size says so. It never asks for Web
 // Push.
 
-import { accountPath, statusPath } from "@my/app-components";
-import { useNotificationReads, useNotifications, type NotificationItem } from "@my/app-data";
+import { notificationPath } from "@my/app-components";
+import { useNotificationReads, useNotifications } from "@my/app-data";
 import { RelativeTime, SectionLine, SectionList, SectionNote, TextButton, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { messages } from "../messages.gen";
-import { followRequestsPath } from "./follow-requests";
 import { glyphOf, sentenceOf } from "./kinds";
-import { waitingPath } from "./waiting";
 
 const known = (id: string) => id in (messages["en"] ?? {});
-
-/**
- * Where a notification leads: what waits for the reader's approval for a request to reply, boost or quote; the follow
- * requests for one; the post it is about, the account, the announcement, event or room; else the list.
- */
-function pathOf(n: NotificationItem): string {
-  if (n.type === "reply_request" || n.type === "boost_request" || n.type === "quote_request") return waitingPath;
-  if (n.type === "follow_request") return followRequestsPath;
-  if (n.status !== undefined) return statusPath(n.status);
-  if (n.type === "account_moved" && n.account_move?.target !== undefined) return accountPath(n.account_move.target);
-  if (n.announcement !== undefined) return `/announcements/${n.announcement.id}`;
-  if (n.event_id !== undefined) return `/events/${n.event_id}`;
-  if (n.voice_room_id !== undefined) return `/voice/${n.voice_room_id}`;
-  if (n.account !== undefined) return accountPath(n.account);
-  return "/notifications";
-}
 
 /** The reader's `count` latest notifications; `instance` is the server's name, which the notices of the server say. */
 export function LatestNotifications({ instance, count = 5 }: { instance: string; count?: number }) {
@@ -53,7 +35,7 @@ export function LatestNotifications({ instance, count = 5 }: { instance: string;
         return (
           <SectionLine
             key={n.id}
-            href={pathOf(n)}
+            href={notificationPath(n)}
             icon={glyphOf(n.type)}
             title={sentenceOf(n, t, instance, known)}
             caption={<RelativeTime date={n.created_at} />}

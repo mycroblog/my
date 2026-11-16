@@ -6,7 +6,7 @@
 // once answered say what the reader answered, in place. A request's own notification is a plain line of the feed,
 // answered here alone.
 
-import { AccountLine } from "@my/app-components";
+import { AccountLine, followRequestsPath } from "@my/app-components";
 import {
   followRequestCountQuery,
   followRequestsQuery,
@@ -34,9 +34,6 @@ import { useEffect, useRef } from "react";
 import { stringsIn } from "../locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
-
-/** Where the row of the follow requests leads: their screen. */
-export const followRequestsPath = "/notifications/follow_requests";
 
 /**
  * What the screen's route waits for: the first page of the requests, from the cache unless a write marked it stale. A

@@ -178,6 +178,8 @@ export {
 export { LinkCard, type LinkCardProps } from "./card";
 export { AudioRow, FileLink, MediaGrid, playTime, type MediaGridProps, type MediaItem, type MediaKind } from "./media";
 export { MediaViewer, type MediaViewerProps } from "./viewer";
+export { InlinePrompt, type InlinePromptProps } from "./prompt";
+export { Switch, type SwitchProps } from "./switch";
 export {
   AccountRow,
   FoundRows,

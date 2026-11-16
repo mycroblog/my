@@ -6,7 +6,7 @@
 // reply, the quoting post, or for a boost the reader's post), and Decline beside Approve, which once answered say what
 // the reader answered. A request's own notification is a plain line of the feed, answered here alone.
 
-import { excerptHtml, ListColumn, nameOf, PostContent } from "@my/app-components";
+import { excerptHtml, ListColumn, nameOf, PostContent, waitingPath } from "@my/app-components";
 import {
   interactionRequestsQuery,
   useAnswerInteraction,
@@ -35,9 +35,6 @@ import { stringsIn } from "../locale";
 import { glyphOf } from "./kinds";
 
 type T = ReturnType<typeof stringsIn>["t"];
-
-/** Where the row of what waits leads: its screen. */
-export const waitingPath = "/notifications/waiting";
 
 /** The notification of each kind of request, whose sentence and glyph a request shares. */
 const noticeOf = { reply: "reply_request", announce: "boost_request", quote: "quote_request" } as const;

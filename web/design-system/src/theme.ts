@@ -20,6 +20,7 @@ import {
   screen,
   shell,
   text,
+  toggle,
 } from "@my/design-tokens";
 import plugin from "tailwindcss/plugin";
 import { transitionRules } from "./motion-css";
@@ -138,6 +139,7 @@ const theme = {
     "chip-inline": ref("--chip-padding-inline"),
     "chip-gap": ref("--chip-gap"),
     "chip-spacing": ref("--chip-spacing"),
+    ...Object.fromEntries(names(toggle).map((name) => [`toggle-${name}`, ref(`--toggle-${name}`)])),
     ...Object.fromEntries(
       names(emojiPicker).map((name) => [`emoji-picker-${kebab(name)}`, ref(`--emoji-picker-${kebab(name)}`)]),
     ),
