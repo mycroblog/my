@@ -48,7 +48,32 @@ export async function askNotificationPermission(): Promise<NotificationPermissio
  */
 export function registerServiceWorker(url: string): void {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
-  void navigator.serviceWorker.register(url, { scope: "/" }).catch(() => undefined);
+  void navigator.serviceWorker.register(workerURL(url), { scope: "/" }).catch(() => undefined);
+}
+
+/** The Trusted Types of the page, where the browser has them. */
+type TrustedTypes = {
+  createPolicy: (
+    name: string,
+    rules: { createScriptURL: (url: string) => string },
+  ) => { createScriptURL: (url: string) => string };
+};
+
+/**
+ * `url` as the script address the worker is registered by: under the page's Trusted Types (the shell's CSP requires them
+ * for every script sink), through the policy the CSP allows for it, `my-service-worker`, which takes that one address
+ * alone; as it is where the browser has none.
+ */
+function workerURL(url: string): string {
+  const tt = (globalThis as { trustedTypes?: TrustedTypes }).trustedTypes;
+  if (tt === undefined) return url;
+  const policy = tt.createPolicy("my-service-worker", {
+    createScriptURL: (given) => {
+      if (given !== url) throw new TypeError(`my-service-worker: not the worker's address: ${given}`);
+      return given;
+    },
+  });
+  return policy.createScriptURL(url);
 }
 
 const fromBase64Url = (text: string): Uint8Array<ArrayBuffer> =>

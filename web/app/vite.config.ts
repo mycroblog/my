@@ -7,6 +7,7 @@ import react from "@vitejs/plugin-react";
 import { defaultClientConditions, defineConfig } from "vite";
 import { bundledLicenses } from "./vite-plugins/licenses.ts";
 import { reactCompiler } from "./vite-plugins/react-compiler.ts";
+import { serviceWorker } from "./vite-plugins/service-worker.ts";
 
 /** Where the Go server embeds the build from (internal/interface/web, //go:embed all:dist). */
 const embedDir = fileURLToPath(new URL("../../internal/interface/web/dist", import.meta.url));
@@ -40,7 +41,8 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // for the browsers of light-dark() (ADR-0025 §1). The licenses/ of the build holds the notices of the npm packages and,
 // through vite-plugins/licenses.ts, of the Unicode emoji data and the emoji and text fonts, each slice of which is an
 // asset of its own. The condition @mycroblog/source reads @mycroblog/mykit (under @my/app-data) from its sources, which
-// need no build.
+// need no build. The Service Worker, sw/sw.ts, is built after the app into sw.js at the build's root
+// (vite-plugins/service-worker.ts).
 export default defineConfig({
   base: "./",
   plugins: [
@@ -49,6 +51,7 @@ export default defineConfig({
     reactCompiler(),
     bundledLicenses(licenseFiles),
     tailwindcss({ optimize: false }),
+    serviceWorker("../sw/sw.ts"),
   ],
   resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
   build: {
