@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The notifications the reader's notification policy holds back (ADR-0158 §7), the screen the row over the
-// notifications opens: kiri (a mention and a favourite) and kobo (a follow), each with how many and Dismiss beside
+// notifications opens: kiri (a boost and a favourite) and kobo (a follow), each with how many and Dismiss beside
 // Accept (`held`); each state every screen is shown in (app.samples.tsx); kiri's held-back notifications on their own
 // screen; the notifications with the row over them; and right after Accept, the answer in place with the focus on it
 // and the row counting again.

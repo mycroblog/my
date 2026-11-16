@@ -253,10 +253,13 @@ export type FakeOptions = {
   subscriptions?: readonly string[];
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
-  /** Besides the scenario's notifications, one of every other kind the server sends, from people and from the server. */
-  everyKind?: boolean;
   /**
-   * The notifications the reader's notification policy holds back (ADR-0158 §7), by account: a mention and a favourite
+   * In place of the scenario's notifications, one of each kind of a group the server sends: from people (`people`), the
+   * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
+   */
+  everyKind?: "people" | "notices" | "moderators";
+  /**
+   * The notifications the reader's notification policy holds back (ADR-0158 §7), by account: a boost and a favourite
    * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
    */
   held?: boolean;
@@ -1697,16 +1700,34 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     };
   };
 
-  // With `everyKind`, a notification of each kind the scenario makes none of, an hour apart before the newest: from
-  // people, about the reader's post, or from the server, each with what its sentence and its target read.
-  if (o.everyKind === true) {
+  // With `everyKind`, a notification of each kind of its group in place of the scenario's, an hour apart: from people
+  // (about the reader's post), the server's notices, or those to its moderators, each with what its sentence and its
+  // target read.
+  if (o.everyKind !== undefined) {
     const own = posts.find((p) => p.author === viewer);
     const status = own === undefined ? {} : { status: statusOf(own) };
+    // A post of `from`: one that mentions the reader, else any of theirs, else the reader's own.
+    const postBy = (from: string): Json => {
+      const p =
+        posts.find((x) => x.author === from && mentioned(x.text).includes(viewer)) ??
+        posts.find((x) => x.author === from);
+      return p === undefined ? status : { status: statusOf(p) };
+    };
     const event = scenarioEvents[0] === undefined ? undefined : eventOf(scenarioEvents[0], 0);
     const about = event === undefined ? {} : { event_id: event["id"], event };
     const room = rooms[0];
-    const kinds: [string, string | undefined, Json][] = [
-      ["status", "sam", status],
+    const people: [string, string | undefined, Json][] = [
+      ["follow", "kobo@bread.example", {}],
+      ["follow_request", "kiri@far.example", {}],
+      ["mention", "sam", postBy("sam")],
+      ["quote", "mio", postBy("mio")],
+      ["favourite", "marco", status],
+      ["boost", "hana", status],
+      ["reaction", "layla", { ...status, reaction: { name: "🎉" } }],
+      ["reply_request", "marco", status],
+      ["boost_request", "mio", status],
+      ["quote_request", "sam", status],
+      ["status", "hana", postBy("hana")],
       ["follow_accepted", "hana", {}],
       ["poll_closed", undefined, status],
       ["interaction_accepted", "layla", status],
@@ -1715,6 +1736,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ["voice_room_started", "hana", room === undefined ? {} : { voice_room_id: room.id, voice_room: room }],
       ["voice_room_invited", "sam", room === undefined ? {} : { voice_room_id: room.id }],
       ["event_invited", "mio", about],
+    ];
+    const notices: [string, string | undefined, Json][] = [
       ["event_schedule_confirmed", undefined, about],
       ["event_changed", undefined, about],
       ["event_cancelled", undefined, about],
@@ -1738,6 +1761,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         undefined,
         { auto_delete_limit: { max_age_days: 365, enforce_from: new Date(started + 30 * day).toISOString() } },
       ],
+    ];
+    const moderators: [string, string | undefined, Json][] = [
       ["admin_report", undefined, { report_id: idAt(started, 60_000) }],
       ["admin_sign_up", "kiri@far.example", {}],
       ["admin_appeal", undefined, { appeal_id: idAt(started, 60_001) }],
@@ -1750,6 +1775,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ["admin_error_group", undefined, { error_group: { change: "created" } }],
       ["admin_hook_appeal", undefined, { hook_appeal_id: idAt(started, 60_002) }],
     ];
+    const kinds = { people, notices, moderators }[o.everyKind];
+    notifications.length = 0;
     kinds.forEach(([type, from, more], i) => {
       const at = started - (i + 1) * 60 * minute;
       notifications.push({
@@ -1761,6 +1788,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       });
     });
     notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
+    // The reader read all but the three newest, as of the scenario's.
+    lastRead = notifications[3]?.["id"] as string | undefined;
   }
 
   // With `held`, the notifications the policy holds back, by the account that sent them, the newest account first.
@@ -1781,7 +1810,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       held.set(from, list);
     };
     hold("kiri@far.example", "favourite", 20, 0, about);
-    hold("kiri@far.example", "mention", 45, 1, about);
+    hold("kiri@far.example", "boost", 45, 1, about);
     hold("kobo@bread.example", "follow", 90, 2);
   }
   const heldRequestOf = (username: string): Json => {

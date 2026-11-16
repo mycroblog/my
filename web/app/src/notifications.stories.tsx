@@ -40,16 +40,18 @@ export const LongText: Story = { parameters: screen({ at, state: "long" }, "noti
  */
 export const WaitingForApproval: Story = { parameters: screen({ at, server: { approvals: true } }, "notifications") };
 /**
- * A notification of every kind the server sends: each line leads to what it tells of (a post, an account, an event, an
- * announcement, a room), the server's notices with their own glyphs; the Mentions tab holds the new posts of accounts
- * the reader is notified of.
+ * A notification of every kind from people (a follow, a mention, a reaction, a request, an event's invitation, …):
+ * each line leads to what it tells of, a post, an account, a room or an event.
  */
-export const EveryKind: Story = {
-  parameters: screen({ at, server: { everyKind: true } }, "notifications"),
-};
-export const EveryKindJapanese: Story = {
-  parameters: screen({ at, server: { everyKind: true } }, "notifications"),
-  globals: { locale: "ja" },
+export const FromPeople: Story = { parameters: screen({ at, server: { everyKind: "people" } }, "notifications") };
+/**
+ * The server's notices to the reader (an announcement, the moderators', the supporter plan's, the service's closure, a
+ * scheduled post that failed, an event's changes, …), each by its own glyph.
+ */
+export const FromServer: Story = { parameters: screen({ at, server: { everyKind: "notices" } }, "notifications") };
+/** The notices to the server's moderators, each by its own glyph. */
+export const ToModerators: Story = {
+  parameters: screen({ at, server: { everyKind: "moderators" } }, "notifications"),
 };
 /** Dismissing a notification takes it out of the list at once. */
 export const Dismissed: Story = {
