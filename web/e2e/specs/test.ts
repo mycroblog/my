@@ -7,10 +7,11 @@
 // - `fresh` makes what a test changes, new on every run of it (src/fresh.ts), so that the specs pass in any order and
 //   with `--repeat-each`: a test that follows, favourites, accepts or posts acts on its own subjects, never on the
 //   scenario's people and posts, which every test reads.
-//   - `fresh.person({ locked?, totp?, follows?, followedBy? })` a new person with a password, a display name unique
-//     to them ("Fresh 1a2b3c4d") and a username `fresh_…`, locked or not, following and followed by the people given
-//     (each follow accepted). With `totp: true` it enables two-factor authentication last and returns `totp: { secret,
-//     step }`: sign them in on the screen with `totpCode(p.totp.secret, { avoidStep: p.totp.step })`.
+//   - `fresh.person({ locked?, totp?, follows?, followedBy?, followsVisibility? })` a new person with a password, a
+//     display name unique to them ("Fresh 1a2b3c4d") and a username `fresh_…`, locked or not, following and followed
+//     by the people given (each follow accepted), who shows their lists of follows to `followsVisibility`. With
+//     `totp: true` it enables two-factor authentication last and returns `totp: { secret, step }`: sign them in on the
+//     screen with `totpCode(p.totp.secret, { avoidStep: p.totp.step })`.
 //   - `fresh.post(author, { text, visibility?, image?, images?, files?, sensitive?, spoiler?, poll?, language?,
 //     replyTo? })` a new post of `author` (a person of the scenario or a fresh one) whose text is `text` and a word
 //     unique to it, in `language` or the author's, with images, a video or a sound (src/av.ts), replying to the post of
@@ -23,6 +24,7 @@
 //   - `fresh.draft(author, { text, inSeconds? })` a new draft of `author` whose text is `text` and a word unique to it,
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
+//   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
 //   - `fresh.themeDraftStylesheet(admin, tokens)` the stylesheet of a draft of the instance theme that a fresh
 //     person made with `fresh.person({ admin: true })` saves, to apply over a page; nothing is published.
 //

@@ -12,6 +12,7 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
   IconArrowLeft,
+  IconArrowMoveRight,
   IconArticle,
   IconAt,
   IconBallFootball,
@@ -72,6 +73,7 @@ import {
   IconMoodSmile,
   IconMoon,
   IconMusic,
+  IconNote,
   IconNotes,
   IconPaperclip,
   IconPaw,
@@ -102,6 +104,7 @@ import {
   IconTrash,
   IconUser,
   IconUserFilled,
+  IconUserMinus,
   IconUserPlus,
   IconVolumeOff,
   IconWorld,
@@ -206,6 +209,12 @@ export const icons = {
   // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll (poll,
   // above), the moderators' notice; and a post its author pinned to their profile.
   follow: { off: IconUserPlus, directional: true },
+  // Taking an account off the reader's followers: the follow glyph's person, a minus for its plus.
+  removeFollower: { off: IconUserMinus, directional: true },
+  // The reader's own note on an account, which only they see: a sticky note, apart from the drafts' page of notes.
+  note: { off: IconNote },
+  // An account that moved to another: an arrow leaving a bar, toward the end of the line, apart from open's box.
+  moved: { off: IconArrowMoveRight, directional: true },
   moderation: { off: IconShield, on: IconShieldFilled },
   pin: { off: IconPin },
   // What a timeline is of, off the navigation: a hashtag, and a list of accounts the reader made.

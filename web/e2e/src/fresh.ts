@@ -33,6 +33,8 @@ export type FreshPersonOptions = {
   followedBy?: readonly Person[];
   /** Keeps the administrator role that `my admin create` gives, for a test of the administrators' API. */
   admin?: boolean;
+  /** Who may read the person's lists of follows and followers (FR-311); everyone by default. */
+  followsVisibility?: components["schemas"]["FollowsVisibility"];
 };
 
 /**
@@ -171,7 +173,11 @@ export class Fresh {
     else this.#o.runMy(["admin", "role", "revoke", p.username, "admin"]);
     const api = await this.#api(p);
     const { error } = await api.PATCH("/accounts/update_credentials", {
-      body: { display_name: p.displayName, locked: o.locked === true },
+      body: {
+        display_name: p.displayName,
+        locked: o.locked === true,
+        ...(o.followsVisibility === undefined ? {} : { follows_visibility: o.followsVisibility }),
+      },
     });
     if (error !== undefined) throw new Error(`fresh: the profile of ${p.username} was refused`);
     for (const followee of o.follows ?? []) await this.#follow(p, followee, true);
@@ -279,6 +285,24 @@ export class Fresh {
       throw new Error(`fresh: the theme draft was refused: ${JSON.stringify(saved.error)}`);
     const { data } = await api.GET("/admin/theme/draft/stylesheet", { parseAs: "text" });
     return body(data, "the stylesheet of the theme draft");
+  }
+
+  /**
+   * `from` moves their account to `to`, both of this server (ADR-0089 §3): `to` names `from` as an alias first, then
+   * `from` moves with their password.
+   */
+  async move(from: FreshPerson, to: FreshPerson): Promise<void> {
+    const aliased = await (await this.#api(to)).POST("/accounts/aliases", { body: { acct: from.username } });
+    if (aliased.error !== undefined)
+      throw new Error(
+        `fresh: ${to.username} could not name ${from.username} as an alias: ${JSON.stringify(aliased.error)}`,
+      );
+    const target = await this.#account(to);
+    const moved = await (
+      await this.#api(from)
+    ).POST("/accounts/move", { body: { target_account_id: target.id, password: from.password } });
+    if (moved.error !== undefined)
+      throw new Error(`fresh: ${from.username} could not move to ${to.username}: ${JSON.stringify(moved.error)}`);
   }
 
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */

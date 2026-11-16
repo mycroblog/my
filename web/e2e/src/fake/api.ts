@@ -2,9 +2,13 @@
 
 // A fake of the client API for the screens' stories, where no server runs: a `fetch`-compatible `serve(request)` that
 // answers as the server would after the seed applied the scenario (scenario.ts), as one person of it reads it. The
-// statuses, the home timeline, a thread, a profile, the relationships and the notifications are derived from the
+// statuses, the home timeline, a thread, a profile with its lists of follows and followers (as far as their owner shows
+// them), the relationships and the notifications are derived from the
 // scenario's people, follows, posts, interactions and restrictions; the IDs and times are the fake's own (the server
-// decides them for real), newest last in the scenario's order. The writes of those screens (follow, block, mute, the
+// decides them for real), newest last in the scenario's order; a person of another server is the fake's own, since the
+// seed's server federates with none, one of them moved, and so is a person of this server who deactivated their
+// account. The writes of those screens (follow, block, mute, a private note, being notified
+// of a person's posts, a follower removed, a server muted as ADR-0013 §30 hides it, the
 // answers of follow requests, the read marker, the announcements read, the conversations of the direct messages read
 // and hidden, the reader's bookmarks and followed hashtags, the reader's edits and deletions of their own posts, the
 // reader's drafts and their schedules, a draft published, the reader's articles posted and edited and the images they
@@ -32,13 +36,15 @@ import {
   emojis,
   eventStart,
   events as scenarioEvents,
-  follows,
+  follows as scenarioFollows,
   interactions as scenarioInteractions,
   lists as scenarioLists,
-  people,
-  personOf,
+  people as scenarioPeople,
+  personOf as scenarioPersonOf,
+  portrait,
   posts as scenarioPosts,
   restrictions,
+  type Follow,
   type Image,
   type Interaction,
   type LinkCard,
@@ -47,10 +53,81 @@ import {
 } from "../scenario";
 import { articleHtml, serverHtml } from "./html";
 
+/**
+ * The people of other servers, the fake's own, since the seed's server federates with none: each `username` is their
+ * whole handle, `user@domain`, and `movedTo` the handle of the account one moved to. sora, on photos.example, follows
+ * the reader, and sam boosts a post of sora's; sora's account on social.example moved to it, and keeps its posts.
+ */
+const remotePeople: readonly (Person & { movedTo?: string })[] = [
+  {
+    username: "sora@photos.example",
+    email: "",
+    password: "",
+    displayName: "Sora そら",
+    note: "Film photographer on another server. 別のサーバーでフィルム写真を撮っています。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([60, 140, 170]),
+  },
+  {
+    username: "sora@social.example",
+    email: "",
+    password: "",
+    displayName: "Sora そら",
+    note: "This account moved. 引っ越しました。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([60, 140, 170]),
+    movedTo: "sora@photos.example",
+  },
+];
+
+/**
+ * A person of this server who deactivated their account, whom the server answers as not there (ADR-0089 §15): a 404,
+ * and in no list.
+ */
+const deactivated = "nao";
+
+/** The handle of the account a person moved to, if they moved. */
+const movedOf = (username: string) => remotePeople.find((p) => p.username === username)?.movedTo;
+
+const remoteFollows: readonly Follow[] = [{ follower: "sora@photos.example", followee: "yuki" }];
+
+const remotePosts: readonly Post[] = [
+  {
+    key: "sora-moving",
+    author: "sora@social.example",
+    text: "Moving to photos.example, where the darkroom is. See you there.",
+    visibility: "public",
+    language: "en",
+  },
+  {
+    key: "sora-film",
+    author: "sora@photos.example",
+    text: "Developed the first roll from the coast. The grain came out just right.",
+    visibility: "public",
+    language: "en",
+  },
+];
+
+const remoteInteractions: readonly Interaction[] = [{ kind: "boost", by: "sam", post: "sora-film" }];
+
+/** Everyone the fake answers about: the scenario's people, then those of other servers. */
+const people: readonly Person[] = [...scenarioPeople, ...remotePeople];
+const personOf = (username: string): Person =>
+  remotePeople.find((p) => p.username === username) ?? scenarioPersonOf(username);
+const follows: readonly Follow[] = [...scenarioFollows, ...remoteFollows];
+
+/** The domain of a person's server: theirs after the `@` of their handle, else this server's. */
+const domainOf = (username: string) => (username.includes("@") ? username.slice(username.indexOf("@") + 1) : undefined);
+
 /** The host the fake answers as. */
 export const fakeHost = "demo.test";
 /** The origin the fake answers as. */
 export const fakeOrigin = `https://${fakeHost}`;
+
+/** The origin of a person's server. */
+const originOf = (username: string) => `https://${domainOf(username) ?? fakeHost}`;
 
 /** Who may read a public timeline (the API's InstanceAudience). */
 export type Audience = "off" | "signed_in" | "everyone";
@@ -126,6 +203,14 @@ export type FakeOptions = {
    * are answered as the server answers them.
    */
   approvals?: boolean;
+  /** The lists of an account's follows and followers fail (`fails`, a 500) or never answer (`waits`). */
+  followsLists?: "fails" | "waits";
+  /** The reader's private notes on people at the start, by username. */
+  notes?: Readonly<Record<string, string>>;
+  /** The people whose new posts notify the reader at the start. */
+  subscriptions?: readonly string[];
+  /** The domains the reader mutes at the start. */
+  domainMutes?: readonly string[];
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -281,8 +366,16 @@ const scenarioEmoji = (name: string) => {
 /** Creates a fake of the client API as `viewer` reads it. */
 export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const viewer = personOf(o.viewer ?? "yuki").username;
-  const posts: readonly ApprovalPost[] = o.approvals === true ? [...scenarioPosts, ...approvalPosts] : scenarioPosts;
-  const interactions = o.approvals === true ? [...scenarioInteractions, ...approvalInteractions] : scenarioInteractions;
+  const posts: readonly ApprovalPost[] = [
+    ...scenarioPosts,
+    ...remotePosts,
+    ...(o.approvals === true ? approvalPosts : []),
+  ];
+  const interactions = [
+    ...scenarioInteractions,
+    ...remoteInteractions,
+    ...(o.approvals === true ? approvalInteractions : []),
+  ];
   const started = Date.now();
   const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
   /** A later page's delay: none unless `lateMs` asks for one. */
@@ -307,37 +400,59 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const blocking = new Set(restrictions.filter((r) => r.kind === "block").map((r) => `${r.by}>${r.target}`));
   const muting = new Set(restrictions.filter((r) => r.kind === "mute").map((r) => `${r.by}>${r.target}`));
   const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
+  /**
+   * Who may read a person's lists of follows and followers (FR-311), the fake's own, since the seed sets none: mio
+   * shows them to mio's followers only, kai to nobody, everyone else to everyone.
+   */
+  /**
+   * The follows a person's counts take in beyond the scenario's people (with people of servers the seed's federates
+   * with none), the fake's own: an account whose lists its owner keeps (FR-311) still shows how many they hold.
+   */
+  const beyond: Readonly<Record<string, { followers: number; following: number }>> = {
+    mio: { followers: 48, following: 35 },
+    kai: { followers: 127, following: 64 },
+    "sora@photos.example": { followers: 1284, following: 312 },
+    // Its followers moved with it; it still follows those it did.
+    "sora@social.example": { followers: 3, following: 298 },
+  };
+  const followsVisibility: Readonly<Record<string, "public" | "followers" | "private">> = {
+    mio: "followers",
+    kai: "private",
+  };
   const hidden = (author: string) => blocking.has(`${viewer}>${author}`) || muting.has(`${viewer}>${author}`);
 
-  const accountOf = (username: string): Json => {
-    const p = personOf(username);
-    const avatar = drawingURL(p.avatar);
-    return {
-      id: idOf(username),
-      username,
-      acct: username,
-      domain: fakeHost,
-      display_name: p.displayName,
-      emojis: [],
-      avatar: { small: { url: avatar }, medium: { url: avatar } },
-    };
-  };
+  // Every account the server answers is a whole one, as the client API's Account is: a post's author too, which the
+  // client shows a profile from at once.
+  const accountOf = (username: string): Json => fullAccount(personOf(username));
 
   const fullAccount = (p: Person): Json => {
     const header = p.header === undefined ? undefined : drawingURL(p.header);
+    const avatar = drawingURL(p.avatar);
+    const remote = domainOf(p.username);
+    const username = remote === undefined ? p.username : p.username.slice(0, p.username.indexOf("@"));
     return {
-      ...accountOf(p.username),
-      uri: `${fakeOrigin}/users/${p.username}`,
-      url: `${fakeOrigin}/@${p.username}`,
-      note: serverHtml(p.note, fakeHost),
+      id: idOf(p.username),
+      username,
+      acct: p.username,
+      domain: remote ?? fakeHost,
+      display_name: p.displayName,
+      emojis: [],
+      avatar: { small: { url: avatar }, medium: { url: avatar } },
+      uri: `${originOf(p.username)}/users/${username}`,
+      url: `${originOf(p.username)}/@${username}`,
+      note: serverHtml(p.note, remote ?? fakeHost),
       locked: p.locked ?? false,
       bot: false,
       created_at: new Date(started - 30 * 24 * 60 * minute).toISOString(),
       fields: p.fields.map(([name, value]) => ({ name, value: serverHtml(value, fakeHost) })),
       badges: [],
       ...(header === undefined ? {} : { header: { small: { url: header }, medium: { url: header } } }),
-      followers_count: people.filter((x) => follows_(x.username, p.username)).length,
-      following_count: people.filter((x) => follows_(p.username, x.username)).length,
+      // The account it moved to, without a move of its own: moves are not followed in chains.
+      ...(movedOf(p.username) === undefined ? {} : { moved: fullAccount(personOf(movedOf(p.username) ?? "")) }),
+      followers_count:
+        people.filter((x) => follows_(x.username, p.username)).length + (beyond[p.username]?.followers ?? 0),
+      following_count:
+        people.filter((x) => follows_(p.username, x.username)).length + (beyond[p.username]?.following ?? 0),
       statuses_count: posts.filter((x) => x.author === p.username).length,
     };
   };
@@ -353,10 +468,24 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       blocking: blocking.has(`${viewer}>${other}`),
       muting: muting.has(`${viewer}>${other}`),
       muting_notifications: muting.has(`${viewer}>${other}`),
-      notify: false,
+      notify: subscribed.has(other),
       show_boosts: true,
-      note: "",
+      note: notes.get(other) ?? "",
     };
+  };
+
+  /** The reader's private notes on people, by username, and the people whose new posts notify them. */
+  const notes = new Map<string, string>(Object.entries(o.notes ?? {}));
+  const subscribed = new Set<string>(o.subscriptions ?? []);
+
+  /** The domains the reader mutes, in the order they muted them, and whether a person's server is one of them. */
+  const domainMutes: { domain: string; created_at: string }[] = (o.domainMutes ?? []).map((domain) => ({
+    domain,
+    created_at: new Date(started).toISOString(),
+  }));
+  const mutedServer = (username: string) => {
+    const domain = domainOf(username);
+    return domain !== undefined && domainMutes.some((m) => domain === m.domain || domain.endsWith(`.${m.domain}`));
   };
 
   // ---- Posts -----------------------------------------------------------------------------------------------------
@@ -682,8 +811,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const favouriters = favouritersOf(p.key);
     return {
       id,
-      uri: `${fakeOrigin}/users/${p.author}/statuses/${id}`,
-      url: `${fakeOrigin}/@${p.author}/${id}`,
+      uri: `${originOf(p.author)}/users/${p.author.split("@")[0] ?? ""}/statuses/${id}`,
+      url: `${originOf(p.author)}/@${p.author.split("@")[0] ?? ""}/${id}`,
       account: accountOf(p.author),
       content: article === undefined ? serverHtml(now.text, fakeHost) : full ? articleHtml(now.text, fakeHost) : "",
       spoiler_text: now.spoiler,
@@ -774,6 +903,19 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     homeEntries.push({ at: step, status: boostOf(p, i.by, step) });
   });
   const home: Json[] = homeEntries.toSorted((a, b) => b.at - a.at).map((e) => e.status);
+  /** The handle of a status's author, or of a notification's sender; empty for a notification from no one. */
+  const authorOf = (s: Json) => ((s["account"] as Json | undefined)?.["acct"] as string | undefined) ?? "";
+  /**
+   * Whether a status of home stays there as the reader's blocks and mutes are now: none of whom they block or mute, and
+   * of the servers they mute (ADR-0013 §30) a boost of a post leaves, and so does a post, unless the reader follows its
+   * author.
+   */
+  const inHomeNow = (s: Json) => {
+    const boosted = s["boost"] as Json | undefined;
+    if (hidden(authorOf(s)) || (boosted !== undefined && hidden(authorOf(boosted)))) return false;
+    if (boosted !== undefined) return !mutedServer(authorOf(boosted));
+    return !mutedServer(authorOf(s)) || follows_(viewer, authorOf(s));
+  };
 
   /**
    * A status of a list as it is now: a post of the scenario (or a boost of one) as edited since, none once deleted;
@@ -1547,7 +1689,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     let match: RegExpExecArray | null;
 
     if (path === "/timelines/home") {
-      const { from, body } = page(home.flatMap(current), q);
+      const { from, body } = page(home.flatMap(current).filter(inHomeNow), q);
       if (o.failFirst === true && from === 0 && Date.now() - started < 1000)
         return problem(500, "Internal Server Error");
       // The retry after the first page failed comes late, so that the screen shows it loading again.
@@ -1562,7 +1704,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         .toLowerCase();
       const audience = o.visitor === true ? ["public"] : ["public", "local"];
       const shown = posts
-        .filter((p) => visible(p) && audience.includes(p.visibility) && (o.visitor === true || !hidden(p.author)))
+        .filter(
+          (p) =>
+            visible(p) &&
+            audience.includes(p.visibility) &&
+            (o.visitor === true || (!hidden(p.author) && !mutedServer(p.author))),
+        )
         .filter((p) => hashtagsOf(versionsOf(p).at(-1)?.text ?? p.text).includes(tag))
         .toReversed()
         .map((p) => statusOf(p));
@@ -1607,6 +1754,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (found === undefined) return problem(404, "Not Found");
       const shown = home
         .flatMap(current)
+        .filter(inHomeNow)
         .filter((s) => found.members.includes((s["account"] as Json)["username"] as string));
       const { from, body } = page(shown, q);
       if (from > 0) await late();
@@ -1640,7 +1788,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const shown = posts
         .filter((p) => !deleted.has(p.key))
         .filter((p) => p.visibility === "public" || (kind === "local" && p.visibility === "local"))
-        .filter((p) => o.visitor === true || !hidden(p.author))
+        .filter((p) => o.visitor === true || (!hidden(p.author) && !mutedServer(p.author)))
         .toReversed()
         .map((p) => statusOf(p));
       const { from, body } = page(shown, q);
@@ -1724,7 +1872,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const found = people
         .filter((p) => !blocking.has(`${viewer}>${p.username}`) && !muting.has(`${viewer}>${p.username}`))
         .filter((p) =>
-          [`${p.username}@${fakeHost}`, name(p), ...name(p).split(/\s+/u)].some((w) => w.startsWith(query)),
+          [p.username.includes("@") ? p.username : `${p.username}@${fakeHost}`, name(p), ...name(p).split(/\s+/u)].some(
+            (w) => w.startsWith(query),
+          ),
         )
         .toSorted(
           (a, b) =>
@@ -1753,7 +1903,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/accounts/lookup") {
       const acct = (q.get("acct") ?? "").replace(new RegExp(`@${fakeHost}$`), "");
-      const found = people.find((p) => p.username === acct);
+      const found = acct === deactivated ? undefined : people.find((p) => p.username === acct);
       return found === undefined ? problem(404, "Not Found") : json(fullAccount(found));
     }
     if (path === "/accounts/relationships") return json({ items: q.getAll("id").map(relationshipOf) });
@@ -1777,11 +1927,78 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return json(body);
     }
     if ((match = m(/^\/accounts\/([^/]+)\/featured_tags$/))) return json({ items: [] });
+    if ((match = m(/^\/accounts\/([^/]+)\/(followers|following)$/))) {
+      // The accounts of the list, newest follow first; a list the owner keeps from the reader is a 403.
+      if (o.followsLists === "waits") return new Promise<Response>(() => undefined);
+      if (o.followsLists === "fails") return problem(500, "Internal Server Error");
+      const username = usernameOf.get(decodeURIComponent(match[1] ?? ""));
+      if (username === undefined) return problem(404, "Not Found");
+      const shown = followsVisibility[username] ?? "public";
+      if (username !== viewer && shown !== "public" && !(shown === "followers" && follows_(viewer, username)))
+        return json(
+          {
+            type: "/api/v1/problems/follows-hidden",
+            title: "This account's follows are not shown",
+            status: 403,
+          },
+          403,
+        );
+      const followers = match[2] === "followers";
+      const listed = [...following]
+        .toReversed()
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([from, to]) => (followers ? to === username : from === username))
+        .map(([from, to]) => accountOf(followers ? from : to));
+      const { from, body } = page(listed, q);
+      if (from > 0) await late();
+      return json(body);
+    }
     if ((match = m(/^\/accounts\/([^/]+)\/(follow|unfollow|block|unblock|mute|unmute)$/))) {
       const verb = match[2] ?? "";
       const add = request.method === "POST" && !verb.startsWith("un");
       const r = change(decodeURIComponent(match[1] ?? ""), verb.replace(/^un/, ""), add);
       return r === undefined ? problem(404, "Not Found") : json(r);
+    }
+    if ((match = m(/^\/accounts\/([^/]+)\/(note|subscribe|follower)$/)) && request.method !== "GET") {
+      // The reader's private note on a person, being notified of their new posts, and removing them as a follower.
+      const id = decodeURIComponent(match[1] ?? "");
+      const other = usernameOf.get(id);
+      if (other === undefined) return problem(404, "Not Found");
+      if (match[2] === "note") {
+        const note = request.method === "PUT" ? ((await request.json()) as { note: string }).note : "";
+        // The server counts code points.
+        if (Array.from(note).length > 2000) return problem(422, "Unprocessable Entity");
+        if (note === "") notes.delete(other);
+        else notes.set(other, note);
+      } else if (match[2] === "subscribe") {
+        if (request.method === "POST") subscribed.add(other);
+        else subscribed.delete(other);
+      } else following.delete(`${other}>${viewer}`);
+      return json(relationshipOf(id));
+    }
+    if (path === "/domain_mutes" && request.method === "GET")
+      return json(
+        page(
+          domainMutes.map((m) => ({ ...m, id: m.domain })),
+          q,
+        ).body,
+      );
+    if (path === "/domain_mutes" && request.method === "POST") {
+      // A remote domain, as the server normalizes it; this server's own is refused.
+      const domain = ((await request.json()) as { domain: string }).domain.toLowerCase().replace(/\.$/, "");
+      if (domain === fakeHost || !domain.includes(".")) return problem(422, "Unprocessable Entity");
+      let mute = domainMutes.find((d) => d.domain === domain);
+      if (mute === undefined) {
+        mute = { domain, created_at: new Date().toISOString() };
+        domainMutes.push(mute);
+      }
+      return json(mute);
+    }
+    if ((match = m(/^\/domain_mutes\/([^/]+)$/)) && request.method === "DELETE") {
+      const domain = decodeURIComponent(match[1] ?? "").toLowerCase();
+      const at = domainMutes.findIndex((d) => d.domain === domain);
+      if (at >= 0) domainMutes.splice(at, 1);
+      return new Response(null, { status: 204 });
     }
     if ((match = m(/^\/statuses\/([^/]+)(\/source|\/history)?$/)) && made.has(decodeURIComponent(match[1] ?? ""))) {
       // A status the reader made here: read alone with its body, its source what they wrote, deleted as theirs.
@@ -1963,8 +2180,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/notifications") {
       const types = q.getAll("types");
-      const typed =
-        types.length === 0 ? notifications : notifications.filter((n) => types.includes(n["type"] as string));
+      // None from whom the reader blocks or mutes now, or from a server they mute.
+      const typed = notifications
+        .filter((n) => types.length === 0 || types.includes(n["type"] as string))
+        .filter((n) => !hidden(authorOf(n)) && !mutedServer(authorOf(n)));
       // A notification of a post shows it as it is now, and goes with it once it is deleted.
       const shown = typed.flatMap((n) => {
         const s = n["status"] as Json | undefined;

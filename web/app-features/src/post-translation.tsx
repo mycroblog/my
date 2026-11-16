@@ -21,7 +21,7 @@ import {
 } from "@my/app-components";
 import type { TranslationFailure } from "@my/app-components";
 import { serverTranslates, TranslationRefusal, useInstance, useTranslateStatus } from "@my/app-data";
-import { useLocale } from "@my/design-system";
+import { CaptionLine, Entry, MenuGroup, MenuItem, TextButton, useLocale } from "@my/design-system";
 import {
   browserName,
   browserTranslatorAvailability,
@@ -31,6 +31,8 @@ import {
   type TranslatorAvailability,
 } from "@my/platform";
 import { useEffect, useRef, useState } from "react";
+import { stringsIn } from "./locale";
+import { userOf, usePostAuthor, type AuthorAction, type AuthorDone, type PostAuthor } from "./post-actions";
 import { ApprovalLine } from "./post-approval";
 
 /** The language tag of the reader's locale that a translation goes into: its language, and its script if it names one. */
@@ -252,17 +254,85 @@ export function usePostTranslation(status: PostStatus, visitor = false): PostTra
 }
 
 /**
+ * The groups of another's post's menu that act on its author (mute, block…) and on a remote author's server (mute
+ * server), headed by whom they act on; for a signed-in reader only.
+ */
+function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor }) {
+  const { t } = stringsIn(useLocale().locale);
+  const on = (action: AuthorAction) => () => {
+    author.act(action, status);
+  };
+  const { account } = status;
+  return (
+    <>
+      <MenuGroup title={userOf(account)}>
+        <MenuItem id="mute-author" icon="mute" onAction={on("mute")}>
+          {t("profile.mute")}
+        </MenuItem>
+        <MenuItem id="block-author" icon="block" onAction={on("block")}>
+          {t("profile.block")}
+        </MenuItem>
+      </MenuGroup>
+      {account.acct.includes("@") && (
+        <MenuGroup title={account.domain}>
+          <MenuItem id="mute-server" icon="mute" onAction={on("mute-server")}>
+            {t("profile.mute_server")}
+          </MenuItem>
+        </MenuGroup>
+      )}
+    </>
+  );
+}
+
+/** What the reader did from a post's menu, in the post's place, with its undoing. */
+function AuthorDoneLine({ id, done, author }: { id: string; done: AuthorDone; author: PostAuthor }) {
+  const { t } = stringsIn(useLocale().locale);
+  const undo = (
+    <TextButton
+      onPress={() => {
+        author.undo(id);
+      }}
+    >
+      {t(done.action === "block" ? "profile.unblock" : "profile.undo")}
+    </TextButton>
+  );
+  const handle = userOf(done.account);
+  // An entry still, in the post's place in its feed.
+  return (
+    <Entry>
+      <CaptionLine icon={done.action === "block" ? "block" : "mute"} action={undo}>
+        {done.action === "mute"
+          ? t("profile.muted_now", { handle })
+          : done.action === "block"
+            ? t("profile.blocked_now", { handle })
+            : t("profile.server_muted_now", { domain: done.account.domain })}
+      </CaptionLine>
+    </Entry>
+  );
+}
+
+/**
  * A post that translates on the reader's request and shows its original again, its translation its own: a `Post`
  * whose translate and original actions it answers itself, every other action going to `onAction`. As the first line of the
  * post itself, after the screen's own line (a thread's heading of its replies), it says when the reader's reply or boost of it waits for an approval (post-approval.tsx).
+ * Another's post offers its author's actions in its menu (post-actions.tsx), and once one is done shows what was done
+ * in its place.
  */
 export function TranslatablePost(props: PostProps) {
   const { props: translation, act } = usePostTranslation(props.status, props.signIn !== undefined);
   const { onAction } = props;
   const approval = <ApprovalLine status={props.status} />;
+  const author = usePostAuthor();
+  const shown = props.status.boost ?? props.status;
+  const done = author?.done(shown.id);
+  if (author !== undefined && done !== undefined) return <AuthorDoneLine id={shown.id} done={done} author={author} />;
   return (
     <Post
       {...props}
+      // A visitor, who has no account to mute or block with, is offered none of it.
+      authorMenu={
+        author === undefined || props.signIn !== undefined ? undefined : <AuthorMenu status={shown} author={author} />
+      }
       context={
         props.context === undefined ? (
           approval

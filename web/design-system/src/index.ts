@@ -217,7 +217,17 @@ export {
   type PollChoiceItem,
   type PollResultItem,
 } from "./poll";
-export { Badge, FieldList, MetaCount, MetaLine, ProfileHead, TagList, type ProfileHeadProps } from "./profile";
+export {
+  Badge,
+  FieldList,
+  MetaCount,
+  MetaLine,
+  NoteEditor,
+  NoteLine,
+  ProfileHead,
+  TagList,
+  type ProfileHeadProps,
+} from "./profile";
 export { DetailLines, GlyphText, ThreadFocus, ThreadReply } from "./thread";
 export {
   routerTransitions,

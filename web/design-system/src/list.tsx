@@ -15,16 +15,24 @@ import { useReader } from "./locale";
 
 const screen = tv({ base: "grid grid-cols-[minmax(0,1fr)] gap-entry-room" });
 
-/** A screen's parts one under another (a head, the tabs, a row, the feed), apart by the room a feed entry's ring needs. */
-export function ScreenStack({ children }: { children: ReactNode }) {
-  return <div className={screen()}>{children}</div>;
+/**
+ * A screen's parts one under another (a head, the tabs, a row, the feed), apart by the room a feed entry's ring needs;
+ * `busy` while what it holds loads, for assistive technology.
+ */
+export function ScreenStack({ busy = false, children }: { busy?: boolean | undefined; children: ReactNode }) {
+  return (
+    <div className={screen()} aria-busy={busy || undefined}>
+      {children}
+    </div>
+  );
 }
 
 const tabs = tv({
   slots: {
     root: "grid grid-cols-[minmax(0,1fr)] gap-entry-room",
     row: "flex items-center gap-screen-tabs-gap",
-    list: "flex min-w-0 flex-1 gap-screen-tab-gap overflow-x-auto overflow-y-hidden",
+    // Its first tab's text on the column's edge, as the heading and the back link above it, its surface reaching out.
+    list: "-ms-control-timeline-inline flex min-w-0 flex-1 gap-screen-tab-gap overflow-x-auto overflow-y-hidden",
     // A tab: muted text on the page; the current one on the raised surface, in the text's color, as a tonal control.
     tab: [
       "box-border flex h-control-timeline cursor-pointer items-center rounded-control px-control-timeline-inline",

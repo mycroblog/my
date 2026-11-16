@@ -114,10 +114,14 @@ export {
   type Update,
 } from "./server";
 export {
+  accountByIdQuery,
+  accountNoteLimit,
   accountQuery,
   accountStatusesQuery,
+  cachedAccount,
   changeRelationship,
   featuredHashtagsQuery,
+  loadAccount,
   relationshipQuery,
   useAccount,
   useAccountStatuses,
@@ -125,13 +129,17 @@ export {
   useFeaturedHashtags,
   useRelationship,
   useViewer,
+  useWriteAccountNote,
   viewerQuery,
+  writeAccountNote,
   type Account,
   type AccountPosts,
   type FeaturedHashtag,
+  type Marking,
   type Relationship,
   type RelationshipChange,
 } from "./accounts";
+export { domainMutesQuery, muteDomain, useMutedDomain, useMuteDomain } from "./domains";
 export {
   cachePostedStatus,
   choiceOf,
@@ -216,6 +224,7 @@ export {
   type PostSource,
   type StatusEdit,
 } from "./own-posts";
+export { accountFollowsQuery, useAccountFollows, type AccountFollows, type FollowsList } from "./follows";
 export type { PagedList } from "./paged";
 export { usePollVote, voteInPoll, type PollVote } from "./polls";
 export { AppDataProvider } from "./provider";

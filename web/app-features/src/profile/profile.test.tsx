@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { accountStatusesQuery } from "@my/app-data";
+import { accountByIdQuery, accountStatusesQuery, homeTimelineQuery } from "@my/app-data";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { press } from "../test/actions";
 import { account, poll, render, server, status } from "../test/server";
@@ -41,6 +41,26 @@ test("the loader reads the account of the handle and the viewer's own", async ()
   ]);
 });
 
+test("the profile of a post's author shows at once from the post's copy, and the counts the account's fetch brings", async () => {
+  const { data, requests } = server({
+    "/accounts/verify_credentials": account("kumi"),
+    "/accounts/lookup": account("hana", { followers_count: 30 }),
+    "/accounts/hana": account("hana", { followers_count: 30 }),
+    "/timelines/home": { items: [status("1", "hana", { account: account("hana", { followers_count: 12 }) })] },
+  });
+  const home = homeTimelineQuery(data).queryKey;
+  await data.queryClient.infiniteQuery(homeTimelineQuery(data));
+  // The home timeline was fetched a minute ago: its copy of hana is stale.
+  data.queryClient.setQueryData(home, (pages) => pages, { updatedAt: Date.now() - 60_000 });
+  requests.length = 0;
+  await loadProfile(data, "hana");
+  expect(requests).toEqual(["GET /accounts/verify_credentials"]);
+  expect(render(data, <Profile acct="hana" />)).toMatch(/Followers <strong[^>]*>12<\/strong>/);
+  await data.queryClient.query(accountByIdQuery(data, "hana"));
+  expect(requests).toEqual(["GET /accounts/verify_credentials", "GET /accounts/hana"]);
+  expect(render(data, <Profile acct="hana" />)).toMatch(/Followers <strong[^>]*>30<\/strong>/);
+});
+
 test("a remote account the reader follows: Following, Follows you, its counts and the line of its server", async () => {
   const { html } = await shown(alice, { following: true, followed_by: true });
   expect(html).toContain(">Following<");
@@ -48,7 +68,8 @@ test("a remote account the reader follows: Following, Follows you, its counts an
   expect(html).toContain("Runs a small server.");
   expect(html).toContain("Website");
   expect(html).toMatch(/Followers <strong[^>]*>2,910<\/strong>/);
-  expect(html).toContain("Information from example.social may be incomplete.");
+  // The sentence's stop sits with the action after it.
+  expect(html).toContain("Information from example.social may be incomplete<span");
   expect(html).toMatch(/aria-label="Posts of the account" role="tablist"/);
 });
 
@@ -73,7 +94,8 @@ test("a blocked account shows its head and no posts, and offers to unblock", asy
 
 test("a muted account says so, with an unmute", async () => {
   const { html } = await shown(account("lena"), { muting: true, following: true });
-  expect(html).toContain("You muted this account. Its posts stay out of your timelines.");
+  // The sentence's stop sits with the action after it.
+  expect(html).toContain("You muted this account. Its posts stay out of your timelines<span");
   expect(html).toContain("Unmute");
 });
 

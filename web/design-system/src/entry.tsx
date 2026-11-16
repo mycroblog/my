@@ -17,6 +17,7 @@ import { useFeedPosition } from "./feed";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 import { Preview, usePreviewState } from "./preview";
+import { actionDot, splitStop } from "./sentence";
 import { ActionScope } from "./shortcuts";
 import { RelativeTime } from "./time";
 
@@ -207,6 +208,8 @@ export function CaptionLine({
 }: CaptionLineProps) {
   const s = caption({ oneLine, alert, waiting });
   const hasText = children !== undefined && children !== null && children !== false;
+  // After a full sentence, its stop goes into the action's run (sentence.ts).
+  const split = hasText && action !== undefined && spoken === undefined ? splitStop(children) : undefined;
   return (
     <p className={s.root()} lang={lang}>
       <span className={s.glyph()}>
@@ -214,7 +217,7 @@ export function CaptionLine({
       </span>
       <span className={s.text()}>
         {spoken === undefined ? (
-          children
+          (split?.[0] ?? children)
         ) : (
           <>
             <span aria-hidden="true">{children}</span>
@@ -222,8 +225,13 @@ export function CaptionLine({
           </>
         )}
         {/* The dot ends the text's last line, held to its last word, so a line never starts with it. */}
-        {hasText && action !== undefined && " · "}
-        {action !== undefined && <span className={s.action()}>{action}</span>}
+        {hasText && action !== undefined && split === undefined && actionDot}
+        {action !== undefined && (
+          <span className={s.action()}>
+            {split?.[1]}
+            {action}
+          </span>
+        )}
       </span>
       {end !== undefined && <span className={s.end()}>{end}</span>}
     </p>

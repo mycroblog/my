@@ -4,11 +4,15 @@
 // column; the avatar over its lower edge, half on it, ringed by the page's surface, with the reader's actions at the
 // other end of its row, as far from the banner's edge as from the avatar; the name with its marks over the handle and
 // its badges; then the rest, a profile's gap apart (the bio, the fields, when it joined and its counts, lines of the
-// account's state, the featured hashtags). Its parts: a badge, the fields, the line of counts, and a list of hashtags.
+// account's state, the featured hashtags). Its parts: a badge, the fields, the line of counts, the reader's private
+// note (a line that opens its editor in place), and a list of hashtags.
 
 import type { ReactNode } from "react";
-import { Link } from "react-aria-components";
+import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { Button } from "./button";
+import { Icon } from "./icons";
+import { ButtonPair } from "./list";
 import { useReader } from "./locale";
 
 const head = tv({
@@ -151,6 +155,107 @@ export function MetaCount({ label, value, href }: { label: string; value: string
     <Link href={href} className={s.count()}>
       {body}
     </Link>
+  );
+}
+
+const note = tv({
+  slots: {
+    // The whole line is the button, a surface on hover, its text on the column's edge as a caption's.
+    line: [
+      "-mx-screen-row-inline flex cursor-pointer items-start gap-entry-caption rounded-control border-0",
+      "bg-transparent px-screen-row-inline py-screen-row-block text-start font-sans text-caption text-muted-text",
+      "outline-hidden data-focus-visible:shadow-focus data-hovered:bg-surface-hover",
+    ],
+    glyph: "inline-flex h-[1lh] shrink-0 items-center",
+    text: "min-w-0 flex-1 whitespace-pre-wrap [word-break:auto-phrase] [overflow-wrap:anywhere]",
+    // Its buttons a profile's gap under the box, as the parts of the head stand apart.
+    editor: "grid gap-screen-profile-gap",
+    // As tall as what it holds, never cut, at least a control's height.
+    box: [
+      "box-border min-h-control-form w-full resize-none rounded-control border-0 bg-surface-raised",
+      "px-control-timeline-inline py-control-timeline-inline font-sans text-body text-text outline-hidden",
+      "[field-sizing:content] [word-break:auto-phrase] focus-visible:shadow-focus",
+    ],
+  },
+  variants: { written: { true: { text: "text-text" } } },
+});
+
+/**
+ * The reader's private note on an account, as a line of its profile that opens its editor: the note, or with none,
+ * `placeholder` (what adding one does), muted. `label` names the line for assistive technology before what it shows.
+ */
+export function NoteLine({
+  note: text,
+  placeholder,
+  label,
+  onPress,
+}: {
+  note: string;
+  placeholder: string;
+  label: string;
+  onPress?: (() => void) | undefined;
+}) {
+  const s = note({ written: text !== "" });
+  return (
+    <AriaButton className={s.line()} {...(onPress ? { onPress } : {})}>
+      <span className={s.glyph()}>
+        <Icon name="note" place="caption" />
+      </span>
+      <span className={s.text()} dir="auto">
+        {text !== "" && <span className="sr-only">{label} </span>}
+        {text === "" ? placeholder : text}
+      </span>
+    </AriaButton>
+  );
+}
+
+/** The note's editor in the line's place: a box as tall as the note, then Cancel and Save. */
+export function NoteEditor({
+  label,
+  value,
+  onChange,
+  maxLength,
+  cancel,
+  save,
+  onCancel,
+  onSave,
+  busy = false,
+}: {
+  /** The box's name, for assistive technology. */
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  maxLength: number;
+  cancel: string;
+  save: string;
+  onCancel: () => void;
+  onSave: () => void;
+  busy?: boolean | undefined;
+}) {
+  const s = note();
+  return (
+    <div className={s.editor()}>
+      <textarea
+        className={s.box()}
+        aria-label={label}
+        value={value}
+        maxLength={maxLength}
+        dir="auto"
+        // It opens on the reader's press, in the line's place.
+        autoFocus
+        onChange={(e) => {
+          onChange(e.target.value);
+        }}
+      />
+      <ButtonPair>
+        <Button kind="quiet" size="timeline" onPress={onCancel} isDisabled={busy}>
+          {cancel}
+        </Button>
+        <Button kind="primary" size="timeline" busy={busy} onPress={onSave}>
+          {save}
+        </Button>
+      </ButtonPair>
+    </div>
   );
 }
 

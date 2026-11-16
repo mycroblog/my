@@ -18,19 +18,28 @@
 // browser refused is told without, since it would be refused again. A screen's own write around its posts (following
 // a hashtag) tells its failure in the same notice (usePostNotice). It is shared by the features, not a feature of its
 // own.
+//
+// The author's actions of another's post (FR-303, FR-304, usePostAuthor): mute or block its author, block after a
+// confirmation, and mute a remote author's server. Once done, the post shows in its place what was done, with Undo
+// (Unblock for a block, since the follows it ended do not come back); the lists stay as they are until they open
+// again, so that the line stays where the reader pressed.
 
 import {
   DeleteConfirm,
   EditHistory,
   ServerDomain,
   statusPath,
+  type PostAccount,
   type PostAction,
   type PostPicker,
+  type PostStatus,
 } from "@my/app-components";
 import {
   RedraftError,
   refusal,
+  useChangeRelationship,
   useInstance,
+  useMuteDomain,
   useOwnPosts,
   usePollVote,
   useStatusHistory,
@@ -41,7 +50,7 @@ import {
   type Status,
   type StatusMark,
 } from "@my/app-data";
-import { ModalPresence, UndoNotice, useLocale } from "@my/design-system";
+import { ConfirmDialog, ModalPresence, UndoNotice, useLocale } from "@my/design-system";
 import { copyText, shareLink } from "@my/platform";
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
 import { rememberReaction, usePickerData } from "./emoji/picker";
@@ -84,6 +93,22 @@ const menuActions: ReadonlySet<PostAction["type"]> = new Set<MenuAction["type"]>
 ]);
 const isMenuAction = (a: PostAction): a is MenuAction & PostAction => menuActions.has(a.type);
 
+/** What the reader does from a post's menu to its author, or to its author's server. */
+export type AuthorAction = "mute" | "block" | "mute-server";
+
+/** What the reader did from a post's menu to its author or its server, which the post shows in its place. */
+export type AuthorDone = { readonly action: AuthorAction; readonly account: PostAccount };
+
+/** The author's actions of the posts under PostActions, and what they left in a post's place. */
+export type PostAuthor = {
+  /** Does `action` to the author of `status` (the post a boost shows), after asking first for a block. */
+  readonly act: (action: AuthorAction, status: PostStatus) => void;
+  /** What the reader did from the menu of the post of `id`, shown in its place; undefined while nothing is. */
+  readonly done: (id: string) => AuthorDone | undefined;
+  /** Undoes what the reader did from the menu of the post of `id`, which shows again. */
+  readonly undo: (id: string) => void;
+};
+
 const Context = createContext<{
   onCompose: ((to: ComposeRequest) => void) | undefined;
   send: Send;
@@ -93,6 +118,7 @@ const Context = createContext<{
   viewer: string | undefined;
   picker: PostPicker;
   failed: Failed;
+  author: PostAuthor;
 } | null>(null);
 
 /** Tells that `what` failed, in the server's words when it refused (`error`), with Try again doing `again` if given. */
@@ -203,6 +229,17 @@ export function usePostNotice(): Failed {
   return use(Context)?.failed ?? (() => undefined);
 }
 
+/**
+ * The author's actions of the posts, and what they left in a post's place; undefined outside PostActions, where a post
+ * offers none.
+ */
+export function usePostAuthor(): PostAuthor | undefined {
+  return use(Context)?.author;
+}
+
+/** An account's name in a post's menu and in what an action on it leaves: `@user`, else its domain. */
+export const userOf = (account: PostAccount) => (account.username === "" ? account.domain : `@${account.username}`);
+
 /** The address of a post to hand on: its own page where it was posted, else its page here. */
 const linkOf = (status: Status) => status.url ?? new URL(statusPath(status), location.href).href;
 
@@ -251,6 +288,12 @@ export function PostActions({
   const [notice, setNotice] = useState<Notice | undefined>(undefined);
   const [confirm, setConfirm] = useState<Confirm | undefined>(undefined);
   const [history, setHistory] = useState<{ id: string; lang: string | undefined } | undefined>(undefined);
+  const change = useChangeRelationship();
+  const muteServer = useMuteDomain();
+  /** What the reader did to each post's author or server from its menu, by the post's ID. */
+  const [done, setDone] = useState<ReadonlyMap<string, AuthorDone>>(new Map());
+  /** The confirmation of blocking the author of a post, open over the page. */
+  const [blocking, setBlocking] = useState<{ status: PostStatus } | undefined>(undefined);
   // The posts' react action is at hand: the picker's code comes once the page is idle, and its emoji too for a reader
   // who opened a picker here before; else its emoji come on the reach. A reader without an account (no composer)
   // reacts after signing in, and gets nothing ahead.
@@ -335,6 +378,63 @@ export function PostActions({
       },
     );
   };
+  /** Shows what the reader did in the place of the post of `id`, or the post again. */
+  const leave = (id: string, what: AuthorDone | undefined) => {
+    setDone((now) => {
+      const next = new Map(now);
+      if (what === undefined) next.delete(id);
+      else next.set(id, what);
+      return next;
+    });
+  };
+  /** The failure's name of an action on an author or a server, done (`on`) or undone. */
+  const failure = (action: AuthorAction, on: boolean) =>
+    t("profile.action_failed", {
+      action: action === "mute-server" ? (on ? "mute_server" : "unmute_server") : on ? action : `un${action}`,
+    });
+  /**
+   * Does or undoes `action` on `account`, leaving the shown lists as they are, so that the post stays where it was, in
+   * its new state; their marks are read when they open again.
+   */
+  const writeAuthor = (action: AuthorAction, account: PostAccount, on: boolean): Promise<void> => {
+    if (action === "mute-server") return muteServer(account.domain, on, "later");
+    return change(account.id, on ? action : action === "mute" ? "unmute" : "unblock", "later");
+  };
+  const doAuthor = (action: AuthorAction, status: PostStatus) => {
+    setNotice(undefined);
+    writeAuthor(action, status.account, true).then(
+      () => {
+        leave(status.id, { action, account: status.account });
+      },
+      (e: unknown) => {
+        failed(e, failure(action, true), () => {
+          doAuthor(action, status);
+        });
+      },
+    );
+  };
+  const author: PostAuthor = {
+    act: (action, status) => {
+      if (action === "block") setBlocking({ status });
+      else doAuthor(action, status);
+    },
+    done: (id) => done.get(id),
+    undo: (id) => {
+      const what = done.get(id);
+      if (what === undefined) return;
+      setNotice(undefined);
+      writeAuthor(what.action, what.account, false).then(
+        () => {
+          leave(id, undefined);
+        },
+        (e: unknown) => {
+          failed(e, failure(what.action, false), () => {
+            author.undo(id);
+          });
+        },
+      );
+    },
+  };
   const menu = (action: MenuAction) => {
     const { id } = action;
     const status = own.cached(id);
@@ -391,9 +491,27 @@ export function PostActions({
     }
   };
   return (
-    <Context value={{ onCompose, send, voting, menu, viewer, picker, failed }}>
+    <Context value={{ onCompose, send, voting, menu, viewer, picker, failed, author }}>
       <ServerDomain value={domain}>{children}</ServerDomain>
       <ModalPresence>
+        {blocking && (
+          <ConfirmDialog
+            key={`block:${blocking.status.id}`}
+            title={t("profile.block_confirm_title", { handle: userOf(blocking.status.account) })}
+            cancel={t("profile.cancel")}
+            confirm={t("profile.block_confirm")}
+            onCancel={() => {
+              setBlocking(undefined);
+            }}
+            onConfirm={() => {
+              // It closes at once, as a deletion's does: the post answers in its place.
+              setBlocking(undefined);
+              doAuthor("block", blocking.status);
+            }}
+          >
+            {t("profile.block_confirm_text")}
+          </ConfirmDialog>
+        )}
         {confirm && (
           <DeleteConfirm
             key={`${confirm.redraft ? "redraft" : "delete"}:${confirm.id}`}

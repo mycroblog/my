@@ -10,6 +10,28 @@ import { answered } from "./write";
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/** The reads under /accounts/ of other things than one account. */
+const notAnAccount = new Set(["relationships", "verify_credentials", "search", "familiar_followers"]);
+
+/**
+ * Holds the server's answer to every read of an account itself, its lookup and GET /accounts/{id}, until
+ * `release()`; the reads of its relationship, posts and the rest pass at once.
+ */
+export async function heldAccountReads(page: Page): Promise<{ release: () => void }> {
+  const { promise: released, resolve } = Promise.withResolvers<undefined>();
+  await page.route(/\/api\/v1\/accounts\/[^/?]+(\?.*)?$/, async (route) => {
+    const name = new URL(route.request().url()).pathname.split("/").at(-1) ?? "";
+    if (route.request().method() !== "GET" || notAnAccount.has(name)) return route.fallback();
+    await released;
+    await route.fallback();
+  });
+  return {
+    release: () => {
+      resolve(undefined);
+    },
+  };
+}
+
 export class Profile {
   readonly page: Page;
   readonly person: Person;

@@ -109,9 +109,9 @@ test("the provider down says so, and Try again asks it again", async ({ page, si
   const post = homeTimeline(page).post(author.displayName, text);
   await post.translate();
   const refusal = post.translationLine("This server's translation service");
-  await expect(refusal).toHaveText(line("This server's translation service is not answering. · Try again"));
+  await expect(refusal).toHaveText(line("This server's translation service is not answering. Try again"));
   await post.translate(post.translateAgainButton);
-  await expect(refusal).toHaveText(line("This server's translation service is not answering. · Try again"));
+  await expect(refusal).toHaveText(line("This server's translation service is not answering. Try again"));
   await expect(post.paragraph(text)).toHaveText(text);
 });
 

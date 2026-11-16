@@ -318,20 +318,20 @@ describe("the translate line", () => {
 
   test("over the limit where the browser may translate, the next press goes to the browser", () => {
     const line = failure({ reason: "limit", retry: "browser" });
-    expect(words(line)).toBe("This server's monthly translation limit is reached. · Translate in this browser");
+    expect(words(line)).toBe("This server's monthly translation limit is reached. Translate in this browser");
     expect(line).toMatch(/<button [^>]*>Translate in this browser<\/button>/);
     expect(line).not.toContain("next month");
   });
 
   test("a visibility the provider may not receive hands the next press to the browser", () => {
     expect(words(failure({ reason: "visibility", retry: "browser" }))).toBe(
-      "Only some people can see this post, so it cannot be sent to this server's translation service. · Translate in this browser",
+      "Only some people can see this post, so it cannot be sent to this server's translation service. Translate in this browser",
     );
   });
 
   test("the provider down says so, and Try again asks it again", () => {
     const line = failure({ reason: "failed", retry: "server" });
-    expect(words(line)).toBe("This server's translation service is not answering. · Try again");
+    expect(words(line)).toBe("This server's translation service is not answering. Try again");
     expect(line).toMatch(/<button [^>]*>Try again<\/button>/);
   });
 
