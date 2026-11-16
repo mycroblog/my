@@ -95,7 +95,7 @@ function SearchLine({ q, results, t }: { q: string; results: SearchResults; t: T
     return (
       <ScreenStack busy>
         <FeedNotice start>
-          {remote === undefined ? t("search.searching") : t("search.looking_up", { handle: remote.acct })}
+          {remote === undefined ? t("search.searching") : t("search.looking_up", { handle: written(remote.acct) })}
         </FeedNotice>
       </ScreenStack>
     );
@@ -106,8 +106,13 @@ function SearchLine({ q, results, t }: { q: string; results: SearchResults; t: T
       </FeedNotice>
     );
   if (remote !== undefined && !remote.found && results.accounts.items.length === 0)
-    return <FeedNotice start>{t("search.remote_none", { handle: remote.acct })}</FeedNotice>;
+    return <FeedNotice start>{t("search.remote_none", { handle: written(remote.acct) })}</FeedNotice>;
   return <FeedNotice start>{t("search.none", { q })}</FeedNotice>;
+}
+
+/** A remote account as people write it: `@user@host` for a handle, an address as it is. */
+function written(acct: string): string {
+  return /^https?:\/\//iu.test(acct) ? acct : `@${acct}`;
 }
 
 /** What the words found: the kinds that found something, in sections one under another; else one line. */
