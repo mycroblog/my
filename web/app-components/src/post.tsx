@@ -110,9 +110,10 @@ export type PostProps = {
   /** What the reader asked of it. */
   onAction?: ((action: PostAction) => void) | undefined;
   /**
-   * A reader without an account: the actions that need one (reply, boost, quote, favourite, react, bookmark, and
-   * acting on the author) lead to the sign-in with the post they were pressed on, in place of `onAction`; the others
-   * (translating, the post's link, sharing) stay `onAction`'s. The actions show as for anyone.
+   * A reader without an account: the actions that need one (reply, boost, quote, favourite, react, bookmark) lead to
+   * the sign-in with the post they were pressed on, in place of `onAction`; the others (translating, the post's link,
+   * sharing) stay `onAction`'s. The actions show as for anyone, but those on the author (`authorMenu`), which the
+   * screen gives no visitor.
    */
   signIn?: ((status: PostStatus) => void) | undefined;
   /** A line of the screen's own over the post, inside it (that it is pinned): a `CaptionLine`. */

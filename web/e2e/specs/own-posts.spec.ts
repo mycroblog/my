@@ -95,16 +95,17 @@ test.describe("the more menu", () => {
     await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Delete and redraft…", "Delete…"]);
   });
 
-  test("of another's post: its link, sharing and the bookmark, nothing of its author's", async ({
+  test("of another's post: its link, sharing and the bookmark, then muting and blocking its author", async ({
     page,
     signIn,
     fresh,
   }) => {
+    // An author of this server: no server of its own to mute.
     const author = await fresh.person();
     const { text } = await fresh.post(author, { text: "A post of someone else's." });
     await signIn(await fresh.person({ follows: [author] }));
     const items = await homeTimeline(page).post(author.displayName, text).more();
-    await expect(items).toHaveText(["Copy link", "Share", "Bookmark"]);
+    await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Mute", "Block…"]);
   });
 
   test("of a visitor: the link and sharing work, and the bookmark leads to the sign-in", async ({ page, fresh }) => {

@@ -255,21 +255,12 @@ export function usePostTranslation(status: PostStatus, visitor = false): PostTra
 
 /**
  * The groups of another's post's menu that act on its author (mute, block…) and on a remote author's server (mute
- * server), headed by whom they act on; a reader without an account is led to sign in (`signIn`).
+ * server), headed by whom they act on; for a signed-in reader only.
  */
-function AuthorMenu({
-  status,
-  author,
-  signIn,
-}: {
-  status: PostStatus;
-  author: PostAuthor;
-  signIn: ((status: PostStatus) => void) | undefined;
-}) {
+function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor }) {
   const { t } = stringsIn(useLocale().locale);
   const on = (action: AuthorAction) => () => {
-    if (signIn === undefined) author.act(action, status);
-    else signIn(status);
+    author.act(action, status);
   };
   const { account } = status;
   return (
@@ -338,8 +329,9 @@ export function TranslatablePost(props: PostProps) {
   return (
     <Post
       {...props}
+      // A visitor, who has no account to mute or block with, is offered none of it.
       authorMenu={
-        author === undefined ? undefined : <AuthorMenu status={shown} author={author} signIn={props.signIn} />
+        author === undefined || props.signIn !== undefined ? undefined : <AuthorMenu status={shown} author={author} />
       }
       context={
         props.context === undefined ? (
