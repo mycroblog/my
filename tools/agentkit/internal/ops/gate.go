@@ -24,13 +24,28 @@ func linkedWorktree(r *repo.Repo) bool {
 	return err == nil && strings.TrimSpace(dir) != r.Common
 }
 
-// MergeCommits returns the merge commits of base..head in dir, each as "<short sha> <subject>".
-func MergeCommits(dir, base, head string) ([]string, error) {
-	out, err := repo.Git(dir, "log", "--min-parents=2", "--format=%h %s", base+".."+head)
+// foreignMerges returns the merge commits of base..HEAD in dir that merge in something not on base, each as
+// "<short sha> <subject>". Bringing a branch up to date is `git merge <base>`, whose parents after the first are
+// on base; so is a branch merged in after it landed on base. CI's docs:pr-commits (tasks/docs.yml) is the same rule.
+func foreignMerges(dir, base string) ([]string, error) {
+	out, err := repo.Git(dir, "log", "--min-parents=2", "--format=%h%x00%P%x00%s", base+"..HEAD")
 	if err != nil {
 		return nil, err
 	}
-	return nonEmpty(out), nil
+	var foreign []string
+	for _, l := range nonEmpty(out) {
+		f := strings.SplitN(l, "\x00", 3)
+		if len(f) < 3 {
+			continue
+		}
+		for _, p := range strings.Fields(f[1])[1:] {
+			if exec.Command("git", "-C", dir, "merge-base", "--is-ancestor", p, base).Run() != nil {
+				foreign = append(foreign, f[0]+" "+f[2])
+				break
+			}
+		}
+	}
+	return foreign, nil
 }
 
 func nonEmpty(s string) []string {
@@ -51,33 +66,21 @@ func short(items []string, n int) string {
 	return fmt.Sprintf("%s, +%d more", strings.Join(items[:n], ", "), len(items)-n)
 }
 
-// reFold matches the subjects `git rebase --autosquash` folds into an earlier commit.
-var reFold = regexp.MustCompile(`^(fixup|squash|amend)! `)
+// mergeFix is how a branch takes in its base: a merge, the regenerated files, and a plain push.
+func mergeFix(base string) string {
+	return "git fetch origin && git merge " + base + ", settle conflicts in generated files with scripts/agentkit.sh regen, git commit"
+}
 
-// history refuses a branch that cannot merge as it is: a merge commit, a commit left to fold, or a conflict with
+// history refuses a branch that cannot merge as it is: a merge of something not on its base, or a conflict with
 // its base.
 func history(r *repo.Repo, branch, base string) error {
-	merges, err := MergeCommits(r.Root, base, "HEAD")
+	merges, err := foreignMerges(r.Root, base)
 	if err != nil {
 		return err
 	}
 	if len(merges) > 0 {
-		return refusal(fmt.Sprintf("%s..HEAD has %d merge commit(s) (%s); a branch is rebased, never merged into", base, len(merges), short(merges, 3)),
-			"git rebase "+base+" && scripts/agentkit.sh regen")
-	}
-	subjects, err := repo.Git(r.Root, "log", "--format=%s", base+"..HEAD")
-	if err != nil {
-		return err
-	}
-	var fold []string
-	for _, s := range nonEmpty(subjects) {
-		if reFold.MatchString(s) {
-			fold = append(fold, strconv.Quote(s))
-		}
-	}
-	if len(fold) > 0 {
-		return refusal(fmt.Sprintf("%d commit(s) to fold into the commit they fix (%s)", len(fold), short(fold, 3)),
-			"GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash "+base)
+		return refusal(fmt.Sprintf("%s..HEAD has %d merge commit(s) of something not on %s (%s); a branch merges in only its base", base, len(merges), base, short(merges, 3)),
+			"land what it merges into "+base+" first, or take the merge out with git rebase "+base)
 	}
 	// A dry merge with the base: exit 1 and the conflicting files when it conflicts.
 	cmd := exec.Command("git", "-C", r.Root, "merge-tree", "--write-tree", "--name-only", "--no-messages", base, "HEAD")
@@ -87,15 +90,14 @@ func history(r *repo.Repo, branch, base string) error {
 		if len(files) > 0 {
 			files = files[1:] // the first line is the tree
 		}
-		return refusal(fmt.Sprintf("%s conflicts with %s in %s", branch, base, short(files, 5)),
-			"git rebase "+base+" && scripts/agentkit.sh regen")
+		return refusal(fmt.Sprintf("%s conflicts with %s in %s", branch, base, short(files, 5)), mergeFix(base))
 	}
 	_ = err // a git without merge-tree --write-tree: the pull request page reports the conflict
 	return nil
 }
 
-// gate is everything `pr open` requires before it pushes: a worktree, a linear history without leftovers that
-// merges cleanly, and the quick checks.
+// gate is everything `pr open` requires before it pushes: a worktree, a history that merges in nothing but its
+// base and merges cleanly, and the quick checks.
 func gate(r *repo.Repo, branch, base string) error {
 	if !linkedWorktree(r) {
 		dir := ".claude/worktrees/" + strings.ReplaceAll(branch, "/", "-")

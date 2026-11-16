@@ -35,18 +35,27 @@ tasks:
     cmds:
       - scripts/adr-numbers.sh
 
-  # A branch is rebased onto its base, never merged into (agentkit pr open refuses the same commits). The merge
-  # queue's own merge commits are on the trunk, outside BASE..HEAD of a pull request.
+  # A branch merges in only its base, whose commits are then on BASE (agentkit pr open refuses the same commits).
   pr-commits:
-    desc: 'Fail when BASE..HEAD holds a merge commit: scripts/task.sh docs:pr-commits [BASE=origin/redesign-web] [HEAD=HEAD]'
+    desc: 'Fail when BASE..HEAD merges in a commit not on BASE: scripts/task.sh docs:pr-commits [BASE=origin/redesign-web] [HEAD=HEAD]'
     vars:
       BASE: '{{.BASE | default "origin/redesign-web"}}'
       HEAD: '{{.HEAD | default "HEAD"}}'
     cmds:
       - |
-        merges="$(git log --min-parents=2 --format='%h %s' {{shellQuote .BASE}}..{{shellQuote .HEAD}})"
+        merges=""
+        for m in $(git rev-list --min-parents=2 {{shellQuote .BASE}}..{{shellQuote .HEAD}}); do
+          for p in $(git rev-list --no-walk --parents -n 1 "$m" | cut -d' ' -f3-); do
+            if ! git merge-base --is-ancestor "$p" {{shellQuote .BASE}}; then
+              merges="$merges$(git log -1 --format='%h %s' "$m")
+        "
+              break
+            fi
+          done
+        done
         if [ -n "$merges" ]; then
-          printf '%s..%s has merge commits; a branch is rebased, never merged into:\n%s\nfix: git rebase origin/redesign-web && scripts/agentkit.sh regen && git push --force-with-lease\n' {{shellQuote .BASE}} {{shellQuote .HEAD}} "$merges" >&2
+          printf '%s..%s merges in commits not on %s:\n%s' {{shellQuote .BASE}} {{shellQuote .HEAD}} {{shellQuote .BASE}} "$merges" >&2
+          printf 'fix: land what it merges into the base first, or take the merge out with git rebase\n' >&2
           exit 1
         fi
 

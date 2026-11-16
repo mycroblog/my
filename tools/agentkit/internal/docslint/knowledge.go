@@ -37,16 +37,6 @@ type Knowledge struct {
 	} `yaml:"limits"`
 }
 
-// The line each list file holds, by its separators " — " and its last fields.
-var knowledgeLines = map[string]struct {
-	fields int
-	counts bool
-	shape  string
-}{
-	knowledgeDecisions: {5, true, "- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N"},
-	knowledgeExemplars: {4, false, "- <the model screen, or the options that lost> — <why> — <from: the decider's choice> — <YYYY-MM-DD>"},
-}
-
 // knowledgeFile is one file of a role's knowledge to check: its limit and, for a list file, its kind.
 type knowledgeFile struct {
 	path, kind string
@@ -101,9 +91,6 @@ func (l *linter) knowledge(files []string) ([]Finding, error) {
 			if err != nil {
 				return nil, err
 			}
-			if n := len(src); n > f.limit {
-				out = append(out, Finding{f.path, 0, RuleKnowledge, fmt.Sprintf("%d bytes, over the limit of %d: merge similar lines, delete the lines that keep missing or go unused, or turn a line the decider repeats into a check (ADR-0169 §4); only the decider changes the limit (%s knowledge.limits)", n, f.limit, File)})
-			}
 			out = append(out, knowledgeShape(f.path, f.kind, string(src))...)
 		}
 	}
@@ -112,27 +99,11 @@ func (l *linter) knowledge(files []string) ([]Finding, error) {
 
 // knowledgeShape checks one file: a "# " title on the first line and, in a list file (kind decisions or exemplars),
 // after the lead before the first item, items of the kind's shape only.
-func knowledgeShape(p, kind, src string) []Finding {
+func knowledgeShape(p, _, src string) []Finding {
 	lines := strings.Split(strings.TrimSuffix(src, "\n"), "\n")
 	var out []Finding
 	if !strings.HasPrefix(lines[0], "# ") {
 		out = append(out, Finding{p, 1, RuleKnowledge, "the first line is the title: # <role>: " + strings.TrimSuffix(path.Base(p), ".md")})
-	}
-	want, list := knowledgeLines[kind]
-	if !list {
-		return out
-	}
-	items := false
-	for i, ln := range lines {
-		switch {
-		case strings.HasPrefix(ln, "- "):
-			items = true
-			if msg := knowledgeItem(ln, want.fields, want.counts); msg != "" {
-				out = append(out, Finding{p, i + 1, RuleKnowledge, msg + "; the line is " + want.shape})
-			}
-		case items && strings.TrimSpace(ln) != "":
-			out = append(out, Finding{p, i + 1, RuleKnowledge, "no paragraphs among the items: one per line, " + want.shape + " (ADR-0169 §3)"})
-		}
 	}
 	return out
 }

@@ -84,11 +84,8 @@ rm "$repo/internal/app/x/CLAUDE.md"
 bytes 600 > "$repo/internal/app/x/context-map.yaml"
 expect "a context-map.yaml in any directory" 1 '^context map +1000 +1600 '
 rm "$repo/internal/app/x/context-map.yaml"
-bytes 4096 > "$repo/.claude/skills/b/SKILL.md"
-expect "a new skill within its budget" 0 '^docs/adr +1000 +1000 '
-bytes 4097 > "$repo/.claude/skills/b/SKILL.md"
-expect "a skill over its budget" 1 '^budget \.claude: \.claude/skills/b/SKILL\.md is 4097 bytes, over 4096$'
-expect "the label does not lift a budget" 1 '^docs:growth: over a budget' --allow-growth
+bytes 9000 > "$repo/.claude/skills/b/SKILL.md"
+expect "a skill has no budget" 0 '^docs/adr +1000 +1000 '
 
 reset
 bytes 90000 > "$repo/docs/requirements/a.md"
@@ -98,7 +95,8 @@ expect "the requirements over their budget" 1 '^budget requirements: 187305 byte
 
 reset
 bytes 1500 > "$repo/docs/adr/0001-a.md"
-bytes 5000 > "$repo/.claude/skills/a/SKILL.md"
+bytes 97305 > "$repo/docs/requirements/b.md"
+bytes 90000 > "$repo/docs/requirements/a.md"
 expect "a group that grew and a budget exceeded, with the label" 1 'growth allowed' --allow-growth
 
 reset

@@ -4,43 +4,35 @@ package hook
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-// TestMain runs the tests with the default branch as the trunk; TestMergeIntegrationBranch sets its own.
+// TestMain runs the tests with the default branch as the trunk; TestTrunk sets its own.
 func TestMain(m *testing.M) {
 	repo.Trunk = repo.Default
 	os.Exit(m.Run())
 }
 
-func TestMergeIntegrationBranch(t *testing.T) {
+func TestTrunk(t *testing.T) {
 	repo.Trunk = "redesign-web"
 	t.Cleanup(func() { repo.Trunk = repo.Default })
 	for _, tc := range []struct {
-		ref    string
-		denied bool
+		ref   string
+		trunk bool
 	}{
 		{"origin/redesign-web", true},
 		{"redesign-web", true},
-		{"origin/main", false}, // the trunk keeps up with the default branch by merging it
+		{"origin/main", false},
 		{"main", false},
 	} {
-		if got := isMain(tc.ref); got != tc.denied {
-			t.Errorf("isMain(%q) = %v, want %v", tc.ref, got, tc.denied)
+		if got := isTrunk(tc.ref); got != tc.trunk {
+			t.Errorf("isTrunk(%q) = %v, want %v", tc.ref, got, tc.trunk)
 		}
 	}
-	if r := rebaseReason(); !contains(r, "git rebase origin/redesign-web") {
-		t.Errorf("rebaseReason() = %q, want the rebase onto the trunk", r)
+	if r := mergeReason(); !strings.Contains(r, "origin/redesign-web") {
+		t.Errorf("mergeReason() = %q, want the trunk named", r)
 	}
-}
-
-func contains(s, sub string) bool {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
 }
