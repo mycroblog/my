@@ -24,12 +24,22 @@ const menu = tv({
     group: "flex flex-col",
     header: "px-control-timeline-inline py-menu-padding text-caption text-muted-text",
     item: [
-      "box-border flex h-control-form cursor-default items-center gap-menu-icon-gap rounded-control",
+      "box-border flex cursor-default gap-menu-icon-gap rounded-control",
       "px-control-timeline-inline text-body whitespace-nowrap outline-hidden",
     ],
     glyph: "inline-flex text-muted-text",
+    // An item's label over its quiet line, which wraps between phrases within a menu's width.
+    text: "grid gap-[0.125rem]",
+    about: "max-w-[16rem] text-caption whitespace-normal text-muted-text [word-break:auto-phrase]",
   },
   variants: {
+    // An item is a form control's height; one with a line under its label grows with it (never clipped), padded so
+    // that the line stands apart from the next item's label, its glyph on the label's line. The height is set here
+    // alone: the variants' classes are not merged, so a fixed height beside a grown one would leave either.
+    described: {
+      false: { item: "h-control-form items-center" },
+      true: { item: "min-h-control-form items-start py-[0.5rem]", glyph: "h-[1lh] items-center" },
+    },
     // Hovered or focused, the item steps a surface up from the menu's; pressed, one more.
     state: {
       rest: {},
@@ -83,22 +93,27 @@ export function MenuGroup({ title, children }: { title?: string | undefined; chi
 
 /**
  * An item: a glyph and its label; `on` draws a toggle's glyph on. A label whose action asks for a confirmation ends
- * in "…".
+ * in "…". `about` is a quiet line under the label, read with it as the item's name (what the action will do: wait
+ * for an approval).
  */
 export function MenuItem({
   id,
   icon,
   on = false,
   onAction,
+  about,
   children,
 }: {
   id: string;
   icon: IconName;
   on?: boolean;
   onAction?: (() => void) | undefined;
+  about?: string | undefined;
   children: string;
 }) {
   const preview = usePreviewItemState(id);
+  const described = about !== undefined;
+  const s = menu({ described });
   return (
     <AriaMenuItem
       id={id}
@@ -113,13 +128,22 @@ export function MenuItem({
                 ? "hover"
                 : "rest",
           ring: isFocusVisible || preview === "focus-visible",
+          described,
         }).item()
       }
     >
-      <span className={menu().glyph()}>
+      <span className={s.glyph()}>
         <Icon name={icon} place="action" on={on} />
       </span>
-      <span>{children}</span>
+      {described ? (
+        <span className={s.text()}>
+          {/* Both read as the item's name: a name without the line it shows is a mismatch for voice control. */}
+          <span>{children}</span>
+          <span className={s.about()}>{about}</span>
+        </span>
+      ) : (
+        <span>{children}</span>
+      )}
     </AriaMenuItem>
   );
 }

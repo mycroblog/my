@@ -93,6 +93,9 @@ export type PostPoll = {
 /** An account a status mentions (the API's StatusMention). */
 export type PostMention = { id: string; username: string; acct: string };
 
+/** Whether the reader may interact with a status in one way (the API's InteractionPermission). */
+type PostPermission = "allowed" | "pending" | "denied";
+
 /** A status (the API's Status), as a post draws it. */
 export type PostStatus = {
   id: string;
@@ -126,6 +129,18 @@ export type PostStatus = {
   favourited?: boolean | undefined;
   boosted?: boolean | undefined;
   bookmarked?: boolean | undefined;
+  /**
+   * The approval of this reply, by the author of the post it replies to, while it is not given: given only to the
+   * reply's author, whom alone a `pending` reply shows to.
+   */
+  approval?: "pending" | "rejected" | undefined;
+  /** The approval of the reader's boost of it by its author, while it is not given. */
+  boost_approval?: "pending" | "rejected" | undefined;
+  /**
+   * What the reader may do with it, of each kind: at once (`allowed`), once its author approves (`pending`), or not;
+   * none for a reader without a session.
+   */
+  permissions?: { reply: PostPermission; announce: PostPermission; quote: PostPermission } | undefined;
   /** The status it quotes, shown one level deep. */
   quote?: { state: string; quoted_status?: PostStatus | undefined } | undefined;
   /** Its poll, whose options may hold custom emoji of `emojis`. */

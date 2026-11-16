@@ -187,6 +187,14 @@
     "defaultMessage": "自分だけ",
     "description": "A choice of the permissions submenu: the author alone."
   },
+  "compose.approval": {
+    "defaultMessage": "ほかの人も、承認すればできるようにする",
+    "description": "A checkbox under the audiences of reply, boost or quote in the permissions submenu: people outside the chosen audience may still do it, once the author approves."
+  },
+  "compose.permission.now": {
+    "defaultMessage": "{audience}{approval, select, yes {、ほかの人は承認すれば} other {}}",
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval)."
+  },
   "compose.visibility.public": {
     "defaultMessage": "公開",
     "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
@@ -229,35 +237,23 @@
   },
   "compose.interactions": {
     "defaultMessage": "返信・ブースト・引用できる人",
-    "description": "The caption of the audience menu's second group, apart from the visibilities: who may reply to, boost and quote the post."
+    "description": "The name of the audience menu's second group, apart from the visibilities, for assistive technology: who may reply to, boost and quote the post."
   },
   "compose.permissions": {
     "defaultMessage": "返信・ブースト・引用できる人",
-    "description": "The title of the submenu of who may reply to, boost and quote the post, beside its back button."
-  },
-  "compose.permissions.item": {
-    "defaultMessage": "返信・ブースト・引用",
-    "description": "The item of the audience menu that opens the submenu of who may reply to, boost and quote the post."
-  },
-  "compose.permissions.open": {
-    "defaultMessage": "誰でも返信・ブースト・引用できる",
-    "description": "The line under the permissions item while anyone may reply to, boost and quote the post."
-  },
-  "compose.permissions.limited": {
-    "defaultMessage": "返信・ブースト・引用を制限中",
-    "description": "The line under the permissions item while someone may not reply to, boost or quote the post."
+    "description": "The row of the audience menu that opens the submenu of who may reply to, boost and quote the post, and the submenu's title beside its back button."
   },
   "compose.interaction.reply": {
     "defaultMessage": "返信できる人",
-    "description": "The caption of a group of the permissions submenu."
+    "description": "A row of the permissions submenu, beside who may reply to the post now, and the title of the panel it opens (its audiences), beside its back button."
   },
   "compose.interaction.announce": {
     "defaultMessage": "ブーストできる人",
-    "description": "The caption of a group of the permissions submenu."
+    "description": "A row of the permissions submenu, beside who may boost the post now, and the title of the panel it opens (its audiences), beside its back button."
   },
   "compose.interaction.quote": {
     "defaultMessage": "引用できる人",
-    "description": "The caption of a group of the permissions submenu."
+    "description": "A row of the permissions submenu, beside who may quote the post now, and the title of the panel it opens (its audiences), beside its back button."
   },
   "compose.language": {
     "defaultMessage": "言語",
@@ -286,6 +282,10 @@
   "compose.replying_to": {
     "defaultMessage": "{handle}さんへの返信",
     "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
+  },
+  "compose.reply_waits": {
+    "defaultMessage": "{handle}さんが承認すると、ほかの人にも表示されます",
+    "description": "A line over the send row while writing a reply to a post whose author approves replies by hand: until that author approves it, only the writer sees the reply. handle is the author's, as @user@domain."
   },
   "compose.quote.remove": {
     "defaultMessage": "引用を外す",

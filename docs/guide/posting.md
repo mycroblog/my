@@ -85,19 +85,19 @@ show it to those followers as a post for followers only.
 - The author of a post can choose who may reply to it and who may boost it; posts from some other servers carry such a choice too. A reply or a boost outside it is refused, with a message such as "The author of this post does not let you reply to it." The author, the people the post mentions, and the author of the post it replies to can always reply.
 - The author may also let some people reply or boost only once they approve it. Such a reply or boost waits: you are notified ("... asked to reply to your post"), and it stays off your post until you approve it. A waiting reply from another server is not in the conversation under your post or in its count of replies; it still appears on its author's profile and on its own page. A waiting boost is not counted. Approving it adds it to your post; declining it keeps it off, and the other server is told either way.
 - A reply or a boost from another server that is outside your choice altogether is kept off your post in the same way, and notifies you of nothing.
-- When you reply to or boost a post whose author approves replies or boosts by hand, yours waits for that approval. Until then, only you see your reply, under the post and on its own page, marked as waiting; others see nothing of it, and nothing is sent to other servers. Your boost is not made until it is approved. You are notified when the author approves or declines it ("... approved your reply, boost, or quote"). Deleting a waiting reply, or undoing a waiting boost, takes the request back.
+- When you reply to or boost a post whose author approves replies or boosts by hand, yours waits for that approval. Until then, only you see your reply, under the post and on its own page, marked "Waiting for approval"; others see nothing of it, and nothing is sent to other servers. Your boost is not made until it is approved. You are notified when the author approves or declines it ("... approved your reply, boost, or quote"). Deleting a waiting reply, or undoing a waiting boost, takes the request back.
 
 ## Who can reply, boost, and quote
 
-"Replies, boosts and quotes" in the menu "Who can see it" opens the choices for that post. For each of replies, boosts,
-and quotes, choose who can do it at once: "Anyone", "Followers", "People you mention", or "Only you". Below each, "Others can reply with your approval" (and the same for boosts and quotes) lets
-everyone else ask instead of being refused. Once a choice admits less than anyone, the form shows the result above its
-tools, for example "Replies: Anyone. Boosts: Only you. Quotes: Anyone.", before you post.
+"Who can reply, boost and quote" in the menu "Who can see it" opens the choices for that post, each with its value,
+for example "Who can boost: Followers, others with your approval". For each of replies, boosts, and quotes, choose
+who can do it at once: "Anyone", "Followers", "People you mention", or "Only you". Below each, "Allow others with your
+approval" lets everyone else ask instead of being refused.
 
 - The people a post mentions can always reply to it. A "Followers only" post can be boosted and quoted only by you, and a "Direct" post by no one, whatever you choose.
 - The defaults for new posts are under "Who can reply to, boost, and quote your new posts" in "Display, posting, and timelines" in the settings.
-- Requests that wait for you are listed under "Approval requests" in the settings, next to "Follow requests"; the notification of each one links there with "Review the requests". "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
-- On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Your boost waits for the author's approval."
+- Requests that wait for you are listed in "Waiting for approval", opened by the row at the top of the notifications. "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
+- On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Boost waiting for approval".
 
 ## After posting
 

@@ -932,7 +932,7 @@
     "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
   "errors.interaction_request.answered": {
-    "defaultMessage": "この返信・ブースト・引用は、すでに承認または拒否しています。",
+    "defaultMessage": "この返信・ブースト・引用は、すでに承認したか、断ったものです。",
     "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
   },
   "errors.precondition_failed": {

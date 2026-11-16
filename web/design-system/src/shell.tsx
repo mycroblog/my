@@ -436,8 +436,9 @@ const line = tv({
     list: "m-0 grid list-none gap-shell-inset p-0",
     item: "flex items-start gap-entry-caption",
     lines: "grid min-w-0 flex-1",
+    // A title that wraps breaks between phrases, never inside a word of ja (求めています, リアクション), as NoticeLine.
     title: [
-      "line-clamp-2 rounded-control text-text no-underline outline-hidden data-hovered:underline",
+      "line-clamp-2 rounded-control text-text no-underline outline-hidden [word-break:auto-phrase] data-hovered:underline",
       "data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
     ],
     caption: "text-caption text-muted-text",

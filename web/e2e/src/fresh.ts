@@ -60,6 +60,11 @@ export type FreshPostOptions = {
   language?: string;
   /** The ID of the post it replies to. */
   replyTo?: string;
+  /**
+   * Who may reply to, boost and quote it (ADR-0155): for each kind given, whom it admits at once (`automatic`) and by
+   * the author's approval (`manual`); the author's defaults for the others.
+   */
+  policy?: components["schemas"]["InteractionPolicyChange"];
 };
 
 /**
@@ -196,6 +201,7 @@ export class Fresh {
         visibility: o.visibility ?? "public",
         language: o.language ?? author.locale,
         ...(o.replyTo === undefined ? {} : { in_reply_to_id: o.replyTo }),
+        ...(o.policy === undefined ? {} : { interaction_policy: o.policy }),
         ...(o.spoiler === undefined ? {} : { spoiler_text: o.spoiler }),
         ...(o.sensitive === true ? { sensitive: true } : {}),
         ...(media.length === 0 ? {} : { media: media.map((m) => ({ id: m.id, description: m.description ?? "" })) }),
@@ -239,6 +245,12 @@ export class Fresh {
       await this.#api(by)
     ).PUT("/statuses/{id}/reaction", { params: { path: { id: post.id } }, body: { emoji } });
     if (error !== undefined) throw new Error(`fresh: ${by.username} could not react to ${post.id}`);
+  }
+
+  /** `by` boosts the post `post`: at once, or as a request where its author approves `by`'s boosts by hand. */
+  async boost(by: Person, post: FreshPost): Promise<void> {
+    const { error } = await (await this.#api(by)).POST("/statuses/{id}/boost", { params: { path: { id: post.id } } });
+    if (error !== undefined) throw new Error(`fresh: ${by.username} could not boost ${post.id}`);
   }
 
   /** The text and the content warning of `author`'s post `id` as the server keeps them (its source). */

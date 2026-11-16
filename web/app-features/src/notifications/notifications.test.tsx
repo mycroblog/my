@@ -22,6 +22,7 @@ const answers = {
   "/notifications/marker": { last_read_id: id(4), unread_count: 2 },
   "/notifications/requests/summary": { accounts_count: 3, notifications_count: 5 },
   "/accounts/relationships": { items: [{ id: "takuya", requested_by: true }] },
+  "/interaction_requests": { items: [] },
 };
 
 async function shown(locale = "en") {
@@ -30,9 +31,14 @@ async function shown(locale = "en") {
   return { html: render(data, <Notifications instance="my.example" />, locale), requests };
 }
 
-test("the loader reads the notifications, the read marker and the count of the requests", async () => {
+test("the loader reads the notifications, the read marker, the count of the requests and what waits for approval", async () => {
   const { requests } = await shown();
-  expect(requests).toEqual(["GET /notifications", "GET /notifications/marker", "GET /notifications/requests/summary"]);
+  expect(requests).toEqual([
+    "GET /notifications",
+    "GET /notifications/marker",
+    "GET /notifications/requests/summary",
+    "GET /interaction_requests",
+  ]);
 });
 
 test("each notification newer than the marker carries its own unread mark, the others none", async () => {
@@ -67,8 +73,42 @@ test("a follow request asks to accept, its refusal beside it", async () => {
     data.queries.queryOptions("get", "/accounts/relationships", { params: { query: { id: ["takuya"] } } }),
   );
   const html = render(data, <Notifications instance="my.example" />);
-  expect(html.indexOf(">Reject<")).toBeGreaterThan(0);
-  expect(html.indexOf(">Reject<")).toBeLessThan(html.indexOf(">Accept<"));
+  expect(html.indexOf(">Decline<")).toBeGreaterThan(0);
+  expect(html.indexOf(">Decline<")).toBeLessThan(html.indexOf(">Accept<"));
+});
+
+test("over the list, a row counts what waits for the reader's approval; a request's notification has no buttons", async () => {
+  const request = (n: number, state: string) => ({
+    id: `q${String(n)}`,
+    kind: "reply",
+    state,
+    created_at: "2026-11-14T03:00:00Z",
+    account: account("marco"),
+    status: status("y", "yuki"),
+  });
+  const { data } = server({
+    ...answers,
+    "/notifications": {
+      items: [
+        { id: id(7), type: "reply_request", created_at: "2026-11-14T04:00:00Z", account: account("marco") },
+        ...notifications,
+      ],
+    },
+    "/interaction_requests": { items: [request(1, "pending"), request(2, "pending"), request(3, "accepted")] },
+  });
+  await loadNotifications(data);
+  const html = render(data, <Notifications instance="my.example" />);
+  expect(html).toContain("2 waiting for your approval");
+  expect(html.indexOf("2 waiting for your approval")).toBeLessThan(html.indexOf("</bdi> asked to reply to your post"));
+  const asked = html.slice(html.indexOf("</bdi> asked to reply to your post"), html.indexOf("mentioned you"));
+  expect(asked).not.toContain("<button");
+  const ja = render(data, <Notifications instance="my.example" />, "ja");
+  expect(ja).toContain("承認待ち 2件");
+});
+
+test("without a request waiting, no row counts them", async () => {
+  const { html } = await shown();
+  expect(html).not.toContain("waiting for your approval");
 });
 
 test("the post of a mention answers its actions: a favourite reaches the server, Reply opens the composer", async () => {

@@ -43,6 +43,11 @@ export const TranslationFailed: Story = {
 };
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };
+/**
+ * A post whose author approves replies and boosts by hand (ADR-0155): the reader's boost of it says it waits, and the
+ * reader's replies under it, which the reader alone sees, say one waits and the other was not approved.
+ */
+export const WaitingForApproval: Story = { parameters: screen({ at: "layla-asks", server: { approvals: true } }) };
 /** An article's page (ADR-0160): its head, its text in full for long reading, its actions, and its replies under it. */
 export const Article: Story = { parameters: screen({ at: "sam-article" }) };
 export const ArticleMinimumWidth: Story = { parameters: screen({ at: "sam-article" }), globals: minimumWidth };

@@ -22,5 +22,10 @@ export const Empty: Story = { parameters: screen({ at, state: "empty" }, "notifi
 export const Loading: Story = { parameters: screen({ at, state: "loading" }, "notifications") };
 export const Failed: Story = { parameters: screen({ at, state: "error" }, "notifications") };
 export const LongText: Story = { parameters: screen({ at, state: "long" }, "notifications") };
+/**
+ * With replies, boosts and quotes of the reader's post waiting for the reader's approval: the row over the
+ * notifications counts them and opens their screen; their notifications are plain lines.
+ */
+export const WaitingForApproval: Story = { parameters: screen({ at, server: { approvals: true } }, "notifications") };
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };

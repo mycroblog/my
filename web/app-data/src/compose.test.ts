@@ -2,7 +2,16 @@
 
 import { expect, test } from "bun:test";
 import { NetworkError } from "@mycroblog/mykit";
-import { cachePostedStatus, postStatus, refusal, refusedField, saveDraft, uploadAttachment } from "./compose";
+import {
+  cachePostedStatus,
+  choiceOf,
+  postStatus,
+  refusal,
+  refusedField,
+  ruleOf,
+  saveDraft,
+  uploadAttachment,
+} from "./compose";
 import { cachedStatus } from "./shadow";
 import { fakeAppData, json, page, status } from "./test/fake";
 import { statusContextQuery, type StatusContext } from "./thread";
@@ -139,4 +148,31 @@ test("a draft saves over the one saved before, and as a new one when another dev
   });
   expect(await saveDraft(data, { visibility: "public" }, { id: "d1", etag: '"1"' })).toEqual({ id: "d2", etag: '"2"' });
   expect(seen).toEqual(['PUT "1"', "POST "]);
+});
+
+test("a choice with approval lets everyone else ask; without it, or for everyone, the rule has no manual audience", () => {
+  expect(ruleOf({ audience: "followers", approval: true })).toEqual({ automatic: "followers", manual: "everyone" });
+  expect(ruleOf({ audience: "nobody", approval: true })).toEqual({ automatic: "nobody", manual: "everyone" });
+  expect(ruleOf({ audience: "mentioned", approval: false })).toEqual({ automatic: "mentioned" });
+  expect(ruleOf({ audience: "everyone", approval: true })).toEqual({ automatic: "everyone" });
+});
+
+test("a rule reads as a choice, any manual audience as approval, and a choice's rule reads back as the choice", () => {
+  expect(choiceOf({ automatic: "followers", manual: "everyone" })).toEqual({ audience: "followers", approval: true });
+  expect(choiceOf({ automatic: "nobody", manual: "followers" })).toEqual({ audience: "nobody", approval: true });
+  expect(choiceOf({ automatic: "everyone" })).toEqual({ audience: "everyone", approval: false });
+  for (const rule of [{ automatic: "mentioned", manual: "everyone" }, { automatic: "nobody" }] as const)
+    expect(ruleOf(choiceOf(rule))).toEqual(rule);
+});
+
+test("a posted reply that waits for approval does not count on its parent; one admitted at once does", () => {
+  const { data } = fakeAppData(() => new Response(null, { status: 500 }));
+  data.queryClient.setQueryData(homeTimelineQuery(data).queryKey, {
+    pages: [{ items: [status("1", { replies_count: 2 })] }],
+    pageParams: [undefined],
+  });
+  cachePostedStatus(data, status("waits", { in_reply_to_id: "1", approval: "pending" }));
+  expect(cachedStatus(data, "1")?.replies_count).toBe(2);
+  cachePostedStatus(data, status("at-once", { in_reply_to_id: "1" }));
+  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
 });

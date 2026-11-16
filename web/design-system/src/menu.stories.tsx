@@ -15,6 +15,7 @@ const rem = (px: number) => `${px / rootPx}rem`;
 
 type Lang = "en" | "ja";
 
+// The design system reads no catalog: these are copies of the app's words (appcomponents:post.*), kept to them by hand.
 const labels = {
   en: {
     boost: "Boost",
@@ -28,6 +29,8 @@ const labels = {
     edit: "Edit",
     redraft: "Delete and redraft…",
     delete: "Delete…",
+    boostWaits: "Your boost goes out once @layla approves it",
+    quoteWaits: "Your quote shows this post once @layla approves it",
   },
   ja: {
     boost: "ブースト",
@@ -41,6 +44,8 @@ const labels = {
     edit: "編集",
     redraft: "削除して書き直す…",
     delete: "削除…",
+    boostWaits: "@laylaさんが承認すると、ブーストされます",
+    quoteWaits: "@laylaさんが承認すると、引用にこの投稿が表示されます",
   },
 } as const;
 
@@ -118,9 +123,27 @@ function MoreMenu({
   );
 }
 
-/** The boost button, boosted, with its count, pressed, and its menu under it: boost (on) and quote. */
-function BoostMenu({ lang }: { lang: Lang }) {
+/**
+ * The boost button, boosted, with its count, pressed, and its menu under it: boost (on) and quote; or, `waits`, not
+ * boosted, each item with a quiet line that it waits for the author's approval.
+ */
+function BoostMenu({ lang, waits = false }: { lang: Lang; waits?: boolean }) {
   const l = labels[lang];
+  if (waits)
+    return (
+      <div lang={lang}>
+        <MenuPanel label={l.boost}>
+          <MenuGroup>
+            <MenuItem id="boost" icon="boost" about={l.boostWaits}>
+              {l.boost}
+            </MenuItem>
+            <MenuItem id="quote" icon="quote" about={l.quoteWaits}>
+              {l.quote}
+            </MenuItem>
+          </MenuGroup>
+        </MenuPanel>
+      </div>
+    );
   return (
     <div lang={lang} style={{ display: "grid", gap: rem(menuOffset), justifyItems: "start" }}>
       <Preview state="pressed">
@@ -160,3 +183,10 @@ export const OnAnothersPost: Story = {
 };
 export const OnOwnPost: Story = { render: ({ lang }) => <MoreMenu lang={lang} own bookmarked /> };
 export const Boost: Story = { render: ({ lang }) => <BoostMenu lang={lang} /> };
+/** Items with a quiet line under each: the boost and the quote of a post whose author approves them by hand. */
+export const BoostWaitingForApproval: Story = { render: ({ lang }) => <BoostMenu lang={lang} waits /> };
+/** The same in Japanese, whose line wraps between phrases. */
+export const BoostWaitingForApprovalJapanese: Story = {
+  args: { lang: "ja" },
+  render: ({ lang }) => <BoostMenu lang={lang} waits />,
+};

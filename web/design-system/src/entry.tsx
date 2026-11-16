@@ -114,7 +114,9 @@ const caption = tv({
     root: "m-0 flex items-start gap-entry-caption text-caption text-muted-text",
     // The glyph stands on the first line, so that a caption that wraps keeps it at its start.
     glyph: "inline-flex h-[1lh] shrink-0 items-center",
-    text: "min-w-0 flex-1",
+    // Wrapping between phrases, never inside a word of ja (表示されます); a word longer than the line (a handle of
+    // another server, @user@domain) breaks where it must rather than push the line past its column.
+    text: "min-w-0 flex-1 [word-break:auto-phrase] [overflow-wrap:anywhere]",
     action: "whitespace-nowrap",
     // An action of its own at the line's end, on the first line, never broken inside.
     end: "shrink-0 whitespace-nowrap",
@@ -130,6 +132,9 @@ const caption = tv({
     oneLine: { true: { text: "flex whitespace-pre" } },
     // What went wrong with what the reader asked for: the text's own color over the muted caption, without a hue.
     alert: { true: { glyph: "text-text", text: "text-text" } },
+    // What the reader did that waits for someone else (a reply until its author approves it): as plain as `alert`,
+    // the text's own color without a hue, since it is no failure.
+    waiting: { true: { glyph: "text-text", text: "text-text" } },
   },
 });
 
@@ -175,6 +180,8 @@ export type CaptionLineProps = {
   busy?: boolean | undefined;
   /** It says what went wrong with what the reader asked for: its text in the text's color. */
   alert?: boolean | undefined;
+  /** It says that what the reader did waits for someone else (an approval): its text in the text's color. */
+  waiting?: boolean | undefined;
   /**
    * What assistive technology reads in place of the text, where the text changes more often than it should be heard (a
    * download's progress, heard by quarters).
@@ -195,9 +202,10 @@ export function CaptionLine({
   oneLine = false,
   busy = false,
   alert = false,
+  waiting = false,
   spoken,
 }: CaptionLineProps) {
-  const s = caption({ oneLine, alert });
+  const s = caption({ oneLine, alert, waiting });
   const hasText = children !== undefined && children !== null && children !== false;
   return (
     <p className={s.root()} lang={lang}>

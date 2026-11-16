@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import { cacheRelationship } from "./accounts";
 import type { AppData } from "./app-data";
+import { receiveInteractionRequests } from "./approvals";
 import { pagedQuery, usePagedList, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
 import { useShadow } from "./shadow";
@@ -24,9 +25,6 @@ export type NotificationItem = components["schemas"]["Notification"];
 
 /** The kind of a notification. */
 export type NotificationType = components["schemas"]["NotificationType"];
-
-/** A reply, boost or quote of the viewer's post that waits for the viewer's approval. */
-export type InteractionRequest = components["schemas"]["InteractionRequest"];
 
 type NotificationMarker = components["schemas"]["NotificationMarker"];
 
@@ -41,6 +39,9 @@ const filters: Readonly<Record<NotificationFilter, readonly NotificationType[] |
   mentions: ["mention", "quote"],
 };
 
+/** The notifications that tell of a reply, boost or quote waiting for the reader's approval (approvals.ts). */
+const requestTypes: ReadonlySet<NotificationType> = new Set(["reply_request", "boost_request", "quote_request"]);
+
 /** The read marker of the notifications and the number of notifications newer than it. */
 export function notificationMarkerQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/notifications/marker");
@@ -49,11 +50,6 @@ export function notificationMarkerQuery({ queries }: AppData) {
 /** How many notification requests wait. */
 export function notificationRequestSummaryQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/notifications/requests/summary");
-}
-
-/** The interaction requests that wait for the viewer: the first page, in which a notification's request is looked up. */
-function interactionRequestsQuery({ queries }: AppData) {
-  return queries.queryOptions("get", "/interaction_requests");
 }
 
 /** The notifications of a filter, newest first. */
@@ -185,6 +181,7 @@ export function receiveNotification(data: AppData, notification?: NotificationIt
   const { queryClient } = data;
   const fetching = (queryKey: readonly unknown[]) =>
     queryClient.getQueryCache().find({ queryKey, exact: true })?.state.fetchStatus === "fetching";
+  if (notification !== undefined && requestTypes.has(notification.type)) receiveInteractionRequests(data);
   if (notification !== undefined) {
     for (const { filter, queryKey } of lists(data)) {
       const types = filters[filter];
@@ -221,18 +218,11 @@ export function receiveNotificationGap(data: AppData): void {
   const { queryClient } = data;
   void queryClient.invalidateQueries({ queryKey: notificationMarkerQuery(data).queryKey, exact: true });
   void queryClient.invalidateQueries({ queryKey: notificationRequestSummaryQuery(data).queryKey, exact: true });
+  receiveInteractionRequests(data);
   for (const { queryKey } of lists(data)) void queryClient.invalidateQueries({ queryKey, exact: true });
 }
 
 // ---- The writes of the requests ------------------------------------------------------------------------------------
-
-/** Answers an interaction request, and resolves once the cache knows it. It rejects with the server's problem. */
-async function answerInteractionRequest(data: AppData, id: string, accept: boolean): Promise<void> {
-  const path = { params: { path: { id } } };
-  if (accept) await data.api.POST("/interaction_requests/{id}/accept", path);
-  else await data.api.POST("/interaction_requests/{id}/reject", path);
-  await data.queryClient.invalidateQueries({ queryKey: interactionRequestsQuery(data).queryKey, exact: true });
-}
 
 /**
  * Answers the follow request of the account of `id`, and resolves once the cache holds the relationship the server
@@ -328,38 +318,15 @@ export function useNotificationRequestSummary(): NotificationRequestSummary | un
   return useQuery(notificationRequestSummaryQuery(useAppData())).data;
 }
 
-const requestKinds: Partial<Record<NotificationType, InteractionRequest["kind"]>> = {
-  reply_request: "reply",
-  boost_request: "announce",
-  quote_request: "quote",
-};
-
 /**
- * The waiting interaction request of a notification that tells of one (a `reply_request`, `boost_request` or
- * `quote_request`): the request of its account about its post, among those the server lists first. Undefined while
- * unknown, for another kind, and for a request answered already.
+ * The answers of the requests a notification carries, from a screen: a follow request's. Those of the requests to
+ * reply, boost and quote are given on their own screen (approvals.ts).
  */
-export function useInteractionRequest(notification: NotificationItem): InteractionRequest | undefined {
-  const kind = requestKinds[notification.type];
-  const requests = useQuery({ ...interactionRequestsQuery(useAppData()), enabled: kind !== undefined }).data;
-  if (kind === undefined) return undefined;
-  return requests?.items.find(
-    (r) =>
-      r.state === "pending" &&
-      r.kind === kind &&
-      r.account.id === notification.account?.id &&
-      r.status.id === notification.status?.id,
-  );
-}
-
-/** The answers of the requests a notification carries, from a screen. */
 export function useAnswerRequest(): {
   readonly follow: (accountId: string, accept: boolean) => Promise<void>;
-  readonly interaction: (requestId: string, accept: boolean) => Promise<void>;
 } {
   const data = useAppData();
   return {
     follow: (accountId, accept) => answerFollowRequest(data, accountId, accept),
-    interaction: (requestId, accept) => answerInteractionRequest(data, requestId, accept),
   };
 }

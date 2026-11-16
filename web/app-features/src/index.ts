@@ -43,6 +43,7 @@ export {
 } from "./compose/model";
 export { LatestNotifications } from "./notifications/latest";
 export { loadNotifications, Notifications } from "./notifications/notifications";
+export { loadWaitingRequests, WaitingRequests } from "./notifications/waiting";
 export { PostActions, type ComposeRequest } from "./post-actions";
 export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTranslationState } from "./post-translation";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";

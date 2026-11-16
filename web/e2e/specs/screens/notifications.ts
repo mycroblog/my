@@ -46,4 +46,52 @@ export class Notifications {
       await this.acceptButton(from).click();
     });
   }
+
+  /**
+   * The row over the notifications that counts the replies, boosts and quotes waiting for the reader's approval ("2
+   * waiting for your approval"), a link to their screen.
+   */
+  waitingRow(count: number): Locator {
+    return this.page
+      .getByRole("main")
+      .getByRole("link", { name: `${String(count)} waiting for your approval`, exact: true });
+  }
+
+  /** Opens the screen of what waits for the reader's approval from the row that counts `count` of them. */
+  async openWaiting(count: number): Promise<WaitingRequests> {
+    await this.waitingRow(count).click();
+    return new WaitingRequests(this.page);
+  }
+}
+
+/** The write of an answer to a request: its approval or its refusal. */
+const answer = /\/interaction_requests\/[^/]+\/(?:accept|reject)$/;
+
+/**
+ * The screen of the replies, boosts and quotes waiting for the reader's approval, under Notifications: each request an
+ * article named by who asked for what ("Fresh 1a2b3c4d asked to reply to your post"), with Decline and Approve until it
+ * is answered, and its answer after.
+ */
+export class WaitingRequests {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  get feed(): Locator {
+    return this.page.getByRole("feed", { name: "Waiting for approval", exact: true });
+  }
+
+  /** The request of `name` (a display name) to do `what` ("reply to", "boost", "quote") with the reader's post. */
+  request(name: string, what: "reply to" | "boost" | "quote"): Locator {
+    return this.feed.getByRole("article", { name: new RegExp(`^⁨?${name}⁩? asked to ${what} your post$`) });
+  }
+
+  /** Approves (`Approve`) or declines (`Decline`) a request, and returns once the server has answered. */
+  async answer(article: Locator, button: "Approve" | "Decline"): Promise<void> {
+    await answered(this.page, { methods: ["POST"], path: answer }, async () => {
+      await article.getByRole("button", { name: button, exact: true }).click();
+    });
+  }
 }

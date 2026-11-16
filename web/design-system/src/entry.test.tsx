@@ -95,8 +95,8 @@ test("a one-line caption truncates its name and keeps the words around it with t
       <CaptionName>A very long name</CaptionName> boosted
     </CaptionLine>,
   );
-  expect(html).toContain(
-    '<span class="min-w-0 flex-1 flex whitespace-pre"><bdi class="min-w-0 truncate">A very long name</bdi> boosted</span>',
+  expect(html).toMatch(
+    /<span class="min-w-0 flex-1 [^"]*flex whitespace-pre"><bdi class="min-w-0 truncate">A very long name<\/bdi> boosted<\/span>/,
   );
   expect(renderToStaticMarkup(<CaptionLine icon="boost">x</CaptionLine>)).not.toContain("whitespace-pre");
 });

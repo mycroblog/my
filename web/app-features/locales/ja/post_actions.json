@@ -30,5 +30,17 @@
   "post_actions.source_failed": {
     "defaultMessage": "編集する投稿を読み込めませんでした。",
     "description": "The notice at the bottom of the page when the reader's post did not load from the server to edit it (Edit), beside Try again; the composer does not open."
+  },
+  "post_actions.approval_pending": {
+    "defaultMessage": "承認待ち",
+    "description": "The line over the reader's own reply that waits for the approval of the author of the post it replies to; only the reader sees the reply."
+  },
+  "post_actions.approval_rejected": {
+    "defaultMessage": "承認されませんでした",
+    "description": "The line over the reader's own reply that the author of the post it replies to declined; only the reader sees it."
+  },
+  "post_actions.boost_waits": {
+    "defaultMessage": "ブーストの承認待ち",
+    "description": "The line over a post the reader boosted whose author approves boosts by hand, until the author does."
   }
 }

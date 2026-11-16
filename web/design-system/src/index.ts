@@ -25,6 +25,7 @@ export {
   AttachmentRow,
   CharCount,
   ChoiceBack,
+  ChoiceCheck,
   ChoiceGroup,
   ChoiceOpens,
   ChoicePopup,

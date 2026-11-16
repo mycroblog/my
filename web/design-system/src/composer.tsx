@@ -662,12 +662,16 @@ const popup = tv({
       below: { anchor: "max-tablet:relative" },
     },
     end: { true: { panel: "tablet:start-auto tablet:end-0" } },
+    // A menu with submenus keeps one width at every level from `tablet`, the widest its values take, so that it does
+    // not change size as the reader goes in and back, and an item's › keeps its place at the end.
+    steady: { true: { panel: "tablet:w-[min(var(--composer-pop-width),calc(100vw-2rem))]" } },
   },
 });
 
 /**
  * A popover of choices under (or, in the row on a phone, over) its trigger: a press outside it or Escape closes it.
- * `end` lines it up with the trigger's end, for a trigger at the row's end.
+ * `end` lines it up with the trigger's end, for a trigger at the row's end; `steady` keeps one width for a menu with
+ * submenus (the audience's).
  */
 export function ChoicePopup({
   open,
@@ -676,6 +680,7 @@ export function ChoicePopup({
   label,
   place = "row",
   end = false,
+  steady = false,
   children,
 }: {
   open: boolean;
@@ -685,9 +690,10 @@ export function ChoicePopup({
   label: string;
   place?: "row" | "below" | undefined;
   end?: boolean | undefined;
+  steady?: boolean | undefined;
   children: ReactNode;
 }) {
-  const s = popup({ place, end });
+  const s = popup({ place, end, steady });
   const anchor = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -733,8 +739,10 @@ const choice = tv({
     glyph: "inline-flex pt-[0.125rem] text-muted-text",
     text: "grid flex-1",
     label: "[[aria-checked=true]_&]:font-label",
-    about: "text-caption text-muted-text",
-    opens: "self-center text-title text-muted-text rtl:-scale-x-100",
+    // A value that wraps breaks between phrases, never inside a word of ja (承認).
+    about: "text-caption text-muted-text [word-break:auto-phrase]",
+    // The › at the item's end, apart from its text, centred on the item however many lines it takes.
+    opens: "inline-flex shrink-0 self-center text-muted-text",
   },
   variants: {
     // A group of another kind of setting (the interactions after the visibilities): a rule above its caption.
@@ -752,7 +760,11 @@ export type Choice<T extends string> = {
   disabled?: boolean | undefined;
 };
 
-/** A group of choices under its caption, the chosen one marked; a note under them says why one cannot be chosen. */
+/**
+ * A group of choices under its caption, the chosen one marked; a note under them says why one cannot be chosen.
+ * Without the caption (`captioned` false) where the head of its panel says the same, the title naming it for assistive
+ * technology alone.
+ */
 export function ChoiceGroup<T extends string>({
   title,
   items,
@@ -760,6 +772,7 @@ export function ChoiceGroup<T extends string>({
   onChoose,
   note,
   apart = false,
+  captioned = true,
 }: {
   title: string;
   items: readonly Choice<T>[];
@@ -767,11 +780,12 @@ export function ChoiceGroup<T extends string>({
   onChoose: (id: T) => void;
   note?: string | undefined;
   apart?: boolean | undefined;
+  captioned?: boolean | undefined;
 }) {
   const s = choice({ apart });
   return (
     <div className={s.group()} role="radiogroup" aria-label={title}>
-      <p className={s.title()}>{title}</p>
+      {captioned && <p className={s.title()}>{title}</p>}
       {items.map((item) => (
         <button
           key={item.id}
@@ -798,18 +812,32 @@ export function ChoiceGroup<T extends string>({
   );
 }
 
-/** A group of items of another kind under its caption, apart from the groups before it by a rule. */
-export function ChoiceSection({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * A group of items of another kind under its caption, apart from the groups before it by a rule; without the caption
+ * (`captioned` false) where its one item says the same, the title naming it for assistive technology alone.
+ */
+export function ChoiceSection({
+  title,
+  captioned = true,
+  children,
+}: {
+  title: string;
+  captioned?: boolean | undefined;
+  children: ReactNode;
+}) {
   const s = choice({ apart: true });
   return (
     <div className={s.group()} role="group" aria-label={title}>
-      <p className={s.title()}>{title}</p>
+      {captioned && <p className={s.title()}>{title}</p>}
       {children}
     </div>
   );
 }
 
-/** An item that opens another panel of the popover (a submenu): a glyph, its label, what it holds now, and ›. */
+/**
+ * An item that opens another panel of the popover (a submenu): a glyph, its label, what it holds now when it says it,
+ * and ›.
+ */
 export function ChoiceOpens({
   icon,
   label,
@@ -818,7 +846,7 @@ export function ChoiceOpens({
 }: {
   icon: IconName;
   label: string;
-  now: string;
+  now?: string | undefined;
   onPress: () => void;
 }) {
   const s = choice();
@@ -829,11 +857,65 @@ export function ChoiceOpens({
       </span>
       <span className={s.text()}>
         <span className={s.label()}>{label}</span>
-        <span className={s.about()}>{now}</span>
+        {now !== undefined && <span className={s.about()}>{now}</span>}
       </span>
       <span className={s.opens()} aria-hidden="true">
-        ›
+        <Icon name="onward" place="action" />
       </span>
+    </button>
+  );
+}
+
+const check = tv({
+  slots: {
+    item: [
+      "flex cursor-pointer items-start gap-menu-icon-gap rounded-control border-0 bg-transparent py-[0.375rem]",
+      "px-control-timeline-inline text-start font-sans text-body text-text outline-hidden",
+      "hover:bg-surface-raised focus-visible:shadow-focus-inset",
+    ],
+    // The mark in the glyphs' column: the poll's square (poll.tsx), muted, a check in it while on, never filled, so
+    // that it stays quieter than the chosen item above it.
+    glyph: "inline-flex h-[1lh] min-w-icon-action shrink-0 items-center justify-center",
+    // A label that wraps breaks between phrases, never inside a word of ja (する), in lines of even length.
+    label: "min-w-0 flex-1 [word-break:auto-phrase] text-balance",
+    mark: [
+      "box-border grid size-form-page-check place-items-center rounded-[3px] border-[length:var(--composer-mark-line)]",
+      "border-solid border-muted-text text-text",
+    ],
+  },
+});
+
+/** A setting of the popover that is on or off (under a group of choices it qualifies): its mark and its label. */
+export function ChoiceCheck({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const s = check();
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      className={s.item()}
+      onClick={() => {
+        onChange(!checked);
+      }}
+    >
+      <span className={s.glyph()}>
+        <span className={s.mark()} aria-hidden="true">
+          {checked && (
+            <svg viewBox="0 0 12 12" className="size-[0.75rem]" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2.5 6.25 L5 8.75 L9.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+      </span>
+      <span className={s.label()}>{label}</span>
     </button>
   );
 }

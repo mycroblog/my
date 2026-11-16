@@ -98,7 +98,11 @@ test("the post sends what was chosen, the permissions only where they differ fro
       cw: " spoiler ",
       language: "ja",
       visibility: "unlisted",
-      policy: { reply: "everyone", announce: "followers", quote: "nobody" },
+      policy: {
+        reply: { audience: "everyone", approval: true },
+        announce: { audience: "followers", approval: false },
+        quote: { audience: "nobody", approval: false },
+      },
       attachments: [{ key: "a", state: "ready", media, description: " a hill " }],
     }),
     settings,
@@ -114,6 +118,25 @@ test("the post sends what was chosen, the permissions only where they differ fro
     interaction_policy: { announce: { automatic: "followers" }, quote: { automatic: "nobody" } },
   });
   expect(toStatus(draft({ text: "hi" }), settings)).toEqual({ text: "hi", visibility: "public" });
+});
+
+test("the post sends each kind whose others may ask for approval with everyone else by approval", () => {
+  const body = toStatus(
+    draft({
+      text: "hi",
+      policy: {
+        reply: { audience: "followers", approval: true },
+        announce: { audience: "mentioned", approval: true },
+        quote: { audience: "nobody", approval: true },
+      },
+    }),
+    settings,
+  );
+  expect(body.interaction_policy).toEqual({
+    reply: { automatic: "followers", manual: "everyone" },
+    announce: { automatic: "mentioned", manual: "everyone" },
+    quote: { automatic: "nobody", manual: "everyone" },
+  });
 });
 
 test("a quote sends the quoted post until the reader removes it; a poll sends its options and duration", () => {

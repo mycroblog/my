@@ -38,7 +38,7 @@ export { ListIndex, ListScreen } from "./lists";
 export { streamOpened } from "./stream";
 export { Landing, type LandingPlace } from "./landing";
 export { MediaViewer } from "./media";
-export { Notifications } from "./notifications";
+export { Notifications, WaitingRequests } from "./notifications";
 export { Profile } from "./profile";
 export { Reactors } from "./reactors";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
