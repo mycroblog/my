@@ -11,14 +11,6 @@
     "defaultMessage": "{posts, select, yes {People by name or handle, hashtags, and posts by their words} other {People by name or handle, and hashtags}}",
     "description": "The hint under the search field: what it finds. posts is yes where the server searches posts too."
   },
-  "search.kinds": {
-    "defaultMessage": "Results",
-    "description": "The name, for assistive technology, of the row of tabs that shows one kind of result (people, hashtags, posts)."
-  },
-  "search.tab": {
-    "defaultMessage": "{kind} {count}{more, select, yes {+} other {}}",
-    "description": "A tab of the search's results: the kind (search.people, search.hashtags, search.posts) and how many it found; + while more posts follow than were read."
-  },
   "search.people": {
     "defaultMessage": "People",
     "description": "The title of the accounts a search found, and the tab of them."

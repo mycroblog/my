@@ -4,36 +4,17 @@
 // anything is written; its results on a server without a search engine (people and hashtags alone, no posts offered)
 // and on one with it (posts too); a remote account looked up by its handle and one that is not there; nothing found;
 // each state every screen is shown in; the screen of the suggested accounts and its states, a one-person server's;
-// and the home of a reader who follows no one yet, which offers the suggestions.
-//
-// Two choices of the decider's are open as live options over every story (@my/devtools/options): `search-results`,
-// the kinds of results in sections one under another or in tabs; and `find-people`, finding people reached from the
-// search before anything is written, from a place of the menu, or both.
+// and the home of a reader who follows no one yet, which offers the suggestions and leads to all of them.
 
-import type { DiscoveryLayout } from "@my/app-features";
-import { DiscoveryLayoutProvider } from "@my/app-features";
-import { Options } from "@my/devtools/options";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
-import { waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
-
-/** The app in each variant of the open choices of finding. */
-function Variants({ app }: { app: () => React.ReactNode }) {
-  const people = (results: DiscoveryLayout["results"]) => {
-    const as = (where: DiscoveryLayout["people"]) => (
-      <DiscoveryLayoutProvider value={{ results, people: where }}>{app()}</DiscoveryLayoutProvider>
-    );
-    return <Options id="find-people" variants={{ both: as("both"), search: as("search"), menu: as("menu") }} />;
-  };
-  return <Options id="search-results" variants={{ sections: people("sections"), tabs: people("tabs") }} />;
-}
 
 const posts = { search: { posts: true } };
 
 const meta = {
   title: "Search",
   ...screenMeta,
-  render: (args: unknown, context: StoryContext) => <Variants app={() => screenMeta.render(args, context)} />,
   parameters: { ...screenMeta.parameters, ...screen({ at: "/search" }) },
 } satisfies Meta;
 export default meta;
@@ -107,35 +88,16 @@ Results.play = holds(
     main.querySelector('a[href^="/tags/baking"]') !== null &&
     main.querySelector("article") !== null,
 );
-/** One kind found, in the tabs' layout: no row of tabs, the kind under its caption alone. */
-export const OneKindInTabs: Story = {
-  parameters: screen({ at: "/search?q=%40kiri%40far.example" }),
-  render: (args: unknown, context: StoryContext) => (
-    <DiscoveryLayoutProvider value={{ results: "tabs", people: "both" }}>
-      {screenMeta.render(args, context)}
-    </DiscoveryLayoutProvider>
-  ),
-  play: holds(
-    "one kind under its caption, no tabs",
-    (main) => main.querySelector('[role="tablist"]') === null && main.querySelector("section") !== null,
-  ),
-};
-/** The three kinds in tabs, each named with how many, the first open. */
-export const ResultsInTabs: Story = {
-  parameters: screen({ at: every, server: posts }),
-  render: (args: unknown, context: StoryContext) => (
-    <DiscoveryLayoutProvider value={{ results: "tabs", people: "both" }}>
-      {screenMeta.render(args, context)}
-    </DiscoveryLayoutProvider>
-  ),
-  play: holds("tabs named with how many, the first open", (main) => {
-    const tabs = [...main.querySelectorAll('[role="tab"]')];
-    return (
-      tabs.length === 3 &&
-      tabs.every((tab) => /\d/u.test(tab.textContent)) &&
-      tabs[0]?.getAttribute("aria-selected") === "true"
-    );
-  }),
+/** The new account's Find more people followed: the screen of all the suggested people, named Find people. */
+export const NewAccountFindsMore: Story = {
+  globals: { locale: "en" },
+  parameters: screen({ at: "/", viewer: "quickdeals" }),
+  play: async (context) => {
+    await screenMeta.play(context);
+    const main = within(context.canvasElement.querySelector("main") ?? context.canvasElement);
+    await userEvent.click(await main.findByRole("link", { name: "Find more people" }));
+    await waitFor(() => expect(main.getByRole("list", { name: "Find people" })).toBeVisible());
+  },
 };
 /** One failure: one line with one Try again, at the column's start. */
 Failed.play = holds("one failure", (main) => main.querySelectorAll('[role="alert"]').length === 1);

@@ -26,16 +26,7 @@ import {
   useUnreadNotifications,
   type Instance,
 } from "@my/app-data";
-import {
-  ComposeLayer,
-  leaveCall,
-  muteCall,
-  PostActions,
-  useCall,
-  useDiscoveryLayout,
-  useSuggestionsOffered,
-  type Call,
-} from "@my/app-features";
+import { ComposeLayer, leaveCall, muteCall, PostActions, useCall, type Call } from "@my/app-features";
 import {
   CallBar,
   Frame,
@@ -62,7 +53,7 @@ import { editArticlePath, newArticlePath } from "./article";
 import { Around, ServerFooter } from "./around";
 import { useCompose } from "./compose";
 import { ServerBanners, UpdateToast } from "./notices";
-import { aroundPlacesFor, composesAt, listsPlace, peoplePlace, placesFor, type Place } from "./places";
+import { aroundPlacesFor, composesAt, listsPlace, placesFor, type Place } from "./places";
 import { useNarrowViewport } from "./viewport";
 
 /** The article editor, first in the menu's sheet on a phone, where New post floats alone. */
@@ -214,7 +205,6 @@ export function Shell({
 }) {
   const t = useStrings();
   const instance = useInstance();
-  const discovery = useDiscoveryLayout();
   const rights = useRights(signedIn);
   const call = useCall();
   const { target, open, close } = useCompose();
@@ -279,10 +269,6 @@ export function Shell({
   );
   const { tabs, side, own, rights: staff } = placesFor(signedIn, instance, rights);
   const around = aroundPlacesFor(signedIn, instance, signInPath);
-  // Finding people, in the menu after the lists where the discovery's layout puts it, only while the server suggests
-  // at least one account (never on a one-person server).
-  const suggests = useSuggestionsOffered(signedIn && discovery.people !== "search");
-  const people = suggests === true ? [peoplePlace] : [];
   const callBar = call === null ? undefined : <CallSlot call={call} />;
   const footer = <ServerFooter instance={instance} />;
   return (
@@ -296,7 +282,7 @@ export function Shell({
           {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
           <NavList>
             <NavMenu label={t("app.menu")} footer={footer}>
-              <PlaceList items={signedIn ? [listsPlace, ...people] : []} pathname={pathname} />
+              <PlaceList items={signedIn ? [listsPlace] : []} pathname={pathname} />
               <PlaceList items={around} pathname={pathname} />
             </NavMenu>
           </NavList>
@@ -323,7 +309,7 @@ export function Shell({
               <Places items={tabs} pathname={pathname} />
               <TabMenu signedIn={signedIn} footer={footer}>
                 <PlaceList items={writesArticles ? [articlePlace] : []} pathname={pathname} />
-                <PlaceList items={signedIn ? [...own, listsPlace, ...people] : own} pathname={pathname} />
+                <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
                 <PlaceList items={staff} pathname={pathname} />
                 <PlaceList items={around} pathname={pathname} />
               </TabMenu>

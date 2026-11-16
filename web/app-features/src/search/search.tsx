@@ -5,11 +5,10 @@
 // and this server's by any part of them), each a row with its follow; a remote account named by `@user@host` or by its
 // address, looked up on its server and put first, the field busy while it is fetched; hashtags by their start, each a
 // row that opens its timeline with how many posts carry it; and posts by their words, only where the server has a
-// search engine, nothing of them shown elsewhere. The kinds that found something stand in sections one under another
-// or in tabs, each named with how many, the first that found something open (`DiscoveryLayout`). One line says that
-// the search runs, that it failed (Try again asks again what failed), that the account named is not there, or that
-// nothing was found. Before anything is written, the suggested people show under the field where finding people is
-// reached from here and the server suggests anyone.
+// search engine, nothing of them shown elsewhere. The kinds that found something stand in sections one under another,
+// each under its caption. One line says that the search runs, that it failed (Try again asks again what failed), that
+// the account named is not there, or that nothing was found. Before anything is written, the suggested people show
+// under the field, finding people's one place, where the server suggests anyone.
 
 import { Column } from "@my/app-components";
 import { useSearch, usePostSearchOffered, type SearchResults } from "@my/app-data";
@@ -21,13 +20,12 @@ import {
   RowList,
   ScreenStack,
   SearchField,
-  TabRow,
   TextButton,
   useLocale,
 } from "@my/design-system";
 import { useEffect, useId, useState } from "react";
 import { stringsIn } from "../locale";
-import { AccountRows, SuggestedPeople, useDiscoveryLayout } from "../people/people";
+import { AccountRows, SuggestedPeople } from "../people/people";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost } from "../post-translation";
 
@@ -112,10 +110,8 @@ function SearchLine({ q, results, t }: { q: string; results: SearchResults; t: T
   return <FeedNotice start>{t("search.none", { q })}</FeedNotice>;
 }
 
-/** What the words found: the kinds that found something, in sections one under another or in tabs; else one line. */
+/** What the words found: the kinds that found something, in sections one under another; else one line. */
 function Results({ q, results, t }: { q: string; results: SearchResults; t: T }) {
-  const { results: layout } = useDiscoveryLayout();
-  const [chosen, setChosen] = useState<Kind | undefined>(undefined);
   const counts: Record<Kind, number> = {
     people: results.accounts.items.length,
     hashtags: results.tags.items.length,
@@ -132,25 +128,6 @@ function Results({ q, results, t }: { q: string; results: SearchResults; t: T })
     ) : (
       <Posts results={results} t={t} />
     );
-  // Tabs choose between kinds: one kind alone stands under its caption, as in sections.
-  if (layout === "tabs" && kinds.length > 1) {
-    // Open on the first kind that found something, until the reader chooses another.
-    const current = chosen !== undefined && kinds.includes(chosen) ? chosen : (kinds[0] ?? "people");
-    const more = results.posts?.hasNextPage === true;
-    return (
-      <TabRow
-        label={t("search.kinds")}
-        tabs={kinds.map((id) => ({
-          id,
-          name: t("search.tab", { kind: name[id], count: counts[id], more: id === "posts" && more ? "yes" : "no" }),
-        }))}
-        current={current}
-        onChange={setChosen}
-      >
-        {body(current)}
-      </TabRow>
-    );
-  }
   return (
     <>
       {kinds.map((kind) => (
@@ -172,7 +149,6 @@ export function Search({ q, onQuery }: { q: string; onQuery: (q: string) => void
   const [words, setWords] = useState(q);
   const settled = useSettled(words.trim());
   const posts = usePostSearchOffered() === true;
-  const { people } = useDiscoveryLayout();
   const results = useSearch(settled);
   useEffect(() => {
     if (settled !== q.trim()) onQuery(settled);
@@ -189,7 +165,7 @@ export function Search({ q, onQuery }: { q: string; onQuery: (q: string) => void
         busy={results.remote?.status === "pending"}
         clearLabel={t("search.clear")}
       />
-      {settled === "" ? people !== "menu" && <SuggestedPeople /> : <Results q={settled} results={results} t={t} />}
+      {settled === "" ? <SuggestedPeople /> : <Results q={settled} results={results} t={t} />}
     </ScreenStack>
   );
 }

@@ -2,10 +2,9 @@
 
 // Finding people (FR-308): the accounts the server suggests the reader follow, each a row with its follow, on a screen
 // of its own; the first few of them where the reader starts out (the home timeline while it is empty, the search before
-// anything is written), with a link to all. Finding people shows nowhere (no place of the menu, no suggestions where
-// the reader starts out) unless the server suggests at least one account: a one-person server suggests no one
-// (ADR-0152), and any server may have none to suggest. Its screen, reached by its address, then says plainly there is
-// no one to suggest. Where the discovery's places go is `DiscoveryLayout`'s.
+// anything is written, the decider's pick over a place of the menu), with a link to all. Finding people shows nowhere
+// unless the server suggests at least one account: a one-person server suggests no one (ADR-0152), and any server may
+// have none to suggest. Its screen, reached by its address, then says plainly there is no one to suggest.
 
 import { AccountLine } from "@my/app-components";
 import { suggestionsQuery, useInstance, useSuggestions, type Account, type AppData } from "@my/app-data";
@@ -21,7 +20,6 @@ import {
   TextLink,
   useLocale,
 } from "@my/design-system";
-import { createContext, use, type ReactNode } from "react";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 
@@ -29,25 +27,6 @@ type T = ReturnType<typeof stringsIn>["t"];
 
 /** Where the find-people screen opens from. */
 const peoplePath = "/people";
-
-/**
- * How the screens of finding show what they find, a choice of the decider's while it is open: the results of a search
- * in `sections` one under another or in `tabs`; and where finding people is reached, from the `search` before anything
- * is written, from a place of the `menu`, or `both`.
- */
-export type DiscoveryLayout = { readonly results: "sections" | "tabs"; readonly people: "search" | "menu" | "both" };
-
-const DiscoveryContext = createContext<DiscoveryLayout>({ results: "sections", people: "both" });
-
-/** Sets how the screens of finding inside show what they find. */
-export function DiscoveryLayoutProvider({ value, children }: { value: DiscoveryLayout; children: ReactNode }) {
-  return <DiscoveryContext value={value}>{children}</DiscoveryContext>;
-}
-
-/** How the screens of finding show what they find. */
-export function useDiscoveryLayout(): DiscoveryLayout {
-  return use(DiscoveryContext);
-}
 
 /** What the find-people screen's loader waits for: the suggestions. A failure is left to the screen. */
 export async function loadPeople(data: AppData): Promise<void> {
@@ -114,13 +93,12 @@ const fewSuggestions = 5;
 /**
  * Whether the server suggests anyone to follow: true once it answered with at least one account, false when it
  * suggests none (a one-person server, an empty answer, a failure), undefined while it is asked. Finding people shows
- * nowhere but at its address unless it is true. `enabled` false asks nothing and answers false.
+ * nowhere but at its address unless it is true.
  */
-export function useSuggestionsOffered(enabled = true): boolean | undefined {
+function useSuggestionsOffered(): boolean | undefined {
   const instance = useInstance();
-  const asks = enabled && instance !== undefined && !instance.single_user;
-  const { items, status } = useSuggestions(asks);
-  if (!enabled || instance?.single_user === true) return false;
+  const { items, status } = useSuggestions(instance !== undefined && !instance.single_user);
+  if (instance?.single_user === true) return false;
   if (instance === undefined || status === "pending") return undefined;
   return status === "success" && items.length > 0;
 }

@@ -50,12 +50,6 @@ const ownPlaces: readonly Place[] = [
  */
 export const listsPlace: Place = { href: "/lists", icon: "list", label: "app.lists" };
 
-/**
- * Finding people (FR-308), a place of the menu after the lists where the discovery's layout puts it there; never on a
- * one-person server, which suggests no one (ADR-0152).
- */
-export const peoplePlace: Place = { href: "/people", icon: "follow", label: "app.people" };
-
 const moderation: Place = { href: "/moderation", icon: "moderation", label: "app.moderation", count: "moderation" };
 const admin: Place = { href: "/admin", icon: "admin", label: "app.admin" };
 const finance: Place = { href: "/finance", icon: "finance", label: "app.finance" };
@@ -80,7 +74,6 @@ export const navigationPaths: ReadonlySet<string> = new Set(
     search,
     ...ownPlaces,
     listsPlace,
-    peoplePlace,
     moderation,
     admin,
     finance,

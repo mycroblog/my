@@ -11,14 +11,6 @@
     "defaultMessage": "{posts, select, yes {名前やハンドルで人を、ハッシュタグを、言葉で投稿を探せます} other {名前やハンドルで人を、ハッシュタグを探せます}}",
     "description": "The hint under the search field: what it finds. posts is yes where the server searches posts too."
   },
-  "search.kinds": {
-    "defaultMessage": "検索結果",
-    "description": "The name, for assistive technology, of the row of tabs that shows one kind of result (people, hashtags, posts)."
-  },
-  "search.tab": {
-    "defaultMessage": "{kind} {count}{more, select, yes {+} other {}}",
-    "description": "A tab of the search's results: the kind (search.people, search.hashtags, search.posts) and how many it found; + while more posts follow than were read."
-  },
   "search.people": {
     "defaultMessage": "人",
     "description": "The title of the accounts a search found, and the tab of them."
