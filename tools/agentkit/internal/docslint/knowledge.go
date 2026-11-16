@@ -37,16 +37,6 @@ type Knowledge struct {
 	} `yaml:"limits"`
 }
 
-// The line each list file holds, by its separators " — " and its last fields.
-var knowledgeLines = map[string]struct {
-	fields int
-	counts bool
-	shape  string
-}{
-	knowledgeDecisions: {5, true, "- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N"},
-	knowledgeExemplars: {4, false, "- <the model screen, or the options that lost> — <why> — <from: the decider's choice> — <YYYY-MM-DD>"},
-}
-
 // knowledgeFile is one file of a role's knowledge to check: its limit and, for a list file, its kind.
 type knowledgeFile struct {
 	path, kind string
@@ -109,7 +99,7 @@ func (l *linter) knowledge(files []string) ([]Finding, error) {
 
 // knowledgeShape checks one file: a "# " title on the first line and, in a list file (kind decisions or exemplars),
 // after the lead before the first item, items of the kind's shape only.
-func knowledgeShape(p, kind, src string) []Finding {
+func knowledgeShape(p, _, src string) []Finding {
 	lines := strings.Split(strings.TrimSuffix(src, "\n"), "\n")
 	var out []Finding
 	if !strings.HasPrefix(lines[0], "# ") {
