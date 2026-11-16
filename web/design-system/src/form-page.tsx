@@ -222,7 +222,8 @@ const form = tv({
     head: "grid gap-form-page-head-gap [&_p]:m-0",
     title: "m-0 text-title",
     text: "m-0",
-    hint: "m-0 text-caption text-muted-text",
+    // Wrapping between phrases, never inside a word of ja, as a field's error does.
+    hint: "m-0 text-caption text-muted-text [word-break:auto-phrase]",
     form: "m-0 flex flex-col gap-form-page-form-gap",
     field: "grid gap-form-page-field-gap",
     labelLine: "flex items-baseline justify-between gap-form-page-alert-gap",
