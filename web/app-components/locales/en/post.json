@@ -159,6 +159,14 @@
     "defaultMessage": "Bookmark",
     "description": "The item of a post's more menu that bookmarks it."
   },
+  "post.mute_thread": {
+    "defaultMessage": "Mute thread",
+    "description": "The item of a post's more menu that stops the notifications of the thread the post is in (replies, mentions, boosts, favourites, reactions and quotes in it); the posts still show in timelines."
+  },
+  "post.unmute_thread": {
+    "defaultMessage": "Unmute thread",
+    "description": "The item of a post's more menu, on while the thread the post is in is muted, that lets its notifications come again."
+  },
   "post.unbookmark": {
     "defaultMessage": "Remove bookmark",
     "description": "The item of a bookmarked post's more menu that takes the bookmark back."

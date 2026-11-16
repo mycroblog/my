@@ -10,7 +10,7 @@
 // account. The writes of those screens (follow, block, mute, a private note, being notified
 // of a person's posts, a follower removed, a server muted as ADR-0013 §30 hides it, the
 // answers of follow requests, the read marker, the announcements read, the conversations of the direct messages read
-// and hidden, the reader's bookmarks and followed hashtags, the reader's edits and deletions of their own posts, the
+// and hidden, the reader's bookmarks, the threads they mute and followed hashtags, the reader's edits and deletions of their own posts, the
 // reader's drafts and their schedules, a draft published, the reader's articles posted and edited and the images they
 // upload) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An
 // article's body comes only with the status read alone, as the server's does, and its preview renders as publishing
@@ -635,6 +635,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const ownFavourite = new Map<string, boolean>();
   const ownReaction = new Map<string, string | null>();
   const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  /** The threads the reader muted (ADR-0158 §8), by the key of the post that starts each. */
+  const mutedThreads = new Set<string>();
+  const threadOf = (key: string): string => {
+    const parent = postOf(key).replyTo;
+    return parent === undefined || !posts.some((p) => p.key === parent) ? key : threadOf(parent);
+  };
   /** The keys of the posts the reader bookmarked, the newest bookmark first: the options', then the scenario's. */
   const bookmarks: string[] = [
     ...new Set([
@@ -909,6 +915,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       favourited: favouriters.includes(viewer),
       boosted: on(p.key, "boost").some((i) => i.by === viewer),
       bookmarked: bookmarks.includes(p.key),
+      ...(o.visitor === true ? {} : { muted: mutedThreads.has(threadOf(p.key)) }),
       pinned: p.pinned === true && p.author === viewer,
       ...(p.poll === undefined ? {} : { poll: pollOf(p) }),
       ...(article === undefined ? {} : { article }),
@@ -1980,6 +1987,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/mute$/)) && request.method !== "GET") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      if (request.method === "POST") mutedThreads.add(threadOf(p.key));
+      else mutedThreads.delete(threadOf(p.key));
+      return json(statusOf(p));
     }
     if ((match = m(/^\/statuses\/([^/]+)\/bookmark$/)) && request.method !== "GET") {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));

@@ -82,6 +82,7 @@ export type PostAction =
         | "open-original"
         | "share"
         | "bookmark"
+        | "mute-thread"
         | "edit"
         | "delete"
         | "redraft"
@@ -654,6 +655,7 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
   "react",
   "reaction",
   "bookmark",
+  "mute-thread",
   "edit",
   "delete",
   "redraft",
@@ -662,7 +664,7 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
 
 /**
  * The more menu: what reaches the post (its link, its original page when it came from another server, sharing it),
- * the bookmark, then for one's own edit (none with a poll), and apart and last delete and delete-and-redraft, which ask
+ * the bookmark and the thread's mute, then for one's own edit (none with a poll), and apart and last delete and delete-and-redraft, which ask
  * first; an article is never redrafted, since the composer writes posts.
  */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
@@ -679,6 +681,7 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
     </MenuItem>
   );
   const bookmarked = status.bookmarked ?? false;
+  const muted = status.muted;
   return (
     <>
       <MenuGroup>
@@ -688,6 +691,9 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
       </MenuGroup>
       <MenuGroup>
         {item("bookmark", "bookmark", t(bookmarked ? "post.unbookmark" : "post.bookmark"), bookmarked)}
+        {/* Only a reader with an account is told whether the thread is muted, and mutes it. */}
+        {muted !== undefined &&
+          item("mute-thread", "mute", t(muted ? "post.unmute_thread" : "post.mute_thread"), muted)}
       </MenuGroup>
       {own && (
         <>

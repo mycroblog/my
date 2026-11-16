@@ -129,6 +129,8 @@ export type PostStatus = {
   favourited?: boolean | undefined;
   boosted?: boolean | undefined;
   bookmarked?: boolean | undefined;
+  /** Whether the reader muted the thread the post is in (ADR-0158 §8); none for a reader without an account. */
+  muted?: boolean | undefined;
   /**
    * The approval of this reply, by the author of the post it replies to, while it is not given: given only to the
    * reply's author, whom alone a `pending` reply shows to.

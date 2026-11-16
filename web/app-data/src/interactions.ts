@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The reader's own marks on a status (ADR-0028 §7, §18): favourite, boost, bookmark and an emoji reaction, each set or
+// The reader's own marks on a status (ADR-0028 §7, §18): favourite, boost, bookmark, an emoji reaction and the mute of
+// its thread (ADR-0158 §8), each set or
 // taken back through the shadow. Every copy of the status shows the change at once, the server's answer replaces it,
 // and a failed write takes it off, each in the fields of the mark's kind alone, and only for the latest write of that
 // kind on the status. A user has one favourite or one reaction on a status, so setting one takes back the other, and
@@ -12,13 +13,20 @@ import type { Status } from "./statuses";
 
 /** A mark to set (`on`) or take back: a reaction names its emoji (a Unicode emoji, or a custom one's shortcode). */
 export type StatusMark =
-  | { readonly type: "favourite" | "boost" | "bookmark"; readonly on: boolean }
+  | { readonly type: "favourite" | "boost" | "bookmark" | "mute"; readonly on: boolean }
   | { readonly type: "reaction"; readonly name: string; readonly on: boolean };
 
 /** The fields of a status that a mark changes. */
 type Marks = Pick<
   Status,
-  "favourited" | "favourites_count" | "boosted" | "boosts_count" | "boost_approval" | "bookmarked" | "reactions"
+  | "favourited"
+  | "favourites_count"
+  | "boosted"
+  | "boosts_count"
+  | "boost_approval"
+  | "bookmarked"
+  | "muted"
+  | "reactions"
 >;
 
 /** The marks of a status, one it does not have as false; a boost waiting for its author's approval, when one does. */
@@ -29,6 +37,7 @@ const marksOf = (s: Status): Marks => ({
   boosts_count: s.boosts_count,
   ...(s.boost_approval === undefined ? {} : { boost_approval: s.boost_approval }),
   bookmarked: s.bookmarked ?? false,
+  muted: s.muted ?? false,
   reactions: s.reactions,
 });
 
@@ -71,6 +80,8 @@ export function marked(s: Status, mark: StatusMark): Status {
       return boostMarked(s, mark.on);
     case "bookmark":
       return (s.bookmarked ?? false) === mark.on ? s : { ...s, bookmarked: mark.on };
+    case "mute":
+      return (s.muted ?? false) === mark.on ? s : { ...s, muted: mark.on };
     case "reaction": {
       if (!mark.on) return s.reactions.some((r) => r.me === true) ? { ...s, reactions: withoutMine(s.reactions) } : s;
       if (s.reactions.some((r) => r.name === mark.name && r.me === true)) return s;
@@ -105,6 +116,12 @@ async function send(data: AppData, id: string, mark: StatusMark): Promise<Status
           ? await data.api.POST("/statuses/{id}/bookmark", params)
           : await data.api.DELETE("/statuses/{id}/bookmark", params)
       ).data;
+    case "mute":
+      return (
+        mark.on
+          ? await data.api.POST("/statuses/{id}/mute", params)
+          : await data.api.DELETE("/statuses/{id}/mute", params)
+      ).data;
     case "reaction":
       return (
         mark.on
@@ -127,6 +144,8 @@ const fieldsOf = (mark: StatusMark): readonly (keyof Marks)[] => {
       return ["boosted", "boosts_count", "boost_approval"];
     case "bookmark":
       return ["bookmarked"];
+    case "mute":
+      return ["muted"];
   }
 };
 

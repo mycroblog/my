@@ -2,8 +2,8 @@
 
 // A post's page, a story per state: a reply in its thread, a post alone with no replies, a post with reactions and who
 // reacted under it, a thread folded (both folds), its posts in another language offered for translation by a provider
-// that answers, and by one that fails, and each state every screen is shown in (app.samples.tsx); and an article's
-// page, at its width and at the minimum.
+// that answers, and by one that fails, its thread muted from its menu, and each state every screen is shown in
+// (app.samples.tsx); and an article's page, at its width and at the minimum.
 
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -40,6 +40,25 @@ export const Translatable: Story = {
 /** With a provider on the server that fails: Translate tells it, with Try again. */
 export const TranslationFailed: Story = {
   parameters: screen({ at: thread, server: { translation: { provider: "failed" } } }),
+};
+/**
+ * The thread's mute (ADR-0158 §8) from a post's more menu: Mute thread stops its notifications, and the menu then offers
+ * to unmute it, on. It reads in en, whatever the toolbar's locale.
+ */
+export const ThreadMuted: Story = {
+  globals: { locale: "en" },
+  play: async (context) => {
+    const { post } = await replyIn(context);
+    await userEvent.click(post.getByRole("button", { name: "More" }));
+    const body = within(context.canvasElement.ownerDocument.body);
+    await userEvent.click(await body.findByRole("menuitem", { name: "Mute thread" }));
+    await waitFor(async () => {
+      await expect(body.queryByRole("menu")).toBeNull();
+    });
+    await userEvent.click(post.getByRole("button", { name: "More" }));
+    await expect(await body.findByRole("menuitem", { name: "Unmute thread" })).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+  },
 };
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };
