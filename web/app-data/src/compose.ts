@@ -47,6 +47,27 @@ export type Audience = components["schemas"]["InteractionAudience"];
 /** The kinds of interaction a policy limits. */
 export type Interaction = "reply" | "announce" | "quote";
 
+/** Who may interact with a status in one way, as the API gives and takes it (ADR-0155 §2). */
+export type InteractionRule = components["schemas"]["InteractionRule"];
+
+/**
+ * Who may interact in one way, as the composer offers it: an audience admitted at once, and whether anyone else may ask
+ * for the author's approval (the API's `manual` of `everyone`); asking means nothing while the audience is everyone.
+ */
+export type InteractionChoice = { readonly audience: Audience; readonly approval: boolean };
+
+/** A rule as the composer offers it: any `manual` reads as anyone else asking. */
+export const choiceOf = (rule: InteractionRule): InteractionChoice => ({
+  audience: rule.automatic,
+  approval: rule.manual !== undefined,
+});
+
+/** The rule of a choice: its audience at once, and everyone else by approval when they may ask. */
+export const ruleOf = (choice: InteractionChoice): InteractionRule =>
+  choice.approval && choice.audience !== "everyone"
+    ? { automatic: choice.audience, manual: "everyone" }
+    : { automatic: choice.audience };
+
 /** What a new post starts from, and what the server allows of it. */
 export type ComposeSettings = {
   /** The most characters of the text and the content warning together. */
@@ -54,8 +75,8 @@ export type ComposeSettings = {
   /** Whether every image needs a description before it is posted. */
   readonly requireDescriptions: boolean;
   readonly visibility: Visibility;
-  /** Whom each interaction admits at once, by default. */
-  readonly policy: Readonly<Record<Interaction, Audience>>;
+  /** Whom each interaction admits, at once or by approval, by default. */
+  readonly policy: Readonly<Record<Interaction, InteractionChoice>>;
   /** The default language of a post, a BCP 47 tag; `und` when there is none. */
   readonly language: string;
   /** The instance's domain, which a local post stays on. */
@@ -71,7 +92,11 @@ export const defaultComposeSettings: ComposeSettings = {
   maxChars: 500,
   requireDescriptions: false,
   visibility: "public",
-  policy: { reply: "everyone", announce: "everyone", quote: "everyone" },
+  policy: {
+    reply: { audience: "everyone", approval: false },
+    announce: { audience: "everyone", approval: false },
+    quote: { audience: "everyone", approval: false },
+  },
   language: "und",
   domain: "",
   viewer: undefined,
@@ -94,7 +119,7 @@ export function useComposeSettings(): ComposeSettings {
       (instance?.limits.require_media_description ?? false) || (preferences?.require_media_description ?? false),
     visibility: preferences?.default_visibility ?? defaultComposeSettings.visibility,
     policy: policy
-      ? { reply: policy.reply.automatic, announce: policy.announce.automatic, quote: policy.quote.automatic }
+      ? { reply: choiceOf(policy.reply), announce: choiceOf(policy.announce), quote: choiceOf(policy.quote) }
       : defaultComposeSettings.policy,
     language: preferences?.default_post_language ?? defaultComposeSettings.language,
     domain: instance?.domain ?? defaultComposeSettings.domain,
@@ -140,7 +165,8 @@ export async function postStatus(data: AppData, body: CreateStatus, idempotencyK
 /**
  * Writes what a posted status makes certain: it tops the home timeline, and the post it replies to has one more reply
  * than it showed, which its cached threads show; a copy the server answered with the reply counted already keeps its
- * count. A direct reply is the latest post of its conversation (conversations.ts).
+ * count, and a reply that waits for the approval of its parent's author counts nowhere yet (its author alone sees it).
+ * A direct reply is the latest post of its conversation (conversations.ts).
  */
 export function cachePostedStatus(data: AppData, status: Status): void {
   prependHomeStatuses(data, [status]);
@@ -148,7 +174,7 @@ export function cachePostedStatus(data: AppData, status: Status): void {
   if (parent === undefined) return;
   cacheConversationPost(data, status);
   const shown = cachedStatus(data, parent);
-  if (shown !== undefined) {
+  if (shown !== undefined && status.approval === undefined) {
     const count = shown.replies_count + 1;
     shadowStatus(data, parent, (s) => ({ ...s, replies_count: Math.max(s.replies_count, count) }), "replies").confirm();
   }

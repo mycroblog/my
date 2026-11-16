@@ -8,8 +8,10 @@
 // descriptions or the poll as a card, the form's error (what the server refused of an input it named stands under that
 // input, the problem's title alone here), and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
-// menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
-// interactions, whose reply, boost and quote permissions open as a submenu. Editing the reader's post, it is titled Edit
+// menus), the count, and Post. The audience menu holds the visibilities, then apart the row of who may reply, boost and
+// quote, whose submenu has a row per kind with who may do it now, each opening its audiences and, under them, whether
+// others may ask for the author's approval (ADR-0155). A reply to a post whose author approves the reader's replies
+// says so in a line over the row. Editing the reader's post, it is titled Edit
 // post and saves with Save; what an edit cannot change leaves the row (the poll, the audience), and one muted line over
 // the text names the audience and that it stays (a post with a poll is never edited: the server refuses it). A
 // redraft is a new post, written from the deleted one. A new post may go out later (ADR-0156): a tool of the row, on
@@ -20,7 +22,7 @@
 // state is the hook's (use-composer.ts).
 
 import { isRemote, QuoteContext, ReplyContext } from "@my/app-components";
-import type { Audience, Interaction, Visibility } from "@my/app-data";
+import type { Audience, Interaction, InteractionChoice, Visibility } from "@my/app-data";
 import {
   AttachButton,
   AttachmentList,
@@ -30,6 +32,7 @@ import {
   CharCount,
   CheckField,
   ChoiceBack,
+  ChoiceCheck,
   ChoiceGroup,
   ChoiceOpens,
   ChoicePopup,
@@ -65,6 +68,7 @@ import { useSuggestions } from "./suggest";
 import { Language, Schedule } from "./tools";
 import type { MessageId } from "../messages.gen";
 import {
+  interactions,
   maxAttachments,
   nearChars,
   newPoll,
@@ -95,7 +99,7 @@ const audienceIcon: Record<Audience, IconName> = {
   nobody: "profile",
 };
 const audiences: readonly Audience[] = ["everyone", "followers", "mentioned", "nobody"];
-const interactions: readonly Interaction[] = ["reply", "announce", "quote"];
+const interactionIcon: Record<Interaction, IconName> = { reply: "reply", announce: "boost", quote: "quote" };
 
 /** How long a poll runs, as its choice reads. */
 function durationName(seconds: number, t: T): string {
@@ -104,7 +108,93 @@ function durationName(seconds: number, t: T): string {
   return t("compose.poll.days", { count: seconds / 86400 });
 }
 
-/** The audience tool and its menu: the visibilities, then the interactions, whose permissions open as a submenu. */
+/** A panel of the audience menu: its first, the permissions submenu, or the panel of one kind of interaction. */
+export type AudiencePanel = "audience" | "permissions" | Interaction;
+
+/** Who may do it, as the value of its row: the audience, and that others may ask, which anyone needs not. */
+const choiceText = (choice: InteractionChoice, t: T) =>
+  t("compose.permission.now", {
+    audience: t(`compose.audience.${choice.audience}`),
+    approval: choice.approval && choice.audience !== "everyone" ? "yes" : "no",
+  });
+
+/**
+ * The permissions submenu: a row per kind of interaction with who may do it now; a kind's own panel, its audiences
+ * and, under them once the audience is not anyone, whether others may ask for approval.
+ */
+function Permissions({
+  c,
+  t,
+  panel,
+  setOpen,
+}: {
+  c: Composer;
+  t: T;
+  panel: "permissions" | Interaction;
+  setOpen: (o: AudiencePanel) => void;
+}) {
+  const { policy } = c.draft;
+  if (panel !== "permissions") {
+    const choice = policy[panel];
+    const change = (next: InteractionChoice) => {
+      c.change({ policy: { ...policy, [panel]: next } });
+    };
+    return (
+      <>
+        <ChoiceBack
+          label={t(`compose.interaction.${panel}`)}
+          onPress={() => {
+            setOpen("permissions");
+          }}
+        />
+        <ChoiceGroup
+          title={t(`compose.interaction.${panel}`)}
+          captioned={false}
+          items={audiences.map((a) => ({ id: a, icon: audienceIcon[a], label: t(`compose.audience.${a}`) }))}
+          chosen={choice.audience}
+          onChoose={(audience) => {
+            change({ ...choice, audience });
+          }}
+        />
+        {choice.audience !== "everyone" && (
+          <ChoiceCheck
+            label={t("compose.approval")}
+            checked={choice.approval}
+            onChange={(approval) => {
+              change({ ...choice, approval });
+            }}
+          />
+        )}
+      </>
+    );
+  }
+  return (
+    <>
+      <ChoiceBack
+        label={t("compose.permissions")}
+        onPress={() => {
+          setOpen("audience");
+        }}
+      />
+      {interactions.map((i) => (
+        <ChoiceOpens
+          key={i}
+          icon={interactionIcon[i]}
+          label={t(`compose.interaction.${i}`)}
+          now={choiceText(policy[i], t)}
+          onPress={() => {
+            setOpen(i);
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * The audience tool and its menu: the visibilities, then apart, without a caption, the row of who may reply, boost and
+ * quote, which opens their submenu.
+ */
 function Audience({
   c,
   t,
@@ -113,33 +203,15 @@ function Audience({
 }: {
   c: Composer;
   t: T;
-  open: "audience" | "permissions" | undefined;
-  setOpen: (o: "audience" | "permissions" | undefined) => void;
+  open: AudiencePanel | undefined;
+  setOpen: (o: AudiencePanel | undefined) => void;
 }) {
   const { draft, settings, answered } = c;
   const remote = draft.target.kind === "quote" && !draft.quoteRemoved && answered !== undefined && isRemote(answered);
-  const limited = interactions.some((i) => draft.policy[i] !== "everyone");
+  const limited = interactions.some((i) => draft.policy[i].audience !== "everyone");
   const panel =
-    open === "permissions" ? (
-      <>
-        <ChoiceBack
-          label={t("compose.permissions")}
-          onPress={() => {
-            setOpen("audience");
-          }}
-        />
-        {interactions.map((i) => (
-          <ChoiceGroup
-            key={i}
-            title={t(`compose.interaction.${i}`)}
-            items={audiences.map((a) => ({ id: a, icon: audienceIcon[a], label: t(`compose.audience.${a}`) }))}
-            chosen={draft.policy[i]}
-            onChoose={(a) => {
-              c.change({ policy: { ...draft.policy, [i]: a } });
-            }}
-          />
-        ))}
-      </>
+    open !== undefined && open !== "audience" ? (
+      <Permissions c={c} t={t} panel={open} setOpen={setOpen} />
     ) : (
       <>
         <ChoiceGroup
@@ -157,11 +229,10 @@ function Audience({
           }}
           note={remote ? t("compose.quote_remote") : undefined}
         />
-        <ChoiceSection title={t("compose.interactions")}>
+        <ChoiceSection title={t("compose.interactions")} captioned={false}>
           <ChoiceOpens
             icon="settings"
-            label={t("compose.permissions.item")}
-            now={t(limited ? "compose.permissions.limited" : "compose.permissions.open")}
+            label={t("compose.permissions")}
             onPress={() => {
               setOpen("permissions");
             }}
@@ -171,6 +242,7 @@ function Audience({
     );
   return (
     <ChoicePopup
+      steady
       open={open !== undefined}
       onClose={() => {
         setOpen(undefined);
@@ -323,8 +395,11 @@ export type ComposerViewProps = {
   onSaveDraft?: (() => void) | undefined;
   /** Opens the newer draft saved elsewhere, in place of this one (a conflict). */
   onNewer?: (() => void) | undefined;
-  /** A specimen opens with this open: the schedule's form, or the drafts' menu in the head. */
-  opened?: "schedule" | "drafts" | undefined;
+  /**
+   * A specimen opens with this open: the schedule's form, the drafts' menu in the head, or the audience menu on one of
+   * its panels.
+   */
+  opened?: "schedule" | "drafts" | AudiencePanel | undefined;
   /** A specimen shows this as if its chunk could not be fetched: the whole view (the layer's), or its editors. */
   unloaded?: "composer" | "editor" | undefined;
 };
@@ -348,9 +423,10 @@ export function ComposerView({
   const errorId = useId();
   const cwErrorId = useId();
   const { t, lang } = stringsIn(locale);
-  const [open, setOpen] = useState<"audience" | "permissions" | "language" | "schedule" | undefined>(
-    opened === "schedule" ? "schedule" : undefined,
+  const [open, setOpen] = useState<AudiencePanel | "language" | "schedule" | undefined>(
+    opened === "drafts" ? undefined : opened,
   );
+  const audienceOpen = open === "language" || open === "schedule" ? undefined : open;
   const [draftsOpen, setDraftsOpen] = useState(opened === "drafts");
   // The content warning was added by the writer here: it takes the focus as it mounts (one opened with it does not).
   const [cwFocus, setCwFocus] = useState(false);
@@ -373,6 +449,8 @@ export function ComposerView({
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t, locale);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
+  // A reply to a post whose author approves the reader's replies says so over the row, before it is sent.
+  const waits = kind === "reply" && (answered?.boost ?? answered)?.permissions?.reply === "pending";
   const over = problems.over > 0;
   // What the server refused of an input it named, beside that input (field-errors.ts).
   const refused = c.phase.kind === "failed" ? c.phase : undefined;
@@ -412,31 +490,40 @@ export function ComposerView({
       phone={phone}
       headEnd={draftsMenu || undefined}
       note={
-        scheduled === undefined ? undefined : (
-          <CaptionLine
-            icon="schedule"
-            lang={lang}
-            end={
-              <TextButton
-                onPress={() => {
-                  setSchedule(true);
-                }}
+        waits || scheduled !== undefined ? (
+          <>
+            {waits && (
+              <CaptionLine icon="time" lang={lang}>
+                {t("compose.reply_waits", { handle })}
+              </CaptionLine>
+            )}
+            {scheduled !== undefined && (
+              <CaptionLine
+                icon="schedule"
+                lang={lang}
+                end={
+                  <TextButton
+                    onPress={() => {
+                      setSchedule(true);
+                    }}
+                  >
+                    {t("compose.schedule.change")}
+                  </TextButton>
+                }
               >
-                {t("compose.schedule.change")}
-              </TextButton>
-            }
-          >
-            {/* The zone is stated once on the screen: by the form while it is open, else here. */}
-            {open === "schedule"
-              ? formatParts(t, "compose.schedule.at", {}, { time: <ScheduleTime date={scheduled} /> })
-              : formatParts(
-                  t,
-                  "compose.schedule.at_zone",
-                  {},
-                  { time: <ScheduleTime date={scheduled} />, zone: <ScheduleZone /> },
-                )}
-          </CaptionLine>
-        )
+                {/* The zone is stated once on the screen: by the form while it is open, else here. */}
+                {open === "schedule"
+                  ? formatParts(t, "compose.schedule.at", {}, { time: <ScheduleTime date={scheduled} /> })
+                  : formatParts(
+                      t,
+                      "compose.schedule.at_zone",
+                      {},
+                      { time: <ScheduleTime date={scheduled} />, zone: <ScheduleZone /> },
+                    )}
+              </CaptionLine>
+            )}
+          </>
+        ) : undefined
       }
       alert={
         alert === undefined ? undefined : (
@@ -484,14 +571,7 @@ export function ComposerView({
               if (!adding) textRef.current?.focus();
             }}
           />
-          {!editing && (
-            <Audience
-              c={c}
-              t={t}
-              open={open === "audience" || open === "permissions" ? open : undefined}
-              setOpen={setOpen}
-            />
-          )}
+          {!editing && <Audience c={c} t={t} open={audienceOpen} setOpen={setOpen} />}
           {!editing && (
             <Schedule
               at={c.draft.scheduledAt}

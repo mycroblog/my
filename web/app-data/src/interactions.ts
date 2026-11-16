@@ -16,17 +16,36 @@ export type StatusMark =
   | { readonly type: "reaction"; readonly name: string; readonly on: boolean };
 
 /** The fields of a status that a mark changes. */
-type Marks = Pick<Status, "favourited" | "favourites_count" | "boosted" | "boosts_count" | "bookmarked" | "reactions">;
+type Marks = Pick<
+  Status,
+  "favourited" | "favourites_count" | "boosted" | "boosts_count" | "boost_approval" | "bookmarked" | "reactions"
+>;
 
-/** The marks of a status, one it does not have as false. */
+/** The marks of a status, one it does not have as false; a boost waiting for its author's approval, when one does. */
 const marksOf = (s: Status): Marks => ({
   favourited: s.favourited ?? false,
   favourites_count: s.favourites_count,
   boosted: s.boosted ?? false,
   boosts_count: s.boosts_count,
+  ...(s.boost_approval === undefined ? {} : { boost_approval: s.boost_approval }),
   bookmarked: s.bookmarked ?? false,
   reactions: s.reactions,
 });
+
+/**
+ * The status with the reader's boost set or taken back: counted at once, or waiting for its author's approval where
+ * the reader's boosts wait for it (ADR-0155 §7), and no longer waiting once taken back.
+ */
+function boostMarked(s: Status, on: boolean): Status {
+  if (on && s.permissions?.announce === "pending")
+    return s.boost_approval === "pending" ? s : { ...s, boost_approval: "pending" };
+  if (!on && s.boost_approval !== undefined) {
+    const { boost_approval: _, ...rest } = s;
+    return rest;
+  }
+  if ((s.boosted ?? false) === on) return s;
+  return { ...s, boosted: on, boosts_count: Math.max(0, s.boosts_count + (on ? 1 : -1)) };
+}
 
 /** The reactions without the reader's own: its count one less, and gone at none. */
 const withoutMine = (reactions: Status["reactions"]): Status["reactions"] =>
@@ -49,7 +68,7 @@ export function marked(s: Status, mark: StatusMark): Status {
         reactions: mark.on ? withoutMine(s.reactions) : s.reactions,
       };
     case "boost":
-      return (s.boosted ?? false) === mark.on ? s : { ...s, boosted: mark.on, boosts_count: step(s.boosts_count) };
+      return boostMarked(s, mark.on);
     case "bookmark":
       return (s.bookmarked ?? false) === mark.on ? s : { ...s, bookmarked: mark.on };
     case "reaction": {
@@ -105,7 +124,7 @@ const fieldsOf = (mark: StatusMark): readonly (keyof Marks)[] => {
     case "reaction":
       return ["favourited", "favourites_count", "reactions"];
     case "boost":
-      return ["boosted", "boosts_count"];
+      return ["boosted", "boosts_count", "boost_approval"];
     case "bookmark":
       return ["bookmarked"];
   }

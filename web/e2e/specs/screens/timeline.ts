@@ -139,13 +139,16 @@ export class Post {
     });
   }
 
-  /** Boosts the post, from the boost button's menu (which also offers a quote), and returns once the server answered. */
+  /**
+   * Boosts the post, from the boost button's menu (which also offers a quote), and returns once the server answered.
+   * The item's name is "Boost", followed by the line saying the boost waits when the author approves boosts.
+   */
   async boost(): Promise<void> {
     await answered(this.page, { methods: ["POST", "DELETE"], path: /\/statuses\/[^/]+\/boost$/ }, async () => {
       await this.boostButton.click();
       await this.page
         .getByRole("menu", { name: "Boost", exact: true })
-        .getByRole("menuitem", { name: "Boost", exact: true })
+        .getByRole("menuitem", { name: /^Boost(?: Your boost goes out once \S+ approves it)?$/ })
         .click();
     });
   }
@@ -352,6 +355,14 @@ export class Post {
    */
   translationLine(start: string): Locator {
     return this.article.getByRole("paragraph").filter({ hasText: new RegExp(`^${start}`) });
+  }
+
+  /**
+   * The line over the reader's own reply or boost while its author's approval is not given: "Waiting for approval" or
+   * "Not approved" over the reply, "Boost waiting for approval" over the post boosted.
+   */
+  approvalLine(words: "Waiting for approval" | "Not approved" | "Boost waiting for approval"): Locator {
+    return this.article.getByText(words, { exact: true });
   }
 
   /** The content warning's words, over the folded text. */

@@ -3,9 +3,11 @@
 // The reader's notifications (FR-205, ADR-0158 §7, the rough of #3047), newest first, one entry each: over them the
 // tabs (all, or the mentions) with mark-all-read at the row's end, then, under all, the row of the requests the
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
-// read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). The affirmative answer
-// of a notification that asks for one (follow back, accept, approve) is the primary button, its refusal a plain one;
-// that of a scheduled post that could not be published opens its draft in the composer.
+// read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). Over them all, a row
+// counts what waits for the reader's approval and opens its screen (waiting.tsx), where those are answered: their
+// notifications here are plain lines. The affirmative answer of a notification that asks for one (follow back, accept)
+// is the primary button, its refusal a plain one; that of a scheduled post that could not be published opens its draft
+// in the composer.
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
@@ -16,20 +18,17 @@ import {
   notificationsQuery,
   useAnswerRequest,
   useChangeRelationship,
-  useInteractionRequest,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,
   useRelationship,
   type AppData,
-  type InteractionRequest,
   type NotificationFilter,
   type NotificationItem,
 } from "@my/app-data";
 import {
   Avatar,
   Button,
-  ButtonPair,
   CustomEmoji,
   Entry,
   Excerpt,
@@ -50,6 +49,7 @@ import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } 
 import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
+import { loadWaitingCount, WaitingRow } from "./waiting";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -66,6 +66,7 @@ export async function loadNotifications(data: AppData): Promise<void> {
     queryClient.infiniteQuery({ ...notificationsQuery(data, "all"), staleTime: Infinity }),
     queryClient.query({ ...notificationMarkerQuery(data), staleTime: Infinity }),
     queryClient.query({ ...notificationRequestSummaryQuery(data), staleTime: Infinity }),
+    loadWaitingCount(data),
   ]).catch(() => undefined);
 }
 
@@ -115,18 +116,16 @@ function Answers({
   open,
   t,
   accept,
-  reject,
 }: {
   answer: (accept: boolean) => Promise<void>;
   open: boolean;
   t: T;
   accept: string;
-  reject: string;
 }) {
   const [busy, press] = usePress();
   const [answered, setAnswered] = useState<boolean | undefined>(undefined);
   if (answered !== undefined)
-    return <StateText>{t(answered ? "notifications.accepted" : "notifications.rejected")}</StateText>;
+    return <StateText>{t(answered ? "notifications.accepted" : "notifications.declined")}</StateText>;
   if (!open) return null;
   const on = (yes: boolean) => () => {
     press(async () => {
@@ -137,7 +136,7 @@ function Answers({
   return (
     <>
       <Button size="timeline" isDisabled={busy} onPress={on(false)}>
-        {reject}
+        {t("notifications.decline")}
       </Button>
       <Button size="timeline" kind="primary" busy={busy} onPress={on(true)}>
         {accept}
@@ -160,30 +159,9 @@ function FollowRequest({ n, t }: { n: NotificationItem; t: T }) {
           answer={(yes) => answer.follow(id, yes)}
           t={t}
           accept={t("notifications.accept")}
-          reject={t("notifications.reject")}
         />
       }
     />
-  );
-}
-
-function InteractionAnswers({ n, t }: { n: NotificationItem; t: T }) {
-  const request = useInteractionRequest(n);
-  const answer = useAnswerRequest();
-  // The request answered here leaves the server's list of those that wait: the answer stays shown.
-  const [open, setOpen] = useState<InteractionRequest | undefined>(undefined);
-  if (request !== undefined && request.id !== open?.id) setOpen(request);
-  if (open === undefined) return null;
-  return (
-    <ButtonPair>
-      <Answers
-        open
-        answer={(yes) => answer.interaction(open.id, yes)}
-        t={t}
-        accept={t("notifications.approve")}
-        reject={t("notifications.decline")}
-      />
-    </ButtonPair>
   );
 }
 
@@ -209,10 +187,6 @@ function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {
         )
       );
     }
-    case "reply_request":
-    case "boost_request":
-    case "quote_request":
-      return <InteractionAnswers n={n} t={t} />;
     case "scheduled_status_failed":
       return <OpenDraft n={n} t={t} />;
     default:
@@ -359,6 +333,7 @@ export function Notifications({ instance }: { instance: string }) {
         }
       >
         <ScreenStack>
+          <WaitingRow t={t} />
           {filter === "all" && <Requests t={t} />}
           <List filter={filter} t={t} instance={instance} />
         </ScreenStack>

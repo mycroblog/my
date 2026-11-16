@@ -105,6 +105,11 @@ export class Composer {
     await holds(this.text, text);
   }
 
+  /** The line of a reply to a post whose author approves the reader's replies: "Others see your reply once @… approves it". */
+  replyWaits(handle: string): Locator {
+    return this.dialog.getByText(new RegExp(`^Others see your reply once ⁨?${handle}⁩? approves it$`));
+  }
+
   /** The button that adds the content warning's field over the text. */
   get warningButton(): Locator {
     return this.dialog.getByRole("button", { name: "Add a content warning", exact: true });

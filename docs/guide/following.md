@@ -35,7 +35,7 @@ button.
 After you follow an account, the bell "Notify me of new posts" notifies you of each of its new posts.
 
 People who want to follow your account get a request when you approve your followers: see "Follow requests" in the
-settings, where you "Accept" or "Reject" each one, or "Approve" or "Decline" it from its notification. Your followers and the accounts you follow are on the profile page,
+settings, where you "Accept" or "Decline" each one, also from its notification. Your followers and the accounts you follow are on the profile page,
 which shows how many there are.
 
 "Who can see your follows and followers" under "Follows and followers" in the profile settings decides who can open

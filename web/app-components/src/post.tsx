@@ -814,6 +814,12 @@ function Actions({
     act({ type, id: status.id });
   };
   const boosted = status.boosted ?? false;
+  // A boost or a quote of a post whose author approves the reader's by hand says so in the menu, before it is sent.
+  const waits = {
+    announce: status.permissions?.announce === "pending",
+    quote: status.permissions?.quote === "pending",
+  };
+  const handle = `@${status.account.acct}`;
   const [moreOpen, setMoreOpen] = useState(false);
   // The keys of the focused post: reply, boost (or take it back) and favourite at once, and more opens its menu.
   // The help lists them once for every post, under the post's group.
@@ -847,10 +853,21 @@ function Actions({
         {...boost}
       >
         <MenuGroup>
-          <MenuItem id="boost" icon="boost" on={boosted} onAction={on("boost")}>
+          <MenuItem
+            id="boost"
+            icon="boost"
+            on={boosted}
+            onAction={on("boost")}
+            about={!boosted && waits.announce ? t("post.boost_waits", { handle }) : undefined}
+          >
             {t(boosted ? "post.unboost" : "post.boost")}
           </MenuItem>
-          <MenuItem id="quote" icon="quote" onAction={on("quote")}>
+          <MenuItem
+            id="quote"
+            icon="quote"
+            onAction={on("quote")}
+            about={waits.quote ? t("post.quote_waits", { handle }) : undefined}
+          >
             {t("post.quote")}
           </MenuItem>
         </MenuGroup>

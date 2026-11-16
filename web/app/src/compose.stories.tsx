@@ -166,9 +166,9 @@ function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
   };
 }
 
-/** A new app on a new fake server, as the composer's stories use it. */
-function createComposeApp() {
-  const fake = createFakeApi();
+/** A new app on a new fake server, as the composer's stories use it; with posts that approve by hand, `approvals`. */
+function createComposeApp(approvals = false) {
+  const fake = createFakeApi({ approvals });
   const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: composeFake(fake) }));
   return { fake, data };
 }
@@ -271,6 +271,13 @@ const sourceOf = (id: string): PostSource => ({
   media: [],
 });
 const typed = (d: ComposeDraft, w: (typeof words)["en"]) => ({ ...d, text: w.typing });
+/** Anyone replies, followers boost and others ask for approval, the author alone quotes. */
+const limited: ComposeDraft["policy"] = {
+  reply: { audience: "everyone", approval: false },
+  announce: { audience: "followers", approval: true },
+  quote: { audience: "nobody", approval: false },
+};
+const limitedTyped = (d: ComposeDraft, w: (typeof words)["en"]) => ({ ...typed(d, w), policy: limited });
 const poll = (multiple: boolean) => (d: ComposeDraft, w: (typeof words)["en"]) => ({
   ...d,
   text: w.poll,
@@ -291,7 +298,28 @@ const states = {
   permissions: {
     name: "Replies, boosts or quotes limited",
     target: nw,
-    draft: (d, w) => ({ ...typed(d, w), policy: { reply: "everyone", announce: "followers", quote: "nobody" } }),
+    draft: (d, w) => ({ ...typed(d, w), policy: limited }),
+  },
+  // Who may reply, boost and quote, with approval (ADR-0155): the audience menu, its permissions submenu with each
+  // kind's value, and the panel of one kind with whether others may ask.
+  "permissions-menu": { name: "Audience menu", target: nw, draft: limitedTyped, specimen: { opened: "audience" } },
+  "permissions-kinds": {
+    name: "Permissions submenu",
+    target: nw,
+    draft: limitedTyped,
+    specimen: { opened: "permissions" },
+  },
+  "permissions-kind": {
+    name: "Who can boost, others with approval",
+    target: nw,
+    draft: limitedTyped,
+    specimen: { opened: "announce" },
+  },
+  // A reply to a post whose author approves the reader's replies by hand (the fake's `approvals`).
+  "reply-waits": {
+    name: "Reply waiting for approval",
+    target: (fake) => ({ kind: "reply", id: idOf(fake, "layla-asks") }),
+    draft: (d) => d,
   },
   "visibility-direct": {
     name: "Direct",
@@ -412,7 +440,7 @@ type StateId = keyof typeof states;
 function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string; pickerSheet?: boolean | undefined }) {
   const { locale } = useLocale();
   const narrow = useNarrowViewport();
-  const [{ fake, data }] = useState(createComposeApp);
+  const [{ fake, data }] = useState(() => createComposeApp(id === "reply-waits"));
   const state: State = states[id];
   const lang = locale.startsWith("ja") ? "ja" : "en";
   const target = state.target(fake);
@@ -466,8 +494,9 @@ function Flow() {
  */
 const settle = async ({ canvasElement, parameters }: StoryContext) => {
   const state = composeOf(parameters);
-  // The handle of the author of the post a reply or a quote is of (sam-bread, layla-jokes), which shows once it came.
-  const of = state === "reply" ? "@sam" : state === "quote" ? "@layla" : "";
+  // The handle of the author of the post a reply or a quote is of (sam-bread, layla-jokes, layla-asks), which shows
+  // once it came.
+  const of = state === "reply" ? "@sam" : state === "quote" || state === "reply-waits" ? "@layla" : "";
   // A state whose chunk was not loaded shows its alert in the text field's place.
   const field = state.startsWith("unloaded-") ? '[role="alert"]' : '[role="textbox"][aria-multiline="true"]';
   await waitFor(
@@ -616,6 +645,16 @@ export const OverLimit: Story = shows("over-limit");
 export const Local: Story = shows("visibility-local");
 export const FollowersOnly: Story = shows("visibility-private");
 export const Permissions: Story = shows("permissions");
+/** The audience menu: the visibilities, then the row of who can reply, boost and quote. */
+export const PermissionsMenu: Story = shows("permissions-menu");
+/** The permissions submenu: a row per kind with who can do it now, others with approval. */
+export const PermissionsByKind: Story = shows("permissions-kinds");
+/** The panel of one kind (boost): its audiences, and under them whether others may ask for approval. */
+export const PermissionOfAKind: Story = shows("permissions-kind");
+/** Replying to a post whose author approves the reader's replies: a line over the row says so. */
+export const ReplyWaits: Story = shows("reply-waits");
+/** The same at the minimum width, where the line over the row wraps. */
+export const ReplyWaitsMinimumWidth: Story = { ...shows("reply-waits"), globals: minimumWidth };
 export const Direct: Story = shows("visibility-direct");
 export const ContentWarning: Story = shows("cw");
 /**

@@ -6,7 +6,7 @@
 // own, a refusal beside its confirmation, and the row that opens what waits elsewhere. Everything sits on the page's
 // one surface, apart by space; a raised surface marks only a control (the current tab).
 
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Button, Link, Tab, TabList, TabPanel, Tabs } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Byline, Stamp } from "./entry";
@@ -119,7 +119,8 @@ const notice = tv({
       "text-[length:var(--icon-action)] leading-none",
     ],
     avatar: "inline-flex h-[1lh] flex-none items-center",
-    text: "m-0 min-w-0 flex-1",
+    // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り).
+    text: "m-0 min-w-0 flex-1 [word-break:auto-phrase]",
     end: "inline-flex h-[1lh] flex-none items-center gap-entry-avatar",
   },
   variants: {
@@ -166,7 +167,7 @@ export function NoticeLine({ icon, emoji, avatar, date, id, unread: mark, childr
 const noticeCaption = tv({
   slots: {
     root: "flex items-center gap-entry-avatar text-caption",
-    text: "m-0 flex min-w-0 flex-1 items-start gap-entry-caption",
+    text: "m-0 flex min-w-0 flex-1 items-start gap-entry-caption [word-break:auto-phrase]",
     glyph: "inline-flex h-[1lh] flex-none items-center text-muted-text",
   },
   variants: { read: { true: { text: "text-muted-text" }, false: { text: "text-text" } } },
@@ -220,11 +221,27 @@ export function Excerpt({ lang, children }: { lang?: string | undefined; childre
   );
 }
 
-const state = tv({ base: "inline-flex h-control-timeline items-center text-caption text-muted-text" });
+const state = tv({
+  base: "inline-flex h-control-timeline items-center text-caption text-muted-text",
+  // One that takes the focus of the button it replaces keeps that button's box (a timeline button's inline padding),
+  // so that its ring has room around the text and the row keeps its footprint.
+  variants: {
+    focusable: { true: "rounded-control px-control-timeline-inline outline-hidden focus-visible:shadow-focus" },
+  },
+});
 
-/** What the reader did, or what is so, in place of the button that did it (a request accepted, an account followed). */
-export function StateText({ children }: { children: string }) {
-  return <span className={state()}>{children}</span>;
+/**
+ * What the reader did, or what is so, in place of the button that did it (a request accepted, an account followed).
+ * Given a `ref`, it takes the focus the pressed button leaves (the screen moves it there), so that a screen reader
+ * reads what the press did and the reader goes on from where they were.
+ */
+export function StateText({ children, ref }: { children: string; ref?: Ref<HTMLSpanElement> | undefined }) {
+  const focusable = ref !== undefined;
+  return (
+    <span ref={ref} className={state({ focusable })} tabIndex={focusable ? -1 : undefined}>
+      {children}
+    </span>
+  );
 }
 
 const pair = tv({ base: "flex flex-none items-center justify-end gap-screen-tabs-gap" });

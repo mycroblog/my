@@ -5,20 +5,22 @@
 // post replied to or quoted), the rules it is checked by before it is sent, the bodies of a post, of an edit and of a
 // server draft made from it, and the draft made from a server draft, to go on writing it. No React and no server here: the hook (use-composer.ts) holds it, the view shows it.
 
-import type {
-  Audience,
-  ComposeSettings,
-  CreateStatus,
-  DraftFailureReason,
-  DraftRequest,
-  EditStatus,
-  Interaction,
-  MediaAttachment,
-  PostSource,
-  SavedDraft,
-  ServerDraft,
-  Status,
-  Visibility,
+import {
+  choiceOf,
+  ruleOf,
+  type ComposeSettings,
+  type CreateStatus,
+  type DraftFailureReason,
+  type DraftRequest,
+  type EditStatus,
+  type Interaction,
+  type InteractionChoice,
+  type MediaAttachment,
+  type PostSource,
+  type SavedDraft,
+  type ServerDraft,
+  type Status,
+  type Visibility,
 } from "@my/app-data";
 import type { FieldMembers } from "../field-errors";
 
@@ -85,7 +87,8 @@ export type Draft = {
   /** The images are marked sensitive, as the post edited or written again had them; the warning marks them too. */
   readonly sensitive?: boolean | undefined;
   readonly visibility: Visibility;
-  readonly policy: Readonly<Record<Interaction, Audience>>;
+  /** Who may reply, boost and quote: an audience at once, and whether others may ask for approval. */
+  readonly policy: Readonly<Record<Interaction, InteractionChoice>>;
   readonly language: string;
   readonly attachments: readonly Attachment[];
   readonly poll?: PollDraft | undefined;
@@ -117,6 +120,9 @@ export const nearChars = 20;
 
 /** The new poll: two empty options, a day. */
 export const newPoll: PollDraft = { options: ["", ""], duration: 86400, multiple: false, hideTotals: false };
+
+/** The kinds of interaction whose permissions a post sets, as the permissions submenu lists them. */
+export const interactions: readonly Interaction[] = ["reply", "announce", "quote"];
 
 /** The visibilities from the widest, as the audience menu lists them. */
 export const visibilities: readonly Visibility[] = ["public", "local", "unlisted", "private", "direct"];
@@ -185,7 +191,10 @@ export function fromServer(
       : server.quoted_status_id !== undefined
         ? { kind: "quote", id: server.quoted_status_id }
         : { kind: "new" };
-  const rule = (k: Interaction) => server.interaction_policy?.[k]?.automatic ?? settings.policy[k];
+  const rule = (k: Interaction) => {
+    const kept = server.interaction_policy?.[k];
+    return kept === undefined ? settings.policy[k] : choiceOf(kept);
+  };
   const failed = server.scheduled_at === undefined ? server.last_schedule : undefined;
   return {
     target,
@@ -289,11 +298,17 @@ export function problemsOf(d: Draft, settings: ComposeSettings): Problems {
 export const postable = (p: Problems) =>
   p.over === 0 && !p.missingDescriptions && !p.waiting && !p.pollInvalid && !p.empty;
 
-/** Whom the reader changed from their defaults: the kinds to send; none when nothing changed. */
+/** Whether two choices make the same rule: asking for approval means nothing while anyone may. */
+const sameRule = (a: InteractionChoice, b: InteractionChoice) => {
+  const [x, y] = [ruleOf(a), ruleOf(b)];
+  return x.automatic === y.automatic && x.manual === y.manual;
+};
+
+/** Whom the reader changed from their defaults: the rules of the kinds to send; none when nothing changed. */
 function policyChange(d: Draft, settings: ComposeSettings) {
-  const kinds = (["reply", "announce", "quote"] as const).filter((k) => d.policy[k] !== settings.policy[k]);
+  const kinds = interactions.filter((k) => !sameRule(d.policy[k], settings.policy[k]));
   if (kinds.length === 0) return undefined;
-  return Object.fromEntries(kinds.map((k) => [k, { automatic: d.policy[k] }]));
+  return Object.fromEntries(kinds.map((k) => [k, ruleOf(d.policy[k])]));
 }
 
 /** The post it replies to: the target of a reply, or what the deleted post of a redraft replied to. */

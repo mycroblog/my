@@ -184,3 +184,27 @@ test("a failed write puts back only its own mark, not a boost set meanwhile", as
   expect(read().timeline?.favourited ?? false).toBe(false);
   expect(read().timeline?.boosted).toBe(true);
 });
+
+test("a boost of a post whose author approves the reader's boosts waits at once, and counts nowhere", async () => {
+  const { promise: answered, resolve: answer } = Promise.withResolvers<Response>();
+  const asks = post({ permissions: { reply: "allowed", announce: "pending", quote: "denied" } });
+  const { data, read } = cached([asks], () => answered);
+  const done = markStatus(data, "1", { type: "boost", on: true });
+  expect(read().timeline?.boost_approval).toBe("pending");
+  expect(read().thread?.boost_approval).toBe("pending");
+  expect(read().timeline?.boosts_count).toBe(0);
+  answer(json(200, { ...asks, boosted: false, boost_approval: "pending" }));
+  await done;
+  expect(read().timeline).toMatchObject({ boost_approval: "pending", boosts_count: 0 });
+  expect(read().timeline?.boosted ?? false).toBe(false);
+});
+
+test("a boost of a post that admits the reader at once does not wait", async () => {
+  const { data, read } = cached(
+    [post({ permissions: { reply: "allowed", announce: "allowed", quote: "allowed" } })],
+    () => json(200, post({ boosted: true, boosts_count: 1 })),
+  );
+  await markStatus(data, "1", { type: "boost", on: true });
+  expect(read().timeline?.boost_approval).toBeUndefined();
+  expect(read().timeline).toMatchObject({ boosted: true, boosts_count: 1 });
+});

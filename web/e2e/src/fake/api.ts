@@ -18,7 +18,9 @@
 // voice rooms, the events) answers in the state the options give the server: its timelines, one person's, its closure,
 // its maintenance, down, or newer than the app. The voice rooms are the fake's own, since a room lives only while
 // people are in it and the seed opens none. A post is translated by the provider `translation` names, which answers
-// or refuses as the options say.
+// or refuses as the options say. With `approvals`, posts of the fake's own approve replies, boosts and quotes by hand
+// (ADR-0155): what waits shows to its author alone and counts nowhere, the reader's requests list and are answered,
+// and a reply approved joins its thread.
 
 import { drawingBlurhash, drawingURL } from "../drawing";
 import {
@@ -31,13 +33,14 @@ import {
   eventStart,
   events as scenarioEvents,
   follows,
-  interactions,
+  interactions as scenarioInteractions,
   lists as scenarioLists,
   people,
   personOf,
-  posts,
+  posts as scenarioPosts,
   restrictions,
   type Image,
+  type Interaction,
   type LinkCard,
   type Person,
   type Post,
@@ -116,7 +119,93 @@ export type FakeOptions = {
    * of its summary, which the problem names (`publish: "summary"`).
    */
   articles?: { authoring?: "everyone" | "permission"; preview?: "fails"; publish?: "refused" | "summary" };
+  /**
+   * Posts whose authors approve replies, boosts and quotes by hand (ADR-0155), after the scenario's (`approvalPosts`):
+   * the reader's (yuki's), which marco replies to and boosts and mio quotes, each waiting for the reader's approval, and
+   * layla's, to which the reader's reply waits, another was not approved, and the reader's boost waits. The requests
+   * are answered as the server answers them.
+   */
+  approvals?: boolean;
 };
+
+/** Whom an interaction policy admits (the API's InteractionAudience). */
+type PolicyAudience = "nobody" | "mentioned" | "followers" | "everyone";
+
+/** Who may reply to, boost and quote a post: at once, and by its author's approval (the API's InteractionRule). */
+type PolicyRule = { automatic: PolicyAudience; manual?: PolicyAudience };
+
+/** A post of `approvals`: its policy, and whether the author of the post it replies to declined it. */
+type ApprovalPost = Post & {
+  policy?: Partial<Record<"reply" | "announce" | "quote", PolicyRule>>;
+  declined?: boolean;
+};
+
+/** The posts of `approvals`, after the scenario's, oldest first. */
+const approvalPosts: readonly ApprovalPost[] = [
+  {
+    key: "yuki-asks",
+    author: "yuki",
+    text: "週末の写真展に出す一枚を、まだ選べずにいます。",
+    visibility: "public",
+    language: "ja",
+    policy: {
+      reply: { automatic: "followers", manual: "everyone" },
+      announce: { automatic: "followers", manual: "everyone" },
+      quote: { automatic: "nobody", manual: "everyone" },
+    },
+  },
+  {
+    key: "layla-asks",
+    author: "layla",
+    text: "Translating a poem this week. Please ask before you share it.",
+    visibility: "public",
+    language: "en",
+    policy: {
+      reply: { automatic: "mentioned", manual: "everyone" },
+      announce: { automatic: "mentioned", manual: "everyone" },
+      quote: { automatic: "nobody" },
+    },
+  },
+  {
+    key: "marco-asks-reply",
+    author: "marco",
+    replyTo: "yuki-asks",
+    text: "The ridge at dawn would be my pick.",
+    visibility: "public",
+    language: "en",
+  },
+  {
+    key: "mio-asks-quote",
+    author: "mio",
+    quote: "yuki-asks",
+    text: "写真展、楽しみ。",
+    visibility: "public",
+    language: "ja",
+  },
+  {
+    key: "yuki-waits",
+    author: "yuki",
+    replyTo: "layla-asks",
+    text: "どの詩ですか？ 読んでみたいです。",
+    visibility: "public",
+    language: "ja",
+  },
+  {
+    key: "yuki-declined",
+    author: "yuki",
+    replyTo: "layla-asks",
+    text: "翻訳ができたら教えてください。",
+    visibility: "public",
+    language: "ja",
+    declined: true,
+  },
+];
+
+/** The boosts of `approvals`, each waiting for the approval of the post's author. */
+const approvalInteractions: readonly Interaction[] = [
+  { kind: "boost", by: "marco", post: "yuki-asks" },
+  { kind: "boost", by: "yuki", post: "layla-asks" },
+];
 
 /** The address of the fake's status page. */
 export const fakeStatusPage = "https://status.demo.test";
@@ -192,6 +281,8 @@ const scenarioEmoji = (name: string) => {
 /** Creates a fake of the client API as `viewer` reads it. */
 export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const viewer = personOf(o.viewer ?? "yuki").username;
+  const posts: readonly ApprovalPost[] = o.approvals === true ? [...scenarioPosts, ...approvalPosts] : scenarioPosts;
+  const interactions = o.approvals === true ? [...scenarioInteractions, ...approvalInteractions] : scenarioInteractions;
   const started = Date.now();
   const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
   /** A later page's delay: none unless `lateMs` asks for one. */
@@ -273,12 +364,95 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const postStep = (key: string) => follows.length + posts.findIndex((p) => p.key === key);
   const statusId = new Map(posts.map((p) => [p.key, idAt(timeOf(postStep(p.key)), postStep(p.key))]));
   const keyOf = new Map([...statusId].map(([k, id]) => [id, k]));
-  const postOf = (key: string): Post => {
+  const postOf = (key: string): ApprovalPost => {
     const p = posts.find((x) => x.key === key);
     if (p === undefined) throw new Error(`fake: no post ${key}`);
     return p;
   };
-  const on = (key: string, kind: string) => interactions.filter((i) => i.post === key && i.kind === kind);
+
+  // ---- Approvals (ADR-0155) -----------------------------------------------------------------------------------------
+
+  type Kind = "reply" | "announce" | "quote";
+  /** Whether `audience` of `p` admits `who`: its author always, the mentioned in any but nobody, as the server does. */
+  const admits = (audience: PolicyAudience, p: Post, who: string) =>
+    who === p.author ||
+    audience === "everyone" ||
+    (audience === "followers" && follows_(who, p.author)) ||
+    (audience !== "nobody" && mentioned(p.text).includes(who));
+  /** Whether `who` may do `kind` with `p`: at once, once its author approves, or not; none for a post of no policy. */
+  const permissionOf = (p: ApprovalPost, kind: Kind, who: string): "allowed" | "pending" | "denied" | undefined => {
+    if (p.policy === undefined) return undefined;
+    const rule = p.policy[kind] ?? { automatic: "everyone" };
+    if (admits(rule.automatic, p, who)) return "allowed";
+    return rule.manual !== undefined && admits(rule.manual, p, who) ? "pending" : "denied";
+  };
+  /**
+   * A request of `by` to reply to (`via` the reply), boost or quote (`via` the quoting post) the post of `target`, at
+   * the step of what asks; one the scenario says the author declined is so from the start.
+   */
+  type AskedApproval = {
+    key: string;
+    kind: Kind;
+    by: string;
+    target: string;
+    via?: string;
+    step: number;
+    declined: boolean;
+  };
+  const requests: AskedApproval[] = [];
+  posts.forEach((p, n) => {
+    const step = follows.length + n;
+    for (const [kind, target] of [
+      ["reply", p.replyTo],
+      ["quote", p.quote],
+    ] as const)
+      if (target !== undefined && permissionOf(postOf(target), kind, p.author) === "pending")
+        requests.push({
+          key: `${kind}:${p.key}`,
+          kind,
+          by: p.author,
+          target,
+          via: p.key,
+          step,
+          declined: p.declined === true,
+        });
+  });
+  interactions.forEach((i, n) => {
+    if (i.kind === "boost" && permissionOf(postOf(i.post), "announce", i.by) === "pending")
+      requests.push({
+        key: `announce:${i.by}:${i.post}`,
+        kind: "announce",
+        by: i.by,
+        target: i.post,
+        step: follows.length + posts.length + n,
+        declined: false,
+      });
+  });
+  /** The answers the reader gave to the requests of their posts, by the request's key. */
+  const answers = new Map<string, "accepted" | "rejected">();
+  const stateOf = (r: AskedApproval) => answers.get(r.key) ?? (r.declined ? "rejected" : "pending");
+  const requestId = (r: AskedApproval) => idAt(timeOf(r.step), 85_000 + r.step);
+  /** The approval the reply of `key` waits for or was refused, while it is not given; none for a reply that needs none. */
+  const replyApproval = (key: string) => {
+    const r = requests.find((x) => x.kind === "reply" && x.via === key);
+    const state = r === undefined ? "accepted" : stateOf(r);
+    return state === "accepted" ? undefined : state;
+  };
+  /** Whether the boost `i` waits for the approval of its post's author, or was refused it. */
+  const boostWaits = (i: { by: string; post: string }) => {
+    const r = requests.find((x) => x.kind === "announce" && x.by === i.by && x.target === i.post);
+    return r !== undefined && stateOf(r) !== "accepted";
+  };
+  /** The quote by the post of `key` while its author has not approved it: pending or rejected. */
+  const quoteApproval = (key: string) => {
+    const r = requests.find((x) => x.kind === "quote" && x.via === key);
+    const state = r === undefined ? "accepted" : stateOf(r);
+    return state === "accepted" ? undefined : state;
+  };
+
+  /** The interactions of `kind` with the post of `key`; a boost only once it needs no approval or has it. */
+  const on = (key: string, kind: string) =>
+    interactions.filter((i) => i.post === key && i.kind === kind && !(i.kind === "boost" && boostWaits(i)));
 
   // The reader's favourite and reaction as they set them, by the key of the post, over the scenario's: one or the
   // other, a reaction's emoji as the scenario writes it, or none (null).
@@ -448,8 +622,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
   });
 
+  // A reply waiting for its approval, or refused it, shows to its author alone.
   const visible = (p: Post) =>
     !deleted.has(p.key) &&
+    (p.author === viewer || replyApproval(p.key) === undefined) &&
     (p.author === viewer ||
       p.visibility === "public" ||
       p.visibility === "unlisted" ||
@@ -490,8 +666,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * A post as the API's Status; an article with its body only when `full`, as a status read alone gives it, and with
    * none in a list (ADR-0160 §8).
    */
-  function statusOf(p: Post, depth = 0, full = false): Json {
+  function statusOf(p: ApprovalPost, depth = 0, full = false): Json {
     const id = statusId.get(p.key) ?? "";
+    const approval = p.author === viewer ? replyApproval(p.key) : undefined;
+    const quoteState = quoteApproval(p.key) ?? "accepted";
     const article = articleOf(p, id);
     const versions = versionsOf(p);
     const now = versions.at(-1) ?? { text: p.text, spoiler: p.spoiler ?? "", at: 0 };
@@ -521,7 +699,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(p.card === undefined ? {} : { card: cardOf(p.card, now.text) }),
       mentions: mentioned(now.text).map((u) => ({ id: idOf(u), username: u, acct: u })),
       emojis: customEmojis,
-      replies_count: posts.filter((x) => x.replyTo === p.key).length,
+      replies_count: posts.filter((x) => x.replyTo === p.key && replyApproval(x.key) === undefined).length,
       boosts_count: on(p.key, "boost").length,
       favourites_count: favouriters.length,
       reactions: [...reactions]
@@ -535,7 +713,34 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(article === undefined ? {} : { article }),
       ...(p.quote === undefined || depth > 0
         ? {}
-        : { quote: { state: "accepted", quoted_status: statusOf(postOf(p.quote), depth + 1) } }),
+        : {
+            quote: {
+              state: quoteState,
+              ...(quoteState === "accepted" ? { quoted_status: statusOf(postOf(p.quote), depth + 1) } : {}),
+            },
+          }),
+      ...(approval === undefined ? {} : { approval }),
+      ...(interactions.some((i) => i.kind === "boost" && i.by === viewer && i.post === p.key && boostWaits(i))
+        ? { boost_approval: "pending" }
+        : {}),
+      ...(p.policy === undefined
+        ? {}
+        : {
+            permissions: {
+              reply: permissionOf(p, "reply", viewer),
+              announce: permissionOf(p, "announce", viewer),
+              quote: permissionOf(p, "quote", viewer),
+            },
+            ...(p.author === viewer
+              ? {
+                  interaction_policy: {
+                    reply: p.policy.reply ?? { automatic: "everyone" },
+                    announce: p.policy.announce ?? { automatic: "everyone" },
+                    quote: p.policy.quote ?? { automatic: "everyone" },
+                  },
+                }
+              : {}),
+          }),
     };
   }
 
@@ -562,7 +767,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     homeEntries.push({ at: postStep(p.key), status: statusOf(p) });
   }
   interactions.forEach((i, n) => {
-    if (i.kind !== "boost" || !inHome(i.by) || i.by === viewer) return;
+    if (i.kind !== "boost" || !inHome(i.by) || i.by === viewer || boostWaits(i)) return;
     const p = postOf(i.post);
     if (hidden(p.author) || !visible(p) || p.visibility === "private" || p.visibility === "direct") return;
     const step = follows.length + posts.length + n;
@@ -655,6 +860,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     });
   }
 
+  /** A request as the API's InteractionRequest: what the reply or the quoting post says, none for a boost. */
+  const requestBody = (r: AskedApproval): Json => ({
+    id: requestId(r),
+    kind: r.kind,
+    state: stateOf(r),
+    created_at: new Date(timeOf(r.step)).toISOString(),
+    account: accountOf(r.by),
+    status: statusOf(postOf(r.target)),
+    ...(r.via === undefined ? {} : { interacting_status: statusOf(postOf(r.via)) }),
+  });
+
   // ---- Direct messages -------------------------------------------------------------------------------------------
 
   // The reader's conversations: their direct posts by thread, each by its root's key, newest first. One is unread while
@@ -718,15 +934,22 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     if (f.followee !== viewer) return;
     notify(step, requested.has(`${f.follower}>${f.followee}`) ? "follow_request" : "follow", f.follower);
   });
+  // A reply or a quote that waits for an approval tells nothing but its request, and a boost too.
   posts.forEach((p, n) => {
     const step = follows.length + n;
-    if (mentioned(p.text).includes(viewer)) notify(step, "mention", p.author, { status: statusOf(p) });
-    if (p.quote !== undefined && postOf(p.quote).author === viewer)
+    if (mentioned(p.text).includes(viewer) && replyApproval(p.key) === undefined)
+      notify(step, "mention", p.author, { status: statusOf(p) });
+    if (p.quote !== undefined && postOf(p.quote).author === viewer && quoteApproval(p.key) === undefined)
       notify(step, "quote", p.author, { status: statusOf(p) });
   });
+  const requestType = { reply: "reply_request", announce: "boost_request", quote: "quote_request" } as const;
+  for (const r of requests)
+    if (postOf(r.target).author === viewer && stateOf(r) === "pending")
+      notify(r.step, requestType[r.kind], r.by, { status: statusOf(postOf(r.target)) });
   interactions.forEach((i, n) => {
     const p = postOf(i.post);
     if (p.author !== viewer || i.kind === "bookmark" || i.kind === "vote") return;
+    if (i.kind === "boost" && boostWaits(i)) return;
     const step = follows.length + posts.length + n;
     // A reaction's emoji as the API gives it: a custom one of this server with its shortcode and image, else Unicode.
     const custom = i.kind === "reaction" ? customEmojis.find((e) => `:${e.shortcode}:` === i.emoji) : undefined;
@@ -1786,7 +2009,26 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return problem(405, "Method Not Allowed");
     }
     if (path === "/notifications/requests/summary") return json({ accounts_count: 0, notifications_count: 0 });
-    if (path === "/interaction_requests") return json({ items: [] });
+    if (path === "/interaction_requests" && request.method === "GET") {
+      // Those of the reader's posts that wait, newest first, of one kind when it is asked.
+      const kind = q.get("kind");
+      const waiting = requests
+        .filter(
+          (r) => postOf(r.target).author === viewer && stateOf(r) === "pending" && (kind === null || r.kind === kind),
+        )
+        .toSorted((a, b) => b.step - a.step)
+        .map(requestBody);
+      const { from, body } = page(waiting, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/interaction_requests\/([^/]+)\/(accept|reject)$/)) && request.method === "POST") {
+      const r = requests.find((x) => requestId(x) === decodeURIComponent(match?.[1] ?? ""));
+      if (r === undefined || postOf(r.target).author !== viewer) return problem(404, "Not Found");
+      if (stateOf(r) !== "pending") return problem(409, "Conflict");
+      answers.set(r.key, match[2] === "accept" ? "accepted" : "rejected");
+      return json(requestBody(r));
+    }
     if (path === "/articles/preview" && request.method === "POST") {
       // The body as the server would render it, with its size and images; one that fails, as the options say.
       if (o.articles?.preview === "fails") return problem(500, "Internal Server Error");

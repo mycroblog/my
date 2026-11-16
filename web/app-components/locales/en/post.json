@@ -15,6 +15,14 @@
     "defaultMessage": "Quote",
     "description": "The item of a post's boost menu that writes a post quoting it."
   },
+  "post.boost_waits": {
+    "defaultMessage": "Your boost goes out once {handle} approves it",
+    "description": "The quiet line under Boost in a post's boost menu, read after it as part of its name, when the post's author approves the reader's boosts by hand: the boost is made only once that author approves it, and until then counts nowhere and no one sees it. handle is the author's, as @user@domain."
+  },
+  "post.quote_waits": {
+    "defaultMessage": "Your quote shows this post once {handle} approves it",
+    "description": "The quiet line under Quote in a post's boost menu, read after it as part of its name, when the post's author approves the reader's quotes by hand: the quote is posted, but shows the quoted post only once that author approves it. handle is the author's, as @user@domain."
+  },
   "post.favourite": {
     "defaultMessage": "Favourite",
     "description": "The action of a post that favourites it, or takes the favourite back."

@@ -187,6 +187,14 @@
     "defaultMessage": "Only you",
     "description": "A choice of the permissions submenu: the author alone."
   },
+  "compose.approval": {
+    "defaultMessage": "Allow others with your approval",
+    "description": "A checkbox under the audiences of reply, boost or quote in the permissions submenu: people outside the chosen audience may still do it, once the author approves."
+  },
+  "compose.permission.now": {
+    "defaultMessage": "{audience}{approval, select, yes {, others with your approval} other {}}",
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval)."
+  },
   "compose.visibility.public": {
     "defaultMessage": "Public",
     "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
@@ -229,35 +237,23 @@
   },
   "compose.interactions": {
     "defaultMessage": "Who can reply, boost and quote",
-    "description": "The caption of the audience menu's second group, apart from the visibilities: who may reply to, boost and quote the post."
+    "description": "The name of the audience menu's second group, apart from the visibilities, for assistive technology: who may reply to, boost and quote the post."
   },
   "compose.permissions": {
     "defaultMessage": "Who can reply, boost and quote",
-    "description": "The title of the submenu of who may reply to, boost and quote the post, beside its back button."
-  },
-  "compose.permissions.item": {
-    "defaultMessage": "Replies, boosts and quotes",
-    "description": "The item of the audience menu that opens the submenu of who may reply to, boost and quote the post."
-  },
-  "compose.permissions.open": {
-    "defaultMessage": "Anyone can reply, boost and quote",
-    "description": "The line under the permissions item while anyone may reply to, boost and quote the post."
-  },
-  "compose.permissions.limited": {
-    "defaultMessage": "Replies, boosts or quotes limited",
-    "description": "The line under the permissions item while someone may not reply to, boost or quote the post."
+    "description": "The row of the audience menu that opens the submenu of who may reply to, boost and quote the post, and the submenu's title beside its back button."
   },
   "compose.interaction.reply": {
     "defaultMessage": "Who can reply",
-    "description": "The caption of a group of the permissions submenu."
+    "description": "A row of the permissions submenu, beside who may reply to the post now, and the title of the panel it opens (its audiences), beside its back button."
   },
   "compose.interaction.announce": {
     "defaultMessage": "Who can boost",
-    "description": "The caption of a group of the permissions submenu."
+    "description": "A row of the permissions submenu, beside who may boost the post now, and the title of the panel it opens (its audiences), beside its back button."
   },
   "compose.interaction.quote": {
     "defaultMessage": "Who can quote",
-    "description": "The caption of a group of the permissions submenu."
+    "description": "A row of the permissions submenu, beside who may quote the post now, and the title of the panel it opens (its audiences), beside its back button."
   },
   "compose.language": {
     "defaultMessage": "Language",
@@ -286,6 +282,10 @@
   "compose.replying_to": {
     "defaultMessage": "Replying to {handle}",
     "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
+  },
+  "compose.reply_waits": {
+    "defaultMessage": "Others see your reply once {handle} approves it",
+    "description": "A line over the send row while writing a reply to a post whose author approves replies by hand: until that author approves it, only the writer sees the reply. handle is the author's, as @user@domain."
   },
   "compose.quote.remove": {
     "defaultMessage": "Remove the quote",

@@ -134,6 +134,7 @@ export {
 } from "./accounts";
 export {
   cachePostedStatus,
+  choiceOf,
   defaultComposeSettings,
   MediaFailedError,
   postStatus,
@@ -141,6 +142,7 @@ export {
   readMedia,
   refusal,
   refusedField,
+  ruleOf,
   saveDraft,
   uploadAttachment,
   useComposeSettings,
@@ -152,6 +154,8 @@ export {
   type CreateStatus,
   type DraftRequest,
   type Interaction,
+  type InteractionChoice,
+  type InteractionRule,
   type MediaAttachment,
   type Visibility,
 } from "./compose";
@@ -174,17 +178,23 @@ export {
 } from "./drafts";
 export { markStatus, useStatusMarks, type StatusMark } from "./interactions";
 export {
+  interactionRequestsQuery,
+  useAnswerInteraction,
+  useWaitingCount,
+  useWaitingRequests,
+  waitingRequestsQuery,
+  type InteractionRequest,
+} from "./approvals";
+export {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
   receiveNotification,
   useAnswerRequest,
-  useInteractionRequest,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,
   useUnreadNotifications,
-  type InteractionRequest,
   type NotificationFilter,
   type NotificationItem,
   type NotificationReads,

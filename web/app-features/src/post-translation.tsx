@@ -31,6 +31,7 @@ import {
   type TranslatorAvailability,
 } from "@my/platform";
 import { useEffect, useRef, useState } from "react";
+import { ApprovalLine } from "./post-approval";
 
 /** The language tag of the reader's locale that a translation goes into: its language, and its script if it names one. */
 function readerLanguage(locale: string): string {
@@ -252,14 +253,26 @@ export function usePostTranslation(status: PostStatus, visitor = false): PostTra
 
 /**
  * A post that translates on the reader's request and shows its original again, its translation its own: a `Post`
- * whose translate and original actions it answers itself, every other action going to `onAction`.
+ * whose translate and original actions it answers itself, every other action going to `onAction`. As the first line of the
+ * post itself, after the screen's own line (a thread's heading of its replies), it says when the reader's reply or boost of it waits for an approval (post-approval.tsx).
  */
 export function TranslatablePost(props: PostProps) {
   const { props: translation, act } = usePostTranslation(props.status, props.signIn !== undefined);
   const { onAction } = props;
+  const approval = <ApprovalLine status={props.status} />;
   return (
     <Post
       {...props}
+      context={
+        props.context === undefined ? (
+          approval
+        ) : (
+          <>
+            {props.context}
+            {approval}
+          </>
+        )
+      }
       {...translation}
       onAction={(action) => {
         if (!act(action.type)) onAction?.(action);

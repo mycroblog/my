@@ -15,6 +15,34 @@
     "defaultMessage": "Mentions",
     "description": "The tab that shows only the notifications that speak to the reader: mentions and quotes."
   },
+  "notifications.waiting": {
+    "defaultMessage": "Waiting for approval",
+    "description": "The title of the screen of the replies, boosts and quotes of the reader's posts that wait for the reader's approval."
+  },
+  "notifications.waiting_count": {
+    "defaultMessage": "{count, plural, one {# waiting for your approval} other {# waiting for your approval}}",
+    "description": "The row at the top of the notifications that opens the replies, boosts and quotes that wait for the reader's approval; count is how many."
+  },
+  "notifications.waiting_loading": {
+    "defaultMessage": "Loading replies, boosts and quotes to approve…",
+    "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says while the first of them load."
+  },
+  "notifications.waiting_loading_more": {
+    "defaultMessage": "Loading more…",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list while more load."
+  },
+  "notifications.waiting_failed": {
+    "defaultMessage": "Replies, boosts and quotes to approve could not be loaded.",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says when the first of them could not be loaded, beside a button to try again."
+  },
+  "notifications.waiting_failed_more": {
+    "defaultMessage": "More could not be loaded.",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list when more could not be loaded, beside a button to try again."
+  },
+  "notifications.waiting_empty": {
+    "defaultMessage": "Nothing is waiting for your approval. When someone asks to reply to, boost or quote your post, it shows here.",
+    "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says when none waits."
+  },
   "notifications.requests_hint": {
     "defaultMessage": "From accounts your notification settings hold back",
     "description": "The hint under the row of the notification requests."
@@ -31,17 +59,13 @@
     "defaultMessage": "Accept",
     "description": "The button of a follow request notification that lets the account follow the reader."
   },
-  "notifications.reject": {
-    "defaultMessage": "Reject",
-    "description": "The button of a follow request notification that refuses to let the account follow the reader."
-  },
   "notifications.approve": {
     "defaultMessage": "Approve",
     "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."
   },
   "notifications.decline": {
     "defaultMessage": "Decline",
-    "description": "The button of a notification asking to reply to, boost or quote the reader's post that refuses it."
+    "description": "The button of a follow request, or of a request to reply to, boost or quote the reader's post, that refuses it."
   },
   "notifications.follow_back": {
     "defaultMessage": "Follow back",
@@ -65,11 +89,15 @@
   },
   "notifications.accepted": {
     "defaultMessage": "Accepted",
-    "description": "What a request notification says once the reader accepted or approved it."
+    "description": "What a follow request's notification says once the reader accepted it (notifications.accept)."
   },
-  "notifications.rejected": {
-    "defaultMessage": "Rejected",
-    "description": "What a request notification says once the reader rejected or declined it."
+  "notifications.approved": {
+    "defaultMessage": "Approved",
+    "description": "What a request to reply to, boost or quote the reader's post says on the screen of what waits for approval once the reader approved it (notifications.approve); focus moves to it."
+  },
+  "notifications.declined": {
+    "defaultMessage": "Declined",
+    "description": "What a follow request, or a request to reply to, boost or quote the reader's post, says once the reader declined it (notifications.decline); on the screen of what waits for approval, focus moves to it."
   },
   "notifications.loading": {
     "defaultMessage": "Loading notifications…",
