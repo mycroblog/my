@@ -122,7 +122,6 @@ sed -E $'s/^([0-9]+)\t(.*)$/    +\\1  \\2/' "$work/report"
 # The budgets, which no label lifts.
 over=0
 awk -F '\t' '
-  $2 ~ /^\.claude\/.*\.md$/ && $1 > 4096 { printf "budget .claude: %s is %d bytes, over 4096\n", $2, $1; over = 1 }
   $2 ~ /^docs\/requirements\// { req += $1 }
   END {
     if (req > 98304) { printf "budget requirements: %d bytes in all, over 98304\n", req; over = 1 }

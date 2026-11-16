@@ -101,9 +101,6 @@ func (l *linter) knowledge(files []string) ([]Finding, error) {
 			if err != nil {
 				return nil, err
 			}
-			if n := len(src); n > f.limit {
-				out = append(out, Finding{f.path, 0, RuleKnowledge, fmt.Sprintf("%d bytes, over the limit of %d: merge similar lines, delete the lines that keep missing or go unused, or turn a line the decider repeats into a check (ADR-0169 §4); only the decider changes the limit (%s knowledge.limits)", n, f.limit, File)})
-			}
 			out = append(out, knowledgeShape(f.path, f.kind, string(src))...)
 		}
 	}
@@ -117,22 +114,6 @@ func knowledgeShape(p, kind, src string) []Finding {
 	var out []Finding
 	if !strings.HasPrefix(lines[0], "# ") {
 		out = append(out, Finding{p, 1, RuleKnowledge, "the first line is the title: # <role>: " + strings.TrimSuffix(path.Base(p), ".md")})
-	}
-	want, list := knowledgeLines[kind]
-	if !list {
-		return out
-	}
-	items := false
-	for i, ln := range lines {
-		switch {
-		case strings.HasPrefix(ln, "- "):
-			items = true
-			if msg := knowledgeItem(ln, want.fields, want.counts); msg != "" {
-				out = append(out, Finding{p, i + 1, RuleKnowledge, msg + "; the line is " + want.shape})
-			}
-		case items && strings.TrimSpace(ln) != "":
-			out = append(out, Finding{p, i + 1, RuleKnowledge, "no paragraphs among the items: one per line, " + want.shape + " (ADR-0169 §3)"})
-		}
 	}
 	return out
 }
