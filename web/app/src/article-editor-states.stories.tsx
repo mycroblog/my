@@ -3,8 +3,9 @@
 // The article editor's states played on the fake server as yuki writes (#3091): an article written, its preview beside
 // it on a PC and behind Write | Preview at the minimum width, a title and a body over their limits, which keep Publish
 // from publishing, a preview the server could not render, an edit refused for its summary (as sam), and a reader the
-// server keeps from writing new articles; in
-// en and in ja, at the minimum width and on a PC.
+// server keeps from writing new articles; the schedule's form and the audience menu (the composer's: who can see it,
+// never direct, and who can reply, boost and quote it, with approval) opened from the row; in en and in ja, at the
+// minimum width and on a PC.
 //
 // The preview is asked of the server 600 ms after the writer stops typing (useArticlePreview), and a body of 100 kB
 // takes the editor a while to take in: a play waits for what the server's answer shows for as long as the screen's own
@@ -39,6 +40,17 @@ const words = {
     tryAgain: "Try again",
     notAllowed:
       "Your account cannot write new articles on this server. You can still edit the articles you wrote before.",
+    schedule: "Schedule",
+    scheduleForm: "Schedule",
+    setTime: "Set time",
+    audienceTool: /^Who can see it: /,
+    audienceMenu: "Who can see and reply",
+    visibility: /^Who can see it/,
+    direct: /^Direct/,
+    permissions: /^Who can reply, boost and quote/,
+    reply: /^Who can reply(?!,)/,
+    followers: "Followers",
+    approval: "Allow others with your approval",
   },
   ja: {
     heading: "新しい記事",
@@ -53,6 +65,17 @@ const words = {
     failed: "プレビューを表示できませんでした。",
     tryAgain: "もう一度試す",
     notAllowed: "このサーバーでは、このアカウントで新しい記事を書けません。これまでに書いた記事は編集できます。",
+    schedule: "予約する",
+    scheduleForm: "予約",
+    setTime: "この時刻にする",
+    audienceTool: /^見られる人: /,
+    audienceMenu: "見られる人と返信できる人",
+    visibility: /^見られる人/,
+    direct: /^ダイレクト/,
+    permissions: /^返信・ブースト・引用できる人/,
+    reply: /^返信できる人/,
+    followers: "フォロワー",
+    approval: "ほかの人も、承認すればできるようにする",
   },
 } as const;
 
@@ -294,4 +317,105 @@ export const NotAllowedJapaneseMinimumWidth: Story = {
   globals: { locale: "ja", ...minimumWidth },
   parameters: permission,
   play: async (context) => notAllowed(context, "ja"),
+};
+
+/** Waits until what a tool opened (a menu, or the schedule's form) has risen into place: a sheet on a phone. */
+async function risen(context: StoryContext, selector: string) {
+  await waitFor(
+    () => {
+      const opened = context.canvasElement.ownerDocument.querySelector(selector);
+      if (opened === null) throw new Error(`${selector} is not open yet`);
+      for (let el: Element | null = opened; el !== null; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+          throw new Error(`${selector} is still rising`);
+      }
+    },
+    { timeout: 5000 },
+  );
+}
+
+/**
+ * The schedule's form opened from the row's tool, at the bottom of the screen: a sheet headed by its name and close on
+ * a phone, from `tablet` a popover over the tool, where there is no room below it, inside the viewport.
+ */
+async function scheduleForm(context: StoryContext, lang: Lang) {
+  const { canvas, w } = await editor(context, lang);
+  await userEvent.click(canvas.getByRole("button", { name: w.schedule }));
+  await risen(context, "[data-popup]");
+  const form = within(context.canvasElement.ownerDocument.body).getByRole("dialog", { name: w.scheduleForm });
+  await expect(within(form).getByRole("button", { name: w.setTime })).toBeVisible();
+  const box = form.getBoundingClientRect();
+  const view = context.canvasElement.ownerDocument.documentElement;
+  await expect(box.bottom).toBeLessThanOrEqual(view.clientHeight);
+  await expect(box.right).toBeLessThanOrEqual(view.clientWidth);
+}
+
+export const ScheduleForm: Story = { globals: { locale: "en" }, play: async (context) => scheduleForm(context, "en") };
+
+export const ScheduleFormJapanesePC: Story = {
+  globals: { locale: "ja", ...pc },
+  play: async (context) => scheduleForm(context, "ja"),
+};
+
+/**
+ * The composer's audience menu, opened from the row's tool: who can see the article, and who can reply, boost and
+ * quote it. Its visibilities are the article's, never Direct.
+ */
+async function audienceMenu(context: StoryContext, lang: Lang) {
+  const { canvas, w } = await editor(context, lang);
+  await userEvent.click(canvas.getByRole("button", { name: w.audienceTool }));
+  await risen(context, '[role="menu"]');
+  const page = within(context.canvasElement.ownerDocument.body);
+  const menu = page.getByRole("menu", { name: w.audienceMenu });
+  await expect(within(menu).getByRole("menuitem", { name: w.visibility })).toBeVisible();
+  await expect(within(menu).getByRole("menuitem", { name: w.permissions })).toBeVisible();
+  return { page, w };
+}
+
+export const AudienceMenu: Story = {
+  globals: { locale: "en" },
+  play: async (context) => {
+    await audienceMenu(context, "en");
+  },
+};
+
+export const AudienceMenuJapanese: Story = {
+  globals: { locale: "ja" },
+  play: async (context) => {
+    await audienceMenu(context, "ja");
+  },
+};
+
+/** The audience menu's visibilities: the article's four, from the widest, and no Direct. */
+async function audienceVisibilities(context: StoryContext, lang: Lang) {
+  const { page, w } = await audienceMenu(context, lang);
+  await userEvent.click(page.getByRole("menuitem", { name: w.visibility }));
+  const visibilities = await page.findAllByRole("menuitemradio");
+  await expect(visibilities).toHaveLength(4);
+  await expect(page.queryByRole("menuitemradio", { name: w.direct })).toBeNull();
+}
+
+export const AudienceVisibilities: Story = {
+  globals: { locale: "en" },
+  play: async (context) => audienceVisibilities(context, "en"),
+};
+
+/** Who can reply, set to followers: the audiences, and under them whether others may ask for approval. */
+async function audienceReply(context: StoryContext, lang: Lang) {
+  const { page, w } = await audienceMenu(context, lang);
+  await userEvent.click(page.getByRole("menuitem", { name: w.permissions }));
+  await userEvent.click(await page.findByRole("menuitem", { name: w.reply }));
+  await userEvent.click(await page.findByRole("menuitemradio", { name: w.followers }));
+  await expect(await page.findByRole("menuitemcheckbox", { name: w.approval })).toBeVisible();
+}
+
+export const AudienceReply: Story = {
+  globals: { locale: "en" },
+  play: async (context) => audienceReply(context, "en"),
+};
+
+export const AudienceReplyJapanesePC: Story = {
+  globals: { locale: "ja", ...pc },
+  play: async (context) => audienceReply(context, "ja"),
 };

@@ -13,6 +13,7 @@ import { Button } from "./button";
 import { FieldError } from "./form-page";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
+import { useHeaded } from "./menu";
 
 const sections = tv({
   slots: {
@@ -223,7 +224,7 @@ export function ScheduleZone() {
 
 const form = tv({
   slots: {
-    root: "grid min-w-[min(17rem,100%)] gap-entry-line p-[0.25rem]",
+    root: "box-border grid gap-entry-line p-[0.25rem]",
     caption: "m-0 inline-flex items-center gap-entry-caption text-caption text-muted-text",
     field: "grid gap-[0.25rem]",
     input: [
@@ -234,6 +235,10 @@ const form = tv({
     ],
     hint: "m-0 text-caption text-muted-text",
     row: "flex flex-wrap items-center justify-end gap-entry-caption pt-[0.25rem]",
+  },
+  variants: {
+    // In a sheet, as wide as it; else of its own width, which a popover sized to what it holds takes, within the page.
+    headed: { true: { root: "w-full" }, false: { root: "w-[17rem] max-w-full" } },
   },
 });
 
@@ -267,7 +272,7 @@ export type ScheduleFormProps = {
 };
 
 /**
- * The time a post goes out: under its caption, one field of the date and the time, the reader's zone and the server's
+ * The time a post goes out: under its caption (none in a sheet, whose head names it), one field of the date and the time, the reader's zone and the server's
  * limits (or what is wrong with the time) under it, then a clear and the confirmation at the end.
  */
 export function ScheduleForm({
@@ -283,15 +288,19 @@ export function ScheduleForm({
   confirm,
   clear,
 }: ScheduleFormProps) {
-  const s = form();
+  // In a sheet, its head names the form.
+  const headed = useHeaded();
+  const s = form({ headed });
   const id = useId();
   const { direction } = useReader(undefined);
   return (
     <div className={s.root()} dir={direction}>
-      <p className={s.caption()}>
-        <Icon name="schedule" place="caption" />
-        {title}
-      </p>
+      {!headed && (
+        <p className={s.caption()}>
+          <Icon name="schedule" place="caption" />
+          {title}
+        </p>
+      )}
       <div className={s.field()}>
         <input
           type="datetime-local"

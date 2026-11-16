@@ -299,6 +299,38 @@ export class ArticleEditor {
     return new Drafts(this.page);
   }
 
+  /**
+   * The audience tool of the row, the composer's: named by who can see the article ("Who can see it: Public"), and
+   * whether replies, boosts or quotes are limited.
+   */
+  get audienceTool(): Locator {
+    return this.page.getByRole("button", { name: /^Who can see it: .+$/ });
+  }
+
+  /** The audience menu, once open: who can see the article, and who can reply, boost and quote it. */
+  get audienceMenu(): Locator {
+    return this.page.getByRole("menu", { name: "Who can see and reply", exact: true });
+  }
+
+  /** The audience menu's panel named `name`, once open: the menu itself, or the submenu that took its place. */
+  audiencePanel(name: string): Locator {
+    return this.page.getByRole("menu", { name, exact: true });
+  }
+
+  /**
+   * Chooses who can see the article from the audience menu: its first row opens the visibilities (never Direct), and a
+   * choice closes the menu.
+   */
+  async chooseVisibility(name: "Public" | "Local" | "Quiet public" | "Followers only"): Promise<void> {
+    await this.audienceTool.click();
+    // An item is named by its label, then what it holds now (a row) or its quiet line (a visibility).
+    await this.audienceMenu.getByRole("menuitem", { name: /^Who can see it\b.*$/ }).click();
+    await this.audiencePanel("Who can see it")
+      .getByRole("menuitemradio", { name: new RegExp(`^${name}\\b.*$`) })
+      .click();
+    await expect(this.audiencePanel("Who can see it")).toBeHidden();
+  }
+
   /** Sets the time the schedule's form starts with: the first whole hour an hour or more from now. */
   async setTime(): Promise<void> {
     await this.button("Schedule").click();

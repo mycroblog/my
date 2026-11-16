@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the article editor holds while the reader writes, and what it sends (FR-122, FR-123, ADR-0160): an article as
-// the editor keeps it (its title, its Markdown body, its summary, its cover, its hashtags, its language, who may see it
-// and whether it is sensitive), the limits it is checked by before it is sent (the server's preview counts the body's),
+// the editor keeps it (its title, its Markdown body, its summary, its cover, its hashtags, its language, who may see it,
+// reply to, boost and quote it, and whether it is sensitive), the limits it is checked by before it is sent (the server's preview counts the body's),
 // and the bodies of a new article, of an edit and of a server draft made from it; and the article made from a server
 // draft, or from what its author wrote of a published one, to go on writing it. No React and no server here: the hook
 // (use-article.ts) holds it, the view shows it.
@@ -17,6 +17,8 @@ import {
   type DraftFailureReason,
   type DraftRequest,
   type EditArticle,
+  type Interaction,
+  type InteractionChoice,
   type MediaAttachment,
   type SavedDraft,
   type ServerDraft,
@@ -24,6 +26,7 @@ import {
   type Visibility,
 } from "@my/app-data";
 import type { FieldMembers } from "../field-errors";
+import { keptPolicy, policyChange } from "./model";
 
 /** What the editor is open for: a new article, or an edit of the reader's published article of `id`. */
 type ArticleTarget = { kind: "new" } | { kind: "edit"; id: string };
@@ -60,6 +63,8 @@ export type ArticleDraft = {
   /** A BCP 47 tag; empty for the reader's default. */
   readonly language: string;
   readonly visibility: ArticleVisibility;
+  /** Who may reply, boost and quote: an audience at once, and whether others may ask for approval. */
+  readonly policy: Readonly<Record<Interaction, InteractionChoice>>;
   readonly sensitive: boolean;
   /** The draft on the server it was saved as, to save over or publish. */
   readonly saved?: SavedDraft | undefined;
@@ -89,6 +94,7 @@ export function emptyArticle(settings: ComposeSettings, key: string): ArticleDra
     tags: [],
     language: languageOf(settings.language),
     visibility: articleVisibility(settings.visibility),
+    policy: settings.policy,
     sensitive: false,
     key,
   };
@@ -105,12 +111,14 @@ const coverOf = (id: string, description: string | undefined, media: MediaAttach
 
 /**
  * The article of a draft the server keeps, to go on writing it (ADR-0156, ADR-0160 §2): its cover as the server holds
- * it now (`cover`, undefined when gone or never read), its schedule, and why its last schedule failed, while it has none.
+ * it now (`cover`, undefined when gone or never read), who may interact with it (the reader's defaults for the kinds it
+ * leaves out), its schedule, and why its last schedule failed, while it has none.
  */
 export function articleFromServer(
   server: ServerDraft,
   saved: SavedDraft,
   cover: MediaAttachment | undefined,
+  settings: ComposeSettings,
   key: string,
 ): ArticleDraft {
   const a = server.article;
@@ -124,6 +132,7 @@ export function articleFromServer(
     tags: a?.tags ?? [],
     language: languageOf(server.language),
     visibility: articleVisibility(server.visibility),
+    policy: keptPolicy(server.interaction_policy, settings),
     sensitive: server.sensitive,
     saved,
     stored: true,
@@ -134,8 +143,16 @@ export function articleFromServer(
   };
 }
 
-/** The reader's published article of `status`, from what its author wrote of it (`source`), to edit it. */
-export function articleFromSource(status: Status, source: ArticleSource, key: string): ArticleDraft {
+/**
+ * The reader's published article of `status`, from what its author wrote of it (`source`), to edit it; who may
+ * interact with it, which an edit does not change, as it is.
+ */
+export function articleFromSource(
+  status: Status,
+  source: ArticleSource,
+  settings: ComposeSettings,
+  key: string,
+): ArticleDraft {
   const a = source.article;
   const cover = status.article?.cover;
   return {
@@ -155,6 +172,7 @@ export function articleFromSource(status: Status, source: ArticleSource, key: st
     tags: a?.tags ?? [],
     language: languageOf(source.language),
     visibility: articleVisibility(status.visibility),
+    policy: keptPolicy(status.interaction_policy, settings),
     sensitive: status.sensitive,
     key,
   };
@@ -270,6 +288,12 @@ export const articleMembers: FieldMembers<ArticleInput> = {
   "article.cover.description": "cover",
 };
 
+/** Who may reply, boost and quote, as the API takes it: the kinds the reader changed from their defaults. */
+const policyInput = (d: ArticleDraft, settings: ComposeSettings) => {
+  const policy = policyChange(d.policy, settings);
+  return policy === undefined ? {} : { interaction_policy: policy };
+};
+
 /** A new article, as the API takes it. */
 export function toCreateArticle(d: ArticleDraft, settings: ComposeSettings): CreateArticle {
   return {
@@ -277,6 +301,7 @@ export function toCreateArticle(d: ArticleDraft, settings: ComposeSettings): Cre
     text: d.text,
     visibility: d.visibility,
     sensitive: d.sensitive,
+    ...policyInput(d, settings),
     ...(d.summary.trim() === "" ? {} : { summary: d.summary.trim() }),
     ...(d.tags.length === 0 ? {} : { tags: [...d.tags] }),
     ...coverInput(d),
@@ -309,6 +334,7 @@ export function toArticleDraft(d: ArticleDraft, settings: ComposeSettings): Draf
     text: d.text,
     visibility: d.visibility,
     sensitive: d.sensitive,
+    ...policyInput(d, settings),
     ...languageInput(d, settings),
     article: {
       title: clip(d.title, articleFieldLimits.title),

@@ -148,7 +148,6 @@ const theme = {
     "composer-thumb": ref("--composer-thumb"),
     "composer-top": ref("--composer-top"),
     "composer-bottom": ref("--composer-bottom"),
-    "composer-pop": ref("--composer-pop-width"),
     kbd: ref("--kbd-height"),
     "kbd-inline": ref("--kbd-padding-inline"),
     "kbd-gap": ref("--kbd-gap"),

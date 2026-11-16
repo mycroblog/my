@@ -15,13 +15,13 @@ import {
   ScheduleForm,
   ToolText,
 } from "@my/design-system";
-import { useState, type ReactNode } from "react";
+import { useState, type ReactElement } from "react";
 import type { stringsIn } from "../locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
 /** How near and how far ahead a post may be scheduled. */
-export type ScheduleLimits = { readonly minLeadMinutes: number; readonly maxLeadDays: number };
+type ScheduleLimits = { readonly minLeadMinutes: number; readonly maxLeadDays: number };
 
 /** A time `minutes` from now, at the next whole hour after it: where the schedule's field starts. */
 function nextHour(minutes = 60): Date {
@@ -42,69 +42,73 @@ function scheduleProblem(value: string, limits: ScheduleLimits, t: T): string | 
   return undefined;
 }
 
-/**
- * The form that sets the time it goes out (`at`, ISO 8601, none while it goes out at once), in a popover under (or, on
- * a phone, over) its trigger: Set gives `onSet` the time, and Clear, while one is set, none.
- */
-export function Schedule({
-  at,
-  limits,
-  onSet,
-  t,
-  locale,
-  open,
-  setOpen,
-  trigger,
-}: {
+type ScheduleProps = {
+  /** When it goes out (ISO 8601), none while it goes out at once. */
   at: string | undefined;
   limits: ScheduleLimits;
   onSet: (at: string | undefined) => void;
   t: T;
   locale: string;
-  open: boolean;
-  setOpen: (o: boolean) => void;
-  trigger: ReactNode;
-}) {
+};
+
+/**
+ * The form that sets the time it goes out, from `at` (the next whole hour while none is set), within the server's
+ * limits, in the reader's zone: Set gives `onSet` the time, and Clear, while one is set, none; either is `onDone`.
+ */
+export function ScheduleTimeForm({ at, limits, onSet, t, locale, onDone }: ScheduleProps & { onDone: () => void }) {
   const [value, setValue] = useState(() => localInput(at === undefined ? nextHour() : new Date(at)));
   const error = scheduleProblem(value, limits, t);
   return (
-    <FormPopup
-      open={open}
-      onClose={() => {
-        setOpen(false);
+    <ScheduleForm
+      title={t("compose.schedule")}
+      label={t("compose.schedule.field")}
+      value={value}
+      onChange={setValue}
+      min={new Date(Date.now() + limits.minLeadMinutes * 60_000)}
+      max={new Date(Date.now() + limits.maxLeadDays * 86_400_000)}
+      zone={readerZone(locale)}
+      hint={t("compose.schedule.limits", { minutes: limits.minLeadMinutes, days: limits.maxLeadDays })}
+      error={error}
+      confirm={{
+        label: t("compose.schedule.set"),
+        onPress: () => {
+          if (error !== undefined) return;
+          onSet(new Date(value).toISOString());
+          onDone();
+        },
       }}
-      label={t("compose.schedule")}
-      trigger={trigger}
-    >
-      <ScheduleForm
-        title={t("compose.schedule")}
-        label={t("compose.schedule.field")}
-        value={value}
-        onChange={setValue}
-        min={new Date(Date.now() + limits.minLeadMinutes * 60_000)}
-        max={new Date(Date.now() + limits.maxLeadDays * 86_400_000)}
-        zone={readerZone(locale)}
-        hint={t("compose.schedule.limits", { minutes: limits.minLeadMinutes, days: limits.maxLeadDays })}
-        error={error}
-        confirm={{
-          label: t("compose.schedule.set"),
-          onPress: () => {
-            if (error !== undefined) return;
-            onSet(new Date(value).toISOString());
-            setOpen(false);
-          },
+      clear={
+        at === undefined
+          ? undefined
+          : {
+              label: t("compose.schedule.clear"),
+              onPress: () => {
+                onSet(undefined);
+                onDone();
+              },
+            }
+      }
+    />
+  );
+}
+
+/**
+ * The schedule's form (`ScheduleTimeForm`), opened by its trigger (a pressable, which opens and closes it) on the one
+ * menu's surface, and closed by Set or Clear.
+ */
+export function Schedule({
+  open,
+  setOpen,
+  trigger,
+  ...form
+}: ScheduleProps & { open: boolean; setOpen: (o: boolean) => void; trigger: ReactElement }) {
+  return (
+    <FormPopup open={open} onOpenChange={setOpen} label={form.t("compose.schedule")} trigger={trigger}>
+      <ScheduleTimeForm
+        {...form}
+        onDone={() => {
+          setOpen(false);
         }}
-        clear={
-          at === undefined
-            ? undefined
-            : {
-                label: t("compose.schedule.clear"),
-                onPress: () => {
-                  onSet(undefined);
-                  setOpen(false);
-                },
-              }
-        }
       />
     </FormPopup>
   );

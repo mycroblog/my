@@ -8,10 +8,8 @@
 // descriptions or the poll as a card, the form's error (what the server refused of an input it named stands under that
 // input, the problem's title alone here), and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
-// menus, the one menu of the design system), the count, and Post. The audience menu holds a row for who can see the
-// post, which opens the visibilities, and one for who may reply, boost and quote, whose submenu has a row per kind with
-// who may do it now, each opening its audiences and, under them, whether others may ask for the author's approval
-// (ADR-0155). A reply to a post whose author approves the reader's replies
+// menus, the one menu of the design system), the count, and Post. The audience menu is the article editor's too
+// (audience.tsx). A reply to a post whose author approves the reader's replies
 // says so in a line over the row. Editing the reader's post, it is titled Edit
 // post and saves with Save; what an edit cannot change leaves the row (the poll, the audience), and one muted line over
 // the text names the audience and that it stays (a post with a poll is never edited: the server refuses it). A
@@ -23,7 +21,6 @@
 // state is the hook's (use-composer.ts).
 
 import { isRemote, QuoteContext, ReplyContext } from "@my/app-components";
-import type { Audience, Interaction, InteractionChoice, Visibility } from "@my/app-data";
 import {
   AttachButton,
   AttachmentList,
@@ -50,20 +47,18 @@ import {
   TextButton,
   useLocale,
   WarningField,
-  type IconName,
 } from "@my/design-system";
 import type { EditorHandle } from "@my/design-system/editor";
 import { useId, useRef, useState } from "react";
 import { fieldError } from "../field-errors";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
+import { AudienceTool, visibilityIcon, type AudiencePanel } from "./audience";
 import { EditorFailed, editorsHere, PostText, retryEditors, WarningText } from "./editors";
 import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
 import { Language, Schedule } from "./tools";
-import type { MessageId } from "../messages.gen";
 import {
-  interactions,
   maxAttachments,
   nearChars,
   newPoll,
@@ -80,22 +75,6 @@ type T = ReturnType<typeof stringsIn>["t"];
 
 export { preloadComposerText } from "./editors";
 
-const visibilityIcon: Record<Visibility, IconName> = {
-  public: "public",
-  local: "local",
-  unlisted: "unlisted",
-  private: "followers",
-  direct: "direct",
-};
-const audienceIcon: Record<Audience, IconName> = {
-  everyone: "public",
-  followers: "followers",
-  mentioned: "direct",
-  nobody: "profile",
-};
-const audiences: readonly Audience[] = ["everyone", "followers", "mentioned", "nobody"];
-const interactionIcon: Record<Interaction, IconName> = { reply: "reply", announce: "boost", quote: "quote" };
-
 /** How long a poll runs, as its choice reads. */
 function durationName(seconds: number, t: T): string {
   if (seconds < 3600) return t("compose.poll.minutes", { count: seconds / 60 });
@@ -103,172 +82,7 @@ function durationName(seconds: number, t: T): string {
   return t("compose.poll.days", { count: seconds / 86400 });
 }
 
-/**
- * A panel of the audience menu: its first, the visibilities' submenu, the permissions' submenu, or the submenu of one
- * kind of interaction.
- */
-export type AudiencePanel = "audience" | "visibility" | "permissions" | Interaction;
-
-/** Who may do it, as the value of its row: the audience, and that others may ask, which anyone needs not. */
-const choiceText = (choice: InteractionChoice, t: T) =>
-  t("compose.permission.now", {
-    audience: t(`compose.audience.${choice.audience}`),
-    approval: choice.approval && choice.audience !== "everyone" ? "yes" : "no",
-  });
-
-/** Who may reply, boost and quote, as the value of their row: one value for all three, or none where they differ. */
-function permissionsText(policy: Composer["draft"]["policy"], t: T): string {
-  const [first, ...rest] = interactions.map((i) => choiceText(policy[i], t));
-  return first !== undefined && rest.every((text) => text === first) ? first : "";
-}
-
-/**
- * The items of the audience menu's panel: its first, a row for who can see the post and one for who can reply, boost
- * and quote it, each with what it holds now; the visibilities, the chosen one checked, a choice closing the menu; the
- * permissions, a row per kind of interaction with who may do it now; and a kind's own, its audiences and, under them
- * once the audience is not anyone, whether others may ask for approval, which stay open as they go together.
- */
-function AudienceItems({
-  c,
-  t,
-  panel,
-  setOpen,
-}: {
-  c: Composer;
-  t: T;
-  panel: AudiencePanel;
-  setOpen: (o: AudiencePanel) => void;
-}) {
-  const { draft, settings, answered } = c;
-  const { policy } = draft;
-  if (panel === "visibility") {
-    const remote = draft.target.kind === "quote" && !draft.quoteRemoved && answered !== undefined && isRemote(answered);
-    return (
-      // A quote of a remote post says over the visibilities why some cannot be chosen.
-      <MenuGroup
-        title={remote ? t("compose.quote_remote") : undefined}
-        chosen={draft.visibility}
-        onChoose={(v) => {
-          const visibility = visibilities.find((x) => x === v);
-          if (visibility !== undefined) c.change({ visibility });
-        }}
-      >
-        {visibilities.map((v) => (
-          <MenuItem
-            key={v}
-            id={v}
-            icon={visibilityIcon[v]}
-            about={t(`compose.visibility.${v}.about` as MessageId, { server: settings.domain })}
-            disabled={remote && !quotesRemote(v)}
-          >
-            {t(`compose.visibility.${v}`)}
-          </MenuItem>
-        ))}
-      </MenuGroup>
-    );
-  }
-  if (panel === "permissions")
-    return (
-      <MenuGroup>
-        {interactions.map((i) => (
-          <MenuItem
-            key={i}
-            id={i}
-            icon={interactionIcon[i]}
-            opens={choiceText(policy[i], t)}
-            onAction={() => {
-              setOpen(i);
-            }}
-          >
-            {t(`compose.interaction.${i}`)}
-          </MenuItem>
-        ))}
-      </MenuGroup>
-    );
-  if (panel !== "audience") {
-    const choice = policy[panel];
-    const change = (next: InteractionChoice) => {
-      c.change({ policy: { ...policy, [panel]: next } });
-    };
-    return (
-      <>
-        <MenuGroup
-          chosen={choice.audience}
-          stay
-          onChoose={(id) => {
-            const audience = audiences.find((a) => a === id);
-            if (audience !== undefined) change({ ...choice, audience });
-          }}
-        >
-          {audiences.map((a) => (
-            <MenuItem key={a} id={a} icon={audienceIcon[a]}>
-              {t(`compose.audience.${a}`)}
-            </MenuItem>
-          ))}
-        </MenuGroup>
-        {choice.audience !== "everyone" && (
-          <MenuGroup
-            checked={choice.approval ? ["approval"] : []}
-            stay
-            onCheck={(_, approval) => {
-              change({ ...choice, approval });
-            }}
-          >
-            <MenuItem id="approval" icon="included">
-              {t("compose.approval")}
-            </MenuItem>
-          </MenuGroup>
-        )}
-      </>
-    );
-  }
-  return (
-    <MenuGroup>
-      <MenuItem
-        id="visibility"
-        icon={visibilityIcon[draft.visibility]}
-        opens={t(`compose.visibility.${draft.visibility}`)}
-        onAction={() => {
-          setOpen("visibility");
-        }}
-      >
-        {t("compose.audience")}
-      </MenuItem>
-      <MenuItem
-        id="permissions"
-        icon="quote"
-        opens={permissionsText(policy, t)}
-        onAction={() => {
-          setOpen("permissions");
-        }}
-      >
-        {t("compose.permissions")}
-      </MenuItem>
-    </MenuGroup>
-  );
-}
-
-/** The submenu a panel of the audience menu is, by its name and the panel back opens; none for its first. */
-function audienceSub(panel: AudiencePanel, t: T, setOpen: (o: AudiencePanel) => void) {
-  if (panel === "audience") return undefined;
-  const [title, parent]: [string, AudiencePanel] =
-    panel === "visibility"
-      ? [t("compose.audience"), "audience"]
-      : panel === "permissions"
-        ? [t("compose.permissions"), "audience"]
-        : [t(`compose.interaction.${panel}`), "permissions"];
-  return {
-    title,
-    onBack: () => {
-      setOpen(parent);
-    },
-  };
-}
-
-/**
- * The audience tool and its menu: who can see the post, and who can reply, boost and quote it, each opening its
- * submenu.
- */
+/** The audience tool of the post: a quote of a remote post says over the visibilities why some cannot be chosen. */
 function Audience({
   c,
   t,
@@ -280,23 +94,20 @@ function Audience({
   open: AudiencePanel | undefined;
   setOpen: (o: AudiencePanel | undefined) => void;
 }) {
-  const { draft } = c;
-  const limited = interactions.some((i) => draft.policy[i].audience !== "everyone");
-  const panel = open ?? "audience";
+  const { draft, settings, answered } = c;
+  const remote = draft.target.kind === "quote" && !draft.quoteRemoved && answered !== undefined && isRemote(answered);
   return (
-    <MenuButton
-      icon={visibilityIcon[draft.visibility]}
-      label={t("compose.audience.tool", { visibility: draft.visibility, limited: limited ? "yes" : "no" })}
-      menuLabel={t("compose.audience_menu")}
-      align="start"
-      open={open !== undefined}
-      onOpenChange={(o) => {
-        setOpen(o ? "audience" : undefined);
-      }}
-      sub={audienceSub(panel, t, setOpen)}
-    >
-      <AudienceItems c={c} t={t} panel={panel} setOpen={setOpen} />
-    </MenuButton>
+    <AudienceTool
+      visibility={draft.visibility}
+      policy={draft.policy}
+      visibilities={visibilities}
+      onChange={c.change}
+      domain={settings.domain}
+      unavailable={remote ? { why: t("compose.quote_remote"), of: (v) => !quotesRemote(v) } : undefined}
+      t={t}
+      open={open}
+      setOpen={setOpen}
+    />
   );
 }
 
@@ -626,11 +437,6 @@ export function ComposerView({
                   icon="schedule"
                   label={t(scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set")}
                   pressed={scheduled !== undefined}
-                  aria-haspopup="dialog"
-                  aria-expanded={open === "schedule"}
-                  onPress={() => {
-                    setSchedule(open !== "schedule");
-                  }}
                 />
               }
             />

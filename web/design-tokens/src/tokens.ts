@@ -369,8 +369,7 @@ export const dialog = {
 /**
  * The post composer, in rem: the size of an image's thumbnail beside its description; the size and the leading
  * (unitless) of the text, which keeps `textLines` lines of room while nothing follows it; the space above the dialog
- * from `tablet`, and below it; the most width and height of a popover of choices, and its most height on a phone,
- * where it opens over the row above the keyboard; the width of the line of a poll option's mark, in px; the corner of
+ * from `tablet`, and below it; the width of the line of a poll option's mark, in px; the corner of
  * a mark behind the text (what the server will read, the part over the limit), in px; and the share of the coral in
  * the tint behind what the server will read (the link it becomes), over whichever surface the text is on, heavier in
  * dark, where a tint of the coral over a dark surface reads less.
@@ -382,9 +381,6 @@ export const composer = {
   textLines: 3,
   top: 4,
   bottom: 2,
-  popWidth: 20,
-  popHeight: 28,
-  popHeightPhone: 26,
   markLine: 1.5,
   overRadius: 2,
   markShare: { light: 0.18, dark: 0.32 },
@@ -690,9 +686,6 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--composer-text-lines", `${composer.textLines}`],
   ["--composer-top", `${composer.top}rem`],
   ["--composer-bottom", `${composer.bottom}rem`],
-  ["--composer-pop-width", `${composer.popWidth}rem`],
-  ["--composer-pop-height", `${composer.popHeight}rem`],
-  ["--composer-pop-height-phone", `${composer.popHeightPhone}rem`],
   ["--composer-mark-line", `${composer.markLine}px`],
   ["--composer-over-radius", `${composer.overRadius}px`],
   [

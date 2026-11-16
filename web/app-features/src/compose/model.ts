@@ -173,6 +173,15 @@ export function emptyDraft(target: Target, settings: ComposeSettings, key: strin
   };
 }
 
+/** Who may reply, boost and quote, as the server keeps it (`kept`, its kinds), the reader's defaults for the others. */
+export function keptPolicy(kept: ServerDraft["interaction_policy"], settings: ComposeSettings): Draft["policy"] {
+  const rule = (k: Interaction) => {
+    const r = kept?.[k];
+    return r === undefined ? settings.policy[k] : choiceOf(r);
+  };
+  return { reply: rule("reply"), announce: rule("announce"), quote: rule("quote") };
+}
+
 /**
  * The draft of a draft the server keeps, to go on writing it (ADR-0156): a reply or a quote of the post it answers, else
  * a new post; its images as the server holds them now (`media`, in the draft's order; undefined for one gone), its
@@ -191,10 +200,6 @@ export function fromServer(
       : server.quoted_status_id !== undefined
         ? { kind: "quote", id: server.quoted_status_id }
         : { kind: "new" };
-  const rule = (k: Interaction) => {
-    const kept = server.interaction_policy?.[k];
-    return kept === undefined ? settings.policy[k] : choiceOf(kept);
-  };
   const failed = server.scheduled_at === undefined ? server.last_schedule : undefined;
   return {
     target,
@@ -202,7 +207,7 @@ export function fromServer(
     cw: server.spoiler_text === "" ? undefined : server.spoiler_text,
     sensitive: server.sensitive,
     visibility: server.visibility,
-    policy: { reply: rule("reply"), announce: rule("announce"), quote: rule("quote") },
+    policy: keptPolicy(server.interaction_policy, settings),
     language: server.language === undefined || server.language === "und" ? "" : server.language,
     attachments: server.media.map((item, i) => {
       const file = media[i];
@@ -304,11 +309,14 @@ const sameRule = (a: InteractionChoice, b: InteractionChoice) => {
   return x.automatic === y.automatic && x.manual === y.manual;
 };
 
-/** Whom the reader changed from their defaults: the rules of the kinds to send; none when nothing changed. */
-function policyChange(d: Draft, settings: ComposeSettings) {
-  const kinds = interactions.filter((k) => !sameRule(d.policy[k], settings.policy[k]));
+/**
+ * Whom the reader changed from their defaults, of a post's or an article's `policy`: the rules of the kinds to send;
+ * none when nothing changed.
+ */
+export function policyChange(policy: Draft["policy"], settings: ComposeSettings) {
+  const kinds = interactions.filter((k) => !sameRule(policy[k], settings.policy[k]));
   if (kinds.length === 0) return undefined;
-  return Object.fromEntries(kinds.map((k) => [k, ruleOf(d.policy[k])]));
+  return Object.fromEntries(kinds.map((k) => [k, ruleOf(policy[k])]));
 }
 
 /** The post it replies to: the target of a reply, or what the deleted post of a redraft replied to. */
@@ -354,7 +362,7 @@ export function toEdit(d: Draft): EditStatus {
 export function toStatus(d: Draft, settings: ComposeSettings): CreateStatus {
   const cw = d.cw?.trim() ?? "";
   const media = mediaOf(d);
-  const policy = policyChange(d, settings);
+  const policy = policyChange(d.policy, settings);
   const reply = repliesTo(d);
   const quote = quotes(d);
   return {
