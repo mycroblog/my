@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { defaultComposeSettings, defaultDraftLimits, type ServerDraft } from "@my/app-data";
+import { defaultComposeSettings, defaultDraftLimits, useComposeSettings, type ServerDraft } from "@my/app-data";
 import { readerZone, scheduleTime } from "@my/design-system";
+import { stringsIn } from "../locale";
 import { render, server, status } from "../test/server";
 import { ComposerView } from "./composer";
 import { DraftsView, type DraftsState } from "./drafts";
 import type { ComposeSpecimen } from "./layer";
 import { emptyDraft, type Draft, type Target } from "./model";
+import { ScheduleTimeForm } from "./tools";
 import { useComposer } from "./use-composer";
 
 const hour = 3_600_000;
@@ -234,9 +236,35 @@ test("scheduled: the tool is on, the time line says when in the zone, Change at 
   expect(ja).toContain("予約する");
 });
 
+/**
+ * The schedule's form from `at`, with the server's limits as the composer reads them (the nearest `minutes` ahead); on
+ * its own, as the composer opens it over the page, which a server render leaves out.
+ */
+async function scheduleForm(
+  at: string | undefined,
+  { locale = "en", minutes }: { locale?: string; minutes?: number } = {},
+) {
+  const { data } = server({
+    "/instance": {
+      domain: "my.example",
+      limits: {
+        max_post_characters: 500,
+        drafts: { ...defaultDraftLimits, scheduled_post_min_lead_minutes: minutes ?? 5 },
+      },
+    },
+  });
+  if (minutes !== undefined) await data.queryClient.query(data.queries.queryOptions("get", "/instance"));
+  return render(data, <Scheduling at={at} locale={locale} />, locale);
+}
+
+function Scheduling({ at, locale }: { at: string | undefined; locale: string }) {
+  const settings = useComposeSettings();
+  const { t } = stringsIn(locale);
+  return <ScheduleTimeForm at={at} limits={settings.schedule} onSet={none} onDone={none} t={t} locale={locale} />;
+}
+
 test("the schedule's form: the time in the reader's zone, the server's limits, and Set time", async () => {
-  const html = await composer({}, { specimen: { opened: "schedule" } });
-  expect(html).toMatch(/role="dialog"[^>]*aria-label="Schedule"|aria-label="Schedule"[^>]*role="dialog"/);
+  const html = await scheduleForm(undefined);
   expect(html).toMatch(/type="datetime-local"[^>]*aria-label="Date and time"/);
   const text = words(html);
   expect(text).toContain(readerZone("en"));
@@ -244,25 +272,21 @@ test("the schedule's form: the time in the reader's zone, the server's limits, a
   expect(text).toContain("Set time");
   // Nothing to take back while no time is set.
   expect(text).not.toContain("Don't schedule");
-  const set = words(await composer({ scheduledAt: from(day) }, { specimen: { opened: "schedule" } }));
+  const set = words(await scheduleForm(from(day)));
   expect(set).toContain("Don't schedule");
 });
 
 test("a time nearer than the server's nearest, or farther than its farthest, says so in the form", async () => {
-  const soon = words(await composer({ scheduledAt: from(2 * 60_000) }, { specimen: { opened: "schedule" } }));
+  const soon = words(await scheduleForm(from(2 * 60_000)));
   expect(soon).toContain("Schedule the post at least 5 minutes from now.");
-  const far = words(await composer({ scheduledAt: from(400 * day) }, { specimen: { opened: "schedule" } }));
+  const far = words(await scheduleForm(from(400 * day)));
   expect(far).toContain("Schedule the post at most 366 days from now.");
-  const ja = words(
-    await composer({ scheduledAt: from(2 * 60_000) }, { specimen: { opened: "schedule" }, locale: "ja" }),
-  );
+  const ja = words(await scheduleForm(from(2 * 60_000), { locale: "ja" }));
   expect(ja).toContain("予約する時刻は、今から 5 分以上先にしてください。");
 });
 
 test("the form takes the instance's limits once they are read", async () => {
-  const html = words(
-    await composer({ scheduledAt: from(2 * 60_000) }, { specimen: { opened: "schedule" }, minutes: 1 }),
-  );
+  const html = words(await scheduleForm(from(2 * 60_000), { minutes: 1 }));
   expect(html).toContain("From 1 minute to 366 days from now");
   expect(html).not.toContain("Schedule the post at least");
 });

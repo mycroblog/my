@@ -346,9 +346,9 @@ export class Composer {
     return this.dialog.getByRole("button", { name, exact: true });
   }
 
-  /** The form of the time the post goes out, once open. */
+  /** The form of the time the post goes out, once open: over the composer, a sheet on a phone, else a popover. */
   get scheduleForm(): Locator {
-    return this.dialog.getByRole("dialog", { name: "Schedule", exact: true });
+    return this.dialog.page().getByRole("dialog", { name: "Schedule", exact: true });
   }
 
   /** The field of the date and time in the schedule's form. */

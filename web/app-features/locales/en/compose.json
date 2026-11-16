@@ -805,6 +805,6 @@
   },
   "compose.audience_menu": {
     "defaultMessage": "Who can see and reply",
-    "description": "The name of the composer's audience menu, over its two items: who can see the post, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
+    "description": "The name of the audience menu of the composer and of the article editor, over its two items: who can see the post or the article, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
   }
 }

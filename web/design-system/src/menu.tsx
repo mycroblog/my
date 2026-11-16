@@ -7,13 +7,16 @@
 // where one is open; from `tablet` in a popover by its trigger, standing off the page by a shadow, with no head. The app
 // says which (`MenuSheet`), as it alone reads the viewport. The pointer and the keyboard move through its items (arrows,
 // Home and End, typing a label's start), Enter or a press runs one and closes it, Escape, a press outside or close
-// closes it, and focus returns to the trigger. A submenu takes its menu's place, headed by back and its name. Each item
-// is an 18 px glyph and its label, in rows of a form control's height; the value chosen among a group's has a check at
-// its end, a toggle its glyph on. Its groups stand apart by space; a group of actions on another account goes under a
-// caption naming it; destructive items sit last and apart, with no color of their own.
+// closes it, and focus returns to the trigger. A submenu takes its menu's place, headed by back and its name. A small
+// form that is filled in and sent (the schedule's, `FormPopup`) opens on the same surface. Each item is an 18 px glyph
+// and its label, in rows of a form control's height; the value chosen among a group's has a check at its end, a toggle
+// its glyph on. Its groups stand apart by space; a group of actions on another account goes under a caption naming it;
+// destructive items sit last and apart, with no color of their own.
 
 import { createContext, use, useEffect, useId, useState, type ReactElement, type ReactNode } from "react";
 import {
+  Dialog,
+  DialogTrigger,
   Header,
   Menu,
   MenuItem as AriaMenuItem,
@@ -445,7 +448,6 @@ export function MenuSurface({
   sub,
   children,
 }: MenuSurfaceProps) {
-  const asSheet = use(SheetContext);
   const reader = useReader(undefined);
   const { t } = stringsIn(reader.lang);
   const [own, setOwn] = useState(false);
@@ -459,49 +461,135 @@ export function MenuSurface({
   };
   const title = sub?.title ?? label;
   const back = sub === undefined ? undefined : { label: t("menu.back"), onPress: sub.onBack };
-  // A submenu is a menu of its own, which takes the focus to its first item as it replaces the one it came from.
-  const panel = (inSheet: boolean) => (
-    <MenuPanel
-      key={title}
-      label={title}
-      own
-      sheet={inSheet}
-      head={
-        inSheet ? (
-          <MenuHead title={title} back={back} close={{ label: t("menu.close"), onPress: close }} />
-        ) : back === undefined ? undefined : (
-          <MenuHead title={title} back={back} />
-        )
-      }
-    >
-      {children}
-    </MenuPanel>
-  );
-  useEffect(followPresses, []);
   return (
     <MenuTrigger isOpen={shown} onOpenChange={change} {...(longPress ? { trigger: "longPress" as const } : {})}>
       {trigger}
-      {asSheet ? (
-        <ModalPresence>
-          {shown && (
-            <MenuSheetLayer key="menu" onDismiss={close}>
-              <div className={sheet().panel()} lang={reader.lang} dir={reader.direction}>
-                {panel(true)}
-              </div>
-            </MenuSheetLayer>
-          )}
-        </ModalPresence>
-      ) : (
-        <Popover
-          placement={placement}
-          offset={offset}
-          shouldFlip={placement !== "end bottom"}
-          className="outline-hidden"
-        >
-          {panel(false)}
-        </Popover>
-      )}
+      <SurfaceLayer shown={shown} onDismiss={close} placement={placement} offset={offset}>
+        {(inSheet) => (
+          // A submenu is a menu of its own, which takes the focus to its first item as it replaces the one it came from.
+          <MenuPanel
+            key={title}
+            label={title}
+            own
+            sheet={inSheet}
+            head={
+              inSheet ? (
+                <MenuHead title={title} back={back} close={{ label: t("menu.close"), onPress: close }} />
+              ) : back === undefined ? undefined : (
+                <MenuHead title={title} back={back} />
+              )
+            }
+          >
+            {children}
+          </MenuPanel>
+        )}
+      </SurfaceLayer>
     </MenuTrigger>
+  );
+}
+
+/**
+ * What a menu or a small form shows on, open, by the trigger of the React Aria trigger around it: on a phone (as
+ * `MenuSheet` says) a sheet from the bottom edge over the dimmed page, from `tablet` a popover by the trigger, which
+ * flips to the other side of it where there is no room and stays inside the viewport. `children` draws what it holds,
+ * told whether it is in the sheet.
+ */
+function SurfaceLayer({
+  shown,
+  onDismiss,
+  placement,
+  offset,
+  children,
+}: {
+  shown: boolean;
+  onDismiss: () => void;
+  placement: MenuPlacement;
+  offset: number;
+  children: (inSheet: boolean) => ReactNode;
+}) {
+  const asSheet = use(SheetContext);
+  const reader = useReader(undefined);
+  useEffect(followPresses, []);
+  if (asSheet)
+    return (
+      <ModalPresence>
+        {shown && (
+          <MenuSheetLayer key="menu" onDismiss={onDismiss}>
+            <div className={sheet().panel()} lang={reader.lang} dir={reader.direction}>
+              {children(true)}
+            </div>
+          </MenuSheetLayer>
+        )}
+      </ModalPresence>
+    );
+  return (
+    <Popover placement={placement} offset={offset} shouldFlip={placement !== "end bottom"} className="outline-hidden">
+      {children(false)}
+    </Popover>
+  );
+}
+
+/** A form inside a sheet whose head names it already: it draws no caption of its own. */
+const HeadedContext = createContext(false);
+
+/** Whether the form is in a sheet whose head names it (`FormPopup`'s on a phone), so that it needs no caption. */
+export const useHeaded = () => use(HeadedContext);
+
+/**
+ * A small form (the schedule's) opened by its trigger, a React Aria pressable, apart from the menus, which choose and
+ * close, where this one is filled in and sent; on the one menu's surface: on a phone a sheet from the bottom edge,
+ * headed by its name and close, from `tablet` a popover under the trigger at its start, or over it where there is no
+ * room below, as wide as what it holds. Escape, a press outside or close closes it, and focus returns to the trigger.
+ */
+export function FormPopup({
+  open,
+  onOpenChange,
+  trigger,
+  label,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  trigger: ReactElement;
+  /** The form's name: its sheet's title, and what assistive technology reads it by. */
+  label: string;
+  children: ReactNode;
+}) {
+  const reader = useReader(undefined);
+  const { t } = stringsIn(reader.lang);
+  // Open as it mounts (the composer opened on it, by Change time…), it opens a frame later: a modal it is in (the
+  // composer's) makes all but itself inert as it mounts, after the effects of what it holds, this popover's among them.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const shown = open && mounted;
+  const close = () => {
+    onOpenChange(false);
+  };
+  return (
+    <DialogTrigger isOpen={shown} onOpenChange={onOpenChange}>
+      {trigger}
+      <SurfaceLayer shown={shown} onDismiss={close} placement="bottom start" offset={4}>
+        {(inSheet) => (
+          <Dialog aria-label={label} className={menu({ sheet: inSheet }).panel()} data-popup="">
+            {inSheet && <MenuHead title={label} close={{ label: t("menu.close"), onPress: close }} />}
+            <HeadedContext value={inSheet}>
+              {/* In a sheet, what it holds lines up with the head's name, as a menu's items do, and scrolls under it. */}
+              <div
+                className={
+                  inSheet
+                    ? "min-h-0 overflow-y-auto px-[calc(var(--control-timeline-padding-inline)-0.25rem)]"
+                    : undefined
+                }
+              >
+                {children}
+              </div>
+            </HeadedContext>
+          </Dialog>
+        )}
+      </SurfaceLayer>
+    </DialogTrigger>
   );
 }
 

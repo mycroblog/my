@@ -6,8 +6,9 @@
 // the title, the Markdown body in its editor (fetched as a chunk of its own), and after it the article's details (the
 // summary, the cover and the hashtags); the article as the server will publish it stands beside it from `desktop`, and
 // behind Write | Preview under it, from `POST /articles/preview` once the writer pauses, with the body's limits under
-// what is written before they are hit. The row at its end holds the tools (an image for the body, who may see it, sensitive,
-// the schedule, the language) and Publish, Schedule or Save. An edit keeps who may see it, and is never a draft.
+// what is written before they are hit. The row at its end holds the tools (an image for the body, the composer's
+// audience menu of who may see it, never direct, and who may reply, boost and quote it; sensitive, the schedule, the
+// language) and Publish, Schedule or Save. An edit keeps who may see it and interact with it, and is never a draft.
 //
 // Leaving: Publish (or Save, an edit) tells the app the status; Schedule, or Save as draft, keeps it on the server and
 // tells the app it was kept; Close keeps a new article that was written or changed as a draft on the server, without a
@@ -23,6 +24,7 @@ import {
   useArticleSource,
   useDrafts,
   useStatus,
+  type ComposeSettings,
   type ComposeWrites,
   type Status,
 } from "@my/app-data";
@@ -58,12 +60,10 @@ import {
   TagInput,
   TextButton,
   useLocale,
-  type IconName,
 } from "@my/design-system";
 import type { EditorHandle, PlainTextEditorProps } from "@my/design-system/editor";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { fieldError } from "../field-errors";
-import type { MessageId } from "../messages.gen";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
 import {
@@ -76,8 +76,8 @@ import {
   limitState,
   usage,
   type ArticleDraft,
-  type ArticleVisibility,
 } from "./article-model";
+import { AudienceTool, visibilityIcon, type AudiencePanel } from "./audience";
 import { ChunkBoundary, retryingLazy } from "./chunk";
 import { DraftsView } from "./drafts";
 import { Language, Schedule } from "./tools";
@@ -106,47 +106,6 @@ function BodyEditor(props: PlainTextEditorProps & { t: T }) {
     >
       <Editor {...rest} />
     </ChunkBoundary>
-  );
-}
-
-const visibilityIcon: Record<ArticleVisibility, IconName> = {
-  public: "public",
-  local: "local",
-  unlisted: "unlisted",
-  private: "followers",
-};
-
-/** Who may see the article: the tool, by the visibility's glyph, and its menu. */
-function Visibility({ e, t, open, setOpen }: { e: ArticleEditor; t: T; open: boolean; setOpen: (o: boolean) => void }) {
-  const { visibility } = e.draft;
-  return (
-    <MenuButton
-      icon={visibilityIcon[visibility]}
-      label={t("compose.audience.tool", { visibility, limited: "no" })}
-      menuLabel={t("compose.audience")}
-      align="start"
-      open={open}
-      onOpenChange={setOpen}
-    >
-      <MenuGroup
-        chosen={visibility}
-        onChoose={(id) => {
-          const v = articleVisibilities.find((x) => x === id);
-          if (v !== undefined) e.change({ visibility: v });
-        }}
-      >
-        {articleVisibilities.map((v) => (
-          <MenuItem
-            key={v}
-            id={v}
-            icon={visibilityIcon[v]}
-            about={t(`compose.visibility.${v}.about` as MessageId, { server: e.settings.domain })}
-          >
-            {t(`compose.visibility.${v}`)}
-          </MenuItem>
-        ))}
-      </MenuGroup>
-    </MenuButton>
   );
 }
 
@@ -206,7 +165,8 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
   const id = useId();
   const bodyRef = useRef<EditorHandle>(null);
   const [mode, setMode] = useState<"write" | "preview">(initialMode ?? "write");
-  const [open, setOpen] = useState<"visibility" | "schedule" | "language" | undefined>(opened);
+  const [open, setOpen] = useState<AudiencePanel | "schedule" | "language" | undefined>(opened);
+  const audienceOpen = open === "language" || open === "schedule" ? undefined : open;
   const { draft, settings, problems, preview, phase } = e;
   const busy = phase.kind === "posting";
   const gone = phase.kind === "gone";
@@ -510,13 +470,15 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
             }}
           />
           {!editing && (
-            <Visibility
-              e={e}
+            <AudienceTool
+              visibility={draft.visibility}
+              policy={draft.policy}
+              visibilities={articleVisibilities}
+              onChange={e.change}
+              domain={settings.domain}
               t={t}
-              open={open === "visibility"}
-              setOpen={(o) => {
-                setOpen(o ? "visibility" : undefined);
-              }}
+              open={audienceOpen}
+              setOpen={setOpen}
             />
           )}
           <IconButton
@@ -543,11 +505,6 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
                   icon="schedule"
                   label={t(scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set")}
                   pressed={scheduled !== undefined}
-                  aria-haspopup="dialog"
-                  aria-expanded={open === "schedule"}
-                  onPress={() => {
-                    setSchedule(open !== "schedule");
-                  }}
                 />
               }
             />
@@ -612,11 +569,11 @@ export type ArticleEditorProps = {
 };
 
 /** Reads the reader's draft of `id` from the server, with its cover, as the editor's article. */
-async function loadDraft(id: string, writes: ComposeWrites): Promise<ArticleDraft> {
+async function loadDraft(id: string, writes: ComposeWrites, settings: ComposeSettings): Promise<ArticleDraft> {
   const { draft, saved } = await writes.readDraft(id);
   const coverId = draft.article?.cover?.id;
   const cover = coverId === undefined ? undefined : await writes.media(coverId).catch(() => undefined);
-  return articleFromServer(draft, saved, cover, crypto.randomUUID());
+  return articleFromServer(draft, saved, cover, settings, crypto.randomUUID());
 }
 
 /** The editor's frame with one notice in place of the form: it loads, it failed, or the reader may not write. */
@@ -745,14 +702,14 @@ export function ArticleEditor({ opening, onLeave, onOpenDraft, specimen = {} }: 
   const draftId = opening.kind === "draft" ? opening.id : undefined;
   const [loaded, setLoaded] = useState<{ id: string; draft: ArticleDraft } | { id: string; failed: true }>();
   const [attempt, setAttempt] = useState(0);
-  const session = useRef(writes);
+  const session = useRef({ writes, settings });
   useEffect(() => {
-    session.current = writes;
+    session.current = { writes, settings };
   });
   useEffect(() => {
     if (draftId === undefined) return undefined;
     const closed = new AbortController();
-    loadDraft(draftId, session.current).then(
+    loadDraft(draftId, session.current.writes, session.current.settings).then(
       (draft) => {
         if (!closed.signal.aborted) setLoaded({ id: draftId, draft });
       },
@@ -799,7 +756,7 @@ export function ArticleEditor({ opening, onLeave, onOpenDraft, specimen = {} }: 
   if (initial === undefined && opening.kind === "edit") {
     if (source.failed || statusFailed) return failedNotice(source.retry);
     if (source.source === undefined || status === undefined) return loading;
-    initial = articleFromSource(status, source.source, crypto.randomUUID());
+    initial = articleFromSource(status, source.source, settings, crypto.randomUUID());
   }
   if (initial === undefined) return loading;
   const key = opening.kind === "new" ? "new" : `${opening.kind}:${opening.id}`;

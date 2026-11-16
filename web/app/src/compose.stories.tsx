@@ -507,8 +507,8 @@ const settle = async ({ canvasElement, parameters }: StoryContext) => {
       const ready = canvasElement.querySelector(field) !== null;
       if (!ready || !canvasElement.textContent.includes(of))
         throw new Error(`the composer does not show its ${state} state yet`);
-      // A state with a menu open (a sheet on a phone) waits until it has risen into place.
-      const menu = canvasElement.ownerDocument.querySelector('[role="menu"]');
+      // A state with a menu or the schedule's form open (a sheet on a phone) waits until it has risen into place.
+      const menu = canvasElement.ownerDocument.querySelector('[role="menu"], [data-popup]');
       for (let el: Element | null = menu; el !== null; el = el.parentElement) {
         const style = getComputedStyle(el);
         if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))

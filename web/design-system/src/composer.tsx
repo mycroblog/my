@@ -5,7 +5,7 @@
 // action stays right above the software keyboard; the text with its count, and the content warning, each around its
 // editor (editor.tsx, loaded lazily); the replied or quoted post above the text; the images as rows of a thumbnail and its
 // description; the poll as a raised card whose options are headed by the mark they will be answered with, its duration
-// a select that opens the one menu (menu.tsx); the popover of the schedule's form; and the notice of a discarded post
+// a select that opens the one menu (menu.tsx); and the notice of a discarded post
 // with its Undo. Its head may hold more before close, and a line over the row may say how the post is
 // sent (when it is scheduled for); with neither tools nor an action (the drafts), it has no row. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
 // press on the backdrop (`onDismiss`, by accident), and neither while what was written is sent (`busy`). Every word is
@@ -15,7 +15,7 @@
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { Suspense, useEffect, useId, useRef, type ReactNode } from "react";
+import { Suspense, useId, useRef, type ReactNode } from "react";
 import { Button as AriaButton, Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
@@ -56,7 +56,6 @@ const frame = tv({
         overlay: [
           "tablet:justify-items-center tablet:px-dialog-margin",
           "tablet:pt-composer-top tablet:pb-composer-bottom",
-          "tablet:has-[[data-popup]]:pb-[calc(var(--composer-pop-height)+var(--composer-bottom))]",
         ],
         panel: [
           "tablet:mx-auto tablet:h-auto tablet:w-[min(var(--shell-column),100%)] tablet:rounded-overlay tablet:p-dialog",
@@ -639,72 +638,6 @@ export function PollOption({
 /** The settings of a poll under its options: how long it runs, and how it counts. */
 export function PollSettings({ children }: { children: ReactNode }) {
   return <div className={poll().settings()}>{children}</div>;
-}
-
-const popup = tv({
-  slots: {
-    anchor: "relative inline-flex max-tablet:static",
-    // Under its trigger from `tablet`, into the page below, which scrolls to it; over the row on a phone, spanning the
-    // composer, above the keyboard.
-    panel: [
-      "absolute start-0 top-[calc(100%+0.25rem)] z-5 box-border grid w-max content-start gap-menu-group-gap",
-      "max-h-[min(var(--composer-pop-height),70dvh)] max-w-[min(var(--composer-pop-width),calc(100vw-2rem))]",
-      "overflow-y-auto rounded-overlay bg-surface p-menu-padding shadow-overlay",
-      "max-tablet:inset-x-0 max-tablet:top-auto max-tablet:bottom-[calc(100%+0.25rem)] max-tablet:w-auto",
-      "max-tablet:max-h-[min(var(--composer-pop-height-phone),60dvh)] max-tablet:max-w-none",
-    ],
-  },
-});
-
-/**
- * A popover of a small form (the schedule's) under its trigger in the row that sends, or over the row on a phone: apart
- * from the menus, which choose and close, where this one is filled in and sent. A press outside it or Escape closes it.
- */
-export function FormPopup({
-  open,
-  onClose,
-  trigger,
-  label,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  trigger: ReactNode;
-  /** The popover's name. */
-  label: string;
-  children: ReactNode;
-}) {
-  const s = popup();
-  const anchor = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e: Event) => {
-      if (!(e.target instanceof Node) || !anchor.current?.contains(e.target)) onClose();
-    };
-    const escape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.isComposing) {
-        e.stopPropagation();
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("pointerdown", away);
-    document.addEventListener("keydown", escape, true);
-    return () => {
-      document.removeEventListener("pointerdown", away);
-      document.removeEventListener("keydown", escape, true);
-    };
-  }, [open, onClose]);
-  return (
-    <span ref={anchor} className={s.anchor()}>
-      {trigger}
-      {open && (
-        <div className={s.panel()} role="dialog" aria-label={label} data-popup="">
-          {children}
-        </div>
-      )}
-    </span>
-  );
 }
 
 /** A value a `ChoiceSelect` offers. */
