@@ -61,7 +61,7 @@ test("the loader reads the list and its timeline; the screen shows its name, mem
   expect(requests).toContain("GET /timelines/list/l1");
   const html = bare(timeline(data, "l1"));
   expect(html).toMatch(
-    />Lists<\/button><\/p><div><h2><span><\/span><bdi>Bread and coffee<\/bdi><span>2 members<\/span><\/h2>/,
+    />Lists<\/button><\/p><div><h2><span><\/span><bdi>Bread and coffee<\/bdi> <span>2 members<\/span><\/h2>/,
   );
   expect(html).toMatch(/role="feed" aria-label="Posts from the list Bread and coffee"/);
   expect(html).toContain("Post p");
