@@ -297,6 +297,18 @@ export {
 } from "./timeline";
 export { followTag, tagQuery, useFollowTag, useTag, type Hashtag } from "./tags";
 export {
+  accountResultsQuery,
+  postResultsQuery,
+  remoteAccountQuery,
+  remoteOf,
+  tagResultsQuery,
+  usePostSearchOffered,
+  useSearch,
+  type Found,
+  type SearchResults,
+} from "./search";
+export { suggestionsQuery, useSuggestions, type Suggestions } from "./suggestions";
+export {
   accountListsQuery,
   followedSearchQuery,
   listLimitOf,

@@ -1,0 +1,34 @@
+{
+  "people.title": {
+    "defaultMessage": "Find people",
+    "description": "The title of the screen of the accounts the server suggests to follow, and of the place that opens it."
+  },
+  "people.suggested": {
+    "defaultMessage": "Suggested for you",
+    "description": "The title of the accounts the server suggests to follow, where they show on another screen (the search before anything is written)."
+  },
+  "people.home": {
+    "defaultMessage": "Your home is empty for now. Follow people to read their posts here.",
+    "description": "In place of the home timeline's posts while it has none (a new account), over the accounts the server suggests to follow."
+  },
+  "people.loading": {
+    "defaultMessage": "Loading suggestions…",
+    "description": "While the suggested accounts load."
+  },
+  "people.failed": {
+    "defaultMessage": "The suggestions could not be loaded.",
+    "description": "When the suggested accounts failed to load; Try again follows it."
+  },
+  "people.empty": {
+    "defaultMessage": "No one to suggest right now. Search for people by name instead.",
+    "description": "In place of the suggested accounts when there are none."
+  },
+  "people.more": {
+    "defaultMessage": "Find more people",
+    "description": "The link under a few suggested accounts that opens the screen of all of them."
+  },
+  "people.retry": {
+    "defaultMessage": "Try again",
+    "description": "The action that reads the suggestions again after they failed."
+  }
+}

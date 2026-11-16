@@ -31,6 +31,10 @@
     "defaultMessage": "検索",
     "description": "The place of the navigation that searches posts, accounts and hashtags."
   },
+  "app.people": {
+    "defaultMessage": "人を探す",
+    "description": "The place of the navigation (in the menu) that opens the accounts the server suggests to follow."
+  },
   "app.profile": {
     "defaultMessage": "プロフィール",
     "description": "The place of the navigation that shows the reader's own profile."

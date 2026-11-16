@@ -331,7 +331,8 @@ export type TextFieldProps = {
   id: string;
   name: string;
   label: string;
-  type?: "text" | "email" | "password" | undefined;
+  /** `search`: a field that finds as it is written (a searchbox). */
+  type?: "text" | "email" | "password" | "search" | undefined;
   /** Left out while an error says the same rule. */
   hint?: string | undefined;
   /** The field's error, right under it; the field takes a line of the text's color. */

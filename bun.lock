@@ -64,6 +64,7 @@
         "react-dom": "19.3.1",
       },
       "devDependencies": {
+        "@my/devtools": "workspace:*",
         "@my/e2e": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
         "@storybook/react-vite": "10.6.7",
