@@ -18,7 +18,8 @@ const field = tv({
     root: "grid gap-form-page-field-gap",
     label: "font-label",
     hint: "m-0 text-caption text-muted-text [word-break:auto-phrase]",
-    box: "relative flex items-center",
+    // A little room under the hint, so that the field and its focus ring stand clear of it.
+    box: "relative mt-screen-air flex items-center",
     glyph: "pointer-events-none absolute start-control-timeline-inline inline-flex text-muted-text",
     input: [
       "box-border h-control-form w-full appearance-none rounded-control border-0 bg-surface-raised font-sans",

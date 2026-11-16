@@ -285,7 +285,14 @@ export function RowList({ label, children }: { label: string; children: ReactNod
   );
 }
 
-const result = tv({ base: "m-0 grid grid-cols-[minmax(0,1fr)] gap-entry-room" });
+const result = tv({
+  base: [
+    // Room above the caption, which sits tight on its rows; the same caption-to-row space for every kind of row, a row
+    // that opens (an `OpenRow`, padded for its hover) drawn up by its padding.
+    "m-0 mt-screen-group-gap grid grid-cols-[minmax(0,1fr)] gap-screen-air",
+    "[&>ul>li:first-child>a]:-mt-screen-row-block",
+  ],
+});
 
 /**
  * One kind of what a screen found (the people of a search), a region named by its heading, muted and small as a
