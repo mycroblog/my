@@ -2,9 +2,9 @@
 
 ## Finding people
 
-"Search" finds accounts: enter `@username@server` or the address of a profile, on this server or on another one. When
-you are signed in, the server looks up an account it does not know yet on its own server; visitors who are not signed in
-only find accounts the server already knows. Some servers do not look up accounts of other servers at all, and then
+"Search" finds people by name or handle, and hashtags; for another server's account, enter `@username@server` or the
+address of its profile. When you are signed in, the server looks up an account it does not know yet on its own server;
+visitors who are not signed in only find accounts the server already knows. Some servers do not look up accounts of other servers at all, and then
 only the accounts they already know are found. The "Posts" tab searches the words of posts when the server offers it;
 it finds public posts, and posts set to "Local" for people who are signed in, and only of
 authors who allow it (authors can opt out in their profile settings).
@@ -82,8 +82,7 @@ A featured hashtag opens that person's posts with the hashtag, newest first, tha
 ("Posts of Alice with #cats"); boosts are not listed. "All posts with #cats" opens the page of the hashtag with
 everyone's posts.
 
-An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
-without a local timeline, "Find people to follow" opens the search.
+While you follow no one, your home timeline shows people the server suggests; "Search" shows them before you type.
 
 ## Private notes
 

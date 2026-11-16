@@ -29,9 +29,9 @@ import {
   RowList,
   ScreenStack,
   ScreenTitle,
+  SearchField,
   StateText,
   TextButton,
-  TextField,
   useLocale,
 } from "@my/design-system";
 import { useId, useRef, useState } from "react";
@@ -124,12 +124,11 @@ export function ListMembers({ id, onBack }: { id: string; onBack: () => void }) 
       >
         {t("timeline.list_members_open")}
       </ScreenTitle>
-      <TextField
+      <SearchField
         id={fieldId}
-        name="find"
         label={t("timeline.list_add")}
         error={refused?.text}
-        autoComplete="off"
+        clearLabel={t("search.clear")}
         onChange={(value) => {
           setQ(value.trim());
         }}

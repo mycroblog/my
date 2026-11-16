@@ -264,7 +264,7 @@ const fakeOf = (parameters: ScreenParameters): Fake => parameters.fake ?? { at: 
  */
 function shows(
   canvas: HTMLElement,
-  { at, state = "normal", failFirst = false, signedOut = false, server = {} }: Fake,
+  { at, state = "normal", failFirst = false, signedOut = false, server = {}, viewer }: Fake,
 ): boolean {
   const has = (selector: string) => canvas.querySelector(selector) !== null;
   const settled = !has('[aria-busy="true"]');
@@ -289,6 +289,8 @@ function shows(
   // The article editor, a screen of its own: its heading, and the article's preview, or why the reader may not write.
   if (at.startsWith("article-") || at.startsWith("/articles/"))
     return settled && has("h1[data-frame-heading]") && (has("article") || server.articles?.authoring === "permission");
+  // The search before anything is written: its field, and the suggestions under it where the server suggests anyone.
+  if (at === "/search" && (state === "normal" || state === "empty")) return settled && has('main input[type="search"]');
   switch (state) {
     case "loading":
       // The shell, with the screen's heading and its own state of waiting (a busy list, or its notice that it loads):
@@ -306,6 +308,12 @@ function shows(
       // a screen of posts, its posts. An account's list of follows, the follow requests and a list's members show their
       // rows, or a line in their place.
       if (at === "/lists") return settled && has('main a[href^="/lists/"]');
+      // Search shows what it found by kind, or one line of none; finding people, its rows or a line.
+      if (at.startsWith("/search?"))
+        return settled && has('main section, main [role="tablist"], main p[role="status"]');
+      if (at === "/people") return settled && has('main a[href^="/@"], main p[role="status"]');
+      // The home of a reader who follows no one shows the suggestions in place of posts.
+      if (at === "/" && viewer === "quickdeals") return settled && has('main a[href^="/@"], main p[role="status"]');
       if (/\/follow(?:ers|ing|_requests)$/.test(at) || at.startsWith("members:"))
         return settled && has('main a[href^="/@"], main p[role="status"]');
       // A list the server has no longer says so, and so does the profile of an account that is not there.

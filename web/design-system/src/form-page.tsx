@@ -222,7 +222,8 @@ const form = tv({
     head: "grid gap-form-page-head-gap [&_p]:m-0",
     title: "m-0 text-title",
     text: "m-0",
-    hint: "m-0 text-caption text-muted-text",
+    // Wrapping between phrases, never inside a word of ja, as a field's error does.
+    hint: "m-0 text-caption text-muted-text [word-break:auto-phrase]",
     form: "m-0 flex flex-col gap-form-page-form-gap",
     field: "grid gap-form-page-field-gap",
     labelLine: "flex items-baseline justify-between gap-form-page-alert-gap",
@@ -331,7 +332,8 @@ export type TextFieldProps = {
   id: string;
   name: string;
   label: string;
-  type?: "text" | "email" | "password" | undefined;
+  /** `search`: a field that finds as it is written (a searchbox). */
+  type?: "text" | "email" | "password" | "search" | undefined;
   /** Left out while an error says the same rule. */
   hint?: string | undefined;
   /** The field's error, right under it; the field takes a line of the text's color. */

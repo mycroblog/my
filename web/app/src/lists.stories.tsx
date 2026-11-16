@@ -133,7 +133,7 @@ export const Deleted: Story = {
     const confirm = await page.findByRole("alertdialog", { name: "Delete the list Bread and coffee?" });
     await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
     await expect(await main.findByRole("heading", { level: 1, name: "Lists" })).toBeVisible();
-    const index = await main.findByRole("navigation", { name: "Your lists" });
+    const index = await main.findByRole("list", { name: "Your lists" });
     await expect(within(index).getByRole("link", { name: /^翻訳の仲間 \d+ members?$/ })).toBeVisible();
     await expect(within(index).queryByRole("link", { name: /^Bread and coffee \d+ members?$/ })).toBeNull();
   },
@@ -159,7 +159,7 @@ export const MembersMinimumWidth: Story = { parameters: screen({ at: "members:2"
 /** Finds `q` among the accounts the reader follows, and adds the first found. */
 async function adding(context: StoryContext, q: string) {
   const { main } = await screenOf(context);
-  await userEvent.type(await main.findByRole("textbox", { name: "Add an account you follow" }), q);
+  await userEvent.type(await main.findByRole("searchbox", { name: "Add an account you follow" }), q);
   const found = await main.findByRole("group", { name: "Add an account you follow" });
   await userEvent.click(await within(found).findByRole("button", { name: "Add" }));
   return { main, found };

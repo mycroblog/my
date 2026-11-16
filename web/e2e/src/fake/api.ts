@@ -80,7 +80,34 @@ const remotePeople: readonly (Person & { movedTo?: string })[] = [
     avatar: portrait([60, 140, 170]),
     movedTo: "sora@photos.example",
   },
+  {
+    // A bakery's account, so that one word ("bak") finds a person, the scenario's #baking and its posts at once.
+    username: "kobo@bread.example",
+    email: "",
+    password: "",
+    displayName: "Bakery Kobo",
+    note: "A small bakery by the station. 駅前の小さなパン屋です。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([200, 150, 90]),
+  },
+  {
+    username: "kiri@far.example",
+    email: "",
+    password: "",
+    displayName: "Kiri 霧",
+    note: "Writes about mountain weather. 山の天気について書いています。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([150, 150, 160]),
+  },
 ];
+
+/**
+ * A person of another server this one has not met yet: no search finds them until a lookup with `resolve` fetched
+ * their account (FR-305), by `@kiri@far.example` or their profile's address.
+ */
+const unmet = "kiri@far.example";
 
 /**
  * A person of this server who deactivated their account, whom the server answers as not there (ADR-0089 §15): a 404,
@@ -205,6 +232,11 @@ export type FakeOptions = {
   approvals?: boolean;
   /** The lists of an account's follows and followers fail (`fails`, a 500) or never answer (`waits`). */
   followsLists?: "fails" | "waits";
+  /**
+   * The search (ADR-0149): `posts` gives the server a search engine, which the instance says and which finds the
+   * public and local posts that hold every word; none by default, as a server without one.
+   */
+  search?: { posts?: boolean };
   /**
    * The most lists the reader may have (the server's 50 by default) and members a list may (1,000): a smaller one shows
    * the server's refusal at its limit (the reader has 3 lists, the first holds 2 accounts).
@@ -402,6 +434,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const idOf = (username: string) => accountId.get(username) ?? "";
   const following = new Set<string>();
   const requested = new Set<string>();
+  /** The people of other servers this one has met by a lookup with `resolve` (`unmet` until then). */
+  const met = new Set<string>();
   for (const f of follows) {
     const edge = `${f.follower}>${f.followee}`;
     if (personOf(f.followee).locked === true && f.accepted !== true) requested.add(edge);
@@ -1496,7 +1530,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     supporter_list_visibility: "off",
     voice_enabled: o.voiceOff !== true,
     voice_room_starters: "everyone",
-    full_text_search: { enabled: true },
+    full_text_search:
+      o.search?.posts === true
+        ? { available: true, visibilities: ["public", "local"] }
+        : { available: false, visibilities: [] },
     translation: {
       browser: o.translation?.browser === true,
       providers: o.translation?.provider === undefined ? [] : [translationProvider],
@@ -1971,17 +2008,24 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       });
     }
     if (path === "/accounts/search") {
-      // As the server finds them (ADR-0092 §1): a username, `username@host` or a word of the display name that starts
-      // with `q`, the blocked and muted left out; the exact username first, then the followed, then the rest.
+      // As the server finds them (ADR-0092 §1, FR-307): a username, `username@host` or a word of the display name that
+      // starts with `q`, and an account of this server whose username or display name holds it; the blocked and muted
+      // left out, and the person of another server it has not met; the exact username first, then the followed, then
+      // the rest.
       const query = (q.get("q") ?? "").replace(/^@/u, "").normalize("NFKC").toLowerCase();
       const limit = Number(q.get("limit") ?? "8");
       const name = (p: Person) => p.displayName.normalize("NFKC").toLowerCase().replace(/:\w+:/gu, "");
       const found = people
         .filter((p) => !blocking.has(`${viewer}>${p.username}`) && !muting.has(`${viewer}>${p.username}`))
-        .filter((p) =>
-          [p.username.includes("@") ? p.username : `${p.username}@${fakeHost}`, name(p), ...name(p).split(/\s+/u)].some(
-            (w) => w.startsWith(query),
-          ),
+        .filter((p) => p.username !== unmet || met.has(unmet))
+        .filter(
+          (p) =>
+            [
+              p.username.includes("@") ? p.username : `${p.username}@${fakeHost}`,
+              name(p),
+              ...name(p).split(/\s+/u),
+            ].some((w) => w.startsWith(query)) ||
+            (!p.username.includes("@") && (p.username.includes(query) || name(p).includes(query))),
         )
         .toSorted(
           (a, b) =>
@@ -2009,9 +2053,61 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return json({ items: found.slice(0, limit) });
     }
     if (path === "/accounts/lookup") {
-      const acct = (q.get("acct") ?? "").replace(new RegExp(`@${fakeHost}$`), "");
-      const found = acct === deactivated ? undefined : people.find((p) => p.username === acct);
+      // A handle, or the address of a profile (`https://host/@user`); the person of another server this one has not
+      // met is found only by `resolve`, which fetches and keeps their account (FR-305).
+      const asked = (q.get("acct") ?? "").replace(/^@/u, "");
+      const profile = /^https?:\/\/([^/]+)\/@([^/@]+)\/?$/u.exec(asked);
+      const handle = profile === null ? asked : `${profile[2] ?? ""}@${profile[1] ?? ""}`;
+      const acct = handle.replace(new RegExp(`@${fakeHost}$`), "");
+      if (acct === unmet && q.get("resolve") === "true") met.add(unmet);
+      const found =
+        acct === deactivated || (acct === unmet && !met.has(unmet))
+          ? undefined
+          : people.find((p) => p.username === acct);
       return found === undefined ? problem(404, "Not Found") : json(fullAccount(found));
+    }
+    if (path === "/statuses/search") {
+      // The public and local posts that hold every word, newest first, where the server has a search engine (ADR-0149).
+      if (o.search?.posts !== true)
+        return json(
+          {
+            type: "/api/v1/problems/search-unavailable",
+            title: "Posts cannot be searched on this server",
+            status: 404,
+          },
+          404,
+        );
+      const words = (q.get("q") ?? "")
+        .normalize("NFKC")
+        .toLowerCase()
+        .split(/\s+/u)
+        .filter((w) => w !== "");
+      const shown = posts
+        .filter((p) => !deleted.has(p.key) && (p.visibility === "public" || p.visibility === "local"))
+        .filter((p) => !hidden(p.author) && visible(p))
+        .filter((p) => words.every((w) => p.text.normalize("NFKC").toLowerCase().includes(w)))
+        .toReversed()
+        .map((p) => statusOf(p));
+      const { from, body } = page(shown, q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if (path === "/accounts/suggestions") {
+      // This server's accounts the reader does not follow, those that posted last first (FR-308); none on a
+      // one-person server.
+      if (o.singleUser === true)
+        return json(
+          { type: "/api/v1/problems/single-user-mode", title: "This is a one-person server", status: 404 },
+          404,
+        );
+      const lastPost = (username: string) => posts.findLastIndex((p) => p.author === username);
+      const suggested = people
+        .filter((p) => !p.username.includes("@") && p.username !== viewer && p.username !== deactivated)
+        .filter((p) => !follows_(viewer, p.username) && !requested.has(`${viewer}>${p.username}`))
+        .filter((p) => !blocking.has(`${viewer}>${p.username}`) && !muting.has(`${viewer}>${p.username}`))
+        .toSorted((a, b) => lastPost(b.username) - lastPost(a.username))
+        .map((p) => ({ source: "recently_active", account: accountOf(p.username) }));
+      return json({ items: suggested });
     }
     if (path === "/accounts/relationships") return json({ items: q.getAll("id").map(relationshipOf) });
     if ((match = m(/^\/accounts\/([^/]+)$/))) {

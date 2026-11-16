@@ -31,6 +31,10 @@
     "defaultMessage": "Search",
     "description": "The place of the navigation that searches posts, accounts and hashtags."
   },
+  "app.people": {
+    "defaultMessage": "Find people",
+    "description": "The place of the navigation (in the menu) that opens the accounts the server suggests to follow."
+  },
   "app.profile": {
     "defaultMessage": "Profile",
     "description": "The place of the navigation that shows the reader's own profile."

@@ -39,9 +39,12 @@ const PlaceContext = createContext<Place>("side");
 const frame = tv({
   slots: {
     // On a phone, `--shell-call` is the room the call's bar takes above the tab bar while there is one.
+    // On a phone, the page's scroller keeps what it scrolls into view (the focus, a match of find in page) clear of the
+    // dock: its scroll padding at the end is `--shell-dock`, the height the dock covers (useDockHeight).
     root: [
       "box-border min-h-dvh bg-surface font-sans text-text [body:has(&)]:m-0 [html:has(&)]:bg-surface",
       "[--shell-call:0rem] has-[[data-frame-call]]:[--shell-call:var(--shell-call-bar)]",
+      "max-tablet:[html:has(&)]:scroll-pb-[var(--shell-dock,calc(var(--shell-bar)+var(--shell-call)))]",
       "tablet:flex tablet:justify-center tablet:gap-shell-gap tablet:px-shell-edge desktop:gap-shell-gap-wide",
     ],
     // The rail and the column beside the main one scroll with the page, with no scrollbar of their own (useAlong).
@@ -50,9 +53,12 @@ const frame = tv({
       "tablet:flex-col tablet:gap-shell-edge tablet:self-start tablet:pt-shell-inset tablet:pb-shell-edge",
       "desktop:w-shell-sidebar",
     ],
-    // The main column is the screen a change of screen moves (motion.tsx); the fixed bars stay over it.
+    // The main column is the screen a change of screen moves (motion.tsx); the fixed bars stay over it. On a phone, its
+    // end clears all the dock covers, the floating action too, so that what ends the screen (a post's More) can scroll
+    // out from under it.
     main: [
-      "box-border min-w-0 px-shell-edge pt-shell-gap pb-[calc(var(--shell-bar)+var(--shell-call)+var(--shell-end))]",
+      "box-border min-w-0 px-shell-edge pt-shell-gap",
+      "pb-[max(calc(var(--shell-bar)+var(--shell-call)+var(--shell-end)),var(--shell-dock,0px))]",
       "[view-transition-name:screen]",
       "tablet:shrink tablet:grow-0 tablet:basis-[var(--shell-column)] tablet:px-0 tablet:pb-shell-end",
     ],
@@ -210,6 +216,37 @@ function along(el: HTMLElement): () => void {
   };
 }
 
+/**
+ * Keeps `--shell-dock` on the document the height the dock covers at the bottom of the viewport on a phone, from the
+ * top of the floating action (or of the bars, where no action floats) to the viewport's end: the tab bar's labels wrap
+ * at a narrow width, so the bars' tokens alone do not tell it. It is unset while neither shows (from `tablet`).
+ */
+function useDockHeight(
+  float: RefObject<HTMLElement | null>,
+  bars: RefObject<HTMLElement | null>,
+  floats: boolean,
+): void {
+  useEffect(() => {
+    const root = document.documentElement;
+    const measure = () => {
+      const top = [float.current, bars.current]
+        .filter((el): el is HTMLElement => el !== null && el.offsetHeight > 0)
+        .map((el) => el.getBoundingClientRect().top);
+      if (top.length === 0) root.style.removeProperty("--shell-dock");
+      else root.style.setProperty("--shell-dock", `${String(Math.ceil(window.innerHeight - Math.min(...top)))}px`);
+    };
+    const sizes = new ResizeObserver(measure);
+    for (const el of [float.current, bars.current]) if (el !== null) sizes.observe(el);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => {
+      sizes.disconnect();
+      window.removeEventListener("resize", measure);
+      root.style.removeProperty("--shell-dock");
+    };
+  }, [float, bars, floats]);
+}
+
 /** The frame of every screen of the app, which holds its regions. */
 export function Frame({ children }: { children: ReactNode }) {
   return <div className={frame().root()}>{children}</div>;
@@ -248,15 +285,18 @@ export function FrameDock({
   toasts?: ReactNode;
 }) {
   const s = frame();
+  const floatRef = useRef<HTMLDivElement>(null);
+  const barsRef = useRef<HTMLDivElement>(null);
+  useDockHeight(floatRef, barsRef, action !== undefined);
   return (
     <div className={s.dock()}>
       <div className={s.toasts()}>{toasts}</div>
       {action !== undefined && (
-        <div className={s.float()}>
+        <div ref={floatRef} className={s.float()}>
           <PlaceContext value="float">{action}</PlaceContext>
         </div>
       )}
-      <div className={s.bars()}>
+      <div ref={barsRef} className={s.bars()}>
         {call !== undefined && <PlaceContext value="dock">{call}</PlaceContext>}
         <nav className={s.tabs()} aria-label={label}>
           <PlaceContext value="tabs">{tabs}</PlaceContext>
