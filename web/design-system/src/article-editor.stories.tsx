@@ -462,7 +462,7 @@ function Article({ state }: { state: State }) {
           {!editing && <IconButton icon="public" label={w.visibility} />}
           <IconButton icon="hidden" label={w.sensitive} />
           {!editing && <IconButton icon="schedule" label={w.schedule} pressed={state === "scheduled"} />}
-          <ToolText label={w.language} expanded={false} onPress={() => undefined} short={lang.toUpperCase()}>
+          <ToolText label={w.language} short={lang.toUpperCase()}>
             {w.languageName}
           </ToolText>
         </>

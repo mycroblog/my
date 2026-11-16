@@ -30,6 +30,7 @@ import {
   IconCalendarEventFilled,
   IconCalendarTime,
   IconChartBar,
+  IconCheck,
   IconChecks,
   IconChevronDown,
   IconChevronLeft,
@@ -226,6 +227,8 @@ export const icons = {
   // Whether something is in a set the reader keeps (an account in one of their lists): a box, filled and checked when
   // it is, so that on differs from off by shape.
   included: { off: IconSquare, on: IconSquareCheckFilled },
+  // The value chosen among a menu's (a visibility), at the item's end.
+  chosen: { off: IconCheck },
   // The accounts in a list: people, apart from followers' lock.
   members: { off: IconUsers },
   // Marking every notification read: two checks.

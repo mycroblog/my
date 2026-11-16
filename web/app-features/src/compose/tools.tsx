@@ -5,7 +5,16 @@
 // written in, by the language's name in its own words.
 
 import { languageName } from "@my/app-components";
-import { ChoiceGroup, ChoicePopup, localInput, readerZone, ScheduleForm, ToolText } from "@my/design-system";
+import {
+  FormPopup,
+  localInput,
+  MenuGroup,
+  MenuItem,
+  MenuSurface,
+  readerZone,
+  ScheduleForm,
+  ToolText,
+} from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import type { stringsIn } from "../locale";
 
@@ -59,7 +68,7 @@ export function Schedule({
   const [value, setValue] = useState(() => localInput(at === undefined ? nextHour() : new Date(at)));
   const error = scheduleProblem(value, limits, t);
   return (
-    <ChoicePopup
+    <FormPopup
       open={open}
       onClose={() => {
         setOpen(false);
@@ -97,7 +106,7 @@ export function Schedule({
               }
         }
       />
-    </ChoicePopup>
+    </FormPopup>
   );
 }
 
@@ -136,36 +145,28 @@ export function Language({
   );
   const shown = current === "" ? lang : current;
   return (
-    <ChoicePopup
+    <MenuSurface
       open={open}
-      onClose={() => {
-        setOpen(false);
-      }}
+      onOpenChange={setOpen}
       label={t("compose.language")}
-      end
+      placement="bottom end"
       trigger={
         <ToolText
           label={t("compose.language.tool", { language: ownName(shown) })}
           lang={shown}
           short={shown.split("-")[0]?.toUpperCase()}
-          expanded={open}
-          onPress={() => {
-            setOpen(!open);
-          }}
         >
           {ownName(shown)}
         </ToolText>
       }
     >
-      <ChoiceGroup
-        title={t("compose.language")}
-        items={tags.map((tag) => ({ id: tag, icon: "translate" as const, label: ownName(tag) }))}
-        chosen={shown}
-        onChoose={(language) => {
-          onChoose(language);
-          setOpen(false);
-        }}
-      />
-    </ChoicePopup>
+      <MenuGroup chosen={shown} onChoose={onChoose}>
+        {tags.map((tag) => (
+          <MenuItem key={tag} id={tag} icon="translate">
+            {ownName(tag)}
+          </MenuItem>
+        ))}
+      </MenuGroup>
+    </MenuSurface>
   );
 }

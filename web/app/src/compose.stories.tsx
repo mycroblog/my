@@ -19,7 +19,7 @@ import {
   type ComposeSpecimen,
   type ComposeTarget,
 } from "@my/app-features";
-import { useLocale } from "@my/design-system";
+import { MenuSheet, useLocale } from "@my/design-system";
 import { images } from "@my/design-system/samples";
 import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
@@ -434,8 +434,9 @@ const states = {
 type StateId = keyof typeof states;
 
 /**
- * One state of the composer in the flow of the page; `text`, when given, is the text written in it. Its emoji picker
- * opens in a sheet on a phone's viewport, as the shell decides, or with `pickerSheet`; else in a popover.
+ * One state of the composer in the flow of the page; `text`, when given, is the text written in it. Its menus and its
+ * emoji picker open in a sheet on a phone's viewport, as the shell decides, the picker also with `pickerSheet`; else in
+ * a popover.
  */
 function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string; pickerSheet?: boolean | undefined }) {
   const { locale } = useLocale();
@@ -459,17 +460,19 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
         };
   return (
     <AppDataProvider data={data}>
-      <div style={{ maxInlineSize: "37.5rem", marginInline: "auto" }}>
-        <ComposeLayer
-          target={target}
-          initial={initial}
-          inline
-          pickerSheet={pickerSheet || narrow}
-          specimen={specimen}
-          onOpen={() => undefined}
-          onClose={() => undefined}
-        />
-      </div>
+      <MenuSheet sheet={narrow}>
+        <div style={{ maxInlineSize: "37.5rem", marginInline: "auto" }}>
+          <ComposeLayer
+            target={target}
+            initial={initial}
+            inline
+            pickerSheet={pickerSheet || narrow}
+            specimen={specimen}
+            onOpen={() => undefined}
+            onClose={() => undefined}
+          />
+        </div>
+      </MenuSheet>
     </AppDataProvider>
   );
 }
@@ -504,6 +507,13 @@ const settle = async ({ canvasElement, parameters }: StoryContext) => {
       const ready = canvasElement.querySelector(field) !== null;
       if (!ready || !canvasElement.textContent.includes(of))
         throw new Error(`the composer does not show its ${state} state yet`);
+      // A state with a menu open (a sheet on a phone) waits until it has risen into place.
+      const menu = canvasElement.ownerDocument.querySelector('[role="menu"]');
+      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
+          throw new Error("the menu is still rising");
+      }
     },
     { timeout: 5000 },
   );

@@ -802,5 +802,9 @@
   "compose.in_place.send_to": {
     "defaultMessage": "Send to {names}",
     "description": "The name of the button that sends the reply in place, for assistive technology, apart from every post's Reply; it starts with, or holds, the button's visible word (compose.in_place.send). names lists the conversation's other people."
+  },
+  "compose.audience_menu": {
+    "defaultMessage": "Who can see and reply",
+    "description": "The name of the composer's audience menu, over its two items: who can see the post, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
   }
 }

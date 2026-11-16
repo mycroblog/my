@@ -50,6 +50,8 @@ export const NoteEditing: Story = {
   parameters: screen({ at: other, server: { notes: { sam: note } } }),
   play: plays.noteEditing,
 };
+/** The profile's menu left open: a sheet on a phone, a popover from a tablet. */
+export const MenuOpen: Story = { parameters: screen({ at: other }), play: plays.menuOpen };
 export const BlockConfirm: Story = { parameters: screen({ at: other }), play: plays.blockConfirm };
 export const RemoveFollowerConfirm: Story = { parameters: screen({ at: remote }), play: plays.removeFollowerConfirm };
 export const PostMenuOfAnother: Story = { parameters: screen({ at: "/" }), play: plays.postMenuOpen };

@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AttachmentRow, CharCount, ChoiceGroup, ComposerFrame, ComposerText, PollOption, UndoNotice } from "./composer";
+import { AttachmentRow, CharCount, ComposerFrame, ComposerText, PollOption, UndoNotice } from "./composer";
 
 const none = () => undefined;
 
@@ -95,23 +95,6 @@ test("a poll's option is headed by a radio's ring, or a checkbox's square with s
     renderToStaticMarkup(<PollOption value="" onChange={none} label="Option 1" multiple={multiple} maxLength={50} />);
   expect(option(false)).toContain("rounded-full");
   expect(option(true)).toContain("rounded-[3px]");
-});
-
-test("a group of choices marks the chosen one, and a choice that may not be made is disabled", () => {
-  const html = renderToStaticMarkup(
-    <ChoiceGroup
-      title="Who can see it"
-      items={[
-        { id: "public", icon: "public", label: "Public" },
-        { id: "local", icon: "local", label: "Local", disabled: true },
-      ]}
-      chosen="public"
-      onChoose={none}
-    />,
-  );
-  expect(html).toContain('role="radiogroup" aria-label="Who can see it"');
-  expect(html).toMatch(/role="radio" aria-checked="true"[^>]*>.*Public/);
-  expect(html).toMatch(/role="radio" aria-checked="false" disabled=""/);
 });
 
 test("the notice of a discarded post is a status with its action", () => {

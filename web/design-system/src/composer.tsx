@@ -4,9 +4,9 @@
 // the dimmed page from `tablet` and a screen of its own on a phone (where the app asks for one), whose row with the
 // action stays right above the software keyboard; the text with its count, and the content warning, each around its
 // editor (editor.tsx, loaded lazily); the replied or quoted post above the text; the images as rows of a thumbnail and its
-// description; the poll as a raised card whose options are headed by the mark they will be answered with; the popovers
-// of choices, whose groups stand apart under their captions, one opening another as a submenu; and the notice of a
-// discarded post with its Undo. Its head may hold more before close, and a line over the row may say how the post is
+// description; the poll as a raised card whose options are headed by the mark they will be answered with, its duration
+// a select that opens the one menu (menu.tsx); the popover of the schedule's form; and the notice of a discarded post
+// with its Undo. Its head may hold more before close, and a line over the row may say how the post is
 // sent (when it is scheduled for); with neither tools nor an action (the drafts), it has no row. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
 // press on the backdrop (`onDismiss`, by accident), and neither while what was written is sent (`busy`). Every word is
 // the caller's.
@@ -15,14 +15,15 @@
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Dialog, Heading } from "react-aria-components";
+import { Suspense, useEffect, useId, useRef, type ReactNode } from "react";
+import { Button as AriaButton, Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
+import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { ModalLayer } from "./modal";
 import { PollMark } from "./poll";
 
@@ -643,44 +644,27 @@ export function PollSettings({ children }: { children: ReactNode }) {
 const popup = tv({
   slots: {
     anchor: "relative inline-flex max-tablet:static",
+    // Under its trigger from `tablet`, into the page below, which scrolls to it; over the row on a phone, spanning the
+    // composer, above the keyboard.
     panel: [
       "absolute start-0 top-[calc(100%+0.25rem)] z-5 box-border grid w-max content-start gap-menu-group-gap",
       "max-h-[min(var(--composer-pop-height),70dvh)] max-w-[min(var(--composer-pop-width),calc(100vw-2rem))]",
       "overflow-y-auto rounded-overlay bg-surface p-menu-padding shadow-overlay",
+      "max-tablet:inset-x-0 max-tablet:top-auto max-tablet:bottom-[calc(100%+0.25rem)] max-tablet:w-auto",
+      "max-tablet:max-h-[min(var(--composer-pop-height-phone),60dvh)] max-tablet:max-w-none",
     ],
-  },
-  variants: {
-    // In the row above the keyboard: over the row on a phone, spanning the composer; under its trigger from `tablet`,
-    // into the page below, which scrolls to it. Elsewhere (in the poll): under its trigger at every width.
-    place: {
-      row: {
-        panel: [
-          "max-tablet:inset-x-0 max-tablet:top-auto max-tablet:bottom-[calc(100%+0.25rem)] max-tablet:w-auto",
-          "max-tablet:max-h-[min(var(--composer-pop-height-phone),60dvh)] max-tablet:max-w-none",
-        ],
-      },
-      below: { anchor: "max-tablet:relative" },
-    },
-    end: { true: { panel: "tablet:start-auto tablet:end-0" } },
-    // A menu with submenus keeps one width at every level from `tablet`, the widest its values take, so that it does
-    // not change size as the reader goes in and back, and an item's › keeps its place at the end.
-    steady: { true: { panel: "tablet:w-[min(var(--composer-pop-width),calc(100vw-2rem))]" } },
   },
 });
 
 /**
- * A popover of choices under (or, in the row on a phone, over) its trigger: a press outside it or Escape closes it.
- * `end` lines it up with the trigger's end, for a trigger at the row's end; `steady` keeps one width for a menu with
- * submenus (the audience's).
+ * A popover of a small form (the schedule's) under its trigger in the row that sends, or over the row on a phone: apart
+ * from the menus, which choose and close, where this one is filled in and sent. A press outside it or Escape closes it.
  */
-export function ChoicePopup({
+export function FormPopup({
   open,
   onClose,
   trigger,
   label,
-  place = "row",
-  end = false,
-  steady = false,
   children,
 }: {
   open: boolean;
@@ -688,12 +672,9 @@ export function ChoicePopup({
   trigger: ReactNode;
   /** The popover's name. */
   label: string;
-  place?: "row" | "below" | undefined;
-  end?: boolean | undefined;
-  steady?: boolean | undefined;
   children: ReactNode;
 }) {
-  const s = popup({ place, end, steady });
+  const s = popup();
   const anchor = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -726,224 +707,24 @@ export function ChoicePopup({
   );
 }
 
-const choice = tv({
-  slots: {
-    group: "grid",
-    title: "m-0 px-control-timeline-inline py-menu-padding text-caption text-muted-text",
-    item: [
-      "flex cursor-pointer items-start gap-menu-icon-gap rounded-control border-0 bg-transparent py-[0.375rem]",
-      "px-control-timeline-inline text-start font-sans text-body text-text outline-hidden",
-      "enabled:hover:bg-surface-raised focus-visible:shadow-focus-inset aria-checked:bg-surface-raised",
-      "disabled:cursor-not-allowed disabled:opacity-disabled",
-    ],
-    glyph: "inline-flex pt-[0.125rem] text-muted-text",
-    text: "grid flex-1",
-    label: "[[aria-checked=true]_&]:font-label",
-    // A value that wraps breaks between phrases, never inside a word of ja (承認).
-    about: "text-caption text-muted-text [word-break:auto-phrase]",
-    // The › at the item's end, apart from its text, centred on the item however many lines it takes.
-    opens: "inline-flex shrink-0 self-center text-muted-text",
-  },
-  variants: {
-    // A group of another kind of setting (the interactions after the visibilities): a rule above its caption.
-    apart: { true: { group: "border-0 border-t border-solid border-surface-raised-hover pt-menu-group-gap" } },
-    back: { true: { item: "items-center", glyph: "pt-0", label: "font-label" } },
-  },
-});
-
+/** A value a `ChoiceSelect` offers. */
 export type Choice<T extends string> = {
   id: T;
   icon: IconName;
   label: string;
-  /** A line about it, under its label. */
-  about?: string | undefined;
-  disabled?: boolean | undefined;
 };
-
-/**
- * A group of choices under its caption, the chosen one marked; a note under them says why one cannot be chosen.
- * Without the caption (`captioned` false) where the head of its panel says the same, the title naming it for assistive
- * technology alone.
- */
-export function ChoiceGroup<T extends string>({
-  title,
-  items,
-  chosen,
-  onChoose,
-  note,
-  apart = false,
-  captioned = true,
-}: {
-  title: string;
-  items: readonly Choice<T>[];
-  chosen: T;
-  onChoose: (id: T) => void;
-  note?: string | undefined;
-  apart?: boolean | undefined;
-  captioned?: boolean | undefined;
-}) {
-  const s = choice({ apart });
-  return (
-    <div className={s.group()} role="radiogroup" aria-label={title}>
-      {captioned && <p className={s.title()}>{title}</p>}
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          role="radio"
-          aria-checked={item.id === chosen}
-          disabled={item.disabled}
-          className={s.item()}
-          onClick={() => {
-            onChoose(item.id);
-          }}
-        >
-          <span className={s.glyph()}>
-            <Icon name={item.icon} place="action" />
-          </span>
-          <span className={s.text()}>
-            <span className={s.label()}>{item.label}</span>
-            {item.about !== undefined && <span className={s.about()}>{item.about}</span>}
-          </span>
-        </button>
-      ))}
-      {note !== undefined && <p className={`${s.title()} max-w-[16rem]`}>{note}</p>}
-    </div>
-  );
-}
-
-/**
- * A group of items of another kind under its caption, apart from the groups before it by a rule; without the caption
- * (`captioned` false) where its one item says the same, the title naming it for assistive technology alone.
- */
-export function ChoiceSection({
-  title,
-  captioned = true,
-  children,
-}: {
-  title: string;
-  captioned?: boolean | undefined;
-  children: ReactNode;
-}) {
-  const s = choice({ apart: true });
-  return (
-    <div className={s.group()} role="group" aria-label={title}>
-      {captioned && <p className={s.title()}>{title}</p>}
-      {children}
-    </div>
-  );
-}
-
-/**
- * An item that opens another panel of the popover (a submenu): a glyph, its label, what it holds now when it says it,
- * and ›.
- */
-export function ChoiceOpens({
-  icon,
-  label,
-  now,
-  onPress,
-}: {
-  icon: IconName;
-  label: string;
-  now?: string | undefined;
-  onPress: () => void;
-}) {
-  const s = choice();
-  return (
-    <button type="button" className={s.item()} onClick={onPress}>
-      <span className={s.glyph()}>
-        <Icon name={icon} place="action" />
-      </span>
-      <span className={s.text()}>
-        <span className={s.label()}>{label}</span>
-        {now !== undefined && <span className={s.about()}>{now}</span>}
-      </span>
-      <span className={s.opens()} aria-hidden="true">
-        <Icon name="onward" place="action" />
-      </span>
-    </button>
-  );
-}
-
-const check = tv({
-  slots: {
-    item: [
-      "flex cursor-pointer items-start gap-menu-icon-gap rounded-control border-0 bg-transparent py-[0.375rem]",
-      "px-control-timeline-inline text-start font-sans text-body text-text outline-hidden",
-      "hover:bg-surface-raised focus-visible:shadow-focus-inset",
-    ],
-    // The mark in the glyphs' column: the poll's square (poll.tsx), muted, a check in it while on, never filled, so
-    // that it stays quieter than the chosen item above it.
-    glyph: "inline-flex h-[1lh] min-w-icon-action shrink-0 items-center justify-center",
-    // A label that wraps breaks between phrases, never inside a word of ja (する), in lines of even length.
-    label: "min-w-0 flex-1 [word-break:auto-phrase] text-balance",
-    mark: [
-      "box-border grid size-form-page-check place-items-center rounded-[3px] border-[length:var(--composer-mark-line)]",
-      "border-solid border-muted-text text-text",
-    ],
-  },
-});
-
-/** A setting of the popover that is on or off (under a group of choices it qualifies): its mark and its label. */
-export function ChoiceCheck({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  const s = check();
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      className={s.item()}
-      onClick={() => {
-        onChange(!checked);
-      }}
-    >
-      <span className={s.glyph()}>
-        <span className={s.mark()} aria-hidden="true">
-          {checked && (
-            <svg viewBox="0 0 12 12" className="size-[0.75rem]" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M2.5 6.25 L5 8.75 L9.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </span>
-      </span>
-      <span className={s.label()}>{label}</span>
-    </button>
-  );
-}
-
-/** The head of a submenu: back to the panel it opened from, under the submenu's name. */
-export function ChoiceBack({ label, onPress }: { label: string; onPress: () => void }) {
-  const s = choice({ back: true });
-  return (
-    <button type="button" className={s.item()} onClick={onPress}>
-      <span className={s.glyph()}>
-        <Icon name="back" place="action" />
-      </span>
-      <span className={s.label()}>{label}</span>
-    </button>
-  );
-}
 
 const select = tv({
   base: [
     "inline-flex h-control-timeline cursor-pointer items-center gap-entry-caption rounded-control border-0 bg-surface",
     "px-control-timeline-inline font-sans text-body text-text outline-hidden [&>svg]:text-muted-text",
-    "hover:bg-surface-hover active:bg-surface-pressed focus-visible:shadow-focus",
+    "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus",
   ],
 });
 
 /**
- * A control that opens a list of choices, as a select reads (a poll's duration): on the fields' surface, its glyph,
- * what it holds now and a chevron; the choices open under it.
+ * A control that opens a menu of choices, as a select reads (a poll's duration): on the fields' surface, its glyph,
+ * what it holds now and a chevron; the menu opens under it, the chosen one checked, and a choice closes it.
  */
 export function ChoiceSelect<T extends string>({
   label,
@@ -962,53 +743,43 @@ export function ChoiceSelect<T extends string>({
   chosen: T;
   onChoose: (id: T) => void;
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <ChoicePopup
-      open={open}
-      onClose={() => {
-        setOpen(false);
-      }}
+    <MenuSurface
       label={label}
-      place="below"
+      placement="bottom start"
       trigger={
-        <button
-          type="button"
-          className={select()}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          onClick={() => {
-            setOpen((o) => !o);
-          }}
-        >
+        <AriaButton className={select()}>
           <Icon name={icon} place="caption" />
           <span>{value}</span>
           <Icon name="expand" place="caption" />
-        </button>
+        </AriaButton>
       }
     >
-      <ChoiceGroup
-        title={label}
-        items={items}
+      <MenuGroup
         chosen={chosen}
         onChoose={(id) => {
-          onChoose(id);
-          setOpen(false);
+          const item = items.find((i) => i.id === id);
+          if (item) onChoose(item.id);
         }}
-      />
-    </ChoicePopup>
+      >
+        {items.map((item) => (
+          <MenuItem key={item.id} id={item.id} icon={item.icon}>
+            {item.label}
+          </MenuItem>
+        ))}
+      </MenuGroup>
+    </MenuSurface>
   );
 }
 
 /**
- * A tool of the row that names what it holds in words (the language), muted at the caption's size; on the narrowest
- * phones (under 360 px) it names it by `short` (EN), so that the row keeps its tools and Post on one line.
+ * A tool of the row that names what it holds in words (the language), muted at the caption's size, the trigger of its
+ * menu (`MenuSurface`); on the narrowest phones (under 360 px) it names it by `short` (EN), so that the row keeps its
+ * tools and Post on one line.
  */
 export function ToolText({
   label,
   lang,
-  expanded,
-  onPress,
   short,
   children,
 }: {
@@ -1018,12 +789,10 @@ export function ToolText({
   label: string;
   /** The language of its words. */
   lang?: string | undefined;
-  expanded: boolean;
-  onPress: () => void;
   children: string;
 }) {
   return (
-    <Button kind="quiet" size="timeline" aria-haspopup="dialog" aria-expanded={expanded} onPress={onPress}>
+    <Button kind="quiet" size="timeline">
       {/* Its name is the label alone, read in place of its words, which may be the short tag. */}
       <span className="sr-only">{label}</span>
       <span className="text-caption font-label text-muted-text" lang={lang} aria-hidden="true">

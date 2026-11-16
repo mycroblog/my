@@ -24,17 +24,12 @@ export {
   AttachmentList,
   AttachmentRow,
   CharCount,
-  ChoiceBack,
-  ChoiceCheck,
-  ChoiceGroup,
-  ChoiceOpens,
-  ChoicePopup,
-  ChoiceSection,
   ChoiceSelect,
   ComposerFrame,
   ComposerQuote,
   ComposerReply,
   ComposerText,
+  FormPopup,
   PollCard,
   PollOption,
   PollOptions,
@@ -207,7 +202,17 @@ export {
   type ScreenTitleProps,
   type TabRowProps,
 } from "./list";
-export { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
+export {
+  MenuButton,
+  MenuGroup,
+  MenuHead,
+  MenuItem,
+  MenuPanel,
+  MenuSheet,
+  MenuSurface,
+  type MenuPlacement,
+  type MenuSurfaceProps,
+} from "./menu";
 export {
   PollBox,
   PollChoices,

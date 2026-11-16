@@ -500,22 +500,28 @@ const postOf = (a: Args): TimelinePost => {
 const fixed = { parameters: { controls: { disable: true } } };
 
 /**
- * Waits until the dialog open over the post has moved in (it rises in by Motion, translucent until then), so that the
- * story tests check it as the reader sees it.
+ * Waits until the layer open over the post that `selector` finds (a dialog, a menu's sheet) has moved in (it rises in
+ * by Motion, translucent until then), so that the story tests check it as the reader sees it.
  */
-const dialogShown = async ({ canvasElement }: StoryContext) => {
-  const shown = () => {
-    const dialog = canvasElement.ownerDocument.querySelector('[role="dialog"], [role="alertdialog"]');
-    for (let e: Element | null = dialog; e !== null; e = e.parentElement)
-      if (getComputedStyle(e).opacity !== "1") return false;
-    return dialog !== null;
+const shownBy =
+  (selector: string) =>
+  async ({ canvasElement }: StoryContext) => {
+    const shown = () => {
+      const layer = canvasElement.ownerDocument.querySelector(selector);
+      for (let e: Element | null = layer; e !== null; e = e.parentElement) {
+        const style = getComputedStyle(e);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform)) return false;
+      }
+      return layer !== null;
+    };
+    for (const until = Date.now() + 5000; !shown();) {
+      if (Date.now() > until) throw new Error("the layer did not move in");
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
   };
-  for (const until = Date.now() + 5000; !shown();) {
-    if (Date.now() > until) throw new Error("the dialog did not move in");
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-};
-const overPost = { ...fixed, play: dialogShown };
+const overPost = { ...fixed, play: shownBy('[role="dialog"], [role="alertdialog"]') };
+/** The more menu open, once it has risen in (a sheet on a phone) or shows (a popover). */
+const menuOver = { ...fixed, play: shownBy('[role="menu"]') };
 
 // Tagged `themes`: the story tests run it in dark too.
 const meta = {
@@ -626,9 +632,9 @@ export const FocusVisible: Story = {
   render: () => <Shown post={byId("alice-reply")} state="focus-visible" />,
 };
 /** The more menu of the reader's own post: its link and sharing, the bookmark, edit, then delete and redraft apart. */
-export const OwnMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("own")} /> };
+export const OwnMenu: Story = { ...menuOver, render: () => <MenuOpen post={byId("own")} /> };
 /** The more menu of another's post from another server: its link, its original page, sharing, the bookmark. */
-export const OthersMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("lena-quiet")} /> };
+export const OthersMenu: Story = { ...menuOver, render: () => <MenuOpen post={byId("lena-quiet")} /> };
 /** The confirmation of Delete…, over the post. */
 export const DeleteConfirmation: Story = { ...overPost, render: () => <EditedOwn open="delete" /> };
 /** The confirmation of Delete and redraft…, over the post. */
@@ -636,7 +642,7 @@ export const RedraftConfirmation: Story = { ...overPost, render: () => <EditedOw
 /** The confirmation of Delete and redraft… of the reader's post with a poll, whose votes it loses. */
 export const RedraftPollConfirmation: Story = { ...overPost, render: () => <Shown post={ownPoll} open="redraft" /> };
 /** The more menu of the reader's post with a poll: no edit, which the server refuses for a poll. */
-export const OwnPollMenu: Story = { ...fixed, render: () => <MenuOpen post={ownPoll} /> };
+export const OwnPollMenu: Story = { ...menuOver, render: () => <MenuOpen post={ownPoll} /> };
 /** Edited posts, one's own and another's, "edited" after their time, beside one never edited. */
 export const Edited: Story = { ...fixed, render: () => <EditedPosts /> };
 /**

@@ -38,11 +38,13 @@ export function ServerFooter({ instance }: { instance: Instance | undefined }) {
     <FrameFooter
       label={t("app.footer")}
       links={[
-        { href: "/about", label: t("app.footer_about") },
-        ...(instance?.terms_url === undefined ? [] : [{ href: instance.terms_url, label: t("app.footer_terms") }]),
+        { href: "/about", label: t("app.footer_about"), icon: "about" },
+        ...(instance?.terms_url === undefined
+          ? []
+          : [{ href: instance.terms_url, label: t("app.footer_terms"), icon: "file" as const }]),
         ...(instance?.privacy_policy_url === undefined
           ? []
-          : [{ href: instance.privacy_policy_url, label: t("app.footer_privacy") }]),
+          : [{ href: instance.privacy_policy_url, label: t("app.footer_privacy"), icon: "file" as const }]),
       ]}
     />
   );

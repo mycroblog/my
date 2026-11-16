@@ -5,7 +5,8 @@
 // toolbar's, and its locale, whose direction the parts read from the I18nProvider and <html>
 // carries; ar-XB, the pseudo-locale made from en, reads from right to left. The toolbar switches both, and the viewport
 // among the device sizes of @my/devtools/sizes (ADR-0169 §1) and the minimum width every page must fit (ADR-0110 §10).
-// A component's story runs under the shortcuts of the app's keymap, in the system's sans; a screen's story
+// A component's story runs under the shortcuts of the app's keymap, its menus shown as the app shows them by the
+// viewport (a sheet on a phone, a popover from `tablet`), in the system's sans; a screen's story
 // (`parameters.screen`) is the whole app, which places its own. The loader asks @my/platform whether the browser runs
 // view transitions, which a story of the design system cannot ask itself (ADR-0028 §17).
 //
@@ -18,12 +19,12 @@ import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import "./preview.css";
 import { keymap } from "@my/app";
-import { I18nProvider, ShortcutProvider, useLocale } from "@my/design-system";
-import { fontFamily } from "@my/design-tokens";
+import { I18nProvider, MenuSheet, ShortcutProvider, useLocale } from "@my/design-system";
+import { breakpoint, fontFamily } from "@my/design-tokens";
 import { sizes } from "@my/devtools/sizes";
 import { namesCommandKey, supportsViewTransitions } from "@my/platform";
 import type { Decorator, Preview } from "@storybook/react-vite";
-import { useLayoutEffect, type ReactNode } from "react";
+import { useLayoutEffect, useSyncExternalStore, type ReactNode } from "react";
 
 const locales = ["en", "ja", "ar-XB"] as const;
 const themes = ["light", "dark"] as const;
@@ -50,6 +51,25 @@ function Html({ children }: { children: ReactNode }) {
   return children;
 }
 
+const phone = `(width < ${String(breakpoint.tablet)}rem)`;
+const subscribePhone = (listener: () => void) => {
+  const list = window.matchMedia(phone);
+  list.addEventListener("change", listener);
+  return () => {
+    list.removeEventListener("change", listener);
+  };
+};
+
+/** Shows the menus as the app does: a sheet on a phone's viewport, a popover from `tablet`. */
+function Menus({ children }: { children: ReactNode }) {
+  const sheet = useSyncExternalStore(
+    subscribePhone,
+    () => window.matchMedia(phone).matches,
+    () => false,
+  );
+  return <MenuSheet sheet={sheet}>{children}</MenuSheet>;
+}
+
 function Theme({ theme, children }: { theme: string; children: ReactNode }) {
   useLayoutEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -68,9 +88,11 @@ const page: Decorator = (Story, { globals, parameters }) => {
             <Story />
           ) : (
             <ShortcutProvider keymap={keymap} mac={namesCommandKey()}>
-              <div style={{ fontFamily: fontFamily.sans }}>
-                <Story />
-              </div>
+              <Menus>
+                <div style={{ fontFamily: fontFamily.sans }}>
+                  <Story />
+                </div>
+              </Menus>
             </ShortcutProvider>
           )}
         </Html>
