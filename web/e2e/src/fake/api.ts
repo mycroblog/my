@@ -81,6 +81,17 @@ const remotePeople: readonly (Person & { movedTo?: string })[] = [
     movedTo: "sora@photos.example",
   },
   {
+    // A bakery's account, so that one word ("bak") finds a person, the scenario's #baking and its posts at once.
+    username: "kobo@bread.example",
+    email: "",
+    password: "",
+    displayName: "Bakery Kobo",
+    note: "A small bakery by the station. 駅前の小さなパン屋です。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([200, 150, 90]),
+  },
+  {
     username: "kiri@far.example",
     email: "",
     password: "",

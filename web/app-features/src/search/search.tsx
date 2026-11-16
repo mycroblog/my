@@ -132,7 +132,8 @@ function Results({ q, results, t }: { q: string; results: SearchResults; t: T })
     ) : (
       <Posts results={results} t={t} />
     );
-  if (layout === "tabs") {
+  // Tabs choose between kinds: one kind alone stands under its caption, as in sections.
+  if (layout === "tabs" && kinds.length > 1) {
     // Open on the first kind that found something, until the reader chooses another.
     const current = chosen !== undefined && kinds.includes(chosen) ? chosen : (kinds[0] ?? "people");
     const more = results.posts?.hasNextPage === true;

@@ -46,10 +46,14 @@ export const Start: Story = {};
 export const StartNoSuggestions: Story = { parameters: screen({ at: "/search", state: "empty" }) };
 /** People and hashtags on a server without a search engine: nothing of posts shows. */
 export const PostsNotOffered: Story = { parameters: screen({ at: "/search?q=sa" }) };
-/** People, hashtags and posts on a server with a search engine. */
-export const Results: Story = { parameters: screen({ at: "/search?q=bread", server: posts }) };
+/**
+ * People, hashtags and posts at once on a server with a search engine: "bak" finds Bakery Kobo, #baking and the posts
+ * that hold it.
+ */
+const every = "/search?q=bak";
+export const Results: Story = { parameters: screen({ at: every, server: posts }) };
 export const ResultsJapanese: Story = {
-  parameters: screen({ at: "/search?q=bread", server: posts }),
+  parameters: screen({ at: every, server: posts }),
   globals: { locale: "ja" },
 };
 /** An account of another server named by its handle, looked up there and put first. */
@@ -96,10 +100,29 @@ PostsNotOffered.play = holds(
   "people found, and no post",
   (main) => main.querySelector('a[href^="/@sam"]') !== null && main.querySelector("article") === null,
 );
-Results.play = holds("posts found", (main) => main.querySelector("article") !== null);
-/** The kinds in tabs, open on the first that found something, each named with how many. */
+Results.play = holds(
+  "people, hashtags and posts",
+  (main) =>
+    main.querySelector('a[href^="/@kobo@bread.example"]') !== null &&
+    main.querySelector('a[href^="/tags/baking"]') !== null &&
+    main.querySelector("article") !== null,
+);
+/** One kind found, in the tabs' layout: no row of tabs, the kind under its caption alone. */
+export const OneKindInTabs: Story = {
+  parameters: screen({ at: "/search?q=%40kiri%40far.example" }),
+  render: (args: unknown, context: StoryContext) => (
+    <DiscoveryLayoutProvider value={{ results: "tabs", people: "both" }}>
+      {screenMeta.render(args, context)}
+    </DiscoveryLayoutProvider>
+  ),
+  play: holds(
+    "one kind under its caption, no tabs",
+    (main) => main.querySelector('[role="tablist"]') === null && main.querySelector("section") !== null,
+  ),
+};
+/** The three kinds in tabs, each named with how many, the first open. */
 export const ResultsInTabs: Story = {
-  parameters: screen({ at: "/search?q=bread", server: posts }),
+  parameters: screen({ at: every, server: posts }),
   render: (args: unknown, context: StoryContext) => (
     <DiscoveryLayoutProvider value={{ results: "tabs", people: "both" }}>
       {screenMeta.render(args, context)}
@@ -108,7 +131,7 @@ export const ResultsInTabs: Story = {
   play: holds("tabs named with how many, the first open", (main) => {
     const tabs = [...main.querySelectorAll('[role="tab"]')];
     return (
-      tabs.length > 0 &&
+      tabs.length === 3 &&
       tabs.every((tab) => /\d/u.test(tab.textContent)) &&
       tabs[0]?.getAttribute("aria-selected") === "true"
     );
