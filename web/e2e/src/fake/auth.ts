@@ -63,7 +63,7 @@ const words = {
   },
   providersOnly: {
     en: "On this server, you sign in only with another service. If your account is not linked to one, ask the administrators.",
-    ja: "このサーバーでは、ほかのサービスでしかログインできません。アカウントをどのサービスともひも付けていない場合は、管理者に問い合わせてください。",
+    ja: "このサーバーでは、ほかのサービスでしかログインできません。アカウントをどのサービスとも連携していない場合は、管理者に問い合わせてください。",
   },
   wrongCode: { en: "The code is incorrect or was already used.", ja: "コードが正しくないか、すでに使われています。" },
   usernameHint: {
