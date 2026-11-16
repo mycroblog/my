@@ -273,6 +273,22 @@ export function FoundRows({ label, children }: { label: string; children: ReactN
   );
 }
 
+const rows = tv({ base: "m-0 grid list-none gap-entry-room p-0" });
+
+/** Rows of one kind (a list's members) as a list, named by `label`, in the rhythm of the rows: each a `RowItem`. */
+export function RowList({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <ul aria-label={label} className={rows()}>
+      {children}
+    </ul>
+  );
+}
+
+/** A row of a `RowList` (an `AccountRow`). */
+export function RowItem({ children }: { children: ReactNode }) {
+  return <li>{children}</li>;
+}
+
 const account = tv({
   slots: { root: "flex items-center gap-screen-row-gap", who: "min-w-0 flex-1" },
 });

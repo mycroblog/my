@@ -36,7 +36,7 @@ export {
 export { countLink, Follows } from "./follows";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";
-export { ListIndex, ListScreen } from "./lists";
+export { ListIndex, ListMembers, ListScreen } from "./lists";
 export { streamOpened } from "./stream";
 export { Landing, type LandingPlace } from "./landing";
 export { MediaViewer } from "./media";

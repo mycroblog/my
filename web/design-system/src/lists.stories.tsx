@@ -17,7 +17,18 @@ import { Button, TextButton } from "./button";
 import { ConfirmDialog } from "./dialog";
 import { FeedNotice } from "./feed";
 import { TextField } from "./form-page";
-import { AccountRow, BackButton, ButtonPair, FoundRows, OpenRow, ScreenStack, ScreenTitle, StateText } from "./list";
+import {
+  AccountRow,
+  BackButton,
+  ButtonPair,
+  FoundRows,
+  OpenRow,
+  RowItem,
+  RowList,
+  ScreenStack,
+  ScreenTitle,
+  StateText,
+} from "./list";
 import { MenuButton, MenuGroup, MenuItem, MenuPanel } from "./menu";
 import { images } from "./samples";
 
@@ -386,20 +397,23 @@ function Members({ state = "normal" }: { state?: "normal" | "searching" | "empty
         {members.length === 0 ? (
           <FeedNotice start>{w.membersEmpty}</FeedNotice>
         ) : (
-          members.map((p) => (
-            <AccountRow
-              key={p.handle}
-              avatar={avatar(p)}
-              name={p.name}
-              handle={p.handle}
-              href="#"
-              end={
-                <Button size="timeline" kind="quiet">
-                  {w.remove}
-                </Button>
-              }
-            />
-          ))
+          <RowList label={w.members}>
+            {members.map((p) => (
+              <RowItem key={p.handle}>
+                <AccountRow
+                  avatar={avatar(p)}
+                  name={p.name}
+                  handle={p.handle}
+                  href="#"
+                  end={
+                    <Button size="timeline" kind="quiet" aria-label={`${w.remove} ${p.name}`}>
+                      {w.remove}
+                    </Button>
+                  }
+                />
+              </RowItem>
+            ))}
+          </RowList>
         )}
       </ScreenStack>
     </Column>

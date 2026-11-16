@@ -83,18 +83,18 @@ export const CreateLimit: Story = {
   },
 };
 
-/** The first More of the screen: its title's (a list's, a profile's), before any post's. */
+/** The first More of the screen: the profile's, before any post's. */
 const firstMore = async (main: Awaited<ReturnType<typeof screenOf>>["main"]) => {
   const [more] = await main.findAllByRole("button", { name: "More" });
   if (more === undefined) throw new Error("no More");
   return more;
 };
 
-/** Opens the list's menu and chooses `item`. */
+/** Opens the list's menu, List options, and chooses `item`. */
 async function fromMenu(context: StoryContext, item: string) {
   const { main, page } = await screenOf(context);
-  await userEvent.click(await firstMore(main));
-  const menu = await page.findByRole("menu", { name: "More" });
+  await userEvent.click(await main.findByRole("button", { name: "List options" }));
+  const menu = await page.findByRole("menu", { name: "List options" });
   await userEvent.click(within(menu).getByRole("menuitem", { name: item }));
   return { main, page };
 }
@@ -193,16 +193,9 @@ export const MembersRemoving: Story = {
   parameters: screen({ at: "members:0" }),
   play: async (context) => {
     const { main } = await screenOf(context);
-    const sam = await main.findByRole("link", { name: /Sam Rivera/ });
-    // Each member's Remove is named Remove alone: Sam's is the one whose row, the nearest box around it with a link,
-    // holds Sam's.
-    const remove = main.getAllByRole("button", { name: "Remove" }).find((button) => {
-      let row = button.parentElement;
-      while (row !== null && row.querySelector("a") === null) row = row.parentElement;
-      return row?.contains(sam) === true;
-    });
-    if (remove === undefined) throw new Error("no Remove beside Sam");
-    await userEvent.click(remove);
+    // The members are a list, each Remove named by whom it takes out.
+    const members = within(await main.findByRole("list", { name: "Members" }));
+    await userEvent.click(members.getByRole("button", { name: "Remove Sam Rivera" }));
     await waitFor(() => expect(main.queryByRole("link", { name: /Sam Rivera/ })).toBeNull());
     await expect(main.getByText("1 member")).toBeVisible();
     await expect(main.getByRole("link", { name: /Hana 花/ })).toBeVisible();

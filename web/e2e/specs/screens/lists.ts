@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The reader's lists, which the menu leads to, each a link to its timeline, and New list at their top; and a list's
-// screen: its name, the menu of its title row (Rename, Members, Delete list…), and the posts of its members in one feed
-// named "Posts from the list {name}".
+// screen: its name, the menu of its title row, List options (Rename, Members, Delete list…), and the posts of its
+// members in one feed named "Posts from the list {name}"; and a list's members, a list of rows, each with a Remove
+// named by whom it takes out ("Remove Sam").
 
 import { expect, type Locator, type Page } from "@playwright/test";
 import { Timeline } from "./timeline";
@@ -84,16 +85,16 @@ export class ListScreen extends Timeline {
     return this.page.getByRole("main").getByText("This list no longer exists.", { exact: true });
   }
 
-  /**
-   * Chooses `action` of the list's menu, the More of its title row. Each post of the feed has a More of its own, and
-   * the title row is no region, so the reader reaches it as a keyboard does: the control after the back button (Lists).
-   */
+  /** The list's own menu button at the end of its title, named apart from every post's More. */
+  get options(): Locator {
+    return this.page.getByRole("main").getByRole("button", { name: "List options", exact: true });
+  }
+
+  /** Chooses `action` of the list's menu, List options. */
   async menu(action: ListAction): Promise<void> {
-    await this.page.getByRole("main").getByRole("button", { name: "Lists", exact: true }).focus();
-    await this.page.keyboard.press("Tab");
-    await this.page.keyboard.press("Enter");
+    await this.options.click();
     await this.page
-      .getByRole("menu", { name: "More", exact: true })
+      .getByRole("menu", { name: "List options", exact: true })
       .getByRole("menuitem", { name: action, exact: true })
       .click();
   }
@@ -117,6 +118,32 @@ export class ListScreen extends Timeline {
     const confirm = this.page.getByRole("alertdialog", { name: `Delete the list ${this.name}?`, exact: true });
     await answered(this.page, { methods: ["DELETE"], path: /\/lists\/[^/]+$/ }, async () => {
       await confirm.getByRole("button", { name: "Delete", exact: true }).click();
+    });
+  }
+}
+
+/** A list's members, at /lists/{id}/members: a list named Members, each row with its Remove. */
+export class ListMembers {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  /** The list of the members. */
+  get members(): Locator {
+    return this.page.getByRole("main").getByRole("list", { name: "Members", exact: true });
+  }
+
+  /** The button that takes `name` (a display name) out of the list. */
+  removeButton(name: string): Locator {
+    return this.members.getByRole("button", { name: `Remove ${name}`, exact: true });
+  }
+
+  /** Takes `name` out of the list, and returns once the server has answered. */
+  async remove(name: string): Promise<void> {
+    await answered(this.page, { methods: ["DELETE"], path: /\/lists\/[^/]+\/accounts\/[^/]+$/ }, async () => {
+      await this.removeButton(name).click();
     });
   }
 }

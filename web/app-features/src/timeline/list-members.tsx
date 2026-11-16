@@ -2,11 +2,12 @@
 
 // A list's members (ADR-0013 §11, §14, §15), a screen of their own under a back button named by the list: its title
 // with how many, the field that finds an account the reader follows (the only ones a list may hold), what it found on
-// the raised surface (Add, or Added once in the list), then the members, each with Remove. Adding puts the account at
+// the raised surface (Add, or Added once in the list), then the members as a list, each with Remove, named by whom it
+// takes out. Adding puts the account at
 // the top of the members and in the count at once; the server's refusal at 1,000 members, or any failure, is said
 // under the field, Add dimmed at the limit. The members load a page at a time, with a fold that shows more.
 
-import { AccountLine } from "@my/app-components";
+import { AccountLine, nameOf } from "@my/app-components";
 import {
   listLimitOf,
   listMembersQuery,
@@ -24,6 +25,8 @@ import {
   FeedNotice,
   Fold,
   FoundRows,
+  RowItem,
+  RowList,
   ScreenStack,
   ScreenTitle,
   StateText,
@@ -156,23 +159,30 @@ export function ListMembers({ id, onBack }: { id: string; onBack: () => void }) 
           ))}
         </FoundRows>
       )}
-      {members.items.map((a) => (
-        <AccountLine
-          key={a.id}
-          account={a}
-          end={
-            <Button
-              size="timeline"
-              kind="quiet"
-              onPress={() => {
-                change(a, false);
-              }}
-            >
-              {t("timeline.list_remove")}
-            </Button>
-          }
-        />
-      ))}
+      {members.items.length > 0 && (
+        <RowList label={t("timeline.list_members_open")}>
+          {members.items.map((a) => (
+            <RowItem key={a.id}>
+              <AccountLine
+                account={a}
+                end={
+                  // Named by whom it takes out: every row has one.
+                  <Button
+                    size="timeline"
+                    kind="quiet"
+                    aria-label={t("timeline.list_remove_member", { name: nameOf(a) })}
+                    onPress={() => {
+                      change(a, false);
+                    }}
+                  >
+                    {t("timeline.list_remove")}
+                  </Button>
+                }
+              />
+            </RowItem>
+          ))}
+        </RowList>
+      )}
       {end}
     </ScreenStack>
   );

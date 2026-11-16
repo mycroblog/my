@@ -124,8 +124,8 @@
     "description": "The button that keeps a list's new name."
   },
   "timeline.list_more": {
-    "defaultMessage": "More",
-    "description": "The button that opens the menu of what may be done with a list."
+    "defaultMessage": "List options",
+    "description": "The name, for assistive technology, of the button at the end of a list's title that opens the menu of what may be done with the list (rename it, its members, delete it), and the menu's name; apart from every post's More."
   },
   "timeline.list_rename": {
     "defaultMessage": "Rename",
@@ -170,6 +170,10 @@
   "timeline.list_remove": {
     "defaultMessage": "Remove",
     "description": "The button of a member of a list that takes it out of the list."
+  },
+  "timeline.list_remove_member": {
+    "defaultMessage": "Remove {name}",
+    "description": "The name, for assistive technology, of the button of a member of a list that takes it out of the list; it holds the button's visible word (timeline.list_remove). name is the member's display name."
   },
   "timeline.list_members_empty": {
     "defaultMessage": "No one in this list yet. Add accounts you follow to read their posts here.",
