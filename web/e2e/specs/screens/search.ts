@@ -46,6 +46,16 @@ export class Search {
     return this.page.getByRole("main").getByRole("list", { name: "People", exact: true });
   }
 
+  /** The hashtags found. */
+  get hashtags(): Locator {
+    return this.page.getByRole("main").getByRole("list", { name: "Hashtags", exact: true });
+  }
+
+  /** The link of the hashtag `#name` among those found, which names it with the count of its posts. */
+  hashtag(name: string, posts: string): Locator {
+    return this.hashtags.getByRole("link", { name: new RegExp(`^#${name}\\s*${posts}$`, "u") });
+  }
+
   /** Writes `words` in the field. */
   async find(words: string): Promise<void> {
     await this.field.fill(words);
