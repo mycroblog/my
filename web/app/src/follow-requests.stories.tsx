@@ -3,10 +3,10 @@
 // The follow requests to the reader (FR-302), the screen the row over the notifications opens: ren, a locked account,
 // asked by sam (the scenario's) and by marco and mio (`followRequests`), each with Decline and Approve; each state every
 // screen is shown in (app.samples.tsx); the notifications with the row of the requests above what waits for approval;
-// and the screen right after Approve, the answer in the request's place with the focus on it.
+// and the screen right after Approve and after Decline, the answer in the request's place with the focus on it.
 
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
-import { userEvent, waitFor, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
 
 const at = "/notifications/follow_requests";
@@ -62,3 +62,22 @@ async function approved(context: StoryContext) {
 
 /** Right after Approve on the newest request: its answer in place of its buttons, with the focus on it. */
 export const Approved: Story = { play: approved };
+
+/**
+ * Right after Decline on the newest request (mio's), in English: its answer in place of its buttons, with the focus on
+ * it, and the other requests still waiting.
+ */
+export const Declined: Story = {
+  globals: { locale: "en" },
+  play: async (context) => {
+    await screenMeta.play(context);
+    const main = within(context.canvasElement.querySelector("main") ?? context.canvasElement);
+    const [decline] = await main.findAllByRole("button", { name: "Decline" });
+    if (decline === undefined) throw new Error("no Decline");
+    await userEvent.click(decline);
+    const said = await main.findByText("Declined");
+    await waitFor(() => expect(said).toHaveFocus());
+    await expect(main.getAllByRole("button", { name: "Decline" })).toHaveLength(2);
+    await expect(main.getAllByRole("button", { name: "Approve" })).toHaveLength(2);
+  },
+};
