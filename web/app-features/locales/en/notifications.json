@@ -364,7 +364,7 @@
     "description": "The title of the screen of the notifications the reader's notification policy held back, one row per account that sent them, and of the screen of one account's."
   },
   "notifications.held_about": {
-    "defaultMessage": "Accept an account to move its notifications into your notifications and let its later ones through. Dismiss to drop them.",
+    "defaultMessage": "Accept moves a person's notifications into your notifications and lets their later ones through. Dismiss deletes them.",
     "description": "The line under the title of the held-back notifications (notifications.held), over the accounts, that says what accepting and dismissing do."
   },
   "notifications.held_count": {
@@ -400,11 +400,11 @@
     "description": "What the screen of the held-back notifications says when none is held back."
   },
   "notifications.held_none": {
-    "defaultMessage": "None of this account's notifications is held back now.",
+    "defaultMessage": "None of this person's notifications is held back now.",
     "description": "What the screen of one account's held-back notifications says when it holds none (they were answered elsewhere, or about posts gone)."
   },
   "notifications.held_gone": {
-    "defaultMessage": "This account has no held-back notifications now.",
+    "defaultMessage": "This person has no held-back notifications now.",
     "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
   }
 }
