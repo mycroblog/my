@@ -442,7 +442,7 @@ const screenTitle = tv({
     // One run of text, so that a long name wraps under its glyph and the count follows its last line.
     title: "m-0 min-w-0 flex-1 text-title font-normal [overflow-wrap:anywhere]",
     glyph: "me-entry-caption inline-flex align-[-0.125em] text-muted-text",
-    count: "ms-entry-caption text-body whitespace-nowrap text-muted-text tabular-nums",
+    count: "text-body whitespace-nowrap text-muted-text tabular-nums",
     actions: "flex flex-none items-center gap-screen-tab-gap",
   },
 });
@@ -487,7 +487,13 @@ export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTit
             </span>
           )}
           <bdi>{breakable(children)}</bdi>
-          {count !== undefined && <span className={s.count()}>{count}</span>}
+          {/* A space apart from the name, read so too: "Bread and coffee 2 members", never "coffee2 members". */}
+          {count !== undefined && (
+            <>
+              {" "}
+              <span className={s.count()}>{count}</span>
+            </>
+          )}
         </h2>
         {actions !== undefined && actions !== false && actions !== null && <div className={s.actions()}>{actions}</div>}
       </div>
