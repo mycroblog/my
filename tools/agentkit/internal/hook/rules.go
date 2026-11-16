@@ -628,20 +628,16 @@ sub:
 		}
 		g.targets = paths
 		return c.searchCall(cwd, g)
-	case "merge":
-		if has("--ff-only", "--abort", "--continue", "--quit") {
-			return nil
-		}
-		for _, a := range rest {
-			if isMain(a.text) {
-				return &denial{"merge-main", rebaseReason()}
-			}
-		}
 	case "pull":
 		if has("--rebase", "-r", "--ff-only") {
 			return nil
 		}
-		return &denial{"merge-main", "`git pull` makes a merge commit when the branch has its own commits. " + rebaseReason() +
+		for _, a := range rest {
+			if isTrunk(a.text) {
+				return nil
+			}
+		}
+		return &denial{"merge-main", "`git pull` merges the branch's upstream, not the trunk. " + mergeReason() +
 			" On a checkout of " + repo.Trunk + " itself, `git pull --ff-only`."}
 	}
 	return nil
@@ -649,9 +645,8 @@ sub:
 
 var reRev = regexp.MustCompile(`^([0-9a-f]{7,40}|HEAD.*|origin/.*|main|v\d.*|\$.*)$`)
 
-// isMain reports whether ref names the trunk (repo.Trunk), the branch every branch is rebased onto. While the trunk
-// is not the default branch, merging the default branch is allowed: that is how the trunk keeps up with it.
-func isMain(ref string) bool {
+// isTrunk reports whether ref names the trunk (repo.Trunk), the branch every branch merges in to keep up with it.
+func isTrunk(ref string) bool {
 	t := repo.Trunk
 	switch ref {
 	case t, "origin/" + t, "upstream/" + t, "refs/heads/" + t, "refs/remotes/origin/" + t:
@@ -660,10 +655,10 @@ func isMain(ref string) bool {
 	return false
 }
 
-func rebaseReason() string {
-	return "Bring a branch up to date by rebasing, not by merging " + repo.Trunk + " into it: " +
-		"`git fetch origin && git rebase origin/" + repo.Trunk + "`, resolve conflicts in generated files with `scripts/agentkit.sh regen` " +
-		"(then `git add` them and `git rebase --continue`), and push with `git push --force-with-lease`."
+func mergeReason() string {
+	return "Bring a branch up to date by merging the trunk into it: " +
+		"`git fetch origin && git merge origin/" + repo.Trunk + "`, resolve conflicts in generated files with `scripts/agentkit.sh regen` " +
+		"(then `git add` them and `git commit`), and push with a plain `git push`."
 }
 
 // ---- reading ---------------------------------------------------------------------------------------------
