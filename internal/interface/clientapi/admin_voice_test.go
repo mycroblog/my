@@ -5,7 +5,6 @@ package clientapi_test
 import (
 	"context"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -91,7 +90,7 @@ func TestCreateReportOfAVoiceRoom(t *testing.T) {
 	} {
 		res := e.postReport(t, "write", tc.body)
 		p := decodeProblem(t, res)
-		if res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.field) {
+		if res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != tc.field {
 			t.Errorf("%s = %d %+v, want 422 on %s", tc.name, res.StatusCode, p, tc.field)
 		}
 	}

@@ -157,20 +157,21 @@ func TestUpdatePreferences(t *testing.T) {
 	}
 
 	for _, tt := range []struct {
-		err        error
-		wantDetail string
+		err                   error
+		wantField, wantDetail string
 	}{
-		{&appidentity.PreferenceError{Preference: "time_zone", Err: identity.ErrInvalidTimeZone}, "time_zone の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。"},
+		{&appidentity.PreferenceError{Preference: "time_zone", Err: identity.ErrInvalidTimeZone},
+			"time_zone", "正しくない値です。入力した内容を確かめてください。"},
 		{&appidentity.PreferenceError{Preference: "timeline_languages", Err: fmt.Errorf("%w: at most 64", identity.ErrTooManyLanguages)},
-			"timeline_languages は 64 個までにしてください。"},
+			"timeline_languages", "64 個までにしてください。"},
 	} {
 		prefs.err = tt.err
 		res := e.sendJSON(t, http.MethodPatch, "/preferences", "write", `{"time_zone":"Mars/Olympus"}`)
 		if res.StatusCode != http.StatusUnprocessableEntity {
 			t.Fatalf("%v: status = %d, want 422", tt.err, res.StatusCode)
 		}
-		if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != tt.wantDetail {
-			t.Errorf("%v: problem = %+v (detail %v), want %q", tt.err, p, p.Detail, tt.wantDetail)
+		if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != tt.wantDetail || p.Field == nil || *p.Field != tt.wantField {
+			t.Errorf("%v: problem = %+v (detail %v, field %v), want %q on %s", tt.err, p, p.Detail, p.Field, tt.wantDetail, tt.wantField)
 		}
 	}
 }

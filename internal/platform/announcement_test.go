@@ -89,7 +89,7 @@ func TestAnnouncements(t *testing.T) {
 	for _, title := range []string{"", "  ", "Two\nlines", strings.Repeat("a", 101)} {
 		var p clientapi.Problem
 		if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"title": title, "text": "ok"}, &p); code != http.StatusUnprocessableEntity ||
-			p.Detail == nil || !strings.Contains(*p.Detail, "title") {
+			p.Field == nil || *p.Field != "title" {
 			t.Errorf("POST an announcement titled %q = %d %+v, want 422 naming title", title, code, p)
 		}
 	}

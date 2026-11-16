@@ -9584,6 +9584,13 @@ type BrandProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
 
@@ -10584,6 +10591,13 @@ type CustomEmojiProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// Reason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
 	// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 	// alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
@@ -10695,6 +10709,13 @@ type CustomEmojiRequestPage struct {
 type CustomEmojiRequestProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// Reason Why a custom emoji request cannot be decided or withdrawn. `not_pending`: it was already
 	// approved, rejected, withdrawn, or lapsed. `requester_cannot_create`: the requester no longer
@@ -13566,6 +13587,13 @@ type LoginProviderProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// Reason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
 	// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
 	// `https` URL without user info, a query, or a fragment for `oidc`; a server without a path
@@ -15515,6 +15543,13 @@ type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
 
@@ -15736,6 +15771,13 @@ type RelayProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// Reason Why a relay operation is refused. `url`: not an https URL of at most 2048 bytes.
 	// `exists`: a relay with the URL is registered. `domain_suspended`: a domain action
 	// suspends its server. `not_actor`: the URL of a `litepub` relay serves no actor with an
@@ -15891,6 +15933,13 @@ type RoleBadge struct {
 type RoleProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// MissingPermissions The permissions that the change needs and the viewer lacks, for `missing_permission`.
 	MissingPermissions *[]Permission `json:"missing_permissions,omitempty"`
@@ -16482,6 +16531,13 @@ type StatusRejectedProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// HookDecisionId The decision to appeal.
 	HookDecisionId *Id `json:"hook_decision_id,omitempty"`
 
@@ -16682,6 +16738,13 @@ type SupporterPlanList struct {
 type SupporterPlanProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// Reason Why a supporter plan is refused. `name`, `description`, `monthly_price`, `currency`,
 	// `annual_discount_percent`, `emoji_limit`, `rank`, `visibility`: the value breaks its rule
@@ -16898,6 +16961,13 @@ type ThemeProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
 
@@ -16946,6 +17016,13 @@ type TipAmounts struct {
 type TipAmountsProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// Reason The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
 	// currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
@@ -17895,6 +17972,13 @@ type WebhookMessageType string
 type WebhookProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// MissingPermissions The permissions that the events need and the user lacks, for `missing_permission`.
 	MissingPermissions *[]Permission `json:"missing_permissions,omitempty"`

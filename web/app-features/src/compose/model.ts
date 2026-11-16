@@ -20,6 +20,7 @@ import type {
   Status,
   Visibility,
 } from "@my/app-data";
+import type { FieldMembers } from "../field-errors";
 
 /**
  * What the composer was opened for: a new post, a reply to or a quote of a post, an edit of the reader's post, or a
@@ -361,6 +362,31 @@ export function toStatus(d: Draft, settings: ComposeSettings): CreateStatus {
           },
         }),
     ...(policy === undefined ? {} : { interaction_policy: policy }),
+  };
+}
+
+/**
+ * An input of the composer a refusal can stand beside: the text, the content warning, an option of the poll by its
+ * index, or the description of an image by its key.
+ */
+export type ComposerInput = "text" | "cw" | `option:${string}` | `media:${string}`;
+
+/**
+ * Which input answers to which member of the body sent of `d` (a post, an edit or a draft, which name them alike): an
+ * image by its place among those sent, the images the server holds. The server counts the content warning with the
+ * text, under `text`. The members of no one input (`language`, `media`, `poll.options`, `poll.expires_in`) stay the
+ * form's error.
+ */
+export function composerMembers(d: Draft): FieldMembers<ComposerInput> {
+  const sent = d.attachments.filter((a) => (a.media?.id ?? a.id) !== undefined);
+  return {
+    text: "text",
+    spoiler_text: "cw",
+    "poll.options[]": (i) => `option:${String(i)}`,
+    "media[].description": (i) => {
+      const a = sent[i];
+      return a === undefined ? undefined : `media:${a.key}`;
+    },
   };
 }
 

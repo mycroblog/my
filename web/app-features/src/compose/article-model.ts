@@ -23,6 +23,7 @@ import {
   type Status,
   type Visibility,
 } from "@my/app-data";
+import type { FieldMembers } from "../field-errors";
 
 /** What the editor is open for: a new article, or an edit of the reader's published article of `id`. */
 type ArticleTarget = { kind: "new" } | { kind: "edit"; id: string };
@@ -245,6 +246,28 @@ const coverInput = (d: ArticleDraft) =>
 const languageInput = (d: ArticleDraft, settings?: ComposeSettings) => {
   const language = d.language !== "" ? d.language : settings?.language;
   return language === undefined || language === "" || language === "und" ? {} : { language };
+};
+
+/** An input of the article editor a refusal can stand beside. */
+export type ArticleInput = "title" | "text" | "summary" | "cover" | "tags";
+
+/**
+ * Which input answers to which member of an article's body: a new one, an edit, or a draft (its body `text`, the rest
+ * under `article`). The body answers for its length, its images and their descriptions; the hashtags for their count
+ * and each one. `language` answers to no input: it stays the form's error.
+ */
+export const articleMembers: FieldMembers<ArticleInput> = {
+  title: "title",
+  text: "text",
+  summary: "summary",
+  tags: "tags",
+  "tags[]": "tags",
+  "cover.description": "cover",
+  "article.title": "title",
+  "article.summary": "summary",
+  "article.tags": "tags",
+  "article.tags[]": "tags",
+  "article.cover.description": "cover",
 };
 
 /** A new article, as the API takes it. */

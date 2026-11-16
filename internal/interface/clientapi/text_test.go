@@ -23,9 +23,8 @@ func TestBodyTextIsCheckedBeforeTheHandler(t *testing.T) {
 	} {
 		res := e.send(t, http.MethodPost, "/statuses", "write", body)
 		p := decodeProblem(t, res)
-		want := field + " の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。"
-		if res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || *p.Detail != want {
-			t.Errorf("POST %s = %d %+v, want 422 %q", body, res.StatusCode, p, want)
+		if res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || p.Field == nil || *p.Field != field {
+			t.Errorf("POST %s = %d %+v, want 422 on %q", body, res.StatusCode, p, field)
 		}
 	}
 	if called {

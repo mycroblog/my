@@ -122,13 +122,13 @@ func TestCreateReport(t *testing.T) {
 
 func TestCreateReportProblems(t *testing.T) {
 	for _, tc := range []struct {
-		name, detail string
-		err          error
+		name, field string
+		err         error
 	}{
-		{"field", "status_ids の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。", &appmoderation.ReportFieldError{Field: "status_ids"}},
-		{"count", "", &moderation.CountError{Field: "rule_ids", Max: 20}},
-		{"too long", "", &moderation.TextError{Field: "comment", Max: 1000}},
-		{"not text", "", &moderation.TextError{Field: "comment"}},
+		{"field", "status_ids", &appmoderation.ReportFieldError{Field: "status_ids"}},
+		{"count", "rule_ids", &moderation.CountError{Field: "rule_ids", Max: 20}},
+		{"too long", "comment", &moderation.TextError{Field: "comment", Max: 1000}},
+		{"not text", "comment", &moderation.TextError{Field: "comment"}},
 	} {
 		e := newReportsEnv(t, &fakeReports{err: tc.err})
 		res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"})
@@ -137,8 +137,8 @@ func TestCreateReportProblems(t *testing.T) {
 			continue
 		}
 		p := decodeProblem(t, res)
-		if p.Detail == nil || *p.Detail == "" || (tc.detail != "" && *p.Detail != tc.detail) {
-			t.Errorf("%s: detail = %v, want %q", tc.name, p.Detail, tc.detail)
+		if p.Detail == nil || *p.Detail == "" || p.Field == nil || *p.Field != tc.field {
+			t.Errorf("%s: detail = %v, field = %v, want a detail on %q", tc.name, p.Detail, p.Field, tc.field)
 		}
 	}
 }

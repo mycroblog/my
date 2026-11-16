@@ -264,7 +264,7 @@ func (s *Server) DisableAdminAccountTwoFactor(ctx context.Context, req DisableAd
 		return DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):
 		return DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil
+			s.fieldProblem(ctx, "id", l.ServerErrorsInvalidValue())), nil
 	case errors.Is(err, appidentity.ErrTwoFactorNotEnabled):
 		return DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusConflict, ProblemTypeTwoFactorNotEnabled, l.ServerErrorsTwoFactorNotEnabled(), "")), nil
@@ -298,7 +298,7 @@ func (s *Server) LiftAdminAccountEmailSuppression(ctx context.Context, req LiftA
 		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):
 		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil
+			s.fieldProblem(ctx, "id", l.ServerErrorsInvalidValue())), nil
 	case errors.Is(err, appidentity.ErrNotSuppressed):
 		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusConflict, ProblemTypeEmailNotSuppressed, l.ServerErrorsEmailNotSuppressed(), "")), nil
@@ -333,7 +333,7 @@ func (s *Server) IssueAdminAccountPasswordResetLink(ctx context.Context, req Iss
 	case errors.Is(err, appidentity.ErrNotLocalAccount):
 		l := s.Localizer(ctx)
 		return IssueAdminAccountPasswordResetLinkdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil
+			s.fieldProblem(ctx, "id", l.ServerErrorsInvalidValue())), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: issue a password reset link for account %s: %w", req.Id, err)
 	}
@@ -364,7 +364,7 @@ func (s *Server) RevealAdminAccount(ctx context.Context, req RevealAdminAccountR
 	case errors.Is(err, appidentity.ErrNotLocalAccount):
 		l := s.Localizer(ctx)
 		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil
+			s.fieldProblem(ctx, "id", l.ServerErrorsInvalidValue())), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: reveal account %s: %w", req.Id, err)
 	}

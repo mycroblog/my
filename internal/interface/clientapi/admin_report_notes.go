@@ -12,7 +12,6 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The detail of a report (FR-710): its moderators' notes and the history of its target, and the
@@ -116,7 +115,7 @@ func (s *Server) AddReportNote(ctx context.Context, req AddReportNoteRequestObje
 	case errors.Is(err, moderation.ErrInvalidReportNote):
 		l := s.Localizer(ctx)
 		return AddReportNotedefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("body"))), nil
+			s.fieldProblem(ctx, "body", l.ServerErrorsInvalidValue())), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: add a note to report %s: %w", req.Id, err)
 	}
@@ -190,11 +189,9 @@ func (s *Server) ForwardReport(ctx context.Context, req ForwardReportRequestObje
 		return ForwardReportdefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusConflict, ProblemTypeReportNotForwardable, l.ServerErrorsConflict(), l.ServerErrorsReportNotForwardable())), nil
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
-			l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))), nil
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, textErr.Field, l.ServerErrorsTooLong(textErr.Max))), nil
 	case errors.Is(err, moderation.ErrInvalidReportForward):
-		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
-			l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("comment"))), nil
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, "comment", l.ServerErrorsInvalidValue())), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: forward report %s: %w", req.Id, err)
 	}

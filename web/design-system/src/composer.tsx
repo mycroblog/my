@@ -286,16 +286,28 @@ const warning = tv({
 
 /**
  * The content warning: a band of the raised surface, as a post shows it, to type the warning on, with its editor
- * (`children`, the `PlainTextEditor` with the `line` look, loaded lazily: its room is held while it arrives).
+ * (`children`, the `PlainTextEditor` with the `line` look, loaded lazily: its room is held while it arrives), and what
+ * is wrong with it right under it, by `errorId`, which the editor is described by.
  */
-export function WarningField({ children }: { children: ReactNode }) {
+export function WarningField({
+  error,
+  errorId,
+  children,
+}: {
+  error?: string | undefined;
+  errorId?: string | undefined;
+  children: ReactNode;
+}) {
   const s = warning();
   return (
-    <div className={s.root()}>
-      <span className={s.glyph()}>
-        <Icon name="hidden" place="caption" />
-      </span>
-      <Suspense fallback={<div className={waiting({ line: true })} aria-busy="true" />}>{children}</Suspense>
+    <div className={text().field()}>
+      <div className={s.root()}>
+        <span className={s.glyph()}>
+          <Icon name="hidden" place="caption" />
+        </span>
+        <Suspense fallback={<div className={waiting({ line: true })} aria-busy="true" />}>{children}</Suspense>
+      </div>
+      {error && <FieldError id={errorId}>{error}</FieldError>}
     </div>
   );
 }
@@ -385,6 +397,8 @@ export type AttachmentRowProps = {
   placeholder: string;
   /** A description that is missing: a caution, or an error where the server asks for every one. */
   missing?: { text: string; required: boolean } | undefined;
+  /** What the server refused of the description, in its place of `missing`. */
+  error?: string | undefined;
   removeLabel: string;
   onRemove: () => void;
 };
@@ -399,12 +413,14 @@ export function AttachmentRow({
   onDescription,
   descriptionLabel,
   placeholder,
-  missing,
+  missing: missingNote,
+  error,
   removeLabel,
   onRemove,
 }: AttachmentRowProps) {
   const s = attachment({ waiting: state === "uploading" || state === "processing" });
   const id = useId();
+  const missing = error ? { text: error, required: true } : missingNote;
   return (
     <li className={s.row()}>
       {src === undefined ? (
@@ -580,6 +596,7 @@ export function PollOption({
   multiple,
   maxLength,
   remove,
+  error,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -588,25 +605,33 @@ export function PollOption({
   multiple: boolean;
   maxLength: number;
   remove?: { label: string; onPress: () => void } | undefined;
+  /** What is wrong with it, right under it. */
+  error?: string | undefined;
 }) {
   const s = poll();
+  const errorId = useId();
   return (
-    <div className={s.option()}>
-      {/* How the option will be answered in the post (poll.tsx). */}
-      <PollMark multiple={multiple} />
-      <input
-        className={s.input()}
-        value={value}
-        placeholder={label}
-        aria-label={label}
-        maxLength={maxLength}
-        dir="auto"
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-      />
-      {remove && <IconButton icon="close" label={remove.label} onPress={remove.onPress} />}
-    </div>
+    <>
+      <div className={s.option()}>
+        {/* How the option will be answered in the post (poll.tsx). */}
+        <PollMark multiple={multiple} />
+        <input
+          className={s.input()}
+          value={value}
+          placeholder={label}
+          aria-label={label}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          maxLength={maxLength}
+          dir="auto"
+          onChange={(e) => {
+            onChange(e.target.value);
+          }}
+        />
+        {remove && <IconButton icon="close" label={remove.label} onPress={remove.onPress} />}
+      </div>
+      {error && <FieldError id={errorId}>{error}</FieldError>}
+    </>
   );
 }
 

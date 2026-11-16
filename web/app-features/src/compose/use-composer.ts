@@ -3,7 +3,7 @@
 // The composer's logic, without its view (ADR-0025 §4): the draft being written (model.ts), the uploads of its images
 // (each with a failed upload's retry), the post replied to or quoted, read from the cache or the server, and the post
 // itself, or the edit of the reader's post. A post the server refuses keeps the draft and says why in the server's own
-// words; one that got no answer says that it did not finish, and Post sends it again with the same Idempotency-Key, so
+// words, beside the input the server named; one that got no answer says that it did not finish, and Post sends it again with the same Idempotency-Key, so
 // that it is posted once (an edit sent again is the same edit). A post saved as a draft on the server (ADR-0156) is
 // saved over it and published from it; one with a time is saved and scheduled instead, and Save as draft keeps it so;
 // a save refused for a newer draft saved elsewhere is the conflict (§9). A draft no longer on the server may have been
@@ -13,7 +13,6 @@
 import {
   DraftConflictError,
   DraftGoneError,
-  refusal,
   useComposeSettings,
   useComposeWrites,
   useStatus,
@@ -22,8 +21,10 @@ import {
   type Status,
 } from "@my/app-data";
 import { useEffect, useRef, useState } from "react";
+import { placeRefusal, type FieldMembers, type Refused } from "../field-errors";
 import {
   answering,
+  composerMembers,
   maxAttachments,
   onServer,
   postable,
@@ -38,13 +39,14 @@ import {
 import { rememberTags } from "./recent-tags";
 
 /**
- * Where the post is: being written, being sent, refused (with what the server said, if it said anything), its draft
- * refused for a newer one saved elsewhere since it was opened (ADR-0156 §9), or its draft gone from the server.
+ * Where the post is: being written, being sent, refused (with what the server said, if it said anything, and the input
+ * it is about, if it named one: field-errors.ts), its draft refused for a newer one saved elsewhere since it was opened
+ * (ADR-0156 §9), or its draft gone from the server.
  */
 export type Phase =
   | { kind: "editing" }
   | { kind: "posting" }
-  | { kind: "failed"; reason: string | undefined }
+  | ({ kind: "failed" } & Refused<string>)
   | { kind: "conflict" }
   | { kind: "gone" };
 
@@ -79,6 +81,16 @@ export type ComposerEvents = {
   /** It was kept on the server as a draft, or scheduled. */
   readonly onKept: (draft: Draft) => void;
 };
+
+/**
+ * The phase of a write refused with `e`: for a newer draft saved elsewhere, for a draft gone, or with what the server
+ * said, beside the input of `members` it is about.
+ */
+export function failedPhase(e: unknown, members: FieldMembers<string>): Phase {
+  if (e instanceof DraftConflictError) return { kind: "conflict" };
+  if (e instanceof DraftGoneError) return { kind: "gone" };
+  return { kind: "failed", ...placeRefusal(e, members) };
+}
 
 let next = 0;
 const newKey = () => `a${String((next += 1))}`;
@@ -189,16 +201,11 @@ export function useComposer(
       d.scheduledAt === undefined ? await writes.unschedule(saved.id) : await writes.schedule(saved.id, d.scheduledAt),
     );
   };
-  /** A write refused: for a newer draft saved elsewhere, for a draft gone, or with what the server said. */
-  const refused = whileOpen((e: unknown) => {
-    setPhase(
-      e instanceof DraftConflictError
-        ? { kind: "conflict" }
-        : e instanceof DraftGoneError
-          ? { kind: "gone" }
-          : { kind: "failed", reason: refusal(e) },
-    );
-  });
+  /** A write of `d` refused. */
+  const refused = (d: Draft) =>
+    whileOpen((e: unknown) => {
+      setPhase(failedPhase(e, composerMembers(d)));
+    });
   const kept = whileOpen(onKept);
 
   /** Posts `d`, or schedules it while it has a time, or shows what keeps it from being sent. */
@@ -213,7 +220,7 @@ export function useComposer(
     if (d.scheduledAt !== undefined && target.kind !== "edit") {
       store(d, true).then(() => {
         kept(d);
-      }, refused);
+      }, refused(d));
       return;
     }
     // A post saved as a draft is published from it, as it is written now; the server deletes the draft.
@@ -226,7 +233,7 @@ export function useComposer(
     sent.then((status) => {
       rememberTags(d.text);
       if (mounted.current) onPosted(status, d);
-    }, refused);
+    }, refused(d));
   };
 
   return {
@@ -282,7 +289,7 @@ export function useComposer(
       setPhase({ kind: "posting" });
       store(draft, true).then(() => {
         kept(draft);
-      }, refused);
+      }, refused(draft));
     },
   };
 }

@@ -2,7 +2,8 @@
 
 // The article editor's states played on the fake server as yuki writes (#3091): an article written, its preview beside
 // it on a PC and behind Write | Preview at the minimum width, a title and a body over their limits, which keep Publish
-// from publishing, a preview the server could not render, and a reader the server keeps from writing new articles; in
+// from publishing, a preview the server could not render, an edit refused for its summary (as sam), and a reader the
+// server keeps from writing new articles; in
 // en and in ja, at the minimum width and on a PC.
 //
 // The preview is asked of the server 600 ms after the writer stops typing (useArticlePreview), and a body of 100 kB
@@ -220,6 +221,53 @@ export const PreviewFailedJapaneseMinimumWidth: Story = {
   globals: { locale: "ja", ...minimumWidth },
   parameters: failing,
   play: async (context) => previewFailed(context, "ja", true),
+};
+
+/** What the fake server says of the summary it refuses (`publish: "summary"`), in English in any locale. */
+const summaryRefusal = { title: "This could not be done.", detail: "This value is not valid. Check what you entered." };
+
+/**
+ * An edit saved from the preview, at the minimum width, and refused for its summary, which the server names: Write
+ * comes back with the summary invalid and described by what is wrong, the alert says the problem's title alone; the
+ * next edit of the summary clears it.
+ */
+async function summaryRefused(context: StoryContext) {
+  await screenMeta.play(context);
+  const canvas = canvasOf(context.canvasElement);
+  await canvas.findByRole("heading", { level: 1, name: "Edit article" });
+  const mode = within(canvas.getByRole("radiogroup", { name: "Write or preview" }));
+  await userEvent.click(mode.getByRole("radio", { name: "Preview" }));
+  await expect(mode.getByRole("radio", { name: "Preview" })).toHaveAttribute("aria-checked", "true");
+
+  await userEvent.click(canvas.getByRole("button", { name: "Save" }));
+  const summary = await canvas.findByRole("textbox", { name: "Summary" }, answered);
+  await waitFor(() => expect(summary).toHaveAttribute("aria-invalid", "true"), answered);
+  await expect(mode.getByRole("radio", { name: "Write" })).toHaveAttribute("aria-checked", "true");
+  await expect(summary).toBeVisible();
+  await expect(summary).toHaveAccessibleDescription(new RegExp(summaryRefusal.detail.replaceAll(".", "\\.")));
+  await expect(canvas.getByRole("alert")).toHaveTextContent(
+    new RegExp(`^${summaryRefusal.title.replace(".", "\\.")}$`),
+  );
+
+  await userEvent.type(summary, " Shorter.");
+  await waitFor(() => expect(summary).not.toHaveAttribute("aria-invalid", "true"));
+  await expect(canvas.queryByText(summaryRefusal.detail)).toBeNull();
+  await expect(canvas.queryByText(summaryRefusal.title)).toBeNull();
+  // React Aria announces Save's busy state for 7 s through a node of the page's own, which names the button by its ID;
+  // the checks of the page read the screen once it is gone.
+  await waitFor(
+    () => {
+      if (document.querySelector('body > [data-live-announcer] [aria-labelledby], [role="img"][aria-labelledby]'))
+        throw new Error("the busy state is still announced");
+    },
+    { timeout: 9000 },
+  );
+}
+
+export const SummaryRefusedMinimumWidth: Story = {
+  globals: { locale: "en", ...minimumWidth },
+  parameters: screen({ at: "article-edit:sam-article", viewer: "sam", server: { articles: { publish: "summary" } } }),
+  play: summaryRefused,
 };
 
 /** A reader the server keeps from writing new articles: why, and nothing to write in or to publish. */

@@ -1538,11 +1538,11 @@ func (l *Localizer) ServerErrorsInvalidToken() string {
 	return l.format("server:errors.invalid_token", nil)
 }
 
-// ServerErrorsInvalidValue formats "server:errors.invalid_value". Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated).
+// ServerErrorsInvalidValue formats "server:errors.invalid_value". Detail of an API error (HTTP 422) when the server rejects a value of the request. The client shows it beside the field it is about, so it does not name the field.
 //
-//	en: The value of {name} is invalid. Reload or update the app, then try again.
-func (l *Localizer) ServerErrorsInvalidValue(name string) string {
-	return l.format("server:errors.invalid_value", map[string]any{"name": name})
+//	en: This value is not valid. Check what you entered.
+func (l *Localizer) ServerErrorsInvalidValue() string {
+	return l.format("server:errors.invalid_value", nil)
 }
 
 // ServerErrorsInvitesNotAllowed formats "server:errors.invites.not_allowed". Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts.
@@ -2584,36 +2584,18 @@ func (l *Localizer) ServerErrorsTargetOutranksActor() string {
 	return l.format("server:errors.target_outranks_actor", nil)
 }
 
-// ServerErrorsTooLongArgs holds the arguments of ServerErrorsTooLong, passed by name.
+// ServerErrorsTooLong formats "server:errors.too_long". Detail of an API error (HTTP 422) when a text of the request is too long. The client shows it beside the field it is about, so it does not name the field. {max} is the limit in characters.
 //
-//exhaustruct:enforce
-type ServerErrorsTooLongArgs struct {
-	_    struct{} // forces keyed fields
-	Max  int
-	Name string
+//	en: {max, plural, one {Use at most # character.} other {Use at most # characters.}}
+func (l *Localizer) ServerErrorsTooLong(max int) string {
+	return l.format("server:errors.too_long", map[string]any{"max": max})
 }
 
-// ServerErrorsTooLong formats "server:errors.too_long". Detail of an API error (HTTP 422) when a text property of the request body is too long. {name} is the property name, e.g. display_name (not translated); {max} is the limit in characters.
+// ServerErrorsTooMany formats "server:errors.too_many". Detail of an API error (HTTP 422) when a list of the request has too many items. The client shows it beside the field it is about, so it does not name the field. {max} is the limit.
 //
-//	en: {max, plural, one {{name} can be at most # character long.} other {{name} can be at most # characters long.}}
-func (l *Localizer) ServerErrorsTooLong(args ServerErrorsTooLongArgs) string {
-	return l.format("server:errors.too_long", map[string]any{"max": args.Max, "name": args.Name})
-}
-
-// ServerErrorsTooManyArgs holds the arguments of ServerErrorsTooMany, passed by name.
-//
-//exhaustruct:enforce
-type ServerErrorsTooManyArgs struct {
-	_    struct{} // forces keyed fields
-	Max  int
-	Name string
-}
-
-// ServerErrorsTooMany formats "server:errors.too_many". Detail of an API error (HTTP 422) when a list property of the request body has too many items. {name} is the property name, e.g. fields (not translated); {max} is the limit.
-//
-//	en: {max, plural, one {{name} can have at most # item.} other {{name} can have at most # items.}}
-func (l *Localizer) ServerErrorsTooMany(args ServerErrorsTooManyArgs) string {
-	return l.format("server:errors.too_many", map[string]any{"max": args.Max, "name": args.Name})
+//	en: {max, plural, one {Use at most # item.} other {Use at most # items.}}
+func (l *Localizer) ServerErrorsTooMany(max int) string {
+	return l.format("server:errors.too_many", map[string]any{"max": max})
 }
 
 // ServerErrorsTranslationFailed formats "server:errors.translation.failed". API error title for HTTP 503 when no translation service returned a usable translation of a post.
@@ -2693,11 +2675,11 @@ func (l *Localizer) ServerErrorsUnsupportedMediaType() string {
 	return l.format("server:errors.unsupported_media_type", nil)
 }
 
-// ServerErrorsUnusableImage formats "server:errors.unusable_image". Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. {name} is the property name, e.g. avatar_media_id (not translated).
+// ServerErrorsUnusableImage formats "server:errors.unusable_image". Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. The client shows it beside the image field, so it does not name the field.
 //
-//	en: {name} must be an image that you uploaded and that has finished processing.
-func (l *Localizer) ServerErrorsUnusableImage(name string) string {
-	return l.format("server:errors.unusable_image", map[string]any{"name": name})
+//	en: Choose an image that you uploaded and that has finished processing.
+func (l *Localizer) ServerErrorsUnusableImage() string {
+	return l.format("server:errors.unusable_image", nil)
 }
 
 // ServerErrorsVoiceAlreadyInvited formats "server:errors.voice.already_invited". API error title for HTTP 409 when the host or a co-host of a voice chat room invites a user a second time (a user is invited to a room once, even after a revocation).

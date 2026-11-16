@@ -285,7 +285,7 @@ func TestAccountActionsOnStatusesAndBans(t *testing.T) {
 		t.Fatalf("ban = %d %+v", res.StatusCode, ban)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+ban.Id+"/lift", "admin", "")
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "id" {
 		t.Errorf("lift a ban = %d %+v, want 422 naming id", res.StatusCode, p)
 	}
 	if f.actions[2].Lift != nil {
@@ -318,7 +318,7 @@ func TestCreateAccountActionRejectsInvalidInput(t *testing.T) {
 		{bob, `{"kind":"warn","public_reason":"spam\u0000"}`, "public_reason"},
 	} {
 		res := e.sendJSON(t, http.MethodPost, tc.path, "admin", tc.body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.want) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != tc.want {
 			t.Errorf("%s %.80s = %d %+v, want 422 naming %s", tc.path, tc.body, res.StatusCode, p, tc.want)
 		}
 	}
@@ -328,7 +328,7 @@ func TestCreateAccountActionRejectsInvalidInput(t *testing.T) {
 	a, _ := f.IssueAccountAction(t.Context(), appmoderation.AccountActionInput{TargetAccountID: bobAccountID, Kind: moderation.ActionWarn, ReasonCategory: moderation.CategoryOther})
 	body := `{"x":"invalid-on-purpose","reason":"` + strings.Repeat("a", moderation.MaxActionText+1) + `"}`
 	res := e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+a.ID+"/lift", "admin", body)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "reason") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "reason" {
 		t.Errorf("lift with a long reason = %d %+v, want 422 naming reason", res.StatusCode, p)
 	}
 	if f.actions[0].Lift != nil {

@@ -103,10 +103,12 @@ func (s *Server) loginProviderProblem(ctx context.Context, err error) (LoginProv
 	}
 	l := s.Localizer(ctx)
 	body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeInvalidLoginProvider,
-		l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(string(reason)))
+		l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue())
+	field := string(reason) // each reason is the name of the property it is about
 	return LoginProviderProblemApplicationProblemPlusJSONResponse{
 		Body: LoginProviderProblem{
-			Type: body.Type, Title: body.Title, Status: body.Status, Detail: body.Detail, RequestId: body.RequestId, Reason: &reason,
+			Type: body.Type, Title: body.Title, Status: body.Status, Detail: body.Detail, RequestId: body.RequestId,
+			Reason: &reason, Field: &field,
 		},
 		Headers: LoginProviderProblemResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
 	}, true

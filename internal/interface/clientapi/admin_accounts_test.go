@@ -350,7 +350,7 @@ func TestRevealAdminAccount(t *testing.T) {
 	}
 
 	res = e.send(t, http.MethodPost, "/admin/accounts/"+reporterAccountID+"/reveal", "admin-read", "")
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "id" {
 		t.Errorf("remote = %d %+v, want 422 naming id", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, "/admin/accounts/"+reportThree+"/reveal", "admin-read", "")
@@ -391,7 +391,7 @@ func TestDisableAdminAccountTwoFactor(t *testing.T) {
 		t.Errorf("disable twice = %d %+v, want 409 two-factor-not-enabled", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, path(reporterAccountID), "admin", "")
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "id" {
 		t.Errorf("remote = %d %+v, want 422 naming id", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, path(reportThree), "admin", "")
@@ -429,7 +429,7 @@ func TestIssueAdminAccountPasswordResetLink(t *testing.T) {
 		t.Errorf("issued = %v, want %v", admin.resetLinks, want)
 	}
 	res = e.send(t, http.MethodPost, path(reporterAccountID), "admin", "")
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "id" {
 		t.Errorf("remote = %d %+v, want 422 naming id", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, path(reportThree), "admin", "")
@@ -465,7 +465,7 @@ func TestLiftAdminAccountEmailSuppression(t *testing.T) {
 		t.Errorf("lift twice = %d %+v, want 409 email-not-suppressed", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, path(reporterAccountID), "admin", "")
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "id") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "id" {
 		t.Errorf("remote = %d %+v, want 422 naming id", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, path(reportThree), "admin", "")

@@ -6,12 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The rules of the link card crawler (FR-117): the admin operations on /admin/link_card_domains
@@ -72,9 +70,9 @@ func (s *Server) SetLinkCardDomainRule(ctx context.Context, req SetLinkCardDomai
 		return nil, err
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (SetLinkCardDomainRuleResponseObject, error) {
+	unprocessable := func(field, detail string) (SetLinkCardDomainRuleResponseObject, error) {
 		return SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	if req.Body == nil {
 		return SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "domain")), nil
@@ -89,11 +87,11 @@ func (s *Server) SetLinkCardDomainRule(ctx context.Context, req SetLinkCardDomai
 	var invalid *instance.LinkCardDomainError
 	switch {
 	case errors.Is(err, instance.ErrTooManyLinkCardDomainRules):
-		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: instance.MaxLinkCardDomainRules, Name: "rules"}))
+		return unprocessable("rules", l.ServerErrorsTooMany(instance.MaxLinkCardDomainRules))
 	case errors.As(err, &invalid) && invalid.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: invalid.Max, Name: invalid.Field}))
+		return unprocessable(invalid.Field, l.ServerErrorsTooLong(invalid.Max))
 	case errors.As(err, &invalid):
-		return unprocessable(l.ServerErrorsInvalidValue(invalid.Field))
+		return unprocessable(invalid.Field, l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: set a link card domain rule: %w", err)
 	}

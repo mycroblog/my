@@ -5,16 +5,13 @@
 // body, and its publication, or the edit of the reader's article. Publish judges the body's limits by the preview of
 // the body as it is then, asked for at once (busy meanwhile) when the one shown is of an earlier body; it never passes
 // or refuses on an earlier body's count. A publication the server refuses keeps what was
-// written and says why in the server's own words; one that got no answer says so, and Publish sends it again with the
+// written and says why in the server's own words, beside the input the server named; one that got no answer says so, and Publish sends it again with the
 // same Idempotency-Key. As a post's, an article saved as a draft on the server (ADR-0156) is saved over it and published
 // from it; one with a time is saved and scheduled instead, and Save as draft keeps it so; a save refused for a newer
 // draft saved elsewhere is the conflict (§9), and a draft gone may have been published, so it is not saved again.
 
 import {
   articleFieldLimits,
-  DraftConflictError,
-  DraftGoneError,
-  refusal,
   useArticleLimits,
   useArticlePreview,
   useArticleWrites,
@@ -30,6 +27,7 @@ import {
 } from "@my/app-data";
 import { useEffect, useRef, useState } from "react";
 import {
+  articleMembers,
   articleProblems,
   imageMarkdown,
   publishable,
@@ -41,7 +39,7 @@ import {
   type ArticleDraft,
   type ArticleProblems,
 } from "./article-model";
-import type { Phase } from "./use-composer";
+import { failedPhase, type Phase } from "./use-composer";
 
 /** How long the writer pauses before the preview is asked for again. */
 const previewPauseMs = 600;
@@ -195,13 +193,7 @@ export function useArticleEditor(
     );
   };
   const refused = whileOpen((e: unknown) => {
-    setPhase(
-      e instanceof DraftConflictError
-        ? { kind: "conflict" }
-        : e instanceof DraftGoneError
-          ? { kind: "gone" }
-          : { kind: "failed", reason: refusal(e) },
-    );
+    setPhase(failedPhase(e, articleMembers));
   });
   const kept = whileOpen(onKept);
   /** The preview of `d`'s body and summary as they are, when one is at hand: never an earlier body's. */

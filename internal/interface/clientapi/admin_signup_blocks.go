@@ -6,13 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the sign-up block list (FR-719, manage_accounts). The moderation module
@@ -105,9 +103,9 @@ func (s *Server) CreateSignupBlock(ctx context.Context, req CreateSignupBlockReq
 		return nil, err
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (CreateSignupBlockResponseObject, error) {
+	unprocessable := func(field, detail string) (CreateSignupBlockResponseObject, error) {
 		return CreateSignupBlockdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	b := req.Body
 	if b == nil {
@@ -119,13 +117,13 @@ func (s *Server) CreateSignupBlock(ctx context.Context, req CreateSignupBlockReq
 	}
 	switch {
 	case !in.Kind.Valid():
-		return unprocessable(l.ServerErrorsInvalidValue("kind"))
+		return unprocessable("kind", l.ServerErrorsInvalidValue())
 	case !in.Severity.Valid():
-		return unprocessable(l.ServerErrorsInvalidValue("severity"))
+		return unprocessable("severity", l.ServerErrorsInvalidValue())
 	}
 	if b.ExpiresIn != nil {
 		if !moderation.ValidDurationSeconds(int64(*b.ExpiresIn)) {
-			return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
+			return unprocessable("expires_in", l.ServerErrorsInvalidValue())
 		}
 		in.Duration = time.Duration(*b.ExpiresIn) * time.Second
 	}
@@ -133,11 +131,11 @@ func (s *Server) CreateSignupBlock(ctx context.Context, req CreateSignupBlockReq
 	var textErr *moderation.TextError
 	switch {
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return unprocessable(textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	case errors.As(err, &textErr):
-		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+		return unprocessable(textErr.Field, l.ServerErrorsInvalidValue())
 	case errors.Is(err, appmoderation.ErrInvalidSignupBlock):
-		return unprocessable(l.ServerErrorsInvalidValue("value"))
+		return unprocessable("value", l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: add a signup block: %w", err)
 	}

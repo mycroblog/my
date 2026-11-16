@@ -88,8 +88,8 @@
     "description": "API error title for HTTP 401 when the access token is malformed, unknown, expired, or revoked."
   },
   "errors.invalid_value": {
-    "defaultMessage": "{name} 的值無效。請重新載入或更新應用程式後再試一次。",
-    "description": "Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated)."
+    "defaultMessage": "此值無效。請檢查輸入的內容。",
+    "description": "Detail of an API error (HTTP 422) when the server rejects a value of the request. The client shows it beside the field it is about, so it does not name the field."
   },
   "errors.media_attached_detail": {
     "defaultMessage": "請編輯貼文來變更它的說明。",
@@ -404,12 +404,12 @@
     "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included. Read by staff."
   },
   "errors.too_long": {
-    "defaultMessage": "{max, plural, other {{name} 最多只能有 # 個字元。}}",
-    "description": "Detail of an API error (HTTP 422) when a text property of the request body is too long. {name} is the property name, e.g. display_name (not translated); {max} is the limit in characters."
+    "defaultMessage": "{max, plural, other {最多只能有 # 個字元。}}",
+    "description": "Detail of an API error (HTTP 422) when a text of the request is too long. The client shows it beside the field it is about, so it does not name the field. {max} is the limit in characters."
   },
   "errors.too_many": {
-    "defaultMessage": "{max, plural, other {{name} 最多只能有 # 個項目。}}",
-    "description": "Detail of an API error (HTTP 422) when a list property of the request body has too many items. {name} is the property name, e.g. fields (not translated); {max} is the limit."
+    "defaultMessage": "{max, plural, other {最多只能有 # 項。}}",
+    "description": "Detail of an API error (HTTP 422) when a list of the request has too many items. The client shows it beside the field it is about, so it does not name the field. {max} is the limit."
   },
   "errors.two_factor.enabled": {
     "defaultMessage": "兩步驟驗證已經啟用。",
@@ -472,8 +472,8 @@
     "description": "Error title for HTTP 415 when a request body is not in a format the endpoint accepts."
   },
   "errors.unusable_image": {
-    "defaultMessage": "{name} 必須是你已上傳且已處理完成的圖片。",
-    "description": "Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. {name} is the property name, e.g. avatar_media_id (not translated)."
+    "defaultMessage": "請選擇你上傳且已處理完成的圖片。",
+    "description": "Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. The client shows it beside the image field, so it does not name the field."
   },
   "errors.webhook.invalid": {
     "defaultMessage": "無法儲存 Webhook。",

@@ -67,9 +67,9 @@ func (s *Server) inviteProblem(ctx context.Context, err error) *problem {
 	case errors.Is(err, appidentity.ErrNotFound):
 		p = s.notFoundResponse(ctx)
 	case errors.Is(err, identity.ErrInviteUsesOverCap):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("max_uses"))
+		p = s.fieldProblem(ctx, "max_uses", l.ServerErrorsInvalidValue())
 	case errors.Is(err, identity.ErrInviteExpiryOverCap):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("expires_in"))
+		p = s.fieldProblem(ctx, "expires_in", l.ServerErrorsInvalidValue())
 	case errors.Is(err, appidentity.ErrInvitesNotAllowed):
 		p = s.problem(ctx, http.StatusForbidden, ProblemTypeInvitesNotAllowed, l.ServerErrorsInvitesNotAllowed(), "")
 	case errors.Is(err, appidentity.ErrTooManyInvites):

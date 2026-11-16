@@ -427,6 +427,41 @@ func TestCreateStatus(t *testing.T) {
 	}
 }
 
+// TestStatusProblemsNameTheField checks that a 422 of a post or an article about one member of
+// its request names it in the problem's field, and that one about none names nothing.
+func TestStatusProblemsNameTheField(t *testing.T) {
+	for _, tc := range []struct {
+		err   error
+		field string
+	}{
+		{&appcontent.TextTooLongError{Length: 501, Max: 500}, "text"},
+		{appcontent.ErrEmptyText, "text"},
+		{appcontent.ErrInvalidLanguage, "language"},
+		{appcontent.ErrTooManyMedia, "media"},
+		{&appcontent.MediaDescriptionError{Place: appcontent.MediaAttachment, Index: 1, Err: appcontent.ErrInvalidMediaDescription}, "media[1].description"},
+		{&appcontent.MediaDescriptionError{Place: appcontent.MediaAttachment, Err: appcontent.ErrMissingMediaDescription}, "media[0].description"},
+		{&content.PollInputError{Option: 1}, "poll.options[1]"},
+		{&content.PollInputError{Option: -1}, "poll.options"},
+		{&content.PollInputError{Option: -1, Duration: true}, "poll.expires_in"},
+		{appcontent.ErrInvalidArticleTitle, "title"},
+		{appcontent.ErrInvalidArticleSummary, "summary"},
+		{&appcontent.ArticleTooLongError{Bytes: 2, Max: 1}, "text"},
+		{&appcontent.TooManyArticleImagesError{Images: 2, Max: 1}, "text"},
+		{appcontent.ErrTooManyHashtags, "tags"},
+		{&appcontent.HashtagError{Index: 2, Name: "#"}, "tags[2]"},
+		{&appcontent.MediaDescriptionError{Place: appcontent.MediaCover, Err: appcontent.ErrInvalidMediaDescription}, "cover.description"},
+		{&appcontent.MediaDescriptionError{Place: appcontent.MediaBodyImage, Err: appcontent.ErrInvalidMediaDescription}, "text"},
+		{appcontent.ErrReplyTargetNotFound, ""},
+	} {
+		e := newStatusEnv(t, &fakeStatuses{create: func(appcontent.CreateInput) (appcontent.Post, error) { return appcontent.Post{}, tc.err }})
+		res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"public"}`)
+		p := decodeProblem(t, res)
+		if res.StatusCode != http.StatusUnprocessableEntity || (tc.field == "") != (p.Field == nil) || (p.Field != nil && *p.Field != tc.field) {
+			t.Errorf("%v: %d %+v, want 422 on %q", tc.err, res.StatusCode, p, tc.field)
+		}
+	}
+}
+
 // TestStatusProblems checks the problem that each failure of a use case becomes.
 func TestStatusProblems(t *testing.T) {
 	for _, tc := range []struct {
@@ -447,7 +482,7 @@ func TestStatusProblems(t *testing.T) {
 		{appcontent.ErrPollNotEditable, http.StatusUnprocessableEntity, "", "投票のある投稿は編集できません。"},
 		{content.ErrInvalidVisibility, http.StatusUnprocessableEntity, "", ""},
 		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、ローカル限定で投稿できません。見られる人を変えてください。"},
-		{fmt.Errorf("x: %w", content.ErrInvalidIdempotencyKey), http.StatusUnprocessableEntity, "", "Idempotency-Key の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。"},
+		{fmt.Errorf("x: %w", content.ErrInvalidIdempotencyKey), http.StatusUnprocessableEntity, "", "正しくない値です。入力した内容を確かめてください。"},
 		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントで投稿できません。"},
 		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。"},
 		{appcontent.ErrAlreadyDeleted, http.StatusConflict, "", "この Idempotency-Key で作成された投稿は削除されています。"},

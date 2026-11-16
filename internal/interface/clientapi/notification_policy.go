@@ -87,9 +87,8 @@ func (s *Server) UpdateNotificationPolicy(ctx context.Context, req UpdateNotific
 	}
 	p, err := s.o.NotificationPolicies.UpdatePolicy(ctx, v.AccountID, choices)
 	if errors.Is(err, notification.ErrInvalidPolicy) {
-		l := s.Localizer(ctx)
-		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("action"))
-		return UpdateNotificationPolicydefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity}, nil
+		return UpdateNotificationPolicydefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, "action", s.Localizer(ctx).ServerErrorsInvalidValue())), nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: update the notification policy of %s: %w", v.AccountID, err)

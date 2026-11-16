@@ -147,7 +147,7 @@ func TestSignupBlocksAPI(t *testing.T) {
 	} {
 		field, _, _ := strings.Cut(name, ":")
 		res := e.adminBody(t, http.MethodPost, "/admin/signup_blocks", "admin-write", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, field) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != field {
 			t.Errorf("%s: POST = %d %+v, want 422 naming it", name, res.StatusCode, p)
 		}
 	}
@@ -219,7 +219,7 @@ func TestImportSignupBlocksAPI(t *testing.T) {
 	} {
 		field, _, _ := strings.Cut(name, ":")
 		res := e.adminBody(t, http.MethodPost, "/admin/signup_blocks/import", "admin-write", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, field) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != field {
 			t.Errorf("%s: POST import = %d %+v, want 422 naming it", name, res.StatusCode, p)
 		}
 	}

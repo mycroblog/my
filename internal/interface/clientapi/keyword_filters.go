@@ -77,7 +77,7 @@ func keywordFilterInput(body *KeywordFilterRequest) apptimeline.KeywordFilterInp
 func (s *Server) keywordFilterProblem(ctx context.Context, err error) (problem, bool) {
 	l := s.Localizer(ctx)
 	invalid := func(field string) problem {
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(field))
+		return s.fieldProblem(ctx, field, l.ServerErrorsInvalidValue())
 	}
 	switch {
 	case errors.Is(err, apptimeline.ErrNotFound):

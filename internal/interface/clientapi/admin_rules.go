@@ -11,7 +11,6 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The instance rules (FR-705): the admin operations that manage them (manage_rules), and the
@@ -73,8 +72,8 @@ func ruleHint(in InstanceRuleInput) string {
 // for a retired one, and 422 for bad input. It reports false for any other error.
 func (s *Server) ruleProblem(ctx context.Context, err error) (problem, bool) {
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (problem, bool) {
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail), true
+	unprocessable := func(field, detail string) (problem, bool) {
+		return s.fieldProblem(ctx, field, detail), true
 	}
 	var te *instance.RuleTextError
 	switch {
@@ -83,13 +82,13 @@ func (s *Server) ruleProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, instance.ErrRuleRetired):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), ""), true
 	case errors.Is(err, instance.ErrTooManyRules):
-		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: instance.MaxRules, Name: "rules"}))
+		return unprocessable("rules", l.ServerErrorsTooMany(instance.MaxRules))
 	case errors.As(err, &te) && te.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: te.Max, Name: te.Field}))
+		return unprocessable(te.Field, l.ServerErrorsTooLong(te.Max))
 	case errors.As(err, &te):
-		return unprocessable(l.ServerErrorsInvalidValue(te.Field))
+		return unprocessable(te.Field, l.ServerErrorsInvalidValue())
 	case errors.Is(err, instance.ErrInvalidValue):
-		return unprocessable(l.ServerErrorsInvalidValue("position"))
+		return unprocessable("position", l.ServerErrorsInvalidValue())
 	}
 	return problem{}, false
 }

@@ -28,8 +28,7 @@ func (s *Server) rejectInvalidBodyText(next StrictHandlerFunc, _ string) StrictH
 		if v.Kind() == reflect.Struct {
 			if body := v.FieldByName("Body"); body.IsValid() {
 				if field := invalidTextField(body, ""); field != "" {
-					l := s.Localizer(ctx)
-					s.writeProblem(w, r, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(field))
+					s.writeProblemDocument(w, s.fieldProblem(ctx, field, s.Localizer(ctx).ServerErrorsInvalidValue()))
 					return nil, nil
 				}
 			}

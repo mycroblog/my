@@ -5,7 +5,8 @@
 // will read in it and the part over the limit marked (the editor of text.tsx, a chunk of its own that comes with this
 // one, which layer.tsx loads once the page is idle or the composer first opens), the suggestions for the word at its caret
 // (suggest.tsx) and the emoji button at the end of its first line (emoji.tsx), the images as rows with their
-// descriptions or the poll as a card, the form's error, and the row
+// descriptions or the poll as a card, the form's error (what the server refused of an input it named stands under that
+// input, the problem's title alone here), and the row
 // that sends it: its tools (images, poll, content warning, the audience and the language as glyphs that open their
 // menus), the count, and Post. The audience menu holds the visibilities, then apart under their own caption the
 // interactions, whose reply, boost and quote permissions open as a submenu. Editing the reader's post, it is titled Edit
@@ -55,6 +56,7 @@ import {
 } from "@my/design-system";
 import type { EditorHandle } from "@my/design-system/editor";
 import { useId, useRef, useState } from "react";
+import { fieldError } from "../field-errors";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
 import { EditorFailed, PostText, retryEditors, WarningText } from "./editors";
@@ -195,11 +197,14 @@ function Audience({
 function Poll({
   poll,
   t,
+  errorOf,
   onChange,
   onRemove,
 }: {
   poll: PollDraft;
   t: T;
+  /** What the server refused of an option, by its index. */
+  errorOf: (i: number) => string | undefined;
   onChange: (p: PollDraft) => void;
   onRemove: () => void;
 }) {
@@ -225,6 +230,7 @@ function Poll({
             label={t("compose.poll.option", { n: i + 1 })}
             multiple={poll.multiple}
             maxLength={pollLimits.length}
+            error={errorOf(i)}
             onChange={(value) => {
               onChange({ ...poll, options: poll.options.map((o, j) => (j === i ? value : o)) });
             }}
@@ -340,6 +346,7 @@ export function ComposerView({
   const textRef = useRef<EditorHandle>(null);
   const cwRef = useRef<EditorHandle>(null);
   const errorId = useId();
+  const cwErrorId = useId();
   const { t, lang } = stringsIn(locale);
   const [open, setOpen] = useState<"audience" | "permissions" | "language" | "schedule" | undefined>(
     opened === "schedule" ? "schedule" : undefined,
@@ -367,6 +374,11 @@ export function ComposerView({
   const alert = alertOf(c, t, locale);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
   const over = problems.over > 0;
+  // What the server refused of an input it named, beside that input (field-errors.ts).
+  const refused = c.phase.kind === "failed" ? c.phase : undefined;
+  const textError =
+    over && !editorsDown ? t("compose.too_long", { max: settings.maxChars }) : fieldError(refused, "text");
+  const cwError = fieldError(refused, "cw");
   const roomy = draft.attachments.length === 0 && draft.poll === undefined;
   // The text completes accounts, hashtags and emoji; the content warning, emoji alone (ADR-0092 §5).
   const textSuggest = useSuggestions({ field: textRef, text: draft.text, triggers: ["@", "#", ":"], locale });
@@ -561,7 +573,7 @@ export function ComposerView({
         />
       )}
       {draft.cw !== undefined && (
-        <WarningField>
+        <WarningField error={cwError} errorId={cwErrorId}>
           {!editorsDown && (
             <WarningText
               key={editorsTry}
@@ -569,6 +581,8 @@ export function ComposerView({
               value={draft.cw}
               label={t("compose.cw.label")}
               placeholder={t("compose.cw.placeholder")}
+              invalid={cwError !== undefined}
+              describedBy={cwError === undefined ? undefined : cwErrorId}
               handle={cwRef}
               autoFocus={cwFocus}
               suggest={cwSuggest.suggest}
@@ -582,7 +596,7 @@ export function ComposerView({
         </WarningField>
       )}
       <ComposerText
-        error={over && !editorsDown ? t("compose.too_long", { max: settings.maxChars }) : undefined}
+        error={textError}
         errorId={errorId}
         roomy={roomy}
         end={editorsDown ? undefined : <ComposerEmoji text={textRef} sheet={pickerSheet} disabled={busy} />}
@@ -604,8 +618,8 @@ export function ComposerView({
             label={t("compose.text.label")}
             placeholder={t("compose.text.placeholder")}
             over={problems.over}
-            describedBy={over ? errorId : undefined}
-            invalid={over}
+            describedBy={textError === undefined ? undefined : errorId}
+            invalid={textError !== undefined}
             readOnly={busy}
             roomy={roomy}
             autoFocus={layer}
@@ -658,6 +672,7 @@ export function ComposerView({
                     : { text: t("compose.description.missing"), required: false }
                   : undefined
               }
+              error={fieldError(refused, `media:${a.key}`)}
               removeLabel={t("compose.remove")}
               onRemove={() => {
                 c.remove(a.key);
@@ -670,6 +685,7 @@ export function ComposerView({
         <Poll
           poll={draft.poll}
           t={t}
+          errorOf={(i) => fieldError(refused, `option:${String(i)}`)}
           onChange={(poll) => {
             c.change({ poll });
           }}

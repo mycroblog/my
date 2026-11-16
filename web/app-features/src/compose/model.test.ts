@@ -9,8 +9,10 @@ import {
   type ServerDraft,
   type Status,
 } from "@my/app-data";
+import { inputOf } from "../field-errors";
 import {
   answering,
+  composerMembers,
   emptyDraft,
   fromServer,
   onServer,
@@ -20,6 +22,7 @@ import {
   toEdit,
   toStatus,
   written,
+  type Attachment,
   type Draft,
 } from "./model";
 
@@ -180,4 +183,47 @@ test("a draft's image whose file could not be read stays the server's: kept by i
   // An image still uploading, or whose upload failed, is no file of the server's.
   expect(onServer({ key: "a", state: "uploading", description: "" })).toBe(false);
   expect(onServer({ key: "a", state: "failed", description: "" })).toBe(false);
+});
+
+test("a refused member of a post names its input: the text, the warning, a poll's option, an image's description", () => {
+  const ready = (key: string): Attachment => ({
+    key,
+    state: "ready",
+    media: { id: `m-${key}`, type: "image", state: "ready" } as unknown as MediaAttachment,
+    description: "",
+  });
+  const d = draft({
+    text: "when?",
+    cw: "food",
+    poll: { options: ["Sat", "Sun", "Mon"], duration: 3600, multiple: false, hideTotals: false },
+    // The first is still uploading, so the body sends the others: a draft's file the server holds, then a2, then a3.
+    attachments: [
+      { key: "a1", state: "uploading", description: "" },
+      { key: "d1", id: "m1", state: "failed", description: "" },
+      ready("a2"),
+      ready("a3"),
+    ],
+  });
+  const members = composerMembers(d);
+  expect(inputOf("text", members)).toBe("text");
+  expect(inputOf("spoiler_text", members)).toBe("cw");
+  expect(inputOf("poll.options[0]", members)).toBe("option:0");
+  expect(inputOf("poll.options[2]", members)).toBe("option:2");
+  expect(inputOf("media[0].description", members)).toBe("media:d1");
+  expect(inputOf("media[1].description", members)).toBe("media:a2");
+  expect(inputOf("media[2].description", members)).toBe("media:a3");
+  // No image is sent at that index.
+  expect(inputOf("media[3].description", members)).toBeUndefined();
+  // The members of the whole poll, the images, the language, the IDs and the key stay the form's.
+  for (const member of [
+    "poll.options",
+    "poll.expires_in",
+    "media",
+    "media[0].id",
+    "language",
+    "in_reply_to_id",
+    "quoted_status_id",
+    "Idempotency-Key",
+  ])
+    expect(inputOf(member, members)).toBeUndefined();
 });

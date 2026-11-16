@@ -6,12 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the subscriptions to domain block lists (ADR-0159 §4–§6,
@@ -112,14 +110,13 @@ func (s *Server) domainListUnprocessable(ctx context.Context, err error) problem
 	l := s.Localizer(ctx)
 	var textErr *moderation.TextError
 	if errors.As(err, &textErr) && textErr.Max > 0 {
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(),
-			l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return s.fieldProblem(ctx, textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	}
 	field := "settings"
 	if fieldErr := (*moderation.DomainListFieldError)(nil); errors.As(err, &fieldErr) {
 		field = fieldErr.Field
 	}
-	return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(field))
+	return s.fieldProblem(ctx, field, l.ServerErrorsInvalidValue())
 }
 
 // ListDomainListSubscriptions serves GET /api/v1/admin/domain_list_subscriptions, newest first.

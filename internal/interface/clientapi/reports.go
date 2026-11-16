@@ -16,7 +16,6 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // ReportLimit bounds the reports that one account files (createReport): each report lands in
@@ -50,9 +49,9 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 		return CreateReportdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "account_id")), nil
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (CreateReportResponseObject, error) {
+	unprocessable := func(field, detail string) (CreateReportResponseObject, error) {
 		return CreateReportdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	in := appmoderation.LocalReportInput{
 		ReporterAccountID: v.AccountID, TargetAccountID: knownID(b.AccountId), StatusIDs: knownIDs(deref(b.StatusIds)),
@@ -62,32 +61,32 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 	if b.VoiceRoomId != nil {
 		// A room that the reporter can see, whose host is the account reported (ADR-0100 §11).
 		if s.o.VoiceModeration == nil {
-			return unprocessable(l.ServerErrorsInvalidValue("voice_room_id"))
+			return unprocessable("voice_room_id", l.ServerErrorsInvalidValue())
 		}
 		t, err := s.o.VoiceModeration.ReportTarget(ctx, v.AccountID, knownID(*b.VoiceRoomId))
 		switch {
 		case errors.Is(err, appvoice.ErrNotFound), errors.Is(err, appvoice.ErrDisabled):
-			return unprocessable(l.ServerErrorsInvalidValue("voice_room_id"))
+			return unprocessable("voice_room_id", l.ServerErrorsInvalidValue())
 		case err != nil:
 			return nil, fmt.Errorf("clientapi: the voice chat room %s of a report: %w", *b.VoiceRoomId, err)
 		case t.HostAccountID != in.TargetAccountID:
-			return unprocessable(l.ServerErrorsInvalidValue("account_id"))
+			return unprocessable("account_id", l.ServerErrorsInvalidValue())
 		}
 		in.VoiceRoom = &moderation.ReportVoiceRoom{RoomID: t.RoomID, RevisionID: t.RevisionID}
 	}
 	if b.EventId != nil {
 		// An event that the reporter can see, whose organizer is the account reported (ADR-0161 §14).
 		if s.o.EventModeration == nil {
-			return unprocessable(l.ServerErrorsInvalidValue("event_id"))
+			return unprocessable("event_id", l.ServerErrorsInvalidValue())
 		}
 		t, err := s.o.EventModeration.ReportTarget(ctx, v.AccountID, knownID(*b.EventId))
 		switch {
 		case errors.Is(err, appgathering.ErrNotFound):
-			return unprocessable(l.ServerErrorsInvalidValue("event_id"))
+			return unprocessable("event_id", l.ServerErrorsInvalidValue())
 		case err != nil:
 			return nil, fmt.Errorf("clientapi: the event %s of a report: %w", *b.EventId, err)
 		case t.OrganizerAccountID != in.TargetAccountID:
-			return unprocessable(l.ServerErrorsInvalidValue("account_id"))
+			return unprocessable("account_id", l.ServerErrorsInvalidValue())
 		}
 		in.Gathering = &moderation.ReportGathering{GatheringID: t.GatheringID, RevisionID: t.RevisionID}
 	}
@@ -99,13 +98,13 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 	)
 	switch {
 	case errors.As(err, &fieldErr):
-		return unprocessable(l.ServerErrorsInvalidValue(fieldErr.Field))
+		return unprocessable(fieldErr.Field, l.ServerErrorsInvalidValue())
 	case errors.As(err, &countErr):
-		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: countErr.Max, Name: countErr.Field}))
+		return unprocessable(countErr.Field, l.ServerErrorsTooMany(countErr.Max))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return unprocessable(textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	case errors.As(err, &textErr):
-		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+		return unprocessable(textErr.Field, l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: file a report on %s: %w", b.AccountId, err)
 	}

@@ -15,7 +15,6 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/notification"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The refusal of a post by the decision hook local.status and its appeal (ADR-0147 §9, §12): the
@@ -119,9 +118,9 @@ func (s *Server) AppealHookDecision(ctx context.Context, req AppealHookDecisionR
 	case errors.Is(err, hook.ErrNotAppealable):
 		return refuse(ProblemTypeNotAppealable, l.ServerErrorsHookAppealNotAppealable(), "")
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return refuse(ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return AppealHookDecisiondefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, textErr.Field, l.ServerErrorsTooLong(textErr.Max))), nil
 	case errors.As(err, &textErr):
-		return refuse(ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(textErr.Field))
+		return AppealHookDecisiondefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, textErr.Field, l.ServerErrorsInvalidValue())), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: appeal hook decision %s of account %s: %w", req.Id, v.AccountID, err)
 	}

@@ -79,11 +79,8 @@ func (s *Server) UpdateNotificationSettings(ctx context.Context, req UpdateNotif
 	}
 	rows, err := s.o.NotificationPreferences.UpdateSettings(ctx, v.AccountID, choices)
 	if errors.Is(err, notification.ErrInvalidSetting) || errors.Is(err, notification.ErrFixedSetting) {
-		l := s.Localizer(ctx)
-		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("changes"))
-		return UpdateNotificationSettingsdefaultApplicationProblemPlusJSONResponse{
-			Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity,
-		}, nil
+		return UpdateNotificationSettingsdefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, "changes", s.Localizer(ctx).ServerErrorsInvalidValue())), nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: update the notification settings of %s: %w", v.AccountID, err)
