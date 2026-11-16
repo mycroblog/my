@@ -345,7 +345,7 @@ func TestCrossOriginPostsAreRefused(t *testing.T) {
 	} {
 		for _, path := range []string{authpages.PathSignIn, authpages.PathSignOut} {
 			w := b.do(http.MethodPost, path, form, header)
-			if w.Code != http.StatusForbidden || !strings.Contains(text(screenData(t, w), "error"), "came from another site") {
+			if w.Code != http.StatusForbidden || !strings.Contains(text(screenData(t, w), "error"), "sent from another site") {
 				t.Errorf("%s POST %s = %d %s, want the 403 page", name, path, w.Code, w.Body.String())
 			}
 		}

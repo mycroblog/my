@@ -1,4 +1,4 @@
-Example Social の閉鎖日を過ぎました。サーバーは自動ではクローズしません。管理画面か my admin closure close でクローズしてください。
+Example Social の閉鎖日を過ぎました。サーバーは自動では閉鎖されません。管理画面か my admin closure close で閉鎖してください。
 
 通知を開く
 https://social.example/notifications
@@ -8,5 +8,5 @@ Example Social
 https://social.example
 連絡先: admin@social.example
 
-通知の設定で「閉鎖日の経過」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+通知の設定で「閉鎖日を過ぎたとき」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
 このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

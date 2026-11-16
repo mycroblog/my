@@ -298,8 +298,8 @@ describe("the translate line", () => {
 
   test("while the browser's model downloads, the line shows its share, and announces it by quarters", () => {
     const line = lineOf({ status: ja, translatable: true, translating: 0.4 });
-    expect(line).toContain('<span aria-hidden="true">Downloading this browser&#x27;s translation model… 40%</span>');
-    expect(line).toMatch(/<span>Downloading this browser&#x27;s translation model… 25%<\/span>/);
+    expect(line).toContain('<span aria-hidden="true">Downloading what this browser needs to translate… 40%</span>');
+    expect(line).toMatch(/<span>Downloading what this browser needs to translate… 25%<\/span>/);
     const at = (share: number) =>
       /<span>Downloading[^<]*… (\d+)%<\/span>/.exec(lineOf({ status: ja, translating: share }))?.[1];
     expect([0.1, 0.26, 0.5, 0.74, 0.99, 1].map(at)).toEqual(["0", "25", "50", "50", "75", "100"]);
@@ -325,7 +325,7 @@ describe("the translate line", () => {
 
   test("a visibility the provider may not receive hands the next press to the browser", () => {
     expect(words(failure({ reason: "visibility", retry: "browser" }))).toBe(
-      "This post cannot be sent to this server's translation service. · Translate in this browser",
+      "Only some people can see this post, so it cannot be sent to this server's translation service. · Translate in this browser",
     );
   });
 
@@ -356,7 +356,7 @@ describe("the translate line", () => {
 
   test("the refusals read in the reader's locale", () => {
     expect(words(failure({ reason: "limit", retry: false }, "ja"))).toBe(
-      "このサーバーの今月の翻訳の上限に達しました。 来月からまた翻訳できます。",
+      "このサーバーで今月翻訳できる量の上限に達しました。 来月からまた翻訳できます。",
     );
     expect(words(failure({ reason: "failed", retry: "server" }, "ja"))).toContain("もう一度試す");
     expect(words(failure({ reason: "visibility", retry: "browser" }, "ja"))).toContain("このブラウザで翻訳する");
@@ -371,7 +371,7 @@ describe("the translate line", () => {
       translationFailure: { reason: "visibility", retry: "browser" },
     });
     expect(html).toMatch(
-      /<span>ネタバレ<\/span><div aria-live="polite"><p[^>]*>.*This post cannot be sent.*<\/div><\/div><\/div><button [^>]*aria-expanded="false"/,
+      /<span>ネタバレ<\/span><div aria-live="polite"><p[^>]*>.*it cannot be sent to this server.*<\/div><\/div><\/div><button [^>]*aria-expanded="false"/,
     );
   });
 
@@ -558,7 +558,7 @@ describe("the poll", () => {
     expect(open).toMatch(/<span>投票する<\/span><\/button>/);
     const ended = pollOf({ status: withPoll({ expired: true, voted: true, own_votes: [0] }) }, "ja");
     expect(ended).toMatch(/4人が投票.* · .*締切済み/);
-    expect(ended).toMatch(/Sourdough<span>[^<]*自分の投票[^<]*<\/span><\/span><span>75%/);
+    expect(ended).toMatch(/Sourdough<span>[^<]*自分の票[^<]*<\/span><\/span><span>75%/);
     const hidden = pollOf({ status: withPoll({ options: [{ title: "A" }, { title: "B" }] }), own: true }, "ja");
     expect(hidden).toContain("票数は締切後に表示");
   });

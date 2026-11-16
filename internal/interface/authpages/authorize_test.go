@@ -170,7 +170,7 @@ func TestAuthorizeRefusesUnverifiedRedirects(t *testing.T) {
 	} {
 		w := b.do(http.MethodGet, target, nil, map[string]string{"Accept-Language": "en"})
 		if w.Code != http.StatusBadRequest || w.Header().Get("Location") != "" ||
-			!strings.Contains(w.Body.String(), "authorization request is invalid") {
+			!strings.Contains(w.Body.String(), "so you cannot allow it") {
 			t.Errorf("GET %s = %d → %q, want the 400 page without a redirect", target, w.Code, w.Header().Get("Location"))
 		}
 	}
@@ -286,11 +286,11 @@ func TestConsentShowsProvenanceAndWarnsOfUnverifiedApps(t *testing.T) {
 		}
 		return w.Body.String()
 	}
-	const unverified = "This server has not verified this application."
-	const impersonation = "which other apps on your device can also claim"
+	const unverified = "This server has not verified this app."
+	const impersonation = "an address that any app on your device can claim"
 
 	body := get("app", appRedirect)
-	for _, want := range []string{unverified, "An application registered by @carol", "Website it declared: https://app.example/about", "app.example",
+	for _, want := range []string{unverified, "An app registered by @carol", "Website it declared: https://app.example/about", "app.example",
 		"Can read your direct messages", "Can post, edit and delete posts as you", "Can change your profile"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("user-registered app: consent page lacks %q\n%s", want, body)

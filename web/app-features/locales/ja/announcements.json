@@ -60,7 +60,7 @@
     "description": "What an announcement's page says while it loads."
   },
   "announcements.not_found": {
-    "defaultMessage": "このお知らせは見つかりませんでした。取り下げられた可能性があります。",
+    "defaultMessage": "このお知らせは表示できません。取り下げられた可能性があります。",
     "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
   },
   "announcements.all": {

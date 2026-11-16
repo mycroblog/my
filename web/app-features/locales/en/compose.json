@@ -216,7 +216,7 @@
     "description": "The line under Local in the audience menu. server is this server's domain."
   },
   "compose.visibility.unlisted.about": {
-    "defaultMessage": "Anyone, kept out of the public timelines",
+    "defaultMessage": "Anyone, kept out of the local and federated timelines",
     "description": "The line under Quiet public in the audience menu."
   },
   "compose.visibility.private.about": {
@@ -228,7 +228,7 @@
     "description": "The line under Direct in the audience menu."
   },
   "compose.interactions": {
-    "defaultMessage": "Interactions",
+    "defaultMessage": "Who can reply, boost and quote",
     "description": "The caption of the audience menu's second group, apart from the visibilities: who may reply to, boost and quote the post."
   },
   "compose.permissions": {
@@ -280,8 +280,8 @@
     "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
   },
   "compose.quote_remote": {
-    "defaultMessage": "A local, followers-only, or direct post cannot quote a post from another server.",
-    "description": "The note under the visibilities when the post quotes a post from another server; the server's own words (errors.status.quote_remote_audience)."
+    "defaultMessage": "To quote a post from another server, make this post Public or Quiet public.",
+    "description": "The note under the visibilities when the post quotes a post from another server, whose other visibilities are disabled: which ones to choose."
   },
   "compose.replying_to": {
     "defaultMessage": "Replying to {handle}",
@@ -444,15 +444,15 @@
     "description": "Why a scheduled post failed: it does not pass the checks of a post, such as its length."
   },
   "compose.schedule.failed.rejected": {
-    "defaultMessage": "the server's automated review refused it",
-    "description": "Why a scheduled post failed: the server's automated review refused it."
+    "defaultMessage": "the server's automated review did not accept it",
+    "description": "Why a scheduled post failed: the server's automated review did not accept it."
   },
   "compose.schedule.failed.next": {
     "defaultMessage": "{failure}. Edit it if needed, then post it or schedule it again.",
     "description": "The composer's alert on a draft whose scheduled post failed: failure is compose.schedule.failed (when and why), followed by what the reader may do now."
   },
   "compose.conflict": {
-    "defaultMessage": "A newer version of this draft was saved on another device, so your changes here were not saved.",
+    "defaultMessage": "This draft was saved later on another device, so your changes here were not saved.",
     "description": "The composer's error when a save of a draft is refused for a newer one saved elsewhere."
   },
   "compose.conflict.open": {

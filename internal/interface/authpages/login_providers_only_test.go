@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	refusedSignIn = "This server signs in only through the login providers."
-	refusedSignUp = "This server registers new users only through the login providers."
+	refusedSignIn = "On this server, you sign in only with another service."
+	refusedSignUp = "On this server, you create an account only with another service."
 	refusedLink   = "so this link cannot set a password now"
 )
 

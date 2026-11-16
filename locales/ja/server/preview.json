@@ -20,7 +20,7 @@
     "description": "Name of the instance's commerce disclosures of its supporter plans in the link preview of their page (/about/commerce)."
   },
   "preview.document.link_card_crawler": {
-    "defaultMessage": "リンクのカードのクローラー",
+    "defaultMessage": "リンクカードのクローラー",
     "description": "Name of the page that tells site operators about the crawler that fetches the links in posts, in the link preview of that page (/about/crawler)."
   },
   "preview.avatar_alt": {

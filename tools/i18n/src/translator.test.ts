@@ -9,7 +9,7 @@ describe("createTranslator", () => {
   test("formats en, ja and pseudo-locales", () => {
     expect(createTranslator(catalogs, "en")("server:config.errors", { count: 1 })).toBe("Found 1 configuration error.");
     expect(createTranslator(catalogs, "ja")("server:config.errors", { count: 1 })).toBe("設定エラーが1件あります。");
-    expect(createTranslator(catalogs, "en-XA")("server:errors.not_found")).toStartWith("[Ŧħḗḗ");
+    expect(createTranslator(catalogs, "en-XA")("server:errors.not_found")).toStartWith("[Ŧħīş");
     expect(createTranslator(catalogs, "ar-XB")("server:errors.not_found")).toStartWith("‮");
   });
 
@@ -32,7 +32,9 @@ describe("createTranslator", () => {
   });
 
   test("falls back along the locale chain to en", () => {
-    expect(createTranslator(catalogs, "ja-JP")("server:errors.not_found")).toBe("指定されたリソースが見つかりません。");
+    expect(createTranslator(catalogs, "ja-JP")("server:errors.not_found")).toBe(
+      "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。",
+    );
     expect(createTranslator(catalogs, "it")("server:config.missing", { name: "MY_DATABASE" })).toBe(
       "The required setting MY_DATABASE is not set.",
     );

@@ -92,7 +92,7 @@
     "description": "In place of the home timeline when the sign-in came back to the app but could not finish (an old or second tab, the server refused it); a link to sign in again follows it."
   },
   "app.not_found": {
-    "defaultMessage": "ここにはまだ何もありません。",
+    "defaultMessage": "このページはありません。アドレスを確かめるか、ホームに戻ってください。",
     "description": "The heading of the screen at an address the app has no screen for, such as a place of the navigation that is not built yet."
   },
   "app.post": {
@@ -200,7 +200,7 @@
     "description": "The notice at the top of every screen while the reader's network works but the server does not answer (an outage)."
   },
   "app.status_page": {
-    "defaultMessage": "ステータスページ",
+    "defaultMessage": "稼働状況",
     "description": "The link to the server's status page, on a service apart from the server, in the offline and outage notices and the maintenance page."
   },
   "app.update_ready": {
@@ -240,7 +240,7 @@
     "description": "Right under the title of the maintenance page, in bold, when the operators said when it should end ({time}, the weekday and time in the reader's time zone, with the zone's name)."
   },
   "app.maintenance_status": {
-    "defaultMessage": "ステータスページで確認する",
+    "defaultMessage": "稼働状況を確認する",
     "description": "The link on the maintenance page to the server's status page."
   },
   "app.notifications_count": {
@@ -256,7 +256,7 @@
     "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
   },
   "app.room_caption": {
-    "defaultMessage": "{host} がホスト · {count, plural, other {# 人が参加中}}",
+    "defaultMessage": "{host}さんがホスト · {count, plural, other {# 人が参加中}}",
     "description": "Under a voice room's name, in the column beside the timeline and in the bar of the call the reader is in: who hosts it ({host}, a display name) and how many are in it."
   },
   "app.event_elsewhere": {

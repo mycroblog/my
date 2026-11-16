@@ -107,7 +107,7 @@ func TestSignUpNeedsTheAgreement(t *testing.T) {
 	if w.Code != http.StatusUnprocessableEntity || len(id.signUps) != 0 {
 		t.Fatalf("POST sign_up without the agreement = %d with %d sign-ups, want 422 and none", w.Code, len(id.signUps))
 	}
-	if data := screenData(t, w); text(data, "signUp.errors.agreement") != "Agree to the documents above to create an account." ||
+	if data := screenData(t, w); text(data, "signUp.errors.agreement") != "Agree to the terms and policies above to create an account." ||
 		at(data, "signUp.needAgreement") != true || at(data, "signUp.agreed") != nil {
 		t.Errorf("sign-up without the agreement: %v", at(data, "signUp"))
 	}

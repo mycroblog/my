@@ -60,7 +60,7 @@
     "description": "What an announcement's page says while it loads."
   },
   "announcements.not_found": {
-    "defaultMessage": "This announcement was not found. It may have been withdrawn.",
+    "defaultMessage": "This announcement cannot be shown. It may have been withdrawn.",
     "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
   },
   "announcements.all": {

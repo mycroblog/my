@@ -418,7 +418,7 @@ func TestPublicTimelineCanBeTurnedOff(t *testing.T) {
 		if res.StatusCode != http.StatusNotFound {
 			t.Fatalf("federated timeline turned off = %d, want 404", res.StatusCode)
 		}
-		if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "指定されたリソースが見つかりません。" {
+		if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。" {
 			t.Errorf("problem = %+v", p)
 		}
 	}
@@ -589,7 +589,7 @@ func TestListAccountStatuses(t *testing.T) {
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("unknown account = %d, want 404", res.StatusCode)
 	}
-	if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "指定されたリソースが見つかりません。" ||
+	if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。" ||
 		res.Header.Get("Content-Language") != "ja" || res.Header.Get("Cache-Control") != "no-store" {
 		t.Errorf("unknown account problem = %+v %v", p, res.Header)
 	}

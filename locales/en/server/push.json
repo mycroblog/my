@@ -4,7 +4,7 @@
     "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account."
   },
   "push.admin_account_moved": {
-    "defaultMessage": "An account that the moderators of {instance} limit moved to another account",
+    "defaultMessage": "An account limited on {instance} moved to another account",
     "description": "Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.admin_appeal": {
@@ -36,11 +36,11 @@
     "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
   },
   "push.scheduled_status_failed": {
-    "defaultMessage": "{instance}: your scheduled post could not be published {reason, select, restricted {because your account cannot post now} reply_unavailable {because the post it replies to is no longer available} quote_unavailable {because the post it quotes is no longer available} media_unavailable {because an attached file is no longer available} invalid {because it does not meet the requirements for a post} rejected {because the server's automated review refused it} other {}}",
+    "defaultMessage": "{instance}: your scheduled post could not be published{reason, select, restricted { because your account cannot post now} reply_unavailable { because the post it replies to is no longer available} quote_unavailable { because the post it quotes is no longer available} media_unavailable { because an attached file is no longer available} invalid { because it does not meet the requirements for a post} rejected { because the server's automated review did not accept it} other {}}; it stays in your drafts",
     "description": "Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none."
   },
   "push.appeal_decided": {
-    "defaultMessage": "The moderators of {instance} decided your appeal",
+    "defaultMessage": "The moderators of {instance} reviewed your appeal",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.custom_emoji_request_decided": {
@@ -57,7 +57,7 @@
   },
   "push.filtered": {
     "defaultMessage": "{title} (matches your filter “{filter}”)",
-    "description": "Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as \u201cAlice mentioned you\u201d; {filter} is the title of the filter, as the user wrote it."
+    "description": "Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as “Alice mentioned you”; {filter} is the title of the filter, as the user wrote it."
   },
   "push.follow": {
     "defaultMessage": "{name} followed you",
@@ -128,7 +128,7 @@
     "description": "Web Push notification to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.service_closure_withdrawn": {
-    "defaultMessage": "{instance} will not close: the closure was withdrawn",
+    "defaultMessage": "The closure of {instance} was withdrawn",
     "description": "Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.admin_service_closure_due": {
@@ -156,7 +156,7 @@
     "description": "Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.admin_hook_appeal": {
-    "defaultMessage": "A refused post was appealed to the moderators of {instance}",
+    "defaultMessage": "An appeal of a refused post awaits the moderators of {instance}",
     "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.hook_appeal_decided": {
@@ -164,7 +164,7 @@
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.supporter_service_closure": {
-    "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
+    "defaultMessage": "Your supporter subscription on {instance} is cancelled because the server closes",
     "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.voice_room_started": {
@@ -188,11 +188,11 @@
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval."
   },
   "push.interaction_accepted": {
-    "defaultMessage": "{name} approved your interaction with their post",
+    "defaultMessage": "{name} approved your reply, boost, or quote",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it."
   },
   "push.interaction_rejected": {
-    "defaultMessage": "{name} declined your interaction with their post",
+    "defaultMessage": "{name} declined your reply, boost, or quote",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it."
   },
   "push.event_invited": {

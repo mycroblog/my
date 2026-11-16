@@ -44,7 +44,7 @@
     "description": "In place of a hashtag's posts when it has none. name is the hashtag without #."
   },
   "timeline.lists": {
-    "defaultMessage": "あなたのリスト",
+    "defaultMessage": "自分のリスト",
     "description": "The name of the index of the reader's lists, for assistive technology."
   },
   "timeline.lists_title": {

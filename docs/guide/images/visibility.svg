@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 528" width="760" height="528" role="img" aria-labelledby="title desc">
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
   <title id="title">Who can see a post, by its visibility</title>
-  <desc id="desc">A table of the five visibilities, with who can see a post on this server and on other servers. Public: on this server anyone, and it is shown on the local and federated timelines; on other servers anyone, and it is sent to your followers and the people you mention. This server: on this server the people signed in to it, and it is shown on the local timeline; on other servers only your followers, who see it as a Followers post, and it is not sent to anyone else. Unlisted: on this server anyone with the link, but it is not shown on the public timelines; on other servers anyone with the link, and it is sent to your followers and the people you mention. Followers: on both, your followers and the people you mention. Mentioned people: on both, only the people you mention.</desc>
+  <desc id="desc">A table of the five visibilities, with who can see a post on this server and on other servers. Public: on this server anyone, and it is shown on the local and federated timelines; on other servers anyone, and it is sent to your followers and the people you mention. Local: on this server the people signed in to it, and it is shown on the local timeline; on other servers only your followers, who see it as a Followers only post, and it is not sent to anyone else. Quiet public: on this server anyone with the link, but it is not shown on the public timelines; on other servers anyone with the link, and it is sent to your followers and the people you mention. Followers only: on both, your followers and the people you mention. Direct: on both, only the people you mention.</desc>
 
   <style>
     svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
@@ -42,17 +42,17 @@
   <text class="m" x="494" y="130">and mentioned people</text>
 
   <rect class="proc" x="16" y="152" width="160" height="84" rx="8"/>
-  <text class="t b" x="96" y="200" text-anchor="middle">This server</text>
+  <text class="t b" x="96" y="200" text-anchor="middle">Local</text>
   <rect class="port" x="196" y="152" width="258" height="84" rx="8"/>
   <text class="t" x="212" y="188">People signed in here</text>
   <text class="m" x="212" y="210">local timeline</text>
   <rect class="port" x="478" y="152" width="258" height="84" rx="8"/>
   <text class="t" x="494" y="180">Your followers only</text>
-  <text class="m" x="494" y="202">shown as Followers</text>
+  <text class="m" x="494" y="202">shown as Followers only</text>
   <text class="danger-text" x="494" y="222">not sent to anyone else</text>
 
   <rect class="proc" x="16" y="244" width="160" height="84" rx="8"/>
-  <text class="t b" x="96" y="292" text-anchor="middle">Unlisted</text>
+  <text class="t b" x="96" y="292" text-anchor="middle">Quiet public</text>
   <rect class="port" x="196" y="244" width="258" height="84" rx="8"/>
   <text class="t" x="212" y="280">Anyone with the link</text>
   <text class="m" x="212" y="302">not on public timelines</text>
@@ -62,7 +62,7 @@
   <text class="m" x="494" y="314">and mentioned people</text>
 
   <rect class="proc" x="16" y="336" width="160" height="84" rx="8"/>
-  <text class="t b" x="96" y="384" text-anchor="middle">Followers</text>
+  <text class="t b" x="96" y="384" text-anchor="middle">Followers only</text>
   <rect class="port" x="196" y="336" width="258" height="84" rx="8"/>
   <text class="t" x="212" y="372">Your followers and</text>
   <text class="t" x="212" y="394">mentioned people</text>
@@ -71,7 +71,7 @@
   <text class="t" x="494" y="394">mentioned people</text>
 
   <rect class="proc" x="16" y="428" width="160" height="84" rx="8"/>
-  <text class="t b" x="96" y="476" text-anchor="middle">Mentioned people</text>
+  <text class="t b" x="96" y="476" text-anchor="middle">Direct</text>
   <rect class="port" x="196" y="428" width="258" height="84" rx="8"/>
   <text class="t" x="212" y="476">Mentioned people</text>
   <rect class="port" x="478" y="428" width="258" height="84" rx="8"/>

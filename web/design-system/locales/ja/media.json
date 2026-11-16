@@ -20,7 +20,7 @@
     "description": "The line above a post's attached files (of a kind the client cannot show) marked sensitive, which stay folded away until the reader shows them, followed by a Show or Hide button. count is how many; one alone has no number."
   },
   "media.sensitive_mixed": {
-    "defaultMessage": "{count, plural, other {センシティブな添付 # 件}}",
+    "defaultMessage": "{count, plural, other {センシティブな添付ファイル # 件}}",
     "description": "The line above a post's sensitive media of several kinds (such as images and a sound), covered until the reader shows them, followed by a Show or Hide button. count is how many, at least two."
   },
   "media.show": {

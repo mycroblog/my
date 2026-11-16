@@ -34,21 +34,21 @@ func (l *Localizer) ServerAuthAuthorizeGroup(risk string) string {
 
 // ServerAuthAuthorizeImpersonation formats "server:auth.authorize.impersonation". Warning on the consent page when the application is sent back to a loopback address or a custom URL scheme, which any app on the device can claim. {target} is that host or scheme.
 //
-//	en: After you allow, the answer goes to {target}, which other apps on your device can also claim. It may be a different app from the one named above. Allow only if you started this from that app.
+//	en: If you allow, access to your account goes to {target}, an address that any app on your device can claim. It may not be the app named above. Allow only if you started this from that app.
 func (l *Localizer) ServerAuthAuthorizeImpersonation(target string) string {
 	return l.format("server:auth.authorize.impersonation", map[string]any{"target": target})
 }
 
 // ServerAuthAuthorizeInvalid formats "server:auth.authorize.invalid". Error page (HTTP 400) when an application opened the authorization page with an unknown client or an unregistered redirect address.
 //
-//	en: This application's authorization request is invalid. Contact the application's developer.
+//	en: This app opened this page with details this server does not accept, so you cannot allow it. Contact the app's developer.
 func (l *Localizer) ServerAuthAuthorizeInvalid() string {
 	return l.format("server:auth.authorize.invalid", nil)
 }
 
 // ServerAuthAuthorizeOriginDynamic formats "server:auth.authorize.origin.dynamic". Where the application comes from, on the consent page, for an application that registered itself by dynamic client registration.
 //
-//	en: An application that registered itself, with details it declared on its own
+//	en: An app that registered itself, with details it declared on its own
 func (l *Localizer) ServerAuthAuthorizeOriginDynamic() string {
 	return l.format("server:auth.authorize.origin.dynamic", nil)
 }
@@ -62,49 +62,49 @@ func (l *Localizer) ServerAuthAuthorizeOriginMetadataDocument(host string) strin
 
 // ServerAuthAuthorizeOriginUser formats "server:auth.authorize.origin.user". Where the application comes from, on the consent page, for an application a user of this server registered. {owner} is that user's handle.
 //
-//	en: An application registered by {owner}
+//	en: An app registered by {owner}
 func (l *Localizer) ServerAuthAuthorizeOriginUser(owner string) string {
 	return l.format("server:auth.authorize.origin.user", map[string]any{"owner": owner})
 }
 
 // ServerAuthAuthorizeOriginUserUnknown formats "server:auth.authorize.origin.user_unknown". Where the application comes from, on the consent page, for an application a user of this server registered when the user cannot be named.
 //
-//	en: An application registered by a user of this server
+//	en: An app registered by a user of this server
 func (l *Localizer) ServerAuthAuthorizeOriginUserUnknown() string {
 	return l.format("server:auth.authorize.origin.user_unknown", nil)
 }
 
 // ServerAuthAuthorizeRateLimited formats "server:auth.authorize.rate_limited". Error page (HTTP 429) when the authorization page could not fetch a client's metadata document because its fetch limits are used up.
 //
-//	en: Too many authorization requests were made for this application. Wait a little and try again.
+//	en: The page to allow this app was opened too many times in a short while. Wait a little and try again.
 func (l *Localizer) ServerAuthAuthorizeRateLimited() string {
 	return l.format("server:auth.authorize.rate_limited", nil)
 }
 
 // ServerAuthAuthorizeScopeAdmin formats "server:auth.authorize.scope.admin". Permission (OAuth scope admin) listed on the authorization page.
 //
-//	en: Administer the instance, as far as your roles allow
+//	en: Administer this server, within what your account may do
 func (l *Localizer) ServerAuthAuthorizeScopeAdmin() string {
 	return l.format("server:auth.authorize.scope.admin", nil)
 }
 
 // ServerAuthAuthorizeScopeAdminPermission formats "server:auth.authorize.scope.admin_permission". Permission (an OAuth permission scope admin:<permission>, which only a token the user issues to themselves holds) listed where scopes are described. {permission} is the name of a permission of the user's roles, such as manage_invites.
 //
-//	en: Use the permission {permission} of your roles
+//	en: Use the permission {permission} your account has
 func (l *Localizer) ServerAuthAuthorizeScopeAdminPermission(permission string) string {
 	return l.format("server:auth.authorize.scope.admin_permission", map[string]any{"permission": permission})
 }
 
 // ServerAuthAuthorizeScopeAdminRead formats "server:auth.authorize.scope.admin_read". Permission (OAuth scope admin:read) listed on the authorization page.
 //
-//	en: Read the instance's administration data, as far as your roles allow
+//	en: Read this server's administration data, within what your account may do
 func (l *Localizer) ServerAuthAuthorizeScopeAdminRead() string {
 	return l.format("server:auth.authorize.scope.admin_read", nil)
 }
 
 // ServerAuthAuthorizeScopeAdminWrite formats "server:auth.authorize.scope.admin_write". Permission (OAuth scope admin:write) listed on the authorization page.
 //
-//	en: Change the instance's administration data, as far as your roles allow
+//	en: Change this server's administration data, within what your account may do
 func (l *Localizer) ServerAuthAuthorizeScopeAdminWrite() string {
 	return l.format("server:auth.authorize.scope.admin_write", nil)
 }
@@ -181,7 +181,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadFilters() string {
 
 // ServerAuthAuthorizeScopeReadFinance formats "server:auth.authorize.scope.read_finance". Permission (OAuth scope read:finance) listed on the authorization page.
 //
-//	en: Read the totals of the instance's costs and income, as far as your roles allow
+//	en: Read the totals of this server's costs and income, within what your account may do
 func (l *Localizer) ServerAuthAuthorizeScopeReadFinance() string {
 	return l.format("server:auth.authorize.scope.read_finance", nil)
 }
@@ -300,7 +300,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteFollows() string {
 
 // ServerAuthAuthorizeScopeWriteMedia formats "server:auth.authorize.scope.write_media". Permission (OAuth scope write:media) listed on the authorization page.
 //
-//	en: Upload images and edit their descriptions
+//	en: Upload images, videos, and audio, and edit their descriptions
 func (l *Localizer) ServerAuthAuthorizeScopeWriteMedia() string {
 	return l.format("server:auth.authorize.scope.write_media", nil)
 }
@@ -349,7 +349,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteVoice() string {
 
 // ServerAuthAuthorizeUnverified formats "server:auth.authorize.unverified". Note on the authorization (consent) page of a third-party application: this server has not checked it; the name and logo are the application's own claim.
 //
-//	en: This server has not verified this application. Its name is the application's own claim.
+//	en: This server has not verified this app. Its name is the app's own claim.
 func (l *Localizer) ServerAuthAuthorizeUnverified() string {
 	return l.format("server:auth.authorize.unverified", nil)
 }
@@ -363,7 +363,7 @@ func (l *Localizer) ServerAuthAuthorizeWebsite(url string) string {
 
 // ServerAuthCrossOrigin formats "server:auth.cross_origin". Body of the page shown (HTTP 403) when a sign-in or sign-out form was submitted from another origin.
 //
-//	en: The request was refused because it came from another site.
+//	en: This form was sent from another site, so it was not accepted. Open this server's page and try again.
 func (l *Localizer) ServerAuthCrossOrigin() string {
 	return l.format("server:auth.cross_origin", nil)
 }
@@ -384,7 +384,7 @@ func (l *Localizer) ServerAuthDocumentTermsTitle() string {
 
 // ServerAuthExternalDenied formats "server:auth.external.denied". Alert on the sign-in page when the account at the external login provider does not meet the conditions that the administrators set (such as an organization).
 //
-//	en: This server does not accept that account of the other service.
+//	en: This server does not accept that account of the other service. Sign in another way.
 func (l *Localizer) ServerAuthExternalDenied() string {
 	return l.format("server:auth.external.denied", nil)
 }
@@ -454,7 +454,7 @@ func (l *Localizer) ServerAuthForgotPasswordInvalidEmail() string {
 
 // ServerAuthForgotPasswordRateLimited formats "server:auth.forgot_password.rate_limited". Error (HTTP 429) after too many requests for a password reset link from the same network. {minutes} is the wait, rounded up to whole minutes.
 //
-//	en: {minutes, plural, one {Too many requests from your network. Try again in # minute.} other {Too many requests from your network. Try again in # minutes.}}
+//	en: {minutes, plural, one {Too many links to set a new password were asked for from your network. Try again in # minute.} other {Too many links to set a new password were asked for from your network. Try again in # minutes.}}
 func (l *Localizer) ServerAuthForgotPasswordRateLimited(minutes int) string {
 	return l.format("server:auth.forgot_password.rate_limited", map[string]any{"minutes": minutes})
 }
@@ -477,7 +477,7 @@ func (l *Localizer) ServerAuthForgotPasswordSent(args ServerAuthForgotPasswordSe
 
 // ServerAuthFormExpired formats "server:auth.form_expired". Error on the sign-in screens (HTTP 403) when the form's anti-forgery token is missing or does not match, e.g. after cookies were cleared.
 //
-//	en: This form has expired. Please try again.
+//	en: This form has expired. Try again.
 func (l *Localizer) ServerAuthFormExpired() string {
 	return l.format("server:auth.form_expired", nil)
 }
@@ -533,7 +533,7 @@ func (l *Localizer) ServerAuthMailUnsubscribeDone(group string) string {
 
 // ServerAuthMailUnsubscribeInvalid formats "server:auth.mail_unsubscribe.invalid". Error when an unsubscribe link is unknown or expired. Must not say which.
 //
-//	en: This link is not valid. It may have expired. You can stop the emails in your preferences.
+//	en: This link is not valid. It may have expired. You can stop the emails in your notification settings.
 func (l *Localizer) ServerAuthMailUnsubscribeInvalid() string {
 	return l.format("server:auth.mail_unsubscribe.invalid", nil)
 }
@@ -554,7 +554,7 @@ func (l *Localizer) ServerAuthResetPasswordInvalid() string {
 
 // ServerAuthResetPasswordLoginProvidersOnly formats "server:auth.reset_password.login_providers_only". Error page of a password reset link while the instance limits sign-in to login providers. It is the same whether or not the link works.
 //
-//	en: This server signs in only through the login providers, so this link cannot set a password now. If your account has none linked, ask the administrators.
+//	en: On this server, you sign in only with another service, so this link cannot set a password now. If your account is not linked to one, ask the administrators.
 func (l *Localizer) ServerAuthResetPasswordLoginProvidersOnly() string {
 	return l.format("server:auth.reset_password.login_providers_only", nil)
 }
@@ -568,7 +568,7 @@ func (l *Localizer) ServerAuthSignInFailed() string {
 
 // ServerAuthSignInLoginProvidersOnly formats "server:auth.sign_in.login_providers_only". Note on the sign-in page, and the refusal of a sign-in with a password or a passkey, while the instance limits sign-in to login providers. It is the same for every account.
 //
-//	en: This server signs in only through the login providers. If your account has none linked, ask the administrators.
+//	en: On this server, you sign in only with another service. If your account is not linked to one, ask the administrators.
 func (l *Localizer) ServerAuthSignInLoginProvidersOnly() string {
 	return l.format("server:auth.sign_in.login_providers_only", nil)
 }
@@ -610,7 +610,7 @@ func (l *Localizer) ServerAuthSignInRateLimited(minutes int) string {
 
 // ServerAuthSignUpAgreementRequired formats "server:auth.sign_up.agreement.required". Error under the agreement checkbox of the registration form when the form was sent without it.
 //
-//	en: Agree to the documents above to create an account.
+//	en: Agree to the terms and policies above to create an account.
 func (l *Localizer) ServerAuthSignUpAgreementRequired() string {
 	return l.format("server:auth.sign_up.agreement.required", nil)
 }
@@ -624,7 +624,7 @@ func (l *Localizer) ServerAuthSignUpEmailInvalid() string {
 
 // ServerAuthSignUpEmailTaken formats "server:auth.sign_up.email_taken". Error under the email address field when another account uses the address.
 //
-//	en: This email address is already in use.
+//	en: This email address is already in use. Sign in with it, or use another address.
 func (l *Localizer) ServerAuthSignUpEmailTaken() string {
 	return l.format("server:auth.sign_up.email_taken", nil)
 }
@@ -659,7 +659,7 @@ func (l *Localizer) ServerAuthSignUpInviteHintOptional() string {
 
 // ServerAuthSignUpInviteInvalid formats "server:auth.sign_up.invite_invalid". Error under the invite code field when the code is unknown, expired, revoked, used up, or of a member who can no longer invite. Must not say which.
 //
-//	en: This invite code is not valid. It may have expired or been used up.
+//	en: This invite code is not valid. It may have expired or been used up. Ask the person who invited you for a new one.
 func (l *Localizer) ServerAuthSignUpInviteInvalid() string {
 	return l.format("server:auth.sign_up.invite_invalid", nil)
 }
@@ -673,7 +673,7 @@ func (l *Localizer) ServerAuthSignUpInviteRequired() string {
 
 // ServerAuthSignUpLoginProvidersOnly formats "server:auth.sign_up.login_providers_only". Note on the registration page, and the refusal of a registration with a password, while the instance limits registration to login providers.
 //
-//	en: This server registers new users only through the login providers.
+//	en: On this server, you create an account only with another service.
 func (l *Localizer) ServerAuthSignUpLoginProvidersOnly() string {
 	return l.format("server:auth.sign_up.login_providers_only", nil)
 }
@@ -733,7 +733,7 @@ func (l *Localizer) ServerAuthSignUpReasonInvalid(max float64) string {
 
 // ServerAuthSignUpRefused formats "server:auth.sign_up.refused". Error (HTTP 403) when the sign-up block list or the external review refuses the sign-up. It deliberately does not say why.
 //
-//	en: This server cannot accept this sign-up.
+//	en: This server cannot accept this sign-up. If you think this is a mistake, contact the administrators.
 func (l *Localizer) ServerAuthSignUpRefused() string {
 	return l.format("server:auth.sign_up.refused", nil)
 }
@@ -754,7 +754,7 @@ func (l *Localizer) ServerAuthSignUpUsernameInvalid(max float64) string {
 
 // ServerAuthSignUpUsernameTaken formats "server:auth.sign_up.username_taken". Error under the username field when another account has the username.
 //
-//	en: This username is already taken.
+//	en: This username is already taken. Choose another.
 func (l *Localizer) ServerAuthSignUpUsernameTaken() string {
 	return l.format("server:auth.sign_up.username_taken", nil)
 }
@@ -861,7 +861,7 @@ func (l *Localizer) ServerAuthStatusDeactivatedWrongPassword() string {
 
 // ServerAuthStatusResendFailed formats "server:auth.status.resend_failed". Error when the confirmation email could not be sent (for example, the mail server is down).
 //
-//	en: The email could not be sent. Please try again later.
+//	en: The email could not be sent. Try again later.
 func (l *Localizer) ServerAuthStatusResendFailed() string {
 	return l.format("server:auth.status.resend_failed", nil)
 }
@@ -938,7 +938,7 @@ func (l *Localizer) ServerClosureDocumentTitle(server string) string {
 
 // ServerClosureNotice formats "server:closure.notice". Heading over the administrators' message of the closure announcement on the static closure page.
 //
-//	en: Message from the administrators
+//	en: Notice from the administrators
 func (l *Localizer) ServerClosureNotice() string {
 	return l.format("server:closure.notice", nil)
 }
@@ -994,7 +994,7 @@ func (l *Localizer) ServerConfigReadinessWarnings(count int) string {
 
 // ServerErrorsAccountMoved formats "server:errors.account_moved". API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first.
 //
-//	en: Your account has moved.
+//	en: Your account has moved to another account. To do this, cancel the move first.
 func (l *Localizer) ServerErrorsAccountMoved() string {
 	return l.format("server:errors.account_moved", nil)
 }
@@ -1057,14 +1057,14 @@ func (l *Localizer) ServerErrorsAppealWindowClosed() string {
 
 // ServerErrorsBadGateway formats "server:errors.bad_gateway". Error title for HTTP 502 when the server could not get a resource from a remote server, e.g. the media proxy could not reach the remote file or the remote server answered with a 5xx.
 //
-//	en: A remote server could not be reached or answered with an error.
+//	en: Another server could not be reached or had an error. Try again later.
 func (l *Localizer) ServerErrorsBadGateway() string {
 	return l.format("server:errors.bad_gateway", nil)
 }
 
 // ServerErrorsBadRequest formats "server:errors.bad_request". API error message for HTTP 400 when no more specific message applies.
 //
-//	en: The request is invalid.
+//	en: This could not be done because of a problem in the app. Reload or update the app and try again.
 func (l *Localizer) ServerErrorsBadRequest() string {
 	return l.format("server:errors.bad_request", nil)
 }
@@ -1078,7 +1078,7 @@ func (l *Localizer) ServerErrorsBlocking() string {
 
 // ServerErrorsConflict formats "server:errors.conflict". API error title for HTTP 409 when no more specific message applies.
 //
-//	en: The request conflicts with the current state of the resource.
+//	en: This changed while you were working on it. Reload it and try again.
 func (l *Localizer) ServerErrorsConflict() string {
 	return l.format("server:errors.conflict", nil)
 }
@@ -1141,7 +1141,7 @@ func (l *Localizer) ServerErrorsDeactivationMoved() string {
 
 // ServerErrorsDeactivationPaidSubscription formats "server:errors.deactivation.paid_subscription". API error detail: the account cannot be deactivated while a paid supporter subscription goes on.
 //
-//	en: Cancel your supporter subscription first.
+//	en: Cancel your supporter plan first.
 func (l *Localizer) ServerErrorsDeactivationPaidSubscription() string {
 	return l.format("server:errors.deactivation.paid_subscription", nil)
 }
@@ -1162,7 +1162,7 @@ func (l *Localizer) ServerErrorsDeactivationRefused() string {
 
 // ServerErrorsDeactivationRegistrationPending formats "server:errors.deactivation.registration_pending". API error detail: the account cannot be deactivated because its registration waits for review.
 //
-//	en: The registration of this account is waiting for review.
+//	en: The registration of this account is waiting for a moderator's approval.
 func (l *Localizer) ServerErrorsDeactivationRegistrationPending() string {
 	return l.format("server:errors.deactivation.registration_pending", nil)
 }
@@ -1190,7 +1190,7 @@ func (l *Localizer) ServerErrorsDraftIfMatchRequired() string {
 
 // ServerErrorsDraftInvalid formats "server:errors.draft.invalid". Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range.
 //
-//	en: The draft cannot be saved: the text, a media file, or the poll is outside what a draft keeps.
+//	en: The draft cannot be saved: the text, an attached file, or the poll is outside what a draft keeps.
 func (l *Localizer) ServerErrorsDraftInvalid() string {
 	return l.format("server:errors.draft.invalid", nil)
 }
@@ -1260,7 +1260,7 @@ func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
 
 // ServerErrorsEventClosed formats "server:errors.event.closed". API error title for HTTP 409 when an event was cancelled, or an answer comes after it started.
 //
-//	en: The event takes no more changes.
+//	en: This event was cancelled or has started, so it can no longer be changed or answered.
 func (l *Localizer) ServerErrorsEventClosed() string {
 	return l.format("server:errors.event.closed", nil)
 }
@@ -1351,14 +1351,14 @@ func (l *Localizer) ServerErrorsEventVoiceUnavailable() string {
 
 // ServerErrorsExportInProgress formats "server:errors.export.in_progress". API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built.
 //
-//	en: An archive of your data is already being prepared. Wait until it is ready.
+//	en: An export of your data is already being prepared. Wait until it is ready.
 func (l *Localizer) ServerErrorsExportInProgress() string {
 	return l.format("server:errors.export.in_progress", nil)
 }
 
 // ServerErrorsExportNotReady formats "server:errors.export.not_ready". API error title for HTTP 409 when the user downloads an archive of their data that is still being built, failed, or has expired.
 //
-//	en: This archive cannot be downloaded.
+//	en: This export cannot be downloaded. If it is being prepared, wait until it is ready; if it failed or expired, request another one.
 func (l *Localizer) ServerErrorsExportNotReady() string {
 	return l.format("server:errors.export.not_ready", nil)
 }
@@ -1379,14 +1379,14 @@ func (l *Localizer) ServerErrorsFeaturedTagsTooMany() string {
 
 // ServerErrorsFederationRestricted formats "server:errors.federation_restricted". API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post.
 //
-//	en: This server does not federate in the direction that this needs.
+//	en: This server does not allow this with accounts and posts on other servers.
 func (l *Localizer) ServerErrorsFederationRestricted() string {
 	return l.format("server:errors.federation_restricted", nil)
 }
 
 // ServerErrorsFirstPartyOnly formats "server:errors.first_party_only". API error title for HTTP 403 when an app that is not this server's own client calls an account security operation (password, two-factor authentication, passkeys, deleting the account).
 //
-//	en: Only this server's own apps may do this.
+//	en: Only this server's own app can do this. Open this server in a browser and do it there.
 func (l *Localizer) ServerErrorsFirstPartyOnly() string {
 	return l.format("server:errors.first_party_only", nil)
 }
@@ -1456,7 +1456,7 @@ func (l *Localizer) ServerErrorsImportInProgress() string {
 
 // ServerErrorsImportInvalidCsv formats "server:errors.import.invalid_csv". Detail of an API error (HTTP 422) when the file the user imports is not a valid CSV file, e.g. it has an unterminated quoted field.
 //
-//	en: The file cannot be read as CSV.
+//	en: The file cannot be read as CSV. Choose a CSV file and try again.
 func (l *Localizer) ServerErrorsImportInvalidCsv() string {
 	return l.format("server:errors.import.invalid_csv", nil)
 }
@@ -1477,21 +1477,21 @@ func (l *Localizer) ServerErrorsInsufficientScopeDetail(scope string) string {
 
 // ServerErrorsInteractionRequestAnswered formats "server:errors.interaction_request.answered". Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before.
 //
-//	en: This request is answered already.
+//	en: You have already approved or declined this reply, boost, or quote.
 func (l *Localizer) ServerErrorsInteractionRequestAnswered() string {
 	return l.format("server:errors.interaction_request.answered", nil)
 }
 
 // ServerErrorsInteractionRestricted formats "server:errors.interaction_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying).
 //
-//	en: Your account may not follow, favourite, boost, or reply right now.
+//	en: A moderation action keeps your account from following, favouriting, boosting, or replying for now.
 func (l *Localizer) ServerErrorsInteractionRestricted() string {
 	return l.format("server:errors.interaction_restricted", nil)
 }
 
 // ServerErrorsInternal formats "server:errors.internal". API error message for HTTP 500. Must not reveal internal details.
 //
-//	en: An unexpected error occurred. Please try again later.
+//	en: An unexpected error occurred. Try again later.
 func (l *Localizer) ServerErrorsInternal() string {
 	return l.format("server:errors.internal", nil)
 }
@@ -1512,7 +1512,7 @@ func (l *Localizer) ServerErrorsInvalidCustomEmoji() string {
 
 // ServerErrorsInvalidCustomEmojiDetail formats "server:errors.invalid_custom_emoji_detail". Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule.
 //
-//	en: {reason, select, invalid_shortcode {A shortcode is 2 to 30 letters (A to Z), digits, and underscores.} shortcode_taken {A custom emoji of this server already has this shortcode.} invalid_alias {An alias is 2 to 30 letters (A to Z), digits, and underscores, and an emoji has at most 10.} invalid_category {A category is at most 64 characters.} media_not_found {The image was not found among your uploads.} media_not_ready {The image is still being processed. Try again in a moment.} unsupported_format {The image must be a PNG, a GIF, or a WebP.} too_large {The image is larger than the limit of this server.} too_big {The image must be at most 1,024 pixels on each side.} remote_emoji {This can be done only with the custom emoji of this server.} local_emoji {This can be done only with the custom emoji of other servers.} fetch_failed {The image of the custom emoji could not be fetched from its server.} limit_reached {You have already requested as many custom emoji this month as your monthly limit. The count resets on the first day of each month (UTC).} request_pending {This custom emoji already has a pending request for a new image.} invalid_reason {A reason is at most 500 characters.} other {The custom emoji breaks a rule.}}
+//	en: {reason, select, invalid_shortcode {A shortcode is 2 to 30 letters (A to Z), digits, and underscores.} shortcode_taken {A custom emoji of this server already has this shortcode.} invalid_alias {An alias is 2 to 30 letters (A to Z), digits, and underscores, and an emoji has at most 10.} invalid_category {A category is at most 64 characters.} media_not_found {The image was not found among your uploads.} media_not_ready {The image is still being processed. Try again in a moment.} unsupported_format {The image must be a PNG, a GIF, or a WebP.} too_large {The image is larger than the limit of this server. Choose a smaller image.} too_big {The image must be at most 1,024 pixels on each side.} remote_emoji {This can be done only with the custom emoji of this server.} local_emoji {This can be done only with the custom emoji of other servers.} fetch_failed {The image of the custom emoji could not be fetched from its server.} limit_reached {You have already requested as many custom emoji this month as your monthly limit. The count resets on the first day of each month (UTC).} request_pending {This custom emoji already has a pending request for a new image.} invalid_reason {A reason is at most 500 characters.} other {The custom emoji breaks a rule.}}
 func (l *Localizer) ServerErrorsInvalidCustomEmojiDetail(reason string) string {
 	return l.format("server:errors.invalid_custom_emoji_detail", map[string]any{"reason": reason})
 }
@@ -1547,7 +1547,7 @@ func (l *Localizer) ServerErrorsInvalidValue(name string) string {
 
 // ServerErrorsInvitesNotAllowed formats "server:errors.invites.not_allowed". Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts.
 //
-//	en: You can't create invites.
+//	en: You cannot create invites.
 func (l *Localizer) ServerErrorsInvitesNotAllowed() string {
 	return l.format("server:errors.invites.not_allowed", nil)
 }
@@ -1610,28 +1610,28 @@ func (l *Localizer) ServerErrorsListsTooMany() string {
 
 // ServerErrorsLoginProviderLinked formats "server:errors.login_provider.linked". Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account.
 //
-//	en: You have already linked an account at that sign-in service.
+//	en: You have already linked an account of that service.
 func (l *Localizer) ServerErrorsLoginProviderLinked() string {
 	return l.format("server:errors.login_provider.linked", nil)
 }
 
 // ServerErrorsLoginProviderUnavailable formats "server:errors.login_provider.unavailable". Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at.
 //
-//	en: That sign-in service is not available.
+//	en: Signing in with that service is not available.
 func (l *Localizer) ServerErrorsLoginProviderUnavailable() string {
 	return l.format("server:errors.login_provider.unavailable", nil)
 }
 
 // ServerErrorsLoginProvidersOnly formats "server:errors.login_providers_only". Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers.
 //
-//	en: This server signs in only through its login providers, so passwords and passkeys cannot be set here.
+//	en: On this server, you sign in only with another service, so you cannot set a password or add a passkey.
 func (l *Localizer) ServerErrorsLoginProvidersOnly() string {
 	return l.format("server:errors.login_providers_only", nil)
 }
 
 // ServerErrorsMediaAttached formats "server:errors.media_attached". API error title for HTTP 409 when the user tries to change the description or focal point of an uploaded media file that a post already attaches.
 //
-//	en: This media is attached to a post and can no longer be changed.
+//	en: This file is attached to a post and can no longer be changed.
 func (l *Localizer) ServerErrorsMediaAttached() string {
 	return l.format("server:errors.media_attached", nil)
 }
@@ -1645,7 +1645,7 @@ func (l *Localizer) ServerErrorsMediaAttachedDetail() string {
 
 // ServerErrorsMediaCorrupt formats "server:errors.media_corrupt". API error title for HTTP 422 when an uploaded file has the signature of an image format but does not decode.
 //
-//	en: The file could not be read as an image.
+//	en: The file could not be read as an image. Choose another file.
 func (l *Localizer) ServerErrorsMediaCorrupt() string {
 	return l.format("server:errors.media_corrupt", nil)
 }
@@ -1666,7 +1666,7 @@ func (l *Localizer) ServerErrorsMediaDescriptionTooLongDetail(max int) string {
 
 // ServerErrorsMediaDimensions formats "server:errors.media_dimensions". API error title for HTTP 422 when an uploaded image is too wide or tall, or has too many pixels or animation frames.
 //
-//	en: The image is too large in width, height, or number of frames.
+//	en: The image is too large in width, height, or number of frames. Choose a smaller image.
 func (l *Localizer) ServerErrorsMediaDimensions() string {
 	return l.format("server:errors.media_dimensions", nil)
 }
@@ -1680,14 +1680,14 @@ func (l *Localizer) ServerErrorsMediaInvalidFocus() string {
 
 // ServerErrorsMediaTooLarge formats "server:errors.media_too_large". API error title for HTTP 413 when an uploaded media file is larger than the server accepts.
 //
-//	en: The file is too large.
+//	en: The file is too large. Choose a smaller file.
 func (l *Localizer) ServerErrorsMediaTooLarge() string {
 	return l.format("server:errors.media_too_large", nil)
 }
 
 // ServerErrorsMediaTooLong formats "server:errors.media_too_long". API error title for HTTP 422 when an uploaded video or audio file is longer than the server accepts.
 //
-//	en: The video or audio is too long.
+//	en: The video or audio is too long. Shorten it and try again.
 func (l *Localizer) ServerErrorsMediaTooLong() string {
 	return l.format("server:errors.media_too_long", nil)
 }
@@ -1722,7 +1722,7 @@ func (l *Localizer) ServerErrorsMissingPermissionDetail(permission string) strin
 
 // ServerErrorsMoveAliasMissing formats "server:errors.move_alias_missing". API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first.
 //
-//	en: The account to move to does not list your account as an alias.
+//	en: The account to move to does not list your account as an alias. Add your account as an alias on that account first.
 func (l *Localizer) ServerErrorsMoveAliasMissing() string {
 	return l.format("server:errors.move_alias_missing", nil)
 }
@@ -1743,14 +1743,14 @@ func (l *Localizer) ServerErrorsMoveTargetUnavailable() string {
 
 // ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before.
 //
-//	en: Your account moved too recently.
+//	en: Your account can move again 30 days after its last move, and not to an account it moved to before.
 func (l *Localizer) ServerErrorsMoveTooSoon() string {
 	return l.format("server:errors.move_too_soon", nil)
 }
 
 // ServerErrorsNotFound formats "server:errors.not_found". API error message for HTTP 404.
 //
-//	en: The requested resource was not found.
+//	en: This could not be found. It may have been deleted, or the link may be wrong.
 func (l *Localizer) ServerErrorsNotFound() string {
 	return l.format("server:errors.not_found", nil)
 }
@@ -1792,14 +1792,14 @@ func (l *Localizer) ServerErrorsPasskeyConfirmationExpired() string {
 
 // ServerErrorsPasskeyInvalid formats "server:errors.passkey.invalid". Title of the HTTP 422 API error when the browser's answer to a passkey registration does not verify (another site, no screen lock or biometrics, or a passkey that is registered already).
 //
-//	en: The passkey could not be verified.
+//	en: The passkey could not be added. It may be added already; if not, turn on the device's screen lock and try again.
 func (l *Localizer) ServerErrorsPasskeyInvalid() string {
 	return l.format("server:errors.passkey.invalid", nil)
 }
 
 // ServerErrorsPasskeyLastSignInMethod formats "server:errors.passkey.last_sign_in_method". Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in.
 //
-//	en: This is your last way to sign in. Add a passkey, set a password, or link an account first.
+//	en: This is your last way to sign in. Add a passkey, set a password, or link an account of another service first.
 func (l *Localizer) ServerErrorsPasskeyLastSignInMethod() string {
 	return l.format("server:errors.passkey.last_sign_in_method", nil)
 }
@@ -1820,7 +1820,7 @@ func (l *Localizer) ServerErrorsPasskeyTooMany() string {
 
 // ServerErrorsPreconditionFailed formats "server:errors.precondition_failed". API error title for HTTP 412 when the If-Match of a request names an older version of the resource.
 //
-//	en: The resource changed since you read it.
+//	en: This changed after you opened it. Reload it and try again.
 func (l *Localizer) ServerErrorsPreconditionFailed() string {
 	return l.format("server:errors.precondition_failed", nil)
 }
@@ -1848,7 +1848,7 @@ func (l *Localizer) ServerErrorsProfileRejectedDetail() string {
 
 // ServerErrorsRateLimited formats "server:errors.rate_limited". API error title for HTTP 429 when a client sent more requests than the rate limit allows.
 //
-//	en: Too many requests.
+//	en: You are doing this too often. Wait a moment and try again.
 func (l *Localizer) ServerErrorsRateLimited() string {
 	return l.format("server:errors.rate_limited", nil)
 }
@@ -1876,7 +1876,7 @@ func (l *Localizer) ServerErrorsRelayInvalid() string {
 
 // ServerErrorsRelayInvalidDetail formats "server:errors.relay.invalid_detail". API error detail for HTTP 422 when a relay operation is refused. {reason} is url, exists, domain_suspended, not_actor, or state.
 //
-//	en: {reason, select, url {The URL must be an https URL of at most 2048 bytes.} exists {A relay with this URL is already registered.} domain_suspended {The relay's server is suspended by a domain action.} not_actor {The URL does not serve the actor of a relay with an inbox.} state {The relay is not in a state that allows this: leave a relay before you delete it, and join only one that you left or that rejected you.} other {The relay cannot be changed that way.}}
+//	en: {reason, select, url {The URL must be an https URL of at most 2048 characters.} exists {A relay with this URL is already registered.} domain_suspended {The relay's server is suspended by a domain action.} not_actor {This URL is not the address of a relay.} state {The relay is not in a state that allows this: leave a relay before you delete it, and join only one that you left or that rejected you.} other {The relay cannot be changed that way.}}
 func (l *Localizer) ServerErrorsRelayInvalidDetail(reason string) string {
 	return l.format("server:errors.relay.invalid_detail", map[string]any{"reason": reason})
 }
@@ -1890,7 +1890,7 @@ func (l *Localizer) ServerErrorsRemoteAccount() string {
 
 // ServerErrorsReportNotForwardable formats "server:errors.report.not_forwardable". Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target.
 //
-//	en: Only a report filed on this server about an account on another server, of no voice chat room, can be forwarded.
+//	en: Only a report filed on this server about an account on another server can be forwarded. A report of a voice chat room cannot.
 func (l *Localizer) ServerErrorsReportNotForwardable() string {
 	return l.format("server:errors.report.not_forwardable", nil)
 }
@@ -1904,7 +1904,7 @@ func (l *Localizer) ServerErrorsReportNotResolved() string {
 
 // ServerErrorsRequestTooLarge formats "server:errors.request_too_large". API error title for HTTP 413 when a request body is larger than the server accepts.
 //
-//	en: The request is too large.
+//	en: What you sent is too large. Make it smaller and try again.
 func (l *Localizer) ServerErrorsRequestTooLarge() string {
 	return l.format("server:errors.request_too_large", nil)
 }
@@ -1925,7 +1925,7 @@ func (l *Localizer) ServerErrorsRoleInvalid() string {
 
 // ServerErrorsRoleInvalidDetail formats "server:errors.role.invalid_detail". API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color.
 //
-//	en: {reason, select, key {The key must be 1 to 64 lowercase letters, digits, underscores, or hyphens.} key_taken {Another role has this key.} position {The position must be from 0 to 999.} permissions {Choose each permission at most once.} builtin {The admin role cannot change, and the built-in roles cannot be deleted.} held {Revoke the role from everyone who holds it first.} missing_permission {You can give or take only the permissions you hold.} badge_label {The badge name must be 1 to 32 characters on one line.} badge_color {Choose one of the badge colors.} other {The change breaks a rule.}}
+//	en: {reason, select, key {The key must be 1 to 64 lowercase letters, digits, underscores, or hyphens.} key_taken {Another role has this key.} position {The position must be from 0 to 999.} permissions {Choose each permission at most once.} builtin {The admin role cannot be changed, and the built-in roles cannot be deleted.} held {Remove the role from everyone who has it first.} missing_permission {You can give or take only the permissions you hold.} badge_label {The badge name must be 1 to 32 characters on one line.} badge_color {Choose one of the badge colors.} other {The change breaks a rule.}}
 func (l *Localizer) ServerErrorsRoleInvalidDetail(reason string) string {
 	return l.format("server:errors.role.invalid_detail", map[string]any{"reason": reason})
 }
@@ -1939,7 +1939,7 @@ func (l *Localizer) ServerErrorsRoleManagedByPlan() string {
 
 // ServerErrorsRoleManagedByPlanDetail formats "server:errors.role.managed_by_plan_detail". API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand.
 //
-//	en: Only the plan's subscriptions grant and revoke it, and its permissions and position change from the plan.
+//	en: The plan grants this role when people subscribe and removes it when their subscriptions end. Change its permissions and position in the plan's settings.
 func (l *Localizer) ServerErrorsRoleManagedByPlanDetail() string {
 	return l.format("server:errors.role.managed_by_plan_detail", nil)
 }
@@ -1967,21 +1967,21 @@ func (l *Localizer) ServerErrorsSelfRelationship() string {
 
 // ServerErrorsServiceClosed formats "server:errors.service_closed". API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports.
 //
-//	en: This server is closed.
+//	en: This server has closed.
 func (l *Localizer) ServerErrorsServiceClosed() string {
 	return l.format("server:errors.service_closed", nil)
 }
 
 // ServerErrorsServiceClosedDetail formats "server:errors.service_closed_detail". API error detail for HTTP 403 when the server is closed: what the users can still do.
 //
-//	en: The server has closed. You can still sign in and export your data.
+//	en: You can still sign in and export your data.
 func (l *Localizer) ServerErrorsServiceClosedDetail() string {
 	return l.format("server:errors.service_closed_detail", nil)
 }
 
 // ServerErrorsServiceClosing formats "server:errors.service_closing". API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions.
 //
-//	en: The closure of this server is announced.
+//	en: The closure of this server has been announced.
 func (l *Localizer) ServerErrorsServiceClosing() string {
 	return l.format("server:errors.service_closing", nil)
 }
@@ -1995,14 +1995,14 @@ func (l *Localizer) ServerErrorsServiceClosingDetail() string {
 
 // ServerErrorsServiceClosureState formats "server:errors.service_closure.state". API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes.
 //
-//	en: The service closure does not allow that in its current state.
+//	en: This cannot be done at the current step of the server's closure.
 func (l *Localizer) ServerErrorsServiceClosureState() string {
 	return l.format("server:errors.service_closure.state", nil)
 }
 
 // ServerErrorsServiceUnavailable formats "server:errors.service_unavailable". Error title for HTTP 503 when the server cannot handle the request for now, e.g. another server it needs to reach is not responding.
 //
-//	en: The service is temporarily unavailable. Please try again later.
+//	en: This is temporarily unavailable. Try again later.
 func (l *Localizer) ServerErrorsServiceUnavailable() string {
 	return l.format("server:errors.service_unavailable", nil)
 }
@@ -2121,7 +2121,7 @@ func (l *Localizer) ServerErrorsStatusEmptyText() string {
 
 // ServerErrorsStatusInvalidHashtag formats "server:errors.status.invalid_hashtag". Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have.
 //
-//	en: A hashtag of the article is not a hashtag.
+//	en: A hashtag of the article has characters that a hashtag cannot use.
 func (l *Localizer) ServerErrorsStatusInvalidHashtag() string {
 	return l.format("server:errors.status.invalid_hashtag", nil)
 }
@@ -2170,7 +2170,7 @@ func (l *Localizer) ServerErrorsStatusMediaNotFound() string {
 
 // ServerErrorsStatusMediaNotReady formats "server:errors.status.media_not_ready". Detail of the HTTP 422 API error when a post attaches a media file whose processing has not finished or failed.
 //
-//	en: An attached file is still being processed or could not be processed.
+//	en: An attached file is still being processed or could not be processed. Wait a moment, or remove it and attach it again.
 func (l *Localizer) ServerErrorsStatusMediaNotReady() string {
 	return l.format("server:errors.status.media_not_ready", nil)
 }
@@ -2212,7 +2212,7 @@ func (l *Localizer) ServerErrorsStatusNotPinnable() string {
 
 // ServerErrorsStatusPinLimit formats "server:errors.status.pin_limit". Detail of the HTTP 422 API error when a user pins more posts than allowed. {max} is the maximum number of pinned posts.
 //
-//	en: {max, plural, one {You can pin at most # post.} other {You can pin at most # posts.}}
+//	en: {max, plural, one {You can pin at most # post. Unpin one first.} other {You can pin at most # posts. Unpin one first.}}
 func (l *Localizer) ServerErrorsStatusPinLimit(max int) string {
 	return l.format("server:errors.status.pin_limit", map[string]any{"max": max})
 }
@@ -2285,7 +2285,7 @@ func (l *Localizer) ServerErrorsStatusPollWithMedia() string {
 
 // ServerErrorsStatusPostingRestricted formats "server:errors.status.posting_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from posting.
 //
-//	en: Your account may not post right now.
+//	en: A moderation action keeps your account from posting for now.
 func (l *Localizer) ServerErrorsStatusPostingRestricted() string {
 	return l.format("server:errors.status.posting_restricted", nil)
 }
@@ -2306,7 +2306,7 @@ func (l *Localizer) ServerErrorsStatusQuoteNotFound() string {
 
 // ServerErrorsStatusQuoteRemoteAudience formats "server:errors.status.quote_remote_audience". Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server.
 //
-//	en: A local, followers-only, or direct post cannot quote a post from another server.
+//	en: To quote a post from another server, make this post Public or Quiet public.
 func (l *Localizer) ServerErrorsStatusQuoteRemoteAudience() string {
 	return l.format("server:errors.status.quote_remote_audience", nil)
 }
@@ -2355,7 +2355,7 @@ func (l *Localizer) ServerErrorsStatusTooManyMedia(max int) string {
 
 // ServerErrorsStreamingTooMany formats "server:errors.streaming.too_many". Detail of the HTTP 429 API error when the user already has as many real-time update streams (open tabs or devices) as the server allows.
 //
-//	en: You have too many streams open. Close one and try again.
+//	en: Real-time updates are open in too many tabs or apps. Close one and try again.
 func (l *Localizer) ServerErrorsStreamingTooMany() string {
 	return l.format("server:errors.streaming.too_many", nil)
 }
@@ -2404,7 +2404,7 @@ func (l *Localizer) ServerErrorsSupportersIneligibleDetail(reason string) string
 
 // ServerErrorsSupportersLiveSubscriptions formats "server:errors.supporters.live_subscriptions". API error title for HTTP 409 when an administrator disables the supporter program while subscriptions go on (ADR-0072 §2).
 //
-//	en: Subscriptions to the supporter plans go on.
+//	en: Some people are still subscribed to the supporter plans.
 func (l *Localizer) ServerErrorsSupportersLiveSubscriptions() string {
 	return l.format("server:errors.supporters.live_subscriptions", nil)
 }
@@ -2425,7 +2425,7 @@ func (l *Localizer) ServerErrorsSupportersPaymentFailed() string {
 
 // ServerErrorsSupportersPaymentFailedDetail formats "server:errors.supporters.payment_failed_detail". API error detail for HTTP 402 when the payment of a change of supporter plan failed.
 //
-//	en: Nothing was charged. Update your card and try again. A card that asks for authentication on each payment cannot pay for a change.
+//	en: Nothing was charged. Change the card and try again. A card that asks for authentication on each payment cannot pay for a change.
 func (l *Localizer) ServerErrorsSupportersPaymentFailedDetail() string {
 	return l.format("server:errors.supporters.payment_failed_detail", nil)
 }
@@ -2467,14 +2467,14 @@ func (l *Localizer) ServerErrorsSupportersPlanRetired() string {
 
 // ServerErrorsSupportersPlanUnavailable formats "server:errors.supporters.plan_unavailable". API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency).
 //
-//	en: The supporter plan takes no subscriptions.
+//	en: This supporter plan is not taking subscriptions. Choose another plan.
 func (l *Localizer) ServerErrorsSupportersPlanUnavailable() string {
 	return l.format("server:errors.supporters.plan_unavailable", nil)
 }
 
 // ServerErrorsSupportersSamePlan formats "server:errors.supporters.same_plan". API error title for HTTP 422 when a user changes their subscription to the plan and interval it has.
 //
-//	en: Your subscription has this plan and interval already.
+//	en: You already subscribe to this plan with this billing interval.
 func (l *Localizer) ServerErrorsSupportersSamePlan() string {
 	return l.format("server:errors.supporters.same_plan", nil)
 }
@@ -2530,7 +2530,7 @@ func (l *Localizer) ServerErrorsSupportersTipAmountsInvalid() string {
 
 // ServerErrorsSupportersTipAmountsInvalidDetail formats "server:errors.supporters.tip_amounts_invalid_detail". API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range.
 //
-//	en: {reason, select, count {Choose 1 to 6 different amounts in one currency.} currency {Tips take yen or US dollars, and the payment provider must take the currency.} range {Each amount must be from 100 to 100,000 yen or from 1 to 1,000 US dollars, and at least the payment provider's smallest charge.} other {The amounts break a rule.}}
+//	en: {reason, select, count {Choose 1 to 6 different amounts in one currency.} currency {Use yen or US dollars, whichever the payment provider takes.} range {Each amount must be from 100 to 100,000 yen or from 1 to 1,000 US dollars, and at least the payment provider's smallest charge.} other {The amounts break a rule.}}
 func (l *Localizer) ServerErrorsSupportersTipAmountsInvalidDetail(reason string) string {
 	return l.format("server:errors.supporters.tip_amounts_invalid_detail", map[string]any{"reason": reason})
 }
@@ -2572,7 +2572,7 @@ func (l *Localizer) ServerErrorsSupportersUnavailable() string {
 
 // ServerErrorsSupportersUnavailableDetail formats "server:errors.supporters.unavailable_detail". API error detail for HTTP 409 when the supporter program is unavailable. {reason} is no_provider, no_email, or provider_mismatch.
 //
-//	en: {reason, select, no_provider {Configure a payment provider in the server's configuration first.} no_email {The server must send email, so that subscribers can verify their address.} provider_mismatch {The configured payment provider is not the one the program was enabled with. Disable the program and enable it again.} other {The supporter program cannot be used now.}}
+//	en: {reason, select, no_provider {Configure a payment provider in the server's configuration first.} no_email {Configure the server to send email first, so that subscribers can verify their address.} provider_mismatch {The configured payment provider is not the one the program was enabled with. Disable the program and enable it again.} other {The supporter program cannot be used now.}}
 func (l *Localizer) ServerErrorsSupportersUnavailableDetail(reason string) string {
 	return l.format("server:errors.supporters.unavailable_detail", map[string]any{"reason": reason})
 }
@@ -2681,7 +2681,7 @@ func (l *Localizer) ServerErrorsUnauthenticated() string {
 
 // ServerErrorsUnprocessable formats "server:errors.unprocessable". API error title for HTTP 422; the detail says what is wrong with the request.
 //
-//	en: The request cannot be processed.
+//	en: This could not be done.
 func (l *Localizer) ServerErrorsUnprocessable() string {
 	return l.format("server:errors.unprocessable", nil)
 }
@@ -2737,7 +2737,7 @@ func (l *Localizer) ServerErrorsVoiceHostingElsewhere() string {
 
 // ServerErrorsVoiceHostingElsewhereDetail formats "server:errors.voice.hosting_elsewhere_detail". API error detail for HTTP 409 when the host of an open voice chat room opens or joins another room.
 //
-//	en: Leave that room first, choosing the next host or ending it.
+//	en: Leave the room you host first, choosing the next host or ending it.
 func (l *Localizer) ServerErrorsVoiceHostingElsewhereDetail() string {
 	return l.format("server:errors.voice.hosting_elsewhere_detail", nil)
 }
@@ -2821,14 +2821,14 @@ func (l *Localizer) ServerErrorsWebhookInvalid() string {
 
 // ServerErrorsWebhookInvalidDetail formats "server:errors.webhook.invalid_detail". API error detail for HTTP 422 when the settings of a webhook endpoint break a rule. {reason} is url, description, events, or missing_permission.
 //
-//	en: {reason, select, url {The URL must be an absolute http or https URL of at most 2048 bytes, without user info or a fragment.} description {The description must be at most 200 characters, without control characters.} events {Choose at least one event, each once.} missing_permission {You need the permissions of every event you choose.} other {The settings break a rule.}}
+//	en: {reason, select, url {The URL must be an absolute http or https URL of at most 2048 characters, without user info or a fragment.} description {The description must be at most 200 characters, without control characters.} events {Choose at least one event, each once.} missing_permission {You need the permissions of every event you choose.} other {The settings break a rule.}}
 func (l *Localizer) ServerErrorsWebhookInvalidDetail(reason string) string {
 	return l.format("server:errors.webhook.invalid_detail", map[string]any{"reason": reason})
 }
 
 // ServerErrorsWrongPassword formats "server:errors.wrong_password". API error title for HTTP 422 when the password the user typed to confirm an operation on their own account (such as deleting it) is not their current password.
 //
-//	en: The password is wrong.
+//	en: The password is wrong. Enter your current password.
 func (l *Localizer) ServerErrorsWrongPassword() string {
 	return l.format("server:errors.wrong_password", nil)
 }
@@ -3037,7 +3037,7 @@ func (l *Localizer) ServerMailAdminHookAppealSubject(instance string) string {
 
 // ServerMailAdminHookFailingBody formats "server:mail.admin_hook_failing.body". First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: Calls of an external review on the server {instance} keep failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.
+//	en: An external review of {instance} keeps failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.
 func (l *Localizer) ServerMailAdminHookFailingBody(instance string) string {
 	return l.format("server:mail.admin_hook_failing.body", map[string]any{"instance": instance})
 }
@@ -3331,7 +3331,7 @@ func (l *Localizer) ServerMailNotificationBody(instance string) string {
 
 // ServerMailPasswordChangedBody formats "server:mail.password_changed.body". First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: The password of your account on {instance} was changed, and your other sessions and apps were signed out.
+//	en: The password of your account on {instance} was changed, and you were signed out on your other devices and apps.
 func (l *Localizer) ServerMailPasswordChangedBody(instance string) string {
 	return l.format("server:mail.password_changed.body", map[string]any{"instance": instance})
 }
@@ -3352,7 +3352,7 @@ func (l *Localizer) ServerMailPasswordChangedSubject(instance string) string {
 
 // ServerMailPasswordRemovedBody formats "server:mail.password_removed.body". First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: The password of your account on {instance} was removed, and your other sessions and apps were signed out. From now on you sign in with your passkeys.
+//	en: The password of your account on {instance} was removed, and you were signed out on your other devices and apps. From now on you sign in with your passkeys.
 func (l *Localizer) ServerMailPasswordRemovedBody(instance string) string {
 	return l.format("server:mail.password_removed.body", map[string]any{"instance": instance})
 }
@@ -3610,7 +3610,7 @@ func (l *Localizer) ServerMailServiceClosureWithdrawnBody(instance string) strin
 
 // ServerMailServiceClosureWithdrawnSubject formats "server:mail.service_closure_withdrawn.subject". Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: {instance} is not closing
+//	en: The closure of {instance} was withdrawn
 func (l *Localizer) ServerMailServiceClosureWithdrawnSubject(instance string) string {
 	return l.format("server:mail.service_closure_withdrawn.subject", map[string]any{"instance": instance})
 }
@@ -3719,7 +3719,7 @@ func (l *Localizer) ServerMailSupporterPlanRetiredBody(args ServerMailSupporterP
 
 // ServerMailSupporterPlanRetiredDetail formats "server:mail.supporter_plan_retired.detail". Second paragraph of the email to a subscriber whose supporter plan the administrators retired.
 //
-//	en: Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
+//	en: Your subscription is cancelled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
 func (l *Localizer) ServerMailSupporterPlanRetiredDetail() string {
 	return l.format("server:mail.supporter_plan_retired.detail", nil)
 }
@@ -3756,7 +3756,7 @@ func (l *Localizer) ServerMailSupporterServiceClosureDetail() string {
 
 // ServerMailSupporterServiceClosureSubject formats "server:mail.supporter_service_closure.subject". Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: Your supporter subscription on {instance} ends with the closure of the server
+//	en: Your supporter subscription on {instance} is cancelled because the server closes
 func (l *Localizer) ServerMailSupporterServiceClosureSubject(instance string) string {
 	return l.format("server:mail.supporter_service_closure.subject", map[string]any{"instance": instance})
 }
@@ -3773,7 +3773,7 @@ type ServerMailSupporterSubscriptionEndedBodyArgs struct {
 
 // ServerMailSupporterSubscriptionEndedBody formats "server:mail.supporter_subscription_ended.body". Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why.
 //
-//	en: Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}
+//	en: Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full, or reversed by the card company after a dispute.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator cancelled the subscription.} other {The subscription was cancelled.}}
 func (l *Localizer) ServerMailSupporterSubscriptionEndedBody(args ServerMailSupporterSubscriptionEndedBodyArgs) string {
 	return l.format("server:mail.supporter_subscription_ended.body", map[string]any{"instance": args.Instance, "plan": args.Plan, "reason": args.Reason})
 }
@@ -3822,7 +3822,7 @@ func (l *Localizer) ServerMailVerifyEmailSubject(instance string) string {
 
 // ServerMaintenanceDescription formats "server:maintenance.description". Explanation under the heading of the maintenance page. {server} is the server's name, or its host name.
 //
-//	en: {server} is temporarily unavailable for maintenance. Please try again later.
+//	en: {server} is temporarily unavailable for maintenance. Try again later.
 func (l *Localizer) ServerMaintenanceDescription(server string) string {
 	return l.format("server:maintenance.description", map[string]any{"server": server})
 }
@@ -3864,7 +3864,7 @@ func (l *Localizer) ServerMaintenanceUntil() string {
 
 // ServerModerationActionCategory formats "server:moderation.action.category". Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category.
 //
-//	en: {category, select, spam {Spam} legal {Legal reasons} violation {Violation of the instance's rules} other {Other}}
+//	en: {category, select, spam {Spam} legal {Legal reasons} violation {Violation of the server's rules} other {Other}}
 func (l *Localizer) ServerModerationActionCategory(category string) string {
 	return l.format("server:moderation.action.category", map[string]any{"category": category})
 }
@@ -4335,7 +4335,7 @@ func (l *Localizer) ServerPushAccountMoved(name string) string {
 
 // ServerPushAdminAccountMoved formats "server:push.admin_account_moved". Web Push notification to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: An account that the moderators of {instance} limit moved to another account
+//	en: An account limited on {instance} moved to another account
 func (l *Localizer) ServerPushAdminAccountMoved(instance string) string {
 	return l.format("server:push.admin_account_moved", map[string]any{"instance": instance})
 }
@@ -4384,7 +4384,7 @@ func (l *Localizer) ServerPushAdminErrorGroupRegressed(instance string) string {
 
 // ServerPushAdminHookAppeal formats "server:push.admin_hook_appeal". Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A refused post was appealed to the moderators of {instance}
+//	en: An appeal of a refused post awaits the moderators of {instance}
 func (l *Localizer) ServerPushAdminHookAppeal(instance string) string {
 	return l.format("server:push.admin_hook_appeal", map[string]any{"instance": instance})
 }
@@ -4442,7 +4442,7 @@ func (l *Localizer) ServerPushAnnouncement(args ServerPushAnnouncementArgs) stri
 
 // ServerPushAppealDecided formats "server:push.appeal_decided". Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: The moderators of {instance} decided your appeal
+//	en: The moderators of {instance} reviewed your appeal
 func (l *Localizer) ServerPushAppealDecided(instance string) string {
 	return l.format("server:push.appeal_decided", map[string]any{"instance": instance})
 }
@@ -4613,14 +4613,14 @@ func (l *Localizer) ServerPushHookAppealDecided(instance string) string {
 
 // ServerPushInteractionAccepted formats "server:push.interaction_accepted". Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it.
 //
-//	en: {name} approved your interaction with their post
+//	en: {name} approved your reply, boost, or quote
 func (l *Localizer) ServerPushInteractionAccepted(name string) string {
 	return l.format("server:push.interaction_accepted", map[string]any{"name": name})
 }
 
 // ServerPushInteractionRejected formats "server:push.interaction_rejected". Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it.
 //
-//	en: {name} declined your interaction with their post
+//	en: {name} declined your reply, boost, or quote
 func (l *Localizer) ServerPushInteractionRejected(name string) string {
 	return l.format("server:push.interaction_rejected", map[string]any{"name": name})
 }
@@ -4706,7 +4706,7 @@ type ServerPushScheduledStatusFailedArgs struct {
 
 // ServerPushScheduledStatusFailed formats "server:push.scheduled_status_failed". Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: {instance}: your scheduled post could not be published {reason, select, restricted {because your account cannot post now} reply_unavailable {because the post it replies to is no longer available} quote_unavailable {because the post it quotes is no longer available} media_unavailable {because an attached file is no longer available} invalid {because it does not meet the requirements for a post} rejected {because the server's automated review refused it} other {}}
+//	en: {instance}: your scheduled post could not be published{reason, select, restricted { because your account cannot post now} reply_unavailable { because the post it replies to is no longer available} quote_unavailable { because the post it quotes is no longer available} media_unavailable { because an attached file is no longer available} invalid { because it does not meet the requirements for a post} rejected { because the server's automated review did not accept it} other {}}; it stays in your drafts
 func (l *Localizer) ServerPushScheduledStatusFailed(args ServerPushScheduledStatusFailedArgs) string {
 	return l.format("server:push.scheduled_status_failed", map[string]any{"instance": args.Instance, "reason": args.Reason})
 }
@@ -4727,7 +4727,7 @@ func (l *Localizer) ServerPushServiceClosureRescheduled(instance string) string 
 
 // ServerPushServiceClosureWithdrawn formats "server:push.service_closure_withdrawn". Web Push notification to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: {instance} will not close: the closure was withdrawn
+//	en: The closure of {instance} was withdrawn
 func (l *Localizer) ServerPushServiceClosureWithdrawn(instance string) string {
 	return l.format("server:push.service_closure_withdrawn", map[string]any{"instance": instance})
 }
@@ -4755,7 +4755,7 @@ func (l *Localizer) ServerPushSupporterPlanRetired(instance string) string {
 
 // ServerPushSupporterServiceClosure formats "server:push.supporter_service_closure". Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: Your supporter subscription on {instance} ends with the closure of the server
+//	en: Your supporter subscription on {instance} is cancelled because the server closes
 func (l *Localizer) ServerPushSupporterServiceClosure(instance string) string {
 	return l.format("server:push.supporter_service_closure", map[string]any{"instance": instance})
 }

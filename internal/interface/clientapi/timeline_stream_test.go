@@ -280,7 +280,7 @@ func TestTimelineStreamAccess(t *testing.T) {
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("local turned off = %d, want 404", res.StatusCode)
 	}
-	if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "指定されたリソースが見つかりません。" {
+	if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Title != "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。" {
 		t.Errorf("problem = %+v", p)
 	}
 	_, _, r := e.open(t.Context(), t, "/streaming/timelines/federated", "read")

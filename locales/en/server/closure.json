@@ -12,7 +12,7 @@
     "description": "<title> of the static closure page. {server} is the server's name, or its host name."
   },
   "closure.notice": {
-    "defaultMessage": "Message from the administrators",
+    "defaultMessage": "Notice from the administrators",
     "description": "Heading over the administrators' message of the closure announcement on the static closure page."
   },
   "closure.status_page": {

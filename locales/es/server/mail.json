@@ -75,10 +75,6 @@
     "defaultMessage": "Se ha desactivado un webhook de {instance}",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
-  "mail.password_changed.body": {
-    "defaultMessage": "Se ha cambiado la contraseña de tu cuenta en {instance} y se han cerrado tus otras sesiones y aplicaciones.",
-    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
-  },
   "mail.password_changed.detail": {
     "defaultMessage": "Si no la cambiaste tú, es posible que alguien más conozca tu contraseña. Establece una nueva de inmediato.",
     "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
@@ -86,10 +82,6 @@
   "mail.password_changed.subject": {
     "defaultMessage": "Se ha cambiado tu contraseña de {instance}",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
-  },
-  "mail.password_removed.body": {
-    "defaultMessage": "Se ha eliminado la contraseña de tu cuenta en {instance} y se han cerrado tus otras sesiones y aplicaciones. A partir de ahora inicias sesión con tus llaves de acceso.",
-    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
     "defaultMessage": "Si no la eliminaste tú, es posible que alguien más haya iniciado sesión en tu cuenta. Establece una contraseña nueva de inmediato.",
@@ -199,10 +191,6 @@
     "defaultMessage": "Los administradores de {instance} han retirado el cierre anunciado. El servidor sigue como antes y no tienes que hacer nada.",
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
-  "mail.service_closure_withdrawn.subject": {
-    "defaultMessage": "{instance} no va a cerrar",
-    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
-  },
   "mail.signature.contact": {
     "defaultMessage": "Contacto: {email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
@@ -231,10 +219,6 @@
     "defaultMessage": "Los administradores de {instance} han retirado el plan de apoyo «{plan}» al que estás suscrito.",
     "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
-  "mail.supporter_plan_retired.detail": {
-    "defaultMessage": "Tu suscripción se ha cancelado y no se renovará. Conservas las ventajas del plan hasta el final del periodo que pagaste, salvo que haya un pago atrasado.",
-    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
-  },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "Se ha retirado tu plan de apoyo en {instance}",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
@@ -246,14 +230,6 @@
   "mail.supporter_service_closure.detail": {
     "defaultMessage": "Tu suscripción no se renovará. Conservas las ventajas del plan hasta el final del periodo que pagaste, salvo que haya un pago atrasado.",
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
-  },
-  "mail.supporter_service_closure.subject": {
-    "defaultMessage": "Tu suscripción de mecenas en {instance} termina con el cierre del servidor",
-    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
-  },
-  "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "Tu plan de apoyo «{plan}» en {instance} ha terminado, y con él sus ventajas. {reason, select, lapsed {No se realizó ningún pago en los 7 días posteriores a un pago fallido, o la suscripción estaba en pausa.} reversed {Un pago se reembolsó por completo o se devolvió.} plan_retired {Los administradores retiraron el plan.} account_suspended {Tu cuenta fue suspendida.} staff {Un administrador canceló la suscripción.} other {La suscripción se canceló.}}",
-    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "Ha terminado tu plan de apoyo en {instance}",
@@ -410,10 +386,6 @@
   "mail.account_deactivated.detail": {
     "defaultMessage": "Para reactivarla, inicia sesión. No volveremos a escribirte sobre esto antes de la eliminación. Si no fuiste tú, inicia sesión, reactiva la cuenta y cambia tu contraseña.",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
-  },
-  "mail.admin_hook_failing.body": {
-    "defaultMessage": "Las llamadas de una revisión externa en el servidor {instance} siguen fallando. Mientras no vuelva a funcionar, lo que revisa sigue su comportamiento ante fallos: de forma predeterminada pasa sin revisar.",
-    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_failing.detail": {
     "defaultMessage": "Abre tus notificaciones y consulta las revisiones automáticas para ver qué falló.",

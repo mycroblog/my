@@ -235,11 +235,11 @@ func TestServeSQLite(t *testing.T) {
 			t.Fatalf("status = %d, want 404", resp.StatusCode)
 		}
 		p := decodeProblem(t, resp, body)
-		if resp.Header.Get("Content-Language") != "ja" || p.Title == "" || p.Title == "The requested resource was not found." {
+		if resp.Header.Get("Content-Language") != "ja" || p.Title == "" || p.Title == "This could not be found. It may have been deleted, or the link may be wrong." {
 			t.Errorf("Content-Language = %q, title = %q; want a Japanese title", resp.Header.Get("Content-Language"), p.Title)
 		}
 		resp, body = s.do(t, http.MethodGet, "/ap/nope", nil)
-		if p := decodeProblem(t, resp, body); p.Title != "The requested resource was not found." || resp.Header.Get("Content-Language") != "en" {
+		if p := decodeProblem(t, resp, body); p.Title != "This could not be found. It may have been deleted, or the link may be wrong." || resp.Header.Get("Content-Language") != "en" {
 			t.Errorf("default title = %q (%s), want the English message", p.Title, resp.Header.Get("Content-Language"))
 		}
 	})

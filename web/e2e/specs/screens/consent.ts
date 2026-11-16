@@ -37,7 +37,7 @@ export class Consent {
   get heading(): Locator {
     return this.page
       .getByRole("main")
-      .getByRole("heading", { level: 1, name: `Authorize ${this.app.name}`, exact: true });
+      .getByRole("heading", { level: 1, name: `Allow ${this.app.name} to use your account`, exact: true });
   }
 
   /** The list of the permissions the app asks for that the screen asks the person to read. */

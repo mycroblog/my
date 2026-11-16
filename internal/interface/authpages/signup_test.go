@@ -192,8 +192,8 @@ func TestSignUpReportsWhatTheServiceRejects(t *testing.T) {
 		// key is where the data says it, and want what it says (a prefix of it).
 		key, want string
 	}{
-		{appaccount.ErrUsernameTaken, http.StatusUnprocessableEntity, "signUp.errors.username", "This username is already taken."},
-		{appidentity.ErrEmailTaken, http.StatusUnprocessableEntity, "signUp.errors.email", "This email address is already in use."},
+		{appaccount.ErrUsernameTaken, http.StatusUnprocessableEntity, "signUp.errors.username", "This username is already taken. Choose another."},
+		{appidentity.ErrEmailTaken, http.StatusUnprocessableEntity, "signUp.errors.email", "This email address is already in use. Sign in with it, or use another address."},
 		{appidentity.ErrInvalidInvite, http.StatusUnprocessableEntity, "signUp.errors.invite_code", "This invite code is not valid."},
 		{appidentity.ErrRegistrationClosed, http.StatusForbidden, "signUp.closed", ""},
 		{appidentity.ErrSignUpRefused, http.StatusForbidden, "error", "This server cannot accept this sign-up."},

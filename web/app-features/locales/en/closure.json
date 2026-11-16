@@ -24,7 +24,7 @@
     "description": "The button on the closed server's screen that saves the list of accounts the reader follows as a CSV file, which another server can import."
   },
   "closure.download_failed": {
-    "defaultMessage": "The CSV could not be downloaded. Try again.",
+    "defaultMessage": "Your follows could not be downloaded. Try again.",
     "description": "What the closed server's screen says when the download of the reader's follows as CSV failed."
   },
   "closure.sign_out": {

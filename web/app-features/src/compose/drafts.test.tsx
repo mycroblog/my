@@ -274,7 +274,7 @@ test("failed: a draft whose scheduled post failed says why and what to do next",
   );
   const ja = words(await composer({ failure: { publishAt: failedAt, reason: "rejected" } }, { locale: "ja" }));
   expect(ja).toContain(
-    `${scheduleTime(failedAt, "ja")} に投稿できませんでした: サーバーの自動審査で断られました。必要なら直してから、投稿するか予約し直してください。`,
+    `${scheduleTime(failedAt, "ja")} に投稿できませんでした: サーバーの自動審査で受け付けられませんでした。必要なら直してから、投稿するか予約し直してください。`,
   );
 });
 
@@ -283,7 +283,7 @@ test("a save refused for a newer draft saved elsewhere says the changes were not
   expect(html).toContain('role="alert"');
   const text = words(html);
   expect(text).toContain(
-    "A newer version of this draft was saved on another device, so your changes here were not saved. Open the newer one",
+    "This draft was saved later on another device, so your changes here were not saved. Open the newer one",
   );
   const ja = words(await composer({}, { specimen: { phase: { kind: "conflict" } }, locale: "ja" }));
   expect(ja).toContain("ここでの変更は保存されませんでした。");
@@ -308,7 +308,7 @@ test("a draft gone from the server says it may have been posted, keeps what was 
   expect(words(ja)).toContain(
     "この下書きはもうサーバーにありません。投稿済みかもしれないので、プロフィールで確かめてください。",
   );
-  expect(ja).toContain(">新しい投稿として送る<");
+  expect(ja).toContain(">新しく投稿する<");
 });
 
 test("Post as new lets the gone draft go and posts what is written by POST /statuses, under a new key", async () => {

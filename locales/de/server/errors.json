@@ -27,21 +27,13 @@
     "defaultMessage": "Die Frist für einen Einspruch gegen diese Maßnahme ist abgelaufen.",
     "description": "API error title for HTTP 422 when the user appeals a moderation action after the instance's appeal window."
   },
-  "errors.bad_gateway": {
-    "defaultMessage": "Ein entfernter Server war nicht erreichbar oder hat mit einem Fehler geantwortet.",
-    "description": "Error title for HTTP 502 when the server could not get a resource from a remote server, e.g. the media proxy could not reach the remote file or the remote server answered with a 5xx."
-  },
   "errors.bad_request": {
-    "defaultMessage": "Die Anfrage ist ungültig.",
+    "defaultMessage": "Das konnte wegen eines Problems in der App nicht ausgeführt werden. Lade die App neu oder aktualisiere sie und versuche es erneut.",
     "description": "API error message for HTTP 400 when no more specific message applies."
   },
   "errors.blocking": {
     "defaultMessage": "Du blockierst dieses Konto. Hebe zuerst die Blockierung auf.",
     "description": "API error title for HTTP 409 when the user tries to follow an account that they block."
-  },
-  "errors.conflict": {
-    "defaultMessage": "Die Anfrage steht im Widerspruch zum aktuellen Zustand der Ressource.",
-    "description": "API error title for HTTP 409 when no more specific message applies."
   },
   "errors.email.already_verified": {
     "defaultMessage": "Die E-Mail-Adresse ist bereits bestätigt.",
@@ -50,22 +42,6 @@
   "errors.email.not_suppressed": {
     "defaultMessage": "Die E-Mail-Adresse ist nicht gesperrt.",
     "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
-  },
-  "errors.export.in_progress": {
-    "defaultMessage": "Ein Archiv deiner Daten wird bereits vorbereitet. Warte, bis es fertig ist.",
-    "description": "API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built."
-  },
-  "errors.export.not_ready": {
-    "defaultMessage": "Dieses Archiv kann nicht heruntergeladen werden.",
-    "description": "API error title for HTTP 409 when the user downloads an archive of their data that is still being built, failed, or has expired."
-  },
-  "errors.federation_restricted": {
-    "defaultMessage": "Dieser Server föderiert nicht in der Richtung, die dafür nötig ist.",
-    "description": "API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post."
-  },
-  "errors.first_party_only": {
-    "defaultMessage": "Das dürfen nur die eigenen Apps dieses Servers.",
-    "description": "API error title for HTTP 403 when an app that is not this server's own client calls an account security operation (password, two-factor authentication, passkeys, deleting the account)."
   },
   "errors.forbidden": {
     "defaultMessage": "Das ist dir nicht erlaubt.",
@@ -83,10 +59,6 @@
     "defaultMessage": "Ein anderer Import läuft gerade. Warte, bis er fertig ist.",
     "description": "API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out."
   },
-  "errors.import.invalid_csv": {
-    "defaultMessage": "Die Datei kann nicht als CSV gelesen werden.",
-    "description": "Detail of an API error (HTTP 422) when the file the user imports is not a valid CSV file, e.g. it has an unterminated quoted field."
-  },
   "errors.insufficient_scope": {
     "defaultMessage": "Diese App darf das nicht tun.",
     "description": "API error title for HTTP 403 when the access token lacks a permission (OAuth scope) that the operation needs."
@@ -94,10 +66,6 @@
   "errors.insufficient_scope_detail": {
     "defaultMessage": "Das Zugriffstoken braucht den Scope {scope}.",
     "description": "Detail of the HTTP 403 insufficient-scope API error. {scope} is the missing OAuth scope, e.g. read:accounts (not translated)."
-  },
-  "errors.interaction_restricted": {
-    "defaultMessage": "Dein Konto darf derzeit weder folgen, favorisieren, boosten noch antworten.",
-    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying)."
   },
   "errors.internal": {
     "defaultMessage": "Ein unerwarteter Fehler ist aufgetreten. Versuche es später erneut.",
@@ -123,17 +91,9 @@
     "defaultMessage": "Der Wert von {name} ist ungültig.",
     "description": "Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated)."
   },
-  "errors.media_attached": {
-    "defaultMessage": "Dieses Medium ist an einen Beitrag angehängt und kann nicht mehr geändert werden.",
-    "description": "API error title for HTTP 409 when the user tries to change the description or focal point of an uploaded media file that a post already attaches."
-  },
   "errors.media_attached_detail": {
     "defaultMessage": "Bearbeite den Beitrag, um die Beschreibung zu ändern.",
     "description": "Detail of the HTTP 409 media-attached API error."
-  },
-  "errors.media_corrupt": {
-    "defaultMessage": "Die Datei konnte nicht als Bild gelesen werden.",
-    "description": "API error title for HTTP 422 when an uploaded file has the signature of an image format but does not decode."
   },
   "errors.media_description_too_long": {
     "defaultMessage": "Die Beschreibung ist zu lang.",
@@ -143,21 +103,9 @@
     "defaultMessage": "{max, plural, one {Eine Beschreibung darf höchstens # Zeichen lang sein.} other {Eine Beschreibung darf höchstens # Zeichen lang sein.}}",
     "description": "Detail of the HTTP 422 API error for a description that is too long. {max} is the maximum number of characters."
   },
-  "errors.media_dimensions": {
-    "defaultMessage": "Das Bild ist in Breite, Höhe oder Anzahl der Einzelbilder zu groß.",
-    "description": "API error title for HTTP 422 when an uploaded image is too wide or tall, or has too many pixels or animation frames."
-  },
   "errors.media_invalid_focus": {
     "defaultMessage": "Der Fokuspunkt muss auf jeder Achse zwischen -1,0 und 1,0 liegen.",
     "description": "API error title for HTTP 422 when the focal point of a media file is outside the image."
-  },
-  "errors.media_too_large": {
-    "defaultMessage": "Die Datei ist zu groß.",
-    "description": "API error title for HTTP 413 when an uploaded media file is larger than the server accepts."
-  },
-  "errors.media_too_long": {
-    "defaultMessage": "Das Video oder die Audiodatei ist zu lang.",
-    "description": "API error title for HTTP 422 when an uploaded video or audio file is longer than the server accepts."
   },
   "errors.media_unsupported_codec": {
     "defaultMessage": "Dieser Video- oder Audio-Codec wird nicht unterstützt. HEVC-Videos (High Efficiency) können nicht hochgeladen werden: Nimm stattdessen in H.264 (Höchste Kompatibilität) auf.",
@@ -176,12 +124,8 @@
     "description": "Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated)."
   },
   "errors.not_found": {
-    "defaultMessage": "Die angeforderte Ressource wurde nicht gefunden.",
+    "defaultMessage": "Das wurde nicht gefunden. Vielleicht wurde es gelöscht, oder der Link ist falsch.",
     "description": "API error message for HTTP 404."
-  },
-  "errors.rate_limited": {
-    "defaultMessage": "Zu viele Anfragen.",
-    "description": "API error title for HTTP 429 when a client sent more requests than the rate limit allows."
   },
   "errors.rate_limited_detail": {
     "defaultMessage": "{seconds, plural, one {Versuche es in # Sekunde erneut.} other {Versuche es in # Sekunden erneut.}}",
@@ -190,10 +134,6 @@
   "errors.relay.invalid": {
     "defaultMessage": "Das Relay kann so nicht geändert werden.",
     "description": "API error title for HTTP 422 when a relay cannot be registered, joined, left, or deleted; the detail says why."
-  },
-  "errors.relay.invalid_detail": {
-    "defaultMessage": "{reason, select, url {Die URL muss eine https-URL mit höchstens 2048 Bytes sein.} exists {Ein Relay mit dieser URL ist bereits registriert.} domain_suspended {Der Server des Relays ist durch eine Maßnahme gegen die Domain gesperrt.} not_actor {Die URL liefert nicht den Actor eines Relays mit Inbox.} state {Das Relay hat nicht den nötigen Zustand: Verlasse ein Relay, bevor du es löschst, und tritt nur einem Relay bei, das du verlassen hast oder das dich abgelehnt hat.} other {Das Relay kann so nicht geändert werden.}}",
-    "description": "API error detail for HTTP 422 when a relay operation is refused. {reason} is url, exists, domain_suspended, not_actor, or state."
   },
   "errors.refetch.not_remote": {
     "defaultMessage": "Nur entfernte Beiträge, entfernte Konten und andere Server können erneut abgerufen werden.",
@@ -207,29 +147,13 @@
     "defaultMessage": "Nur eine erledigte Meldung kann wieder geöffnet werden.",
     "description": "Detail of the HTTP 409 API error when a moderator reopens a report that is still open."
   },
-  "errors.report.not_forwardable": {
-    "defaultMessage": "Nur eine auf diesem Server eingereichte Meldung zu einem Konto auf einem anderen Server, die keinen Sprachchat-Raum betrifft, kann weitergeleitet werden.",
-    "description": "Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target."
-  },
-  "errors.request_too_large": {
-    "defaultMessage": "Die Anfrage ist zu groß.",
-    "description": "API error title for HTTP 413 when a request body is larger than the server accepts."
-  },
   "errors.role.invalid": {
     "defaultMessage": "Die Rolle kann nicht gespeichert werden.",
     "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which."
   },
-  "errors.role.invalid_detail": {
-    "defaultMessage": "{reason, select, key {Der Schlüssel muss aus 1 bis 64 Kleinbuchstaben, Ziffern, Unterstrichen oder Bindestrichen bestehen.} key_taken {Eine andere Rolle hat diesen Schlüssel.} position {Die Position muss zwischen 0 und 999 liegen.} permissions {Wähle jede Berechtigung höchstens einmal aus.} builtin {Die Administratorrolle kann nicht geändert und die eingebauten Rollen können nicht gelöscht werden.} held {Widerrufe die Rolle zuerst bei allen, die sie haben.} missing_permission {Du kannst nur Berechtigungen vergeben oder entziehen, die du selbst hast.} badge_label {Der Name des Abzeichens muss 1 bis 32 Zeichen in einer Zeile lang sein.} badge_color {Wähle eine der Abzeichenfarben.} other {Die Änderung verstößt gegen eine Regel.}}",
-    "description": "API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color."
-  },
   "errors.role.managed_by_plan": {
     "defaultMessage": "Die Rolle gehört zu einem Unterstützungsplan.",
     "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5)."
-  },
-  "errors.role.managed_by_plan_detail": {
-    "defaultMessage": "Nur die Abos des Plans vergeben und widerrufen sie, und ihre Berechtigungen und Position werden über den Plan geändert.",
-    "description": "API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand."
   },
   "errors.role.breaks_supporter_roles": {
     "defaultMessage": "Teamrollen müssen über den Rollen der Unterstützungspläne bleiben.",
@@ -250,14 +174,6 @@
   "errors.supporters.unavailable": {
     "defaultMessage": "Das Unterstützerprogramm ist auf diesem Server nicht verfügbar.",
     "description": "API error title for HTTP 409 when the supporter program cannot be enabled or used: no payment provider is configured, the server sends no email, or the configured provider is not the program's (ADR-0072 §2)."
-  },
-  "errors.supporters.unavailable_detail": {
-    "defaultMessage": "{reason, select, no_provider {Konfiguriere zuerst einen Zahlungsanbieter in der Konfiguration des Servers.} no_email {Der Server muss E-Mails versenden, damit Abonnenten ihre Adresse bestätigen können.} provider_mismatch {Der konfigurierte Zahlungsanbieter ist nicht der, mit dem das Programm aktiviert wurde. Deaktiviere das Programm und aktiviere es erneut.} other {Das Unterstützerprogramm kann derzeit nicht verwendet werden.}}",
-    "description": "API error detail for HTTP 409 when the supporter program is unavailable. {reason} is no_provider, no_email, or provider_mismatch."
-  },
-  "errors.supporters.live_subscriptions": {
-    "defaultMessage": "Abos der Unterstützungspläne laufen noch.",
-    "description": "API error title for HTTP 409 when an administrator disables the supporter program while subscriptions go on (ADR-0072 §2)."
   },
   "errors.supporters.live_subscriptions_detail": {
     "defaultMessage": "Ziehe die Pläne zurück und warte, bis ihre Abos enden, bevor du das Programm deaktivierst.",
@@ -295,29 +211,9 @@
     "defaultMessage": "Ändere stattdessen den Plan deines Abos.",
     "description": "API error detail for HTTP 409 when a user who has a subscription starts another one."
   },
-  "errors.supporters.plan_unavailable": {
-    "defaultMessage": "Der Unterstützungsplan nimmt keine Abos an.",
-    "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
-  },
-  "errors.service_closed": {
-    "defaultMessage": "Dieser Server ist eingestellt.",
-    "description": "API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports."
-  },
-  "errors.service_closed_detail": {
-    "defaultMessage": "Der Server wurde eingestellt. Du kannst dich weiterhin anmelden und deine Daten exportieren.",
-    "description": "API error detail for HTTP 403 when the server is closed: what the users can still do."
-  },
-  "errors.service_closure.state": {
-    "defaultMessage": "Die Einstellung des Dienstes erlaubt das in ihrem aktuellen Zustand nicht.",
-    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes."
-  },
   "errors.supporters.subscription_state": {
     "defaultMessage": "Dein Abo kann das in seinem aktuellen Zustand nicht.",
     "description": "API error title for HTTP 409 when the state of a user's subscription to a supporter plan does not allow the operation (ADR-0072 §8): a change needs an active subscription, a cancellation an active or past-due one, a resumption a canceling one."
-  },
-  "errors.supporters.same_plan": {
-    "defaultMessage": "Dein Abo hat diesen Plan und dieses Intervall bereits.",
-    "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
   "errors.supporters.tip_amount": {
     "defaultMessage": "Das Trinkgeld muss einer der Beträge des Servers sein.",
@@ -347,17 +243,9 @@
     "defaultMessage": "Die Beträge der Trinkgelder können nicht gespeichert werden.",
     "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
   },
-  "errors.supporters.tip_amounts_invalid_detail": {
-    "defaultMessage": "{reason, select, count {Wähle 1 bis 6 verschiedene Beträge in einer Währung.} currency {Trinkgelder gibt es in Yen oder US-Dollar, und der Zahlungsanbieter muss die Währung annehmen.} range {Jeder Betrag muss zwischen 100 und 100.000 Yen oder zwischen 1 und 1.000 US-Dollar liegen und mindestens der kleinsten Abbuchung des Zahlungsanbieters entsprechen.} other {Die Beträge verstoßen gegen eine Regel.}}",
-    "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
-  },
   "errors.supporters.payment_failed": {
     "defaultMessage": "Die Zahlung für diese Änderung ist fehlgeschlagen, daher hat sich dein Plan nicht geändert.",
     "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."
-  },
-  "errors.supporters.payment_failed_detail": {
-    "defaultMessage": "Es wurde nichts abgebucht. Aktualisiere deine Karte und versuche es erneut. Eine Karte, die bei jeder Zahlung eine Authentifizierung verlangt, kann eine Änderung nicht bezahlen.",
-    "description": "API error detail for HTTP 402 when the payment of a change of supporter plan failed."
   },
   "errors.supporters.payment_processing": {
     "defaultMessage": "Die Zahlung für diese Änderung wird noch verarbeitet, daher hat sich dein Plan noch nicht geändert.",
@@ -399,6 +287,10 @@
     "defaultMessage": "{max, plural, one {Der Titel eines Artikels muss 1 Zeichen lang sein.} other {Der Titel eines Artikels muss 1 bis # Zeichen lang sein.}}",
     "description": "Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters."
   },
+  "errors.status.article_too_long": {
+    "defaultMessage": "Der Text dieses Artikels ist zu lang. Kürze ihn und versuche es erneut.",
+    "description": "Detail of the HTTP 422 API error when the body of an article is longer than the instance allows."
+  },
   "errors.status.article_too_many_images": {
     "defaultMessage": "{max, plural, one {Der Text eines Artikels darf höchstens # Bild zeigen.} other {Der Text eines Artikels darf höchstens # Bilder zeigen.}}",
     "description": "Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images."
@@ -414,10 +306,6 @@
   "errors.status.empty_text": {
     "defaultMessage": "Der Beitrag hat keinen Text.",
     "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
-  },
-  "errors.status.invalid_hashtag": {
-    "defaultMessage": "Ein Hashtag des Artikels ist kein Hashtag.",
-    "description": "Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have."
   },
   "errors.status.invalid_language": {
     "defaultMessage": "Die Sprache ist kein gültiges Sprach-Tag.",
@@ -439,10 +327,6 @@
     "defaultMessage": "Eine angehängte Datei wurde unter deinen Uploads nicht gefunden.",
     "description": "Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded."
   },
-  "errors.status.media_not_ready": {
-    "defaultMessage": "Eine angehängte Datei wird noch verarbeitet oder konnte nicht verarbeitet werden.",
-    "description": "Detail of the HTTP 422 API error when a post attaches a media file whose processing has not finished or failed."
-  },
   "errors.status.missing_media_description": {
     "defaultMessage": "Dieser Server verlangt für jedes Bild eine Beschreibung (Alternativtext). Füge vor dem Veröffentlichen zu jedem Bild eine hinzu.",
     "description": "Detail of the HTTP 422 API error when an attached image has no alternative text while the server requires one for every image (the instance setting require_media_description)."
@@ -462,10 +346,6 @@
   "errors.status.not_pinnable": {
     "defaultMessage": "Nur deine eigenen Beiträge, die nicht direkt sind, können angeheftet werden.",
     "description": "Detail of the HTTP 422 API error when a user tries to pin another account's post or a direct post."
-  },
-  "errors.status.pin_limit": {
-    "defaultMessage": "{max, plural, one {Du kannst höchstens # Beitrag anheften.} other {Du kannst höchstens # Beiträge anheften.}}",
-    "description": "Detail of the HTTP 422 API error when a user pins more posts than allowed. {max} is the maximum number of pinned posts."
   },
   "errors.status.poll_already_voted": {
     "defaultMessage": "Du hast bei dieser Umfrage bereits abgestimmt.",
@@ -499,10 +379,6 @@
     "defaultMessage": "An einen Beitrag mit einer Umfrage können keine Dateien angehängt werden.",
     "description": "Detail of the HTTP 422 API error when a new post has both a poll and attached media."
   },
-  "errors.status.posting_restricted": {
-    "defaultMessage": "Dein Konto darf derzeit keine Beiträge veröffentlichen.",
-    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from posting."
-  },
   "errors.status.quote_not_found": {
     "defaultMessage": "Der Beitrag, den du zitierst, wurde nicht gefunden.",
     "description": "Detail of the HTTP 422 API error when a post quotes a post that does not exist, was deleted, or that the user cannot see."
@@ -510,10 +386,6 @@
   "errors.status.quote_not_allowed": {
     "defaultMessage": "Du kannst diesen Beitrag nicht zitieren.",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
-  },
-  "errors.status.quote_remote_audience": {
-    "defaultMessage": "Ein lokaler Beitrag, ein Beitrag nur für Follower oder ein direkter Beitrag kann keinen Beitrag von einem anderen Server zitieren.",
-    "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
   },
   "errors.status.reply_not_found": {
     "defaultMessage": "Der Beitrag, auf den du antwortest, wurde nicht gefunden.",
@@ -547,10 +419,6 @@
     "defaultMessage": "Der Beitrag kann nicht in diese Sprache übersetzt werden.",
     "description": "API error title for HTTP 422 when no translation service of the server translates between the post's language and the language asked for."
   },
-  "errors.streaming.too_many": {
-    "defaultMessage": "Du hast zu viele Streams geöffnet. Schließe einen und versuche es erneut.",
-    "description": "Detail of the HTTP 429 API error when the user already has as many real-time update streams (open tabs or devices) as the server allows."
-  },
   "errors.streaming.unavailable": {
     "defaultMessage": "Echtzeit-Aktualisierungen sind derzeit nicht verfügbar. Versuche es später erneut.",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
@@ -583,17 +451,9 @@
     "defaultMessage": "Die Einrichtung der Authenticator-App ist abgelaufen. Beginne von vorn.",
     "description": "Title of the HTTP 422 API error when the user confirms the setup of an authenticator app after it expired (15 minutes) or with an unknown setup."
   },
-  "errors.passkey.invalid": {
-    "defaultMessage": "Der Passkey konnte nicht überprüft werden.",
-    "description": "Title of the HTTP 422 API error when the browser's answer to a passkey registration does not verify (another site, no screen lock or biometrics, or a passkey that is registered already)."
-  },
   "errors.passkey.confirmation_expired": {
     "defaultMessage": "Die Bestätigung mit dem Passkey ist abgelaufen. Versuche es erneut.",
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account (such as deleting it or removing the password) with a passkey after the confirmation expired (5 minutes) or was already used."
-  },
-  "errors.passkey.last_sign_in_method": {
-    "defaultMessage": "Das ist deine letzte Möglichkeit zur Anmeldung. Füge zuerst einen Passkey hinzu, lege ein Passwort fest oder verknüpfe ein Konto.",
-    "description": "Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in."
   },
   "errors.passkey.registration_expired": {
     "defaultMessage": "Die Registrierung des Passkeys ist abgelaufen. Beginne von vorn.",
@@ -635,10 +495,6 @@
     "defaultMessage": "Melde dich an, um das zu tun.",
     "description": "API error title for HTTP 401 when the request carries no access token and the operation needs one."
   },
-  "errors.unprocessable": {
-    "defaultMessage": "Die Anfrage kann nicht verarbeitet werden.",
-    "description": "API error title for HTTP 422; the detail says what is wrong with the request."
-  },
   "errors.unsupported_media_type": {
     "defaultMessage": "Der Anfragetext hat einen nicht unterstützten Inhaltstyp.",
     "description": "Error title for HTTP 415 when a request body is not in a format the endpoint accepts."
@@ -651,21 +507,9 @@
     "defaultMessage": "Der Webhook kann nicht gespeichert werden.",
     "description": "API error title for HTTP 422 when the settings of a webhook endpoint break a rule; the detail says which."
   },
-  "errors.webhook.invalid_detail": {
-    "defaultMessage": "{reason, select, url {Die URL muss eine absolute http- oder https-URL mit höchstens 2048 Bytes sein, ohne Benutzerangaben und ohne Fragment.} description {Die Beschreibung darf höchstens 200 Zeichen lang sein und keine Steuerzeichen enthalten.} events {Wähle mindestens ein Ereignis aus, jedes nur einmal.} missing_permission {Du brauchst die Berechtigungen jedes gewählten Ereignisses.} other {Die Einstellungen verstoßen gegen eine Regel.}}",
-    "description": "API error detail for HTTP 422 when the settings of a webhook endpoint break a rule. {reason} is url, description, events, or missing_permission."
-  },
-  "errors.wrong_password": {
-    "defaultMessage": "Das Passwort ist falsch.",
-    "description": "API error title for HTTP 422 when the password the user typed to confirm an operation on their own account (such as deleting it) is not their current password."
-  },
   "errors.invalid_custom_emoji": {
     "defaultMessage": "Das eigene Emoji kann nicht gespeichert werden.",
     "description": "API error title for HTTP 422 when a custom emoji, or a request for one, breaks a rule; the detail and the reason property say which."
-  },
-  "errors.invalid_custom_emoji_detail": {
-    "defaultMessage": "{reason, select, invalid_shortcode {Ein Shortcode besteht aus 2 bis 30 Buchstaben (A bis Z), Ziffern und Unterstrichen.} shortcode_taken {Ein eigenes Emoji dieses Servers hat diesen Shortcode bereits.} invalid_alias {Ein Alias besteht aus 2 bis 30 Buchstaben (A bis Z), Ziffern und Unterstrichen, und ein Emoji hat höchstens 10.} invalid_category {Eine Kategorie darf höchstens 64 Zeichen lang sein.} media_not_found {Das Bild wurde unter deinen Uploads nicht gefunden.} media_not_ready {Das Bild wird noch verarbeitet. Versuche es gleich noch einmal.} unsupported_format {Das Bild muss ein PNG, GIF oder WebP sein.} too_large {Das Bild ist größer als das Limit dieses Servers.} too_big {Das Bild darf auf jeder Seite höchstens 1.024 Pixel messen.} remote_emoji {Das ist nur mit den eigenen Emoji dieses Servers möglich.} local_emoji {Das ist nur mit den eigenen Emoji anderer Server möglich.} fetch_failed {Das Bild des eigenen Emojis konnte nicht von seinem Server abgerufen werden.} limit_reached {Du hast in diesem Monat bereits so viele eigene Emoji beantragt, wie dein Monatslimit erlaubt. Die Zählung beginnt am ersten Tag jedes Monats (UTC) von vorn.} request_pending {Für dieses eigene Emoji liegt bereits ein offener Antrag auf ein neues Bild vor.} invalid_reason {Eine Begründung darf höchstens 500 Zeichen lang sein.} other {Das eigene Emoji verstößt gegen eine Regel.}}",
-    "description": "Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule."
   },
   "errors.custom_emoji_request_conflict": {
     "defaultMessage": "Über den Antrag auf ein eigenes Emoji kann so nicht entschieden werden.",
@@ -715,17 +559,9 @@
     "defaultMessage": "Zu einer Liste können nur Konten hinzugefügt werden, denen du folgst.",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
   },
-  "errors.service_closing": {
-    "defaultMessage": "Die Einstellung dieses Servers ist angekündigt.",
-    "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
-  },
   "errors.service_closing_detail": {
     "defaultMessage": "Neue Registrierungen und Unterstützer-Abos enden, solange die Einstellung angekündigt ist.",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
-  },
-  "errors.account_moved": {
-    "defaultMessage": "Dein Konto ist umgezogen.",
-    "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."
   },
   "errors.account_not_moved": {
     "defaultMessage": "Dein Konto ist nicht umgezogen.",
@@ -735,10 +571,6 @@
     "defaultMessage": "Das ist der Browser, den du gerade verwendest. Melde dich stattdessen ab.",
     "description": "API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it."
   },
-  "errors.move_alias_missing": {
-    "defaultMessage": "Das Konto, zu dem du umziehen willst, führt dein Konto nicht als Alias auf.",
-    "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."
-  },
   "errors.move_target_moved": {
     "defaultMessage": "Das Konto, zu dem du umziehen willst, ist selbst umgezogen.",
     "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
@@ -746,10 +578,6 @@
   "errors.move_target_unavailable": {
     "defaultMessage": "Du kannst nicht zu diesem Konto umziehen.",
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
-  },
-  "errors.move_too_soon": {
-    "defaultMessage": "Dein Konto ist erst vor Kurzem umgezogen.",
-    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
   },
   "errors.voice.not_eligible": {
     "defaultMessage": "Du darfst keine Sprachchat-Räume hosten.",
@@ -770,10 +598,6 @@
   "errors.voice.hosting_elsewhere": {
     "defaultMessage": "Du hostest einen anderen Raum.",
     "description": "API error title for HTTP 409 when the host of an open voice chat room opens or joins another room."
-  },
-  "errors.voice.hosting_elsewhere_detail": {
-    "defaultMessage": "Verlasse zuerst diesen Raum und bestimme den nächsten Host oder beende ihn.",
-    "description": "API error detail for HTTP 409 when the host of an open voice chat room opens or joins another room."
   },
   "errors.voice.host_must_choose": {
     "defaultMessage": "Bestimme den nächsten Host oder beende den Raum.",
@@ -819,18 +643,6 @@
     "defaultMessage": "Die Bestätigung mit dem verknüpften Konto ist abgelaufen oder wurde bereits verwendet. Versuche es erneut.",
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account with a linked account at an external login provider after the confirmation expired (10 minutes), was already used, or was made for another operation."
   },
-  "errors.login_provider.unavailable": {
-    "defaultMessage": "Dieser Anmeldedienst ist nicht verfügbar.",
-    "description": "Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at."
-  },
-  "errors.login_provider.linked": {
-    "defaultMessage": "Du hast bei diesem Anmeldedienst bereits ein Konto verknüpft.",
-    "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
-  },
-  "errors.login_providers_only": {
-    "defaultMessage": "Dieser Server erlaubt die Anmeldung nur über seine Anmeldeanbieter, daher können hier keine Passwörter und Passkeys festgelegt werden.",
-    "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
-  },
   "errors.deactivation.refused": {
     "defaultMessage": "Dieses Konto kann derzeit nicht deaktiviert werden.",
     "description": "API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why."
@@ -850,14 +662,6 @@
   "errors.deactivation.moved": {
     "defaultMessage": "Dieses Konto ist zu einem anderen Konto umgezogen.",
     "description": "API error detail: the account cannot be deactivated because it moved to another account."
-  },
-  "errors.deactivation.registration_pending": {
-    "defaultMessage": "Die Registrierung dieses Kontos wartet auf Prüfung.",
-    "description": "API error detail: the account cannot be deactivated because its registration waits for review."
-  },
-  "errors.deactivation.paid_subscription": {
-    "defaultMessage": "Kündige zuerst dein Unterstützer-Abo.",
-    "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
   },
   "errors.deactivation.recently_reactivated": {
     "defaultMessage": "Dieses Konto wurde vor weniger als 24 Stunden reaktiviert.",
@@ -927,14 +731,6 @@
     "defaultMessage": "Beiträge auf einem Ein-Personen-Server können nicht lokal sein.",
     "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
-  "errors.interaction_request.answered": {
-    "defaultMessage": "Diese Anfrage wurde bereits beantwortet.",
-    "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
-  },
-  "errors.precondition_failed": {
-    "defaultMessage": "Die Ressource hat sich geändert, seit du sie gelesen hast.",
-    "description": "API error title for HTTP 412 when the If-Match of a request names an older version of the resource."
-  },
   "errors.precondition_required": {
     "defaultMessage": "Diese Anfrage braucht die Version, die du gelesen hast.",
     "description": "API error title for HTTP 428 when a request that replaces a resource has no If-Match header."
@@ -946,10 +742,6 @@
   "errors.draft.if_match_required": {
     "defaultMessage": "Sende den Header If-Match mit dem ETag des Entwurfs, den du gelesen hast.",
     "description": "Detail of the HTTP 428 API error when a save of a draft has no If-Match header."
-  },
-  "errors.draft.invalid": {
-    "defaultMessage": "Der Entwurf kann nicht gespeichert werden: Der Text, eine Mediendatei oder die Umfrage liegt außerhalb dessen, was ein Entwurf behält.",
-    "description": "Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range."
   },
   "errors.draft.not_scheduled": {
     "defaultMessage": "Der Entwurf ist nicht geplant.",
@@ -986,10 +778,6 @@
   "errors.event.organizer_only": {
     "defaultMessage": "Das darf nur der Veranstalter der Veranstaltung.",
     "description": "API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it."
-  },
-  "errors.event.closed": {
-    "defaultMessage": "Die Veranstaltung nimmt keine Änderungen mehr an.",
-    "description": "API error title for HTTP 409 when an event was cancelled, or an answer comes after it started."
   },
   "errors.event.full": {
     "defaultMessage": "Die Veranstaltung ist voll.",

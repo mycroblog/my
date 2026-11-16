@@ -1,6 +1,6 @@
 {
   "moderation.action.category": {
-    "defaultMessage": "{category, select, spam {Spam} legal {Legal reasons} violation {Violation of the instance's rules} other {Other}}",
+    "defaultMessage": "{category, select, spam {Spam} legal {Legal reasons} violation {Violation of the server's rules} other {Other}}",
     "description": "Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category."
   },
   "moderation.action.kind": {

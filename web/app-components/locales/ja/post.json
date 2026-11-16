@@ -60,19 +60,19 @@
     "description": "The line under a post, heard by assistive technology, while its translation is on its way."
   },
   "post.translation_downloading": {
-    "defaultMessage": "ブラウザの翻訳モデルをダウンロードしています… {percent}",
-    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads its translation model before translating the post; percent is how much has come, such as 40%."
+    "defaultMessage": "このブラウザで翻訳するためのデータをダウンロードしています… {percent}",
+    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads what it needs before translating the post; percent is how much has come, such as 40%."
   },
   "post.translation_limit": {
-    "defaultMessage": "このサーバーの今月の翻訳の上限に達しました。",
+    "defaultMessage": "このサーバーで今月翻訳できる量の上限に達しました。",
     "description": "The line under a post when this server refused to translate it because the reader or the whole server used up this month's characters; Try again may follow when the reader's browser can translate it instead."
   },
   "post.translation_visibility": {
-    "defaultMessage": "この投稿は、このサーバーの翻訳サービスには送れません。",
+    "defaultMessage": "この投稿は見られる人が限られているため、このサーバーの翻訳サービスには送れません。",
     "description": "The line under a post when this server may not send it to its translation service because of its visibility (followers only, a direct message, or an author's posts limited to followers); Try again may follow when the reader's browser can translate it instead."
   },
   "post.translation_language": {
-    "defaultMessage": "このサーバーの翻訳サービスは、この言語間の翻訳に対応していません。",
+    "defaultMessage": "このサーバーの翻訳サービスは、この言語の組み合わせに対応していません。",
     "description": "The line under a post when this server's translation service does not translate between the post's language and the reader's language (or, when the post's language is not known, cannot tell it), and the reader's browser cannot translate it instead; nothing follows it."
   },
   "post.translation_failed": {
@@ -152,7 +152,7 @@
     "description": "The item of a post's more menu that bookmarks it."
   },
   "post.unbookmark": {
-    "defaultMessage": "ブックマークを削除",
+    "defaultMessage": "ブックマークを外す",
     "description": "The item of a bookmarked post's more menu that takes the bookmark back."
   },
   "post.edit": {
@@ -288,7 +288,7 @@
     "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
   },
   "post.poll_mine": {
-    "defaultMessage": "自分の投票",
+    "defaultMessage": "自分の票",
     "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
   },
   "post.reacted_row": {

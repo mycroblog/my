@@ -16,7 +16,7 @@
     "description": "What the closed server's screen says while the archive of the reader's data is being built (after a request, and on every visit until it is ready); the request button waits meanwhile."
   },
   "closure.export_failed": {
-    "defaultMessage": "エクスポートを依頼できませんでした。時間をおいてもう一度試してください。",
+    "defaultMessage": "エクスポートを依頼できませんでした。しばらくしてからもう一度試してください。",
     "description": "What the closed server's screen says when the server refused the request of an archive of the reader's data (one already being built, too many today)."
   },
   "closure.download_follows": {
@@ -24,7 +24,7 @@
     "description": "The button on the closed server's screen that saves the list of accounts the reader follows as a CSV file, which another server can import."
   },
   "closure.download_failed": {
-    "defaultMessage": "CSV をダウンロードできませんでした。もう一度試してください。",
+    "defaultMessage": "フォロー中のアカウントをダウンロードできませんでした。もう一度試してください。",
     "description": "What the closed server's screen says when the download of the reader's follows as CSV failed."
   },
   "closure.sign_out": {

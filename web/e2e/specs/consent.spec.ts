@@ -15,7 +15,7 @@ test("a person allows an app and the server sends them back with a code", async 
   const consent = new Consent(page, tidepool);
   await consent.open(secrets().apps["tidepool"]?.clientId ?? "", "allow-state");
   await expect(consent.heading).toBeVisible();
-  await expect(consent.paragraph("An application registered by @sam")).toBeVisible();
+  await expect(consent.paragraph("An app registered by @sam")).toBeVisible();
   await expect(consent.permissions).toContainText(["Read your account", "Post, edit, delete"]);
   const params = await consent.allow();
   expect(params.get("code")).toBeTruthy();

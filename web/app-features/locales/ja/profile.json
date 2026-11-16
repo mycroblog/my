@@ -48,7 +48,7 @@
     "description": "The badge beside the handle of an account that follows the reader."
   },
   "profile.bot": {
-    "defaultMessage": "bot",
+    "defaultMessage": "ボット",
     "description": "The badge beside the name of an automated account."
   },
   "profile.locked": {

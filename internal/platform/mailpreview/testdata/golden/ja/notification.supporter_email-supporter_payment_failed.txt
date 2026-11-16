@@ -2,7 +2,7 @@ Example Social のサポーターのプラン「Supporter」の支払いに失�
 
 プランの特典は 2027-02-07 09:30 (UTC) まで続きます。それまでに支払いが成功しなければ、特典はなくなります。
 
-支払い方法を直す
+支払い方法を更新する
 https://social.example/settings/supporter
 
 -- 
@@ -10,4 +10,4 @@ Example Social
 https://social.example
 連絡先: admin@social.example
 
-Example Social のサポーターのプランに加入している、または加入していたため、このメールが届いています。
+Example Social のサポーターのプランに加入している、または加入していたため、このメールを送りました。

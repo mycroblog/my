@@ -150,7 +150,7 @@ export const TranslateInBrowserNext: Story = {
     const { post, words } = await replyIn(context, "That light!");
     await userEvent.click(post.getByRole("button", { name: "翻訳する" }));
     await waitFor(() =>
-      expect(words()).toContain("このサーバーの今月の翻訳の上限に達しました。 · このブラウザで翻訳する"),
+      expect(words()).toContain("このサーバーで今月翻訳できる量の上限に達しました。 · このブラウザで翻訳する"),
     );
     await expect(words()).not.toContain("来月");
     await userEvent.click(post.getByRole("button", { name: "このブラウザで翻訳する" }));

@@ -228,7 +228,7 @@ func TestExternalSignUpPage(t *testing.T) {
 	// What the identity module refuses shows the form again too.
 	x.signUpErr = appidentity.ErrEmailTaken
 	w = b.do(http.MethodPost, authpages.PathExternalSignUp, b.form(page, "ticket", "ticket-1", "username", "dana", "email", "alice@example.com"), nil)
-	if data := screenData(t, w); w.Code != http.StatusUnprocessableEntity || text(data, "signUp.errors.email") != "This email address is already in use." ||
+	if data := screenData(t, w); w.Code != http.StatusUnprocessableEntity || text(data, "signUp.errors.email") != "This email address is already in use. Sign in with it, or use another address." ||
 		text(data, "signUp.external.ticket") != "ticket-1" {
 		t.Errorf("sign-up with a taken address = %d\n%s", w.Code, w.Body.String())
 	}
