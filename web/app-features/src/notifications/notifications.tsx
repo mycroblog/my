@@ -22,6 +22,8 @@ import {
 } from "@my/app-components";
 import {
   notificationMarkerQuery,
+  notificationSettingsQuery,
+  pushSubscriptionQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
   useDismissNotification,
@@ -55,6 +57,7 @@ import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
 import { FollowRequestsRow, loadFollowRequestCount } from "./follow-requests";
+import { PushPrompt } from "./push-prompt";
 import { loadWaitingCount, WaitingRow } from "./waiting";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -71,6 +74,12 @@ export async function loadNotifications(data: AppData): Promise<void> {
     queryClient.query({ ...notificationRequestSummaryQuery(data), staleTime: Infinity }),
     loadWaitingCount(data),
     loadFollowRequestCount(data),
+  ]).catch(() => undefined);
+  // What the prompt to turn Web Push on reads, so that it shows with the screen rather than after it; a failure leaves
+  // it out.
+  await Promise.all([
+    queryClient.query({ ...pushSubscriptionQuery(data), staleTime: Infinity }),
+    queryClient.query({ ...notificationSettingsQuery(data), staleTime: Infinity }),
   ]).catch(() => undefined);
 }
 
@@ -282,6 +291,7 @@ export function Notifications({ instance }: { instance: string }) {
   const reads = useNotificationReads();
   return (
     <ScreenStack>
+      <PushPrompt t={t} />
       <TabRow
         label={t("notifications.filters")}
         tabs={[

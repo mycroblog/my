@@ -58,5 +58,10 @@ export const Dismissed: Story = {
     });
   },
 };
+/**
+ * On a server that sends Web Push, for a reader with no subscription who has not closed it: the prompt to turn it on,
+ * over the tabs (ADR-0086 §18). It shows only where the browser lets the site ask; one that blocks it shows none.
+ */
+export const PushOffered: Story = { parameters: screen({ at, server: { push: true } }, "notifications") };
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };

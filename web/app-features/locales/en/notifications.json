@@ -402,5 +402,33 @@
   "notifications.held_gone": {
     "defaultMessage": "This person has no held-back notifications now.",
     "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
+  },
+  "notifications.push_offer": {
+    "defaultMessage": "Get your notifications on this device, even while the app is closed. You can also turn this on later in Settings, under Notifications.",
+    "description": "The prompt over the notifications' tabs that offers to turn Web Push on for this device; it says that the settings can turn it on later."
+  },
+  "notifications.push_turn_on": {
+    "defaultMessage": "Turn on",
+    "description": "The primary button of the Web Push prompt (notifications.push_offer): asks the browser's permission if it must, then turns push notifications on for this device."
+  },
+  "notifications.push_not_now": {
+    "defaultMessage": "Not now",
+    "description": "The button of the Web Push prompt that closes it for good on this device; push stays off."
+  },
+  "notifications.push_closed": {
+    "defaultMessage": "You closed the browser's question without choosing. Turn on to ask again.",
+    "description": "Under the Web Push prompt when the reader closed the browser's permission question without allowing or blocking; Turn on stays."
+  },
+  "notifications.push_blocked": {
+    "defaultMessage": "Your browser blocks notifications from this site. Allow them in the browser's settings.",
+    "description": "Under the Web Push prompt when the browser blocks the site's notifications (the reader refused); only Not now stays."
+  },
+  "notifications.push_failed": {
+    "defaultMessage": "Notifications could not be turned on. Try again.",
+    "description": "Under the Web Push prompt when subscribing or registering the subscription failed; Turn on stays."
+  },
+  "notifications.push_on": {
+    "defaultMessage": "Notifications are on for this device. Choose which kinds in Settings, under Notifications.",
+    "description": "The line in place of the Web Push prompt once push notifications are on for this device."
   }
 }

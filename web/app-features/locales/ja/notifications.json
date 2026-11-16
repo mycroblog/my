@@ -402,5 +402,33 @@
   "notifications.held_gone": {
     "defaultMessage": "この人からの保留中の通知は、いまはありません。",
     "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
+  },
+  "notifications.push_offer": {
+    "defaultMessage": "アプリを閉じていても、この端末で通知を受け取れます。あとから設定の「通知」でオンにすることもできます。",
+    "description": "The prompt over the notifications' tabs that offers to turn Web Push on for this device; it says that the settings can turn it on later."
+  },
+  "notifications.push_turn_on": {
+    "defaultMessage": "有効にする",
+    "description": "The primary button of the Web Push prompt (notifications.push_offer): asks the browser's permission if it must, then turns push notifications on for this device."
+  },
+  "notifications.push_not_now": {
+    "defaultMessage": "今はしない",
+    "description": "The button of the Web Push prompt that closes it for good on this device; push stays off."
+  },
+  "notifications.push_closed": {
+    "defaultMessage": "ブラウザの確認が選ばれずに閉じられました。もう一度確認するには「有効にする」を押してください。",
+    "description": "Under the Web Push prompt when the reader closed the browser's permission question without allowing or blocking; Turn on stays."
+  },
+  "notifications.push_blocked": {
+    "defaultMessage": "ブラウザがこのサイトの通知をブロックしています。ブラウザの設定で許可してください。",
+    "description": "Under the Web Push prompt when the browser blocks the site's notifications (the reader refused); only Not now stays."
+  },
+  "notifications.push_failed": {
+    "defaultMessage": "通知を有効にできませんでした。もう一度試してください。",
+    "description": "Under the Web Push prompt when subscribing or registering the subscription failed; Turn on stays."
+  },
+  "notifications.push_on": {
+    "defaultMessage": "この端末で通知を受け取れるようになりました。受け取る種類は設定の「通知」で変えられます。",
+    "description": "The line in place of the Web Push prompt once push notifications are on for this device."
   }
 }
