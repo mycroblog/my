@@ -76,7 +76,11 @@ const menu = tv({
           "pb-[calc(var(--dialog-padding)+env(safe-area-inset-bottom))]",
         ],
         // As wide as the viewport and no wider: an item's label and what it holds wrap, never scrolling sideways.
-        list: "min-h-0 overflow-y-auto [&_[role^=menuitem]]:whitespace-normal",
+        // A row grows with a label that wraps, never running over the next row or into the gap before a group.
+        list: [
+          "min-h-0 overflow-y-auto [&_[role^=menuitem]]:whitespace-normal",
+          "[&_.h-control-form]:h-auto [&_.h-control-form]:min-h-control-form [&_.h-control-form]:py-[0.25rem]",
+        ],
       },
     },
   },
