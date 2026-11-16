@@ -162,7 +162,7 @@ func TestDomainBlockCSVRejectsInvalidInput(t *testing.T) {
 	}
 	rows := strings.Repeat("x.example\n", moderation.MaxDomainBlockImport+1)
 	res := e.sendJSON(t, http.MethodPost, "/admin/domain_actions/import/preview", "admin", `{"csv":`+jsonString(rows)+`}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "csv") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "csv" {
 		t.Errorf("too many rows = %d %+v", res.StatusCode, p)
 	}
 	if len(f.issued) != 0 {

@@ -112,9 +112,10 @@ export type FakeOptions = {
   /**
    * The articles (ADR-0160): who may write new ones, everyone by default or only the roles with `create_articles`
    * (`authoring: "permission"`, which no person of the scenario has); a preview of a body that fails (`preview:
-   * "fails"`); a publication or an edit the server's review refuses (`publish: "refused"`).
+   * "fails"`); a publication or an edit the server's review refuses (`publish: "refused"`), or refuses for the value
+   * of its summary, which the problem names (`publish: "summary"`).
    */
-  articles?: { authoring?: "everyone" | "permission"; preview?: "fails"; publish?: "refused" };
+  articles?: { authoring?: "everyone" | "permission"; preview?: "fails"; publish?: "refused" | "summary" };
 };
 
 /** The address of the fake's status page. */
@@ -860,6 +861,18 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         title: "The post was rejected",
         status: 422,
         detail: "This server's review did not accept the article. Change it and try again.",
+      },
+      422,
+    );
+  /** An article refused for the value of its summary, which the problem names in `field`, as the server answers it. */
+  const refusedSummary = () =>
+    json(
+      {
+        type: "about:blank",
+        title: "This could not be done.",
+        status: 422,
+        detail: "This value is not valid. Check what you entered.",
+        field: "summary",
       },
       422,
     );
@@ -1794,6 +1807,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (o.articles?.authoring === "permission" && !permissionsOf(viewer).includes("create_articles"))
         return problem(403, "Forbidden");
       if (o.articles?.publish === "refused") return refusedArticle();
+      if (o.articles?.publish === "summary") return refusedSummary();
       const body = (await request.json()) as Json;
       const { title, summary, tags, cover, ...rest } = body;
       return json(
@@ -1804,6 +1818,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     if ((match = m(/^\/articles\/([^/]+)$/)) && request.method === "PUT") {
       const sid = decodeURIComponent(match[1] ?? "");
       if (o.articles?.publish === "refused") return refusedArticle();
+      if (o.articles?.publish === "summary") return refusedSummary();
       const edit = (await request.json()) as Json;
       const after = editMade(sid, edit);
       if (after !== undefined) return json(after);

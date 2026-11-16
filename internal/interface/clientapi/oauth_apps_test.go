@@ -194,7 +194,7 @@ func TestOAuthAppRegistration(t *testing.T) {
 		{`{"name":"Bot","redirect_uris":["https://bot.example/cb"],"scope":"admin:read","client_type":"public"}`, "scope"},
 	} {
 		res := e.sendJSON(t, http.MethodPost, "/oauth_apps", "write", tc.body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.param) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != tc.param {
 			t.Errorf("create %s = %d %+v, want a 422 naming %s", tc.body, res.StatusCode, p, tc.param)
 		}
 	}
@@ -226,7 +226,7 @@ func TestOAuthAppChanges(t *testing.T) {
 		t.Errorf("update = %d %+v, want the changes and the same scope", res.StatusCode, app)
 	}
 	res = e.sendJSON(t, http.MethodPatch, "/oauth_apps/"+id, "write", `{"scope":"write admin"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "scope") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "scope" {
 		t.Errorf("update with a first-party-only scope = %d %+v, want a 422 naming scope", res.StatusCode, p)
 	}
 
@@ -246,7 +246,7 @@ func TestOAuthAppChanges(t *testing.T) {
 		t.Errorf("issue tokens without a body = %d %+v, want the app's scope", res.StatusCode, tok)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", `{"scope":"follow"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "scope") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "scope" {
 		t.Errorf("issue tokens beyond the app = %d %+v, want a 422 naming scope", res.StatusCode, p)
 	}
 

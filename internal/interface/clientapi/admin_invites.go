@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
@@ -135,7 +134,7 @@ func (s *Server) CreateInvite(ctx context.Context, req CreateInviteRequestObject
 	l := s.Localizer(ctx)
 	unprocessable := func(name string) CreateInviteResponseObject {
 		return CreateInvitedefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(name)))
+			s.fieldProblem(ctx, name, l.ServerErrorsInvalidValue()))
 	}
 	in := appidentity.CreateInviteInput{CreatedByUserID: v.UserID}
 	if b := req.Body; b != nil {

@@ -21,11 +21,11 @@ type Articles interface {
 }
 
 // articleProblem returns the problem of an error of the article use cases, or false for another
-// error.
-func (s *Server) articleProblem(ctx context.Context, err error) (problem, bool) {
+// error. article is the path of the article's members in the request (contentField).
+func (s *Server) articleProblem(ctx context.Context, err error, article string) (problem, bool) {
 	l := s.Localizer(ctx)
 	unprocessable := func(detail string) (problem, bool) {
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail), true
+		return s.fieldProblem(ctx, contentField(err, article), detail), true
 	}
 	var tooManyImages *appcontent.TooManyArticleImagesError
 	switch {

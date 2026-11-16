@@ -141,14 +141,14 @@ func TestManageInstanceSettings(t *testing.T) {
 
 func TestInstanceSettingProblems(t *testing.T) {
 	e, f := newSettingsEnv(t)
-	for _, tc := range []struct{ name, body, detail string }{
+	for _, tc := range []struct{ name, body, field string }{
 		{"unknown key", `{"values":{"registration_mode":"open","motto":"x"}}`, "values.motto"},
 		{"invalid value", `{"values":{"registration_mode":"open","max_status_length":"0"}}`, "values.max_status_length"},
 	} {
 		res := e.sendJSON(t, http.MethodPatch, "/admin/settings", "admin", tc.body)
 		p := decodeProblem(t, res)
-		if res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.detail) {
-			t.Errorf("%s: %d %+v, want 422 naming %q", tc.name, res.StatusCode, p, tc.detail)
+		if res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != tc.field {
+			t.Errorf("%s: %d %+v, want 422 naming %q", tc.name, res.StatusCode, p, tc.field)
 		}
 	}
 	if len(f.stored) != 0 {

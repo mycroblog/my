@@ -92,21 +92,25 @@ func TestNewPoll(t *testing.T) {
 	}
 	long := strings.Repeat("あ", MaxPollOptionLength+1)
 	cases := []struct {
-		name string
-		in   PollInput
+		name     string
+		in       PollInput
+		option   int
+		duration bool
 	}{
-		{"one choice", PollInput{Options: []string{"a"}, Duration: time.Hour}},
-		{"too many choices", PollInput{Options: []string{"a", "b", "c", "d", "e"}, Duration: time.Hour}},
-		{"blank choice", PollInput{Options: []string{"a", " "}, Duration: time.Hour}},
-		{"long choice", PollInput{Options: []string{"a", long}, Duration: time.Hour}},
-		{"NUL", PollInput{Options: []string{"a", "b\x00"}, Duration: time.Hour}},
-		{"twice", PollInput{Options: []string{"a", " a"}, Duration: time.Hour}},
-		{"short", PollInput{Options: []string{"a", "b"}, Duration: MinPollDuration - time.Second}},
-		{"long", PollInput{Options: []string{"a", "b"}, Duration: MaxPollDuration + time.Second}},
+		{"one choice", PollInput{Options: []string{"a"}, Duration: time.Hour}, -1, false},
+		{"too many choices", PollInput{Options: []string{"a", "b", "c", "d", "e"}, Duration: time.Hour}, -1, false},
+		{"blank choice", PollInput{Options: []string{"a", " "}, Duration: time.Hour}, 1, false},
+		{"long choice", PollInput{Options: []string{"a", long}, Duration: time.Hour}, 1, false},
+		{"NUL", PollInput{Options: []string{"a", "b\x00"}, Duration: time.Hour}, 1, false},
+		{"twice", PollInput{Options: []string{"a", " a"}, Duration: time.Hour}, 1, false},
+		{"short", PollInput{Options: []string{"a", "b"}, Duration: MinPollDuration - time.Second}, -1, true},
+		{"long", PollInput{Options: []string{"a", "b"}, Duration: MaxPollDuration + time.Second}, -1, true},
 	}
 	for _, c := range cases {
-		if _, err := NewPoll(testID(1), c.in, now); !errors.Is(err, ErrInvalidPoll) {
-			t.Errorf("%s: NewPoll = %v, want ErrInvalidPoll", c.name, err)
+		_, err := NewPoll(testID(1), c.in, now)
+		var inputErr *PollInputError
+		if !errors.Is(err, ErrInvalidPoll) || !errors.As(err, &inputErr) || inputErr.Option != c.option || inputErr.Duration != c.duration {
+			t.Errorf("%s: NewPoll = %#v, want ErrInvalidPoll about option %d (duration %t)", c.name, err, c.option, c.duration)
 		}
 	}
 	if _, err := NewPoll(testID(1), PollInput{Options: []string{"a", strings.Repeat("あ", MaxPollOptionLength)}, Duration: MaxPollDuration}, now); err != nil {

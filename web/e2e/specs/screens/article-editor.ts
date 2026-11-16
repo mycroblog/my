@@ -183,11 +183,15 @@ export class ArticleEditor {
   }
 
   async #upload(file: Upload, button: Locator, processed: boolean): Promise<string> {
-    // The server takes an image (202) and processes it; the client reads it again until it is (200).
+    // The server takes an image (202) and processes it; the client reads it again (200, its state in the body) until
+    // its state is no longer processing.
     const ready = new Set<string>();
     const seen = (r: Response) => {
       const id = /\/media\/([^/]+)$/.exec(new URL(r.url()).pathname)?.[1];
-      if (r.request().method() === "GET" && r.status() === 200 && id !== undefined) ready.add(id);
+      if (r.request().method() !== "GET" || id === undefined) return;
+      void processedIn(r).then((done) => {
+        if (done) ready.add(id);
+      });
     };
     this.page.on("response", seen);
     try {
@@ -200,7 +204,7 @@ export class ArticleEditor {
       await (await chooser).setFiles(file);
       const answer = await response;
       const { id } = (await answer.json()) as { id: string };
-      if (processed && answer.status() !== 200) await expect.poll(() => ready.has(id)).toBe(true);
+      if (processed && !(await processedIn(answer))) await expect.poll(() => ready.has(id)).toBe(true);
       return id;
     } finally {
       this.page.off("response", seen);
@@ -313,3 +317,13 @@ export class ArticleEditor {
 }
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Whether the server's answer `r` with a media file says it is processed. The server answers 200 to a read of a file
+ * still processing, its state in the body, so the status alone does not tell.
+ */
+export async function processedIn(r: Response): Promise<boolean> {
+  if (!r.ok()) return false;
+  const { state } = (await r.json().catch(() => ({}))) as { state?: string };
+  return state !== undefined && state !== "processing";
+}

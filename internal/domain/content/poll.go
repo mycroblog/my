@@ -30,6 +30,19 @@ var (
 	ErrInvalidPoll = errors.New("content: invalid poll")
 )
 
+// PollInputError is the ErrInvalidPoll of NewPoll, with the part of the PollInput it is about:
+// Option is the index of the choice that breaks a limit, or -1 when the poll does (the number of
+// its choices, or Duration).
+type PollInputError struct {
+	Option   int
+	Duration bool
+	reason   string
+}
+
+func (e *PollInputError) Error() string { return ErrInvalidPoll.Error() + ": " + e.reason }
+
+func (e *PollInputError) Unwrap() error { return ErrInvalidPoll }
+
 // Limits of a local poll (FR-112). They are Mastodon's defaults, which the servers that read
 // the Question also accept.
 const (
@@ -57,27 +70,29 @@ type PollInput struct {
 // in.Duration after now, to the second. It fails with ErrInvalidPoll on fewer than
 // MinPollOptions or more than MaxLocalPollOptions choices, a blank choice, one longer than
 // MaxPollOptionLength, not valid UTF-8, or with a NUL character, the same choice twice, or a
-// duration outside [MinPollDuration, MaxPollDuration]. The titles are trimmed.
+// duration outside [MinPollDuration, MaxPollDuration], as a *PollInputError. The titles are
+// trimmed.
 func NewPoll(id string, in PollInput, now time.Time) (Poll, error) {
 	if n := len(in.Options); n < MinPollOptions || n > MaxLocalPollOptions {
-		return Poll{}, fmt.Errorf("%w: %d choices, %d to %d", ErrInvalidPoll, n, MinPollOptions, MaxLocalPollOptions)
+		return Poll{}, &PollInputError{Option: -1, reason: fmt.Sprintf("%d choices, %d to %d", n, MinPollOptions, MaxLocalPollOptions)}
 	}
 	if in.Duration < MinPollDuration || in.Duration > MaxPollDuration {
-		return Poll{}, fmt.Errorf("%w: a duration of %s, %s to %s", ErrInvalidPoll, in.Duration, MinPollDuration, MaxPollDuration)
+		return Poll{}, &PollInputError{Option: -1, Duration: true,
+			reason: fmt.Sprintf("a duration of %s, %s to %s", in.Duration, MinPollDuration, MaxPollDuration)}
 	}
 	p := Poll{ID: id, Multiple: in.Multiple, HideTotals: in.HideTotals}
 	for i, raw := range in.Options {
 		title := strings.TrimSpace(raw)
 		switch {
 		case title == "":
-			return Poll{}, fmt.Errorf("%w: choice %d is blank", ErrInvalidPoll, i)
+			return Poll{}, &PollInputError{Option: i, reason: fmt.Sprintf("choice %d is blank", i)}
 		case !utf8.ValidString(title) || strings.ContainsRune(title, 0):
-			return Poll{}, fmt.Errorf("%w: choice %d is not valid text", ErrInvalidPoll, i)
+			return Poll{}, &PollInputError{Option: i, reason: fmt.Sprintf("choice %d is not valid text", i)}
 		case utf8.RuneCountInString(title) > MaxPollOptionLength:
-			return Poll{}, fmt.Errorf("%w: choice %d is longer than %d characters", ErrInvalidPoll, i, MaxPollOptionLength)
+			return Poll{}, &PollInputError{Option: i, reason: fmt.Sprintf("choice %d is longer than %d characters", i, MaxPollOptionLength)}
 		}
 		if slices.ContainsFunc(p.Options, func(o PollOption) bool { return o.Title == title }) {
-			return Poll{}, fmt.Errorf("%w: choice %q twice", ErrInvalidPoll, title)
+			return Poll{}, &PollInputError{Option: i, reason: fmt.Sprintf("choice %q twice", title)}
 		}
 		p.Options = append(p.Options, PollOption{Position: i, Title: title})
 	}

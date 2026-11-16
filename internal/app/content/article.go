@@ -396,7 +396,7 @@ func (s *Service) prepareArticle(ctx context.Context, author appaccount.Actor, i
 	}
 	article := &content.ArticleRevision{Title: title, Summary: summary, SummaryOrigin: content.SummaryByAuthor}
 	if c := in.Cover; c != nil {
-		if err := checkDescription(c.MediaID, c.Description, requireDescription); err != nil {
+		if err := checkDescription(c.MediaID, c.Description, requireDescription, MediaCover, 0); err != nil {
 			return preparedText{}, err
 		}
 		if err := s.checkMedia(ctx, author.Account.ID, c.MediaID, allowProcessing); err != nil {
@@ -419,7 +419,7 @@ func (s *Service) prepareArticle(ctx context.Context, author appaccount.Actor, i
 		return preparedText{}, &TooManyArticleImagesError{Images: n, Max: limits.MaxImages}
 	}
 	for _, img := range r.Images {
-		if err := checkDescription(img.MediaID, img.Description, requireDescription); err != nil {
+		if err := checkDescription(img.MediaID, img.Description, requireDescription, MediaBodyImage, 0); err != nil {
 			return preparedText{}, err
 		}
 	}
@@ -484,18 +484,29 @@ func validSummary(summary string) (string, error) {
 	return summary, nil
 }
 
+// HashtagError is the ErrInvalidHashtag of the hashtag Name, at Index among the hashtags of an
+// article.
+type HashtagError struct {
+	Index int
+	Name  string
+}
+
+func (e *HashtagError) Error() string { return fmt.Sprintf("%v: %q", ErrInvalidHashtag, e.Name) }
+
+func (e *HashtagError) Unwrap() error { return ErrInvalidHashtag }
+
 // articleHashtags returns the hashtags of names, each a hashtag name with or without "#"
-// (ParseHashtag, ErrInvalidHashtag), each once by its normalized name: at most
+// (ParseHashtag, *HashtagError), each once by its normalized name: at most
 // content.MaxArticleTags (ErrTooManyHashtags).
 func articleHashtags(names []string) ([]Hashtag, error) {
 	if len(names) > content.MaxArticleTags {
 		return nil, fmt.Errorf("%w: %d hashtags, at most %d", ErrTooManyHashtags, len(names), content.MaxArticleTags)
 	}
 	var out []Hashtag
-	for _, name := range names {
+	for i, name := range names {
 		h, ok := ParseHashtag(strings.TrimSpace(name))
 		if !ok {
-			return nil, fmt.Errorf("%w: %q", ErrInvalidHashtag, name)
+			return nil, &HashtagError{Index: i, Name: name}
 		}
 		if !containsTag(out, h.NameNormalized) {
 			out = append(out, h)
@@ -521,15 +532,19 @@ func (s *Service) requireDescription(ctx context.Context) (bool, error) {
 	return s.d.RequireMediaDescription(ctx)
 }
 
-// checkDescription checks the alt text of a media file as attachments checks it.
-func checkDescription(mediaID, d string, required bool) error {
-	if !content.ValidText(d) || utf8.RuneCountInString(d) > MaxMediaDescription {
-		return fmt.Errorf("media %s: %w", mediaID, ErrInvalidMediaDescription)
+// checkDescription checks the alt text d of the media file mediaID at place (index among the
+// attachments of a post), failing with a *MediaDescriptionError.
+func checkDescription(mediaID, d string, required bool, place MediaPlace, index int) error {
+	var err error
+	switch {
+	case !content.ValidText(d) || utf8.RuneCountInString(d) > MaxMediaDescription:
+		err = ErrInvalidMediaDescription
+	case required && strings.TrimSpace(d) == "":
+		err = ErrMissingMediaDescription
+	default:
+		return nil
 	}
-	if required && strings.TrimSpace(d) == "" {
-		return fmt.Errorf("media %s: %w", mediaID, ErrMissingMediaDescription)
-	}
-	return nil
+	return &MediaDescriptionError{MediaID: mediaID, Place: place, Index: index, Err: err}
 }
 
 // reviewedMedia returns the media files of rev that the decision hook media.check acts on: its

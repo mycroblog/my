@@ -90,6 +90,18 @@ func (s *Server) NewProblem(ctx context.Context, status int, typ, title, detail 
 	return p, ProblemResponseHeaders{ContentLanguage: &locale, CacheControl: &cache}
 }
 
+// fieldProblem returns the 422 problem of a member of the request whose value the server
+// refuses. field names the member by its name in the request (the problem's `field`), and
+// detail says what is wrong with its value without naming it, since the client shows it
+// beside that field. An empty field leaves `field` out.
+func (s *Server) fieldProblem(ctx context.Context, field, detail string) problem {
+	p := s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, s.Localizer(ctx).ServerErrorsUnprocessable(), detail)
+	if field != "" {
+		p.Body.Field = &field
+	}
+	return p
+}
+
 // invalidParameterResponse is invalidParameter as a default response (problem, statuses.go).
 func (s *Server) invalidParameterResponse(ctx context.Context, name string) problem {
 	body, headers := s.invalidParameter(ctx, name)
@@ -102,7 +114,13 @@ func (s *Server) invalidParameterResponse(ctx context.Context, name string) prob
 // kept. Problems are never cached.
 func (s *Server) writeProblem(w http.ResponseWriter, r *http.Request, status int, typ, title, detail string) {
 	p, headers := s.NewProblem(withLocale(r), status, typ, title, detail)
-	body, err := json.Marshal(p)
+	s.writeProblemDocument(w, problem{Body: p, Headers: headers, StatusCode: status})
+}
+
+// writeProblemDocument writes p as writeProblem does.
+func (s *Server) writeProblemDocument(w http.ResponseWriter, p problem) {
+	status, headers := p.StatusCode, p.Headers
+	body, err := json.Marshal(p.Body)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

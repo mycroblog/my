@@ -7,7 +7,16 @@
 // the composer's (marked an article), and one is scheduled; the seed's drafts of articles open in the editor.
 
 import { drawPNG } from "../src/seed/png";
-import { ArticleEditor, ArticleText, Frame, holdPreviews, holdProcessing, Thread, type Upload } from "./screens";
+import {
+  ArticleEditor,
+  ArticleText,
+  Frame,
+  holdPreviews,
+  holdProcessing,
+  processedIn,
+  Thread,
+  type Upload,
+} from "./screens";
 import { expect, person, test } from "./test";
 
 /** A small PNG to pick in the file picker. */
@@ -109,8 +118,8 @@ test("Publish pressed while the cover is processing says to wait, and publishes 
   await expect(editor.heading("New article")).toBeVisible();
   // Once the server says the cover is processed, Publish publishes it.
   const processed = page.waitForResponse(
-    (r) =>
-      r.request().method() === "GET" && r.status() === 200 && new URL(r.url()).pathname.endsWith(`/media/${cover}`),
+    async (r) =>
+      r.request().method() === "GET" && new URL(r.url()).pathname.endsWith(`/media/${cover}`) && (await processedIn(r)),
   );
   await release();
   await processed;

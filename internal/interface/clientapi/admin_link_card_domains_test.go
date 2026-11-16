@@ -122,7 +122,7 @@ func TestLinkCardDomainRuleValidation(t *testing.T) {
 		"long note": {`{"mode":"no_fetch","x":"invalid-on-purpose","note":"` + strings.Repeat("a", instance.MaxLinkCardDomainNote+1) + `"}`, "note"},
 	} {
 		res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/a.example", "admin", tc.body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.field) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != tc.field {
 			t.Errorf("%s = %d %+v, want 422 naming %s", name, res.StatusCode, p, tc.field)
 		}
 	}
@@ -131,7 +131,7 @@ func TestLinkCardDomainRuleValidation(t *testing.T) {
 	}
 	f.tooMany = true
 	res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/a.example", "admin", `{"mode":"no_fetch"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "rules") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "rules" {
 		t.Errorf("too many = %d %+v, want 422 naming rules", res.StatusCode, p)
 	}
 }

@@ -64,6 +64,7 @@ import {
 } from "@my/design-system";
 import type { EditorHandle, PlainTextEditorProps } from "@my/design-system/editor";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { fieldError } from "../field-errors";
 import type { MessageId } from "../messages.gen";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
@@ -226,7 +227,18 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
   const tagsLeft = articleFieldLimits.tags - draft.tags.length;
   const textLang = draft.language === "" ? undefined : draft.language;
   const alert = alertOf(e, t, locale);
-  const bodyError = e.checked && problems.bodyMissing ? t("compose.article.body.missing") : undefined;
+  // What the server refused of an input it named, beside that input (field-errors.ts); the preview gives way to what
+  // is written, which holds it.
+  const refused = phase.kind === "failed" ? phase : undefined;
+  const placed = refused?.field !== undefined;
+  useEffect(() => {
+    if (placed) setMode("write");
+  }, [placed]);
+  const bodyError = e.checked && problems.bodyMissing ? t("compose.article.body.missing") : fieldError(refused, "text");
+  const summaryError =
+    summaryLeft < 0
+      ? t("compose.article.summary.over", { max: articleFieldLimits.summary })
+      : fieldError(refused, "summary");
   const setSchedule = (o: boolean) => {
     setOpen(o ? "schedule" : undefined);
   };
@@ -247,7 +259,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
           ? t("compose.article.field.title.over", { max: articleFieldLimits.title })
           : e.checked && problems.titleMissing
             ? t("compose.article.field.title.missing")
-            : undefined
+            : fieldError(refused, "title")
       }
     />
   );
@@ -287,7 +299,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
       label={t("compose.article.summary")}
       hint={t("compose.article.summary.hint")}
       end={<Count left={summaryLeft} near={50} t={t} />}
-      error={summaryLeft < 0 ? t("compose.article.summary.over", { max: articleFieldLimits.summary }) : undefined}
+      error={summaryError}
     >
       <ArticleTextArea
         label={t("compose.article.summary")}
@@ -297,8 +309,8 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
         onChange={(value) => {
           e.change({ summary: value });
         }}
-        invalid={summaryLeft < 0}
-        describedBy={summaryLeft < 0 ? `${id}-summary-error` : undefined}
+        invalid={summaryError !== undefined}
+        describedBy={summaryError === undefined ? undefined : `${id}-summary-error`}
       />
     </ArticleField>
   );
@@ -307,6 +319,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
     <ArticleField
       id={`${id}-cover`}
       label={t("compose.article.cover")}
+      error={fieldError(refused, "cover")}
       end={
         coverDraft === undefined ? undefined : (
           <CoverRemove label={t("compose.article.cover.remove")} onPress={e.removeCover} />
@@ -347,6 +360,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
     <ArticleField
       id={`${id}-tags`}
       label={t("compose.article.tags")}
+      error={fieldError(refused, "tags")}
       end={
         tagsLeft <= 2 ? (
           <CharCount left={tagsLeft} near={2} label={t("compose.article.tags.left", { count: tagsLeft })} />

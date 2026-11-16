@@ -99,9 +99,8 @@ func (s *Server) PutPushSubscription(ctx context.Context, req PutPushSubscriptio
 		return nil, fmt.Errorf("clientapi: register the push subscription of %s: %w", v.FamilyID, err)
 	}
 	if property != "" {
-		l := s.Localizer(ctx)
-		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(property))
-		return PutPushSubscriptiondefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity}, nil
+		return PutPushSubscriptiondefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, property, s.Localizer(ctx).ServerErrorsInvalidValue())), nil
 	}
 	cache := cacheNoStore
 	return PutPushSubscription200JSONResponse{Body: s.newPushSubscription(sub), Headers: PutPushSubscription200ResponseHeaders{CacheControl: &cache}}, nil

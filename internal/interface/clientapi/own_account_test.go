@@ -213,7 +213,7 @@ func TestDeleteOwnAccount(t *testing.T) {
 		t.Fatalf("deleted = %v, want none yet", own.deleted)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/delete", "write", `{}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "password") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "password" {
 		t.Errorf("no confirmation = %d %+v, want 422 on password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/delete", "write", `{"passkey":{"confirmation_token":"bad","credential":{"id":"x"}}}`)
@@ -247,7 +247,7 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("wrong password = %d %+v, want 422 wrong-password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"secret","new_password":"short","x":"invalid-on-purpose"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "new_password") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "new_password" {
 		t.Errorf("short new password = %d %+v, want 422 on new_password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"limited","new_password":"new password"}`)
@@ -274,7 +274,7 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("expired passkey confirmation = %d %+v, want 422 passkey-confirmation-expired", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"passkey":{"confirmation_token":"","credential":{}},"new_password":"new password"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "passkey") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "passkey" {
 		t.Errorf("empty passkey = %d %+v, want 422 on passkey", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"passkey":{"confirmation_token":"good","credential":{"id":"x"}},"new_password":"new password"}`)

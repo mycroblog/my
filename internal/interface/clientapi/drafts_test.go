@@ -17,10 +17,12 @@ import (
 )
 
 // fakeDrafts holds the drafts of one account by ID, at most max of them (and max is 1 here).
+// Publish fails with publishErr, or ErrEmptyText.
 type fakeDrafts struct {
-	byID  map[string]appcontent.DraftView
-	max   int
-	clock time.Time
+	byID       map[string]appcontent.DraftView
+	max        int
+	clock      time.Time
+	publishErr error
 }
 
 func (f *fakeDrafts) tick() time.Time {
@@ -84,6 +86,9 @@ func (f *fakeDrafts) Unschedule(context.Context, string, string) (appcontent.Dra
 }
 
 func (f *fakeDrafts) Publish(context.Context, string, string, string) (appcontent.Post, error) {
+	if f.publishErr != nil {
+		return appcontent.Post{}, f.publishErr
+	}
 	return appcontent.Post{}, appcontent.ErrEmptyText
 }
 
@@ -154,6 +159,34 @@ func TestDrafts(t *testing.T) {
 	res = e.draftRequest(t, http.MethodGet, "/drafts?scheduled=true", "", map[string]string{"Authorization": "Bearer read"})
 	if err := json.NewDecoder(res.Body).Decode(&page); err != nil || res.StatusCode != http.StatusOK {
 		t.Errorf("list = %d, %v; want 200 with a page", res.StatusCode, err)
+	}
+}
+
+// TestDraftProblemsNameTheField checks that a 422 of a draft about one member of its content
+// names it in the draft's request: the article's members under article.
+func TestDraftProblemsNameTheField(t *testing.T) {
+	f := &fakeDrafts{byID: map[string]appcontent.DraftView{}, max: 1, clock: time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.Drafts = f })
+	res := e.draftRequest(t, http.MethodPost, "/drafts", `{"text": "hello", "visibility": "public"}`, nil)
+	id := decode[clientapi.Draft](t, res).Id
+	for _, tc := range []struct {
+		err   error
+		field string
+	}{
+		{appcontent.ErrEmptyText, "text"},
+		{&appcontent.TextTooLongError{Length: 501, Max: 500}, "text"},
+		{&content.PollInputError{Option: 1}, "poll.options[1]"},
+		{&appcontent.MediaDescriptionError{Place: appcontent.MediaAttachment, Index: 2, Err: appcontent.ErrInvalidMediaDescription}, "media[2].description"},
+		{appcontent.ErrInvalidArticleTitle, "article.title"},
+		{appcontent.ErrInvalidArticleSummary, "article.summary"},
+		{&appcontent.HashtagError{Index: 3, Name: "#"}, "article.tags[3]"},
+		{&appcontent.MediaDescriptionError{Place: appcontent.MediaCover, Err: appcontent.ErrMissingMediaDescription}, "article.cover.description"},
+	} {
+		f.publishErr = tc.err
+		res := e.draftRequest(t, http.MethodPost, "/drafts/"+id+"/publish", "", nil)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != tc.field {
+			t.Errorf("publish failing with %v = %d %+v, want 422 on %s", tc.err, res.StatusCode, p, tc.field)
+		}
 	}
 }
 

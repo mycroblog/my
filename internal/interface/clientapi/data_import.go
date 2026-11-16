@@ -15,7 +15,6 @@ import (
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The viewer's follows, blocks, mutes, and bookmarks as Mastodon's CSV files: exports, and
@@ -79,15 +78,15 @@ func (s *Server) importInput(ctx context.Context, v Viewer, b *DataImportRequest
 		UserID: v.UserID, AccountID: v.AccountID, Kind: identity.ImportKind(b.Kind), Mode: identity.ImportMode(b.Mode), Text: b.Text,
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (appidentity.ImportInput, *problem) {
-		p := s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)
+	unprocessable := func(field, detail string) (appidentity.ImportInput, *problem) {
+		p := s.fieldProblem(ctx, field, detail)
 		return appidentity.ImportInput{}, &p
 	}
 	switch {
 	case !in.Kind.Valid():
-		return unprocessable(l.ServerErrorsInvalidValue("kind"))
+		return unprocessable("kind", l.ServerErrorsInvalidValue())
 	case !in.Mode.Valid():
-		return unprocessable(l.ServerErrorsInvalidValue("mode"))
+		return unprocessable("mode", l.ServerErrorsInvalidValue())
 	}
 	return in, nil
 }
@@ -100,8 +99,7 @@ func (s *Server) importProblem(ctx context.Context, err error) *problem {
 	var parseErr *csv.ParseError
 	switch {
 	case errors.Is(err, identity.ErrTooManyImportEntries):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(),
-			l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: identity.MaxImportEntries, Name: "text"}))
+		p = s.fieldProblem(ctx, "text", l.ServerErrorsTooMany(identity.MaxImportEntries))
 	case errors.As(err, &parseErr):
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsImportInvalidCsv())
 	case errors.Is(err, appidentity.ErrImportInProgress):

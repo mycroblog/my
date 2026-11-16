@@ -34,31 +34,47 @@ export const Edit: Story = { parameters: screen({ at: "article-edit:sam-article"
 export const PreviewFailed: Story = {
   parameters: screen({ at: draft, server: { articles: { preview: "fails" } } }),
 };
+/** Presses Publish (or Save), and waits until the refusal stands before it, in the editor, which keeps what is written. */
+const pressRefused = async (context: StoryContext) => {
+  await screenMeta.play(context);
+  const canvas = within(context.canvasElement);
+  // Publish ends the row, the last button of the screen, in any locale.
+  const publish = (await canvas.findAllByRole("button")).at(-1);
+  if (publish === undefined) throw new Error("the editor has no Publish");
+  await userEvent.click(publish);
+  await waitFor(() => {
+    if (!publish.closest("div")?.parentElement?.querySelector('[role="alert"]'))
+      throw new Error("the refusal is not shown before Publish yet");
+  });
+  if (!publish.isConnected) throw new Error("the editor was left");
+  // React Aria announces the button's busy state for 7 s through a node of the page's own, which names the button
+  // by its ID; the checks of the page read the screen once it is gone.
+  await waitFor(
+    () => {
+      if (document.querySelector('body > [data-live-announcer] [aria-labelledby], [role="img"][aria-labelledby]'))
+        throw new Error("the busy state is still announced");
+    },
+    { timeout: 9000 },
+  );
+};
 /** Publish pressed, and the server's review refuses the article: its words before Publish, what is written kept. */
 export const PublishingError: Story = {
   parameters: screen({ at: draft, server: { articles: { publish: "refused" } } }),
+  play: pressRefused,
+};
+/**
+ * Save pressed on an edit, and the server refuses the value of the summary, which it names: what is wrong stands under
+ * the summary, the problem's title alone before Save.
+ */
+export const SummaryRefused: Story = {
+  parameters: screen({ at: "article-edit:sam-article", viewer: "sam", server: { articles: { publish: "summary" } } }),
   play: async (context: StoryContext) => {
-    await screenMeta.play(context);
-    const canvas = within(context.canvasElement);
-    // Publish ends the row, the last button of the screen, in any locale.
-    const publish = (await canvas.findAllByRole("button")).at(-1);
-    if (publish === undefined) throw new Error("the editor has no Publish");
-    await userEvent.click(publish);
-    // The refusal stands before Publish, in the editor, which keeps what is written.
-    await waitFor(() => {
-      if (!publish.closest("div")?.parentElement?.querySelector('[role="alert"]'))
-        throw new Error("the refusal is not shown before Publish yet");
-    });
-    if (!publish.isConnected) throw new Error("the editor was left");
-    // React Aria announces the button's busy state for 7 s through a node of the page's own, which names the button
-    // by its ID; the checks of the page read the screen once it is gone.
-    await waitFor(
-      () => {
-        if (document.querySelector('body > [data-live-announcer] [aria-labelledby], [role="img"][aria-labelledby]'))
-          throw new Error("the busy state is still announced");
-      },
-      { timeout: 9000 },
-    );
+    await pressRefused(context);
+    // The fake's detail, under the summary's textarea, which it describes.
+    const summary = context.canvasElement.querySelector('textarea[aria-invalid="true"]');
+    const error = summary?.getAttribute("aria-describedby");
+    if (!error || !context.canvasElement.ownerDocument.getElementById(error)?.textContent.includes("not valid"))
+      throw new Error("the refusal does not stand under the summary");
   },
 };
 /** The server keeps new articles to a role the reader does not have: no form, the one sentence why. */

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"slices"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of moderation: the actions on domains (FR-702, manage_domains) and the
@@ -143,9 +141,9 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 		return nil, err
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (CreateDomainActionResponseObject, error) {
+	unprocessable := func(field, detail string) (CreateDomainActionResponseObject, error) {
 		return CreateDomainActiondefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	b := req.Body
 	if b == nil {
@@ -153,10 +151,10 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	}
 	in := appmoderation.DomainActionInput{Kind: moderation.DomainActionKind(b.Kind), IssuedByUserID: v.UserID}
 	if !in.Kind.Valid() {
-		return unprocessable(l.ServerErrorsInvalidValue("kind"))
+		return unprocessable("kind", l.ServerErrorsInvalidValue())
 	}
 	if in.Domain, err = appfederation.CanonicalHost(b.Domain); err != nil || !moderation.ValidDomain(in.Domain) {
-		return unprocessable(l.ServerErrorsInvalidValue("domain"))
+		return unprocessable("domain", l.ServerErrorsInvalidValue())
 	}
 	if b.PublicComment != nil {
 		in.PublicComment = *b.PublicComment
@@ -167,7 +165,7 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	in.Obfuscate = b.Obfuscate != nil && *b.Obfuscate
 	if b.ExpiresIn != nil {
 		if !moderation.ValidDurationSeconds(int64(*b.ExpiresIn)) {
-			return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
+			return unprocessable("expires_in", l.ServerErrorsInvalidValue())
 		}
 		in.Duration = time.Duration(*b.ExpiresIn) * time.Second
 	}
@@ -175,11 +173,11 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	var textErr *moderation.TextError
 	switch {
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return unprocessable(textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	case errors.As(err, &textErr):
-		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+		return unprocessable(textErr.Field, l.ServerErrorsInvalidValue())
 	case errors.Is(err, moderation.ErrOwnDomain):
-		return unprocessable(l.ServerErrorsInvalidValue("domain"))
+		return unprocessable("domain", l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: issue a domain action on %s: %w", in.Domain, err)
 	}
@@ -507,7 +505,7 @@ func (s *Server) ResolveReport(ctx context.Context, req ResolveReportRequestObje
 	case errors.Is(err, moderation.ErrInvalidReport):
 		l := s.Localizer(ctx)
 		return ResolveReportdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("outcome"))), nil
+			s.fieldProblem(ctx, "outcome", l.ServerErrorsInvalidValue())), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: resolve report %s: %w", req.Id, err)
 	}

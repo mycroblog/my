@@ -115,7 +115,7 @@ func TestReportNotes(t *testing.T) {
 		}
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/reports/"+reportTwo+"/notes", "admin", `{"body":"  "}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "body") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "body" {
 		t.Errorf("blank note = %d %+v, want 422 about body", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/reports/01890a5d-ac96-774b-bcce-b302099a4999/notes", "admin", `{"body":"lost"}`)

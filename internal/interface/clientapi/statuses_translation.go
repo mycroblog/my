@@ -71,7 +71,7 @@ func (s *Server) translationProblem(ctx context.Context, err error) (problem, bo
 	case errors.Is(err, appcontent.ErrNotFound):
 		return s.statusProblem(ctx, err)
 	case errors.Is(err, translation.ErrInvalidLanguage):
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("target_language")), true
+		return s.fieldProblem(ctx, "target_language", l.ServerErrorsInvalidValue()), true
 	case errors.Is(err, translation.ErrNoProvider):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeTranslationUnavailable, l.ServerErrorsTranslationUnavailable(), ""), true
 	case errors.Is(err, translation.ErrUnsupportedLanguage):

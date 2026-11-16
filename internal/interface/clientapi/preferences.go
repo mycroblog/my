@@ -6,11 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/domain/identity"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // UserPreferences reads and changes the viewer's preferences (FR-007, FR-208).
@@ -103,14 +101,11 @@ func (s *Server) UpdatePreferences(ctx context.Context, req UpdatePreferencesReq
 	var invalid *appidentity.PreferenceError
 	if errors.As(err, &invalid) {
 		l := s.Localizer(ctx)
-		detail := l.ServerErrorsInvalidValue(invalid.Preference)
+		detail := l.ServerErrorsInvalidValue()
 		if errors.Is(invalid.Err, identity.ErrTooManyLanguages) {
-			detail = l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: identity.MaxTimelineLanguageCount, Name: invalid.Preference})
+			detail = l.ServerErrorsTooMany(identity.MaxTimelineLanguageCount)
 		}
-		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)
-		return UpdatePreferencesdefaultApplicationProblemPlusJSONResponse{
-			Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity,
-		}, nil
+		return UpdatePreferencesdefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, invalid.Preference, detail)), nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: update the preferences of %s: %w", v.UserID, err)

@@ -210,7 +210,7 @@ func TestAppealModerationAction(t *testing.T) {
 	for _, c := range []struct {
 		name, path, token, body string
 		status                  int
-		typ, detail             string
+		typ, field              string
 	}{
 		{"a second appeal", limit, "write", `{"text":"again"}`, http.StatusUnprocessableEntity, clientapi.ProblemTypeAlreadyAppealed, ""},
 		{"after the deadline", "/moderation/actions/" + actionID(1) + "/appeal", "write", `{"text":"late"}`, http.StatusUnprocessableEntity, clientapi.ProblemTypeAppealWindowClosed, ""},
@@ -223,8 +223,8 @@ func TestAppealModerationAction(t *testing.T) {
 		e.auth.tokens["bob-write"] = bearer("write", bobAccountID)
 		res := e.sendJSON(t, http.MethodPost, c.path, c.token, c.body)
 		p := decodeProblem(t, res)
-		if res.StatusCode != c.status || p.Type != c.typ || (c.detail != "" && (p.Detail == nil || !strings.Contains(*p.Detail, c.detail))) {
-			t.Errorf("%s = %d %+v, want %d %s naming %q", c.name, res.StatusCode, p, c.status, c.typ, c.detail)
+		if res.StatusCode != c.status || p.Type != c.typ || (c.field != "" && (p.Field == nil || *p.Field != c.field)) {
+			t.Errorf("%s = %d %+v, want %d %s naming %q", c.name, res.StatusCode, p, c.status, c.typ, c.field)
 		}
 	}
 	if len(f.appeals) != 1 {
@@ -277,7 +277,7 @@ func TestAdminAppeals(t *testing.T) {
 		t.Errorf("upholding an overturned appeal = %d %+v, want 409 appeal-decided in Japanese", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/appeals/"+appealID(2)+"/uphold", "admin", `{"x":"invalid-on-purpose","public_reason":"`+strings.Repeat("a", moderation.MaxAppealText+1)+`"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "public_reason") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "public_reason" {
 		t.Errorf("a long reason = %d %+v, want 422 naming public_reason", res.StatusCode, p)
 	}
 	res = e.admin(t, http.MethodGet, "/admin/appeals/"+appealID(2), "admin-read", nil)

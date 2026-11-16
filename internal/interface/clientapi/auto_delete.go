@@ -52,9 +52,7 @@ func (s *Server) autoDeletePolicyProblem(ctx context.Context, err error) (proble
 	if !errors.As(err, &invalid) {
 		return problem{}, false
 	}
-	l := s.Localizer(ctx)
-	body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(invalid.Property))
-	return problem{Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity}, true
+	return s.fieldProblem(ctx, invalid.Property, s.Localizer(ctx).ServerErrorsInvalidValue()), true
 }
 
 func newAutoDeletePolicy(p content.AutoDeletePolicy) AutoDeletePolicy {

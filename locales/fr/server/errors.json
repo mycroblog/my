@@ -88,8 +88,8 @@
     "description": "API error title for HTTP 401 when the access token is malformed, unknown, expired, or revoked."
   },
   "errors.invalid_value": {
-    "defaultMessage": "La valeur de {name} n’est pas valide. Rechargez ou mettez à jour l’app, puis réessayez.",
-    "description": "Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated)."
+    "defaultMessage": "Cette valeur n’est pas valide. Vérifiez votre saisie.",
+    "description": "Detail of an API error (HTTP 422) when the server rejects a value of the request. The client shows it beside the field it is about, so it does not name the field."
   },
   "errors.media_attached_detail": {
     "defaultMessage": "Modifiez la publication pour changer sa description.",
@@ -404,12 +404,12 @@
     "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included. Read by staff."
   },
   "errors.too_long": {
-    "defaultMessage": "{max, plural, one {{name} peut comporter # caractère au maximum.} other {{name} peut comporter # caractères au maximum.}}",
-    "description": "Detail of an API error (HTTP 422) when a text property of the request body is too long. {name} is the property name, e.g. display_name (not translated); {max} is the limit in characters."
+    "defaultMessage": "{max, plural, one {Utilisez # caractère au maximum.} other {Utilisez # caractères au maximum.}}",
+    "description": "Detail of an API error (HTTP 422) when a text of the request is too long. The client shows it beside the field it is about, so it does not name the field. {max} is the limit in characters."
   },
   "errors.too_many": {
-    "defaultMessage": "{max, plural, one {{name} peut comporter # élément au maximum.} other {{name} peut comporter # éléments au maximum.}}",
-    "description": "Detail of an API error (HTTP 422) when a list property of the request body has too many items. {name} is the property name, e.g. fields (not translated); {max} is the limit."
+    "defaultMessage": "{max, plural, one {Utilisez # élément au maximum.} other {Utilisez # éléments au maximum.}}",
+    "description": "Detail of an API error (HTTP 422) when a list of the request has too many items. The client shows it beside the field it is about, so it does not name the field. {max} is the limit."
   },
   "errors.two_factor.enabled": {
     "defaultMessage": "L’authentification à deux facteurs est déjà activée.",
@@ -472,8 +472,8 @@
     "description": "Error title for HTTP 415 when a request body is not in a format the endpoint accepts."
   },
   "errors.unusable_image": {
-    "defaultMessage": "{name} doit être une image que vous avez envoyée et dont le traitement est terminé.",
-    "description": "Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. {name} is the property name, e.g. avatar_media_id (not translated)."
+    "defaultMessage": "Choisissez une image que vous avez téléversée et dont le traitement est terminé.",
+    "description": "Detail of an API error (HTTP 422) when a profile image refers to a media file that is not the user's own processed upload. The client shows it beside the image field, so it does not name the field."
   },
   "errors.webhook.invalid": {
     "defaultMessage": "Le webhook ne peut pas être enregistré.",

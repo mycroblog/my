@@ -17618,6 +17618,14 @@ export interface components {
             detail?: string;
             /** @description The request ID (the `X-Request-Id` response header), for reporting the problem. */
             request_id?: string;
+            /**
+             * @description The member of the request that a 422 is about, by its name in the request: a property of
+             *     the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+             *     field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+             *     wrong with its value without naming it, for the client to show beside that field. Absent
+             *     when the problem is not about one member.
+             */
+            field?: string;
         };
         /** @description One metadata field of a profile. */
         ProfileField: {

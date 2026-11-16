@@ -254,18 +254,18 @@ func TestUpdateAccountCredentialsProblems(t *testing.T) {
 	profiles := &fakeProfiles{}
 	e := newAuthEnv(t, func(o *clientapi.Options) { o.Profiles = profiles })
 	for _, tt := range []struct {
-		err        error
-		wantDetail string
+		err                   error
+		wantField, wantDetail string
 	}{
 		// alice's locale is ja.
 		{&account.ProfileError{Property: account.PropertyDisplayName, Problem: account.ProblemTooLong, Max: 30},
-			"display_name は 30 文字以内にしてください。"},
+			"display_name", "30 文字以内にしてください。"},
 		{&account.ProfileError{Property: account.PropertyFields, Problem: account.ProblemTooMany, Max: 4},
-			"fields は 4 個までにしてください。"},
+			"fields", "4 個までにしてください。"},
 		{&account.ProfileError{Property: account.PropertyFieldName, Problem: account.ProblemInvalid},
-			"fields[].name の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。"},
+			"fields[].name", "正しくない値です。入力した内容を確かめてください。"},
 		{&account.ProfileError{Property: account.PropertyAvatar, Problem: account.ProblemInvalid},
-			"avatar_media_id には、自分でアップロードして処理が終わった画像を指定してください。"},
+			"avatar_media_id", "自分でアップロードして処理が終わった画像を選んでください。"},
 	} {
 		profiles.err = tt.err
 		res := e.sendJSON(t, http.MethodPatch, "/accounts/update_credentials", "write", `{"display_name":"x"}`)
@@ -275,8 +275,9 @@ func TestUpdateAccountCredentialsProblems(t *testing.T) {
 		if lang := res.Header.Get("Content-Language"); lang != "ja" {
 			t.Errorf("%v: Content-Language = %q, want ja", tt.err, lang)
 		}
-		if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != tt.wantDetail || p.Type != clientapi.ProblemTypeBlank {
-			t.Errorf("%v: problem = %+v (detail %v), want %q", tt.err, p, p.Detail, tt.wantDetail)
+		if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != tt.wantDetail || p.Field == nil || *p.Field != tt.wantField ||
+			p.Type != clientapi.ProblemTypeBlank {
+			t.Errorf("%v: problem = %+v (detail %v, field %v), want %q on %s", tt.err, p, p.Detail, p.Field, tt.wantDetail, tt.wantField)
 		}
 	}
 	// A body that is not JSON is a 400.

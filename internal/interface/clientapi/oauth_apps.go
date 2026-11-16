@@ -71,7 +71,7 @@ func oauthAppResponse(a appidentity.OAuthApp) OAuthAppJSONResponse {
 func (s *Server) oauthAppProblem(ctx context.Context, err error) *problem {
 	l := s.Localizer(ctx)
 	invalid := func(name string) *problem {
-		p := s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(name))
+		p := s.fieldProblem(ctx, name, l.ServerErrorsInvalidValue())
 		return &p
 	}
 	var oauthErr *appidentity.OAuthError

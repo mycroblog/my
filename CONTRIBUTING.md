@@ -517,10 +517,10 @@ Commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_ge
 
 Every accessor takes the arguments of a message by name, so that two arguments of the same type cannot be swapped:
 
-- In Go, an accessor of a message with one argument takes it as its only parameter (`l.ServerErrorsUnusableImage(name)`);
+- In Go, an accessor of a message with one argument takes it as its only parameter (`l.ServerErrorsTooLong(max)`);
   one with two or more takes a generated struct named after it, with one field per argument
-  (`l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: max, Name: name})`). The struct cannot be written without
-  the field names, and `scripts/task.sh go:lint` reports a field left out.
+  (`l.ServerAuthForgotPasswordSent(i18n.ServerAuthForgotPasswordSentArgs{Email: email, Minutes: minutes})`).
+  The struct cannot be written without the field names, and `scripts/task.sh go:lint` reports a field left out.
 
 To see the pages the server renders in a pseudo-locale, start it with `my serve -pseudo-locales` and set the browser's
 language to `en-XA` or `ar-XB` (they cannot be chosen without the flag).

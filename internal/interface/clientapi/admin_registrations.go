@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -14,7 +13,6 @@ import (
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the registration review (FR-721, manage_accounts): the sign-ups that
@@ -166,11 +164,11 @@ func (s *Server) decideRegistration(ctx context.Context, id string, d identity.D
 		return AdminRegistrationJSONResponse{}, &p, nil
 	case errors.Is(err, identity.ErrInvalidNote):
 		l := s.Localizer(ctx)
-		detail := l.ServerErrorsInvalidValue("note")
+		detail := l.ServerErrorsInvalidValue()
 		if utf8.RuneCountInString(in.Note) > identity.MaxDecisionNoteLength {
-			detail = l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: identity.MaxDecisionNoteLength, Name: "note"})
+			detail = l.ServerErrorsTooLong(identity.MaxDecisionNoteLength)
 		}
-		p := s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)
+		p := s.fieldProblem(ctx, "note", detail)
 		return AdminRegistrationJSONResponse{}, &p, nil
 	case errors.Is(err, appidentity.ErrServiceClosing):
 		p := s.serviceClosingProblem(ctx)

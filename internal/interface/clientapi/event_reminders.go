@@ -74,9 +74,8 @@ func (s *Server) UpdateEventReminders(ctx context.Context, req UpdateEventRemind
 	}
 	r, err := settings.SetReminders(ctx, v.AccountID, minutes)
 	if errors.Is(err, gathering.ErrInvalidReminders) {
-		l := s.Localizer(ctx)
-		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("minutes_before"))
-		return UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity}, nil
+		return UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, "minutes_before", s.Localizer(ctx).ServerErrorsInvalidValue())), nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: update the event reminders of %s: %w", v.AccountID, err)

@@ -6,13 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/domain/gathering"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The moderation of the events (ADR-0161 §14): the target of a report of an event (reports.go),
@@ -50,8 +48,7 @@ func (s *Server) CancelEventAsModerator(ctx context.Context, req CancelEventAsMo
 	case errors.As(err, &se):
 		l := s.Localizer(ctx)
 		return CancelEventAsModeratordefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(),
-				l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: gathering.MaxNoteLength, Name: "reason"}))), nil
+			s.fieldProblem(ctx, "reason", l.ServerErrorsTooLong(gathering.MaxNoteLength))), nil
 	case err != nil:
 		if p, ok := s.eventProblem(ctx, err); ok {
 			return CancelEventAsModeratordefaultApplicationProblemPlusJSONResponse(p), nil

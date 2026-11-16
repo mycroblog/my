@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import { NetworkError } from "@mycroblog/mykit";
-import { cachePostedStatus, postStatus, refusal, saveDraft, uploadAttachment } from "./compose";
+import { cachePostedStatus, postStatus, refusal, refusedField, saveDraft, uploadAttachment } from "./compose";
 import { cachedStatus } from "./shadow";
 import { fakeAppData, json, page, status } from "./test/fake";
 import { statusContextQuery, type StatusContext } from "./thread";
@@ -81,6 +81,29 @@ test("a refused post says the server's words; one without an answer says nothing
   const refused = await postStatus(data, { text: "hi", visibility: "public" }, "k").catch((e: unknown) => e);
   expect(refusal(refused)).toBe("Too long.");
   expect(refusal(new NetworkError("POST", "/statuses", new Error("offline")))).toBeUndefined();
+});
+
+test("a 422 that names a member gives the member, what is wrong with its value, and the problem's title", async () => {
+  const refused = async (problem: Record<string, unknown>) => {
+    const { data } = fakeAppData(() => json(problem["status"] as number, problem));
+    return postStatus(data, { text: "hi", visibility: "public" }, "k").catch((e: unknown) => e);
+  };
+  const invalid = { type: "about:blank", title: "This could not be done.", status: 422 };
+  const detail = "This value is not valid. Check what you entered.";
+  expect(refusedField(await refused({ ...invalid, detail, field: "poll.options[1]" }))).toEqual({
+    member: "poll.options[1]",
+    detail,
+    title: "This could not be done.",
+  });
+  // The server's words are the form's alone: no member named, an empty one, or nothing said of its value.
+  expect(refusedField(await refused({ ...invalid, detail }))).toBeUndefined();
+  expect(refusedField(await refused({ ...invalid, detail, field: "" }))).toBeUndefined();
+  expect(refusedField(await refused({ ...invalid, field: "text" }))).toBeUndefined();
+  expect(refusedField(await refused({ ...invalid, detail: "", field: "text" }))).toBeUndefined();
+  // Only a 422 is about the value of a member.
+  expect(refusedField(await refused({ ...invalid, status: 400, detail, field: "text" }))).toBeUndefined();
+  expect(refusedField(new NetworkError("POST", "/statuses", new Error("offline")))).toBeUndefined();
+  expect(refusedField(new Error("text"))).toBeUndefined();
 });
 
 test("an upload waits until the server has processed the file, and a file it could not process fails", async () => {

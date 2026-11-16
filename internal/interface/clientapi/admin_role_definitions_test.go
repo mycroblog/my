@@ -124,7 +124,7 @@ func TestCreateUpdateAndDeleteRoles(t *testing.T) {
 		t.Errorf("remove moderator's badge = %d %+v, want no badge", res.StatusCode, got)
 	}
 	res = e.send(t, http.MethodPatch, "/admin/roles/moderator", "admin", `{"remove_badge":true,"badge":{"label":"Staff","color":"red"}}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "remove_badge") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "remove_badge" {
 		t.Errorf("badge with remove_badge = %d %+v, want 422 naming remove_badge", res.StatusCode, p)
 	}
 	if res := e.send(t, http.MethodDelete, "/admin/roles/helper", "admin", ""); res.StatusCode != http.StatusNoContent {

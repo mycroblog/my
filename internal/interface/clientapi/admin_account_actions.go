@@ -6,14 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the actions on accounts (FR-703, manage_accounts). The moderation
@@ -159,9 +157,9 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 		return nil, err
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (CreateAccountActionResponseObject, error) {
+	unprocessable := func(field, detail string) (CreateAccountActionResponseObject, error) {
 		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	b := req.Body
 	if b == nil {
@@ -172,17 +170,17 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 		NotifyTarget: b.NotifyTarget == nil || *b.NotifyTarget, IssuedByUserID: v.UserID,
 	}
 	if !in.Kind.Valid() {
-		return unprocessable(l.ServerErrorsInvalidValue("kind"))
+		return unprocessable("kind", l.ServerErrorsInvalidValue())
 	}
 	if b.ReasonCategory != nil {
 		if in.ReasonCategory = moderation.Category(*b.ReasonCategory); !in.ReasonCategory.Valid() {
-			return unprocessable(l.ServerErrorsInvalidValue("reason_category"))
+			return unprocessable("reason_category", l.ServerErrorsInvalidValue())
 		}
 	}
 	in.PublicReason, in.PrivateNote, in.ReportID = deref(b.PublicReason), deref(b.PrivateNote), knownID(deref(b.ReportId))
 	if b.ExpiresIn != nil {
 		if !moderation.ValidDurationSeconds(int64(*b.ExpiresIn)) {
-			return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
+			return unprocessable("expires_in", l.ServerErrorsInvalidValue())
 		}
 		in.Duration = time.Duration(*b.ExpiresIn) * time.Second
 	}
@@ -197,7 +195,7 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	case !ok:
 		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case target.IsInstanceActor():
-		return unprocessable(l.ServerErrorsInvalidValue("id"))
+		return unprocessable("id", l.ServerErrorsInvalidValue())
 	}
 	a, err := s.o.AccountModeration.IssueAccountAction(ctx, in)
 	var textErr *moderation.TextError
@@ -209,19 +207,19 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	case errors.Is(err, appmoderation.ErrLastAdministrator):
 		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.lastAdministrator(ctx)), nil
 	case errors.Is(err, appmoderation.ErrInvalidReportReference):
-		return unprocessable(l.ServerErrorsInvalidValue("report_id"))
+		return unprocessable("report_id", l.ServerErrorsInvalidValue())
 	case errors.Is(err, appmoderation.ErrInvalidStatusReference), errors.Is(err, moderation.ErrInvalidActionStatuses):
-		return unprocessable(l.ServerErrorsInvalidValue("status_ids"))
+		return unprocessable("status_ids", l.ServerErrorsInvalidValue())
 	case errors.Is(err, moderation.ErrActionNeverExpires):
-		return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
+		return unprocessable("expires_in", l.ServerErrorsInvalidValue())
 	case errors.Is(err, appmoderation.ErrCannotBlockEmail):
-		return unprocessable(l.ServerErrorsInvalidValue("block_email"))
+		return unprocessable("block_email", l.ServerErrorsInvalidValue())
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return unprocessable(textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	case errors.As(err, &textErr):
-		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+		return unprocessable(textErr.Field, l.ServerErrorsInvalidValue())
 	case errors.Is(err, appmoderation.ErrUnsupportedAction), errors.Is(err, moderation.ErrInvalidAction):
-		return unprocessable(l.ServerErrorsInvalidValue("kind"))
+		return unprocessable("kind", l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: issue an action on account %s: %w", req.Id, err)
 	}
@@ -274,14 +272,13 @@ func (s *Server) LiftAccountAction(ctx context.Context, req LiftAccountActionReq
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appmoderation.ErrNotLiftable):
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil
+			s.fieldProblem(ctx, "id", l.ServerErrorsInvalidValue())), nil
 	case errors.As(err, &textErr):
-		detail := l.ServerErrorsInvalidValue(textErr.Field)
+		detail := l.ServerErrorsInvalidValue()
 		if textErr.Max > 0 {
-			detail = l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field})
+			detail = l.ServerErrorsTooLong(textErr.Max)
 		}
-		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, textErr.Field, detail)), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: lift account action %s: %w", req.Id, err)
 	}

@@ -6,13 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The bulk import of the sign-up block list (manage_accounts): a moderator sends a list, such as
@@ -30,9 +28,9 @@ func (s *Server) ImportSignupBlocks(ctx context.Context, req ImportSignupBlocksR
 		return nil, err
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (ImportSignupBlocksResponseObject, error) {
+	unprocessable := func(field, detail string) (ImportSignupBlocksResponseObject, error) {
 		return ImportSignupBlocksdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	b := req.Body
 	if b == nil {
@@ -44,13 +42,13 @@ func (s *Server) ImportSignupBlocks(ctx context.Context, req ImportSignupBlocksR
 	}
 	switch {
 	case !in.Kind.Valid():
-		return unprocessable(l.ServerErrorsInvalidValue("kind"))
+		return unprocessable("kind", l.ServerErrorsInvalidValue())
 	case !in.Severity.Valid():
-		return unprocessable(l.ServerErrorsInvalidValue("severity"))
+		return unprocessable("severity", l.ServerErrorsInvalidValue())
 	}
 	if b.ExpiresIn != nil {
 		if !moderation.ValidDurationSeconds(int64(*b.ExpiresIn)) {
-			return unprocessable(l.ServerErrorsInvalidValue("expires_in"))
+			return unprocessable("expires_in", l.ServerErrorsInvalidValue())
 		}
 		in.Duration = time.Duration(*b.ExpiresIn) * time.Second
 	}
@@ -58,11 +56,11 @@ func (s *Server) ImportSignupBlocks(ctx context.Context, req ImportSignupBlocksR
 	var textErr *moderation.TextError
 	switch {
 	case errors.Is(err, appmoderation.ErrTooManySignupBlocks):
-		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxSignupBlockImport, Name: "text"}))
+		return unprocessable("text", l.ServerErrorsTooMany(moderation.MaxSignupBlockImport))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return unprocessable(textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	case errors.As(err, &textErr):
-		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+		return unprocessable(textErr.Field, l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: import signup blocks: %w", err)
 	}

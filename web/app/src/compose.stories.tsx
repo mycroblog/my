@@ -25,7 +25,7 @@ import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake"
 import { createClient } from "@mycroblog/mykit";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { AppRoot } from "./app";
 import { minimumWidth, rightToLeft } from "./app.samples";
 import { createAppRouter } from "./router";
@@ -194,6 +194,9 @@ const words = {
     suggestEmoji: "Good morning :wa",
     suggestCw: "Trail photos :sp",
     later: "@sam The sourdough came out flat again. Trying your overnight proof this weekend.",
+    // The server's words of a 422 that names a member of the request: its title, and its detail.
+    refusedTitle: "This could not be done.",
+    refusedDetail: "This value is not valid. Check what you entered.",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -215,6 +218,8 @@ const words = {
     suggestEmoji: "おはよう :wa",
     suggestCw: "登山の写真 :sp",
     later: "@sam サワードウがまたぺたんこに。週末は教わった一晩発酵でやってみます。",
+    refusedTitle: "この操作はできませんでした。",
+    refusedDetail: "正しくない値です。入力した内容を確かめてください。",
   },
 };
 
@@ -242,6 +247,8 @@ type State = {
   draft: (base: ComposeDraft, w: (typeof words)["en"]) => ComposeDraft;
   /** What it opens in: its phase, and what is open in it. */
   specimen?: ComposeSpecimen;
+  /** It opens refused by the server, in the server's words, beside this input (field-errors.ts of @my/app-features). */
+  refusedAt?: string;
 };
 
 /** A moment `days` days from now at `hour` o'clock, local time, as an ISO 8601 string. */
@@ -364,6 +371,21 @@ const states = {
   },
   conflict: { name: "Newer draft elsewhere", target: nw, draft: typed, specimen: { phase: { kind: "conflict" } } },
   gone: { name: "Draft gone from the server", target: nw, draft: typed, specimen: { phase: { kind: "gone" } } },
+  // Refused by the server for the value of one input it named: what is wrong stands under that input, the problem's
+  // title alone before Post.
+  "refused-cw": {
+    name: "Content warning refused",
+    target: nw,
+    draft: (d, w) => ({ ...d, cw: w.cw, text: w.cwText }),
+    refusedAt: "cw",
+  },
+  "refused-option": { name: "Poll option refused", target: nw, draft: poll(false), refusedAt: "option:1" },
+  "refused-description": {
+    name: "Image description refused",
+    target: nw,
+    draft: (d, w) => ({ ...d, text: w.images, attachments: [image(0, "ready", w.alt), image(1, "ready", w.alt)] }),
+    refusedAt: "media:sample-1",
+  },
   // Being sent: Close, Post and the tools wait for the answer.
   posting: { name: "Posting", target: nw, draft: typed, specimen: { phase: { kind: "posting" } } },
   // The chunk of the composer's view, or of its editor, could not be fetched (the network).
@@ -399,6 +421,14 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
     words[lang],
   );
   const initial = text === "" ? drafted : { ...drafted, text };
+  const w = words[lang];
+  const specimen: ComposeSpecimen | undefined =
+    state.refusedAt === undefined
+      ? state.specimen
+      : {
+          ...state.specimen,
+          phase: { kind: "failed", reason: w.refusedTitle, field: { input: state.refusedAt, text: w.refusedDetail } },
+        };
   return (
     <AppDataProvider data={data}>
       <div style={{ maxInlineSize: "37.5rem", marginInline: "auto" }}>
@@ -407,7 +437,7 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
           initial={initial}
           inline
           pickerSheet={pickerSheet || narrow}
-          specimen={state.specimen}
+          specimen={specimen}
           onOpen={() => undefined}
           onClose={() => undefined}
         />
@@ -448,6 +478,40 @@ const settle = async ({ canvasElement, parameters }: StoryContext) => {
     },
     { timeout: 5000 },
   );
+};
+
+/** Waits until the composer shows its state, then that the server's words describe the input it refused, marked invalid. */
+const refusedBeside = async (context: StoryContext) => {
+  await settle(context);
+  const said = [words.en.refusedDetail, words.ja.refusedDetail];
+  await waitFor(
+    () => {
+      const doc = context.canvasElement.ownerDocument;
+      const described = [...context.canvasElement.querySelectorAll('[aria-invalid="true"]')].some((input) => {
+        const id = input.getAttribute("aria-describedby");
+        const text = id ? (doc.getElementById(id)?.textContent ?? "") : "";
+        return said.some((s) => text.includes(s));
+      });
+      if (!described) throw new Error("the refusal does not describe the input it is about");
+    },
+    { timeout: 5000 },
+  );
+};
+
+/**
+ * The refusal beside the poll's second option, then one more letter typed in that option: the option is valid again,
+ * and neither the server's words nor its title stand anywhere in the composer.
+ */
+const refusedThenEdited = async (context: StoryContext) => {
+  await refusedBeside(context);
+  const canvas = within(context.canvasElement);
+  const option = canvas.getByRole("textbox", { name: "Option 2" });
+  await expect(option).toHaveAttribute("aria-invalid", "true");
+  await expect(canvas.getByRole("alert")).toHaveTextContent(/^This could not be done\.$/);
+  await userEvent.type(option, "s");
+  await waitFor(() => expect(option).not.toHaveAttribute("aria-invalid", "true"));
+  await expect(canvas.queryByText(words.en.refusedDetail)).toBeNull();
+  await expect(canvas.queryByText(words.en.refusedTitle)).toBeNull();
 };
 
 /** The state of the composer a story shows, from its parameters. */
@@ -597,6 +661,15 @@ export const NewerDraft: Story = shows("conflict");
 export const DraftGone: Story = shows("gone");
 /** Being sent: Post shows it is sending, and Close stays in its place, disabled. */
 export const Posting: Story = shows("posting");
+export const WarningRefused: Story = { ...shows("refused-cw"), play: refusedBeside };
+export const PollOptionRefused: Story = { ...shows("refused-option"), play: refusedBeside };
+export const DescriptionRefused: Story = { ...shows("refused-description"), play: refusedBeside };
+/** A poll's option refused, then edited: the next letter typed in it clears what the server said. */
+export const PollOptionRefusedEdited: Story = {
+  ...shows("refused-option"),
+  globals: { locale: "en" },
+  play: refusedThenEdited,
+};
 /** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
 export const PostFormNotLoaded: Story = shows("unloaded-composer");
 /**

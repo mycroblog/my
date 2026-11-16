@@ -68,6 +68,31 @@ var (
 	ErrPollNotEditable = errors.New("content: a status with a poll cannot be edited")
 )
 
+// MediaPlace is where a media file of a post or an article is, for a MediaDescriptionError.
+type MediaPlace int
+
+const (
+	// MediaAttachment is an attachment of a post, the Index of its media.
+	MediaAttachment MediaPlace = iota
+	// MediaCover is the cover of an article.
+	MediaCover
+	// MediaBodyImage is an image of the body of an article.
+	MediaBodyImage
+)
+
+// MediaDescriptionError is the ErrInvalidMediaDescription or ErrMissingMediaDescription (Err) of
+// one media file, with where it is: Index is its position among the media of a post.
+type MediaDescriptionError struct {
+	MediaID string
+	Place   MediaPlace
+	Index   int
+	Err     error
+}
+
+func (e *MediaDescriptionError) Error() string { return fmt.Sprintf("media %s: %v", e.MediaID, e.Err) }
+
+func (e *MediaDescriptionError) Unwrap() error { return e.Err }
+
 // TextTooLongError is the ErrTextTooLong of one post, with the limit in effect.
 type TextTooLongError struct {
 	// Length is the CountCharacters of the post, Max the max_status_length setting.
@@ -1048,11 +1073,8 @@ func (s *Service) attachments(ctx context.Context, authorID string, in []MediaIn
 			return nil, fmt.Errorf("%w: %s is attached twice", ErrTooManyMedia, m.MediaID)
 		}
 		d := m.Description
-		if !content.ValidText(d) || utf8.RuneCountInString(d) > MaxMediaDescription {
-			return nil, fmt.Errorf("media %s: %w", m.MediaID, ErrInvalidMediaDescription)
-		}
-		if requireDescription && strings.TrimSpace(d) == "" {
-			return nil, fmt.Errorf("media %s: %w", m.MediaID, ErrMissingMediaDescription)
+		if err := checkDescription(m.MediaID, d, requireDescription, MediaAttachment, i); err != nil {
+			return nil, err
 		}
 		if err := s.checkMedia(ctx, authorID, m.MediaID, allowProcessing); err != nil {
 			return nil, err

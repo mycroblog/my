@@ -321,6 +321,9 @@ export type WarningTextProps = {
   label: string;
   placeholder: string;
   readOnly: boolean;
+  /** The ID of what is wrong with it. */
+  describedBy?: string | undefined;
+  invalid?: boolean | undefined;
   /** It takes the focus once drawn, its caret at the end (the writer added it). */
   autoFocus: boolean;
   /** The suggestions write at its selection. */
