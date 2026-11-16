@@ -88,7 +88,7 @@
     "description": "API error title for HTTP 401 when the access token is malformed, unknown, expired, or revoked."
   },
   "errors.invalid_value": {
-    "defaultMessage": "{name} 的值無效。",
+    "defaultMessage": "{name} 的值無效。請重新載入或更新應用程式後再試一次。",
     "description": "Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated)."
   },
   "errors.media_attached_detail": {
@@ -121,10 +121,10 @@
   },
   "errors.missing_permission_detail": {
     "defaultMessage": "你的角色需要 {permission} 權限。",
-    "description": "Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated)."
+    "description": "Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated). Read by administrators."
   },
   "errors.not_found": {
-    "defaultMessage": "找不到內容。它可能已被刪除，或連結有誤。",
+    "defaultMessage": "找不到內容。它可能已被刪除，或連結有誤。請檢查連結，或返回上一頁。",
     "description": "API error message for HTTP 404."
   },
   "errors.rate_limited_detail": {
@@ -149,15 +149,15 @@
   },
   "errors.role.invalid": {
     "defaultMessage": "無法儲存角色。",
-    "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which."
+    "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which. Read by administrators."
   },
   "errors.role.managed_by_plan": {
     "defaultMessage": "這個角色屬於支持者方案。",
-    "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5)."
+    "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5). Read by administrators."
   },
   "errors.role.breaks_supporter_roles": {
     "defaultMessage": "管理人員的角色必須高於支持者方案的角色。",
-    "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5)."
+    "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5). Read by administrators."
   },
   "errors.subscription_blocked": {
     "defaultMessage": "你無法收到這個帳號新貼文的通知。",
@@ -182,10 +182,6 @@
   "errors.supporters.plan_invalid": {
     "defaultMessage": "無法儲存支持者方案。",
     "description": "API error title for HTTP 422 when a supporter plan breaks a rule; the detail says which (ADR-0072 §3 to §5)."
-  },
-  "errors.supporters.plan_invalid_detail": {
-    "defaultMessage": "{reason, select, name {名稱必須是單行 1 到 50 個字元。} description {說明最多只能有 1,000 個字元。} monthly_price {價格必須至少達到金流服務商的最低收費金額，年繳價格也一樣。} currency {金流服務商不接受這種貨幣。} annual_discount_percent {年繳折扣必須介於 0 到 90%。} emoji_limit {表情符號上限必須介於 0 到 10,000。} rank {等級必須介於 0 到 1,000,000。} visibility {請選擇公開或隱藏。} role_builtin {內建角色無法作為方案的角色。} role_taken {另一個方案已使用這個角色。} role_held {請選擇沒有人擁有的角色。} role_permissions {方案的角色只能擁有成員權限。} role_position {方案的角色必須低於所有管理人員的角色。} order_rank {另一個方案已使用這個等級。} order_position {較高方案的角色必須高於下一級方案的角色。} order_permissions {較高方案的角色必須擁有下一級方案的所有權限。} order_emoji_limit {較高的方案必須讓成員建立至少和下一級方案一樣多的自訂表情符號。} other {這個方案違反了規則。}}",
-    "description": "API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit."
   },
   "errors.supporters.plan_retired": {
     "defaultMessage": "這個支持者方案已停止提供。",
@@ -271,10 +267,6 @@
     "defaultMessage": "以這個 Idempotency-Key 建立的貼文已被刪除。",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
   },
-  "errors.status.article_direct": {
-    "defaultMessage": "文章不能是私訊。",
-    "description": "Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have."
-  },
   "errors.status.article_edited_as_post": {
     "defaultMessage": "文章要以文章的方式編輯。",
     "description": "Detail of the HTTP 422 API error when the user edits an article as a short post."
@@ -303,10 +295,6 @@
     "defaultMessage": "這則貼文的作者不允許你轉發。",
     "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
   },
-  "errors.status.empty_text": {
-    "defaultMessage": "貼文沒有內文。",
-    "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
-  },
   "errors.status.invalid_language": {
     "defaultMessage": "語言不是有效的語言標籤。",
     "description": "Detail of the HTTP 422 API error when a post's language is not a well-formed BCP 47 tag such as en or ja."
@@ -322,10 +310,6 @@
   "errors.status.invalid_text": {
     "defaultMessage": "內文含有無法發布的字元。",
     "description": "Detail of the HTTP 422 API error when a post's text or content warning is not valid UTF-8 or contains a NUL character."
-  },
-  "errors.status.media_not_found": {
-    "defaultMessage": "在你上傳的檔案中找不到附加的檔案。",
-    "description": "Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded."
   },
   "errors.status.missing_media_description": {
     "defaultMessage": "這個伺服器要求每張圖片都要有說明（替代文字）。請在發布前為每張圖片加上說明。",
@@ -375,14 +359,6 @@
     "defaultMessage": "含有投票的貼文無法編輯。",
     "description": "Detail of the HTTP 422 API error when a user edits a post that has a poll: the votes belong to the poll as it was posted."
   },
-  "errors.status.poll_with_media": {
-    "defaultMessage": "含有投票的貼文無法附加檔案。",
-    "description": "Detail of the HTTP 422 API error when a new post has both a poll and attached media."
-  },
-  "errors.status.quote_not_found": {
-    "defaultMessage": "找不到你要引用的貼文。",
-    "description": "Detail of the HTTP 422 API error when a post quotes a post that does not exist, was deleted, or that the user cannot see."
-  },
   "errors.status.quote_not_allowed": {
     "defaultMessage": "你無法引用這則貼文。",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
@@ -425,7 +401,7 @@
   },
   "errors.target_outranks_actor": {
     "defaultMessage": "這個帳號的角色並不低於你的角色，所以你無法對它執行這項操作。",
-    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included."
+    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included. Read by staff."
   },
   "errors.too_long": {
     "defaultMessage": "{max, plural, other {{name} 最多只能有 # 個字元。}}",
@@ -434,10 +410,6 @@
   "errors.too_many": {
     "defaultMessage": "{max, plural, other {{name} 最多只能有 # 個項目。}}",
     "description": "Detail of an API error (HTTP 422) when a list property of the request body has too many items. {name} is the property name, e.g. fields (not translated); {max} is the limit."
-  },
-  "errors.two_factor.code_invalid": {
-    "defaultMessage": "驗證碼不正確或已經使用過。",
-    "description": "Title of the HTTP 422 API error when a two-factor authentication code (six digits from an authenticator app, or a recovery code) is wrong, was used before, or is not a code."
   },
   "errors.two_factor.enabled": {
     "defaultMessage": "兩步驟驗證已經啟用。",
@@ -555,10 +527,6 @@
     "defaultMessage": "一個關鍵字過濾器最多有 100 個字詞，你所有的過濾器合計最多 1,000 個字詞。請先移除一些。",
     "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
   },
-  "errors.list_members.not_followed": {
-    "defaultMessage": "只有你追蹤的帳號可以加入列表。",
-    "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
-  },
   "errors.service_closing_detail": {
     "defaultMessage": "宣布關閉期間，會停止新的註冊和支持者訂閱。",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
@@ -571,10 +539,6 @@
     "defaultMessage": "這是你正在使用的瀏覽器。請改為登出。",
     "description": "API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it."
   },
-  "errors.move_target_moved": {
-    "defaultMessage": "要搬過去的帳號本身已經搬家了。",
-    "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
-  },
   "errors.move_target_unavailable": {
     "defaultMessage": "你無法搬到那個帳號。",
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
@@ -586,14 +550,6 @@
   "errors.voice.not_host": {
     "defaultMessage": "只有聊天室的主持人可以執行這項操作。",
     "description": "API error title for HTTP 403 when a participant who is not the host of a voice chat room changes its settings, ends it, or hands it over."
-  },
-  "errors.voice.room_full": {
-    "defaultMessage": "聊天室已滿。",
-    "description": "API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows."
-  },
-  "errors.voice.too_many_rooms": {
-    "defaultMessage": "目前無法再開啟更多聊天室。",
-    "description": "API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows."
   },
   "errors.voice.hosting_elsewhere": {
     "defaultMessage": "你正在主持另一個聊天室。",
@@ -610,10 +566,6 @@
   "errors.voice.conflict": {
     "defaultMessage": "聊天室在這段期間有所變更。請再試一次。",
     "description": "API error title for HTTP 409 when a change of a voice chat room raced another change of the same user."
-  },
-  "errors.voice.unavailable": {
-    "defaultMessage": "目前無法使用語音聊天。",
-    "description": "API error title for HTTP 503 when the server could not prepare the connection of a voice chat room."
   },
   "errors.voice.not_host_or_cohost": {
     "defaultMessage": "只有聊天室的主持人或共同主持人可以執行這項操作。",
@@ -662,10 +614,6 @@
   "errors.deactivation.moved": {
     "defaultMessage": "這個帳號已搬到另一個帳號。",
     "description": "API error detail: the account cannot be deactivated because it moved to another account."
-  },
-  "errors.deactivation.recently_reactivated": {
-    "defaultMessage": "這個帳號在不到 24 小時前才重新啟用。",
-    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
   },
   "errors.deactivation.last_administrator": {
     "defaultMessage": "這是唯一可以登入的管理員帳號。請先讓其他人成為管理員。",
@@ -726,10 +674,6 @@
   "errors.single_user_requires_one_account_detail": {
     "defaultMessage": "{count, plural, other {這個伺服器有 # 個本站帳號。}}",
     "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
-  },
-  "errors.status.local_unavailable": {
-    "defaultMessage": "單人伺服器上的貼文無法設為本站。",
-    "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
   "errors.precondition_required": {
     "defaultMessage": "這項請求需要你讀取時的版本。",

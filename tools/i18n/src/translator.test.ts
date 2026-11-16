@@ -33,7 +33,7 @@ describe("createTranslator", () => {
 
   test("falls back along the locale chain to en", () => {
     expect(createTranslator(catalogs, "ja-JP")("server:errors.not_found")).toBe(
-      "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。",
+      "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。リンクを確かめるか、前の画面に戻ってください。",
     );
     expect(createTranslator(catalogs, "it")("server:config.missing", { name: "MY_DATABASE" })).toBe(
       "The required setting MY_DATABASE is not set.",

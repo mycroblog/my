@@ -140,7 +140,7 @@ func TestUpdateAutoDeletePolicy(t *testing.T) {
 	if res.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("unknown visibility: status = %d, want 422", res.StatusCode)
 	}
-	if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != "keep_visibilities の値が正しくありません。" {
+	if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != "keep_visibilities の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。" {
 		t.Errorf("problem = %+v (detail %v), want keep_visibilities named", p, p.Detail)
 	}
 }
@@ -172,7 +172,7 @@ func TestAutoDeletePolicyServerLimit(t *testing.T) {
 	if res.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("over the maximum: status = %d, want 422", res.StatusCode)
 	}
-	if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != "min_age_days の値が正しくありません。" {
+	if p := decodeProblem(t, res); p.Detail == nil || *p.Detail != "min_age_days の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。" {
 		t.Errorf("problem = %+v (detail %v), want min_age_days named", p, p.Detail)
 	}
 	if _, ok := f.byAccount[aliceAccountID]; ok {

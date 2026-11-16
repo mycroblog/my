@@ -5,7 +5,10 @@
 //   waive:  fails unless tools/i18n/waivers.json waives it with a reason (waivers.ts)
 //   answer: printed for the author to answer; never fails
 // The rules, by the name a waiver gives:
-//   words (block)        a word the copy role's decisions (.claude/knowledge/copy/decisions.md) say to avoid
+//   words (block)        a word the copy role's decisions (.claude/knowledge/copy/decisions.md) say to avoid, named
+//                        with the word to use; a line "to users" spares the strings only administrators read (ADMIN)
+//   next-step (block)    an error (errorOf) whose en or ja text says no next step (hasNextStep), unless the reviewed
+//                        list tools/i18n/no-step.json holds it with why no step is possible (check.ts runs it)
 //   emoji (block)        an emoji
 //   dash (waive)         a dash (‒ – — ― ⸺ ⸻ －, or a spaced hyphen " - ")
 //   colon (waive)        a decorative colon: a label (at most four words, or 15 characters in ja) that ends in one
@@ -14,10 +17,10 @@
 //   url, code (block)    ja: the URLs, or the `code` spans, differ from the en text
 //   placeholder (waive)  ja: an argument of the en text is missing
 //   number (answer)      ja: the numbers differ from the en text (en may spell them out: "once", "a week")
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type MessageFormatElement, TYPE } from "@formatjs/icu-messageformat-parser";
-import { SOURCE, toolDir } from "./catalog";
+import { repoRoot, SOURCE, toolDir } from "./catalog";
 
 type Tier = "block" | "waive" | "answer";
 export type CopyFinding = { tier: Tier; rule: string; message: string };
@@ -32,34 +35,49 @@ export const COPY_LOCALES: readonly string[] = [SOURCE, "ja"];
 export const DECISIONS = ".claude/knowledge/copy/decisions.md";
 const decisionsPath = join(toolDir, "..", "..", DECISIONS);
 
-/** A word decision: in `locale`, write `use` instead of what the `avoid` expressions match. */
-export type Word = { locale: string; use: string; avoid: RegExp[] };
+/**
+ * A word decision: in `locale`, write `use` instead of what the `avoid` expressions match. `users`: the decision holds
+ * in the strings users read and spares those only administrators read, which may name what such a reader works with.
+ */
+export type Word = { locale: string; use: string; avoid: RegExp[]; users: boolean };
 
-/** `- <locale>: write <term>, avoid `<regexp>`[, `<regexp>`...] — <why> — ...` */
-const WORD_LINE = /^- ([a-z]{2}): write (.+?), avoid (`[^`]+`(?:, `[^`]+`)*) — /;
+/** `- <locale>[, to users]: write <term>, avoid `<regexp>`[, ...][; write <term>, avoid ...] — <why> — ...` */
+const WORD_LINE = /^- ([a-z]{2})(, to users)?: (write .+?) — /;
+const WORD_CLAUSE = /^write (.+?), avoid (`[^`]+`(?:, `[^`]+`)*)$/;
 
 /** Reads the word decisions of `text` (decisions.md); throws on a word line out of shape or a pattern that does not compile. */
 export function parseWords(text: string, path = DECISIONS): Word[] {
   const words: Word[] = [];
   text.split("\n").forEach((line, i) => {
-    if (!/^- [a-z]{2}: /.test(line)) return;
+    if (!/^- [a-z]{2}(?:, to users)?: /.test(line)) return;
+    const shape = new Error(
+      `${path}:${i + 1}: a word decision is - <locale>[, to users]: write "<term>", avoid \`<regexp>\`[, \`<regexp>\`][; write ...] — <why> — <from> — <YYYY-MM-DD> — held N / missed N`,
+    );
     const m = WORD_LINE.exec(line);
-    if (!m)
-      throw new Error(
-        `${path}:${i + 1}: a word decision is - <locale>: write "<term>", avoid \`<regexp>\`[, \`<regexp>\`] — <why> — <from> — <YYYY-MM-DD> — held N / missed N`,
-      );
-    const [, locale = "", use = "", avoid = ""] = m;
-    const patterns = [...avoid.matchAll(/`([^`]+)`/g)].map(([, p = ""]) => {
-      try {
-        return new RegExp(p, "mu");
-      } catch (e) {
-        throw new Error(`${path}:${i + 1}: ${(e as Error).message}`);
-      }
-    });
-    words.push({ locale, use, avoid: patterns });
+    if (!m) throw shape;
+    const [, locale = "", users, clauses = ""] = m;
+    for (const clause of clauses.split(/; (?=write )/)) {
+      const c = WORD_CLAUSE.exec(clause);
+      if (!c) throw shape;
+      const [, use = "", avoid = ""] = c;
+      const patterns = [...avoid.matchAll(/`([^`]+)`/g)].map(([, p = ""]) => {
+        try {
+          return new RegExp(p, "mu");
+        } catch (e) {
+          throw new Error(`${path}:${i + 1}: ${(e as Error).message}`);
+        }
+      });
+      words.push({ locale, use, avoid: patterns, users: users !== undefined });
+    }
   });
   return words;
 }
+
+/**
+ * A string only administrators read: its en description says so in a sentence of its own, "Read by administrators."
+ * (or by moderators, staff, or other servers' operators).
+ */
+export const ADMIN = /\bRead by (?:administrators|moderators|staff|other servers' operators)\./;
 
 export const loadWords = (path: string = decisionsPath): Word[] => parseWords(readFileSync(path, "utf8"));
 
@@ -173,26 +191,249 @@ function numberMismatch(ja: string, en: string): { lacks: string[]; adds: string
   };
 }
 
+/**
+ * The error a key belongs to, for the next-step rule: a key with a segment `error` or `errors` (server:errors.*,
+ * payments.error.*), or a key of a web package whose last segment is or ends in `failed` / `failed_more`. One error
+ * is the key and its `_detail`, `group` the key without `_detail`. Not an error: a `title` (the heading over one) and
+ * notifications.kind.* (a notification that something failed, not an error of the reader's own action). `retry`:
+ * a failure of the client, which G18 shows with the retry button that is its next step.
+ */
+export function errorOf(ns: string, key: string): { group: string; retry: boolean } | undefined {
+  const segments = key.split(".");
+  const last = segments.at(-1) ?? "";
+  if (last === "title" || key.startsWith("notifications.kind.")) return undefined;
+  const group = `${ns}:${key.replace(/[._]detail$/, "")}`;
+  if (segments.some((s) => s === "error" || s === "errors")) return { group, retry: false };
+  if (ns !== "server" && /(?:^|_)failed(?:_more)?$/.test(last)) return { group, retry: true };
+  return undefined;
+}
+
+/** en: the verbs a next step starts with. */
+const STEP_VERBS =
+  "add|allow|approve|ask|cancel|change|check|choose|close|configure|confirm|contact|delete|disable|edit|enable|enter|export|follow|give|go|keep|leave|link|make|move|open|pick|post|raise|record|reject|reload|remove|request|retire|revoke|save|schedule|select|send|set|shorten|sign|start|turn|try|unblock|unfollow|unlink|unmute|unpin|update|upload|use|verify|wait|write";
+/**
+ * A next step. ja: a sentence that asks with ください; as a field error does, what is needed or the limit (必要です,
+ * までです); what the reader can do (できます, られます); or that nothing needs doing (かまいません). en: a sentence, a
+ * branch, or a clause after a comma or a colon that starts with an imperative of STEP_VERBS; the value the server
+ * needs (must, at most, need); or what the reader can do (you can, your account can, available again).
+ */
+const STEP: Record<string, RegExp> = {
+  ja: /ください(?:[。)」]|$)|必要です|までです|(?<!(?:だけ|のみ)[^。\n]*)(?:でき|られ)ます(?:。|$)|かまいません/mu,
+  en: new RegExp(
+    `(?:^|[.?:;,]\\s+|\\n)(?:Please\\s+|then\\s+|or\\s+)?(?:${STEP_VERBS})\\b|\\b(?:must|at most|needs?|available again)\\b|\\b(?:you|your account) can (?:still |again )?(?!not\\b|only\\b|no\\b)`,
+    "imu",
+  ),
+};
+/** G18: the failure of a part of the client, which the retry button follows. */
+const RETRY: Record<string, RegExp> = {
+  ja: /ませんでした(?:。|$)/mu,
+  en: /\b(?:could not be|did not finish)\b/u,
+};
+
+/** Whether the text of an error says what to do next, or, with `retry`, is the G18 failure the retry button follows. */
+export function hasNextStep(locale: string, text: string, retry = false): boolean {
+  return Boolean(STEP[locale]?.test(text) || (retry && RETRY[locale]?.test(text)));
+}
+
+/**
+ * The reviewed list of the errors with no possible step: `{ "<why no step>": ["<namespace>:<error>", ...] }`, where
+ * an entry is a whole error or one branch of a message of it (`<namespace>:<key>#<branch>`, branchTexts).
+ */
+export const NO_STEP = "tools/i18n/no-step.json";
+/** In the repository the tool reads, as the list is about its catalogs (I18N_TOOL_ROOT). */
+const noStepPath = join(repoRoot, NO_STEP);
+/** The shortest reason, in characters. */
+const MIN_NO_STEP_REASON = 40;
+
+/** The errors of the list (`text`) by id, with their reason; throws on a list out of shape. */
+export function parseNoStep(text: string): Map<string, string> {
+  const data: unknown = JSON.parse(text);
+  const shape = `${NO_STEP}: an object of {"<why no step is possible>": ["<namespace>:<error>[#<branch>]", ...]}`;
+  if (typeof data !== "object" || data === null || Array.isArray(data)) throw new Error(shape);
+  const out = new Map<string, string>();
+  for (const [reason, ids] of Object.entries(data)) {
+    if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string")) throw new Error(shape);
+    if (reason.trim().length < MIN_NO_STEP_REASON)
+      throw new Error(
+        `${NO_STEP}: "${reason}": say in at least ${MIN_NO_STEP_REASON} characters why no step is possible`,
+      );
+    for (const id of ids) {
+      if (out.has(id)) throw new Error(`${NO_STEP}: ${id} is listed twice; keep one`);
+      out.set(id, reason);
+    }
+  }
+  return out;
+}
+
+export const loadNoStep = (path: string = noStepPath): Map<string, string> =>
+  existsSync(path) ? parseNoStep(readFileSync(path, "utf8")) : new Map<string, string>();
+
+/**
+ * Renames the ids of the reviewed list (`scripts/i18n.sh mv`), and drops one whose new key is no error (errorOf);
+ * returns whether it changed.
+ */
+export function renameNoStep(renames: Map<string, string>, path: string = noStepPath): boolean {
+  if (!existsSync(path)) return false;
+  const data = JSON.parse(readFileSync(path, "utf8")) as Record<string, string[]>;
+  const base = (id: string) => id.split("#")[0] ?? id;
+  if (!Object.values(data).some((ids) => ids.some((id) => renames.has(base(id))))) return false;
+  const renamed = (id: string): string[] => {
+    const [from = "", branch] = id.split("#");
+    const moved = renames.get(from);
+    if (moved === undefined) return [id];
+    const to = branch === undefined ? moved : `${moved}#${branch}`;
+    const [ns = "", key = ""] = moved.split(/:(.*)/s);
+    return errorOf(ns, key) ? [to] : [];
+  };
+  const next = Object.fromEntries(
+    Object.entries(data)
+      .map(([reason, ids]) => [reason, ids.flatMap(renamed)] as const)
+      .filter(([, ids]) => ids.length),
+  );
+  writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`);
+  return true;
+}
+
+/**
+ * The texts a message can show, by branch: one per choice of each select and plural, with the text around it. The
+ * id of a branch is its option keys, outer first, joined by "/" (`exists`, `name/one`); a message without a select
+ * or a plural has the one branch "". Arguments are kept as `{name}`, as in copyText.
+ */
+export function branchTexts(ast: MessageFormatElement[]): Map<string, string> {
+  type Branch = { keys: string[]; text: string };
+  const join = (heads: Branch[], tails: Branch[]): Branch[] =>
+    heads.flatMap((h) => tails.map((t) => ({ keys: [...h.keys, ...t.keys], text: h.text + t.text })));
+  const walk = (els: MessageFormatElement[]): Branch[] => {
+    let out: Branch[] = [{ keys: [], text: "" }];
+    for (const el of els) {
+      switch (el.type) {
+        case TYPE.literal:
+          out = join(out, [{ keys: [], text: el.value }]);
+          break;
+        case TYPE.argument:
+        case TYPE.number:
+        case TYPE.date:
+        case TYPE.time:
+          out = join(out, [{ keys: [], text: `{${el.value}}` }]);
+          break;
+        case TYPE.pound:
+          out = join(out, [{ keys: [], text: "#" }]);
+          break;
+        case TYPE.plural:
+        case TYPE.select:
+          out = join(
+            out,
+            Object.entries(el.options).flatMap(([key, o]) =>
+              walk(o.value).map((b) => ({ keys: [key, ...b.keys], text: b.text })),
+            ),
+          );
+          break;
+        case TYPE.tag:
+          out = join(out, walk(el.children));
+          break;
+      }
+    }
+    return out;
+  };
+  return new Map(walk(ast).map((b) => [b.keys.join("/"), b.text]));
+}
+
+/**
+ * The messages of one error (errorOf) in en and ja: each message's key and its texts by branch (branchTexts);
+ * whether a key of it is among the checked ones.
+ */
+export type ErrorTexts = {
+  texts: { locale: string; key: string; branches: Map<string, string> }[];
+  retry: boolean;
+  checked: boolean;
+};
+
+/**
+ * The branches of one error that say no next step, as `<ns>:<key>#<branch>` (or the group id for an error without
+ * branches), each with the locales it lacks one in. A branch has its step when the branch says one, or when another
+ * message of the error does in its branch of the same id, or as a whole when it has no branches (a title over the
+ * detail's branches).
+ */
+function stepless(group: string, { texts, retry }: ErrorTexts): Map<string, string[]> {
+  const ns = group.split(":")[0] ?? "";
+  const out = new Map<string, string[]>();
+  for (const locale of COPY_LOCALES) {
+    const msgs = texts.filter((t) => t.locale === locale);
+    if (!msgs.length) continue;
+    const step = (text: string | undefined) => text !== undefined && hasNextStep(locale, text, retry);
+    const ids = new Set(msgs.flatMap((m) => [...m.branches.keys()].filter((b) => b !== "")));
+    const lack = (id: string) => void out.set(id, [...(out.get(id) ?? []), locale]);
+    if (!ids.size) {
+      if (!msgs.some((m) => step(m.branches.get("")))) lack(group);
+      continue;
+    }
+    for (const branch of ids) {
+      if (msgs.some((m) => step(m.branches.get(branch)) || (m.branches.size === 1 && step(m.branches.get("")))))
+        continue;
+      const owner = msgs.find((m) => m.branches.has(branch));
+      lack(`${ns}:${owner?.key ?? ""}#${branch}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * The findings of the next-step rule: an error, or a branch of one (`<ns>:<key>#<branch>`), whose en or ja text has
+ * no next step, unless the reviewed list `noStep` holds it (a whole error holds all its branches); and an entry of
+ * the list that names nothing that lacks a step: an error or a branch that has its step now, or none of the catalogs.
+ */
+export function nextStepErrors(errors: Map<string, ErrorTexts>, noStep: Map<string, string>): string[] {
+  const out: string[] = [];
+  const lacking = new Set<string>();
+  for (const [group, error] of errors) {
+    const missing = stepless(group, error);
+    for (const [id, locales] of missing) {
+      lacking.add(id);
+      if (!error.checked || noStep.has(group) || noStep.has(id)) continue;
+      const what = id === group ? "the error" : "this branch";
+      out.push(
+        `${id}: ${what} says no next step in ${locales.join(" and ")}; end it with what the reader can do (en: an imperative such as "Try again."; ja: 〜してください), or, when no step is possible, add it to ${NO_STEP} under the reason`,
+      );
+    }
+    const both = COPY_LOCALES.every((l) => error.texts.some((t) => t.locale === l));
+    if (missing.size) lacking.add(group);
+    else if (both && noStep.has(group))
+      out.push(`${NO_STEP}: ${group} says its next step now; remove it from the list`);
+  }
+  for (const id of noStep.keys()) {
+    if (id.includes("#")) {
+      if (!lacking.has(id))
+        out.push(
+          `${NO_STEP}: ${id} is no branch of an error that lacks a next step (it has one now, or is gone); remove it`,
+        );
+    } else if (!errors.has(id)) out.push(`${NO_STEP}: ${id} is not an error of the catalogs (errorOf); remove it`);
+  }
+  return out;
+}
+
 const same = (a: string[], b: string[]): boolean => [...a].sort().join("\0") === [...b].sort().join("\0");
 const list = (items: string[]): string => (items.length ? items.join(", ") : "none");
 
 /**
  * The copy findings of one message: `text` is its copyText; for a ja message, `source` is the copyText of the en
- * message and `missing` the en arguments it does not use.
+ * message and `missing` the en arguments it does not use; `adminOnly`, that only administrators read it (ADMIN).
  */
 export function copyFindings(
   words: Word[],
   locale: string,
   text: string,
   source?: { text: string; missing: string[] },
+  adminOnly = false,
 ): CopyFinding[] {
   if (!COPY_LOCALES.includes(locale)) return [];
   const out: CopyFinding[] = [];
   const add = (tier: Tier, rule: string, message: string) => void out.push({ tier, rule, message });
+  // The words of the text, not the names of its arguments.
+  const prose = text.replace(/\{[^{}]*\}/g, "{}");
   for (const word of words) {
-    if (word.locale !== locale) continue;
+    if (word.locale !== locale || (word.users && adminOnly)) continue;
     for (const avoid of word.avoid) {
-      const found = avoid.exec(text);
+      const found = avoid.exec(prose);
       if (found) add("block", "words", `"${found[0]}" is a word to avoid; use ${word.use} (${DECISIONS})`);
     }
   }

@@ -263,7 +263,7 @@ func TestUpdateAccountCredentialsProblems(t *testing.T) {
 		{&account.ProfileError{Property: account.PropertyFields, Problem: account.ProblemTooMany, Max: 4},
 			"fields は 4 個までにしてください。"},
 		{&account.ProfileError{Property: account.PropertyFieldName, Problem: account.ProblemInvalid},
-			"fields[].name の値が正しくありません。"},
+			"fields[].name の値が正しくありません。アプリを読み込み直すか更新してから、もう一度試してください。"},
 		{&account.ProfileError{Property: account.PropertyAvatar, Problem: account.ProblemInvalid},
 			"avatar_media_id には、自分でアップロードして処理が終わった画像を指定してください。"},
 	} {

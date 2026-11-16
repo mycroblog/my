@@ -6,6 +6,8 @@ The copy role writes the text users read (ADR-0169 §2). Read this page, then `d
   of each locale is a rule of `scripts/task.sh i18n:check`, which says the fix.
 - `scripts/task.sh i18n:lint` holds the en and ja catalogs to the rules of the copy lint (`tools/i18n/src/copy.ts`).
   A finding blocks, is waived with its reason in `tools/i18n/waivers.json` (at most three new waivers a change), or
-  is answered. A word line of `decisions.md` is one of its rules.
+  is answered. A word line of `decisions.md` is one of its rules. A string only administrators read says so in its
+  en description ("Read by administrators."), and the `to users` word lines (system words) spare it. An error
+  says its next step; one with no possible step goes in `tools/i18n/no-step.json` under the reason.
 - A correction of the decider becomes a line of `decisions.md`; the same correction a second time, a proposal to turn
   the line into a check (ADR-0169 §4). Add, merge or delete lines; never rewrite a file.

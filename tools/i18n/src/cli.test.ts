@@ -72,6 +72,11 @@ beforeEach(() => {
       "errors.count": entry(count),
     });
   }
+  // The fixture's errors say no next step; the copy lint holds them to the reviewed list.
+  write(
+    "tools/i18n/no-step.json",
+    `${JSON.stringify({ "The fixture's errors stand for any error; their wording is not under test here.": ["server:errors.not_found", "server:errors.count"] })}\n`,
+  );
   write(
     "internal/i18n/testdata/cases.json",
     `${JSON.stringify({ catalog: [{ key: "server:errors.not_found", args: {} }], syntax: [] })}\n`,
@@ -288,6 +293,10 @@ test("mv rewrites the Go accessors, the argument struct, the templates and the f
   expect(go).toContain("cfg.ServerErrorsNotFound\n");
   expect(read("internal/web/page.html")).toContain("{{.L.ServerErrorsMissing}}");
   expect(read("internal/i18n/testdata/cases.json")).toContain('"server:errors.missing"');
+  // The reviewed list of errors with no step follows the rename, and lets go of a key that is no error any more.
+  expect(JSON.parse(read("tools/i18n/no-step.json"))).toEqual({
+    "The fixture's errors stand for any error; their wording is not under test here.": ["server:errors.missing"],
+  });
   expect(keys("locales/zh-TW/server/problems.json")).toEqual(["problems.total"]);
   expect(read("internal/i18n/messages_gen.go")).toContain(
     "func (l *Localizer) ServerProblemsTotal(args ServerProblemsTotalArgs)",

@@ -1148,7 +1148,7 @@ func (l *Localizer) ServerErrorsDeactivationPaidSubscription() string {
 
 // ServerErrorsDeactivationRecentlyReactivated formats "server:errors.deactivation.recently_reactivated". API error detail: the account cannot be deactivated until 24 hours after its last reactivation.
 //
-//	en: This account was reactivated less than 24 hours ago.
+//	en: This account was reactivated less than 24 hours ago. Try again 24 hours after reactivating it.
 func (l *Localizer) ServerErrorsDeactivationRecentlyReactivated() string {
 	return l.format("server:errors.deactivation.recently_reactivated", nil)
 }
@@ -1512,7 +1512,7 @@ func (l *Localizer) ServerErrorsInvalidCustomEmoji() string {
 
 // ServerErrorsInvalidCustomEmojiDetail formats "server:errors.invalid_custom_emoji_detail". Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule.
 //
-//	en: {reason, select, invalid_shortcode {A shortcode is 2 to 30 letters (A to Z), digits, and underscores.} shortcode_taken {A custom emoji of this server already has this shortcode.} invalid_alias {An alias is 2 to 30 letters (A to Z), digits, and underscores, and an emoji has at most 10.} invalid_category {A category is at most 64 characters.} media_not_found {The image was not found among your uploads.} media_not_ready {The image is still being processed. Try again in a moment.} unsupported_format {The image must be a PNG, a GIF, or a WebP.} too_large {The image is larger than the limit of this server. Choose a smaller image.} too_big {The image must be at most 1,024 pixels on each side.} remote_emoji {This can be done only with the custom emoji of this server.} local_emoji {This can be done only with the custom emoji of other servers.} fetch_failed {The image of the custom emoji could not be fetched from its server.} limit_reached {You have already requested as many custom emoji this month as your monthly limit. The count resets on the first day of each month (UTC).} request_pending {This custom emoji already has a pending request for a new image.} invalid_reason {A reason is at most 500 characters.} other {The custom emoji breaks a rule.}}
+//	en: {reason, select, invalid_shortcode {Use 2 to 30 letters (A to Z), digits, and underscores for the shortcode.} shortcode_taken {A custom emoji of this server already has this shortcode. Choose another shortcode.} invalid_alias {An alias is 2 to 30 letters (A to Z), digits, and underscores, and an emoji has at most 10.} invalid_category {A category is at most 64 characters.} media_not_found {The image was not found among your uploads. Upload the image again.} media_not_ready {The image is still being processed. Try again in a moment.} unsupported_format {The image must be a PNG, a GIF, or a WebP.} too_large {The image is larger than the limit of this server. Choose a smaller image.} too_big {The image must be at most 1,024 pixels on each side.} remote_emoji {This can be done only with the custom emoji of this server.} local_emoji {This can be done only with the custom emoji of other servers.} fetch_failed {The image of the custom emoji could not be fetched from its server. Try again later.} limit_reached {You have already requested as many custom emoji this month as your monthly limit. Try again next month: the count resets on the first day of each month (UTC).} request_pending {This custom emoji already has a pending request for a new image. Wait until it is reviewed.} invalid_reason {A reason is at most 500 characters.} other {The custom emoji breaks a rule.}}
 func (l *Localizer) ServerErrorsInvalidCustomEmojiDetail(reason string) string {
 	return l.format("server:errors.invalid_custom_emoji_detail", map[string]any{"reason": reason})
 }
@@ -1540,7 +1540,7 @@ func (l *Localizer) ServerErrorsInvalidToken() string {
 
 // ServerErrorsInvalidValue formats "server:errors.invalid_value". Detail of an API error (HTTP 422) when a property of the request body has a value that the server rejects. {name} is the property name, e.g. time_zone (not translated).
 //
-//	en: The value of {name} is invalid.
+//	en: The value of {name} is invalid. Reload or update the app, then try again.
 func (l *Localizer) ServerErrorsInvalidValue(name string) string {
 	return l.format("server:errors.invalid_value", map[string]any{"name": name})
 }
@@ -1589,7 +1589,7 @@ func (l *Localizer) ServerErrorsLastAdministrator() string {
 
 // ServerErrorsListMembersNotFollowed formats "server:errors.list_members.not_followed". API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending.
 //
-//	en: Only accounts you follow can be added to a list.
+//	en: Only accounts you follow can be added to a list. Follow the account first.
 func (l *Localizer) ServerErrorsListMembersNotFollowed() string {
 	return l.format("server:errors.list_members.not_followed", nil)
 }
@@ -1713,7 +1713,7 @@ func (l *Localizer) ServerErrorsMethodNotAllowed(method string) string {
 	return l.format("server:errors.method_not_allowed", map[string]any{"method": method})
 }
 
-// ServerErrorsMissingPermissionDetail formats "server:errors.missing_permission_detail". Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated).
+// ServerErrorsMissingPermissionDetail formats "server:errors.missing_permission_detail". Detail of the HTTP 403 missing-permission API error of an admin operation. {permission} is the missing role permission, e.g. manage_jobs (not translated). Read by administrators.
 //
 //	en: Your roles need the permission {permission}.
 func (l *Localizer) ServerErrorsMissingPermissionDetail(permission string) string {
@@ -1729,7 +1729,7 @@ func (l *Localizer) ServerErrorsMoveAliasMissing() string {
 
 // ServerErrorsMoveTargetMoved formats "server:errors.move_target_moved". API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account.
 //
-//	en: The account to move to has moved itself.
+//	en: The account to move to has moved itself. Move to the account it moved to.
 func (l *Localizer) ServerErrorsMoveTargetMoved() string {
 	return l.format("server:errors.move_target_moved", nil)
 }
@@ -1750,7 +1750,7 @@ func (l *Localizer) ServerErrorsMoveTooSoon() string {
 
 // ServerErrorsNotFound formats "server:errors.not_found". API error message for HTTP 404.
 //
-//	en: This could not be found. It may have been deleted, or the link may be wrong.
+//	en: This could not be found. It may have been deleted, or the link may be wrong. Check the link, or go back.
 func (l *Localizer) ServerErrorsNotFound() string {
 	return l.format("server:errors.not_found", nil)
 }
@@ -1876,7 +1876,7 @@ func (l *Localizer) ServerErrorsRelayInvalid() string {
 
 // ServerErrorsRelayInvalidDetail formats "server:errors.relay.invalid_detail". API error detail for HTTP 422 when a relay operation is refused. {reason} is url, exists, domain_suspended, not_actor, or state.
 //
-//	en: {reason, select, url {The URL must be an https URL of at most 2048 characters.} exists {A relay with this URL is already registered.} domain_suspended {The relay's server is suspended by a domain action.} not_actor {This URL is not the address of a relay.} state {The relay is not in a state that allows this: leave a relay before you delete it, and join only one that you left or that rejected you.} other {The relay cannot be changed that way.}}
+//	en: {reason, select, url {The URL must be an https URL of at most 2048 characters.} exists {A relay with this URL is already registered.} domain_suspended {The relay's server is suspended by a domain action. Remove that domain action first to use the relay.} not_actor {This URL is not the address of a relay. Check the URL.} state {The relay is not in a state that allows this: leave a relay before you delete it, and join only one that you left or that rejected you.} other {The relay cannot be changed that way.}}
 func (l *Localizer) ServerErrorsRelayInvalidDetail(reason string) string {
 	return l.format("server:errors.relay.invalid_detail", map[string]any{"reason": reason})
 }
@@ -1909,35 +1909,35 @@ func (l *Localizer) ServerErrorsRequestTooLarge() string {
 	return l.format("server:errors.request_too_large", nil)
 }
 
-// ServerErrorsRoleBreaksSupporterRoles formats "server:errors.role.breaks_supporter_roles". API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5).
+// ServerErrorsRoleBreaksSupporterRoles formats "server:errors.role.breaks_supporter_roles". API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5). Read by administrators.
 //
 //	en: Staff roles must stay above the roles of the supporter plans.
 func (l *Localizer) ServerErrorsRoleBreaksSupporterRoles() string {
 	return l.format("server:errors.role.breaks_supporter_roles", nil)
 }
 
-// ServerErrorsRoleInvalid formats "server:errors.role.invalid". API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which.
+// ServerErrorsRoleInvalid formats "server:errors.role.invalid". API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which. Read by administrators.
 //
 //	en: The role cannot be saved.
 func (l *Localizer) ServerErrorsRoleInvalid() string {
 	return l.format("server:errors.role.invalid", nil)
 }
 
-// ServerErrorsRoleInvalidDetail formats "server:errors.role.invalid_detail". API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color.
+// ServerErrorsRoleInvalidDetail formats "server:errors.role.invalid_detail". API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color. Read by administrators.
 //
-//	en: {reason, select, key {The key must be 1 to 64 lowercase letters, digits, underscores, or hyphens.} key_taken {Another role has this key.} position {The position must be from 0 to 999.} permissions {Choose each permission at most once.} builtin {The admin role cannot be changed, and the built-in roles cannot be deleted.} held {Remove the role from everyone who has it first.} missing_permission {You can give or take only the permissions you hold.} badge_label {The badge name must be 1 to 32 characters on one line.} badge_color {Choose one of the badge colors.} other {The change breaks a rule.}}
+//	en: {reason, select, key {The key must be 1 to 64 lowercase letters, digits, underscores, or hyphens.} key_taken {Another role has this key. Choose another key.} position {The position must be from 0 to 999.} permissions {Choose each permission at most once.} builtin {The admin role cannot be changed, and the built-in roles cannot be deleted.} held {Remove the role from everyone who has it first.} missing_permission {You can give or take only the permissions you hold.} badge_label {The badge name must be 1 to 32 characters on one line.} badge_color {Choose one of the badge colors.} other {The change breaks a rule.}}
 func (l *Localizer) ServerErrorsRoleInvalidDetail(reason string) string {
 	return l.format("server:errors.role.invalid_detail", map[string]any{"reason": reason})
 }
 
-// ServerErrorsRoleManagedByPlan formats "server:errors.role.managed_by_plan". API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5).
+// ServerErrorsRoleManagedByPlan formats "server:errors.role.managed_by_plan". API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5). Read by administrators.
 //
 //	en: The role belongs to a supporter plan.
 func (l *Localizer) ServerErrorsRoleManagedByPlan() string {
 	return l.format("server:errors.role.managed_by_plan", nil)
 }
 
-// ServerErrorsRoleManagedByPlanDetail formats "server:errors.role.managed_by_plan_detail". API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand.
+// ServerErrorsRoleManagedByPlanDetail formats "server:errors.role.managed_by_plan_detail". API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand. Read by administrators.
 //
 //	en: The plan grants this role when people subscribe and removes it when their subscriptions end. Change its permissions and position in the plan's settings.
 func (l *Localizer) ServerErrorsRoleManagedByPlanDetail() string {
@@ -2044,14 +2044,14 @@ func (l *Localizer) ServerErrorsStatusAlreadyDeleted() string {
 
 // ServerErrorsStatusArticleDirect formats "server:errors.status.article_direct". Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have.
 //
-//	en: An article cannot be a direct post.
+//	en: An article cannot be a direct post. Change who can see it.
 func (l *Localizer) ServerErrorsStatusArticleDirect() string {
 	return l.format("server:errors.status.article_direct", nil)
 }
 
 // ServerErrorsStatusArticleEditedAsPost formats "server:errors.status.article_edited_as_post". Detail of the HTTP 422 API error when the user edits an article as a short post.
 //
-//	en: An article is edited as an article.
+//	en: This post is an article. Edit it as an article.
 func (l *Localizer) ServerErrorsStatusArticleEditedAsPost() string {
 	return l.format("server:errors.status.article_edited_as_post", nil)
 }
@@ -2114,14 +2114,14 @@ func (l *Localizer) ServerErrorsStatusEditRejectedDetail() string {
 
 // ServerErrorsStatusEmptyText formats "server:errors.status.empty_text". Detail of the HTTP 422 API error when a post's text is empty or only spaces.
 //
-//	en: The post has no text.
+//	en: The post has no text. Write the text of the post.
 func (l *Localizer) ServerErrorsStatusEmptyText() string {
 	return l.format("server:errors.status.empty_text", nil)
 }
 
 // ServerErrorsStatusInvalidHashtag formats "server:errors.status.invalid_hashtag". Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have.
 //
-//	en: A hashtag of the article has characters that a hashtag cannot use.
+//	en: A hashtag of the article has characters that a hashtag cannot use. Remove them from the hashtag.
 func (l *Localizer) ServerErrorsStatusInvalidHashtag() string {
 	return l.format("server:errors.status.invalid_hashtag", nil)
 }
@@ -2156,14 +2156,14 @@ func (l *Localizer) ServerErrorsStatusInvalidText() string {
 
 // ServerErrorsStatusLocalUnavailable formats "server:errors.status.local_unavailable". API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only.
 //
-//	en: Posts on a one-person server cannot be local.
+//	en: Posts on a one-person server cannot be local. Change who can see it.
 func (l *Localizer) ServerErrorsStatusLocalUnavailable() string {
 	return l.format("server:errors.status.local_unavailable", nil)
 }
 
 // ServerErrorsStatusMediaNotFound formats "server:errors.status.media_not_found". Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded.
 //
-//	en: An attached file was not found among your uploads.
+//	en: An attached file was not found among your uploads. Upload the file again.
 func (l *Localizer) ServerErrorsStatusMediaNotFound() string {
 	return l.format("server:errors.status.media_not_found", nil)
 }
@@ -2278,7 +2278,7 @@ func (l *Localizer) ServerErrorsStatusPollNotEditable() string {
 
 // ServerErrorsStatusPollWithMedia formats "server:errors.status.poll_with_media". Detail of the HTTP 422 API error when a new post has both a poll and attached media.
 //
-//	en: A post with a poll cannot attach files.
+//	en: A post with a poll cannot attach files. Remove the poll or the files.
 func (l *Localizer) ServerErrorsStatusPollWithMedia() string {
 	return l.format("server:errors.status.poll_with_media", nil)
 }
@@ -2299,7 +2299,7 @@ func (l *Localizer) ServerErrorsStatusQuoteNotAllowed() string {
 
 // ServerErrorsStatusQuoteNotFound formats "server:errors.status.quote_not_found". Detail of the HTTP 422 API error when a post quotes a post that does not exist, was deleted, or that the user cannot see.
 //
-//	en: The post you are quoting was not found.
+//	en: The post you are quoting was not found. Remove the quote, then post again.
 func (l *Localizer) ServerErrorsStatusQuoteNotFound() string {
 	return l.format("server:errors.status.quote_not_found", nil)
 }
@@ -2451,9 +2451,9 @@ func (l *Localizer) ServerErrorsSupportersPlanInvalid() string {
 	return l.format("server:errors.supporters.plan_invalid", nil)
 }
 
-// ServerErrorsSupportersPlanInvalidDetail formats "server:errors.supporters.plan_invalid_detail". API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit.
+// ServerErrorsSupportersPlanInvalidDetail formats "server:errors.supporters.plan_invalid_detail". API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit. Read by administrators.
 //
-//	en: {reason, select, name {The name must be 1 to 50 characters on one line.} description {The description must be at most 1,000 characters.} monthly_price {The price must be at least the payment provider's minimum charge, for the yearly price too.} currency {The payment provider does not take this currency.} annual_discount_percent {The yearly discount must be from 0 to 90 percent.} emoji_limit {The emoji limit must be from 0 to 10,000.} rank {The rank must be from 0 to 1,000,000.} visibility {Choose public or hidden.} role_builtin {The built-in roles cannot be a plan's role.} role_taken {Another plan has this role.} role_held {Choose a role that nobody holds.} role_permissions {A plan's role may have only member permissions.} role_position {A plan's role must be below every staff role.} order_rank {Another plan has this rank.} order_position {A higher plan's role must be above the role of the plan below it.} order_permissions {A higher plan's role must have every permission of the plan below it.} order_emoji_limit {A higher plan must let its members create at least as many custom emoji as the plan below it.} other {The plan breaks a rule.}}
+//	en: {reason, select, name {The name must be 1 to 50 characters on one line.} description {The description must be at most 1,000 characters.} monthly_price {The price must be at least the payment provider's minimum charge, for the yearly price too.} currency {The payment provider does not take this currency. Choose another currency.} annual_discount_percent {The yearly discount must be from 0 to 90 percent.} emoji_limit {The emoji limit must be from 0 to 10,000.} rank {The rank must be from 0 to 1,000,000.} visibility {Choose public or hidden.} role_builtin {The built-in roles cannot be a plan's role. Choose a role that is not built in.} role_taken {Another plan has this role. Choose another role.} role_held {Choose a role that nobody holds.} role_permissions {Give a plan's role only member permissions.} role_position {A plan's role must be below every staff role.} order_rank {Another plan has this rank. Choose another rank.} order_position {A higher plan's role must be above the role of the plan below it.} order_permissions {A higher plan's role must have every permission of the plan below it.} order_emoji_limit {A higher plan must let its members create at least as many custom emoji as the plan below it.} other {The plan breaks a rule.}}
 func (l *Localizer) ServerErrorsSupportersPlanInvalidDetail(reason string) string {
 	return l.format("server:errors.supporters.plan_invalid_detail", map[string]any{"reason": reason})
 }
@@ -2577,7 +2577,7 @@ func (l *Localizer) ServerErrorsSupportersUnavailableDetail(reason string) strin
 	return l.format("server:errors.supporters.unavailable_detail", map[string]any{"reason": reason})
 }
 
-// ServerErrorsTargetOutranksActor formats "server:errors.target_outranks_actor". API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included.
+// ServerErrorsTargetOutranksActor formats "server:errors.target_outranks_actor". API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included. Read by staff.
 //
 //	en: This account's role does not rank below yours, so you cannot do this to it.
 func (l *Localizer) ServerErrorsTargetOutranksActor() string {
@@ -2646,7 +2646,7 @@ func (l *Localizer) ServerErrorsTranslationUnsupportedLanguage() string {
 
 // ServerErrorsTwoFactorCodeInvalid formats "server:errors.two_factor.code_invalid". Title of the HTTP 422 API error when a two-factor authentication code (six digits from an authenticator app, or a recovery code) is wrong, was used before, or is not a code.
 //
-//	en: The code is incorrect or was already used.
+//	en: The code is incorrect or was already used. Enter the code your authenticator app shows now, or a recovery code you have not used.
 func (l *Localizer) ServerErrorsTwoFactorCodeInvalid() string {
 	return l.format("server:errors.two_factor.code_invalid", nil)
 }
@@ -2786,7 +2786,7 @@ func (l *Localizer) ServerErrorsVoiceNotHostOrCohost() string {
 
 // ServerErrorsVoiceRoomFull formats "server:errors.voice.room_full". API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows.
 //
-//	en: The room is full.
+//	en: The room is full. Try again when someone leaves.
 func (l *Localizer) ServerErrorsVoiceRoomFull() string {
 	return l.format("server:errors.voice.room_full", nil)
 }
@@ -2800,14 +2800,14 @@ func (l *Localizer) ServerErrorsVoiceTooManyCohosts() string {
 
 // ServerErrorsVoiceTooManyRooms formats "server:errors.voice.too_many_rooms". API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows.
 //
-//	en: No more rooms can be opened now.
+//	en: No more rooms can be opened now. Try again later.
 func (l *Localizer) ServerErrorsVoiceTooManyRooms() string {
 	return l.format("server:errors.voice.too_many_rooms", nil)
 }
 
 // ServerErrorsVoiceUnavailable formats "server:errors.voice.unavailable". API error title for HTTP 503 when the server could not prepare the connection of a voice chat room.
 //
-//	en: Voice chat is not available right now.
+//	en: Voice chat is not available right now. Try again later.
 func (l *Localizer) ServerErrorsVoiceUnavailable() string {
 	return l.format("server:errors.voice.unavailable", nil)
 }
