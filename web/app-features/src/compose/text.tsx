@@ -294,6 +294,11 @@ export type PostTextProps = {
   readOnly: boolean;
   roomy: boolean;
   autoFocus: boolean;
+  /**
+   * Its chunk had not come when the composer opened: drawn later, it takes the focus only where the reader has not
+   * moved it since.
+   */
+  late?: boolean | undefined;
   /** The emoji button sits at the end of its first line. */
   ended: boolean;
   /** The emoji button and the suggestions write at its selection. */
