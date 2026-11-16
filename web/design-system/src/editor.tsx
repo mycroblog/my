@@ -223,6 +223,27 @@ function ValuePlugin({ value, onChange }: { value: string; onChange: (value: str
   return null;
 }
 
+/**
+ * The focus of an editor drawn late, as its chunk comes: taken, as `AutoFocusPlugin` takes it, only while it is on the
+ * page or on what holds the editor (the dialog that took it while the chunk came). A control the reader has gone to
+ * meanwhile (a menu's trigger, which its menu gave the focus back to) keeps it.
+ */
+function LateFocusPlugin() {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    const root = editor.getRootElement();
+    const active = document.activeElement;
+    if (root === null || !(active === null || active === document.body || active.contains(root))) return;
+    editor.focus(
+      () => {
+        if (!root.contains(document.activeElement)) root.focus({ preventScroll: true });
+      },
+      { defaultSelection: "rootEnd" },
+    );
+  }, [editor]);
+  return null;
+}
+
 /** The editor's handle: its focus, and writing at the selection it had last. */
 function HandlePlugin({ handle }: { handle: Ref<EditorHandle> }) {
   const [editor] = useLexicalComposerContext();
@@ -644,6 +665,11 @@ export type PlainTextEditorProps = {
   readOnly?: boolean | undefined;
   /** It takes the focus once drawn, its caret at the end. */
   autoFocus?: boolean | undefined;
+  /**
+   * It is drawn after what holds it (its chunk came later): with `autoFocus`, it takes the focus only from the page or
+   * from what holds it, never from a control the reader has gone to since.
+   */
+  late?: boolean | undefined;
   /** How many characters at its end are over a limit, marked. */
   over?: number | undefined;
   /** The composer's text, or a line on a band (the content warning). */
@@ -676,6 +702,7 @@ export function PlainTextEditor({
   multiline = true,
   readOnly = false,
   autoFocus = false,
+  late = false,
   over = 0,
   look,
   roomy = false,
@@ -735,7 +762,7 @@ export function PlainTextEditor({
       <EditablePlugin editable={!readOnly} />
       <OverPlugin over={over} />
       {!multiline && <SingleLinePlugin />}
-      {autoFocus && <AutoFocusPlugin />}
+      {autoFocus && (late ? <LateFocusPlugin /> : <AutoFocusPlugin />)}
       {handle !== undefined && <HandlePlugin handle={handle} />}
       {children}
     </LexicalExtensionComposer>

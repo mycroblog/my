@@ -66,6 +66,9 @@ function Chosen<P extends object>({
   return <Editor {...props} />;
 }
 
+/** Whether the editors' module has come: one drawn now is drawn at once. */
+export const editorsHere = (): boolean => loaded !== undefined;
+
 /** Nothing in a failed editor's place: the view says it once, for the whole form (`EditorFailed`). */
 const nothing = () => null;
 
