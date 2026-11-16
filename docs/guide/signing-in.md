@@ -29,10 +29,7 @@ If the server sends email, it sends a link to confirm your email address. Open i
 Until the account is approved and the address is confirmed, you can sign in but you only see what you are waiting for
 ("Your account is not ready yet").
 
-After sign-up, a welcome page lets you choose an avatar and a display name ("Continue" saves them, "Later" skips this).
-Your home timeline then shows a "Get started" checklist: "Set up your profile", "Follow someone", and "Write your first
-post". "Hide these steps" closes it on that browser. "Suggested accounts" lists people you can follow, except on a server
-of one person, where "Find people" opens the search instead.
+After sign-up, while you follow no one, your home timeline shows people the server suggests, if it suggests any.
 
 ## Signing in
 

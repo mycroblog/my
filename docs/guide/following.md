@@ -82,7 +82,7 @@ A featured hashtag opens that person's posts with the hashtag, newest first, tha
 ("Posts of Alice with #cats"); boosts are not listed. "All posts with #cats" opens the page of the hashtag with
 everyone's posts.
 
-While you follow no one, your home timeline shows people the server suggests; "Find people" in the menu lists them all.
+While you follow no one, your home timeline shows people the server suggests; "Search" shows them before you type.
 
 ## Private notes
 
