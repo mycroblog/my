@@ -184,6 +184,7 @@ export {
   FoundRows,
   RowItem,
   RowList,
+  ResultGroup,
   BackButton,
   ButtonPair,
   Excerpt,

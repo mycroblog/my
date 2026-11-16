@@ -14,8 +14,10 @@ import { Column } from "@my/app-components";
 import { useSearch, usePostSearchOffered, type SearchResults } from "@my/app-data";
 import {
   FeedNotice,
-  GroupHeading,
   OpenRow,
+  ResultGroup,
+  RowItem,
+  RowList,
   ScreenStack,
   TabRow,
   TextButton,
@@ -88,17 +90,18 @@ function Hashtags({ results, t }: { results: SearchResults; t: T }) {
   if (tags.items.length === 0)
     return <Notice status={tags.status} none={t("search.hashtags_none")} refetch={tags.refetch} t={t} />;
   return (
-    <nav aria-label={t("search.hashtags")}>
+    <RowList label={t("search.hashtags")}>
       {tags.items.map((tag) => (
-        <OpenRow
-          key={tag.name}
-          href={`/tags/${encodeURIComponent(tag.name)}`}
-          icon="hashtag"
-          title={`#${tag.name}`}
-          hint={t("search.tag_posts", { count: tag.statuses_count })}
-        />
+        <RowItem key={tag.name}>
+          <OpenRow
+            href={`/tags/${encodeURIComponent(tag.name)}`}
+            icon="hashtag"
+            title={`#${tag.name}`}
+            hint={t("search.tag_posts", { count: tag.statuses_count })}
+          />
+        </RowItem>
       ))}
-    </nav>
+    </RowList>
   );
 }
 
@@ -176,12 +179,9 @@ function Results({ q, t }: { q: string; t: T }) {
   return (
     <ScreenStack busy={busy}>
       {kinds.map((kind) => (
-        <section key={kind} aria-label={name[kind]}>
-          <ScreenStack>
-            <GroupHeading>{name[kind]}</GroupHeading>
-            {body(kind)}
-          </ScreenStack>
-        </section>
+        <ResultGroup key={kind} title={name[kind]}>
+          {body(kind)}
+        </ResultGroup>
       ))}
     </ScreenStack>
   );

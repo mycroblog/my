@@ -19,7 +19,7 @@ import {
   Button,
   FeedNotice,
   Fold,
-  GroupHeading,
+  ResultGroup,
   RowItem,
   RowList,
   ScreenStack,
@@ -163,8 +163,9 @@ export function SuggestedPeople({ intro }: { intro?: string | undefined }) {
   return (
     <ScreenStack>
       {intro !== undefined && <FeedNotice start>{intro}</FeedNotice>}
-      <GroupHeading>{t("people.suggested")}</GroupHeading>
-      <Suggested label={t("people.suggested")} limit={fewSuggestions} t={t} />
+      <ResultGroup title={t("people.suggested")}>
+        <Suggested label={t("people.suggested")} limit={fewSuggestions} t={t} />
+      </ResultGroup>
     </ScreenStack>
   );
 }

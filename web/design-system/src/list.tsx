@@ -3,10 +3,11 @@
 // The parts of a screen over and among the entries of its feed (the notifications, a profile's posts, a thread): the
 // screen's parts stacked a feed entry's room apart, the tabs over a list, a heading of a group of a list, a fold of
 // what the list does not show, the unread mark, the line of a notice's kind, an excerpt, an account on a row of its
-// own, a refusal beside its confirmation, and the row that opens what waits elsewhere. Everything sits on the page's
-// one surface, apart by space; a raised surface marks only a control (the current tab).
+// own, rows of one kind as a list, one kind of what a screen found under its heading, what a field found, a refusal
+// beside its confirmation, and the row that opens what waits elsewhere. Everything sits on the page's one surface,
+// apart by space; a raised surface marks only a control (the current tab) and what a field found.
 
-import type { ReactNode, Ref } from "react";
+import { useId, type ReactNode, type Ref } from "react";
 import { Button, Link, Tab, TabList, TabPanel, Tabs } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Byline, Stamp } from "./entry";
@@ -284,7 +285,25 @@ export function RowList({ label, children }: { label: string; children: ReactNod
   );
 }
 
-/** A row of a `RowList` (an `AccountRow`). */
+const result = tv({ base: "m-0 grid grid-cols-[minmax(0,1fr)] gap-entry-room" });
+
+/**
+ * One kind of what a screen found (the people of a search), a region named by its heading, muted and small as a
+ * list's group's: its rows, or the line that stands in their place, under it.
+ */
+export function ResultGroup({ title, children }: { title: string; children: ReactNode }) {
+  const id = useId();
+  return (
+    <section aria-labelledby={id} className={result()}>
+      <h2 id={id} className={group()}>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+/** A row of a `RowList` (an `AccountRow`, an `OpenRow`). */
 export function RowItem({ children }: { children: ReactNode }) {
   return <li>{children}</li>;
 }
