@@ -104,6 +104,11 @@ const theme = {
     "menu-padding": ref("--menu-padding"),
     "menu-group-gap": ref("--menu-group-gap"),
     "menu-icon-gap": ref("--menu-icon-gap"),
+    "menu-min-width": ref("--menu-min-width"),
+    "menu-described-block": ref("--menu-described-block"),
+    "menu-wrapped-block": ref("--menu-wrapped-block"),
+    // What a sheet holds under its head lines up with the head's name, as a menu's items do.
+    "menu-form-inline": "calc(var(--control-timeline-padding-inline) - 0.25rem)",
     "disclosure-gap": ref("--disclosure-gap"),
     "disclosure-padding": ref("--disclosure-padding"),
     "disclosure-start": ref("--disclosure-padding-start"),
@@ -158,6 +163,8 @@ const theme = {
       names(emojiPicker).map((name) => [`emoji-picker-${kebab(name)}`, ref(`--emoji-picker-${kebab(name)}`)]),
     ),
     dialog: ref("--dialog-padding"),
+    // The bottom padding of a sheet from the viewport's bottom edge: a dialog's, clear of the device's safe area.
+    "dialog-safe-bottom": "calc(var(--dialog-padding) + env(safe-area-inset-bottom))",
     "dialog-gap": ref("--dialog-gap"),
     "dialog-row": ref("--dialog-row-gap"),
     "dialog-margin": ref("--dialog-margin"),

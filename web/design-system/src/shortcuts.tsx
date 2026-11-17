@@ -101,7 +101,7 @@ export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; ma
             onDismiss={() => {
               setShown(null);
             }}
-            overlay={help().overlay()}
+            place="center"
             panel={help().modal()}
           >
             <ShortcutList screen={shown.screen} groups={shown.groups} mac={store.mac} />
@@ -161,10 +161,9 @@ export function useAction(
 
 const help = tv({
   slots: {
-    overlay: "fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin",
     modal: [
-      "relative box-border max-h-full w-full max-w-[var(--dialog-max-width)] overflow-auto rounded-overlay bg-surface",
-      "p-dialog font-sans text-body text-text shadow-overlay outline-hidden",
+      "max-h-full overflow-auto rounded-overlay bg-surface p-dialog font-sans text-body text-text shadow-overlay",
+      "outline-hidden",
     ],
     dialog: "grid gap-dialog-gap",
     header: "flex items-center justify-between gap-dialog-gap",

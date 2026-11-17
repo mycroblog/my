@@ -15,6 +15,10 @@
 // a phone opens its keyboard, and lays itself out above it (`--keyboard-inset`); a modal here shows on the frame it
 // mounts in. A press outside its panel dismisses it, as Escape does unless the caller handles Escape itself; focus
 // stays in it and goes back where it was; the page behind is inert.
+//
+// Where a modal stands is its frame's alone (`ModalFrame`, with `ModalPanel`): a modal says its place, and writes its
+// surface and what it holds. Under `tablet` a modal at `screen` is a screen of its own, so the frame is one of the
+// frames of a page, which read the viewport.
 
 import { transition } from "@my/design-tokens";
 import {
@@ -77,6 +81,73 @@ export function ModalPresence({ onExited, children }: { onExited?: (() => void) 
   );
 }
 
+/**
+ * Where a modal's panel stands over the viewport:
+ * - `center`: in its middle, a dialog's most width at most, a margin from its edges (a confirmation).
+ * - `sheet`: on its bottom edge at its full width, room above it showing the page; `sheet-above-keyboard` keeps its
+ *   bottom above the software keyboard where one is open.
+ * - `screen`: under `tablet` the whole of it, a screen of its own; from `tablet` at its top, in its middle, the room
+ *   of the composer above and below, the overlay scrolling with what the panel holds.
+ * - `cover`: the whole of it at every width (the media viewer).
+ */
+type ModalPlace = "center" | "sheet" | "sheet-above-keyboard" | "screen" | "cover";
+
+const sheetOverlay = "fixed inset-0 z-50 box-border flex flex-col justify-end pt-shell-sheet-room";
+const OVERLAY: Record<ModalPlace, string> = {
+  center: "fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin",
+  sheet: sheetOverlay,
+  "sheet-above-keyboard": `${sheetOverlay} pb-[var(--keyboard-inset,env(keyboard-inset-height,0px))]`,
+  screen: [
+    "fixed inset-0 z-50 box-border grid items-start overflow-y-auto",
+    "tablet:justify-items-center tablet:px-dialog-margin tablet:pt-composer-top tablet:pb-composer-bottom",
+  ].join(" "),
+  cover: "fixed inset-0 z-50",
+};
+
+// Positioned, so that the panel paints over the fixed backdrop before it in the overlay.
+const sheetPanel = "relative flex min-h-0 w-full flex-col";
+const PANEL: Record<ModalPlace, string> = {
+  center: "relative box-border w-full max-w-[var(--dialog-max-width)]",
+  sheet: sheetPanel,
+  "sheet-above-keyboard": sheetPanel,
+  screen: "box-border w-full",
+  cover: "size-full",
+};
+
+/**
+ * The frame of a modal: the overlay over the viewport, which places the panel by `place` and lays the backdrop over
+ * the page behind it. Motion moves it through `states`; `idle`, it takes no pointer.
+ */
+function ModalFrame({
+  place,
+  backdrop,
+  idle,
+  states,
+  children,
+}: {
+  place: ModalPlace;
+  backdrop: keyof typeof modalBackdrop;
+  idle: boolean;
+  states: ReturnType<typeof modalStates>;
+  children: ReactNode;
+}) {
+  return (
+    <m.div className={idle ? `${OVERLAY[place]} pointer-events-none` : OVERLAY[place]} {...states}>
+      <m.div className={modalBackdrop[backdrop]} variants={modalMotion.backdrop} />
+      {children}
+    </m.div>
+  );
+}
+
+/** The panel of a modal, where `place` puts it in its frame, on the surface its modal gives it (`paint`). */
+function ModalPanel({ place, paint, children }: { place: ModalPlace; paint: string | undefined; children: ReactNode }) {
+  return (
+    <m.div className={paint === undefined ? PANEL[place] : `${paint} ${PANEL[place]}`} variants={modalMotion.panel}>
+      {children}
+    </m.div>
+  );
+}
+
 export type ModalLayerProps = {
   /** A press outside the panel, and Escape unless `ownEscape`. */
   onDismiss: () => void;
@@ -87,10 +158,12 @@ export type ModalLayerProps = {
    * width with no blur.
    */
   backdrop?: "always" | "tablet" | "dim" | undefined;
-  /** The layout of the overlay over the viewport, which places the panel and scrolls. */
-  overlay: string;
-  /** The panel's box. */
-  panel: string;
+  /** Where the panel stands over the viewport. */
+  place: ModalPlace;
+  /** The panel's own surface: its paint, its padding. */
+  panel?: string | undefined;
+  /** It takes no pointer yet (a sheet whose opening press has not ended). */
+  idle?: boolean | undefined;
   children: ReactNode;
 };
 
@@ -99,8 +172,9 @@ export function ModalLayer({
   onDismiss,
   ownEscape = false,
   backdrop: dim = "always",
-  overlay,
+  place,
   panel,
+  idle = false,
   children,
 }: ModalLayerProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -121,15 +195,14 @@ export function ModalLayer({
   return (
     <Overlay isExiting={!present}>
       <LazyMotion features={domAnimation} strict>
-        <m.div className={present ? overlay : `${overlay} pointer-events-none`} {...modalStates(reduced)}>
-          <m.div className={modalBackdrop[dim]} variants={modalMotion.backdrop} />
+        <ModalFrame place={place} backdrop={dim} idle={idle || !present} states={modalStates(reduced)}>
           <div {...modalProps} ref={ref} className="contents">
             <DismissButton onDismiss={onDismiss} />
-            <m.div className={panel} variants={modalMotion.panel}>
+            <ModalPanel place={place} paint={panel}>
               <OverlayTriggerStateContext value={state}>{children}</OverlayTriggerStateContext>
-            </m.div>
+            </ModalPanel>
           </div>
-        </m.div>
+        </ModalFrame>
       </LazyMotion>
     </Overlay>
   );

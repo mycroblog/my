@@ -51,10 +51,8 @@ const overlay = tv({
       "p-emoji-picker-gap shadow-overlay outline-hidden",
     ],
     dialog: "outline-hidden",
-    sheetOverlay: "fixed inset-0 z-50 box-border flex flex-col justify-end pt-shell-sheet-room",
     sheet: [
-      "relative box-border flex h-[min(100%,var(--emoji-picker-sheet))] w-full flex-col",
-      "rounded-t-overlay bg-surface px-emoji-picker-gap pt-shell-inset",
+      "box-border h-[min(100%,var(--emoji-picker-sheet))] rounded-t-overlay bg-surface px-emoji-picker-gap pt-shell-inset",
       "pb-[calc(var(--emoji-picker-gap)+env(safe-area-inset-bottom))] font-sans text-body text-text shadow-overlay",
       "outline-hidden",
     ],
@@ -154,7 +152,7 @@ export function EmojiPickerSheet({
   return (
     <ModalPresence>
       {open && (
-        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" overlay={s.sheetOverlay()} panel={s.sheet()}>
+        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" place="sheet" panel={s.sheet()}>
           <Dialog className={s.sheetDialog()} lang={lang} dir={direction}>
             <div className={s.head()}>
               <Heading slot="title" className={s.title()}>

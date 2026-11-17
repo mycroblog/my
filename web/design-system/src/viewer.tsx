@@ -33,7 +33,6 @@ import { ModalLayer } from "./modal";
 
 const view = tv({
   slots: {
-    overlay: "fixed inset-0 z-50",
     panel: [
       "relative box-border grid size-full grid-rows-[auto_minmax(0,1fr)] bg-viewer-scrim font-sans text-body text-text",
       "outline-hidden [color-scheme:dark]",
@@ -320,7 +319,7 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
       </div>
     );
   return (
-    <ModalLayer onDismiss={onClose} overlay={s.overlay()} panel="size-full">
+    <ModalLayer onDismiss={onClose} place="cover">
       <div className="contents" onKeyDown={keys}>
         <Dialog aria-label={t("viewer.label")} className="size-full outline-hidden">
           {panel}

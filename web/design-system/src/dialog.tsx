@@ -7,26 +7,22 @@
 // composer does: a dialog of the main column's width over the dimmed page from `tablet`, a screen of its own on a
 // phone; its head holds the title and close at its end, and its body scrolls under the head.
 
-import { useId, type ReactNode } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { IconButton } from "./icon-button";
+import { Box, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { ModalLayer } from "./modal";
 
 const confirm = tv({
   slots: {
-    overlay: "fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin",
-    modal: [
-      "relative box-border w-full max-w-[var(--dialog-max-width)] rounded-overlay bg-surface p-dialog",
-      "font-sans text-body text-text shadow-overlay outline-hidden",
-    ],
-    dialog: "grid gap-dialog-gap outline-hidden",
+    modal: "rounded-overlay bg-surface p-dialog font-sans text-body text-text shadow-overlay outline-hidden",
+    dialog: "outline-hidden",
     // Wrapping between phrases, never inside a word of ja.
-    title: "m-0 text-title [word-break:auto-phrase]",
-    text: "m-0 text-muted-text [word-break:auto-phrase]",
-    row: "flex flex-wrap items-center justify-end gap-dialog-row",
+    title: "text-title [word-break:auto-phrase]",
+    text: "text-muted-text [word-break:auto-phrase]",
   },
 });
 
@@ -65,65 +61,94 @@ export function ConfirmDialog({
   const body = (
     <>
       {layer ? (
-        <Heading slot="title" className={s.title()}>
+        <Box reset as={<Heading slot="title" className={s.title()} />}>
           {title}
-        </Heading>
+        </Box>
       ) : (
-        <h2 id={titleId} className={s.title()}>
+        <Box as="h2" id={titleId} className={s.title()}>
           {title}
-        </h2>
+        </Box>
       )}
-      <p id={textId} className={s.text()}>
+      <Box as="p" id={textId} className={s.text()}>
         {children}
-      </p>
-      <div className={s.row()}>
+      </Box>
+      <Row wrap align="center" justify="end" gap="dialog-row">
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
           {cancel}
         </Button>
         <Button kind="primary" size="form" busy={busy} onPress={onConfirm}>
           {confirmLabel}
         </Button>
-      </div>
+      </Row>
     </>
   );
+  // A specimen in a page stands as the modal's frame would place it: as wide as its column, a dialog's width at most.
   if (!layer)
     return (
-      <div role="alertdialog" aria-labelledby={titleId} aria-describedby={textId} className={s.modal()} dir={direction}>
-        <div className={s.dialog()}>{body}</div>
-      </div>
+      <Box
+        anchor
+        full
+        max="dialog"
+        role="alertdialog"
+        aria-labelledby={titleId}
+        aria-describedby={textId}
+        className={`box-border ${s.modal()}`}
+        dir={direction}
+      >
+        <Stack gap="dialog-gap" className={s.dialog()}>
+          {body}
+        </Stack>
+      </Box>
     );
   return (
     // In flight, the dialog stays: Escape and a press outside cancel no more than Cancel, which is disabled.
-    <ModalLayer onDismiss={busy ? () => undefined : onCancel} overlay={s.overlay()} panel={s.modal()}>
-      <Dialog role="alertdialog" aria-describedby={textId} className={s.dialog()} dir={direction}>
+    <ModalLayer onDismiss={busy ? () => undefined : onCancel} place="center" panel={s.modal()}>
+      <Stack
+        gap="dialog-gap"
+        as={<Dialog role="alertdialog" aria-describedby={textId} className={s.dialog()} dir={direction} />}
+      >
         {body}
-      </Dialog>
+      </Stack>
     </ModalLayer>
   );
 }
 
-const panel = tv({
-  slots: {
-    overlay: [
-      "fixed inset-0 z-50 box-border grid items-start overflow-y-auto",
-      "tablet:justify-items-center tablet:px-dialog-margin tablet:pt-composer-top tablet:pb-composer-bottom",
-    ],
-    rise: "box-border w-full",
-    frame: [
-      "relative box-border flex h-dvh flex-col bg-surface font-sans text-body text-text outline-hidden",
-      "tablet:mx-auto tablet:h-auto tablet:w-[min(var(--shell-column),100%)] tablet:rounded-overlay",
-      "tablet:shadow-overlay",
-    ],
-    head: "flex items-center justify-between gap-entry-caption px-shell-edge pt-entry-line pb-entry tablet:px-dialog",
-    close: "-me-icon-button-inline inline-flex",
-    title: "m-0 text-title",
-    body: "min-h-0 flex-1 overflow-y-auto px-shell-edge pb-entry tablet:overflow-visible tablet:px-dialog tablet:pb-dialog",
-  },
-  variants: {
-    // A specimen in a page is as tall as what it holds.
-    layer: { false: { frame: "h-auto" } },
-  },
-});
+const panel = tv({ slots: { title: "text-title" } });
+
+/**
+ * The frame of a panel: a column, its head over its body. Under `tablet` it is a screen of its own, as tall as the
+ * viewport, its body scrolling under its head; from `tablet` a dialog of the main column's width on its own surface,
+ * as tall as what it holds, the modal's overlay scrolling it. A `specimen` in a page is as tall as what it holds at
+ * every width. One of the frames of a page: it reads the viewport.
+ */
+function PanelFrame({
+  as,
+  specimen,
+  head,
+  children,
+}: {
+  /** The dialog's element. */
+  as: ReactElement<{ className?: unknown }>;
+  specimen: boolean;
+  head: ReactNode;
+  children: ReactNode;
+}) {
+  const frame = [
+    "relative box-border flex h-dvh flex-col bg-surface font-sans text-body text-text outline-hidden",
+    "tablet:mx-auto tablet:h-auto tablet:w-[min(var(--shell-column),100%)] tablet:rounded-overlay",
+    "tablet:shadow-overlay",
+  ].join(" ");
+  return (
+    <Box as={as} className={specimen ? `${frame} h-auto` : frame}>
+      <div className="flex items-center justify-between gap-entry-caption px-shell-edge pt-entry-line pb-entry tablet:px-dialog">
+        {head}
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-shell-edge pb-entry tablet:overflow-visible tablet:px-dialog tablet:pb-dialog">
+        {children}
+      </div>
+    </Box>
+  );
+}
 
 export type PanelDialogProps = {
   title: string;
@@ -138,38 +163,36 @@ export type PanelDialogProps = {
 
 /** Something to read over the page: its title and close at the end of its head, then what it shows, which scrolls. */
 export function PanelDialog({ title, closeLabel, onClose, layer = true, children }: PanelDialogProps) {
-  const s = panel({ layer });
+  const s = panel();
   const { direction } = useReader(undefined);
   const titleId = useId();
   const head = (
-    <div className={s.head()}>
+    <>
       {layer ? (
-        <Heading slot="title" className={s.title()}>
+        <Box reset as={<Heading slot="title" className={s.title()} />}>
           {title}
-        </Heading>
+        </Box>
       ) : (
-        <h2 id={titleId} className={s.title()}>
+        <Box as="h2" id={titleId} className={s.title()}>
           {title}
-        </h2>
+        </Box>
       )}
-      <span className={s.close()}>
+      <Row as="span" inline bleedEnd="icon-button-inline">
         <IconButton icon="close" label={closeLabel} onPress={onClose} />
-      </span>
-    </div>
+      </Row>
+    </>
   );
   if (!layer)
     return (
-      <div role="dialog" aria-labelledby={titleId} className={s.frame()} dir={direction}>
-        {head}
-        <div className={s.body()}>{children}</div>
-      </div>
+      <PanelFrame specimen head={head} as={<div role="dialog" aria-labelledby={titleId} dir={direction} />}>
+        {children}
+      </PanelFrame>
     );
   return (
-    <ModalLayer onDismiss={onClose} backdrop="tablet" overlay={s.overlay()} panel={s.rise()}>
-      <Dialog className={s.frame()} dir={direction}>
-        {head}
-        <div className={s.body()}>{children}</div>
-      </Dialog>
+    <ModalLayer onDismiss={onClose} backdrop="tablet" place="screen">
+      <PanelFrame specimen={false} head={head} as={<Dialog dir={direction} />}>
+        {children}
+      </PanelFrame>
     </ModalLayer>
   );
 }

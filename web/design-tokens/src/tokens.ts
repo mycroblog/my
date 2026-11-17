@@ -227,9 +227,17 @@ export const barShadow = { y: -2, blur: 12, share: { light: 0.08, dark: 0.4 } } 
 
 /**
  * A menu, in rem: its padding around the items, the space between its groups, the gap between an item's glyph and
- * its label, and its least width. Its rows are a form control's height.
+ * its label, and its least width. Its rows are a form control's height; one that grows keeps a padding above and
+ * below: with a quiet line under its label (`describedBlock`), or with a label that wraps (`wrappedBlock`).
  */
-export const menu = { padding: 0.25, groupGap: 0.5, iconGap: 0.625, minWidth: 12 } as const;
+export const menu = {
+  padding: 0.25,
+  groupGap: 0.5,
+  iconGap: 0.625,
+  minWidth: 12,
+  describedBlock: 0.5,
+  wrappedBlock: 0.25,
+} as const;
 
 /**
  * A disclosure, in rem: the space between its summary and what it folds, and between the summary's glyph, text and
@@ -628,6 +636,8 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--menu-group-gap", `${menu.groupGap}rem`],
   ["--menu-icon-gap", `${menu.iconGap}rem`],
   ["--menu-min-width", `${menu.minWidth}rem`],
+  ["--menu-described-block", `${menu.describedBlock}rem`],
+  ["--menu-wrapped-block", `${menu.wrappedBlock}rem`],
   ["--disclosure-gap", `${disclosure.gap}rem`],
   ["--disclosure-padding", `${disclosure.padding}rem`],
   ["--disclosure-padding-start", `${disclosure.paddingStart}rem`],

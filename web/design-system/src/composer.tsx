@@ -29,8 +29,6 @@ import { PollMark } from "./poll";
 
 const frame = tv({
   slots: {
-    overlay: "fixed inset-0 z-50 box-border grid items-start overflow-y-auto",
-    rise: "box-border w-full",
     panel: [
       "relative box-border flex flex-col gap-entry bg-surface font-sans text-body text-text outline-hidden",
       "h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))] px-shell-edge pt-entry-line",
@@ -53,10 +51,6 @@ const frame = tv({
     // the page behind keeps its place.
     dialog: {
       true: {
-        overlay: [
-          "tablet:justify-items-center tablet:px-dialog-margin",
-          "tablet:pt-composer-top tablet:pb-composer-bottom",
-        ],
         panel: [
           "tablet:mx-auto tablet:h-auto tablet:w-[min(var(--shell-column),100%)] tablet:rounded-overlay tablet:p-dialog",
           "tablet:pt-[calc(var(--dialog-padding)*0.6)] tablet:shadow-overlay",
@@ -199,8 +193,7 @@ export function ComposerFrame({
       }}
       ownEscape
       backdrop={phone === "dialog" ? "always" : "tablet"}
-      overlay={s.overlay()}
-      panel={s.rise()}
+      place="screen"
     >
       <Dialog className="box-border w-full outline-hidden">{panel}</Dialog>
     </ModalLayer>
