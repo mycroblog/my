@@ -3,8 +3,8 @@
 import { expect, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState, type ReactNode } from "react";
-import { I18nProvider } from "react-aria-components";
+import { useState } from "react";
+import { I18nProvider, RouterProvider } from "react-aria-components";
 import { Button, TextButton } from "./button";
 import {
   AccountRow,
@@ -34,18 +34,6 @@ import {
 /** Whether `later` comes after `earlier` in the reading order. */
 const follows = (later: Element, earlier: Element) =>
   (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-
-/** A page that follows no link: a click on one leaves the test's document where it is, as the app's router does. */
-const Page = ({ children }: { children: ReactNode }) => (
-  <div
-    role="presentation"
-    onClick={(event) => {
-      event.preventDefault();
-    }}
-  >
-    {children}
-  </div>
-);
 
 const tabs = [
   { id: "all", name: "All" },
@@ -231,8 +219,9 @@ test("a notice's line says its sentence and when it happened, with the unread ma
 test("a notice's line that leads somewhere is a link named by its sentence, and following it tells its owner", async () => {
   const user = userEvent.setup();
   let followed = 0;
+  const went: string[] = [];
   render(
-    <Page>
+    <RouterProvider navigate={(href) => went.push(href)}>
       <NoticeLine
         icon="favourite"
         date="2026-11-14T09:30:00Z"
@@ -242,13 +231,15 @@ test("a notice's line that leads somewhere is a link named by its sentence, and 
       >
         Kiri favourited your post
       </NoticeLine>
-    </Page>,
+    </RouterProvider>,
   );
   const link = screen.getByRole("link", { name: "Kiri favourited your post" });
   expect(link.getAttribute("href")).toBe("/@ren/status/1");
 
   await user.click(link);
   expect(followed).toBe(1);
+  // It goes there through the app's navigation.
+  expect(went).toEqual(["/@ren/status/1"]);
 });
 
 test("a notice's sentence alone names the entry that is labelled by its id", () => {

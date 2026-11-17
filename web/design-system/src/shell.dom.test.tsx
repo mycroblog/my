@@ -3,7 +3,7 @@
 import { expect, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { RouterProvider } from "react-aria-components";
 import { Button } from "./button";
 import { MenuGroup, MenuItem } from "./menu";
 import {
@@ -35,18 +35,6 @@ import {
 /** Whether `later` comes after `earlier` in the reading order. */
 const follows = (later: Element, earlier: Element) =>
   (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-
-/** A page that follows no link: a click on one leaves the test's document where it is, as the app's router does. */
-const Page = ({ children }: { children: ReactNode }) => (
-  <div
-    role="presentation"
-    onClick={(event) => {
-      event.preventDefault();
-    }}
-  >
-    {children}
-  </div>
-);
 
 /** The addresses of the images that say nothing to assistive technology, in the document's order. */
 const decorations = () => screen.queryAllByRole("presentation").map((image) => image.getAttribute("src"));
@@ -312,18 +300,16 @@ test("a click on the Menu's place opens its menu, and Escape closes it with the 
 function callBar(muted: boolean) {
   const did: string[] = [];
   render(
-    <Page>
-      <CallBar
-        href="/voice/1"
-        room="Coffee"
-        detail="Hosted by Mika · 12 in the room"
-        muted={muted}
-        muteLabel="Mute"
-        onMute={() => did.push("mute")}
-        leaveLabel="Leave"
-        onLeave={() => did.push("leave")}
-      />
-    </Page>,
+    <CallBar
+      href="/voice/1"
+      room="Coffee"
+      detail="Hosted by Mika · 12 in the room"
+      muted={muted}
+      muteLabel="Mute"
+      onMute={() => did.push("mute")}
+      leaveLabel="Leave"
+      onLeave={() => did.push("leave")}
+    />,
   );
   return did;
 }
@@ -492,8 +478,9 @@ test("a section folded to one line is one link to its place, named by what it ho
 test("a section's lines are a list, each a link by its title with its caption, marked while unread", async () => {
   const user = userEvent.setup();
   const followed: string[] = [];
+  const went: string[] = [];
   render(
-    <Page>
+    <RouterProvider navigate={(href) => went.push(href)}>
       <SectionList>
         <SectionLine
           href="/@ren"
@@ -505,7 +492,7 @@ test("a section's lines are a list, each a link by its title with its caption, m
         />
         <SectionLine href="/events/1" title="Fediverse meetup in Tokyo" caption="Sat, Nov 21, 19:00" read />
       </SectionList>
-    </Page>,
+    </RouterProvider>,
   );
 
   const [unread, read] = within(screen.getByRole("list")).getAllByRole("listitem") as [HTMLElement, HTMLElement];
@@ -519,6 +506,8 @@ test("a section's lines are a list, each a link by its title with its caption, m
 
   await user.click(title);
   expect(followed).toEqual(["ren"]);
+  // It goes there through the app's navigation.
+  expect(went).toEqual(["/@ren"]);
 });
 
 test("a section's note says what it shows in place of its lines, then what the reader may do about it", async () => {
@@ -537,7 +526,7 @@ test("a section's note says what it shows in place of its lines, then what the r
 
 test("the dock holds the tab bar under its name, the call's bar, the primary action and the toasts", () => {
   render(
-    <Page>
+    <>
       <FrameDock
         label="Main"
         tabs={
@@ -564,7 +553,7 @@ test("the dock holds the tab bar under its name, the call's bar, the primary act
           </Toast>
         }
       />
-    </Page>,
+    </>,
   );
 
   const tabs = screen.getByRole("navigation", { name: "Main" });
