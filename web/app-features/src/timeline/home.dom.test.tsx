@@ -6,7 +6,7 @@
 import { expect, test } from "bun:test";
 import { homeTimelineQuery } from "@my/app-data";
 import { scenario, type FakeOptions } from "@my/e2e/fake";
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { fakeData, renderFeature } from "../test/feature";
 import { HomeTimeline, loadHomeTimeline } from "./home";
@@ -200,5 +200,55 @@ test("for a reader who follows someone, no suggestions are asked for, and the fe
     if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
   });
   expect(suggestions.seen).toHaveLength(0);
+  expect(suggested()).toBeNull();
+});
+
+/** Follows the first person the block suggests, as the viewer's reading says they now follow one, and waits for it. */
+async function followFromTheBlock({ fake, data }: ReturnType<typeof fakeData>, user: ReturnType<typeof renderFeature>) {
+  const people = await screen.findByRole("list", { name: "Suggested for you" });
+  const viewer = fake.script("GET /accounts/verify_credentials", {
+    change: (account) => ({ ...account, following_count: 1 }),
+  });
+  const follow = fake.script("POST /accounts/{id}/follow");
+  const [row] = within(people).getAllByRole("listitem");
+  if (row === undefined) throw new Error("test: the block suggests no one");
+  await user.click(within(row).getByRole("button", { name: "Follow" }));
+  await follow.served();
+  // Nothing in the block reads the viewer again by itself; whatever does (a refocus, the stream) is this.
+  await data.queryClient.invalidateQueries({ queryKey: ["get", "/accounts/verify_credentials"] });
+  await viewer.served();
+  await waitFor(() => {
+    if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+  });
+}
+
+test("the block stays while the reader stays on Home, though they now follow someone, and the feed stays after it", async () => {
+  const made = fakeData(newcomer);
+  await loadHomeTimeline(made.data);
+  const user = renderFeature(made.data, <HomeTimeline />);
+
+  await followFromTheBlock(made, user);
+
+  const people = screen.getByRole("list", { name: "Suggested for you" });
+  const [first] = within(screen.getByRole("feed", { name: "Home timeline" })).getAllByRole("article");
+  if (first === undefined) throw new Error("test: the home timeline shows no post");
+  expect(people.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+});
+
+test("leaving Home and coming back decides again: after a follow, the feed shows without the block", async () => {
+  const made = fakeData(newcomer);
+  await loadHomeTimeline(made.data);
+  const user = renderFeature(made.data, <HomeTimeline />);
+  await followFromTheBlock(made, user);
+
+  cleanup();
+  await loadHomeTimeline(made.data);
+  renderFeature(made.data, <HomeTimeline />);
+
+  expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+  expect(suggested()).toBeNull();
+  await waitFor(() => {
+    if (made.data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+  });
   expect(suggested()).toBeNull();
 });
