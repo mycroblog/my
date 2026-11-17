@@ -337,8 +337,16 @@ type Tag = keyof JSX.IntrinsicElements;
 /** The steps of the type scale a text is set in. */
 const TEXT = { caption: "text-caption", body: "text-body", title: "text-title" } as const;
 
-/** The colour of a text: the page's, muted, or the page's surface where it is knocked out of the text's colour. */
-const TONE = { text: "text-text", muted: "text-muted-text", inverse: "text-surface" } as const;
+/**
+ * The colour of a text: the page's, muted, or the page's surface where it is knocked out of the text's colour;
+ * `all-muted` mutes all it holds too, also what sets a colour of its own in a text people wrote (a link).
+ */
+const TONE = {
+  text: "text-text",
+  muted: "text-muted-text",
+  "all-muted": "text-muted-text [&_*]:text-muted-text",
+  inverse: "text-surface",
+} as const;
 
 const WEIGHT = { normal: "font-normal", label: "font-label", strong: "font-strong" } as const;
 
@@ -357,10 +365,12 @@ const SURFACE = { page: "bg-surface", raised: "bg-surface-raised" } as const;
 /** The corners of a surface: a control's, or those of an entry's surface. */
 const RADIUS = { control: "rounded-control", entry: "rounded-entry" } as const;
 
-/** The padding of a surface or of a row, by a token of the theme's spacing: on every side, or on the sides of a line. */
+/** The padding of a surface or of a row, by a token of the theme's spacing: on every side, or on the sides named. */
 const PAD = { embed: "p-embed", "poll-padding": "p-poll-padding" } as const;
 const PAD_X = { "poll-option-inline": "px-poll-option-inline" } as const;
-const PAD_Y = { "poll-result-block": "py-poll-result-block" } as const;
+const PAD_Y = { "composer-inset": "py-composer-inset", "poll-result-block": "py-poll-result-block" } as const;
+const PAD_START = { "control-timeline-inline": "ps-control-timeline-inline" } as const;
+const PAD_END = { "composer-inset": "pe-composer-inset" } as const;
 
 /**
  * What a generic part takes of paint: the style of a text and the surface under a group, which are a composite's own
@@ -393,6 +403,10 @@ type Paint = {
   padX?: keyof typeof PAD_X | undefined;
   /** Its padding above and below. */
   padY?: keyof typeof PAD_Y | undefined;
+  /** Its padding at the start of its lines, where not the end's. */
+  padStart?: keyof typeof PAD_START | undefined;
+  /** Its padding at the end of its lines, where not the start's. */
+  padEnd?: keyof typeof PAD_END | undefined;
   /** A list without its markers and, unless it has a padding, their room. */
   plain?: boolean | undefined;
 };
@@ -412,6 +426,8 @@ const PAINT: Record<keyof Paint, true> = {
   pad: true,
   padX: true,
   padY: true,
+  padStart: true,
+  padEnd: true,
   plain: true,
 };
 
@@ -425,6 +441,8 @@ function paintOf(props: Paint): string {
   if (props.pad) c += ` box-border ${PAD[props.pad]}`;
   if (props.padX) c += ` box-border ${PAD_X[props.padX]}`;
   if (props.padY) c += ` ${PAD_Y[props.padY]}`;
+  if (props.padStart) c += ` box-border ${PAD_START[props.padStart]}`;
+  if (props.padEnd) c += ` box-border ${PAD_END[props.padEnd]}`;
   if (props.text) c += ` ${TEXT[props.text]}`;
   if (props.tone) c += ` ${TONE[props.tone]}`;
   if (props.weight) c += ` ${WEIGHT[props.weight]}`;
@@ -436,9 +454,12 @@ function paintOf(props: Paint): string {
   return c;
 }
 
-/** Words for assistive technology alone, where what is shown says them by a shape or a place. */
-export function Spoken({ children }: { children: ReactNode }) {
-  return <span className="sr-only">{children}</span>;
+/**
+ * Words for assistive technology alone, where what is shown says them by a shape or a place; as the `legend` of a
+ * group whose name is shown beside it.
+ */
+export function Spoken({ as: Tag = "span", children }: { as?: "span" | "legend"; children: ReactNode }) {
+  return <Tag className="sr-only">{children}</Tag>;
 }
 
 /** What every layout part takes beside its arrangement. */

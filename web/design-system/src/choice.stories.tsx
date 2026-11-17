@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The controls of a choice: the options open to one answer and to several, held while an answer is in flight, and a
-// share as a bar. The words are samples in English.
+// The controls of a choice: the options open to one answer and to several, held while an answer is in flight, an
+// option as it is written, and a share as a bar. The words are samples in English.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { ChoiceList, ShareBar } from "./choice";
+import { ChoiceField, ChoiceList, ShareBar } from "./choice";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -51,6 +51,39 @@ export const Held: Story = {
   render: () => (
     <Column>
       <ChoiceList label="Bread" multiple={false} items={items} chosen={[0]} onChange={none} disabled />
+    </Column>
+  ),
+};
+
+/** An option as it is written, with its remove. */
+export const Field: Story = {
+  render: () => (
+    <Column>
+      <ChoiceField
+        value="Sourdough"
+        onChange={none}
+        label="Option 1"
+        multiple={false}
+        maxLength={50}
+        remove={{ label: "Remove option 1", onPress: none }}
+      />
+    </Column>
+  ),
+};
+
+/** An option left empty, with what is wrong with it under it. */
+export const FieldRefused: Story = {
+  render: () => (
+    <Column>
+      <ChoiceField
+        value=""
+        onChange={none}
+        label="Option 3"
+        multiple
+        maxLength={50}
+        remove={{ label: "Remove option 3", onPress: none }}
+        error="Write this option or remove it."
+      />
     </Column>
   ),
 };

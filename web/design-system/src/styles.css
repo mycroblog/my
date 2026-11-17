@@ -20,9 +20,10 @@
     margin: 0;
   }
 
-  /* A fieldset's margin is the browser's too. */
+  /* A fieldset's margin and its frame are the browser's too. */
   :where(fieldset) {
     margin: 0;
+    border: 0;
   }
 
   /*

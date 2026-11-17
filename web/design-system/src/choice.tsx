@@ -2,11 +2,13 @@
 
 // The controls of a choice among options: the options as pressable rows on the page's surface, each headed by the
 // mark it is answered with, a radio's ring or, where several may be chosen, a checkbox's square; the mark alone, for
-// what shows a choice made or to be made without being pressed; and a share of a whole as a bar. Every word is the
-// caller's.
+// what shows a choice made or to be made without being pressed; an option as it is written, a field headed by that
+// mark; and a share of a whole as a bar. Every word is the caller's.
 
 import { useId, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
+import { FieldError } from "./form-page";
+import { IconButton } from "./icon-button";
 import { Box, Layers, Row, Stack } from "./layout";
 
 const choice = tv({
@@ -21,6 +23,11 @@ const choice = tv({
     ],
     input: "sr-only",
     label: "[overflow-wrap:anywhere]",
+    // An option as it is written: its text on the surface it stands on, the ring around it on focus.
+    field: [
+      "h-control-form rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
+      "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
+    ],
     // The meter's bar (shell.tsx), quieter in a timeline: muted on a track lighter than it.
     track: "h-shell-meter rounded-[calc(var(--shell-meter)/2)] bg-surface-raised",
     bar: "rounded-[calc(var(--shell-meter)/2)] bg-muted-text",
@@ -130,6 +137,59 @@ export function ChoiceList({
         );
       })}
     </Stack>
+  );
+}
+
+/**
+ * An option as it is written: a field named by `label`, headed by the mark it will be answered with (a checkbox's
+ * square where several may be chosen, else a radio's ring); its remove at its end, where it may go, and what is wrong
+ * with it right under it.
+ */
+export function ChoiceField({
+  value,
+  onChange,
+  label,
+  multiple,
+  maxLength,
+  remove,
+  error,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+  multiple: boolean;
+  maxLength: number;
+  remove?: { label: string; onPress: () => void } | undefined;
+  error?: string | undefined;
+}) {
+  const s = choice();
+  const errorId = useId();
+  return (
+    <>
+      <Row align="center" gap="entry-caption">
+        <ChoiceMark multiple={multiple} />
+        <Box
+          as={
+            <input
+              value={value}
+              placeholder={label}
+              aria-label={label}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
+              maxLength={maxLength}
+              dir="auto"
+              onChange={(e) => {
+                onChange(e.target.value);
+              }}
+            />
+          }
+          grow
+          className={s.field()}
+        />
+        {remove && <IconButton icon="close" label={remove.label} onPress={remove.onPress} />}
+      </Row>
+      {error && <FieldError id={errorId}>{error}</FieldError>}
+    </>
   );
 }
 

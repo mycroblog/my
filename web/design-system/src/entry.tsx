@@ -500,12 +500,24 @@ export function ActionRow({
 
 const embed = tv({
   base: "rounded-control bg-surface-raised p-embed",
+  variants: { clear: { true: "[&>:first-child]:pe-composer-remove-room" } },
 });
 
-/** Something embedded in an entry, on the raised surface: a quoted post, which never outweighs the post that carries it. */
-export function Embed({ lang, children }: { lang?: string | undefined; children: ReactNode }) {
+/**
+ * Something embedded in an entry, on the raised surface: a quoted post, which never outweighs the post that carries
+ * it. `clear` keeps the end of its first line clear of a button pinned over its top end (its remove).
+ */
+export function Embed({
+  lang,
+  clear = false,
+  children,
+}: {
+  lang?: string | undefined;
+  clear?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <Rows gap="embed-gap" className={embed()} lang={lang}>
+    <Rows gap="embed-gap" className={embed({ clear })} lang={lang}>
       {children}
     </Rows>
   );

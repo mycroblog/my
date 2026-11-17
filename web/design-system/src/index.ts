@@ -220,8 +220,8 @@ export {
   type MenuPlacement,
   type MenuSurfaceProps,
 } from "./menu";
-export { ChoiceList, ChoiceMark, ShareBar, type ChoiceItem } from "./choice";
-export { Box, Row, Spoken, Stack } from "./layout";
+export { ChoiceField, ChoiceList, ChoiceMark, ShareBar, type ChoiceItem } from "./choice";
+export { Box, Pin, Row, Spoken, Stack } from "./layout";
 export {
   Badge,
   FieldList,
