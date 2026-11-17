@@ -41,6 +41,8 @@ export default defineConfig({
   projects: [
     { name: "layout", testDir: "specs/layout", use: chrome },
     { name: "browser", testDir: "specs/browser", use: chrome },
-    { name: "stories", testDir: "specs/stories", use: chrome },
+    // No trace: it would take pictures of every story to keep those of the few that fail, and a failure names the
+    // story and what it found.
+    { name: "stories", testDir: "specs/stories", use: { ...chrome, trace: "off" } },
   ],
 });
