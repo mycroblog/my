@@ -72,3 +72,32 @@ test("a written text at the minimum width: long words wrap, links stay whole, qu
   await expectNoSidewaysScroll(page);
   await expectMirrored(page, ltr, parts);
 });
+
+test("a paragraph reads in the direction of its own text, whichever way the page reads", async ({ page, open }) => {
+  const story = "app-components-post-content--right-to-left-among-left-to-right";
+  const arabic = page.getByRole("paragraph").filter({ hasText: /^مرحبا بالجميع! .+$/ });
+  const hebrew = page.getByRole("paragraph").filter({ hasText: /^שלום לכולם, .+$/ });
+  const english = page.getByText("And an English line after them, ending with its own punctuation!", { exact: true });
+  for (const locale of ["en", "ar-XB"] as const) {
+    await open(story, { locale });
+    await expect(arabic).toHaveAttribute("dir", "auto");
+    await expect(arabic).toHaveCSS("direction", "rtl");
+    await expect(hebrew).toHaveCSS("direction", "rtl");
+    await expect(english).toHaveCSS("direction", "ltr");
+    // Each starts at its own side of the column: the Arabic line ends where the English one starts.
+    await expect
+      .poll(async () => {
+        const start = (text: typeof arabic) =>
+          text.evaluate((paragraph) => {
+            const range = document.createRange();
+            range.selectNodeContents(paragraph);
+            const [first] = range.getClientRects();
+            const box = paragraph.getBoundingClientRect();
+            return first === undefined ? "none" : first.left - box.left < box.right - first.right ? "left" : "right";
+          });
+        return [await start(arabic), await start(english)];
+      })
+      .toEqual(["right", "left"]);
+    await expectNoSidewaysScroll(page);
+  }
+});
