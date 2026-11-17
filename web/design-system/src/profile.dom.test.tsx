@@ -5,11 +5,11 @@
 // hashtags it features. That the head lays out in the reader's direction is a layout test's.
 
 import { expect, test } from "bun:test";
-import { Button, I18nProvider } from "@my/design-system";
+import { Badge, Button, I18nProvider } from "@my/design-system";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { Badge, FieldList, MetaCount, MetaLine, NoteEditor, NoteLine, ProfileHead, TagList } from "./profile";
+import { FieldList, MetaCount, MetaLine, NoteEditor, NoteLine, ProfileHead, TagList } from "./profile";
 
 test("a profile's head is a region named by the account's name, its heading; the avatar's row comes before the names", () => {
   render(

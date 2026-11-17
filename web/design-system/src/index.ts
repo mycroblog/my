@@ -18,7 +18,9 @@ export {
   type LinkButtonProps,
   type TextButtonProps,
 } from "./button";
-export { Chip, ChipRow, type ChipProps } from "./chip";
+export { Badge, Chip, ChipLink, ChipRow, type ChipProps } from "./chip";
+export { BannerHead } from "./banner-head";
+export { QuietLink } from "./quiet-link";
 export {
   AttachButton,
   AttachmentList,
@@ -89,6 +91,7 @@ export {
 export { Feed, FeedItem, FeedNotice, moveFeedFocus, type FeedProps, type NewItems } from "./feed";
 export { Faces, type FacesProps } from "./faces";
 export {
+  BareTextArea,
   CheckField,
   DateTimeField,
   FieldError,
@@ -196,7 +199,6 @@ export {
 export { ChoiceField, ChoiceList, ChoiceMark, ShareBar, type ChoiceItem } from "./choice";
 export { Box, Pin, Row, Spoken, Stack } from "./layout";
 export {
-  Badge,
   FieldList,
   MetaCount,
   MetaLine,
