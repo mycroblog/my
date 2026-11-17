@@ -3265,9 +3265,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return { status: 200, body: requestBody(r) };
   }
 
-  /** The operations a visitor without a session may call; every other answers 401. */
+  /**
+   * The operations a visitor without a session may call, as the specification opens them (`security: {}`); every other
+   * answers 401: the reader's own account, their relationships, the searches and the suggestions among them, whose
+   * paths read like an account's, a status's or a hashtag's.
+   */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/[^/]+(?:\/statuses|\/featured_tags)?|statuses\/[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/[^/]+)$/;
+    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

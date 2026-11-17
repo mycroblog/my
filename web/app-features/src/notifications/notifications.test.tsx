@@ -44,7 +44,11 @@ function server(options = answers()) {
       ...page,
       items: [
         ...page.items,
-        { id: "00000000-0000-7000-8000-000000000002", type: "moderation_notice", created_at: "2026-11-13T01:00:00Z" },
+        {
+          id: "00000000-0000-7000-8000-000000000002",
+          type: "moderation_notice" as const,
+          created_at: "2026-11-13T01:00:00Z",
+        },
         {
           id: "00000000-0000-7000-8000-000000000001",
           // No kind of the specification: one a server newer than this client sends.

@@ -193,7 +193,7 @@ tasks:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
   test:
-    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools, each kind on its DOM
+    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools, each kind on its DOM, and of the fake API of web/e2e
     deps: [install, ":i18n:compile", routes]
     cmds:
       - task: test-packages
@@ -211,6 +211,7 @@ tasks:
       - { task: test-package, vars: { PACKAGE: app-features, FLAGS: --conditions=@mycroblog/source } }
       - { task: test-package, vars: { PACKAGE: app, FLAGS: --conditions=@mycroblog/source } }
       - { task: test-package, vars: { PACKAGE: devtools } }
+      - task: test-fake
 
   # The three kinds of test file of a package (ADR-0171 §4), each in a process of its own: `*.test.ts(x)` with no DOM,
   # `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on jsdom. A preload of
@@ -222,6 +223,14 @@ tasks:
       - bun test {{.FLAGS}} --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx'
       - bun test {{.FLAGS}} --preload ../devtools/src/happy-dom.ts --pass-with-no-tests .dom.test.
       - bun test {{.FLAGS}} --preload ../devtools/src/jsdom.ts --pass-with-no-tests .jsdom.test.
+
+  # The unit tests of the fake API (ADR-0171 §5), under web/e2e/src alone: the Playwright specs beside it (specs/) are
+  # the E2E tests, which web:e2e runs against a server.
+  test-fake:
+    internal: true
+    dir: web/e2e
+    cmds:
+      - bun test --conditions=@mycroblog/source ./src
 
   # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
   # generator reads no node_modules.
