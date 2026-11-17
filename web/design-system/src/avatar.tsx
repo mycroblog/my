@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { tv } from "tailwind-variants/lite";
+import { Box, Row } from "./layout";
 
 /**
  * Where an avatar sits, which gives its size: inline beside a name, at the start of a list's row on one line (a
@@ -27,12 +28,12 @@ export type AvatarProps = {
 
 const avatar = tv({
   slots: {
-    base: "relative inline-flex shrink-0 overflow-hidden rounded-full bg-surface-raised align-middle",
+    base: "rounded-full bg-surface-raised",
     // An image sits on the light avatar-backing in both schemes, so that a dark logo on transparency stays seen.
-    image: "block size-full object-cover bg-avatar-backing",
+    image: "object-cover bg-avatar-backing",
     // The initial's own surface, over the backing: the place for a color of the account's own, which would tell two
     // accounts with the same initial apart.
-    fallback: "absolute inset-0 flex items-center justify-center bg-surface-raised leading-none font-label text-text",
+    fallback: "bg-surface-raised leading-none font-label text-text",
     // A decorative avatar's initial is drawn, not written: inside a link named by its own words (a row of faces), a
     // written initial would be visible text missing from that name.
     drawn: "before:content-[attr(data-initial)]",
@@ -67,21 +68,43 @@ export function Avatar({ name, src, size, decorative = false }: AvatarProps) {
   const s = avatar({ size });
   const shown = src !== undefined && src !== "" && src !== failed;
   return (
-    <span className={s.base()} {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": name })}>
+    <Row
+      as="span"
+      inline
+      rigid
+      clip
+      baseline="middle"
+      className={s.base()}
+      {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": name })}
+    >
       {shown ? (
-        <img
+        <Box
+          full="both"
           className={s.image()}
-          src={src}
-          alt=""
-          onError={() => {
-            setFailed(src);
-          }}
+          as={
+            <img
+              src={src}
+              alt=""
+              onError={() => {
+                setFailed(src);
+              }}
+            />
+          }
         />
       ) : decorative ? (
-        <span className={`${s.fallback()} ${s.drawn()}`} data-initial={initialOf(name)} />
+        <Row
+          as="span"
+          full="both"
+          align="center"
+          justify="center"
+          className={`${s.fallback()} ${s.drawn()}`}
+          data-initial={initialOf(name)}
+        />
       ) : (
-        <span className={s.fallback()}>{initialOf(name)}</span>
+        <Row as="span" full="both" align="center" justify="center" className={s.fallback()}>
+          {initialOf(name)}
+        </Row>
       )}
-    </span>
+    </Row>
   );
 }

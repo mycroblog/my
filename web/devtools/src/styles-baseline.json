@@ -1,7 +1,6 @@
 {
   "layout-parts": {
     "web/design-system/fixtures/baseline.tsx": {"kept.base": 2, "grown.base": 1, "shrunk.base": 2, "gone.base": 1},
-    "web/design-system/src/avatar.tsx": {"avatar.base": 5, "avatar.fallback": 5, "avatar.image": 2},
     "web/design-system/src/disclosure.tsx": {"disclosure.glyph": 2, "disclosure.root": 3, "disclosure.summary": 3, "disclosure.text": 3},
     "web/design-system/src/drafts.tsx": {"form.caption": 4, "form.field": 2, "form.hint": 1, "form.input": 2, "form.root": 6, "form.row": 6, "row.foot": 5, "row.lead": 3, "row.leadGlyph": 4, "row.mark": 3, "row.more": 1, "row.open": 5, "row.root": 3, "row.text": 1, "row.warning": 3, "sections.empty": 1, "sections.head": 2, "sections.section": 2, "sections.title": 1},
     "web/design-system/src/history.tsx": {"history.head": 6, "history.image": 1, "history.media": 4, "history.replaced": 1, "history.text": 1, "history.tile": 1, "history.tileAdded": 1, "history.tileRemoved": 2, "history.version": 3},
