@@ -315,11 +315,11 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 	})
 	r.Register(appgraph.EventFollowMigrated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.FollowMigrated)
-		return p.notifyWith(ctx, tx, notification.Notification{
+		return p.notify(ctx, tx, notification.Notification{
 			RecipientAccountID: ev.AccountID, SourceAccountID: ev.SourceAccountID, Type: notification.TypeAccountMoved,
 			AccountMoveID: ev.MoveID, AccountMoveOutcome: notification.MoveOutcome(ev.Outcome),
 			DedupeKey: notification.AccountMovedKey(ev.MoveID), CreatedAt: ev.At,
-		}, movedTo(ev.TargetAccountID))
+		})
 	})
 	r.Register(appgraph.EventFollowsMigrated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		// As the projector of FollowMigrated notifies each follower, with one notifyAll per
@@ -342,7 +342,7 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 				AccountMoveID: first.MoveID, AccountMoveOutcome: notification.MoveOutcome(o),
 				DedupeKey: notification.AccountMovedKey(first.MoveID), CreatedAt: first.At,
 			}
-			if err := p.notifyAllWith(ctx, tx, n, byOutcome[o], movedTo(first.TargetAccountID)); err != nil {
+			if err := p.notifyAll(ctx, tx, n, byOutcome[o]); err != nil {
 				return err
 			}
 		}
@@ -1061,10 +1061,4 @@ func (p *projector) reaches(ctx context.Context, tx uow.Tx, recipientID, sourceI
 		return err == nil, err
 	}
 	return p.d.Relationships.Follows(ctx, tx, recipientID, sourceID)
-}
-
-// movedTo completes the Web Push message and the email of an account_moved with the account that
-// the moved account moved to, which they lead to.
-func movedTo(targetAccountID string) func(*pushJob) {
-	return func(job *pushJob) { job.MoveTargetAccountID = targetAccountID }
 }

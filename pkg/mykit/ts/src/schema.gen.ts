@@ -2643,6 +2643,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a notification
+         * @description One of the user's notifications, as the list shows it. A notification that is not the
+         *     user's, is dismissed, or that the list leaves out is a 404.
+         */
+        get: operations["getNotification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/{id}/dismiss": {
         parameters: {
             query?: never;
@@ -23354,6 +23375,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationMarker"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the notification. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notification. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
                 };
             };
             default: components["responses"]["Problem"];

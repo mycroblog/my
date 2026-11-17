@@ -121,6 +121,30 @@ func (s *Service) Listed(ctx context.Context, accountID, id string) (bool, error
 	return s.d.Repository.NotificationListed(ctx, accountID, id, hidden, s.d.Clock.Now())
 }
 
+// Get returns accountID's notification id when List would return it now, as Listed tells;
+// withoutModerator leaves out the moderator notifications as Query.WithoutModerator does. A
+// notification that is not accountID's, is dismissed, or that List leaves out fails with
+// ErrNotFound.
+func (s *Service) Get(ctx context.Context, accountID, id string, withoutModerator bool) (notification.Notification, error) {
+	hidden, err := s.hidden(ctx, accountID, withoutModerator)
+	if err != nil {
+		return notification.Notification{}, err
+	}
+	listed, err := s.d.Repository.NotificationListed(ctx, accountID, id, hidden, s.d.Clock.Now())
+	if err != nil {
+		return notification.Notification{}, err
+	}
+	if !listed {
+		return notification.Notification{}, fmt.Errorf("notification %s of %s: %w", id, accountID, ErrNotFound)
+	}
+	var n notification.Notification
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		n, err = s.own(ctx, tx, accountID, id)
+		return err
+	})
+	return n, err
+}
+
 // ReadMarker returns accountID's read marker; an account that has read nothing has a marker
 // with an empty LastReadID.
 func (s *Service) ReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error) {

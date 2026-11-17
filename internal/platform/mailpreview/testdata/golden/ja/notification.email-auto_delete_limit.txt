@@ -3,7 +3,7 @@ Example Social: 公開から90 日を過ぎた投稿が30 日後から自動で�
 それまでは、あなたの設定がそのまま使われます。どの投稿が削除されるかは自動削除の設定で確認でき、サーバーの上限までの範囲で設定を変えられます。削除した投稿は元に戻せません。
 
 開く
-https://social.example/notifications
+https://social.example/notifications/01JSAMPLE0NOTIFICATION00000
 
 -- 
 Example Social

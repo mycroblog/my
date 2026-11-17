@@ -7,7 +7,7 @@ Example Social に、まだ読んでいない通知があります。
 共同主催: Carol
 
 開く
-https://social.example/notifications
+https://social.example/notifications/01JSAMPLE0NOTIFICATION00000
 
 -- 
 Example Social

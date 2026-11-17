@@ -214,6 +214,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/notifications/requests/summary":                                    {Operation: "getNotificationRequestSummary", Scopes: []string{"read:notifications"}},
 	"GET /api/v1/notifications/requests/{id}":                                       {Operation: "getNotificationRequest", Scopes: []string{"read:notifications"}},
 	"GET /api/v1/notifications/requests/{id}/notifications":                         {Operation: "listNotificationRequestNotifications", Scopes: []string{"read:notifications"}},
+	"GET /api/v1/notifications/{id}":                                                {Operation: "getNotification", Scopes: []string{"read:notifications"}},
 	"GET /api/v1/oauth_apps":                                                        {Operation: "listOAuthApps", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
 	"GET /api/v1/oauth_apps/{id}":                                                   {Operation: "getOAuthApp", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
 	"GET /api/v1/passkeys":                                                          {Operation: "listPasskeys", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},

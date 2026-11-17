@@ -27310,6 +27310,14 @@ type ClientInterface interface {
 	// Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
 	ListNotificationRequestNotifications(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetNotification Get a notification
+	//
+	// One of the user's notifications, as the list shows it. A notification that is not the
+	// user's, is dismissed, or that the list leaves out is a 404.
+	//
+	// Corresponds with GET /notifications/{id} (the `GetNotification` operationId).
+	GetNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DismissNotification Dismiss a notification
 	//
 	// Removes the notification from the list and the unread count. Dismissing it again
@@ -39304,6 +39312,24 @@ func (c *Client) DismissNotificationRequest(ctx context.Context, id AccountId, r
 // Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
 func (c *Client) ListNotificationRequestNotifications(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListNotificationRequestNotificationsRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetNotification Get a notification
+//
+// One of the user's notifications, as the list shows it. A notification that is not the
+// user's, is dismissed, or that the list leaves out is a 404.
+//
+// Corresponds with GET /notifications/{id} (the `GetNotification` operationId).
+func (c *Client) GetNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNotificationRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -58240,6 +58266,40 @@ func NewListNotificationRequestNotificationsRequest(server string, id AccountId,
 	return req, nil
 }
 
+// NewGetNotificationRequest constructs an http.Request for the GetNotification method
+func NewGetNotificationRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDismissNotificationRequest constructs an http.Request for the DismissNotification method
 func NewDismissNotificationRequest(server string, id Id) (*http.Request, error) {
 	var err error
@@ -69233,6 +69293,16 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
 	ListNotificationRequestNotificationsWithResponse(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*ListNotificationRequestNotificationsResponse, error)
+
+	// GetNotificationWithResponse Get a notification
+	//
+	// One of the user's notifications, as the list shows it. A notification that is not the
+	// user's, is dismissed, or that the list leaves out is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /notifications/{id} (the `GetNotification` operationId).
+	GetNotificationWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetNotificationResponse, error)
 
 	// DismissNotificationWithResponse Dismiss a notification
 	//
@@ -93943,6 +94013,71 @@ func (r ListNotificationRequestNotificationsResponse) ContentType() string {
 	return ""
 }
 
+// GetNotificationResponse200Headers the declared response headers of an HTTP 200 response for GetNotification
+type GetNotificationResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetNotificationResponseDefaultHeaders the declared response headers of an HTTP default response for GetNotification
+type GetNotificationResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetNotificationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Notification
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetNotificationResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetNotificationResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetNotificationResponse) GetJSON200() *Notification {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetNotificationResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetNotificationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNotificationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNotificationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetNotificationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // DismissNotificationResponseDefaultHeaders the declared response headers of an HTTP default response for DismissNotification
 type DismissNotificationResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -110175,6 +110310,22 @@ func (c *ClientWithResponses) ListNotificationRequestNotificationsWithResponse(c
 		return nil, err
 	}
 	return ParseListNotificationRequestNotificationsResponse(rsp)
+}
+
+// GetNotificationWithResponse Get a notification
+//
+// One of the user's notifications, as the list shows it. A notification that is not the
+// user's, is dismissed, or that the list leaves out is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /notifications/{id} (the `GetNotification` operationId).
+func (c *ClientWithResponses) GetNotificationWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetNotificationResponse, error) {
+	rsp, err := c.GetNotification(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNotificationResponse(rsp)
 }
 
 // DismissNotificationWithResponse Dismiss a notification
@@ -140308,6 +140459,83 @@ func ParseListNotificationRequestNotificationsResponse(rsp *http.Response) (*Lis
 		response.Headers200 = &headers
 	case true:
 		var headers ListNotificationRequestNotificationsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetNotificationResponse parses an HTTP response from a GetNotificationWithResponse call
+func ParseGetNotificationResponse(rsp *http.Response) (*GetNotificationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNotificationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Notification
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetNotificationResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetNotificationResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
