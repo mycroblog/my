@@ -150,9 +150,12 @@ export type ArticleViewProps = {
   onDrafts?: (() => void) | undefined;
   /** Opens the newer draft saved elsewhere, in place of this one (a conflict). */
   onNewer?: (() => void) | undefined;
-  /** What it opens with: what is written, or the preview (under `desktop`), and the schedule's form open. */
+  /**
+   * What it opens with: what is written, or the preview (under `desktop`), and the schedule's form or a panel of the
+   * audience menu open.
+   */
   mode?: "write" | "preview" | undefined;
-  opened?: "schedule" | undefined;
+  opened?: "schedule" | AudiencePanel | undefined;
 };
 
 /** The article editor's screen, for the state of `e` (use-article.ts). */
@@ -553,7 +556,7 @@ export type ArticleSpecimen = {
   readonly initial?: ArticleDraft | undefined;
   readonly phase?: Phase | undefined;
   readonly mode?: "write" | "preview" | undefined;
-  readonly opened?: "schedule" | "drafts" | undefined;
+  readonly opened?: "schedule" | "drafts" | AudiencePanel | undefined;
 };
 
 export type ArticleEditorProps = {
@@ -649,7 +652,7 @@ function Open({
       <ArticleView
         e={e}
         mode={specimen.mode}
-        opened={specimen.opened === "schedule" ? "schedule" : undefined}
+        opened={specimen.opened === "drafts" ? undefined : specimen.opened}
         onClose={() => {
           void e.keepQuietly().then(() => {
             onLeave({ kind: "closed" });

@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The states of the article editor that follow what the writer writes or presses (#3091), on the fake server as yuki
-// writes: a draft whose title, or whose body, is over its limit, which the server is seeded with; and those the screen
-// has no prop for, which a play presses: the preview behind Write | Preview (under `desktop`, where one of them shows),
-// the schedule's form, and the audience menu (the composer's: who can see it, never direct, and who can reply, boost
-// and quote it, with approval) opened from the row.
+// writes: a draft whose title, or whose body, is over its limit, which the server is seeded with; and those no address
+// leads to, which the editor is opened in (its specimen), the editor alone on a fake server of its own: the preview
+// behind Write | Preview (under `desktop`, where one of them shows), the schedule's form, the audience menu (the
+// composer's: who can see it, never direct, and who can reply, boost and quote it, with approval) and its submenus,
+// and what the server refused of a publication or of an edit.
 
-import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
-import { scenario, type FakeSeed } from "@my/e2e/fake";
-import { userEvent, waitFor, within } from "storybook/test";
+import { AppDataProvider, createAppData, defaultComposeSettings } from "@my/app-data";
+import { ArticleEditor, emptyArticle, type ArticleOpening, type ArticleSpecimen } from "@my/app-features";
+import { MenuSheet } from "@my/design-system";
+import { createFakeApi, fakeOrigin, scenario, type FakeApi, type FakeSeed } from "@my/e2e/fake";
+import { createClient } from "@mycroblog/mykit";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 import { screen, screenMeta } from "./app.samples";
+import { useNarrowViewport } from "./shell/viewport";
 
 const meta = {
   title: "Article editor states",
@@ -45,115 +51,90 @@ export const BodyOver: Story = {
   parameters: draftOf("yuki-article-body-over", "A starter in a jar", "flour ".repeat(17_000)),
 };
 
-/** The editor in the canvas, once the screen shows its state. */
-async function editor(context: StoryContext) {
-  await screenMeta.play(context);
-  return within(context.canvasElement);
-}
+/** What a specimen of the editor opens: a new article, or the reader's draft or article of a key of the scenario. */
+type Opens = { kind: "new" } | { kind: "draft" | "edit"; key: string };
 
 /**
- * The tool of the row at `place` from its end, in any locale: the row ends with the audience (5), the sensitive mark,
- * the schedule (3), the language and Publish.
+ * The editor alone, opened in `specimen`, on a fake server of its own as `viewer` reads it (yuki by default). Its menus
+ * and the schedule's form open in a sheet on a phone's viewport, as the app decides, else in a popover.
  */
-async function tool(context: StoryContext, place: 3 | 5): Promise<HTMLElement> {
-  const found = (await (await editor(context)).findAllByRole("button")).at(-place);
-  if (found === undefined) throw new Error("the row has no such tool");
-  return found;
-}
-
-/** Waits until what a tool opened (a menu, or the schedule's form) has risen into place: a sheet on a phone. */
-async function risen(context: StoryContext, selector: string) {
-  await waitFor(
-    () => {
-      const opened = context.canvasElement.ownerDocument.querySelector(selector);
-      if (opened === null) throw new Error(`${selector} is not open yet`);
-      for (let el: Element | null = opened; el !== null; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error(`${selector} is still rising`);
-      }
-    },
-    { timeout: 5000 },
+function Specimen({ opens, viewer, specimen }: { opens: Opens; viewer?: string; specimen: ArticleSpecimen }) {
+  const narrow = useNarrowViewport();
+  const [{ data, opening }] = useState(() => {
+    const fake: FakeApi = createFakeApi(viewer === undefined ? {} : { viewer });
+    const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: fake.serve }));
+    const opening: ArticleOpening = opens.kind === "new" ? opens : { kind: opens.kind, id: fake.idOf(opens.key) };
+    return { data, opening };
+  });
+  return (
+    <AppDataProvider data={data}>
+      <MenuSheet sheet={narrow}>
+        <ArticleEditor opening={opening} onLeave={() => undefined} onOpenDraft={() => undefined} specimen={specimen} />
+      </MenuSheet>
+    </AppDataProvider>
   );
 }
 
+/** A story of the editor opened in `specimen`. */
+const opened = (specimen: ArticleSpecimen, opens: Opens = { kind: "new" }, viewer?: string): Story => ({
+  render: (_, { id }) => (
+    <Specimen key={id} opens={opens} specimen={specimen} {...(viewer === undefined ? {} : { viewer })} />
+  ),
+});
+
+const draft: Opens = { kind: "draft", key: "yuki-article-trail" };
+const published: Opens = { kind: "edit", key: "sam-article" };
+
 /**
  * A draft previewed from Write | Preview, which shows under `desktop` alone: from it, the preview stands beside what
- * is written, and the play presses nothing.
+ * is written either way.
  */
-export const Preview: Story = {
-  parameters: screen({ at: "article-draft:yuki-article-trail" }),
-  play: async (context) => {
-    const canvas = await editor(context);
-    // Preview is the second of the switch's two, in any locale.
-    const preview = canvas.queryAllByRole("radio")[1];
-    if (preview === undefined) return;
-    await userEvent.click(preview);
-    await waitFor(() => {
-      if (preview.getAttribute("aria-checked") !== "true") throw new Error("the preview is not chosen yet");
-    });
-  },
-};
+export const Preview: Story = opened({ mode: "preview" }, draft);
 
 /**
- * The schedule's form opened from the row's tool: a sheet headed by its name and close on a phone, from `tablet` a
+ * The schedule's form open from the row's tool: a sheet headed by its name and close on a phone, from `tablet` a
  * popover over the tool.
  */
-export const ScheduleForm: Story = {
-  play: async (context) => {
-    await userEvent.click(await tool(context, 3));
-    await risen(context, "[data-popup]");
-  },
-};
+export const ScheduleForm: Story = opened({ opened: "schedule" });
 
-/** Opens the audience menu from the row's tool, and returns the queries of the page once it has risen. */
-async function audienceMenu(context: StoryContext) {
-  await userEvent.click(await tool(context, 5));
-  await risen(context, '[role="menu"]');
-  return within(context.canvasElement.ownerDocument.body);
-}
-
-/**
- * The composer's audience menu, opened from the row's tool: who can see the article, and who can reply, boost and
- * quote it.
- */
-export const AudienceMenu: Story = {
-  play: async (context) => {
-    await audienceMenu(context);
-  },
-};
+/** The composer's audience menu, open from the row's tool: who can see the article, and who can reply, boost and quote it. */
+export const AudienceMenu: Story = opened({ opened: "audience" });
 
 /** The audience menu's visibilities: the article's four, from the widest, and no Direct. */
-export const AudienceVisibilities: Story = {
-  play: async (context) => {
-    const page = await audienceMenu(context);
-    // Who can see it is the first of the menu's two.
-    const [visibility] = page.getAllByRole("menuitem");
-    if (visibility === undefined) throw new Error("the menu offers nothing");
-    await userEvent.click(visibility);
-    await page.findAllByRole("menuitemradio");
-  },
-};
+export const AudienceVisibilities: Story = opened({ opened: "visibility" });
 
 /** Who can reply, set to followers: the audiences, and under them whether others may ask for approval. */
-export const AudienceReply: Story = {
-  play: async (context) => {
-    const page = await audienceMenu(context);
-    // Who can reply, boost and quote is the second of the menu's two; who can reply, the first of its three.
-    const permissions = page.getAllByRole("menuitem")[1];
-    if (permissions === undefined) throw new Error("the menu has no permissions");
-    await userEvent.click(permissions);
-    const [reply] = await waitFor(() => {
-      const items = page.getAllByRole("menuitem");
-      if (items.length !== 3) throw new Error("the permissions are not open yet");
-      return items;
-    });
-    if (reply === undefined) throw new Error("the permissions offer nothing");
-    await userEvent.click(reply);
-    // Followers is the second audience, after anyone.
-    const followers = (await page.findAllByRole("menuitemradio"))[1];
-    if (followers === undefined) throw new Error("the audiences have no second one");
-    await userEvent.click(followers);
-    await page.findByRole("menuitemcheckbox");
+export const AudienceReply: Story = opened({
+  opened: "reply",
+  initial: {
+    ...emptyArticle(defaultComposeSettings, "article-editor-states"),
+    policy: { ...defaultComposeSettings.policy, reply: { audience: "followers", approval: false } },
   },
-};
+});
+
+/** A publication the server's review refused: its words before Publish, what is written kept. */
+export const PublishingError: Story = opened(
+  {
+    phase: {
+      kind: "failed",
+      reason: "This server's review did not accept the article. Change it and try again.",
+    },
+  },
+  draft,
+);
+
+/**
+ * An edit the server refused for the value of the summary, which it named: what is wrong stands under the summary, the
+ * problem's title alone before Save.
+ */
+export const SummaryRefused: Story = opened(
+  {
+    phase: {
+      kind: "failed",
+      reason: "This could not be done.",
+      field: { input: "summary", text: "This value is not valid. Check what you entered." },
+    },
+  },
+  published,
+  "sam",
+);
