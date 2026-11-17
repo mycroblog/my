@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The grid of an entry's pictures (media.tsx): one alone, two side by side, three with the first as tall as the two
-// after it, four in two rows, in a box 16:9 of its width.
+// after it, four in two rows, in a box 16:9 of its width; and what covers a sensitive picture, its blurhash, drawn in
+// the picture's place.
 
 import { expectNoComputedViolations } from "../axe";
 import { boxesAtRest, expectMirrored, expectNoSidewaysScroll, type Box } from "../boxes";
@@ -68,3 +69,56 @@ for (const count of [1, 2, 3, 4] as const)
       await expectMirrored(page, ltr, shown);
     }
   });
+
+/** The value of a string of blurhash's base 83. */
+function base83(text: string): number {
+  const digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~";
+  return text.split("").reduce((value, digit) => value * 83 + digits.indexOf(digit), 0);
+}
+
+test("a sensitive picture is covered by its blurhash, drawn in the picture's box until it is shown", async ({
+  page,
+  open,
+}) => {
+  await open(story, { args: { count: 1, sensitive: true } });
+  const show = page.getByRole("button", { name: "Show", exact: true });
+  const picture = page.getByRole("img", { name: "Low hills at dawn under a peach sky", exact: true });
+  await expect(show).toBeVisible();
+  await expect(picture).toHaveCount(0);
+  /**
+   * The cover, a picture hidden from screen readers that only its pixels tell: its box, and the mean of its colours.
+   */
+  const cover = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector("canvas");
+      const pixels = canvas?.getContext("2d")?.getImageData(0, 0, canvas.width, canvas.height).data;
+      if (canvas === null || pixels === undefined) return undefined;
+      const sum = [0, 0, 0];
+      for (let i = 0; i < pixels.length; i += 4)
+        for (let c = 0; c < 3; c += 1) sum[c] = (sum[c] ?? 0) + (pixels[i + c] ?? 0);
+      const { width, height } = canvas.getBoundingClientRect();
+      return { width, height, mean: sum.map((s) => Math.round(s / (pixels.length / 4))) };
+    });
+  // The story's picture of dawn has the blurhash IuPrad~U8_, whose third to sixth characters hold its mean colour.
+  const mean = base83("Prad");
+  const [red, green, blue] = [mean >> 16, (mean >> 8) & 255, mean & 255];
+  await expect
+    .poll(async () => {
+      const drawn = (await cover())?.mean ?? [];
+      return drawn.length === 3
+        ? Math.max(...[red, green, blue].map((v, i) => Math.abs(v - (drawn[i] ?? 0))))
+        : undefined;
+    })
+    .toBeLessThanOrEqual(16);
+  // The cover has the box the picture will have: 16:9 of the column's width.
+  await expect
+    .poll(async () => {
+      const box = await cover();
+      return box === undefined ? undefined : Math.abs(box.width * (9 / 16) - box.height);
+    })
+    .toBeLessThan(1.5);
+  const covered = await cover();
+  await show.click();
+  await expect(picture).toBeVisible();
+  await expect.poll(async () => (await boxesAtRest({ picture })).picture.width).toBe(covered?.width);
+});
