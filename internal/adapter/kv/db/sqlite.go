@@ -32,7 +32,7 @@ var _ store = sqliteStore{}
 // transaction, when tx is nil.
 func (s sqliteStore) queries(tx uow.Tx) (*sqlitekv.Queries, error) {
 	if tx == nil {
-		return sqlitekv.New(s.db.SQLDB()), nil // untraced, as the store's queries in a transaction are
+		return sqlitekv.New(s.db.SQLDB()), nil // the store's queries are not traced (none of them, in a transaction or out)
 	}
 	sqlTx, err := s.db.SQLTx(tx)
 	if err != nil {
