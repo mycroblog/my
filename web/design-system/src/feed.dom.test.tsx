@@ -6,17 +6,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { Button, TextButton } from "./button";
 import { Entry } from "./entry";
-import {
-  Feed,
-  FeedItem,
-  FeedNotice,
-  moveFeedFocus,
-  onFeedFocus,
-  onFeedKeyDown,
-  useFeedPosition,
-  type FeedPosition,
-  type FeedProps,
-} from "./feed";
+import { Feed, FeedItem, FeedNotice, moveFeedFocus, useFeedPosition, type FeedPosition, type FeedProps } from "./feed";
 
 /** What an entry was asked to scroll with, by the entry's position in its feed. */
 type Scroll = { entry: string | null; options: ScrollIntoViewOptions | boolean | undefined };
@@ -492,67 +482,5 @@ describe("bringing an entry to the top", () => {
     await user.keyboard("{PageDown>2/}");
 
     expect(asked(3)).toEqual({ block: "start", inline: "nearest", behavior: "instant" });
-  });
-});
-
-describe("the feed's handlers, called as a feed calls them", () => {
-  /** A key that goes down on `target`, and whether the handler took it. */
-  function press(target: Element, key: string, modifiers: { ctrlKey?: boolean; shiftKey?: boolean } = {}) {
-    let taken = false;
-    act(() => {
-      onFeedKeyDown({
-        key,
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        shiftKey: false,
-        ...modifiers,
-        target,
-        defaultPrevented: false,
-        preventDefault: () => {
-          taken = true;
-        },
-      });
-    });
-    return taken;
-  }
-
-  test("onFeedKeyDown moves from the key's target and takes the key, or leaves it where it moves nothing", async () => {
-    timeline({ count: 2 });
-
-    expect(press(screen.getByRole("button", { name: "Reply to post 1" }), "PageDown")).toBe(true);
-    expect(document.activeElement).toBe(entry(2));
-    await frame();
-    expect(press(entry(2), "PageDown")).toBe(false);
-    expect(press(entry(2), "PageUp", { ctrlKey: true })).toBe(false);
-    expect(press(entry(2), "PageUp", { shiftKey: true })).toBe(false);
-    expect(press(entry(2), "ArrowUp")).toBe(false);
-    expect(press(screen.getByRole("button", { name: "Before" }), "PageDown")).toBe(false);
-    expect(document.activeElement).toBe(entry(2));
-  });
-
-  // Whether the keyboard or a click gave the focus is the browser's to say: here `:focus-visible` is true of whatever
-  // has the focus, so that an entry a click focused stays put is for a test in a browser.
-  test("onFeedFocus asks the entry that has the focus to scroll to the top, and nothing of a part inside an entry", async () => {
-    const user = userEvent.setup();
-    timeline({ count: 2 });
-    const feed = screen.getByRole("feed", { name: "Home" });
-    await user.tab();
-    await user.tab();
-    expect(document.activeElement).toBe(entry(1));
-    scrolls.length = 0;
-
-    onFeedFocus({ target: entry(1), currentTarget: feed });
-    expect(scrolls).toEqual([{ entry: "1", options: { block: "start", inline: "nearest", behavior: "smooth" } }]);
-    onFeedFocus({ target: entry(2), currentTarget: feed });
-    expect(scrolls).toHaveLength(1);
-
-    // Focus on a part inside an entry is the browser's to show.
-    await user.tab();
-    const reply = screen.getByRole("button", { name: "Reply to post 1" });
-    expect(document.activeElement).toBe(reply);
-    scrolls.length = 0;
-    onFeedFocus({ target: reply, currentTarget: feed });
-    expect(scrolls).toEqual([]);
   });
 });

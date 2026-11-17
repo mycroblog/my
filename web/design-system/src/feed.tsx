@@ -99,7 +99,7 @@ export function moveFeedFocus(from: Element | null, step: 1 | -1, { repeat = fal
 const keySteps: Readonly<Record<string, 1 | -1>> = { PageDown: 1, PageUp: -1 };
 
 /** The feed's keys: Page Down and Page Up move between its entries, outside a field and without a modifier. */
-export function onFeedKeyDown(
+function onFeedKeyDown(
   e: Pick<
     KeyboardEvent,
     "key" | "altKey" | "ctrlKey" | "metaKey" | "shiftKey" | "target" | "preventDefault" | "defaultPrevented"
@@ -113,7 +113,7 @@ export function onFeedKeyDown(
 }
 
 /** Scrolls an entry the keyboard focused (Tab, a shortcut) to the top; an entry focused by a click stays put. */
-export function onFeedFocus(e: { target: Element; currentTarget: Element }): void {
+function onFeedFocus(e: { target: Element; currentTarget: Element }): void {
   const { target, currentTarget } = e;
   if (!target.matches(entrySelector) || target.parentElement?.closest('[role="feed"]') !== currentTarget) return;
   if (target.matches(":focus-visible")) scrollEntryToTop(target);
