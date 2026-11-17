@@ -157,18 +157,29 @@ tasks:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
   test:
-    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools
+    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools, each kind on its DOM
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - cd web/design-tokens && bun test
-      - cd web/design-system && bun test
-      - cd web/app-components && bun test
-      - cd web/platform && bun test
+      - for: [design-tokens, design-system, app-components, platform]
+        task: test-package
+        vars: { PACKAGE: "{{.ITEM}}" }
       # The condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
-      - cd web/app-data && bun test --conditions=@mycroblog/source
-      - cd web/app-features && bun test --conditions=@mycroblog/source
-      - cd web/app && bun test --conditions=@mycroblog/source
-      - cd web/devtools && bun test
+      - for: [app-data, app-features, app]
+        task: test-package
+        vars: { PACKAGE: "{{.ITEM}}", FLAGS: --conditions=@mycroblog/source }
+      - task: test-package
+        vars: { PACKAGE: devtools }
+
+  # The three kinds of test file of a package (ADR-0171 §4), each in a process of its own: `*.test.ts(x)` with no DOM,
+  # `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on jsdom. A preload of
+  # web/devtools registers the DOM before a test module loads; a package may have no test of a DOM kind.
+  test-package:
+    internal: true
+    dir: web/{{.PACKAGE}}
+    cmds:
+      - bun test {{.FLAGS}} --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx'
+      - bun test {{.FLAGS}} --preload ../devtools/src/happy-dom.ts --pass-with-no-tests .dom.test.
+      - bun test {{.FLAGS}} --preload ../devtools/src/jsdom.ts --pass-with-no-tests .jsdom.test.
 
   # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
   # generator reads no node_modules.
