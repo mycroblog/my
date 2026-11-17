@@ -17,14 +17,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestTrunk(t *testing.T) {
-	repo.Trunk = "redesign-web"
+	repo.Trunk = "integration"
 	t.Cleanup(func() { repo.Trunk = repo.Default })
 	for _, tc := range []struct {
 		ref   string
 		trunk bool
 	}{
-		{"origin/redesign-web", true},
-		{"redesign-web", true},
+		{"origin/integration", true},
+		{"integration", true},
 		{"origin/main", false},
 		{"main", false},
 	} {
@@ -32,7 +32,7 @@ func TestTrunk(t *testing.T) {
 			t.Errorf("isTrunk(%q) = %v, want %v", tc.ref, got, tc.trunk)
 		}
 	}
-	if r := mergeReason(); !strings.Contains(r, "origin/redesign-web") {
+	if r := mergeReason(); !strings.Contains(r, "origin/integration") {
 		t.Errorf("mergeReason() = %q, want the trunk named", r)
 	}
 }

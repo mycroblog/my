@@ -52,11 +52,11 @@ tasks:
 
   # Like docs:growth, it reads the change against its base, so the pull request's preflight runs it with BASE=HEAD^1.
   waivers:
-    desc: Fail when more than three waivers of the copy lint (tools/i18n/waivers.json) were added since the merge base with BASE (default origin/redesign-web)
+    desc: Fail when more than three waivers of the copy lint (tools/i18n/waivers.json) were added since the merge base with BASE (default origin/main)
     deps: [":web:install"]
     dir: tools/i18n
     vars:
-      BASE: '{{.BASE | default "origin/redesign-web"}}'
+      BASE: '{{.BASE | default "origin/main"}}'
     cmds:
       - bun src/waivers.ts {{shellQuote .BASE}}
 

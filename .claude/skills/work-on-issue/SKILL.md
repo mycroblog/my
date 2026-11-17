@@ -33,8 +33,8 @@ Given an epic or a milestone, you are the orchestrator. Before building:
    UI change, `visual` first in a story (ADR-0169 §9), `copy` for its strings, and a fresh `visual-evaluator`
    given only `web:shot`'s shots, the task and the constraints, before the decider picks. Hand the others their
    `ctx <n> --quiet` file.
-5. Bring the branch up to date with `git merge origin/redesign-web` (the trunk during #2863; `agentkit regen` on a conflict in generated
-   files). `main` comes in by `git merge origin/main` on `sync/main`, `gh pr create --base redesign-web`, `pr land`. `scripts/agentkit.sh check` is the local check; run
+5. Bring the branch up to date with `git merge origin/main` (`agentkit regen` on a conflict in generated
+   files). `scripts/agentkit.sh check` is the local check; run
    `--full` only to reproduce a failure.
 6. `scripts/agentkit.sh pr open`, then `pr land <pr>` in the background. An epic is one pull
    request: `pr open -draft` with its first commit, `pr open` again after each later one, and

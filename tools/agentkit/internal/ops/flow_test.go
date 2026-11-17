@@ -672,23 +672,23 @@ func TestLandMergesCleansUpAndReports(t *testing.T) {
 // for the merge of the trunk into the default branch.
 func TestLandIntoIntegrationBranch(t *testing.T) {
 	main, _, state, log, head := landSetup(t)
-	withTrunk(t, "redesign-web")
+	withTrunk(t, "integration")
 	write(t, filepath.Join(state, "pr"), prJSON("MERGED", "UNKNOWN", head, "", false))
 	write(t, filepath.Join(state, "completed"), "2")
 	write(t, filepath.Join(state, "sibling"), "CLOSED")
 	write(t, filepath.Join(state, "other"), "CLOSED")
 	mergeToMain(t, main, "feat/12-x")
-	git(t, main, "push", "-q", "origin", "main:redesign-web")
+	git(t, main, "push", "-q", "origin", "main:integration")
 	code, out := land(t, main)
 	if code != 0 {
 		t.Fatalf("exit %d:\n%s", code, out)
 	}
-	if want := "#30 Epic: every sub-issue is closed; it closes with the merge of redesign-web into main"; !strings.Contains(out, want) {
+	if want := "#30 Epic: every sub-issue is closed; it closes with the merge of integration into main"; !strings.Contains(out, want) {
 		t.Errorf("output lacks %q:\n%s", want, out)
 	}
 	calls := readLog(t, log)
 	for _, n := range []string{"12", "13"} {
-		if !strings.Contains(calls, "issue close "+n+" -R mycroblog/my --comment Merged into redesign-web by #20.") {
+		if !strings.Contains(calls, "issue close "+n+" -R mycroblog/my --comment Merged into integration by #20.") {
 			t.Errorf("#%s was not closed:\n%s", n, calls)
 		}
 	}

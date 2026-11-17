@@ -4,7 +4,7 @@
 // MIN_REASON or boilerplate, and one that waives nothing; run as a script (`scripts/task.sh i18n:waivers`), this
 // refuses more than CAP waivers added since the merge base with a ref, the waivers of one change.
 //
-//   bun src/waivers.ts [BASE]    BASE defaults to origin/redesign-web
+//   bun src/waivers.ts [BASE]    BASE defaults to origin/main
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { repoRoot, toolDir } from "./catalog";
@@ -149,7 +149,7 @@ const git = (...args: string[]) => {
 };
 
 if (import.meta.main) {
-  const base = process.argv[2] || "origin/redesign-web";
+  const base = process.argv[2] || "origin/main";
   const mergeBase = git("merge-base", base, "HEAD");
   if (!mergeBase.ok) {
     console.error(

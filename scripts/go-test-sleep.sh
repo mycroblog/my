@@ -5,7 +5,7 @@
 # `scripts/task.sh go:lint` and `agentkit check` run it.
 #
 #   scripts/go-test-sleep.sh [options]
-#     --base REF   the baseline may only shrink from the merge base of REF and HEAD (default: origin/redesign-web)
+#     --base REF   the baseline may only shrink from the merge base of REF and HEAD (default: origin/main)
 #     --root DIR   the repository (default: the one this script is in)
 #
 # The uses that predate the check are in scripts/go-test-sleep.baseline, one "<path> <count>" per file. It fails when
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-base="origin/redesign-web"
+base="origin/main"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --base) base="${2:-}" && shift ;;

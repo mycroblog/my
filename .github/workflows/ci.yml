@@ -209,17 +209,15 @@ jobs:
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           # The pull request's own commits merge in only its base. The checkout has a depth of 2, so the history of
-          # both is fetched first, commits only. Dependabot rebases its branches itself; `sync/main` is the merge of
-          # main into redesign-web, a merge by design.
+          # both is fetched first, commits only. Dependabot rebases its branches itself.
           - name: docs:pr-commits
             env:
               AUTHOR: ${{ github.event.pull_request.user.login }}
-              HEAD_REF: ${{ github.head_ref }}
               BASE_SHA: ${{ github.event.pull_request.base.sha }}
               HEAD_SHA: ${{ github.event.pull_request.head.sha }}
             run: |
-              if [ "$AUTHOR" = "dependabot[bot]" ] || [ "$HEAD_REF" = sync/main ]; then
-                echo "A Dependabot update or the merge of main: skipped."
+              if [ "$AUTHOR" = "dependabot[bot]" ]; then
+                echo "A Dependabot update: skipped."
                 exit 0
               fi
               git fetch --no-tags --quiet --deepen=500 origin "$BASE_SHA" "$HEAD_SHA"
