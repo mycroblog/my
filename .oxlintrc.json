@@ -408,9 +408,8 @@
       }
     },
     // Only a layout part of @my/design-system writes layout (ADR-0171 §3), and only the frame of a page decides by the
-    // viewport (ADR-0025 §4; the app decides for itself); web/devtools/src/layout-parts.js names both, and
-    // styles-baseline.json holds what the other parts still write against the rules, which only shrinks. A story
-    // lays out its specimens and stands in for the app.
+    // viewport (ADR-0025 §4; the app decides for itself); web/devtools/src/layout-parts.js names both. A story lays
+    // out its specimens and stands in for the app.
     {
       "files": [
         "web/design-system/**",

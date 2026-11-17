@@ -180,7 +180,7 @@ tasks:
   # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17). The rules of the styles
   # (ADR-0171 §2, §3) refuse a colour that is no token (restrict/token-colors, and colors.js for the CSS, which Oxlint
   # does not read), layout outside the layout parts and a viewport breakpoint outside the frames of a page
-  # (restrict/layout-parts, restrict/viewport-breakpoints, each with its baseline in styles-baseline.json).
+  # (restrict/layout-parts, restrict/viewport-breakpoints).
   lint:
     desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
     deps: [install, ":i18n:compile", routes]

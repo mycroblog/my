@@ -42,22 +42,14 @@
 //   `matchMedia` of the viewport's width, height, aspect ratio or orientation written as a literal, and a read of
 //   `innerWidth`. The viewport's height read for geometry (`innerHeight`) is not a breakpoint.
 //
-// layout-parts and viewport-breakpoints come with a baseline (styles-baseline.json): how many times each declaration
-// of a file still writes against the rule, which may only shrink. A declaration fails with every finding in it when
-// it has more than its baseline allows, and a file fails when its baseline allows more than it has, so that the
-// baseline stays what the code is.
+// Each finding fails: no file is allowed one.
 
-import { readFileSync } from "node:fs";
 import { rawColors, namedColor } from "./colors.js";
 import { LAYOUT_PARTS, PAGE_FRAMES } from "./layout-parts.js";
 
 /** @typedef {{ type: string, [key: string]: any }} Node */
 /** @typedef {{ text: string, node: Node }} ClassText */
 /** @typedef {{ node: Node, what: string, why: string }} Finding */
-
-const BASELINE = "web/devtools/src/styles-baseline.json";
-/** @type {Record<string, Record<string, Record<string, number>>>} */
-const baseline = JSON.parse(readFileSync(new URL("./styles-baseline.json", import.meta.url), "utf8"));
 
 /** The viewport breakpoints of the theme (the `breakpoint` of @my/design-tokens), and the ones Tailwind names itself. */
 export const BREAKPOINTS = ["tablet", "desktop", "wide"];
@@ -67,9 +59,8 @@ const SCREENS = new Set([...BREAKPOINTS, "sm", "md", "lg", "xl", "2xl"]);
 const MAX_DEPTH = 8;
 
 /**
- * The path of a file from the repository's root (`web/design-system/src/chip.tsx`), as layout-parts.js and the
- * baseline name it. A fixture that restrictions.test.js lints as a copy (`.fixtures-<pid>-<time>/`) has the name of
- * its original.
+ * The path of a file from the repository's root (`web/design-system/src/chip.tsx`), as layout-parts.js names it. A
+ * fixture that restrictions.test.js lints as a copy (`.fixtures-<pid>-<time>/`) has the name of its original.
  */
 function fileKey(/** @type {string} */ filename) {
   const path = filename.replaceAll("\\", "/");
@@ -687,33 +678,13 @@ function refusedClasses({ declarations, written }, allowed, role, each) {
 }
 
 /**
- * Reports the findings of each declaration against the baseline of the file: all of a declaration's when it has more
- * than its baseline allows, and the baseline itself, at the declaration, when it allows more than there is.
+ * Reports every finding, with the declaration it is in.
  * @param {any} context
- * @param {Node} program
- * @param {string} rule
  * @param {Map<string, Finding[]>} findings
- * @param {Map<string, Node>} owners
  */
-function settle(context, program, rule, findings, owners) {
-  const allowed = baseline[rule]?.[fileKey(String(context.filename))] ?? {};
-  for (const [key, found] of findings) {
-    const limit = allowed[key] ?? 0;
-    if (found.length <= limit) continue;
-    const over = limit > 0 ? ` \`${key}\` has ${found.length} of these, and its baseline allows ${limit}.` : "";
-    for (const f of found) context.report({ node: f.node, message: `\`${f.what}\` in \`${key}\` ${f.why}${over}` });
-  }
-  for (const [key, limit] of Object.entries(allowed)) {
-    const count = findings.get(key)?.length ?? 0;
-    if (count < limit)
-      context.report({
-        node: owners.get(key.split(".")[0] ?? key) ?? top(program),
-        message:
-          `The baseline of restrict/${rule} allows \`${key}\` ${limit} and it has ${count}: the baseline only ` +
-          "shrinks, and stays what the code is. " +
-          (count === 0 ? `Remove the entry from ${BASELINE}.` : `Set it to ${count} in ${BASELINE}.`),
-      });
-  }
+function settle(context, findings) {
+  for (const [key, found] of findings)
+    for (const f of found) context.report({ node: f.node, message: `\`${f.what}\` in \`${key}\` ${f.why}` });
 }
 
 /** Where a finding about the whole file is reported: its first statement. */
@@ -772,7 +743,7 @@ function createLayoutParts(context) {
       }
       // A class that comes in under another name, in a layout part too: its callers are other declarations.
       for (const [owner, found] of misnamed) for (const finding of found) add(owner, finding);
-      settle(context, program, "layout-parts", findings, owners);
+      settle(context, findings);
       known(context, program, LAYOUT_PARTS[file] ?? [], owners);
     },
   };
@@ -829,7 +800,7 @@ function createViewportBreakpoints(context) {
       refusedClasses({ declarations, written }, frames, "page frame", (key, node, token, who) => {
         if (viewportOf(token)) add(key, { node, what: shown(token), why: why(who) });
       });
-      settle(context, program, "viewport-breakpoints", findings, owners);
+      settle(context, findings);
       known(context, program, PAGE_FRAMES[file] ?? [], owners);
     },
   };

@@ -4,12 +4,11 @@
 // one that a fixture line expects with an `error: <Component> prop` comment (design-system-props), an `error: layers
 // @my/<x>` comment (layer-imports), an `error: platform <what>` comment (platform-globals), an `error: e2e <what>`
 // comment (e2e-queries), an `error: e2e-flaky <what>` comment (e2e-flaky), an `error: color <colour>` comment
-// (token-colors), an `error: layout <class>`, `error: layout-part <name>` or `error: layout-baseline <declaration>`
-// comment (layout-parts), or an `error: viewport <what>` comment (viewport-breakpoints), and each expected one must be
-// found. Oxlint's RuleTester refuses to run on Bun (ADR-0025 §8, §10). .oxlintrc.json ignores the fixtures, so that no
+// (token-colors), an `error: layout <class>` or `error: layout-part <name>` comment (layout-parts), or an `error:
+// viewport <what>` comment (viewport-breakpoints), and each expected one must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025 §8, §10). .oxlintrc.json ignores the fixtures, so that no
 // other lint run fails on them; this lints copies of them beside them, under the same overrides, and removes the
-// copies. It also holds the lists of the rules to the code: the files layout-parts.js and the baseline name exist,
-// and the breakpoints are the tokens'.
+// copies. It also holds the lists of the rules to the code: the files layout-parts.js names exist, and the
+// breakpoints are the tokens'.
 
 import { expect, test } from "bun:test";
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
@@ -51,10 +50,8 @@ const findings = {
   "restrict(viewport-breakpoints)": (/** @type {string} */ message) => styleFinding("viewport", message),
 };
 
-/** A finding of a rule with a baseline: what a declaration wrote, a name of layout-parts.js, or the baseline itself. */
+/** A finding of a rule of the styles: what a declaration wrote, or a name of layout-parts.js. */
 function styleFinding(/** @type {string} */ rule, /** @type {string} */ message) {
-  const stale = /^The baseline of \S+ allows `([^`]+)`/.exec(message)?.[1];
-  if (stale !== undefined) return `${rule}-baseline ${stale}`;
   const named = /^`([^`]+)` is named in /.exec(message)?.[1];
   return named === undefined ? `${rule} ${/^`([^`]+)`/.exec(message)?.[1]}` : `${rule}-part ${named}`;
 }
@@ -96,7 +93,7 @@ async function expected() {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
       const match =
-        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|layout-baseline|viewport) \S+)/.exec(
+        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport) \S+)/.exec(
           line,
         );
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
@@ -117,14 +114,13 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
   expect(fixtures).toContain("web/design-system/fixtures/colors.tsx");
   expect(fixtures).toContain("web/design-system/fixtures/layout.tsx");
   expect(fixtures).toContain("web/design-system/fixtures/viewport.tsx");
-  expect(fixtures).toContain("web/design-system/fixtures/baseline.tsx");
   const want = await expected();
   expect(want.some((line) => line.includes(" e2e-flaky "))).toBe(true);
   expect(want.some((line) => line.endsWith(" className") || line.endsWith(" style"))).toBe(true);
   expect(want.some((line) => line.includes(" layers @my/"))).toBe(true);
   expect(want.some((line) => line.includes(" platform "))).toBe(true);
   expect(want.some((line) => line.includes(" e2e "))).toBe(true);
-  for (const kind of ["color", "layout", "layout-part", "layout-baseline", "viewport"])
+  for (const kind of ["color", "layout", "layout-part", "viewport"])
     expect([kind, want.some((line) => line.includes(` ${kind} `))]).toEqual([kind, true]);
   expect(lint()).toEqual(want);
 }, 60_000);
@@ -153,18 +149,11 @@ test("viewportOf reads the breakpoints of the tokens, and no container query", (
     expect([c, viewportOf(c)]).toEqual([c, false]);
 });
 
-test("the files that layout-parts.js and the baseline name exist, so that the lint reads every entry", () => {
-  /** @type {Record<string, Record<string, Record<string, number>>>} */
-  const baseline = JSON.parse(readFileSync(new URL("./styles-baseline.json", import.meta.url), "utf8"));
-  const named = [LAYOUT_PARTS, PAGE_FRAMES, ...Object.values(baseline)].flatMap((files) => Object.keys(files));
+test("the files that layout-parts.js names exist, so that the lint reads every entry", () => {
+  const named = [LAYOUT_PARTS, PAGE_FRAMES].flatMap((files) => Object.keys(files));
   expect(named.length).toBeGreaterThan(0);
   for (const file of named) expect([file, existsSync(`${root}${file}`)]).toEqual([file, true]);
   // A frame of a page is a layout part.
   for (const [file, frames] of Object.entries(PAGE_FRAMES))
     for (const frame of frames) expect([frame, LAYOUT_PARTS[file]?.includes(frame)]).toEqual([frame, true]);
-  // The baseline holds counts, none of them zero, which the lint would not ask to remove.
-  for (const files of Object.values(baseline))
-    for (const [file, declarations] of Object.entries(files))
-      for (const [key, count] of Object.entries(declarations))
-        expect([file, key, Number.isInteger(count) && count > 0]).toEqual([file, key, true]);
 });

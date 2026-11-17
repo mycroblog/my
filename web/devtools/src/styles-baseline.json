@@ -1,8 +1,0 @@
-{
-  "layout-parts": {
-    "web/design-system/fixtures/baseline.tsx": {"kept.base": 2, "grown.base": 1, "shrunk.base": 2, "gone.base": 1}
-  },
-  "viewport-breakpoints": {
-    "web/design-system/fixtures/baseline.tsx": {"wide.kept": 1}
-  }
-}
