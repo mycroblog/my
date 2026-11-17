@@ -198,8 +198,21 @@ describe("cachedAccount", () => {
         people: scenario.people,
         follows: [{ follower: "yuki", followee: "hana" }],
         posts: [
-          { key: "quoted", author: remote, text: "The grain came out just right.", visibility: "public", language: "en" },
-          { key: "quoting", author: "hana", quote: "quoted", text: "Look at this.", visibility: "public", language: "en" },
+          {
+            key: "quoted",
+            author: remote,
+            text: "The grain came out just right.",
+            visibility: "public",
+            language: "en",
+          },
+          {
+            key: "quoting",
+            author: "hana",
+            quote: "quoted",
+            text: "Look at this.",
+            visibility: "public",
+            language: "en",
+          },
         ],
       },
     });

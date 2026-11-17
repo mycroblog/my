@@ -18,11 +18,18 @@ const request = (method: string, path: string, body?: unknown, headers: Record<s
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 
-/** The status and the JSON body of the fake's answer to a request. */
-async function ask<T = unknown>(fake: FakeApi, method: string, path: string, body?: unknown) {
+/** The fake's answer to a request: its status, its media type, and its JSON body. */
+type Answered<T> = { status: number; type: string | null; body: T };
+
+/** The fake's answer to a request. */
+async function ask(fake: FakeApi, method: string, path: string, body?: unknown): Promise<Answered<unknown>> {
   const response = await fake.serve(request(method, path, body));
   const text = await response.text();
-  return { status: response.status, type: response.headers.get("Content-Type"), body: (text === "" ? undefined : JSON.parse(text)) as T };
+  return {
+    status: response.status,
+    type: response.headers.get("Content-Type"),
+    body: text === "" ? undefined : (JSON.parse(text) as unknown),
+  };
 }
 
 /** A server where the reader follows sam, who posted `post`. */
@@ -33,11 +40,19 @@ const small: Partial<FakeSeed> = {
 };
 
 /** The post of `small` as the reader is answered it. */
-const post = async (fake: FakeApi) => (await ask<Status>(fake, "GET", `/statuses/${fake.idOf("post")}`)).body;
+const post = async (fake: FakeApi) =>
+  ((await ask(fake, "GET", `/statuses/${fake.idOf("post")}`)) as Answered<Status>).body;
 
 /** Whether `promise` settled by the next turn of the event loop. */
 const settled = (promise: Promise<unknown>) =>
-  Promise.race([promise.then(() => true), new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 0))]);
+  Promise.race([
+    promise.then(() => true),
+    new Promise<boolean>((resolve) => {
+      setTimeout(() => {
+        resolve(false);
+      }, 0);
+    }),
+  ]);
 
 describe("a script", () => {
   test("that names nothing counts and keeps the requests of its operation, and of no other", async () => {
@@ -68,7 +83,7 @@ describe("a script", () => {
   test("held at the request, the fake does nothing until it is released", async () => {
     const fake = createFakeApi({ seed: small });
     const write = fake.script("POST /statuses/{id}/favourite", { hold: "request" });
-    const answer = ask<Status>(fake, "POST", `/statuses/${fake.idOf("post")}/favourite`);
+    const answer = ask(fake, "POST", `/statuses/${fake.idOf("post")}/favourite`) as Promise<Answered<Status>>;
     await write.arrived();
     const [answered, before] = [await settled(answer), await post(fake)];
     expect([answered, before.favourited]).toEqual([false, false]);
@@ -80,7 +95,7 @@ describe("a script", () => {
   test("held at the response, the fake did what was asked, and served(n) says when", async () => {
     const fake = createFakeApi({ seed: small });
     const write = fake.script("POST /statuses/{id}/favourite", { hold: "response" });
-    const answer = ask<Status>(fake, "POST", `/statuses/${fake.idOf("post")}/favourite`);
+    const answer = ask(fake, "POST", `/statuses/${fake.idOf("post")}/favourite`) as Promise<Answered<Status>>;
     await write.served();
     const [answered, meanwhile] = [await settled(answer), await post(fake)];
     expect([answered, meanwhile.favourited]).toEqual([false, true]);
@@ -93,7 +108,7 @@ describe("a script", () => {
     const fake = createFakeApi({ seed: small });
     const read = fake.script("GET /timelines/home", { hold: "request" });
     read.release();
-    const answer = await ask<StatusPage>(fake, "GET", "/timelines/home");
+    const answer = (await ask(fake, "GET", "/timelines/home")) as Answered<StatusPage>;
     expect(answer.body.items).toHaveLength(1);
   });
 
@@ -168,7 +183,7 @@ describe("a script", () => {
     const held = ask(fake, "GET", "/timelines/home");
     await read.arrived();
     read.end();
-    const [first, later] = [await held, await ask<StatusPage>(fake, "GET", "/timelines/home")];
+    const [first, later] = [await held, (await ask(fake, "GET", "/timelines/home")) as Answered<StatusPage>];
     expect([first.status, later.status, read.seen.length]).toEqual([500, 200, 1]);
   });
 });
@@ -206,7 +221,7 @@ describe("the stream", () => {
     const sent = await frame(reader);
     expect(sent.startsWith("event: update\ndata: ")).toBe(true);
     expect((JSON.parse(sent.slice(sent.indexOf("data: ") + 6)) as Status).id).toBe(made?.id ?? "");
-    const home = await ask<StatusPage>(fake, "GET", "/timelines/home");
+    const home = (await ask(fake, "GET", "/timelines/home")) as Answered<StatusPage>;
     expect(home.body.items.map((s) => s.id)).toEqual([made?.id ?? "", fake.idOf("post")]);
   });
 
@@ -226,8 +241,8 @@ describe("the seed", () => {
   test("without one, the fake holds the scenario", async () => {
     const fake = createFakeApi();
     const [home, lists] = [
-      await ask<StatusPage>(fake, "GET", "/timelines/home"),
-      await ask<{ items: { name: string }[] }>(fake, "GET", "/lists"),
+      (await ask(fake, "GET", "/timelines/home")) as Answered<StatusPage>,
+      (await ask(fake, "GET", "/lists")) as Answered<{ items: { name: string }[] }>,
     ];
     expect(home.body.items).toHaveLength(20);
     expect(lists.body.items.map((l) => l.name)).toContain("Bread and coffee");
@@ -237,10 +252,10 @@ describe("the seed", () => {
   test("a seed replaces the scenario: the lists it names, and nothing else", async () => {
     const fake = createFakeApi({ seed: small });
     const [home, lists, drafts, announcements] = [
-      await ask<StatusPage>(fake, "GET", "/timelines/home"),
-      await ask<{ items: unknown[] }>(fake, "GET", "/lists"),
-      await ask<{ items: unknown[] }>(fake, "GET", "/drafts"),
-      await ask<{ items: unknown[] }>(fake, "GET", "/announcements"),
+      (await ask(fake, "GET", "/timelines/home")) as Answered<StatusPage>,
+      (await ask(fake, "GET", "/lists")) as Answered<{ items: unknown[] }>,
+      (await ask(fake, "GET", "/drafts")) as Answered<{ items: unknown[] }>,
+      (await ask(fake, "GET", "/announcements")) as Answered<{ items: unknown[] }>,
     ];
     expect(home.body.items.map((s) => s.id)).toEqual([fake.idOf("post")]);
     expect([lists.body.items, drafts.body.items, announcements.body.items]).toEqual([[], [], []]);
@@ -256,8 +271,12 @@ describe("the seed", () => {
 
   test("the reader is the person the options name, with the rights of their roles", async () => {
     const credentials = async (viewer: string) =>
-      (await ask<{ acct: string; permissions: string[] }>(createFakeApi({ viewer }), "GET", "/accounts/verify_credentials"))
-        .body;
+      (
+        (await ask(createFakeApi({ viewer }), "GET", "/accounts/verify_credentials")) as Answered<{
+          acct: string;
+          permissions: string[];
+        }>
+      ).body;
     const [yuki, marco] = [await credentials("yuki"), await credentials("marco")];
     expect([yuki.acct, yuki.permissions]).toEqual(["yuki", []]);
     expect(marco.permissions).toContain("manage_reports");
@@ -271,7 +290,14 @@ describe("a visitor", () => {
     people: scenario.people,
     posts: [
       { key: "post", author: "sam", text: "The crumb is finally open.", visibility: "public", language: "en" },
-      { key: "asks", author: "sam", text: "Which loaf?", visibility: "public", language: "en", poll: { options: ["Sourdough", "Rye"], days: 1 } },
+      {
+        key: "asks",
+        author: "sam",
+        text: "Which loaf?",
+        visibility: "public",
+        language: "en",
+        poll: { options: ["Sourdough", "Rye"], days: 1 },
+      },
       { key: "own", author: "yuki", text: "A walk.", visibility: "public", language: "en", pinned: true },
       { key: "kept", author: "sam", text: "For my followers.", visibility: "private", language: "en" },
     ],
@@ -288,7 +314,8 @@ describe("a visitor", () => {
 
   test("is answered what anyone may read, with nothing of a reader's own", async () => {
     const [reader, visitor] = [createFakeApi({ seed: marked }), createFakeApi({ seed: marked, visitor: true })];
-    const read = async (fake: FakeApi, key: string) => (await ask<Status>(fake, "GET", `/statuses/${fake.idOf(key)}`)).body;
+    const read = async (fake: FakeApi, key: string) =>
+      ((await ask(fake, "GET", `/statuses/${fake.idOf(key)}`)) as Answered<Status>).body;
     const [mine, theirs] = [await read(reader, "post"), await read(visitor, "post")];
     expect(own.slice(0, 4).map((member) => mine[member])).toEqual([true, true, true, false]);
     expect(own.filter((member) => member in theirs)).toEqual([]);
@@ -304,7 +331,7 @@ describe("a visitor", () => {
 
   test("reads the public timelines and no post kept to followers", async () => {
     const visitor = createFakeApi({ seed: marked, visitor: true });
-    const local = await ask<StatusPage>(visitor, "GET", "/timelines/local");
+    const local = (await ask(visitor, "GET", "/timelines/local")) as Answered<StatusPage>;
     expect(local.body.items.map((s) => s.id)).toEqual(["own", "asks", "post"].map(visitor.idOf));
     expect(local.body.items.flatMap((s) => own.filter((member) => member in s))).toEqual([]);
     const kept = await ask(visitor, "GET", `/statuses/${visitor.idOf("kept")}`);
@@ -329,10 +356,15 @@ describe("a visitor", () => {
       refused.push((await ask(visitor, method, path)).status);
     expect(refused).toEqual(refused.map(() => 401));
     const open = [];
-    for (const path of [`/accounts/${visitor.accountId("sam")}`, "/accounts/lookup?acct=sam", "/tags/baking", "/instance"])
+    for (const path of [
+      `/accounts/${visitor.accountId("sam")}`,
+      "/accounts/lookup?acct=sam",
+      "/tags/baking",
+      "/instance",
+    ])
       open.push((await ask(visitor, "GET", path)).status);
     expect(open).toEqual([200, 200, 200, 200]);
-    const now = await ask<Status>(visitor, "GET", `/statuses/${visitor.idOf("post")}`);
+    const now = (await ask(visitor, "GET", `/statuses/${visitor.idOf("post")}`)) as Answered<Status>;
     expect(now.body.favourites_count).toBe(1);
   });
 });
@@ -372,22 +404,27 @@ describe("what the reader writes", () => {
     };
     const [first, retried, other] = [await make("k1"), await make("k1"), await make("k2")];
     expect([retried === first, other === first]).toEqual([true, false]);
-    const home = await ask<StatusPage>(fake, "GET", "/timelines/home");
+    const home = (await ask(fake, "GET", "/timelines/home")) as Answered<StatusPage>;
     expect(home.body.items.map((s) => s.id)).toEqual([other, first, fake.idOf("post")]);
   });
 
   test("a reply counts on the post it answers until it is deleted, and its source is what was written", async () => {
     const fake = createFakeApi({ seed: small });
-    const reply = await ask<Status>(fake, "POST", "/statuses", {
+    const reply = (await ask(fake, "POST", "/statuses", {
       text: "@sam Which flour?",
       spoiler_text: "Bread",
       visibility: "public",
       in_reply_to_id: fake.idOf("post"),
-    });
+    })) as Answered<Status>;
     const counted = await post(fake);
     const source = await ask(fake, "GET", `/statuses/${reply.body.id}/source`);
     expect([reply.status, counted.replies_count]).toEqual([201, 1]);
-    expect(source.body).toEqual({ id: reply.body.id, text: "@sam Which flour?", spoiler_text: "Bread", language: "en" });
+    expect(source.body).toEqual({
+      id: reply.body.id,
+      text: "@sam Which flour?",
+      spoiler_text: "Bread",
+      language: "en",
+    });
     const deleted = await ask(fake, "DELETE", `/statuses/${reply.body.id}`);
     const after = await post(fake);
     expect([deleted.status, after.replies_count]).toEqual([204, 0]);
@@ -396,30 +433,41 @@ describe("what the reader writes", () => {
   test("a reply to a post whose author approves the reader's replies waits, and counts nowhere", async () => {
     const fake = createFakeApi({ approvals: true });
     const asks = fake.idOf("layla-asks");
-    const reply = await ask<Status>(fake, "POST", "/statuses", { text: "hi", visibility: "public", in_reply_to_id: asks });
-    const parent = await ask<Status>(fake, "GET", `/statuses/${asks}`);
+    const reply = (await ask(fake, "POST", "/statuses", {
+      text: "hi",
+      visibility: "public",
+      in_reply_to_id: asks,
+    })) as Answered<Status>;
+    const parent = (await ask(fake, "GET", `/statuses/${asks}`)) as Answered<Status>;
     expect([reply.body.approval, parent.body.replies_count]).toEqual(["pending", 0]);
   });
 
   test("an edit that takes the link out of a post takes its card out", async () => {
     const fake = createFakeApi({ viewer: "layla" });
     const id = fake.idOf("layla-jokes");
-    const before = await ask<Status>(fake, "GET", `/statuses/${id}`);
-    const after = await ask<Status>(fake, "PUT", `/statuses/${id}`, { text: "The hardest part is always the jokes." });
+    const before = (await ask(fake, "GET", `/statuses/${id}`)) as Answered<Status>;
+    const after = (await ask(fake, "PUT", `/statuses/${id}`, {
+      text: "The hardest part is always the jokes.",
+    })) as Answered<Status>;
     expect([before.body.card?.site_name, "card" in after.body]).toEqual(["Layla's notes", false]);
   });
 
   test("the reader's account and a post have the IDs the fake names", async () => {
     const fake = createFakeApi({ seed: small });
-    const sam = await ask<{ id: string }>(fake, "GET", "/accounts/lookup?acct=sam");
+    const sam = (await ask(fake, "GET", "/accounts/lookup?acct=sam")) as Answered<{ id: string }>;
     const read = await post(fake);
-    expect([sam.body.id, read.id, read.account.id]).toEqual([fake.accountId("sam"), fake.idOf("post"), fake.accountId("sam")]);
+    expect([sam.body.id, read.id, read.account.id]).toEqual([
+      fake.accountId("sam"),
+      fake.idOf("post"),
+      fake.accountId("sam"),
+    ]);
   });
 
   test("the reader has not read as many of their newest notifications as the options say", async () => {
     const marker = async (unreadNotifications?: number) => {
       const fake = createFakeApi(unreadNotifications === undefined ? {} : { unreadNotifications });
-      return (await ask<{ unread_count: number }>(fake, "GET", "/notifications/marker")).body.unread_count;
+      return ((await ask(fake, "GET", "/notifications/marker")) as Answered<{ unread_count: number }>).body
+        .unread_count;
     };
     const counts = [await marker(), await marker(0), await marker(5)];
     expect(counts).toEqual([3, 0, 5]);

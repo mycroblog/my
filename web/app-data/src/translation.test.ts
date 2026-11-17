@@ -99,7 +99,11 @@ test("a refusal is not kept: asking again asks the server again, and may succeed
   const { fake, data, requests, welcome } = translating();
   fake.script("POST /statuses/{id}/translation", {
     times: 1,
-    fail: { type: "/api/v1/problems/translation-failed", title: "The translation provider did not answer", status: 503 },
+    fail: {
+      type: "/api/v1/problems/translation-failed",
+      title: "The translation provider did not answer",
+      status: 503,
+    },
   });
   const refused: unknown = await translateStatus(data, welcome, "en").catch((e: unknown) => e);
   expect(refused).toBeInstanceOf(TranslationRefusal);

@@ -39,10 +39,11 @@ afterEach(() => {
 function fakeServer(statusPage: string | undefined) {
   const up = createFakeApi();
   up.script("GET /instance", {
-    change: ({ status_page_url: _, ...instance }) => ({
-      ...instance,
-      ...(statusPage === undefined ? {} : { status_page_url: statusPage }),
-    }),
+    change: (instance) => {
+      const named = { ...instance };
+      delete named.status_page_url;
+      return statusPage === undefined ? named : { ...named, status_page_url: statusPage };
+    },
   });
   const maintenance = createFakeApi({ maintenance: true });
   const down = createFakeApi({ down: "offline" });

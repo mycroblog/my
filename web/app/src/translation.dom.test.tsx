@@ -9,7 +9,8 @@
 import { expect, test } from "bun:test";
 import { scenario, type FakeSeed } from "@my/e2e/fake";
 import { waitFor, within } from "@testing-library/react";
-import { findPost, renderApp, words, type AppOptions } from "./test/app";
+import { renderApp, words, type AppOptions } from "./test/app";
+import { findPost } from "./test/posts";
 
 type Post = FakeSeed["posts"][number];
 

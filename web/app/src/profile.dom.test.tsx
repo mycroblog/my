@@ -6,7 +6,8 @@
 import { expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
 import { screen, within } from "@testing-library/react";
-import { findPost, main, renderApp, type TestApp } from "./test/app";
+import { main, renderApp, type TestApp } from "./test/app";
+import { findPost } from "./test/posts";
 
 const sam = "Sam Rivera";
 const yuki = "Yuki 雪";

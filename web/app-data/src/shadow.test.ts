@@ -122,7 +122,11 @@ describe("a change", () => {
     const arrived = fake.newPosts(1);
     prependHomeStatuses(data, arrived);
     expect(read().map((s) => s.id)).toEqual([...arrived.map((s) => s.id), ...before]);
-    expect(read().filter((s) => s.favourited === true).map((s) => s.id)).toEqual([one]);
+    expect(
+      read()
+        .filter((s) => s.favourited === true)
+        .map((s) => s.id),
+    ).toEqual([one]);
   });
 
   test("the server took stays on when a reply goes in above it in a thread", async () => {

@@ -26,7 +26,9 @@ describe("useMutedDomain", () => {
   test("names the muted domain a server falls under: itself or a parent, on any page of the list", async () => {
     const { data, requests } = fakeData({ domainMutes: ["a.example", ...filler, "photos.example"] });
     await data.queryClient.query(domainMutesQuery(data));
-    const cursors = requests.map((r) => new URL(r.slice("GET ".length), "https://demo.test").searchParams.get("cursor"));
+    const cursors = requests.map((r) =>
+      new URL(r.slice("GET ".length), "https://demo.test").searchParams.get("cursor"),
+    );
     expect(cursors).toEqual([null, filler.at(-2) ?? ""]);
     expect(mutedOf(data, "photos.example")).toBe("photos.example");
     expect(mutedOf(data, "cdn.photos.example")).toBe("photos.example");

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The posts of the screen in place, for the component tests of the app's routes: a feed by its name, and a post in it
-// by its author's display name, which names its article, and a part of its text.
+// The posts of the screen in place, for the component tests of the app's routes: a feed by its name, and a post by its
+// author's display name, which names its article, and a part of its text, in a feed or anywhere on the screen.
 
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type { TestApp } from "./app";
 
 /** The feed named `name` of the screen in place, once it shows. */
@@ -11,9 +11,9 @@ export function feedOf(name: string): Promise<HTMLElement> {
   return within(screen.getByRole("main")).findByRole("feed", { name });
 }
 
-/** The posts of `author` (a display name) in `feed` that hold `text`, boosts of them included. */
-const postsOf = (feed: HTMLElement, author: string, text: string): HTMLElement[] =>
-  within(feed)
+/** The articles of `author` (a display name) in `scope` that hold `text`, boosts of them included. */
+const articlesOf = (scope: HTMLElement, author: string, text: string): HTMLElement[] =>
+  within(scope)
     .queryAllByRole("article", { name: author })
     .filter((post) => post.textContent.includes(text));
 
@@ -25,23 +25,24 @@ function one(posts: HTMLElement[], what: string): HTMLElement {
   return post;
 }
 
-/** The post of `author` in `feed` that holds `text`, itself and not a boost of it. */
-export function postOf(feed: HTMLElement, author: string, text: string): HTMLElement {
-  return one(
-    postsOf(feed, author, text).filter((post) => !post.textContent.includes(" boosted")),
-    `${author}'s "${text}"`,
-  );
+/** The posts of `author` in `scope` that hold `text`, themselves and not boosts of them: none once it is gone. */
+export function postsLike(scope: HTMLElement, author: string, text: string): HTMLElement[] {
+  return articlesOf(scope, author, text).filter((post) => !post.textContent.includes(" boosted"));
 }
 
-/** The posts of `author` in `feed` that hold `text`, themselves and not boosts of them: none once it is gone. */
-export function postsLike(feed: HTMLElement, author: string, text: string): HTMLElement[] {
-  return postsOf(feed, author, text).filter((post) => !post.textContent.includes(" boosted"));
+/** The post of `author` in `scope` (a feed, a thread) that holds `text`, itself and not a boost of it. */
+export function postOf(scope: HTMLElement, author: string, text: string): HTMLElement {
+  return one(postsLike(scope, author, text), `${author}'s "${text}"`);
 }
 
-/** The boost by `booster` of the post of `author` in `feed` that holds `text`. */
-export function boostOf(feed: HTMLElement, booster: string, author: string, text: string): HTMLElement {
+/** The post of `author` that holds `text` in the main landmark, itself and not a boost of it, once the screen shows it. */
+export const findPost = (author: string, text: string): Promise<HTMLElement> =>
+  waitFor(() => postOf(screen.getByRole("main"), author, text));
+
+/** The boost by `booster` of the post of `author` in `scope` that holds `text`. */
+export function boostOf(scope: HTMLElement, booster: string, author: string, text: string): HTMLElement {
   return one(
-    postsOf(feed, author, text).filter((post) => post.textContent.includes(`${booster} boosted`)),
+    articlesOf(scope, author, text).filter((post) => post.textContent.includes(`${booster} boosted`)),
     `${booster}'s boost of ${author}'s "${text}"`,
   );
 }

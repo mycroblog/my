@@ -39,7 +39,7 @@ async function server(count: number, unread: number) {
   const moved = fake.script("PUT /notifications/marker");
   // The server pages them 20 at a time; a test of more reads them all here to name them.
   const all: string[] = [];
-  for (let cursor: string | undefined; ; ) {
+  for (let cursor: string | undefined; ;) {
     const { data: page } = await data.api.GET("/notifications", {
       params: { query: cursor === undefined ? {} : { cursor } },
     });

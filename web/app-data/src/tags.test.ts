@@ -15,7 +15,13 @@ describe("tagTimelineQuery", () => {
     const { fake, data, requests } = fakeData({
       seed: {
         people: scenario.people,
-        posts: keys.map((key) => ({ key, author: "sam", text: `${key} #baking`, visibility: "public", language: "en" })),
+        posts: keys.map((key) => ({
+          key,
+          author: "sam",
+          text: `${key} #baking`,
+          visibility: "public",
+          language: "en",
+        })),
       },
     });
     const ids = keys.toReversed().map(fake.idOf);

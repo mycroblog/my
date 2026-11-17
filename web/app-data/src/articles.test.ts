@@ -138,7 +138,9 @@ test("an edit of an article is PUT to it, and every copy shows the article as th
   await editArticle(data, id, { title: "Seven days of a starter", text: "New." });
   expect(requests).toEqual([`PUT /articles/${id}`]);
   // The copy of a list holds no body (ADR-0160 §8); the article read alone does.
-  const listed = data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages[0]?.items.find((s) => s.id === id);
+  const listed = data.queryClient
+    .getQueryData(homeTimelineQuery(data).queryKey)
+    ?.pages[0]?.items.find((s) => s.id === id);
   const alone = data.queryClient.getQueryData<Status>(statusQuery(data, id).queryKey);
   const shown = [listed, alone].map((copy) => copy && shadowed(data, copy));
   expect(shown.map((copy) => copy?.article?.title)).toEqual(["Seven days of a starter", "Seven days of a starter"]);

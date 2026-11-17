@@ -11,7 +11,11 @@ import { loadTagTimeline, TagTimeline } from "./tag";
  * A server with the hashtag `baking`, which sam's post first wrote "Baking" (or which no post has), read as the
  * screen opens, by a reader who follows it or not, or by a visitor.
  */
-async function opened({ posts = true, following = false, ...options }: FakeOptions & { posts?: boolean; following?: boolean } = {}) {
+async function opened({
+  posts = true,
+  following = false,
+  ...options
+}: FakeOptions & { posts?: boolean; following?: boolean } = {}) {
   const { data, requests } = fakeData({
     seed: {
       people: scenario.people,

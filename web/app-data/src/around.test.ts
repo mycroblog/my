@@ -28,7 +28,9 @@ const event = (n: number): FakeSeed["events"][number] => ({
 async function server(count: number, short = false) {
   const { fake, data } = fakeData({
     seed: {
-      people: scenario.people.filter((p) => !hosts.includes(p.username) || hosts.indexOf(p.username) < Math.max(count, 1)),
+      people: scenario.people.filter(
+        (p) => !hosts.includes(p.username) || hosts.indexOf(p.username) < Math.max(count, 1),
+      ),
       events: Array.from({ length: count }, (_, i) => event(i + 1)),
     },
     around: count === 0 ? "none" : "all",

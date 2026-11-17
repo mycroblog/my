@@ -102,17 +102,6 @@ export async function renderApp(at: string, { locale = "en", on, ...options }: A
 /** The queries of the screen's own part, the main landmark: the shell around it repeats its places in two navigations. */
 export const main = () => within(screen.getByRole("main"));
 
-/** The post by `author` (a display name) that holds `text`, in the main landmark, once the screen shows it. */
-export const findPost = (author: string, text: string): Promise<HTMLElement> =>
-  waitFor(() => {
-    const [post, ...more] = main()
-      .getAllByRole("article", { name: author })
-      .filter((article) => article.textContent.includes(text));
-    if (post === undefined || more.length > 0)
-      throw new Error(`test: ${String(more.length + (post === undefined ? 0 : 1))} posts of ${author} hold "${text}"`);
-    return post;
-  });
-
 /**
  * What `element` says as a reader reads its line: without the joiners that keep a line's last words together, each run
  * of spaces, breaking or not, as one space.

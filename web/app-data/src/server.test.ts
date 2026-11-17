@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { createFakeApi, fakeOrigin, type FakeApi } from "@my/e2e/fake";
+import { createFakeApi, fakeOrigin, fakeStatusPage, type FakeApi } from "@my/e2e/fake";
 import { watchServer, type ServerState, type ServerWatch } from "./server";
 
 const home = () => new Request(`${fakeOrigin}/api/v1/timelines/home`);
@@ -75,11 +75,9 @@ test("the maintenance problem shows the maintenance with the operator's notice, 
   const state = await until(w, (x) => x.maintenance !== null);
   const problem = (await (await modes.maintenance.serve(home())).json()) as Record<string, unknown>;
   expect(problem["type"]).toBe("/api/v1/problems/maintenance");
-  expect(state.maintenance).toEqual({
-    message: expect.stringContaining("Moving the database to a larger disk."),
-    until: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-    statusPageUrl: "https://status.demo.test",
-  });
+  expect(String(problem["message"])).toContain("Moving the database to a larger disk.");
+  expect(Number.isNaN(Date.parse(String(problem["until"])))).toBe(false);
+  expect(problem["status_page_url"]).toBe(fakeStatusPage);
   expect(state.maintenance as unknown).toEqual({
     message: problem["message"],
     until: problem["until"],

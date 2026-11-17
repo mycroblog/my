@@ -39,7 +39,11 @@ const [top, read, last] = [keys.at(-1) ?? "", keys.at(-2) ?? "", keys[0] ?? ""];
  * the server lists them, newest first, and `id` the ID of the conversation of a post.
  */
 async function reader(pages: 1 | 2 = 2) {
-  const { fake, data: plain, requests } = fakeData({
+  const {
+    fake,
+    data: plain,
+    requests,
+  } = fakeData({
     seed: {
       people: scenario.people,
       posts: keys.map((key) => ({
@@ -55,7 +59,9 @@ async function reader(pages: 1 | 2 = 2) {
   const data: AppData = { ...plain, connection: { server: fakeOrigin } };
   const first = await data.queryClient.infiniteQuery({ ...conversationsQuery(data), staleTime: Infinity });
   const second =
-    pages === 1 ? undefined : (await new InfiniteQueryObserver(data.queryClient, conversationsQuery(data)).fetchNextPage()).data;
+    pages === 1
+      ? undefined
+      : (await new InfiniteQueryObserver(data.queryClient, conversationsQuery(data)).fetchNextPage()).data;
   const listed = (second ?? first).pages.flatMap((p) => p.items);
   const id = (key: string) => listed.find((c) => c.last_status.id === fake.idOf(key))?.id ?? `none of ${key}`;
   return { fake, data, requests, ids: listed.map((c) => c.id), id };
@@ -164,7 +170,7 @@ test("a new conversation arriving goes to the top of the list, unread", async ()
 
 /** The conversation whose latest post is `status`, from the server's list read to its end. */
 async function latest(data: AppData, status: string): Promise<Conversation | undefined> {
-  for (let cursor: string | undefined; ; ) {
+  for (let cursor: string | undefined; ;) {
     const { data: page } = await data.api.GET("/conversations", {
       params: { query: cursor === undefined ? {} : { cursor } },
     });

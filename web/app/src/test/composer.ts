@@ -5,7 +5,7 @@
 // (a key pressed in an empty box writes nothing there), so a test writes by pasting, which the editor takes from the
 // event's own data, and the editing a keyboard does stays with the tests in a browser.
 
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type { TestApp } from "./app";
 import { rail } from "./viewport";
 
@@ -44,3 +44,22 @@ export async function paste(app: TestApp, box: HTMLElement, text: string): Promi
   if (document.activeElement !== box) await app.user.click(box);
   await app.user.paste(text);
 }
+
+/** Writes `text` in place of what `box` holds: pasted, since the editor takes no typed key on a simulation. */
+export async function replace(app: TestApp, box: HTMLElement, text: string): Promise<void> {
+  await app.user.click(box);
+  await app.user.keyboard("{Control>}a{/Control}{Delete}");
+  if (text !== "") await app.user.paste(text);
+}
+
+/**
+ * The composer whose dialog is named `name` once its text holds `text`: opening a draft in the composer puts a new
+ * one in its place, so the test finds it again.
+ */
+export const composerHolding = (name: string, text: string): Promise<Composer> =>
+  waitFor(() => {
+    const dialog = screen.getByRole("dialog", { name });
+    const box = within(dialog).getByRole("textbox", { name: "Text" });
+    if (heldBy(box) !== text) throw new Error(`test: the composer ${name} holds "${heldBy(box)}", not "${text}"`);
+    return { dialog, text: box };
+  });

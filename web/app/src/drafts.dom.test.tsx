@@ -8,30 +8,10 @@ import { expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderApp, words, type TestApp } from "./test/app";
+import { composerHolding, newPost, replace } from "./test/composer";
 
-/** Opens the composer of a new post from the navigation, on a screen where no other New post floats. */
-async function newPost({ user }: TestApp) {
-  await user.click(screen.getByRole("button", { name: "New post" }));
-  return screen.findByRole("dialog", { name: "New post" });
-}
-
-/** The text box of the composer in `dialog`. */
-const textOf = (dialog: HTMLElement) => within(dialog).findByRole("textbox", { name: "Text" });
-
-/** Writes `text` in place of what the composer in `dialog` holds: pasted, as the editor takes no typed key here. */
-async function replace({ user }: TestApp, dialog: HTMLElement, text: string) {
-  await user.click(await textOf(dialog));
-  await user.keyboard("{Control>}a{/Control}{Delete}");
-  if (text !== "") await user.paste(text);
-}
-
-/** The composer of a new post once it holds `text`: opening a draft puts a new one in its place. */
-const holding = (text: string) =>
-  waitFor(() => {
-    const dialog = screen.getByRole("dialog", { name: "New post" });
-    expect(within(dialog).getByRole("textbox", { name: "Text" }).textContent).toBe(text);
-    return dialog;
-  });
+/** The composer of a new post once it holds `text`. */
+const holding = (text: string) => composerHolding("New post", text);
 
 /** Chooses `item` of the drafts' menu in the head of the composer in `dialog`. */
 async function draftsMenu(
@@ -71,14 +51,14 @@ test("the list goes back to the post being written, and once closed, New post op
   const text = "Back check: a post still being written.";
   const app = await renderApp("/bookmarks");
   const composer = await newPost(app);
-  await replace(app, composer, text);
+  await replace(app, composer.text, text);
 
-  const drafts = await openDrafts(app, composer);
+  const drafts = await openDrafts(app, composer.dialog);
   await app.user.click(within(drafts).getByRole("button", { name: "Back to the post" }));
   const back = await holding(text);
 
-  await replace(app, back, "");
-  const again = await openDrafts(app, back);
+  await replace(app, back.text, "");
+  const again = await openDrafts(app, back.dialog);
   await app.user.click(within(again).getByRole("button", { name: "Close" }));
   await waitFor(() => {
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -94,7 +74,7 @@ test("a save from an older copy of a draft is refused, and the composer opens th
     seed: { people: scenario.people, drafts: [{ key: "conflict", author: "yuki", text: first, language: "en" }] },
   });
   // This composer opens the draft first.
-  const list = await openDrafts(app, await newPost(app));
+  const list = await openDrafts(app, (await newPost(app)).dialog);
   for (const button of opener(await draftRow(list, first), first)) await app.user.click(button);
   const stale = await holding(first);
 
@@ -108,14 +88,14 @@ test("a save from an older copy of a draft is refused, and the composer opens th
   expect(saved.response.status).toBe(200);
 
   // This composer's save is refused: it says so, and opens the newer one.
-  await replace(app, stale, `${first} Third version, written on the older copy.`);
-  await draftsMenu(app, stale, "Save as draft");
-  const alert = await within(stale).findByRole("alert");
+  await replace(app, stale.text, `${first} Third version, written on the older copy.`);
+  await draftsMenu(app, stale.dialog, "Save as draft");
+  const alert = await within(stale.dialog).findByRole("alert");
   expect(words(alert)).toBe(
     "This draft was saved later on another device, so your changes here were not saved. Open the newer one",
   );
   await app.user.click(within(alert).getByRole("button", { name: "Open the newer one" }));
-  const opened = await holding(newer);
+  const opened = (await holding(newer)).dialog;
   expect(within(opened).queryByRole("alert")).toBeNull();
   await app.user.click(within(opened).getByRole("button", { name: "Close" }));
   await waitFor(() => {
@@ -123,7 +103,7 @@ test("a save from an older copy of a draft is refused, and the composer opens th
   });
 
   // One draft, the newer one: the refused save made no copy.
-  const after = await openDrafts(app, await newPost(app));
+  const after = await openDrafts(app, (await newPost(app)).dialog);
   expect(await within(after).findByRole("heading", { name: "Drafts 1" })).toBeDefined();
   expect(opener(await draftRow(after, newer), newer)).toHaveLength(1);
 });
@@ -131,7 +111,7 @@ test("a save from an older copy of a draft is refused, and the composer opens th
 test("a scheduled post that failed says why on its draft and in the composer", async () => {
   const text = "Booked two seats. See you at the pier!";
   const app = await renderApp("/bookmarks");
-  const drafts = await openDrafts(app, await newPost(app));
+  const drafts = await openDrafts(app, (await newPost(app)).dialog);
 
   const row = await draftRow(drafts, text);
   expect(

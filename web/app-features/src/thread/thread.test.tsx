@@ -21,7 +21,10 @@ const by = (author: string, key: string, more: Partial<Post> = {}): Post => ({
 });
 
 /** The thread of sam's post `f`, under four posts of hana's, which three people favourited and two boosted. */
-const ancestors = [by("hana", "a1"), ...[2, 3, 4].map((n) => by("hana", `a${String(n)}`, { replyTo: `a${String(n - 1)}` }))];
+const ancestors = [
+  by("hana", "a1"),
+  ...[2, 3, 4].map((n) => by("hana", `a${String(n)}`, { replyTo: `a${String(n - 1)}` })),
+];
 const focused = by("sam", "f", { replyTo: "a4" });
 
 /** A server that holds `posts`, of which `f` is read as its thread's screen reads it. */
@@ -66,7 +69,11 @@ test("between the thread's first post and the two closest, the ancestors fold", 
 });
 
 test("the replies follow under their heading, each in the feed's order", async () => {
-  const { html } = await shown([by("sam", "f"), by("hana", "r1", { replyTo: "f" }), by("sam", "r2", { replyTo: "r1" })]);
+  const { html } = await shown([
+    by("sam", "f"),
+    by("hana", "r1", { replyTo: "f" }),
+    by("sam", "r2", { replyTo: "r1" }),
+  ]);
   expect(html).toContain(">Replies</h2>");
   expect(html.indexOf("Post f")).toBeLessThan(html.indexOf("Post r1"));
   expect(html.indexOf("Post r1")).toBeLessThan(html.indexOf("Post r2"));
@@ -103,9 +110,7 @@ test("the focused post and a reply answer their actions: a favourite reaches the
 });
 
 test("the focused post shows its poll, and a vote in it reaches the server", async () => {
-  const { fake, data, id } = await shown([
-    by("sam", "f", { poll: { options: ["Sourdough", "Rye"], days: 1 } }),
-  ]);
+  const { fake, data, id } = await shown([by("sam", "f", { poll: { options: ["Sourdough", "Rye"], days: 1 } })]);
   const sent = fake.script("POST /statuses/{id}/poll/votes");
   const { data: post } = await data.api.GET("/statuses/{id}", { params: { path: { id } } });
   const poll = post?.poll?.id ?? "";

@@ -169,7 +169,11 @@ test("a redraft again whose post the server no longer finds resolves with the so
 test("an edit sends PUT with what the composer wrote, and every copy shows the server's answer", async () => {
   const { fake, data, requests, read, id } = await cached();
   const write = fake.script("PUT /statuses/{id}", { hold: "response" });
-  const done = editStatus(data, id, { text: "Bread at ten, see https://bakery.test/", spoiler_text: "Food", language: "en" });
+  const done = editStatus(data, id, {
+    text: "Bread at ten, see https://bakery.test/",
+    spoiler_text: "Food",
+    language: "en",
+  });
   write.release();
   await done;
   expect(requests).toEqual([`PUT /statuses/${id}`]);

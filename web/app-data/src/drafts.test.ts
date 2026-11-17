@@ -15,6 +15,7 @@ import {
   scheduleDraft,
   unscheduleDraft,
   useDrafts,
+  type SavedDraft,
 } from "./drafts";
 import { cachedStatus } from "./shadow";
 import { fakeData } from "./test/data";
@@ -26,6 +27,13 @@ const river = "yuki-draft-river";
 const weekly = "yuki-scheduled-weekly";
 /** The ID of no draft: of one deleted on another device since this one read it. */
 const gone = "00000000-0000-7000-8000-00000000ffff";
+
+/** What a save answered, its ETag as "an ETag" when it reads as the server's do, and its ID as `id` says. */
+const shape = (saved: SavedDraft, id: string = saved.id) => ({
+  ...saved,
+  id: saved.id === id ? "the draft" : "another",
+  etag: /^"\d+"$/.test(saved.etag) ? "an ETag" : saved.etag,
+});
 
 /** Whether the lists of drafts are marked to be read again. */
 const stale = (data: AppData) => data.queryClient.getQueryState(draftListsQuery(data).queryKey)?.isInvalidated;
@@ -53,7 +61,7 @@ test("a draft saved before is saved over with the ETag it was read with, and the
   const saved = await saveDraft(data, { text: "hi", visibility: "public" }, read);
   expect(requests).toEqual([`PUT /drafts/${id}`]);
   expect(sent()).toEqual([read.etag]);
-  expect(saved).toEqual({ id, etag: expect.stringMatching(/^"\d+"$/), scheduledAt: read.scheduledAt });
+  expect(shape(saved, id)).toEqual({ id: "the draft", etag: "an ETag", scheduledAt: read.scheduledAt });
   expect(saved.etag).not.toBe(read.etag);
   expect(read.scheduledAt).toBeDefined();
   expect(stale(data)).toBe(true);
@@ -62,7 +70,7 @@ test("a draft saved before is saved over with the ETag it was read with, and the
 test("a draft never saved is saved as a new one, with its ETag", async () => {
   const { data, requests } = await withLists();
   const saved = await saveDraft(data, { text: "hi", visibility: "public" });
-  expect(saved).toEqual({ id: expect.any(String), etag: expect.stringMatching(/^"\d+"$/) });
+  expect(shape(saved)).toEqual({ id: "the draft", etag: "an ETag" });
   expect((await readDraft(data, saved.id)).draft.text).toBe("hi");
   expect(requests.slice(0, 1)).toEqual(["POST /drafts"]);
 });
@@ -90,8 +98,7 @@ test("a draft deleted elsewhere since it was read is saved as a new one", async 
   const { fake, data, requests } = await withLists();
   const sent = saves(fake);
   const saved = await saveDraft(data, { text: "hi", visibility: "public" }, { id: gone, etag: '"3"' });
-  expect(saved).toEqual({ id: expect.any(String), etag: expect.stringMatching(/^"\d+"$/) });
-  expect(saved.id).not.toBe(gone);
+  expect(shape(saved, gone)).toEqual({ id: "another", etag: "an ETag" });
   expect(requests).toEqual([`PUT /drafts/${gone}`, "POST /drafts"]);
   expect(sent()).toEqual(['"3"']);
 });
@@ -154,10 +161,16 @@ test("the lists read every page of the drafts and of the scheduled posts apart, 
   expect(lists.scheduled.map((d) => d.id)).toEqual(["soon", "mid", "late"].map(fake.idOf));
   // The page size is the client's to choose: the lists differ by `scheduled`, and the next page by its cursor.
   const asked = requests.map((r) => new URL(r.slice("GET ".length), "https://demo.test").searchParams);
-  const pages = (scheduled: string) => asked.filter((q) => q.get("scheduled") === scheduled).map((q) => q.has("cursor"));
+  const pages = (scheduled: string) =>
+    asked.filter((q) => q.get("scheduled") === scheduled).map((q) => q.has("cursor"));
   expect(pages("true")).toEqual([false]);
   expect(pages("false").length).toBeGreaterThan(1);
-  expect(pages("false")).toEqual([false, ...pages("false").slice(1).map(() => true)]);
+  expect(pages("false")).toEqual([
+    false,
+    ...pages("false")
+      .slice(1)
+      .map(() => true),
+  ]);
 });
 
 test("a draft is read with the ETag its next save sends, and its schedule", async () => {
@@ -166,7 +179,7 @@ test("a draft is read with the ETag its next save sends, and its schedule", asyn
   const { draft: read, saved } = await readDraft(data, id);
   expect(read.text).toBe("Weekly photo thread is open. Post one picture from your week, no captions needed.");
   expect(read.scheduled_at).toBeDefined();
-  expect(saved).toEqual({ id, etag: expect.stringMatching(/^"\d+"$/), scheduledAt: read.scheduled_at });
+  expect(shape(saved, id)).toEqual({ id: "the draft", etag: "an ETag", scheduledAt: read.scheduled_at });
 });
 
 test("scheduling sends the time, answers the draft with its schedule, and marks the lists stale", async () => {
@@ -174,11 +187,7 @@ test("scheduling sends the time, answers the draft with its schedule, and marks 
   const id = fake.idOf(river);
   const sent = fake.script("PUT /drafts/{id}/schedule");
   const at = new Date(Date.now() + 3 * 86_400_000).toISOString();
-  expect(await scheduleDraft(data, id, at)).toEqual({
-    id,
-    etag: expect.stringMatching(/^"\d+"$/),
-    scheduledAt: at,
-  });
+  expect(shape(await scheduleDraft(data, id, at), id)).toEqual({ id: "the draft", etag: "an ETag", scheduledAt: at });
   expect(requests).toEqual([`PUT /drafts/${id}/schedule`]);
   expect(sent.seen.map((s) => s.body)).toEqual([{ publish_at: at }]);
   expect(stale(data)).toBe(true);
@@ -196,13 +205,13 @@ test("a time past the server's limits (422) rejects with its words, and the list
 test("taking a schedule back answers the draft without one; one not scheduled (409) is read as it is", async () => {
   const { fake, data, requests } = await withLists();
   const id = fake.idOf(weekly);
-  expect(await unscheduleDraft(data, id)).toEqual({ id, etag: expect.stringMatching(/^"\d+"$/) });
+  expect(shape(await unscheduleDraft(data, id), id)).toEqual({ id: "the draft", etag: "an ETag" });
   expect(requests).toEqual([`DELETE /drafts/${id}/schedule`]);
   expect(stale(data)).toBe(true);
 
   const twice = await withLists();
   const plain = twice.fake.idOf(river);
-  expect(await unscheduleDraft(twice.data, plain)).toEqual({ id: plain, etag: expect.stringMatching(/^"\d+"$/) });
+  expect(shape(await unscheduleDraft(twice.data, plain), plain)).toEqual({ id: "the draft", etag: "an ETag" });
   expect(twice.requests).toEqual([`DELETE /drafts/${plain}/schedule`, `GET /drafts/${plain}`]);
 });
 
