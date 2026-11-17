@@ -36,31 +36,6 @@ export class Post {
     return this.article.getByRole("img", { name: alt, exact: true });
   }
 
-  /** The picture that opens in the media viewer: "Open image" or "Open GIF", then ": " and its description if any. */
-  picture(name: string): Locator {
-    return this.article.getByRole("button", { name, exact: true });
-  }
-
-  /**
-   * The button of the line above sensitive media, Show or Hide, described by what it covers, `label` ("Sensitive
-   * image", "2 sensitive images").
-   */
-  sensitiveLine(label: string, action: "Show" | "Hide"): Locator {
-    return this.article.getByRole("button", { name: action, description: label, exact: true });
-  }
-
-  /**
-   * The color [red, green, blue] at the middle of the first blurhash drawn in the post in place of covered media, a
-   * picture hidden from screen readers that only its pixels tell; none while none is drawn.
-   */
-  async coveredColor(): Promise<number[]> {
-    return this.article.evaluate((article) => {
-      const canvas = article.querySelector("canvas");
-      const pixel = canvas?.getContext("2d")?.getImageData(canvas.width / 2, canvas.height / 2, 1, 1).data;
-      return pixel === undefined ? [] : [...pixel.slice(0, 3)];
-    });
-  }
-
   /** The link card of the post's first link, named by its text: the site, the title, and so on. */
   card(name: RegExp): Locator {
     return this.article.getByRole("link", { name });

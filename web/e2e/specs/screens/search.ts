@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Search, at /search: a field (a searchbox named Search), then what it finds by kind, the hashtags a list named
-// Hashtags; and the suggested people over the home of a reader who follows no one.
+// Hashtags.
 
 import type { Locator, Page } from "@playwright/test";
 
@@ -36,9 +36,4 @@ export class Search {
   async find(words: string): Promise<void> {
     await this.field.fill(words);
   }
-}
-
-/** The suggested people over the home of a reader who follows no one, a list named Suggested for you. */
-export function homeSuggestions(page: Page): Locator {
-  return page.getByRole("main").getByRole("list", { name: "Suggested for you", exact: true });
 }

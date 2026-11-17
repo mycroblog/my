@@ -8,7 +8,6 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { holds } from "./composer";
 import { Drafts } from "./drafts";
-import { Frame } from "./frame";
 import { answered } from "./write";
 
 /** A file to upload, as the file picker hands it to the page. */
@@ -24,20 +23,6 @@ export class ArticleEditor {
   /** Opens the editor of a new article at its own address. */
   async openNew(): Promise<void> {
     await this.page.goto("/articles/new");
-    await expect(this.heading("New article")).toBeVisible();
-  }
-
-  /** The main navigation's New article, under New post (from `tablet`), while the reader may write articles. */
-  get navigationEntry(): Locator {
-    return this.page
-      .getByRole("navigation", { name: "Main", exact: true })
-      .getByRole("button", { name: "New article", exact: true });
-  }
-
-  /** Opens the editor from the place New article that starts the phone's Menu sheet. */
-  async openFromMenuSheet(): Promise<void> {
-    const menu = await new Frame(this.page).openMenu();
-    await menu.dialog.getByRole("menuitem", { name: "New article", exact: true }).click();
     await expect(this.heading("New article")).toBeVisible();
   }
 
