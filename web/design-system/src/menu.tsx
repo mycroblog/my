@@ -253,10 +253,19 @@ export function MenuGroup({
 }
 
 /**
- * Gives the menu's focus to the item it is drawn in, the value chosen among a group's: React Aria opens a menu with
- * the focus on the key chosen in the menu's own selection, and a group's selection is the group's own.
+ * In a `MenuSurface`: the items that opened the submenus down to the one shown, which an item that opens one adds
+ * itself to (`opened`), and the one that back took out of them (`from`), which has the focus in the menu put back.
  */
-function ChosenFocus({ id }: { id: string }) {
+type Trail = { openers: readonly string[]; from: string | undefined };
+const noTrail: Trail = { openers: [], from: undefined };
+const TrailContext = createContext<(Trail & { opened: (id: string) => void }) | undefined>(undefined);
+
+/**
+ * Gives the menu's focus to the item it is drawn in: the value chosen among a group's (React Aria opens a menu with
+ * the focus on the key chosen in the menu's own selection, and a group's selection is the group's own), or the item
+ * whose submenu back closed.
+ */
+function TakesFocus({ id }: { id: string }) {
   const state = use(MenuStateContext);
   const take = useEffectEvent(() => {
     state?.selectionManager.setFocusedKey(id);
@@ -318,6 +327,15 @@ export function MenuItem({
   children: string;
 }) {
   const preview = usePreviewItemState(id);
+  const trail = use(TrailContext);
+  // An item that opens a submenu adds itself to the surface's trail as it acts.
+  const act =
+    onAction === undefined || opensValue === undefined
+      ? onAction
+      : () => {
+          trail?.opened(id);
+          onAction();
+        };
   const described = about !== undefined;
   const s = menu({ described });
   return (
@@ -325,7 +343,7 @@ export function MenuItem({
       id={id}
       textValue={children}
       isDisabled={disabled}
-      {...(onAction ? { onAction } : {})}
+      {...(act ? { onAction: act } : {})}
       {...(href === undefined ? {} : { href })}
       {...(current
         ? // React Aria passes no aria-current through: the place where the reader is says so on the element itself.
@@ -359,7 +377,9 @@ export function MenuItem({
         const opens = disabled ? undefined : opensValue;
         return (
           <>
-            {selectionMode === "single" && isSelected && <ChosenFocus id={id} />}
+            {(trail?.from === undefined ? selectionMode === "single" && isSelected : trail.from === id) && (
+              <TakesFocus id={id} />
+            )}
             <span className={s.glyph()}>
               <Icon name={icon} place="action" on={on || current || (selectionMode === "multiple" && isSelected)} />
             </span>
@@ -501,8 +521,24 @@ export function MenuSurface({
   const close = () => {
     change(false);
   };
+  // Back closes a submenu, and the item that opened it has the focus again (WAI-ARIA's menu); a menu that closed
+  // remembers none.
+  const [trail, setTrail] = useState(noTrail);
+  if (!shown && trail !== noTrail) setTrail(noTrail);
+  const opened = (id: string) => {
+    setTrail({ openers: [...trail.openers, id], from: undefined });
+  };
   const title = sub?.title ?? label;
-  const back = sub === undefined ? undefined : { label: t("menu.back"), onPress: sub.onBack };
+  const back =
+    sub === undefined
+      ? undefined
+      : {
+          label: t("menu.back"),
+          onPress: () => {
+            setTrail({ openers: trail.openers.slice(0, -1), from: trail.openers.at(-1) });
+            sub.onBack();
+          },
+        };
   return (
     <MenuTrigger isOpen={shown} onOpenChange={change} {...(longPress ? { trigger: "longPress" as const } : {})}>
       {trigger}
@@ -530,7 +566,7 @@ export function MenuSurface({
               )
             }
           >
-            {children}
+            <TrailContext value={{ ...trail, opened }}>{children}</TrailContext>
           </MenuPanel>
         )}
       </SurfaceLayer>
