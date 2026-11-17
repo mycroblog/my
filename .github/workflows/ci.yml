@@ -10,8 +10,10 @@ name: CI
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
 #   server-test, and repo, and the container contracts of the adapters it changes (scripts/changed-contracts.sh);
 #   repo also checks the documentation site (web/docs), the catalog tools (tools/i18n), and the published packages
-#   when their contexts change; e2e runs the E2E tests of the web client when the e2e context changes, and layout
-#   the tests in a browser on the Storybook host's built catalog when the stories context changes.
+#   when their contexts change; web runs the web client's static checks and its build, and web-test the tests of
+#   each web package the change reaches, a runner each; e2e
+#   runs the E2E tests of the web client when the e2e context changes, and layout the tests in a browser on the
+#   Storybook host's built catalog when the stories context changes.
 # - pull_request labelled `allow:full-ci`: both.
 #
 # Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
@@ -62,6 +64,7 @@ jobs:
       site: ${{ steps.select.outputs.site }}
       web: ${{ steps.select.outputs.web }}
       web-packages: ${{ steps.select.outputs.web-packages }}
+      web-packages-json: ${{ steps.select.outputs.web-packages-json }}
       e2e: ${{ steps.select.outputs.e2e }}
       stories: ${{ steps.select.outputs.stories }}
       contracts: ${{ steps.select.outputs.contracts }}
@@ -119,6 +122,8 @@ jobs:
           web_packages="$(scripts/changed-web-packages.sh --files "$RUNNER_TEMP/changed" | tr '\n' ' ')"
           echo "web packages: $web_packages"
           echo "web-packages=${web_packages% }" >> "$GITHUB_OUTPUT"
+          # The same as a JSON list, which the matrix of web-test reads.
+          echo "web-packages-json=$(printf '%s' "${web_packages% }" | jq -Rnc '[inputs] | join(" ") | split(" ") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
           touches e2e e2e
           touches stories stories
           # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
@@ -136,7 +141,7 @@ jobs:
     # requests in the merge queue cannot break them and the queue does not run them again.
     # api:live-calls also runs here and in the merge queue's repo job: the spec and the live tests' calls can change in
     # two pull requests, and the live tests themselves run on neither.
-    # The bun fmt check (web:fmt-check) runs here and again in the merge queue's repo job, because two pull requests
+    # The bun fmt check (web:fmt-check) runs here and again in the merge queue's web job, because two pull requests
     # that each format their own lines can meet in one statement.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -481,13 +486,13 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the documentation rules (links and anchors across
-    # files) and inventories (the names each document must mention), the ADR numbers, the bun fmt check of the TS packages, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
+    # files) and inventories (the names each document must mention), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
     # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
     # pkg/mybot/ts when the mykit context changes (their licenses run in preflight). Also the build of the documentation
     # site (web/docs, ADR-0150 §7) and its tsc, Oxlint, and knip when the site context changes: the build fails on a
     # broken link or a page that does not render, which two pull requests can cause together (one removes a heading, the other links to it), so it runs on
     # the merge group and not in preflight. Also the catalog lint and the tests of tools/i18n when the i18n context
-    # changes. A step here rather than a job of its own keeps a group small.
+    # changes. The web client's checks run in web, and its packages' tests in web-test.
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -505,11 +510,11 @@ jobs:
       - name: Build pkg/mykit and pkg/mybot once
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:warm
-      # web:fmt-check needs only Bun. The TypeScript checks of the packages run with the workspace's packages, on Bun.
+      # The TypeScript checks of the packages run with the workspace's packages, on Bun.
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
-        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.web-packages != ''
+        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true'
         run: scripts/task.sh web:install
       # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
       - parallel:
@@ -531,42 +536,9 @@ jobs:
             run: scripts/task.sh docs:adr-numbers
           - name: docs:ci-coverage
             run: scripts/task.sh docs:ci-coverage
-          # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet.
-          - name: web:fmt-check
-            run: scripts/task.sh web:fmt-check
           # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
-          # The tokens of web/design-tokens (ADR-0059), the components of web/design-system and web/app-components
-          # (ADR-0025), the platform of web/platform and the server data of web/app-data (ADR-0028), the features and the app of web/app-features and
-          # web/app with the app's build (ADR-0025 §9), the development packages web/devtools (ADR-0168) and
-          # web/storybook (ADR-0165), and what the production build holds: no @my/devtools, the license notice of each
-          # font, and the editor in a chunk of its own. web:test runs the packages the change reaches
-          # (scripts/changed-web-packages.sh), which a change outside the web context can do (pkg/mykit/ts); the slow
-          # suite runs every package.
-          - name: web:typecheck
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:typecheck
-          - name: web:lint
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:lint
-          - name: web:direction
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:direction
-          - name: web:knip
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:knip
-          - name: web:test
-            if: needs.changes.outputs.web-packages != ''
-            env:
-              PACKAGES: ${{ needs.changes.outputs.web-packages }}
-            run: scripts/task.sh web:test PACKAGES="$PACKAGES"
-          - name: web:build
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:build
-          - name: web:build-check
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:build-check
           - name: i18n:lint
             if: needs.changes.outputs.i18n == 'true'
             run: scripts/task.sh i18n:lint
@@ -582,7 +554,7 @@ jobs:
             run: scripts/task.sh i18n:knip
           # The check of the site context (site:check): copy the published documents in and build the site as the
           # deploy combines it, checking what it tells search engines, and run its unit tests, tsc, Oxlint, and knip on
-          # web/docs (its bun fmt is web:fmt-check above), and the check of its translations.
+          # web/docs (its bun fmt is web:fmt-check, in the web job), and the check of its translations.
           - name: docs:site-index-check
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-index-check
@@ -770,6 +742,74 @@ jobs:
         # sometimes does not hold a pull request. The slow suite finds those tests (slow-suite.yml's e2e).
         run: scripts/task.sh web:e2e-built -- --retries=2 --shard=${{ matrix.shard }}/4
 
+  web:
+    # The web client's static checks and its build: the tokens of web/design-tokens (ADR-0059), the components of
+    # web/design-system and web/app-components (ADR-0025), the platform of web/platform and the server data of
+    # web/app-data (ADR-0028), the features and the app of web/app-features and web/app with the app's build
+    # (ADR-0025 §9), the development packages web/devtools (ADR-0168) and web/storybook (ADR-0165), and what the
+    # production build holds: no @my/devtools, the license notice of each font, and the editor in a chunk of its own.
+    # The steps run one after another: each check uses the runner's cores itself.
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet. It needs
+      # only Bun, and any change can break it.
+      - name: web:fmt-check
+        run: scripts/task.sh web:fmt-check
+      - name: Install the Bun packages
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:install
+      - name: web:typecheck
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:typecheck
+      - name: web:lint
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:lint
+      - name: web:direction
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:direction
+      - name: web:knip
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:knip
+      - name: web:build
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:build
+      - name: web:build-check
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:build-check
+
+  web-test:
+    # The tests of the web packages the change reaches (scripts/changed-web-packages.sh, ADR-0079 §18), which a change
+    # outside the web context can do (pkg/mykit/ts); the slow suite runs every package. A package a runner: a test
+    # process uses a core, and a test that waits for one passes its limit.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.web-packages != ''
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.web-packages-json) }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: web:test
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: scripts/task.sh web:test PACKAGES="$PACKAGE"
+
   layout:
     # The tests in a browser on the built catalog (ADR-0171 §1, §4), with the E2E tests' runner and no server, when
     # the stories context changes: the layout tests of the design system's layout parts and overlays, and the browser
@@ -804,7 +844,7 @@ jobs:
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it. A draft
     # reports nothing, rather than a pass that checked nothing.
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, e2e-build, e2e, layout]
+    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, web, web-test, e2e-build, e2e, layout]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled
