@@ -76,7 +76,8 @@ const states: readonly [string, Partial<Args>][] = [
   ["busy", { busy: true }],
 ];
 
-// The buttons stay one group: beside the field where they fit, below it where they do not.
+// The buttons stay one group: beside the field where they fit, below it where they do not, and on a line more of
+// their own where the group is wider than the page.
 function Row({ size, lang, field = false }: { size: ButtonSize; lang: Lang; field?: boolean }) {
   const name = lang === "en" ? "Display name" : "表示名";
   return (
@@ -99,7 +100,7 @@ function Row({ size, lang, field = false }: { size: ButtonSize; lang: Lang; fiel
           }}
         />
       )}
-      <div style={{ ...line, flex: "0 0 auto" }}>
+      <div style={{ ...line, flex: "0 0 auto", maxWidth: "100%" }}>
         {kinds.map((kind) => (
           <Specimen key={kind} {...rest} kind={kind} size={size} label={labels[kind][lang]} />
         ))}
