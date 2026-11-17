@@ -735,3 +735,103 @@ export function WidgetSlot({
 }) {
   return <div className={`${markerClassName} ${form().widget()}`} {...data} />;
 }
+
+const bare = tv({
+  slots: {
+    dateTime: [
+      "box-border h-control-form rounded-control border-0 bg-surface-raised px-control-timeline-inline",
+      "font-sans text-body text-text tabular-nums outline-hidden [color-scheme:inherit] focus-visible:shadow-focus",
+      "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
+      "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
+    ],
+    // As tall as what it holds, never cut, at least a control's height.
+    textArea: [
+      "box-border min-h-control-form resize-none rounded-control border-0 bg-surface-raised",
+      "px-control-timeline-inline py-control-timeline-inline font-sans text-body text-text outline-hidden",
+      "[field-sizing:content] [word-break:auto-phrase] focus-visible:shadow-focus",
+    ],
+  },
+});
+
+/**
+ * A field of a date and a time (`datetime-local`) with no label of its own: `label` names it for assistive technology,
+ * `value`, `min` and `max` are as the browser holds them (2026-11-16T09:00), `invalid` draws the line of a refusal,
+ * and `describedBy` names the ids that describe it.
+ */
+export function DateTimeField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  invalid = false,
+  describedBy,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  min?: string | undefined;
+  max?: string | undefined;
+  invalid?: boolean;
+  describedBy?: string | undefined;
+}) {
+  return (
+    <Box
+      full
+      shrink
+      as={
+        <input
+          type="datetime-local"
+          className={bare().dateTime()}
+          aria-label={label}
+          aria-invalid={invalid ? true : undefined}
+          aria-describedby={describedBy}
+          value={value}
+          min={min}
+          max={max}
+          onChange={(e) => {
+            onChange(e.target.value);
+          }}
+        />
+      }
+    />
+  );
+}
+
+/**
+ * A box for a few lines of text with no label of its own, as tall as the text it holds and at least a control's
+ * height, read in the direction of its text; `label` names it for assistive technology. `autoFocus` takes the focus as
+ * it mounts, for a box the reader just opened.
+ */
+export function BareTextArea({
+  label,
+  value,
+  onChange,
+  maxLength,
+  autoFocus = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  maxLength?: number | undefined;
+  autoFocus?: boolean;
+}) {
+  return (
+    <Box
+      full
+      as={
+        <textarea
+          className={bare().textArea()}
+          aria-label={label}
+          value={value}
+          maxLength={maxLength}
+          dir="auto"
+          autoFocus={autoFocus}
+          onChange={(e) => {
+            onChange(e.target.value);
+          }}
+        />
+      }
+    />
+  );
+}

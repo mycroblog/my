@@ -187,6 +187,8 @@ const MAX = {
   suggestions: "max-h-[calc(8*var(--control-form-height)+2*var(--menu-padding))]",
   // A dialog in the middle of the viewport, a margin from its edges, its padding around what it holds.
   "viewport-dialog": "max-h-[calc(100dvh-2*var(--dialog-margin)-2*var(--dialog-padding))]",
+  // A form in a popover sized to what it holds: this wide, within the page.
+  "popover-form": "w-[17rem] max-w-full",
   // A picture or a video is no larger than the room it is in.
   contain: "max-h-full max-w-full",
   // A description of the media viewer: a column of a reading width, a third of the screen at most.
@@ -257,6 +259,7 @@ const SPACE_AFTER = {
   // The words that took the place of the removed ones follow a space apart.
   "diff-replaced": "me-[0.3em]",
   "entry-caption": "me-entry-caption",
+  "screen-tab-gap": "me-screen-tab-gap",
   "shell-edge": "me-shell-edge",
   "content-emoji-side": "me-content-emoji-side",
 } as const;
@@ -370,11 +373,13 @@ const SURFACE = { page: "bg-surface", raised: "bg-surface-raised" } as const;
 const RADIUS = { control: "rounded-control", entry: "rounded-entry" } as const;
 
 /** The padding of a surface or of a row, by a token of the theme's spacing: on every side, or on the sides named. */
-const PAD = { embed: "p-embed", "poll-padding": "p-poll-padding" } as const;
+const PAD = { embed: "p-embed", "poll-padding": "p-poll-padding", "screen-tab-gap": "p-screen-tab-gap" } as const;
 const PAD_X = { "poll-option-inline": "px-poll-option-inline" } as const;
 const PAD_Y = { "composer-inset": "py-composer-inset", "poll-result-block": "py-poll-result-block" } as const;
 const PAD_START = { "control-timeline-inline": "ps-control-timeline-inline" } as const;
 const PAD_END = { "composer-inset": "pe-composer-inset" } as const;
+/** The padding above alone: the room a control beside a text keeps to stand on the text's first line. */
+const PAD_TOP = { "screen-tab-gap": "pt-screen-tab-gap" } as const;
 
 /**
  * What a generic part takes of paint: the style of a text and the surface under a group, which are a composite's own
@@ -411,6 +416,8 @@ type Paint = {
   padStart?: keyof typeof PAD_START | undefined;
   /** Its padding at the end of its lines, where not the start's. */
   padEnd?: keyof typeof PAD_END | undefined;
+  /** Its padding above alone. */
+  padTop?: keyof typeof PAD_TOP | undefined;
   /** A list without its markers and, unless it has a padding, their room. */
   plain?: boolean | undefined;
 };
@@ -432,6 +439,7 @@ const PAINT: Record<keyof Paint, true> = {
   padY: true,
   padStart: true,
   padEnd: true,
+  padTop: true,
   plain: true,
 };
 
@@ -447,6 +455,7 @@ function paintOf(props: Paint): string {
   if (props.padY) c += ` ${PAD_Y[props.padY]}`;
   if (props.padStart) c += ` box-border ${PAD_START[props.padStart]}`;
   if (props.padEnd) c += ` box-border ${PAD_END[props.padEnd]}`;
+  if (props.padTop) c += ` ${PAD_TOP[props.padTop]}`;
   if (props.text) c += ` ${TEXT[props.text]}`;
   if (props.tone) c += ` ${TONE[props.tone]}`;
   if (props.weight) c += ` ${WEIGHT[props.weight]}`;

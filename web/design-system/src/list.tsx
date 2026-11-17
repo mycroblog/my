@@ -12,7 +12,7 @@ import { Button, Link, Tab, TabList, TabPanel, Tabs } from "react-aria-component
 import { tv } from "tailwind-variants/lite";
 import { Byline, Stamp } from "./entry";
 import { Icon, type IconName } from "./icons";
-import { Box, Row, Stack } from "./layout";
+import { Box, Row, Stack, type Gap } from "./layout";
 import { useReader } from "./locale";
 
 /**
@@ -741,5 +741,59 @@ export function BackButton({ onPress, children }: { onPress: () => void; childre
         {children}
       </Row>
     </p>
+  );
+}
+
+const press = tv({
+  base: [
+    "cursor-pointer rounded-control border-0 bg-transparent px-screen-row-inline py-screen-row-block text-start",
+    "font-sans outline-hidden data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
+    "data-focus-visible:shadow-focus",
+  ],
+});
+
+/**
+ * A row of a list that is pressed as a whole: a surface on hover and press, the ring on focus, its parts a `gap` apart,
+ * one under another (`stack`) or side by side from the top (`row`). Its surface reaches past the column by its inline
+ * padding, so that what it holds lines up with the column's edge: at its start (`start`, beside something that stands
+ * at its end), or at both (`inline`). `grow` takes the room left in a row. Its text is the caption's or the body's,
+ * the text's color or muted.
+ */
+export function PressRow({
+  onPress,
+  flow = "stack",
+  gap,
+  bleed,
+  grow = false,
+  text = "body",
+  tone = "text",
+  children,
+}: {
+  onPress?: (() => void) | undefined;
+  flow?: "stack" | "row";
+  gap: Gap;
+  bleed: "start" | "inline";
+  grow?: boolean;
+  text?: "caption" | "body";
+  tone?: "text" | "muted";
+  children: ReactNode;
+}) {
+  const as = <Button className={press()} {...(onPress ? { onPress } : {})} />;
+  const place = {
+    as,
+    grow,
+    text,
+    tone,
+    bleedStart: bleed === "start" ? ("screen-row-inline" as const) : undefined,
+    bleedInline: bleed === "inline" ? ("screen-row-inline" as const) : undefined,
+  };
+  return flow === "row" ? (
+    <Row {...place} align="start" gap={gap}>
+      {children}
+    </Row>
+  ) : (
+    <Stack {...place} gap={gap}>
+      {children}
+    </Stack>
   );
 }

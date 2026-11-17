@@ -4,40 +4,36 @@
 // in the composer and holds its other actions in a menu at its end; the time a post goes out, in the reader's locale
 // and time zone; and the form that sets that time, within the server's limits. Everything sits on the page's surface,
 // apart by space; a row takes a surface on hover and the ring on focus, as a row that opens something does. Every word
-// is the caller's.
+// is the caller's. It is composed of the design system's parts alone, laid out and painted by their props (ADR-0025
+// §4).
 
 import { useId, type ReactNode } from "react";
-import { Button as AriaButton, useLocale } from "react-aria-components";
-import { tv } from "tailwind-variants/lite";
+import { useLocale } from "react-aria-components";
 import { Button } from "./button";
-import { FieldError } from "./form-page";
+import { DateTimeField, FieldError } from "./form-page";
 import { Icon, type IconName } from "./icons";
+import { Box, Row, Spoken, Stack } from "./layout";
+import { PressRow } from "./list";
 import { useReader } from "./locale";
 import { useHeaded } from "./menu";
-
-const sections = tv({
-  slots: {
-    // Apart from the back link above by a group's space, as the sections are from each other.
-    root: "mt-screen-group-gap grid gap-entry-room",
-    section: "grid gap-entry-line",
-    // The heading and the line under it (the zone) together, tight.
-    head: "grid gap-[0.125rem]",
-    title: "m-0 text-body font-strong text-text",
-    // How many, muted beside the heading, as a list's title says how many members it has.
-    count: "font-normal whitespace-nowrap text-muted-text tabular-nums",
-    empty: "m-0 text-muted-text",
-  },
-});
 
 /** How many a section of the drafts' list holds, muted, in its heading's sentence (Scheduled 3). */
 export function DraftCount({ count }: { count: number }) {
   const { locale } = useLocale();
-  return <span className={sections().count()}>{new Intl.NumberFormat(locale).format(count)}</span>;
+  return (
+    <Box as="span" weight="normal" nowrap tone="muted" numeric>
+      {new Intl.NumberFormat(locale).format(count)}
+    </Box>
+  );
 }
 
 /** The sections of the drafts' list, one under another, a group's space apart and from what is above them. */
 export function DraftSections({ children }: { children: ReactNode }) {
-  return <div className={sections().root()}>{children}</div>;
+  return (
+    <Stack gap="entry-room" spaceAbove="screen-group-gap">
+      {children}
+    </Stack>
+  );
 }
 
 /**
@@ -45,60 +41,36 @@ export function DraftSections({ children }: { children: ReactNode }) {
  * zone), then its rows.
  */
 export function DraftSection({ title, note, children }: { title: ReactNode; note?: ReactNode; children: ReactNode }) {
-  const s = sections();
   return (
-    <section className={s.section()}>
-      <div className={s.head()}>
-        <h3 className={s.title()}>{title}</h3>
+    <Stack as="section" gap="entry-line">
+      <Stack gap="hair">
+        <Box as="h3" text="body" weight="strong" tone="text">
+          {title}
+        </Box>
         {note}
-      </div>
+      </Stack>
       {children}
-    </section>
+    </Stack>
   );
 }
 
 /** That a list of drafts has none, muted, where its first heading would stand. */
 export function DraftsEmpty({ children }: { children: string }) {
-  return <p className={sections().empty()}>{children}</p>;
+  return (
+    <Box as="p" tone="muted">
+      {children}
+    </Box>
+  );
 }
-
-const list = tv({ base: "m-0 grid list-none gap-entry-line p-0" });
 
 /** The rows of drafts or of scheduled posts, one under another. */
 export function DraftList({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <ul className={list()} aria-label={label}>
+    <Stack as="ul" gap="entry-line" plain aria-label={label}>
       {children}
-    </ul>
+    </Stack>
   );
 }
-
-const row = tv({
-  slots: {
-    root: "flex items-start gap-entry-caption",
-    open: [
-      "-ms-screen-row-inline grid min-w-0 flex-1 cursor-pointer gap-entry-line rounded-control border-0 bg-transparent",
-      "px-screen-row-inline py-screen-row-block text-start font-sans text-body text-text outline-hidden",
-      "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus",
-    ],
-    lead: "flex items-start gap-entry-caption text-caption",
-    leadGlyph: "inline-flex h-[1lh] flex-none items-center",
-    text: "line-clamp-2 [overflow-wrap:anywhere] whitespace-pre-line",
-    warning: "text-muted-text [&>svg]:me-[0.25rem] [&>svg]:inline [&>svg]:align-[-0.125em]",
-    blank: "text-muted-text",
-    foot: "flex flex-wrap items-center gap-x-entry-avatar gap-y-0 text-caption text-muted-text",
-    mark: "inline-flex items-center gap-[0.25rem]",
-    more: "pt-[0.25rem]",
-  },
-  variants: {
-    // A line that says what went wrong (a failed publish) in the text's color, by its glyph; a time in the text's
-    // color too, at the label's weight: the one thing a scheduled post is found by.
-    lead: {
-      failed: { lead: "text-text", leadGlyph: "text-text" },
-      scheduled: { lead: "font-label text-text", leadGlyph: "text-muted-text" },
-    },
-  },
-});
 
 export type DraftMark = {
   icon: IconName;
@@ -134,48 +106,70 @@ export type DraftRowProps = {
  * what it carries and when it was saved, muted; the whole row opens it in the composer, and its menu sits at the end.
  */
 export function DraftRow({ lead, text, blank, warning, lang, marks, saved, openLabel, onOpen, menu }: DraftRowProps) {
-  const s = row({ lead: lead?.kind });
+  const hasWarning = warning !== undefined && warning !== "";
   return (
-    <li className={s.root()}>
+    <Row as="li" align="start" gap="entry-caption">
       {/* Named by what it says after what it does, as it shows, so that each row reads apart and its words once. */}
-      <AriaButton className={s.open()} onPress={onOpen}>
-        <span className="sr-only">{openLabel}</span>
+      <PressRow bleed="start" gap="entry-line" grow onPress={onOpen}>
+        <Spoken>{openLabel}</Spoken>
         {lead !== undefined && (
-          <span className={s.lead()}>
-            <span className={s.leadGlyph()}>
+          <Row
+            as="span"
+            align="start"
+            gap="entry-caption"
+            text="caption"
+            tone="text"
+            weight={lead.kind === "scheduled" ? "label" : undefined}
+          >
+            <Row as="span" inline line rigid align="center" tone={lead.kind === "scheduled" ? "muted" : "text"}>
               <Icon name={lead.kind === "failed" ? "error" : "schedule"} place="caption" />
-            </span>
+            </Row>
             <span>{lead.text}</span>
-          </span>
+          </Row>
         )}
-        <span className={s.text()} lang={lang} dir="auto">
-          {warning !== undefined && warning !== "" && (
-            <span className={s.warning()}>
-              <Icon name="hidden" place="caption" />
+        <Box as="span" lines={2} breaks="anywhere" keeps="lines" lang={lang} dir="auto">
+          {hasWarning && (
+            <Box as="span" tone="muted">
+              <Row as="span" inline baseline="glyph" spaceAfter="screen-tab-gap">
+                <Icon name="hidden" place="caption" />
+              </Row>
               {warning}
-            </span>
+            </Box>
           )}
-          {warning !== undefined && warning !== "" && text !== "" && " "}
+          {hasWarning && text !== "" && " "}
           {text === "" ? (
-            warning === undefined || warning === "" ? (
-              <span className={s.blank()}>{blank}</span>
-            ) : null
+            hasWarning ? null : (
+              <Box as="span" tone="muted">
+                {blank}
+              </Box>
+            )
           ) : (
             text
           )}
-        </span>
-        <span className={s.foot()}>
+        </Box>
+        <Row as="span" wrap align="center" gapX="entry-avatar" gapY="0" text="caption" tone="muted">
           {marks.map((m) => (
-            <span key={m.icon} className={s.mark()} role="img" aria-label={m.label} title={m.label}>
+            <Row
+              key={m.icon}
+              as="span"
+              inline
+              align="center"
+              gap="screen-tab-gap"
+              role="img"
+              aria-label={m.label}
+              title={m.label}
+            >
               <Icon name={m.icon} place="caption" />
               {m.count !== undefined && m.count > 1 && <span aria-hidden="true">{m.count}</span>}
-            </span>
+            </Row>
           ))}
           <span>{saved}</span>
-        </span>
-      </AriaButton>
-      <span className={s.more()}>{menu}</span>
-    </li>
+        </Row>
+      </PressRow>
+      <Box as="span" padTop="screen-tab-gap">
+        {menu}
+      </Box>
+    </Row>
   );
 }
 
@@ -210,37 +204,21 @@ export function readerZone(locale: string, at = new Date()): string {
 export function ScheduleTime({ date }: { date: Date | string }) {
   const { locale } = useLocale();
   return (
-    <bdi className="whitespace-nowrap">
+    <Box as="bdi" nowrap>
       <time dateTime={new Date(date).toISOString()}>{scheduleTime(date, locale)}</time>
-    </bdi>
+    </Box>
   );
 }
 
 /** The reader's time zone (`readerZone`), isolated and never broken inside, as `ScheduleTime` is. */
 export function ScheduleZone() {
   const { locale } = useLocale();
-  return <bdi className="whitespace-nowrap">{readerZone(locale)}</bdi>;
+  return (
+    <Box as="bdi" nowrap>
+      {readerZone(locale)}
+    </Box>
+  );
 }
-
-const form = tv({
-  slots: {
-    root: "box-border grid gap-entry-line p-[0.25rem]",
-    caption: "m-0 inline-flex items-center gap-entry-caption text-caption text-muted-text",
-    field: "grid gap-[0.25rem]",
-    input: [
-      "box-border h-control-form w-full min-w-0 rounded-control border-0 bg-surface-raised px-control-timeline-inline",
-      "font-sans text-body text-text tabular-nums outline-hidden [color-scheme:inherit] focus-visible:shadow-focus",
-      "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
-      "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
-    ],
-    hint: "m-0 text-caption text-muted-text",
-    row: "flex flex-wrap items-center justify-end gap-entry-caption pt-[0.25rem]",
-  },
-  variants: {
-    // In a sheet, as wide as it; else of its own width, which a popover sized to what it holds takes, within the page.
-    headed: { true: { root: "w-full" }, false: { root: "w-[17rem] max-w-full" } },
-  },
-});
 
 /** A local date and time as a `datetime-local` field holds it (2026-11-16T09:00). */
 export const localInput = (d: Date) => {
@@ -272,8 +250,9 @@ export type ScheduleFormProps = {
 };
 
 /**
- * The time a post goes out: under its caption (none in a sheet, whose head names it), one field of the date and the time, the reader's zone and the server's
- * limits (or what is wrong with the time) under it, then a clear and the confirmation at the end.
+ * The time a post goes out: under its caption (none in a sheet, whose head names it), one field of the date and the
+ * time, the reader's zone and the server's limits (or what is wrong with the time) under it, then a clear and the
+ * confirmation at the end.
  */
 export function ScheduleForm({
   title,
@@ -288,45 +267,46 @@ export function ScheduleForm({
   confirm,
   clear,
 }: ScheduleFormProps) {
-  // In a sheet, its head names the form.
+  // In a sheet, its head names the form; else it is of its own width, which a popover sized to what it holds takes.
   const headed = useHeaded();
-  const s = form({ headed });
   const id = useId();
   const { direction } = useReader(undefined);
   return (
-    <div className={s.root()} dir={direction}>
+    <Stack
+      gap="entry-line"
+      pad="screen-tab-gap"
+      full={headed}
+      max={headed ? undefined : "popover-form"}
+      dir={direction}
+    >
       {!headed && (
-        <p className={s.caption()}>
+        <Row as="p" inline align="center" gap="entry-caption" text="caption" tone="muted">
           <Icon name="schedule" place="caption" />
           {title}
-        </p>
+        </Row>
       )}
-      <div className={s.field()}>
-        <input
-          type="datetime-local"
-          className={s.input()}
-          aria-label={label}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={`${id}-zone ${id}-note`}
+      <Stack gap="screen-tab-gap">
+        <DateTimeField
+          label={label}
           value={value}
+          onChange={onChange}
           min={localInput(min)}
           max={localInput(max)}
-          onChange={(e) => {
-            onChange(e.target.value);
-          }}
+          invalid={Boolean(error)}
+          describedBy={`${id}-zone ${id}-note`}
         />
-        <p id={`${id}-zone`} className={s.hint()}>
+        <Box as="p" id={`${id}-zone`} text="caption" tone="muted">
           {zone}
-        </p>
+        </Box>
         {error ? (
           <FieldError id={`${id}-note`}>{error}</FieldError>
         ) : (
-          <p id={`${id}-note`} className={s.hint()}>
+          <Box as="p" id={`${id}-note`} text="caption" tone="muted">
             {hint}
-          </p>
+          </Box>
         )}
-      </div>
-      <div className={s.row()}>
+      </Stack>
+      <Row wrap align="center" justify="end" gap="entry-caption" padTop="screen-tab-gap">
         {clear && (
           <Button kind="quiet" size="timeline" onPress={clear.onPress}>
             {clear.label}
@@ -335,7 +315,7 @@ export function ScheduleForm({
         <Button kind="secondary" size="timeline" onPress={confirm.onPress}>
           {confirm.label}
         </Button>
-      </div>
-    </div>
+      </Row>
+    </Stack>
   );
 }
