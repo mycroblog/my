@@ -93,7 +93,8 @@ const line = tv({
 });
 
 // The covered pictures' own button: a press anywhere on them shows them, as the line does; out of the tab order and
-// hidden from a screen reader, since the line is the one a keyboard reaches and a screen reader hears.
+// hidden from a screen reader, since the line is the one a keyboard reaches and a screen reader hears. It goes as it is
+// pressed, so it never takes the focus, which stays where it was.
 const veil = [
   "absolute inset-0 cursor-pointer rounded-control border-0 bg-transparent p-0 outline-hidden",
   "data-focus-visible:shadow-focus-inset",
@@ -526,6 +527,7 @@ export function MediaGrid({ items, size = "full", sensitive = false, onOpen, loc
                   className={veil}
                   aria-label={`${label} · ${t("media.show")}`}
                   excludeFromTabOrder
+                  preventFocusOnPress
                   onPress={() => {
                     setShown(true);
                   }}
