@@ -472,7 +472,10 @@ export function Stamp({ glyph, date, href, edited }: StampProps) {
   );
 }
 
-/** A row of icon buttons close together at the start, and `end` (more) at the row's end. */
+/**
+ * A row of icon buttons close together at the start, and `end` (more) at the row's end; the buttons that do not fit (large
+ * counts, as a right-to-left locale writes them) go on a next line.
+ */
 export function ActionRow({
   lang,
   children,
@@ -484,7 +487,7 @@ export function ActionRow({
 }) {
   // The row reaches as far past the body as a tile's inline padding, so that the first glyph lines up with the body.
   return (
-    <Row bleedInline="icon-button-inline" gap="entry-action" lang={lang}>
+    <Row wrap bleedInline="icon-button-inline" gap="entry-action" lang={lang}>
       {children}
       {end !== undefined && (
         <Row as="span" push="end" rigid>

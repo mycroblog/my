@@ -102,7 +102,6 @@ test("the row of actions keeps inside the entry right to left, where large count
   page,
   open,
 }) => {
-  test.fail(true, "ActionRow: three counts as ar writes them (123.5 ألف) push More out of a 320 px page");
   await open(story, { locale: "ar-XB", args: { counts: "large" } });
   const entry = page.getByRole("article", { name, exact: true });
   const at = await boxesAtRest({ entry, more: entry.getByRole("button", { name: "More", exact: true }) });
