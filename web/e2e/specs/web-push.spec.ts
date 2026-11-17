@@ -49,3 +49,29 @@ test("a person turns Web Push on from the prompt, and a mention arrives as a not
     .poll(() => shownNotifications(page))
     .toContainEqual({ title: message.payload.title, url: `${origin}/@${writer.username}/status/${mention.id}` });
 });
+
+test("a person who chose Not now is not offered Web Push again in this browser, after a reload", async ({
+  page,
+  context,
+  baseURL,
+  signIn,
+  fresh,
+}) => {
+  if (baseURL === undefined) throw new Error("e2e: no base URL");
+  const shim = await installPushShim(context, new URL(baseURL).origin);
+  const reader = await fresh.person();
+  const writer = await fresh.person();
+  const mention = await fresh.post(writer, { text: `@${reader.username} the bakery opens at eight` });
+
+  await signIn(reader);
+  await new Frame(page).goTo("Notifications");
+  const notifications = new Notifications(page);
+  await notifications.closePush();
+  await expect(notifications.pushPrompt).toBeHidden();
+
+  // The prompt shows with the notifications when it shows at all: once the mention shows, the screen has decided.
+  await page.reload();
+  await expect(notifications.mention(writer.displayName, mention.text)).toBeVisible();
+  await expect(notifications.pushPrompt).toBeHidden();
+  expect(shim.subscription()).toBeUndefined();
+});

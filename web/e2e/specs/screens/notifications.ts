@@ -105,6 +105,11 @@ export class Notifications {
     });
   }
 
+  /** Closes the Web Push prompt with Not now, which only this browser keeps. */
+  async closePush(): Promise<void> {
+    await this.pushPrompt.getByRole("button", { name: "Not now", exact: true }).click();
+  }
+
   /** Opens the screen of what waits for the reader's approval from the row that counts `count` of them. */
   async openWaiting(count: number): Promise<WaitingRequests> {
     await this.waitingRow(count).click();

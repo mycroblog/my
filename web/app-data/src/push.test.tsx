@@ -1,0 +1,189 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  notificationSettingsQuery,
+  pushSubscriptionQuery,
+  rememberPushPromptClosed,
+  useNotificationKinds,
+  usePushSubscription,
+  useRegisterPush,
+  type PushSubscription,
+} from "./push";
+import { fakeAppData, json, type Handler } from "./test/fake";
+import { probe } from "./test/probe";
+
+const subscription: PushSubscription = {
+  id: "0190a5d0-0000-7000-8000-000000000070",
+  endpoint: "https://push.example/s/1",
+  alerts: ["mention", "follow"],
+  server_key: "BAECAwQFBgcICQ",
+};
+
+const row = (group: string, types: string[]) => ({
+  group,
+  section: "ordinary",
+  types,
+  in_app: { enabled: true, fixed: false },
+});
+
+/** A server whose subscription and settings answer as `handler` does at their paths. */
+const at = (answers: Record<string, () => Response>): Handler => {
+  return (request) => {
+    const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
+    return answers[`${request.method} ${path}`]?.() ?? json(404, { status: 404, title: "Not Found" });
+  };
+};
+
+describe("usePushSubscription", () => {
+  test("is undefined until it is read, the server's once read, and null when the server has none (a 404)", async () => {
+    const found = fakeAppData(at({ "GET /push/subscription": () => json(200, subscription) })).data;
+    expect(probe(found, usePushSubscription)).toBeUndefined();
+    await found.queryClient.query(pushSubscriptionQuery(found));
+    expect(probe(found, usePushSubscription)).toEqual(subscription);
+
+    const none = fakeAppData(at({})).data;
+    await none.queryClient.query(pushSubscriptionQuery(none));
+    expect(probe(none, usePushSubscription)).toBeNull();
+  });
+
+  test("is undefined when it could not be read, never null", async () => {
+    const { data } = fakeAppData(at({ "GET /push/subscription": () => json(500, { status: 500, title: "Oops" }) }));
+    await data.queryClient.query(pushSubscriptionQuery(data)).catch(() => undefined);
+    expect(probe(data, usePushSubscription)).toBeUndefined();
+  });
+});
+
+describe("useNotificationKinds", () => {
+  test("is every kind of the reader's rows, each once, and undefined until the rows are read", async () => {
+    const { data } = fakeAppData(
+      at({
+        "GET /preferences/notifications": () =>
+          json(200, {
+            rows: [row("mention", ["mention"]), row("boost", ["boost", "quote"]), row("again", ["quote", "follow"])],
+          }),
+      }),
+    );
+    expect(probe(data, useNotificationKinds)).toBeUndefined();
+    await data.queryClient.query(notificationSettingsQuery(data));
+    const kinds = probe(data, useNotificationKinds);
+    expect([...(kinds ?? [])].sort()).toEqual(["boost", "follow", "mention", "quote"]);
+  });
+
+  test("stays undefined when the rows could not be read", async () => {
+    const { data } = fakeAppData(
+      at({ "GET /preferences/notifications": () => json(500, { status: 500, title: "Oops" }) }),
+    );
+    await data.queryClient.query(notificationSettingsQuery(data)).catch(() => undefined);
+    expect(probe(data, useNotificationKinds)).toBeUndefined();
+  });
+});
+
+describe("useRegisterPush", () => {
+  const browser = { endpoint: "https://push.example/s/1", keys: { p256dh: "-_8B", auth: "_gI" } };
+
+  test("puts this browser's subscription for the kinds given, and the server's answer is the subscription then", async () => {
+    let body: unknown;
+    const { data } = fakeAppData(async (request) => {
+      const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
+      if (path === "/push/subscription" && request.method === "PUT") {
+        body = await request.json();
+        return json(200, subscription);
+      }
+      return json(404, { status: 404, title: "Not Found" });
+    });
+    await data.queryClient.query(pushSubscriptionQuery(data));
+    expect(probe(data, usePushSubscription)).toBeNull();
+    const register = probe(data, useRegisterPush);
+    await register(browser, ["mention", "follow"]);
+    expect(body).toEqual({ ...browser, alerts: ["mention", "follow"] });
+    expect(probe(data, usePushSubscription)).toEqual(subscription);
+  });
+
+  test("rejects when the server refuses, and the grant still has none", async () => {
+    const { data } = fakeAppData(at({ "PUT /push/subscription": () => json(422, { status: 422, title: "Bad" }) }));
+    await data.queryClient.query(pushSubscriptionQuery(data));
+    let refused: unknown;
+    await probe(data, useRegisterPush)(browser, ["mention"]).catch((e: unknown) => {
+      refused = e;
+    });
+    expect(refused).toBeDefined();
+    expect(probe(data, usePushSubscription)).toBeNull();
+  });
+});
+
+/** A device's storage that keeps what it is given; Bun has none of its own. */
+function deviceStorage(kept = new Map<string, string>()): Storage {
+  return {
+    get length() {
+      return kept.size;
+    },
+    clear: () => {
+      kept.clear();
+    },
+    getItem: (k) => kept.get(k) ?? null,
+    key: (i) => Array.from(kept.keys())[i] ?? null,
+    removeItem: (k) => {
+      kept.delete(k);
+    },
+    setItem: (k, v) => {
+      kept.set(k, v);
+    },
+  };
+}
+
+// What usePushPromptClosed answers, account by account, the screen's stories check in a browser (Notifications,
+// PushClosedBefore and PushClosedByAnother): a render without a DOM reads no device.
+describe("rememberPushPromptClosed", () => {
+  const key = "my:push-prompt-closed";
+  let kept: Map<string, string>;
+  /** The accounts the device keeps as having closed the prompt (ADR-0086 §21: a list of account IDs). */
+  const closedOnDevice = (): unknown => {
+    const value = kept.get(key);
+    return value === undefined ? [] : (JSON.parse(value) as unknown);
+  };
+
+  beforeEach(() => {
+    kept = new Map();
+    globalThis.localStorage = deviceStorage(kept);
+  });
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, "localStorage");
+  });
+
+  test("keeps on the device each account that closed the prompt, once", () => {
+    rememberPushPromptClosed("yuki", true);
+    rememberPushPromptClosed("hana", true);
+    rememberPushPromptClosed("yuki", true);
+    expect(closedOnDevice()).toEqual(expect.arrayContaining(["yuki", "hana"]));
+    expect(closedOnDevice()).toHaveLength(2);
+  });
+
+  test("taking one account's record away leaves the others'", () => {
+    rememberPushPromptClosed("yuki", true);
+    rememberPushPromptClosed("hana", true);
+    rememberPushPromptClosed("yuki", false);
+    rememberPushPromptClosed("marco", false);
+    expect(closedOnDevice()).toEqual(["hana"]);
+  });
+
+  test("a value the device cannot read is replaced, and a device that keeps nothing does not fail", () => {
+    kept.set(key, "{not json");
+    rememberPushPromptClosed("yuki", true);
+    expect(closedOnDevice()).toEqual(["yuki"]);
+    const refuse = () => {
+      throw new DOMException("The storage is blocked", "SecurityError");
+    };
+    globalThis.localStorage = {
+      length: 0,
+      clear: refuse,
+      getItem: refuse,
+      key: refuse,
+      removeItem: refuse,
+      setItem: refuse,
+    };
+    expect(() => {
+      rememberPushPromptClosed("yuki", true);
+    }).not.toThrow();
+  });
+});

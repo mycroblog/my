@@ -269,6 +269,11 @@ export type FakeOptions = {
    * a VAPID key.
    */
   push?: boolean;
+  /**
+   * With `push`: the reader holds a subscription already (`subscribed`), or the read of it (`subscription-fails`) or of
+   * their notification settings (`settings-fail`) fails with a 500.
+   */
+  pushState?: "subscribed" | "subscription-fails" | "settings-fail";
   /** The first dismissal of a notification fails (a 500); the next is kept, as a try again finds it. */
   dismissFails?: boolean;
 };
@@ -1841,7 +1846,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
 
   /** The reader's Web Push subscription, once they registered one (`push`). */
-  let pushSubscription: Json | undefined;
+  let pushSubscription: Json | undefined =
+    o.pushState === "subscribed"
+      ? {
+          id: idAt(0, 70_000),
+          endpoint: "https://push.example/s/held",
+          alerts: ["mention"],
+          server_key: instanceBody["push_server_key"],
+        }
+      : undefined;
 
   // ---- Answers ---------------------------------------------------------------------------------------------------
 
@@ -2580,6 +2593,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }
     if (path === "/push/subscription") {
       if (o.push !== true) return problem(404, "Not Found");
+      if (request.method === "GET" && o.pushState === "subscription-fails")
+        return problem(500, "Internal Server Error");
       if (request.method === "PUT") {
         const body = (await request.json()) as { endpoint: string; alerts: string[] };
         pushSubscription = {
@@ -2593,6 +2608,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (request.method === "DELETE") return new Response(null, { status: 204 });
       return pushSubscription === undefined ? problem(404, "Not Found") : json(pushSubscription);
     }
+    if (path === "/preferences/notifications" && request.method === "GET" && o.pushState === "settings-fail")
+      return problem(500, "Internal Server Error");
     if (path === "/preferences/notifications" && request.method === "GET")
       return json({
         rows: (["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const).map(
