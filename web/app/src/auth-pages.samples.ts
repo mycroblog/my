@@ -201,7 +201,7 @@ export function authScreens(lang: Lang): AuthScreenStates[] {
   const passkey = { options: { challenge: "c2FtcGxl", rpId: fakeHost }, challenge: "sample" };
   const humanCheck = {
     scriptSrc: "",
-    containerClass: "cf-turnstile",
+    containerClassName: "cf-turnstile",
     siteKey: "sample",
     theme: "auto",
     notice: w("humanNotice"),

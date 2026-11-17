@@ -24,7 +24,7 @@ const headerColorScheme = "Sec-CH-Prefers-Color-Scheme"
 // ContainerClass with the data attributes that the service reads.
 type humanCheckView struct {
 	ScriptSrc      string `json:"scriptSrc"`
-	ContainerClass string `json:"containerClass"`
+	ContainerClass string `json:"containerClassName"`
 	SiteKey        string `json:"siteKey"`
 	// Action is the data-action of the widget, empty when the service does not bind a token
 	// to an action; Language is its data-language, empty when the script's URL selects it.

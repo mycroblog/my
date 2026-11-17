@@ -724,8 +724,14 @@ export function GlyphLabel({ icon, children }: { icon: IconName; children: React
 
 /**
  * The place of a third party's widget (a CAPTCHA), which draws itself in an iframe: an element of the service's
- * `marker` class with the data attributes it reads, holding the height of its frame so that the form does not jump.
+ * `markerClassName` class with the data attributes it reads, holding the height of its frame so that the form does not jump.
  */
-export function WidgetSlot({ marker, data }: { marker: string; data: Readonly<Record<`data-${string}`, string>> }) {
-  return <div className={`${marker} ${form().widget()}`} {...data} />;
+export function WidgetSlot({
+  markerClassName,
+  data,
+}: {
+  markerClassName: string;
+  data: Readonly<Record<`data-${string}`, string>>;
+}) {
+  return <div className={`${markerClassName} ${form().widget()}`} {...data} />;
 }

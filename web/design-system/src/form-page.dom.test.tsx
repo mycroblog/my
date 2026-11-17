@@ -530,7 +530,7 @@ test("a caution and an account say their line, and their glyph and avatar say no
 });
 
 test("a widget's place is what its service looks for: an element of its class with the data it reads", () => {
-  render(<WidgetSlot marker="cf-turnstile" data={{ "data-sitekey": "k", "data-theme": "auto" }} />);
+  render(<WidgetSlot markerClassName="cf-turnstile" data={{ "data-sitekey": "k", "data-theme": "auto" }} />);
 
   // A third party's script finds its place by this class, so the test does too.
   const places = Array.from(document.getElementsByClassName("cf-turnstile"), (place) => [

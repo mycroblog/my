@@ -143,7 +143,7 @@ test("the human check asks for the service's script and places its widget inside
     screen: "sign_in",
     humanCheck: {
       scriptSrc: "https://challenges.example/api.js",
-      containerClass: "cf-turnstile",
+      containerClassName: "cf-turnstile",
       siteKey: "key",
       action: "sign_in",
       language: "ja",
