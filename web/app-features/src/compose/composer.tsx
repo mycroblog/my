@@ -20,7 +20,7 @@
 // why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. Its
 // state is the hook's (use-composer.ts).
 
-import { isRemote, QuoteContext, ReplyContext } from "@my/app-components";
+import { isRemote, PollCard, PollOption, PollOptions, QuoteContext, ReplyContext } from "@my/app-components";
 import {
   AttachButton,
   AttachmentList,
@@ -37,9 +37,6 @@ import {
   MenuButton,
   MenuGroup,
   MenuItem,
-  PollCard,
-  PollOption,
-  PollOptions,
   PollSettings,
   ScheduleTime,
   scheduleTime,

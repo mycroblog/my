@@ -4,7 +4,8 @@
 // author on one line over the start of its text, muted; or the quoted post as the new post will carry it, a reduced
 // preview on the raised surface, with its remove. Both above the text. The text is drawn by the one content renderer.
 
-import { Avatar, Byline, ComposerQuote, ComposerReply, Embed, MediaGrid, Stamp } from "@my/design-system";
+import { Avatar, Byline, Embed, MediaGrid, Stamp } from "@my/design-system";
+import { ComposerQuote, ComposerReply } from "./compose";
 import { EmojiText, excerptHtml, PostContent } from "./post-content";
 import type { PostAccount, PostStatus } from "./status";
 
@@ -52,7 +53,7 @@ export function QuoteContext({
   });
   return (
     <ComposerQuote removeLabel={removeLabel} onRemove={onRemove}>
-      <Embed lang={known(shown.language)}>
+      <Embed lang={known(shown.language)} clear>
         <AuthorLine status={shown} time />
         <PostContent html={excerptHtml(shown)} emojis={shown.emojis} lang={known(shown.language)} />
         <MediaGrid items={media} size="preview" sensitive={shown.sensitive ?? false} />

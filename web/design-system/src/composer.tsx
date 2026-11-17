@@ -3,8 +3,8 @@
 // The parts of the post composer (ADR-0025 §4), from the rough the decider approved (#3046): the frame, a dialog over
 // the dimmed page from `tablet` and a screen of its own on a phone (where the app asks for one), whose row with the
 // action stays right above the software keyboard; the text with its count, and the content warning, each around its
-// editor (editor.tsx, loaded lazily); the replied or quoted post above the text; the images as rows of a thumbnail and its
-// description; the poll as a raised card whose options are headed by the mark they will be answered with, its duration
+// editor (editor.tsx, loaded lazily); the images as rows of a thumbnail and its
+// description; the settings of a poll under its options, its duration
 // a select that opens the one menu (menu.tsx); and the notice of a discarded post
 // with its Undo. Its head may hold more before close, and a line over the row may say how the post is
 // sent (when it is scheduled for); with neither tools nor an action (the drafts), it has no row. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
@@ -26,7 +26,6 @@ import { Box, Pin, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { ModalLayer } from "./modal";
-import { ChoiceMark } from "./choice";
 
 const frame = tv({
   slots: {
@@ -355,50 +354,6 @@ export function WarningField({
   );
 }
 
-const context = tv({
-  slots: {
-    reply: "text-muted-text",
-    // Muted, also where what people write sets its own color.
-    replyText: "[&_*]:text-muted-text",
-    quote: "[&>div>:first-child]:pe-composer-remove-room",
-  },
-});
-
-/** The post replied to, above the text: its byline and the start of its text, muted, cut after two lines. */
-export function ComposerReply({ byline, note, children }: { byline: ReactNode; note: string; children: ReactNode }) {
-  const s = context();
-  return (
-    <Stack gap="entry-line" className={s.reply()}>
-      {byline}
-      <Box lines={2} className={s.replyText()}>
-        {children}
-      </Box>
-      <span className="sr-only">{note}</span>
-    </Stack>
-  );
-}
-
-/** The quoted post, above the text, as the post will carry it (an `Embed`), with its remove at its top end. */
-export function ComposerQuote({
-  removeLabel,
-  onRemove,
-  children,
-}: {
-  removeLabel: string;
-  onRemove: () => void;
-  children: ReactNode;
-}) {
-  const s = context();
-  return (
-    <Box anchor className={s.quote()}>
-      {children}
-      <Pin as="span" top="composer-field-block" end="entry-line">
-        <IconButton icon="close" label={removeLabel} onPress={onRemove} />
-      </Pin>
-    </Box>
-  );
-}
-
 const attachment = tv({
   slots: {
     thumb: "size-composer-thumb rounded-control bg-surface-raised object-cover",
@@ -567,124 +522,6 @@ export function AttachButton({
           if (files.length > 0) onFiles(files);
         }}
       />
-    </>
-  );
-}
-
-const poll = tv({
-  slots: {
-    card: "rounded-control border-0 bg-surface-raised p-embed",
-    caption: "text-caption text-muted-text",
-    options: "rounded-control bg-surface py-composer-inset ps-control-timeline-inline pe-composer-inset",
-    input: [
-      "h-control-form rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
-      "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
-    ],
-  },
-});
-
-/** The poll: a raised card under its caption and its remove; its options, then its settings. */
-export function PollCard({
-  title,
-  removeLabel,
-  onRemove,
-  children,
-}: {
-  title: string;
-  removeLabel: string;
-  onRemove: () => void;
-  children: ReactNode;
-}) {
-  const s = poll();
-  return (
-    <Stack as="fieldset" shrink gap="entry-line" className={s.card()}>
-      <legend className="sr-only">{title}</legend>
-      <Row align="center" justify="between" bleedBlock="composer-inset" bleedEnd="icon-button-inline">
-        <Row as="span" inline align="center" gap="entry-caption" className={s.caption()}>
-          <Icon name="poll" place="caption" />
-          {title}
-        </Row>
-        <IconButton icon="close" label={removeLabel} onPress={onRemove} />
-      </Row>
-      {children}
-    </Stack>
-  );
-}
-
-/** The options of a poll, together on the page's surface inside the card; the last line adds one. */
-export function PollOptions({
-  add,
-  children,
-}: {
-  add?: { label: string; onPress: () => void } | undefined;
-  children: ReactNode;
-}) {
-  const s = poll();
-  return (
-    <Stack className={s.options()}>
-      {children}
-      {add && (
-        <Row as="span" bleedStart="control-timeline-inline">
-          <Button kind="quiet" size="timeline" onPress={add.onPress}>
-            <Row as="span" inline align="center" gap="entry-caption">
-              <Icon name="add" place="action" />
-              {add.label}
-            </Row>
-          </Button>
-        </Row>
-      )}
-    </Stack>
-  );
-}
-
-/** An option of a poll, headed by the mark it will be answered with; its remove at its end, where it may go. */
-export function PollOption({
-  value,
-  onChange,
-  label,
-  multiple,
-  maxLength,
-  remove,
-  error,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  label: string;
-  /** Several may be chosen: a checkbox's square, else a radio's ring. */
-  multiple: boolean;
-  maxLength: number;
-  remove?: { label: string; onPress: () => void } | undefined;
-  /** What is wrong with it, right under it. */
-  error?: string | undefined;
-}) {
-  const s = poll();
-  const errorId = useId();
-  return (
-    <>
-      <Row align="center" gap="entry-caption">
-        {/* How the option will be answered in the post. */}
-        <ChoiceMark multiple={multiple} />
-        <Box
-          as={
-            <input
-              value={value}
-              placeholder={label}
-              aria-label={label}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? errorId : undefined}
-              maxLength={maxLength}
-              dir="auto"
-              onChange={(e) => {
-                onChange(e.target.value);
-              }}
-            />
-          }
-          grow
-          className={s.input()}
-        />
-        {remove && <IconButton icon="close" label={remove.label} onPress={remove.onPress} />}
-      </Row>
-      {error && <FieldError id={errorId}>{error}</FieldError>}
     </>
   );
 }
