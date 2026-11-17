@@ -81,11 +81,11 @@ function OptionName({ dir, className, children }: { dir: "auto"; className: stri
 
 /**
  * An account's handle after its name, left to right: its user part gives up its width down to its start, and the whole
- * gives up more of it than the name does.
+ * gives up more of it than the name does. What does not fit is cut, never drawn over the name beside it.
  */
 function OptionHandle({ user, server }: { user: string; server: string }) {
   return (
-    <span dir="ltr" className="flex min-w-0 shrink-[4] text-muted-text">
+    <span dir="ltr" className="flex min-w-0 shrink-[4] overflow-hidden text-muted-text">
       <span className="min-w-[3em] truncate">{user}</span>
       {server !== "" && <span className="shrink-0 whitespace-nowrap">{server}</span>}
     </span>
