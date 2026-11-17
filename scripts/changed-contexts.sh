@@ -319,8 +319,9 @@ classify() {
       ;;
   esac
   case "$path" in
-    # web:test fails when the Go list generated from web/design-tokens is stale.
-    internal/domain/instance/theme_tokens.gen.go)
+    # web:test fails when the Go list generated from web/design-tokens is stale, and a test of web/app-features reads
+    # the vectors of the text rules it shares with the server.
+    internal/domain/instance/theme_tokens.gen.go | pkg/testkit/fixtures/text/tokens.json)
       select_contexts web
       known=1
       ;;

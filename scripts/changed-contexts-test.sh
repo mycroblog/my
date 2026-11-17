@@ -81,6 +81,7 @@ expect "the Storybook host, which the E2E tests do not run" "web agentkit storie
 expect "a package neither depends on" "go i18n web agentkit" web/i18n/src/format.ts
 expect "a package outside the graph" "agentkit mykit" pkg/mybot/ts/src/index.ts
 expect "the server's code" "go agentkit e2e" internal/app/content/text.go
+expect "the vectors of the text rules, which a test of web/app-features reads too" "go web agentkit" pkg/testkit/fixtures/text/tokens.json
 expect "the tasks of bin/my, which web:e2e calls" "go web agentkit e2e stories" tasks/go.yml
 expect "the shared configuration" "$all" Taskfile.yml
 expect "an unknown path" "$all" unknown/file.xyz
