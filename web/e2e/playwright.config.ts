@@ -13,6 +13,8 @@ export default defineConfig({
   globalSetup: "./specs/global-setup.ts",
   outputDir: "../../.tmp/e2e/test-results",
   forbidOnly: process.env["CI"] !== undefined,
+  // No test runs again here: the pull request jobs of CI pass --retries, and the slow suite, which finds the tests
+  // that fail only sometimes, --repeat-each.
   retries: 0,
   // The specs share one seeded server; each signs in as a person of the scenario.
   ...(process.env["CI"] === undefined ? {} : { workers: 2 }),

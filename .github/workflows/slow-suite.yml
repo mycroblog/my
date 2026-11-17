@@ -9,7 +9,7 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 # LiveKit transport contract on livekit-server --dev (ADR-0101), the blob = s3 contract on Garage, the search.Index contracts on the
 # search engines (ADR-0149), the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0023 §7), the restore drill, golangci-lint over everything with the build tag sets,
-# the OpenTofu modules (tofu validate and the tofu tests), and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
+# the OpenTofu modules (tofu validate and the tofu tests), the E2E tests of the web client twice over, and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
 # `gh workflow run slow-suite.yml --ref <branch>`. release.yml calls it as the release gate: the whole suite, or, when a
 # run of it already passed on the commit, `scope: release`, which runs only the jobs that check the commit's images
 # against a release (upgrade, restore-drill), or `scope: none`, which runs nothing, for a pre-release released without
@@ -260,6 +260,47 @@ jobs:
       - name: tofu:aws-plan-test
         run: scripts/task.sh tofu:aws-plan-test
 
+  e2e:
+    if: inputs.scope == 'all'
+    # The E2E tests of the web client, each twice on one seeded server and never run again when they fail: a test
+    # that passes only sometimes, or only before its own writes are there, fails here, while ci.yml's e2e runs each
+    # once and retries it. Four jobs, each with a server of its own and the spec files of one of Playwright's shards.
+    # The files, not --shard itself: with --repeat-each it puts the two runs of a file in different jobs, on
+    # different servers.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        # The whole browser, as in ci.yml's e2e.
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps chromium
+      - name: List the spec files of the shard
+        id: specs
+        working-directory: web/e2e
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          files="$(bun --bun playwright test --list --reporter=json --shard="$SHARD/4" | jq -r '[.suites[].file] | unique | map("specs/" + .) | join(" ")')"
+          test -n "$files"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+      - name: web:e2e
+        env:
+          FILES: ${{ steps.specs.outputs.files }}
+        run: scripts/task.sh web:e2e -- --repeat-each=2 $FILES
+
   codeql:
     if: inputs.scope == 'all'
     uses: ./.github/workflows/codeql.yml
@@ -274,7 +315,7 @@ jobs:
   # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
   result:
     if: always()
-    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, codeql]
+    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, e2e, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

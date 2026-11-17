@@ -691,9 +691,14 @@ jobs:
     # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
     # test build of bin/my (web:e2e builds it, with the client embedded), when the e2e context changes: a workspace
     # package that @my/app or @my/e2e depends on, or the server code (scripts/changed-contexts.sh). Chromium comes from
-    # Playwright's CLI, run on Bun.
+    # Playwright's CLI, run on Bun. Four jobs side by side, each with a server of its own and a quarter of the spec files
+    # (Playwright's --shard): the tests take most of the time, and a pull request waits for the slowest job.
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -712,8 +717,9 @@ jobs:
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
       - name: web:e2e
-        # Each test twice on the one seeded server: a suite that passes only once depends on the order of its tests.
-        run: scripts/task.sh web:e2e -- --repeat-each=2
+        # What the client does, once: a test that fails runs again, twice at most, so that a test that fails only
+        # sometimes does not hold a pull request. The slow suite finds those tests (slow-suite.yml's e2e).
+        run: scripts/task.sh web:e2e -- --retries=2 --shard=${{ matrix.shard }}/4
 
   stories:
     # The static build of the Storybook host and the story tests (ADR-0110 §9): every story run by Storybook's Vitest
