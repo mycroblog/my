@@ -253,6 +253,14 @@ export class Fresh {
     if (error !== undefined) throw new Error(`fresh: ${by.username} could not react to ${post.id}`);
   }
 
+  /** The ID of `p`'s newest notification of `type`, as the server lists them. */
+  async notificationOf(p: Person, type: "mention" | "favourite" | "follow"): Promise<string> {
+    const { data } = await (await this.#api(p)).GET("/notifications", { params: { query: { types: [type] } } });
+    const id = body(data, `the notifications of ${p.username}`).items[0]?.id;
+    if (id === undefined) throw new Error(`fresh: ${p.username} has no ${type} notification`);
+    return id;
+  }
+
   /** `by` favourites the post `post`. */
   async favourite(by: Person, post: FreshPost): Promise<void> {
     const { error } = await (

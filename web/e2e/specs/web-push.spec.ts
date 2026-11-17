@@ -3,8 +3,8 @@
 // Web Push (FR-206, ADR-0015 §12): a fresh person turns it on from the prompt over their notifications; another person
 // mentions them through the API; the fake push service of the demo server verifies the server's VAPID token and
 // decrypts the message, which, handed to the app's real Service Worker over CDP, shows the mention's notification, whose
-// click opens the mention. The browser's side is src/web-push.ts. Notifications show in Chromium's new headless mode
-// alone.
+// click opens its own page, /notifications/{id}, which goes on to the mention. The browser's side is src/web-push.ts.
+// Notifications show in Chromium's new headless mode alone.
 
 import { deliverPush, installPushShim, receivedPushes, shownNotifications } from "../src/web-push";
 import { Frame, Notifications } from "./screens";
@@ -45,9 +45,11 @@ test("a person turns Web Push on from the prompt, and a mention arrives as a not
   if (message === undefined) throw new Error("no mention was pushed");
 
   await deliverPush(page, origin, message.plaintext);
-  await expect
-    .poll(() => shownNotifications(page))
-    .toContainEqual({ title: message.payload.title, url: `${origin}/@${writer.username}/status/${mention.id}` });
+  // A click opens the notification's own page, which goes on to the mention.
+  const opens = `${origin}/notifications/${message.payload.notification_id}`;
+  await expect.poll(() => shownNotifications(page)).toContainEqual({ title: message.payload.title, url: opens });
+  await page.goto(opens);
+  await expect(page).toHaveURL(`${origin}/@${writer.username}/status/${mention.id}`);
 });
 
 test("a person who chose Not now is not offered Web Push again in this browser, after a reload", async ({

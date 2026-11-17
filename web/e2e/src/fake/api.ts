@@ -381,6 +381,8 @@ export type FakeApi = {
   conversationPath: (index: number) => string;
   /** The app's address of the held-back notifications of the person of `username` (`held`). */
   heldPath: (username: string) => string;
+  /** The app's address of the reader's newest notification of `type`: where a push or an email about it leads. */
+  notificationPath: (type: string) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -2616,6 +2618,20 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
           (type) => ({ group: type, section: "ordinary", types: [type], in_app: { enabled: true, fixed: false } }),
         ),
       });
+    if (
+      (match = m(/^\/notifications\/([^/]+)$/)) &&
+      request.method === "GET" &&
+      !["marker", "requests"].includes(match[1] ?? "")
+    ) {
+      // One of the reader's notifications, as the list shows it; none of another or a dismissed one (a 404).
+      const found = notifications.find((n) => n["id"] === decodeURIComponent(match?.[1] ?? ""));
+      if (found === undefined || hidden(authorOf(found)) || mutedServer(authorOf(found)))
+        return problem(404, "Not Found");
+      const s = found["status"] as Json | undefined;
+      if (s === undefined) return json(found);
+      const now = current(s)[0];
+      return now === undefined ? problem(404, "Not Found") : json({ ...found, status: now });
+    }
     if (path === "/notifications/marker") {
       if (request.method === "PUT") {
         const { last_read_id: id } = (await request.json()) as { last_read_id: string };
@@ -2927,6 +2943,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
 
   const heldPath = (username: string) => `/notifications/requests/${idOf(username)}`;
+  const notificationPath = (type: string) => {
+    const id = notifications.find((n) => n["type"] === type)?.["id"];
+    return `/notifications/${typeof id === "string" ? id : "none"}`;
+  };
 
   return {
     serve,
@@ -2938,5 +2958,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     idOf: keyedId,
     conversationPath,
     heldPath,
+    notificationPath,
   };
 }

@@ -2,7 +2,8 @@
 
 // The notifications screen shows what the scenario's people did to a person: a follow, a reply that mentions them, a
 // favourite and a boost of their post; a fresh person opens what a follow, a favourite and a mention tell of, and a
-// notification they dismiss stays gone.
+// notification they dismiss stays gone; the link of one notification, as an email or a push gives it, leads to what it
+// tells of.
 
 import { Frame, Notifications } from "./screens";
 import { expect, person, test } from "./test";
@@ -56,4 +57,24 @@ test("a person opens a follow, a favourite and a mention from their notification
   await page.reload();
   await expect(notifications.notification(`${fan.displayName} favourited your post`)).toBeVisible();
   await expect(notifications.notification(`${follower.displayName} followed you`)).toBeHidden();
+});
+
+test("the link of one notification, as an email or a push gives it, leads to what it tells of, and says so of one gone", async ({
+  page,
+  signIn,
+  fresh,
+}) => {
+  const reader = await fresh.person();
+  const fan = await fresh.person();
+  const post = await fresh.post(reader, { text: "Rye loaves on the cooling rack." });
+  await fresh.favourite(fan, post);
+  const id = await fresh.notificationOf(reader, "favourite");
+
+  await signIn(reader);
+  await page.goto(`/notifications/${id}`);
+  await expect(page).toHaveURL(new RegExp(`/@${reader.username}/status/${post.id}$`));
+
+  const notifications = new Notifications(page);
+  await page.goto("/notifications/0190a5d0-0000-7000-8000-000000000999");
+  await expect(notifications.gone).toBeVisible();
 });
