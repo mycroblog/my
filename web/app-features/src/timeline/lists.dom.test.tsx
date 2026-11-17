@@ -105,3 +105,14 @@ test("a list whose members have not posted says so, in en and ja", async () => {
     screen.getByText("まだこのリストのメンバーの投稿はありません。メンバーが投稿すると、ここに表示されます。"),
   ).not.toBeNull();
 });
+
+test("a list that no longer exists says so", async () => {
+  const { data } = server();
+  // An ID of the server's form that no list has.
+  const id = "01890a5d-ac96-774b-bcce-b302099a8057";
+  await loadListTimeline(data, id);
+
+  timeline(data, id);
+
+  expect(await screen.findByText("This list no longer exists.")).not.toBeNull();
+});
