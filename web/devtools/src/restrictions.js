@@ -21,6 +21,9 @@
 //   It does not see, for want of other files and of types:
 //   - a component that another package re-exports under another name (`export { Button as X }` in app-components);
 //   - a wrapper that spreads its own props onto a component (`(p) => <Button {...p} />`), whose callers can pass them.
+//   In the layers above it (app-components, app-features, app) an element of the DOM gets neither: only the design
+//   system writes a class, and its stylesheet holds the classes of its own files alone. A story and a test may, to
+//   stand a specimen in a width.
 //
 // - platform-globals: in a layer other than @my/platform, nothing checks the browser, the PWA or the OS (ADR-0028
 //   §17): no `navigator` or other global of the platform (as a global or a member of any object), no `"x" in window`
@@ -74,9 +77,14 @@ function keyName(/** @type {Node} */ property) {
   return undefined;
 }
 
+/** The layers above @my/design-system, by their directories of web/: no element of theirs gets a class or a style. */
+const ABOVE = new Set(["app-components", "app-features", "app"]);
+
 /** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
 function create(context) {
   const { sourceCode } = context;
+  const filename = String(context.filename).replaceAll("\\", "/");
+  const above = ABOVE.has(webDir(filename) ?? "") && !STORY_FILE.test(filename) && !TEST_FILE.test(filename);
 
   /** The variable that `name` refers to at `node`. */
   function resolve(/** @type {Node} */ node, /** @type {string} */ name) {
@@ -117,9 +125,12 @@ function create(context) {
   function report(/** @type {Node} */ node, /** @type {string} */ prop, /** @type {string} */ component) {
     context.report({
       node,
-      message:
-        `<${component}> of @my/design-system gets \`${prop}\`: outside the package a component takes no class and ` +
-        "no style (ADR-0025 §4). Use its props and variants, or add the variant it lacks to @my/design-system.",
+      message: /^[a-z]/.test(component)
+        ? `<${component}> above @my/design-system gets \`${prop}\`: a layer above it writes no class and no style ` +
+          "(ADR-0025 §4), and its stylesheet holds no class written here. Compose the parts of @my/design-system " +
+          "by their props, or add the part or the variant it lacks to @my/design-system."
+        : `<${component}> of @my/design-system gets \`${prop}\`: outside the package a component takes no class and ` +
+          "no style (ADR-0025 §4). Use its props and variants, or add the variant it lacks to @my/design-system.",
     });
   }
 
@@ -177,9 +188,9 @@ function create(context) {
   return {
     JSXOpeningElement(/** @type {Node} */ node) {
       const name = node.name;
-      // A lower-case name is a DOM element, which takes a class and a style.
-      if (name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name)) return;
-      if (name.type === "JSXNamespacedName" || !isDesignSystem(name, 0)) return;
+      // A lower-case name is a DOM element, which takes a class and a style below the layers above the design system.
+      const dom = name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name);
+      if (dom ? !above : name.type === "JSXNamespacedName" || !isDesignSystem(name, 0)) return;
       const component = elementName(name);
       for (const attribute of node.attributes) {
         if (attribute.type === "JSXSpreadAttribute") checkSpread(attribute.argument, component, 0);
@@ -674,7 +685,10 @@ export default {
     "design-system-props": {
       meta: {
         type: "problem",
-        docs: { description: "Disallow a className or a style on a component of @my/design-system outside it" },
+        docs: {
+          description:
+            "Disallow a className or a style on a component of @my/design-system outside it, and on any element above it",
+        },
         schema: [],
       },
       create,

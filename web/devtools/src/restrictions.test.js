@@ -38,7 +38,7 @@ const fixtures = dirs.flatMap((dir) =>
 /** What each rule's message says of a finding, as a fixture writes it after `error: `. */
 const findings = {
   "restrict(design-system-props)": (/** @type {string} */ message) => {
-    const [, component, prop] = /^(<\S+>) of @my\/design-system gets `(\w+)`/.exec(message) ?? [];
+    const [, component, prop] = /^(<\S+>) (?:of|above) @my\/design-system gets `(\w+)`/.exec(message) ?? [];
     return `${component} ${prop}`;
   },
   "restrict(layer-imports)": (/** @type {string} */ message) =>
