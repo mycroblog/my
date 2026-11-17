@@ -57,7 +57,7 @@ export function modalStates(reduced: boolean) {
 }
 
 /** The backdrop: at every width, or from `tablet`; or dimmed alone, unblurred, at every width. */
-export const modalBackdrop = {
+const modalBackdrop = {
   // A sheet that keeps what it writes into in sight (the emoji picker's).
   dim: "fixed inset-0 bg-scrim",
   always:
