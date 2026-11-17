@@ -3,8 +3,10 @@
 import { expect, test } from "bun:test";
 import type { AppData } from "@my/app-data";
 import { scenario } from "@my/e2e/fake";
+import { cleanup, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { PostActions } from "../post-actions";
-import { fakeData, markupOf } from "../test/feature";
+import { fakeData, renderFeature } from "../test/feature";
 import { ListIndex, ListTimeline, loadLists, loadListTimeline } from "./lists";
 
 /**
@@ -29,40 +31,48 @@ function server({ lists = true, posts = true } = {}) {
   return { data, requests, l1, l2 };
 }
 
-/** The markup without classes and icons, to read the structure. */
-const bare = (html: string) => html.replace(/ class="[^"]*"/g, "").replace(/<svg.*?<\/svg>/g, "");
+/** `node` on `data`, alone in the document, for a reader of `locale`. */
+function shown(data: AppData, node: ReactNode, locale = "en") {
+  cleanup();
+  renderFeature(data, node, locale);
+}
 
-const timeline = (data: AppData, id: string, locale = "en") =>
-  markupOf(
+const timeline = (data: AppData, id: string, locale = "en") => {
+  shown(
     data,
     <PostActions onCompose={() => undefined}>
       <ListTimeline id={id} onBack={() => undefined} />
     </PostActions>,
     locale,
   );
+};
 
 test("the index lists the reader's lists, each a link to its timeline with how many members it has", async () => {
   const { data, requests, l1, l2 } = server();
   await loadLists(data);
   expect(requests).toEqual(["GET /lists"]);
-  const en = bare(markupOf(data, <ListIndex />));
-  expect(en).toMatch(/<ul aria-label="Your lists">/);
-  expect(en).toMatch(new RegExp(`<a [^>]*href="/lists/${l1}"[^>]*>.*Bread and coffee.*2 members.*?</a>`));
-  expect(en).toMatch(new RegExp(`<a [^>]*href="/lists/${l2}"[^>]*>.*翻訳の仲間.*1 member<.*?</a>`));
-  const ja = bare(markupOf(data, <ListIndex />, "ja"));
-  expect(ja).toMatch(/<ul aria-label="自分のリスト">/);
-  expect(ja).toContain("2 人");
+
+  shown(data, <ListIndex />);
+  const links = within(screen.getByRole("list", { name: "Your lists" })).getAllByRole("link");
+  expect(links.map((link) => link.getAttribute("href"))).toEqual([`/lists/${l1}`, `/lists/${l2}`]);
+  expect(links[0]?.textContent).toMatch(/^Bread and coffee\s*2 members$/);
+  expect(links[1]?.textContent).toMatch(/^翻訳の仲間\s*1 member$/);
+
+  shown(data, <ListIndex />, "ja");
+  const [first] = within(screen.getByRole("list", { name: "自分のリスト" })).getAllByRole("link");
+  expect(first?.textContent).toMatch(/^Bread and coffee\s*2 人$/);
 });
 
 test("with no lists, the index says so, in en and ja", async () => {
   const { data } = server({ lists: false });
   await loadLists(data);
-  expect(markupOf(data, <ListIndex />)).toContain(
-    "No lists yet. Your lists show here, each with the posts of its members.",
-  );
-  expect(markupOf(data, <ListIndex />, "ja")).toContain(
-    "まだリストはありません。リストはここに表示され、それぞれのメンバーの投稿を読めます。",
-  );
+
+  shown(data, <ListIndex />);
+  expect(screen.getByText("No lists yet. Your lists show here, each with the posts of its members.")).not.toBeNull();
+  shown(data, <ListIndex />, "ja");
+  expect(
+    screen.getByText("まだリストはありません。リストはここに表示され、それぞれのメンバーの投稿を読めます。"),
+  ).not.toBeNull();
 });
 
 test("the loader reads the list and its timeline; the screen shows its name, members and posts", async () => {
@@ -70,23 +80,28 @@ test("the loader reads the list and its timeline; the screen shows its name, mem
   await loadListTimeline(data, l1);
   expect(requests).toContain(`GET /lists/${l1}`);
   expect(requests).toContain(`GET /timelines/list/${l1}`);
-  const html = bare(timeline(data, l1));
-  expect(html).toMatch(
-    />Lists<\/button><\/p><div><h2><span><\/span><bdi>Bread and coffee<\/bdi> <span>2 members<\/span><\/h2>/,
-  );
-  expect(html).toMatch(/role="feed" aria-label="Posts from the list Bread and coffee"/);
-  expect(html).toContain("The first loaf.");
+
+  timeline(data, l1);
+  const back = screen.getByRole("button", { name: "Lists" });
+  const heading = screen.getByRole("heading", { level: 2 });
+  expect(heading.textContent).toMatch(/^Bread and coffee\s*2 members$/);
+  expect(back.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  const feed = screen.getByRole("feed", { name: "Posts from the list Bread and coffee" });
+  expect(within(feed).getByText("The first loaf.")).not.toBeNull();
   // A list has nothing to follow: no action in its head.
-  expect(html).not.toContain(">Follow<");
+  expect(screen.queryAllByRole("button", { name: "Follow" })).toHaveLength(0);
 });
 
 test("a list whose members have not posted says so, in en and ja", async () => {
   const { data, l1 } = server({ posts: false });
   await loadListTimeline(data, l1);
-  expect(timeline(data, l1)).toContain(
-    "No posts from this list&#x27;s members yet. When they post, their posts show here.",
-  );
-  expect(timeline(data, l1, "ja")).toContain(
-    "まだこのリストのメンバーの投稿はありません。メンバーが投稿すると、ここに表示されます。",
-  );
+
+  timeline(data, l1);
+  expect(
+    screen.getByText("No posts from this list's members yet. When they post, their posts show here."),
+  ).not.toBeNull();
+  timeline(data, l1, "ja");
+  expect(
+    screen.getByText("まだこのリストのメンバーの投稿はありません。メンバーが投稿すると、ここに表示されます。"),
+  ).not.toBeNull();
 });
