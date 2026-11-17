@@ -20,7 +20,7 @@ libSQL / Turso は v0.1.0 では対応せず、将来の候補とする。v0.1.0
 
 ### 2. 抽象化
 
-- アプリケーション層は **集約単位のリポジトリポート** と **`UnitOfWork`（`Tx(ctx, func(tx) error) error`）** にのみ依存する。
+- アプリケーション層は **集約単位のリポジトリポート** と **`UnitOfWork`（`Tx(ctx, func(tx) error) error` と読み取り専用の `Read`）** にのみ依存する。
 - 短い対話的トランザクションを許容する。ただし:
   - **トランザクション内で外部 I/O（HTTP・キュー投入・Blob 操作）をしない**。キュー投入は Transactional Outbox 経由（ADR-0004）。
   - 直列化失敗・競合エラー（SQLSTATE 40001）は `UnitOfWork` が有限回リトライする（PG の serializable 対策）。そのためトランザクション関数は再実行可能に書く。
@@ -31,7 +31,8 @@ libSQL / Turso は v0.1.0 では対応せず、将来の候補とする。v0.1.0
   方言差（FTS、JSON 関数、日付関数、プレースホルダ）はアダプタ内に閉じ込める。根拠は [#17 の調査報告](https://github.com/mycroblog/my/issues/17#issuecomment-6209364365)。
 - ドライバ: SQLite は `modernc.org/sqlite`（cgo 不要）、PostgreSQL は `pgx/v5`。
 - トランザクションの設定:
-  - SQLite は `BEGIN IMMEDIATE`（`_txlock=immediate`）+ `busy_timeout` + WAL を必須とする。遅延ロックのままだと書き込みの競合でリトライが多発する。
+  - SQLite の `Tx` は `BEGIN IMMEDIATE`（`_txlock=immediate`）+ `busy_timeout` + WAL を必須とする。遅延ロックのままだと書き込みの競合でリトライが多発する。
+  - `Read` は書き込めず、SQLite では書き込みロックを取らない（WAL の読み手は書き手を待たない。#3182）。読み取りの接続を分ける必要が出たら見直す。
   - PostgreSQL は READ COMMITTED を既定とし、直列化失敗・デッドロックは `UnitOfWork` のリトライで吸収する。
 - スキーマは、モジュールごとのディレクトリに方言ごとのファイル `schema/<NN>-<module>/<dialect>.sql` を持つ（ADR-0023、ADR-0081）。
 - **コントラクトテスト**: リポジトリポートごとに単一のテストスイートを書き、SQLite（インメモリ / 一時ファイル）・PostgreSQL で実行する。PostgreSQL の実行環境と頻度は ADR-0015 と ADR-0079 が決める。

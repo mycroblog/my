@@ -27,6 +27,8 @@ type directUOW struct{}
 
 func (directUOW) Tx(_ context.Context, fn func(uow.Tx) error) error { return fn(noTx{}) }
 
+func (directUOW) Read(_ context.Context, fn func(uow.Tx) error) error { return fn(noTx{}) }
+
 // erasureRepo keeps the accounts to erase in ID order and what the erasure did to them.
 type erasureRepo struct {
 	targets  []account.ErasureTarget

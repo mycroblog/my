@@ -356,3 +356,5 @@ func formatValue(v any) string {
 type within struct{ tx uow.Tx }
 
 func (w within) Tx(_ context.Context, fn func(uow.Tx) error) error { return fn(w.tx) }
+
+func (w within) Read(_ context.Context, fn func(uow.Tx) error) error { return fn(w.tx) }

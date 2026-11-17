@@ -136,6 +136,20 @@ func (d *DB) Tx(ctx context.Context, fn func(tx uow.Tx) error) error {
 	})
 }
 
+// Read implements uow.UnitOfWork: a READ ONLY transaction, which PostgreSQL itself keeps from
+// writing (SQLSTATE 25006), at READ COMMITTED as Tx is.
+func (d *DB) Read(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
+	sctx, span := dbtrace.StartTx(ctx, d.tracer.get(), dbtrace.SystemPostgreSQL)
+	defer func() { dbtrace.End(span, err) }()
+	pgTx, err := d.conns.BeginTx(sctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadOnly})
+	if err != nil {
+		return fmt.Errorf("postgres: begin: %w", err)
+	}
+	// Roll back even when ctx has ended, so that the connection returns to the pool clean.
+	defer func() { _ = pgTx.Rollback(context.WithoutCancel(ctx)) }()
+	return fn(&Tx{tx: pgTx, owner: d.pool, projectors: d.opts.Projectors, readOnly: true})
+}
+
 func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer.get(), dbtrace.SystemPostgreSQL)
 	defer func() { dbtrace.End(span, err) }()
@@ -177,12 +191,17 @@ type Tx struct {
 	projectors *uow.Projectors
 	// events are the events emitted so far, for the commit hooks.
 	events []uow.Event
+	// readOnly marks a transaction of UnitOfWork.Read.
+	readOnly bool
 }
 
 var _ uow.Tx = (*Tx)(nil)
 
 // Emit implements uow.Tx.
 func (t *Tx) Emit(ctx context.Context, e uow.Event) error {
+	if t.readOnly {
+		return uow.ErrReadOnly
+	}
 	t.events = append(t.events, e)
 	return t.projectors.Project(ctx, t, e)
 }

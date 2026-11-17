@@ -8,12 +8,15 @@
 //
 // Every connection uses WAL journaling and a busy timeout, and every transaction starts with
 // BEGIN IMMEDIATE, so that writers queue on the database lock instead of failing when a read
-// transaction upgrades to a write. The pool is bounded and keeps every connection it opens (pool_max_conns).
+// transaction upgrades to a write. UnitOfWork.Read is the exception: it begins deferred and
+// cannot write, so it takes no lock and, in WAL, waits for no writer. The pool is bounded and keeps
+// every connection it opens (pool_max_conns).
 package sqlite
 
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"net/url"
@@ -235,6 +238,36 @@ func (d *DB) Tx(ctx context.Context, fn func(tx uow.Tx) error) error {
 	})
 }
 
+// Read implements uow.UnitOfWork. The transaction begins deferred (the driver ignores _txlock for
+// a read-only transaction), and the connection is read-only for its life with PRAGMA query_only,
+// because the driver begins a read-only transaction but does not stop it from writing.
+func (d *DB) Read(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
+	sctx, span := dbtrace.StartTx(ctx, d.tracer, dbtrace.SystemSQLite)
+	defer func() { dbtrace.End(span, err) }()
+	checkSecondConnection(d.db)
+	conn, err := d.db.Conn(sctx)
+	if err != nil {
+		return fmt.Errorf("sqlite: begin: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
+	if _, err := conn.ExecContext(sctx, "PRAGMA query_only = 1"); err != nil {
+		return fmt.Errorf("sqlite: begin: %w", err)
+	}
+	defer func() {
+		// A connection that stays read-only must not return to the pool: discard it.
+		if _, err := conn.ExecContext(context.WithoutCancel(ctx), "PRAGMA query_only = 0"); err != nil {
+			_ = conn.Raw(func(any) error { return driver.ErrBadConn })
+		}
+	}()
+	sqlTx, err := conn.BeginTx(sctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return fmt.Errorf("sqlite: begin: %w", err)
+	}
+	defer func() { _ = sqlTx.Rollback() }()
+	tx := &Tx{tx: sqlTx, owner: d.db, db: dbtrace.Wrap(sqlTx, d.tracer, dbtrace.SystemSQLite), projectors: d.opts.Projectors, readOnly: true}
+	return holdingTransaction(d.db, func() error { return fn(tx) })
+}
+
 func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer, dbtrace.SystemSQLite)
 	defer func() { dbtrace.End(span, err) }()
@@ -290,12 +323,17 @@ type Tx struct {
 	projectors *uow.Projectors
 	// events are the events emitted so far, for the commit hooks.
 	events []uow.Event
+	// readOnly marks a transaction of UnitOfWork.Read.
+	readOnly bool
 }
 
 var _ uow.Tx = (*Tx)(nil)
 
 // Emit implements uow.Tx.
 func (t *Tx) Emit(ctx context.Context, e uow.Event) error {
+	if t.readOnly {
+		return uow.ErrReadOnly
+	}
 	t.events = append(t.events, e)
 	return t.projectors.Project(ctx, t, e)
 }

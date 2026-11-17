@@ -37,6 +37,8 @@ type logUoW struct{ uow.UnitOfWork }
 
 func (logUoW) Tx(_ context.Context, fn func(uow.Tx) error) error { return fn(logTx{}) }
 
+func (logUoW) Read(_ context.Context, fn func(uow.Tx) error) error { return fn(logTx{}) }
+
 type logKeys struct{ key SigningKey }
 
 func (k logKeys) SigningKey(context.Context, string) (SigningKey, error) { return k.key, nil }

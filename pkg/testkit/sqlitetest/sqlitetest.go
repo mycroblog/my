@@ -99,3 +99,29 @@ func NewFile(t testing.TB) string {
 	}
 	return filepath.Join(dir, "my.db")
 }
+
+// HoldWriteLock takes the write lock of the database file at path from a connection of its own,
+// as the begin of an immediate transaction does, and returns the function that releases it. A
+// transaction that begins with the lock waits behind it; one that takes none does not. The
+// release is registered with t.Cleanup too, and may be called once more.
+func HoldWriteLock(t testing.TB, path string) (release func()) {
+	t.Helper()
+	db, err := sql.Open("sqlite", "file:"+path+"?_txlock=immediate&_pragma=busy_timeout(5000)&_pragma=journal_mode(wal)")
+	if err != nil {
+		t.Fatalf("sqlitetest: %v", err)
+	}
+	tx, err := db.BeginTx(t.Context(), nil)
+	if err != nil {
+		_ = db.Close()
+		t.Fatalf("sqlitetest: take the write lock: %v", err)
+	}
+	var once sync.Once
+	release = func() {
+		once.Do(func() {
+			_ = tx.Rollback()
+			_ = db.Close()
+		})
+	}
+	t.Cleanup(release)
+	return release
+}

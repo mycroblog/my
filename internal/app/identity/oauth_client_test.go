@@ -71,6 +71,8 @@ func (fixedIDs) NewIDAt(time.Time) string { return "0190a000-0000-7000-8000-0000
 
 func (u directUnitOfWork) Tx(_ context.Context, fn func(tx uow.Tx) error) error { return fn(u.tx) }
 
+func (u directUnitOfWork) Read(_ context.Context, fn func(tx uow.Tx) error) error { return fn(u.tx) }
+
 func TestDisablingAndDeletingAClientRevokeItsTokensWithTheirReasons(t *testing.T) {
 	clock := fixedClock(time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC))
 	repo := &clientEventsRepository{client: domain.OAuthClient{

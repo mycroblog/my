@@ -96,6 +96,8 @@ func (keyUnitOfWork) Tx(ctx context.Context, fn func(uow.Tx) error) error {
 	return ctx.Err()
 }
 
+func (u keyUnitOfWork) Read(ctx context.Context, fn func(uow.Tx) error) error { return u.Tx(ctx, fn) }
+
 // keyInstances has seen every server already.
 type keyInstances struct{ InstanceRepository }
 

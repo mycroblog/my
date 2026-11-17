@@ -311,7 +311,7 @@ func (q *Queue) DueJobs(ctx context.Context, now, dueBefore time.Time, limit int
 		return nil, nil
 	}
 	var wakes []queue.Wake
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		wakes, err = q.st.dueJobs(ctx, tx, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
 		return err
@@ -329,7 +329,7 @@ func (q *Queue) DueJobsOfTypes(ctx context.Context, types []string, now, dueBefo
 		return nil, nil
 	}
 	var wakes []queue.Wake
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		wakes = nil
 		for _, t := range types {
 			w, err := q.st.dueJobsOfType(ctx, tx, t, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
@@ -355,7 +355,7 @@ func (q *Queue) DueJobsExceptTypes(ctx context.Context, types []string, now, due
 		return nil, nil
 	}
 	var wakes []queue.Wake
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		wakes, err = q.st.dueJobsExceptTypes(ctx, tx, types, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
 		return err
@@ -372,7 +372,7 @@ func (q *Queue) NextJob(ctx context.Context, orderingKey string) (queue.Wake, bo
 		w  queue.Wake
 		ok bool
 	)
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		w, ok, err = q.st.nextOfKey(ctx, tx, orderingKey)
 		return err
@@ -427,7 +427,7 @@ func (q *Queue) ListDeadJobs(ctx context.Context, jobType string, after queue.De
 		return nil, nil
 	}
 	var out []queue.DeadJob
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		out, err = q.st.listDead(ctx, tx, jobType, after, limit)
 		return err
@@ -444,7 +444,7 @@ func (q *Queue) GetDeadJob(ctx context.Context, id string) (queue.DeadJob, error
 		out   queue.DeadJob
 		found bool
 	)
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		out, found, err = q.st.getDead(ctx, tx, id)
 		return err
@@ -524,7 +524,7 @@ func (q *Queue) DeleteDeadJobsBefore(ctx context.Context, before time.Time, limi
 // Backlog implements queue.BacklogReader.
 func (q *Queue) Backlog(ctx context.Context, now time.Time) (queue.Backlog, error) {
 	var b queue.Backlog
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		b, err = q.st.backlog(ctx, tx, kernel.Normalize(now))
 		return err
@@ -541,7 +541,7 @@ func (q *Queue) ListJobs(ctx context.Context, now time.Time, f queue.JobFilter, 
 		return nil, nil
 	}
 	var out []queue.PendingJob
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		out, err = q.st.listPending(ctx, tx, kernel.Normalize(now), f, queue.JobPosition{RunAt: kernel.Normalize(after.RunAt), ID: after.ID}, limit)
 		return err
@@ -558,7 +558,7 @@ func (q *Queue) GetJob(ctx context.Context, now time.Time, id string) (queue.Pen
 		out   queue.PendingJob
 		found bool
 	)
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		out, found, err = q.st.getPending(ctx, tx, kernel.Normalize(now), id)
 		return err
@@ -575,7 +575,7 @@ func (q *Queue) GetJob(ctx context.Context, now time.Time, id string) (queue.Pen
 // SummarizeJobs implements queue.JobInspector.
 func (q *Queue) SummarizeJobs(ctx context.Context, now time.Time) (queue.JobSummary, error) {
 	var s queue.JobSummary
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		s, err = q.st.summarize(ctx, tx, kernel.Normalize(now))
 		return err
@@ -617,7 +617,7 @@ func (q *Queue) ListAttempts(ctx context.Context, jobID string, after queue.Atte
 		return nil, nil
 	}
 	var out []queue.Attempt
-	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+	err := q.db.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		out, err = q.st.listAttempts(ctx, tx, jobID, queue.AttemptPosition{FinishedAt: kernel.Normalize(after.FinishedAt), Attempt: after.Attempt}, limit)
 		return err

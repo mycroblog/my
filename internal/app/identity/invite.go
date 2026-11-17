@@ -510,7 +510,7 @@ func (s *Service) ListOwnInvites(ctx context.Context, userID, before string, lim
 			out.Invites[i].State = InviteCreatorIneligible
 		}
 	}
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = s.d.UnitOfWork.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		out.Usable, err = s.d.Repository.CountUsableMemberInvites(ctx, tx, userID, now)
 		return err

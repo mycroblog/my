@@ -5,8 +5,9 @@
 // (internal/adapter/db/postgres). It needs no extra middleware (NFR-COST-2) and its entries
 // are shared by every process on the database, so rate limits hold across instances.
 //
-// Entries live in the kv_entries table (schema/10-infrastructure). Every operation is one short
-// transaction of the database's UnitOfWork; IncrBy is a single upsert of the decimal value
+// Entries live in the kv_entries table (schema/10-infrastructure). Get and GetMany are one
+// statement outside any transaction, so that on SQLite they never wait for the write lock; every
+// other operation is one short transaction of the database's UnitOfWork; IncrBy is a single upsert of the decimal value
 // (preceded on SQLite by removing the expired entry, which BEGIN IMMEDIATE makes atomic with it),
 // and CompareAndSwap one conditional statement on PostgreSQL and a read and a write in one BEGIN
 // IMMEDIATE transaction on SQLite. An expired entry reads as absent until the hourly
@@ -26,8 +27,9 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// store runs the dialect's queries inside a transaction of the dialect's UnitOfWork.
-// expiresAt is nil for an entry that never expires.
+// store runs the dialect's queries inside a transaction of the dialect's UnitOfWork; get and
+// getMany, single statements, also run with a nil tx, outside any transaction. expiresAt is nil
+// for an entry that never expires.
 type store interface {
 	get(ctx context.Context, tx uow.Tx, namespace, key string, now time.Time) ([]byte, bool, error)
 	getMany(ctx context.Context, tx uow.Tx, namespace string, keys []string, now time.Time) (map[string][]byte, error)
@@ -65,15 +67,8 @@ func (s *Store) expiry(ttl time.Duration) *time.Time {
 // Get implements kernel.KeyValueStore.
 func (s *Store) Get(ctx context.Context, namespace, key string) ([]byte, error) {
 	now := s.clock.Now()
-	var (
-		value []byte
-		found bool
-	)
-	err := s.db.Tx(ctx, func(tx uow.Tx) error {
-		var err error
-		value, found, err = s.st.get(ctx, tx, namespace, key, now)
-		return err
-	})
+	// One statement: no transaction, so on SQLite it never waits for the write lock.
+	value, found, err := s.st.get(ctx, nil, namespace, key, now)
 	if err != nil {
 		return nil, fmt.Errorf("kv/db: get %s/%s: %w", namespace, key, err)
 	}
@@ -86,18 +81,14 @@ func (s *Store) Get(ctx context.Context, namespace, key string) ([]byte, error) 
 	return value, nil
 }
 
-// GetMany implements kernel.KeyValueBatch with one query in one transaction.
+// GetMany implements kernel.KeyValueBatch with one query.
 func (s *Store) GetMany(ctx context.Context, namespace string, keys []string) (map[string][]byte, error) {
 	out := map[string][]byte{}
 	if len(keys) == 0 {
 		return out, nil
 	}
 	now := s.clock.Now()
-	err := s.db.Tx(ctx, func(tx uow.Tx) error {
-		var err error
-		out, err = s.st.getMany(ctx, tx, namespace, keys, now)
-		return err
-	})
+	out, err := s.st.getMany(ctx, nil, namespace, keys, now) // one statement, no transaction
 	if err != nil {
 		return nil, fmt.Errorf("kv/db: get %d keys of %s: %w", len(keys), namespace, err)
 	}
