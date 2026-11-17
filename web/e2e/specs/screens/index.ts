@@ -15,16 +15,6 @@ export { Consent } from "./consent";
 export { conversationRead, Conversations } from "./conversations";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
-export {
-  applyTheme,
-  CjkFonts,
-  EmojiFonts,
-  selfHostedCjk,
-  selfHostedNoto,
-  selfHostedNotoSans,
-  type CjkRegion,
-  type DrawnWith,
-} from "./fonts";
 export { countLink, Follows } from "./follows";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";

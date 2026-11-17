@@ -17,7 +17,6 @@ import { signIn } from "./seed/sign-in";
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
 type MediaAttachment = components["schemas"]["MediaAttachment"];
-type ThemeTokenValue = components["schemas"]["ThemeTokenValue"];
 
 /** A person a test made: a Person, and with two-factor authentication its secret and the step its enrollment used. */
 export type FreshPerson = Person & { totp?: { secret: string; step: number } };
@@ -298,21 +297,6 @@ export class Fresh {
   async deletion(author: Person, post: FreshPost): Promise<void> {
     const { error } = await (await this.#api(author)).DELETE("/statuses/{id}", { params: { path: { id: post.id } } });
     if (error !== undefined) throw new Error(`fresh: ${author.username} could not delete ${post.id}`);
-  }
-
-  /**
-   * The stylesheet of a draft of the instance theme with `tokens` overridden, which `admin` saves and the server would
-   * serve once published: an administrator applies it over a page to preview the draft. Nothing is published, so no
-   * other test sees the theme.
-   */
-  async themeDraftStylesheet(admin: FreshPerson, tokens: readonly ThemeTokenValue[]): Promise<string> {
-    if (admin.staff !== "admin") throw new Error(`fresh: ${admin.username} is no administrator`);
-    const api = await this.#api(admin);
-    const saved = await api.PUT("/admin/theme/draft", { body: { tokens: [...tokens] } });
-    if (saved.error !== undefined)
-      throw new Error(`fresh: the theme draft was refused: ${JSON.stringify(saved.error)}`);
-    const { data } = await api.GET("/admin/theme/draft/stylesheet", { parseAs: "text" });
-    return body(data, "the stylesheet of the theme draft");
   }
 
   /**

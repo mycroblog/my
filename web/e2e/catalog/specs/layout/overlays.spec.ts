@@ -16,7 +16,7 @@ import {
   expectNoSidewaysScroll,
   viewportBox,
 } from "../boxes";
-import { expect, minimum, pc, test } from "../test";
+import { expect, pc, test } from "../test";
 
 const story = "design-system-layout-parts--overlays";
 

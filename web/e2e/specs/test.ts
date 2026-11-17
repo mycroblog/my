@@ -29,8 +29,6 @@
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
-//   - `fresh.themeDraftStylesheet(admin, tokens)` the stylesheet of a draft of the instance theme that a fresh
-//     person made with `fresh.person({ admin: true })` saves, to apply over a page; nothing is published.
 //
 // And what a spec needs of the scenario: `person(username)` the person to sign in as, `secrets()` what the seed made
 // that the server decided (a TOTP secret and the step its enrollment used, a passkey's key, an app's client ID), and
