@@ -189,6 +189,41 @@ test("Ctrl+Z takes back what was pasted", async () => {
   expect(told.at(-1)).toBe("Quiet");
 });
 
+test("a paste keeps the clipboard's plain text and ignores its HTML, Ctrl+Z takes it back and Ctrl+Shift+Z writes it again", async () => {
+  const user = userEvent.setup();
+  const told: string[] = [];
+  render(<Held initial="" told={told} />);
+  await paste(user, "Start ");
+  expect(box().getAttribute("aria-multiline")).toBe("true");
+  const data = new DataTransfer();
+  data.setData("text/plain", "line one\nline two");
+  data.setData(
+    "text/html",
+    '<p><b>Bold</b> <a href="https://example.com/">link</a></p><img src="https://example.com/x.png" alt="pic">',
+  );
+
+  await user.paste(data);
+
+  expect(told.at(-1)).toBe("Start line one\nline two");
+  expect(within(box()).queryAllByRole("img")).toHaveLength(0);
+  expect(within(box()).queryAllByRole("link")).toHaveLength(0);
+  await user.keyboard("{Control>}z{/Control}");
+  expect(told.at(-1)).toBe("Start ");
+  await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+  expect(told.at(-1)).toBe("Start line one\nline two");
+});
+
+test("a copy gives the plain text, a line break as a newline", async () => {
+  const user = userEvent.setup();
+  render(<Held />);
+  await paste(user, "Tea time\nnext line");
+
+  await user.keyboard("{Control>}a{/Control}");
+  const copied = await user.copy();
+
+  expect(copied?.getData("text/plain")).toBe("Tea time\nnext line");
+});
+
 test("with autoFocus it takes the focus once drawn, also from a control the reader is on", async () => {
   render(
     <>

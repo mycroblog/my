@@ -300,6 +300,30 @@ test("the composer is named for what it writes: a new post, a reply", async () =
   expect(screen.getByRole("dialog", { name: "Reply" }) === reply.dialog).toBe(true);
 });
 
+test("a custom emoji in the text shows as its image and copies as its shortcode, and in the content warning shows as its image too", async () => {
+  const { user, part, dialog } = await composer({ text: "" });
+  const text = part.getByRole("textbox", { name: "Text" });
+  await user.click(text);
+  await user.paste("Tea :teacup: time\nnext line");
+  // The emoji shows as its image, which has no text of its own to copy.
+  expect(await within(text).findByRole("img", { name: ":teacup:" })).not.toBeNull();
+
+  await user.keyboard("{Control>}a{/Control}");
+  const copied = await user.copy();
+  expect(copied?.getData("text/plain")).toBe("Tea :teacup: time\nnext line");
+
+  await user.click(part.getByRole("button", { name: "Add a content warning" }));
+  const warning = await part.findByRole("textbox", { name: "Content warning" });
+  await user.click(warning);
+  await user.paste("Spoilers :wave:");
+  expect(await within(warning).findByRole("img", { name: ":wave:" })).not.toBeNull();
+  // The warning is one line: Enter writes nothing there, and the composer stays open.
+  await user.keyboard("{Enter}");
+  expect(warning.getAttribute("aria-multiline")).not.toBe("true");
+  expect(screen.getByRole("dialog", { name: "New post" }) === dialog).toBe(true);
+  expect(within(warning).queryAllByRole("img", { name: ":wave:" })).toHaveLength(1);
+});
+
 test("a new post has the drafts' menu in its head and the schedule tool off, and posts with Post", async () => {
   const { part, said } = await composer({});
 
