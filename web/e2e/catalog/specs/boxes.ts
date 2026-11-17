@@ -97,11 +97,19 @@ export const viewportBox = (page: Page): Promise<Box> =>
     return { left: 0, top: 0, right: width, bottom: height, width, height };
   });
 
-/** The box of `inner` is inside that of `outer`, or inside the viewport of the page. */
+/** The box of `inner` is inside that of `outer`, or between the sides of the page, which scrolls down. */
 export async function expectInside(inner: Locator, outer: Locator | Page): Promise<void> {
   await expect
-    .poll(async () => outside(await boxOf(inner), "goto" in outer ? await viewportBox(outer) : await boxOf(outer)))
+    .poll(async () => {
+      if (!("goto" in outer)) return outside(await boxOf(inner), await boxOf(outer));
+      return outside(await boxOf(inner), { ...(await viewportBox(outer)), top: -Infinity, bottom: Infinity });
+    })
     .toEqual([]);
+}
+
+/** The box of `part` is inside the viewport, where the reader sees all of it. */
+export async function expectInViewport(page: Page, part: Locator): Promise<void> {
+  await expect.poll(async () => outside(await boxOf(part), await viewportBox(page))).toEqual([]);
 }
 
 /** The same box seen from the other side of a page `width` wide. */
