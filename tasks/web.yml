@@ -126,6 +126,22 @@ tasks:
     cmds:
       - bun --bun playwright test -c catalog/playwright.config.ts --project browser {{.CLI_ARGS}}
 
+  # The check of every story at once (ADR-0171 §6, the project `stories` of the same configuration): each story of the
+  # built catalog at the minimum width, in both directions and, where its look depends on it, in the dark theme, for
+  # an error, sideways scrolling and axe. An upper layer: the slow suite runs it, no pull request and not `check`, and
+  # what it finds gets its test in the layer that missed it. It takes minutes, so its run has a limit of its own.
+  stories-check:
+    desc: Build the catalog (web:stories) and check every story of it in Chromium at 320 px, in en and right-to-left in ar-XB, for an error, sideways scrolling and axe (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: stories-check-built
+
+  stories-check-built:
+    desc: Check every story of the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project stories --global-timeout 1800000 {{.CLI_ARGS}}
+
   # What the visual evaluator sees (ADR-0169 §2): web/storybook/shot.ts prints the path of each shot.
   shot:
     desc: Screenshot a story of the running Storybook (its URL, or --section <story id>[#<element id>]) at the mobile, tablet and PC viewports in light and dark (--landscape rotates them, --lang <locale> shows it in a locale such as ar-XB), once per variant with --options <id>

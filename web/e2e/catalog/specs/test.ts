@@ -43,9 +43,13 @@ function catalogURL(): string {
   return url;
 }
 
-/** The address of a story alone on its page, as the catalog's canvas frames it. */
+/**
+ * The address of a story alone on its page, as the catalog's canvas frames it. The catalog's accessibility addon
+ * leaves its own check to a person there (`a11y.manual`): a test runs the axe it asks for (axe.ts).
+ */
 export function storyURL(id: string, { locale = "en", theme = "light", args = {} }: View = {}): string {
-  const query = new URLSearchParams({ id, viewMode: "story", globals: `locale:${locale};theme:${theme}` });
+  const globals = `locale:${locale};theme:${theme};a11y.manual:!true`;
+  const query = new URLSearchParams({ id, viewMode: "story", globals });
   const set = Object.entries(args).map(
     ([name, value]) => `${name}:${typeof value === "boolean" ? "!" : ""}${String(value)}`,
   );
