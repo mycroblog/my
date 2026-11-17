@@ -1090,6 +1090,8 @@ export function NavMenu({
   marked = false,
   markLabel,
   count,
+  open,
+  onOpenChange,
   footer: end,
   children,
 }: {
@@ -1101,6 +1103,9 @@ export function NavMenu({
    * mark, which `markLabel` names.
    */
   count?: number | undefined;
+  /** The menu is open, when its owner opens it too, with `onOpenChange`; else its entry alone does. */
+  open?: boolean | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
   footer?: ReactNode;
   children: ReactNode;
 }) {
@@ -1122,7 +1127,14 @@ export function NavMenu({
   return (
     <NavPlace>
       {/* From `tablet`, toward the content, its end at the entry's; it mirrors from right to left. */}
-      <MenuSurface trigger={trigger} label={label} placement="end bottom" offset={8}>
+      <MenuSurface
+        trigger={trigger}
+        label={label}
+        placement="end bottom"
+        offset={8}
+        open={open}
+        onOpenChange={onOpenChange}
+      >
         <PlaceContext value="menu">
           {children}
           {end}
