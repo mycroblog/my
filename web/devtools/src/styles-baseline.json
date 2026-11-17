@@ -1,7 +1,6 @@
 {
   "layout-parts": {
     "web/design-system/fixtures/baseline.tsx": {"kept.base": 2, "grown.base": 1, "shrunk.base": 2, "gone.base": 1},
-    "web/design-system/src/article-editor.tsx": {"ArticleFrame": 2, "CoverRemove": 3, "cover.field": 2, "cover.row": 4, "field.hint": 1, "field.labelLine": 4, "field.root": 2, "field.text": 2, "field.title": 2, "frame.aside": 5, "frame.body": 6, "frame.caption": 5, "frame.end": 4, "frame.endInner": 2, "frame.head": 7, "frame.headEnd": 6, "frame.inner": 4, "frame.main": 4, "frame.root": 3, "frame.row": 3, "frame.title": 2, "frame.tools": 6, "group.heading": 1, "group.root": 3, "limits.item": 3, "limits.root": 6, "mode.group": 2, "mode.item": 2, "tags.input": 3, "tags.root": 6, "tags.tag": 3, "view.body": 1, "view.cover": 2, "view.empty": 1, "view.root": 5},
     "web/design-system/src/article.tsx": {"ArticleParts": 3, "ArticleTable": 1, "card.covered": 3, "card.figure": 6, "card.image": 2, "card.kind": 3, "card.line": 1, "card.link": 3, "card.root": 3, "card.summary": 1, "card.title": 1, "head.cover": 6, "head.covered": 3, "head.image": 2, "head.line": 1, "head.root": 3, "head.summary": 1, "head.title": 1, "text.base": 17},
     "web/design-system/src/avatar.tsx": {"avatar.base": 5, "avatar.fallback": 5, "avatar.image": 2},
     "web/design-system/src/card.tsx": {"card.author": 7, "card.covered": 3, "card.description": 1, "card.figure": 7, "card.image": 2, "card.root": 5, "card.site": 1, "card.text": 5, "card.title": 1},
@@ -32,7 +31,6 @@
   },
   "viewport-breakpoints": {
     "web/design-system/fixtures/baseline.tsx": {"wide.kept": 1},
-    "web/design-system/src/article-editor.tsx": {"frame.aside": 4, "frame.body": 2, "frame.caption": 1, "frame.head": 3, "frame.headEnd": 2, "frame.inner": 1, "frame.tools": 1, "mode.group": 1, "pane.root": 2},
     "web/design-system/src/composer.tsx": {"ToolText": 2, "frame.body": 1, "frame.end": 1, "frame.panel": 7, "frame.tools": 1, "notice.base": 4},
     "web/design-system/src/disclosure.tsx": {"disclosure.summary": 1},
     "web/design-system/src/shell.tsx": {"call.actions": 1, "call.button": 5, "call.buttonLabel": 1, "call.lines": 2, "call.room": 7, "call.root": 2, "call.tooltip": 1, "fold.root": 1, "frame.mark": 2, "nav.corner": 1, "nav.end": 1, "nav.item": 4, "nav.label": 2, "toast.root": 1},

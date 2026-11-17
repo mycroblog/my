@@ -266,7 +266,9 @@ export const content = {
 /**
  * An article (ADR-0160): on its page, the most a line of its text runs, in em of `reading`; the space between its
  * blocks and above a heading, in rem; and its cover's height as a share of its width, at most `coverMaxHeight` rem.
- * In a timeline, its card's square cover is `cardThumb` rem wide.
+ * In a timeline, its card's square cover is `cardThumb` rem wide. In its editor: the block padding of a text of a few
+ * lines on a field's surface; the room the hashtags' field keeps around its hashtags and before what is typed; and
+ * the least width of what is typed there before it goes on a next line.
  */
 export const article = {
   measure: 38,
@@ -275,6 +277,9 @@ export const article = {
   coverRatio: 0.5625,
   coverMaxHeight: 22,
   cardThumb: 5.5,
+  fieldBlock: 0.375,
+  tagsInset: 0.25,
+  tagInput: 6,
 } as const;
 
 /**
@@ -656,6 +661,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--article-cover-ratio", `${article.coverRatio}`],
   ["--article-cover-max-height", `${article.coverMaxHeight}rem`],
   ["--article-card-thumb", `${article.cardThumb}rem`],
+  ["--article-field-block", `${article.fieldBlock}rem`],
+  ["--article-tags-inset", `${article.tagsInset}rem`],
+  ["--article-tag-input", `${article.tagInput}rem`],
   ["--entry-gap", `${entry.gap}rem`],
   ["--entry-line-gap", `${entry.lineGap}rem`],
   ["--entry-reach", `${entry.reach}rem`],
