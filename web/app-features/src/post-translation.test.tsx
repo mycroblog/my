@@ -5,58 +5,63 @@
 
 import { afterEach, expect, test } from "bun:test";
 import type { PostStatus } from "@my/app-components";
-import { instanceQuery, type InstanceTranslation } from "@my/app-data";
+import { homeTimelineQuery, instanceQuery } from "@my/app-data";
+import type { FakeOptions } from "@my/e2e/fake";
 import { inAnotherLanguage, usePostTranslation, type PostTranslationState } from "./post-translation";
-import { render, server, status } from "./test/server";
+import { fakeData, markupOf } from "./test/feature";
 
 afterEach(() => {
   Reflect.deleteProperty(globalThis, "Translator");
 });
 
 /** A server whose one provider receives the default visibilities, as the demo server's fake does. */
-const withProvider: InstanceTranslation = {
-  browser: false,
-  providers: [{ id: "fake", name: "Demo Translate", visibilities: ["public", "local", "unlisted"] }],
-};
-
-const translated = (language: string) => ({
-  language,
-  source_language: "ja",
-  content: `<p>[${language}] 小さなサーバー</p>`,
-  spoiler_text: "",
-  media_attachments: [],
-  poll_options: [],
-  provider: { id: "fake", name: "Demo Translate" },
-});
-
-/** A post of lena's in `language`, with the fields a test sets. */
-const post = (language: string, fields: Record<string, unknown> = {}) =>
-  status("1", "lena", { language, content: "<p>小さなサーバー</p>", ...fields }) as unknown as PostStatus;
+const withProvider: FakeOptions["translation"] = { provider: "answers" };
 
 /**
- * The translation of `shown` as a reader in `locale` (a visitor when `visitor`) first sees it, on a server whose
- * instance offers `offer` and that answers `answers` besides; and the server's requests.
+ * The posts of the scenario the tests translate: hana's welcome in Japanese (public), her notice (unlisted), marco's
+ * hello in English, ren's post for followers, hana's direct message to the reader, and sam's boost of the welcome.
+ */
+const posts = {
+  ja: "hana-welcome",
+  unlisted: "hana-unlisted",
+  en: "marco-hello",
+  private: "ren-followers",
+  direct: "hana-group",
+} as const;
+
+/**
+ * The translation of the post `of` (or of sam's boost of the welcome) as a reader in `locale` (a visitor when
+ * `visitor`) first sees it, on a server whose instance offers `offer`; the ID of the post translated, and the server's
+ * requests of a translation.
  */
 async function translation(
-  shown: PostStatus,
-  offer: InstanceTranslation,
-  {
-    locale = "en",
-    visitor = false,
-    answers = {},
-  }: { locale?: string; visitor?: boolean; answers?: Record<string, unknown> } = {},
+  of: keyof typeof posts | "boost",
+  offer: FakeOptions["translation"],
+  { locale = "en", visitor = false }: { locale?: string; visitor?: boolean } = {},
 ) {
-  const { data, requests, received } = server({ "/instance": { translation: offer }, ...answers });
+  const { fake, data, requests } = fakeData(offer === undefined ? {} : { translation: offer });
+  const sent = fake.script("POST /statuses/{id}/translation");
   await data.queryClient.query(instanceQuery(data));
+  const id = fake.idOf(posts[of === "boost" ? "ja" : of]);
+  const shown: PostStatus | undefined =
+    of === "boost"
+      ? (await data.queryClient.infiniteQuery(homeTimelineQuery(data))).pages[0]?.items.find((s) => s.boost?.id === id)
+      : (await data.api.GET("/statuses/{id}", { params: { path: { id } } })).data;
+  if (shown === undefined) throw new Error(`test: the server has no ${of} post`);
   const seen: { state?: PostTranslationState } = {};
   function Probe() {
-    seen.state = usePostTranslation(shown, visitor);
+    seen.state = usePostTranslation(shown as PostStatus, visitor);
     return null;
   }
-  render(data, <Probe />, locale);
+  markupOf(data, <Probe />, locale);
   const state = seen.state;
   if (state === undefined) throw new Error("test: the probe did not render");
-  return { ...state, received, translations: () => requests.filter((r) => r.includes("/translation")) };
+  return {
+    ...state,
+    id,
+    asked: async () => (await sent.arrived()).body,
+    translations: () => requests.filter((r) => r.includes("/translation")),
+  };
 }
 
 test("a post is in another language than the reader's: another language, or the same in another script", () => {
@@ -75,25 +80,25 @@ test("a post whose language is not known is not offered: it may be the reader's"
 });
 
 test("a signed-in reader is offered Translate on a post in another language that the server's provider may receive", async () => {
-  expect((await translation(post("ja"), withProvider)).props.translatable).toBe(true);
-  expect((await translation(post("ja", { visibility: "unlisted" }), withProvider)).props.translatable).toBe(true);
+  expect((await translation("ja", withProvider)).props.translatable).toBe(true);
+  expect((await translation("unlisted", withProvider)).props.translatable).toBe(true);
 });
 
 test("a post in the reader's own language is not offered", async () => {
-  expect((await translation(post("en"), withProvider)).props.translatable).not.toBe(true);
-  expect((await translation(post("ja"), withProvider, { locale: "ja" })).props.translatable).not.toBe(true);
+  expect((await translation("en", withProvider)).props.translatable).not.toBe(true);
+  expect((await translation("ja", withProvider, { locale: "ja" })).props.translatable).not.toBe(true);
 });
 
 test("without a provider and without the browser's translator, nothing is offered and nothing is sent", async () => {
-  const none = await translation(post("ja"), { browser: false, providers: [] });
+  const none = await translation("ja", undefined);
   expect(none.props.translatable).not.toBe(true);
   none.act("translate");
   expect(none.translations()).toEqual([]);
 });
 
 test("a followers-only or direct post that no provider may receive is not offered without the browser's translator", async () => {
-  for (const visibility of ["private", "direct"]) {
-    const closed = await translation(post("ja", { visibility }), withProvider);
+  for (const visibility of ["private", "direct"] as const) {
+    const closed = await translation(visibility, withProvider);
     expect(closed.props.translatable).not.toBe(true);
     closed.act("translate");
     expect(closed.translations()).toEqual([]);
@@ -101,34 +106,30 @@ test("a followers-only or direct post that no provider may receive is not offere
 });
 
 test("a visitor is never offered the server's provider: only the browser translates for them", async () => {
-  const visiting = await translation(post("ja"), withProvider, { visitor: true });
+  const visiting = await translation("ja", withProvider, { visitor: true });
   expect(visiting.props.translatable).not.toBe(true);
   visiting.act("translate");
   expect(visiting.translations()).toEqual([]);
 });
 
 test("first drawn, a post shows no translation, nothing on its way and no refusal", async () => {
-  const { props } = await translation(post("ja"), withProvider);
+  const { props } = await translation("ja", withProvider);
   expect(props.translation).toBeUndefined();
   expect(props.translating).toBeFalsy();
   expect(props.translationFailure).toBeUndefined();
 });
 
 test("Translate asks the server for the post in the reader's language; the hook says it handled it", async () => {
-  const shown = await translation(post("ja"), withProvider, {
-    answers: { "/statuses/1/translation": translated("en") },
-  });
+  const shown = await translation("ja", withProvider);
   expect(shown.act("translate")).toBe(true);
-  expect(await shown.received("POST /statuses/1/translation")).toEqual({ target_language: "en" });
+  expect(await shown.asked()).toEqual({ target_language: "en" });
+  expect(shown.translations()).toEqual([`POST /statuses/${shown.id}/translation`]);
 });
 
 test("a reader of Japanese asks for Japanese", async () => {
-  const shown = await translation(post("en"), withProvider, {
-    locale: "ja",
-    answers: { "/statuses/1/translation": translated("ja") },
-  });
+  const shown = await translation("en", withProvider, { locale: "ja" });
   shown.act("translate");
-  expect(await shown.received("POST /statuses/1/translation")).toEqual({ target_language: "ja" });
+  expect(await shown.asked()).toEqual({ target_language: "ja" });
 });
 
 test("where the browser may translate too, the server's provider is asked first", async () => {
@@ -139,28 +140,22 @@ test("where the browser may translate too, the server's provider is asked first"
       create: () => Promise.reject(new Error("test: the browser was asked before the server")),
     },
   });
-  const shown = await translation(
-    post("ja"),
-    { ...withProvider, browser: true },
-    {
-      answers: { "/statuses/1/translation": translated("en") },
-    },
-  );
+  const shown = await translation("ja", { ...withProvider, browser: true });
   shown.act("translate");
-  expect(await shown.received("POST /statuses/1/translation")).toEqual({ target_language: "en" });
+  expect(await shown.asked()).toEqual({ target_language: "en" });
 });
 
 test("the post's other actions are not the hook's", async () => {
-  const shown = await translation(post("ja"), withProvider);
+  const shown = await translation("ja", withProvider);
   expect(shown.act("favourite")).toBe(false);
   expect(shown.act("reply")).toBe(false);
   expect(shown.translations()).toEqual([]);
 });
 
 test("a boost translates the post it boosts", async () => {
-  const boost = status("2", "kenji", { language: "en", boost: post("ja") }) as unknown as PostStatus;
-  const shown = await translation(boost, withProvider, { answers: { "/statuses/1/translation": translated("en") } });
+  const shown = await translation("boost", withProvider);
   expect(shown.props.translatable).toBe(true);
   shown.act("translate");
-  expect(await shown.received("POST /statuses/1/translation")).toEqual({ target_language: "en" });
+  expect(await shown.asked()).toEqual({ target_language: "en" });
+  expect(shown.translations()).toEqual([`POST /statuses/${shown.id}/translation`]);
 });

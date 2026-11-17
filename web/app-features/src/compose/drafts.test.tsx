@@ -4,7 +4,7 @@ import { expect, test } from "bun:test";
 import { defaultComposeSettings, defaultDraftLimits, useComposeSettings, type ServerDraft } from "@my/app-data";
 import { readerZone, scheduleTime } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { render, server, status } from "../test/server";
+import { fakeData, markupOf } from "../test/feature";
 import { ComposerView } from "./composer";
 import { DraftsView, type DraftsState } from "./drafts";
 import type { ComposeSpecimen } from "./layer";
@@ -66,8 +66,8 @@ const none = () => undefined;
 
 /** The drafts' list in `state`, in `locale`. */
 function list(state: DraftsState, locale = "en") {
-  const { data } = server({});
-  return render(
+  const { data } = fakeData();
+  return markupOf(
     data,
     <DraftsView
       state={state}
@@ -173,6 +173,26 @@ test("in ja, the list's headings, its zone and a row's saved time", () => {
   expect(ja).toContain("この下書きを開く");
 });
 
+/**
+ * The app's data on a server whose nearest scheduled time is `minutes` ahead, its instance read; or, without
+ * `minutes`, on a server whose instance is not read yet.
+ */
+async function instanceWith(minutes: number | undefined) {
+  const { fake, data } = fakeData();
+  if (minutes === undefined) return data;
+  fake.script("GET /instance", {
+    change: (instance) => ({
+      ...instance,
+      limits: {
+        ...instance.limits,
+        drafts: { ...defaultDraftLimits, scheduled_post_min_lead_minutes: minutes },
+      },
+    }),
+  });
+  await data.queryClient.query(data.queries.queryOptions("get", "/instance"));
+  return data;
+}
+
 /** The composer of a new post written as `fields` say, in `locale`, under the instance's `limits` once read. */
 async function composer(
   fields: Partial<Draft>,
@@ -188,18 +208,9 @@ async function composer(
     minutes?: number;
   } = {},
 ) {
-  const { data } = server({
-    "/instance": {
-      domain: "my.example",
-      limits: {
-        max_post_characters: 500,
-        drafts: { ...defaultDraftLimits, scheduled_post_min_lead_minutes: minutes ?? 5 },
-      },
-    },
-  });
-  if (minutes !== undefined) await data.queryClient.query(data.queries.queryOptions("get", "/instance"));
+  const data = await instanceWith(minutes);
   const initial = { ...emptyDraft(target, defaultComposeSettings, "k"), text: "Later, maybe.", ...fields };
-  return render(data, <Composing initial={initial} specimen={specimen} />, locale);
+  return markupOf(data, <Composing initial={initial} specimen={specimen} />, locale);
 }
 
 /**
@@ -244,17 +255,7 @@ async function scheduleForm(
   at: string | undefined,
   { locale = "en", minutes }: { locale?: string; minutes?: number } = {},
 ) {
-  const { data } = server({
-    "/instance": {
-      domain: "my.example",
-      limits: {
-        max_post_characters: 500,
-        drafts: { ...defaultDraftLimits, scheduled_post_min_lead_minutes: minutes ?? 5 },
-      },
-    },
-  });
-  if (minutes !== undefined) await data.queryClient.query(data.queries.queryOptions("get", "/instance"));
-  return render(data, <Scheduling at={at} locale={locale} />, locale);
+  return markupOf(await instanceWith(minutes), <Scheduling at={at} locale={locale} />, locale);
 }
 
 function Scheduling({ at, locale }: { at: string | undefined; locale: string }) {
@@ -336,9 +337,8 @@ test("a draft gone from the server says it may have been posted, keeps what was 
 });
 
 test("Post as new lets the gone draft go and posts what is written by POST /statuses, under a new key", async () => {
-  const { data, requests, received } = server({
-    "/statuses": status("s1", "lena", { content: "<p>Later, maybe.</p>" }),
-  });
+  const { fake, data, requests } = fakeData();
+  const sent = fake.script("POST /statuses");
   const initial: Draft = {
     ...emptyDraft({ kind: "new" }, defaultComposeSettings, "k"),
     text: "Later, maybe.",
@@ -364,9 +364,9 @@ test("Post as new lets the gone draft go and posts what is written by POST /stat
     );
     return null;
   }
-  render(data, <Probe />);
+  markupOf(data, <Probe />);
   seen.c?.submit();
-  expect(await received("POST /statuses")).toMatchObject({ text: "Later, maybe." });
+  expect((await sent.arrived()).body).toMatchObject({ text: "Later, maybe." });
   const d = await posted;
   // Nothing of the gone draft is written again: no save over it, no publication of it, no schedule.
   expect(requests.filter((r) => r.includes("/drafts"))).toEqual([]);

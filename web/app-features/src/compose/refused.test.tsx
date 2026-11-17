@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import { defaultComposeSettings, type MediaAttachment } from "@my/app-data";
-import { render, server } from "../test/server";
+import { fakeData, markupOf } from "../test/feature";
 import { ComposerView } from "./composer";
 import { emptyDraft, type Draft } from "./model";
 import { useComposer, type Phase } from "./use-composer";
@@ -18,7 +18,7 @@ function composer(fields: Partial<Draft>, phase: Phase) {
     const c = useComposer(initial, { onPosted: none, onKept: none }, phase);
     return <ComposerView c={c} layer={false} onClose={none} onDismiss={none} />;
   }
-  return render(server({}).data, <Composing />);
+  return markupOf(fakeData().data, <Composing />);
 }
 
 /** The opening tag of each element of `html` marked invalid. */

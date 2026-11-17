@@ -1,24 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { publicTimelineQuery } from "@my/app-data";
 import { PostActions } from "../post-actions";
 import { press } from "../test/actions";
-import { poll, render, server, status } from "../test/server";
+import { fakeData, markupOf } from "../test/feature";
 import { loadPublicTimeline, PublicTimeline } from "./public";
 
 test("a signed-in reader's vote in a post's poll on the local timeline reaches the server", async () => {
-  const { data, received } = server({
-    "/timelines/local": { items: [status("v", "sam", { poll: poll("p") })] },
-    "/statuses/v/poll/votes": status("v", "sam", { poll: poll("p", { voted: true, own_votes: [0] }) }),
-  });
+  // In the scenario sam asks which loaf to bake, in a poll the reader has not voted in.
+  const { fake, data } = fakeData();
+  const id = fake.idOf("sam-poll");
+  const sent = fake.script("POST /statuses/{id}/poll/votes");
   await loadPublicTimeline(data, "local");
-  const html = render(
+  const local = data.queryClient.getQueryData(publicTimelineQuery(data, "local").queryKey);
+  const poll = local?.pages.flatMap((p) => p.items).find((s) => s.id === id)?.poll?.id ?? "";
+  expect(poll).not.toBe("");
+  const html = markupOf(
     data,
     <PostActions onCompose={() => undefined}>
       <PublicTimeline kind="local" />
     </PostActions>,
   );
   expect(html).toContain(">Vote<");
-  press({ type: "vote", id: "v", poll: "p", choices: [0] });
-  expect(await received("POST /statuses/v/poll/votes")).toEqual({ poll_id: "p", choices: [0] });
+  press({ type: "vote", id, poll, choices: [0] });
+  expect((await sent.arrived()).body).toEqual({ poll_id: poll, choices: [0] });
 });
