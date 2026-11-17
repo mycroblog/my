@@ -38,6 +38,5 @@ export { Reactors } from "./reactors";
 export { homeSuggestions, Search } from "./search";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
-export { Moved } from "./moved";
 export { Notice } from "./notice";
 export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";
