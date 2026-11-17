@@ -2,8 +2,8 @@
 
 // The plain text of the editor (ADR-0092 §4): what $setPlainText writes, $plainText reads back unchanged, and the
 // offsets of a selection are those of that plain text, in UTF-16 code units, also around a node that stands for text (a
-// caller's custom emoji, read as its `:shortcode:`). Run headless: Lexical's editor without a DOM. And the editor is a
-// text box to assistive technology, with its name, description and states, as it is first drawn.
+// caller's custom emoji, read as its `:shortcode:`). Run headless: Lexical's editor without a DOM. What the editor is
+// to assistive technology and to the keyboard is in editor.dom.test.tsx.
 
 import { describe, expect, test } from "bun:test";
 import {
@@ -15,8 +15,7 @@ import {
   type LexicalEditor,
   type NodeKey,
 } from "lexical";
-import { renderToStaticMarkup } from "react-dom/server";
-import { $plainText, $selectionOffsets, $selectOffsets, $setPlainText, PlainTextEditor } from "./editor";
+import { $plainText, $selectionOffsets, $selectOffsets, $setPlainText } from "./editor";
 
 /** A node that stands for text, as a caller's custom emoji does: shown as something else, read as `:shortcode:`. */
 class ShortcodeNode extends DecoratorNode<null> {
@@ -242,57 +241,5 @@ describe("$selectOffsets then $selectionOffsets gives the same offsets", () => {
     const e = editor();
     set(e, "abc");
     expect(read(e, $selectionOffsets)).toBeUndefined();
-  });
-});
-
-/** The attributes of the text box that `props` draw, by name. */
-function textbox(props: Partial<Parameters<typeof PlainTextEditor>[0]>): Record<string, string> {
-  const html = renderToStaticMarkup(
-    <PlainTextEditor
-      namespace="test"
-      value="a"
-      onChange={() => undefined}
-      label="Text"
-      placeholder="Write here"
-      look="composer"
-      {...props}
-    />,
-  );
-  const tag = /<div[^>]*\srole="textbox"[^>]*>/.exec(html)?.[0];
-  if (tag === undefined) throw new Error(`no text box in ${html}`);
-  return Object.fromEntries(Array.from(tag.matchAll(/\s([\w-]+)="([^"]*)"/g), (m) => [m[1] ?? "", m[2] ?? ""]));
-}
-
-describe("the text box", () => {
-  test("has its name, its placeholder, its description and its states as given", () => {
-    const box = textbox({ describedBy: "e1", invalid: true, required: true, multiline: true });
-    expect(box).toMatchObject({
-      role: "textbox",
-      "aria-label": "Text",
-      "aria-placeholder": "Write here",
-      "aria-describedby": "e1",
-      "aria-invalid": "true",
-      "aria-required": "true",
-      "aria-multiline": "true",
-      contentEditable: "true",
-      dir: "auto",
-    });
-  });
-
-  test("says nothing of a state not set", () => {
-    const box = textbox({ multiline: true });
-    for (const name of ["aria-describedby", "aria-invalid", "aria-required", "aria-readonly"])
-      expect(box[name] ?? "false").toBe("false");
-  });
-
-  test("of one line is not multiline", () => {
-    expect(textbox({ multiline: false, look: "line", label: "Content warning" })).toMatchObject({
-      "aria-label": "Content warning",
-      "aria-multiline": "false",
-    });
-  });
-
-  test("read only is not editable, and says so", () => {
-    expect(textbox({ readOnly: true })).toMatchObject({ contentEditable: "false", "aria-readonly": "true" });
   });
 });
