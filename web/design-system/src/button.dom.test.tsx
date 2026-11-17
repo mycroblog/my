@@ -84,6 +84,25 @@ test("a disabled button is disabled: Tab passes it and a click does not press it
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "Save draft" }));
 });
 
+// A press that began on the button while it was disabled once took the next press with it (d34afabff).
+test("a press on a button while it is disabled loses no press once it is enabled", async () => {
+  const user = userEvent.setup();
+  let presses = 0;
+  const vote = (disabled: boolean) => (
+    <Button isDisabled={disabled} onPress={() => presses++}>
+      Vote
+    </Button>
+  );
+  const { rerender } = render(vote(true));
+
+  await user.click(screen.getByRole("button", { name: "Vote" }));
+  expect(presses).toBe(0);
+  rerender(vote(false));
+  await user.click(screen.getByRole("button", { name: "Vote" }));
+
+  expect(presses).toBe(1);
+});
+
 test("a button tells assistive technology the keys that run its action", () => {
   render(<Button aria-keyshortcuts="Control+Enter">Post</Button>);
 
