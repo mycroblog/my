@@ -33,6 +33,8 @@ export type LinkCardProps = {
   size?: "large" | "small" | undefined;
   /** The post is sensitive: the image is covered, its blurhash in its place, until the reader shows it. */
   sensitive?: boolean | undefined;
+  /** A sensitive post's image is shown at first; covered by default. */
+  defaultShown?: boolean | undefined;
   /**
    * The page's author, as its server confirms them: what shows (an inline avatar and the name), and the name as text,
    * which a screen reader reads after "by".
@@ -92,12 +94,13 @@ export function LinkCard({
   image,
   size = "large",
   sensitive = false,
+  defaultShown = false,
   author,
   lang,
 }: LinkCardProps) {
   const { lang: reader, direction } = useReader(undefined);
   const { t } = stringsIn(reader);
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(defaultShown);
   const id = useId();
   const coverable = sensitive && image !== undefined;
   const covered = coverable && !shown;

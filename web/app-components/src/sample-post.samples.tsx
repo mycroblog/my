@@ -134,7 +134,7 @@ export function SamplePost({
   picker?: PostPicker | undefined;
   /** The focused post's own lines (Post's `details`), with the stamp left out of its author's line. */
   details?: ReactNode;
-} & Pick<PostProps, "cardSize">) {
+} & Pick<PostProps, "cardSize" | "defaultShown">) {
   const [status, setStatus] = useState(() => statusOf(post, post.id));
   const answer = translationOf(post, lang);
   const translation = answer && translationAs ? translationAs(answer) : answer;

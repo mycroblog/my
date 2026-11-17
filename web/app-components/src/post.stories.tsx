@@ -264,7 +264,10 @@ function Shown({
 }
 
 /** Several sample posts one after another, a timeline's gap apart, in the column. */
-function Several({ posts: several, ...shown }: { posts: readonly TimelinePost[] } & Pick<PostProps, "cardSize">) {
+function Several({
+  posts: several,
+  ...shown
+}: { posts: readonly TimelinePost[] } & Pick<PostProps, "cardSize" | "defaultShown">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -278,7 +281,7 @@ function Several({ posts: several, ...shown }: { posts: readonly TimelinePost[] 
 }
 
 /** The sample posts of these ids, one after another. */
-function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "cardSize">) {
+function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "cardSize" | "defaultShown">) {
   return <Several posts={ids.map(byId)} {...shown} />;
 }
 
@@ -287,21 +290,6 @@ function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "
  * image.
  */
 const sensitiveIds = ["sensitive", "sensitive-four", "sensitive-cw", "sensitive-mixed", "sensitive-card"] as const;
-
-/** Presses every Show of the story: the sensitive media and the content warnings, shown. */
-async function showAll(canvasElement: HTMLElement) {
-  // A content warning shown brings the line of its media into view: press again until none is left. The lines and the
-  // content warnings' buttons are the folded disclosures that end in Show.
-  for (let pass = 0; pass < 3; pass++) {
-    const shows = within(canvasElement).queryAllByRole("button", { expanded: false, name: /Show$|表示$/ });
-    if (shows.length === 0) return;
-    for (const show of shows) {
-      await userEvent.click(show);
-      // The pointer leaves, so that no post shows its hovered surface at rest.
-      await userEvent.unhover(show);
-    }
-  }
-}
 
 /** The reader's language, en or ja, from the toolbar's locale. */
 const useLang = () => (new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en");
@@ -659,14 +647,8 @@ export const MixedMedia: Story = { ...fixed, render: () => <Shown post={byId("mi
  * warning, an image with a sound (folded), and a card's image.
  */
 export const Sensitive: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} /> };
-/** The same, every Show pressed: the media shown, the line ending in Hide. */
-export const SensitiveShown: Story = {
-  ...fixed,
-  render: () => <Posts ids={sensitiveIds} />,
-  play: async ({ canvasElement }) => {
-    await showAll(canvasElement);
-  },
-};
+/** The same, shown: the content warning open and the media shown, the line ending in Hide. */
+export const SensitiveShown: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} defaultShown /> };
 /** The viewer opened from a post at its first picture: the post's media one at a time, whole. */
 export const ViewerFromPost: Story = {
   ...fixed,

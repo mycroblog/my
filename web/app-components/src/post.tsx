@@ -148,6 +148,11 @@ export type PostProps = {
    * own; the screen's, which answers them.
    */
   authorMenu?: ReactNode;
+  /**
+   * What it holds back is shown at first: its content warning open, and its sensitive media, its card's image and a
+   * sensitive article's cover and text uncovered; folded and covered by default. The reader hides each again.
+   */
+  defaultShown?: boolean | undefined;
 };
 
 /**
@@ -302,7 +307,7 @@ class Contained extends Component<{ children: ReactNode }, { failed: boolean }> 
  * The link card, when the post has neither media nor a quote (ADR-0062 §1); its author on an inline avatar. A card
  * that fails to draw (a page's data the card cannot take) leaves the post without it, never breaks the post (§8).
  */
-function Card({ status, size }: { status: PostStatus; size: "large" | "small" }) {
+function Card({ status, size, defaultShown }: { status: PostStatus; size: "large" | "small"; defaultShown: boolean }) {
   const card = status.card;
   if (card === undefined || status.media_attachments.length > 0 || status.quote?.quoted_status !== undefined)
     return null;
@@ -316,6 +321,7 @@ function Card({ status, size }: { status: PostStatus; size: "large" | "small" })
       site={card.site_name}
       size={size}
       sensitive={status.sensitive ?? false}
+      defaultShown={defaultShown}
       lang={card.language}
       image={
         image === undefined
@@ -919,6 +925,7 @@ export function Post({
   replyingTo = true,
   self,
   authorMenu,
+  defaultShown = false,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -962,12 +969,13 @@ export function Post({
       <MediaGrid
         items={media}
         sensitive={shown.sensitive ?? false}
+        defaultShown={defaultShown}
         onOpen={(index) => {
           setViewing(index);
         }}
       />
       <Contained key={shown.card?.url}>
-        <Card status={shown} size={cardSize} />
+        <Card status={shown} size={cardSize} defaultShown={defaultShown} />
       </Contained>
       {quoted !== undefined && <Quote status={quoted} />}
     </>
@@ -1024,6 +1032,7 @@ export function Post({
         summary={article.summary}
         cover={cover}
         sensitive={sensitive}
+        defaultShown={defaultShown}
         lang={textLang}
       />
     );
@@ -1039,7 +1048,7 @@ export function Post({
         {byline}
         <ArticleTitle title={article.title} summary={article.summary} lang={textLang} />
         {sensitive ? (
-          <Disclosure summary={t("post.article_sensitive")} icon="hidden">
+          <Disclosure summary={t("post.article_sensitive")} icon="hidden" defaultExpanded={defaultShown}>
             <Stack gap="entry" lang={textLang}>
               {coverPart}
               {text}
@@ -1072,6 +1081,7 @@ export function Post({
               )
             }
             icon="hidden"
+            defaultExpanded={defaultShown}
           >
             <Stack gap="entry" lang={textLang}>
               {content}

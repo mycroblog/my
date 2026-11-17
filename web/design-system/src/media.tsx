@@ -502,16 +502,25 @@ export type MediaGridProps = {
   size?: "full" | "preview";
   /** Covered until the reader shows it. */
   sensitive?: boolean | undefined;
+  /** Sensitive media is shown at first; covered by default. */
+  defaultShown?: boolean | undefined;
   /** Opens the viewer at the picture of this index among the pictures (images, GIFs and videos). */
   onOpen?: ((index: number) => void) | undefined;
   /** The reader's locale, for the marks and the cover; the I18nProvider's by default. */
   locale?: string | undefined;
 };
 
-export function MediaGrid({ items, size = "full", sensitive = false, onOpen, locale }: MediaGridProps) {
+export function MediaGrid({
+  items,
+  size = "full",
+  sensitive = false,
+  defaultShown = false,
+  onOpen,
+  locale,
+}: MediaGridProps) {
   const { lang, direction } = useReader(locale);
   const { t } = stringsIn(lang);
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(defaultShown);
   const covers = useId();
   if (items.length === 0) return null;
   const pictures = items.filter(isPicture);

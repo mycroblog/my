@@ -34,6 +34,8 @@ export type ArticleCardProps = {
   cover?: ArticleCoverImage | undefined;
   /** The article is sensitive: its cover is covered, its blurhash in its place, until the reader shows it. */
   sensitive?: boolean | undefined;
+  /** A sensitive article's cover is shown at first; covered by default. */
+  defaultShown?: boolean | undefined;
   /** The article's language, when it is known. */
   lang?: string | undefined;
 };
@@ -69,10 +71,18 @@ function Kind({ className }: { className: string }) {
 }
 
 /** An article in a timeline: what it is, its title and its summary as one link to its page, and its cover under them. */
-export function ArticleCard({ href, title, summary, cover, sensitive = false, lang }: ArticleCardProps) {
+export function ArticleCard({
+  href,
+  title,
+  summary,
+  cover,
+  sensitive = false,
+  defaultShown = false,
+  lang,
+}: ArticleCardProps) {
   const { lang: reader, direction } = useReader(undefined);
   const { t } = stringsIn(reader);
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(defaultShown);
   const id = useId();
   const covered = sensitive && !shown;
   const s = card({ covered });
