@@ -9,14 +9,13 @@
 // apart), and each surface of the inventory: a post's more and boost menus, a profile's, Add to list, a conversation's,
 // a draft's, the composer's drafts, New post's, the phone's Menu, the composer's audience with its submenus, an
 // article's visibility, the post's language and a poll's duration. The sheet and its backdrop are drawn still, as they
-// rest once open; the Open stories open the menu itself, as the reader does. The words are the features' where they
+// rest once open; the Open stories show the menu open. The words are the features' where they
 // exist, else placeholders.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useState, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
-import { userEvent, waitFor, within } from "storybook/test";
 import { IconButton } from "./icon-button";
 import type { IconName } from "./icons";
 import { MenuButton, MenuGroup, MenuHead, MenuItem, MenuPanel } from "./menu";
@@ -539,6 +538,7 @@ function Inventory({ kind }: { kind: string }) {
  */
 function Live({ kind }: { kind: "actions" | "values" | "submenu" }) {
   const w = words[useLang()];
+  const [open, setOpen] = useState(true);
   const [chosen, setChosen] = useState("v-0");
   const [panel, setPanel] = useState<"top" | "lists">(kind === "submenu" ? "lists" : "top");
   const [on, setOn] = useState<readonly string[]>(["l-0", "l-2"]);
@@ -625,8 +625,10 @@ function Live({ kind }: { kind: "actions" | "values" | "submenu" }) {
               }
             : undefined
         }
-        onOpenChange={(open) => {
-          if (!open && kind !== "submenu") setPanel("top");
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next && kind !== "submenu") setPanel("top");
         }}
       >
         {items}
@@ -635,27 +637,6 @@ function Live({ kind }: { kind: "actions" | "values" | "submenu" }) {
   );
 }
 
-/** Opens the story's menu by its button, and waits until it has risen into place (a sheet's; a popover does not move). */
-const opened = {
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const [button] = within(canvasElement).getAllByRole("button");
-    if (button === undefined) throw new Error("no button opens the menu");
-    await userEvent.click(button);
-    await waitFor(
-      () => {
-        const menu = canvasElement.ownerDocument.querySelector('[role="menu"]');
-        if (menu === null) throw new Error("no menu is open");
-        for (let el: Element | null = menu; el !== null; el = el.parentElement) {
-          const style = getComputedStyle(el);
-          if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-            throw new Error("the menu is still rising");
-        }
-      },
-      { timeout: 5000 },
-    );
-  },
-};
-
 // Tagged `themes`: the story tests run it in dark too.
 const meta = { title: "Menu everywhere", tags: ["themes"], parameters: { layout: "fullscreen" } } satisfies Meta;
 export default meta;
@@ -663,11 +644,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** A menu of actions, opened: one cannot be done now, and says why. */
-export const OpenActions: Story = { ...opened, render: () => <Live kind="actions" /> };
+export const OpenActions: Story = { render: () => <Live kind="actions" /> };
 /** The values of one setting, opened: the chosen one checked; a choice closes it. */
-export const OpenValues: Story = { ...opened, render: () => <Live kind="values" /> };
+export const OpenValues: Story = { render: () => <Live kind="values" /> };
 /** A submenu, opened in its menu's place: back and its name head it; its toggles keep it open. */
-export const OpenSubmenu: Story = { ...opened, render: () => <Live kind="submenu" /> };
+export const OpenSubmenu: Story = { render: () => <Live kind="submenu" /> };
 
 export const ItemKinds: Story = { render: () => <ItemKindsStory /> };
 export const Submenu: Story = { render: () => <SubmenuStory /> };

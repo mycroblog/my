@@ -86,6 +86,22 @@ test("on a phone a menu and a small form are sheets along the bottom edge, heade
   });
 });
 
+test("on a phone a press on the dimmed page above a menu's sheet closes it and gives the focus back to the trigger", async ({
+  page,
+  open,
+}) => {
+  await open(story);
+  await trigger(page, "Menu at the end").click();
+  const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });
+  await expect(menu).toBeVisible();
+  // The top corner of the page, away from the trigger and from the sheet along the bottom edge.
+  expect((await boxOf(menu)).top).toBeGreaterThan(8);
+  await page.mouse.click(8, 8);
+
+  await expect(menu).toBeHidden();
+  await expect(trigger(page, "Menu at the end")).toBeFocused();
+});
+
 test("on a phone a question stands in the middle of the view, and a panel is a screen of its own that scrolls inside", async ({
   page,
   open,
