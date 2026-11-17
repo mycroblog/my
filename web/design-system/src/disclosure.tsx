@@ -7,12 +7,13 @@
 // page's search while folded: a reader who chose not to see it is not shown it by a find. The button's label is the
 // design system's own string, in the reader's locale; it lays out in the reader's direction (locale.ts).
 
-import type { ReactNode } from "react";
+import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 import { Disclosure as AriaDisclosure, DisclosurePanel } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { Icon, type IconName } from "./icons";
+import { Box, Row } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { usePreviewExpanded } from "./preview";
 
@@ -31,20 +32,29 @@ export type DisclosureProps = {
 
 const disclosure = tv({
   slots: {
-    root: "grid grid-cols-1 gap-disclosure-gap",
-    // The glyph and the toggle line up with the summary's first line, so a long warning wraps below them. On a narrow
-    // screen (under 40rem, mobile) the toggle's column is its label's width and little more, so the warning wraps less.
+    // On a narrow screen (under 40rem, mobile) the toggle's column is its label's width and little more, so the warning
+    // wraps less.
     summary: [
-      "flex items-start gap-disclosure-gap rounded-control bg-surface-raised",
+      "rounded-control bg-surface-raised",
       "py-disclosure-padding ps-disclosure-start pe-disclosure-padding",
       "max-[40rem]:[&>button]:px-disclosure-padding",
     ],
-    glyph: "inline-flex h-control-timeline items-center text-muted-text",
+    glyph: "h-control-timeline text-muted-text",
     // Centred on the toggle's height: its first line sits level with the glyph and the label.
-    text: "min-w-0 flex-1 text-body py-[calc((var(--control-timeline-height)-1lh)/2)]",
+    text: "text-body py-disclosure-text",
     panel: "[&[hidden]]:hidden",
   },
 });
+
+/** The disclosure's grid: the summary over what it folds. */
+function DisclosureFrame(props: Omit<ComponentProps<typeof AriaDisclosure>, "className">) {
+  return <AriaDisclosure {...props} className="grid grid-cols-1 gap-disclosure-gap" />;
+}
+
+/** The summary's line: the glyph and the toggle line up with its first line, so a long warning wraps below them. */
+function DisclosureSummary({ className, ...rest }: HTMLAttributes<HTMLDivElement> & { className: string }) {
+  return <div {...rest} className={`${className} flex items-start gap-disclosure-gap`} />;
+}
 
 export function Disclosure({ summary, icon, defaultExpanded = false, locale, children }: DisclosureProps) {
   const reader = useReader(locale);
@@ -53,25 +63,25 @@ export function Disclosure({ summary, icon, defaultExpanded = false, locale, chi
   const previewExpanded = usePreviewExpanded();
   const s = disclosure();
   return (
-    <AriaDisclosure defaultExpanded={defaultExpanded || previewExpanded} className={s.root()} dir={reader.direction}>
+    <DisclosureFrame defaultExpanded={defaultExpanded || previewExpanded} dir={reader.direction}>
       {({ isExpanded }) => (
         <>
-          <div className={s.summary()}>
+          <DisclosureSummary className={s.summary()}>
             {icon !== undefined && (
-              <span className={s.glyph()}>
+              <Row as="span" align="center" className={s.glyph()}>
                 <Icon name={icon} place="caption" />
-              </span>
+              </Row>
             )}
-            <div id={summaryId} className={s.text()}>
+            <Box id={summaryId} grow className={s.text()}>
               {summary}
-            </div>
+            </Box>
             <Button slot="trigger" kind="quiet" size="timeline" aria-describedby={summaryId}>
               <span lang={lang}>{t(isExpanded ? "disclosure.hide" : "disclosure.show")}</span>
             </Button>
-          </div>
+          </DisclosureSummary>
           <DisclosurePanel className={s.panel()}>{children}</DisclosurePanel>
         </>
       )}
-    </AriaDisclosure>
+    </DisclosureFrame>
   );
 }

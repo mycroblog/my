@@ -115,6 +115,8 @@ const theme = {
     "disclosure-gap": ref("--disclosure-gap"),
     "disclosure-padding": ref("--disclosure-padding"),
     "disclosure-start": ref("--disclosure-padding-start"),
+    // Above and below the summary's text, so that its first line is level with the toggle's label.
+    "disclosure-text": "calc((var(--control-timeline-height) - 1lh) / 2)",
     "content-paragraph": ref("--content-paragraph-gap"),
     "content-indent": ref("--content-indent"),
     "content-quote": ref("--content-quote-indent"),
