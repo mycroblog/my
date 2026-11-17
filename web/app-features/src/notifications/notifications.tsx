@@ -292,8 +292,9 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
       onPassed={reads.read}
     >
       {(n) => {
-        // The one place where an action reads its notification, whatever the row holds, now or later: a press on
-        // it or on an item of a menu of it, and what a shortcut's key asks of the post it shows.
+        // The one place where a notification is read by what the reader does on it, whatever the row holds, now or
+        // later: a press on it, the one that opens a menu or a picker included, or on an item of a menu of it, and
+        // what a shortcut's key asks of the post it shows. A press shows that the reader saw it.
         const read = () => {
           reads.read(n.id);
         };

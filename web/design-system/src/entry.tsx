@@ -155,20 +155,18 @@ export function LivePart({ children }: { children: ReactNode }) {
 const pressed = 'a[href], button, summary, [role="button"], [role="link"], [role^="menuitem"]';
 const pressedBySpace = 'button, summary, [role="button"], [role^="menuitem"]';
 
-/** Whether a press on `on` acts on the entry of `around`: see `HeardActions`. */
+/** Whether a press on `on` is one on the entry of `around`: see `HeardActions`. */
 function acts(around: Element, on: Element): boolean {
-  if (on.closest("[aria-haspopup]") !== null) return false;
   // A press in what the entry opened reaches it through React's tree, from outside its own elements.
   return around.contains(on) || on.closest('[role^="menuitem"]:not([aria-disabled="true"])') !== null;
 }
 
 /**
- * Around an entry, with no box of its own: hears every press by which the reader acts on it (a notification, read once
- * the reader acts on it), by a pointer or by Enter or Space, on its words or on a control of it, and on an item of a
- * menu it opened. It hears the press before the control that takes it, where a feed's `onEntryClick` hears only a
- * press no control took. A press that only opens a menu or a submenu is not yet an action, and neither is one that
- * leaves a menu without a choice (its close, its back, the page behind it) or lands on an item that cannot be chosen.
- * It may hear one action twice. A shortcut's key is no press: what it runs tells its owner itself.
+ * Around an entry, with no box of its own: hears every press of the reader on it (a notification is read once the
+ * reader has shown that they saw it), by a pointer or by Enter or Space, on its words or on a control of it, the one
+ * that opens a menu or a picker included, and on an item of a menu it opened. It hears the press before the control
+ * that takes it, where a feed's `onEntryClick` hears only a press no control took. It may hear one press twice. A
+ * shortcut's key is no press: what it runs tells its owner itself.
  */
 export function HeardActions({ onAct, children }: { onAct: () => void; children: ReactNode }) {
   return (
