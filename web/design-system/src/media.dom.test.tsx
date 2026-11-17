@@ -150,7 +150,6 @@ describe("each kind of media", () => {
   });
 
   test("Enter on a video's play button leaves the focus in the video's place", async () => {
-    // Defect: the play button goes as the player comes and nothing takes the focus it had: it falls to the page.
     const user = userEvent.setup();
     render(
       <>
@@ -343,6 +342,33 @@ describe("sensitive media", () => {
 
     expect(screen.getByRole("button", { name: "Hide", expanded: true })).not.toBeNull();
     expect(screen.getAllByRole("img", { name: "A ridge at dawn" })).toHaveLength(2);
+  });
+
+  test("a press on the covered media shows them and leaves the focus where it was", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Button>Before</Button>
+        <MediaGrid items={many(picture, 2)} sensitive onOpen={() => undefined} />
+      </>,
+    );
+    const cover = () => screen.getByRole("button", { name: "2 sensitive images · Show", hidden: true });
+    await user.tab();
+    const before = screen.getByRole("button", { name: "Before" });
+    expect(document.activeElement).toBe(before);
+
+    await user.click(cover());
+    expect(screen.getAllByRole("img", { name: "A ridge at dawn" })).toHaveLength(2);
+    expect(document.activeElement).toBe(before);
+
+    // From the line's own button too, which the press turns into Hide.
+    await user.tab();
+    await user.keyboard("{Enter}");
+    const show = screen.getByRole("button", { name: "Show", expanded: false });
+    expect(document.activeElement).toBe(show);
+    await user.click(cover());
+    expect(screen.getByRole("button", { name: "Hide", expanded: true })).toBe(show);
+    expect(document.activeElement).toBe(show);
   });
 
   test("as a quoted post's previews, each image has its description, and sensitive ones are covered too", () => {

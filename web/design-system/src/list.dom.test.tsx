@@ -423,7 +423,6 @@ test("a row of faces is one link named by its label, which shows its count and r
 });
 
 test("a row of faces says its label on hover", async () => {
-  // Defect: FacesRowProps says the label shows on hover; the row has neither a title nor a tooltip.
   const user = userEvent.setup();
   render(<FacesRow href="/@ren/status/1/favourites" label="6 favourited" glyph="★" count="6" faces={[]} />);
   const link = screen.getByRole("link", { name: "6 favourited" });
