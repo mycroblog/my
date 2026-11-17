@@ -177,10 +177,15 @@ test("over the list, a row counts what waits for the reader's approval; a reques
 test("the row of what waits leads to its screen, and stays over the Mentions tab; no request to reply, boost or quote has buttons to answer it", async () => {
   const user = await shown(fakeData({ approvals: true }));
   const row = () => screen.getByRole("link", { name: "3 waiting for your approval" });
-  const requests = () => within(feed()).queryAllByRole("article", { name: /asked to (reply to|boost|quote) your post$/ });
+  const requests = () =>
+    within(feed()).queryAllByRole("article", { name: /asked to (reply to|boost|quote) your post$/ });
 
   expect(row().getAttribute("href")).toBe("/notifications/waiting");
-  expect(requests().map(buttons)).toEqual(Array(3).fill(["Dismiss notification"]));
+  expect(requests().map(buttons)).toEqual([
+    ["Dismiss notification"],
+    ["Dismiss notification"],
+    ["Dismiss notification"],
+  ]);
 
   await user.click(screen.getByRole("tab", { name: "Mentions" }));
   await waitFor(() => {

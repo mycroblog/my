@@ -12,7 +12,13 @@ import { renderApp } from "./test/app";
 import { fakeApp } from "./test/server";
 
 test("the bar of a call stays across the screens, its microphone mutes and unmutes, and no toast offers a newer build meanwhile", async () => {
-  enterCall({ roomId: "morning-coffee", room: "Morning coffee chat", host: "Sam Rivera", participants: 12, muted: false });
+  enterCall({
+    roomId: "morning-coffee",
+    room: "Morning coffee chat",
+    host: "Sam Rivera",
+    participants: 12,
+    muted: false,
+  });
   onTestFinished(leaveCall);
   const on = fakeApp();
   on.watch.offerUpdate();

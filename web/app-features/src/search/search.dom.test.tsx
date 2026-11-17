@@ -85,12 +85,16 @@ test("of more than five people suggested, the search shows five, then the way to
 
 test("on a server that suggests no one, the search before anything is written is its field alone", async () => {
   let answered = false;
-  const { data, requests } = searching("", {}, {
-    script: (fake) => {
-      const suggestions = fake.script("GET /accounts/suggestions", { change: (page) => ({ ...page, items: [] }) });
-      void suggestions.served().then(() => (answered = true));
+  const { data, requests } = searching(
+    "",
+    {},
+    {
+      script: (fake) => {
+        const suggestions = fake.script("GET /accounts/suggestions", { change: (page) => ({ ...page, items: [] }) });
+        void suggestions.served().then(() => (answered = true));
+      },
     },
-  });
+  );
 
   // Nothing shows while the suggestions are on their way either: the test waits for the answer itself.
   await waitFor(() => {
@@ -113,8 +117,22 @@ test("on a server without a search engine, the search finds people and hashtags 
 });
 
 for (const [locale, w] of [
-  ["en", { kinds: ["People", "Hashtags", "Posts"], count: "2 posts", hint: "People by name or handle, hashtags, and posts by their words" }],
-  ["ja", { kinds: ["人", "ハッシュタグ", "投稿"], count: "2 件の投稿", hint: "名前やハンドルで人を、ハッシュタグを、言葉で投稿を探せます" }],
+  [
+    "en",
+    {
+      kinds: ["People", "Hashtags", "Posts"],
+      count: "2 posts",
+      hint: "People by name or handle, hashtags, and posts by their words",
+    },
+  ],
+  [
+    "ja",
+    {
+      kinds: ["人", "ハッシュタグ", "投稿"],
+      count: "2 件の投稿",
+      hint: "名前やハンドルで人を、ハッシュタグを、言葉で投稿を探せます",
+    },
+  ],
 ] as const)
   test(`on a server with a search engine, the search finds people, hashtags and posts at once, in that order, a hashtag with how many posts carry it (${locale})`, async () => {
     // "bak" finds Bakery Kobo, #baking and sam's two posts that carry it.
@@ -145,11 +163,15 @@ const busy = (element: Element | null): boolean =>
 
 test("while a handle is looked up on its server, one line names the handle and the field is busy", async () => {
   let lookup: { release: () => void } | undefined;
-  searching("@kiri@far.example", {}, {
-    script: (fake) => {
-      lookup = fake.script("GET /accounts/lookup", { hold: "request" });
+  searching(
+    "@kiri@far.example",
+    {},
+    {
+      script: (fake) => {
+        lookup = fake.script("GET /accounts/lookup", { hold: "request" });
+      },
     },
-  });
+  );
 
   expect(await line(/^Looking up/)).toMatch(/^Looking up ⁨?@kiri@far\.example⁩? on its server…$/);
   expect(busy(screen.getByRole("searchbox"))).toBe(true);
