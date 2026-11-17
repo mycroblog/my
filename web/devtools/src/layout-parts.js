@@ -54,6 +54,7 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/composer.tsx": ["AttachmentList", "PollSettings"],
   "web/design-system/src/suggestions.tsx": ["OptionName", "OptionHandle"],
   "web/design-system/src/viewer.tsx": ["ViewerRoom", "ViewerSide"],
+  "web/design-system/src/editor.tsx": ["SuggestPopup", "FieldBox"],
   "web/design-system/src/emoji-picker.tsx": [
     "PickerFrame",
     "SearchGlyph",

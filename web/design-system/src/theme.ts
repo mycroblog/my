@@ -184,6 +184,11 @@ const theme = {
     "dialog-gap": ref("--dialog-gap"),
     "dialog-row": ref("--dialog-row-gap"),
     "dialog-margin": ref("--dialog-margin"),
+    // The least height of the composer's text: its lines, or one, at its size and leading.
+    "composer-room": "calc(var(--composer-text-lines) * var(--composer-text-leading) * var(--composer-text-size))",
+    "composer-line": "calc(var(--composer-text-leading) * var(--composer-text-size))",
+    // What a button at the end of a line takes: its glyph and its padding on both sides.
+    "icon-button-end": "calc(var(--icon-action) + 2 * var(--icon-button-padding-inline))",
     "composer-thumb": ref("--composer-thumb"),
     "composer-top": ref("--composer-top"),
     "composer-bottom": ref("--composer-bottom"),

@@ -62,6 +62,7 @@ import {
   type RefObject,
 } from "react";
 import { tv } from "tailwind-variants/lite";
+import { Box } from "./layout";
 
 /** The text the editor holds: its paragraphs, a line each. */
 export function $plainText(): string {
@@ -585,42 +586,41 @@ function OverPlugin({ over }: { over: number }) {
 const field = tv({
   slots: {
     // The text and its placeholder over each other; the placeholder lets a press through to the text.
-    wrap: "grid [&>*]:[grid-area:1/1] [&>[aria-hidden]]:pointer-events-none",
+    wrap: "[&>[aria-hidden]]:pointer-events-none",
     text: [
-      "box-border m-0 border-0 p-0 font-sans text-text outline-hidden whitespace-pre-wrap [overflow-wrap:anywhere]",
+      "box-border border-0 p-0 font-sans text-text outline-hidden whitespace-pre-wrap [overflow-wrap:anywhere]",
       // The part over a limit: a deeper neutral and a line under it, apart from a mark in gray as in color.
       "[&_*::highlight(editor-over)]:bg-surface-raised-pressed [&::highlight(editor-over)]:bg-surface-raised-pressed",
       "[&_*::highlight(editor-over)]:underline [&::highlight(editor-over)]:underline",
       "[&_*::highlight(editor-over)]:decoration-text [&::highlight(editor-over)]:decoration-text",
     ],
-    placeholder: "box-border m-0 p-0 font-sans text-muted-text select-none",
+    placeholder: "box-border p-0 font-sans text-muted-text select-none",
   },
   variants: {
     look: {
       // The composer's text: its size and leading, on the composer's surface; the suggestions open in its box.
       composer: {
-        wrap: "relative",
         text: "text-[length:var(--composer-text-size)] leading-[var(--composer-text-leading)]",
         placeholder: "text-[length:var(--composer-text-size)] leading-[var(--composer-text-leading)]",
       },
       // A line on a band (the content warning): the body's size, as tall as a form's control; the suggestions open in
       // the band's box, which places them.
       line: {
-        wrap: "min-h-control-form min-w-0 flex-1 content-center pe-control-timeline-inline",
+        wrap: "min-h-control-form pe-control-timeline-inline",
         text: "text-body",
-        placeholder: "truncate text-body",
+        placeholder: "text-body",
       },
     },
     // Three lines of room while nothing follows the text; with images or a poll under it, only its own lines.
     roomy: {
-      true: { text: "min-h-[calc(var(--composer-text-lines)*var(--composer-text-leading)*var(--composer-text-size))]" },
+      true: { text: "min-h-composer-room" },
       false: {},
     },
     // A button at the end of the first line: the text keeps clear of it on every line. The room is the wrapper's, in
     // the page's direction as the button is placed: the text's own direction (dir="auto") would move it to the other
     // side where the text runs against the page.
     ended: {
-      true: { wrap: "pe-[calc(var(--icon-action)+2*var(--icon-button-padding-inline))]" },
+      true: { wrap: "pe-icon-button-end" },
       false: {},
     },
   },
@@ -628,10 +628,28 @@ const field = tv({
     {
       look: "composer",
       roomy: false,
-      class: { text: "min-h-[calc(var(--composer-text-leading)*var(--composer-text-size))]" },
+      class: { text: "min-h-composer-line" },
     },
   ],
 });
+
+/**
+ * The box of the text: the text and its placeholder over each other, in one cell as large as the larger. The
+ * composer's is where the suggestions are placed (`SuggestPopup`); a line on a band takes the room left in the band and
+ * stands in the middle of its height.
+ */
+function FieldBox({
+  look,
+  className,
+  children,
+}: {
+  look: "composer" | "line";
+  className: string;
+  children: ReactNode;
+}) {
+  const own = look === "composer" ? "relative" : "min-w-0 flex-1 content-center";
+  return <div className={`${className} grid grid-cols-[minmax(0,1fr)] [&>*]:[grid-area:1/1] ${own}`}>{children}</div>;
+}
 
 /**
  * The classes of the editor's nodes: a paragraph; and `token`, a part the caller's nodes mark (what the server will
@@ -735,7 +753,7 @@ export function PlainTextEditor({
   );
   return (
     <LexicalExtensionComposer extension={extension} contentEditable={null}>
-      <div className={s.wrap()}>
+      <FieldBox look={look} className={s.wrap()}>
         <ContentEditable
           className={s.text()}
           ariaLabel={label}
@@ -747,7 +765,11 @@ export function PlainTextEditor({
           ariaControls={listed ? suggest.listId : undefined}
           ariaActiveDescendant={listed ? `${suggest.listId ?? ""}-${String(suggest.active)}` : undefined}
           aria-placeholder={placeholder}
-          placeholder={<p className={s.placeholder()}>{placeholder}</p>}
+          placeholder={
+            <Box as="p" lines={look === "line" ? 1 : undefined} className={s.placeholder()}>
+              {placeholder}
+            </Box>
+          }
           dir="auto"
         />
         {suggest !== undefined && <SuggestPopup suggest={suggest} line={look === "line"} />}
@@ -756,7 +778,7 @@ export function PlainTextEditor({
             {suggest?.announce ?? ""}
           </span>
         )}
-      </div>
+      </FieldBox>
       {(completes || onCaret !== undefined) && <SuggestPlugin suggest={suggest} onCaret={onCaret} />}
       <ValuePlugin value={value} onChange={onChange} />
       <EditablePlugin editable={!readOnly} />

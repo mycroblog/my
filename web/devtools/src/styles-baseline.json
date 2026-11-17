@@ -9,7 +9,6 @@
     "web/design-system/src/conversation.tsx": {"faces.face": 3, "faces.root": 3, "head.more": 3, "head.root": 2, "head.row": 4, "head.title": 4, "line.end": 6, "line.excerpt": 4, "line.head": 4, "line.more": 4, "line.names": 3, "line.root": 4, "reply.glyph": 2, "reply.people": 2, "reply.root": 3, "reply.row": 3, "reply.to": 5, "reply.tools": 5},
     "web/design-system/src/disclosure.tsx": {"disclosure.glyph": 2, "disclosure.root": 3, "disclosure.summary": 3, "disclosure.text": 3},
     "web/design-system/src/drafts.tsx": {"form.caption": 4, "form.field": 2, "form.hint": 1, "form.input": 2, "form.root": 6, "form.row": 6, "row.foot": 5, "row.lead": 3, "row.leadGlyph": 4, "row.mark": 3, "row.more": 1, "row.open": 5, "row.root": 3, "row.text": 1, "row.warning": 3, "sections.empty": 1, "sections.head": 2, "sections.section": 2, "sections.title": 1},
-    "web/design-system/src/editor.tsx": {"SuggestPopup": 4, "field.placeholder": 2, "field.text": 3, "field.wrap": 7},
     "web/design-system/src/entry.tsx": {"CaptionName": 2, "byline.end": 3, "byline.handle": 4, "byline.handleLine": 3, "byline.heading": 4, "byline.line": 4, "byline.lines": 6, "byline.link": 3, "byline.name": 3, "byline.root": 5, "caption.end": 1, "caption.glyph": 4, "caption.root": 4, "caption.text": 3, "embed.base": 3, "entry.base": 4, "stamp.edited": 5, "stamp.glyph": 2, "stamp.root": 4, "stamp.when": 3},
     "web/design-system/src/feed.tsx": {"feed.list": 6, "feed.newItems": 8, "feed.root": 3, "feed.top": 3, "notice.root": 1},
     "web/design-system/src/form-page.tsx": {"WidgetSlot": 1},
