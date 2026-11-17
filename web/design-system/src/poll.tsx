@@ -10,37 +10,30 @@
 import { useId, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
+import { Box, Layers, Row, Stack } from "./layout";
 
 const poll = tv({
   slots: {
-    card: "m-0 grid min-w-0 gap-entry-line rounded-control border-0 bg-surface-raised p-embed",
+    card: "rounded-control border-0 bg-surface-raised p-embed",
     // The options on the page's surface: a row's own padding lines its mark up with the composer's.
-    options: "m-0 grid list-none rounded-control bg-surface p-[0.25rem]",
+    options: "list-none rounded-control bg-surface p-poll-padding",
     // As tall as a form's control on one line; an option that wraps keeps its mark and its share by its first line.
-    row: [
-      "relative isolate box-border flex items-start gap-entry-caption rounded-control px-[0.5rem] text-body text-text",
-      "py-[calc((var(--control-form-height)-1lh)/2)]",
-    ],
-    // The mark's place: as tall as a line, so that the mark stays by the first line of an option that wraps.
-    head: "flex h-[1lh] flex-none items-center",
+    row: "box-border rounded-control px-poll-option-inline py-control-form-line text-body text-text",
     choice: [
       "cursor-pointer has-[input:enabled]:hover:bg-surface-hover has-[input:focus-visible]:shadow-focus",
       "has-[input:disabled]:cursor-default",
     ],
     input: "sr-only",
-    label: "min-w-0 flex-1 [overflow-wrap:anywhere]",
-    share: "flex-none text-body tabular-nums",
+    label: "[overflow-wrap:anywhere]",
+    share: "text-body tabular-nums",
     // A result: its line (the mark, the option, its share), then its share as a bar across the whole row, so that the
     // bars of a poll compare true; the bar sits close under the line, one line or several.
-    result: "box-border grid gap-[0.125rem] rounded-control px-[0.5rem] py-[0.375rem] text-body text-text",
-    line: "flex items-start gap-entry-caption",
+    result: "box-border rounded-control px-poll-option-inline py-poll-result-block text-body text-text",
     // The meter's bar (shell.tsx), quieter in a timeline: muted on a track lighter than it.
-    track: "h-shell-meter overflow-hidden rounded-[calc(var(--shell-meter)/2)] bg-surface-raised",
-    bar: "h-full rounded-[calc(var(--shell-meter)/2)] bg-muted-text",
+    track: "h-shell-meter rounded-[calc(var(--shell-meter)/2)] bg-surface-raised",
+    bar: "rounded-[calc(var(--shell-meter)/2)] bg-muted-text",
     part: "whitespace-nowrap",
-    // Its line wraps beside Vote, which stays at the end.
-    foot: "flex items-center gap-entry-caption",
-    meta: "m-0 min-w-0 flex-1 text-caption text-muted-text",
+    meta: "text-caption text-muted-text",
   },
   variants: {
     leading: { true: { label: "font-label", share: "font-label" } },
@@ -48,10 +41,7 @@ const poll = tv({
 });
 
 const mark = tv({
-  base: [
-    "box-border grid size-form-page-check flex-none place-items-center border-[length:var(--composer-mark-line)]",
-    "border-solid",
-  ],
+  base: "box-border size-form-page-check border-[length:var(--composer-mark-line)] border-solid",
   variants: {
     multiple: { false: "rounded-full", true: "rounded-[3px]" },
     on: { false: "", true: "border-text bg-text text-surface" },
@@ -80,25 +70,34 @@ export function PollMark({
   plain?: boolean;
 }) {
   return (
-    <span className={mark({ multiple, on, plain })} aria-hidden="true">
+    <Layers as="span" center rigid className={mark({ multiple, on, plain })} aria-hidden="true">
       {on &&
         (multiple ? (
-          <svg viewBox="0 0 12 12" className="size-[0.75rem]" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg viewBox="0 0 12 12" className="size-poll-mark-check" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M2.5 6.25 L5 8.75 L9.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         ) : (
-          <span className="size-[0.375rem] rounded-full bg-current" />
+          <span className="size-poll-mark-dot rounded-full bg-current" />
         ))}
-    </span>
+    </Layers>
   );
 }
 
 /** The poll: a raised card of its options, then its line and its action. */
 export function PollBox({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div role="group" aria-label={label} className={poll().card()}>
+    <Stack shrink gap="entry-line" role="group" aria-label={label} className={poll().card()}>
       {children}
-    </div>
+    </Stack>
+  );
+}
+
+/** The mark's place: as tall as a line, so that the mark stays by the first line of an option that wraps. */
+function MarkPlace({ children }: { children: ReactNode }) {
+  return (
+    <Row as="span" line rigid align="center">
+      {children}
+    </Row>
   );
 }
 
@@ -127,11 +126,18 @@ export function PollChoices({
   const s = poll();
   const name = useId();
   return (
-    <div role={multiple ? "group" : "radiogroup"} aria-label={label} className={s.options()}>
+    <Stack role={multiple ? "group" : "radiogroup"} aria-label={label} className={s.options()}>
       {items.map((item, i) => {
         const on = chosen.includes(i);
         return (
-          <label key={item.key} className={`${s.row()} ${s.choice()}`}>
+          <Row
+            key={item.key}
+            as="label"
+            anchor="isolate"
+            align="start"
+            gap="entry-caption"
+            className={`${s.row()} ${s.choice()}`}
+          >
             <input
               className={s.input()}
               type={multiple ? "checkbox" : "radio"}
@@ -143,16 +149,16 @@ export function PollChoices({
                 else onChange(on ? chosen.filter((c) => c !== i) : [...chosen, i].sort((a, b) => a - b));
               }}
             />
-            <span className={s.head()}>
+            <MarkPlace>
               <PollMark multiple={multiple} on={on} />
-            </span>
-            <span className={s.label()} dir="auto">
+            </MarkPlace>
+            <Box as="span" grow shrink className={s.label()} dir="auto">
               {item.label}
-            </span>
-          </label>
+            </Box>
+          </Row>
         );
       })}
-    </div>
+    </Stack>
   );
 }
 
@@ -184,33 +190,36 @@ export function PollResults({
   const s = poll();
   const marked = items.some((item) => item.mine);
   return (
-    <ul className={s.options()}>
+    <Stack as="ul" className={s.options()}>
       {items.map((item) => {
         const r = poll({ leading: item.leading });
-        const width = item.share && `${String(Math.round(item.share.value * 1000) / 10)}%`;
         return (
-          <li key={item.key} className={s.result()}>
-            <span className={s.line()}>
+          <Stack key={item.key} as="li" gap="hair" className={s.result()}>
+            <Row as="span" align="start" gap="entry-caption">
               {marked && (
-                <span className={s.head()}>
+                <MarkPlace>
                   <PollMark multiple={multiple} on={item.mine} plain />
-                </span>
+                </MarkPlace>
               )}
-              <span className={r.label()} dir="auto">
+              <Box as="span" grow shrink className={r.label()} dir="auto">
                 {item.label}
                 {item.mine && <span className="sr-only">{` (${mineLabel})`}</span>}
-              </span>
-              {item.share && <span className={r.share()}>{item.share.text}</span>}
-            </span>
+              </Box>
+              {item.share && (
+                <Box as="span" rigid className={r.share()}>
+                  {item.share.text}
+                </Box>
+              )}
+            </Row>
             {item.share && (
-              <span className={s.track()} aria-hidden="true">
-                <span className={`block ${s.bar()}`} style={{ inlineSize: width }} />
-              </span>
+              <Box as="span" clip className={s.track()} aria-hidden="true">
+                <Box as="span" display="block" full="block" share={item.share.value} className={s.bar()} />
+              </Box>
             )}
-          </li>
+          </Stack>
         );
       })}
-    </ul>
+    </Stack>
   );
 }
 
@@ -227,20 +236,21 @@ export function PollFoot({
 }) {
   const s = poll();
   return (
-    <div className={s.foot()}>
-      <p className={s.meta()}>
+    <Row align="center" gap="entry-caption">
+      {/* Its line wraps beside Vote, which stays at the end. */}
+      <Box as="p" grow shrink className={s.meta()}>
         {parts.map((part, i) => (
           <span key={i}>
             {i > 0 && " · "}
             <span className={s.part()}>{part}</span>
           </span>
         ))}
-      </p>
+      </Box>
       {vote && (
         <Button kind="primary" size="timeline" isDisabled={vote.disabled} busy={vote.busy} onPress={vote.onPress}>
           {vote.label}
         </Button>
       )}
-    </div>
+    </Row>
   );
 }

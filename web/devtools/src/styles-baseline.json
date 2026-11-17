@@ -24,7 +24,6 @@
     "web/design-system/src/menu.tsx": {"FormPopup": 3, "head.root": 5, "head.title": 3, "menu.about": 1, "menu.end": 4, "menu.glyph": 3, "menu.group": 2, "menu.item": 5, "menu.list": 7, "menu.panel": 8, "menu.text": 2, "sheet.overlay": 7, "sheet.panel": 5},
     "web/design-system/src/modal.tsx": {"ModalLayer": 6},
     "web/design-system/src/motion.tsx": {"Shared": 1},
-    "web/design-system/src/poll.tsx": {"PollMark": 2, "PollResults": 2, "mark.base": 3, "poll.bar": 1, "poll.card": 4, "poll.foot": 3, "poll.head": 4, "poll.label": 2, "poll.line": 3, "poll.meta": 3, "poll.options": 3, "poll.result": 4, "poll.row": 7, "poll.share": 1, "poll.track": 1},
     "web/design-system/src/profile.tsx": {"fields.field": 1, "fields.root": 3, "fields.value": 1, "head.actions": 5, "head.avatar": 2, "head.banner": 6, "head.handle": 5, "head.image": 2, "head.name": 5, "head.names": 2, "head.root": 4, "head.row": 4, "meta.root": 5, "note.box": 1, "note.editor": 2, "note.glyph": 4, "note.line": 4, "note.text": 2, "tags.heading": 1, "tags.list": 4, "tags.root": 2, "tags.tag": 3},
     "web/design-system/src/prompt.tsx": {"prompt.actions": 4, "prompt.body": 4, "prompt.glyph": 4, "prompt.note": 2, "prompt.root": 1, "prompt.row": 3, "prompt.text": 1},
     "web/design-system/src/search-field.tsx": {"field.box": 4, "field.end": 6, "field.glyph": 3, "field.hint": 1, "field.input": 3, "field.root": 2},

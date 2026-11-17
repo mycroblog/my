@@ -132,6 +132,12 @@ const theme = {
     "feed-tight": ref("--feed-tight-gap"),
     embed: ref("--embed-padding"),
     "embed-gap": ref("--embed-gap"),
+    "poll-padding": ref("--poll-padding"),
+    "poll-option-inline": ref("--poll-option-inline"),
+    "poll-result-block": ref("--poll-result-block"),
+    // What stands inside the mark of a poll's option that is chosen: a checkbox's check, a radio's dot.
+    "poll-mark-check": "calc(var(--form-page-check) * 2 / 3)",
+    "poll-mark-dot": "calc(var(--form-page-check) / 3)",
     media: ref("--media-gap"),
     "media-preview-width": ref("--media-preview-width"),
     "media-preview-height": ref("--media-preview-height"),

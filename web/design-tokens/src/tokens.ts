@@ -301,6 +301,12 @@ export const feed = { gap: 1.75, scrollMargin: 0.75, tightGap: 1.25 } as const;
 export const embed = { padding: 0.75, gap: 0.375 } as const;
 
 /**
+ * A poll's options inside its card, in rem: the padding of the surface they sit on, an option's inline padding, and
+ * the block padding of an option shown as a result.
+ */
+export const poll = { padding: 0.25, optionInline: 0.5, resultBlock: 0.375 } as const;
+
+/**
  * Media: in a grid at the full width, the gap between them, the height as a share of the width (16:9) and the most
  * it may reach in rem, so that the next entry shows on the same screen; as small previews, their width and height in
  * rem. Over a picture, a mark (ALT, GIF, a video's length) sits `badgeInset` rem from its corner on a backing of black
@@ -654,6 +660,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--feed-tight-gap", `${feed.tightGap}rem`],
   ["--embed-padding", `${embed.padding}rem`],
   ["--embed-gap", `${embed.gap}rem`],
+  ["--poll-padding", `${poll.padding}rem`],
+  ["--poll-option-inline", `${poll.optionInline}rem`],
+  ["--poll-result-block", `${poll.resultBlock}rem`],
   ["--media-gap", `${media.gap}rem`],
   ["--media-ratio", `${media.ratio}`],
   ["--media-max-height", `${media.maxHeight}rem`],
