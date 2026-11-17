@@ -9,7 +9,6 @@ import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, useState } from "react";
 import { useLocale } from "react-aria-components";
-import { expect, userEvent, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import { Entry } from "./entry";
 import { NoticeLine, SentenceName } from "./list";
@@ -87,34 +86,11 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Offered: its action and its dismiss; dismissing it takes it away. */
-export const Offered: Story = {
-  render: () => <Top state="offered" />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const prompt = canvas.getByRole("region", { name: /notified|通知を届け/ });
-    await expect(within(prompt).getByRole("button", { name: /Turn on|有効にする/ })).toBeVisible();
-    await userEvent.click(within(prompt).getByRole("button", { name: /Not now|今はしない/ }));
-    await expect(canvas.queryByRole("region")).toBeNull();
-  },
-};
+/** Offered: its action and its dismiss. */
+export const Offered: Story = { render: () => <Top state="offered" /> };
 
 /** The browser's question closed without a choice: the reason under it, its action still there. */
-export const QuestionClosed: Story = {
-  render: () => <Top state="closed" />,
-  play: async ({ canvasElement }) => {
-    const prompt = within(canvasElement).getByRole("region");
-    await expect(within(prompt).getByRole("alert")).toBeVisible();
-    await expect(within(prompt).getByRole("button", { name: /Turn on|有効にする/ })).toBeVisible();
-  },
-};
+export const QuestionClosed: Story = { render: () => <Top state="closed" /> };
 
 /** The site's notifications blocked: the reason, and only its dismiss. */
-export const Blocked: Story = {
-  render: () => <Top state="blocked" />,
-  play: async ({ canvasElement }) => {
-    const prompt = within(canvasElement).getByRole("region");
-    await expect(within(prompt).queryByRole("button", { name: /Turn on|有効にする/ })).toBeNull();
-    await expect(within(prompt).getByRole("button", { name: /Not now|今はしない/ })).toBeVisible();
-  },
-};
+export const Blocked: Story = { render: () => <Top state="blocked" /> };

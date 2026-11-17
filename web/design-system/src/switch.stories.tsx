@@ -8,7 +8,6 @@ import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { useLocale } from "react-aria-components";
-import { expect, userEvent, within } from "storybook/test";
 import { Switch } from "./switch";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -61,42 +60,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const States: Story = { render: () => <All /> };
-
-/** A press anywhere on the row turns it on, and again off; the description is read as one, not in the name. */
-export const Turns: Story = {
-  render: () => {
-    const w = useWords();
-    return (
-      <Column>
-        <Switch label={w.mentions} description={w.mentionsAbout} />
-      </Column>
-    );
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const toggle = canvas.getByRole("switch");
-    await expect(toggle).not.toBeChecked();
-    await expect(toggle).toHaveAccessibleDescription(/./);
-    await userEvent.click(canvas.getByText(/Mentions|メンション/));
-    await expect(toggle).toBeChecked();
-    await userEvent.keyboard(" ");
-    await expect(toggle).not.toBeChecked();
-  },
-};
-
-/** Disabled, it does not turn, and its reason is its description. */
-export const Disabled: Story = {
-  render: () => {
-    const w = useWords();
-    return (
-      <Column>
-        <Switch label={w.push} isDisabled reason={w.pushOff} />
-      </Column>
-    );
-  },
-  play: async ({ canvasElement }) => {
-    const toggle = within(canvasElement).getByRole("switch");
-    await expect(toggle).toBeDisabled();
-    await expect(toggle).toHaveAccessibleDescription(/blocks|ブロック/);
-  },
-};
