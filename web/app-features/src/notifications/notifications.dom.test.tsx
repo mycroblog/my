@@ -234,6 +234,34 @@ test("the Mentions tab asks the server for the mentions alone, and shows them in
   expect(within(feed()).getAllByRole("article", { name: "Yuki 雪" }).length).toBeGreaterThan(0);
 });
 
+test("the Mentions tab keeps the mention, the quote and the new post of a subscribed account, each its sentence over its post", async () => {
+  // One notification of every kind from people.
+  const { data } = fakeData({ everyKind: "people" });
+  await loadNotifications(data);
+  const user = renderFeature(data, <Notifications instance={fakeHost} />);
+  const feed = () => screen.getByRole("feed", { name: "Notifications" });
+  expect(within(feed()).getAllByRole("article").length).toBeGreaterThan(3);
+
+  await user.click(screen.getByRole("tab", { name: "Mentions" }));
+
+  await waitFor(() => {
+    expect(within(feed()).getAllByRole("article")).toHaveLength(3);
+  });
+  // Newest first, each named by its post's author, its sentence before the author's line.
+  const posts = within(feed()).getAllByRole("article");
+  const expected = [
+    ["Sam Rivera", /^⁨?Sam Rivera⁩? mentioned you⁨?Sam Rivera/],
+    ["Mio 澪", /^⁨?Mio 澪⁩? quoted your post⁨?Mio 澪/],
+    ["Hana 花", /^⁨?Hana 花⁩? posted⁨?Hana 花/],
+  ] as const;
+  for (const [i, [author, start]] of expected.entries()) {
+    const named = within(feed()).getAllByRole("article", { name: author });
+    expect(named).toHaveLength(1);
+    expect(named[0] === posts[i]).toBe(true);
+    expect(posts[i]?.textContent).toMatch(start);
+  }
+});
+
 // A notification the reader acts on becomes read. The scenario's notifications, newest first: Hana reacted to, boosted
 // and favourited sam's post, Yuki favourited it, Yuki mentioned sam in three posts, then Marco, Layla, Yuki and Hana
 // followed sam. Unless a test says otherwise, the reader has not read the three newest.

@@ -195,6 +195,37 @@ test("moving to the next and the previous notification does not read either", as
   expect(marker.seen).toHaveLength(0);
 });
 
+test("a dismissal the server fails brings the notification back with a notice, whose Try again dismisses it for good", async () => {
+  const { app, feed } = await inbox({ dismissFails: true });
+  const dismissed = app.fake.script("POST /notifications/{id}/dismiss");
+  const name = "Marco followed you";
+  const shown = () => within(feed()).queryAllByRole("article", { name });
+
+  await app.user.click(within(rows.follow(feed())).getByRole("button", { name: "Dismiss notification" }));
+
+  // The notice is the page's, under the screen.
+  const notice = await waitFor(() => {
+    const said = screen
+      .getAllByRole("status")
+      .find((status) => status.textContent.startsWith("The notification could not be dismissed."));
+    if (said === undefined) throw new Error("test: no notice says that the dismissal failed");
+    return said;
+  });
+  await waitFor(() => {
+    if (shown().length !== 1) throw new Error("test: the notification is not back in the list");
+  });
+  expect(dismissed.seen).toHaveLength(1);
+
+  await app.user.click(within(notice).getByRole("button", { name: "Try again" }));
+  await waitFor(() => {
+    if (shown().length !== 0) throw new Error("test: the notification is still in the list");
+  });
+  expect(dismissed.seen).toHaveLength(2);
+  // Kept by the server: the list read again leaves it out.
+  const { data: page } = await app.data.api.GET("/notifications");
+  expect(page?.items.filter((item) => item.type === "follow" && item.account?.username === "marco")).toHaveLength(0);
+});
+
 // The notification a push or an email opens.
 
 // Defect: the app lands on the post, but the notification stays unread and no marker is sent.
