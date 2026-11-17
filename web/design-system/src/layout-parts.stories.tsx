@@ -18,6 +18,7 @@ import { ConfirmDialog, PanelDialog } from "./dialog";
 import { Disclosure } from "./disclosure";
 import { ActionRow, Byline, CaptionLine, CaptionName, Entry, Stamp } from "./entry";
 import { Feed, FeedItem, FeedNotice } from "./feed";
+import { banner, wordmark } from "./form-page.samples";
 import {
   CheckField,
   Form,
@@ -226,15 +227,6 @@ export const LongScreenTitle: Story = {
     </ScreenTitle>
   ),
 };
-
-/* oxlint-disable restrict/token-colors -- a sample picture is drawn in its own colours */
-const banner = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90" width="640" height="360"><rect width="160" height="90" fill="#7fb3d5"/><path d="M0 60 L40 42 L80 56 L120 38 L160 52 V90 H0Z" fill="#3f6f86"/></svg>',
-)}`;
-const wordmark = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" width="120" height="32"><text x="0" y="24" font-family="sans-serif" font-size="24" fill="#767676">mycroblog</text></svg>',
-)}`;
-/* oxlint-enable restrict/token-colors */
 
 type FormPageArgs = {
   /** The page belongs to a server, which it introduces. */

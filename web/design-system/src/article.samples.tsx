@@ -180,3 +180,14 @@ const ja = (
 
 /** The text of the sample article in `lang` (en or ja). */
 export const articleText = { en, ja } as const;
+
+/** The cover of the sample article: a sea under a pale sun, with the blurhash the server would give it. */
+export const articleCover = {
+  src: `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90" width="640" height="360"><rect width="160" height="90" fill="#7fb3d5"/><circle cx="112" cy="34" r="12" fill="#fffbe8"/><path d="M0 60 L40 44 L80 56 L120 40 L160 52 V90 H0Z" fill="#3f6f86"/></svg>`,
+  )}`,
+  width: 640,
+  height: 360,
+  alt: "A blue sea under a pale sun",
+  blurhash: "IxHWWH%h01",
+};

@@ -39,6 +39,66 @@ test("Han characters draw with Noto Sans CJK of the region of their text's langu
     await expect.poll(async () => ({ language, fonts: await drawing(page, line) })).toEqual({ language, fonts });
 });
 
+test("a Han character takes the region of every tag of that region, and of the CJK language around a text in another", async ({
+  page,
+  open,
+}) => {
+  // A page with no Han of its own, where each probe is the only Han character.
+  await open("design-system-cjk--latin-only");
+  const probes = [
+    ["zh-Hans", undefined, "sc"],
+    ["zh-Hant", undefined, "tc"],
+    ["zh-HK", undefined, "tc"],
+    ["zh-MO", undefined, "tc"],
+    ["en", "zh-TW", "tc"],
+    ["fr", "ko", "kr"],
+    ["en", "zh-CN", "sc"],
+  ] as const;
+  for (const [lang, around, region] of probes) {
+    await page.evaluate(
+      ([language, outside]) => {
+        const outer = document.createElement("div");
+        outer.id = "probe";
+        if (outside !== undefined) outer.lang = outside;
+        const probe = document.createElement("span");
+        probe.lang = language;
+        probe.textContent = "直";
+        outer.append(probe);
+        document.body.append(outer);
+      },
+      [lang, around] as const,
+    );
+    await expect
+      .poll(async () => ({ lang, around, fonts: await drawing(page, "直") }))
+      .toEqual({ lang, around, fonts: [notoCjk(region)] });
+    await page.evaluate(() => {
+      document.getElementById("probe")?.remove();
+    });
+  }
+});
+
+test("code in a post keeps the mono stack, and its Han characters the region of the code's language", async ({
+  page,
+  open,
+}) => {
+  await open("design-system-cjk--code");
+  const regions = [
+    ["inline", "const 茶", "jp"],
+    ["code-lang", "直线", "sc"],
+    ["block", "// 直", "jp"],
+    ["part-lang", "한국어 直", "kr"],
+  ] as const;
+  for (const [probe, text, region] of regions) {
+    const stack = await page.evaluate(
+      (name) => getComputedStyle(document.querySelectorAll(`[data-probe="${name}"]`)[0] ?? document.body).fontFamily,
+      probe,
+    );
+    expect(stack, probe).toContain("ui-monospace");
+    expect(stack, probe).not.toContain("system-ui");
+    await expect.poll(() => drawing(page, text), probe).toContainEqual(notoCjk(region));
+  }
+});
+
 test("a word in letters that Noto Sans CJK lacks draws with one font, also inside Japanese text", async ({
   page,
   open,
@@ -78,6 +138,45 @@ test("an emoji draws with the self-hosted Noto Color Emoji, and fetches its spli
   await expect.poll(() => drawing(page, "🍞")).toContainEqual(notoEmoji);
   await files.settled();
   expect(files.emoji).toEqual(["noto-emoji-colrv1-food-drink"]);
+});
+
+test("each split of the emoji font loads for the emoji it claims, and the text symbols stay with the text fonts", async ({
+  page,
+  open,
+}) => {
+  await open("design-system-emoji--all");
+  const font = '16px "my Noto Color Emoji"';
+  // The story shows a sample of each split, named by the split.
+  const samples = await page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>("[data-split]"), (row) => ({
+      split: row.dataset["split"] ?? "",
+      emoji: row.querySelector("span")?.textContent ?? "",
+    })),
+  );
+  expect(samples.map((s) => s.split)).toHaveLength(11);
+
+  for (const { split, emoji } of samples) {
+    const loaded = await page.evaluate(
+      async ([face, text]) => {
+        // A face of the family claims the emoji, it loads, and the family then draws them all.
+        const faces = await document.fonts.load(face, text);
+        return {
+          faces: faces.length,
+          errors: faces.filter((f) => f.status === "error").length,
+          loaded: faces.every((f) => f.status === "loaded"),
+        };
+      },
+      [font, emoji] as const,
+    );
+    expect({ split, ...loaded }).toEqual({ split, faces: loaded.faces, errors: 0, loaded: true });
+    expect(loaded.faces, split).toBeGreaterThan(0);
+  }
+  // The keycap bases and the symbols of running text stay with the text fonts: no face claims them.
+  const claimed = await page.evaluate(
+    async ([face]) => (await document.fonts.load(face as string, "#*0123456789©®™‼⁉↔")).length,
+    [font] as const,
+  );
+  expect(claimed).toBe(0);
 });
 
 test("an emoji written in a text box draws with the self-hosted Noto Color Emoji", async ({ page, open }) => {

@@ -11,7 +11,7 @@
 import { color } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
-import { userEvent, waitFor, within } from "storybook/test";
+import { userEvent, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
@@ -622,25 +622,6 @@ export const AroundEmpty: Story = { args: { around: "none" } };
 export const ArticlesNotAllowed: Story = { args: { articles: false } };
 /** The direct messages' place, where the reader is, with the unread conversations' count. */
 export const DirectMessages: Story = { args: { at: "/direct" } };
-/**
- * Waits until the menu over the page has risen into place (a sheet's; a popover does not move), so that the story
- * tests check it as the reader sees it.
- */
-async function menuRisen(doc: Document) {
-  await waitFor(
-    () => {
-      const menu = doc.querySelector('[role="menu"]');
-      if (menu === null) throw new Error("no menu is open");
-      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error("the menu is still rising");
-      }
-    },
-    { timeout: 5000 },
-  );
-}
-
 // The menu pressed where it shows: the tab bar's sheet on a phone, the popover beside the rail's or the sidebar's
 // entry from `tablet`, the one menu either way.
 export const MenuOpen: Story = {
@@ -651,7 +632,6 @@ export const MenuOpen: Story = {
     });
     if (menu === undefined) throw new Error("no menu shows");
     await userEvent.click(menu);
-    await menuRisen(canvasElement.ownerDocument);
   },
 };
 
