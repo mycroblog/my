@@ -178,6 +178,7 @@ const theme = {
     "composer-top": ref("--composer-top"),
     "composer-bottom": ref("--composer-bottom"),
     kbd: ref("--kbd-height"),
+    "kbd-min-width": ref("--kbd-min-width"),
     "kbd-inline": ref("--kbd-padding-inline"),
     "kbd-gap": ref("--kbd-gap"),
     ...Object.fromEntries(

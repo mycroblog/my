@@ -176,6 +176,8 @@ const MAX = {
   sheet: "max-h-[85dvh]",
   // The suggestions for a word of the composer: eight options, then they scroll.
   suggestions: "max-h-[calc(8*var(--control-form-height)+2*var(--menu-padding))]",
+  // A dialog in the middle of the viewport, a margin from its edges, its padding around what it holds.
+  "viewport-dialog": "max-h-[calc(100dvh-2*var(--dialog-margin)-2*var(--dialog-padding))]",
   // An article's cover is never taller than this, whatever its width.
   "article-cover": "max-h-article-cover-max",
 } as const;
