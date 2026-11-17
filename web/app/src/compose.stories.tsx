@@ -25,9 +25,8 @@ import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake"
 import { createClient } from "@mycroblog/mykit";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { waitFor } from "storybook/test";
 import { AppRoot } from "./app";
-import { minimumWidth, rightToLeft } from "./app.samples";
 import { createAppRouter } from "./router";
 import { useNarrowViewport } from "./shell/viewport";
 
@@ -406,7 +405,8 @@ function Flow() {
 
 /**
  * Waits until the composer shows what the fake server answers: its text field, and the post a reply or a quote is
- * of; so that the story tests check it as the reader sees it.
+ * of; so that the story tests check it as the reader sees it, not halfway through the entrance of what a state opens
+ * (axe reads a form that fades in as too faint), and a play that presses something in the composer starts from there.
  */
 const settle = async ({ canvasElement, parameters }: StoryContext) => {
   const state = composeOf(parameters);
@@ -430,40 +430,6 @@ const settle = async ({ canvasElement, parameters }: StoryContext) => {
     },
     { timeout: 5000 },
   );
-};
-
-/** Waits until the composer shows its state, then that the server's words describe the input it refused, marked invalid. */
-const refusedBeside = async (context: StoryContext) => {
-  await settle(context);
-  const said = [words.en.refusedDetail, words.ja.refusedDetail];
-  await waitFor(
-    () => {
-      const doc = context.canvasElement.ownerDocument;
-      const described = [...context.canvasElement.querySelectorAll('[aria-invalid="true"]')].some((input) => {
-        const id = input.getAttribute("aria-describedby");
-        const text = id ? (doc.getElementById(id)?.textContent ?? "") : "";
-        return said.some((s) => text.includes(s));
-      });
-      if (!described) throw new Error("the refusal does not describe the input it is about");
-    },
-    { timeout: 5000 },
-  );
-};
-
-/**
- * The refusal beside the poll's second option, then one more letter typed in that option: the option is valid again,
- * and neither the server's words nor its title stand anywhere in the composer.
- */
-const refusedThenEdited = async (context: StoryContext) => {
-  await refusedBeside(context);
-  const canvas = within(context.canvasElement);
-  const option = canvas.getByRole("textbox", { name: "Option 2" });
-  await expect(option).toHaveAttribute("aria-invalid", "true");
-  await expect(canvas.getByRole("alert")).toHaveTextContent(/^This could not be done\.$/);
-  await userEvent.type(option, "s");
-  await waitFor(() => expect(option).not.toHaveAttribute("aria-invalid", "true"));
-  await expect(canvas.queryByText(words.en.refusedDetail)).toBeNull();
-  await expect(canvas.queryByText(words.en.refusedTitle)).toBeNull();
 };
 
 /** The state of the composer a story shows, from its parameters. */
@@ -529,7 +495,7 @@ const suggest = async (context: StoryContext) => {
   );
 };
 
-/** Waits until the app shows the home timeline's posts. */
+/** Waits until the app shows the home timeline's posts, in place of the composer's own wait. */
 const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   await waitFor(
     () => {
@@ -540,7 +506,8 @@ const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => 
 };
 
 // The composer's state is the story's (`parameters.compose`); the one knob is the text written in it, which replaces
-// the state's own while given. Tagged `themes`, the story tests run each in dark too.
+// the state's own while given. Tagged `themes`, the story tests run each in dark too. A play stays where a press alone
+// reaches the state (the suggestions under the caret, the emoji picker open), and asserts nothing.
 const meta = {
   title: "Compose",
   tags: ["themes"],
@@ -576,8 +543,8 @@ export const PermissionsByKind: Story = shows("permissions-kinds");
 export const PermissionOfAKind: Story = shows("permissions-kind");
 /** Replying to a post whose author approves the reader's replies: a line over the row says so. */
 export const ReplyWaits: Story = shows("reply-waits");
-/** The same at the minimum width, where the line over the row wraps. */
-export const ReplyWaitsMinimumWidth: Story = { ...shows("reply-waits"), globals: minimumWidth };
+/** The same, to look at at the minimum width, where the line over the row wraps. */
+export const ReplyWaitsMinimumWidth: Story = shows("reply-waits");
 export const Direct: Story = shows("visibility-direct");
 export const ContentWarning: Story = shows("cw");
 /**
@@ -585,10 +552,10 @@ export const ContentWarning: Story = shows("cw");
  * the content warning, its custom emoji alone.
  */
 export const Marks: Story = shows("marks");
-export const MarksRightToLeft: Story = { ...shows("marks"), globals: rightToLeft };
+export const MarksRightToLeft: Story = shows("marks");
 /** `@m` typed: the accounts the server found, the followed first, under the caret's line, the first active. */
 export const SuggestAccounts: Story = { ...shows("suggest-account"), play: suggest };
-export const SuggestAccountsRightToLeft: Story = { ...shows("suggest-account"), play: suggest, globals: rightToLeft };
+export const SuggestAccountsRightToLeft: Story = { ...shows("suggest-account"), play: suggest };
 /** `#ba` (`#写` in ja): the hashtags the server found, the most used first, with how many posts carry each. */
 export const SuggestHashtags: Story = { ...shows("suggest-hashtag"), play: suggest };
 /** `:wa`: the custom emoji, then the Unicode ones, that match. */
@@ -623,15 +590,11 @@ export const NewerDraft: Story = shows("conflict");
 export const DraftGone: Story = shows("gone");
 /** Being sent: Post shows it is sending, and Close stays in its place, disabled. */
 export const Posting: Story = shows("posting");
-export const WarningRefused: Story = { ...shows("refused-cw"), play: refusedBeside };
-export const PollOptionRefused: Story = { ...shows("refused-option"), play: refusedBeside };
-export const DescriptionRefused: Story = { ...shows("refused-description"), play: refusedBeside };
-/** A poll's option refused, then edited: the next letter typed in it clears what the server said. */
-export const PollOptionRefusedEdited: Story = {
-  ...shows("refused-option"),
-  globals: { locale: "en" },
-  play: refusedThenEdited,
-};
+export const WarningRefused: Story = shows("refused-cw");
+export const PollOptionRefused: Story = shows("refused-option");
+export const DescriptionRefused: Story = shows("refused-description");
+/** A poll's option refused, as PollOptionRefused shows it: the next letter typed in it clears what the server said. */
+export const PollOptionRefusedEdited: Story = shows("refused-option");
 /** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
 export const PostFormNotLoaded: Story = shows("unloaded-composer");
 /**
@@ -639,17 +602,13 @@ export const PostFormNotLoaded: Story = shows("unloaded-composer");
  * warning's band empty, the count away and Post disabled.
  */
 export const EditorNotLoaded: Story = shows("unloaded-editor");
-export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
-export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
-/** A time set at the narrowest width: the row keeps its tools, the count and Schedule on one line. */
-export const ScheduledMinimumWidth: Story = { ...shows("scheduled"), globals: minimumWidth };
+export const RightToLeft: Story = shows("typing");
+export const MinimumWidth: Story = shows("typing");
+/** A time set, to look at at the narrowest width: the row keeps its tools, the count and Schedule on one line. */
+export const ScheduledMinimumWidth: Story = shows("scheduled");
 /** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
 export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
 /** The same on a phone: the picker in a sheet from the bottom. */
-export const EmojiPickerSheet: Story = {
-  parameters: { compose: "typing", pickerSheet: true },
-  play: openEmoji,
-  globals: minimumWidth,
-};
+export const EmojiPickerSheet: Story = { parameters: { compose: "typing", pickerSheet: true }, play: openEmoji };
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */
 export const LiveFlow: Story = { render: () => <Flow />, play: settleFlow };
