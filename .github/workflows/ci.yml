@@ -571,6 +571,10 @@ jobs:
           - name: i18n:lint
             if: needs.changes.outputs.i18n == 'true'
             run: scripts/task.sh i18n:lint
+          # The web tasks compile the catalogs first; a change to tools/i18n alone selects none of them.
+          - name: i18n:compile
+            if: needs.changes.outputs.i18n == 'true'
+            run: scripts/task.sh i18n:compile
           - name: i18n:typecheck
             if: needs.changes.outputs.i18n == 'true'
             run: scripts/task.sh i18n:typecheck

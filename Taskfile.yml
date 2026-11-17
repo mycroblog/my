@@ -47,8 +47,8 @@ tasks:
   check:
     desc: Run every offline check, the contexts and the checks inside each in parallel (CHECKS="go web" for some); the site context last, since its build rewrites web/docs/dist under the Go walk
     vars:
-      PARALLEL:
-        sh: for c in {{.CHECKS}}; do [ "$c" = site ] || printf '%s ' "$c"; done
+      # Not a `sh:` variable: `--summary`, which scripts/ci-coverage.sh reads, lists a loop over one as no dependency.
+      PARALLEL: '{{without (splitList " " .CHECKS) "site" "" | join " "}}'
     deps:
       - for: { var: PARALLEL }
         task: "{{.ITEM}}:check"

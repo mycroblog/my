@@ -6,9 +6,13 @@
 # the reason CI does not run it.
 #
 # The checks are the tasks with a command of their own that `check` reaches through tasks without one (the
-# `<context>:check` groups); their own dependencies (installs, generators) are not checks. A step runs a task when it
-# runs `scripts/task.sh <task>`, or, for an action that runs the same tool (golangci-lint-action), when it is named
-# after the task.
+# `<context>:check` groups); their own dependencies (installs, generators) are not checks. A task that calls an
+# internal task, which no step can run, is a check itself (web:test). A step runs a task when it runs
+# `scripts/task.sh <task>`, or, for an action that runs the same tool (golangci-lint-action), when it is named after
+# the task.
+#
+# It reads the tasks from `--summary`, which leaves out what it cannot list (a loop over a `sh:` variable), so it also
+# asks `--dry` what `check` would run and fails when that names a task the walk did not reach.
 #
 # Usage: scripts/ci-coverage.sh [workflows dir]   (default: .github/workflows)
 set -euo pipefail
@@ -19,15 +23,31 @@ dir="${1:-$root/.github/workflows}"
 # EXCLUDED: the checks of `check` that CI does not run, each "<task> <reason>" (as "web:foo needs a GPU runner").
 EXCLUDED=()
 
-declare -A seen=() checks=()
+declare -A seen=() checks=() below=() summaries=()
 
-# walk TASK adds the checks TASK reaches to `checks`. `--summary` lists a task's dependencies and its commands, one
-# per " - " line, a call of another task as " - Task: <name>". NO_COLOR keeps the colour codes go-task adds in CI
-# out of the lines.
-walk() {
-  local task="$1" section="" line children=() own=0 child
-  [ -z "${seen[$task]:-}" ] || return 0
-  seen[$task]=1
+# summary TASK sets `summaries[TASK]` to the lines of `--summary`, or to `internal` for an internal task, which
+# `--summary` refuses. NO_COLOR keeps the colour codes go-task adds in CI out of the lines.
+summary() {
+  local out
+  [ -z "${summaries[$1]:-}" ] || return 0
+  if out="$(NO_COLOR=1 "$root/scripts/task.sh" --summary "$1" 2>&1)"; then
+    summaries[$1]="$out"
+  elif [[ "$out" == *"is internal"* ]]; then
+    summaries[$1]=internal
+  else
+    printf '%s\n' "$out" >&2
+    exit 1
+  fi
+}
+
+# read_task TASK sets `children` to the tasks TASK depends on and calls, and `own` to whether it has a command of its
+# own or calls an internal task, which no step can run for it. `--summary` lists a task's dependencies and its
+# commands, one per " - " line, a call of another task as " - Task: <name>".
+read_task() {
+  local section="" line child
+  children=()
+  own=0
+  summary "$1"
   while IFS= read -r line; do
     case "$line" in
       dependencies:) section=deps ;;
@@ -41,9 +61,33 @@ walk() {
         esac
         ;;
     esac
-  done < <(NO_COLOR=1 "$root/scripts/task.sh" --summary "$task")
+  done <<< "${summaries[$1]}"
+  for child in "${children[@]}"; do
+    summary "$child"
+    [ "${summaries[$child]}" != internal ] || own=1
+  done
+}
+
+# under TASK adds everything TASK depends on and calls to `below`: what a check runs besides its own commands.
+under() {
+  local child children own
+  read_task "$1"
+  for child in "${children[@]}"; do
+    [ -z "${below[$child]:-}" ] || continue
+    below[$child]=1
+    under "$child"
+  done
+}
+
+# walk TASK adds the checks TASK reaches to `checks`.
+walk() {
+  local task="$1" child children own
+  [ -z "${seen[$task]:-}" ] || return 0
+  seen[$task]=1
+  read_task "$task"
   if [ "$own" = 1 ]; then
     checks[$task]=1
+    under "$task"
     return 0
   fi
   for child in "${children[@]}"; do
@@ -53,6 +97,17 @@ walk() {
 
 walk check
 [ "${#checks[@]}" -gt 0 ] || { echo "ci-coverage.sh: found no checks under \`check\`" >&2; exit 1; }
+
+# What `check` would run: every task with a command, a loop's included. One the walk did not reach is a check, or a
+# group of checks, that `--summary` does not list; an internal task is its caller's, which the walk counted.
+status=0
+while IFS= read -r task; do
+  summary "$task"
+  if [ -z "${seen[$task]:-}" ] && [ -z "${below[$task]:-}" ] && [ "${summaries[$task]}" != internal ]; then
+    echo "error: \`scripts/task.sh --dry check\` runs $task, which scripts/ci-coverage.sh did not find under \`check\`: \`--summary\` lists no dependency that leads to it" >&2
+    status=1
+  fi
+done < <("$root/scripts/task.sh" --dry check 2>&1 | sed -nE 's/^task: \[([^]]+)\] .*/\1/p' | sort -u)
 
 # The tasks the steps run: `scripts/task.sh <task>` and the names of the steps.
 mapfile -t ran < <(
@@ -65,7 +120,6 @@ for task in "${ran[@]}"; do
   covered[$task]=1
 done
 
-status=0
 declare -A excluded=()
 for entry in "${EXCLUDED[@]}"; do
   task="${entry%% *}"
