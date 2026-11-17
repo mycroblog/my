@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The media viewer, a dialog named "Media" over the page that shows a post's pictures and videos whole, one at a time:
-// where it is among them ("2 of 3"), the shown one's description as a caption, what it announces as the reader moves,
-// and its buttons. A swipe is a touch on the page (the browser's context has touch), from the picture sideways.
+// where it is among them ("2 of 3"), and its buttons. A swipe is a touch on the page (the browser's context has
+// touch), from the picture sideways.
 
 import type { Locator, Page } from "@playwright/test";
 
@@ -17,16 +17,6 @@ export class MediaViewer {
 
   /** Where it is among the post's media, such as "2 of 3". */
   position(text: string): Locator {
-    return this.dialog.getByText(text, { exact: true });
-  }
-
-  /** The shown picture's description, its caption. */
-  caption(text: string): Locator {
-    return this.dialog.getByRole("paragraph").filter({ hasText: text });
-  }
-
-  /** What it announced of the last move: where it is, then the start of the description or the kind. */
-  announced(text: string | RegExp): Locator {
     return this.dialog.getByText(text, { exact: true });
   }
 

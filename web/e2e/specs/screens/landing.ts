@@ -25,11 +25,6 @@ export class Landing {
     return this.page.getByRole("banner").getByRole("heading", { level: 1, name, exact: true });
   }
 
-  /** The action that opens the server's registration. */
-  get createAccount(): Locator {
-    return this.page.getByRole("main").getByRole("link", { name: "Create an account", exact: true });
-  }
-
   /** The action that signs in. */
   get signIn(): Locator {
     return this.page.getByRole("main").getByRole("link", { name: "Sign in", exact: true });

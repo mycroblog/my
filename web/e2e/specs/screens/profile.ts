@@ -95,20 +95,6 @@ export class Profile {
     return this.tabs.and(this.page.getByRole("tab", { name, exact: true }));
   }
 
-  /** The notice of the open tab `name` that it holds no posts. */
-  noPosts(name: string): Locator {
-    return this.page
-      .getByRole("main")
-      .getByRole("tabpanel", { name, exact: true })
-      .getByRole("status")
-      .filter({ hasText: /^No posts yet\.$/ });
-  }
-
-  /** Opens the tab of the profile named `name`. */
-  async openTab(name: string): Promise<void> {
-    await this.tab(name).click();
-  }
-
   /** The person's posts. */
   get posts(): Timeline {
     return new Timeline(this.page, this.page.getByRole("feed", { name: "Posts of the account", exact: true }));

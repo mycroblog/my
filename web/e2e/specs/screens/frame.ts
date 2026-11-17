@@ -34,11 +34,6 @@ export class Menu {
   async goTo(place: MenuPlace): Promise<void> {
     await this.link(place).click();
   }
-
-  /** Closes the menu's sheet with its Close button, at the end of its head. */
-  async close(): Promise<void> {
-    await this.page.getByRole("button", { name: "Close", exact: true }).click();
-  }
 }
 
 export class Frame {

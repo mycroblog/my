@@ -41,39 +41,12 @@ export class Post {
     return this.article.getByRole("button", { name, exact: true });
   }
 
-  /** The button that plays a video in place: "Play video", then ": " and its description if any. */
-  playVideo(name: string): Locator {
-    return this.article.getByRole("button", { name, exact: true });
-  }
-
-  /** The playing video, named by its description. */
-  video(description: string): Locator {
-    return this.article.getByLabel(description, { exact: true });
-  }
-
-  /** The button in the corner of a video that opens it in the media viewer. */
-  get openVideo(): Locator {
-    return this.article.getByRole("button", { name: "Open video", exact: true });
-  }
-
-  /** The play or pause button of an attached sound. */
-  audioButton(name: "Play audio" | "Pause audio"): Locator {
-    return this.article.getByRole("button", { name, exact: true });
-  }
-
   /**
    * The button of the line above sensitive media, Show or Hide, described by what it covers, `label` ("Sensitive
    * image", "2 sensitive images").
    */
   sensitiveLine(label: string, action: "Show" | "Hide"): Locator {
     return this.article.getByRole("button", { name: action, description: label, exact: true });
-  }
-
-  /** The covered media, which a press shows too; hidden from a screen reader, which hears the line alone. */
-  covered(label: string): Locator {
-    return this.article
-      .getByRole("button", { name: `${label} · Show`, exact: true, includeHidden: true })
-      .filter({ hasNotText: "Show" });
   }
 
   /**
@@ -255,19 +228,6 @@ export class Post {
     });
   }
 
-  /**
-   * Deletes the reader's post from Delete and redraft… and its confirmation, once the server has answered, and returns
-   * the composer it opens as a new post.
-   */
-  async redraft(): Promise<Composer> {
-    await this.menuItem("Delete and redraft…");
-    const confirm = this.page.getByRole("alertdialog", { name: "Delete and redraft this post?", exact: true });
-    await answered(this.page, { methods: ["DELETE"], path: /\/statuses\/[^/]+$/ }, async () => {
-      await confirm.getByRole("button", { name: "Delete and redraft", exact: true }).click();
-    });
-    return new Composer(this.page.getByRole("dialog", { name: "New post", exact: true }));
-  }
-
   /** Bookmarks the post from its more menu, and returns once the server has answered. */
   async bookmark(): Promise<void> {
     await answered(this.page, bookmark, async () => {
@@ -335,20 +295,6 @@ export class Post {
       .filter({ has: this.page.getByRole("time") })
       .click();
   }
-
-  /**
-   * The card of an article titled `title` (ADR-0160): one link to its page, named "Article", its title, and its summary
-   * when it has one.
-   */
-  articleCard(title: string): Locator {
-    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return this.article.getByRole("link", { name: new RegExp(`^Article ${escaped}( .+)?$`) });
-  }
-
-  /** Opens the page of the article titled `title`, from its card. */
-  async openArticle(title: string): Promise<void> {
-    await this.articleCard(title).click();
-  }
 }
 
 export class Timeline {
@@ -368,28 +314,6 @@ export class Timeline {
         .getByRole("article", { name: author, exact: true })
         .filter({ hasText: text })
         .filter({ hasNotText: "boosted" }),
-    );
-  }
-
-  /** The post of `author` that holds `text`, as it leads a profile's feed, pinned, under the line "Pinned". */
-  pinned(author: string, text: string): Post {
-    return new Post(
-      this.page,
-      this.feed
-        .getByRole("article", { name: author, exact: true })
-        .filter({ hasText: text })
-        .filter({ hasText: /^Pinned[^]*$/ }),
-    );
-  }
-
-  /** The boost by `booster` of the post of `author` that holds `text`. */
-  boostOf(booster: string, author: string, text: string): Post {
-    return new Post(
-      this.page,
-      this.feed
-        .getByRole("article", { name: author, exact: true })
-        .filter({ hasText: text })
-        .filter({ hasText: `${booster} boosted` }),
     );
   }
 

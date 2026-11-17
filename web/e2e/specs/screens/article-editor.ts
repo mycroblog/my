@@ -14,46 +14,6 @@ import { answered } from "./write";
 /** A file to upload, as the file picker hands it to the page. */
 export type Upload = { name: string; mimeType: string; buffer: Buffer };
 
-/**
- * Holds the server's answers that an upload is processed (GET /media/{id}) until the returned function releases them,
- * so that the page sees its uploads processing for as long as a test needs.
- */
-export async function holdProcessing(page: Page): Promise<() => Promise<void>> {
-  const { promise: released, resolve: release } = Promise.withResolvers<undefined>();
-  const media = (url: URL) => /\/api\/v\d\/media\/[^/]+$/.test(url.pathname);
-  await page.route(media, async (route) => {
-    await released;
-    await route.continue();
-  });
-  return async () => {
-    release(undefined);
-    await page.unroute(media);
-  };
-}
-
-/**
- * Holds the server's previews of a body (POST /articles/preview) until `release`, so that the page keeps showing the
- * preview it had for as long as a test needs; `asked` holds the body of each request, in their order.
- */
-export async function holdPreviews(page: Page): Promise<{ asked: unknown[]; release: () => void }> {
-  const { promise: released, resolve } = Promise.withResolvers<undefined>();
-  const asked: unknown[] = [];
-  const previews = (url: URL) => /\/api\/v\d\/articles\/preview$/.test(url.pathname);
-  await page.route(previews, async (route) => {
-    asked.push(route.request().postDataJSON());
-    await released;
-    // A request the page gave up on meanwhile (an earlier body's, superseded) is gone: nothing to let through.
-    await route.continue().catch(() => undefined);
-  });
-  return {
-    asked,
-    // Released, the route lets every preview through at once; it stays until the page closes.
-    release: () => {
-      resolve(undefined);
-    },
-  };
-}
-
 export class ArticleEditor {
   readonly page: Page;
 
@@ -74,28 +34,10 @@ export class ArticleEditor {
       .getByRole("button", { name: "New article", exact: true });
   }
 
-  /** Opens the editor from the main navigation's New article. */
-  async openFromNavigation(): Promise<void> {
-    await this.navigationEntry.click();
-    await expect(this.heading("New article")).toBeVisible();
-  }
-
   /** Opens the editor from the place New article that starts the phone's Menu sheet. */
   async openFromMenuSheet(): Promise<void> {
     const menu = await new Frame(this.page).openMenu();
     await menu.dialog.getByRole("menuitem", { name: "New article", exact: true }).click();
-    await expect(this.heading("New article")).toBeVisible();
-  }
-
-  /** The menu of what can be written, which the phone's floating New post opens on a long press or right click. */
-  get postMenu(): Locator {
-    return this.page.getByRole("menu", { name: "New", exact: true });
-  }
-
-  /** Opens the phone's floating New post's menu with a right click, and the editor from its New article. */
-  async openFromPostMenu(): Promise<void> {
-    await this.page.getByRole("button", { name: "New post", exact: true }).click({ button: "right" });
-    await this.postMenu.getByRole("menuitem", { name: "New article", exact: true }).click();
     await expect(this.heading("New article")).toBeVisible();
   }
 
@@ -136,10 +78,6 @@ export class ArticleEditor {
   /** What is about the article, after the body: its summary, its cover and its hashtags. */
   get details(): Locator {
     return this.page.getByRole("region", { name: "About the article", exact: true });
-  }
-
-  get summary(): Locator {
-    return this.details.getByRole("textbox", { name: "Summary", exact: true });
   }
 
   /** The field that adds a hashtag. */
@@ -354,7 +292,7 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Whether the server's answer `r` with a media file says it is processed. The server answers 200 to a read of a file
  * still processing, its state in the body, so the status alone does not tell.
  */
-export async function processedIn(r: Response): Promise<boolean> {
+async function processedIn(r: Response): Promise<boolean> {
   if (!r.ok()) return false;
   const { state } = (await r.json().catch(() => ({}))) as { state?: string };
   return state !== undefined && state !== "processing";

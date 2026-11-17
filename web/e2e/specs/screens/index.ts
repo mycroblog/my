@@ -9,7 +9,7 @@
 
 export { AccountNote } from "./account-note";
 export { ArticleText } from "./article";
-export { ArticleEditor, holdPreviews, holdProcessing, processedIn, type Upload } from "./article-editor";
+export { ArticleEditor, type Upload } from "./article-editor";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
 export { conversationRead, Conversations } from "./conversations";
