@@ -3,8 +3,7 @@
 import { expect, test } from "bun:test";
 import { fakeOrigin, scenario, type FakeApi } from "@my/e2e/fake";
 import { InfiniteQueryObserver } from "@tanstack/react-query";
-import { createElement, useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { useState } from "react";
 import type { AppData } from "./app-data";
 import { postStatus } from "./compose";
 import {
@@ -21,7 +20,6 @@ import {
   type Conversation,
   type ConversationWrites,
 } from "./conversations";
-import { AppDataProvider } from "./provider";
 import { startStream } from "./stream";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
@@ -362,15 +360,13 @@ test("hiding a conversation the cache does not hold sends nothing and changes no
 test("the writes are the same object across renders, so that an effect may depend on them", async () => {
   const { data } = await reader();
   const rendered: ConversationWrites[] = [];
-  function Twice() {
+  probe(data, () => {
     const writes = useConversationWrites();
     const [round, setRound] = useState(0);
     rendered.push(writes);
     // An update during the render renders the same component again, its hooks kept.
     if (round === 0) setRound(1);
-    return null;
-  }
-  renderToStaticMarkup(createElement(AppDataProvider, { data, children: createElement(Twice) }));
+  });
   expect(rendered).toHaveLength(2);
   expect(rendered[1]).toBe(rendered[0] as ConversationWrites);
 });

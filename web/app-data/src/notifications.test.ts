@@ -2,7 +2,6 @@
 
 import { expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
-import { renderToStaticMarkup } from "react-dom/server";
 import type { AppData } from "./app-data";
 import {
   notificationMarkerQuery,
@@ -13,7 +12,6 @@ import {
   useUnreadNotifications,
   type NotificationReads,
 } from "./notifications";
-import { AppDataProvider } from "./provider";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 
@@ -55,22 +53,8 @@ async function server(count: number, unread: number) {
 }
 
 /** What the list and the shell read now. */
-function read(data: AppData): { reads: NotificationReads; count: number | undefined } {
-  let reads: NotificationReads | undefined;
-  let count: number | undefined;
-  function Probe() {
-    reads = useNotificationReads();
-    count = useUnreadNotifications();
-    return null;
-  }
-  renderToStaticMarkup(
-    <AppDataProvider data={data}>
-      <Probe />
-    </AppDataProvider>,
-  );
-  if (reads === undefined) throw new Error("the probe did not render");
-  return { reads, count };
-}
+const read = (data: AppData): { reads: NotificationReads; count: number | undefined } =>
+  probe(data, () => ({ reads: useNotificationReads(), count: useUnreadNotifications() }));
 
 /** Waits for the marker's moves the reads started. */
 const settle = () => Bun.sleep(5);

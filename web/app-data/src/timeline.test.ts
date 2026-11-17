@@ -4,10 +4,9 @@ import { describe, expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
 import { ProblemError } from "@mycroblog/mykit";
 import { InfiniteQueryObserver } from "@tanstack/react-query";
-import { renderToStaticMarkup } from "react-dom/server";
 import type { AppData } from "./app-data";
 import { fakeData } from "./test/data";
-import { probe } from "./test/probe";
+import { probe, probeOutside } from "./test/probe";
 import { homeTimelineQuery, useHomeTimeline } from "./timeline";
 
 /**
@@ -104,10 +103,8 @@ describe("useHomeTimeline", () => {
   });
 
   test("fails outside AppDataProvider", () => {
-    function Column() {
-      useHomeTimeline();
-      return null;
-    }
-    expect(() => renderToStaticMarkup(<Column />)).toThrow(/outside AppDataProvider/);
+    expect(() => {
+      probeOutside(useHomeTimeline);
+    }).toThrow(/outside AppDataProvider/);
   });
 });
