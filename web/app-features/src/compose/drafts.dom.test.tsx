@@ -291,6 +291,15 @@ async function composer(
   return { ...made, user, dialog, part: within(dialog), said: () => dialog.textContent };
 }
 
+test("the composer is named for what it writes: a new post, a reply", async () => {
+  const fresh = await composer({});
+  expect(screen.getByRole("dialog", { name: "New post" }) === fresh.dialog).toBe(true);
+
+  const reply = await composer({}, { target: { kind: "reply", id: "9" } });
+
+  expect(screen.getByRole("dialog", { name: "Reply" }) === reply.dialog).toBe(true);
+});
+
 test("a new post has the drafts' menu in its head and the schedule tool off, and posts with Post", async () => {
   const { part, said } = await composer({});
 

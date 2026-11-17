@@ -208,7 +208,7 @@ test("a draft's image whose file could not be read stays the server's: kept by i
   expect(onServer({ key: "a", state: "failed", description: "" })).toBe(false);
 });
 
-test("a draft whose scheduled post failed opens with when it was for and why, and a scheduled one with no failure", () => {
+test("a draft opens for what it was written for, and one whose scheduled post failed with when it was for and why", () => {
   const server = {
     id: "d1",
     created_at: "2026-11-14T00:00:00Z",
@@ -229,6 +229,10 @@ test("a draft whose scheduled post failed opens with when it was for and why, an
     fromServer({ ...server, ...fields }, { id: "d1", etag: '"1"' }, [], settings, "key");
 
   expect(open({}).failure).toEqual({ publishAt: "2026-11-15T09:00:00Z", reason: "reply_unavailable" });
+  // What it was written for opens with it: a reply to its post, a quote of its post, else a new post.
+  expect(open({}).target).toEqual({ kind: "new" });
+  expect(open({ in_reply_to_id: "p1" }).target).toEqual({ kind: "reply", id: "p1" });
+  expect(open({ quoted_status_id: "p2" }).target).toEqual({ kind: "quote", id: "p2" });
   // Scheduled again, the failure is behind it.
   expect(open({ scheduled_at: "2026-11-20T09:00:00Z" }).failure).toBeUndefined();
 });

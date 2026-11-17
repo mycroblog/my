@@ -246,6 +246,7 @@ test("behind a content warning, the warning, the poll's options and the alt text
   // The translate line sits in the warning's band: it translates with the text still folded.
   await user.click(button);
   expect(await post.findByText("[en] パンの話")).not.toBeNull();
+  expect(post.getByText("Demo Translate")).not.toBeNull();
   await user.click(post.getByRole("button", { name: "Show" }));
   expect(await post.findByText("[en] 土曜のパンはどれにしますか？")).not.toBeNull();
   const options = within(post.getByRole("group", { name: "Poll" }));
