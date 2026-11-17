@@ -1,7 +1,7 @@
 Example Social に、まだ読んでいない通知があります。
 
 開く
-https://social.example/settings/follow-requests
+https://social.example/notifications/follow_requests
 
 -- 
 Example Social

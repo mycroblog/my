@@ -136,3 +136,108 @@ func TestDescribeScheduledStatusFailed(t *testing.T) {
 		}
 	}
 }
+
+// TestPushPathOfEveryType checks that the Web Push message and the email of each notification
+// type lead to the web client's page of it, as its notificationPath decides for the lists
+// (web/app-components/src/paths.ts): the post, the account, the follow requests, what waits for
+// approval, the announcement, and the notifications for a kind whose screen the client lacks.
+func TestPushPathOfEveryType(t *testing.T) {
+	const (
+		me     = "me"
+		bob    = "bob@remote.example"
+		carol  = "carol"
+		status = "01890a5d-ac96-774b-bcce-b30209900010"
+		ann    = "01890a5d-ac96-774b-bcce-b30209900011"
+	)
+	byBob := "/@" + bob + "/status/" + status
+	mine := "/@" + me + "/status/" + status
+	want := map[notification.Type]string{
+		notification.TypeFollow:                     "/@" + bob,
+		notification.TypeFollowRequest:              "/notifications/follow_requests",
+		notification.TypeFollowAccepted:             "/@" + bob,
+		notification.TypeMention:                    byBob,
+		notification.TypeStatus:                     byBob,
+		notification.TypeBoost:                      mine,
+		notification.TypeFavourite:                  mine,
+		notification.TypeReaction:                   mine,
+		notification.TypeQuote:                      byBob,
+		notification.TypePollClosed:                 byBob,
+		notification.TypeReplyRequest:               "/notifications/waiting",
+		notification.TypeBoostRequest:               "/notifications/waiting",
+		notification.TypeQuoteRequest:               "/notifications/waiting",
+		notification.TypeInteractionAccepted:        byBob,
+		notification.TypeInteractionRejected:        byBob,
+		notification.TypeAccountMoved:               "/@" + carol,
+		notification.TypeAnnouncement:               "/announcements/" + ann,
+		notification.TypeModerationNotice:           "/notifications",
+		notification.TypeReportResolved:             "/notifications",
+		notification.TypeAdminReport:                "/notifications",
+		notification.TypeAdminSignUp:                "/notifications",
+		notification.TypeRelationshipsSevered:       "/notifications",
+		notification.TypeAppealDecided:              "/notifications",
+		notification.TypeAdminAppeal:                "/notifications",
+		notification.TypeAdminWebhookDisabled:       "/notifications",
+		notification.TypeAdminCustomEmojiRequest:    "/notifications",
+		notification.TypeCustomEmojiRequestDecided:  "/notifications",
+		notification.TypeSupporterPaymentFailed:     "/notifications",
+		notification.TypeSupporterSubscriptionEnded: "/notifications",
+		notification.TypeSupporterPlanRetired:       "/notifications",
+		notification.TypeAdminAccountMoved:          "/notifications",
+		notification.TypeServiceClosure:             "/notifications",
+		notification.TypeAdminServiceClosureDue:     "/notifications",
+		notification.TypeSupporterServiceClosure:    "/notifications",
+		notification.TypeVoiceRoomStarted:           "/notifications",
+		notification.TypeVoiceRoomInvited:           "/notifications",
+		notification.TypeAdminErrorGroup:            "/notifications",
+		notification.TypeAdminHookFailing:           "/notifications",
+		notification.TypeAdminHookAppeal:            "/notifications",
+		notification.TypeHookAppealDecided:          "/notifications",
+		notification.TypeAutoDeleteLimit:            "/notifications",
+		notification.TypeScheduledStatusFailed:      "/notifications",
+		notification.TypeAdminDomainListFailing:     "/notifications",
+		notification.TypeEventInvited:               "/notifications",
+		notification.TypeEventScheduleConfirmed:     "/notifications",
+		notification.TypeEventChanged:               "/notifications",
+		notification.TypeEventCancelled:             "/notifications",
+		notification.TypeEventReminder:              "/notifications",
+		notification.TypeEventStarted:               "/notifications",
+		notification.TypeEventRoomUnavailable:       "/notifications",
+	}
+	d := describer{audience: stubAudience{}, host: "example.com"}
+	for _, typ := range notification.Types {
+		t.Run(string(typ), func(t *testing.T) {
+			path, ok := want[typ]
+			if !ok {
+				t.Fatalf("no page for %s: add the web client's page of it", typ)
+			}
+			job := pushJob{
+				NotificationID: "n", AccountID: me, Type: typ, SourceAccountID: bob, StatusID: status,
+				ReportID: "r", AppealID: "a", VoiceRoomID: "v", ErrorGroupID: "e", HookAppealID: "h",
+				AnnouncementID: ann, GatheringID: "g",
+			}
+			if typ == notification.TypeAccountMoved {
+				job.MoveTargetAccountID = carol
+			}
+			p, _, err := d.describe(t.Context(), job)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p.Path != path {
+				t.Errorf("path = %q, want %q", p.Path, path)
+			}
+		})
+	}
+}
+
+// TestPushPathOfAccountMovedWithoutTarget checks that an account_moved whose job does not name
+// the account moved to, as one enqueued before it did, leads to the moved account.
+func TestPushPathOfAccountMovedWithoutTarget(t *testing.T) {
+	d := describer{audience: stubAudience{}, host: "example.com"}
+	p, _, err := d.describe(t.Context(), pushJob{NotificationID: "n", AccountID: "me", Type: notification.TypeAccountMoved, SourceAccountID: "bob"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Path != "/@bob" {
+		t.Errorf("path = %q, want /@bob", p.Path)
+	}
+}

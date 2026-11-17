@@ -116,9 +116,6 @@ func (g *GatheringNotifier) NotifyEventTx(ctx context.Context, tx uow.Tx, n Even
 	}, recipientIDs, func(job *pushJob) { job.Event = &mail })
 }
 
-// EventPath is the web client's page of an event.
-func EventPath(id string) string { return "/events/" + id }
-
 // The units of the time before the start of a reminder, as push.event_reminder selects them.
 const (
 	reminderDay    = "day"

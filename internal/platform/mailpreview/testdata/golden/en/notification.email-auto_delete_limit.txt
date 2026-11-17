@@ -3,7 +3,7 @@ Example Social: posts older than 90 days will be deleted automatically in 30 day
 Until then, your own settings apply. The settings of the automatic deletion show which of your posts will be deleted, and you can change them within the server's maximum. Deleted posts cannot be restored.
 
 Open
-https://social.example/settings/auto-delete
+https://social.example/notifications
 
 -- 
 Example Social
