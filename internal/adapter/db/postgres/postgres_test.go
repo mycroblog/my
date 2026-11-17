@@ -55,7 +55,14 @@ func probeQueries(db *DB, tx uow.Tx) (*identitygen.Queries, error) {
 }
 
 func probeKeys(ctx context.Context, db *DB) ([]string, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id FROM users ORDER BY id")
+	return selectKeys(ctx, db.pool)
+}
+
+// selectKeys reads the probe keys through q, the pool or a transaction.
+func selectKeys(ctx context.Context, q interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+}) ([]string, error) {
+	rows, err := q.Query(ctx, "SELECT id FROM users ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +86,13 @@ func TestUnitOfWorkContract(t *testing.T) {
 				return insertProbe(ctx, q, name)
 			},
 			Keys: func(ctx context.Context) ([]string, error) { return probeKeys(ctx, db) },
+			Select: func(ctx context.Context, tx uow.Tx) ([]string, error) {
+				pgTx, err := db.PgxTx(tx)
+				if err != nil {
+					return nil, err
+				}
+				return selectKeys(ctx, pgTx)
+			},
 		}
 	})
 }
@@ -231,5 +245,31 @@ func TestReady(t *testing.T) {
 	db.Close()
 	if err := db.Ready(t.Context(), schema.Tables(schema.Postgres)); err == nil {
 		t.Error("Ready on a closed pool = nil, want an error")
+	}
+}
+
+// TestReadRefusesWritesWithReadOnlySQLTransaction: a write through the transaction of Read fails
+// with SQLSTATE 25006 (read_only_sql_transaction) and is not kept.
+func TestReadRefusesWritesWithReadOnlySQLTransaction(t *testing.T) {
+	pgtest.RequireRealServer(t)
+	db := newTestDB(t, uow.Options{})
+	var wrote error
+	err := db.Read(t.Context(), func(tx uow.Tx) error {
+		q, err := probeQueries(db, tx)
+		if err != nil {
+			return err
+		}
+		wrote = insertProbe(t.Context(), q, testkit.NamedID("a"))
+		return nil
+	})
+	if err != nil && !errors.Is(err, wrote) {
+		t.Fatalf("Read = %v", err)
+	}
+	var pgErr *pgconn.PgError
+	if !errors.As(wrote, &pgErr) || pgErr.Code != "25006" {
+		t.Errorf("write in Read = %v, want SQLSTATE 25006", wrote)
+	}
+	if got, err := probeKeys(t.Context(), db); err != nil || len(got) != 0 {
+		t.Errorf("committed keys = %q (%v), want none", got, err)
 	}
 }

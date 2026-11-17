@@ -26,6 +26,8 @@ type UnitOfWorkHarness struct {
 	// Keys returns the committed probe keys in any order, reading outside every transaction of
 	// UnitOfWork. It must not block while a transaction is open.
 	Keys func(ctx context.Context) ([]string, error)
+	// Select returns the probe keys that tx sees, in any order, by a query through tx.
+	Select func(ctx context.Context, tx uow.Tx) ([]string, error)
 }
 
 // UnitOfWorkFactory returns a harness on a new, empty database whose UnitOfWork uses opts.
@@ -47,7 +49,9 @@ func (probeEvent) EventType() string { return "testkit.probe_inserted" }
 // after the commit, for the events of the attempt that committed; transactions bound to the
 // database that began them, even another database of the same adapter; conflicting writers
 // of one key, of which exactly one commits; and nothing committed when the context ends
-// before the commit. The factory is called twice by the case of another database.
+// before the commit; and the read-only transaction (Read): it sees committed data, refuses
+// writes and events, returns the error of fn, does not retry, and leaves the connection able
+// to write. The factory is called twice by the case of another database.
 func UnitOfWorkContract(t *testing.T, newHarness UnitOfWorkFactory) {
 	t.Helper()
 	cases := []struct {
@@ -70,6 +74,12 @@ func UnitOfWorkContract(t *testing.T, newHarness UnitOfWorkFactory) {
 		{"RunsCommitHooksOnlyForTheCommittedAttempt", uowRunsCommitHooksOnce},
 		{"RejectsTransactionsOfAnotherDatabase", uowRejectsForeignTransactions},
 		{"CommitsOneOfConflictingWriters", uowCommitsOneOfConflictingWriters},
+		{"ReadSeesCommittedData", uowReadSeesCommittedData},
+		{"ReadRefusesWritesAndWritesNothing", uowReadRefusesWrites},
+		{"ReadRefusesEvents", uowReadRefusesEvents},
+		{"ReadReturnsTheErrorOfFn", uowReadReturnsFnError},
+		{"ReadDoesNotRetry", uowReadDoesNotRetry},
+		{"TxWritesAfterARead", uowTxWritesAfterARead},
 		{"CommitsNothingWhenTheContextEndsBeforeTheCommit", uowCommitsNothingAfterCancel},
 	}
 	for _, tc := range cases {
@@ -513,4 +523,123 @@ func uowCommitsNothingAfterCancel(t *testing.T, newHarness UnitOfWorkFactory) {
 	if len(*seen) > 0 {
 		t.Errorf("commit hooks ran for a transaction that did not commit: %q", *seen)
 	}
+}
+
+func commitKeys(t *testing.T, h UnitOfWorkHarness, keys ...string) {
+	t.Helper()
+	err := h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		for _, k := range keys {
+			if err := h.Insert(t.Context(), tx, k); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Tx = %v", err)
+	}
+}
+
+func uowReadSeesCommittedData(t *testing.T, newHarness UnitOfWorkFactory) {
+	h := newHarness(t, uow.Options{Retry: fastRetry})
+	a, b := testkit.NamedID("a"), testkit.NamedID("b")
+	commitKeys(t, h, a, b)
+
+	var seen []string
+	err := h.UnitOfWork.Read(t.Context(), func(tx uow.Tx) error {
+		var err error
+		seen, err = h.Select(t.Context(), tx)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("Read = %v", err)
+	}
+	slices.Sort(seen)
+	if want := slices.Sorted(slices.Values([]string{a, b})); !slices.Equal(seen, want) {
+		t.Errorf("Read saw %q, want %q", seen, want)
+	}
+}
+
+func uowReadRefusesWrites(t *testing.T, newHarness UnitOfWorkFactory) {
+	h := newHarness(t, uow.Options{Retry: fastRetry})
+	a := testkit.NamedID("a")
+	commitKeys(t, h, a)
+
+	var wrote error
+	_ = h.UnitOfWork.Read(t.Context(), func(tx uow.Tx) error {
+		wrote = h.Insert(t.Context(), tx, testkit.NamedID("b"))
+		return nil
+	})
+	if wrote == nil {
+		t.Error("a write through the transaction of Read succeeded, want an error")
+	}
+	wantKeys(t, h, a)
+}
+
+func uowReadRefusesEvents(t *testing.T, newHarness UnitOfWorkFactory) {
+	var projectors uow.Projectors
+	h := newHarness(t, uow.Options{Retry: fastRetry, Projectors: &projectors})
+	projectInto(h, &projectors, nil)
+	seen := hookInto(t, h, &projectors)
+
+	var emitted error
+	err := h.UnitOfWork.Read(t.Context(), func(tx uow.Tx) error {
+		emitted = tx.Emit(t.Context(), probeEvent{key: testkit.NamedID("a")})
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Read = %v", err)
+	}
+	if !errors.Is(emitted, uow.ErrReadOnly) {
+		t.Errorf("Emit in Read = %v, want uow.ErrReadOnly", emitted)
+	}
+	if len(*seen) > 0 {
+		t.Errorf("commit hooks ran for Read: %q", *seen)
+	}
+	wantKeys(t, h)
+}
+
+func uowReadReturnsFnError(t *testing.T, newHarness UnitOfWorkFactory) {
+	h := newHarness(t, uow.Options{Retry: fastRetry})
+	boom := errors.New("boom")
+	err := h.UnitOfWork.Read(t.Context(), func(uow.Tx) error { return boom })
+	if err != boom {
+		t.Errorf("Read = %v, want the error of fn as it is", err)
+	}
+}
+
+// uowReadDoesNotRetry: Read calls fn once even when it fails with a retryable error.
+func uowReadDoesNotRetry(t *testing.T, newHarness UnitOfWorkFactory) {
+	h := newHarness(t, uow.Options{Retry: fastRetry})
+	retryable := uow.MarkRetryable(errors.New("conflict"))
+	calls := 0
+	err := h.UnitOfWork.Read(t.Context(), func(uow.Tx) error {
+		calls++
+		return retryable
+	})
+	if !errors.Is(err, uow.ErrRetryable) {
+		t.Errorf("Read = %v, want the retryable error of fn", err)
+	}
+	if calls != 1 {
+		t.Errorf("fn ran %d times, want 1", calls)
+	}
+}
+
+// uowTxWritesAfterARead: the connection a Read used can write again. Run after reads that
+// ended in every way: nil, an error of fn, and a refused write.
+func uowTxWritesAfterARead(t *testing.T, newHarness UnitOfWorkFactory) {
+	h := newHarness(t, uow.Options{Retry: fastRetry})
+	reads := []func(uow.Tx) error{
+		func(uow.Tx) error { return nil },
+		func(uow.Tx) error { return errors.New("boom") },
+		func(tx uow.Tx) error { return h.Insert(t.Context(), tx, testkit.NamedID("refused")) },
+	}
+	var want []string
+	for i, read := range reads {
+		_ = h.UnitOfWork.Read(t.Context(), read)
+		key := testkit.NamedID(fmt.Sprintf("w%d", i))
+		commitKeys(t, h, key)
+		want = append(want, key)
+	}
+	wantKeys(t, h, want...)
 }

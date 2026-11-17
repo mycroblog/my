@@ -52,7 +52,14 @@ func probeQueries(db *DB, tx uow.Tx) (*identitygen.Queries, error) {
 }
 
 func probeKeys(ctx context.Context, db *DB) ([]string, error) {
-	rows, err := db.db.QueryContext(ctx, "SELECT id FROM users ORDER BY id")
+	return selectKeys(ctx, db.db)
+}
+
+// selectKeys reads the probe keys through q, a pool or a transaction.
+func selectKeys(ctx context.Context, q interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}) ([]string, error) {
+	rows, err := q.QueryContext(ctx, "SELECT id FROM users ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +89,13 @@ func TestUnitOfWorkContract(t *testing.T) {
 				return insertProbe(ctx, q, name)
 			},
 			Keys: func(ctx context.Context) ([]string, error) { return probeKeys(ctx, db) },
+			Select: func(ctx context.Context, tx uow.Tx) ([]string, error) {
+				sqlTx, err := db.SQLTx(tx)
+				if err != nil {
+					return nil, err
+				}
+				return selectKeys(ctx, sqlTx)
+			},
 		}
 	})
 }
