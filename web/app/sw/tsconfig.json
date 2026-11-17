@@ -1,9 +1,15 @@
 {
   "extends": "../../../tsconfig.base.json",
-  "//": "The Service Worker (sw/), which runs in a ServiceWorkerGlobalScope: the worker's types in place of the page's.",
+  "//": "The Service Worker (sw/), which runs in a ServiceWorkerGlobalScope: the worker's types in place of the page's. exactOptionalPropertyTypes is off here alone: Workbox's plugin classes declare their callbacks as `T | undefined`, which its own WorkboxPlugin type does not accept under that option.",
   "compilerOptions": {
-    "lib": ["ES2023", "WebWorker"],
-    "types": []
+    "lib": [
+      "ES2023",
+      "WebWorker"
+    ],
+    "types": [],
+    "exactOptionalPropertyTypes": false
   },
-  "include": ["**/*.ts"]
+  "include": [
+    "**/*.ts"
+  ]
 }

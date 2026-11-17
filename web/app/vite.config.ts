@@ -5,9 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defaultClientConditions, defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 import { bundledLicenses } from "./vite-plugins/licenses.ts";
 import { reactCompiler } from "./vite-plugins/react-compiler.ts";
-import { serviceWorker } from "./vite-plugins/service-worker.ts";
 
 /** Where the Go server embeds the build from (internal/interface/web, //go:embed all:dist). */
 const embedDir = fileURLToPath(new URL("../../internal/interface/web/dist", import.meta.url));
@@ -41,8 +41,8 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // for the browsers of light-dark() (ADR-0025 §1). The licenses/ of the build holds the notices of the npm packages and,
 // through vite-plugins/licenses.ts, of the Unicode emoji data and the emoji and text fonts, each slice of which is an
 // asset of its own. The condition @mycroblog/source reads @mycroblog/mykit (under @my/app-data) from its sources, which
-// need no build. The Service Worker, sw/sw.ts, is built after the app into sw.js at the build's root
-// (vite-plugins/service-worker.ts).
+// need no build. The Service Worker, sw/sw.ts, is built with the app's precache manifest into sw.js at the build's
+// root (vite-plugin-pwa, below).
 export default defineConfig({
   base: "./",
   plugins: [
@@ -51,7 +51,41 @@ export default defineConfig({
     reactCompiler(),
     bundledLicenses(licenseFiles),
     tailwindcss({ optimize: false }),
-    serviceWorker("../sw/sw.ts"),
+    // The Service Worker (ADR-0028 §3): sw/sw.ts, built by vite-plugin-pwa's injectManifest with the precache manifest of
+    // this build (https://vite-pwa-org.netlify.app/guide/inject-manifest.html) into sw.js at the build's root. Go writes
+    // the Web App Manifest and the HTML, so the plugin writes neither and registers nothing: the app registers the
+    // worker (@my/platform).
+    VitePWA({
+      strategies: "injectManifest",
+      srcDir: "sw",
+      filename: "sw.ts",
+      manifest: false,
+      injectRegister: false,
+      // Absolute, unlike the build's relative base: the worker lives at /sw.js and controls the whole origin.
+      base: "/",
+      scope: "/",
+      injectManifest: {
+        // A classic script, which every browser registers.
+        rollupFormat: "iife",
+        // The worker's own conditions: @mycroblog/source as the app's, and its own notices of npm packages.
+        buildPlugins: {
+          vite: [
+            {
+              name: "my:sw-build",
+              config: () => ({
+                resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
+                build: { license: { fileName: "licenses/npm-packages-sw.md" } },
+              }),
+            },
+          ],
+        },
+        // The build's scripts, stylesheet and images; not its HTML (the worker precaches the server's shell at /home
+        // instead) nor the auth screens' files, which the app never loads, and not its fonts (tens of MB of splits),
+        // which the worker caches as a page first uses them.
+        globPatterns: ["**/*.{js,css,svg,png}"],
+        globIgnores: ["index.html", "auth.html", "sw.js", "assets/auth-*.js", "assets/auth-*.css"],
+      },
+    }),
   ],
   resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
   build: {
