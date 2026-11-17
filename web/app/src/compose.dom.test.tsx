@@ -4,6 +4,7 @@
 // is sent is the composer's (web/app-features/src/compose/drafts.dom.test.tsx).
 
 import { expect, test } from "bun:test";
+import { scenario } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderApp } from "./test/app";
 import { newPost, paste } from "./test/composer";
@@ -11,7 +12,14 @@ import { feedOf, postsLike } from "./test/posts";
 
 test("a post sent from the composer closes it and shows in the home timeline", async () => {
   const text = "In-flight check: the ferry leaves at noon.";
-  const app = await renderApp("/", { viewer: "yuki" });
+  // The home timeline holds one post of the writer's before theirs: the test reads no other.
+  const app = await renderApp("/", {
+    viewer: "yuki",
+    seed: {
+      people: scenario.people,
+      posts: [{ key: "first", author: "yuki", text: "The ferry timetable.", visibility: "public", language: "en" }],
+    },
+  });
   const feed = await feedOf("Home timeline");
   const composer = await newPost(app);
   await paste(app, composer.text, text);

@@ -8,17 +8,15 @@
 //
 //   dom-tests happy-dom|jsdom [an option of bun test]...
 //
-// There are as many processes as cores, and one package's at a time in the workspace (web:test runs the packages side
-// by side): a process that waits for a core is slow to import the package, and a test that waits a second for what it
-// imports then fails.
+// There are as many processes as cores, among every package whose run goes beside this one: web:test runs the packages
+// side by side and says how many of them run tests on a DOM (DOM_TESTS_BESIDE), and each takes its share of the cores,
+// one process at least. A package run alone takes them all. With a process per core and package, a test's own work
+// waited for a core four times as long as it took, and passed the limit of a test.
 //
 // A package calls it from its `test` script and declares @my/devtools, where scripts/changed-web-packages.sh reads
 // that a change to a preload reaches the package's tests.
 
-import { Database } from "bun:sqlite";
-import { existsSync, mkdirSync } from "node:fs";
 import { availableParallelism } from "node:os";
-import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** The files a process runs at least: it pays the preload and the package's imports once, about a second. */
@@ -35,25 +33,9 @@ export function deal(files: string[], count: number): string[][] {
   return lists;
 }
 
-/** The directory of the workspace the package is in, which holds bun.lock; nothing outside one. */
-function workspace(dir: string): string | undefined {
-  if (existsSync(join(dir, "bun.lock"))) return dir;
-  return dirname(dir) === dir ? undefined : workspace(dirname(dir));
-}
-
-/**
- * Waits for the other packages' runs in the workspace to end, and holds the others off until `close()` or the end of
- * this process: an exclusive lock on a database file, which SQLite waits for and the system frees with the process.
- */
-function alone(): { close(): void } {
-  const root = workspace(process.cwd());
-  if (root === undefined) return { close: () => {} };
-  mkdirSync(join(root, "node_modules/.cache"), { recursive: true });
-  const lock = new Database(join(root, "node_modules/.cache/dom-tests.lock"));
-  lock.run("PRAGMA busy_timeout = 3600000");
-  lock.run("BEGIN EXCLUSIVE");
-  return lock;
-}
+/** The processes of a run: its share of `cores` among the `beside` packages that run side by side, one at least. */
+export const share = (cores: number, beside: number): number =>
+  Math.max(1, Math.floor(cores / Math.max(1, Number.isFinite(beside) ? beside : 1)));
 
 if (import.meta.main) {
   const [dom = "", ...options] = process.argv.slice(2);
@@ -64,8 +46,8 @@ if (import.meta.main) {
   }
   const files = [...new Bun.Glob(`**/*${suffix}`).scanSync(".")].filter((f) => !f.includes("node_modules/")).sort();
   const preload = fileURLToPath(new URL(`./${dom}.ts`, import.meta.url));
-  const lock = alone();
-  const runs = deal(files, availableParallelism()).map((list) =>
+  const processes = share(availableParallelism(), Number(process.env["DOM_TESTS_BESIDE"] ?? 1));
+  const runs = deal(files, processes).map((list) =>
     Bun.spawn([process.execPath, "test", ...options, "--preload", preload, ...list.map((f) => `./${f}`)], {
       stdout: "pipe",
       stderr: "pipe",
@@ -82,6 +64,5 @@ if (import.meta.main) {
     process.stderr.write(err);
     if (code !== 0) failed = true;
   }
-  lock.close();
   process.exit(failed ? 1 : 0);
 }

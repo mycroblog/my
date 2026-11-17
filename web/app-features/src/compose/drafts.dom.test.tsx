@@ -10,7 +10,7 @@ import { readerZone, scheduleTime } from "@my/design-system";
 import type { BoundFunctions, queries } from "@testing-library/dom";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { stringsIn } from "../locale";
-import { fakeData, renderFeature } from "../test/feature";
+import { fakeData, pasteInto, renderFeature } from "../test/feature";
 import { ComposerView } from "./composer";
 import { DraftsView, type DraftsState } from "./drafts";
 import type { ComposeSpecimen } from "./layer";
@@ -304,7 +304,7 @@ test("a custom emoji in the text shows as its image and copies as its shortcode,
   const { user, part, dialog } = await composer({ text: "" });
   const text = part.getByRole("textbox", { name: "Text" });
   await user.click(text);
-  await user.paste("Tea :teacup: time\nnext line");
+  await pasteInto(user, text, "Tea :teacup: time\nnext line");
   // The emoji shows as its image, which has no text of its own to copy.
   expect(await within(text).findByRole("img", { name: ":teacup:" })).not.toBeNull();
 
@@ -315,7 +315,7 @@ test("a custom emoji in the text shows as its image and copies as its shortcode,
   await user.click(part.getByRole("button", { name: "Add a content warning" }));
   const warning = await part.findByRole("textbox", { name: "Content warning" });
   await user.click(warning);
-  await user.paste("Spoilers :wave:");
+  await pasteInto(user, warning, "Spoilers :wave:");
   expect(await within(warning).findByRole("img", { name: ":wave:" })).not.toBeNull();
   // The warning is one line: Enter writes nothing there, and the composer stays open.
   await user.keyboard("{Enter}");

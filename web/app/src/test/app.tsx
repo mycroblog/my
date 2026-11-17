@@ -12,6 +12,8 @@ import { fakeHost, fakeOrigin, type FakeOptions } from "@my/e2e/fake";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { onTestFinished } from "bun:test";
+// What the features load on first use is loaded before a test renders: no test waits for a chunk.
+import "@my/app-features/test/chunks";
 import { AppRoot } from "../app";
 import { createAppRouter } from "../router";
 import { fakeApp, type FakeApp } from "./server";
@@ -108,3 +110,18 @@ export const main = () => within(screen.getByRole("main"));
  */
 export const words = (element: Element): string =>
   element.textContent.replaceAll("\u2060", "").replace(/\s+/g, " ").trim();
+
+/**
+ * Lets what the app waits `ms` or longer for (the second before it asks again whether an upload is processed) come at
+ * once, until the test ends: the test's clock in place of the wall's, for a wait the app times itself. Call it before
+ * the app starts the wait. What Testing Library waits for keeps its own time.
+ */
+export function withoutWaitsOf(ms: number): void {
+  const wait = globalThis.setTimeout;
+  const sooner = ((handler: TimerHandler, timeout?: number, ...rest: unknown[]) =>
+    wait(handler, timeout !== undefined && timeout >= ms ? 0 : timeout, ...rest)) as typeof setTimeout;
+  globalThis.setTimeout = Object.assign(sooner, wait);
+  onTestFinished(() => {
+    globalThis.setTimeout = wait;
+  });
+}

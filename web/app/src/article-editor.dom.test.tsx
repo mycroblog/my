@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
-import { renderApp } from "./test/app";
+import { renderApp, withoutWaitsOf } from "./test/app";
 import { paste } from "./test/composer";
 import { chooseFiles, imageFile } from "./test/files";
 import { feedOf, postOf } from "./test/posts";
@@ -40,6 +40,8 @@ async function published(app: { path: () => string }, username: string): Promise
 test("Publish pressed while the cover is processing says to wait, and publishes once it is processed", async () => {
   const title = "A cover still processing";
   const app = await renderApp("/articles/new", { viewer: "yuki", uploads: "processing" });
+  // The app asks whether an upload is processed a second after it was told that it is not: that second is not waited.
+  withoutWaitsOf(1000);
   await app.user.type(screen.getByRole("textbox", { name: "Title" }), title);
   await paste(app, await body(), "Its cover is not processed yet.");
   // The server's answers that the upload is processed are held: the cover stays processing.

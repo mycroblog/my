@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { deal } from "./dom-tests";
+import { deal, share } from "./dom-tests";
 
 const files = (count: number) => Array.from({ length: count }, (_, i) => `f${i}`);
 
@@ -19,6 +19,14 @@ test("deal gives every file to one list, in turn, four or more to a list", () =>
 test("deal makes one list of a few files, and none of none", () => {
   expect(deal(files(3), 4)).toEqual([["f0", "f1", "f2"]]);
   expect(deal([], 4)).toEqual([]);
+});
+
+test("a run takes its share of the cores among the packages that run beside it, and one process at least", () => {
+  expect(share(24, 1)).toBe(24);
+  expect(share(24, 5)).toBe(4);
+  expect(share(4, 5)).toBe(1);
+  expect(share(4, 0)).toBe(4);
+  expect(share(4, Number.NaN)).toBe(4);
 });
 
 let dir = "";

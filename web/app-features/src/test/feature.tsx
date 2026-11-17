@@ -10,9 +10,13 @@ import { AppDataProvider, createAppData, type AppData } from "@my/app-data";
 import { I18nProvider } from "@my/design-system";
 import { createFakeApi, fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import type { ReactNode } from "react";
+
+// What the features load on first use is loaded before a test renders: no test waits for a chunk. A test file
+// without a DOM renders nothing, and the editors look for a document when they are loaded.
+if (typeof document !== "undefined") await import("./chunks");
 
 /** The app's data on a fake API, and what it asked of it. */
 export type FakeData = {
@@ -54,4 +58,17 @@ export function renderFeature(data: AppData, children: ReactNode, locale = "en")
     </AppDataProvider>,
   );
   return userEvent.setup();
+}
+
+/**
+ * Pastes `text` at the caret of the editor `box`, which has the focus, and returns once the editor wrote it: it writes
+ * what it is given in a turn of its own, after the event, so a test that read the box at once read it as fast as the
+ * machine was.
+ */
+export async function pasteInto(user: UserEvent, box: HTMLElement, text: string): Promise<void> {
+  const before = box.innerHTML;
+  await user.paste(text);
+  await waitFor(() => {
+    if (box.innerHTML === before) throw new Error("test: the editor did not write what was pasted yet");
+  });
 }

@@ -12,7 +12,11 @@ test("a line above the home timeline counts the unread announcements and leads t
   const [opened] = scenario.announcements;
   if (opened === undefined) throw new Error("test: the scenario has no announcement");
   const all = scenario.announcements.length;
-  const app = await renderApp("/", { viewer: "sam" });
+  // The line stands above the timeline whatever it holds: the server has the announcements and no post.
+  const app = await renderApp("/", {
+    viewer: "sam",
+    seed: { people: scenario.people, announcements: scenario.announcements },
+  });
 
   await app.user.click(await main().findByRole("link", { name: `${String(all)} unread announcements` }));
 

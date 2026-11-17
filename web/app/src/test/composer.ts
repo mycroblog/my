@@ -39,17 +39,36 @@ export function heldBy(box: HTMLElement): string {
   return Array.from(box.children, read).join("\n");
 }
 
-/** Pastes `text` at the caret of `box`, as Ctrl+V does with plain text on the clipboard. */
+/**
+ * Waits until `box` holds something else than `before`: the editor writes what it is given in a turn of its own,
+ * after the event, so a test that read the box at once read it as fast as the machine was.
+ */
+const written = (box: HTMLElement, before: string): Promise<void> =>
+  waitFor(() => {
+    if (heldBy(box) === before) throw new Error(`test: the editor still holds "${before}"`);
+  });
+
+/**
+ * Pastes `text` at the caret of `box`, as Ctrl+V does with plain text on the clipboard, and returns once the editor
+ * wrote it.
+ */
 export async function paste(app: TestApp, box: HTMLElement, text: string): Promise<void> {
   if (document.activeElement !== box) await app.user.click(box);
+  const before = heldBy(box);
   await app.user.paste(text);
+  if (text !== "") await written(box, before);
 }
 
-/** Writes `text` in place of what `box` holds: pasted, since the editor takes no typed key on a simulation. */
+/**
+ * Writes `text` in place of what `box` holds, and returns once the editor holds it: pasted, since the editor takes
+ * no typed key on a simulation.
+ */
 export async function replace(app: TestApp, box: HTMLElement, text: string): Promise<void> {
   await app.user.click(box);
+  const before = heldBy(box);
   await app.user.keyboard("{Control>}a{/Control}{Delete}");
-  if (text !== "") await app.user.paste(text);
+  if (before !== "") await written(box, before);
+  if (text !== "") await paste(app, box, text);
 }
 
 /**

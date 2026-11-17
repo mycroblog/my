@@ -9,7 +9,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { defaultComposeSettings } from "@my/app-data";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
-import { fakeData, renderFeature } from "../test/feature";
+import { fakeData, pasteInto, renderFeature } from "../test/feature";
 import { ComposerView } from "./composer";
 import { emptyDraft } from "./model";
 import { useComposer } from "./use-composer";
@@ -93,7 +93,7 @@ const focusedIn = (text: HTMLElement) => document.activeElement === text;
 test("a writer completes an account by keyboard: the followed first, the list announced, the caret after it", async () => {
   const { user, dialog, text } = await composing();
   await user.click(text);
-  await user.paste("Hi @m");
+  await pasteInto(user, text, "Hi @m");
 
   // Marco and Mio by the start of their names, Sam by the m in sam; Sam, whom the writer follows, comes first.
   expect(await suggests(text, "Accounts", ["Sam Rivera, @sam", "Marco, @marco", "Mio 澪, @mio"])).toHaveLength(3);
@@ -116,14 +116,14 @@ test("a writer completes an account by keyboard: the followed first, the list an
   expect(focusedIn(text)).toBe(true);
 
   // The caret follows what was written: what comes next goes after its space.
-  await user.paste("and hello");
+  await pasteInto(user, text, "and hello");
   expect(heldBy(text)).toBe("Hi @marco and hello");
 });
 
 test("Escape closes the suggestions and leaves the composer open; a press on an account writes it", async () => {
   const { user, dialog, text } = await composing();
   await user.click(text);
-  await user.paste("@m");
+  await pasteInto(user, text, "@m");
   await suggests(text, "Accounts", ["Sam Rivera, @sam", "Marco, @marco", "Mio 澪, @mio"]);
 
   await user.keyboard("{Escape}");
@@ -133,7 +133,7 @@ test("Escape closes the suggestions and leaves the composer open; a press on an 
   expect(heldBy(text)).toBe("@m");
 
   // A new word opens them again; a press picks one and leaves the focus in the text.
-  await user.paste(" and @ma");
+  await pasteInto(user, text, " and @ma");
   await suggests(text, "Accounts", ["Marco, @marco"]);
   const option = Array.from(listOf(text, "Accounts")?.querySelectorAll<HTMLElement>("[role=option]") ?? []).find(
     (candidate) => named(candidate) === "Marco, @marco",
@@ -148,7 +148,7 @@ test("Escape closes the suggestions and leaves the composer open; a press on an 
 test("a writer completes a hashtag with Tab, which one undo takes back", async () => {
   const { user, text } = await composing();
   await user.click(text);
-  await user.paste("Bread #ba");
+  await pasteInto(user, text, "Bread #ba");
   await suggests(text, "Hashtags", [/^#baking, \d+ posts?$/]);
 
   await user.keyboard("{Tab}");
@@ -163,7 +163,7 @@ test("a writer completes a hashtag with Tab, which one undo takes back", async (
 test("a custom emoji is completed by an alias, by pointer and by keyboard, and shows as its image", async () => {
   const { user, text } = await composing();
   await user.click(text);
-  await user.paste("Tea :och");
+  await pasteInto(user, text, "Tea :och");
 
   // ocha is an alias of :teacup:.
   await suggests(text, "Emoji", [":teacup:"]);
@@ -177,7 +177,7 @@ test("a custom emoji is completed by an alias, by pointer and by keyboard, and s
   expect(within(text).getByRole("img", { name: ":teacup:" })).not.toBeNull();
   expect(heldBy(text)).toBe("Tea :teacup: ");
 
-  await user.paste("and :spark");
+  await pasteInto(user, text, "and :spark");
   await suggests(text, "Emoji", [":sparkle:"]);
   await user.keyboard("{Enter}");
   expect(screen.queryByRole("listbox", { hidden: true })).toBeNull();

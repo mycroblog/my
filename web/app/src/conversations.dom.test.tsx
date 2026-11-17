@@ -7,6 +7,7 @@
 import { expect, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type TestApp } from "./test/app";
+import { paste } from "./test/composer";
 import { fakeApp } from "./test/server";
 
 /** The list of the reader's conversations. */
@@ -83,8 +84,7 @@ test("a read answered for the post before a newer one keeps the newer one unread
   const form = main().getByRole("form", { name: /^Your message to ⁨?Sam Rivera⁩?$/ });
   const box = await within(form).findByRole("textbox", { name: "Message" });
   // Pasted: the editor takes no typed key on a simulation.
-  await app.user.click(box);
-  await app.user.paste("Bus it is.");
+  await paste(app, box, "Bus it is.");
   await app.user.click(within(form).getByRole("button", { name: /^Send to ⁨?Sam Rivera⁩?$/ }));
   expect((await posted.arrived()).body.in_reply_to_id).toBe(newer.id);
 });

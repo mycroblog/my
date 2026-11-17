@@ -224,13 +224,22 @@ tasks:
       - task: test-packages
         vars: { PACKAGES: "{{.SELECTED}}" }
 
-  # Every package at once: a test process uses one core, and the packages' tests share nothing while they run.
+  # Every package at once: a test process uses one core, and the packages' tests share nothing while they run. The
+  # packages whose tests run on a DOM share the cores: each one's `dom-tests` takes one of BESIDE parts of them.
   test-packages:
     internal: true
+    vars:
+      BESIDE:
+        sh: |
+          n=0
+          for p in $(echo '{{.PACKAGES}}' | tr '\n' ' '); do
+            if grep -q 'dom-tests' "web/$p/package.json"; then n=$((n + 1)); fi
+          done
+          echo "$n"
     deps:
       - for: { var: PACKAGES }
         task: test-package
-        vars: { PACKAGE: "{{.ITEM}}" }
+        vars: { PACKAGE: "{{.ITEM}}", BESIDE: "{{.BESIDE}}" }
 
   # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each kind in processes of its own:
   # `*.test.ts(x)` with no DOM, `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on
@@ -242,6 +251,8 @@ tasks:
   test-package:
     internal: true
     dir: web/{{.PACKAGE}}
+    env:
+      DOM_TESTS_BESIDE: "{{.BESIDE}}"
     cmds:
       - bun run test
 
