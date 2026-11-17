@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { Button, TextButton } from "./button";
 import { Entry } from "./entry";
+import { IconButton } from "./icon-button";
 import { Feed, FeedItem, FeedNotice, moveFeedFocus, useFeedPosition, type FeedPosition, type FeedProps } from "./feed";
 
 /** What an entry was asked to scroll with, by the entry's position in its feed. */
@@ -247,14 +248,33 @@ describe("a feed", () => {
     expect(clicked).toEqual(["p2", "p1"]);
   });
 
-  test.failing("it tells the key of the entry whose button the reader clicks", async () => {
-    // Defect: FeedProps says a click anywhere inside an entry is heard; one on a Button or an IconButton inside is not.
+  test("it does not tell of a press that a control inside an entry takes", async () => {
     const user = userEvent.setup();
     const clicked: string[] = [];
-    timeline({ count: 2, onEntryClick: (key) => clicked.push(key) });
+    const pressed: string[] = [];
+    timeline({
+      count: 2,
+      onEntryClick: (key) => clicked.push(key),
+      inside: (position) => (
+        <>
+          <Button onPress={() => pressed.push(`open ${String(position)}`)}>{`Open post ${String(position)}`}</Button>
+          <IconButton
+            icon="favourite"
+            label={`Favourite post ${String(position)}`}
+            onPress={() => pressed.push(`favourite ${String(position)}`)}
+          />
+        </>
+      ),
+    });
 
-    await user.click(screen.getByRole("button", { name: "Reply to post 1" }));
+    await user.click(screen.getByText("Post 1"));
+    expect(clicked).toEqual(["p1"]);
+    await user.click(screen.getByRole("button", { name: "Open post 1" }));
+    await user.click(screen.getByRole("button", { name: "Favourite post 2" }));
+    await user.keyboard("{Enter}");
 
+    // The press is the control's alone.
+    expect(pressed).toEqual(["open 1", "favourite 2", "favourite 2"]);
     expect(clicked).toEqual(["p1"]);
   });
 
@@ -362,6 +382,25 @@ describe("moving between entries", () => {
     ]);
   });
 
+  test("outside the feed they are the page's", async () => {
+    const user = userEvent.setup();
+    const page = keysOfThePage();
+    timeline({ count: 2 });
+    const before = screen.getByRole("button", { name: "Before" });
+    const after = screen.getByRole("button", { name: "After" });
+
+    await user.tab();
+    expect(document.activeElement).toBe(before);
+    await user.keyboard("{PageDown}");
+    expect(document.activeElement).toBe(before);
+    await user.click(after);
+    await user.keyboard("{PageUp}");
+    expect(document.activeElement).toBe(after);
+
+    page.stop();
+    expect(page.keys.filter(([, taken]) => taken)).toEqual([]);
+  });
+
   test("they leave a field, a modifier and other keys alone", async () => {
     const user = userEvent.setup();
     const page = keysOfThePage();
@@ -381,7 +420,9 @@ describe("moving between entries", () => {
     await user.keyboard("{Shift>}{PageDown}{/Shift}");
     await user.keyboard("{Alt>}{PageDown}{/Alt}");
     await user.keyboard("{Meta>}{PageDown}{/Meta}");
-    await user.keyboard("{ArrowDown}j");
+    await user.keyboard("{Control>}{PageUp}{/Control}");
+    await user.keyboard("{Shift>}{PageUp}{/Shift}");
+    await user.keyboard("{ArrowDown}{ArrowUp}j");
     expect(document.activeElement).toBe(entry(1));
     await user.click(screen.getByRole("textbox", { name: "Alternative text 1" }));
     await user.keyboard("{PageDown}");
@@ -451,6 +492,25 @@ describe("bringing an entry to the top", () => {
     // block "start" keeps the entry's scroll margin and the scroller's scroll padding (a sticky header's).
     expect(asked(2)).toEqual({ block: "start", inline: "nearest", behavior: "smooth" });
     expect(scrolls.every((scroll) => scroll.entry === "2")).toBe(true);
+  });
+
+  // Whether the keyboard or a click gave the focus is the browser's to say: here `:focus-visible` is true of whatever
+  // has the focus, so that an entry a click focused stays put is for a test in a browser.
+  test("an entry Tab comes to is asked to glide to the top, and a part inside an entry is the browser's to show", async () => {
+    const user = userEvent.setup();
+    timeline({ count: 2 });
+    await user.tab();
+    expect(scrolls).toEqual([]);
+
+    await user.tab();
+    expect(document.activeElement).toBe(entry(1));
+    expect(asked(1)).toEqual({ block: "start", inline: "nearest", behavior: "smooth" });
+    expect(scrolls.every((scroll) => scroll.entry === "1")).toBe(true);
+
+    scrolls.length = 0;
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Reply to post 1" }));
+    expect(scrolls).toEqual([]);
   });
 
   test("with reduced motion it asks for a jump", () => {
