@@ -237,9 +237,11 @@ test("the block stays while the reader stays on Home, though they now follow som
 
 test("leaving Home and coming back decides again: after a follow, the feed shows without the block", async () => {
   const made = fakeData(newcomer);
+  const suggestions = made.fake.script("GET /accounts/suggestions");
   await loadHomeTimeline(made.data);
   const user = renderFeature(made.data, <HomeTimeline />);
   await followFromTheBlock(made, user);
+  const asked = suggestions.seen.length;
 
   cleanup();
   await loadHomeTimeline(made.data);
@@ -251,4 +253,5 @@ test("leaving Home and coming back decides again: after a follow, the feed shows
     if (made.data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
   });
   expect(suggested()).toBeNull();
+  expect(suggestions.seen).toHaveLength(asked);
 });
