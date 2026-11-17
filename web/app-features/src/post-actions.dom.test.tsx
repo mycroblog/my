@@ -218,3 +218,47 @@ test("a vote that gets no answer holds the choice while it is in flight, shows t
   });
   expect(results()).toEqual(["Sourdough0%", "Rye (your vote)100%", "Focaccia0%"]);
 });
+
+test("a reaction that does not finish puts back the favourite it took, and Try again sends it", async () => {
+  const { fake, user, post } = await timeline();
+  const loaf = () => post("The first loaf.");
+  /** The reader's favourite of the post: the favourite button, pressed, named with its count; null without one. */
+  const favourited = () => loaf().queryByRole("button", { name: "Favourite, 1", pressed: true });
+  await user.click(loaf().getByRole("button", { name: "Favourite" }));
+  await waitFor(() => {
+    if (favourited() === null) throw new Error("the post does not say it is favourited");
+  });
+  const held = fake.script("PUT /statuses/{id}/reaction", { times: 1, hold: "request", fail: "network" });
+
+  /** The reader's reaction: its chip, pressed, named "{emoji}, {count}, including yours". */
+  const reaction = () =>
+    waitFor(() =>
+      within(loaf().getByRole("group", { name: "Reactions" })).getByRole("button", {
+        name: "😀, 1, including yours",
+        pressed: true,
+      }),
+    );
+  await user.click(loaf().getByRole("button", { name: "React" }));
+  const grid = await within(await screen.findByRole("dialog", { name: "React" })).findByRole("grid", { name: "Emoji" });
+  await user.click(
+    within(within(grid).getByRole("rowgroup", { name: "Smileys & emotion" })).getByRole("gridcell", {
+      name: "grinning face",
+    }),
+  );
+  await held.arrived();
+  // Shown at once, before the server answers; a reaction takes the favourite's place.
+  expect(await reaction()).not.toBeNull();
+  expect(favourited()).toBeNull();
+
+  held.release();
+  expect(await screen.findByText("The reaction did not finish.")).not.toBeNull();
+  expect(loaf().queryByRole("group", { name: "Reactions" })).toBeNull();
+  expect(favourited()).not.toBeNull();
+
+  await user.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => {
+    if (held.seen.length !== 2) throw new Error("the reaction was not sent again");
+  });
+  expect(await reaction()).not.toBeNull();
+  expect(favourited()).toBeNull();
+});
