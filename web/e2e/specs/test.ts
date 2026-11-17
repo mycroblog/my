@@ -32,22 +32,21 @@
 //   - `fresh.themeDraftStylesheet(admin, tokens)` the stylesheet of a draft of the instance theme that a fresh
 //     person made with `fresh.person({ admin: true })` saves, to apply over a page; nothing is published.
 //
-// And what a spec needs of the scenario: `person(username)` the person to sign in as, `announcements` the server's
-// announcements (the last published is the newest), `secrets()` what the seed made that the server decided (a TOTP
-// secret and the step its enrollment used, a passkey's key, an app's client ID), and `totpCode(secret, { avoidStep })`
-// a code of an authenticator app that the server has not taken: the current step's, or the next one's when the
-// current step is `avoidStep`.
+// And what a spec needs of the scenario: `person(username)` the person to sign in as, `secrets()` what the seed made
+// that the server decided (a TOTP secret and the step its enrollment used, a passkey's key, an app's client ID), and
+// `totpCode(secret, { avoidStep })` a code of an authenticator app that the server has not taken: the current step's,
+// or the next one's when the current step is `avoidStep`.
 
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test as base } from "@playwright/test";
 import { Fresh } from "../src/fresh";
-import { announcements, personOf, type Person } from "../src/scenario";
+import { personOf, type Person } from "../src/scenario";
 import type { SeedState } from "../src/seed/seed";
 import { totpCode } from "../src/seed/totp";
 import { runMyOn } from "../src/server/demo";
 
-export { announcements, expect, personOf as person, totpCode };
+export { expect, personOf as person, totpCode };
 export type { FreshPerson, FreshPost } from "../src/fresh";
 
 /** The demo server's origin, which global-setup.ts set for the workers. */
