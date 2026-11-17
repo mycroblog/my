@@ -17,6 +17,7 @@ import {
 } from "./articles";
 import { instanceQuery } from "./instance";
 import { cachedStatus, shadowed } from "./shadow";
+import type { Status } from "./statuses";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import { statusQuery } from "./thread";
@@ -68,7 +69,7 @@ async function reader(viewer: string, options: FakeOptions, grant = false) {
   // No person of the scenario holds a role that writes articles: the server grants this reader the permission.
   if (grant)
     fake.script("GET /accounts/verify_credentials", {
-      change: (account) => ({ ...account, permissions: [...account.permissions, "create_articles"] }),
+      change: (account) => ({ ...account, permissions: [...account.permissions, "create_articles" as const] }),
     });
   await data.queryClient.query(viewerQuery(data));
   await data.queryClient.query(instanceQuery(data));
@@ -138,7 +139,7 @@ test("an edit of an article is PUT to it, and every copy shows the article as th
   expect(requests).toEqual([`PUT /articles/${id}`]);
   // The copy of a list holds no body (ADR-0160 §8); the article read alone does.
   const listed = data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages[0]?.items.find((s) => s.id === id);
-  const alone = data.queryClient.getQueryData(statusQuery(data, id).queryKey);
+  const alone = data.queryClient.getQueryData<Status>(statusQuery(data, id).queryKey);
   const shown = [listed, alone].map((copy) => copy && shadowed(data, copy));
   expect(shown.map((copy) => copy?.article?.title)).toEqual(["Seven days of a starter", "Seven days of a starter"]);
   expect(shown.map((copy) => copy?.content)).toEqual(["", "<p>New.</p>"]);

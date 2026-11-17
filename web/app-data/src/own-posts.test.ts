@@ -35,7 +35,7 @@ async function cached(posts: Post[] = [own()], options: FakeOptions = {}) {
   const shown = (copy: Status | undefined) => copy && shadowed(data, copy);
   const read = () => ({
     timeline: shown(data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages[0]?.items[0]),
-    thread: shown(data.queryClient.getQueryData(statusQuery(data, id).queryKey)),
+    thread: shown(data.queryClient.getQueryData<Status>(statusQuery(data, id).queryKey)),
   });
   return { fake, data, requests, read, id };
 }

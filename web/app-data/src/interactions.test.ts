@@ -53,7 +53,7 @@ async function cached(options: FakeOptions = posted(), key = "post") {
         ?.pages.flatMap((p) => p.items)
         .find((s) => s.id === id),
     ),
-    thread: shown(data.queryClient.getQueryData(statusQuery(data, id).queryKey)),
+    thread: shown(data.queryClient.getQueryData<Status>(statusQuery(data, id).queryKey)),
   });
   return { fake, data, requests, read, id };
 }

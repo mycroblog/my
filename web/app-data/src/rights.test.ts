@@ -16,7 +16,7 @@ async function viewer(username: "hana" | "marco" | "yuki", reportsOnly = false) 
   // A moderator whose role manages the reports alone: the server leaves the other counts out.
   if (reportsOnly) {
     fake.script("GET /accounts/verify_credentials", {
-      change: (account) => ({ ...account, permissions: ["manage_reports"] }),
+      change: (account) => ({ ...account, permissions: ["manage_reports" as const] }),
     });
     fake.script("GET /admin/counts", {
       change: ({ open_reports }) => (open_reports === undefined ? {} : { open_reports }),

@@ -47,7 +47,7 @@ async function cached(multiple = false, more: Partial<NonNullable<FakeSeed["post
   const shown = (copy: Status | undefined) => (copy && shadowed(data, copy))?.poll;
   const read = () => ({
     timeline: shown(data.queryClient.getQueryData(timeline)?.pages[0]?.items[0]),
-    thread: shown(data.queryClient.getQueryData(statusQuery(data, id).queryKey)),
+    thread: shown(data.queryClient.getQueryData<Status>(statusQuery(data, id).queryKey)),
   });
   return { fake, data, requests, read, timeline, id, open };
 }

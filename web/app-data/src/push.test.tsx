@@ -39,7 +39,7 @@ describe("useNotificationKinds", () => {
     // The server lists the quotes with the boosts, in one row of two kinds, and in a row of their own.
     fake.script("GET /preferences/notifications", {
       change: (settings) => ({
-        rows: settings.rows.map((row) => (row.group === "boost" ? { ...row, types: ["boost", "quote"] } : row)),
+        rows: settings.rows.map((row) => (row.group === "boost" ? { ...row, types: ["boost" as const, "quote" as const] } : row)),
       }),
     });
     expect(probe(data, useNotificationKinds)).toBeUndefined();

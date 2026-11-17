@@ -127,7 +127,7 @@ test("an upload waits until the server has processed the file, and a file it cou
   expect(media.state).toBe("ready");
 
   const failing = fakeData({ uploads: "processing" });
-  failing.fake.script("GET /media/{id}", { change: (file) => ({ ...file, state: "failed" }) });
+  failing.fake.script("GET /media/{id}", { change: (file) => ({ ...file, state: "failed" as const }) });
   const error = await uploadAttachment(failing.data, new File(["x"], "a.png")).catch((e: unknown) => e);
   expect((error as Error).name).toBe("MediaFailedError");
 });

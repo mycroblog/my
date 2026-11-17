@@ -160,16 +160,17 @@ test("the Mentions list asks for the mentions, the quotes and the new posts of s
 test("a new post of a subscribed account and a quote from the stream go to the Mentions list", async () => {
   const { fake, data } = await server(2, 1);
   await data.queryClient.infiniteQuery(notificationsQuery(data, "mentions"));
-  const [posted, quoted, followed] = (["status", "quote", "follow"] as const).map((type) => ({
-    ...fake.newNotification(),
-    type,
-  }));
-  for (const notification of [posted, quoted, followed]) receiveNotification(data, notification);
+  const arrives = (type: "status" | "quote" | "follow") => {
+    const notification = { ...fake.newNotification(), type };
+    receiveNotification(data, notification);
+    return notification.id;
+  };
+  const [posted, quoted, followed] = [arrives("status"), arrives("quote"), arrives("follow")];
   const mentions = data.queryClient
     .getQueryData(notificationsQuery(data, "mentions").queryKey)
     ?.pages.flatMap((p) => p.items.map((n) => n.id));
-  expect(mentions?.slice(0, 2)).toEqual([quoted?.id, posted?.id]);
-  expect(mentions).not.toContain(followed?.id);
+  expect(mentions?.slice(0, 2)).toEqual([quoted, posted]);
+  expect(mentions).not.toContain(followed);
 });
 
 /** A server with three mentions, which both lists hold, read into both; `ids(filter)` is what a list holds now. */
