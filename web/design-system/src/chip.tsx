@@ -66,11 +66,15 @@ const link = tv({
   ],
 });
 
-/** A chip that leads to `href`: its words on the raised surface, then a `count` in the caption's size, muted. */
+/**
+ * A chip that leads to `href`: its words on the raised surface, then a `count` in the caption's size, muted. The
+ * words stand in a box of their own, so that a word longer than the line breaks inside the chip whatever the caller
+ * gives (bare words in a row would be a box the row cannot make narrower).
+ */
 export function ChipLink({ href, count, children }: { href: string; count?: string | undefined; children: ReactNode }) {
   return (
     <Row as={<Link href={href} className={link()} />} inline align="baseline" gap="screen-name-gap">
-      {children}
+      <Box as="span">{children}</Box>
       {count !== undefined && (
         <>
           {" "}
