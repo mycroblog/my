@@ -6,6 +6,7 @@
 // actions are answered as on every screen (post-actions.tsx). While the reader follows no one, as a new account right
 // after it signed up, it offers people to follow over its posts (people.tsx).
 
+import { useState } from "react";
 import { Column } from "@my/app-components";
 import {
   homeTimelineQuery,
@@ -13,6 +14,7 @@ import {
   useHomeSuggestions,
   useHomeTimeline,
   type AppData,
+  type HomeSuggestions,
 } from "@my/app-data";
 import { ScreenStack, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
@@ -43,7 +45,12 @@ export function HomeTimeline() {
   // A reader who follows no one yet (a new account) is offered people to follow over the column (FR-308), where the
   // server suggests anyone. The column waits, as in its loading, until that is known, so that nothing arrives over its
   // posts once they show.
-  const offered = useHomeSuggestions();
+  // It is decided once, when everything it depends on is first known, and holds while the reader stays on Home: a
+  // later answer (the viewer read again, the suggestions' list) never adds or takes the block away under a press.
+  const live = useHomeSuggestions();
+  const [decided, decide] = useState<HomeSuggestions>();
+  if (decided === undefined && live !== "pending") decide(live);
+  const offered = decided ?? "pending";
   const timeline = useHomeTimeline();
   const column = (
     <Column
@@ -59,7 +66,7 @@ export function HomeTimeline() {
   if (offered === "none") return column;
   return (
     <ScreenStack>
-      <SuggestedPeople intro={t("people.home")} />
+      <SuggestedPeople intro={t("people.home")} shown={offered === "some"} />
       {column}
     </ScreenStack>
   );

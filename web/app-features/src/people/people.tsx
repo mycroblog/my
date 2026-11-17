@@ -105,11 +105,13 @@ function useSuggestionsOffered(): boolean | undefined {
 
 /**
  * The first few suggestions under their heading, where the reader starts out (`intro` says why, on an empty home);
- * nothing at all while the server suggests no one, busy while it is asked.
+ * nothing at all while the server suggests no one, busy while it is asked (unless `shown` says).
  */
-export function SuggestedPeople({ intro }: { intro?: string | undefined }) {
+export function SuggestedPeople({ intro, shown }: { intro?: string | undefined; shown?: boolean | undefined }) {
   const { t } = stringsIn(useLocale().locale);
-  const offered = useSuggestionsOffered();
+  // A screen that decided already says so with `shown`, and the block then stands whatever is read again.
+  const asked = useSuggestionsOffered();
+  const offered = shown ?? asked;
   if (offered === undefined) return <ScreenStack busy>{null}</ScreenStack>;
   if (!offered) return null;
   return (
