@@ -641,13 +641,23 @@ export function ToolText({
 
 const notice = tv({
   base: [
-    "fixed inset-x-shell-edge bottom-[calc(var(--shell-bar)+var(--shell-edge)+env(safe-area-inset-bottom))] z-60",
-    "box-border flex w-max max-w-[calc(100%-3*var(--shell-edge)-var(--shell-bar))] items-center gap-entry-avatar",
+    "box-border flex w-max items-center gap-entry-avatar",
     "rounded-overlay bg-text py-composer-inset ps-control-timeline-inline pe-composer-inset font-sans text-body",
-    "text-surface shadow-overlay tablet:inset-x-0 tablet:bottom-shell-end tablet:mx-auto",
-    "tablet:max-w-[calc(100%-2*var(--shell-edge))]",
+    "text-surface shadow-overlay",
   ],
-  variants: { inline: { true: "static mx-0" }, bare: { true: "pe-control-timeline-inline" } },
+  variants: {
+    inline: {
+      // In the flow nothing floats beside it: it may be as wide as what holds it.
+      true: "max-w-full",
+      // Over the page, as wide at most as leaves the action floating at the end clear, with an edge on either side.
+      false: [
+        "fixed inset-x-shell-edge bottom-[calc(var(--shell-bar)+var(--shell-edge)+env(safe-area-inset-bottom))] z-60",
+        "max-w-[calc(100%-3*var(--shell-edge)-var(--shell-bar))]",
+        "tablet:inset-x-0 tablet:bottom-shell-end tablet:mx-auto tablet:max-w-[calc(100%-2*var(--shell-edge))]",
+      ],
+    },
+    bare: { true: "pe-control-timeline-inline" },
+  },
 });
 
 /**
@@ -683,8 +693,8 @@ const noticeAction = tv({
 
 /**
  * A short notice at the bottom of the page, with its action when it has one (a discarded post, with Undo): knocked out
- * and neutral, at the start on a phone, clear of the action floating at the end. `inline` keeps it in the flow (a
- * specimen).
+ * and neutral, at the start on a phone, clear of the action floating at the end. Its action keeps its words on one
+ * line, as a button does, and its sentence gives way beside it. `inline` keeps it in the flow (a specimen).
  */
 export function UndoNotice({
   action,
@@ -702,16 +712,24 @@ export function UndoNotice({
   return (
     <NoticePlace inline={inline} bare={!acts} dir={direction}>
       {acts ? (
-        <span>{children}</span>
+        <Box as="span" shrink>
+          {children}
+        </Box>
       ) : (
         <Row as="span" align="center" className="min-h-control-timeline">
           {children}
         </Row>
       )}
       {acts && (
-        <button type="button" className={noticeAction()} onClick={onAction}>
+        <Row
+          inline
+          rigid
+          align="center"
+          justify="center"
+          as={<button type="button" className={noticeAction()} onClick={onAction} />}
+        >
           {action}
-        </button>
+        </Row>
       )}
     </NoticePlace>
   );

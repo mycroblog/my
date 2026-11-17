@@ -130,7 +130,7 @@ for (const locale of ["en", "ar-XB"] as const)
 
 // Defect: at the minimum width the notice is 184 px wide in a page that leaves it 288, so its sentence stands on four
 // lines 96 px wide and the two words of its action, "Try again", on two.
-test.fail("a notice's short action keeps its words on one line at the minimum width", async ({ page, open }) => {
+test("a notice's short action keeps its words on one line at the minimum width", async ({ page, open }) => {
   await open("design-system-composer--notice-with-action");
   const action = page.getByRole("status").getByRole("button", { name: "Try again", exact: true });
   await expect(action).toBeVisible();
