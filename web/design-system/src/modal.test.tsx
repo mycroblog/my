@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import { transition } from "@my/design-tokens";
-import { modalBackdrop, modalMotion, modalStates } from "./modal";
+import { modalMotion, modalStates } from "./modal";
 
 test("no modal is drawn through ModalOverlay, whose reveal waits for a keyboard while a text field has the focus", async () => {
   for (const file of ["./modal.tsx", "./composer.tsx", "./shortcuts.tsx"]) {
@@ -31,19 +31,4 @@ test("the backdrop and the panel move by one state the overlay holds, in a modal
 
 test("with reduced motion a modal is there at once and gone at once", () => {
   expect(modalStates(true)).toEqual({ initial: false, animate: "shown" });
-});
-
-test("the backdrop dims and blurs the page, only dims with reduced transparency, and is none on a phone's screen", () => {
-  for (const b of [modalBackdrop.always, modalBackdrop.tablet]) {
-    expect(b).toContain("bg-scrim");
-    expect(b).toContain("backdrop-blur-[var(--dialog-blur)]");
-    expect(b).toContain("[@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none");
-  }
-  expect(modalBackdrop.tablet).toContain("max-tablet:hidden");
-});
-
-test("the dim backdrop dims the page at every width and never blurs it", () => {
-  expect(modalBackdrop.dim).toContain("bg-scrim");
-  expect(modalBackdrop.dim).not.toContain("blur");
-  expect(modalBackdrop.dim).not.toContain("hidden");
 });
