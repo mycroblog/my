@@ -304,9 +304,18 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
  * The reader's notifications; `instance` is the server's name, which the notices of the server say. `gone` says over
  * them that a notification a link led to is no longer there (dismissed, or never the reader's).
  */
-export function Notifications({ instance, gone = false }: { instance: string; gone?: boolean }) {
+export function Notifications({
+  instance,
+  gone = false,
+  defaultFilter = "all",
+}: {
+  instance: string;
+  gone?: boolean;
+  /** The tab shown at first, which the reader changes; all of them by default. */
+  defaultFilter?: NotificationFilter | undefined;
+}) {
   const { t } = stringsIn(useLocale().locale);
-  const [filter, setFilter] = useState<NotificationFilter>("all");
+  const [filter, setFilter] = useState<NotificationFilter>(defaultFilter);
   const reads = useNotificationReads();
   return (
     <ScreenStack>

@@ -3,14 +3,14 @@
 // The composer's text in its editor, in the reader's language (the toolbar's locale; ar-XB reads right-to-left), with
 // the suggestions for the word at the caret, under its line across the text's width: accounts for `@` (followed
 // first), hashtags for `#` (by their use), emoji for `:` (custom, then Unicode), the first active; while they are
-// asked for, and when none came. The marks of what the server will read are the app's nodes, in its composer stories.
-// The words are placeholders.
+// asked for, and when none came; and the notice that follows a write, in the flow, with its action. The marks of what
+// the server will read are the app's nodes, in its composer stories. The words are placeholders.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 import { Button } from "./button";
-import { CharCount, ComposerFrame, ComposerText } from "./composer";
+import { CharCount, ComposerFrame, ComposerText, UndoNotice } from "./composer";
 import { PlainTextEditor } from "./editor";
 import { sampleCustomEmoji } from "./emoji.samples";
 import { IconButton } from "./icon-button";
@@ -40,6 +40,8 @@ const words = {
     list: "Suggestions",
     loading: "Loading…",
     empty: "No suggestions",
+    failed: "The notification could not be dismissed.",
+    retry: "Try again",
     uses: (n: number) => `${n.toLocaleString("en")} posts`,
   },
   ja: {
@@ -58,6 +60,8 @@ const words = {
     list: "候補",
     loading: "読み込み中…",
     empty: "候補はありません",
+    failed: "通知を消せませんでした。",
+    retry: "もう一度試す",
     uses: (n: number) => `${n.toLocaleString("ja")} 件`,
   },
   ar: {
@@ -76,6 +80,8 @@ const words = {
     list: "اقتراحات",
     loading: "جارٍ التحميل…",
     empty: "لا توجد اقتراحات",
+    failed: "تعذّر تجاهل الإشعار.",
+    retry: "حاول مرة أخرى",
     uses: (n: number) => `${n.toLocaleString("ar")} منشور`,
   },
 } as const;
@@ -226,6 +232,18 @@ function Ended({ text }: { text: keyof typeof against }) {
   );
 }
 
+/** A notice in the flow, with its action: a write that failed, and Try again. */
+function Noticed() {
+  const w = words[useLang()];
+  return (
+    <div style={{ padding: "1rem" }}>
+      <UndoNotice inline action={w.retry} onAction={() => undefined}>
+        {w.failed}
+      </UndoNotice>
+    </div>
+  );
+}
+
 // Tagged `themes`: the story tests run each in dark too.
 const meta = {
   title: "Composer",
@@ -250,3 +268,5 @@ export const EndedRightToLeftText: Story = { render: () => <Ended text="rtl" /> 
 export const Loading: Story = { render: () => <Suggesting kind="accounts" status="loading" /> };
 /** None came. */
 export const Empty: Story = { render: () => <Suggesting kind="hashtags" status="empty" /> };
+/** The notice at the bottom of the page after a write that failed: what failed, and its action. */
+export const NoticeWithAction: Story = { render: () => <Noticed /> };
