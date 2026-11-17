@@ -244,7 +244,7 @@ function Noticed() {
   );
 }
 
-// Tagged `themes`: the story tests run each in dark too.
+// Tagged `themes`: the check of every story shows each in dark too.
 const meta = {
   title: "Composer",
   tags: ["themes"],

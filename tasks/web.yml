@@ -84,16 +84,6 @@ tasks:
     cmds:
       - bun --bun storybook build -o dist --quiet
 
-  # The story tests (ADR-0110 §9): Storybook's Vitest addon in browser mode (web/storybook/vitest.config.ts). Chromium
-  # comes from `bun --bun playwright install chromium` in web/storybook. Not a part of `check`: CI runs it when the
-  # stories context changes.
-  stories-test:
-    desc: Test every story of the Storybook host in Chromium at 320 px, in en and right-to-left in ar-XB, with axe and for sideways scrolling (CLI_ARGS go to Vitest)
-    deps: [install, ":i18n:compile", routes]
-    dir: web/storybook
-    cmds:
-      - bun --bun vitest run {{.CLI_ARGS}}
-
   # The layout tests (ADR-0171 §1, §4): what only a layout engine decides of the design system's layout parts and
   # overlays, on the stories of the built catalog, with the E2E tests' runner and no server
   # (web/e2e/catalog/playwright.config.ts, the project `layout`). Chromium comes from

@@ -2,7 +2,7 @@
 
 // The test of the catalog's specs: Playwright's, with the served catalog as its base URL, and `open`, which shows one
 // story as the test asks for it: at a viewport's width, in a locale (ar-XB reads from right to left) and a theme. A
-// story pins none of them (ADR-0171 §4), and a test never depends on a story's `play`.
+// story pins none of them and does nothing by itself (ADR-0171 §4).
 
 import { breakpoint, rootPx } from "@my/design-tokens";
 import { expect, test as base, type Page } from "@playwright/test";

@@ -25,7 +25,7 @@ const sample = {
   },
 } as const;
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Disclosure",
   tags: ["themes"],

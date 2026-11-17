@@ -10,7 +10,7 @@ import { Preview, type PreviewState } from "./preview";
 
 type Args = { icon: IconName; label: string; count: number; pressed: boolean; shown: "none" | PreviewState };
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Icon button",
   tags: ["themes"],

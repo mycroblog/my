@@ -18,7 +18,7 @@ function Column({ children }: { children: ReactNode }) {
   return <div style={{ maxWidth: rem(600), paddingInline: rem(16) }}>{children}</div>;
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Banner head", tags: ["themes"] } satisfies Meta;
 export default meta;
 

@@ -481,7 +481,7 @@ function Article({ state }: { state: State }) {
   );
 }
 
-// Tagged `themes`: the story tests run each in dark too.
+// Tagged `themes`: the check of every story shows each in dark too.
 const meta = {
   title: "Article editor",
   tags: ["themes"],

@@ -24,7 +24,6 @@ import { createClient } from "@mycroblog/mykit";
 import type { StoryContext } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
 import { addons } from "storybook/preview-api";
-import { waitFor } from "storybook/test";
 import { AppRoot } from "./app";
 import { createAppRouter } from "./router";
 
@@ -260,84 +259,12 @@ type ScreenParameters = { fake?: Fake; stream?: Stream };
 
 const fakeOf = (parameters: ScreenParameters): Fake => parameters.fake ?? { at: "/" };
 
-/**
- * Whether the screen in the canvas shows its state: what the fake server's first answers render. A first page that
- * fails once shows its failure, with the retry.
- */
-function shows(
-  canvas: HTMLElement,
-  { at, state = "normal", failFirst = false, signedOut = false, server = {}, viewer }: Fake,
-): boolean {
-  const has = (selector: string) => canvas.querySelector(selector) !== null;
-  const settled = !has('[aria-busy="true"]');
-  if (failFirst) return has('[role="alert"]');
-  // A page in place of every screen shows its title.
-  if (server.maintenance === true) return has("h1:not([data-frame-heading])");
-  // A closed server's page, with the state of the reader's export once it is read.
-  if (server.closure === "closed" && !signedOut)
-    return (
-      has("h1:not([data-frame-heading])") &&
-      (server.dataExport === undefined || server.dataExport === "none" || has('p[role="status"]'))
-    );
-  // An account's lists of follows that fail show it with the retry; those that never answer, their tabs over a busy list.
-  if (server.followsLists === "fails") return has('main [role="alert"]');
-  if (server.followsLists === "waits") return has('main [role="tab"]') && has('main [aria-busy="true"]');
-  // A server gone down shows its notice over the screen.
-  if (server.down !== undefined) return has('[role="region"]');
-  // A visitor at / of a server not of one person: the landing page, with its sign-in once the instance answered.
-  if (signedOut && at === "/" && server.singleUser !== true) return has('main a[href="/login"]');
-  // A visitor reads something (a public timeline, the operator's profile), or is asked to sign in.
-  if (signedOut) return settled && (has("article") || has('p[role="status"]'));
-  // The article editor, a screen of its own: its heading, and the article's preview, or why the reader may not write.
-  if (at.startsWith("article-") || at.startsWith("/articles/"))
-    return settled && has("h1[data-frame-heading]") && (has("article") || server.articles?.authoring === "permission");
-  // The search before anything is written: its field, and the suggestions under it where the server suggests anyone.
-  if (at === "/search" && (state === "normal" || state === "empty")) return settled && has('main input[type="search"]');
-  switch (state) {
-    case "loading":
-      // The shell, with the screen's heading and its own state of waiting (a busy list, or its notice that it loads):
-      // never a blank page.
-      return has("nav") && has("h1[data-frame-heading]") && has('main [aria-busy="true"], main p[role="status"]');
-    case "error":
-      return has('[role="alert"]');
-    case "empty":
-      return settled && has('article, p[role="status"]');
-    case "folded":
-      // Both folds, each a text button in the entry before what it holds.
-      return settled && canvas.querySelectorAll("article > p > button").length >= 2;
-    default:
-      // A list of who reacted shows a row per account, each a link to its profile; the reader's lists, a row per list;
-      // a screen of posts, its posts. An account's list of follows, the follow requests and a list's members show their
-      // rows, or a line in their place.
-      if (at === "/lists" || at.startsWith("/lists?")) return settled && has('main a[href^="/lists/"]');
-      // The held-back notifications, a row per account that sent them, or a line in their place.
-      if (at === "/notifications/requests")
-        return settled && has('main a[href^="/notifications/requests/"], main p[role="status"]');
-      // One account's, its notifications, or a line that it holds none.
-      if (at.startsWith("held:")) return settled && has('main article, main p[role="status"]');
-      // Search shows what it found by kind, or one line of none; finding people, its rows or a line.
-      if (at.startsWith("/search?"))
-        return settled && has('main section, main [role="tablist"], main p[role="status"]');
-      if (at === "/people") return settled && has('main a[href^="/@"], main p[role="status"]');
-      // The home of a reader who follows no one shows the suggestions in place of posts.
-      if (at === "/" && viewer === "quickdeals") return settled && has('main a[href^="/@"], main p[role="status"]');
-      if (/\/follow(?:ers|ing|_requests)$/.test(at) || at.startsWith("members:"))
-        return settled && has('main a[href^="/@"], main p[role="status"]');
-      // A list the server has no longer says so, and so does the profile of an account that is not there.
-      if (at === "/lists/gone") return has('main p[role="status"]');
-      if (at === "/@nao") return settled && has('main p[role="status"]');
-      return settled && has(at.startsWith("reactions:") ? 'main a[href^="/@"]' : "article");
-  }
-}
-
 /** The fake server's screen and state of a story, for its meta or the story itself: `screen({ at: "/" })`. */
 export const screen = (fake: Fake, stream?: Stream) => ({ fake, ...(stream ? { stream } : {}) });
 
 /**
- * What every screen's story shares: the whole app, edge to edge, which places its own shortcuts; a new app for each
- * story; and a play that waits until the screen shows its state (its posts, its notice of none, its failure), so that
- * the story tests check the screen (axe, sideways scrolling) as the reader sees it. Tagged `themes`, the story tests
- * run it in dark too.
+ * What every screen's story shares: the whole app, edge to edge, which places its own shortcuts, and a new app for
+ * each story. Tagged `themes`, the check of every story shows it in dark too.
  */
 export const screenMeta = {
   tags: ["themes"],
@@ -345,16 +272,6 @@ export const screenMeta = {
   render: (_: unknown, { id, parameters }: StoryContext) => {
     const p = parameters as ScreenParameters;
     return <StoryApp key={id} {...fakeOf(p)} stream={p.stream} />;
-  },
-  play: async ({ canvasElement, parameters }: StoryContext) => {
-    const fake = fakeOf(parameters);
-    await waitFor(
-      () => {
-        if (!shows(canvasElement, fake))
-          throw new Error(`the screen does not show its ${fake.state ?? "normal"} state yet`);
-      },
-      { timeout: 5000 },
-    );
   },
 };
 

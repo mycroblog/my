@@ -25,7 +25,6 @@ import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake"
 import { createClient } from "@mycroblog/mykit";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { waitFor } from "storybook/test";
 import { AppRoot } from "./app";
 import { createAppRouter } from "./router";
 import { useNarrowViewport } from "./shell/viewport";
@@ -378,35 +377,6 @@ function Flow() {
   return <AppRoot router={router} visitor={data} />;
 }
 
-/**
- * Waits until the composer shows what the fake server answers: its text field, and the post a reply or a quote is
- * of; so that the story tests check it as the reader sees it, not halfway through the entrance of what a state opens
- * (axe reads a form that fades in as too faint), and a play that presses something in the composer starts from there.
- */
-const settle = async ({ canvasElement, parameters }: StoryContext) => {
-  const state = composeOf(parameters);
-  // The handle of the author of the post a reply or a quote is of (sam-bread, layla-jokes, layla-asks), which shows
-  // once it came.
-  const of = state === "reply" ? "@sam" : state === "quote" || state === "reply-waits" ? "@layla" : "";
-  // A state whose chunk was not loaded shows its alert in the text field's place.
-  const field = state.startsWith("unloaded-") ? '[role="alert"]' : '[role="textbox"][aria-multiline="true"]';
-  await waitFor(
-    () => {
-      const ready = canvasElement.querySelector(field) !== null;
-      if (!ready || !canvasElement.textContent.includes(of))
-        throw new Error(`the composer does not show its ${state} state yet`);
-      // A state with a menu or the schedule's form open (a sheet on a phone) waits until it has risen into place.
-      const menu = canvasElement.ownerDocument.querySelector('[role="menu"], [data-popup]');
-      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error("the menu is still rising");
-      }
-    },
-    { timeout: 5000 },
-  );
-};
-
 /** The state of the composer a story shows, from its parameters. */
 const composeOf = (parameters: StoryContext["parameters"]): StateId =>
   ((parameters as { compose?: StateId }).compose ?? "empty") satisfies StateId;
@@ -414,18 +384,8 @@ const composeOf = (parameters: StoryContext["parameters"]): StateId =>
 /** A story of the composer in `id`. */
 const shows = (id: StateId): Story => ({ parameters: { compose: id } });
 
-/** Waits until the app shows the home timeline's posts, in place of the composer's own wait. */
-const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-  await waitFor(
-    () => {
-      if (canvasElement.querySelector("article") === null) throw new Error("the home timeline shows no post yet");
-    },
-    { timeout: 5000 },
-  );
-};
-
 // The composer's state is the story's (`parameters.compose`); the one knob is the text written in it, which replaces
-// the state's own while given. Tagged `themes`, the story tests run each in dark too. The suggestions under the caret
+// the state's own while given. Tagged `themes`, the check of every story shows each in dark too. The suggestions under the caret
 // and the emoji picker open are the parts' own (the design system's Composer and Emoji picker).
 const meta = {
   title: "Compose",
@@ -433,7 +393,6 @@ const meta = {
   parameters: { screen: true, layout: "fullscreen" },
   args: { text: "" },
   argTypes: { text: { control: "text", description: "The text written in the composer, in place of the state's" } },
-  play: settle,
   render: ({ text }, { id, parameters }) => <Specimen key={id} id={composeOf(parameters)} text={text} />,
 } satisfies Meta<{ text: string }>;
 export default meta;
@@ -501,4 +460,4 @@ export const PostFormNotLoaded: Story = shows("unloaded-composer");
  */
 export const EditorNotLoaded: Story = shows("unloaded-editor");
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */
-export const LiveFlow: Story = { render: () => <Flow />, play: settleFlow };
+export const LiveFlow: Story = { render: () => <Flow /> };

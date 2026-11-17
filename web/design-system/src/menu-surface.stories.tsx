@@ -637,7 +637,7 @@ function Live({ kind }: { kind: "actions" | "values" | "submenu" }) {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Menu everywhere", tags: ["themes"], parameters: { layout: "fullscreen" } } satisfies Meta;
 export default meta;
 

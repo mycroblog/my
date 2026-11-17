@@ -63,7 +63,7 @@ const itemsOf = ({ count, kinds }: Args) => {
   return [first, ...samples.slice(1)].filter((m) => m !== undefined).slice(0, count);
 };
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Media",
   tags: ["themes"],

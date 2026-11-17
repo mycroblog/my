@@ -458,7 +458,7 @@ const postOf = (a: Args): TimelinePost => {
 // A story of one state shows a fixed sample, which the Controls do not change.
 const fixed = { parameters: { controls: { disable: true } } };
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Post",
   tags: ["themes"],

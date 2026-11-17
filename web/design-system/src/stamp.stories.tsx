@@ -8,7 +8,7 @@ import { Stamp } from "./entry";
 import { Row } from "./layout";
 import { ago, images } from "./samples";
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Stamp", tags: ["themes"] } satisfies Meta;
 export default meta;
 

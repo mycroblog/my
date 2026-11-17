@@ -31,7 +31,7 @@ type Age = keyof typeof ages;
 
 type Args = { name: string; visibility: Visibility; age: Age; locale: "en" | "ja" };
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Name line",
   tags: ["themes"],

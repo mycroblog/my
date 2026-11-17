@@ -18,7 +18,7 @@ const people = [
 const faces = (count: number) =>
   people.slice(0, count).map((p) => <Avatar key={p.name} name={p.name} src={p.src} size="row" decorative />);
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Faces", tags: ["themes"] } satisfies Meta;
 export default meta;
 
