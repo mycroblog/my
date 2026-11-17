@@ -90,6 +90,7 @@ function serverEnv(dir: string, port: number): Record<string, string> {
     ...(process.env["SPIKE_SQLITE_CONNS"] ? { SPIKE_SQLITE_CONNS: process.env["SPIKE_SQLITE_CONNS"] } : {}),
     // A local PostgreSQL that trusts every connection (docker run -e POSTGRES_HOST_AUTH_METHOD=trust), for the
     // comparison of the spike.
+    ...(process.env["SPIKE_KV"] ? { MY_KV: process.env["SPIKE_KV"] } : {}),
     ...(process.env["SPIKE_PG"]
       ? { MY_DATABASE: "postgres", MY_DATABASE_URL: "postgres://my@127.0.0.1:55432/my?sslmode=disable" }
       : {}),
