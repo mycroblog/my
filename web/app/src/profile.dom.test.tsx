@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A person reads another person's profile. The reader is Marco, who follows Sam and not Yuki. That a follow stays is
-// the E2E tests' (web/e2e/specs/profile.spec.ts).
+// A person reads another person's profile. The reader is Marco, who follows Sam and not Yuki. What the profile shows
+// is the feature's (profile.dom.test.tsx); that a follow stays is the E2E tests' (web/e2e/specs/profile.spec.ts).
 
 import { expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
@@ -36,44 +36,13 @@ async function openSam({ user }: TestApp) {
   await user.click(within(post).getByRole("link", { name: sam }));
 }
 
-test("a profile opened from a post in the home timeline shows its author at once, and the rest after", async () => {
-  const app = await home();
-  await findPost(sam, "Day 3 of the sourdough");
-  // Every read of the profile waits: of the account itself, by its handle and by its ID, and of the rest.
-  const rest = app.fake.script("GET /accounts/relationships", { hold: "request" });
-  const held = [
-    app.fake.script("GET /accounts/lookup", { hold: "request" }),
-    app.fake.script("GET /accounts/{id}", { hold: "request" }),
-    app.fake.script("GET /accounts/{id}/statuses", { hold: "request" }),
-    rest,
-  ];
-
-  await openSam(app);
-
-  expect(await heading(sam)).toBeDefined();
-  expect(card(sam).getByText(noteOf("sam"))).toBeDefined();
-  expect(card(sam).getByRole("term").textContent).toContain("Blog");
-  // Shown from what the post said of its author, with no answer yet: the rest is still asked for.
-  await rest.arrived();
-  expect(card(sam).queryByRole("button", { name: "Following" })).toBeNull();
-  for (const read of held) read.release();
-  expect(await card(sam).findByRole("button", { name: "Following" })).toBeDefined();
-  const posts = await main().findByRole("feed", { name: "Posts of the account" });
-  expect(await within(posts).findByText(/^Day 3 of the sourdough/)).toBeDefined();
-});
-
-test("another person's profile shows their note, fields and posts", async () => {
+test("the author's name on a post in the home timeline leads to their profile, at their address", async () => {
   const app = await home();
 
   await openSam(app);
 
   expect(await heading(sam)).toBeDefined();
   expect(app.path()).toBe("/@sam");
-  expect(card(sam).getByText(noteOf("sam"))).toBeDefined();
-  expect(card(sam).getByRole("term").textContent).toContain("Blog");
-  expect(await card(sam).findByRole("button", { name: "Following" })).toBeDefined();
-  const posts = await main().findByRole("feed", { name: "Posts of the account" });
-  expect(await within(posts).findByText(/^Day 3 of the sourdough/)).toBeDefined();
 });
 
 test("the profile of a person who writes in Japanese keeps the reader's language", async () => {

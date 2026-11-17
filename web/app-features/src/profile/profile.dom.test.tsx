@@ -86,15 +86,23 @@ test("the profile of a post's author shows at once from the post's copy, and the
   // The home timeline was fetched a minute ago: its copy of hana is stale, and others followed hana since.
   data.queryClient.setQueryData(home, (pages) => pages, { updatedAt: Date.now() - 60_000 });
   fake.script("GET /accounts/{id}", { change: (account) => ({ ...account, followers_count: 30 }) });
+  const relationship = fake.script("GET /accounts/relationships", { hold: "request" });
   requests.length = 0;
 
   await loadProfile(data, "hana");
   expect(requests).toEqual(["GET /accounts/verify_credentials"]);
   renderFeature(data, <Profile acct="hana" />);
 
-  // No wait: the head is the post's copy of the account.
-  expect(screen.getByRole("region", { name: "Hana 花" })).not.toBeNull();
+  // No wait: the head is the post's copy of the account, with its note and its fields; what the reader's
+  // relationship adds is still asked for.
+  const head = within(screen.getByRole("region", { name: "Hana 花" }));
+  expect(head.getByText(scenario.people.find((p) => p.username === "hana")?.note ?? "")).not.toBeNull();
+  expect(head.getAllByRole("term").map((term) => term.textContent)).toContain("役割");
   expect(count("Followers")).toBe("1");
+  await relationship.arrived();
+  expect(head.queryAllByRole("button", { name: "Following" })).toHaveLength(0);
+  relationship.release();
+  expect(await head.findByRole("button", { name: "Following" })).not.toBeNull();
   await waitFor(() => {
     if (count("Followers") !== "30") throw new Error(`the head counts ${count("Followers")} followers`);
   });
