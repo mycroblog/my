@@ -320,3 +320,25 @@ test("a search that matches no emoji says so in the grid and to assistive techno
   const grid = screen.getByRole("grid", { name: "Emoji" });
   expect(within(grid).getByRole("gridcell").textContent).toBe("No emoji match “xylophone”. Try another word.");
 });
+
+test("ArrowDown from a row to a shorter one under a group's heading lands on its last emoji, and ArrowUp returns over the heading", async () => {
+  const user = userEvent.setup();
+  picker();
+  const columns = Number(screen.getByRole("grid", { name: "Emoji" }).getAttribute("aria-colcount"));
+  // People: twenty hands in rows of as many columns, then the group Blobs, a row of one emoji.
+  const lastRow = Math.floor(19 / columns) * columns;
+  expect(columns).toBeGreaterThan(1);
+  expect(lastRow + 1).toBeLessThan(20);
+  for (let stop = 0; stop < 4; stop++) await user.tab();
+  await user.keyboard("{ArrowRight}{Enter}");
+  expect(document.activeElement).toBe(cell("hand 0"));
+  for (let row = 0; row < lastRow / columns; row++) await user.keyboard("{ArrowDown}");
+  await user.keyboard("{ArrowRight}");
+  expect(document.activeElement).toBe(cell(`hand ${String(lastRow + 1)}`));
+
+  await user.keyboard("{ArrowDown}");
+  expect(document.activeElement).toBe(cell(":blobcat:"));
+
+  await user.keyboard("{ArrowUp}");
+  expect(document.activeElement).toBe(cell(`hand ${String(lastRow)}`));
+});
