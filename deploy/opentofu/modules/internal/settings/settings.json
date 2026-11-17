@@ -811,6 +811,10 @@
     "env": "MY_PLUGIN_TRANSLATOR_TOKEN",
     "secret": true
   },
+  "pprof_listen": {
+    "env": "MY_PPROF_LISTEN",
+    "secret": false
+  },
   "profile": {
     "env": "MY_PROFILE",
     "secret": false

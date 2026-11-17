@@ -37,6 +37,8 @@ type ServeOptions struct {
 	Listener net.Listener
 	// MetricsListener, when set, is used instead of listening on metrics_listen.
 	MetricsListener net.Listener
+	// PprofListener, when set, is used instead of listening on pprof_listen.
+	PprofListener net.Listener
 	// HTTPListener, when set, is used instead of listening on tls_http_listen, the plain HTTP
 	// port that redirects to https with tls other than off.
 	HTTPListener net.Listener
@@ -59,6 +61,7 @@ type ServeOptions struct {
 //     tls other than off, the web and all roles serve HTTPS there instead, and plain HTTP on
 //     tls_http_listen that redirects to https;
 //   - with metrics_exporter = prometheus, every role serves GET /metrics on metrics_listen;
+//   - with pprof_listen set, every role serves the Go runtime's profiles there;
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
 //     queue = cloudtasks or sqs serve the endpoints that run the jobs and tick the periodic ones;
 //   - every role first ensures the built-in roles, giving admin every permission.
@@ -127,7 +130,16 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		tlsLn.close()
 		return err
 	}
-	serveErr := make(chan error, 3)
+	pprofSrv, err := a.servePprof(ctx, opts.PprofListener)
+	if err != nil {
+		_ = ln.Close()
+		tlsLn.close()
+		if metricsSrv != nil {
+			_ = metricsSrv.ln.Close()
+		}
+		return err
+	}
+	serveErr := make(chan error, 4)
 	// The panic of a goroutine of kernel.Go stops the server as a failure (ADR-0103 §5).
 	fatal := make(chan error, 1)
 	defer a.ErrorReporter.setStop(func(cause error) {
@@ -174,6 +186,13 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		kernel.Go(ctx, "http.serve_metrics", a.ErrorReporter, func(context.Context) {
 			if err := metricsSrv.srv.Serve(metricsSrv.ln); !errors.Is(err, http.ErrServerClosed) {
 				serveErr <- fmt.Errorf("metrics: %w", err)
+			}
+		})
+	}
+	if pprofSrv != nil {
+		kernel.Go(ctx, "http.serve_pprof", a.ErrorReporter, func(context.Context) {
+			if err := pprofSrv.srv.Serve(pprofSrv.ln); !errors.Is(err, http.ErrServerClosed) {
+				serveErr <- fmt.Errorf("pprof: %w", err)
 			}
 		})
 	}
@@ -241,6 +260,11 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		// A scrape is short; the metrics stay available while the requests finish.
 		_ = metricsSrv.srv.Shutdown(graceCtx)
 	}
+	if pprofSrv != nil {
+		// The profiles stay available while the requests finish, to show what a shutdown waits
+		// for; a profile still being taken is cut rather than awaited.
+		_ = pprofSrv.srv.Close()
+	}
 	jobsDone := make(chan struct{})
 	kernel.Go(graceCtx, "serve.wait_jobs", a.ErrorReporter, func(context.Context) { jobs.Wait(); close(jobsDone) })
 	select {
@@ -305,15 +329,15 @@ func (a *App) afterDomainsVerified(ctx context.Context) {
 	}
 }
 
-// metricsServer is the listener of the Prometheus scrape.
-type metricsServer struct {
+// sideServer is a listener beside the public one: the Prometheus scrape, the profiles.
+type sideServer struct {
 	srv *http.Server
 	ln  net.Listener
 }
 
 // serveMetrics listens on metrics_listen (or ln) for GET /metrics when the App has a scrape, and
 // returns nil otherwise. The metrics are never served on the public listener (ADR-0055 §2).
-func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*metricsServer, error) {
+func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*sideServer, error) {
 	if a.metricsHandler == nil {
 		if ln != nil {
 			_ = ln.Close()
@@ -329,7 +353,7 @@ func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*metricsServer
 	mux := http.NewServeMux()
 	mux.Handle("GET "+PathMetrics, a.metricsHandler)
 	a.Logger.InfoContext(ctx, "serving metrics", slog.String("addr", ln.Addr().String()))
-	return &metricsServer{
+	return &sideServer{
 		srv: &http.Server{
 			Handler: mux, ReadHeaderTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second,
 			ErrorLog: slog.NewLogLogger(a.Logger.Handler(), slog.LevelWarn),

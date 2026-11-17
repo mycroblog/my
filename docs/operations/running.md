@@ -537,6 +537,25 @@ To send to X-Ray, run the **AWS Distro for OpenTelemetry (ADOT) Collector** as a
 - Give the Collector a share of the task: `mycroblog-aws` gives it 32 CPU units and 128 MiB, and the server the rest, with `GOMEMLIMIT` at 90% of that rest. Make the server's container depend on the Collector's start, so that the Collector stops after the server and receives its last spans.
 - The cost is the sidecar's share of the task's resources, and the number of traces X-Ray records (the first 100,000 per month are free). The default `traces_sample_ratio` of 0.01 records about 30,000 traces a month for 100,000 requests a day.
 
+## Profiles
+
+The [system metrics](#system-metrics) say how much memory and CPU a process uses; a profile of the Go runtime says what uses it.
+`pprof_listen` names the address of a listener that serves the profiles under `/debug/pprof/`, for every `role`. It is empty by default, which opens no listener.
+
+```sh
+MY_PPROF_LISTEN=127.0.0.1:6060 my serve
+
+go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap   # what holds the heap now
+go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
+curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
+```
+
+The listener has no authentication, a profile shows the internals of the process, and taking one costs CPU: keep it on loopback and reach it through a tunnel (`ssh -L 6060:127.0.0.1:6060 <host>`, `kubectl port-forward`), and unset it when you are done.
+The heap profile covers the Go heap only. The resident memory of the process also holds the pages of the binary that were read, the stacks, and the runtime's own structures; the memory statistics give those.
+The mutex and block profiles are empty: the server does not sample them.
+
 ## Stop the server
 
 On SIGTERM or SIGINT the server shuts down gracefully.

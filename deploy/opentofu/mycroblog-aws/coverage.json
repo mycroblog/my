@@ -105,6 +105,7 @@
     "origin_secret_previous",
     "payments*",
     "plugin_*",
+    "pprof_listen",
     "push_allowed_destinations",
     "relay_max_activities_per_hour",
     "remote_custom_emoji_max_bytes",

@@ -239,6 +239,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`errors_exporter`](#errors_exporter) | `MY_ERRORS_EXPORTER` | `none` | no | no |
 | [`errors_sentry_dsn`](#errors_sentry_dsn) | `MY_ERRORS_SENTRY_DSN` | none | when `errors_exporter` is `sentry` | yes |
 | [`errors_environment`](#errors_environment) | `MY_ERRORS_ENVIRONMENT` | the value of `profile` | no | no |
+| [`pprof_listen`](#pprof_listen) | `MY_PPROF_LISTEN` | none | no | no |
 | [`plugin_translator_address`](#plugin_translator_address) | `MY_PLUGIN_TRANSLATOR_ADDRESS` | none | no | no |
 | [`plugin_translator_protocol`](#plugin_translator_protocol) | `MY_PLUGIN_TRANSLATOR_PROTOCOL` | `json` | no | no |
 | [`plugin_translator_token`](#plugin_translator_token) | `MY_PLUGIN_TRANSLATOR_TOKEN` | none | no | yes |
@@ -2073,6 +2074,14 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 - Environment variable: `MY_ERRORS_ENVIRONMENT`
 - Default: the value of `profile`
+- Required: no
+
+### `pprof_listen`
+
+TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel.
+
+- Environment variable: `MY_PPROF_LISTEN`
+- Default: none
 - Required: no
 
 ### `plugin_translator_address`
