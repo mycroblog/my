@@ -2,9 +2,11 @@
 
 // The app for the component tests of its routes (ADR-0171 §2, §5): the router and the shell, signed in to a fake API
 // of its own (@my/e2e/fake) as a person of its seed, or as a visitor, in a locale, on the DOM the test file's kind
-// registered. A test finds what the screen shows by role and name, presses and types as a reader does, scripts the
-// fake's answers and pushes its stream's events, and reads where the app is, the document's title and the focus.
+// registered, with the stream of a session as the app's entry starts it. A test finds what the screen shows by role and
+// name, presses and types as a reader does, scripts the fake's answers and pushes its stream's events, and reads where
+// the app is, the document's title and the focus.
 
+import { startStream } from "@my/app-data";
 import { I18nProvider } from "@my/design-system";
 import { fakeHost, fakeOrigin, type FakeOptions } from "@my/e2e/fake";
 import { act, render, waitFor } from "@testing-library/react";
@@ -15,7 +17,14 @@ import { createAppRouter } from "../router";
 import { fakeApp, type FakeApp } from "./server";
 
 /** Who reads, on what server, in what locale: the fake's options, and the reader's locale (`en` by default). */
-export type AppOptions = FakeOptions & { locale?: string };
+export type AppOptions = FakeOptions & {
+  locale?: string;
+  /**
+   * The server to render on, in place of a new one of the fake's options: one a test made with `fakeApp(options)` to
+   * script its fake before the app's first request.
+   */
+  on?: FakeApp;
+};
 
 /** The app a test rendered: its fake API (to script and to push events), its data, and what a reader does and reads. */
 export type TestApp = Pick<FakeApp, "fake" | "data"> & {
@@ -33,7 +42,7 @@ export type TestApp = Pick<FakeApp, "fake" | "data"> & {
   back: () => Promise<void>;
 };
 
-/** What ends with the test: the watches of the servers of the apps it rendered. */
+/** What ends with the test: the streams and the watches of the servers of the apps it rendered. */
 const stops: (() => void)[] = [];
 
 afterEach(() => {
@@ -44,13 +53,24 @@ afterEach(() => {
  * Renders the app at the path `at`, on a fake API of its own, and returns once the first screen is in place. The
  * reader is the fake's (`viewer`, yuki by default), or a visitor (`visitor: true`).
  */
-export async function renderApp(at: string, { locale = "en", ...options }: AppOptions = {}): Promise<TestApp> {
-  const { fake, watch, data } = fakeApp(options);
+export async function renderApp(at: string, { locale = "en", on, ...options }: AppOptions = {}): Promise<TestApp> {
+  const { fake, watch, data, visitor } = on ?? fakeApp(options);
   stops.push(() => {
     watch.stop();
   });
+  // The fake's answers and its stream's events reach the app when they come, as a server's do, not inside an act()
+  // of the test: React is told so until the test ends, and the test waits for what it asserts (`findBy…`, `waitFor`).
+  const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const wrapped = environment.IS_REACT_ACT_ENVIRONMENT;
+  environment.IS_REACT_ACT_ENVIRONMENT = false;
+  stops.push(() => {
+    if (wrapped === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
+    else environment.IS_REACT_ACT_ENVIRONMENT = wrapped;
+  });
+  // A stream in this tab alone: a simulation has no other tab to share it with.
+  if (!visitor) stops.push(startStream(data, { tabs: null }));
   const router = createAppRouter({
-    data: options.visitor === true ? null : data,
+    data: visitor ? null : data,
     config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
     at,
   });

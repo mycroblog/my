@@ -13,8 +13,10 @@ export type FakeApp = {
   fake: FakeApi;
   /** The app's watch of the server, which every request goes through. */
   watch: ServerWatch;
-  /** The app's data on the fake, without retries. */
+  /** The app's data on the fake, without retries; a reader with a session has what their stream connects with. */
   data: AppData;
+  /** Whether the reader has no session (`visitor`). */
+  visitor: boolean;
 };
 
 /**
@@ -25,7 +27,14 @@ export function fakeApp(options: FakeOptions = {}): FakeApp {
   const fake = createFakeApi(options);
   const watch = watchServer({ server: fakeOrigin, fetch: fake.serve, followDevice: false });
   const api = createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: watch.fetch });
-  return { fake, watch, data: createAppData(api, undefined, watch) };
+  const visitor = options.visitor === true;
+  const data = createAppData(api, undefined, watch);
+  return {
+    fake,
+    watch,
+    data: visitor ? data : { ...data, connection: { server: fakeOrigin, fetch: watch.fetch } },
+    visitor,
+  };
 }
 
 /** The instance of a fake server of `options`, as the shell reads it. */
