@@ -63,7 +63,7 @@ test("an approved reply stays listed as approved and joins the cached thread of 
   expect(probe(data, useWaitingCount)).toBe(2);
 });
 
-// The answer's post counts the reply already, and the app's data counts it once more: the post shows 2.
+// The answer's post already counts the approved reply, and the app's data takes the count as it is.
 test("an approved reply counts once on the post", async () => {
   const { data, post, ids } = await cached();
   expect(parentShown(data, post)?.replies_count).toBe(0);
@@ -78,7 +78,7 @@ test("an approved boost stays listed as approved, and joins no thread", async ()
   expect(thread(data, post)).toEqual([]);
 });
 
-// The answer's post counts the boost already, and the app's data counts it once more: the post shows 2.
+// The answer's post already counts the approved boost, and the app's data takes the count as it is.
 test("an approved boost counts once on the post, at once", async () => {
   const { data, post, ids } = await cached();
   expect(parentShown(data, post)?.boosts_count).toBe(0);
