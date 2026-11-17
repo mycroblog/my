@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The emoji of a post and of the composer are drawn with the self-hosted Noto Color Emoji, and a page fetches the
-// WOFF2 of the splits of the emoji it shows and no other; a page with no emoji fetches none; the build serves the
-// font's license (ADR-0091 §8–§13). Chromium draws COLRv1, the first source of each face.
+// WOFF2 of the splits of the emoji it shows and no other; a page with no emoji fetches none (ADR-0091 §8–§13).
+// Chromium draws COLRv1, the first source of each face.
 
 import { instance } from "../src/scenario";
 import { EmojiFonts, Frame, homeTimeline, Landing, selfHostedNoto, SignIn } from "./screens";
@@ -51,11 +51,4 @@ test("an emoji written in the composer is drawn with the self-hosted Noto Color 
   await expect.poll(() => fonts.drawing("🍙")).toContainEqual(selfHostedNoto);
   await fonts.settled();
   expect(fonts.fetched).toEqual(["noto-emoji-colrv1-food-drink.woff2"]);
-});
-
-test("the build serves the license of the emoji font", async ({ request }) => {
-  const response = await request.get("/licenses/OFL.txt");
-  await expect(response).toBeOK();
-  const license = await response.text();
-  expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
 });

@@ -280,21 +280,3 @@ test("hashtags and mentions never break inside at 320 px, also right to left; a 
     .toBe(1);
   await expect.poll(() => composer.sideOf(url)).toEqual(["left"]);
 });
-
-test("the main chunk holds no Lexical: the editor is a chunk of its own", async ({ page, request, signIn, fresh }) => {
-  // The page's entry script and the modules it preloads, as the server sends them.
-  const html = await (await request.get("/")).text();
-  const sources = [...html.matchAll(/<(?:script[^>]*\ssrc|link[^>]*rel="modulepreload"[^>]*\shref)="([^"]+)"/g)].map(
-    (m) => m[1] ?? "",
-  );
-  expect(sources.length).toBeGreaterThan(0);
-  for (const source of sources) {
-    const body = await (await request.get(source)).text();
-    expect(body, source).not.toContain("data-lexical-editor");
-  }
-
-  // The marker is Lexical's own: the editor's root carries it once the composer opens.
-  await signIn(await fresh.person());
-  const composer = await new Frame(page).newPost();
-  await expect(composer.text).toHaveAttribute("data-lexical-editor", "true");
-});

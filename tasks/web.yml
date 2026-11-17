@@ -30,7 +30,7 @@ vars:
 tasks:
   check:
     desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/storybook in parallel, with the app's build
-    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, build, devtools-absent]
+    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, build, build-check]
 
   # The app's Vite dev server on http://localhost:5173, which passes /api, /oauth and /auth on to the server of
   # `docker compose up` (MY_SERVER=<origin> names another); `my serve -dev-vite-origin http://localhost:5173` loads the
@@ -179,14 +179,17 @@ tasks:
     cmds:
       - bun web/design-tokens/src/theme-tokens.ts
 
-  # The production build is the app's (web/app), which this builds apart from web:build's, into .tmp/, so that the two
-  # can run at once; it fails when the output contains @my/devtools, which only the Storybook host loads.
-  devtools-absent:
-    desc: Build web/app for production into .tmp/devtools-absent and fail if the build contains @my/devtools (ADR-0168 §3)
+  # The checks of what the production build holds (ADR-0171 §2), which need no browser and no server. The build is the
+  # app's (web/app), which this builds apart from web:build's, into .tmp/, so that the two can run at once. It fails
+  # when the output contains @my/devtools, which only the Storybook host loads, lacks the license notice of a font it
+  # ships, or holds the editor in a chunk that an entry loads with the page.
+  build-check:
+    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, or loads Lexical with an entry
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/devtools-absent --emptyOutDir
-      - bun web/devtools/src/absent.ts .tmp/devtools-absent
+      - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/build-check --emptyOutDir
+      - bun web/devtools/src/absent.ts .tmp/build-check
+      - bun web/app/scripts/build-check.ts .tmp/build-check
 
   # It skips while node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.

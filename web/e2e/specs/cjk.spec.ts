@@ -3,8 +3,8 @@
 // The text is drawn with the self-hosted Noto Sans for Latin, Greek and Cyrillic and Noto Sans CJK of its language's
 // region, and a page fetches the WOFF2 of the slices of the characters it shows and of no other region; a word in
 // letters that Noto Sans CJK lacks draws with one font; a theme's own font (--font-sans-override) draws the Latin it
-// has, while the emoji and the Han characters it lacks stay with the self-hosted fonts; the build serves the fonts'
-// licenses (ADR-0009 §5, ADR-0059 §2). Chromium reads which font drew a piece of text over the DevTools protocol.
+// has, while the emoji and the Han characters it lacks stay with the self-hosted fonts (ADR-0009 §5, ADR-0059 §2).
+// Chromium reads which font drew a piece of text over the DevTools protocol.
 
 import { instance } from "../src/scenario";
 import {
@@ -137,18 +137,4 @@ test("a theme's --font-sans-override draws the Latin, and the emoji and the Han 
   await expect
     .poll(async () => distinct(await fonts.drawing(post.text)))
     .toEqual(distinct([{ familyName: "Liberation Sans", isCustomFont: false }, selfHostedCjk("jp"), selfHostedNoto]));
-});
-
-test("the build serves the license of Noto Sans CJK", async ({ request }) => {
-  const response = await request.get("/licenses/OFL-NotoSansCJK.txt");
-  await expect(response).toBeOK();
-  const license = await response.text();
-  expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
-});
-
-test("the build serves the license of Noto Sans", async ({ request }) => {
-  const response = await request.get("/licenses/OFL-NotoSans.txt");
-  await expect(response).toBeOK();
-  const license = await response.text();
-  expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
 });

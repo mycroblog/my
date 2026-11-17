@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Builds a small module with the licenses plugin as `vite build` would, and proves that each license file it is given
 // lands in the build's licenses/ under its own name with its bytes unchanged (ADR-0091 §13). That the app's build
-// serves the emoji font's OFL.txt is the E2E spec emoji.spec.ts.
+// carries the notice of each font it ships is scripts/build-check.ts, and that the server serves the files of licenses/
+// is TestStaticFiles of internal/interface/web.
 
 import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";

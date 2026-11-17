@@ -535,7 +535,8 @@ jobs:
           # The tokens of web/design-tokens (ADR-0059), the components of web/design-system and web/app-components
           # (ADR-0025), the platform of web/platform and the server data of web/app-data (ADR-0028), the features and the app of web/app-features and
           # web/app with the app's build (ADR-0025 §9), the development packages web/devtools (ADR-0168) and
-          # web/storybook (ADR-0165), and that no production build contains @my/devtools.
+          # web/storybook (ADR-0165), and what the production build holds: no @my/devtools, the license notice of each
+          # font, and the editor in a chunk of its own.
           - name: web:typecheck
             if: needs.changes.outputs.web == 'true'
             run: scripts/task.sh web:typecheck
@@ -551,9 +552,9 @@ jobs:
           - name: web:build
             if: needs.changes.outputs.web == 'true'
             run: scripts/task.sh web:build
-          - name: web:devtools-absent
+          - name: web:build-check
             if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:devtools-absent
+            run: scripts/task.sh web:build-check
           - name: i18n:lint
             if: needs.changes.outputs.i18n == 'true'
             run: scripts/task.sh i18n:lint

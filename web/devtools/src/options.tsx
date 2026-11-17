@@ -2,7 +2,7 @@
 
 // Live options (ADR-0168 §1): an agent wraps the variants of an element in <Options> in a story, and the decider
 // switches between them in the overlay and picks one, which comes back as a note. Only a story may import it
-// (restrict/layer-imports), and no production build may contain it (web:devtools-absent): keep the picked variant in
+// (restrict/layer-imports), and no production build may contain it (web:build-check): keep the picked variant in
 // the component, remove the rest.
 
 import { useEffect, useState, type ReactNode } from "react";
