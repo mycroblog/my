@@ -9,6 +9,7 @@ import { expectNoComputedViolations } from "../axe";
 import {
   boxesAtRest,
   boxOf,
+  covered,
   expectInside,
   expectInViewport,
   expectMirrored,
@@ -205,4 +206,43 @@ test("a toast is over the tab bar on a phone, and in the middle of the bottom ed
       return box.bottom > 320 && box.left > pc / 4 && box.right < (3 * pc) / 4;
     })
     .toBe(true);
+});
+
+test("on a phone the Menu's sheet holds New article, which the tab bar has no room for, over the page", async ({
+  page,
+  open,
+}) => {
+  await open("design-system-shell--home");
+  const tabs = page.getByRole("navigation", { name: "Main", exact: true });
+  await expect(page.getByRole("button", { name: "New article", exact: true })).toBeHidden();
+  await tabs.getByRole("button", { name: /^Menu .+$/ }).click();
+  const menu = page.getByRole("menu", { name: "Menu", exact: true });
+  const write = menu.getByRole("menuitem", { name: "New article", exact: true });
+  await expect(write).toBeVisible();
+  await expectInViewport(page, menu);
+  await expect.poll(() => covered(write)).toEqual([]);
+  // The sheet rises over the tab bar it opened from.
+  await expect.poll(async () => (await covered(tabs.getByRole("link", { name: "Home", exact: true }))).length).toBe(1);
+  await expectNoSidewaysScroll(page);
+});
+
+test("on a phone the press that opens the Menu's sheet does not follow the place the sheet raises under the pointer", async ({
+  page,
+  open,
+}) => {
+  await open("design-system-shell--home");
+  const at = page.url();
+  const button = await boxOf(
+    page.getByRole("navigation", { name: "Main", exact: true }).getByRole("button", { name: /^Menu .+$/ }),
+  );
+  await page.mouse.move((button.left + button.right) / 2, (button.top + button.bottom) / 2);
+  await page.mouse.down();
+  const menu = page.getByRole("menu", { name: "Menu", exact: true });
+  await expect(menu).toBeVisible();
+  // The sheet has put a place where the pointer went down; the pointer goes up over one.
+  const place = (await boxesAtRest({ profile: menu.getByRole("menuitem", { name: "Profile", exact: true }) })).profile;
+  await page.mouse.move((place.left + place.right) / 2, (place.top + place.bottom) / 2);
+  await page.mouse.up();
+  await expect(menu).toBeVisible();
+  await expect(page).toHaveURL(at);
 });

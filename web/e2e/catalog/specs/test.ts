@@ -65,15 +65,14 @@ export async function openStory(page: Page, id: string, view: View = {}): Promis
  * it cannot show it (no story of that id, or one that throws).
  */
 export async function drawn(page: Page): Promise<void> {
-  const failure = await page.waitForFunction(async () => {
-    const shows = (state: string) => document.body.classList.contains(`sb-show-${state}`);
+  const state = await page.waitForFunction(() => {
+    const shows = (name: string) => document.body.classList.contains(`sb-show-${name}`);
     if (shows("errordisplay") || shows("nopreview")) return document.body.innerText.trim().slice(0, 400) || "no story";
-    if (!shows("main") || (document.getElementById("storybook-root")?.childElementCount ?? 0) === 0) return false;
-    await document.fonts.ready;
-    return "";
+    const rendered = shows("main") && (document.getElementById("storybook-root")?.childElementCount ?? 0) > 0;
+    return rendered && document.fonts.status === "loaded" ? "drawn" : false;
   });
-  const said = await failure.jsonValue();
-  if (said !== "") throw new Error(`catalog: ${page.url()} shows no story: ${String(said)}`);
+  const said = await state.jsonValue();
+  if (said !== "drawn") throw new Error(`catalog: ${page.url()} shows no story: ${String(said)}`);
 }
 
 type Fixtures = {
