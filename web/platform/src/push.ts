@@ -6,6 +6,8 @@
 // badge shows a count where the platform has one (the Badging API), and nothing elsewhere. A browser that has none of
 // them answers so, and does nothing.
 
+import { skipWaitingMessage } from "./sw-protocol";
+
 /** What the reader said to this site's notifications, or that the browser has none. */
 export type NotificationPermissionState = "default" | "granted" | "denied" | "unsupported";
 
@@ -120,4 +122,27 @@ export function showAppBadge(count: number): void {
   if (typeof navigator === "undefined" || !("setAppBadge" in navigator)) return;
   if (count > 0) void navigator.setAppBadge(count).catch(() => undefined);
   else void navigator.clearAppBadge().catch(() => undefined);
+}
+
+/**
+ * Lets a waiting Service Worker of a newer build take over (Update, which then loads the page again), and resolves once
+ * it controls the page, or after a moment where there is none or it does not come.
+ */
+export async function takeUpdate(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  const registration = await navigator.serviceWorker.getRegistration().catch(() => undefined);
+  const waiting = registration?.waiting;
+  if (waiting === undefined || waiting === null) return;
+  await new Promise<void>((done) => {
+    const timer = setTimeout(done, 2000);
+    navigator.serviceWorker.addEventListener(
+      "controllerchange",
+      () => {
+        clearTimeout(timer);
+        done();
+      },
+      { once: true },
+    );
+    waiting.postMessage(skipWaitingMessage);
+  });
 }

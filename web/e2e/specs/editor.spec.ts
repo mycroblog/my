@@ -8,6 +8,10 @@
 import { Frame } from "./screens";
 import { expect, test } from "./test";
 
+// Without the app's Service Worker: a chunk it precached would never fail to come, and the failures below are those of
+// a visit before it has (page.route sees the page's own fetches alone).
+test.use({ serviceWorkers: "block" });
+
 test("the text is a named text box of several lines; typed and edited in the middle, it holds what was written", async ({
   page,
   signIn,

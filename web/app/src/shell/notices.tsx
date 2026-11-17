@@ -7,6 +7,7 @@
 
 import { useServerActions, useServerState, useStatusPageUrl, type Instance } from "@my/app-data";
 import { FrameBanner, FrameBanners, Toast, useLocale } from "@my/design-system";
+import { takeUpdate } from "@my/platform";
 import { useStrings } from "../locale";
 
 /** The notices at the top of the main column, from the top: the closure, then the reader offline or the server down. */
@@ -57,8 +58,11 @@ export function UpdateToast({ inCall }: { inCall: boolean }) {
   const { update } = useServerState();
   const { dismissUpdate } = useServerActions();
   if (inCall || update === "none") return null;
+  // The newer build's Service Worker takes over first, so that the page loads under it (ADR-0028 §3).
   const reload = () => {
-    location.reload();
+    void takeUpdate().then(() => {
+      location.reload();
+    });
   };
   return update === "ready" ? (
     <Toast action={t("app.update")} onAction={reload} closeLabel={t("app.toast_close")} onClose={dismissUpdate}>
