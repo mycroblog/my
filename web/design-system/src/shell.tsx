@@ -19,11 +19,21 @@
 // other surface is the page's; the dock stands apart from what scrolls under it by a shadow, not a line. A link of the
 // frame navigates through the app's router when the app places NavigationProvider.
 
-import { createContext, use, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { Button as AriaButton, Link, ToggleButton, Tooltip, TooltipTrigger } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
 import { Icon, type IconName } from "./icons";
+import { Box, Column, Row, Stack } from "./layout";
 import { UnreadMark } from "./list";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
@@ -74,7 +84,7 @@ const frame = tv({
     // lines; from `tablet`, the column's width at most, in the middle.
     toasts: [
       "flex flex-col items-stretch gap-shell-inset px-shell-edge pb-shell-edge empty:hidden",
-      "tablet:items-center tablet:pb-shell-end",
+      "tablet:items-center tablet:pb-shell-end tablet:[&>*]:max-w-[var(--shell-column)]",
     ],
     float: [
       "pointer-events-auto me-shell-edge mb-shell-edge self-end rounded-control shadow-overlay",
@@ -87,33 +97,29 @@ const frame = tv({
       "flex h-shell-item flex-none items-center justify-center rounded-control outline-hidden",
       "data-focus-visible:shadow-focus desktop:justify-start desktop:px-shell-item-inline",
     ],
-    markLight: "h-shell-mark [:root[data-theme=dark]_&]:hidden dark:[:root:not([data-theme=light])_&]:hidden",
-    markDark: "hidden h-shell-mark [:root[data-theme=dark]_&]:block dark:[:root:not([data-theme=light])_&]:block",
+    markImage: "h-shell-mark",
     // An instance's own logo: square, at the mark's height, in the rail and the sidebar alike.
     logo: "size-shell-mark rounded-control object-contain",
   },
 });
 
+// A place of the navigation where the frame puts it: its arrangement there, and what it looks like there.
 const nav = tv({
   slots: {
-    list: "m-0 flex list-none p-0",
-    li: "",
-    item: [
-      "relative flex items-center rounded-control text-muted-text no-underline outline-hidden",
-      "data-focus-visible:shadow-focus-inset aria-[current=page]:font-strong aria-[current=page]:text-text",
-    ],
+    item: "relative flex items-center",
     glyph: "relative inline-flex flex-none",
     label: "",
     // The badge on the glyph's corner, where the label is not shown beside the glyph, and at the line's end, where it
     // is; each place sets which shows. The corner's badge is cut out of the glyph by a ring of the surface under it, so
     // that it reads over a filled glyph (the current place's).
-    corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)] shadow-face-cut",
-    end: "ms-auto",
+    corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)] items-center justify-center shadow-face-cut",
+    // The neutral mark in the corner's place.
+    dot: "absolute -top-[0.125rem] start-[calc(100%-0.25rem)]",
+    end: "ms-auto items-center justify-center",
   },
   variants: {
     place: {
       side: {
-        list: "flex-col gap-shell-item-gap",
         item: [
           // At the full width of the rail or the sidebar, so that the menu's popover opens beside the navigation.
           "box-border h-shell-item w-full flex-none justify-center gap-shell-edge data-hovered:bg-surface-hover",
@@ -128,14 +134,10 @@ const nav = tv({
         corner: "inline-flex desktop:hidden",
         end: "hidden desktop:inline-flex",
       },
-      // Each item starts from its label's width and shares what is left; a label too long for 320 px wraps, inside a
-      // word if it must, and is never shortened (ADR-0110 §11).
+      // A label too long for 320 px wraps, inside a word if it must, and is never shortened (ADR-0110 §11).
       tabs: {
-        // The gap between items stays; a label wraps before it goes.
-        list: "items-stretch gap-screen-tab-gap px-screen-tab-gap",
-        li: "flex min-w-0 flex-[1_1_auto]",
         item: [
-          "min-h-shell-bar w-full flex-col justify-center gap-[0.125rem] px-[0.125rem] py-shell-inset text-caption",
+          "min-h-shell-bar w-full flex-col justify-center gap-[0.125rem] px-shell-tab-inline py-shell-inset text-caption",
           "pointer-coarse:data-pressed:bg-surface-pressed",
         ],
         label: "text-center [overflow-wrap:anywhere]",
@@ -150,13 +152,91 @@ const nav = tv({
   },
 });
 
+// What a place looks like wherever it is.
+const entry = tv({
+  base: [
+    "rounded-control text-muted-text no-underline outline-hidden",
+    "data-focus-visible:shadow-focus-inset aria-[current=page]:font-strong aria-[current=page]:text-text",
+  ],
+});
+
 const badge = tv({
   base: [
-    "box-border h-shell-badge min-w-[var(--shell-badge)] items-center justify-center",
-    "rounded-[calc(var(--shell-badge)/2)]",
+    "box-border h-shell-badge min-w-shell-badge rounded-[calc(var(--shell-badge)/2)]",
     "bg-text px-shell-badge-inline text-[0.6875rem] leading-none font-label text-surface tabular-nums",
   ],
 });
+
+/**
+ * The label of an entry of the frame where the frame puts it: beside the glyph in the sidebar, under it in the tab
+ * bar, for assistive technology alone in the rail; `plain` where it always shows as it is.
+ */
+function EntryLabel({
+  place,
+  plain = false,
+  hidden,
+  children,
+}: {
+  place: Place;
+  plain?: boolean;
+  /** It repeats a name its entry already has: hidden from assistive technology. */
+  hidden?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <span className={plain ? "" : nav({ place }).label()} aria-hidden={hidden ? "true" : undefined}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * A place of the navigation as the frame lays it out where it is, as `as` (its link, its button): in the rail its
+ * glyph in the rail's middle with the count on the glyph's corner; in the sidebar the glyph, the label and the count
+ * at the line's end; in the tab bar the glyph over the label.
+ */
+function NavEntry({
+  place,
+  as,
+  glyph,
+  corner,
+  dot,
+  label,
+  said,
+  end,
+}: {
+  place: Place;
+  as: ReactElement<{ className?: unknown }>;
+  glyph: ReactNode;
+  /** The count on the glyph's corner, as its element. */
+  corner?: ReactElement<{ className?: unknown }> | undefined;
+  /** A mark in the corner's place, as its element. */
+  dot?: ReactElement<{ className?: unknown }> | undefined;
+  label: string;
+  /** What assistive technology reads after the label. */
+  said?: string | undefined;
+  /** The count at the line's end, as its element. */
+  end?: ReactElement<{ className?: unknown }> | undefined;
+}) {
+  const s = nav({ place });
+  return (
+    <Box as={as} className={s.item()}>
+      <span className={s.glyph()}>
+        {glyph}
+        {corner !== undefined && <Box as={corner} className={s.corner()} />}
+        {dot !== undefined && <Box as={dot} className={s.dot()} />}
+      </span>
+      <EntryLabel place={place}>{label}</EntryLabel>
+      {said !== undefined && (
+        <>
+          {" "}
+          <span className="sr-only">{said}</span>
+        </>
+      )}
+      {end !== undefined && <Box as={end} className={s.end()} />}
+    </Box>
+  );
+}
 
 /** A count as its badge shows it: up to 99, then "99+", in the reader's numbers. */
 function countText(count: number, lang: string): string {
@@ -341,17 +421,15 @@ export function FrameAside({ label, children }: { label: string; children: React
 
 const section = tv({
   slots: {
-    root: "grid content-start gap-shell-inset [&_p]:m-0",
-    // The heading names the section alone; the link to all of it ends the heading's line, outside the heading.
-    head: "flex items-center justify-between gap-shell-inset text-caption",
-    heading: "m-0 text-caption font-normal",
+    head: "text-caption",
+    heading: "text-caption font-normal",
     link: [
-      "inline-flex items-center gap-shell-inset rounded-control text-muted-text no-underline outline-hidden",
-      "py-[calc((var(--target-minimum)-1lh)/2)] data-hovered:text-text data-hovered:underline",
+      "rounded-control py-target-line text-muted-text no-underline outline-hidden",
+      "data-hovered:text-text data-hovered:underline",
       "data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
     ],
     all: [
-      "rounded-control py-[calc((var(--target-minimum)-1lh)/2)] text-accent-text no-underline outline-hidden",
+      "rounded-control py-target-line text-accent-text no-underline outline-hidden",
       "data-hovered:underline data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
     ],
   },
@@ -381,22 +459,23 @@ export function FrameSection({
 }) {
   const s = section();
   return (
-    <section className={s.root()} aria-labelledby={id}>
-      <div className={s.head()}>
+    <Stack as="section" pack="start" gap="shell-inset" aria-labelledby={id}>
+      {/* The heading names the section alone; the link to all of it ends the heading's line, outside the heading. */}
+      <Row align="center" justify="between" gap="shell-inset" className={s.head()}>
         <h2 id={id} className={s.heading()}>
-          <Link className={s.link()} href={href}>
+          <Row inline align="center" gap="shell-inset" as={<Link className={s.link()} href={href} />}>
             <Icon name={icon} place="caption" />
             {heading}
-          </Link>
+          </Row>
         </h2>
         {all !== undefined && (
           <Link className={s.all()} href={href} aria-label={all.name}>
             {all.text}
           </Link>
         )}
-      </div>
+      </Row>
       {children}
-    </section>
+    </Stack>
   );
 }
 
@@ -404,15 +483,26 @@ const fold = tv({
   slots: {
     // Compact and neutral, on the raised surface; its target reaches the minimum, and a finger's on a touch screen.
     root: [
-      "mb-shell-gap box-border flex items-center gap-entry-caption rounded-overlay bg-surface-raised px-embed",
-      "py-[calc((var(--target-minimum)-1lh)/2)] text-body text-text no-underline outline-hidden",
+      "box-border rounded-overlay bg-surface-raised px-embed",
+      "py-target-line text-body text-text no-underline outline-hidden",
       "pointer-coarse:min-h-icon-button-touch data-hovered:bg-surface-raised-hover",
-      "data-pressed:bg-surface-raised-hover data-focus-visible:shadow-focus wide:hidden",
+      "data-pressed:bg-surface-raised-hover data-focus-visible:shadow-focus",
     ],
-    glyph: "inline-flex flex-none text-muted-text",
-    text: "min-w-0 flex-1",
+    glyph: "text-muted-text",
   },
 });
+
+/**
+ * The line a section folds to above a feed, as `as`: its parts in its middle, the frame's gap under it; under `wide`
+ * alone, where no column beside the main one holds the section.
+ */
+function FoldRow({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
+  return (
+    <Row as={as} align="center" gap="entry-caption" spaceBelow="shell-gap" className="wide:hidden">
+      {children}
+    </Row>
+  );
+}
 
 /**
  * A section folded to one line above a feed under `wide`, where no column beside the main one holds it: its place's
@@ -422,32 +512,31 @@ const fold = tv({
 export function FrameFold({ icon, href, children }: { icon: IconName; href: string; children: ReactNode }) {
   const s = fold();
   return (
-    <Link className={s.root()} href={href}>
-      <span className={s.glyph()}>
+    <FoldRow as={<Link className={s.root()} href={href} />}>
+      <Row as="span" inline rigid className={s.glyph()}>
         <Icon name={icon} place="caption" />
-      </span>
-      <span className={s.text()}>{children}</span>
-      <span className={s.glyph()}>
+      </Row>
+      <Box as="span" grow>
+        {children}
+      </Box>
+      <Row as="span" inline rigid className={s.glyph()}>
         <Icon name="onward" place="caption" />
-      </span>
-    </Link>
+      </Row>
+    </FoldRow>
   );
 }
 
 const line = tv({
   slots: {
-    list: "m-0 grid list-none gap-shell-inset p-0",
-    item: "flex items-start gap-entry-caption",
-    lines: "grid min-w-0 flex-1",
+    list: "list-none p-0",
     // A title that wraps breaks between phrases, never inside a word of ja (求めています, リアクション), as NoticeLine.
     title: [
-      "line-clamp-2 rounded-control text-text no-underline outline-hidden [word-break:auto-phrase] data-hovered:underline",
+      "rounded-control text-text no-underline outline-hidden [word-break:auto-phrase] data-hovered:underline",
       "data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
     ],
     caption: "text-caption text-muted-text",
-    mark: "inline-flex h-[1lh] flex-none items-center",
-    glyph: "inline-flex h-[1lh] flex-none items-center text-muted-text",
-    note: "m-0 flex flex-wrap items-baseline gap-x-shell-edge text-caption text-muted-text",
+    glyph: "text-muted-text",
+    note: "text-caption text-muted-text",
   },
   variants: {
     read: { true: { title: "text-muted-text" } },
@@ -460,16 +549,20 @@ const line = tv({
  */
 export function SectionNote({ action, children }: { action?: ReactNode; children: string }) {
   return (
-    <p className={line().note()}>
+    <Row as="p" wrap align="baseline" gapX="shell-edge" className={line().note()}>
       <span>{children}</span>
       {action}
-    </p>
+    </Row>
   );
 }
 
 /** The lines of a section: what it lists, in order. */
 export function SectionList({ children }: { children: ReactNode }) {
-  return <ul className={line().list()}>{children}</ul>;
+  return (
+    <Stack as="ul" gap="shell-inset" className={line().list()}>
+      {children}
+    </Stack>
+  );
 }
 
 /**
@@ -497,33 +590,35 @@ export function SectionLine({
 }) {
   const s = line({ read });
   return (
-    <li className={s.item()}>
+    <Row as="li" align="start" gap="entry-caption">
       {icon !== undefined && (
-        <span className={s.glyph()}>
+        <Row as="span" inline line rigid align="center" className={s.glyph()}>
           <Icon name={icon} place="caption" />
-        </span>
+        </Row>
       )}
-      <span className={s.lines()}>
-        <Link className={s.title()} href={href} dir="auto" {...(onPress === undefined ? {} : { onPress })}>
+      <Stack as="span" grow>
+        <Box
+          lines={2}
+          as={<Link className={s.title()} href={href} dir="auto" {...(onPress === undefined ? {} : { onPress })} />}
+        >
           {title}
-        </Link>
+        </Box>
         {caption !== undefined && <span className={s.caption()}>{caption}</span>}
-      </span>
+      </Stack>
       {unread !== undefined && (
-        <span className={s.mark()}>
+        <Row as="span" inline line rigid align="center">
           <UnreadMark label={unread} />
-        </span>
+        </Row>
       )}
-    </li>
+    </Row>
   );
 }
 
 const meter = tv({
   slots: {
-    root: "grid gap-shell-inset",
     figure: "text-title tabular-nums",
-    track: "h-shell-meter overflow-hidden rounded-[calc(var(--shell-meter)/2)] bg-surface-raised-hover",
-    fill: "h-full rounded-[calc(var(--shell-meter)/2)] bg-text",
+    track: "h-shell-meter rounded-[calc(var(--shell-meter)/2)] bg-surface-raised-hover",
+    fill: "rounded-[calc(var(--shell-meter)/2)] bg-text",
     caption: "text-caption text-muted-text",
   },
 });
@@ -539,11 +634,12 @@ export function Meter({ value, label, caption }: { value: number; label: string;
   // The bar and the meter's value stay within its range, full at the goal and beyond; the figure says the share itself.
   const filled = Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
-    <div className={s.root()}>
+    <Stack gap="shell-inset">
       <span className={s.figure()} aria-hidden="true">
         {shown}
       </span>
-      <div
+      <Box
+        clip
         className={s.track()}
         role="meter"
         aria-label={label}
@@ -552,20 +648,20 @@ export function Meter({ value, label, caption }: { value: number; label: string;
         aria-valuenow={filled}
         aria-valuetext={shown}
       >
-        <div className={s.fill()} style={{ inlineSize: `${String(filled)}%` }} />
-      </div>
+        <Box full="block" share={filled / 100} className={s.fill()} />
+      </Box>
       <span className={s.caption()}>{caption}</span>
-    </div>
+    </Stack>
   );
 }
 
 const footer = tv({
   slots: {
     root: "text-caption text-muted-text",
+    list: "list-none p-0",
     // A link's target reaches the minimum around its text without moving the line (WCAG 2.5.8).
-    list: "m-0 flex list-none flex-wrap gap-x-shell-edge p-0",
     link: [
-      "inline-block rounded-control py-[calc((var(--target-minimum)-1lh)/2)] text-muted-text no-underline",
+      "rounded-control py-target-line text-muted-text no-underline",
       "outline-hidden data-hovered:text-text data-hovered:underline data-focus-visible:shadow-focus",
     ],
   },
@@ -596,15 +692,15 @@ export function FrameFooter({
   return (
     <footer className={s.root()}>
       <nav aria-label={label}>
-        <ul className={s.list()}>
+        <Row as="ul" wrap gapX="shell-edge" className={s.list()}>
           {links.map((l) => (
             <li key={l.href}>
-              <Link className={s.link()} href={l.href}>
+              <Box display="inline-block" as={<Link className={s.link()} href={l.href} />}>
                 {l.label}
-              </Link>
+              </Box>
             </li>
           ))}
-        </ul>
+        </Row>
       </nav>
     </footer>
   );
@@ -612,13 +708,10 @@ export function FrameFooter({
 
 const banner = tv({
   slots: {
-    group: "mb-shell-gap grid gap-shell-inset",
-    root: ["flex items-start gap-entry-avatar rounded-overlay px-embed py-shell-inset text-body [&_p]:m-0"],
-    glyph: "inline-flex h-[1lh] flex-none items-center",
-    body: "grid min-w-0 flex-1",
-    links: "m-0 flex list-none flex-wrap gap-x-shell-edge p-0",
+    root: "rounded-overlay px-embed py-shell-inset text-body",
+    links: "list-none p-0",
     link: [
-      "inline-block rounded-control py-[calc((var(--target-minimum)-1lh)/2)] font-label underline",
+      "rounded-control py-target-line font-label underline",
       "underline-offset-[0.15em] outline-hidden data-focus-visible:shadow-focus",
     ],
   },
@@ -638,9 +731,9 @@ const banner = tv({
  */
 export function FrameBanners({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={banner().group()} role="region" aria-label={label}>
+    <Stack gap="shell-inset" spaceBelow="shell-gap" role="region" aria-label={label}>
       {children}
-    </div>
+    </Stack>
   );
 }
 
@@ -663,48 +756,52 @@ export function FrameBanner({
 }) {
   const s = banner({ strong });
   return (
-    <div className={s.root()}>
-      <span className={s.glyph()}>
+    <Row align="start" gap="entry-avatar" className={s.root()}>
+      <Row as="span" inline line rigid align="center">
         <Icon name={icon} place="action" />
-      </span>
-      <div className={s.body()}>
+      </Row>
+      <Stack grow>
         <p dir="auto">{children}</p>
         {links.length > 0 && (
-          <ul className={s.links()}>
+          <Row as="ul" wrap gapX="shell-edge" className={s.links()}>
             {links.map((l) => (
               <li key={l.href}>
-                <Link
-                  className={s.link()}
-                  href={l.href}
-                  {...(l.newTab === undefined ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                <Box
+                  display="inline-block"
+                  as={
+                    <Link
+                      className={s.link()}
+                      href={l.href}
+                      {...(l.newTab === undefined ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                    />
+                  }
                 >
                   {l.label}
                   {l.newTab !== undefined && <span className="sr-only"> {l.newTab}</span>}
-                </Link>
+                </Box>
               </li>
             ))}
-          </ul>
+          </Row>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Row>
   );
 }
 
 const toast = tv({
   slots: {
+    // In the dock, which holds it to the column's width from `tablet`.
     root: [
-      "pointer-events-auto box-border flex max-w-full items-center gap-entry-avatar rounded-overlay bg-text py-[0.25rem]",
-      "ps-control-timeline-inline pe-[0.25rem] font-sans text-body text-surface shadow-overlay",
-      "tablet:max-w-[var(--shell-column)]",
+      "pointer-events-auto box-border rounded-overlay bg-text py-shell-toast-inset",
+      "ps-control-timeline-inline pe-shell-toast-inset font-sans text-body text-surface shadow-overlay",
     ],
-    text: "min-w-0 flex-1",
     action: [
-      "h-control-timeline flex-none cursor-pointer rounded-control border-0 bg-transparent px-control-timeline-inline",
+      "h-control-timeline cursor-pointer rounded-control border-0 bg-transparent px-control-timeline-inline",
       "font-sans text-body font-label text-inherit outline-hidden hover:underline",
       "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
     ],
     close: [
-      "inline-flex size-control-timeline flex-none cursor-pointer items-center justify-center rounded-control border-0",
+      "size-control-timeline cursor-pointer rounded-control border-0",
       "bg-transparent p-0 text-inherit outline-hidden hover:bg-[color-mix(in_srgb,var(--color-surface)_15%,transparent)]",
       "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
     ],
@@ -730,17 +827,37 @@ export function Toast({
 }) {
   const s = toast();
   return (
-    <div className={s.root()} role="status">
-      <span className={s.text()}>{children}</span>
-      <button type="button" className={s.action()} onClick={onAction}>
+    <Row align="center" gap="entry-avatar" max="full" className={s.root()} role="status">
+      <Box as="span" grow>
+        {children}
+      </Box>
+      <Box rigid as={<button type="button" className={s.action()} onClick={onAction} />}>
         {action}
-      </button>
+      </Box>
       {onClose !== undefined && (
-        <button type="button" className={s.close()} onClick={onClose} aria-label={closeLabel}>
+        <Row
+          inline
+          rigid
+          align="center"
+          justify="center"
+          as={<button type="button" className={s.close()} onClick={onClose} aria-label={closeLabel} />}
+        >
           <Icon name="close" place="action" />
-        </button>
+        </Row>
       )}
-    </div>
+    </Row>
+  );
+}
+
+/**
+ * The mark's place at the top of the rail, as `as`: in the rail's middle, and from `desktop` at the sidebar's start,
+ * on the column of the places' glyphs.
+ */
+function MarkPlace({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
+  return (
+    <Box as={as} className={frame().mark()}>
+      {children}
+    </Box>
   );
 }
 
@@ -764,16 +881,16 @@ export function FrameMark({
 }) {
   const s = frame();
   return (
-    <Link className={s.mark()} href={href} aria-label={label}>
+    <MarkPlace as={<Link href={href} aria-label={label} />}>
       {logo !== undefined && logo !== "" ? (
         <img className={s.logo()} src={logo} alt="" />
       ) : (
         <>
-          <img className={s.markLight()} src={light} alt="" />
-          <img className={s.markDark()} src={dark} alt="" />
+          <Box only="light" as={<img className={s.markImage()} src={light} alt="" />} />
+          <Box only="dark" as={<img className={s.markImage()} src={dark} alt="" />} />
         </>
       )}
-    </Link>
+    </MarkPlace>
   );
 }
 
@@ -805,7 +922,6 @@ export function FrameAction({
   "aria-keyshortcuts"?: string | undefined;
 }) {
   const place = use(PlaceContext);
-  const s = nav({ place });
   const float = place === "float";
   const [open, setOpen] = useState(false);
   const button = (
@@ -816,12 +932,12 @@ export function FrameAction({
       aria-keyshortcuts={keyshortcuts}
       onPress={onPress}
     >
-      <span className="inline-flex items-center gap-shell-inset">
+      <Row as="span" inline align="center" gap="shell-inset">
         <Icon name={icon} place="navigation" />
-        <span className={float && labelled ? "" : s.label()} aria-hidden="true">
+        <EntryLabel place={place} plain={float && labelled} hidden>
           {label}
-        </span>
-      </span>
+        </EntryLabel>
+      </Row>
     </ButtonBase>
   );
   if (menu === undefined) return button;
@@ -852,59 +968,46 @@ export function FrameAction({
  * (New post), then a second one (New article), tonal.
  */
 export function FrameActions({ children }: { children: ReactNode }) {
-  return <div className="grid gap-shell-item-gap">{children}</div>;
+  return <Stack gap="shell-item-gap">{children}</Stack>;
 }
 
 /** A list of places of the app, in the rail, the sidebar, the tab bar or the Menu (a group); two lists stand apart. */
 export function NavList({ children }: { children: ReactNode }) {
   const place = use(PlaceContext);
   if (place === "menu") return <MenuGroup>{children}</MenuGroup>;
-  return <ul className={nav({ place }).list()}>{children}</ul>;
-}
-
-/** The glyph of a place with its count's badge on its corner, and the badge again at the line's end in the sidebar. */
-function Counted({
-  icon,
-  on,
-  count,
-  label,
-  countLabel,
-}: {
-  icon: IconName;
-  on: boolean;
-  count: number | undefined;
-  label: string;
-  countLabel: string | undefined;
-}) {
-  const place = use(PlaceContext);
-  const s = nav({ place });
-  const { lang } = useReader(undefined);
-  const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
+  // In the tab bar, the gap between the places stays; a label wraps before it goes.
+  if (place === "tabs")
+    return (
+      <Row as="ul" align="stretch" gap="screen-tab-gap" className="list-none p-0 px-screen-tab-gap">
+        {children}
+      </Row>
+    );
   return (
-    <>
-      <span className={s.glyph()}>
-        <Icon name={icon} place="navigation" on={on} />
-        {shown !== undefined && (
-          <span className={`${badge()} ${s.corner()}`} aria-hidden="true">
-            {shown}
-          </span>
-        )}
-      </span>
-      <span className={s.label()}>{label}</span>
-      {shown !== undefined && countLabel !== undefined && (
-        <>
-          {" "}
-          <span className="sr-only">{countLabel}</span>
-        </>
-      )}
-      {shown !== undefined && (
-        <span className={`${badge()} ${s.end()}`} aria-hidden="true">
-          {shown}
-        </span>
-      )}
-    </>
+    <Column as="ul" gap="shell-item-gap" className="list-none p-0">
+      {children}
+    </Column>
   );
 }
+
+/**
+ * A place's entry in the list of its bar: in the tab bar each starts from its label's width and shares what is left.
+ */
+function NavPlace({ children }: { children: ReactNode }) {
+  if (use(PlaceContext) === "tabs")
+    return (
+      <Row as="li" grow="content">
+        {children}
+      </Row>
+    );
+  return <li>{children}</li>;
+}
+
+/** A count's badge, hidden from assistive technology, which reads the count in words. */
+const countBadge = (shown: string) => (
+  <span className={badge()} aria-hidden="true">
+    {shown}
+  </span>
+);
 
 /**
  * A place: its glyph, on where the reader is, and its label, which the rail shows as its name alone and the tab bar
@@ -930,9 +1033,8 @@ export function NavItem({
 }) {
   const place = use(PlaceContext);
   const { lang } = useReader(undefined);
-  const s = nav({ place });
+  const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
   if (place === "menu") {
-    const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
     return (
       <MenuItem
         id={href}
@@ -942,9 +1044,9 @@ export function NavItem({
         badge={
           shown === undefined ? undefined : (
             <>
-              <span className={`${badge()} inline-flex`} aria-hidden="true">
+              <Row as="span" inline align="center" justify="center" className={badge()} aria-hidden="true">
                 {shown}
-              </span>
+              </Row>
               {countLabel !== undefined && <span className="sr-only">{countLabel}</span>}
             </>
           )
@@ -955,20 +1057,22 @@ export function NavItem({
     );
   }
   return (
-    <li className={s.li()}>
-      <Link className={s.item()} href={href} {...(current ? { "aria-current": "page" as const } : {})}>
-        <Counted icon={icon} on={current} count={count} label={label} countLabel={countLabel} />
-      </Link>
-    </li>
+    <NavPlace>
+      <NavEntry
+        place={place}
+        as={<Link className={entry()} href={href} {...(current ? { "aria-current": "page" as const } : {})} />}
+        glyph={<Icon name={icon} place="navigation" on={current} />}
+        corner={shown === undefined ? undefined : countBadge(shown)}
+        label={label}
+        said={shown === undefined ? undefined : countLabel}
+        end={shown === undefined ? undefined : countBadge(shown)}
+      />
+    </NavPlace>
   );
 }
 
-const menu = tv({
-  slots: {
-    // The neutral mark on the menu's glyph while a place inside it has a count.
-    dot: "absolute -top-[0.125rem] start-[calc(100%-0.25rem)] size-screen-unread rounded-[50%] bg-text",
-  },
-});
+// The neutral mark on the menu's glyph while a place inside it has a count.
+const dot = tv({ base: "size-screen-unread rounded-[50%] bg-text" });
 
 /**
  * The Menu: a place of the tab bar on a phone, and the last place of the rail and the sidebar, that opens what the
@@ -998,75 +1102,49 @@ export function NavMenu({
   children: ReactNode;
 }) {
   const place = use(PlaceContext);
-  const s = nav({ place });
-  const m = menu();
   const { lang } = useReader(undefined);
   const shown = count !== undefined && count > 0 ? countText(count, lang) : undefined;
-  const entry = (
-    <AriaButton className={`${s.item()} cursor-pointer border-0 bg-transparent font-sans`}>
-      <span className={s.glyph()}>
-        <Icon name="menu" place="navigation" />
-        {shown !== undefined ? (
-          <span className={`${badge()} ${s.corner()}`} aria-hidden="true">
-            {shown}
-          </span>
-        ) : (
-          marked && <span className={m.dot()} aria-hidden="true" />
-        )}
-      </span>
-      <span className={s.label()}>{label}</span>
-      {(marked || shown !== undefined) && markLabel !== undefined && (
-        <>
-          {" "}
-          <span className="sr-only">{markLabel}</span>
-        </>
-      )}
-      {shown !== undefined && (
-        <span className={`${badge()} ${s.end()}`} aria-hidden="true">
-          {shown}
-        </span>
-      )}
-    </AriaButton>
+  const trigger = (
+    <NavEntry
+      place={place}
+      as={<AriaButton className={`${entry()} cursor-pointer border-0 bg-transparent font-sans`} />}
+      glyph={<Icon name="menu" place="navigation" />}
+      corner={shown === undefined ? undefined : countBadge(shown)}
+      dot={shown === undefined && marked ? <span className={dot()} aria-hidden="true" /> : undefined}
+      label={label}
+      said={marked || shown !== undefined ? markLabel : undefined}
+      end={shown === undefined ? undefined : countBadge(shown)}
+    />
   );
   return (
-    <li className={s.li()}>
+    <NavPlace>
       {/* From `tablet`, toward the content, its end at the entry's; it mirrors from right to left. */}
-      <MenuSurface trigger={entry} label={label} placement="end bottom" offset={8}>
+      <MenuSurface trigger={trigger} label={label} placement="end bottom" offset={8}>
         <PlaceContext value="menu">
           {children}
           {end}
         </PlaceContext>
       </MenuSurface>
-    </li>
+    </NavPlace>
   );
 }
 
 // Every control of the call's bar is a timeline control's size, and reaches the touch size on a touch screen.
 const callTarget = "size-control-timeline pointer-coarse:size-icon-button-touch";
 
+// The call's bar where the frame puts it: its arrangement there, and what changes of its look with it.
 const call = tv({
   slots: {
     root: "flex items-center gap-entry-avatar",
-    room: [
-      "flex min-w-0 flex-1 items-center gap-entry-avatar rounded-control text-text no-underline outline-hidden",
-      "data-focus-visible:shadow-focus",
-    ],
+    room: "flex min-w-0 flex-1 items-center gap-entry-avatar",
     glyph: "inline-flex flex-none",
     lines: "grid min-w-0 flex-1 leading-entry",
-    name: "truncate font-label",
-    detail: "truncate text-caption text-muted-text",
+    name: "truncate",
+    detail: "truncate",
     actions: "flex flex-none items-center gap-shell-inset",
-    // The microphone muted is knocked out, as a toggle on is, with its crossed glyph: it reads at rest, without a hue.
-    button: [
-      "box-border inline-flex flex-none cursor-pointer items-center justify-center gap-icon-button-gap rounded-control",
-      "border-0 p-0 font-sans text-caption font-label text-text outline-hidden data-focus-visible:shadow-focus",
-      "data-selected:bg-text data-selected:text-surface data-selected:data-hovered:bg-text",
-      "data-selected:data-pressed:bg-text",
-      callTarget,
-    ],
+    button: ["box-border inline-flex flex-none items-center justify-center gap-icon-button-gap", callTarget],
     buttonLabel: "sr-only",
-    tooltip:
-      "max-w-[var(--menu-min-width)] rounded-control bg-text px-shell-inset py-[0.25rem] text-caption text-surface",
+    tooltip: "max-w-[var(--menu-min-width)]",
   },
   variants: {
     place: {
@@ -1107,6 +1185,45 @@ const call = tv({
   },
 });
 
+// What the parts of the call's bar look like wherever it is. The microphone muted is knocked out, as a toggle on is,
+// with its crossed glyph: it reads at rest, without a hue.
+const callLook = tv({
+  slots: {
+    room: "rounded-control text-text no-underline outline-hidden data-focus-visible:shadow-focus",
+    name: "font-label",
+    detail: "text-caption text-muted-text",
+    button: [
+      "cursor-pointer rounded-control",
+      "border-0 p-0 font-sans text-caption font-label text-text outline-hidden data-focus-visible:shadow-focus",
+      "data-selected:bg-text data-selected:text-surface data-selected:data-hovered:bg-text",
+      "data-selected:data-pressed:bg-text",
+    ],
+    tooltip: "rounded-control bg-text px-shell-inset py-shell-toast-inset text-caption text-surface",
+  },
+});
+
+/**
+ * A part of the call's bar where the frame puts the bar, as `as`: above the tab bar a row at the dock's width; at the
+ * rail's end a tile of its controls one under another, and from `desktop` a card of the room's name and detail over
+ * its two buttons side by side, each with its label.
+ */
+function CallPart({
+  part,
+  as,
+  children,
+}: {
+  part: "root" | "room" | "glyph" | "lines" | "name" | "detail" | "actions" | "button" | "buttonLabel" | "tooltip";
+  as: ReactElement<{ className?: unknown }>;
+  children?: ReactNode;
+}) {
+  const s = call({ place: use(PlaceContext) });
+  return (
+    <Box as={as} className={s[part]()}>
+      {children}
+    </Box>
+  );
+}
+
 /**
  * The bar of the call the reader is in, kept while they move between screens: above the tab bar on a phone, ending the
  * navigation from `tablet`. The room's glyph, name and detail (who hosts it, how many listen) lead to its screen (in the
@@ -1134,45 +1251,54 @@ export function CallBar({
   onLeave: () => void;
 }) {
   const place = use(PlaceContext);
-  const s = call({ place });
+  const look = callLook();
   const link = (
-    <Link className={s.room()} href={href}>
-      <span className={s.glyph()}>
+    <CallPart part="room" as={<Link className={look.room()} href={href} />}>
+      <CallPart part="glyph" as={<span />}>
         <Icon name="live" place="action" />
-      </span>
-      <span className={s.lines()}>
-        <span className={s.name()} dir="auto">
+      </CallPart>
+      <CallPart part="lines" as={<span />}>
+        <CallPart part="name" as={<span className={look.name()} dir="auto" />}>
           {room}
-        </span>{" "}
-        <span className={s.detail()}>{detail}</span>
-      </span>
-    </Link>
+        </CallPart>{" "}
+        <CallPart part="detail" as={<span className={look.detail()} />}>
+          {detail}
+        </CallPart>
+      </CallPart>
+    </CallPart>
   );
   return (
-    <div className={s.root()} data-frame-call={place === "dock" ? "" : undefined} role="group" aria-label={room}>
+    <CallPart
+      part="root"
+      as={<div data-frame-call={place === "dock" ? "" : undefined} role="group" aria-label={room} />}
+    >
       {place === "side" ? (
         <TooltipTrigger delay={300}>
           {link}
-          <Tooltip className={s.tooltip()} placement="end" offset={8}>
-            <span className="block font-label" dir="auto">
+          <CallPart part="tooltip" as={<Tooltip className={look.tooltip()} placement="end" offset={8} />}>
+            <Box as="span" display="block" className="font-label" dir="auto">
               {room}
-            </span>
+            </Box>
             {detail}
-          </Tooltip>
+          </CallPart>
         </TooltipTrigger>
       ) : (
         link
       )}
-      <span className={s.actions()}>
-        <ToggleButton className={s.button()} isSelected={muted} onChange={onMute}>
+      <CallPart part="actions" as={<span />}>
+        <CallPart part="button" as={<ToggleButton className={look.button()} isSelected={muted} onChange={onMute} />}>
           <Icon name="microphone" place="action" on={muted} />
-          <span className={s.buttonLabel()}>{muteLabel}</span>
-        </ToggleButton>
-        <AriaButton className={s.button()} onPress={onLeave}>
+          <CallPart part="buttonLabel" as={<span />}>
+            {muteLabel}
+          </CallPart>
+        </CallPart>
+        <CallPart part="button" as={<AriaButton className={look.button()} onPress={onLeave} />}>
           <Icon name="leave" place="action" />
-          <span className={s.buttonLabel()}>{leaveLabel}</span>
-        </AriaButton>
-      </span>
-    </div>
+          <CallPart part="buttonLabel" as={<span />}>
+            {leaveLabel}
+          </CallPart>
+        </CallPart>
+      </CallPart>
+    </CallPart>
   );
 }

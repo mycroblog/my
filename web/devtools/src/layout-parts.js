@@ -10,7 +10,8 @@
 // - it does nothing but place: no state, and no effect or handler other than one that measures and places;
 // - its classes place and space, with the resets of the element it uses (`list-none`, `m-0`, `p-0`). The frame of a
 //   page also sets the page's base (its surface and its font) and the surface of a bar it holds in place, and the
-//   frame of a modal the backdrop it lays over the page behind it.
+//   frame of a modal the backdrop it lays over the page behind it. A part of a frame that the viewport rearranges (a
+//   place of the navigation, the call's bar) also holds what of its look changes with its place.
 //
 // There are two kinds. The generic ones (layout.tsx) know nothing of mycroblog: their props name an arrangement or a
 // token of the theme's spacing, never a class, and every other part takes its layout from them, rendered as the
@@ -36,10 +37,11 @@ export const LAYOUT_PARTS = {
     "FrameDock",
     "FrameMain",
     "FrameAside",
-    "FrameBanners",
-    "FrameActions",
-    "NavList",
-    "SectionList",
+    "MarkPlace",
+    "EntryLabel",
+    "NavEntry",
+    "FoldRow",
+    "CallPart",
   ],
   "web/design-system/src/form-page.tsx": ["FormPage", "GlyphLine"],
   "web/design-system/src/list.tsx": ["GroupPlace", "ResultPlace"],
@@ -57,12 +59,24 @@ export const LAYOUT_PARTS = {
 };
 
 /**
- * The frames of a page: the app's (shell.tsx, ADR-0110 §10), that of a page of its own outside it (form-page.tsx), and
- * those of a modal, which under `tablet` is a screen of its own (modal.tsx, and the panel that fills it, dialog.tsx).
+ * The frames of a page: the app's, with the parts of it that the viewport rearranges (shell.tsx, ADR-0110 §10), that
+ * of a page of its own outside it (form-page.tsx), those of a modal, which under `tablet` is a screen of its own
+ * (modal.tsx, and the panel that fills it, dialog.tsx), and that of the article editor's screen (article-editor.tsx).
  * @type {Record<string, string[]>}
  */
 export const PAGE_FRAMES = {
-  "web/design-system/src/shell.tsx": ["Frame", "FrameSide", "FrameDock", "FrameMain", "FrameAside"],
+  "web/design-system/src/shell.tsx": [
+    "Frame",
+    "FrameSide",
+    "FrameDock",
+    "FrameMain",
+    "FrameAside",
+    "MarkPlace",
+    "EntryLabel",
+    "NavEntry",
+    "FoldRow",
+    "CallPart",
+  ],
   "web/design-system/src/form-page.tsx": ["FormPage"],
   "web/design-system/src/modal.tsx": ["ModalFrame"],
   "web/design-system/src/dialog.tsx": ["PanelFrame"],

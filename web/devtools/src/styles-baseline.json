@@ -22,7 +22,6 @@
     "web/design-system/src/profile.tsx": {"fields.field": 1, "fields.root": 3, "fields.value": 1, "head.actions": 5, "head.avatar": 2, "head.banner": 6, "head.handle": 5, "head.image": 2, "head.name": 5, "head.names": 2, "head.root": 4, "head.row": 4, "meta.root": 5, "note.box": 1, "note.editor": 2, "note.glyph": 4, "note.line": 4, "note.text": 2, "tags.heading": 1, "tags.list": 4, "tags.root": 2, "tags.tag": 3},
     "web/design-system/src/prompt.tsx": {"prompt.actions": 4, "prompt.body": 4, "prompt.glyph": 4, "prompt.note": 2, "prompt.root": 1, "prompt.row": 3, "prompt.text": 1},
     "web/design-system/src/search-field.tsx": {"field.box": 4, "field.end": 6, "field.glyph": 3, "field.hint": 1, "field.input": 3, "field.root": 2},
-    "web/design-system/src/shell.tsx": {"CallBar": 1, "FrameAction": 3, "Meter": 1, "NavItem": 1, "badge.base": 3, "banner.body": 3, "banner.glyph": 4, "banner.link": 2, "banner.links": 4, "banner.root": 4, "call.actions": 6, "call.button": 7, "call.detail": 1, "call.glyph": 2, "call.lines": 4, "call.name": 1, "call.room": 9, "call.root": 9, "call.tooltip": 2, "fold.glyph": 2, "fold.root": 5, "fold.text": 2, "footer.link": 2, "footer.list": 4, "frame.mark": 5, "frame.markDark": 2, "line.glyph": 4, "line.item": 3, "line.lines": 3, "line.mark": 4, "line.note": 5, "line.title": 1, "menu.dot": 3, "meter.fill": 1, "meter.root": 2, "meter.track": 1, "nav.corner": 5, "nav.end": 2, "nav.glyph": 3, "nav.item": 13, "nav.label": 1, "nav.li": 3, "section.all": 1, "section.head": 4, "section.heading": 1, "section.link": 4, "section.root": 4, "toast.action": 1, "toast.close": 4, "toast.root": 7, "toast.text": 2},
     "web/design-system/src/shortcuts.tsx": {"help.caption": 5, "help.dialog": 2, "help.group": 2, "help.header": 4, "help.key": 4, "help.keys": 4, "help.label": 1, "help.list": 3, "help.modal": 2, "help.row": 4, "help.title": 1},
     "web/design-system/src/suggestions.tsx": {"Row": 3, "list.end": 2, "list.handle": 3, "list.lead": 4, "list.line": 4, "list.name": 3, "list.option": 5, "list.panel": 3, "list.server": 1, "list.text": 5, "list.user": 2},
     "web/design-system/src/switch.tsx": {"toggle.description": 2, "toggle.label": 2, "toggle.root": 5, "toggle.thumb": 5, "toggle.track": 5},
@@ -33,7 +32,6 @@
     "web/design-system/fixtures/baseline.tsx": {"wide.kept": 1},
     "web/design-system/src/composer.tsx": {"ToolText": 2, "frame.body": 1, "frame.end": 1, "frame.panel": 7, "frame.tools": 1, "notice.base": 4},
     "web/design-system/src/disclosure.tsx": {"disclosure.summary": 1},
-    "web/design-system/src/shell.tsx": {"call.actions": 1, "call.button": 5, "call.buttonLabel": 1, "call.lines": 2, "call.room": 7, "call.root": 2, "call.tooltip": 1, "fold.root": 1, "frame.mark": 2, "nav.corner": 1, "nav.end": 1, "nav.item": 4, "nav.label": 2, "toast.root": 1},
     "web/design-system/src/viewer.tsx": {"view.side": 1}
   }
 }
