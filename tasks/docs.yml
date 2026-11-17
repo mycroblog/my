@@ -35,30 +35,6 @@ tasks:
     cmds:
       - scripts/adr-numbers.sh
 
-  # A branch merges in only its base, whose commits are then on BASE (agentkit pr open refuses the same commits).
-  pr-commits:
-    desc: 'Fail when BASE..HEAD merges in a commit not on BASE: scripts/task.sh docs:pr-commits [BASE=origin/main] [HEAD=HEAD]'
-    vars:
-      BASE: '{{.BASE | default "origin/main"}}'
-      HEAD: '{{.HEAD | default "HEAD"}}'
-    cmds:
-      - |
-        merges=""
-        for m in $(git rev-list --min-parents=2 {{shellQuote .BASE}}..{{shellQuote .HEAD}}); do
-          for p in $(git rev-list --no-walk --parents -n 1 "$m" | cut -d' ' -f3-); do
-            if ! git merge-base --is-ancestor "$p" {{shellQuote .BASE}}; then
-              merges="$merges$(git log -1 --format='%h %s' "$m")
-        "
-              break
-            fi
-          done
-        done
-        if [ -n "$merges" ]; then
-          printf '%s..%s merges in commits not on %s:\n%s' {{shellQuote .BASE}} {{shellQuote .HEAD}} {{shellQuote .BASE}} "$merges" >&2
-          printf 'fix: land what it merges into the base first, or take the merge out with git rebase\n' >&2
-          exit 1
-        fi
-
   ci-coverage:
     desc: Fail when a check of `check` runs in no step of .github/workflows and is not excluded with a reason (ADR-0079)
     cmds:

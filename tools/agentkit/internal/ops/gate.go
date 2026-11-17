@@ -26,7 +26,7 @@ func linkedWorktree(r *repo.Repo) bool {
 
 // foreignMerges returns the merge commits of base..HEAD in dir that merge in something not on base, each as
 // "<short sha> <subject>". Bringing a branch up to date is `git merge <base>`, whose parents after the first are
-// on base; so is a branch merged in after it landed on base. CI's docs:pr-commits (tasks/docs.yml) is the same rule.
+// on base; so is a branch merged in after it landed on base.
 func foreignMerges(dir, base string) ([]string, error) {
 	out, err := repo.Git(dir, "log", "--min-parents=2", "--format=%h%x00%P%x00%s", base+"..HEAD")
 	if err != nil {
