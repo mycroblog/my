@@ -111,7 +111,6 @@ export {
   Entry,
   HeardActions,
   LivePart,
-  Stack,
   Stamp,
   type BylineProps,
   type CaptionLineProps,
@@ -230,6 +229,7 @@ export {
   type PollChoiceItem,
   type PollResultItem,
 } from "./poll";
+export { Box, Row, Spoken, Stack } from "./layout";
 export {
   Badge,
   FieldList,

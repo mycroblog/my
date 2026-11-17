@@ -955,7 +955,7 @@ export function Post({
   const pictures = media.filter(isPicture);
   const content = (
     <>
-      <Stack gap="line">
+      <Stack gap="entry-line">
         <PostContent html={translation?.content ?? shown.content} emojis={shown.emojis} lang={textLang} />
         {!cw && translateLine}
       </Stack>
@@ -1041,7 +1041,7 @@ export function Post({
         <ArticleTitle title={article.title} summary={article.summary} lang={textLang} />
         {sensitive ? (
           <Disclosure summary={t("post.article_sensitive")} icon="hidden">
-            <Stack lang={textLang}>
+            <Stack gap="entry" lang={textLang}>
               {coverPart}
               {text}
             </Stack>
@@ -1062,7 +1062,7 @@ export function Post({
           <Disclosure
             summary={
               translates ? (
-                <Stack gap="line" lang={textLang}>
+                <Stack gap="entry-line" lang={textLang}>
                   <span>
                     <EmojiText text={cw} emojis={shown.emojis} />
                   </span>
@@ -1074,7 +1074,7 @@ export function Post({
             }
             icon="hidden"
           >
-            <Stack lang={textLang}>{content}</Stack>
+            <Stack gap="entry" lang={textLang}>{content}</Stack>
           </Disclosure>
         ) : (
           content

@@ -19,6 +19,7 @@
 // - `Pin`: a box taken out of the flow and held against the edges of the nearest `anchor` (a badge on a corner, a
 //   spinner over a label), or of the viewport.
 // - `Sticky`: a box that scrolls with what holds it until it meets an edge, then stays.
+// - `Spoken`: words for assistive technology alone, which take no room.
 //
 // Every part also says how its own box sits in the part that holds it (the props of `Placement`): whether it takes
 // the room left or keeps its size, where it stands across the row, how far it reaches past an edge, what it does with
@@ -44,6 +45,14 @@
 // and fixed size from tokens): the lint (restrict/layout-parts) refuses layout in it. The other attributes reach the
 // element in the order the caller wrote them. A block of text (a paragraph, a heading, a list, a figure) has no margin
 // of its own anywhere in the design system (styles.css): where a box stands is its container's to say.
+//
+// A part takes its paint the same way (the props of `Paint`), so that a layer above the design system, which writes no
+// class (ADR-0025 §4), composes these parts and the controls and nothing else. `Paint` says what a composite's own
+// boxes are: the style of a text (its step, its tone, its weight) and the surface under a group (its colour, its
+// corners, its padding), each by a token. It does not say three things, which are parts of the design system instead:
+// what a control looks like in its states (hovered, pressed, focused, invalid, disabled), which is the control's; a
+// rule that reaches into another part (`[&_a]:…`, `[&>svg]:…`), which is a prop of the part reached into; and a value
+// written out (`rounded-[3px]`, `pt-[0.25rem]`), which is a token or nothing.
 //
 // What these props cannot say is not written beside them in a class: it becomes a prop here when it is an arrangement
 // of its own (and a line of the story that shows it), or a layout part named in its own file when only one part of
@@ -325,12 +334,120 @@ const BASELINE = {
 
 type Tag = keyof JSX.IntrinsicElements;
 
+/** The steps of the type scale a text is set in. */
+const TEXT = { caption: "text-caption", body: "text-body", title: "text-title" } as const;
+
+/** The colour of a text: the page's, muted, or the page's surface where it is knocked out of the text's colour. */
+const TONE = { text: "text-text", muted: "text-muted-text", inverse: "text-surface" } as const;
+
+const WEIGHT = { normal: "font-normal", label: "font-label", strong: "font-strong" } as const;
+
+/** The height of a text's lines, where not its step's own: an entry's, for a name beside an avatar. */
+const LEADING = { entry: "leading-entry" } as const;
+
+/** What a text keeps of how it was typed: its line breaks, or its line breaks and its spaces. */
+const KEEPS = { lines: "whitespace-pre-line", spaces: "whitespace-pre-wrap" } as const;
+
+/** Where a text may break besides its spaces: anywhere a long word must, or between phrases alone (ja). */
+const BREAKS = { anywhere: "[overflow-wrap:anywhere]", phrase: "[word-break:auto-phrase]" } as const;
+
+/** The surface under a group: the page's own (inside a raised one), or raised from the page. */
+const SURFACE = { page: "bg-surface", raised: "bg-surface-raised" } as const;
+
+/** The corners of a surface: a control's, or those of an entry's surface. */
+const RADIUS = { control: "rounded-control", entry: "rounded-entry" } as const;
+
+/** The padding of a surface or of a row, by a token of the theme's spacing: on every side, or on the sides of a line. */
+const PAD = { embed: "p-embed", "poll-padding": "p-poll-padding" } as const;
+const PAD_X = { "poll-option-inline": "px-poll-option-inline" } as const;
+const PAD_Y = { "poll-result-block": "py-poll-result-block" } as const;
+
+/**
+ * What a generic part takes of paint: the style of a text and the surface under a group, which are a composite's own
+ * to say. What a control looks like in its states (hovered, pressed, focused, invalid) is not here: a control is a
+ * part of the design system, with its states.
+ */
+type Paint = {
+  /** The step of the type scale its text is set in. */
+  text?: keyof typeof TEXT | undefined;
+  /** The colour of its text. */
+  tone?: keyof typeof TONE | undefined;
+  weight?: keyof typeof WEIGHT | undefined;
+  /** The height of its lines, where not its step's own. */
+  leading?: keyof typeof LEADING | undefined;
+  /** What its text keeps of how it was typed, for a text someone wrote that is shown as plain text. */
+  keeps?: keyof typeof KEEPS | undefined;
+  /** Its figures are as wide as one another, so that a column of them lines up. */
+  numeric?: boolean | undefined;
+  /** Its text keeps to one line: for a few words that belong together, never for a text someone wrote. */
+  nowrap?: boolean | undefined;
+  /** Where its text may break besides its spaces. */
+  breaks?: keyof typeof BREAKS | undefined;
+  /** The surface under it. */
+  surface?: keyof typeof SURFACE | undefined;
+  /** Its corners. */
+  radius?: keyof typeof RADIUS | undefined;
+  /** Its padding on every side. */
+  pad?: keyof typeof PAD | undefined;
+  /** Its padding at the start and the end of its lines. */
+  padX?: keyof typeof PAD_X | undefined;
+  /** Its padding above and below. */
+  padY?: keyof typeof PAD_Y | undefined;
+  /** A list without its markers and, unless it has a padding, their room. */
+  plain?: boolean | undefined;
+};
+
+/** The props of `Paint`, which the element a part renders does not take. */
+const PAINT: Record<keyof Paint, true> = {
+  text: true,
+  tone: true,
+  weight: true,
+  leading: true,
+  keeps: true,
+  numeric: true,
+  nowrap: true,
+  breaks: true,
+  surface: true,
+  radius: true,
+  pad: true,
+  padX: true,
+  padY: true,
+  plain: true,
+};
+
+/** The classes of a part's paint. */
+function paintOf(props: Paint): string {
+  let c = "";
+  if (props.surface) c += ` ${SURFACE[props.surface]}`;
+  if (props.radius) c += ` ${RADIUS[props.radius]}`;
+  if (props.plain) c += props.pad ? " list-none" : " list-none p-0";
+  // A padded box counts its padding in its size.
+  if (props.pad) c += ` box-border ${PAD[props.pad]}`;
+  if (props.padX) c += ` box-border ${PAD_X[props.padX]}`;
+  if (props.padY) c += ` ${PAD_Y[props.padY]}`;
+  if (props.text) c += ` ${TEXT[props.text]}`;
+  if (props.tone) c += ` ${TONE[props.tone]}`;
+  if (props.weight) c += ` ${WEIGHT[props.weight]}`;
+  if (props.leading) c += ` ${LEADING[props.leading]}`;
+  if (props.keeps) c += ` ${KEEPS[props.keeps]}`;
+  if (props.numeric) c += " tabular-nums";
+  if (props.nowrap) c += " whitespace-nowrap";
+  if (props.breaks) c += ` ${BREAKS[props.breaks]}`;
+  return c;
+}
+
+/** Words for assistive technology alone, where what is shown says them by a shape or a place. */
+export function Spoken({ children }: { children: ReactNode }) {
+  return <span className="sr-only">{children}</span>;
+}
+
 /** What every layout part takes beside its arrangement. */
 export type PartProps = Placement &
+  Paint &
   Omit<HTMLAttributes<HTMLElement>, "className" | "style" | "children"> & {
     /** The tag it renders, or the element it lays out (a component that renders its own element). */
     as?: Tag | ReactElement<{ className?: unknown }> | undefined;
-    /** Its paint: no layout. */
+    /** Its paint, inside the design system, where a part writes classes; a layer above gives the props of `Paint`. */
     className?: string | undefined;
     children?: ReactNode;
   };
@@ -396,14 +513,14 @@ function part(layoutClassName: string, props: PartProps, style?: Record<string, 
   if (props.spaceBefore) c += ` ${SPACE_BEFORE[props.spaceBefore]}`;
   if (props.spaceAfter) c += ` ${SPACE_AFTER[props.spaceAfter]}`;
   c = c.trim();
-  const paint = props.className ?? "";
+  const paint = `${props.className ?? ""}${paintOf(props)}`.trim();
   const own = paint === "" ? c : c === "" ? paint : `${paint} ${c}`;
 
   // The element's props: the caller's, with the classes where the caller wrote its own, else last.
   const given: Record<string, unknown> = props;
   const rest: Record<string, unknown> = {};
   for (const key in given) {
-    if (key in PLACEMENT) continue;
+    if (key in PLACEMENT || key in PAINT) continue;
     if (key !== "className") rest[key] = given[key];
     else if (own !== "") rest["className"] = own;
   }
