@@ -165,7 +165,7 @@ describe("each kind of media", () => {
     await user.keyboard("{Enter}");
 
     expect(players("video")).toHaveLength(1);
-    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement === document.body).toBe(false);
   });
 
   test("a video opens whole from its own button, by its place among the pictures", async () => {
