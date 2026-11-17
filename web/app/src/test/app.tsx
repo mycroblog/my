@@ -11,7 +11,7 @@ import { I18nProvider } from "@my/design-system";
 import { fakeHost, fakeOrigin, type FakeOptions } from "@my/e2e/fake";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
-import { afterEach } from "bun:test";
+import { onTestFinished } from "bun:test";
 import { AppRoot } from "../app";
 import { createAppRouter } from "../router";
 import { fakeApp, type FakeApp } from "./server";
@@ -42,20 +42,14 @@ export type TestApp = Pick<FakeApp, "fake" | "data"> & {
   back: () => Promise<void>;
 };
 
-/** What ends with the test: the streams and the watches of the servers of the apps it rendered. */
-const stops: (() => void)[] = [];
-
-afterEach(() => {
-  for (const stop of stops.splice(0)) stop();
-});
-
 /**
  * Renders the app at the path `at`, on a fake API of its own, and returns once the first screen is in place. The
  * reader is the fake's (`viewer`, yuki by default), or a visitor (`visitor: true`).
  */
 export async function renderApp(at: string, { locale = "en", on, ...options }: AppOptions = {}): Promise<TestApp> {
   const { fake, watch, data, visitor } = on ?? fakeApp(options);
-  stops.push(() => {
+  // What the app started ends with the test that rendered it, in whichever file it is.
+  onTestFinished(() => {
     watch.stop();
   });
   // The fake's answers and its stream's events reach the app when they come, as a server's do, not inside an act()
@@ -63,12 +57,12 @@ export async function renderApp(at: string, { locale = "en", on, ...options }: A
   const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const wrapped = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = false;
-  stops.push(() => {
+  onTestFinished(() => {
     if (wrapped === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
     else environment.IS_REACT_ACT_ENVIRONMENT = wrapped;
   });
   // A stream in this tab alone: a simulation has no other tab to share it with.
-  if (!visitor) stops.push(startStream(data, { tabs: null }));
+  if (!visitor) onTestFinished(startStream(data, { tabs: null }));
   const router = createAppRouter({
     data: visitor ? null : data,
     config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
