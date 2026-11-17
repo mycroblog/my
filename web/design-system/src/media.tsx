@@ -20,13 +20,14 @@
 // of the layout. A link card's sensitive image takes the same line.
 
 import { useReducedMotion } from "motion/react";
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { Button as AriaButton } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Blurhash } from "./blurhash";
 import { Button } from "./button";
 import { IconButton } from "./icon-button";
 import { Icon } from "./icons";
+import { Box, Pin, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 
 export type MediaKind = "image" | "gifv" | "video" | "audio" | "unknown";
@@ -50,45 +51,55 @@ export type MediaItem = {
 
 const grid = tv({
   slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-media",
+    cell: "bg-surface-raised",
+    picture: "object-cover",
+    press: [
+      "cursor-zoom-in rounded-control border-0 bg-transparent p-0 outline-hidden",
+      "data-focus-visible:shadow-focus-inset",
+    ],
+    marks: "pointer-events-none",
+    mark: "rounded-control bg-media-badge px-media-mark text-caption font-label text-on-media",
+    play: "pointer-events-none size-media-play rounded-full bg-media-badge text-on-media",
+    corner: "rounded-control bg-media-badge text-on-media",
+    tile: "h-media-preview-height w-media-preview-width rounded-control bg-surface-raised",
+    tilePicture: "object-cover",
+  },
+});
+
+// The pictures' box, a layout part of its own: one box 16:9 of its container's width up to a height, whose frame is
+// the container it measures, laid out by how many pictures there are (two columns from two, two rows from three, the
+// first of three taking the whole first column).
+const pictures = tv({
+  slots: {
     frame: "@container",
     box: [
       "grid gap-media overflow-hidden rounded-control",
       "h-[min(calc(100cqw*var(--media-ratio)),var(--media-max-height))]",
     ],
-    cell: "relative min-h-0 overflow-hidden bg-surface-raised",
-    picture: "block size-full min-h-0 object-cover",
-    press: [
-      "absolute inset-0 cursor-zoom-in rounded-control border-0 bg-transparent p-0 outline-hidden",
-      "data-focus-visible:shadow-focus-inset",
-    ],
-    marks: "pointer-events-none absolute inset-x-media-badge bottom-media-badge flex items-end gap-media",
-    mark: "rounded-control bg-media-badge px-[0.375em] text-caption font-label text-on-media",
-    end: "ms-auto",
-    play: [
-      "pointer-events-none absolute inset-0 m-auto flex size-media-play items-center justify-center rounded-full",
-      "bg-media-badge text-on-media",
-    ],
-    corner: "absolute end-media-badge top-media-badge rounded-control bg-media-badge text-on-media",
-    row: "flex flex-wrap gap-media",
-    tile: "relative h-media-preview-height w-media-preview-width overflow-hidden rounded-control bg-surface-raised",
-    tilePicture: "block size-full object-cover",
   },
   variants: {
     columns: { 1: { box: "grid-cols-[minmax(0,1fr)]" }, 2: { box: "grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" } },
     rows: { 1: { box: "grid-rows-[minmax(0,1fr)]" }, 2: { box: "grid-rows-[minmax(0,1fr)_minmax(0,1fr)]" } },
-    // Three in a grid of two by two: the first takes the whole first column.
-    tall: { true: { cell: "first:row-span-2" } },
+    tall: { true: { box: "[&>:first-child]:row-span-2" } },
   },
 });
+
+function PictureGrid({ count, children }: { count: number; children: ReactNode }) {
+  const s = pictures({ columns: count === 1 ? 1 : 2, rows: count > 2 ? 2 : 1, tall: count === 3 });
+  return (
+    <div className={s.frame()}>
+      <div className={s.box()}>{children}</div>
+    </div>
+  );
+}
 
 const line = tv({
   slots: {
     // A caption's type in the muted color, the glyph and the toggle level with the label's first line.
-    root: "flex w-full items-start gap-entry-caption font-sans text-caption text-muted-text",
-    glyph: "inline-flex h-control-timeline shrink-0 items-center",
+    root: "font-sans text-caption text-muted-text",
+    glyph: "h-control-timeline",
     // Centred on the toggle's height, as a content warning's summary is (disclosure.tsx).
-    text: "min-w-0 flex-1 py-[calc((var(--control-timeline-height)-1lh)/2)]",
+    text: "py-media-line",
   },
 });
 
@@ -96,24 +107,23 @@ const line = tv({
 // hidden from a screen reader, since the line is the one a keyboard reaches and a screen reader hears. It goes as it is
 // pressed, so it never takes the focus, which stays where it was.
 const veil = [
-  "absolute inset-0 cursor-pointer rounded-control border-0 bg-transparent p-0 outline-hidden",
+  "cursor-pointer rounded-control border-0 bg-transparent p-0 outline-hidden",
   "data-focus-visible:shadow-focus-inset",
 ].join(" ");
 
 const audio = tv({
   slots: {
-    root: "flex items-center gap-entry-caption rounded-control bg-surface-raised py-disclosure-padding pe-embed ps-disclosure-padding",
-    text: "grid min-w-0 flex-1 gap-[0.125rem]",
-    name: "truncate text-body",
-    meta: "flex items-center gap-entry-caption text-caption text-muted-text tabular-nums",
-    track: "relative h-[0.1875rem] flex-1 overflow-hidden rounded-full bg-surface-raised-pressed",
-    done: "absolute inset-y-0 start-0 bg-text",
+    root: "rounded-control bg-surface-raised py-disclosure-padding pe-embed ps-disclosure-padding",
+    name: "text-body",
+    meta: "text-caption text-muted-text tabular-nums",
+    track: "h-media-track rounded-full bg-surface-raised-pressed",
+    done: "bg-text",
   },
 });
 
 const file = tv({
   base: [
-    "flex items-center gap-entry-caption rounded-control bg-surface-raised px-embed py-disclosure-padding",
+    "rounded-control bg-surface-raised px-embed py-disclosure-padding",
     "text-body text-text no-underline outline-hidden data-focus-visible:shadow-focus hover:bg-surface-raised-hover",
   ],
 });
@@ -141,18 +151,16 @@ const takeFocus = (player: HTMLVideoElement | null) => {
 function Cell({
   item,
   covered,
-  tall,
   t,
   onOpen,
 }: {
   item: MediaItem;
   covered: boolean;
-  tall: boolean;
   t: T;
   onOpen: (() => void) | undefined;
 }) {
   const kind = kindOf(item);
-  const s = grid({ tall });
+  const s = grid();
   const [playing, setPlaying] = useState(false);
   const still = useReducedMotion() ?? false;
   const named =
@@ -160,85 +168,125 @@ function Cell({
   // Covered, nothing of the picture loads (neither the image nor a video's poster): its blurhash stands in for it.
   if (covered)
     return (
-      <div className={s.cell()}>
-        <Blurhash hash={item.blurhash} className={s.picture()} />
-      </div>
+      <Box anchor clip shrink="block" className={s.cell()}>
+        <Box
+          as={<Blurhash hash={item.blurhash} />}
+          display="block"
+          full="both"
+          shrink="block"
+          className={s.picture()}
+        />
+      </Box>
     );
   const whole = kind === "video" && onOpen !== undefined && (
-    <span className={s.corner()}>
+    <Pin as="span" end="media-badge" top="media-badge" className={s.corner()}>
       <MediaIconButton icon="whole" label={t("media.whole")} onPress={onOpen} />
-    </span>
+    </Pin>
   );
   // Playing, a video keeps its description as its name, and still opens whole from its corner.
   if (kind === "video" && playing)
     return (
-      <div className={s.cell()}>
-        <video
-          ref={takeFocus}
-          tabIndex={0}
+      <Box anchor clip shrink="block" className={s.cell()}>
+        <Box
+          as={
+            <video
+              ref={takeFocus}
+              tabIndex={0}
+              src={item.href}
+              poster={item.src}
+              aria-label={item.alt === "" ? undefined : item.alt}
+              controls
+              autoPlay
+              playsInline
+            />
+          }
+          display="block"
+          full="both"
+          shrink="block"
           className={s.picture()}
-          src={item.href}
-          poster={item.src}
-          aria-label={item.alt === "" ? undefined : item.alt}
-          controls
-          autoPlay
-          playsInline
         />
         {whole}
-      </div>
+      </Box>
     );
   const picture =
     kind === "gifv" ? (
-      <video
+      <Box
+        as={
+          <video
+            src={item.href}
+            poster={item.src}
+            aria-label={item.alt === "" ? undefined : item.alt}
+            muted
+            loop
+            playsInline
+            autoPlay={!still}
+          />
+        }
+        display="block"
+        full="both"
+        shrink="block"
         className={s.picture()}
-        src={item.href}
-        poster={item.src}
-        aria-label={item.alt === "" ? undefined : item.alt}
-        muted
-        loop
-        playsInline
-        autoPlay={!still}
       />
     ) : (
-      <img className={s.picture()} src={item.src} alt={item.alt} />
+      <Box
+        as={<img src={item.src} alt={item.alt} />}
+        display="block"
+        full="both"
+        shrink="block"
+        className={s.picture()}
+      />
     );
   return (
-    <div className={s.cell()}>
+    <Box anchor clip shrink="block" className={s.cell()}>
       {picture}
       {kind === "video" ? (
-        <AriaButton
+        <Pin
+          as={
+            <AriaButton
+              aria-label={item.alt === "" ? t("media.play") : t("media.play_described", { description: item.alt })}
+              onPress={() => {
+                setPlaying(true);
+              }}
+            />
+          }
+          cover
           className={s.press()}
-          aria-label={item.alt === "" ? t("media.play") : t("media.play_described", { description: item.alt })}
-          onPress={() => {
-            setPlaying(true);
-          }}
         />
       ) : (
-        onOpen !== undefined && <AriaButton className={s.press()} aria-label={named} onPress={onOpen} />
+        onOpen !== undefined && (
+          <Pin as={<AriaButton aria-label={named} onPress={onOpen} />} cover className={s.press()} />
+        )
       )}
       {kind === "video" && (
-        <span className={s.play()} aria-hidden="true">
+        <Row as={<Pin as="span" center aria-hidden="true" />} align="center" justify="center" className={s.play()}>
           <Icon name="play" place="action" />
-        </span>
+        </Row>
       )}
-      <span className={s.marks()} aria-hidden="true">
+      <Row
+        as={<Pin as="span" insetInline="media-badge" bottom="media-badge" aria-hidden="true" />}
+        align="end"
+        gap="media"
+        className={s.marks()}
+      >
         {item.alt !== "" && <span className={s.mark()}>{t("media.alt")}</span>}
         {kind === "gifv" && <span className={s.mark()}>{t("media.gif")}</span>}
         {kind === "video" && item.duration !== undefined && (
-          <span className={`${s.mark()} ${s.end()} tabular-nums`}>{playTime(item.duration)}</span>
+          <Box as="span" push="end" className={`${s.mark()} tabular-nums`}>
+            {playTime(item.duration)}
+          </Box>
         )}
-      </span>
+      </Row>
       {whole}
-    </div>
+    </Box>
   );
 }
 
 /** An icon button over a picture: white on the badge's backing, whatever the scheme. */
 function MediaIconButton({ icon, label, onPress }: { icon: "whole" | "hidden"; label: string; onPress: () => void }) {
   return (
-    <span className="flex [color-scheme:dark] [&>button]:text-on-media">
+    <Row as="span" className="[color-scheme:dark] [&>button]:text-on-media">
       <IconButton icon={icon} label={label} onPress={onPress} />
-    </span>
+    </Row>
   );
 }
 
@@ -255,28 +303,24 @@ function Pictures({
   onOpen: ((index: number) => void) | undefined;
 }) {
   const n = items.length;
-  const s = grid({ columns: n === 1 ? 1 : 2, rows: n > 2 ? 2 : 1 });
   return (
-    <div className={s.frame()}>
-      <div className={s.box()}>
-        {items.map((m, i) => (
-          <Cell
-            key={m.id}
-            item={m}
-            covered={covered}
-            tall={n === 3}
-            t={t}
-            onOpen={
-              onOpen === undefined
-                ? undefined
-                : () => {
-                    onOpen(i);
-                  }
-            }
-          />
-        ))}
-      </div>
-    </div>
+    <PictureGrid count={n}>
+      {items.map((m, i) => (
+        <Cell
+          key={m.id}
+          item={m}
+          covered={covered}
+          t={t}
+          onOpen={
+            onOpen === undefined
+              ? undefined
+              : () => {
+                  onOpen(i);
+                }
+          }
+        />
+      ))}
+    </PictureGrid>
   );
 }
 
@@ -290,7 +334,7 @@ export function AudioRow({ item, locale }: { item: MediaItem; locale?: string | 
   const [at, setAt] = useState(0);
   const length = item.duration ?? 0;
   return (
-    <div className={s.root()} dir={direction}>
+    <Row align="center" gap="entry-caption" className={s.root()} dir={direction}>
       {/* One button whose name says what it does now: Play, or Pause while it plays; no toggle state besides. */}
       <IconButton
         icon={playing ? "pause" : "play"}
@@ -302,19 +346,25 @@ export function AudioRow({ item, locale }: { item: MediaItem; locale?: string | 
           else el.pause();
         }}
       />
-      <div className={s.text()}>
-        <span className={s.name()}>{item.alt === "" ? t("media.audio") : item.alt}</span>
-        <span className={s.meta()}>
+      <Stack grow gap="hair">
+        <Box as="span" lines={1} className={s.name()}>
+          {item.alt === "" ? t("media.audio") : item.alt}
+        </Box>
+        <Row as="span" align="center" gap="entry-caption" className={s.meta()}>
           <Icon name="audio" place="caption" />
-          <span className={s.track()} aria-hidden="true">
-            <span className={s.done()} style={{ width: length > 0 ? `${(at / length) * 100}%` : "0%" }} />
-          </span>
+          <Box as="span" anchor clip grow className={s.track()} aria-hidden="true">
+            <Box
+              as={<Pin as="span" insetBlock="0" start="0" />}
+              share={length > 0 ? at / length : 0}
+              className={s.done()}
+            />
+          </Box>
           <span aria-hidden="true">
             {playTime(at)} / {playTime(length)}
           </span>
           <span className="sr-only">{t("media.audio_time", { at: playTime(at), length: playTime(length) })}</span>
-        </span>
-      </div>
+        </Row>
+      </Stack>
       <audio
         ref={ref}
         src={item.href}
@@ -329,7 +379,7 @@ export function AudioRow({ item, locale }: { item: MediaItem; locale?: string | 
           setAt(e.currentTarget.currentTime);
         }}
       />
-    </div>
+    </Row>
   );
 }
 
@@ -358,23 +408,30 @@ export function FileLink({ item, locale }: { item: MediaItem; locale?: string | 
   }
   const title = [item.alt, name].find((text) => text !== "") ?? t("media.file");
   return (
-    <a className={file()} dir={direction} href={item.href ?? item.src} target="_blank" rel="noopener noreferrer">
-      <span className="inline-flex text-muted-text">
+    <Row
+      as={<a dir={direction} href={item.href ?? item.src} target="_blank" rel="noopener noreferrer" />}
+      align="center"
+      gap="entry-caption"
+      className={file()}
+    >
+      <Row as="span" rigid className="text-muted-text">
         <Icon name="file" place="action" />
-      </span>
-      <span className="grid min-w-0 flex-1">
-        <span className="truncate">{title}</span>
+      </Row>
+      <Stack as="span" grow>
+        <Box as="span" lines={1}>
+          {title}
+        </Box>
         {host !== "" && (
-          <bdi dir="ltr" className="truncate text-caption text-muted-text">
+          <Box as="bdi" dir="ltr" lines={1} className="text-caption text-muted-text">
             {host}
-          </bdi>
+          </Box>
         )}
-      </span>
-      <span className="inline-flex text-muted-text">
+      </Stack>
+      <Row as="span" rigid className="text-muted-text">
         <Icon name="open" place="caption" />
-      </span>
+      </Row>
       <span className="sr-only"> {t("media.new_tab")}</span>
-    </a>
+    </Row>
   );
 }
 
@@ -418,13 +475,13 @@ export function SensitiveLine({ label, shown, onToggle, controls, locale }: Sens
   const labelId = useId();
   const s = line();
   return (
-    <div className={s.root()} dir={direction}>
-      <span className={s.glyph()}>
+    <Row full align="start" gap="entry-caption" className={s.root()} dir={direction}>
+      <Row as="span" rigid align="center" className={s.glyph()}>
         <Icon name="hidden" place="caption" />
-      </span>
-      <span id={labelId} className={s.text()}>
+      </Row>
+      <Box as="span" grow id={labelId} className={s.text()}>
         {label}
-      </span>
+      </Box>
       <Button
         kind="quiet"
         size="timeline"
@@ -435,7 +492,7 @@ export function SensitiveLine({ label, shown, onToggle, controls, locale }: Sens
       >
         <span lang={lang}>{t(shown ? "media.hide" : "media.show")}</span>
       </Button>
-    </div>
+    </Row>
   );
 }
 
@@ -465,23 +522,23 @@ export function MediaGrid({ items, size = "full", sensitive = false, onOpen, loc
     // A preview never shows sensitive media: its blurhash stands in for it, and nothing of it loads.
     const s = grid();
     return (
-      <div className={s.row()}>
+      <Row wrap gap="media">
         {items.map((m) => (
-          <span key={m.id} className={s.tile()}>
+          <Box as="span" key={m.id} anchor clip rigid className={s.tile()}>
             {isPicture(m) ? (
               sensitive ? (
-                <Blurhash hash={m.blurhash} className={s.tilePicture()} />
+                <Box as={<Blurhash hash={m.blurhash} />} display="block" full="both" className={s.tilePicture()} />
               ) : (
-                <img className={s.tilePicture()} src={m.src} alt={m.alt} />
+                <Box as={<img src={m.src} alt={m.alt} />} display="block" full="both" className={s.tilePicture()} />
               )
             ) : (
-              <span className="flex size-full items-center justify-center text-muted-text">
+              <Row as="span" full="both" align="center" justify="center" className="text-muted-text">
                 <Icon name={kindOf(m) === "audio" ? "audio" : "file"} place="action" />
-              </span>
+              </Row>
             )}
-          </span>
+          </Box>
         ))}
-      </div>
+      </Row>
     );
   }
   const pictureBox = (hidden: boolean) =>
@@ -496,18 +553,17 @@ export function MediaGrid({ items, size = "full", sensitive = false, onOpen, loc
       ))}
     </>
   );
-  const s = grid();
   if (!sensitive)
     return (
-      <div className={s.root()} dir={direction}>
+      <Stack gap="media" dir={direction}>
         {pictureBox(false)}
         {rest}
-      </div>
+      </Stack>
     );
   // Sensitive: the line above, the pictures blurred and the sounds and files folded until shown.
   const label = sensitiveLabel(items, t);
   return (
-    <div className={s.root()} dir={direction}>
+    <Stack gap="media" dir={direction}>
       <SensitiveLine
         label={label}
         shown={shown}
@@ -517,27 +573,32 @@ export function MediaGrid({ items, size = "full", sensitive = false, onOpen, loc
           setShown(!shown);
         }}
       />
-      <div id={covers} className={s.root()}>
+      <Stack id={covers} gap="media">
         {pictures.length > 0 && (
-          <div className="relative">
+          <Box anchor>
             {pictureBox(covered)}
             {covered && (
               <div className="contents" aria-hidden="true">
-                <AriaButton
+                <Pin
+                  as={
+                    <AriaButton
+                      aria-label={`${label} · ${t("media.show")}`}
+                      excludeFromTabOrder
+                      preventFocusOnPress
+                      onPress={() => {
+                        setShown(true);
+                      }}
+                    />
+                  }
+                  cover
                   className={veil}
-                  aria-label={`${label} · ${t("media.show")}`}
-                  excludeFromTabOrder
-                  preventFocusOnPress
-                  onPress={() => {
-                    setShown(true);
-                  }}
                 />
               </div>
             )}
-          </div>
+          </Box>
         )}
         {!covered && rest}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

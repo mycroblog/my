@@ -12,7 +12,6 @@
     "web/design-system/src/form-page.tsx": {"WidgetSlot": 1},
     "web/design-system/src/history.tsx": {"history.head": 6, "history.image": 1, "history.media": 4, "history.replaced": 1, "history.text": 1, "history.tile": 1, "history.tileAdded": 1, "history.tileRemoved": 2, "history.version": 3},
     "web/design-system/src/icons.tsx": {"icon.glyph": 1, "icon.tile": 4},
-    "web/design-system/src/media.tsx": {"AudioRow": 1, "FileLink": 7, "MediaGrid": 7, "MediaIconButton": 1, "audio.done": 3, "audio.meta": 3, "audio.name": 1, "audio.root": 3, "audio.text": 4, "audio.track": 4, "file.base": 3, "grid.box": 8, "grid.cell": 4, "grid.corner": 3, "grid.end": 1, "grid.frame": 1, "grid.mark": 1, "grid.marks": 6, "grid.picture": 3, "grid.play": 6, "grid.press": 2, "grid.root": 3, "grid.row": 3, "grid.tile": 2, "grid.tilePicture": 2, "line.glyph": 3, "line.root": 4, "line.text": 3},
     "web/design-system/src/motion.tsx": {"Shared": 1},
     "web/design-system/src/profile.tsx": {"fields.field": 1, "fields.root": 3, "fields.value": 1, "head.actions": 5, "head.avatar": 2, "head.banner": 6, "head.handle": 5, "head.image": 2, "head.name": 5, "head.names": 2, "head.root": 4, "head.row": 4, "meta.root": 5, "note.box": 1, "note.editor": 2, "note.glyph": 4, "note.line": 4, "note.text": 2, "tags.heading": 1, "tags.list": 4, "tags.root": 2, "tags.tag": 3},
     "web/design-system/src/prompt.tsx": {"prompt.actions": 4, "prompt.body": 4, "prompt.glyph": 4, "prompt.note": 2, "prompt.root": 1, "prompt.row": 3, "prompt.text": 1},
