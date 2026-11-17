@@ -152,7 +152,7 @@ export function EmojiPickerSheet({
   return (
     <ModalPresence>
       {open && (
-        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" place="sheet" panel={s.sheet()}>
+        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" place="sheet" panelClassName={s.sheet()}>
           <Dialog className={s.sheetDialog()} lang={lang} dir={direction}>
             <div className={s.head()}>
               <Heading slot="title" className={s.title()}>

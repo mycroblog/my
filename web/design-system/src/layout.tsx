@@ -332,9 +332,9 @@ const PLACEMENT: Record<keyof Placement | "as" | "reset", true> = {
  * The element of a part: `as` with the caller's props in the order the caller wrote them, the part's classes after
  * the caller's own.
  */
-function part(layout: string, props: PartProps, style?: Record<string, string>) {
+function part(layoutClassName: string, props: PartProps, style?: Record<string, string>) {
   const as = props.as ?? "div";
-  let c = layout;
+  let c = layoutClassName;
   if (props.reset || (typeof as === "string" && RESET.has(as))) c += " m-0";
   if (props.grow) c += ` ${GROW[props.grow === true ? "share" : props.grow]}`;
   if (props.shrink) c += props.shrink === "block" ? " min-h-0" : " min-w-0";
@@ -420,8 +420,8 @@ type Flow = {
   gap?: Gap | undefined;
 };
 
-function flow(c: string, { align, justify, gap }: Flow) {
-  let out = c;
+function flow(className: string, { align, justify, gap }: Flow) {
+  let out = className;
   if (align) out += ` ${ALIGN[align]}`;
   if (justify) out += ` ${JUSTIFY[justify]}`;
   if (gap) out += ` ${GAP[gap]}`;
@@ -587,8 +587,8 @@ type Edges = {
   insetBlock?: keyof typeof INSET_BLOCK | undefined;
 };
 
-function edges(c: string, { top, bottom, start, end, insetInline, insetBlock }: Edges) {
-  let out = c;
+function edges(className: string, { top, bottom, start, end, insetInline, insetBlock }: Edges) {
+  let out = className;
   if (top) out += ` ${TOP[top]}`;
   if (bottom) out += ` ${BOTTOM[bottom]}`;
   if (start) out += ` ${START[start]}`;

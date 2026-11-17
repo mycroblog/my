@@ -60,6 +60,9 @@ export function Note({ wide, children }: { wide: boolean; children: ReactNode })
   const roomy = window.matchMedia(`(min-width: ${40}rem)`).matches; // error: viewport matchMedia(min-width)
   const width = window.innerWidth; // error: viewport innerWidth
   const height = window.innerHeight;
+  // A class given to a variable after its declaration is read as one written in place.
+  let more = "font-label";
+  if (wide) more += " tablet:underline"; // error: viewport tablet:underline
   return (
     <p className={note()} data-wide={wide || roomy || landscape} data-reduced={reduced}>
       <span
@@ -67,6 +70,7 @@ export function Note({ wide, children }: { wide: boolean; children: ReactNode })
       >
         {children} {width} {height}
       </span>
+      <span className={more} />
     </p>
   );
 }

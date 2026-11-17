@@ -29,10 +29,24 @@ const shelf = tv({
   variants: { wide: { true: { root: "w-full", item: "col-span-2" } } },
 });
 
-export function Shelf({ wide, first, children }: { wide: boolean; first: ReactNode; children: ReactNode }) {
+export function Shelf({
+  wide,
+  first,
+  edge,
+  children,
+}: {
+  wide: boolean;
+  first: ReactNode;
+  edge: string;
+  children: ReactNode;
+}) {
   const s = shelf({ wide });
   return (
     <div className={s.root()}>
+      <div
+        // A class comes in under a name that says so, in a layout part too: its callers are other declarations.
+        className={edge} // error: layout edge
+      />
       <div className={s.item()}>{first}</div>
       <div className={s.shared()}>{children}</div>
     </div>
@@ -105,5 +119,71 @@ export function Tag({ kind, depth, children }: { kind: "flex" | "grid"; depth: n
         }}
       />
     </span>
+  );
+}
+
+// What a declaration gives an element as a class outside an attribute: in an object of props, in an assignment to
+// one, in a variable given more after its declaration, through a function of the file, and in the `classList`.
+const wide = (on: boolean) => (on ? "w-full" : "text-body"); // error: layout w-full
+function joined(className: string, on: boolean) {
+  let out = className;
+  if (on) out += " font-label";
+  return out;
+}
+
+export function Loose({ on, children }: { on: boolean; children: ReactNode }) {
+  let c = "text-body";
+  if (on) c += " ms-auto"; // error: layout ms-auto
+  const props: { className?: string } = {};
+  props.className = "grid"; // error: layout grid
+  const more = { className: "flex-none" }; // error: layout flex-none
+  return (
+    <span {...props}>
+      <span className={c}>{children}</span>
+      <span className={wide(on)} {...more} />
+      <span
+        className={joined(
+          "truncate", // error: layout truncate
+          on,
+        )}
+        ref={(element) => {
+          element?.classList.add("sticky"); // error: layout sticky
+        }}
+      />
+    </span>
+  );
+}
+
+// A class comes into a declaration under a name that says so, `className` or one that ends in `ClassName`: the lint
+// reads what the callers give under that name. The state a component gives a function of classes is no class.
+export function Named({
+  className,
+  innerClassName,
+  look,
+  children,
+}: {
+  className: string;
+  innerClassName: (hovered: boolean) => string;
+  look: string;
+  children: ReactNode;
+}) {
+  const state = (hovered: boolean) => (hovered ? innerClassName(hovered) : className);
+  return (
+    <span className={className}>
+      <span className={state(true)}>{children}</span>
+      <span
+        className={look} // error: layout look
+      />
+    </span>
+  );
+}
+
+export function Taken(props: { tone: string; className: string }) {
+  return (
+    <span
+      className={`${props.className} ${
+        props.tone // error: layout tone
+      }`}
+    />
   );
 }

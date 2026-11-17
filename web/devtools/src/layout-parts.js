@@ -28,7 +28,8 @@
 
 /** @type {Record<string, string[]>} */
 export const LAYOUT_PARTS = {
-  "web/design-system/src/layout.tsx": ["Box", "Row", "Column", "Stack", "Grid", "Layers", "Pin", "Sticky"],
+  // The generic parts, and `part`, the function that renders each of them.
+  "web/design-system/src/layout.tsx": ["Box", "Row", "Column", "Stack", "Grid", "Layers", "Pin", "Sticky", "part"],
   "web/design-system/src/shell.tsx": [
     "Frame",
     "FrameSide",

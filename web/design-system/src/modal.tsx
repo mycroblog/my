@@ -139,10 +139,21 @@ function ModalFrame({
   );
 }
 
-/** The panel of a modal, where `place` puts it in its frame, on the surface its modal gives it (`paint`). */
-function ModalPanel({ place, paint, children }: { place: ModalPlace; paint: string | undefined; children: ReactNode }) {
+/** The panel of a modal, where `place` puts it in its frame, on the surface its modal gives it (`className`). */
+function ModalPanel({
+  place,
+  className,
+  children,
+}: {
+  place: ModalPlace;
+  className: string | undefined;
+  children: ReactNode;
+}) {
   return (
-    <m.div className={paint === undefined ? PANEL[place] : `${paint} ${PANEL[place]}`} variants={modalMotion.panel}>
+    <m.div
+      className={className === undefined ? PANEL[place] : `${className} ${PANEL[place]}`}
+      variants={modalMotion.panel}
+    >
       {children}
     </m.div>
   );
@@ -161,7 +172,7 @@ export type ModalLayerProps = {
   /** Where the panel stands over the viewport. */
   place: ModalPlace;
   /** The panel's own surface: its paint, its padding. */
-  panel?: string | undefined;
+  panelClassName?: string | undefined;
   /** It takes no pointer yet (a sheet whose opening press has not ended). */
   idle?: boolean | undefined;
   children: ReactNode;
@@ -173,7 +184,7 @@ export function ModalLayer({
   ownEscape = false,
   backdrop: dim = "always",
   place,
-  panel,
+  panelClassName,
   idle = false,
   children,
 }: ModalLayerProps) {
@@ -198,7 +209,7 @@ export function ModalLayer({
         <ModalFrame place={place} backdrop={dim} idle={idle || !present} states={modalStates(reduced)}>
           <div {...modalProps} ref={ref} className="contents">
             <DismissButton onDismiss={onDismiss} />
-            <ModalPanel place={place} paint={panel}>
+            <ModalPanel place={place} className={panelClassName}>
               <OverlayTriggerStateContext value={state}>{children}</OverlayTriggerStateContext>
             </ModalPanel>
           </div>

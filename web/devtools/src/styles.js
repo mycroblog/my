@@ -26,11 +26,15 @@
 //   - Colour, type (with how a text wraps), radius, border, shadow, opacity, cursor, focus ring, transition and
 //     transform are neither: every part writes them. `hidden` and `sr-only` show or hide, `contents` gives a part
 //     no box, and none of them places.
-//   A viewport breakpoint is the other rule's. The classes are the ones of a `tv()` declaration, by slot, of a
-//   `className` and of the constants these name; a slot may write layout when every component that reads it is a
-//   layout part of layout-parts.js, a `className` or a `style` when its component is. The rule knows a component as a
-//   function at the top of its file, and does not follow a class through a call of another function or into another
-//   file.
+//   A viewport breakpoint is the other rule's. The classes are the ones of a `tv()` declaration, by slot, and the
+//   ones a declaration gives to an element: in a `className` (an attribute, a property of an object, an assignment
+//   to one, the `classList`), through the constants and the variables these name, with what a variable is given
+//   after its declaration (`c += " flex"`), and through the functions of the file they call, by what those return.
+//   A slot may write layout when every component that reads it is a layout part of layout-parts.js, a `className` or
+//   a `style` when its declaration is. The rule knows a component as a function at the top of its file and does not
+//   read another file: so a class crosses from one declaration to another only under a name that says it is one. A
+//   parameter or a prop that a declaration gives to an element as a class is named `className` or `…ClassName`, and
+//   what its callers give under that name, in this file or another, is read where they write it.
 //
 // - viewport-breakpoints: only the frame of a page decides by the viewport (ADR-0025 §4). It refuses, outside the
 //   components layout-parts.js names as page frames, a class under a breakpoint variant (`tablet:`, `max-desktop:`,
@@ -255,19 +259,81 @@ function collect(context) {
     return def?.type === "Variable" && def.node.init ? callsTV(def.node.init, depth + 1) : false;
   }
 
+  /** The function a call's callee names, when it is one of this file: its declaration, or the function a constant holds. */
+  function functionOf(/** @type {Node} */ callee) {
+    const expression = unwrap(callee);
+    if (expression.type !== "Identifier") return undefined;
+    const def = resolve(expression, expression.name)?.defs[0];
+    if (def?.type === "FunctionName") return def.node;
+    const init = def?.type === "Variable" && def.node.init ? unwrap(def.node.init) : undefined;
+    return init?.type === "ArrowFunctionExpression" || init?.type === "FunctionExpression" ? init : undefined;
+  }
+
+  /** The places, among a function's parameters, of those named as a class. */
+  function classParameters(/** @type {Node} */ fn) {
+    return fn.params.flatMap((/** @type {Node} */ parameter, /** @type {number} */ index) => {
+      const id = parameter.type === "AssignmentPattern" ? parameter.left : parameter;
+      return id.type === "Identifier" && CLASS_ATTRIBUTE.test(id.name) ? [index] : [];
+    });
+  }
+
+  /** Whether a function stands at the top of the file: a component, or a function the components of the file call. */
+  function atTop(/** @type {Node} */ fn) {
+    let node = fn.parent;
+    if (node?.type === "VariableDeclarator") node = node.parent?.parent;
+    if (node?.type === "ExportNamedDeclaration" || node?.type === "ExportDefaultDeclaration") node = node.parent;
+    return node?.type === "Program";
+  }
+
+  /**
+   * The name a caller gives a parameter by: the key of a destructured prop (`{ panel: frame }` is `panel`), or the
+   * parameter's own; undefined for the rest of the props, and for a parameter of a function inside another, which
+   * takes what that one gives it.
+   */
+  function givenName(/** @type {any} */ def) {
+    if (def?.type !== "Parameter" || !atTop(def.node)) return undefined;
+    let binding = def.name;
+    if (binding.parent?.type === "AssignmentPattern" && binding.parent.left === binding) binding = binding.parent;
+    const holder = binding.parent;
+    if (holder?.type === "RestElement") return undefined;
+    if (holder?.type === "Property" && holder.value === binding) return keyName(holder);
+    return def.name.name;
+  }
+
+  /** The parameters, by declaration, that reach an element as a class under a name that does not say so. */
+  /** @type {Map<string, Finding[]>} */
+  const misnamed = new Map();
+  const reported = new Set();
+
+  /** Holds a class that comes in through `name` to that name: `className`, or one that ends in `ClassName`. */
+  function cameIn(/** @type {string | undefined} */ name, /** @type {Node} */ node, /** @type {string} */ owner) {
+    if (name === undefined || CLASS_ATTRIBUTE.test(name) || reported.has(node)) return;
+    reported.add(node);
+    (misnamed.get(owner) ?? misnamed.set(owner, []).get(owner))?.push({
+      node,
+      what: name,
+      why:
+        `gives an element a class that comes in through \`${name}\`, a name that does not say so: the lint reads ` +
+        "what a caller gives as a class by the name it gives it under, in this file and in every other. Name it " +
+        "`className`, or a name that ends in `ClassName` (ADR-0171 §3).",
+    });
+  }
+
   /**
    * The class texts an expression may yield: each string and template written in it, through conditionals, arrays,
-   * the arguments of a call and the constants it names. A call of a `tv()` yields the classes of its `class` option
-   * alone, since its other options name variants.
+   * the arguments of a call, the constants and the variables it names with what they are given later, and what a
+   * function of the file it calls returns. A call of a `tv()` yields the classes of its `class` option alone, since
+   * its other options name variants. A parameter it reaches is held to its name (`cameIn`), in `owner`.
    * @param {Node | null | undefined} node
    * @param {ClassText[]} out
    * @param {Set<Node>} seen
+   * @param {string} owner
    */
-  function classTexts(node, out, seen, depth = 0) {
+  function classTexts(node, out, seen, owner, depth = 0) {
     if (!node || depth > MAX_DEPTH * 4 || seen.has(node)) return out;
     seen.add(node);
     const expression = unwrap(node);
-    const next = (/** @type {Node | null | undefined} */ n) => classTexts(n, out, seen, depth + 1);
+    const next = (/** @type {Node | null | undefined} */ n) => classTexts(n, out, seen, owner, depth + 1);
     switch (expression.type) {
       case "Literal":
         if (typeof expression.value === "string") out.push({ text: expression.value, node: expression });
@@ -277,7 +343,12 @@ function collect(context) {
           text: expression.quasis.map((/** @type {Node} */ q) => q.value.cooked ?? "").join("\0"),
           node: expression,
         });
-        expression.expressions.forEach(next);
+        // What stands alone between spaces is a class of its own; what is written into a class is a part of it.
+        expression.expressions.forEach((/** @type {Node} */ part, /** @type {number} */ i) => {
+          const before = expression.quasis[i]?.value.cooked ?? "";
+          const after = expression.quasis[i + 1]?.value.cooked ?? "";
+          if (/(?:^|\s)$/.test(before) && /^(?:\s|$)/.test(after)) next(part);
+        });
         break;
       case "ArrayExpression":
         expression.elements.forEach(next);
@@ -302,9 +373,21 @@ function collect(context) {
       case "ObjectExpression":
         for (const property of expression.properties) next(property.type === "Property" ? property.value : property);
         break;
-      case "MemberExpression":
-        next(expression.object);
+      case "MemberExpression": {
+        const property = expression.property;
+        const name = !expression.computed
+          ? property.name
+          : property.type === "Literal" && typeof property.value === "string"
+            ? property.value
+            : undefined;
+        // A class under a class's name is its giver's to write, and read where it is written.
+        if (name !== undefined && CLASS_ATTRIBUTE.test(name)) break;
+        const object = unwrap(expression.object);
+        const def = object.type === "Identifier" ? resolve(object, object.name)?.defs[0] : undefined;
+        if (name !== undefined && givenName(def) !== undefined) cameIn(name, expression, owner);
+        else next(expression.object);
         break;
+      }
       case "CallExpression":
         if (callsTV(expression.callee, 0)) {
           for (const argument of expression.arguments) {
@@ -315,8 +398,16 @@ function collect(context) {
                 next(property.value);
           }
         } else {
-          if (expression.callee.type === "MemberExpression") next(expression.callee.object);
-          expression.arguments.forEach(next);
+          const fn = functionOf(expression.callee);
+          if (fn === undefined) {
+            if (expression.callee.type === "MemberExpression") next(expression.callee.object);
+            expression.arguments.forEach(next);
+          } else {
+            // A function of the file: what it returns, and what it is given under a class's name.
+            for (const index of classParameters(fn)) next(expression.arguments[index]);
+            if (fn.type === "FunctionDeclaration") returned(fn.body, next);
+            else next(fn);
+          }
         }
         break;
       case "ArrowFunctionExpression":
@@ -325,9 +416,16 @@ function collect(context) {
         else next(expression.body);
         break;
       case "Identifier": {
-        const def = resolve(expression, expression.name)?.defs[0];
-        if (def?.type === "Variable" && def.node.id.type === "Identifier" && def.node.init && !isTV(def.node.init))
+        const variable = resolve(expression, expression.name);
+        const def = variable?.defs[0];
+        if (def?.type === "Parameter") cameIn(givenName(def), expression, owner);
+        else if (def?.type === "Variable" && def.node.id.type === "Identifier" && !isTV(def.node.init)) {
+          if (seen.has(def.node)) break;
+          seen.add(def.node);
           next(def.node.init);
+          // What the variable is given after its declaration: `c += " flex"`.
+          for (const reference of variable.references) if (reference.writeExpr) next(reference.writeExpr);
+        }
         break;
       }
       default:
@@ -363,7 +461,7 @@ function collect(context) {
     const slots = new Map();
     const seen = new Set();
     const add = (/** @type {string} */ slot, /** @type {Node} */ value) => {
-      classTexts(value, slots.get(slot) ?? slots.set(slot, []).get(slot), seen);
+      classTexts(value, slots.get(slot) ?? slots.set(slot, []).get(slot), seen, ownerOf(call));
     };
     /** A value that is the classes of the base, or an object of the classes of each slot. */
     const addValue = (/** @type {Node} */ value, /** @type {string[]} */ fallback) => {
@@ -466,10 +564,56 @@ function collect(context) {
     return out;
   }
 
+  /** Reads what a declaration gives an element as a class. */
+  function given(/** @type {Node} */ at, /** @type {Node | null | undefined} */ value) {
+    const owner = ownerOf(at);
+    classTexts(value, written.get(owner) ?? written.set(owner, []).get(owner), seenWritten, owner);
+  }
+
+  /** Whether `node` is in the configuration or the options of a `tv()`, whose classes its declaration holds. */
+  function inTV(/** @type {Node} */ node) {
+    for (let parent = node.parent; parent; parent = parent.parent)
+      if (parent.type === "CallExpression" && (isTV(parent) || callsTV(parent.callee, 0))) return true;
+    return false;
+  }
+
+  /** The name of the member a member expression reads, written as a name or as a string. */
+  const memberName = (/** @type {Node} */ member) =>
+    !member.computed
+      ? member.property.name
+      : member.property.type === "Literal" && typeof member.property.value === "string"
+        ? member.property.value
+        : undefined;
+
   return {
     visitors: {
       FunctionDeclaration(/** @type {Node} */ node) {
         if (!owners.has(ownerOf(node))) owners.set(ownerOf(node), node);
+      },
+      // A class given outside an attribute: `{ className: … }` (an element's props, spread or cloned).
+      Property(/** @type {Node} */ node) {
+        if (node.parent?.type !== "ObjectExpression" || !CLASS_ATTRIBUTE.test(keyName(node) ?? "")) return;
+        if (!inTV(node)) given(node, node.value);
+      },
+      // `props.className = …`, `element.className = …`.
+      AssignmentExpression(/** @type {Node} */ node) {
+        const left = unwrap(node.left);
+        if (left.type === "MemberExpression" && CLASS_ATTRIBUTE.test(memberName(left) ?? "")) given(node, node.right);
+      },
+      CallExpression(/** @type {Node} */ node) {
+        const callee = unwrap(node.callee);
+        // `element.classList.add(…)`, `element.setAttribute("class", …)`.
+        if (callee.type === "MemberExpression" && !callee.computed) {
+          const object = unwrap(callee.object);
+          if (object.type === "MemberExpression" && memberName(object) === "classList")
+            for (const argument of node.arguments) given(node, argument);
+          const [name, value] = node.arguments;
+          if (callee.property.name === "setAttribute" && name?.type === "Literal" && name.value === "class")
+            given(node, value);
+        }
+        // A function of the file that takes a class under its name: what each caller gives it.
+        const fn = functionOf(node.callee);
+        if (fn !== undefined) for (const index of classParameters(fn)) given(node, node.arguments[index]);
       },
       VariableDeclarator(/** @type {Node} */ node) {
         if (node.id.type !== "Identifier") return;
@@ -494,8 +638,7 @@ function collect(context) {
         if (node.name.type !== "JSXIdentifier" || !node.value) return;
         const value = node.value.type === "JSXExpressionContainer" ? node.value.expression : node.value;
         const owner = ownerOf(node);
-        if (CLASS_ATTRIBUTE.test(node.name.name))
-          classTexts(value, written.get(owner) ?? written.set(owner, []).get(owner), seenWritten);
+        if (CLASS_ATTRIBUTE.test(node.name.name)) given(node, value);
         else if (node.name.name === "style") styleObjects(value, styled.get(owner) ?? styled.set(owner, []).get(owner));
       },
     },
@@ -503,6 +646,7 @@ function collect(context) {
     written,
     styled,
     owners,
+    misnamed,
   };
 }
 
@@ -596,7 +740,7 @@ function known(
 function createLayoutParts(context) {
   const file = fileKey(String(context.filename));
   const parts = new Set(LAYOUT_PARTS[file] ?? []);
-  const { visitors, declarations, written, styled, owners } = collect(context);
+  const { visitors, declarations, written, styled, owners, misnamed } = collect(context);
   const why = (/** @type {string} */ kind, /** @type {string} */ readers) =>
     `writes ${kind}, which is layout, and ${readers}: only a part that just places its children writes layout ` +
     "(ADR-0171 §3). Build it from the layout parts of @my/design-system (web/devtools/src/layout-parts.js names " +
@@ -626,6 +770,8 @@ function createLayoutParts(context) {
               });
           }
       }
+      // A class that comes in under another name, in a layout part too: its callers are other declarations.
+      for (const [owner, found] of misnamed) for (const finding of found) add(owner, finding);
       settle(context, program, "layout-parts", findings, owners);
       known(context, program, LAYOUT_PARTS[file] ?? [], owners);
     },
@@ -664,6 +810,7 @@ function createViewportBreakpoints(context) {
   return {
     ...visitors,
     CallExpression(/** @type {Node} */ node) {
+      visitors.CallExpression(node);
       const callee = unwrap(node.callee);
       const named =
         (callee.type === "Identifier" && callee.name === "matchMedia") ||

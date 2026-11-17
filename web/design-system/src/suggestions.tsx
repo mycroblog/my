@@ -118,7 +118,7 @@ export function SuggestionList({ id, label, items, active, onChoose, status }: S
             onChoose(i);
           }}
         >
-          <Row item={item} s={s} />
+          <Row item={item} />
         </div>
       ))}
     </div>
@@ -131,7 +131,8 @@ const handleParts = (handle: string): [string, string] => {
   return at < 0 ? [handle, ""] : [handle.slice(0, at), handle.slice(at)];
 };
 
-function Row({ item, s }: { item: Suggestion; s: ReturnType<typeof list> }) {
+function Row({ item }: { item: Suggestion }) {
+  const s = list();
   switch (item.kind) {
     case "account": {
       const [user, server] = handleParts(item.handle);

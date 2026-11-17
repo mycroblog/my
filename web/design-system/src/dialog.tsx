@@ -102,7 +102,7 @@ export function ConfirmDialog({
     );
   return (
     // In flight, the dialog stays: Escape and a press outside cancel no more than Cancel, which is disabled.
-    <ModalLayer onDismiss={busy ? () => undefined : onCancel} place="center" panel={s.modal()}>
+    <ModalLayer onDismiss={busy ? () => undefined : onCancel} place="center" panelClassName={s.modal()}>
       <Stack
         gap="dialog-gap"
         as={<Dialog role="alertdialog" aria-describedby={textId} className={s.dialog()} dir={direction} />}

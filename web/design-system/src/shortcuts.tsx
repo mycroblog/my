@@ -103,7 +103,7 @@ export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; ma
               setShown(null);
             }}
             place="center"
-            panel={help().modal()}
+            panelClassName={help().modal()}
           >
             <ShortcutList screen={shown.screen} groups={shown.groups} mac={store.mac} />
           </ModalLayer>
