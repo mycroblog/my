@@ -119,3 +119,89 @@ test("a vote in a post's poll reaches the server", async () => {
     if (poll.queryAllByText(/your vote/).length !== 1) throw new Error("the poll shows no vote of the reader's");
   });
 });
+
+/** The people suggested over the home timeline, and the feed under them, as the screen shows them. */
+const suggested = () => screen.queryByRole("list", { name: "Suggested for you" });
+const feed = () => screen.queryByRole("feed", { name: "Home timeline" });
+
+/** Quickdeals follows no one: the server suggests people to them, and their home holds one post, their own. */
+const newcomer: FakeOptions = { viewer: "quickdeals" };
+
+/** Waits until the home timeline's first page is read, so that a test looks at the screen when it could have it. */
+const timelineRead = (data: ReturnType<typeof fakeData>["data"]) =>
+  waitFor(() => {
+    if (data.queryClient.getQueryState(homeTimelineQuery(data).queryKey)?.status !== "success")
+      throw new Error("the first page of the timeline is not read yet");
+  });
+
+test("for a reader who follows no one, no post shows while the suggestions are on their way, then the people and the feed show together, the people first", async () => {
+  const { fake, data } = fakeData(newcomer);
+  const suggestions = fake.script("GET /accounts/suggestions", { hold: "response" });
+  const loading = loadHomeTimeline(data);
+  renderFeature(data, <HomeTimeline />);
+
+  await suggestions.served();
+  await timelineRead(data);
+  // The timeline is read and the suggestions are not: the column is loading, and nothing of the feed is drawn.
+  expect(screen.getByText("Loading posts…").getAttribute("role")).toBe("status");
+  expect(feed()).toBeNull();
+  expect(screen.queryAllByRole("article")).toHaveLength(0);
+  expect(suggested()).toBeNull();
+
+  suggestions.release();
+  await loading;
+  const people = await screen.findByRole("list", { name: "Suggested for you" });
+  const [first] = within(screen.getByRole("feed", { name: "Home timeline" })).getAllByRole("article");
+  if (first === undefined) throw new Error("test: the home timeline shows no post");
+  expect(people.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  expect(screen.queryByText("Loading posts…")).toBeNull();
+});
+
+// Defect: Home's first paint waits for the suggestions' retry after a failed answer: the loader returns with the
+// request failed once, and the feed shows only when the retry fails too (two requests, not one).
+test.failing(
+  "for a reader who follows no one, suggestions that fail leave the feed alone, and the block is not added later",
+  async () => {
+    const { fake, data } = fakeData(newcomer);
+    const suggestions = fake.script("GET /accounts/suggestions", { fail: 500 });
+    await loadHomeTimeline(data);
+    renderFeature(data, <HomeTimeline />);
+
+    expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+    expect(suggested()).toBeNull();
+    await waitFor(() => {
+      if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+    });
+    expect(suggestions.seen).toHaveLength(1);
+    expect(suggested()).toBeNull();
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+  },
+);
+
+test("for a reader who follows no one, suggestions that name no one leave the feed alone", async () => {
+  const { fake, data } = fakeData(newcomer);
+  fake.script("GET /accounts/suggestions", { change: (page) => ({ ...page, items: [] }) });
+  await loadHomeTimeline(data);
+  renderFeature(data, <HomeTimeline />);
+
+  expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+  await waitFor(() => {
+    if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+  });
+  expect(suggested()).toBeNull();
+  expect(screen.queryAllByRole("link", { name: "Find more people" })).toHaveLength(0);
+});
+
+test("for a reader who follows someone, no suggestions are asked for, and the feed shows without them", async () => {
+  const { fake, data } = fakeData(server);
+  const suggestions = fake.script("GET /accounts/suggestions");
+  await loadHomeTimeline(data);
+  renderFeature(data, <HomeTimeline />);
+
+  expect(post("Bread at ten on Saturday")).toBeDefined();
+  await waitFor(() => {
+    if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+  });
+  expect(suggestions.seen).toHaveLength(0);
+  expect(suggested()).toBeNull();
+});
