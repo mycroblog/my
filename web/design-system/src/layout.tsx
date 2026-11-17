@@ -174,6 +174,8 @@ const MAX = {
   "menu-about": "max-w-[16rem]",
   // A sheet from the viewport's bottom edge leaves the page in sight above it.
   sheet: "max-h-[85dvh]",
+  // The suggestions for a word of the composer: eight options, then they scroll.
+  suggestions: "max-h-[calc(8*var(--control-form-height)+2*var(--menu-padding))]",
   // An article's cover is never taller than this, whatever its width.
   "article-cover": "max-h-article-cover-max",
 } as const;

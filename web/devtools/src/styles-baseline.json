@@ -23,7 +23,6 @@
     "web/design-system/src/prompt.tsx": {"prompt.actions": 4, "prompt.body": 4, "prompt.glyph": 4, "prompt.note": 2, "prompt.root": 1, "prompt.row": 3, "prompt.text": 1},
     "web/design-system/src/search-field.tsx": {"field.box": 4, "field.end": 6, "field.glyph": 3, "field.hint": 1, "field.input": 3, "field.root": 2},
     "web/design-system/src/shortcuts.tsx": {"help.caption": 5, "help.dialog": 2, "help.group": 2, "help.header": 4, "help.key": 4, "help.keys": 4, "help.label": 1, "help.list": 3, "help.modal": 2, "help.row": 4, "help.title": 1},
-    "web/design-system/src/suggestions.tsx": {"Row": 3, "list.end": 2, "list.handle": 3, "list.lead": 4, "list.line": 4, "list.name": 3, "list.option": 5, "list.panel": 3, "list.server": 1, "list.text": 5, "list.user": 2},
     "web/design-system/src/switch.tsx": {"toggle.description": 2, "toggle.label": 2, "toggle.root": 5, "toggle.thumb": 5, "toggle.track": 5},
     "web/design-system/src/thread.tsx": {"details.glyph": 4, "details.root": 3, "focus.base": 4},
     "web/design-system/src/viewer.tsx": {"MediaViewer": 3, "view.bar": 3, "view.caption": 5, "view.end": 1, "view.main": 11, "view.panel": 4, "view.picture": 3, "view.position": 2, "view.side": 3, "view.stage": 5, "view.start": 1, "view.tools": 3}

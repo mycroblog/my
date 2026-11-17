@@ -52,6 +52,7 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/drafts.tsx": ["DraftSections", "DraftList"],
   "web/design-system/src/history.tsx": ["VersionList"],
   "web/design-system/src/composer.tsx": ["AttachmentList", "PollSettings"],
+  "web/design-system/src/suggestions.tsx": ["OptionName", "OptionHandle"],
   "web/design-system/src/article-editor.tsx": ["EditorFrame", "ArticlePane", "ModeRow", "PreviewBody"],
   // The fixtures that prove the rules (restrictions.test.js).
   "web/design-system/fixtures/layout.tsx": ["Row", "Shelf", "Gone"],
