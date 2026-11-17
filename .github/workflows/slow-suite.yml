@@ -260,7 +260,32 @@ jobs:
       - name: tofu:aws-plan-test
         run: scripts/task.sh tofu:aws-plan-test
 
+  e2e-build:
+    if: inputs.scope == 'all'
+    # The test build of bin/my, built once for the jobs of e2e (ADR-0079 §9), as in ci.yml.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: go:bin
+        run: scripts/task.sh go:bin GO_TAGS=e2e_fakes
+      - name: Keep bin/my for the E2E jobs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-my
+          path: bin/my
+          retention-days: 1
+
   e2e:
+    needs: e2e-build
     if: inputs.scope == 'all'
     # The E2E tests of the web client, each twice on one seeded server and never run again when they fail: a test
     # that passes only sometimes, or only before its own writes are there, fails here, while ci.yml's e2e runs each
@@ -277,8 +302,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
@@ -287,6 +310,14 @@ jobs:
         # The whole browser, as in ci.yml's e2e.
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
+      - name: Fetch bin/my
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: e2e-my
+          path: bin
+      # An artifact does not keep the file's mode.
+      - name: Make bin/my executable
+        run: chmod +x bin/my
       - name: List the spec files of the shard
         id: specs
         working-directory: web/e2e
@@ -296,10 +327,10 @@ jobs:
           files="$(bun --bun playwright test --list --reporter=json --shard="$SHARD/4" | jq -r '[.suites[].file] | unique | map("specs/" + .) | join(" ")')"
           test -n "$files"
           echo "files=$files" >> "$GITHUB_OUTPUT"
-      - name: web:e2e
+      - name: web:e2e-built
         env:
           FILES: ${{ steps.specs.outputs.files }}
-        run: scripts/task.sh web:e2e -- --repeat-each=2 $FILES
+        run: scripts/task.sh web:e2e-built -- --repeat-each=2 $FILES
 
   codeql:
     if: inputs.scope == 'all'
@@ -315,7 +346,7 @@ jobs:
   # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
   result:
     if: always()
-    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, e2e, codeql]
+    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, e2e-build, e2e, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results
