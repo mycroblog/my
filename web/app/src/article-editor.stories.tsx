@@ -70,10 +70,11 @@ export const SummaryRefused: Story = {
   parameters: screen({ at: "article-edit:sam-article", viewer: "sam", server: { articles: { publish: "summary" } } }),
   play: async (context: StoryContext) => {
     await pressRefused(context);
-    // The fake's detail, under the summary's textarea, which it describes.
+    // The fake's detail, under the summary's textarea, which its hint and then it describe.
     const summary = context.canvasElement.querySelector('textarea[aria-invalid="true"]');
-    const error = summary?.getAttribute("aria-describedby");
-    if (!error || !context.canvasElement.ownerDocument.getElementById(error)?.textContent.includes("not valid"))
+    const described = summary?.getAttribute("aria-describedby")?.split(" ") ?? [];
+    const texts = described.map((id) => context.canvasElement.ownerDocument.getElementById(id)?.textContent ?? "");
+    if (!texts.some((text) => text.includes("not valid")))
       throw new Error("the refusal does not stand under the summary");
   },
 };
