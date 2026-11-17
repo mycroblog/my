@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The drafts in the composer (ADR-0156), as its screens show them: the list goes back to the post being written, a
-// save from an older copy is refused for the newer one, and a scheduled post that failed says why. The writer is Yuki.
-// That a draft is kept, scheduled, deleted and published is the E2E tests' (web/e2e/specs/drafts.spec.ts).
+// save from an older copy is refused for the newer one. The writer is Yuki. Why a scheduled post failed is the
+// feature's (compose/drafts.dom.test.tsx, compose/model.test.ts); that a draft is kept, scheduled, deleted and
+// published is the E2E tests' (web/e2e/specs/drafts.spec.ts).
 
 import { expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
@@ -106,21 +107,4 @@ test("a save from an older copy of a draft is refused, and the composer opens th
   const after = await openDrafts(app, (await newPost(app)).dialog);
   expect(await within(after).findByRole("heading", { name: "Drafts 1" })).toBeDefined();
   expect(opener(await draftRow(after, newer), newer)).toHaveLength(1);
-});
-
-test("a scheduled post that failed says why on its draft and in the composer", async () => {
-  const text = "Booked two seats. See you at the pier!";
-  const app = await renderApp("/bookmarks");
-  const drafts = await openDrafts(app, (await newPost(app)).dialog);
-
-  const row = await draftRow(drafts, text);
-  expect(
-    within(row).getByText(/^Scheduled for .+, not posted: the post it replies to is no longer available$/),
-  ).toBeDefined();
-  for (const button of opener(row, text)) await app.user.click(button);
-
-  const composer = await screen.findByRole("dialog", { name: "Reply" });
-  expect(words(await within(composer).findByRole("alert"))).toMatch(
-    /^Scheduled for .+, not posted: the post it replies to is no longer available\. Edit it if needed, then post it or schedule it again\.$/,
-  );
 });
