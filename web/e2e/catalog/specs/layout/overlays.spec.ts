@@ -226,10 +226,6 @@ test("a question keeps its words and its buttons inside it when its title holds 
   page,
   open,
 }) => {
-  test.fail(
-    true,
-    "ConfirmDialog: a word no line holds in the title does not wrap; the text and the buttons leave the panel",
-  );
   await open(story, { args: { long: true } });
   await trigger(page, "Open the question").click();
   const question = page.getByRole("alertdialog", { name: /^Delete .+\?$/ });
@@ -243,7 +239,6 @@ test("a question keeps its words and its buttons inside it when its title holds 
 });
 
 test("a menu's sheet keeps an item inside it when its label holds a word no line holds", async ({ page, open }) => {
-  test.fail(true, "MenuItem: a word no line holds in the label does not wrap and runs out of the sheet at 320 px");
   await open(story, { args: { long: true } });
   await trigger(page, "Menu at the end").click();
   const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });

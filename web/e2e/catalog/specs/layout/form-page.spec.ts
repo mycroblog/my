@@ -158,7 +158,6 @@ test("the server's front page shows its introduction at every width, ended by it
 });
 
 test("a page keeps its width when a name in it is a word no line holds", async ({ page, open }) => {
-  test.fail(true, "FormHead, FormList, FormLink: a word no line holds does not wrap and widens the page at 320 px");
   await open(story, { args: { long: "word" } });
   const overflow = await atRest(() => sidewaysScroll(page));
   expect(overflow).toEqual([]);
