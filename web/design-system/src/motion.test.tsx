@@ -1,54 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { afterEach, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
-import { routerTransitions, runTransition, Shared, transitionTypes, type TransitionKind } from "./motion";
+// What a change of screen does with no browser at all, and the rules its View Transitions run by. What it does in a
+// document is in motion.dom.test.tsx.
+
+import { expect, test } from "bun:test";
+import { routerTransitions, runTransition, type TransitionKind } from "./motion";
 import { transitionRules } from "./motion-css";
-
-const globals = globalThis as Record<string, unknown>;
-
-/** A browser with View Transitions and their types, and the reader's motion preference; the calls it saw. */
-function browser({ reduce = false }: { reduce?: boolean } = {}) {
-  const started: { types: string[] }[] = [];
-  globals.document = {
-    startViewTransition: ({ update, types }: { update: () => void; types: string[] }) => {
-      started.push({ types });
-      update();
-      return { updateCallbackDone: Promise.resolve() };
-    },
-  };
-  globals.matchMedia = () => ({ matches: reduce });
-  return started;
-}
-
-afterEach(() => {
-  delete globals.document;
-  delete globals.matchMedia;
-});
-
-test("each kind that moves is the type of its View Transition; none changes the screen at once", () => {
-  browser();
-  for (const kind of ["push", "pop", "modal", "replace"] as const) expect(transitionTypes(kind)).toEqual([kind]);
-  expect(transitionTypes("none")).toBe(false);
-});
-
-test("with reduced motion no kind moves", () => {
-  browser({ reduce: true });
-  for (const kind of ["push", "pop", "modal", "replace", "none"] as const) expect(transitionTypes(kind)).toBe(false);
-});
-
-test("runTransition moves by the kind, and changes the screen at once without View Transition types", async () => {
-  const started = browser();
-  let updates = 0;
-  await runTransition("push", () => void updates++, true);
-  expect(started).toEqual([{ types: ["push"] }]);
-  await runTransition("none", () => void updates++, true);
-  expect(started).toHaveLength(1);
-  const old = browser();
-  await runTransition("push", () => void updates++, false);
-  expect(old).toHaveLength(0);
-  expect(updates).toBe(3);
-});
 
 test("runTransition changes the screen at once outside a browser", async () => {
   let updated = false;
@@ -62,20 +19,9 @@ test("runTransition changes the screen at once outside a browser", async () => {
   expect(updated).toBe(true);
 });
 
-test("a router moves by the kind of each navigation, and runs no View Transition where the browser has none", () => {
+test("a router runs no View Transition where the browser has none", () => {
   const kindOf = (to: string): TransitionKind => (to === "/" ? "replace" : "push");
   expect(routerTransitions(kindOf, false)).toBe(false);
-  browser();
-  const transitions = routerTransitions(kindOf, true);
-  if (transitions === false) throw new Error("no transitions in a browser with them");
-  expect(transitions.types("/")).toEqual(["replace"]);
-  expect(transitions.types("/post")).toEqual(["push"]);
-});
-
-test("a shared element is named apart from the frame's regions, as a CSS identifier", () => {
-  expect(renderToStaticMarkup(<Shared name="avatar:1/2">x</Shared>)).toContain(
-    "view-transition-name:shared-avatar_1_2",
-  );
 });
 
 test("push and pop mirror in a right-to-left page, and reduced motion stops every View Transition", () => {
