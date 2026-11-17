@@ -28,6 +28,7 @@ import {
 } from "react";
 import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
+import { Box, Layers, Stack } from "./layout";
 import { anchoring, scrollerOf, scrollToTop, viewTopOf, type Anchoring } from "./scroll";
 import { focusFrameHeading } from "./shell";
 import { actionJoint } from "./sentence";
@@ -124,15 +125,23 @@ function onFeedFocus(e: { target: Element; currentTarget: Element }): void {
 // scrolls under it. The feed turns the browser's anchoring off, since it anchors itself.
 const feed = tv({
   slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-feed [overflow-anchor:none]",
-    list: "col-start-1 row-start-1 grid grid-cols-[minmax(0,1fr)]",
-    top: "pointer-events-none col-start-1 row-start-1 h-px self-start",
-    newItems: "sticky top-shell-gap z-2 col-start-1 row-start-1 flex h-0 justify-center self-start",
+    root: "[overflow-anchor:none]",
+    top: "pointer-events-none h-px",
     newItemsButton: "rounded-control shadow-overlay",
   },
-  // The posts of a conversation of direct messages, one exchange, closer together.
-  variants: { tight: { false: { list: "gap-feed" }, true: { list: "gap-feed-tight" } } },
 });
+
+/**
+ * Where the new entries' button floats: a strip with no height that holds its button at the middle of the feed's top,
+ * scrolling with the page until it meets the shell's edge, then staying.
+ */
+function NewItemsPlace({ children }: { children: ReactNode }) {
+  return (
+    <div role="status" className="sticky top-shell-gap z-2 flex h-0 justify-center self-start">
+      {children}
+    </div>
+  );
+}
 
 /** The new entries' button: what it says (how many), and what a press does before the feed goes to the top. */
 export type NewItems = { label: string; onPress: () => void };
@@ -267,7 +276,7 @@ export function Feed({
   onEntryClick,
   tight = false,
 }: FeedProps) {
-  const s = feed({ tight });
+  const s = feed();
   const sentinel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const top = useRef<HTMLDivElement>(null);
@@ -361,49 +370,53 @@ export function Feed({
     };
   }, [hears, count]);
   return (
-    <div className={s.root()}>
-      {/* Always there, so that a change of the count is read out (ADR-0013 §6); the button never takes the focus. */}
-      <div role="status" className={s.newItems()}>
-        {newItems && (
-          <span className={s.newItemsButton()}>
-            <ButtonBase kind="primary" size="notice" onPress={goToTop}>
-              {newItems.label}
-            </ButtonBase>
-          </span>
-        )}
-      </div>
-      <div ref={top} aria-hidden="true" className={s.top()} />
-      <FeedSize value={more ? -1 : count}>
-        {/* A feed owns its articles: with none yet (loading, failed, empty), the list is no feed, and the notice of
+    <Stack gap="feed" className={s.root()}>
+      {/* The list, the mark at its top and the new entries' button share the first row, so that neither the mark nor
+          the button takes room or a gap. */}
+      <Layers>
+        {/* Always there, so that a change of the count is read out (ADR-0013 §6); the button never takes the focus. */}
+        <NewItemsPlace>
+          {newItems && (
+            <span className={s.newItemsButton()}>
+              <ButtonBase kind="primary" size="notice" onPress={goToTop}>
+                {newItems.label}
+              </ButtonBase>
+            </span>
+          )}
+        </NewItemsPlace>
+        <Box as={<div ref={top} />} self="start" aria-hidden="true" className={s.top()} />
+        <FeedSize value={more ? -1 : count}>
+          {/* A feed owns its articles: with none yet (loading, failed, empty), the list is no feed, and the notice of
             `end` tells what it holds. */}
-        <div
-          ref={list}
-          role={count > 0 ? "feed" : undefined}
-          aria-label={count > 0 ? label : undefined}
-          aria-busy={busy}
-          className={s.list()}
-          onKeyDown={onFeedKeyDown}
-          onClick={(e) => {
-            const entry = (e.target as Element).closest(entrySelector);
-            const key = entry?.getAttribute("data-scroll-key");
-            if (entry?.parentElement?.closest('[role="feed"]') === e.currentTarget && key) onEntryClick?.(key);
-          }}
-          onFocus={(e) => {
-            readerChange("focus", true);
-            onFeedFocus({ target: e.target, currentTarget: e.currentTarget });
-          }}
-          onBlur={(e) => {
-            if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) {
-              readerChange("focus", false);
-            }
-          }}
-        >
-          <ActionScope target={list}>{children}</ActionScope>
-        </div>
-      </FeedSize>
+          <Stack
+            as={<div ref={list} />}
+            gap={tight ? "feed-tight" : "feed"}
+            role={count > 0 ? "feed" : undefined}
+            aria-label={count > 0 ? label : undefined}
+            aria-busy={busy}
+            onKeyDown={onFeedKeyDown}
+            onClick={(e) => {
+              const entry = (e.target as Element).closest(entrySelector);
+              const key = entry?.getAttribute("data-scroll-key");
+              if (entry?.parentElement?.closest('[role="feed"]') === e.currentTarget && key) onEntryClick?.(key);
+            }}
+            onFocus={(e) => {
+              readerChange("focus", true);
+              onFeedFocus({ target: e.target, currentTarget: e.currentTarget });
+            }}
+            onBlur={(e) => {
+              if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) {
+                readerChange("focus", false);
+              }
+            }}
+          >
+            <ActionScope target={list}>{children}</ActionScope>
+          </Stack>
+        </FeedSize>
+      </Layers>
       {end}
       {asks && <div ref={sentinel} aria-hidden="true" />}
-    </div>
+    </Stack>
   );
 }
 
@@ -419,7 +432,7 @@ export function FeedItem({ id, position, children }: { id: string; position: num
 const notice = tv({
   slots: {
     // Wrapping between phrases, never inside a word of ja, as a caption does.
-    root: "m-0 text-caption text-muted-text [word-break:auto-phrase]",
+    root: "text-caption text-muted-text [word-break:auto-phrase]",
     action: "whitespace-nowrap",
   },
   // Centered under a feed; at the start in a form, as its fields read.
