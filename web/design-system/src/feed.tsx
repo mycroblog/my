@@ -163,7 +163,10 @@ export type FeedProps = {
    * padding), and of each entry above the view when the feed shows it.
    */
   onPassed?: ((key: string) => void) | undefined;
-  /** Hears the key of an entry the reader clicked or tapped, anywhere inside it. */
+  /**
+   * Hears the key of an entry the reader clicked or tapped, however deep inside it. A press that a control inside it
+   * takes (a button, a menu) is the control's alone, and is not heard.
+   */
   onEntryClick?: ((key: string) => void) | undefined;
   /** Its entries closer together, as one exchange (a conversation of direct messages). */
   tight?: boolean | undefined;
