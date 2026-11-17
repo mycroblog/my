@@ -6,10 +6,9 @@
 
 import { expect, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
-import { renderApp, type TestApp } from "./test/app";
+import { main, renderApp, type TestApp } from "./test/app";
 import { fakeApp } from "./test/server";
 
-const main = () => within(screen.getByRole("main"));
 /** The list of the reader's conversations. */
 const list = () => main().findByRole("feed", { name: "Direct messages" });
 /** The conversation with Sam in the list. */

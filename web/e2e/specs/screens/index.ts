@@ -41,4 +41,4 @@ export { homeSuggestions, People, Search } from "./search";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
 export { Notice } from "./notice";
-export { bookmarks, homeTimeline, line, localTimeline, Post, Timeline } from "./timeline";
+export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";
