@@ -397,6 +397,100 @@ function ProfileMenu({ sheet }: { sheet: boolean }) {
   );
 }
 
+/**
+ * A More button whose menu opens the submenu of the reader's lists, which opens the submenu of a new list's audience:
+ * each item that opens one is the last of its menu, so that the focus on it is no menu's first.
+ */
+function NestedMenu({ sheet }: { sheet: boolean }) {
+  const [panel, setPanel] = useState<"top" | "lists" | "audience">("top");
+  const back = { lists: "top", audience: "lists" } as const;
+  return (
+    <MenuSheet sheet={sheet}>
+      <MenuButton
+        icon="more"
+        label="More"
+        sub={
+          panel === "top"
+            ? undefined
+            : {
+                title: panel === "lists" ? "Add to list" : "Who sees a new list",
+                onBack: () => {
+                  setPanel(back[panel]);
+                },
+              }
+        }
+        onOpenChange={(open) => {
+          if (!open) setPanel("top");
+        }}
+      >
+        {panel === "top" && (
+          <MenuGroup>
+            <MenuItem id="mute" icon="mute">
+              Mute
+            </MenuItem>
+            <MenuItem id="block" icon="block">
+              Block
+            </MenuItem>
+            <MenuItem
+              id="lists"
+              icon="list"
+              opens="2"
+              onAction={() => {
+                setPanel("lists");
+              }}
+            >
+              Add to list
+            </MenuItem>
+          </MenuGroup>
+        )}
+        {panel === "lists" && (
+          <MenuGroup>
+            <MenuItem id="photographers" icon="included">
+              Photographers
+            </MenuItem>
+            <MenuItem id="friends" icon="included">
+              Friends
+            </MenuItem>
+            <MenuItem
+              id="audience"
+              icon="followers"
+              opens="Only you"
+              onAction={() => {
+                setPanel("audience");
+              }}
+            >
+              New list
+            </MenuItem>
+          </MenuGroup>
+        )}
+        {panel === "audience" && (
+          <MenuGroup>
+            <MenuItem id="private" icon="hidden">
+              Only you
+            </MenuItem>
+            <MenuItem id="public" icon="public">
+              Everyone
+            </MenuItem>
+          </MenuGroup>
+        )}
+      </MenuButton>
+    </MenuSheet>
+  );
+}
+
+/** The focus is on the menu item whose name starts with `name`: on jsdom it arrives a frame after its menu is back. */
+async function focusIsOnItem(name: string) {
+  await waitFor(
+    () => {
+      // A cheap look while it waits: a query that finds nothing describes the whole page each time it fails.
+      const focused = document.activeElement;
+      if (focused?.getAttribute("role") !== "menuitem" || !focused.textContent.startsWith(name))
+        throw new Error(`the focus is not on ${name}`);
+    },
+    { interval: 5 },
+  );
+}
+
 for (const sheet of [false, true]) {
   const where = sheet ? "sheet" : "popover";
 
@@ -431,6 +525,45 @@ for (const sheet of [false, true]) {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("menu")).toBeNull();
     await focusIsBack();
+  });
+
+  test(`in a ${where}, a submenu's back gives the focus to the item that opened the submenu`, async () => {
+    const user = userEvent.setup();
+    render(<ProfileMenu sheet={sheet} />);
+    await openWithEnter(user);
+    await user.keyboard("{ArrowDown}{Enter}");
+    await screen.findByRole("menu", { name: "Add to list" });
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+
+    const menu = await screen.findByRole("menu", { name: "More" });
+    // Not the menu's first item, Mute: the one the reader came through.
+    await focusIsOnItem("Add to list");
+    expect(menu.contains(document.activeElement)).toBe(true);
+    await user.keyboard("{ArrowUp}");
+    expect(document.activeElement).toBe(item("Mute"));
+  });
+
+  test(`in a ${where}, back from a submenu of a submenu gives the focus to the item that opened each, one menu at a time`, async () => {
+    const user = userEvent.setup();
+    render(<NestedMenu sheet={sheet} />);
+    await openWithEnter(user);
+    await user.keyboard("{End}{Enter}");
+    await screen.findByRole("menu", { name: "Add to list" });
+    await user.keyboard("{End}{Enter}");
+    await screen.findByRole("menu", { name: "Who sees a new list" });
+    expect(document.activeElement).toBe(item("Only you"));
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    const lists = await screen.findByRole("menu", { name: "Add to list" });
+    await focusIsOnItem("New list");
+    expect(lists.contains(document.activeElement)).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    const top = await screen.findByRole("menu", { name: "More" });
+    await focusIsOnItem("Add to list");
+    expect(top.contains(document.activeElement)).toBe(true);
+    expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
   });
 
   test(`in a ${where}, Escape in a submenu closes the whole menu, with the focus back on its button`, async () => {
