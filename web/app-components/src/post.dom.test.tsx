@@ -613,12 +613,12 @@ describe("the actions", () => {
     ]);
   });
 
-  /** Opens the post's more menu, presses each of its items in turn, and gives their words. */
-  async function more(user: ReturnType<typeof userEvent.setup>, part: Part) {
+  /** Opens the post's more menu, presses each of its items from `from` on in turn, and gives the words of them all. */
+  async function more(user: ReturnType<typeof userEvent.setup>, part: Part, from = 0) {
     await user.click(part.getByRole("button", { name: "More" }));
     const names = words(await screen.findAllByRole("menuitem"));
     await user.keyboard("{Escape}");
-    for (const name of names) {
+    for (const name of names.slice(from)) {
       await user.click(part.getByRole("button", { name: "More" }));
       await user.click(await screen.findByRole("menuitem", { name }));
     }
@@ -654,10 +654,19 @@ describe("the actions", () => {
     const user = userEvent.setup();
     const { part, actions } = post({ own: true });
 
-    const names = await more(user, part);
+    // What every post's menu offers comes first, as on another's post.
+    const names = await more(user, part, 4);
 
-    expect(names.slice(-3)).toEqual(["Edit", "Delete and redraft…", "Delete…"]);
-    expect(actions.slice(-3)).toEqual([
+    expect(names).toEqual([
+      "Copy link",
+      "Open original page",
+      "Share",
+      "Bookmark",
+      "Edit",
+      "Delete and redraft…",
+      "Delete…",
+    ]);
+    expect(actions).toEqual([
       { type: "edit", id: "10" },
       { type: "redraft", id: "10" },
       { type: "delete", id: "10" },

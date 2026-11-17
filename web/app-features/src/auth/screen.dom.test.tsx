@@ -4,7 +4,7 @@
 // mark and documents, each field's name, autofill and error, the refusal that takes the focus when the page opens,
 // the consent's wait. The entry moves the focus and counts the wait down; the screens are drawn as the server's page.
 
-import { expect, test } from "bun:test";
+import { expect, onTestFinished, test } from "bun:test";
 import { I18nProvider } from "@my/design-system";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { consentWaitSeconds } from "./consent-wait";
@@ -129,7 +129,15 @@ test("with passkeys, the email field offers them in its autofill; the providers 
   expect(others.getByRole("link", { name: "Sign in with GitHub" }).getAttribute("href")).toBe("/auth/external/1/start");
 });
 
-test("the human check places the service's widget inside the form, with the notice the service asks for", () => {
+test("the human check asks for the service's script and places its widget inside the form, with the notice it asks for", () => {
+  // The simulation loads no script, and says so as an error: here a script it does not load counts as loaded.
+  const { settings } = (
+    window as unknown as { happyDOM: { settings: { handleDisabledFileLoadingAsSuccess: boolean } } }
+  ).happyDOM;
+  settings.handleDisabledFileLoadingAsSuccess = true;
+  onTestFinished(() => {
+    settings.handleDisabledFileLoadingAsSuccess = false;
+  });
   const { form } = shown({
     ...base,
     screen: "sign_in",
@@ -146,6 +154,7 @@ test("the human check places the service's widget inside the form, with the noti
   });
   const signIn = form("Sign in").form;
 
+  expect(Array.from(document.scripts, (script) => script.src)).toContain("https://challenges.example/api.js");
   // What the service's script reads to draw its widget: its own class, and its settings as data attributes.
   const [widget] = signIn.getElementsByClassName("cf-turnstile");
   expect(widget instanceof HTMLElement ? Object.fromEntries(Object.entries(widget.dataset)) : undefined).toEqual({
