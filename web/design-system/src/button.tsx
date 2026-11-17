@@ -11,6 +11,7 @@ import { motion } from "@my/design-tokens";
 import type { ReactNode } from "react";
 import { Button as AriaButton, Link as AriaLink, type ButtonProps as AriaButtonProps } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { Box, Pin, Row, type Gap, type RowProps } from "./layout";
 import { usePreviewState } from "./preview";
 
 export type ButtonKind = "primary" | "secondary" | "quiet";
@@ -42,15 +43,14 @@ export const markedSurface = (on: boolean): Record<typeof marked, "" | undefined
 const button = tv({
   slots: {
     base: [
-      "relative box-border inline-flex items-center justify-center whitespace-nowrap",
-      "cursor-pointer rounded-control border-0 py-0 font-sans leading-none",
+      "box-border whitespace-nowrap cursor-pointer rounded-control border-0 py-0 font-sans leading-none",
       "data-pressed:translate-y-press data-focus-visible:shadow-focus data-focus-visible:outline-hidden",
       "data-disabled:cursor-not-allowed data-disabled:opacity-disabled data-pending:cursor-progress",
     ],
     label: "",
     spinner: [
-      "absolute inset-0 m-auto box-border size-spinner rounded-full border-spinner border-solid",
-      "border-spinner-track border-t-current animate-spin",
+      "box-border size-spinner rounded-full border-spinner border-solid border-spinner-track border-t-current",
+      "animate-spin",
       motion.spin.reduced === "still" ? "motion-reduce:animate-none" : "",
     ],
   },
@@ -66,17 +66,14 @@ const button = tv({
         base: "text-body font-label bg-transparent text-text data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
       },
       // Muted until pressed or on; inside a marked surface, which wears surface-hover, its hover steps to
-      // surface-pressed and its press to surface-raised-hover. The hit area reaches the touch height on a touch screen.
+      // surface-pressed and its press to surface-raised-hover.
       icon: {
         base: [
           "text-caption bg-transparent text-muted-text aria-pressed:text-text data-pressed:text-text",
           "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
           "[[data-surface-marked]_&]:data-hovered:bg-surface-pressed",
           "[[data-surface-marked]_&]:data-pressed:bg-surface-raised-hover",
-          "pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2",
-          "pointer-coarse:before:h-icon-button-touch pointer-coarse:before:-translate-y-1/2",
         ],
-        label: "inline-flex items-center gap-icon-button-gap",
       },
       // A toggle on the raised surface; on, it is knocked out: the text's color as its fill, with no hue.
       chip: {
@@ -85,7 +82,6 @@ const button = tv({
           "aria-pressed:bg-text aria-pressed:text-surface",
           "aria-pressed:data-hovered:bg-text aria-pressed:data-pressed:bg-text",
         ],
-        label: "inline-flex items-center gap-chip-gap",
       },
     },
     size: {
@@ -94,8 +90,8 @@ const button = tv({
       icon: { base: "h-control-timeline px-icon-button-inline" },
       chip: { base: "h-chip px-chip-inline" },
       // The app frame's primary action (shell.tsx): the width of the rail or the sidebar, or floating over the tab bar.
-      side: { base: "h-shell-item w-full px-0", label: "inline-flex items-center gap-shell-inset" },
-      float: { base: "size-shell-bar px-0", label: "inline-flex items-center" },
+      side: { base: "h-shell-item px-0" },
+      float: { base: "size-shell-bar px-0" },
       // A notice floating over a feed (the new entries' button): a timeline button's type and padding at the full
       // touch height, since it is pressed over moving content.
       notice: { base: "h-icon-button-touch px-control-timeline-inline" },
@@ -103,6 +99,48 @@ const button = tv({
     busy: { true: { label: "text-transparent" } },
   },
 });
+
+type Kind = ButtonKind | "icon" | "chip";
+type Size = ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
+
+/**
+ * How a button places what it holds: its label in its middle, under the spinner while busy. An icon button's press
+ * target reaches the touch height on a touch screen; the frame's action in the rail is as wide as the rail.
+ */
+const arrangement = (kind: Kind, size: Size) =>
+  ({
+    inline: true,
+    align: "center",
+    justify: "center",
+    anchor: true,
+    touch: kind === "icon",
+    full: size === "side",
+  }) satisfies RowProps;
+
+/**
+ * The label: the button's words, or, where a button holds more than words (an icon and its count, a chip's glyph and
+ * count, the frame's action), its parts in a row, a gap apart.
+ */
+function Label({
+  kind,
+  size,
+  className,
+  children,
+}: {
+  kind: Kind;
+  size: Size;
+  className: string | undefined;
+  children: ReactNode;
+}) {
+  const gap: Gap | undefined =
+    size === "side" ? "shell-inset" : kind === "icon" ? "icon-button-gap" : kind === "chip" ? "chip-gap" : undefined;
+  if (gap === undefined && size !== "float") return <span className={className}>{children}</span>;
+  return (
+    <Row as="span" inline align="center" gap={gap} className={className}>
+      {children}
+    </Row>
+  );
+}
 
 /** The base of the button and the icon button: a kind and a size, and a toggle's state. */
 export function ButtonBase({
@@ -115,8 +153,8 @@ export function ButtonBase({
   children,
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
-  kind: ButtonKind | "icon" | "chip";
-  size: ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
+  kind: Kind;
+  size: Size;
   pressed?: boolean | undefined;
   /** What assistive technology reads after the name (an icon button's exact count). */
   "aria-description"?: string | undefined;
@@ -124,26 +162,33 @@ export function ButtonBase({
   const preview = usePreviewState();
   const s = button({ kind, size, busy });
   return (
-    <AriaButton
-      {...rest}
-      isPending={busy}
-      className={s.base()}
-      render={(props, { isHovered, isPressed, isFocusVisible }) => (
-        <button
-          {...props}
-          aria-pressed={pressed}
-          aria-keyshortcuts={keyshortcuts}
-          aria-description={description}
-          aria-busy={busy || undefined}
-          data-hovered={isHovered || preview === "hover" || undefined}
-          data-pressed={isPressed || preview === "pressed" || undefined}
-          data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined}
+    <Row
+      {...arrangement(kind, size)}
+      as={
+        <AriaButton
+          {...rest}
+          isPending={busy}
+          className={s.base()}
+          render={(props, { isHovered, isPressed, isFocusVisible }) => (
+            <button
+              {...props}
+              aria-pressed={pressed}
+              aria-keyshortcuts={keyshortcuts}
+              aria-description={description}
+              aria-busy={busy || undefined}
+              data-hovered={isHovered || preview === "hover" || undefined}
+              data-pressed={isPressed || preview === "pressed" || undefined}
+              data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined}
+            />
+          )}
         />
-      )}
+      }
     >
-      <span className={s.label()}>{children}</span>
-      {busy && <span className={s.spinner()} aria-hidden="true" />}
-    </AriaButton>
+      <Label kind={kind} size={size} className={s.label()}>
+        {children}
+      </Label>
+      {busy && <Pin as="span" center className={s.spinner()} aria-hidden="true" />}
+    </Row>
   );
 }
 
@@ -165,19 +210,20 @@ export type LinkButtonProps = {
 export function LinkButton({ href, kind = "secondary", size = "form", children }: LinkButtonProps) {
   const s = button({ kind, size });
   return (
-    <AriaLink href={href} className={`${s.base()} no-underline`}>
-      <span className={s.label()}>{children}</span>
-    </AriaLink>
+    <Row {...arrangement(kind, size)} as={<AriaLink href={href} className={`${s.base()} no-underline`} />}>
+      <Label kind={kind} size={size} className={s.label()}>
+        {children}
+      </Label>
+    </Row>
   );
 }
 
 // It takes the font and the color of the line it sits in, and keeps no surface, so the line reads as one. Its press
-// target reaches the target minimum above and below the text, and a margin as large gives the room back, so the line
-// keeps its height.
+// target reaches the target minimum above and below the text (its padding), and it reaches as far past its line, which
+// gives the room back, so the line keeps its height.
 const textButton = tv({
   base: [
-    "cursor-pointer rounded-control border-0 bg-transparent px-0 text-current [font:inherit]",
-    "py-[max(0px,calc((var(--target-minimum)-1lh)/2))] -my-[max(0px,calc((var(--target-minimum)-1lh)/2))]",
+    "cursor-pointer rounded-control border-0 bg-transparent px-0 py-target-line text-current [font:inherit]",
     "underline underline-offset-[0.15em] outline-hidden data-focus-visible:shadow-focus",
   ],
 });
@@ -190,15 +236,20 @@ export type TextButtonProps = Omit<AriaButtonProps, "className" | "style" | "ren
 export function TextButton({ children, ...rest }: TextButtonProps) {
   const preview = usePreviewState();
   return (
-    <AriaButton
-      {...rest}
-      className={textButton()}
-      render={(props, { isFocusVisible }) => (
-        <button {...props} data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined} />
-      )}
+    <Box
+      bleedBlock="target-line"
+      as={
+        <AriaButton
+          {...rest}
+          className={textButton()}
+          render={(props, { isFocusVisible }) => (
+            <button {...props} data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined} />
+          )}
+        />
+      }
     >
       {children}
-    </AriaButton>
+    </Box>
   );
 }
 
@@ -208,8 +259,8 @@ export function TextButton({ children, ...rest }: TextButtonProps) {
  */
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <AriaLink href={href} className={textButton()}>
+    <Box bleedBlock="target-line" as={<AriaLink href={href} className={textButton()} />}>
       {children}
-    </AriaLink>
+    </Box>
   );
 }
