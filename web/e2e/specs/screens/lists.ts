@@ -75,16 +75,6 @@ export class ListScreen extends Timeline {
     return this.page.getByRole("main").getByRole("heading", { level: 1, name: this.name, exact: true });
   }
 
-  /** Opens the screen of the list with the ID given, at its address. */
-  async open(id: string): Promise<void> {
-    await this.page.goto(`/lists/${id}`);
-  }
-
-  /** What the screen says in place of a list that does not exist. */
-  get gone(): Locator {
-    return this.page.getByRole("main").getByText("This list no longer exists.", { exact: true });
-  }
-
   /** The list's own menu button at the end of its title, named apart from every post's More. */
   get options(): Locator {
     return this.page.getByRole("main").getByRole("button", { name: "List options", exact: true });
