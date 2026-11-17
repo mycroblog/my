@@ -40,10 +40,6 @@ const also: Record<string, (page: Page) => Promise<void>> = {
   },
 };
 
-// Defect: in a row inside a line of text, the glyph beside a word no line holds gives way below its own width (a box
-// 2.5 px wide for a glyph of 12), and is painted over the first letters of the word.
-const defects: Record<string, string> = {};
-
 const stories = [
   "row-long-word",
   "row-bare-long-word",
@@ -67,7 +63,6 @@ for (const name of stories)
     page,
     open,
   }) => {
-    test.fail(name in defects, defects[name]);
     for (const locale of ["en", "ar-XB"] as const) {
       await open(`design-system-layout--${name}`, { locale });
       await expectNoSidewaysScroll(page);
