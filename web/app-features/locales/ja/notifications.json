@@ -63,6 +63,10 @@
     "defaultMessage": "通知を消せませんでした。",
     "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
   },
+  "notifications.gone": {
+    "defaultMessage": "その通知はもうありません。",
+    "description": "Over the notifications, when a link to one notification (from a push or an email) led to one that is dismissed, or is not the reader's."
+  },
   "notifications.approve": {
     "defaultMessage": "承認",
     "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."

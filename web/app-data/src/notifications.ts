@@ -9,7 +9,7 @@
 // kept here, for the session, and the marker moves up to the newest notification below which every one is read: once
 // the reader read the oldest unread one, or all of them. Until it moves, those count as read here, in the list's marks
 // and in the unread count.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import type { AppData } from "./app-data";
@@ -349,4 +349,37 @@ export function useNotificationRequestSummary(): NotificationRequestSummary | un
 export function useDismissNotification(): (id: string) => Promise<void> {
   const data = useAppData();
   return (id) => dismissNotification(data, id);
+}
+
+// ---- One notification --------------------------------------------------------------------------------------------
+
+/** One of the reader's notifications, by its ID (where a push or an email about it leads). */
+export function notificationQuery({ queries }: AppData, id: string) {
+  return queries.queryOptions("get", "/notifications/{id}", { params: { path: { id } } });
+}
+
+/** One notification as a screen reads it, and how it came. */
+export type OneNotification = {
+  readonly notification: NotificationItem | undefined;
+  /** `gone` once the server says the reader has no such notification (404): dismissed, another's, or none. */
+  readonly status: "pending" | "success" | "error" | "gone";
+  readonly refetch: () => void;
+};
+
+/** The reader's notification of `id`. */
+export function useNotification(id: string): OneNotification {
+  const query = useQuery(notificationQuery(useAppData(), id));
+  const { error } = query;
+  return {
+    notification: query.data,
+    status:
+      query.status === "error"
+        ? error instanceof ProblemError && error.status === 404
+          ? "gone"
+          : "error"
+        : query.status,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
 }

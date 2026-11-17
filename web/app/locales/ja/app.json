@@ -19,6 +19,18 @@
     "defaultMessage": "通知",
     "description": "The place of the navigation that shows the reader's notifications."
   },
+  "app.notification_retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button beside app.notification_failed that reads the notification again."
+  },
+  "app.notification_failed": {
+    "defaultMessage": "通知を読み込めませんでした。",
+    "description": "What /notifications/{id} says when the notification could not be read (the network, the server), beside a button to try again (app.notification_retry)."
+  },
+  "app.notification_opening": {
+    "defaultMessage": "通知を開いています…",
+    "description": "What /notifications/{id} (where a push or an email about one notification leads) says while it reads the notification, before it goes on to what the notification tells of."
+  },
   "app.direct_messages": {
     "defaultMessage": "DM",
     "description": "The place of the navigation, and the heading of its screen, that lists the reader's conversations of direct messages."

@@ -16,16 +16,16 @@ const message = (fields: Record<string, unknown> = {}) =>
     type: "mention",
     title: "Sora mentioned you",
     lang: "en",
-    path: "/@sora@photos.example/status/9",
+    path: "/notifications/0190a5d0-0000-7000-8000-000000000001",
     ...fields,
   });
 
 describe("notificationFor", () => {
-  test("shows the server's title, tagged with the notification's ID, and keeps the page a click opens on this origin", () => {
+  test("shows the server's title, tagged with the notification's ID, and keeps the notification's page on this origin", () => {
     const shown = notificationFor(message(), origin);
     expect(shown.title).toBe("Sora mentioned you");
     expect(shown.options.tag).toBe("0190a5d0-0000-7000-8000-000000000001");
-    expect(urlOf(shown)).toBe("https://my.example/@sora@photos.example/status/9");
+    expect(urlOf(shown)).toBe("https://my.example/notifications/0190a5d0-0000-7000-8000-000000000001");
   });
 
   test("a message sent twice is tagged alike, so that it replaces itself", () => {
@@ -34,23 +34,16 @@ describe("notificationFor", () => {
     );
   });
 
-  test("leads where the client opens the kind: a request to what waits, a follow request to the follow requests", () => {
-    expect(urlOf(notificationFor(message({ type: "reply_request" }), origin))).toBe(
-      "https://my.example/notifications/waiting",
-    );
-    expect(urlOf(notificationFor(message({ type: "follow_request", path: "/settings/follow-requests" }), origin))).toBe(
-      "https://my.example/notifications/follow_requests",
-    );
-    expect(urlOf(notificationFor(message({ type: "event_invited", path: "/@sora" }), origin))).toBe(
-      "https://my.example/notifications",
-    );
-  });
-
-  test("a page of another origin, or one this client has none of, leads to the notifications on this origin", () => {
-    for (const path of ["https://evil.example/@sora", "//evil.example/@sora", "/moderation/reports/1"])
-      expect([path, urlOf(notificationFor(message({ path }), origin))]).toEqual([
-        path,
-        "https://my.example/notifications",
+  test("every kind leads to the notification's page, whatever page the message names, on this origin alone", () => {
+    for (const [type, path] of [
+      ["reply_request", "/@yuki/status/9"],
+      ["follow_request", "/settings/follow-requests"],
+      ["event_invited", "https://evil.example/@sora"],
+      ["mention", "//evil.example/@sora"],
+    ])
+      expect([type, urlOf(notificationFor(message({ type, path }), origin))]).toEqual([
+        type,
+        "https://my.example/notifications/0190a5d0-0000-7000-8000-000000000001",
       ]);
   });
 
@@ -66,7 +59,7 @@ describe("clickedURL", () => {
   test("opens the address the notification keeps", () => {
     expect(clickedURL({ url: "https://my.example/@sora/status/9" }, origin)).toBe("https://my.example/@sora/status/9");
     expect(clickedURL(notificationFor(message(), origin).options.data, origin)).toBe(
-      "https://my.example/@sora@photos.example/status/9",
+      "https://my.example/notifications/0190a5d0-0000-7000-8000-000000000001",
     );
   });
 
