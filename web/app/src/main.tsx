@@ -14,7 +14,10 @@ import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import { openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { I18nProvider, useLocale } from "@my/design-system";
-import { browserLanguages, registerServiceWorker } from "@my/platform";
+import { browserLanguages, readDeviceValue, registerServiceWorker, writeDeviceValue } from "@my/platform";
+
+/** The device's key of when the page last loaded again for a chunk of an older build. */
+const reloadedKey = "my:reloaded-for-chunk";
 import { StrictMode, useLayoutEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { AppRoot } from "./app";
@@ -31,8 +34,18 @@ const server = {
 };
 const data = await openSession(server).catch(() => null);
 if (data !== null) startStream(data);
-// The Service Worker of the build, which shows Web Push messages (sw/sw.ts); the dev server has none.
+// The Service Worker of the build (sw/sw.ts); the dev server has none.
 if (import.meta.env.PROD) registerServiceWorker("/sw.js");
+// A chunk of an older build that a newer one replaced (its worker took over and dropped the old precache, and the
+// server serves the new build alone) fails to load: the page loads again on the build the server serves, once a
+// minute at most, so that a chunk that fails for another reason never loops (ADR-0028 §12).
+addEventListener("vite:preloadError", (event) => {
+  const last = Number(readDeviceValue(reloadedKey) ?? "0");
+  if (Date.now() - last < 60_000) return;
+  event.preventDefault();
+  writeDeviceValue(reloadedKey, String(Date.now()));
+  location.reload();
+});
 const visitor = visitorData(server);
 const router = createAppRouter({ data, config });
 

@@ -27,6 +27,7 @@ export {
   showAppBadge,
   subscribePush,
   supportsPush,
+  takeUpdate,
   type NotificationPermissionState,
   type PushSubscriptionData,
 } from "./push";
