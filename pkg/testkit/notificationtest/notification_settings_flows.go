@@ -190,14 +190,14 @@ func notificationEmails(t *testing.T, e *notificationEnv) {
 		}
 	}
 
-	// Unread, it is sent: the subject says what happened, and the email links to the post and
-	// carries the unsubscribe link of its row.
+	// Unread, it is sent: the subject says what happened, and the email links to the
+	// notification's page and carries the unsubscribe link of its row.
 	n, j := mention()
 	run(j, 1, "of an unread mention")
 	if sent := mailer.Sent(); len(sent) == 1 {
 		m := sent[0]
 		if m.To != "alice@example.com" || !strings.Contains(m.Subject, "Carol") ||
-			!strings.Contains(m.Text, "https://web.example/@carol@remote.example/status/"+n.StatusID) ||
+			!strings.Contains(m.Text, "https://web.example/notifications/"+n.ID) ||
 			!strings.Contains(m.Text, "my_eut_"+alice+"_mention") {
 			t.Errorf("sent = %+v, want the mention to alice with its link and unsubscribe link", m)
 		}

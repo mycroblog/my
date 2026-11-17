@@ -269,7 +269,7 @@ func pushJobs(t *testing.T, e *pushEnv) {
 	if err := json.Unmarshal(sent[0].Payload, &payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload.Type != notification.TypeMention || payload.Title == "" || payload.Path != "/@carol@remote.example/status/01890a5d-ac96-774b-bcce-b302099a805b" {
+	if payload.Type != notification.TypeMention || payload.Title == "" || payload.Path != "/notifications/"+payload.NotificationID || payload.NotificationID != "01890a5d-ac96-774b-bcce-b302099a8059" {
 		t.Errorf("payload = %+v", payload)
 	}
 
