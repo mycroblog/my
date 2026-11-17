@@ -1,103 +1,103 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { NetworkError } from "@mycroblog/mykit";
-import {
-  cachePostedStatus,
-  choiceOf,
-  postStatus,
-  refusal,
-  refusedField,
-  ruleOf,
-  saveDraft,
-  uploadAttachment,
-} from "./compose";
+import { scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
+import { NetworkError, type components } from "@mycroblog/mykit";
+import type { AppData } from "./app-data";
+import { choiceOf, postStatus, refusal, refusedField, ruleOf, saveDraft, uploadAttachment } from "./compose";
 import { cachedStatus } from "./shadow";
-import { fakeAppData, json, page, status } from "./test/fake";
+import { fakeData } from "./test/data";
 import { statusContextQuery, type StatusContext } from "./thread";
 import { homeTimelineQuery } from "./timeline";
 
-const ids = (data: ReturnType<typeof fakeAppData>["data"]) =>
+const ids = (data: AppData) =>
   data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages[0]?.items.map((s) => s.id);
 
+const by = (author: string, key: string, replyTo?: string): FakeSeed["posts"][number] => ({
+  key,
+  author,
+  text: `Post ${key}.`,
+  visibility: "public",
+  language: "en",
+  ...(replyTo === undefined ? {} : { replyTo }),
+});
+
+/** A server where the reader follows sam, who posted `parent` and then `other`. */
+const followed: FakeOptions = {
+  seed: {
+    people: scenario.people,
+    follows: [{ follower: "yuki", followee: "sam" }],
+    posts: [by("sam", "parent"), by("sam", "other")],
+  },
+};
+
 test("a posted status tops the home timeline at once, and its parent counts one more reply", async () => {
-  const keys: (string | null)[] = [];
-  const { data } = fakeAppData((request) => {
-    if (request.method === "POST") {
-      keys.push(request.headers.get("Idempotency-Key"));
-      return json(201, status("new", { in_reply_to_id: "1" }));
-    }
-    return json(200, page(["1", "2"]));
-  });
+  const { fake, data } = fakeData(followed);
+  const parent = fake.idOf("parent");
+  const sent = fake.script("POST /statuses");
   await data.queryClient.infiniteQuery(homeTimelineQuery(data));
-  data.queryClient.setQueryData(
-    homeTimelineQuery(data).queryKey,
-    (cached) => cached && { ...cached, pages: [{ items: [status("1", { replies_count: 2 }), status("2")] }] },
-  );
-  await postStatus(data, { text: "hi", visibility: "public" }, "key-1");
-  expect(keys).toEqual(["key-1"]);
-  expect(ids(data)).toEqual(["new", "1", "2"]);
-  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
+  expect(cachedStatus(data, parent)?.replies_count).toBe(0);
+  const posted = await postStatus(data, { text: "hi", visibility: "public", in_reply_to_id: parent }, "key-1");
+  expect(sent.seen.map((s) => s.headers.get("Idempotency-Key"))).toEqual(["key-1"]);
+  expect(ids(data)).toEqual([posted.id, fake.idOf("other"), parent]);
+  expect(cachedStatus(data, parent)?.replies_count).toBe(1);
 });
 
 test("a parent the server answered with the reply counted already does not count it again", async () => {
-  // The timeline is read again while the reply is posted, and the server answers with the reply counted.
-  const answers = [json(200, { items: [status("1", { replies_count: 2 })] })];
-  let refetched: (response: Response) => void = () => {};
-  const { data } = fakeAppData((request) => {
-    if (request.method === "POST") return json(201, status("new", { in_reply_to_id: "1" }));
-    return (
-      answers.shift() ??
-      new Promise<Response>((resolve) => {
-        refetched = resolve;
-      })
-    );
-  });
+  const { fake, data } = fakeData(followed);
+  const parent = fake.idOf("parent");
   await data.queryClient.infiniteQuery(homeTimelineQuery(data));
+  // The timeline is read again while the reply is posted, and the server answers with the reply counted.
+  const again = fake.script("GET /timelines/home", { hold: "request" });
   const refetch = data.queryClient.refetchQueries({ queryKey: homeTimelineQuery(data).queryKey });
-  await Bun.sleep(0);
-  await postStatus(data, { text: "hi", visibility: "public" }, "key-1");
-  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
-  refetched(json(200, { items: [status("1", { replies_count: 3 })] }));
+  await again.arrived();
+  await postStatus(data, { text: "hi", visibility: "public", in_reply_to_id: parent }, "key-1");
+  expect(cachedStatus(data, parent)?.replies_count).toBe(1);
+  again.release();
   await refetch;
-  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
+  expect(cachedStatus(data, parent)?.replies_count).toBe(1);
 });
 
-test("a posted reply shows in a cached thread of its parent, after the replies already under it", () => {
-  const { data } = fakeAppData(() => new Response(null, { status: 500 }));
-  const context = statusContextQuery(data, "0").queryKey;
-  data.queryClient.setQueryData(context, {
-    ancestors: [],
-    descendants: [
-      status("1", { in_reply_to_id: "0" }),
-      status("2", { in_reply_to_id: "1" }),
-      status("3", { in_reply_to_id: "0" }),
-    ],
+test("a posted reply shows in a cached thread of its parent, after the replies already under it", async () => {
+  const { fake, data } = fakeData({
+    seed: {
+      people: scenario.people,
+      posts: [by("sam", "root"), by("sam", "1", "root"), by("sam", "2", "1"), by("sam", "3", "root")],
+    },
   });
-  cachePostedStatus(data, status("new", { in_reply_to_id: "1" }));
-  expect(data.queryClient.getQueryData<StatusContext>(context)?.descendants.map((s) => s.id)).toEqual([
-    "1",
-    "2",
-    "new",
-    "3",
+  const context = statusContextQuery(data, fake.idOf("root"));
+  await data.queryClient.query(context);
+  const posted = await postStatus(data, { text: "hi", visibility: "public", in_reply_to_id: fake.idOf("1") }, "key-1");
+  expect(data.queryClient.getQueryData<StatusContext>(context.queryKey)?.descendants.map((s) => s.id)).toEqual([
+    fake.idOf("1"),
+    fake.idOf("2"),
+    posted.id,
+    fake.idOf("3"),
   ]);
 });
 
+type Problem = components["schemas"]["Problem"];
+
+/** The failure of a post the server refuses with `problem`. */
+async function refused(problem: Problem) {
+  const { fake, data } = fakeData();
+  fake.script("POST /statuses", { fail: problem });
+  return postStatus(data, { text: "hi", visibility: "public" }, "k").catch((e: unknown) => e);
+}
+
 test("a refused post says the server's words; one without an answer says nothing of its own", async () => {
-  const { data } = fakeAppData(() =>
-    json(422, { type: "/api/v1/problems/status-rejected", title: "Refused", status: 422, detail: "Too long." }),
-  );
-  const refused = await postStatus(data, { text: "hi", visibility: "public" }, "k").catch((e: unknown) => e);
-  expect(refusal(refused)).toBe("Too long.");
+  const error = await refused({
+    type: "/api/v1/problems/status-rejected",
+    title: "Refused",
+    status: 422,
+    detail: "Too long.",
+  });
+  expect(refusal(error)).toBe("Too long.");
   expect(refusal(new NetworkError("POST", "/statuses", new Error("offline")))).toBeUndefined();
 });
 
 test("a 422 that names a member gives the member, what is wrong with its value, and the problem's title", async () => {
-  const refused = async (problem: Record<string, unknown>) => {
-    const { data } = fakeAppData(() => json(problem["status"] as number, problem));
-    return postStatus(data, { text: "hi", visibility: "public" }, "k").catch((e: unknown) => e);
-  };
-  const invalid = { type: "about:blank", title: "This could not be done.", status: 422 };
+  const invalid: Problem = { type: "about:blank", title: "This could not be done.", status: 422 };
   const detail = "This value is not valid. Check what you entered.";
   expect(refusedField(await refused({ ...invalid, detail, field: "poll.options[1]" }))).toEqual({
     member: "poll.options[1]",
@@ -116,12 +116,7 @@ test("a 422 that names a member gives the member, what is wrong with its value, 
 });
 
 test("an upload waits until the server has processed the file, and a file it could not process fails", async () => {
-  let looks = 0;
-  const { data } = fakeAppData((request) => {
-    if (request.method === "POST") return json(202, { id: "m", type: "image", state: "processing", meta: {} });
-    looks += 1;
-    return json(200, { id: "m", type: "image", state: looks < 2 ? "processing" : "ready", meta: {}, url: "u" });
-  });
+  const { data } = fakeData({ uploads: "processing" });
   let processing = false;
   const media = await uploadAttachment(data, new File(["x"], "a.png", { type: "image/png" }), {
     onProcessing: () => {
@@ -131,23 +126,22 @@ test("an upload waits until the server has processed the file, and a file it cou
   expect(processing).toBe(true);
   expect(media.state).toBe("ready");
 
-  const failing = fakeAppData(() => json(200, { id: "m", type: "unknown", state: "failed", meta: {} }));
+  const failing = fakeData({ uploads: "processing" });
+  failing.fake.script("GET /media/{id}", { change: (file) => ({ ...file, state: "failed" }) });
   const error = await uploadAttachment(failing.data, new File(["x"], "a.png")).catch((e: unknown) => e);
   expect((error as Error).name).toBe("MediaFailedError");
 });
 
 test("a draft saves over the one saved before, and as a new one when another device saved over it", async () => {
-  const seen: string[] = [];
-  const { data } = fakeAppData((request) => {
-    seen.push(`${request.method} ${request.headers.get("If-Match") ?? ""}`);
-    if (request.method === "PUT") return json(412, { type: "about:blank", title: "Precondition Failed", status: 412 });
-    return new Response(JSON.stringify({ id: "d2" }), {
-      status: 201,
-      headers: { "Content-Type": "application/json", ETag: '"2"' },
-    });
-  });
-  expect(await saveDraft(data, { visibility: "public" }, { id: "d1", etag: '"1"' })).toEqual({ id: "d2", etag: '"2"' });
-  expect(seen).toEqual(['PUT "1"', "POST "]);
+  const { fake, data } = fakeData();
+  const draft = fake.idOf("yuki-draft-river");
+  const saves = [fake.script("PUT /drafts/{id}"), fake.script("POST /drafts")] as const;
+  // The version this device read is not the one the server holds any more.
+  const saved = await saveDraft(data, { visibility: "public" }, { id: draft, etag: '"1"' });
+  expect(saves[0].seen.map((s) => s.headers.get("If-Match"))).toEqual(['"1"']);
+  expect(saves[1].seen).toHaveLength(1);
+  expect(saved.id).not.toBe(draft);
+  expect(saved.etag).toMatch(/^"\d+"$/);
 });
 
 test("a choice with approval lets everyone else ask; without it, or for everyone, the rule has no manual audience", () => {
@@ -165,14 +159,17 @@ test("a rule reads as a choice, any manual audience as approval, and a choice's 
     expect(ruleOf(choiceOf(rule))).toEqual(rule);
 });
 
-test("a posted reply that waits for approval does not count on its parent; one admitted at once does", () => {
-  const { data } = fakeAppData(() => new Response(null, { status: 500 }));
-  data.queryClient.setQueryData(homeTimelineQuery(data).queryKey, {
-    pages: [{ items: [status("1", { replies_count: 2 })] }],
-    pageParams: [undefined],
-  });
-  cachePostedStatus(data, status("waits", { in_reply_to_id: "1", approval: "pending" }));
-  expect(cachedStatus(data, "1")?.replies_count).toBe(2);
-  cachePostedStatus(data, status("at-once", { in_reply_to_id: "1" }));
-  expect(cachedStatus(data, "1")?.replies_count).toBe(3);
+test("a posted reply that waits for approval does not count on its parent; one admitted at once does", async () => {
+  // layla approves by hand the replies of all but those her post mentions (the fake's `approvals`).
+  const { fake, data } = fakeData({ approvals: true });
+  const asks = fake.idOf("layla-asks");
+  const admits = fake.idOf("layla-jokes");
+  await data.queryClient.infiniteQuery(homeTimelineQuery(data));
+  const [before, counted] = [cachedStatus(data, asks)?.replies_count, cachedStatus(data, admits)?.replies_count];
+  expect([before, counted]).toEqual([0, 0]);
+  const waits = await postStatus(data, { text: "hi", visibility: "public", in_reply_to_id: asks }, "key-1");
+  expect(waits.approval).toBe("pending");
+  expect(cachedStatus(data, asks)?.replies_count).toBe(0);
+  await postStatus(data, { text: "hi", visibility: "public", in_reply_to_id: admits }, "key-2");
+  expect(cachedStatus(data, admits)?.replies_count).toBe(1);
 });

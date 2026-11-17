@@ -3,7 +3,10 @@
 // What a test scripts on the fake API: the requests of an operation counted and kept, its answer held until the test
 // lets it go, failed, or changed. The E2E tests do the same to the real server by intercepting the page's requests.
 
-import { apiPath, createMatcher, jsonOf, type OkBody, type RequestBody, type Route } from "./spec";
+import { apiPath, createMatcher, jsonOf, type OkBody, type RequestBody, type Route, type Schema } from "./spec";
+
+/** How a script fails a request: with a problem of a status, with the problem given, or without an answer. */
+export type Failure = number | "network" | Schema<"Problem">;
 
 /** What a script does to the requests of its operation; nothing but count and keep them when it names nothing. */
 export type Script<R extends Route> = {
@@ -15,16 +18,17 @@ export type Script<R extends Route> = {
    */
   hold?: "request" | "response";
   /**
-   * Fails the request: with a problem of this status, or as a request that got no answer (`network`). The fake does not
-   * do what the request asks, unless the answer is held at the `response`.
+   * Fails the request: with a problem of this status, with the problem given (its type, its detail, the member it
+   * names), or as a request that got no answer (`network`). The fake does not do what the request asks, unless the
+   * answer is held at the `response`.
    */
-  fail?: number | "network";
+  fail?: Failure;
   /** Changes the JSON body of the fake's answer, where it answers 200. */
   change?: (body: OkBody<R>) => OkBody<R>;
 };
 
-/** A request of a scripted operation, as the fake received it. */
-export type Seen<R extends Route> = { url: URL; body: RequestBody<R> };
+/** A request of a scripted operation, as the fake received it: its address, its headers and its JSON body. */
+export type Seen<R extends Route> = { url: URL; headers: Headers; body: RequestBody<R> };
 
 /** A script at work. */
 export type Scripted<R extends Route> = {
@@ -32,6 +36,11 @@ export type Scripted<R extends Route> = {
   readonly seen: readonly Seen<R>[];
   /** Resolves with the `n`th request of the operation, the first by default, once it arrived. */
   arrived: (n?: number) => Promise<Seen<R>>;
+  /**
+   * Resolves with the `n`th request of the operation, the first by default, once the fake did what it asks: its answer
+   * is made, though a hold at the `response` still keeps it. It does not resolve for a request failed unserved.
+   */
+  served: (n?: number) => Promise<Seen<R>>;
   /** Lets the held answers go; the later requests are not held. */
   release: () => void;
   /** Ends the script, letting go of what it holds: the later requests are answered as without it. */
@@ -44,16 +53,21 @@ type Running = {
   left: number;
   seen: Seen<Route>[];
   waiting: { n: number; resolve: (seen: Seen<Route>) => void }[];
+  /** The requests the fake served, by their place in `seen`, and who waits for one. */
+  served: Set<number>;
+  servedWaiting: { n: number; resolve: (seen: Seen<Route>) => void }[];
   released: Promise<void>;
   release: () => void;
   ended: boolean;
 };
 
 /** The answer of a request that `fail` fails; a request without an answer throws as `fetch` does. */
-function failure(fail: number | "network"): Response {
+function failure(fail: Failure): Response {
   if (fail === "network") throw new TypeError("Failed to fetch");
-  return new Response(JSON.stringify({ type: "about:blank", title: "The request failed", status: fail }), {
-    status: fail,
+  const problem: Schema<"Problem"> =
+    typeof fail === "number" ? { type: "about:blank", title: "The request failed", status: fail } : fail;
+  return new Response(JSON.stringify(problem), {
+    status: problem.status,
     headers: { "Content-Type": "application/problem+json" },
   });
 }
@@ -81,6 +95,8 @@ export function createScripts(
       left: script.times ?? Infinity,
       seen: [],
       waiting: [],
+      served: new Set(),
+      servedWaiting: [],
       released,
       release: () => {
         release(undefined);
@@ -98,6 +114,13 @@ export function createScripts(
           own.waiting.push({ n, resolve });
         });
       },
+      served: (n = 1) => {
+        const seen = own.seen[n - 1];
+        if (seen !== undefined && own.served.has(n)) return Promise.resolve(seen);
+        return new Promise<Seen<R>>((resolve) => {
+          own.servedWaiting.push({ n, resolve });
+        });
+      },
       release: own.release,
       end: () => {
         own.ended = true;
@@ -110,17 +133,32 @@ export function createScripts(
     const route = find(request.method, apiPath(request))?.route;
     const own = running.filter((r) => !r.ended && r.route === route);
     if (own.length === 0) return serve(request);
-    const seen = { url: new URL(request.url), body: await jsonOf(request) } as Seen<Route>;
+    const seen = {
+      url: new URL(request.url),
+      headers: new Headers(request.headers),
+      body: await jsonOf(request),
+    } as Seen<Route>;
     let acting: Running | undefined;
+    const places: [Running, number][] = [];
     for (const r of own) {
       r.seen.push(seen);
+      places.push([r, r.seen.length]);
       for (const w of r.waiting.filter((w) => w.n === r.seen.length)) w.resolve(seen);
       if (acting === undefined && r.left > 0) {
         r.left -= 1;
         acting = r;
       }
     }
-    if (acting === undefined) return serve(request);
+    /** The fake's own answer, which every script of the operation is told of. */
+    const served = async () => {
+      const response = await serve(request);
+      for (const [r, n] of places) {
+        r.served.add(n);
+        for (const w of r.servedWaiting.filter((w) => w.n === n)) w.resolve(seen);
+      }
+      return response;
+    };
+    if (acting === undefined) return served();
     const { hold, fail, change } = acting.script;
     if (hold === "request") {
       await acting.released;
@@ -128,7 +166,7 @@ export function createScripts(
       if (request.signal.aborted) throw request.signal.reason;
     }
     if (fail !== undefined && hold !== "response") return failure(fail);
-    const response = await serve(request);
+    const response = await served();
     if (hold === "response") await acting.released;
     if (fail !== undefined) return failure(fail);
     if (change === undefined || response.status !== 200 || response.headers.get("Content-Type") !== "application/json")

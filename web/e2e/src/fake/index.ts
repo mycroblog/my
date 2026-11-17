@@ -18,5 +18,5 @@ export {
   type FakeStreamEvent,
 } from "./api";
 export { serverHtml } from "./html";
-export type { Script, Scripted, Seen } from "./script";
+export type { Failure, Script, Scripted, Seen } from "./script";
 export { UnimplementedError, type Route } from "./spec";

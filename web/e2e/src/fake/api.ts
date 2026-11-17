@@ -461,6 +461,8 @@ export type FakeApi = {
   listPath: (index: number) => string;
   /** The ID of the seed's post of `key`, or of the reader's draft of that key. */
   idOf: (key: string) => string;
+  /** The ID of the account of the seed's person of `username`. */
+  accountId: (username: string) => string;
   /** The app's address of the reader's conversation at `index` of their direct messages, newest first. */
   conversationPath: (index: number) => string;
   /** The app's address of the held-back notifications of the person of `username` (`held`). */
@@ -1067,6 +1069,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     );
   };
 
+  /** How many replies the reader posted here to each status that count on it, by its ID: those that wait for no approval. */
+  const repliesMade = new Map<string, number>();
+
   /** The title, summary and hashtags of the seed's articles as the reader edited them, by the key of each. */
   const articleEdits = new Map<string, { title: string; summary: string; tags: readonly string[] }>();
 
@@ -1126,7 +1131,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       tags: statusTags(now.text, articleEdits.get(p.key)?.tags),
       filtered: [],
       emojis: customEmojis,
-      replies_count: posts.filter((x) => x.replyTo === p.key && replyApproval(x.key) === undefined).length,
+      replies_count:
+        posts.filter((x) => x.replyTo === p.key && replyApproval(x.key) === undefined).length +
+        (repliesMade.get(id) ?? 0),
       boosts_count: boosters.length,
       favourites_count: favouriters.length,
       reactions: [...reactions]
@@ -1628,6 +1635,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const id = idAt(at, 950_000 + draftsMade);
     const parent = w.in_reply_to_id === undefined ? undefined : statusById(w.in_reply_to_id);
     const quoted = w.quoted_status_id === undefined ? undefined : statusById(w.quoted_status_id);
+    // A reply to a post whose author approves the reader's replies by hand waits, and counts nowhere (ADR-0155).
+    const asked = w.in_reply_to_id === undefined ? undefined : shownPost(w.in_reply_to_id);
+    const waits = asked !== undefined && permissionOf(asked, "reply", viewer) === "pending";
     const status = exact<Status>()({
       id,
       uri: `${fakeOrigin}/users/${viewer}/statuses/${id}`,
@@ -1671,11 +1681,36 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
           }),
       ...(quoted === undefined ? {} : { quote: { state: "accepted" as const, quoted_status: quoted } }),
       ...(article === undefined ? {} : { article: madeArticle(article, text) }),
+      ...(waits ? { approval: "pending" as const } : {}),
     });
     made.set(id, status);
+    if (parent !== undefined && !waits) countReply(parent.id, 1);
     if (article !== undefined) madeSources.set(id, { text, article });
     // A list holds no article's body (ADR-0160 §8).
     home.unshift(article === undefined ? status : { ...status, content: "" });
+    return status;
+  };
+  /** Counts `by` more replies on the status `id`, one of the seed or one the reader made here. */
+  const countReply = (id: string, by: number) => {
+    const own = made.get(id);
+    if (own === undefined) {
+      repliesMade.set(id, Math.max(0, (repliesMade.get(id) ?? 0) + by));
+      return;
+    }
+    const counted = { ...own, replies_count: Math.max(0, own.replies_count + by) };
+    made.set(id, counted);
+    const at = home.findIndex((s) => s.id === id);
+    if (at >= 0) home.splice(at, 1, counted.article === undefined ? counted : { ...counted, content: "" });
+  };
+  /** The statuses posted with an `Idempotency-Key`, by the key. */
+  const posted = new Map<string, Status>();
+  /** What `post` makes, or what the request's `Idempotency-Key` made before: a retry posts nothing again. */
+  const once = (request: Request, post: () => Status): Status => {
+    const key = request.headers.get("Idempotency-Key");
+    const before = key === null ? undefined : posted.get(key);
+    if (before !== undefined) return before;
+    const status = post();
+    if (key !== null) posted.set(key, status);
     return status;
   };
   /** Edits the article of `id` the fake made, as `PUT /articles/{id}` does: its body, title, summary, cover, hashtags. */
@@ -2656,7 +2691,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     // ---- Statuses ---------------------------------------------------------------------------------------------------
 
-    "POST /statuses": ({ body }) => ({ status: 201, body: publish(body) }),
+    "POST /statuses": ({ body, request }) => ({ status: 201, body: once(request, () => publish(body)) }),
     "GET /statuses/search": ({ query }) => {
       // The public and local posts that hold every word, newest first, where the server has a search engine (ADR-0149).
       if (o.search?.posts !== true)
@@ -2702,7 +2737,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return { status: 200, body: statusOf(p) };
     },
     "DELETE /statuses/{id}": ({ params }) => {
-      if (made.delete(params.id)) {
+      const own = made.get(params.id);
+      if (own !== undefined) {
+        made.delete(params.id);
+        if (own.in_reply_to_id !== undefined && own.approval === undefined) countReply(own.in_reply_to_id, -1);
         const at = home.findIndex((s) => s.id === params.id);
         if (at >= 0) home.splice(at, 1);
         return { status: 204 };
@@ -3038,7 +3076,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       };
       return { status: 200, body: preview };
     },
-    "POST /articles": ({ body }) => {
+    "POST /articles": ({ body, request }) => {
       if (o.articles?.authoring === "permission" && !permissionsOf(viewer).includes("create_articles"))
         return problem(403, "Forbidden");
       if (o.articles?.publish === "refused") return refusedArticle();
@@ -3052,13 +3090,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       };
       return {
         status: 201,
-        body: publish({
-          text,
-          visibility,
-          article,
-          ...(language === undefined ? {} : { language }),
-          ...(sensitive === undefined ? {} : { sensitive }),
-        }),
+        body: once(request, () =>
+          publish({
+            text,
+            visibility,
+            article,
+            ...(language === undefined ? {} : { language }),
+            ...(sensitive === undefined ? {} : { sensitive }),
+          }),
+        ),
       };
     },
     "PUT /articles/{id}": ({ params, body }) => {
@@ -3361,6 +3401,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     announcementPath,
     listPath,
     idOf: keyedId,
+    accountId: (username) => idOf(personOf(username).username),
     conversationPath,
     heldPath,
     notificationPath,
