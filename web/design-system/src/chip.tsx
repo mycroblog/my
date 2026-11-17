@@ -10,12 +10,12 @@ import type { ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { ButtonBase, type ButtonProps } from "./button";
 import { compactCount } from "./icon-button";
+import { Row } from "./layout";
 import { useReader } from "./locale";
 
 const chip = tv({
   slots: {
-    row: "flex flex-wrap gap-chip-spacing",
-    glyph: "inline-flex text-[length:var(--chip-glyph)] leading-none",
+    glyph: "text-[length:var(--chip-glyph)] leading-none",
     count: "tabular-nums",
   },
 });
@@ -38,9 +38,9 @@ export function Chip({ label, glyph, count, pressed, locale, ...rest }: ChipProp
   const s = chip();
   return (
     <ButtonBase {...rest} dir={direction} kind="chip" size="chip" pressed={pressed} aria-label={label}>
-      <span aria-hidden="true" className={s.glyph()}>
+      <Row as="span" inline aria-hidden="true" className={s.glyph()}>
         {glyph}
-      </span>
+      </Row>
       <bdi aria-hidden="true" dir="ltr" lang={lang} className={s.count()}>
         {compactCount(count, lang)}
       </bdi>
@@ -51,8 +51,8 @@ export function Chip({ label, glyph, count, pressed, locale, ...rest }: ChipProp
 /** A row of chips that wraps, named for assistive technology as a group. */
 export function ChipRow({ label, lang, children }: { label: string; lang?: string | undefined; children: ReactNode }) {
   return (
-    <div role="group" aria-label={label} lang={lang} className={chip().row()}>
+    <Row wrap gap="chip-spacing" role="group" aria-label={label} lang={lang}>
       {children}
-    </div>
+    </Row>
   );
 }
