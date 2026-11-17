@@ -37,15 +37,6 @@ export {
 } from "./composer";
 export { SuggestionList, type Suggestion, type SuggestionListProps } from "./suggestions";
 export {
-  ConversationAuthor,
-  ConversationText,
-  ConversationFaces,
-  ConversationHead,
-  ConversationLine,
-  ConversationReply,
-  type ConversationLineProps,
-} from "./conversation";
-export {
   ContentBody,
   ContentLink,
   CustomEmoji,

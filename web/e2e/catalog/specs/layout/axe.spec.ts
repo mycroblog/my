@@ -15,7 +15,7 @@ const stories = [
   "design-system-avatar--no-image",
   "design-system-button--variants",
   "design-system-composer--hashtags",
-  "design-system-direct-messages--conversations",
+  "app-components-direct-messages--conversations",
   "design-system-emoji-picker--popover",
   "design-system-follow-requests--follow-requests",
   "design-system-icon-button--pressed",

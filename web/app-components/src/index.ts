@@ -14,6 +14,15 @@ export {
   type ListColumnProps,
   type ListWords,
 } from "./column";
+export {
+  ConversationAuthor,
+  ConversationFaces,
+  ConversationHead,
+  ConversationLine,
+  ConversationReply,
+  ConversationText,
+  type ConversationLineProps,
+} from "./conversation";
 export { translateContent, translatePlain, type TranslateText } from "./content-translation";
 export { DeleteConfirm, type DeleteConfirmProps } from "./delete-confirm";
 export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-history";

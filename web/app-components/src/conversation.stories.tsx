@@ -8,10 +8,28 @@
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, type ReactNode } from "react";
-import { useLocale } from "react-aria-components";
-import { Avatar } from "./avatar";
-import { Button } from "./button";
-import { CharCount, ComposerText } from "./composer";
+import {
+  ActionRow,
+  Avatar,
+  BackButton,
+  Box,
+  Button,
+  Byline,
+  CharCount,
+  ComposerText,
+  Entry,
+  Feed,
+  FeedItem,
+  FeedNotice,
+  IconButton,
+  MenuButton,
+  MenuItem,
+  ScreenStack,
+  Stamp,
+  useLocale,
+} from "@my/design-system";
+import { PlainTextEditor } from "@my/design-system/editor";
+import { ago, images } from "@my/design-system/samples";
 import {
   ConversationAuthor,
   ConversationHead,
@@ -19,13 +37,6 @@ import {
   ConversationReply,
   ConversationText,
 } from "./conversation";
-import { PlainTextEditor } from "./editor";
-import { ActionRow, Byline, Entry, Stamp } from "./entry";
-import { Feed, FeedItem, FeedNotice } from "./feed";
-import { IconButton } from "./icon-button";
-import { BackButton, ScreenStack } from "./list";
-import { MenuButton, MenuItem } from "./menu";
-import { ago, images } from "./samples";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 const minute = 60_000;
@@ -389,9 +400,9 @@ function Thread({ with: indexes, texts }: { with: number[]; texts: "thread" | "g
                     self={p.by === undefined ? w.you : undefined}
                     end={<Stamp glyph={{ icon: "direct", label: w.direct }} date={p.date} />}
                   />
-                  <p className="m-0" dir="auto">
+                  <Box as="p" dir="auto">
                     {p.text}
-                  </p>
+                  </Box>
                   <ActionRow end={<IconButton icon="more" label={w.more} />}>
                     <IconButton icon="reply" label={w.reply} />
                     <IconButton icon="favourite" label={w.favourite} />

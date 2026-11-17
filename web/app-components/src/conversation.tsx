@@ -9,12 +9,7 @@
 // and truncates at its end.
 
 import type { ReactNode } from "react";
-import { Stamp } from "./entry";
-import { Faces } from "./faces";
-import { Icon } from "./icons";
-import { Box, Row, Stack } from "./layout";
-import { Excerpt, UnreadMark } from "./list";
-import { useReader } from "./locale";
+import { Box, Excerpt, Faces, Icon, Row, Stack, Stamp, UnreadMark, useLocale } from "@my/design-system";
 
 /** The first three of a conversation's people as faces in a row (avatars at a row's size), each a little over the next. */
 export function ConversationFaces({ children }: { children: readonly ReactNode[] }) {
@@ -62,7 +57,7 @@ export function ConversationLine({
   more,
 }: ConversationLineProps) {
   const read = unread === undefined;
-  const { direction } = useReader(undefined);
+  const { direction } = useLocale();
   return (
     // Tight inside the conversation: its line and its excerpt a line's gap apart; the feed keeps the space between.
     <Stack shrink gap="entry-line">
@@ -133,7 +128,7 @@ export function ConversationHead({
   /** The people's names, each in a <bdi> of its own, as the list shows them. */
   children: ReactNode;
 }) {
-  const { direction } = useReader(undefined);
+  const { direction } = useLocale();
   return (
     <Stack gap="screen-name-gap">
       {back}
