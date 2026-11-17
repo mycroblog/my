@@ -10,6 +10,7 @@ import { expect, spyOn, test } from "bun:test";
 import { screen, within } from "@testing-library/react";
 import { renderApp } from "./test/app";
 import { feedOf, postOf } from "./test/posts";
+import { fakeApp } from "./test/server";
 
 /** The media viewer, once it is open over the screen. */
 const viewer = async () => within(await screen.findByRole("dialog", { name: "Media" }));
@@ -138,11 +139,10 @@ test("a link card that cannot be drawn leaves its post drawn", async () => {
   // React reports what the card threw as it drew: the test reads it, and keeps it out of the run's output.
   const reported = spyOn(console, "error").mockImplementation(() => undefined);
   try {
-    // The reader starts elsewhere, so that the home timeline's first answer is the one with the card that breaks.
-    const app = await renderApp("/notifications", { viewer: "hana" });
-    const id = app.fake.idOf("layla-jokes");
+    const on = fakeApp({ viewer: "hana" });
+    const id = on.fake.idOf("layla-jokes");
     // A title that is no text: the card throws as it draws.
-    const read = app.fake.script("GET /timelines/home", {
+    const read = on.fake.script("GET /timelines/home", {
       change: (page) => ({
         ...page,
         items: page.items.map((status) =>
@@ -152,7 +152,7 @@ test("a link card that cannot be drawn leaves its post drawn", async () => {
         ),
       }),
     });
-    await app.navigate("/");
+    await renderApp("/", { on });
     const post = within(postOf(await feedOf("Home timeline"), "ليلى Layla", "Translating a short novel"));
     expect(read.seen).toHaveLength(1);
     expect(post.queryByRole("link", { name: /\(opens in a new tab\)$/ })).toBeNull();
