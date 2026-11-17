@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A person's profile: the region named by their display name, with the follow button, their note and fields, and
-// the feed of their posts.
+// A person's profile: the region named by their display name, with the follow button, and the feed of their posts.
 
 import type { Locator, Page } from "@playwright/test";
 import type { Person } from "../../src/scenario";
@@ -9,28 +8,6 @@ import { Timeline } from "./timeline";
 import { answered } from "./write";
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/** The reads under /accounts/ of other things than one account. */
-const notAnAccount = new Set(["relationships", "verify_credentials", "search", "familiar_followers"]);
-
-/**
- * Holds the server's answer to every read of an account itself, its lookup and GET /accounts/{id}, until
- * `release()`; the reads of its relationship, posts and the rest pass at once.
- */
-export async function heldAccountReads(page: Page): Promise<{ release: () => void }> {
-  const { promise: released, resolve } = Promise.withResolvers<undefined>();
-  await page.route(/\/api\/v1\/accounts\/[^/?]+(\?.*)?$/, async (route) => {
-    const name = new URL(route.request().url()).pathname.split("/").at(-1) ?? "";
-    if (route.request().method() !== "GET" || notAnAccount.has(name)) return route.fallback();
-    await released;
-    await route.fallback();
-  });
-  return {
-    release: () => {
-      resolve(undefined);
-    },
-  };
-}
 
 export class Profile {
   readonly page: Page;
@@ -67,16 +44,6 @@ export class Profile {
   /** The button that shows the reader follows the person, and unfollows them. */
   get followingButton(): Locator {
     return this.card.getByRole("button", { name: "Following", exact: true });
-  }
-
-  /** The paragraph of the card that holds `text`, such as the person's note. */
-  paragraph(text: string): Locator {
-    return this.card.getByRole("paragraph").filter({ hasText: text });
-  }
-
-  /** The name of the profile field `name`. */
-  fieldName(name: string): Locator {
-    return this.card.getByRole("term").filter({ hasText: name });
   }
 
   /** Follows the person, and returns once the server has answered. */

@@ -349,11 +349,6 @@ export class Post {
   async openArticle(title: string): Promise<void> {
     await this.articleCard(title).click();
   }
-
-  /** Opens the profile of the post's author, from the link of their name. */
-  async openAuthor(displayName: string): Promise<void> {
-    await this.article.getByRole("link", { name: displayName, exact: true }).click();
-  }
 }
 
 export class Timeline {

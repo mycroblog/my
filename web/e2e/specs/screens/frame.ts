@@ -80,11 +80,6 @@ export class Frame {
     return new Menu(this.page);
   }
 
-  /** The language of the document (`<html lang>`), the language the client speaks to the reader in. */
-  async language(): Promise<string> {
-    return this.page.evaluate(() => document.documentElement.lang);
-  }
-
   /** The heading of the screen, which names it. */
   heading(name: string | RegExp): Locator {
     return this.page.getByRole("main").getByRole("heading", { level: 1, name, exact: true });
