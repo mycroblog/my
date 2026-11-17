@@ -6,10 +6,11 @@
 // is Yuki. Each test opens the editor at its address, on a server that keeps the drafts it reads: the way from one of
 // these to the next is the app's navigation, which the editor's own tests hold (article-editor.dom.test.tsx: New
 // article opens it, Close goes back, and its own list holds the drafts of articles alone). The drafts' own way to the
-// server and back, a published draft leaving the list too, is an E2E test (web/e2e/specs/drafts.spec.ts), and what
-// the server does with a draft of an article is the server's tests'.
+// server and back is an E2E test (web/e2e/specs/drafts.spec.ts), and what the server does with a draft of an article is
+// the server's tests'.
 
 import { expect, test } from "bun:test";
+import { draftListsQuery } from "@my/app-data";
 import { scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderApp, words, type TestApp } from "./test/app";
@@ -85,9 +86,9 @@ const holding = (draft: Draft) =>
     if (held[0] !== draft.text) throw new Error(`test: the body holds "${String(held[0])}"`);
   });
 
-/** Opens the editor at the address of the draft `draft`, the only one the writer keeps, once it holds it. */
-async function editing(draft: Draft): Promise<TestApp & { id: string }> {
-  const on = fakeApp(keeping(draft));
+/** Opens the editor at the address of the draft `draft`, which the writer keeps with `others`, once it holds it. */
+async function editing(draft: Draft, ...others: Draft[]): Promise<TestApp & { id: string }> {
+  const on = fakeApp(keeping(draft, ...others));
   const id = on.fake.idOf(draft.key);
   const app = await renderApp(`/articles/new?draft=${id}`, { on });
   await holding(draft);
@@ -124,8 +125,8 @@ test("a new article closed is kept on the server as a draft of an article, with 
   expect(saved.seen).toHaveLength(1);
 });
 
-test("the composer's list marks the drafts of articles, a scheduled one too, and opens one in the editor", async () => {
-  const app = await renderApp("/lists", keeping(note, kept, waiting));
+/** Opens the composer from the rail, and the list of the writer's drafts in its place. */
+async function composersList(app: TestApp): Promise<HTMLElement> {
   const { dialog } = await newPost(app);
   await app.user.click(within(dialog).getByRole("button", { name: "Drafts" }));
   await app.user.click(
@@ -133,9 +134,12 @@ test("the composer's list marks the drafts of articles, a scheduled one too, and
       screen.queryAllByRole("menuitem", { name: "Drafts and scheduled posts" }),
     ),
   );
-  const list = await shown("the list of the drafts", () =>
-    screen.queryAllByRole("dialog", { name: "Drafts and scheduled posts" }),
-  );
+  return shown("the list of the drafts", () => screen.queryAllByRole("dialog", { name: "Drafts and scheduled posts" }));
+}
+
+test("the composer's list marks the drafts of articles, a scheduled one too, and opens one in the editor", async () => {
+  const app = await renderApp("/lists", keeping(note, kept, waiting));
+  const list = await composersList(app);
   const article = await shown("the article's draft", () => rows(list, "Drafts", "Kept when the editor closes"));
 
   expect(within(list).getByRole("heading", { name: "Drafts 2" })).toBeDefined();
@@ -170,8 +174,11 @@ test("a draft of an article saved again is saved over with what changed, and the
   expect(saved.seen).toHaveLength(1);
 });
 
-test("a draft of an article is published from the server, and reads on its page", async () => {
-  const app = await editing(kept);
+test("a draft of an article is published from the server, reads on its page, and leaves the list of the drafts", async () => {
+  const app = await editing(kept, note);
+  // The writer's drafts as the app holds them before: the list read after the publication is no first read.
+  const before = await app.data.queryClient.query(draftListsQuery(app.data));
+  expect(before.drafts.map((draft) => draft.id).sort()).toEqual([app.id, app.fake.idOf(note.key)].sort());
   const published = app.fake.script("POST /drafts/{id}/publish");
 
   await app.user.click(screen.getByRole("button", { name: "Publish" }));
@@ -183,6 +190,12 @@ test("a draft of an article is published from the server, and reads on its page"
   const article = postOf(await feedOf("Thread"), "Yuki 雪", "Kept when the editor closes");
   expect(within(article).getByRole("heading", { level: 1, name: "Kept when the editor closes" })).toBeDefined();
   expect(published.seen).toHaveLength(1);
+
+  // Published, the draft is gone from the list, with no reload; the post's stays.
+  const list = await composersList(app);
+  await shown("the draft of the post", () => rows(list, "Drafts", note.text));
+  expect(rows(list, "Drafts", "Kept when the editor closes")).toHaveLength(0);
+  expect(within(list).getByRole("heading", { name: "Drafts 1" })).toBeDefined();
 });
 
 test("an article given a time says when, offers Schedule in Publish's place, and is scheduled on the server", async () => {
