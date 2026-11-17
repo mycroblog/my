@@ -207,6 +207,9 @@
     },
     "web/devtools": {
       "name": "@my/devtools",
+      "bin": {
+        "dom-tests": "./src/dom-tests.ts",
+      },
       "dependencies": {
         "magic-string": "1.4.5",
       },

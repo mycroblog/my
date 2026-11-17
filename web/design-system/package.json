@@ -15,9 +15,7 @@
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",
-    "test": "bun test --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && bun run test:dom && bun run test:jsdom",
-    "test:dom": "bun test --preload @my/devtools/happy-dom --pass-with-no-tests .dom.test.",
-    "test:jsdom": "bun test --preload @my/devtools/jsdom --pass-with-no-tests .jsdom.test."
+    "test": "bun test --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom && dom-tests jsdom"
   },
   "dependencies": {
     "@lexical/history": "0.53.0",

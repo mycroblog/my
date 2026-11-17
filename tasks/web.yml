@@ -232,10 +232,11 @@ tasks:
         task: test-package
         vars: { PACKAGE: "{{.ITEM}}" }
 
-  # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each in a process of its own:
+  # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each kind in processes of its own:
   # `*.test.ts(x)` with no DOM, `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on
-  # jsdom. A preload of @my/devtools, which a package with such tests depends on, registers the DOM before a test module
-  # loads. The condition of a package above @mycroblog/mykit reads it from its TypeScript sources, as tsconfig.json does.
+  # jsdom. `dom-tests` of @my/devtools, which a package with such tests depends on, runs the files of a DOM side by
+  # side, on a preload that registers the DOM before a test module loads. The condition of a package above
+  # @mycroblog/mykit reads it from its TypeScript sources, as tsconfig.json does.
   # web/e2e's runs the unit tests of the fake API (ADR-0171 §5), under src alone: the Playwright specs beside it are
   # the E2E tests, which web:e2e runs against a server.
   test-package:

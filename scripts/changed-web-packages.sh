@@ -16,7 +16,7 @@
 #   - The packages are the members of the Bun workspace (the root package.json) under web/ whose manifest has a `test`
 #     script that runs `bun test`, which web:test runs.
 #   - A package depends on the workspace members its manifest names (dependencies, devDependencies, peerDependencies):
-#     @my/e2e for a test on the fake API, @my/devtools for a test on a DOM, whose preload its test scripts name.
+#     @my/e2e for a test on the fake API, @my/devtools for a test on a DOM, which its `dom-tests` runs on a preload.
 # What no manifest says is said here:
 #   - web/docs and web/i18n are no packages of web:test: the site and i18n contexts run their tests (docs:site-test,
 #     i18n:test).
