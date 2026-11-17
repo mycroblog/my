@@ -230,22 +230,32 @@ tasks:
       - task: test-packages
         vars: { PACKAGES: "{{.SELECTED}}" }
 
-  # Every package at once: a test process uses one core, and the packages' tests share nothing while they run. The
-  # packages whose tests run on a DOM share the cores: each one's `dom-tests` takes one of BESIDE parts of them.
+  # The packages side by side, as many at once as there are cores and no more: a test process uses one core, and a
+  # test that waits for a core takes that much longer and passes its limit (nine packages at once on a runner of four
+  # cores did). The packages' tests share nothing while they run. The packages whose tests run on a DOM share the
+  # cores: each one's `dom-tests` takes one of BESIDE parts of them, BESIDE being how many of them run at once.
   test-packages:
     internal: true
     vars:
+      JOBS:
+        sh: |
+          n=$(echo '{{.PACKAGES}}' | wc -w)
+          cores=$(nproc)
+          if [ "$n" -gt "$cores" ]; then n=$cores; fi
+          echo "$n"
       BESIDE:
         sh: |
           n=0
           for p in $(echo '{{.PACKAGES}}' | tr '\n' ' '); do
             if grep -q 'dom-tests' "web/$p/package.json"; then n=$((n + 1)); fi
           done
+          cores=$(nproc)
+          if [ "$n" -gt "$cores" ]; then n=$cores; fi
           echo "$n"
-    deps:
-      - for: { var: PACKAGES }
-        task: test-package
-        vars: { PACKAGE: "{{.ITEM}}", BESIDE: "{{.BESIDE}}" }
+    cmds:
+      - |
+        echo '{{.PACKAGES}}' | tr ' ' '\n' | grep -v '^$' | xargs -P {{.JOBS}} -I {} \
+          "{{.ROOT_DIR}}/scripts/task.sh" web:test-package PACKAGE={} BESIDE={{.BESIDE}}
 
   # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each kind in processes of its own:
   # `*.test.ts(x)` with no DOM, `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on
@@ -255,7 +265,8 @@ tasks:
   # web/e2e's runs the unit tests of the fake API (ADR-0171 §5), under src alone: the Playwright specs beside it are
   # the E2E tests, which web:e2e runs against a server.
   test-package:
-    internal: true
+    desc: Run the tests of one web package (PACKAGE=app; web:test runs the packages a change reaches, side by side)
+    requires: { vars: [PACKAGE] }
     dir: web/{{.PACKAGE}}
     env:
       DOM_TESTS_BESIDE: "{{.BESIDE}}"
