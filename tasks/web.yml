@@ -164,15 +164,21 @@ tasks:
     desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools, each kind on its DOM
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - for: [design-tokens, design-system, app-components, platform]
-        task: test-package
-        vars: { PACKAGE: "{{.ITEM}}" }
-      # The condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
-      - for: [app-data, app-features, app]
-        task: test-package
-        vars: { PACKAGE: "{{.ITEM}}", FLAGS: --conditions=@mycroblog/source }
-      - task: test-package
-        vars: { PACKAGE: devtools }
+      - task: test-packages
+
+  # Every package at once: a test process uses one core, and the packages' tests share nothing while they run. The
+  # condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
+  test-packages:
+    internal: true
+    deps:
+      - { task: test-package, vars: { PACKAGE: design-tokens } }
+      - { task: test-package, vars: { PACKAGE: design-system } }
+      - { task: test-package, vars: { PACKAGE: app-components } }
+      - { task: test-package, vars: { PACKAGE: platform } }
+      - { task: test-package, vars: { PACKAGE: app-data, FLAGS: --conditions=@mycroblog/source } }
+      - { task: test-package, vars: { PACKAGE: app-features, FLAGS: --conditions=@mycroblog/source } }
+      - { task: test-package, vars: { PACKAGE: app, FLAGS: --conditions=@mycroblog/source } }
+      - { task: test-package, vars: { PACKAGE: devtools } }
 
   # The three kinds of test file of a package (ADR-0171 §4), each in a process of its own: `*.test.ts(x)` with no DOM,
   # `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on jsdom. A preload of
