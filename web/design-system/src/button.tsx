@@ -8,7 +8,7 @@
 // the text link a link drawn as it is.
 
 import { motion } from "@my/design-tokens";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Button as AriaButton, Link as AriaLink, type ButtonProps as AriaButtonProps } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Box, Pin, Row, type Gap, type RowProps } from "./layout";
@@ -142,6 +142,14 @@ function Label({
   );
 }
 
+/**
+ * The pointerdown a React Aria button hears: none while it is disabled. A browser gives a disabled button the
+ * pointer's events and no click; React Aria, which ends a press at its click, would hold that press, and take the first
+ * press once the button is enabled for its end.
+ */
+export const heardPointerDown = (props: ComponentProps<"button">) =>
+  props.disabled === true ? undefined : props.onPointerDown;
+
 /** The base of the button and the icon button: a kind and a size, and a toggle's state. */
 export function ButtonBase({
   kind,
@@ -172,6 +180,7 @@ export function ButtonBase({
           render={(props, { isHovered, isPressed, isFocusVisible }) => (
             <button
               {...props}
+              onPointerDown={heardPointerDown(props)}
               aria-pressed={pressed}
               aria-keyshortcuts={keyshortcuts}
               aria-description={description}
@@ -243,7 +252,11 @@ export function TextButton({ children, ...rest }: TextButtonProps) {
           {...rest}
           className={textButton()}
           render={(props, { isFocusVisible }) => (
-            <button {...props} data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined} />
+            <button
+              {...props}
+              onPointerDown={heardPointerDown(props)}
+              data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined}
+            />
           )}
         />
       }

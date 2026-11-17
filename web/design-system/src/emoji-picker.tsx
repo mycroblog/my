@@ -67,6 +67,7 @@ import {
   Toolbar,
 } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { heardPointerDown } from "./button";
 import { Icon, type IconName } from "./icons";
 import { stringsIn, useReader } from "./locale";
 
@@ -784,6 +785,7 @@ export function EmojiPicker({
             aria-label={section.label}
             {...(shown === section.id ? { "aria-current": "true" as const } : {})}
             isDisabled={typed || (!searching && !layout.firstCellOf.has(section.id))}
+            render={(props) => <button {...props} onPointerDown={heardPointerDown(props)} />}
             onPress={() => {
               go(section.id);
             }}
