@@ -86,6 +86,41 @@ export async function expectNoSidewaysScroll(page: Page): Promise<void> {
 }
 
 /**
+ * What reaches past a side of what holds it in the story: an element past its parent, or a text past its element (a
+ * word no line holds that did not break), each with where; empty when everything is inside. What a parent that scrolls
+ * or clips sideways holds is that parent's to scroll, and is left out.
+ */
+export const reachingOut = (page: Page): Promise<string[]> =>
+  page.evaluate(() => {
+    const story = document.getElementById("storybook-root");
+    if (story === null) return ["the page shows no story"];
+    const slack = 0.75;
+    const said = (what: string, box: DOMRect, holder: DOMRect) =>
+      `${what} from ${String(Math.round(box.left))} to ${String(Math.round(box.right))}, held from ${String(Math.round(holder.left))} to ${String(Math.round(holder.right))}`;
+    const past = (box: DOMRect, holder: DOMRect) =>
+      box.width > 0 && (box.left < holder.left - slack || box.right > holder.right + slack);
+    const out: string[] = [];
+    const range = document.createRange();
+    for (const element of story.querySelectorAll("*")) {
+      const box = element.getBoundingClientRect();
+      const name = `<${element.tagName.toLowerCase()}> "${element.textContent.trim().replaceAll(/\s+/g, " ").slice(0, 40)}"`;
+      const parent = element.parentElement;
+      if (parent !== null && getComputedStyle(parent).overflowX === "visible") {
+        const holder = parent.getBoundingClientRect();
+        if (past(box, holder)) out.push(said(name, box, holder));
+      }
+      if (getComputedStyle(element).overflowX !== "visible") continue;
+      for (const node of element.childNodes) {
+        if (node.nodeType !== Node.TEXT_NODE || (node.textContent ?? "").trim() === "") continue;
+        range.selectNodeContents(node);
+        const text = range.getBoundingClientRect();
+        if (past(text, box)) out.push(said(`the text of ${name}`, text, box));
+      }
+    }
+    return out.slice(0, 5);
+  });
+
+/**
  * The texts of the element that a reader sees, in the order of the page: those that are painted, in more than a pixel
  * of what clips them. Words kept for assistive technology alone take no room, and are not among them.
  */

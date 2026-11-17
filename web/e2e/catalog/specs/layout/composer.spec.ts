@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// AttachmentList and PollSettings (composer.tsx): the rows of a post's images, and a poll's settings; and the emoji
-// button at the end of the text's first line.
+// AttachmentList and PollSettings (composer.tsx): the rows of a post's images, and a poll's settings; the emoji
+// button at the end of the text's first line; a suggestion's name and handle on its one line; and a notice's action.
 
 import { expectNoComputedViolations } from "../axe";
-import { boxesAtRest, boxOf, expectInside, expectMirrored, expectNoSidewaysScroll } from "../boxes";
+import {
+  atRest,
+  boxesAtRest,
+  boxOf,
+  expectInside,
+  expectMirrored,
+  expectNoSidewaysScroll,
+  linesOf,
+  outside,
+} from "../boxes";
 import { expect, test } from "../test";
 
 const story = "design-system-layout-parts--composer-parts";
@@ -81,3 +90,50 @@ for (const [id, locale, page_, text] of [
       })
       .toBe("clear");
   });
+
+// The accounts the story suggests for `@sa`, in its own words: the names it shows in en and right to left, and the
+// handles, the last one longer than its line.
+const suggested = {
+  en: ["Sam Rivera", "Sasha Kim", "Samira Haddad", "Saoirse O'Neill"],
+  "ar-XB": ["سام ريفيرا", "Sasha Kim", "سميرة حداد", "Saoirse O'Neill"],
+  handles: [
+    "@sam",
+    "@sasha@mastodon.example",
+    "@samira@social.example",
+    "@saoirse_on_a_very_long_handle@photos.example",
+  ],
+} as const;
+
+for (const locale of ["en", "ar-XB"] as const)
+  test(`a suggested account's name and handle share its line without covering each other (${locale === "en" ? "left to right" : "right to left"})`, async ({
+    page,
+    open,
+  }) => {
+    await open("design-system-composer--accounts", { locale });
+    const options = page.getByRole("listbox").getByRole("option");
+    await expect(options).toHaveCount(suggested.handles.length);
+    for (const [i, handle] of suggested.handles.entries()) {
+      const option = options.filter({ has: page.getByText(handle, { exact: true }) });
+      const at = await boxesAtRest({
+        option,
+        name: option.getByText(suggested[locale][i] ?? "", { exact: true }),
+        handle: option.getByText(handle, { exact: true }),
+      });
+      expect({ handle, out: outside(at.name, at.option) }).toEqual({ handle, out: [] });
+      expect({ handle, out: outside(at.handle, at.option) }).toEqual({ handle, out: [] });
+      // Side by side: one ends where the other begins, or before.
+      const apart = Math.max(at.handle.left - at.name.right, at.name.left - at.handle.right);
+      expect({ handle, apart: apart >= -0.75 }).toEqual({ handle, apart: true });
+    }
+    await expectNoSidewaysScroll(page);
+  });
+
+// Defect: at the minimum width the notice is 184 px wide in a page that leaves it 288, so its sentence stands on four
+// lines 96 px wide and the two words of its action, "Try again", on two.
+test.fail("a notice's short action keeps its words on one line at the minimum width", async ({ page, open }) => {
+  await open("design-system-composer--notice-with-action");
+  const action = page.getByRole("status").getByRole("button", { name: "Try again", exact: true });
+  await expect(action).toBeVisible();
+  const lines = await atRest(() => linesOf(action));
+  expect(lines).toBe(1);
+});
