@@ -6,7 +6,7 @@ import { expectNoComputedViolations } from "../axe";
 import { boxesAtRest, expectInside, expectMirrored, expectNoSidewaysScroll } from "../boxes";
 import { expect, test } from "../test";
 
-const story = "design-system-layout-parts--drafts";
+const story = "app-components-drafts--drafts";
 
 test("the sections of the drafts and their rows stand one under another, each row's menu at its end", async ({
   page,

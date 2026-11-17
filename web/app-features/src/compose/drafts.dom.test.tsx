@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 import { defaultComposeSettings, defaultDraftLimits, useComposeSettings, type ServerDraft } from "@my/app-data";
-import { readerZone, scheduleTime } from "@my/design-system";
+import { readerZone, scheduleTime } from "@my/app-components";
 import type { BoundFunctions, queries } from "@testing-library/dom";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { stringsIn } from "../locale";

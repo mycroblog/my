@@ -15,7 +15,7 @@
 // word, so that a long text is never lost, and leaves an edit as it was. A reader the server keeps from writing new
 // articles (`article_authoring`) gets the one sentence why in place of the form; an edit of an earlier one still opens.
 
-import { PostContent } from "@my/app-components";
+import { PostContent, scheduleTime, ScheduleTime, ScheduleZone } from "@my/app-components";
 import {
   articleFieldLimits,
   useArticleAuthoring,
@@ -54,9 +54,6 @@ import {
   MenuGroup,
   MenuItem,
   ModalPresence,
-  ScheduleTime,
-  scheduleTime,
-  ScheduleZone,
   TagInput,
   TextButton,
   useLocale,

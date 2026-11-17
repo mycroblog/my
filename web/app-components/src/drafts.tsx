@@ -7,15 +7,21 @@
 // is the caller's. It is composed of the design system's parts alone, laid out and painted by their props (ADR-0025
 // §4).
 
+import {
+  Box,
+  Button,
+  DateTimeField,
+  FieldError,
+  Icon,
+  PressRow,
+  Row,
+  Spoken,
+  Stack,
+  useHeaded,
+  useLocale,
+  type IconName,
+} from "@my/design-system";
 import { useId, type ReactNode } from "react";
-import { useLocale } from "react-aria-components";
-import { Button } from "./button";
-import { DateTimeField, FieldError } from "./form-page";
-import { Icon, type IconName } from "./icons";
-import { Box, Row, Spoken, Stack } from "./layout";
-import { PressRow } from "./list";
-import { useReader } from "./locale";
-import { useHeaded } from "./menu";
 
 /** How many a section of the drafts' list holds, muted, in its heading's sentence (Scheduled 3). */
 export function DraftCount({ count }: { count: number }) {
@@ -270,7 +276,7 @@ export function ScheduleForm({
   // In a sheet, its head names the form; else it is of its own width, which a popover sized to what it holds takes.
   const headed = useHeaded();
   const id = useId();
-  const { direction } = useReader(undefined);
+  const { direction } = useLocale();
   return (
     <Stack
       gap="entry-line"
