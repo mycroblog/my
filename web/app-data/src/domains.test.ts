@@ -6,7 +6,7 @@ import { InfiniteQueryObserver } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { domainMutesQuery, muteDomain, useMutedDomain } from "./domains";
 import { notificationsQuery } from "./notifications";
-import { fakeAppData, json, page } from "./test/fake";
+import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import {
   bookmarksQuery,
@@ -16,54 +16,25 @@ import {
   tagTimelineQuery,
 } from "./timeline";
 
-/**
- * A server that keeps the viewer's muted domains, `muted` at the start, and lists them `size` a page; it refuses a mute
- * of this server's own domain (example.com) as the server does, and answers every other read with a page of one post.
- */
-function server(muted: string[] = [], size = 2) {
-  const domains = [...muted];
-  const writes: { method: string; path: string; body: unknown }[] = [];
-  const fake = fakeAppData(async (request) => {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    if (path === "/api/v1/domain_mutes" && request.method === "GET") {
-      const at = Number(url.searchParams.get("cursor") ?? "0");
-      const items = domains.slice(at, at + size).map((domain) => ({ domain, created_at: "2026-11-16T00:00:00Z" }));
-      return json(200, { items, ...(at + size < domains.length ? { next_cursor: String(at + size) } : {}) });
-    }
-    if (path === "/api/v1/domain_mutes" && request.method === "POST") {
-      const body = (await request.json()) as { domain: string };
-      writes.push({ method: "POST", path, body });
-      if (body.domain === "example.com") return json(422, { type: "about:blank", title: "Unprocessable", status: 422 });
-      if (!domains.includes(body.domain)) domains.push(body.domain);
-      return json(200, { domain: body.domain, created_at: "2026-11-16T00:00:00Z" });
-    }
-    if (path.startsWith("/api/v1/domain_mutes/") && request.method === "DELETE") {
-      writes.push({ method: "DELETE", path, body: undefined });
-      const domain = decodeURIComponent(path.slice("/api/v1/domain_mutes/".length));
-      const at = domains.indexOf(domain);
-      if (at >= 0) domains.splice(at, 1);
-      return new Response(null, { status: 204 });
-    }
-    return json(200, page(["1"]));
-  });
-  return { ...fake, writes };
-}
+/** The largest page of the server's list of muted domains, which a domain of a test comes after. */
+const filler = Array.from({ length: 40 }, (_, i) => `server-${String(i + 1)}.example`);
 
 const mutedOf = (data: AppData, domain: string) => probe(data, () => useMutedDomain(domain));
+const writes = (requests: readonly string[]) => requests.filter((r) => !r.startsWith("GET "));
 
 describe("useMutedDomain", () => {
   test("names the muted domain a server falls under: itself or a parent, on any page of the list", async () => {
-    const { data, requests } = server(["a.example", "b.example", "photos.example"]);
+    const { data, requests } = fakeData({ domainMutes: ["a.example", ...filler, "photos.example"] });
     await data.queryClient.query(domainMutesQuery(data));
-    expect(requests.map((r) => r.searchParams.get("cursor"))).toEqual([null, "2"]);
+    const cursors = requests.map((r) => new URL(r.slice("GET ".length), "https://demo.test").searchParams.get("cursor"));
+    expect(cursors).toEqual([null, filler.at(-2) ?? ""]);
     expect(mutedOf(data, "photos.example")).toBe("photos.example");
     expect(mutedOf(data, "cdn.photos.example")).toBe("photos.example");
     expect(mutedOf(data, "a.example")).toBe("a.example");
   });
 
   test("names none for a server not under a muted domain, though its name ends alike", async () => {
-    const { data } = server(["photos.example"]);
+    const { data } = fakeData({ domainMutes: ["photos.example"] });
     await data.queryClient.query(domainMutesQuery(data));
     expect(mutedOf(data, "otherphotos.example")).toBeUndefined();
     expect(mutedOf(data, "example")).toBeUndefined();
@@ -71,7 +42,7 @@ describe("useMutedDomain", () => {
   });
 
   test("names none until the list is read, and for an account of this server", () => {
-    const { data } = server(["photos.example"]);
+    const { data } = fakeData({ domainMutes: ["photos.example"] });
     expect(mutedOf(data, "photos.example")).toBeUndefined();
     expect(probe(data, () => useMutedDomain(undefined))).toBeUndefined();
   });
@@ -79,70 +50,76 @@ describe("useMutedDomain", () => {
 
 describe("muteDomain", () => {
   test("mutes a server, and the cache holds it once the write resolves", async () => {
-    const { data, writes } = server();
+    const { fake, data, requests } = fakeData();
+    const sent = fake.script("POST /domain_mutes");
     await data.queryClient.query(domainMutesQuery(data));
     await muteDomain(data, "photos.example", true);
-    expect(writes).toEqual([{ method: "POST", path: "/api/v1/domain_mutes", body: { domain: "photos.example" } }]);
+    expect(writes(requests)).toEqual(["POST /domain_mutes"]);
+    expect(sent.seen.map((s) => s.body)).toEqual([{ domain: "photos.example" }]);
     expect(mutedOf(data, "photos.example")).toBe("photos.example");
     expect(mutedOf(data, "cdn.photos.example")).toBe("photos.example");
   });
 
   test("stops muting a server, and the cache no longer holds it once the write resolves", async () => {
-    const { data, writes } = server(["photos.example", "social.example"]);
+    const { data, requests } = fakeData({ domainMutes: ["photos.example", "social.example"] });
     await data.queryClient.query(domainMutesQuery(data));
     await muteDomain(data, "photos.example", false);
-    expect(writes).toEqual([{ method: "DELETE", path: "/api/v1/domain_mutes/photos.example", body: undefined }]);
+    expect(writes(requests)).toEqual(["DELETE /domain_mutes/photos.example"]);
     expect(mutedOf(data, "photos.example")).toBeUndefined();
     expect(mutedOf(data, "social.example")).toBe("social.example");
   });
 
   test("rejects with the server's problem, and the cache keeps the list as it was", async () => {
-    const { data } = server(["photos.example"]);
+    const { data } = fakeData({ domainMutes: ["photos.example"] });
     await data.queryClient.query(domainMutesQuery(data));
-    const refused = await muteDomain(data, "example.com", true).then(
+    // The server mutes no domain of its own.
+    const refused = await muteDomain(data, "demo.test", true).then(
       () => undefined,
       (error: unknown) => error,
     );
     expect(refused).toBeInstanceOf(ProblemError);
-    expect(mutedOf(data, "example.com")).toBeUndefined();
+    expect(mutedOf(data, "demo.test")).toBeUndefined();
     expect(mutedOf(data, "photos.example")).toBe("photos.example");
   });
 
   // ADR-0013 §30: a muted server's posts leave the timelines other than home, its boosts leave home, its accounts
   // notify no more. The server filters; the client reads them again.
-  const changed = (data: AppData) => [
-    homeTimelineQuery(data).queryKey,
-    listTimelineQuery(data, "l").queryKey,
-    publicTimelineQuery(data, "federated").queryKey,
-    tagTimelineQuery(data, "film").queryKey,
-    notificationsQuery(data, "all").queryKey,
-  ];
-
-  async function cached(data: AppData) {
-    const keys: (readonly unknown[])[] = [...changed(data), bookmarksQuery(data).queryKey];
-    for (const key of keys) data.queryClient.setQueryData(key, { pages: [page(["1"])], pageParams: [undefined] });
+  /** Reads the timelines, the notifications, the bookmarks and the muted domains, and returns the keys a mute marks. */
+  async function cached(data: AppData, list: string) {
+    const home = homeTimelineQuery(data);
+    const listed = listTimelineQuery(data, list);
+    const federated = publicTimelineQuery(data, "federated");
+    const tagged = tagTimelineQuery(data, "baking");
+    const notifications = notificationsQuery(data, "all");
+    await data.queryClient.infiniteQuery(home);
+    await data.queryClient.infiniteQuery(listed);
+    await data.queryClient.infiniteQuery(federated);
+    await data.queryClient.infiniteQuery(tagged);
+    await data.queryClient.infiniteQuery(notifications);
+    await data.queryClient.infiniteQuery(bookmarksQuery(data));
     await data.queryClient.query(domainMutesQuery(data));
+    return [home.queryKey, listed.queryKey, federated.queryKey, tagged.queryKey, notifications.queryKey];
   }
 
   for (const on of [true, false])
     for (const marking of ["shown", "later"] as const)
       test(`${on ? "a mute" : "an unmute"} (${marking}) marks the timelines and the notifications, and nothing else`, async () => {
-        const { data } = server(on ? [] : ["photos.example"]);
-        await cached(data);
+        const { fake, data } = fakeData({ domainMutes: on ? [] : ["photos.example"] });
+        const changed = await cached(data, fake.listPath(0).replace("/lists/", ""));
         await muteDomain(data, "photos.example", on, marking);
         const marked = (key: readonly unknown[]) => data.queryClient.getQueryState(key)?.isInvalidated;
-        for (const key of changed(data)) expect([key, marked(key)]).toEqual([key, true]);
+        for (const key of changed) expect([key, marked(key)]).toEqual([key, true]);
         expect(marked(bookmarksQuery(data).queryKey)).toBe(false);
       });
 
   test("shown, the home timeline on the screen is read again before the write resolves; later, it is not", async () => {
     for (const marking of ["shown", "later"] as const) {
-      const { data, requests } = server();
+      const { data, requests } = fakeData();
       await data.queryClient.query(domainMutesQuery(data));
       await data.queryClient.infiniteQuery(homeTimelineQuery(data));
       const observer = new InfiniteQueryObserver(data.queryClient, homeTimelineQuery(data));
       const unsubscribe = observer.subscribe(() => undefined);
-      const reads = () => requests.filter((r) => r.pathname === "/api/v1/timelines/home").length;
+      const reads = () => requests.filter((r) => r === "GET /timelines/home").length;
       const before = reads();
       await muteDomain(data, "photos.example", true, marking);
       expect([marking, reads() - before]).toEqual([marking, marking === "shown" ? 1 : 0]);

@@ -1,29 +1,49 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
+import { fakeOrigin, scenario } from "@my/e2e/fake";
 import { InfiniteQueryObserver } from "@tanstack/react-query";
-import type { StreamEvent } from "@mycroblog/mykit";
 import type { AppData } from "./app-data";
 import { receiveListsGap, receiveListStatuses } from "./arrivals";
 import { shadowed } from "./shadow";
 import { startStream } from "./stream";
-import { fakeAppData, json, page, status } from "./test/fake";
+import { fakeData } from "./test/data";
 import { fakeBrowser, fakeStreams } from "./test/tabs";
 import { homeTimelineQuery, listTimelineQuery } from "./timeline";
 
+/** sam's posts, oldest first, one more than a page, and hana's two after them. */
+const bread = Array.from({ length: 21 }, (_, i) => `bread-${String(i + 1)}`);
+const notes = ["note-1", "note-2"];
+
 /**
- * A server whose list timelines answer `first()` of the list for their first page and ["1"] for the page after "c2",
- * and whose home timeline answers ["h"].
+ * A server where the reader follows sam and hana and keeps a list of each: the list `a` of sam, whose timeline is two
+ * pages (`first`, `second`), and the list `b` of hana, whose timeline is `other`.
  */
-function server(first: (list: string) => unknown = () => page(["3", "2"], "c2")) {
-  const fake = fakeAppData((request) => {
-    const url = new URL(request.url);
-    const list = /^\/api\/v1\/timelines\/list\/([^/]+)$/.exec(url.pathname)?.[1];
-    if (list === undefined) return json(200, page(["h"]));
-    return json(200, url.searchParams.get("cursor") === "c2" ? page(["1"]) : first(list));
+function server() {
+  const { fake, data, requests } = fakeData({
+    seed: {
+      people: scenario.people,
+      follows: ["sam", "hana"].map((followee) => ({ follower: "yuki", followee })),
+      posts: [...bread.map((key) => ["sam", key] as const), ...notes.map((key) => ["hana", key] as const)].map(
+        ([author, key]) => ({ key, author, text: `Post ${key}.`, visibility: "public", language: "en" }),
+      ),
+      lists: [
+        { key: "a", owner: "yuki", name: "Bread", members: ["sam"] },
+        { key: "b", owner: "yuki", name: "Notes", members: ["hana"] },
+      ],
+    },
   });
-  const data: AppData = { ...fake.data, connection: { server: "https://example.com" } };
-  return { data, requests: fake.requests };
+  const [oldest = "", ...later] = bread.map(fake.idOf);
+  return {
+    fake,
+    data: { ...data, connection: { server: fakeOrigin } } satisfies AppData,
+    requests,
+    a: fake.listPath(0).replace("/lists/", ""),
+    b: fake.listPath(1).replace("/lists/", ""),
+    first: later.toReversed(),
+    second: [oldest],
+    other: notes.toReversed().map(fake.idOf),
+  };
 }
 
 /** What a loader of the list reads: the cache while it holds the list and it is not marked, else a fetch. */
@@ -39,7 +59,7 @@ const cached = (data: AppData, list: string) =>
 const home = (data: AppData) =>
   data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages.map((p) => p.items.map((s) => s.id));
 
-/** Loads the first two pages of `list`: ["3", "2"] and ["1"]. */
+/** Loads the two pages of `list`. */
 async function twoPages(data: AppData, list: string) {
   await load(data, list);
   const observer = new InfiniteQueryObserver(data.queryClient, listTimelineQuery(data, list));
@@ -49,65 +69,64 @@ async function twoPages(data: AppData, list: string) {
 
 describe("listTimelineQuery", () => {
   test("reads the list's timeline, page after page by next_cursor", async () => {
-    const { data, requests } = server();
-    await twoPages(data, "a");
-    expect(cached(data, "a")).toEqual([["3", "2"], ["1"]]);
-    expect(requests.map((u) => u.pathname + u.search)).toEqual([
-      "/api/v1/timelines/list/a",
-      "/api/v1/timelines/list/a?cursor=c2",
-    ]);
+    const { data, requests, a, first, second } = server();
+    await twoPages(data, a);
+    expect(cached(data, a)).toEqual([first, second]);
+    expect(requests).toEqual([`GET /timelines/list/${a}`, `GET /timelines/list/${a}?cursor=${first.at(-1) ?? ""}`]);
   });
 
   test("keeps each list's timeline apart", () => {
-    const { data } = server();
-    expect(listTimelineQuery(data, "a").queryKey).not.toEqual(listTimelineQuery(data, "b").queryKey);
+    const { data, a, b } = server();
+    expect(listTimelineQuery(data, a).queryKey).not.toEqual(listTimelineQuery(data, b).queryKey);
   });
 });
 
 describe("a list's new posts, while no screen shows it", () => {
   test("go at once to the top of that list's first page, once, and to no other list nor home", async () => {
-    const { data } = server();
-    await twoPages(data, "a");
-    await load(data, "b");
+    const { fake, data, a, b, first, second, other } = server();
+    await twoPages(data, a);
+    await load(data, b);
     await data.queryClient.infiniteQuery({ ...homeTimelineQuery(data), staleTime: Infinity });
-    receiveListStatuses(data, "a", [status("5"), status("4")]);
-    receiveListStatuses(data, "a", [status("4")]);
-    expect(cached(data, "a")).toEqual([["5", "4", "3", "2"], ["1"]]);
-    expect(cached(data, "b")).toEqual([["3", "2"]]);
-    expect(home(data)).toEqual([["h"]]);
+    const before = home(data);
+    const [five, four] = fake.newPosts(2);
+    if (five === undefined || four === undefined) throw new Error("test: the fake made no posts");
+    receiveListStatuses(data, a, [five, four]);
+    receiveListStatuses(data, a, [four]);
+    expect(cached(data, a)).toEqual([[five.id, four.id, ...first], second]);
+    expect(cached(data, b)).toEqual([other]);
+    expect(home(data)).toEqual(before);
   });
 
   test("a post of a list never read is left to the list's first read", () => {
-    const { data } = server();
-    receiveListStatuses(data, "a", [status("4")]);
-    expect(cached(data, "a")).toBeUndefined();
+    const { fake, data, a } = server();
+    receiveListStatuses(data, a, fake.newPosts(1));
+    expect(cached(data, a)).toBeUndefined();
   });
 });
 
 describe("after a break in the stream", () => {
   test("every list read keeps its first page alone and is marked to be read again, without a fetch", async () => {
-    const { data, requests } = server();
-    await twoPages(data, "a");
-    await load(data, "b");
+    const { data, requests, a, b, first } = server();
+    await twoPages(data, a);
+    await load(data, b);
     receiveListsGap(data);
-    expect(cached(data, "a")).toEqual([["3", "2"]]);
-    for (const list of ["a", "b"])
+    expect(cached(data, a)).toEqual([first]);
+    for (const list of [a, b])
       expect(data.queryClient.getQueryState(listTimelineQuery(data, list).queryKey)?.isInvalidated).toBe(true);
     await Promise.resolve();
     expect(requests).toHaveLength(3);
   });
 
   test("the list a screen shows reads its first page again in place of every page", async () => {
-    let first = page(["3", "2"], "c2");
-    const { data, requests } = server(() => first);
-    const observer = await twoPages(data, "a");
+    const { fake, data, requests, a, first } = server();
+    const observer = await twoPages(data, a);
     const unobserve = observer.subscribe(() => undefined);
-    first = page(["9", "8"], "c2");
+    // sam posted twice while the stream was away.
+    const missed = fake.newPosts(2);
     receiveListsGap(data);
-    await data.queryClient.getQueryCache().find({ queryKey: listTimelineQuery(data, "a").queryKey })?.promise;
-    expect(cached(data, "a")).toEqual([["9", "8"]]);
-    expect(requests.at(-1)?.pathname).toBe("/api/v1/timelines/list/a");
-    expect(requests.at(-1)?.search).toBe("");
+    await data.queryClient.getQueryCache().find({ queryKey: listTimelineQuery(data, a).queryKey })?.promise;
+    expect(cached(data, a)).toEqual([[...missed.map((s) => s.id), ...first.slice(0, 18)]]);
+    expect(requests.at(-1)).toBe(`GET /timelines/list/${a}`);
     unobserve();
   });
 });
@@ -125,31 +144,32 @@ describe("by the stream", () => {
   }
 
   test("a list_update goes to its list's timeline, and an update of home to none of the lists", async () => {
-    const { data } = server();
-    await load(data, "a");
-    await load(data, "b");
+    const { fake, data, a, b, first, other } = server();
+    await load(data, a);
+    await load(data, b);
     const stream = await streaming(data);
-    const listUpdate: StreamEvent = { type: "list_update", listId: "a", status: status("4") };
-    stream.send(listUpdate);
-    stream.send({ type: "update", status: status("5") });
-    expect(cached(data, "a")).toEqual([["4", "3", "2"]]);
-    expect(cached(data, "b")).toEqual([["3", "2"]]);
+    const [five, four] = fake.newPosts(2);
+    if (five === undefined || four === undefined) throw new Error("test: the fake made no posts");
+    stream.send({ type: "list_update", listId: a, status: four });
+    stream.send({ type: "update", status: five });
+    expect(cached(data, a)).toEqual([[four.id, ...first]]);
+    expect(cached(data, b)).toEqual([other]);
   });
 
   test("after it connects again, the lists read are read again", async () => {
-    const { data } = server();
-    await load(data, "a");
+    const { data, a } = server();
+    await load(data, a);
     const stream = await streaming(data);
-    expect(data.queryClient.getQueryState(listTimelineQuery(data, "a").queryKey)?.isInvalidated).toBe(false);
+    expect(data.queryClient.getQueryState(listTimelineQuery(data, a).queryKey)?.isInvalidated).toBe(false);
     stream.open(true);
-    expect(data.queryClient.getQueryState(listTimelineQuery(data, "a").queryKey)?.isInvalidated).toBe(true);
+    expect(data.queryClient.getQueryState(listTimelineQuery(data, a).queryKey)?.isInvalidated).toBe(true);
   });
 
   test("a post deleted on the stream leaves the list's timeline", async () => {
-    const { data } = server();
-    await load(data, "a");
+    const { data, a, first } = server();
+    await load(data, a);
     const stream = await streaming(data);
-    stream.send({ type: "delete", id: "2" });
-    expect(cached(data, "a")).toEqual([["3"]]);
+    stream.send({ type: "delete", id: first[1] ?? "" });
+    expect(cached(data, a)).toEqual([first.filter((_, i) => i !== 1)]);
   });
 });

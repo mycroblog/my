@@ -335,6 +335,8 @@ export type FakeOptions = {
    * their notification settings (`settings-fail`) fails with a 500.
    */
   pushState?: "subscribed" | "subscription-fails" | "settings-fail";
+  /** How many of the reader's newest notifications they have not read yet; 3 by default. */
+  unreadNotifications?: number;
   /** The first dismissal of a notification fails (a 500); the next is kept, as a try again finds it. */
   dismissFails?: boolean;
   /**
@@ -1752,8 +1754,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   }
   notifications.sort(newestFirst);
 
-  // The reader read all but the three newest.
-  let lastRead = notifications[3]?.id;
+  // The reader read all but the newest, three unless the options say how many.
+  const unreadAtStart = o.unreadNotifications ?? 3;
+  let lastRead = notifications[unreadAtStart]?.id;
   const unreadCount = () => notifications.filter((n) => lastRead === undefined || n.id > lastRead).length;
 
   // ---- The shell: the instance, the reader's rights, what is around them --------------------------------------------
@@ -2115,8 +2118,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       });
     });
     notifications.sort(newestFirst);
-    // The reader read all but the three newest, as of the seed's.
-    lastRead = notifications[3]?.id;
+    // The reader read all but the newest, as of the seed's.
+    lastRead = notifications[unreadAtStart]?.id;
   }
 
   // With `dismissFails`, the dismissals of a notification still to fail before one is kept.
