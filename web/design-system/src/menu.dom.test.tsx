@@ -156,7 +156,7 @@ test("an item that opens a submenu reads what the submenu holds now in its name"
 });
 
 // WAI-ARIA's menu pattern: an item that opens a submenu has aria-haspopup. This one says nothing of it.
-test.failing("an item that opens a submenu says that it has one", () => {
+test("an item that opens a submenu says that it has one", () => {
   render(
     <MenuPanel label="Who can see and reply">
       <MenuGroup>

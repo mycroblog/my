@@ -298,7 +298,11 @@ export function MenuItem({
           {
             render: (props: object) => (href === undefined ? <div {...props} /> : <a {...props} aria-current="page" />),
           }
-        : {})}
+        : opensValue !== undefined && !disabled
+          ? // An item given aria-haspopup is React Aria's trigger of a submenu of its own, which runs no action: the
+            // item that opens a submenu says so on the element itself, where it shows ›.
+            { render: (props: object) => <div {...props} aria-haspopup="menu" /> }
+          : {})}
       {...(opensValue === undefined ? {} : { shouldCloseOnSelect: false })}
       className={({ isHovered, isFocused, isFocusVisible, isPressed }) =>
         menu({
