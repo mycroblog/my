@@ -254,6 +254,8 @@ const SPACE_BEFORE = {
   "content-emoji-side": "ms-content-emoji-side",
 } as const;
 const SPACE_AFTER = {
+  // The words that took the place of the removed ones follow a space apart.
+  "diff-replaced": "me-[0.3em]",
   "entry-caption": "me-entry-caption",
   "shell-edge": "me-shell-edge",
   "content-emoji-side": "me-content-emoji-side",
@@ -585,7 +587,7 @@ export type BoxProps = PartProps & {
   share?: number | undefined;
   /** As wide as it is tall times this (width over height): a picture's box, whatever its width. */
   ratio?: number | undefined;
-  /** Its press reaches over the whole of the nearest `anchor` (a line that is one link). */
+  /** Its press, or a mark drawn over it, reaches over the whole of the nearest `anchor` (a line that is one link). */
   reach?: boolean | undefined;
 };
 

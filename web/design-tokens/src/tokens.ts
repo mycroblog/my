@@ -201,9 +201,10 @@ export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const
 
 /**
  * The words a version of a post added in its edit history: the share of the text's color in the tint behind them, a
- * neutral grey in both schemes, apart from the warm surfaces and from the coral of links.
+ * neutral grey in both schemes, apart from the warm surfaces and from the coral of links; and the frame the tint makes
+ * around an added image, in rem.
  */
-export const diff = { addedShare: 0.14 } as const;
+export const diff = { addedShare: 0.14, imageFrame: 0.25 } as const;
 
 /**
  * An icon's size where it sits, in rem: in an action of a timeline, beside a caption, or in the app's navigation. An
@@ -638,6 +639,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--spinner-stroke", `${spinner.stroke}em`],
   ["--spinner-track-share", percent(spinner.trackShare)],
   ["--diff-added-share", percent(diff.addedShare)],
+  ["--diff-image-frame", `${diff.imageFrame}rem`],
   ["--icon-action", `${icon.action}rem`],
   ["--icon-caption", `${icon.caption}rem`],
   ["--icon-navigation", `${icon.navigation}rem`],

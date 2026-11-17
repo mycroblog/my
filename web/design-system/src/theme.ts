@@ -112,6 +112,7 @@ const theme = {
     "menu-wrapped-block": ref("--menu-wrapped-block"),
     // What a sheet holds under its head lines up with the head's name, as a menu's items do.
     "menu-form-inline": "calc(var(--control-timeline-padding-inline) - 0.25rem)",
+    "diff-image-frame": ref("--diff-image-frame"),
     "disclosure-gap": ref("--disclosure-gap"),
     "disclosure-padding": ref("--disclosure-padding"),
     "disclosure-start": ref("--disclosure-padding-start"),

@@ -57,7 +57,6 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/prompt.tsx": ["PromptFrame", "PromptNote"],
   "web/design-system/src/thread.tsx": ["ThreadReply"],
   "web/design-system/src/drafts.tsx": ["DraftSections", "DraftList"],
-  "web/design-system/src/history.tsx": ["VersionList"],
   "web/design-system/src/composer.tsx": [
     "AttachmentList",
     "AttachmentLine",
