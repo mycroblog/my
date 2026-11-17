@@ -8,16 +8,22 @@
 // line that opens its editor in place), and a list of hashtags. It is composed of the design system's parts alone,
 // laid out and painted by their props (ADR-0025 §4).
 
+import {
+  BannerHead,
+  BareTextArea,
+  Box,
+  Button,
+  ButtonPair,
+  ChipLink,
+  Icon,
+  PressRow,
+  QuietLink,
+  Row,
+  Spoken,
+  Stack,
+  useLocale,
+} from "@my/design-system";
 import type { ReactNode } from "react";
-import { BannerHead } from "./banner-head";
-import { Button } from "./button";
-import { ChipLink } from "./chip";
-import { BareTextArea } from "./form-page";
-import { Icon } from "./icons";
-import { Box, Row, Spoken, Stack } from "./layout";
-import { ButtonPair, PressRow } from "./list";
-import { useReader } from "./locale";
-import { QuietLink } from "./quiet-link";
 
 export type ProfileHeadProps = {
   /** The id of the name, which names the head. */
@@ -51,7 +57,7 @@ export function ProfileHead({
   badges,
   children,
 }: ProfileHeadProps) {
-  const { direction } = useReader(undefined);
+  const { direction } = useLocale();
   return (
     <BannerHead banner={banner} lead={avatar} end={actions} labelledBy={nameId} dir={direction}>
       <Stack gap="hair">

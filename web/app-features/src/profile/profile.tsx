@@ -13,7 +13,21 @@
 // it, the tabs of its posts (posts, posts and replies, media, articles), the pinned posts first under the first two. A blocked
 // account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
 
-import { AccountName, accountPath, handleOf, ListColumn, nameOf, PostContent } from "@my/app-components";
+import {
+  AccountName,
+  accountPath,
+  FieldList,
+  handleOf,
+  ListColumn,
+  MetaCount,
+  MetaLine,
+  nameOf,
+  NoteEditor,
+  NoteLine,
+  PostContent,
+  ProfileHead,
+  TagList,
+} from "@my/app-components";
 import { formatParts } from "../slots";
 import {
   accountNoteLimit,
@@ -46,21 +60,14 @@ import {
   CaptionLine,
   ConfirmDialog,
   FeedNotice,
-  FieldList,
   Icon,
   IconButton,
   MenuButton,
   MenuGroup,
   MenuItem,
-  MetaCount,
-  MetaLine,
   ModalPresence,
-  NoteEditor,
-  NoteLine,
-  ProfileHead,
   ScreenStack,
   TabRow,
-  TagList,
   TextButton,
   TextLink,
   LinkButton,

@@ -58,6 +58,16 @@ export {
   type NotificationTarget,
 } from "./paths";
 export { PollCard, PollOption, PollOptions } from "./compose";
+export {
+  FieldList,
+  MetaCount,
+  MetaLine,
+  NoteEditor,
+  NoteLine,
+  ProfileHead,
+  TagList,
+  type ProfileHeadProps,
+} from "./profile";
 export { Post, type PostAction, type PostPicker, type PostProps, type TranslationFailure } from "./post";
 export { excerptHtml, PostContent, ServerDomain, type ContentEmoji, type PostContentProps } from "./post-content";
 export { isRemote, QuoteContext, ReplyContext } from "./post-context";

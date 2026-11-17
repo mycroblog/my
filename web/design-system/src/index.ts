@@ -198,16 +198,6 @@ export {
 } from "./menu";
 export { ChoiceField, ChoiceList, ChoiceMark, ShareBar, type ChoiceItem } from "./choice";
 export { Box, Pin, Row, Spoken, Stack } from "./layout";
-export {
-  FieldList,
-  MetaCount,
-  MetaLine,
-  NoteEditor,
-  NoteLine,
-  ProfileHead,
-  TagList,
-  type ProfileHeadProps,
-} from "./profile";
 export { DetailLines, GlyphText, ThreadFocus, ThreadReply } from "./thread";
 export {
   routerTransitions,
