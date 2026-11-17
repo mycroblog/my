@@ -6,7 +6,7 @@
 import { afterEach, expect, test } from "bun:test";
 import type { PostAction, PostStatus } from "@my/app-components";
 import { homeTimelineQuery, instanceQuery } from "@my/app-data";
-import type { FakeOptions } from "@my/e2e/fake";
+import { scenario, type FakeOptions } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { TranslatablePost } from "./post-translation";
 import { fakeData, renderFeature } from "./test/feature";
@@ -31,24 +31,27 @@ const posts = {
 } as const;
 
 /**
- * The post `of` (or sam's boost of the welcome) drawn for a reader in `locale` (a visitor when `visitor`), on a server
- * whose instance offers `offer`: the post, the ID of the post translated, what the post asked of its screen, and the
- * server's requests of a translation.
+ * The post `of` (or sam's boost of the welcome; or the post of `seed` whose key is `of.key`) drawn for a reader in
+ * `locale` (a visitor when `visitor`), on a server whose instance offers `offer`: the post, the ID of the post
+ * translated, what the post asked of its screen, and the server's requests of a translation.
  */
 async function drawn(
-  of: keyof typeof posts | "boost",
+  of: keyof typeof posts | "boost" | { key: string },
   offer: FakeOptions["translation"],
-  { locale = "en", visitor = false }: { locale?: string; visitor?: boolean } = {},
+  { locale = "en", visitor = false, seed }: { locale?: string; visitor?: boolean; seed?: FakeOptions["seed"] } = {},
 ) {
-  const { fake, data, requests } = fakeData(offer === undefined ? {} : { translation: offer });
+  const { fake, data, requests } = fakeData({
+    ...(offer === undefined ? {} : { translation: offer }),
+    ...(seed === undefined ? {} : { seed }),
+  });
   const sent = fake.script("POST /statuses/{id}/translation");
   await data.queryClient.query(instanceQuery(data));
-  const id = fake.idOf(posts[of === "boost" ? "ja" : of]);
+  const id = fake.idOf(typeof of === "object" ? of.key : posts[of === "boost" ? "ja" : of]);
   const shown: PostStatus | undefined =
     of === "boost"
       ? (await data.queryClient.infiniteQuery(homeTimelineQuery(data))).pages[0]?.items.find((s) => s.boost?.id === id)
       : (await data.api.GET("/statuses/{id}", { params: { path: { id } } })).data;
-  if (shown === undefined) throw new Error(`test: the server has no ${of} post`);
+  if (shown === undefined) throw new Error(`test: the server has no ${typeof of === "object" ? of.key : of} post`);
   const asked: PostAction[] = [];
   const user = renderFeature(
     data,
@@ -174,4 +177,84 @@ test("a boost translates the post it boosts", async () => {
   expect(await sent()).toEqual({ target_language: "en" });
   expect(translations()).toEqual([`POST /statuses/${id}/translation`]);
   expect(await post.findByRole("button", { name: "Show original" })).not.toBeNull();
+});
+
+test("a provider that does not answer says so, and Try again asks it again", async () => {
+  const { user, post, translations, translate } = await drawn("ja", { provider: "failed" });
+  const refusal = "This server's translation service is not answering. Try again";
+  const said = () => post.queryAllByText(/^This server's translation service/).map((line) => line.textContent);
+  const [button] = translate();
+  if (button === undefined) throw new Error("test: the post offers no Translate");
+
+  await user.click(button);
+  await waitFor(() => {
+    if (said().length === 0) throw new Error("the post says nothing of the refusal");
+  });
+  expect(said().map((line) => line.replaceAll("\u2060", "").replaceAll("\u00a0", " ").trim())).toEqual([refusal]);
+  await user.click(post.getByRole("button", { name: "Try again" }));
+
+  await waitFor(() => {
+    if (translations().length !== 2) throw new Error("the translation was not asked for again");
+  });
+  await waitFor(() => {
+    if (post.queryAllByRole("button", { name: "Try again" }).length !== 1) throw new Error("the refusal is not back");
+  });
+  // The post stays as it was: nothing of it is translated.
+  expect(post.queryAllByText(/^\[en\]/)).toHaveLength(0);
+  expect(translate()).toHaveLength(0);
+});
+
+test("over the monthly limit, the line says so and when translation comes back, with nothing to press", async () => {
+  const { user, post, translate } = await drawn("ja", { provider: "limit" });
+  const [button] = translate();
+  if (button === undefined) throw new Error("test: the post offers no Translate");
+
+  await user.click(button);
+
+  await waitFor(() => {
+    post.getByText(/^This server's monthly translation limit is reached\./);
+  });
+  expect(translate()).toHaveLength(0);
+  expect(post.queryAllByRole("button", { name: "Try again" })).toHaveLength(0);
+});
+
+test("behind a content warning, the warning, the poll's options and the alt text are translated with the text", async () => {
+  const soup = {
+    name: "soup.png",
+    description: "湯気の立つスープ",
+    drawing: { width: 64, height: 64, top: [200, 120, 80], bottom: [120, 60, 40], shapes: [] },
+  } as const;
+  const seed = {
+    people: scenario.people,
+    posts: [
+      {
+        key: "folded",
+        author: "yuki",
+        text: "土曜のパンはどれにしますか？",
+        language: "ja",
+        visibility: "public",
+        spoiler: "パンの話",
+        poll: { options: ["ライ麦", "サワー種"], days: 1 },
+        images: [soup],
+      },
+    ],
+  } satisfies FakeOptions["seed"];
+  const { user, post, translate } = await drawn({ key: "folded" }, withProvider, { seed });
+  const [button] = translate();
+  if (button === undefined) throw new Error("test: the post offers no Translate");
+
+  // The translate line sits in the warning's band: it translates with the text still folded.
+  await user.click(button);
+  expect(await post.findByText("[en] パンの話")).not.toBeNull();
+  await user.click(post.getByRole("button", { name: "Show" }));
+  expect(await post.findByText("[en] 土曜のパンはどれにしますか？")).not.toBeNull();
+  const options = within(post.getByRole("group", { name: "Poll" }));
+  expect(options.getByRole("radio", { name: "[en] ライ麦" })).not.toBeNull();
+  expect(options.getByRole("radio", { name: "[en] サワー種" })).not.toBeNull();
+  // The fake's server marks the media of a post with a warning sensitive: a second Show uncovers them.
+  await user.click(post.getByRole("button", { name: "Show" }));
+  expect(await post.findByRole("img", { name: `[en] ${soup.description}` })).not.toBeNull();
+  await user.click(post.getByRole("button", { name: "Show original" }));
+  expect(await post.findByText("パンの話")).not.toBeNull();
+  expect(post.getByRole("img", { name: soup.description })).not.toBeNull();
 });
