@@ -9,7 +9,15 @@
 // suite is uowtest.UnitOfWorkContract in pkg/testkit/uowtest.
 package uow
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+// ErrReadOnly is what Tx.Emit returns in a read-only transaction (UnitOfWork.Read). A write
+// through the transaction's statements fails with the database's own error, which says the
+// transaction is read-only (PostgreSQL SQLSTATE 25006, SQLite SQLITE_READONLY).
+var ErrReadOnly = errors.New("uow: the transaction is read-only")
 
 // UnitOfWork runs functions in database transactions.
 type UnitOfWork interface {
@@ -43,6 +51,26 @@ type UnitOfWork interface {
 	//     have committed, Tx does not retry it, and no commit hook runs. Writes made safe to
 	//     repeat (idempotency keys, upserts) let the caller repeat the command.
 	Tx(ctx context.Context, fn func(tx Tx) error) error
+
+	// Read runs fn in a new read-only transaction, for several reads that must see one state
+	// of the database. It does not commit, and it ends when fn returns: any error of fn is
+	// returned as it is.
+	//
+	//   - A write through tx fails with an error that says the transaction is read-only
+	//     (ErrReadOnly, or the database's own error), and Tx.Emit returns ErrReadOnly: no
+	//     projector or commit hook runs.
+	//   - Read does not retry fn: a reader has no conflict to retry. fn still does no external
+	//     I/O and keeps the transaction short, as in Tx.
+	//   - On SQLite the transaction does not take the database's one write lock, so it neither
+	//     waits for a writer nor holds one up (WAL journaling lets a reader see the state as of
+	//     its first read); Tx takes the lock when it begins. On PostgreSQL it is a READ ONLY
+	//     transaction at READ COMMITTED, as Tx is.
+	//   - A single statement needs no transaction: read it through the repository outside of
+	//     any Tx. Use Read only where fn must see one state across statements.
+	//
+	// Use tx only inside fn and only from the goroutine running fn. A Tx of Read is accepted
+	// by the repositories as any other, for their reads.
+	Read(ctx context.Context, fn func(tx Tx) error) error
 }
 
 // Tx is a transaction in progress, passed to the function given to UnitOfWork.Tx.

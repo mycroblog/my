@@ -1059,6 +1059,8 @@ type robotsUOW struct{ uow.UnitOfWork }
 
 func (robotsUOW) Tx(_ context.Context, fn func(uow.Tx) error) error { return fn(nil) }
 
+func (robotsUOW) Read(_ context.Context, fn func(uow.Tx) error) error { return fn(nil) }
+
 // robotsDomains refuses fetching from the listed hosts.
 type robotsDomains struct{ refused map[string]bool }
 

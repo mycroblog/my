@@ -26,6 +26,8 @@ type limiterUnitOfWork struct{ uow.UnitOfWork }
 
 func (limiterUnitOfWork) Tx(_ context.Context, fn func(uow.Tx) error) error { return fn(nil) }
 
+func (limiterUnitOfWork) Read(_ context.Context, fn func(uow.Tx) error) error { return fn(nil) }
+
 type limiterClock struct{ now time.Time }
 
 func (c limiterClock) Now() time.Time { return c.now }
