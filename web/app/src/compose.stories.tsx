@@ -101,10 +101,6 @@ const words = {
     marked:
       "Thanks @sam and @layla@social.example for the walk :sparkle: Photos at https://photos.example/ridge #山 #hiking",
     markedCw: "Trail photos :sparkle: lots of them",
-    suggestAccount: "Lunch tomorrow with @m",
-    suggestHashtag: "Day 4 of the sourdough experiment #ba",
-    suggestEmoji: "Good morning :wa",
-    suggestCw: "Trail photos :sp",
     later: "@sam The sourdough came out flat again. Trying your overnight proof this weekend.",
     // The server's words of a 422 that names a member of the request: its title, and its detail.
     refusedTitle: "This could not be done.",
@@ -125,10 +121,6 @@ const words = {
     marked:
       "@sam さん @layla@social.example さん、今日はありがとう :sparkle: 写真は https://photos.example/ridge に #山 #写真",
     markedCw: "登山の写真 :sparkle: たくさん",
-    suggestAccount: "明日のお昼は @m",
-    suggestHashtag: "今朝の尾根 #写",
-    suggestEmoji: "おはよう :wa",
-    suggestCw: "登山の写真 :sp",
     later: "@sam サワードウがまたぺたんこに。週末は教わった一晩発酵でやってみます。",
     refusedTitle: "この操作はできませんでした。",
     refusedDetail: "正しくない値です。入力した内容を確かめてください。",
@@ -244,22 +236,6 @@ const states = {
     target: nw,
     draft: (d, w) => ({ ...d, cw: w.markedCw, text: w.marked }),
   },
-  "suggest-account": {
-    name: "Suggesting accounts",
-    target: nw,
-    draft: (d, w) => ({ ...d, text: w.suggestAccount }),
-  },
-  "suggest-hashtag": {
-    name: "Suggesting hashtags",
-    target: nw,
-    draft: (d, w) => ({ ...d, text: w.suggestHashtag }),
-  },
-  "suggest-emoji": { name: "Suggesting emoji", target: nw, draft: (d, w) => ({ ...d, text: w.suggestEmoji }) },
-  "suggest-cw": {
-    name: "Suggesting emoji in the content warning",
-    target: nw,
-    draft: (d, w) => ({ ...d, cw: w.suggestCw, text: w.cwText }),
-  },
   images: {
     name: "Images: described, not yet, processing, failed",
     target: nw,
@@ -347,10 +323,9 @@ type StateId = keyof typeof states;
 
 /**
  * One state of the composer in the flow of the page; `text`, when given, is the text written in it. Its menus and its
- * emoji picker open in a sheet on a phone's viewport, as the shell decides, the picker also with `pickerSheet`; else in
- * a popover.
+ * emoji picker open in a sheet on a phone's viewport, as the shell decides, else in a popover.
  */
-function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string; pickerSheet?: boolean | undefined }) {
+function Specimen({ id, text }: { id: StateId; text: string }) {
   const { locale } = useLocale();
   const narrow = useNarrowViewport();
   const [{ fake, data }] = useState(() => createComposeApp(id === "reply-waits"));
@@ -378,7 +353,7 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
             target={target}
             initial={initial}
             inline
-            pickerSheet={pickerSheet || narrow}
+            pickerSheet={narrow}
             specimen={specimen}
             onOpen={() => undefined}
             onClose={() => undefined}
@@ -439,62 +414,6 @@ const composeOf = (parameters: StoryContext["parameters"]): StateId =>
 /** A story of the composer in `id`. */
 const shows = (id: StateId): Story => ({ parameters: { compose: id } });
 
-/**
- * Opens the composer's emoji picker, as a press on its button does, and waits until it shows the Unicode emoji and
- * (in a sheet) has risen, so that the story tests check it as the reader sees it.
- */
-const openEmoji = async (context: StoryContext) => {
-  await settle(context);
-  const doc = context.canvasElement.ownerDocument;
-  // The button at the end of the text's first line, in any locale.
-  context.canvasElement
-    .querySelector<HTMLButtonElement>('div:has(> [role="textbox"][aria-multiline="true"]) ~ div button')
-    ?.click();
-  await waitFor(
-    () => {
-      const grid = doc.querySelector('[role="grid"]');
-      const panel = grid?.closest('[role="dialog"]')?.parentElement;
-      const style = panel ? getComputedStyle(panel) : undefined;
-      if (grid === null || grid.querySelectorAll('[role="gridcell"]').length < 20)
-        throw new Error("the emoji picker shows no emoji yet");
-      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-        throw new Error("the emoji picker has not appeared yet");
-    },
-    { timeout: 5000 },
-  );
-};
-
-/**
- * Puts the caret at the end of the field whose word is suggested for (the content warning's for `suggest-cw`, else the
- * text's), as a reader who typed it, and waits until the suggestions list their options.
- */
-const suggest = async (context: StoryContext) => {
-  await settle(context);
-  const multiline = composeOf(context.parameters) === "suggest-cw" ? "false" : "true";
-  const field = await waitFor(
-    () => {
-      const found = context.canvasElement.querySelector<HTMLElement>(
-        `[role="textbox"][aria-autocomplete][aria-multiline="${multiline}"]`,
-      );
-      if (found === null) throw new Error("the composer has no field to suggest in");
-      return found;
-    },
-    { timeout: 5000 },
-  );
-  // As a reader presses End: the caret goes to the end of the text, which tells the suggestions where it is.
-  field.focus();
-  const selection = field.ownerDocument.getSelection();
-  selection?.selectAllChildren(field);
-  selection?.collapseToEnd();
-  await waitFor(
-    () => {
-      if (context.canvasElement.querySelectorAll('[role="listbox"] [role="option"]').length === 0)
-        throw new Error("the composer suggests nothing yet");
-    },
-    { timeout: 5000 },
-  );
-};
-
 /** Waits until the app shows the home timeline's posts, in place of the composer's own wait. */
 const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   await waitFor(
@@ -506,8 +425,8 @@ const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => 
 };
 
 // The composer's state is the story's (`parameters.compose`); the one knob is the text written in it, which replaces
-// the state's own while given. Tagged `themes`, the story tests run each in dark too. A play stays where a press alone
-// reaches the state (the suggestions under the caret, the emoji picker open), and asserts nothing.
+// the state's own while given. Tagged `themes`, the story tests run each in dark too. The suggestions under the caret
+// and the emoji picker open are the parts' own (the design system's Composer and Emoji picker).
 const meta = {
   title: "Compose",
   tags: ["themes"],
@@ -515,14 +434,7 @@ const meta = {
   args: { text: "" },
   argTypes: { text: { control: "text", description: "The text written in the composer, in place of the state's" } },
   play: settle,
-  render: ({ text }, { id, parameters }) => (
-    <Specimen
-      key={id}
-      id={composeOf(parameters)}
-      text={text}
-      pickerSheet={(parameters as { pickerSheet?: boolean }).pickerSheet}
-    />
-  ),
+  render: ({ text }, { id, parameters }) => <Specimen key={id} id={composeOf(parameters)} text={text} />,
 } satisfies Meta<{ text: string }>;
 export default meta;
 
@@ -550,14 +462,6 @@ export const ContentWarning: Story = shows("cw");
  * the content warning, its custom emoji alone.
  */
 export const Marks: Story = shows("marks");
-/** `@m` typed: the accounts the server found, the followed first, under the caret's line, the first active. */
-export const SuggestAccounts: Story = { ...shows("suggest-account"), play: suggest };
-/** `#ba` (`#写` in ja): the hashtags the server found, the most used first, with how many posts carry each. */
-export const SuggestHashtags: Story = { ...shows("suggest-hashtag"), play: suggest };
-/** `:wa`: the custom emoji, then the Unicode ones, that match. */
-export const SuggestEmoji: Story = { ...shows("suggest-emoji"), play: suggest };
-/** `:sp` in the content warning: its emoji, under it. */
-export const SuggestEmojiInWarning: Story = { ...shows("suggest-cw"), play: suggest };
 export const Images: Story = shows("images");
 export const Reply: Story = shows("reply");
 export const Quote: Story = shows("quote");
@@ -596,9 +500,5 @@ export const PostFormNotLoaded: Story = shows("unloaded-composer");
  * warning's band empty, the count away and Post disabled.
  */
 export const EditorNotLoaded: Story = shows("unloaded-editor");
-/** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
-export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
-/** The same on a phone: the picker in a sheet from the bottom. */
-export const EmojiPickerSheet: Story = { parameters: { compose: "typing", pickerSheet: true }, play: openEmoji };
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */
 export const LiveFlow: Story = { render: () => <Flow />, play: settleFlow };

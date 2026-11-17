@@ -3,15 +3,14 @@
 // A profile, a story per relationship the reader (yuki) meets it in: their own, following each other (the bell of new
 // posts off, then on), locked and followed, following them, blocked and muted, an account of another server that
 // follows them, and the same with its server muted; one that moved, and one that is not there (nao's, deactivated);
-// the reader's private note on it, written and in its editor; the
-// confirmations of its menu (block, remove a follower); a post's menu on another's post, and that post once the reader
-// muted or blocked its author or muted its server from it, and the home of a reader who mutes that server; and a story
-// per state every screen is shown in (app.samples.tsx), on a profile of another. What a press alone reaches (an editor,
-// a menu, a confirmation, a line in a post's place) a play presses (profile.plays.ts).
+// the reader's private note on it; the home of a reader who mutes a server; and a story per state every screen is
+// shown in (app.samples.tsx), on a profile of another. What a press opens or leaves is the part's own: the note's
+// editor (the app components' Profile note), the profile's and a post's menu (the design system's Menu everywhere), a
+// confirmation (its List management), and the line in a post's place once its author was muted or blocked (its
+// Caption line).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
-import * as plays from "./profile.plays";
 
 const other = "/@sam";
 const remote = "/@sora@photos.example";
@@ -38,18 +37,6 @@ export const ServerMuted: Story = { parameters: screen({ at: remote, server: { d
 export const Moved: Story = { parameters: screen({ at: "/@sora@social.example" }) };
 export const NotFound: Story = { parameters: screen({ at: "/@nao" }) };
 export const NoteWritten: Story = { parameters: screen({ at: other, server: { notes: { sam: note } } }) };
-export const NoteEditing: Story = {
-  parameters: screen({ at: other, server: { notes: { sam: note } } }),
-  play: plays.noteEditing,
-};
-/** The profile's menu left open: a sheet on a phone, a popover from a tablet. */
-export const MenuOpen: Story = { parameters: screen({ at: other }), play: plays.menuOpen };
-export const BlockConfirm: Story = { parameters: screen({ at: other }), play: plays.blockConfirm };
-export const RemoveFollowerConfirm: Story = { parameters: screen({ at: remote }), play: plays.removeFollowerConfirm };
-export const PostMenuOfAnother: Story = { parameters: screen({ at: "/" }), play: plays.postMenuOpen };
-export const PostAfterMute: Story = { parameters: screen({ at: "/" }), play: plays.mutedFromPost };
-export const PostAfterBlock: Story = { parameters: screen({ at: "/" }), play: plays.blockedFromPost };
-export const PostAfterServerMute: Story = { parameters: screen({ at: "/" }), play: plays.serverMutedFromPost };
 /** The home timeline of a reader who mutes photos.example: sam's boost of its post is not there, sam's own posts are. */
 export const HomeAfterServerMute: Story = {
   parameters: screen({ at: "/", server: { domainMutes: ["photos.example"] } }),
