@@ -19,7 +19,6 @@ import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/s
 import { breakpoint, rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { userEvent, within } from "storybook/test";
 import { statusPath } from "./paths";
 import type { PostProps, TranslationFailure } from "./post";
 import { mediaPosts, posts, translatedWhole, type TimelinePost } from "./post.samples";
@@ -252,7 +251,7 @@ function Shown({
   translationAs?: Translation;
   votingAt?: readonly number[];
   open?: SampleOpen | undefined;
-} & Pick<PostProps, "cardSize">) {
+} & Pick<PostProps, "cardSize" | "defaultViewing">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -649,14 +648,5 @@ export const MixedMedia: Story = { ...fixed, render: () => <Shown post={byId("mi
 export const Sensitive: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} /> };
 /** The same, shown: the content warning open and the media shown, the line ending in Hide. */
 export const SensitiveShown: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} defaultShown /> };
-/** The viewer opened from a post at its first picture: the post's media one at a time, whole. */
-export const ViewerFromPost: Story = {
-  ...fixed,
-  render: () => <Shown post={byId("mixed")} />,
-  play: async ({ canvasElement }) => {
-    // Found by its description, the sample's own words, in every locale.
-    const [first] = within(canvasElement).getAllByRole("button", { name: /A sea under a pale blue sky/ });
-    if (first === undefined) throw new Error("no picture opens");
-    await userEvent.click(first);
-  },
-};
+/** The viewer open from a post at its first picture: the post's media one at a time, whole. */
+export const ViewerFromPost: Story = { ...fixed, render: () => <Shown post={byId("mixed")} defaultViewing={0} /> };

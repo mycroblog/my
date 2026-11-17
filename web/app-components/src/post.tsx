@@ -153,6 +153,11 @@ export type PostProps = {
    * sensitive article's cover and text uncovered; folded and covered by default. The reader hides each again.
    */
   defaultShown?: boolean | undefined;
+  /**
+   * The media viewer is open at first, at the picture of this index among its pictures (images, GIFs and videos);
+   * closed by default.
+   */
+  defaultViewing?: number | undefined;
 };
 
 /**
@@ -926,6 +931,7 @@ export function Post({
   self,
   authorMenu,
   defaultShown = false,
+  defaultViewing,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -956,7 +962,7 @@ export function Post({
   const translates =
     translation !== undefined || translating !== false || translationFailure !== undefined || translatable;
   // The media viewer, open at one of the post's pictures; the modal gives the focus back to what opened it.
-  const [viewing, setViewing] = useState<number | null>(null);
+  const [viewing, setViewing] = useState<number | null>(defaultViewing ?? null);
   const media = mediaItems(shown.media_attachments, translation);
   const pictures = media.filter(isPicture);
   const content = (
