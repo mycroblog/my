@@ -73,6 +73,7 @@ expect "@my/i18n" "go i18n web agentkit" web/i18n/src/compile.ts
 expect "the copy role's knowledge, which the copy lint reads" "docs go i18n agentkit" .claude/knowledge/copy/decisions.md
 expect "a brand asset" "web docker agentkit" web/brand/icon.svg
 expect "a package under web/" "web agentkit e2e stories" web/app/src/main.tsx
+expect "the selection of the packages web:test runs" "web shell agentkit" scripts/changed-web-packages.sh
 # The E2E tests run when what they run changes: a workspace package @my/app or @my/e2e depends on, or the server. The
 # story tests run when a workspace package the Storybook host depends on changes.
 expect "@my/e2e, whose fake server the screens' stories render on" "web agentkit e2e stories" web/e2e/specs/smoke.spec.ts

@@ -52,12 +52,14 @@ tasks:
     deps:
       - for: { var: PARALLEL }
         task: "{{.ITEM}}:check"
+        # The web packages that web:test runs: every one without it.
+        vars: { PACKAGES: "{{.WEB_PACKAGES}}" }
     cmds:
       - task: site:check
         if: case " {{.CHECKS}} " in *" site "*) true;; *) false;; esac
 
   check:changed:
-    desc: Run the checks of the contexts changed since BASE (default origin/redesign-web) and of their dependents
+    desc: Run the checks of the contexts changed since BASE (default origin/redesign-web) and of their dependents, with the tests of the web packages the changes reach
     vars:
       # The changes since the merge base of BASE and HEAD, uncommitted and untracked files included.
       BASE: '{{.BASE | default "origin/redesign-web"}}'
@@ -65,8 +67,12 @@ tasks:
         sh: scripts/changed-contexts.sh '{{.BASE}}' | tr '\n' ' '
       SELECTED:
         sh: for c in {{.CONTEXTS}}; do case " {{.CHECKS}} " in *" $c "*) printf '%s ' "$c";; esac; done
+      # The web packages whose tests the changes reach, which web:test runs alone.
+      WEB_PACKAGES:
+        sh: p="$(scripts/changed-web-packages.sh '{{.BASE}}' | tr '\n' ' ')"; echo "${p:-none}"
     cmds:
       - "echo 'contexts changed since {{.BASE}}: {{.CONTEXTS}}'"
+      - "echo 'web packages to test: {{.WEB_PACKAGES}}'"
       - cmd: echo 'also run `scripts/task.sh shell:check` (shellcheck; CI runs it)'
         if: case " {{.CONTEXTS}} " in *" shell "*) true;; *) false;; esac
       - cmd: echo 'also run `scripts/task.sh db:check-all` and `scripts/task.sh db:lint` for both dialects (PostgreSQL needs Docker; CI runs them)'
@@ -78,8 +84,12 @@ tasks:
       - cmd: echo 'no check covers these changes'
         if: '[ -z "{{trim .SELECTED}}" ]'
       - task: check
-        vars: { CHECKS: "{{.SELECTED}}" }
+        vars: { CHECKS: "{{.SELECTED}}", WEB_PACKAGES: "{{.WEB_PACKAGES}}" }
         if: '[ -n "{{trim .SELECTED}}" ]'
+      # A change outside the web context reaches the packages that depend on it (pkg/mykit/ts, tools/i18n).
+      - task: web:test
+        vars: { PACKAGES: "{{.WEB_PACKAGES}}" }
+        if: case " {{.SELECTED}} " in *" web "*) false;; *) [ "{{.WEB_PACKAGES}}" != none ];; esac
 
   # The check of the site context. The tasks of the documentation site live in tasks/docs.yml (ADR-0150 §2), so the
   # context has no namespace of its own in which `check` could find a `site:check`.

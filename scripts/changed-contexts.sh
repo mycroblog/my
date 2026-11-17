@@ -15,7 +15,8 @@
 #   go      the Go module, sqlc, and the Go tests                (go:check)
 #   i18n    the catalogs and their generated accessors           (i18n:check)
 #   api     the OpenAPI spec and the code generated from it      (api:check)
-#   web     the Bun workspace: its packages under web/ and the workspace-wide checks (web:check)
+#   web     the Bun workspace: its packages under web/ and the workspace-wide checks (web:check); of its tests,
+#           scripts/changed-web-packages.sh picks the packages a change reaches
 #   docker  the Dockerfile and the deployments                   (docker:check, the Docker smoke test)
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
@@ -353,14 +354,15 @@ classify() {
       ;;
   esac
   case "$path" in
-    # The other packages of the workspace under web/, and the script that renders the brand icons of web/brand.
+    # The other packages of the workspace under web/, the script that renders the brand icons of web/brand, and the
+    # one that picks the packages web:test runs.
     web/docs/*) ;;
     # The brand assets, which the server image embeds.
     web/brand/*)
       select_contexts web docker
       known=1
       ;;
-    web/* | scripts/web-icons.sh)
+    web/* | scripts/web-icons.sh | scripts/changed-web-packages.sh)
       select_contexts web
       known=1
       ;;

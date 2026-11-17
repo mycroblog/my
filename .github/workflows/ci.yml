@@ -62,6 +62,7 @@ jobs:
       tofu: ${{ steps.select.outputs.tofu }}
       site: ${{ steps.select.outputs.site }}
       web: ${{ steps.select.outputs.web }}
+      web-packages: ${{ steps.select.outputs.web-packages }}
       e2e: ${{ steps.select.outputs.e2e }}
       stories: ${{ steps.select.outputs.stories }}
       contracts: ${{ steps.select.outputs.contracts }}
@@ -115,6 +116,10 @@ jobs:
           touches tofu tofu
           touches site site
           touches web web
+          # The web packages whose tests the change reaches (ADR-0079 §18), separated by spaces: web:test runs these.
+          web_packages="$(scripts/changed-web-packages.sh --files "$RUNNER_TEMP/changed" | tr '\n' ' ')"
+          echo "web packages: $web_packages"
+          echo "web-packages=${web_packages% }" >> "$GITHUB_OUTPUT"
           touches e2e e2e
           touches stories stories
           # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
@@ -505,7 +510,7 @@ jobs:
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
-        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true' || needs.changes.outputs.web == 'true'
+        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.web-packages != ''
         run: scripts/task.sh web:install
       # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
       - parallel:
@@ -537,7 +542,9 @@ jobs:
           # (ADR-0025), the platform of web/platform and the server data of web/app-data (ADR-0028), the features and the app of web/app-features and
           # web/app with the app's build (ADR-0025 §9), the development packages web/devtools (ADR-0168) and
           # web/storybook (ADR-0165), and what the production build holds: no @my/devtools, the license notice of each
-          # font, and the editor in a chunk of its own.
+          # font, and the editor in a chunk of its own. web:test runs the packages the change reaches
+          # (scripts/changed-web-packages.sh), which a change outside the web context can do (pkg/mykit/ts); the slow
+          # suite runs every package.
           - name: web:typecheck
             if: needs.changes.outputs.web == 'true'
             run: scripts/task.sh web:typecheck
@@ -551,8 +558,10 @@ jobs:
             if: needs.changes.outputs.web == 'true'
             run: scripts/task.sh web:knip
           - name: web:test
-            if: needs.changes.outputs.web == 'true'
-            run: scripts/task.sh web:test
+            if: needs.changes.outputs.web-packages != ''
+            env:
+              PACKAGES: ${{ needs.changes.outputs.web-packages }}
+            run: scripts/task.sh web:test PACKAGES="$PACKAGES"
           - name: web:build
             if: needs.changes.outputs.web == 'true'
             run: scripts/task.sh web:build

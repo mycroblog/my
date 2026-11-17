@@ -30,7 +30,16 @@ vars:
 tasks:
   check:
     desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/storybook in parallel, with the app's build
-    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, build, build-check]
+    deps:
+      - fmt-check
+      - licenses
+      - typecheck
+      - lint
+      - direction
+      - knip
+      - { task: test, vars: { PACKAGES: "{{.PACKAGES}}" } }
+      - build
+      - build-check
 
   # The app's Vite dev server on http://localhost:5173, which passes /api, /oauth and /auth on to the server of
   # `docker compose up` (MY_SERVER=<origin> names another); `my serve -dev-vite-origin http://localhost:5173` loads the
@@ -192,45 +201,48 @@ tasks:
     cmds:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
+  # A package's manifest says how its tests run (its `test` script) and what they depend on: scripts/changed-web-packages.sh
+  # reads there which packages there are and which a change reaches (ADR-0079 §18).
   test:
-    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools, each kind on its DOM, and of the fake API of web/e2e
+    desc: Run the tests of the packages under web/ (web/design-tokens' fail on a stale internal/domain/instance/theme_tokens.gen.go), side by side, each kind on its DOM - every package, or those of PACKAGES (PACKAGES=app,app-features; `none` for none)
     deps: [install, ":i18n:compile", routes]
+    vars:
+      SELECTED:
+        sh: |
+          all="$(scripts/changed-web-packages.sh --all)"
+          case '{{.PACKAGES}}' in
+            "") echo "$all" ;;
+            none) ;;
+            *)
+              for p in $(echo '{{.PACKAGES}}' | tr ',' ' '); do
+                echo "$all" | grep -qx -- "$p" || { echo "web:test: web/$p is no package with tests: $(echo $all)" >&2; exit 1; }
+                echo "$p"
+              done
+              ;;
+          esac
     cmds:
       - task: test-packages
+        vars: { PACKAGES: "{{.SELECTED}}" }
 
-  # Every package at once: a test process uses one core, and the packages' tests share nothing while they run. The
-  # condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
+  # Every package at once: a test process uses one core, and the packages' tests share nothing while they run.
   test-packages:
     internal: true
     deps:
-      - { task: test-package, vars: { PACKAGE: design-tokens } }
-      - { task: test-package, vars: { PACKAGE: design-system } }
-      - { task: test-package, vars: { PACKAGE: app-components } }
-      - { task: test-package, vars: { PACKAGE: platform } }
-      - { task: test-package, vars: { PACKAGE: app-data, FLAGS: --conditions=@mycroblog/source } }
-      - { task: test-package, vars: { PACKAGE: app-features, FLAGS: --conditions=@mycroblog/source } }
-      - { task: test-package, vars: { PACKAGE: app, FLAGS: --conditions=@mycroblog/source } }
-      - { task: test-package, vars: { PACKAGE: devtools } }
-      - task: test-fake
+      - for: { var: PACKAGES }
+        task: test-package
+        vars: { PACKAGE: "{{.ITEM}}" }
 
-  # The three kinds of test file of a package (ADR-0171 §4), each in a process of its own: `*.test.ts(x)` with no DOM,
-  # `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on jsdom. A preload of
-  # web/devtools registers the DOM before a test module loads; a package may have no test of a DOM kind.
+  # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each in a process of its own:
+  # `*.test.ts(x)` with no DOM, `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on
+  # jsdom. A preload of @my/devtools, which a package with such tests depends on, registers the DOM before a test module
+  # loads. The condition of a package above @mycroblog/mykit reads it from its TypeScript sources, as tsconfig.json does.
+  # web/e2e's runs the unit tests of the fake API (ADR-0171 §5), under src alone: the Playwright specs beside it are
+  # the E2E tests, which web:e2e runs against a server.
   test-package:
     internal: true
     dir: web/{{.PACKAGE}}
     cmds:
-      - bun test {{.FLAGS}} --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx'
-      - bun test {{.FLAGS}} --preload ../devtools/src/happy-dom.ts --pass-with-no-tests .dom.test.
-      - bun test {{.FLAGS}} --preload ../devtools/src/jsdom.ts --pass-with-no-tests .jsdom.test.
-
-  # The unit tests of the fake API (ADR-0171 §5), under web/e2e/src alone: the Playwright specs beside it (specs/) are
-  # the E2E tests, which web:e2e runs against a server.
-  test-fake:
-    internal: true
-    dir: web/e2e
-    cmds:
-      - bun test --conditions=@mycroblog/source ./src
+      - bun run test
 
   # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
   # generator reads no node_modules.
