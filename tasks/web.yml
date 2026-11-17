@@ -85,6 +85,38 @@ tasks:
     cmds:
       - bun --bun vitest run {{.CLI_ARGS}}
 
+  # The layout tests (ADR-0171 §1, §4): what only a layout engine decides of the design system's layout parts and
+  # overlays, on the stories of the built catalog, with the E2E tests' runner and no server
+  # (web/e2e/catalog/playwright.config.ts, the project `layout`). Chromium comes from
+  # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the stories context
+  # changes.
+  layout-test:
+    desc: Build the catalog (web:stories) and run the layout tests of web/e2e/catalog on its stories in Chromium (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: layout-test-built
+
+  # CI builds the catalog once for the tests that open it.
+  layout-test-built:
+    desc: Run the layout tests of web/e2e/catalog on the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project layout {{.CLI_ARGS}}
+
+  # The browser tests of the parts (the project `browser` of the same configuration): what a part does with an input
+  # only a browser has (an input method's composition, the caret's keys, the clipboard), on a story. No layout tests.
+  browser-test:
+    desc: Build the catalog (web:stories) and run the browser tests of web/e2e/catalog on its stories in Chromium (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: browser-test-built
+
+  browser-test-built:
+    desc: Run the browser tests of web/e2e/catalog on the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project browser {{.CLI_ARGS}}
+
   # What the visual evaluator sees (ADR-0169 §2): web/storybook/shot.ts prints the path of each shot.
   shot:
     desc: Screenshot a story of the running Storybook (its URL, or --section <story id>[#<element id>]) at the mobile, tablet and PC viewports in light and dark (--landscape rotates them, --lang <locale> shows it in a locale such as ar-XB), once per variant with --options <id>

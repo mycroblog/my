@@ -27,7 +27,8 @@
 #           (site:check: the build of docs:site-build, the tsc, Oxlint, and knip of web/docs, and the check of its translations)
 #   e2e     the E2E tests of web/e2e against the demo server (web:e2e, a job of its own rather than a part of `check`):
 #           the workspace packages @my/app and @my/e2e depend on (is_e2e), and the server code the demo server builds
-#   stories the story tests of the Storybook host web/storybook (web:stories-test, a job of its own): the host and the
+#   stories the story tests of the Storybook host web/storybook (web:stories-test, a job of its own) and the tests in a
+#           browser on its built catalog (web:layout-test, web:browser-test, a job of their own): the host and the
 #           workspace packages it depends on, whose stories it composes (is_stories)
 #
 # A change to shared configuration (Taskfile.yml, .tool-versions, tools/go.mod, and ci.yml, which runs the
