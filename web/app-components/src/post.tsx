@@ -56,7 +56,7 @@ import {
   type MediaItem,
 } from "@my/design-system";
 import { Component, Fragment, useId, useState, type ReactNode } from "react";
-import { AccountName as Name, handleOf, nameOf } from "./account";
+import { AccountName as Name, handleOf, nameOf, sentenceHandleOf } from "./account";
 import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
@@ -273,11 +273,11 @@ function Context({
     );
   const to = shown.in_reply_to_account_id;
   if (to === undefined || !replyingTo) return null;
-  const username = to === shown.account.id ? shown.account.username : shown.mentions.find((m) => m.id === to)?.username;
-  if (username === undefined) return null;
+  const who = to === shown.account.id ? shown.account : shown.mentions.find((m) => m.id === to);
+  if (who === undefined) return null;
   return (
     <CaptionLine icon="reply" lang={lang}>
-      {format(t, "post.replying_to", { handle: <bdi dir="ltr">@{username}</bdi> })}
+      {format(t, "post.replying_to", { handle: <bdi dir="ltr">{sentenceHandleOf(who)}</bdi> })}
     </CaptionLine>
   );
 }
@@ -847,7 +847,7 @@ function Actions({
     announce: status.permissions?.announce === "pending",
     quote: status.permissions?.quote === "pending",
   };
-  const handle = `@${status.account.acct}`;
+  const handle = sentenceHandleOf(status.account);
   const [moreOpen, setMoreOpen] = useState(defaultMenuOpen);
   // The keys of the focused post: reply, boost (or take it back) and favourite at once, and more opens its menu.
   // The help lists them once for every post, under the post's group.

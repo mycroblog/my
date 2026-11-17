@@ -26,6 +26,7 @@ import {
   NoteLine,
   PostContent,
   ProfileHead,
+  sentenceHandleOf,
   TagList,
 } from "@my/app-components";
 import { formatParts } from "../slots";
@@ -253,7 +254,7 @@ function More({
   const muting = relationship.muting ?? false;
   const blocking = relationship.blocking ?? false;
   const remote = account.acct.includes("@");
-  const handle = `@${account.username || account.domain}`;
+  const handle = sentenceHandleOf(account);
   const confirm = () => {
     if (asking === undefined || asking.busy) return;
     setAsking({ ...asking, busy: true });

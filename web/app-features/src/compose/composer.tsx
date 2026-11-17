@@ -30,6 +30,7 @@ import {
   scheduleTime,
   ScheduleTime,
   ScheduleZone,
+  sentenceHandleOf,
 } from "@my/app-components";
 import {
   AttachButton,
@@ -309,7 +310,7 @@ export function ComposerView({
   const kind = draft.target.kind;
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t, locale);
-  const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
+  const handle = answered ? sentenceHandleOf((answered.boost ?? answered).account) : "";
   // A reply to a post whose author approves the reader's replies says so over the row, before it is sent.
   const waits = kind === "reply" && (answered?.boost ?? answered)?.permissions?.reply === "pending";
   const over = problems.over > 0;

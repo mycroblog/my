@@ -13,6 +13,7 @@
 
 import {
   Post,
+  sentenceHandleOf,
   translateContent,
   translatePlain,
   type PostProps,
@@ -32,7 +33,7 @@ import {
 } from "@my/platform";
 import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "./locale";
-import { userOf, usePostAuthor, type AuthorAction, type AuthorDone, type PostAuthor } from "./post-actions";
+import { usePostAuthor, type AuthorAction, type AuthorDone, type PostAuthor } from "./post-actions";
 import { ApprovalLine } from "./post-approval";
 
 /** The language tag of the reader's locale that a translation goes into: its language, and its script if it names one. */
@@ -265,7 +266,7 @@ function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor
   const { account } = status;
   return (
     <>
-      <MenuGroup title={userOf(account)}>
+      <MenuGroup title={sentenceHandleOf(account)}>
         <MenuItem id="mute-author" icon="mute" onAction={on("mute")}>
           {t("profile.mute")}
         </MenuItem>
@@ -296,7 +297,7 @@ function AuthorDoneLine({ id, done, author }: { id: string; done: AuthorDone; au
       {t(done.action === "block" ? "profile.unblock" : "profile.undo")}
     </TextButton>
   );
-  const handle = userOf(done.account);
+  const handle = sentenceHandleOf(done.account);
   // An entry still, in the post's place in its feed.
   return (
     <Entry>
