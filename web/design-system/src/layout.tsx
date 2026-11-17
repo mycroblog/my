@@ -178,6 +178,10 @@ const MAX = {
   suggestions: "max-h-[calc(8*var(--control-form-height)+2*var(--menu-padding))]",
   // A dialog in the middle of the viewport, a margin from its edges, its padding around what it holds.
   "viewport-dialog": "max-h-[calc(100dvh-2*var(--dialog-margin)-2*var(--dialog-padding))]",
+  // A picture or a video is no larger than the room it is in.
+  contain: "max-h-full max-w-full",
+  // A description of the media viewer: a column of a reading width, a third of the screen at most.
+  reading: "max-h-[33dvh] max-w-[40rem]",
   // An article's cover is never taller than this, whatever its width.
   "article-cover": "max-h-article-cover-max",
 } as const;

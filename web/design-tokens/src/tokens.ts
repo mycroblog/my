@@ -345,10 +345,19 @@ export const media = {
 
 /**
  * The media viewer: one picture or video whole over the page, always in the dark scheme, its backing black at
- * `scrim`; its bar's height and the space it keeps around the picture, in rem; the most a picture zooms to, and the
- * step of a wheel's or a key's zoom.
+ * `scrim`; its bar's height and the space it keeps around the picture, in rem; the inline padding of the buttons at
+ * the stage's sides and the height of a specimen in a page, in rem; the most a picture zooms to, and the step of a
+ * wheel's or a key's zoom.
  */
-export const viewer = { scrim: 0.92, bar: 3.5, inset: 0.75, maxZoom: 4, zoomStep: 0.5 } as const;
+export const viewer = {
+  scrim: 0.92,
+  bar: 3.5,
+  inset: 0.75,
+  sideInline: 0.8125,
+  specimen: 40,
+  maxZoom: 4,
+  zoomStep: 0.5,
+} as const;
 
 /**
  * A chip (an emoji reaction), in rem: its height, its inline padding, the gap between its glyph and its count, and
@@ -702,6 +711,8 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--viewer-scrim", `rgb(0 0 0 / ${percent(viewer.scrim)})`],
   ["--viewer-bar", `${viewer.bar}rem`],
   ["--viewer-inset", `${viewer.inset}rem`],
+  ["--viewer-side-inline", `${viewer.sideInline}rem`],
+  ["--viewer-specimen", `${viewer.specimen}rem`],
   ["--chip-height", `${chip.height}rem`],
   ["--chip-padding-inline", `${chip.paddingInline}rem`],
   ["--chip-gap", `${chip.gap}rem`],

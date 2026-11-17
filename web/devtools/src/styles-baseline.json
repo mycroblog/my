@@ -23,13 +23,11 @@
     "web/design-system/src/prompt.tsx": {"prompt.actions": 4, "prompt.body": 4, "prompt.glyph": 4, "prompt.note": 2, "prompt.root": 1, "prompt.row": 3, "prompt.text": 1},
     "web/design-system/src/search-field.tsx": {"field.box": 4, "field.end": 6, "field.glyph": 3, "field.hint": 1, "field.input": 3, "field.root": 2},
     "web/design-system/src/switch.tsx": {"toggle.description": 2, "toggle.label": 2, "toggle.root": 5, "toggle.thumb": 5, "toggle.track": 5},
-    "web/design-system/src/thread.tsx": {"details.glyph": 4, "details.root": 3, "focus.base": 4},
-    "web/design-system/src/viewer.tsx": {"MediaViewer": 3, "view.bar": 3, "view.caption": 5, "view.end": 1, "view.main": 11, "view.panel": 4, "view.picture": 3, "view.position": 2, "view.side": 3, "view.stage": 5, "view.start": 1, "view.tools": 3}
+    "web/design-system/src/thread.tsx": {"details.glyph": 4, "details.root": 3, "focus.base": 4}
   },
   "viewport-breakpoints": {
     "web/design-system/fixtures/baseline.tsx": {"wide.kept": 1},
     "web/design-system/src/composer.tsx": {"ToolText": 2, "frame.body": 1, "frame.end": 1, "frame.panel": 7, "frame.tools": 1, "notice.base": 4},
-    "web/design-system/src/disclosure.tsx": {"disclosure.summary": 1},
-    "web/design-system/src/viewer.tsx": {"view.side": 1}
+    "web/design-system/src/disclosure.tsx": {"disclosure.summary": 1}
   }
 }

@@ -20,57 +20,75 @@ import { viewer as tokens } from "@my/design-tokens";
 import {
   useRef,
   useState,
+  type HTMLAttributes,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import { Dialog } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { IconButton } from "./icon-button";
+import { Box, Grid, Row } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import type { MediaItem } from "./media";
 import { ModalLayer } from "./modal";
 
 const view = tv({
   slots: {
-    panel: [
-      "relative box-border grid size-full grid-rows-[auto_minmax(0,1fr)] bg-viewer-scrim font-sans text-body text-text",
-      "outline-hidden [color-scheme:dark]",
-    ],
-    bar: "flex h-viewer-bar items-center gap-entry-caption px-viewer-inset",
-    position: "min-w-0 flex-1 text-caption text-muted-text tabular-nums",
-    tools: "flex items-center gap-entry-action",
-    // The picture and its description as one group, in the middle of the room under the bar: the picture's row is as
-    // tall as the picture at the full width, and gives up height first; the room left goes above and below the pair.
-    // Its foot keeps the space the bar keeps above its buttons. The whole room takes a swipe, a pinch and a drag, the
-    // room around a small picture as well as the picture.
-    main: [
-      "relative grid min-h-0 grid-cols-[minmax(0,1fr)] content-center justify-items-center gap-viewer-inset overflow-hidden",
-      "touch-none pb-[calc((var(--viewer-bar)-var(--control-timeline-height))/2)]",
-    ],
-    stage: "box-border flex size-full min-h-0 items-center justify-center px-viewer-inset select-none",
-    picture: "block max-h-full max-w-full object-contain will-change-transform",
-    side: [
-      "absolute top-1/2 -translate-y-1/2 rounded-full bg-media-badge max-tablet:hidden",
-      "[&>button]:h-icon-button-touch [&>button]:px-[0.8125rem] [&>button]:text-on-media",
-    ],
-    start: "start-viewer-inset",
-    end: "end-viewer-inset",
+    panel: "box-border bg-viewer-scrim font-sans text-body text-text outline-hidden [color-scheme:dark]",
+    bar: "h-viewer-bar px-viewer-inset",
+    position: "text-caption text-muted-text tabular-nums",
+    stage: "box-border px-viewer-inset select-none",
+    picture: "object-contain will-change-transform",
     // Plain text at a reading width; a long one scrolls in its own area, at most a third of the screen, so that the
     // picture keeps the rest.
     caption: [
-      "m-0 box-border w-full max-w-[40rem] max-h-[33dvh] overflow-y-auto px-viewer-inset text-body whitespace-pre-line",
-      "rounded-control outline-hidden focus-visible:shadow-focus",
+      "box-border px-viewer-inset text-body whitespace-pre-line rounded-control outline-hidden",
+      "focus-visible:shadow-focus",
     ],
   },
   variants: {
     zoomed: { true: { picture: "cursor-grab active:cursor-grabbing" }, false: { picture: "cursor-zoom-in" } },
-    described: {
-      true: { main: "grid-rows-[minmax(0,auto)_auto]" },
-      false: { main: "grid-rows-[minmax(0,auto)]" },
-    },
   },
 });
+
+/**
+ * The room under the bar, where the picture and its description stand as one group in the middle: the picture's row is
+ * as tall as the picture at the full width, and gives up height first; the room left goes above and below the pair.
+ * Its foot keeps the space the bar keeps above its buttons. The whole room takes a swipe, a pinch and a drag, the room
+ * around a small picture as well as the picture. It holds what is placed against its sides (`ViewerSide`).
+ */
+function ViewerRoom({
+  described,
+  children,
+  ...rest
+}: { described: boolean; children: ReactNode } & HTMLAttributes<HTMLDivElement>) {
+  const rows = described ? "grid-rows-[minmax(0,auto)_auto]" : "grid-rows-[minmax(0,auto)]";
+  return (
+    <div
+      className={`relative grid min-h-0 grid-cols-[minmax(0,1fr)] content-center justify-items-center gap-viewer-inset overflow-hidden touch-none pb-viewer-foot ${rows}`}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A button held against a side of the room, halfway down it, on a backing: from `tablet` alone, where the viewport has
+ * the room for it (a phone swipes). One of the frames of a page: it reads the viewport.
+ */
+function ViewerSide({ place, children }: { place: "start" | "end"; children: ReactNode }) {
+  const side = place === "start" ? "start-viewer-inset" : "end-viewer-inset";
+  return (
+    <span
+      className={`absolute top-1/2 -translate-y-1/2 rounded-full bg-media-badge max-tablet:hidden [&>button]:h-icon-button-touch [&>button]:px-viewer-side-inline [&>button]:text-on-media ${side}`}
+    >
+      {children}
+    </span>
+  );
+}
 
 export type MediaViewerProps = {
   /** The post's pictures and videos, in its order. */
@@ -115,14 +133,13 @@ function Stage({
   const s = view({ zoomed: zoom > 1 });
   const kind = item.kind ?? "image";
   // The description is the caption under the picture, read there: the picture itself is not named by it again.
-  const picture =
+  const element =
     kind === "video" ? (
-      <video className={s.picture()} src={item.href} poster={item.src} controls autoPlay playsInline />
+      <video src={item.href} poster={item.src} controls autoPlay playsInline />
     ) : kind === "gifv" ? (
-      <video className={s.picture()} src={item.href} poster={item.src} muted loop autoPlay playsInline />
+      <video src={item.href} poster={item.src} muted loop autoPlay playsInline />
     ) : (
       <img
-        className={s.picture()}
         src={item.href ?? item.src}
         alt=""
         draggable={false}
@@ -131,9 +148,9 @@ function Stage({
       />
     );
   return (
-    <div className={s.stage()} data-viewer-stage="">
-      {picture}
-    </div>
+    <Row full="both" shrink="block" align="center" justify="center" className={s.stage()} data-viewer-stage="">
+      <Box as={element} display="block" max="contain" className={s.picture()} />
+    </Row>
   );
 }
 
@@ -151,7 +168,7 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
   const item = items[index];
   if (item === undefined) return null;
   const description = item.alt;
-  const s = view({ zoomed: zoom > 1, described: description !== "" });
+  const s = view();
   const many = items.length > 1;
   const kind = item.kind ?? "image";
   const isImage = kind === "image";
@@ -228,13 +245,15 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
       ? t("viewer.shown_kind", { ...where, kind })
       : t("viewer.shown", { ...where, description: startOf(description) });
   const panel = (
-    <div className={s.panel()} dir={direction} lang={lang}>
-      <div className={s.bar()}>
-        <span className={s.position()}>{many ? t("viewer.position", where) : ""}</span>
+    <Grid rows="head" anchor full="both" className={s.panel()} dir={direction} lang={lang}>
+      <Row align="center" gap="entry-caption" className={s.bar()}>
+        <Box as="span" grow className={s.position()}>
+          {many ? t("viewer.position", where) : ""}
+        </Box>
         <span className="sr-only" aria-live="polite">
           {announced}
         </span>
-        <span className={s.tools()}>
+        <Row as="span" align="center" gap="entry-action">
           {isImage && (
             <IconButton
               icon={zoom > 1 ? "zoomOut" : "zoomIn"}
@@ -245,10 +264,10 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
             />
           )}
           <IconButton icon="close" label={t("viewer.close")} onPress={onClose} />
-        </span>
-      </div>
-      <div
-        className={s.main()}
+        </Row>
+      </Row>
+      <ViewerRoom
+        described={description !== ""}
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
@@ -270,12 +289,21 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
         {description !== "" && (
           // A long description scrolls, so it takes the focus that scrolling by keys needs. Keyed apart from the stage,
           // its sibling, so that a move replaces each.
-          <p key={`caption:${item.id}`} className={s.caption()} dir="auto" tabIndex={0}>
+          <Box
+            as="p"
+            key={`caption:${item.id}`}
+            full
+            max="reading"
+            scroll="y"
+            className={s.caption()}
+            dir="auto"
+            tabIndex={0}
+          >
             {description}
-          </p>
+          </Box>
         )}
         {many && index > 0 && (
-          <span className={`${s.side()} ${s.start()}`}>
+          <ViewerSide place="start">
             <IconButton
               icon="previous"
               label={t("viewer.previous")}
@@ -283,10 +311,10 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
                 go(index - 1);
               }}
             />
-          </span>
+          </ViewerSide>
         )}
         {many && index < items.length - 1 && (
-          <span className={`${s.side()} ${s.end()}`}>
+          <ViewerSide place="end">
             <IconButton
               icon="onward"
               label={t("viewer.next")}
@@ -294,10 +322,10 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
                 go(index + 1);
               }}
             />
-          </span>
+          </ViewerSide>
         )}
-      </div>
-    </div>
+      </ViewerRoom>
+    </Grid>
   );
   // The keys act wherever the focus is in the viewer, the dialog itself included (where it starts), except in a video,
   // whose controls take the arrows for seeking.
@@ -314,16 +342,16 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
   };
   if (!layer)
     return (
-      <div role="dialog" aria-label={t("viewer.label")} className="relative h-[40rem]" onKeyDown={keys}>
+      <Box anchor role="dialog" aria-label={t("viewer.label")} className="h-viewer-specimen" onKeyDown={keys}>
         {panel}
-      </div>
+      </Box>
     );
   return (
     <ModalLayer onDismiss={onClose} place="cover">
       <div className="contents" onKeyDown={keys}>
-        <Dialog aria-label={t("viewer.label")} className="size-full outline-hidden">
+        <Box as={<Dialog aria-label={t("viewer.label")} className="outline-hidden" />} full="both">
           {panel}
-        </Dialog>
+        </Box>
       </div>
     </ModalLayer>
   );
