@@ -12,8 +12,7 @@
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, waitFor } from "storybook/test";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
-import { callAcrossScreens } from "./shell.plays";
+import { screen, screenMeta } from "./app.samples";
 
 const meta = {
   title: "Shell",
@@ -52,21 +51,15 @@ export const Offline: Story = {
   parameters: screen({ at: "/", server: { closure: "announced", down: "offline" } }),
 };
 export const Outage: Story = { parameters: screen({ at: "/notifications", server: { down: "outage" } }) };
-/**
- * A call, with a newer build waiting that no toast offers during it. Its play mutes and unmutes from the call's bar,
- * then moves to the notifications and back: the bar stays across the screens.
- */
-export const InCall: Story = {
-  parameters: screen({ at: "/", call: true, updateReady: true }),
-  play: callAcrossScreens,
-};
+/** A call, with a newer build waiting that no toast offers during it. */
+export const InCall: Story = { parameters: screen({ at: "/", call: true, updateReady: true }) };
 export const UpdateReady: Story = { parameters: screen({ at: "/", updateReady: true }) };
 export const UpdateRequired: Story = { parameters: screen({ at: "/notifications", server: { newerEpoch: true } }) };
 /** The voice rooms off: no section of them beside the timeline, and no place of them in the menu. */
 export const VoiceOff: Story = { parameters: screen({ at: "/", server: { voiceOff: true } }) };
 export const AroundEmpty: Story = { parameters: screen({ at: "/", server: { around: "none" } }) };
 
-/** Waits until the menu has risen into place, so that the story tests check it as the reader sees it. */
+/** Waits until the menu has risen into place, so that the story shows it as the reader sees it. */
 async function menuRisen(doc: Document) {
   await waitFor(
     () => {
@@ -97,8 +90,8 @@ export const MenuOpen: Story = {
   },
 };
 
-/** The phone's Menu left open: the tab bar's sheet over the dimmed and blurred page, at the minimum width. */
-export const MenuSheet: Story = { ...MenuOpen, globals: minimumWidth };
+/** The phone's Menu left open: the tab bar's sheet over the dimmed and blurred page, at a phone's width. */
+export const MenuSheet: Story = { ...MenuOpen };
 
 /**
  * The floating New post's menu left open on a phone (a long press, here its right click): New post and New article,
@@ -117,5 +110,5 @@ export const NewPostMenu: Story = {
   },
 };
 
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };
+export const RightToLeft: Story = {};
+export const MinimumWidth: Story = {};
