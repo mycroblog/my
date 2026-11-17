@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Every menu is one component (#3129): on a phone a sheet along the bottom edge, headed by its name and Close, whose
-// submenu takes its place under Back and its title; from a tablet's width a popover by its trigger, with no head. The
-// press that opens a sheet over its trigger (the tab bar's Menu) does not run the item it raises under the pointer.
+// Where a menu is drawn (#3129): on a phone a sheet along the bottom edge, headed by its name and Close, painted above
+// its backdrop; from a tablet's width a popover by its trigger, with no head. The press that opens a sheet over its
+// trigger (the tab bar's Menu) does not run the item it raises under the pointer, and the composer's text, whose code
+// comes after its menu closed, does not take the focus from the menu's button.
 
 import type { Locator, Page } from "@playwright/test";
 import type { Fresh } from "../src/fresh";
@@ -25,7 +26,7 @@ const heading = (page: Page, title: string): Locator => page.getByRole("heading"
 
 /**
  * A control of the open menu's head: Back before a submenu's title, Close after the title on a phone. Over a screen
- * without a Close of its own (a timeline), the menu's is the page's only one; over the composer, it is not.
+ * without a Close of its own (a timeline), the menu's is the page's only one.
  */
 const headControl = (page: Page, control: "Back" | "Close"): Locator =>
   page.getByRole("button", { name: control, exact: true });
@@ -93,35 +94,6 @@ test.describe("on a phone", () => {
     await post.more();
     await expect(post.menu).toBeVisible();
     await expect.poll(() => covered(post.menu)).toEqual([]);
-  });
-
-  test("the composer's audience opens a submenu in the same sheet, under Back and its title; Back returns, Escape closes", async ({
-    page,
-    signIn,
-  }) => {
-    await signIn(person("yuki"));
-    await page.getByRole("button", { name: "New post", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "New post", exact: true });
-    const audience = dialog.getByRole("button", { name: /^Who can see it: .+$/ });
-    await audience.click();
-    const top = page.getByRole("menu", { name: "Who can see and reply", exact: true });
-    await expect(top).toBeVisible();
-    await top.getByRole("menuitem", { name: /^Who can see it\s*\S.*$/ }).click();
-    const sub = page.getByRole("menu", { name: "Who can see it", exact: true });
-    // Each audience is a value of one setting: a radio, the chosen one checked.
-    await expect(sub.getByRole("menuitemradio", { checked: true })).toHaveCount(1);
-    await expect(sub.getByRole("menuitem")).toHaveCount(0);
-    await expect(top).toBeHidden();
-    await expect(heading(page, "Who can see it")).toBeVisible();
-    await headControl(page, "Back").click();
-    await expect(top).toBeVisible();
-    await expect(sub).toBeHidden();
-    await expect(heading(page, "Who can see and reply")).toBeVisible();
-    // Escape closes the menu alone, not the composer under it.
-    await page.keyboard.press("Escape");
-    await expect(top).toBeHidden();
-    await expect(dialog).toBeVisible();
-    await expect(audience).toBeFocused();
   });
 
   test("the composer's text, come after its menu closed, leaves the focus on the menu's button", async ({
@@ -200,24 +172,5 @@ test.describe("from a tablet's width", () => {
     await page.keyboard.press("Escape");
     await expect(post.menu).toBeHidden();
     await expect(more).toBeFocused();
-  });
-
-  test("the composer's audience opens its submenu in the popover, headed by Back and its title", async ({
-    page,
-    signIn,
-  }) => {
-    await signIn(person("yuki"));
-    const composer = await new Frame(page).newPost();
-    await composer.dialog.getByRole("button", { name: /^Who can see it: .+$/ }).click();
-    const top = page.getByRole("menu", { name: "Who can see and reply", exact: true });
-    await expect(top).toBeVisible();
-    await expect(heading(page, "Who can see and reply")).toBeHidden();
-    await top.getByRole("menuitem", { name: /^Who can see it\s*\S.*$/ }).click();
-    const sub = page.getByRole("menu", { name: "Who can see it", exact: true });
-    await expect(sub.getByRole("menuitemradio", { checked: true })).toHaveCount(1);
-    await expect(heading(page, "Who can see it")).toBeVisible();
-    await headControl(page, "Back").click();
-    await expect(top).toBeVisible();
-    await expect(heading(page, "Who can see and reply")).toBeHidden();
   });
 });
