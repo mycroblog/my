@@ -525,7 +525,7 @@ export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
  * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
  * main one; the height of the mark at the top of the rail; the height of the call's bar above the tab bar; the least
  * size of a count's badge and its inline padding; the height of a meter's bar; the room the menu's sheet leaves
- * above it; the inline padding of a place of the tab bar; and the padding of a toast around its controls.
+ * above it; and the padding of a toast around its controls.
  */
 export const shell = {
   rail: 3.5,
@@ -549,7 +549,6 @@ export const shell = {
   badgeInline: 0.3125,
   meter: 0.375,
   sheetRoom: 4,
-  tabInline: 0.125,
   toastInset: 0.25,
 } as const;
 

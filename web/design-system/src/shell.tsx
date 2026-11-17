@@ -137,10 +137,12 @@ const nav = tv({
         corner: "inline-flex desktop:hidden",
         end: "hidden desktop:inline-flex",
       },
-      // A label too long for 320 px wraps, inside a word if it must, and is never shortened (ADR-0110 §11).
+      // A label too long for 320 px wraps, inside a word if it must, and is never shortened (ADR-0110 §11). An item
+      // has no padding beside its label, a button's own neither: the room there is its share of what the labels
+      // leave, so that no label wraps while any of that room is left.
       tabs: {
         item: [
-          "min-h-shell-bar w-full flex-col justify-center gap-[0.125rem] px-shell-tab-inline py-shell-inset text-caption",
+          "min-h-shell-bar w-full flex-col justify-center gap-[0.125rem] px-0 py-shell-inset text-caption",
           "pointer-coarse:data-pressed:bg-surface-pressed",
         ],
         label: "text-center [overflow-wrap:anywhere]",
