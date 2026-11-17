@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The notifications as a feature: what its loader reads, what each notification says and whether it is unread, the
-// rows over the list, and what a press on a mention's post asks of the server or of the screen.
+// rows over the list, what a press on a mention's post asks of the server or of the screen, and when a notification
+// becomes read.
 
 import { expect, test } from "bun:test";
+import { NavigationProvider } from "@my/design-system";
 import { fakeHost, scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, type ComposeRequest } from "../post-actions";
@@ -230,4 +232,276 @@ test("the Mentions tab asks the server for the mentions alone, and shows them in
     expect(within(feed()).queryByRole("article", { name: "Yuki 雪 followed you" })).toBeNull();
   });
   expect(within(feed()).getAllByRole("article", { name: "Yuki 雪" }).length).toBeGreaterThan(0);
+});
+
+// A notification the reader acts on becomes read. The scenario's notifications, newest first: Hana reacted to, boosted
+// and favourited sam's post, Yuki favourited it, Yuki mentioned sam in three posts, then Marco, Layla, Yuki and Hana
+// followed sam. Unless a test says otherwise, the reader has not read the three newest.
+
+const everything = { unreadNotifications: 11 } as const;
+
+/** The notifications of sam, drawn: the marker's and the dismissal's requests scripted to be counted, and where a link asked to go. */
+async function inbox(options: FakeOptions = {}) {
+  const made = fakeData({ viewer: "sam", ...options });
+  const marker = made.fake.script("PUT /notifications/marker");
+  const dismissed = made.fake.script("POST /notifications/{id}/dismiss");
+  await loadNotifications(made.data);
+  const went: string[] = [];
+  const user = renderFeature(
+    made.data,
+    <NavigationProvider navigate={(href) => went.push(href)}>
+      <PostActions onCompose={() => undefined}>
+        <Notifications instance={fakeHost} />
+      </PostActions>
+    </NavigationProvider>,
+  );
+  const { data: page } = await made.data.api.GET("/notifications");
+  /** The ID of the `n`th notification, 0 the newest. */
+  const id = (n: number) => page?.items[n]?.id ?? `no notification ${String(n)}`;
+  return { ...made, user, marker, dismissed, went, id };
+}
+
+/** The rows of the scenario's notifications that carry something to press. */
+const rows = {
+  boost: () => within(feed()).getByRole("article", { name: "Hana 花 boosted your post" }),
+  follow: () => within(feed()).getByRole("article", { name: "Marco followed you" }),
+  /** Yuki's mention of sam: a post with its reply, boost, favourite, react and more. */
+  mention: () => {
+    const row = entries().find((article) => article.textContent.includes("北側の尾根道です"));
+    if (row === undefined) throw new Error("test: no notification of the mention");
+    return row;
+  },
+};
+
+const unreadMark = (row: HTMLElement) => within(row).queryByRole("img", { name: "Unread" });
+/** How many notifications of the list say Unread. */
+const unreadCount = () => within(feed()).queryAllByRole("img", { name: "Unread" }).length;
+
+/** Waits until `row` shows no Unread mark and `unread` notifications of the list say Unread. */
+const becomesRead = (row: () => HTMLElement, unread: number) =>
+  waitFor(() => {
+    if (unreadMark(row()) !== null) throw new Error("test: the row still says Unread");
+    if (unreadCount() !== unread) throw new Error(`test: ${String(unreadCount())} notifications say Unread`);
+  });
+
+/** Sees that `row` is unread still, and `unread` notifications say Unread. */
+const staysUnread = (row: HTMLElement, unread: number) => {
+  expect(unreadMark(row)).not.toBeNull();
+  expect(unreadCount()).toBe(unread);
+};
+
+/** The focus on `element`, as a reader's Tab or a script's gives it. */
+const focus = (element: HTMLElement) => {
+  element.focus();
+  expect(document.activeElement).toBe(element);
+};
+
+test("each kind says who did what to which post, and the scenario's notifications are unread, each marked", async () => {
+  await inbox(everything);
+
+  expect(unreadCount()).toBe(11);
+  expect(within(feed()).getByRole("article", { name: "Yuki 雪 followed you" })).not.toBeNull();
+  // A mention is the post that mentions the reader, named by its author.
+  const mentioned = entries().filter(
+    (post) => post.textContent.includes("北側の尾根道です") && post.textContent.includes("Yuki 雪 mentioned you"),
+  );
+  expect(mentioned).toHaveLength(1);
+  expect(within(feed()).getByRole("article", { name: "Yuki 雪 favourited your post" }).textContent).toContain(
+    "Day 3 of the sourdough",
+  );
+  expect(within(feed()).getByRole("article", { name: "Hana 花 boosted your post" }).textContent).toContain(
+    "Day 3 of the sourdough",
+  );
+});
+
+test("a click on the words of a notification reads it", async () => {
+  const { user } = await inbox(everything);
+  await user.click(within(rows.boost()).getByText(/^Day 3 of the sourdough/));
+  await becomesRead(rows.boost, 10);
+});
+
+// A button of the row, pressed by a pointer, by Enter and by Space.
+
+type Press = (user: Awaited<ReturnType<typeof inbox>>["user"]) => Promise<void>;
+const presses: [string, Press][] = [
+  ["a pointer", (user) => user.click(document.activeElement as HTMLElement)],
+  ["Enter", (user) => user.keyboard("{Enter}")],
+  ["Space", (user) => user.keyboard(" ")],
+];
+
+const pressable: [string, keyof typeof rows, string | RegExp][] = [
+  ["Follow back", "follow", "Follow back"],
+  ["Favourite", "mention", "Favourite"],
+  ["Reply", "mention", /^Reply/],
+];
+
+for (const [how, press] of presses) {
+  for (const [title, row, name] of pressable) {
+    test(`the ${title} button of a notification, pressed by ${how}, reads it`, async () => {
+      const { user } = await inbox(everything);
+      // Follow back waits for the reader's relationship with the account.
+      focus(await within(rows[row]()).findByRole("button", { name }));
+      await press(user);
+      await becomesRead(rows[row], 10);
+    });
+  }
+
+  test(`the Dismiss button of an unread notification, pressed by ${how}, dismisses it and the count drops by one`, async () => {
+    const { user, dismissed, id } = await inbox(everything);
+    focus(within(rows.boost()).getByRole("button", { name: "Dismiss notification" }));
+    await press(user);
+    await waitFor(() => {
+      expect(unreadCount()).toBe(10);
+    });
+    expect(dismissed.seen.map((s) => s.url.pathname)).toEqual([`/api/v1/notifications/${id(1)}/dismiss`]);
+    expect(within(feed()).queryByRole("article", { name: "Hana 花 boosted your post" })).toBeNull();
+  });
+}
+
+test("the Show button of a notification of a post with a content warning reads it", async () => {
+  const { user } = await inbox({
+    seed: {
+      people: scenario.people,
+      posts: [
+        {
+          key: "cw",
+          author: "yuki",
+          text: "@sam The ending, in full.",
+          spoiler: "Spoilers",
+          visibility: "public",
+          language: "en",
+        },
+      ],
+    },
+    unreadNotifications: 1,
+  });
+  const row = () => within(feed()).getByRole("article");
+  await user.click(within(row()).getByRole("button", { name: /^Show/ }));
+  await becomesRead(row, 0);
+});
+
+// A link of the row, followed by a pointer and by Enter: the link asks the app to go, and the row is read.
+
+const links: [string, keyof typeof rows, string | RegExp][] = [
+  ["its line", "boost", "Hana 花 boosted your post"],
+  ["the author's name", "mention", "Yuki 雪"],
+];
+
+for (const [how, press] of presses.slice(0, 2)) {
+  for (const [title, row, name] of links) {
+    test(`following ${title} of a notification by ${how} reads it`, async () => {
+      const { user, went } = await inbox(everything);
+      focus(within(rows[row]()).getByRole("link", { name }));
+      await press(user);
+      await waitFor(() => {
+        expect(went).toHaveLength(1);
+      });
+      expect(went[0]).not.toBe("/notifications");
+      await becomesRead(rows[row], 10);
+    });
+  }
+}
+
+// An item chosen in a menu the row opened.
+
+const menus: [string, string | RegExp, string][] = [
+  ["More", "More", "Bookmark"],
+  ["Boost", "Boost", "Boost"],
+];
+
+for (const [title, opener, item] of menus) {
+  test(`the ${item} item of the ${title} menu of a notification, chosen by a pointer, reads it`, async () => {
+    const { user } = await inbox(everything);
+    await user.click(within(rows.mention()).getByRole("button", { name: opener }));
+    await user.click(await screen.findByRole("menuitem", { name: item }));
+    await becomesRead(rows.mention, 10);
+  });
+
+  test(`the ${item} item of the ${title} menu of a notification, chosen by Enter, reads it`, async () => {
+    const { user } = await inbox(everything);
+    await user.click(within(rows.mention()).getByRole("button", { name: opener }));
+    focus(await screen.findByRole("menuitem", { name: item }));
+    await user.keyboard("{Enter}");
+    await becomesRead(rows.mention, 10);
+  });
+}
+
+// A control that opens a menu or the emoji picker reads it: opening alone counts.
+
+const opens: [string, (user: Awaited<ReturnType<typeof inbox>>["user"], row: HTMLElement) => Promise<void>][] = [
+  ["a press on More", (user, row) => user.click(within(row).getByRole("button", { name: "More" }))],
+  [
+    "Enter on More",
+    async (user, row) => {
+      focus(within(row).getByRole("button", { name: "More" }));
+      await user.keyboard("{Enter}");
+    },
+  ],
+  ["a press on Boost", (user, row) => user.click(within(row).getByRole("button", { name: "Boost" }))],
+  ["a press on React", (user, row) => user.click(within(row).getByRole("button", { name: "React" }))],
+  [
+    "Enter on React",
+    async (user, row) => {
+      focus(within(row).getByRole("button", { name: "React" }));
+      await user.keyboard("{Enter}");
+    },
+  ],
+];
+
+for (const [opening, open] of opens) {
+  test(`opening a menu or the picker by ${opening} reads the notification`, async () => {
+    const { user } = await inbox(everything);
+    await open(user, rows.mention());
+    await becomesRead(rows.mention, 10);
+  });
+}
+
+// What does not read a notification: nothing was asked of it.
+
+test("focusing a notification, and Tab from it, do not read it", async () => {
+  const { user, marker } = await inbox(everything);
+  const row = rows.mention();
+  focus(row);
+  staysUnread(row, 11);
+  await user.tab();
+  expect(document.activeElement).not.toBe(row);
+  staysUnread(row, 11);
+  expect(marker.seen).toHaveLength(0);
+});
+
+test("Space on the notification itself does not read it", async () => {
+  const { user, marker } = await inbox(everything);
+  const row = rows.mention();
+  focus(row);
+  await user.keyboard(" ");
+  staysUnread(row, 11);
+  expect(marker.seen).toHaveLength(0);
+});
+
+// The marker the server keeps.
+
+test("reading the oldest unread notification moves the marker to it", async () => {
+  const { user, marker, id } = await inbox();
+  const favourite = within(feed()).getByRole("article", { name: "Hana 花 favourited your post" });
+  await user.click(within(favourite).getByText(/^Day 3 of the sourdough/));
+  await waitFor(() => {
+    expect(marker.seen.map((s) => s.body.last_read_id)).toEqual([id(2)]);
+  });
+});
+
+test("reading newer notifications while an older one is unread sends nothing, and reading the oldest moves the marker to the newest", async () => {
+  const { user, marker, id } = await inbox();
+  for (const name of ["Hana 花 reacted to your post", "Hana 花 boosted your post"]) {
+    await user.click(within(within(feed()).getByRole("article", { name })).getByText(/^Day 3 of the sourdough/));
+  }
+  await waitFor(() => {
+    expect(unreadCount()).toBe(1);
+  });
+  expect(marker.seen).toHaveLength(0);
+  const oldest = within(feed()).getByRole("article", { name: "Hana 花 favourited your post" });
+  await user.click(within(oldest).getByText(/^Day 3 of the sourdough/));
+  await waitFor(() => {
+    expect(marker.seen.map((s) => s.body.last_read_id)).toEqual([id(0)]);
+  });
+  expect(unreadCount()).toBe(0);
 });
