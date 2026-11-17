@@ -447,6 +447,12 @@ export type FakeApi = {
   newPosts: (count: number) => Status[];
   /** Adds a notification (a favourite of the reader's post), sends it on the stream, and returns it. */
   newNotification: () => Notification;
+  /**
+   * Adds a direct post to the reader's conversation at `index` of their direct messages (newest first, the hidden ones
+   * too), by its first other person in reply to its latest post, sends the conversation on the stream, and returns
+   * the post.
+   */
+  newMessage: (index: number) => Status;
   /** The app's address of the post with `key`. */
   postPath: (key: string) => string;
   /** The app's address of the seed's announcement with `key`, or of the fake's one that ended (`ended`). */
@@ -606,7 +612,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const viewer = personOf(o.viewer ?? "yuki").username;
   /** The reader has no session: the server answers them what anyone may read, with nothing of a reader's own. */
   const visitor = o.visitor === true;
-  const posts: readonly ApprovalPost[] = [...seed.posts, ...(o.approvals === true ? approvalPosts : [])];
+  const posts: ApprovalPost[] = [...seed.posts, ...(o.approvals === true ? approvalPosts : [])];
   const interactions = [...seed.interactions, ...(o.approvals === true ? approvalInteractions : [])];
   const started = Date.now();
   const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -3299,6 +3305,30 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return notification;
   }
 
+  function newMessage(index: number): Status {
+    const held = conversationsNow()[index];
+    const last = posts.find((p) => statusId.get(p.key) === held?.at);
+    const from = usernameOf.get(held?.body.accounts[0]?.id ?? "");
+    if (held === undefined || last === undefined || from === undefined)
+      throw new Error(`fake: ${viewer} has no conversation ${String(index)} with another person`);
+    added += 1;
+    const message: Post = {
+      key: `message-${String(added)}`,
+      author: from,
+      replyTo: last.key,
+      text: `@${viewer} One more thing, number ${String(added)}.`,
+      visibility: "direct",
+      language: "en",
+    };
+    posts.push(message);
+    const id = idAt(timeOf(postStep(message.key)), postStep(message.key));
+    statusId.set(message.key, id);
+    keyOf.set(id, message.key);
+    const now = conversationOf(held.body.id);
+    if (now !== undefined) send({ type: "conversation", conversation: now.body });
+    return statusOf(message);
+  }
+
   const postPath = (key: string) => `/@${postOf(key).author}/status/${statusId.get(key) ?? ""}`;
   const announcementPath = (key: string) =>
     `/announcements/${key === "ended" ? endedAnnouncement.id : announcementId(key)}`;
@@ -3326,6 +3356,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     unimplemented,
     newPosts,
     newNotification,
+    newMessage,
     postPath,
     announcementPath,
     listPath,

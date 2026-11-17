@@ -13,14 +13,7 @@ export { ArticleText } from "./article";
 export { ArticleEditor, holdPreviews, holdProcessing, processedIn, type Upload } from "./article-editor";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
-export {
-  Conversation,
-  conversationRead,
-  Conversations,
-  failingReads,
-  heldWrite,
-  nextReplyTarget,
-} from "./conversations";
+export { conversationRead, Conversations } from "./conversations";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
 export {

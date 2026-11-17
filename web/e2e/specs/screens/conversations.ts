@@ -21,59 +21,6 @@ export function conversationRead(page: Page): Promise<void> {
   return read.then(() => undefined);
 }
 
-const writeOf = (kind: "read" | "hide") => new RegExp(`/api/v1/conversations/[^/]+/${kind}$`);
-
-/** Makes every read of a conversation fail with the server's 500, and counts the reads the client sent. */
-export async function failingReads(page: Page): Promise<{ sent: () => number }> {
-  let sent = 0;
-  await page.route(writeOf("read"), async (route) => {
-    if (route.request().method() !== "POST") return route.fallback();
-    sent += 1;
-    await route.fulfill({
-      status: 500,
-      contentType: "application/problem+json",
-      body: JSON.stringify({ type: "about:blank", title: "Internal Server Error", status: 500 }),
-    });
-  });
-  return { sent: () => sent };
-}
-
-/**
- * Holds the server's answer to the client's first `kind` write of a conversation (the server has done it) until
- * `release()`, and counts the writes of that kind the client sent; the later ones pass at once.
- */
-export async function heldWrite(
-  page: Page,
-  kind: "read" | "hide",
-): Promise<{ arrived: Promise<undefined>; release: () => void; sent: () => number }> {
-  let sent = 0;
-  const { promise: arrived, resolve: arrive } = Promise.withResolvers<undefined>();
-  const { promise: released, resolve: release } = Promise.withResolvers<undefined>();
-  await page.route(writeOf(kind), async (route) => {
-    if (route.request().method() !== "POST") return route.fallback();
-    sent += 1;
-    if (sent > 1) return route.continue();
-    const response = await route.fetch();
-    arrive(undefined);
-    await released;
-    await route.fulfill({ response });
-  });
-  return {
-    arrived,
-    release: () => {
-      release(undefined);
-    },
-    sent: () => sent,
-  };
-}
-
-/** The ID of the post that the client's next new post replies to; ask before sending it. */
-export function nextReplyTarget(page: Page): Promise<string | undefined> {
-  return page
-    .waitForRequest((r) => r.method() === "POST" && new URL(r.url()).pathname === "/api/v1/statuses")
-    .then((r) => (r.postDataJSON() as { in_reply_to_id?: string }).in_reply_to_id);
-}
-
 export class Conversations {
   readonly page: Page;
 
@@ -110,14 +57,9 @@ export class Conversations {
   /** Hides the conversation with `names` from its More menu, and returns once the server has answered. */
   async hide(names: string): Promise<void> {
     await answered(this.page, { methods: ["POST"], path: /\/conversations\/[^/]+\/hide$/ }, async () => {
-      await this.startHide(names);
+      await this.conversation(names).getByRole("button", { name: "More", exact: true }).click();
+      await this.page.getByRole("menuitem", { name: "Hide from the list", exact: true }).click();
     });
-  }
-
-  /** Hides the conversation with `names` from its More menu, without waiting for the server's answer. */
-  async startHide(names: string): Promise<void> {
-    await this.conversation(names).getByRole("button", { name: "More", exact: true }).click();
-    await this.page.getByRole("menuitem", { name: "Hide from the list", exact: true }).click();
   }
 
   /** The line that says the conversation with `names` (isolated from the words around) was hidden and comes back. */
@@ -195,17 +137,5 @@ export class Conversation {
   async back(): Promise<Conversations> {
     await this.page.getByRole("main").getByRole("button", { name: "Direct messages", exact: true }).click();
     return new Conversations(this.page);
-  }
-
-  /** Opens the screen of the conversation of `id`, at its address. */
-  async openAt(id: string): Promise<void> {
-    await this.page.goto(`/conversations/${id}`);
-  }
-
-  /** What the screen says in place of a conversation that is not the reader's. */
-  get gone(): Locator {
-    return this.page
-      .getByRole("main")
-      .getByText("These direct messages were not found. Check the link, or go back to the list.", { exact: true });
   }
 }
