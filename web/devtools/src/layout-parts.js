@@ -11,12 +11,21 @@
 // - its classes place and space, with the resets of the element it uses (`list-none`, `m-0`, `p-0`). The frame of a
 //   page also sets the page's base (its surface and its font) and the surface of a bar it holds in place.
 //
+// There are two kinds. The generic ones (layout.tsx) know nothing of mycroblog: their props name an arrangement or a
+// token of the theme's spacing, never a class, and every other part takes its layout from them, rendered as the
+// element it would have written (their `as`), so that no element is added. A part named in its own file has an
+// arrangement that only it has, which the generic ones' props do not say: the frame of a page, a place that depends
+// on what holds the part. A part that only names a use of the generic ones (a stack of a screen's parts, a row of
+// chips) writes no layout and is not listed here.
+//
 // So a section under a heading that sets the heading's type, a surface that stacks what is on it, an overlay with its
-// title and its dismissal, and a feed with its scrolling are not layout parts: what places inside them becomes one
-// when it is taken out of them. A name here that its file no longer declares fails the lint of the file.
+// title and its dismissal, and a feed with its scrolling are not layout parts: they compose them. Nor is a control:
+// it is laid out as a generic part (a button is a `Row` rendered as its element). A name here that its file no longer
+// declares fails the lint of the file.
 
 /** @type {Record<string, string[]>} */
 export const LAYOUT_PARTS = {
+  "web/design-system/src/layout.tsx": ["Box", "Row", "Column", "Stack", "Grid", "Layers", "Pin", "Sticky"],
   "web/design-system/src/shell.tsx": [
     "Frame",
     "FrameSide",

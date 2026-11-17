@@ -1,0 +1,627 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The generic layout parts (ADR-0171 §3): the parts that place what they are given and nothing else, from which every
+// other part of the design system takes its layout. They know nothing of mycroblog: a prop names an arrangement
+// (`align="center"`, `wrap`) or a token of the theme's spacing (`gap="entry-line"`), never a class, so that what only
+// a browser can verify (what overflows, wraps, mirrors right-to-left, or lies over the page) has these parts as its
+// only sources, each with its layout test, and no screen needs to be rendered to be trusted.
+//
+// The parts, by the arrangement of what they hold:
+//
+// - `Box`: one box and how it sits where it is put. It arranges nothing inside itself.
+// - `Row`: its children side by side, in the reader's direction (a flex row); `inline` inside a line of text or a
+//   control (an icon and its label).
+// - `Column`: its children one under another, sharing its height (a flex column): a head that keeps its height over a
+//   body that takes the rest and scrolls.
+// - `Stack`: its children one under another, each as wide as the stack and never wider (a grid of one column).
+// - `Grid`: its children in columns, or in rows, of a named template.
+// - `Layers`: its children over one another, in one cell as large as the largest.
+// - `Pin`: a box taken out of the flow and held against the edges of the nearest `anchor` (a badge on a corner, a
+//   spinner over a label), or of the viewport.
+// - `Sticky`: a box that scrolls with what holds it until it meets an edge, then stays.
+//
+// Every part also says how its own box sits in the part that holds it (the props of `Placement`): whether it takes
+// the room left or keeps its size, where it stands across the row, how far it reaches past an edge, what it does with
+// what does not fit. A part that only fills a row is a `Box` with `grow`.
+//
+// A part renders one element and adds none, so that composing these costs a function call and no node: `as` names its
+// tag ("div" unless said), or is the element to lay out, for a component that renders its own (a React Aria
+// Components' Button, a Motion element, an element that takes a ref): the part clones it with its classes after the
+// element's own, which may be a function of the component's state, as React Aria's are; children that are such a
+// function stay on that element. The caller's `className` is the part's paint (colour, type, radius, its own padding
+// and fixed size from tokens): the lint (restrict/layout-parts) refuses layout in it. The other attributes reach the
+// element in the order the caller wrote them. A part that renders a block of text (a paragraph, a heading, a list, a
+// figure) takes the browser's margin off it: where a box stands is its container's to say.
+//
+// What these props cannot say is not written beside them in a class: it becomes a prop here when it is an arrangement
+// of its own (and a line of the story that shows it), or a layout part named in its own file when only one part of
+// the design system has it (web/devtools/src/layout-parts.js lists both kinds and says what a layout part is).
+
+import { cloneElement, type HTMLAttributes, type JSX, type ReactElement, type ReactNode } from "react";
+
+/** The spacing tokens a gap may be, and `hair`, the least space there is: a label and the quiet line under it. */
+const GAP = {
+  hair: "gap-[0.125rem]",
+  "article-block": "gap-article-block",
+  "chip-gap": "gap-chip-gap",
+  "chip-spacing": "gap-chip-spacing",
+  "content-paragraph": "gap-content-paragraph",
+  "dialog-gap": "gap-dialog-gap",
+  "dialog-row": "gap-dialog-row",
+  "disclosure-gap": "gap-disclosure-gap",
+  "embed-gap": "gap-embed-gap",
+  "emoji-picker-gap": "gap-emoji-picker-gap",
+  entry: "gap-entry",
+  "entry-action": "gap-entry-action",
+  "entry-avatar": "gap-entry-avatar",
+  "entry-caption": "gap-entry-caption",
+  "entry-line": "gap-entry-line",
+  "entry-name": "gap-entry-name",
+  "entry-room": "gap-entry-room",
+  feed: "gap-feed",
+  "feed-tight": "gap-feed-tight",
+  "form-page-alert-gap": "gap-form-page-alert-gap",
+  "form-page-field-gap": "gap-form-page-field-gap",
+  "form-page-form-gap": "gap-form-page-form-gap",
+  "form-page-gap": "gap-form-page-gap",
+  "form-page-head-gap": "gap-form-page-head-gap",
+  "form-page-intro-gap": "gap-form-page-intro-gap",
+  "form-page-list-gap": "gap-form-page-list-gap",
+  "form-page-mark-gap": "gap-form-page-mark-gap",
+  "form-page-screen-gap": "gap-form-page-screen-gap",
+  "icon-button-gap": "gap-icon-button-gap",
+  "kbd-gap": "gap-kbd-gap",
+  media: "gap-media",
+  "menu-group-gap": "gap-menu-group-gap",
+  "menu-icon-gap": "gap-menu-icon-gap",
+  "screen-air": "gap-screen-air",
+  "screen-field-gap": "gap-screen-field-gap",
+  "screen-focus-gap": "gap-screen-focus-gap",
+  "screen-head-room": "gap-screen-head-room",
+  "screen-name-gap": "gap-screen-name-gap",
+  "screen-profile-gap": "gap-screen-profile-gap",
+  "screen-row-gap": "gap-screen-row-gap",
+  "screen-tab-gap": "gap-screen-tab-gap",
+  "screen-tabs-gap": "gap-screen-tabs-gap",
+  "shell-edge": "gap-shell-edge",
+  "shell-inset": "gap-shell-inset",
+  "shell-item-gap": "gap-shell-item-gap",
+  "viewer-inset": "gap-viewer-inset",
+} as const;
+
+/** A gap between the children of a line alone, where the lines of a row that wraps stand otherwise apart. */
+const GAP_X = {
+  "entry-avatar": "gap-x-entry-avatar",
+  "entry-caption": "gap-x-entry-caption",
+  "entry-name": "gap-x-entry-name",
+  "form-page-gap": "gap-x-form-page-gap",
+  "screen-meta-gap": "gap-x-screen-meta-gap",
+  "shell-edge": "gap-x-shell-edge",
+  "toggle-gap": "gap-x-toggle-gap",
+} as const;
+
+/** A gap between the lines of a row that wraps, or the rows of a grid, alone. */
+const GAP_Y = {
+  "0": "gap-y-0",
+  "screen-tab-gap": "gap-y-screen-tab-gap",
+} as const;
+
+export type Gap = keyof typeof GAP;
+
+const ALIGN = {
+  start: "items-start",
+  center: "items-center",
+  end: "items-end",
+  baseline: "items-baseline",
+  stretch: "items-stretch",
+} as const;
+
+const JUSTIFY = {
+  start: "justify-start",
+  center: "justify-center",
+  end: "justify-end",
+  between: "justify-between",
+} as const;
+
+const SELF = {
+  start: "self-start",
+  center: "self-center",
+  end: "self-end",
+  stretch: "self-stretch",
+  baseline: "self-baseline",
+} as const;
+
+/** Where the room left beside the box goes: before it (`end` pushes it to the end), after it, around it. */
+const PUSH = {
+  start: "me-auto",
+  end: "ms-auto",
+  bottom: "mt-auto",
+  center: "mx-auto",
+  middle: "m-auto",
+} as const;
+
+/** The room left that a box takes: its share of it, or all of it past the least width it keeps before it wraps. */
+const GROW = {
+  share: "flex-1",
+  // A name over a handle beside what the reader may do: under this width, what follows goes on a next line.
+  names: "flex-[1_1_12rem]",
+} as const;
+
+const FULL = { inline: "w-full", block: "h-full", both: "size-full" } as const;
+
+/** The most a box may be: its container's width or height, or a width of the theme. */
+const MAX = {
+  full: "max-w-full",
+  "full-block": "max-h-full",
+  dialog: "max-w-[var(--dialog-max-width)]",
+  menu: "max-w-[var(--menu-min-width)]",
+  // The quiet line under a menu item's label: it wraps within this, in a menu as wide as its longest label.
+  "menu-about": "max-w-[16rem]",
+  // A sheet from the viewport's bottom edge leaves the page in sight above it.
+  sheet: "max-h-[85dvh]",
+} as const;
+
+const CLIP = { both: "overflow-hidden", x: "overflow-x-hidden", y: "overflow-y-hidden" } as const;
+const SCROLL = { both: "overflow-auto", x: "overflow-x-auto", y: "overflow-y-auto" } as const;
+const LINES = { 1: "truncate", 2: "line-clamp-2", 3: "line-clamp-3" } as const;
+const LAYER = { 1: "z-1", 2: "z-2", 3: "z-3", 10: "z-10", 20: "z-20", 50: "z-50", 60: "z-60" } as const;
+
+/**
+ * How far a box reaches past an edge of its container, so that what it holds, not its own padding, lines up with the
+ * edge: by the inline padding of a control, or of a row.
+ */
+const BLEED_START = {
+  "control-timeline-inline": "-ms-control-timeline-inline",
+  "icon-button-inline": "-ms-icon-button-inline",
+  "screen-row-inline": "-ms-screen-row-inline",
+} as const;
+const BLEED_END = {
+  "control-timeline-inline": "-me-control-timeline-inline",
+  "icon-button-inline": "-me-icon-button-inline",
+} as const;
+const BLEED_INLINE = {
+  "emoji-picker-gap": "-mx-emoji-picker-gap",
+  "icon-button-inline": "-mx-icon-button-inline",
+  "screen-row-inline": "-mx-screen-row-inline",
+  "shell-edge": "-mx-shell-edge",
+} as const;
+/** Past its line above and below: a control taller than the line it stands on leaves the line its height. */
+const BLEED_BLOCK = {
+  "icon-button-inline": "-my-icon-button-inline",
+  "control-timeline-line": "-my-control-timeline-line",
+  "target-line": "-my-target-line",
+} as const;
+
+/** The space a box keeps on one side, where its container sets no gap: the children of a line of text, a float. */
+const SPACE_ABOVE = {
+  "embed-gap": "mt-embed-gap",
+  "form-page-gap": "mt-form-page-gap",
+  "screen-air": "mt-screen-air",
+  "screen-group-gap": "mt-screen-group-gap",
+} as const;
+const SPACE_BELOW = {
+  "menu-group-gap": "mb-menu-group-gap",
+  "shell-edge": "mb-shell-edge",
+  "shell-gap": "mb-shell-gap",
+} as const;
+const SPACE_BEFORE = {
+  "entry-caption": "ms-entry-caption",
+  "form-page-list-gap": "ms-form-page-list-gap",
+  "screen-avatar-inset": "ms-screen-avatar-inset",
+} as const;
+const SPACE_AFTER = {
+  "entry-caption": "me-entry-caption",
+  "shell-edge": "me-shell-edge",
+} as const;
+
+/** How the box of a part sits in the part that holds it. */
+type Placement = {
+  /**
+   * It takes the room left along its row or column, shared with the others that grow; in a row that wraps, a name of
+   * `GROW` is the least width it keeps before what follows it wraps.
+   */
+  grow?: boolean | Exclude<keyof typeof GROW, "share"> | undefined;
+  /**
+   * It may be narrower than what it holds (`block`: shorter), so that the text inside it wraps or truncates, or the
+   * region inside it scrolls, in place of pushing its row or column past the container.
+   */
+  shrink?: boolean | "block" | undefined;
+  /** It keeps its size: it neither grows nor gives way. */
+  rigid?: boolean | undefined;
+  /** Where it stands across its row or column, when not where the others do. */
+  self?: keyof typeof SELF | undefined;
+  /** Where it goes with the room left beside it: to the `end` of its row, to the `bottom` of its column. */
+  push?: keyof typeof PUSH | undefined;
+  /** As wide as its container (`block`: as tall, `both`). */
+  full?: boolean | "block" | "both" | undefined;
+  /** The most it may be. */
+  max?: keyof typeof MAX | undefined;
+  /** What a `Pin` inside it is held against; `isolate` also keeps the layers inside it from those outside. */
+  anchor?: boolean | "isolate" | undefined;
+  /** At the end of the first line of the text that follows it, which runs around it. */
+  float?: "end" | undefined;
+  /** Where it stands on its line of text, as an inline box. */
+  baseline?: keyof typeof BASELINE | undefined;
+  /** Its layer over what it overlaps, where the order of the document does not say. */
+  layer?: keyof typeof LAYER | undefined;
+  /** What does not fit is cut off. */
+  clip?: boolean | "x" | "y" | undefined;
+  /** What does not fit scrolls inside it. */
+  scroll?: "x" | "y" | "both" | undefined;
+  /** Its text keeps to so many lines, ending in an ellipsis. */
+  lines?: keyof typeof LINES | undefined;
+  /**
+   * As tall as one line of its text, so that what it holds (a glyph, a mark) stands on the first line of the text
+   * beside it when that text wraps.
+   */
+  line?: boolean | undefined;
+  /**
+   * How far it reaches past its container's edge at its start, at its end, or at both, so that what it holds lines up
+   * with the edge.
+   */
+  bleedStart?: keyof typeof BLEED_START | undefined;
+  bleedEnd?: keyof typeof BLEED_END | undefined;
+  bleedInline?: keyof typeof BLEED_INLINE | undefined;
+  /** How far it reaches past its line above and below, so that the line keeps its height. */
+  bleedBlock?: keyof typeof BLEED_BLOCK | undefined;
+  /** The space it keeps on one side, where its container sets no gap. */
+  spaceAbove?: keyof typeof SPACE_ABOVE | undefined;
+  spaceBelow?: keyof typeof SPACE_BELOW | undefined;
+  spaceBefore?: keyof typeof SPACE_BEFORE | undefined;
+  spaceAfter?: keyof typeof SPACE_AFTER | undefined;
+};
+
+/** How an inline box stands on its line: on the text's middle, or as a glyph does, a little under the baseline. */
+const BASELINE = {
+  top: "align-top",
+  middle: "align-middle",
+  bottom: "align-bottom",
+  glyph: "align-[-0.125em]",
+} as const;
+
+/** The elements whose margin the browser sets: a layout part takes it off. */
+const RESET = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "dl", "dd", "figure", "blockquote", "pre"]);
+
+type Tag = keyof JSX.IntrinsicElements;
+
+/** What every layout part takes beside its arrangement. */
+export type PartProps = Placement &
+  Omit<HTMLAttributes<HTMLElement>, "className" | "style" | "children"> & {
+    /** The tag it renders, or the element it lays out (a component that renders its own element). */
+    as?: Tag | ReactElement<{ className?: unknown }> | undefined;
+    /**
+     * The element that `as` renders is one whose margin the browser sets (a heading a component renders), to take
+     * off; a tag named in `as` needs no saying.
+     */
+    reset?: boolean | undefined;
+    /** Its paint: no layout. */
+    className?: string | undefined;
+    children?: ReactNode;
+  };
+
+/** The props of a part that say where its box sits, which the element it renders does not take. */
+const PLACEMENT: Record<keyof Placement | "as" | "reset", true> = {
+  as: true,
+  reset: true,
+  grow: true,
+  shrink: true,
+  rigid: true,
+  self: true,
+  push: true,
+  full: true,
+  max: true,
+  anchor: true,
+  float: true,
+  baseline: true,
+  layer: true,
+  clip: true,
+  scroll: true,
+  lines: true,
+  line: true,
+  bleedStart: true,
+  bleedEnd: true,
+  bleedInline: true,
+  bleedBlock: true,
+  spaceAbove: true,
+  spaceBelow: true,
+  spaceBefore: true,
+  spaceAfter: true,
+};
+
+/**
+ * The element of a part: `as` with the caller's props in the order the caller wrote them, the part's classes after
+ * the caller's own.
+ */
+function part(layout: string, props: PartProps, style?: Record<string, string>) {
+  const as = props.as ?? "div";
+  let c = layout;
+  if (props.reset || (typeof as === "string" && RESET.has(as))) c += " m-0";
+  if (props.grow) c += ` ${GROW[props.grow === true ? "share" : props.grow]}`;
+  if (props.shrink) c += props.shrink === "block" ? " min-h-0" : " min-w-0";
+  if (props.rigid) c += " flex-none";
+  if (props.self) c += ` ${SELF[props.self]}`;
+  if (props.push) c += ` ${PUSH[props.push]}`;
+  if (props.full) c += ` ${FULL[props.full === true ? "inline" : props.full]}`;
+  if (props.max) c += ` ${MAX[props.max]}`;
+  if (props.anchor) c += props.anchor === "isolate" ? " relative isolate" : " relative";
+  if (props.float) c += " float-end";
+  if (props.baseline) c += ` ${BASELINE[props.baseline]}`;
+  if (props.layer) c += ` ${LAYER[props.layer]}`;
+  if (props.clip) c += ` ${CLIP[props.clip === true ? "both" : props.clip]}`;
+  if (props.scroll) c += ` ${SCROLL[props.scroll]}`;
+  if (props.lines) c += ` ${LINES[props.lines]}`;
+  if (props.line) c += " h-[1lh]";
+  if (props.bleedStart) c += ` ${BLEED_START[props.bleedStart]}`;
+  if (props.bleedEnd) c += ` ${BLEED_END[props.bleedEnd]}`;
+  if (props.bleedInline) c += ` ${BLEED_INLINE[props.bleedInline]}`;
+  if (props.bleedBlock) c += ` ${BLEED_BLOCK[props.bleedBlock]}`;
+  if (props.spaceAbove) c += ` ${SPACE_ABOVE[props.spaceAbove]}`;
+  if (props.spaceBelow) c += ` ${SPACE_BELOW[props.spaceBelow]}`;
+  if (props.spaceBefore) c += ` ${SPACE_BEFORE[props.spaceBefore]}`;
+  if (props.spaceAfter) c += ` ${SPACE_AFTER[props.spaceAfter]}`;
+  c = c.trim();
+  const paint = props.className ?? "";
+  const own = paint === "" ? c : c === "" ? paint : `${paint} ${c}`;
+
+  // The element's props: the caller's, with the classes where the caller wrote its own, else last.
+  const given: Record<string, unknown> = props;
+  const rest: Record<string, unknown> = {};
+  for (const key in given) {
+    if (key in PLACEMENT) continue;
+    if (key !== "className") rest[key] = given[key];
+    else if (own !== "") rest["className"] = own;
+  }
+  if (!("className" in rest) && own !== "") rest["className"] = own;
+  if (style !== undefined) rest["style"] = style;
+
+  if (typeof as === "string") {
+    const Element = as as "div";
+    return <Element {...rest} />;
+  }
+  // The element's own classes first, as a function of its component's state where they are one.
+  const its = as.props.className;
+  if (typeof its === "function")
+    rest["className"] = (...state: unknown[]) =>
+      `${String((its as (...s: unknown[]) => unknown)(...state))} ${own}`.trim();
+  else if (typeof its === "string" && its !== "") rest["className"] = `${its} ${own}`.trim();
+  return cloneElement(as as ReactElement<Record<string, unknown>>, rest);
+}
+
+const DISPLAY = { block: "block", inline: "inline", "inline-block": "inline-block" } as const;
+
+export type BoxProps = PartProps & {
+  /** In the flow as a block, or inside a line of text. */
+  display?: keyof typeof DISPLAY | undefined;
+  /**
+   * The paragraphs inside it run on as one text, in place of standing one under another (an excerpt of a post);
+   * `all`: its blocks too.
+   */
+  run?: boolean | "all" | undefined;
+  /** As wide as this share of its container (0 to 1): the fill of a meter. */
+  share?: number | undefined;
+  /** Its press reaches over the whole of the nearest `anchor` (a line that is one link). */
+  reach?: boolean | undefined;
+};
+
+/** One box, and how it sits where it is put: it arranges nothing inside itself. */
+export function Box({ display, run, share, reach, ...rest }: BoxProps) {
+  let c = display ? DISPLAY[display] : "";
+  if (run) c += run === "all" ? " [&_p]:inline [&_div]:inline" : " [&_p]:inline";
+  if (reach) c += " after:absolute after:inset-0 after:content-['']";
+  return part(c, rest, share === undefined ? undefined : { inlineSize: `${String(Math.round(share * 1000) / 10)}%` });
+}
+
+type Flow = {
+  /** Where the children stand across the row (a column: along its width). */
+  align?: keyof typeof ALIGN | undefined;
+  /** Where the children stand along the row when room is left (a column: along its height). */
+  justify?: keyof typeof JUSTIFY | undefined;
+  /** The space between the children. */
+  gap?: Gap | undefined;
+};
+
+function flow(c: string, { align, justify, gap }: Flow) {
+  let out = c;
+  if (align) out += ` ${ALIGN[align]}`;
+  if (justify) out += ` ${JUSTIFY[justify]}`;
+  if (gap) out += ` ${GAP[gap]}`;
+  return out;
+}
+
+/** How far each child of a row lies over the one before it: faces in a strip. */
+const OVERLAP = {
+  "screen-face-overlap": "[&>*+*]:-ms-screen-face-overlap",
+  "screen-face-tuck": "[&>*+*]:-ms-screen-face-tuck",
+} as const;
+
+export type RowProps = PartProps &
+  Flow & {
+    /** Inside a line of text or a control, as wide as what it holds. */
+    inline?: boolean | undefined;
+    /** The children that do not fit go on a next line. */
+    wrap?: boolean | undefined;
+    /** The space between the children of a line alone. */
+    gapX?: keyof typeof GAP_X | undefined;
+    /** The space between the lines of a row that wraps alone. */
+    gapY?: keyof typeof GAP_Y | undefined;
+    /** Each child lies this far over the one before it. */
+    overlap?: keyof typeof OVERLAP | undefined;
+    /**
+     * On a touch screen, its press target reaches the touch height above and below it, whatever its own height (an
+     * icon button in a row of text); it is its own `anchor`.
+     */
+    touch?: boolean | undefined;
+  };
+
+/** Its children side by side, in the reader's direction. */
+export function Row({ inline, wrap, align, justify, gap, gapX, gapY, overlap, touch, ...rest }: RowProps) {
+  let c = flow(wrap ? (inline ? "inline-flex flex-wrap" : "flex flex-wrap") : inline ? "inline-flex" : "flex", {
+    align,
+    justify,
+    gap,
+  });
+  if (gapX) c += ` ${GAP_X[gapX]}`;
+  if (gapY) c += ` ${GAP_Y[gapY]}`;
+  if (overlap) c += ` ${OVERLAP[overlap]}`;
+  if (touch)
+    c +=
+      " pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2" +
+      " pointer-coarse:before:h-icon-button-touch pointer-coarse:before:-translate-y-1/2";
+  return part(c, rest);
+}
+
+export type ColumnProps = PartProps & Flow;
+
+/**
+ * Its children one under another, sharing its height: one that is `rigid` keeps its own, one that `grow`s takes the
+ * rest (and scrolls what does not fit, with `shrink="block"` and `scroll`).
+ */
+export function Column({ align, justify, gap, ...rest }: ColumnProps) {
+  return part(flow("flex flex-col", { align, justify, gap }), rest);
+}
+
+const CONTENT = { start: "content-start", center: "content-center" } as const;
+const JUSTIFY_ITEMS = { start: "justify-items-start", center: "justify-items-center" } as const;
+
+export type StackProps = PartProps & {
+  /** The space between the children. */
+  gap?: Gap | undefined;
+  /** Where the children stand along the stack's width, when not across the whole of it. */
+  justify?: keyof typeof JUSTIFY_ITEMS | undefined;
+  /** Where the children stand in a stack taller than they are, when not spread over it. */
+  pack?: keyof typeof CONTENT | undefined;
+};
+
+/** Its children one under another, each as wide as the stack and never wider. */
+export function Stack({ gap, justify, pack, ...rest }: StackProps) {
+  let c = "grid grid-cols-[minmax(0,1fr)]";
+  if (gap) c += ` ${GAP[gap]}`;
+  if (justify) c += ` ${JUSTIFY_ITEMS[justify]}`;
+  if (pack) c += ` ${CONTENT[pack]}`;
+  return part(c, rest);
+}
+
+/**
+ * The templates of a grid's columns: so many alike, or one that takes the room beside one as wide as what it holds
+ * (`lead`: the first is the one that hugs; `trail`: the last).
+ */
+const COLUMNS = {
+  2: "grid-cols-2",
+  lead: "grid-cols-[auto_minmax(0,1fr)]",
+  trail: "grid-cols-[minmax(0,1fr)_auto]",
+} as const;
+
+/** The templates of a grid's rows: a `head` as tall as what it holds over a body that takes the rest. */
+const ROWS = { head: "grid-rows-[auto_minmax(0,1fr)]" } as const;
+
+export type GridProps = PartProps & {
+  columns?: keyof typeof COLUMNS | undefined;
+  rows?: keyof typeof ROWS | undefined;
+  /** The space between the cells. */
+  gap?: Gap | undefined;
+  gapX?: keyof typeof GAP_X | undefined;
+  gapY?: keyof typeof GAP_Y | undefined;
+  /** Where each child stands in its cell, down the cell. */
+  align?: keyof typeof ALIGN | undefined;
+};
+
+/** Its children in the cells of a template, row after row. */
+export function Grid({ columns, rows, gap, gapX, gapY, align, ...rest }: GridProps) {
+  let c = "grid";
+  if (columns) c += ` ${COLUMNS[columns]}`;
+  if (rows) c += ` ${ROWS[rows]}`;
+  if (gap) c += ` ${GAP[gap]}`;
+  if (gapX) c += ` ${GAP_X[gapX]}`;
+  if (gapY) c += ` ${GAP_Y[gapY]}`;
+  if (align) c += ` ${ALIGN[align]}`;
+  return part(c, rest);
+}
+
+export type LayersProps = PartProps & {
+  /** Every child in the middle of the cell, in place of filling it. */
+  center?: boolean | undefined;
+};
+
+/**
+ * Its children over one another, the later over the earlier, in one cell as large as the largest: a picture under
+ * its badge, a text under its placeholder.
+ */
+export function Layers({ center, ...rest }: LayersProps) {
+  return part(center ? "grid place-items-center [&>*]:[grid-area:1/1]" : "grid [&>*]:[grid-area:1/1]", rest);
+}
+
+/** How far from an edge a pinned or a sticky box is held: on it, or a token of the theme's spacing away. */
+const TOP = {
+  "0": "top-0",
+  half: "top-1/2",
+  "media-badge": "top-media-badge",
+  "shell-gap": "top-shell-gap",
+} as const;
+const BOTTOM = { "0": "bottom-0", "media-badge": "bottom-media-badge" } as const;
+const START = {
+  "0": "start-0",
+  "control-timeline-inline": "start-control-timeline-inline",
+  "viewer-inset": "start-viewer-inset",
+} as const;
+const END = {
+  "0": "end-0",
+  "entry-line": "end-entry-line",
+  "media-badge": "end-media-badge",
+  "viewer-inset": "end-viewer-inset",
+} as const;
+const INSET_INLINE = {
+  "0": "inset-x-0",
+  "media-badge": "inset-x-media-badge",
+  "shell-edge": "inset-x-shell-edge",
+} as const;
+const INSET_BLOCK = { "0": "inset-y-0" } as const;
+
+type Edges = {
+  top?: keyof typeof TOP | undefined;
+  bottom?: keyof typeof BOTTOM | undefined;
+  start?: keyof typeof START | undefined;
+  end?: keyof typeof END | undefined;
+  /** From both the start and the end. */
+  insetInline?: keyof typeof INSET_INLINE | undefined;
+  /** From both the top and the bottom. */
+  insetBlock?: keyof typeof INSET_BLOCK | undefined;
+};
+
+function edges(c: string, { top, bottom, start, end, insetInline, insetBlock }: Edges) {
+  let out = c;
+  if (top) out += ` ${TOP[top]}`;
+  if (bottom) out += ` ${BOTTOM[bottom]}`;
+  if (start) out += ` ${START[start]}`;
+  if (end) out += ` ${END[end]}`;
+  if (insetInline) out += ` ${INSET_INLINE[insetInline]}`;
+  if (insetBlock) out += ` ${INSET_BLOCK[insetBlock]}`;
+  return out;
+}
+
+export type PinProps = PartProps &
+  Edges & {
+    /** Against the viewport's edges, in place of the nearest `anchor`'s. */
+    viewport?: boolean | undefined;
+    /** Over the whole of what it is held against. */
+    cover?: boolean | undefined;
+    /** In the middle of what it is held against, at its own size (which it must have). */
+    center?: boolean | undefined;
+  };
+
+/**
+ * A box taken out of the flow and held against the edges of the nearest `anchor`, or of the viewport: over the whole
+ * of it, in its middle, or by the edges it names.
+ */
+export function Pin({ viewport, cover, center, top, bottom, start, end, insetInline, insetBlock, ...rest }: PinProps) {
+  let c = viewport ? "fixed" : "absolute";
+  if (cover || center) c += " inset-0";
+  if (center) c += " m-auto";
+  return part(edges(c, { top, bottom, start, end, insetInline, insetBlock }), rest);
+}
+
+export type StickyProps = PartProps & Pick<Edges, "top" | "bottom">;
+
+/** A box that scrolls with what holds it until it meets the top or the bottom it names, then stays. */
+export function Sticky({ top, bottom, ...rest }: StickyProps) {
+  return part(edges("sticky", { top, bottom }), rest);
+}

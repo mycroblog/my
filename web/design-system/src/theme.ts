@@ -76,6 +76,12 @@ const theme = {
         [`control-${size}-inline`, ref(`--control-${size}-padding-inline`)],
       ]),
     ),
+    // The room above and below one line of text in a box as tall as a control, or as the least press target: the block
+    // padding of a box of that height whose text may wrap, which then grows by its lines.
+    ...Object.fromEntries(
+      names(control).map((size) => [`control-${size}-line`, `calc((var(--control-${size}-height) - 1lh) / 2)`]),
+    ),
+    "target-line": "max(0px, calc((var(--target-minimum) - 1lh) / 2))",
     "icon-button-inline": ref("--icon-button-padding-inline"),
     "icon-button-gap": ref("--icon-button-gap"),
     "icon-button-touch": ref("--icon-button-touch"),
