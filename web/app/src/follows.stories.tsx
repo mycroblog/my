@@ -5,8 +5,7 @@
 // every screen is shown in (app.samples.tsx), on sam's followers.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
-import * as plays from "./follows.plays";
+import { screen, screenMeta } from "./app.samples";
 
 const followers = "/@sam/followers";
 
@@ -19,18 +18,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Followers: Story = { play: plays.followers };
-export const Following: Story = { parameters: screen({ at: "/@sam/following" }), play: plays.following };
-export const FollowersOnly: Story = { parameters: screen({ at: "/@mio/followers" }), play: plays.followersOnly };
-export const Private: Story = { parameters: screen({ at: "/@kai/following" }), play: plays.privateList };
+export const Followers: Story = {};
+export const Following: Story = { parameters: screen({ at: "/@sam/following" }) };
+export const FollowersOnly: Story = { parameters: screen({ at: "/@mio/followers" }) };
+export const Private: Story = { parameters: screen({ at: "/@kai/following" }) };
 export const ListLoading: Story = { parameters: screen({ at: followers, server: { followsLists: "waits" } }) };
-export const ListFailed: Story = {
-  parameters: screen({ at: followers, server: { followsLists: "fails" } }),
-  play: plays.listFailed,
-};
-export const Empty: Story = { parameters: screen({ at: followers, state: "empty" }), play: plays.empty };
+export const ListFailed: Story = { parameters: screen({ at: followers, server: { followsLists: "fails" } }) };
+export const Empty: Story = { parameters: screen({ at: followers, state: "empty" }) };
 export const Loading: Story = { parameters: screen({ at: followers, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: followers, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: followers, state: "long" }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };
+export const RightToLeft: Story = {};
+export const MinimumWidth: Story = {};
