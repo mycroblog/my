@@ -28,7 +28,12 @@ type sqliteStore struct{ db *sqlite.DB }
 
 var _ store = sqliteStore{}
 
+// queries returns the queries that run in tx, or on the connection pool, outside any
+// transaction, when tx is nil.
 func (s sqliteStore) queries(tx uow.Tx) (*sqlitekv.Queries, error) {
+	if tx == nil {
+		return sqlitekv.New(s.db.SQLDB()), nil // untraced, as the store's queries in a transaction are
+	}
 	sqlTx, err := s.db.SQLTx(tx)
 	if err != nil {
 		return nil, err

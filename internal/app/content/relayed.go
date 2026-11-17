@@ -133,7 +133,7 @@ func (r *RelayedRetention) Run(ctx context.Context, after string) (next string, 
 	q := RelayedPurgeQuery{After: after, Before: now.Add(-period), Limit: r.d.Batch}
 	for range retentionMaxBatches {
 		var candidates []content.Status
-		err := r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		err := r.d.UnitOfWork.Read(ctx, func(tx uow.Tx) error {
 			var err error
 			candidates, err = r.d.Retention.ListRelayedStatusesToPurge(ctx, tx, q)
 			return err

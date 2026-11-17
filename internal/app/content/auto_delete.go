@@ -247,7 +247,7 @@ func (a *AutoDelete) view(ctx context.Context, p content.AutoDeletePolicy) (Auto
 		return AutoDeleteView{Policy: p}, err
 	}
 	lv := &AutoDeleteLimitView{AutoDeleteLimit: limit, Effective: content.EffectiveAutoDeletePolicy(p, limit, false)}
-	err = a.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = a.d.UnitOfWork.Read(ctx, func(tx uow.Tx) error {
 		pins, err := a.d.AutoDeletes.CountAutoDeletePins(ctx, tx, p.AccountID)
 		if err != nil {
 			return err
@@ -355,8 +355,8 @@ func (a *AutoDelete) PreviewAutoDeletePolicy(ctx context.Context, accountID stri
 	}
 	before := p.Cutoff(kernel.Normalize(a.d.Clock.Now()))
 	var statuses []content.Status
-	// A read in one short transaction: the repository lists the posts as the job would.
-	err = a.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	// A read in one short read-only transaction: the repository lists the posts as the job would.
+	err = a.d.UnitOfWork.Read(ctx, func(tx uow.Tx) error {
 		var err error
 		statuses, err = a.d.AutoDeletes.ListStatusesToAutoDelete(ctx, tx, p, before, AutoDeletePreviewCap+1)
 		return err
