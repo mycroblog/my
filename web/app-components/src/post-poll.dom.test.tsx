@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A post's poll, from the status: open to the reader's vote or shown as results, what its last line says, and the
-// vote it asks the screen to cast. What the options and the vote button are to assistive technology is the design
-// system's (poll.dom.test.tsx).
+// vote it asks the screen to cast. What the options and the vote button are to assistive technology is the poll's
+// own (poll.dom.test.tsx).
 
 import { expect, test } from "bun:test";
 import { cleanup, screen, within } from "@testing-library/react";
