@@ -687,11 +687,9 @@ jobs:
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:mybot-ts-runtimes
 
-  e2e:
-    # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
-    # test build of bin/my (web:e2e builds it, with the client embedded), when the e2e context changes: a workspace
-    # package that @my/app or @my/e2e depends on, or the server code (scripts/changed-contexts.sh). Chromium comes from
-    # Playwright's CLI, run on Bun.
+  e2e-build:
+    # The test build of bin/my, with the web client embedded, built once for the jobs of e2e, so that every one of
+    # them tests the same build (ADR-0079 §9).
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
@@ -706,14 +704,54 @@ jobs:
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
+      - name: go:bin
+        run: scripts/task.sh go:bin GO_TAGS=e2e_fakes
+      - name: Keep bin/my for the E2E jobs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-my
+          path: bin/my
+          retention-days: 1
+
+  e2e:
+    # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
+    # test build of bin/my that e2e-build made, when the e2e context changes: a workspace package that @my/app or
+    # @my/e2e depends on, or the server code (scripts/changed-contexts.sh). Chromium comes from Playwright's CLI, run
+    # on Bun. Four jobs side by side, each with a server of its own and a quarter of the spec files (Playwright's
+    # --shard): the tests take most of the time, and a pull request waits for the slowest job.
+    needs: [changes, e2e-build]
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
       - name: Install Chromium
         # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
         # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
-      - name: web:e2e
-        # Each test twice on the one seeded server: a suite that passes only once depends on the order of its tests.
-        run: scripts/task.sh web:e2e -- --repeat-each=2
+      - name: Fetch bin/my
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: e2e-my
+          path: bin
+      # An artifact does not keep the file's mode.
+      - name: Make bin/my executable
+        run: chmod +x bin/my
+      - name: web:e2e-built
+        # What the client does, once: a test that fails runs again, twice at most, so that a test that fails only
+        # sometimes does not hold a pull request. The slow suite finds those tests (slow-suite.yml's e2e).
+        run: scripts/task.sh web:e2e-built -- --retries=2 --shard=${{ matrix.shard }}/4
 
   stories:
     # The static build of the Storybook host and the story tests (ADR-0110 §9): every story run by Storybook's Vitest
@@ -747,7 +785,7 @@ jobs:
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it. A draft
     # reports nothing, rather than a pass that checked nothing.
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, e2e, stories]
+    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, e2e-build, e2e, stories]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

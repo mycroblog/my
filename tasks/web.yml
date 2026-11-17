@@ -110,6 +110,12 @@ tasks:
     deps:
       - task: ":go:bin"
         vars: { GO_TAGS: e2e_fakes }
+    cmds:
+      - task: e2e-built
+
+  # CI builds bin/my once and gives it to every job of the E2E tests (ADR-0079 §9), which run this.
+  e2e-built:
+    desc: Run the Playwright tests of web/e2e against the demo server, on the test build of bin/my that is already there (CLI_ARGS go to Playwright)
     dir: web/e2e
     cmds:
       - bun --bun playwright test {{.CLI_ARGS}}
