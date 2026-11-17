@@ -116,7 +116,7 @@ test("a confirmation that is not busy has no busy button", async () => {
 });
 
 // Its Cancel is disabled while the action is in flight, and "the dialog stays": Escape still cancels it.
-test.failing("while the confirmed action is in flight, Escape does not cancel the confirmation", async () => {
+test("while the confirmed action is in flight, Escape does not cancel the confirmation", async () => {
   const user = userEvent.setup();
   const answers = confirmation({ busy: true });
   await screen.findByRole("alertdialog", { name: "Delete this post?" });
