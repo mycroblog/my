@@ -236,11 +236,13 @@ const SPACE_ABOVE = {
   "embed-gap": "mt-embed-gap",
   "form-page-gap": "mt-form-page-gap",
   "screen-air": "mt-screen-air",
+  "screen-focus-gap": "mt-screen-focus-gap",
   "screen-group-gap": "mt-screen-group-gap",
   "content-emoji-line": "mt-content-emoji-line",
 } as const;
 const SPACE_BELOW = {
   "menu-group-gap": "mb-menu-group-gap",
+  "screen-focus-gap": "mb-screen-focus-gap",
   "shell-edge": "mb-shell-edge",
   "shell-gap": "mb-shell-gap",
   "content-emoji-line": "mb-content-emoji-line",
