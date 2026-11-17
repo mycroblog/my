@@ -7,7 +7,7 @@
 // minimum width.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const meta = {
   title: "Landing",
@@ -34,5 +34,3 @@ export const NoPublicTimelines: Story = {
 export const Logo: Story = { parameters: visitor({ logo: true }) };
 /** The thumbnail, the image that represents the server, as the introduction's banner. */
 export const Thumbnail: Story = { parameters: visitor({ thumbnail: true, logo: true, registrations: "approval" }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

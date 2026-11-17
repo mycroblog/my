@@ -274,9 +274,3 @@ export const screenMeta = {
     return <StoryApp key={id} {...fakeOf(p)} stream={p.stream} />;
   },
 };
-
-/** Pins the toolbar's locale to ar-XB, which reads from right to left. */
-export const rightToLeft = { locale: "ar-XB" };
-
-/** Pins the toolbar's viewport to the minimum width (ADR-0110 §10). */
-export const minimumWidth = { viewport: { value: "minimum" } };

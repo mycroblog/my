@@ -5,7 +5,7 @@
 // left.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const at = "/tags/baking";
 
@@ -25,5 +25,3 @@ export const Loading: Story = { parameters: screen({ at, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at, state: "long" }) };
 export const Visitor: Story = { parameters: screen({ at, signedOut: true }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

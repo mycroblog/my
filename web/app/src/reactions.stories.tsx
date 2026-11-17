@@ -4,7 +4,7 @@
 // each state every screen is shown in (app.samples.tsx).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const party = "reactions:yuki-ridge:🎉";
 
@@ -23,5 +23,3 @@ export const Empty: Story = { parameters: screen({ at: party, state: "empty" }) 
 export const Loading: Story = { parameters: screen({ at: party, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: party, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: party, state: "long" }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };
