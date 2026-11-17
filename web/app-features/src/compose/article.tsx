@@ -262,7 +262,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
           e.change({ summary: value });
         }}
         invalid={summaryError !== undefined}
-        describedBy={summaryError === undefined ? undefined : `${id}-summary-error`}
+        describedBy={summaryError === undefined ? `${id}-summary-hint` : `${id}-summary-hint ${id}-summary-error`}
       />
     </ArticleField>
   );

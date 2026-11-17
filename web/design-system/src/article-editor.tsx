@@ -294,7 +294,8 @@ export function ArticleTitleInput({
 
 /**
  * A labelled field of the article (the summary, the cover, the hashtags): its label, what stands at the label line's
- * end (a count, the cover's remove), its hint, the control, and its error right under it.
+ * end (a count, the cover's remove), its hint, the control, and its error right under it. Its caller describes
+ * the control by the hint and the error, by their ids (`<id>-hint`, `<id>-error`).
  */
 export function ArticleField({
   id,
@@ -320,7 +321,11 @@ export function ArticleField({
         </span>
         {end}
       </div>
-      {hint && <p className={s.hint()}>{hint}</p>}
+      {hint && (
+        <p id={`${id}-hint`} className={s.hint()}>
+          {hint}
+        </p>
+      )}
       {children}
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </div>
@@ -343,7 +348,7 @@ export function ArticleTextArea({
   onChange?: ((value: string) => void) | undefined;
   readOnly?: boolean | undefined;
   invalid?: boolean | undefined;
-  /** The ID of what describes it (its error). */
+  /** The IDs of what describes it (its field's hint, `<id>-hint`, and error, `<id>-error`). */
   describedBy?: string | undefined;
 }) {
   return (

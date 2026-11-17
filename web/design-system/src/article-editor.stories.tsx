@@ -346,6 +346,7 @@ function Article({ state }: { state: State }) {
         placeholder={w.summaryPlaceholder}
         value={h.summary}
         invalid={summaryLeft < 0}
+        describedBy={summaryLeft < 0 ? "article-summary-hint article-summary-error" : "article-summary-hint"}
       />
     </ArticleField>
   );
