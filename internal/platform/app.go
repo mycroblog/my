@@ -290,7 +290,7 @@ type App struct {
 	dbQueue *queuedb.Queue
 	// runnerSource is the source of the worker role's runner, when it polls the database queue.
 	runnerSource queue.Source
-	// dbPoolMax is the maximum of the database's connection pool; 0 for a database without one.
+	// dbPoolMax is the maximum of the database's connection pool.
 	dbPoolMax int
 	// skippedJobTypes are the job types that worker_job_types leaves to other workers (ADR-0004).
 	skippedJobTypes []string
