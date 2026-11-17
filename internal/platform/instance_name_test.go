@@ -29,7 +29,7 @@ func TestInstanceNameAndDomain(t *testing.T) {
 		"assets/index-AAAA.js": {Data: []byte("export {}")},
 	}
 	var logs bytes.Buffer
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.NewJSONHandler(&logs, nil)), WebBuild: build})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.NewJSONHandler(&logs, nil)), WebBuild: webBuild(t, build)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}

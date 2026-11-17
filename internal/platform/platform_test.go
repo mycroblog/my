@@ -17,11 +17,13 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -65,6 +67,18 @@ func newDatabase(t *testing.T, applied bool) string {
 		return filepath.Join(t.TempDir(), "my.db")
 	}
 	return sqlitetest.NewFile(t)
+}
+
+// webBuild adds to build, a build of the web client made here, the list of its files' ETags, which
+// the web build writes last.
+func webBuild(t *testing.T, build fstest.MapFS) fstest.MapFS {
+	t.Helper()
+	list, err := web.ListETags(build)
+	if err != nil {
+		t.Fatal(err)
+	}
+	build[web.ETagsPath] = &fstest.MapFile{Data: list}
+	return build
 }
 
 // loadConfig loads a configuration from env alone, with the required settings filled in.

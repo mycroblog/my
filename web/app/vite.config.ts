@@ -33,7 +33,8 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // The build of the web client (ADR-0025 §1, §9, ADR-0028 §4): the Go server serves its own HTML shells and builds their
 // <script> and <link> tags from the manifest, whose entries are index.html, the app, and auth.html, the auth screens
 // that a page load opens, so the build writes the manifest, with a relative base, into the directory Go embeds;
-// web:build empties it first and adds web/brand. Every asset is a file of
+// web:build empties it first, and after the build adds web/brand and the list of the files' ETags
+// (scripts/etags.ts). Every asset is a file of
 // its own, since the shell's CSP allows no data: source. React Compiler runs through the plugin of vite-plugins/,
 // which fails the build on a function it skips. The routes of src/routes compile into src/routeTree.gen.ts, which
 // scripts/routes.ts also writes with the same options, each route's components in a chunk of their own; TanStack
