@@ -13,6 +13,7 @@ import { DisclosureStateContext, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Blurhash } from "./blurhash";
 import { Icon } from "./icons";
+import { Box, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { SensitiveLine, sensitiveLabel } from "./media";
 
@@ -42,19 +43,12 @@ const titleWrap = "[word-break:auto-phrase] text-balance";
 
 const card = tv({
   slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-entry",
-    link: [
-      "group box-border grid min-w-0 gap-entry-line rounded-control text-text no-underline outline-hidden",
-      "focus-visible:shadow-focus",
-    ],
-    covered: "grid grid-cols-[minmax(0,1fr)] gap-media",
-    // The line's Show ends at the cover's end edge, its button's padding outside it.
-    line: "-me-control-timeline-inline",
-    figure: "relative m-0 block w-full max-h-media-card-max overflow-hidden rounded-control bg-surface-raised-pressed",
-    image: "block size-full object-cover",
-    kind: "flex items-center gap-entry-caption text-caption text-muted-text",
-    title: ["line-clamp-3 text-title group-hover:underline group-data-[hovered]:underline", titleWrap],
-    summary: "line-clamp-3 text-body text-text",
+    link: "group box-border rounded-control text-text no-underline outline-hidden focus-visible:shadow-focus",
+    figure: "rounded-control bg-surface-raised-pressed",
+    image: "object-cover",
+    kind: "text-caption text-muted-text",
+    title: ["text-title group-hover:underline group-data-[hovered]:underline", titleWrap],
+    summary: "text-body text-text",
   },
   variants: {
     // Covered, the cover is a low band of its blurhash, not the picture's whole height.
@@ -67,10 +61,10 @@ function Kind({ className }: { className: string }) {
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   return (
-    <span className={className} lang={lang}>
+    <Row as="span" align="center" gap="entry-caption" className={className} lang={lang}>
       <Icon name="article" place="caption" />
       {t("article.kind")}
-    </span>
+    </Row>
   );
 }
 
@@ -84,10 +78,16 @@ export function ArticleCard({ href, title, summary, cover, sensitive = false, la
   const s = card({ covered });
   // At the full width the cover is never taller than 16:9: a taller one is cropped to it, a wider one keeps its shape.
   const figure = cover !== undefined && (
-    <span
+    <Box
+      as="span"
       id={id}
+      display="block"
+      anchor
+      clip
+      full
+      max="media-card"
+      ratio={covered ? undefined : Math.max(cover.width / cover.height, 16 / 9)}
       className={s.figure()}
-      style={covered ? undefined : { aspectRatio: String(Math.max(cover.width / cover.height, 16 / 9)) }}
       onClick={
         covered
           ? () => {
@@ -97,29 +97,29 @@ export function ArticleCard({ href, title, summary, cover, sensitive = false, la
       }
     >
       {covered ? (
-        <Blurhash hash={cover.blurhash} className={s.image()} />
+        <Box as={<Blurhash hash={cover.blurhash} />} display="block" full="both" className={s.image()} />
       ) : (
-        <img className={s.image()} src={cover.src} alt={cover.alt ?? ""} />
+        <Box as={<img src={cover.src} alt={cover.alt ?? ""} />} display="block" full="both" className={s.image()} />
       )}
-    </span>
+    </Box>
   );
   return (
-    <div className={s.root()} dir={direction}>
-      <Link className={s.link()} href={href}>
+    <Stack gap="entry" dir={direction}>
+      <Stack as={<Link href={href} />} gap="entry-line" className={s.link()}>
         <Kind className={s.kind()} />
-        <span className={s.title()} lang={lang} dir="auto">
+        <Box as="span" lines={3} className={s.title()} lang={lang} dir="auto">
           {title}
-        </span>
+        </Box>
         {summary !== "" && (
-          <span className={s.summary()} lang={lang} dir="auto">
+          <Box as="span" lines={3} className={s.summary()} lang={lang} dir="auto">
             {summary}
-          </span>
+          </Box>
         )}
-      </Link>
+      </Stack>
       {figure !== false &&
         (sensitive ? (
-          <div className={s.covered()}>
-            <div className={s.line()}>
+          <Stack gap="media">
+            <Box bleedEnd="control-timeline-inline">
               <SensitiveLine
                 label={sensitiveLabel([{ kind: "image" }], t)}
                 shown={shown}
@@ -128,26 +128,22 @@ export function ArticleCard({ href, title, summary, cover, sensitive = false, la
                   setShown(!shown);
                 }}
               />
-            </div>
+            </Box>
             {figure}
-          </div>
+          </Stack>
         ) : (
           figure
         ))}
-    </div>
+    </Stack>
   );
 }
 
 const head = tv({
   slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-entry-line",
-    title: ["m-0 text-headline text-text", titleWrap],
-    summary: "m-0 text-reading text-muted-text",
-    cover:
-      "relative m-0 block w-full overflow-hidden rounded-control bg-surface-raised-pressed max-h-article-cover-max",
-    image: "block size-full object-cover",
-    covered: "grid grid-cols-[minmax(0,1fr)] gap-media",
-    line: "-me-control-timeline-inline",
+    title: ["text-headline text-text", titleWrap],
+    summary: "text-reading text-muted-text",
+    cover: "rounded-control bg-surface-raised-pressed",
+    image: "object-cover",
   },
   variants: { covered: { true: { cover: "h-media-preview-height" } } },
 });
@@ -159,7 +155,11 @@ const head = tv({
  * post's.
  */
 export function ArticleParts({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-[minmax(0,1fr)] gap-article-block pb-article-block text-body">{children}</div>;
+  return (
+    <Stack gap="article-block" className="pb-article-block text-body">
+      {children}
+    </Stack>
+  );
 }
 
 /**
@@ -180,16 +180,16 @@ export function ArticleTitle({
   const s = head();
   const Heading = level === 1 ? "h1" : "h2";
   return (
-    <hgroup className={s.root()} lang={lang}>
-      <Heading className={s.title()} dir="auto">
+    <Stack as="hgroup" gap="entry-line" lang={lang}>
+      <Box as={Heading} className={s.title()} dir="auto">
         {title}
-      </Heading>
+      </Box>
       {summary !== "" && (
         <p className={s.summary()} dir="auto">
           {summary}
         </p>
       )}
-    </hgroup>
+    </Stack>
   );
 }
 
@@ -218,18 +218,28 @@ export function ArticleCover({
   const s = head({ covered });
   const ratio = Math.max(cover.width / cover.height, 16 / 9);
   const figure = (
-    <span id={id} className={s.cover()} style={covered ? undefined : { aspectRatio: String(ratio) }}>
+    <Box
+      as="span"
+      id={id}
+      display="block"
+      anchor
+      clip
+      full
+      max="article-cover"
+      ratio={covered ? undefined : ratio}
+      className={s.cover()}
+    >
       {covered || unopened ? (
-        <Blurhash hash={cover.blurhash} className={s.image()} />
+        <Box as={<Blurhash hash={cover.blurhash} />} display="block" full="both" className={s.image()} />
       ) : (
-        <img className={s.image()} src={cover.src} alt={cover.alt ?? ""} />
+        <Box as={<img src={cover.src} alt={cover.alt ?? ""} />} display="block" full="both" className={s.image()} />
       )}
-    </span>
+    </Box>
   );
   if (!sensitive) return figure;
   return (
-    <div className={s.covered()} dir={direction}>
-      <div className={s.line()}>
+    <Stack gap="media" dir={direction}>
+      <Box bleedEnd="control-timeline-inline">
         <SensitiveLine
           label={sensitiveLabel([{ kind: "image" }], t)}
           shown={shown}
@@ -238,9 +248,9 @@ export function ArticleCover({
             setShown(!shown);
           }}
         />
-      </div>
+      </Box>
       {figure}
-    </div>
+    </Stack>
   );
 }
 
@@ -258,10 +268,10 @@ export function ArticleCover({
 const text = tv({
   base: [
     "grid max-w-article-measure grid-cols-[minmax(0,1fr)] gap-article-block text-reading text-text wrap-anywhere",
-    "[&_:is(p,blockquote,ol,ul,pre,h2,h3,h4,h5,h6,table,figure)]:m-0",
-    "[&_:is(h2,h3,h4,h5,h6)]:mt-article-heading [&_:is(h2,h3,h4,h5,h6)]:font-strong",
+    "[&_:is(h2,h3,h4,h5,h6)]:font-strong",
+    // A box of its own after a heading (a table's) holds close to it.
+    "[&_:is(h2,h3,h4,h5,h6)+div]:-mt-[calc(var(--article-block-gap)*3/4)]",
     "[&_:is(h2,h3,h4,h5,h6)]:[word-break:auto-phrase] [&_:is(h2,h3,h4,h5,h6)]:text-balance",
-    "[&_:is(h2,h3,h4,h5,h6)+*]:-mt-[calc(var(--article-block-gap)*3/4)]",
     "[&_h2]:text-heading [&_h3]:text-title [&_h4]:text-reading [&_h5]:text-body [&_h6]:text-caption",
     "[&_:is(h4,h5,h6)]:font-strong [&_h6]:text-muted-text",
     "[&_em:is(:lang(ja),:lang(zh),:lang(ko))]:not-italic [&_em:is(:lang(ja),:lang(zh),:lang(ko))]:font-strong",
@@ -289,6 +299,15 @@ const text = tv({
   ],
 });
 
+/** The flow of an article's text, a layout part: it places the blocks that its renderer writes without a class. */
+function ArticleFlow({ children, lang }: { children: ReactNode; lang?: string | undefined }) {
+  return (
+    <div className={text()} lang={lang} dir="auto">
+      {children}
+    </div>
+  );
+}
+
 /**
  * The text of an article on its page, set for long reading, in its own direction. In a fold (a Disclosure, as a
  * sensitive article's page folds its cover and text), the text is not drawn until the fold opens, so that none of its
@@ -305,11 +324,7 @@ export function ArticleText({
   folded?: boolean | undefined;
 }) {
   const fold = use(DisclosureStateContext);
-  return (
-    <div className={text()} lang={lang} dir="auto">
-      {folded && fold?.isExpanded !== true ? null : children}
-    </div>
-  );
+  return <ArticleFlow lang={lang}>{folded && fold?.isExpanded !== true ? null : children}</ArticleFlow>;
 }
 
 /**
@@ -319,10 +334,10 @@ export function ArticleText({
 export function ArticleTable({ children, lang }: { children: ReactNode; lang?: string | undefined }) {
   return (
     // A box that scrolls takes the focus, so that a keyboard can scroll it.
-    <div className="overflow-x-auto rounded-control outline-hidden focus-visible:shadow-focus" tabIndex={0}>
+    <Box scroll="x" className="rounded-control outline-hidden focus-visible:shadow-focus" tabIndex={0}>
       <table lang={lang} dir="auto">
         {children}
       </table>
-    </div>
+    </Box>
   );
 }

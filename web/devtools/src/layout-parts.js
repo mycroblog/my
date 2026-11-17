@@ -47,6 +47,7 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/list.tsx": ["GroupPlace", "ResultPlace"],
   "web/design-system/src/modal.tsx": ["ModalFrame", "ModalPanel"],
   "web/design-system/src/dialog.tsx": ["PanelFrame"],
+  "web/design-system/src/article.tsx": ["ArticleFlow"],
   "web/design-system/src/card.tsx": ["AuthorLine"],
   "web/design-system/src/content.tsx": ["ContentBody"],
   "web/design-system/src/feed.tsx": ["NewItemsPlace"],
