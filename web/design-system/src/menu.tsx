@@ -13,7 +13,7 @@
 // its glyph on. Its groups stand apart by space; a group of actions on another account goes under a caption naming it;
 // destructive items sit last and apart, with no color of their own.
 
-import { createContext, use, useEffect, useId, useState, type ReactElement, type ReactNode } from "react";
+import { createContext, use, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -452,7 +452,10 @@ export function MenuSurface({
   const { t } = stringsIn(reader.lang);
   const [own, setOwn] = useState(false);
   const shown = open ?? own;
+  // What held the focus as the menu opened (its trigger), which takes it back once a sheet has left.
+  const opener = useRef<Element | null>(null);
   const change = (next: boolean) => {
+    if (next) opener.current = document.activeElement;
     if (open === undefined) setOwn(next);
     onOpenChange?.(next);
   };
@@ -464,7 +467,15 @@ export function MenuSurface({
   return (
     <MenuTrigger isOpen={shown} onOpenChange={change} {...(longPress ? { trigger: "longPress" as const } : {})}>
       {trigger}
-      <SurfaceLayer shown={shown} onDismiss={close} placement={placement} offset={offset}>
+      <SurfaceLayer
+        shown={shown}
+        onDismiss={close}
+        onExited={() => {
+          giveBack(opener.current);
+        }}
+        placement={placement}
+        offset={offset}
+      >
         {(inSheet) => (
           // A submenu is a menu of its own, which takes the focus to its first item as it replaces the one it came from.
           <MenuPanel
@@ -489,6 +500,18 @@ export function MenuSurface({
 }
 
 /**
+ * Gives the focus back to `opener` (a menu's trigger) once its sheet has left, where nothing else took it: the page,
+ * or what holds the trigger (the composer's dialog, which takes the focus that the sheet's leaving dropped before the
+ * sheet could give it back). A control or a dialog that took it on purpose (an item opened one) keeps it.
+ */
+function giveBack(opener: Element | null): void {
+  if (!(opener instanceof HTMLElement) || !opener.isConnected) return;
+  const active = document.activeElement;
+  if (active === opener) return;
+  if (active === null || active === document.body || active.contains(opener)) opener.focus({ preventScroll: true });
+}
+
+/**
  * What a menu or a small form shows on, open, by the trigger of the React Aria trigger around it: on a phone (as
  * `MenuSheet` says) a sheet from the bottom edge over the dimmed page, from `tablet` a popover by the trigger, which
  * flips to the other side of it where there is no room and stays inside the viewport. `children` draws what it holds,
@@ -497,12 +520,15 @@ export function MenuSurface({
 function SurfaceLayer({
   shown,
   onDismiss,
+  onExited,
   placement,
   offset,
   children,
 }: {
   shown: boolean;
   onDismiss: () => void;
+  /** Runs once the sheet has left. */
+  onExited?: (() => void) | undefined;
   placement: MenuPlacement;
   offset: number;
   children: (inSheet: boolean) => ReactNode;
@@ -512,7 +538,7 @@ function SurfaceLayer({
   useEffect(followPresses, []);
   if (asSheet)
     return (
-      <ModalPresence>
+      <ModalPresence onExited={onExited}>
         {shown && (
           <MenuSheetLayer key="menu" onDismiss={onDismiss}>
             <div className={sheet().panel()} lang={reader.lang} dir={reader.direction}>

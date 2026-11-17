@@ -67,9 +67,14 @@ export const modalBackdrop = {
     "fixed inset-0 bg-scrim backdrop-blur-[var(--dialog-blur)] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none max-tablet:hidden",
 };
 
-/** Lets a modal rendered in it leave by its motion before it unmounts: wrap where the modal is rendered or not. */
-export function ModalPresence({ children }: { children: ReactNode }) {
-  return <AnimatePresence>{children}</AnimatePresence>;
+/**
+ * Lets a modal rendered in it leave by its motion before it unmounts: wrap where the modal is rendered or not.
+ * `onExited` runs once one has left.
+ */
+export function ModalPresence({ onExited, children }: { onExited?: (() => void) | undefined; children: ReactNode }) {
+  return (
+    <AnimatePresence {...(onExited === undefined ? {} : { onExitComplete: onExited })}>{children}</AnimatePresence>
+  );
 }
 
 export type ModalLayerProps = {
