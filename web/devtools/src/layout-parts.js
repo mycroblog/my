@@ -51,7 +51,14 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/thread.tsx": ["ThreadReply"],
   "web/design-system/src/drafts.tsx": ["DraftSections", "DraftList"],
   "web/design-system/src/history.tsx": ["VersionList"],
-  "web/design-system/src/composer.tsx": ["AttachmentList", "PollSettings"],
+  "web/design-system/src/composer.tsx": [
+    "AttachmentList",
+    "AttachmentLine",
+    "PollSettings",
+    "ComposerPanel",
+    "ToolWords",
+    "NoticePlace",
+  ],
   "web/design-system/src/suggestions.tsx": ["OptionName", "OptionHandle"],
   "web/design-system/src/viewer.tsx": ["ViewerRoom", "ViewerSide"],
   "web/design-system/src/editor.tsx": ["SuggestPopup", "FieldBox"],
@@ -93,5 +100,6 @@ export const PAGE_FRAMES = {
   "web/design-system/src/dialog.tsx": ["PanelFrame"],
   "web/design-system/src/article-editor.tsx": ["EditorFrame", "ArticlePane", "ModeRow"],
   "web/design-system/src/viewer.tsx": ["ViewerSide"],
+  "web/design-system/src/composer.tsx": ["ComposerPanel", "ToolWords", "NoticePlace"],
   "web/design-system/fixtures/viewport.tsx": ["Page"],
 };

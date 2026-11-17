@@ -190,6 +190,9 @@ const theme = {
     // What a button at the end of a line takes: its glyph and its padding on both sides.
     "icon-button-end": "calc(var(--icon-action) + 2 * var(--icon-button-padding-inline))",
     "composer-thumb": ref("--composer-thumb"),
+    "composer-inset": ref("--composer-inset"),
+    "composer-field-block": ref("--composer-field-block"),
+    "composer-remove-room": ref("--composer-remove-room"),
     "composer-top": ref("--composer-top"),
     "composer-bottom": ref("--composer-bottom"),
     kbd: ref("--kbd-height"),

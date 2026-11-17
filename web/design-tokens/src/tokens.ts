@@ -405,7 +405,8 @@ export const dialog = {
 } as const;
 
 /**
- * The post composer, in rem: the size of an image's thumbnail beside its description; the size and the leading
+ * The post composer, in rem: the size of an image's thumbnail beside its description; the least space inside its
+ * cards, the block padding of a field of text and the room a text keeps for the button that removes it; the size and the leading
  * (unitless) of the text, which keeps `textLines` lines of room while nothing follows it; the space above the dialog
  * from `tablet`, and below it; the width of the line of a poll option's mark, in px; the corner of
  * a mark behind the text (what the server will read, the part over the limit), in px; and the share of the coral in
@@ -414,6 +415,9 @@ export const dialog = {
  */
 export const composer = {
   thumb: 4.5,
+  inset: 0.25,
+  fieldBlock: 0.375,
+  removeRoom: 2,
   textSize: 1,
   textLeading: 1.55,
   textLines: 3,
@@ -734,6 +738,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
     `light-dark(rgb(0 0 0 / ${percent(dialog.scrim.light)}), rgb(0 0 0 / ${percent(dialog.scrim.dark)}))`,
   ],
   ["--composer-thumb", `${composer.thumb}rem`],
+  ["--composer-inset", `${composer.inset}rem`],
+  ["--composer-field-block", `${composer.fieldBlock}rem`],
+  ["--composer-remove-room", `${composer.removeRoom}rem`],
   ["--composer-text-size", `${composer.textSize}rem`],
   ["--composer-text-leading", `${composer.textLeading}`],
   ["--composer-text-lines", `${composer.textLines}`],

@@ -15,13 +15,14 @@
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { Suspense, useId, useRef, type ReactNode } from "react";
+import { Suspense, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { Button as AriaButton, Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
+import { Box, Pin, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { ModalLayer } from "./modal";
@@ -33,18 +34,11 @@ const frame = tv({
       "relative box-border flex flex-col gap-entry bg-surface font-sans text-body text-text outline-hidden",
       "h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))] px-shell-edge pt-entry-line",
     ],
-    head: "flex items-center justify-between gap-entry-caption -me-icon-button-inline",
-    title: "m-0 min-w-0 text-title",
-    headEnd: "inline-flex flex-none items-center",
     body: "flex min-h-0 flex-1 flex-col gap-entry overflow-y-auto",
     end: "relative grid gap-entry-line bg-surface py-entry",
-    row: "flex items-center gap-entry-caption",
     // On the narrowest phones (under 360 px) the glyphs sit closer, and the language names itself by its tag
     // (ToolText), so that the tools, the count and Post keep one line.
-    tools: [
-      "-ms-icon-button-inline flex min-w-0 flex-1 flex-wrap items-center",
-      "max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
-    ],
+    tools: "max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
   },
   variants: {
     // From `tablet` a dialog of the main column's width over the dimmed page, which scrolls with what opens below it;
@@ -64,6 +58,69 @@ const frame = tv({
     room: { true: { panel: "min-h-[24rem]" } },
   },
 });
+
+/**
+ * The frame of the composer, one of the frames of a page: the head (the title, then what ends it), what is written
+ * and at its end what stands over the row and the row of the tools, the count and the action. On a phone it is a screen
+ * as tall as the viewport less the keyboard; from `tablet` a dialog of the main column's width, as tall as what it
+ * holds. A specimen in a page (`layer` off) is as tall as what it holds at every width.
+ */
+function ComposerPanel({
+  phone,
+  layer,
+  room,
+  dir,
+  onKeyDown,
+  title,
+  headEnd,
+  over,
+  tools,
+  count,
+  action,
+  children,
+}: {
+  phone: "screen" | "dialog";
+  layer: boolean;
+  room: boolean;
+  dir: "ltr" | "rtl";
+  onKeyDown: (e: KeyboardEvent<HTMLElement>) => void;
+  title: ReactNode;
+  headEnd: ReactNode;
+  over: ReactNode;
+  tools: ReactNode;
+  count: ReactNode;
+  action: ReactNode;
+  children: ReactNode;
+}) {
+  const s = frame({ dialog: true, layer, room });
+  return (
+    <div
+      className={phone === "dialog" ? `${s.panel()} h-auto rounded-overlay p-dialog shadow-overlay` : s.panel()}
+      dir={dir}
+      onKeyDown={onKeyDown}
+    >
+      <Row align="center" justify="between" gap="entry-caption" bleedEnd="icon-button-inline">
+        {title}
+        <Row as="span" inline rigid align="center">
+          {headEnd}
+        </Row>
+      </Row>
+      <div className={s.body()}>{children}</div>
+      {(tools !== undefined || action !== undefined) && (
+        <div className={s.end()}>
+          {over}
+          <Row align="center" gap="entry-caption">
+            <Row grow wrap align="center" bleedStart="icon-button-inline" className={s.tools()}>
+              {tools}
+            </Row>
+            {count}
+            {action}
+          </Row>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export type ComposerFrameProps = {
   /** The title of what is written: a new post, a reply, a quote. */
@@ -124,15 +181,16 @@ export function ComposerFrame({
   action,
   children,
 }: ComposerFrameProps) {
-  const s = frame({ dialog: true, layer, room: !layer && !fit });
   const leave = (how: () => void) => {
     if (!busy) how();
   };
   const { direction } = useReader(undefined);
   const titleId = useId();
   const panel = (
-    <div
-      className={phone === "dialog" ? `${s.panel()} h-auto rounded-overlay p-dialog shadow-overlay` : s.panel()}
+    <ComposerPanel
+      phone={phone}
+      layer={layer}
+      room={!layer && !fit}
       dir={direction}
       onKeyDown={(e) => {
         // Escape means to leave, but not while an input method composes, where it cancels the composition.
@@ -141,18 +199,19 @@ export function ComposerFrame({
           leave(onClose);
         }
       }}
-    >
-      <div className={s.head()}>
-        {layer ? (
-          <Heading slot="title" className={s.title()}>
+      title={
+        layer ? (
+          <Heading slot="title" className="text-title">
             {title}
           </Heading>
         ) : (
-          <h2 id={titleId} className={s.title()}>
+          <h2 id={titleId} className="text-title">
             {title}
           </h2>
-        )}
-        <span className={s.headEnd()}>
+        )
+      }
+      headEnd={
+        <>
           {headEnd}
           <IconButton
             icon="close"
@@ -162,21 +221,20 @@ export function ComposerFrame({
               leave(onClose);
             }}
           />
-        </span>
-      </div>
-      <div className={s.body()}>{children}</div>
-      {(tools !== undefined || action !== undefined) && (
-        <div className={s.end()}>
+        </>
+      }
+      over={
+        <>
           {note}
           {alert}
-          <div className={s.row()}>
-            <div className={s.tools()}>{tools}</div>
-            {count}
-            {action}
-          </div>
-        </div>
-      )}
-    </div>
+        </>
+      }
+      tools={tools}
+      count={count}
+      action={action}
+    >
+      {children}
+    </ComposerPanel>
   );
   if (!layer)
     return (
@@ -195,7 +253,9 @@ export function ComposerFrame({
       backdrop={phone === "dialog" ? "always" : "tablet"}
       place="screen"
     >
-      <Dialog className="box-border w-full outline-hidden">{panel}</Dialog>
+      <Box as={<Dialog className="outline-hidden" />} full className="box-border">
+        {panel}
+      </Box>
     </ModalLayer>
   );
 }
@@ -215,21 +275,11 @@ export function CharCount({ left, near, label }: { left: number; near: number; l
   );
 }
 
-const text = tv({
-  slots: {
-    field: "grid gap-form-page-field-gap",
-    wrap: "relative grid",
-    // The button at the end of the text's first line (the emoji picker's, ADR-0091 §4), over the text's own room.
-    end: "absolute top-0 end-0 z-10",
-  },
-});
-
 /** The room the text takes while its editor arrives, so that the composer does not jump when it comes. */
 const waiting = tv({
-  base: "min-h-[calc(var(--composer-text-leading)*var(--composer-text-size))]",
   variants: {
-    roomy: { true: "min-h-[calc(var(--composer-text-lines)*var(--composer-text-leading)*var(--composer-text-size))]" },
-    line: { true: "h-control-form min-h-0 min-w-0 flex-1" },
+    roomy: { true: "min-h-composer-room", false: "min-h-composer-line" },
+    line: { true: "h-control-form" },
   },
 });
 
@@ -253,15 +303,18 @@ export function ComposerText({
   end?: ReactNode;
   children: ReactNode;
 }) {
-  const s = text();
   return (
-    <div className={s.field()}>
-      <div className={s.wrap()}>
+    <Stack gap="form-page-field-gap">
+      <Stack anchor>
         <Suspense fallback={<div className={waiting({ roomy })} aria-busy="true" />}>{children}</Suspense>
-        {end !== undefined && <div className={s.end()}>{end}</div>}
-      </div>
+        {end !== undefined && (
+          <Pin top="0" end="0" layer={10}>
+            {end}
+          </Pin>
+        )}
+      </Stack>
       {error && <FieldError id={errorId}>{error}</FieldError>}
-    </div>
+    </Stack>
   );
 }
 
@@ -269,11 +322,8 @@ const warning = tv({
   slots: {
     // The suggestions of its editor open under the band, across its width.
     // As tall as its editor's line also while it has none (an editor that could not be loaded).
-    root: [
-      "relative flex min-h-control-form items-center gap-disclosure-gap rounded-control bg-surface-raised",
-      "ps-disclosure-start",
-    ],
-    glyph: "inline-flex text-muted-text",
+    root: "min-h-control-form rounded-control bg-surface-raised ps-disclosure-start",
+    glyph: "text-muted-text",
   },
 });
 
@@ -293,25 +343,24 @@ export function WarningField({
 }) {
   const s = warning();
   return (
-    <div className={text().field()}>
-      <div className={s.root()}>
-        <span className={s.glyph()}>
+    <Stack gap="form-page-field-gap">
+      <Row anchor align="center" gap="disclosure-gap" className={s.root()}>
+        <Row as="span" inline className={s.glyph()}>
           <Icon name="hidden" place="caption" />
-        </span>
-        <Suspense fallback={<div className={waiting({ line: true })} aria-busy="true" />}>{children}</Suspense>
-      </div>
+        </Row>
+        <Suspense fallback={<Box grow className={waiting({ line: true })} aria-busy="true" />}>{children}</Suspense>
+      </Row>
       {error && <FieldError id={errorId}>{error}</FieldError>}
-    </div>
+    </Stack>
   );
 }
 
 const context = tv({
   slots: {
-    reply: "grid gap-entry-line text-muted-text",
+    reply: "text-muted-text",
     // Muted, also where what people write sets its own color.
-    replyText: "line-clamp-2 overflow-hidden [&_*]:text-muted-text",
-    quote: "relative [&>div>:first-child]:pe-[2rem]",
-    quoteRemove: "absolute end-entry-line top-[0.375rem]",
+    replyText: "[&_*]:text-muted-text",
+    quote: "[&>div>:first-child]:pe-composer-remove-room",
   },
 });
 
@@ -319,11 +368,13 @@ const context = tv({
 export function ComposerReply({ byline, note, children }: { byline: ReactNode; note: string; children: ReactNode }) {
   const s = context();
   return (
-    <div className={s.reply()}>
+    <Stack gap="entry-line" className={s.reply()}>
       {byline}
-      <div className={s.replyText()}>{children}</div>
+      <Box lines={2} className={s.replyText()}>
+        {children}
+      </Box>
       <span className="sr-only">{note}</span>
-    </div>
+    </Stack>
   );
 }
 
@@ -339,39 +390,44 @@ export function ComposerQuote({
 }) {
   const s = context();
   return (
-    <div className={s.quote()}>
+    <Box anchor className={s.quote()}>
       {children}
-      <span className={s.quoteRemove()}>
+      <Pin as="span" top="composer-field-block" end="entry-line">
         <IconButton icon="close" label={removeLabel} onPress={onRemove} />
-      </span>
-    </div>
+      </Pin>
+    </Box>
   );
 }
 
 const attachment = tv({
   slots: {
-    list: "m-0 grid list-none gap-entry p-0",
-    row: "grid grid-cols-[var(--composer-thumb)_minmax(0,1fr)_auto] items-start gap-entry-avatar",
     thumb: "size-composer-thumb rounded-control bg-surface-raised object-cover",
-    placeholder:
-      "inline-flex size-composer-thumb items-center justify-center rounded-control bg-surface-raised text-muted-text",
-    field: "grid gap-entry-line",
+    placeholder: "size-composer-thumb rounded-control bg-surface-raised text-muted-text",
     label: "font-label",
     description: [
-      "box-border min-h-control-form w-full resize-none rounded-control border-0 bg-surface-raised py-[0.375rem]",
+      "box-border min-h-control-form resize-none rounded-control border-0 bg-surface-raised py-composer-field-block",
       "px-control-timeline-inline font-sans text-body text-text outline-hidden [field-sizing:content]",
       "placeholder:text-muted-text focus-visible:shadow-focus",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
-    status: "m-0 flex flex-wrap items-center gap-entry-caption pt-entry-line text-caption text-muted-text",
+    status: "pt-entry-line text-caption text-muted-text",
   },
   variants: { waiting: { true: { thumb: "opacity-disabled" } } },
 });
 
-/** The images of a post, a row each. */
+/** The list of the images of a post, a row each. */
 export function AttachmentList({ children }: { children: ReactNode }) {
-  return <ul className={attachment().list()}>{children}</ul>;
+  return <ul className="m-0 grid list-none gap-entry p-0">{children}</ul>;
+}
+
+/** An image's row: its thumbnail, its description and field, and remove at its end, the middle taking the room left. */
+function AttachmentLine({ children }: { children: ReactNode }) {
+  return (
+    <li className="grid grid-cols-[var(--composer-thumb)_minmax(0,1fr)_auto] items-start gap-entry-avatar">
+      {children}
+    </li>
+  );
 }
 
 export type AttachmentRowProps = {
@@ -415,46 +471,51 @@ export function AttachmentRow({
   const id = useId();
   const missing = error ? { text: error, required: true } : missingNote;
   return (
-    <li className={s.row()}>
+    <AttachmentLine>
       {src === undefined ? (
-        <span className={s.placeholder()}>
+        <Row as="span" inline align="center" justify="center" className={s.placeholder()}>
           <Icon name="attach" place="action" />
-        </span>
+        </Row>
       ) : (
         <img className={s.thumb()} src={src} alt="" />
       )}
-      <div className={s.field()}>
+      <Stack gap="entry-line">
         {state === "ready" ? (
           <>
             <label className={s.label()} htmlFor={id}>
               {descriptionLabel}
             </label>
-            <textarea
-              id={id}
+            <Box
+              as={
+                <textarea
+                  id={id}
+                  rows={2}
+                  value={description}
+                  placeholder={placeholder}
+                  maxLength={1500}
+                  aria-invalid={missing?.required ? true : undefined}
+                  aria-describedby={missing ? `${id}-note` : undefined}
+                  dir="auto"
+                  onChange={(e) => {
+                    onDescription(e.target.value);
+                  }}
+                />
+              }
+              full
               className={s.description()}
-              rows={2}
-              value={description}
-              placeholder={placeholder}
-              maxLength={1500}
-              aria-invalid={missing?.required ? true : undefined}
-              aria-describedby={missing ? `${id}-note` : undefined}
-              dir="auto"
-              onChange={(e) => {
-                onDescription(e.target.value);
-              }}
             />
             {missing &&
               (missing.required ? (
                 <FieldError id={`${id}-note`}>{missing.text}</FieldError>
               ) : (
-                <p id={`${id}-note`} className={s.status()}>
+                <Row as="p" id={`${id}-note`} wrap align="center" gap="entry-caption" className={s.status()}>
                   <Icon name="caution" place="caption" />
                   {missing.text}
-                </p>
+                </Row>
               ))}
           </>
         ) : (
-          <p className={s.status()} role="status">
+          <Row as="p" wrap align="center" gap="entry-caption" className={s.status()} role="status">
             {state === "failed" && <Icon name="error" place="caption" />}
             <span>{status}</span>
             {retry && (
@@ -462,11 +523,11 @@ export function AttachmentRow({
                 {retry.label}
               </Button>
             )}
-          </p>
+          </Row>
         )}
-      </div>
+      </Stack>
       <IconButton icon="close" label={removeLabel} onPress={onRemove} />
-    </li>
+    </AttachmentLine>
   );
 }
 
@@ -512,18 +573,13 @@ export function AttachButton({
 
 const poll = tv({
   slots: {
-    card: "m-0 grid min-w-0 gap-entry-line rounded-control border-0 bg-surface-raised p-embed",
-    head: "-my-[0.25rem] -me-icon-button-inline flex items-center justify-between",
-    caption: "inline-flex items-center gap-entry-caption text-caption text-muted-text",
-    options: "grid rounded-control bg-surface py-[0.25rem] ps-control-timeline-inline pe-[0.25rem]",
-    option: "flex items-center gap-entry-caption",
+    card: "rounded-control border-0 bg-surface-raised p-embed",
+    caption: "text-caption text-muted-text",
+    options: "rounded-control bg-surface py-composer-inset ps-control-timeline-inline pe-composer-inset",
     input: [
-      "h-control-form min-w-0 flex-1 rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
+      "h-control-form rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
       "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
     ],
-    add: "-ms-control-timeline-inline justify-self-start",
-    glyphLabel: "inline-flex items-center gap-entry-caption",
-    settings: "grid justify-items-start gap-entry-line",
   },
 });
 
@@ -541,17 +597,17 @@ export function PollCard({
 }) {
   const s = poll();
   return (
-    <fieldset className={s.card()}>
+    <Stack as="fieldset" shrink gap="entry-line" className={s.card()}>
       <legend className="sr-only">{title}</legend>
-      <div className={s.head()}>
-        <span className={s.caption()}>
+      <Row align="center" justify="between" bleedBlock="composer-inset" bleedEnd="icon-button-inline">
+        <Row as="span" inline align="center" gap="entry-caption" className={s.caption()}>
           <Icon name="poll" place="caption" />
           {title}
-        </span>
+        </Row>
         <IconButton icon="close" label={removeLabel} onPress={onRemove} />
-      </div>
+      </Row>
       {children}
-    </fieldset>
+    </Stack>
   );
 }
 
@@ -565,19 +621,19 @@ export function PollOptions({
 }) {
   const s = poll();
   return (
-    <div className={s.options()}>
+    <Stack className={s.options()}>
       {children}
       {add && (
-        <span className={s.add()}>
+        <Row as="span" bleedStart="control-timeline-inline">
           <Button kind="quiet" size="timeline" onPress={add.onPress}>
-            <span className={s.glyphLabel()}>
+            <Row as="span" inline align="center" gap="entry-caption">
               <Icon name="add" place="action" />
               {add.label}
-            </span>
+            </Row>
           </Button>
-        </span>
+        </Row>
       )}
-    </div>
+    </Stack>
   );
 }
 
@@ -605,24 +661,29 @@ export function PollOption({
   const errorId = useId();
   return (
     <>
-      <div className={s.option()}>
+      <Row align="center" gap="entry-caption">
         {/* How the option will be answered in the post (poll.tsx). */}
         <PollMark multiple={multiple} />
-        <input
+        <Box
+          as={
+            <input
+              value={value}
+              placeholder={label}
+              aria-label={label}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
+              maxLength={maxLength}
+              dir="auto"
+              onChange={(e) => {
+                onChange(e.target.value);
+              }}
+            />
+          }
+          grow
           className={s.input()}
-          value={value}
-          placeholder={label}
-          aria-label={label}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
-          maxLength={maxLength}
-          dir="auto"
-          onChange={(e) => {
-            onChange(e.target.value);
-          }}
         />
         {remove && <IconButton icon="close" label={remove.label} onPress={remove.onPress} />}
-      </div>
+      </Row>
       {error && <FieldError id={errorId}>{error}</FieldError>}
     </>
   );
@@ -630,7 +691,7 @@ export function PollOption({
 
 /** The settings of a poll under its options: how long it runs, and how it counts. */
 export function PollSettings({ children }: { children: ReactNode }) {
-  return <div className={poll().settings()}>{children}</div>;
+  return <div className="grid justify-items-start gap-entry-line">{children}</div>;
 }
 
 /** A value a `ChoiceSelect` offers. */
@@ -642,7 +703,7 @@ export type Choice<T extends string> = {
 
 const select = tv({
   base: [
-    "inline-flex h-control-timeline cursor-pointer items-center gap-entry-caption rounded-control border-0 bg-surface",
+    "h-control-timeline cursor-pointer rounded-control border-0 bg-surface",
     "px-control-timeline-inline font-sans text-body text-text outline-hidden [&>svg]:text-muted-text",
     "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus",
   ],
@@ -674,11 +735,11 @@ export function ChoiceSelect<T extends string>({
       label={label}
       placement="bottom start"
       trigger={
-        <AriaButton className={select()}>
+        <Row as={<AriaButton />} inline align="center" gap="entry-caption" className={select()}>
           <Icon name={icon} place="caption" />
           <span>{value}</span>
           <Icon name="expand" place="caption" />
-        </AriaButton>
+        </Row>
       }
     >
       <MenuGroup
@@ -695,6 +756,19 @@ export function ChoiceSelect<T extends string>({
         ))}
       </MenuGroup>
     </MenuSurface>
+  );
+}
+
+/**
+ * What a tool of the row says: its words, or on the narrowest phones (under 360 px) `short`. One of the frames of a
+ * page: it reads the viewport.
+ */
+function ToolWords({ short, children }: { short: string; children: string }) {
+  return (
+    <>
+      <span className="max-[22.5rem]:hidden">{children}</span>
+      <span className="hidden max-[22.5rem]:inline">{short}</span>
+    </>
   );
 }
 
@@ -722,14 +796,7 @@ export function ToolText({
       {/* Its name is the label alone, read in place of its words, which may be the short tag. */}
       <span className="sr-only">{label}</span>
       <span className="text-caption font-label text-muted-text" lang={lang} aria-hidden="true">
-        {short === undefined ? (
-          children
-        ) : (
-          <>
-            <span className="max-[22.5rem]:hidden">{children}</span>
-            <span className="hidden max-[22.5rem]:inline">{short}</span>
-          </>
-        )}
+        {short === undefined ? children : <ToolWords short={short}>{children}</ToolWords>}
       </span>
     </Button>
   );
@@ -739,14 +806,35 @@ const notice = tv({
   base: [
     "fixed inset-x-shell-edge bottom-[calc(var(--shell-bar)+var(--shell-edge)+env(safe-area-inset-bottom))] z-60",
     "box-border flex w-max max-w-[calc(100%-3*var(--shell-edge)-var(--shell-bar))] items-center gap-entry-avatar",
-    "rounded-overlay bg-text py-[0.25rem] ps-control-timeline-inline pe-[0.25rem] font-sans text-body text-surface",
-    "shadow-overlay tablet:inset-x-0 tablet:bottom-shell-end tablet:mx-auto tablet:max-w-[calc(100%-2*var(--shell-edge))]",
+    "rounded-overlay bg-text py-composer-inset ps-control-timeline-inline pe-composer-inset font-sans text-body",
+    "text-surface shadow-overlay tablet:inset-x-0 tablet:bottom-shell-end tablet:mx-auto",
+    "tablet:max-w-[calc(100%-2*var(--shell-edge))]",
   ],
   variants: { inline: { true: "static mx-0" }, bare: { true: "pe-control-timeline-inline" } },
 });
 
-/** The words of a notice without an action, as tall as an action, so that it keeps the height of one with. */
-const noticeText = tv({ base: "flex min-h-control-timeline items-center" });
+/**
+ * Where a notice stands: over the page at the bottom, at the start on a phone, clear of the action floating at the end,
+ * and in the middle of the viewport from `tablet`; or in the flow, as a specimen (`inline`). One of the frames of a
+ * page: it reads the viewport.
+ */
+function NoticePlace({
+  inline,
+  bare,
+  dir,
+  children,
+}: {
+  inline: boolean;
+  bare: boolean;
+  dir: "ltr" | "rtl";
+  children: ReactNode;
+}) {
+  return (
+    <div className={notice({ inline, bare })} role="status" dir={dir}>
+      {children}
+    </div>
+  );
+}
 
 const noticeAction = tv({
   base: [
@@ -775,13 +863,19 @@ export function UndoNotice({
   const { direction } = useReader(undefined);
   const acts = action !== undefined && onAction !== undefined;
   return (
-    <div className={notice({ inline, bare: !acts })} role="status" dir={direction}>
-      <span className={acts ? undefined : noticeText()}>{children}</span>
+    <NoticePlace inline={inline} bare={!acts} dir={direction}>
+      {acts ? (
+        <span>{children}</span>
+      ) : (
+        <Row as="span" align="center" className="min-h-control-timeline">
+          {children}
+        </Row>
+      )}
       {acts && (
         <button type="button" className={noticeAction()} onClick={onAction}>
           {action}
         </button>
       )}
-    </div>
+    </NoticePlace>
   );
 }

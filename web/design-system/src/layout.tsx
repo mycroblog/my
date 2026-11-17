@@ -212,6 +212,7 @@ const BLEED_INLINE = {
 } as const;
 /** Past its line above and below: a control taller than the line it stands on leaves the line its height. */
 const BLEED_BLOCK = {
+  "composer-inset": "-my-composer-inset",
   "icon-button-inline": "-my-icon-button-inline",
   "control-timeline-line": "-my-control-timeline-line",
   "target-line": "-my-target-line",
@@ -606,6 +607,7 @@ export function Layers({ center, ...rest }: LayersProps) {
 const TOP = {
   "0": "top-0",
   half: "top-1/2",
+  "composer-field-block": "top-composer-field-block",
   "media-badge": "top-media-badge",
   "shell-gap": "top-shell-gap",
 } as const;

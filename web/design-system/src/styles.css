@@ -20,6 +20,11 @@
     margin: 0;
   }
 
+  /* A fieldset's margin is the browser's too. */
+  :where(fieldset) {
+    margin: 0;
+  }
+
   /*
    * A word longer than its line breaks inside its box, in place of running past it and widening the page: the layout
    * parts let a box be narrower than its words (layout.tsx), and this keeps the words in it.
