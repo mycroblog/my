@@ -42,9 +42,7 @@ const also: Record<string, (page: Page) => Promise<void>> = {
 
 // Defect: in a row inside a line of text, the glyph beside a word no line holds gives way below its own width (a box
 // 2.5 px wide for a glyph of 12), and is painted over the first letters of the word.
-const defects: Record<string, string> = {
-  "row-inline-long-word": "the glyph is squeezed under its own width and painted over the word beside it",
-};
+const defects: Record<string, string> = {};
 
 const stories = [
   "row-long-word",

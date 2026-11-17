@@ -28,7 +28,8 @@
 // What a part does unasked is what cannot push a page past the viewport, so that no composite overflows by leaving a
 // prop out. Every child of a `Row`, a `Stack`, a `Grid` or `Layers` may be narrower than what it holds, whatever
 // element it is but a picture, and so may words given to the part with no element around them; a word longer than
-// its line breaks inside its box (styles.css, for every text):
+// its line breaks inside its box (styles.css, for every text), and a child of words alone gives way no further than
+// a letter, so that a glyph beside an overlong word keeps its width:
 // the child that must keep its size says so (`rigid`), and that is for what has a size of its own (an avatar, a
 // button, a tab), never for a text someone wrote; a short label of the interface that must keep its words whole
 // beside a text that wraps says `words`. Beside a child that takes the room left (`grow`), not one as wide
@@ -524,7 +525,7 @@ function part(layoutClassName: string, props: PartProps, style?: Record<string, 
   if (props.grow) c += ` ${GROW[props.grow === true ? "share" : props.grow]}`;
   if (props.shrink) c += props.shrink === "block" ? " min-h-0" : " min-w-0";
   if (props.rigid) c += " flex-none";
-  if (props.words) c += " min-w-auto";
+  if (props.words) c += " min-w-auto wrap-break-word";
   if (props.self) c += ` ${SELF[props.self]}`;
   if (props.push) c += ` ${PUSH[props.push]}`;
   if (props.full) c += ` ${FULL[props.full === true ? "inline" : props.full]}`;
@@ -628,23 +629,26 @@ function flow(className: string, { align, justify, gap }: Flow) {
 }
 
 /**
- * What a part that places children side by side gives each of them unasked: it may be narrower than what it holds.
- * A picture (an image, a glyph, a video, a canvas) is no box of text: it keeps the size it has, which squeezing would
- * distort. Without specificity, so that a child's own least width is heard. `BARE` goes with it.
+ * What a part that places children side by side gives each of them unasked. A child that holds elements may be
+ * narrower than what it holds, and so may a field (an input, a text area, a select). A child that holds words alone,
+ * or a glyph, gives way by breaking its words and never below a letter (`BARE`), so that a short one beside an
+ * overlong one is not squeezed under its own glyph; a picture (an image, a glyph drawn, a video, a canvas) keeps the
+ * size it has, which squeezing would distort. Without specificity, so that a child's own least width is heard.
  */
-const SHRINKS = "[:where(&)>:where(:not(img,svg,video,canvas,picture))]:min-w-0";
+const SHRINKS = "[:where(&)>:where(:has(*):not(svg,picture,video,canvas),input,textarea,select)]:min-w-0";
 
 /** A child that does not fill what holds it is no wider than it, its padding counted. `BARE` goes with it. */
 const FITS = "[:where(&)>*]:box-border [:where(&)>*]:max-w-full";
 
 /**
- * The same for words given to the part with no element around them (a string as its child): they are a box no rule
- * of a child reaches, as wide at least as its longest word. Where a word may break is the one thing such a box takes
- * from the part, so the part lets its own words break anywhere, which makes that least width a letter's, and gives
- * each child back the page's rule (a word breaks only where it runs past its box, styles.css), without specificity:
- * nothing changes for a child, nor for a child that says where its own words break.
+ * Words given to the part with no element around them (a string as its child) are a box no rule of a child reaches,
+ * as wide at least as its longest word. Where a word may break is the one thing such a box takes from the part, so
+ * the part lets its words break anywhere, which makes that least width a letter's. A child that holds words alone
+ * takes the same from the part, and gives way no further than a letter; a child that holds elements gets the page's
+ * rule back (a word breaks only where it runs past its box, styles.css), without specificity: nothing changes inside
+ * it, nor for a child that says where its own words break (`words`, which keeps them whole).
  */
-const BARE = "wrap-anywhere [:where(&)>*]:wrap-break-word";
+const BARE = "wrap-anywhere [:where(&)>:where(:has(*))]:wrap-break-word";
 
 /** How far each child of a row lies over the one before it: faces in a strip. */
 const OVERLAP = {
