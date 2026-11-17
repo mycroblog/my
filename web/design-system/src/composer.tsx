@@ -26,7 +26,7 @@ import { Box, Pin, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { ModalLayer } from "./modal";
-import { PollMark } from "./poll";
+import { ChoiceMark } from "./choice";
 
 const frame = tv({
   slots: {
@@ -662,8 +662,8 @@ export function PollOption({
   return (
     <>
       <Row align="center" gap="entry-caption">
-        {/* How the option will be answered in the post (poll.tsx). */}
-        <PollMark multiple={multiple} />
+        {/* How the option will be answered in the post. */}
+        <ChoiceMark multiple={multiple} />
         <Box
           as={
             <input

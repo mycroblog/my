@@ -220,15 +220,7 @@ export {
   type MenuPlacement,
   type MenuSurfaceProps,
 } from "./menu";
-export {
-  PollBox,
-  PollChoices,
-  PollFoot,
-  PollMark,
-  PollResults,
-  type PollChoiceItem,
-  type PollResultItem,
-} from "./poll";
+export { ChoiceList, ChoiceMark, ShareBar, type ChoiceItem } from "./choice";
 export { Box, Row, Spoken, Stack } from "./layout";
 export {
   Badge,

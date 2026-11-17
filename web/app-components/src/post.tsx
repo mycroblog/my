@@ -44,10 +44,6 @@ import {
   MenuGroup,
   MenuItem,
   ModalPresence,
-  PollBox,
-  PollChoices,
-  PollFoot,
-  PollResults,
   preloadEmojiPicker,
   Stack,
   Stamp,
@@ -64,6 +60,7 @@ import { AccountName as Name, handleOf, nameOf } from "./account";
 import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
+import { PollBox, PollChoices, PollFoot, PollResults } from "./poll";
 import { EmojiText, excerptHtml, PostContent } from "./post-content";
 import type { PostArticle, PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
 
@@ -1074,7 +1071,9 @@ export function Post({
             }
             icon="hidden"
           >
-            <Stack gap="entry" lang={textLang}>{content}</Stack>
+            <Stack gap="entry" lang={textLang}>
+              {content}
+            </Stack>
           </Disclosure>
         ) : (
           content

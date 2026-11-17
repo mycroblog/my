@@ -7,7 +7,8 @@ import { expect, test } from "bun:test";
 import { isInaccessible, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { PollBox, PollChoices, PollFoot, PollMark, PollResults, type PollResultItem } from "./poll";
+import { ChoiceMark as PollMark } from "@my/design-system";
+import { PollBox, PollChoices, PollFoot, PollResults, type PollResultItem } from "./poll";
 
 const none = () => undefined;
 
