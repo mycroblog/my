@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/identity"
@@ -78,6 +79,9 @@ func Start(t testing.TB, opts Options) *Server {
 	}
 	app, err := platform.NewApp(context.Background(), cfg, platform.AppOptions{
 		Logger: logger, Version: "0.0.0-test", ClientAPIAccountLimit: opts.AccountLimit,
+		// No web client, whatever the checkout embeds: these tests drive the API, and
+		// `scripts/task.sh web:build` may be writing the embedded build while they compile.
+		WebBuild: fstest.MapFS{},
 	})
 	if err != nil {
 		t.Fatalf("platformtest: NewApp: %v", err)
