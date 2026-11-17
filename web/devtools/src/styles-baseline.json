@@ -6,7 +6,6 @@
     "web/design-system/src/motion.tsx": {"Shared": 1},
     "web/design-system/src/profile.tsx": {"fields.field": 1, "fields.root": 3, "fields.value": 1, "head.actions": 5, "head.avatar": 2, "head.banner": 6, "head.handle": 5, "head.image": 2, "head.name": 5, "head.names": 2, "head.root": 4, "head.row": 4, "meta.root": 5, "note.box": 1, "note.editor": 2, "note.glyph": 4, "note.line": 4, "note.text": 2, "tags.heading": 1, "tags.list": 4, "tags.root": 2, "tags.tag": 3},
     "web/design-system/src/prompt.tsx": {"prompt.actions": 4, "prompt.body": 4, "prompt.glyph": 4, "prompt.note": 2, "prompt.root": 1, "prompt.row": 3, "prompt.text": 1},
-    "web/design-system/src/search-field.tsx": {"field.box": 4, "field.end": 6, "field.glyph": 3, "field.hint": 1, "field.input": 3, "field.root": 2},
     "web/design-system/src/thread.tsx": {"details.glyph": 4, "details.root": 3, "focus.base": 4}
   },
   "viewport-breakpoints": {

@@ -117,6 +117,8 @@ const theme = {
     "disclosure-start": ref("--disclosure-padding-start"),
     // Above and below the summary's text, so that its first line is level with the toggle's label.
     "disclosure-text": "calc((var(--control-timeline-height) - 1lh) / 2)",
+    // The search field's input, past its glyph at the start.
+    "search-field-start": "calc(var(--control-timeline-padding-inline) * 2 + var(--icon-action))",
     "content-paragraph": ref("--content-paragraph-gap"),
     "content-indent": ref("--content-indent"),
     "content-quote": ref("--content-quote-indent"),
