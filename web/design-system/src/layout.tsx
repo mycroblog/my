@@ -27,7 +27,8 @@
 //
 // What a part does unasked is what cannot push a page past the viewport, so that no composite overflows by leaving a
 // prop out. Every child of a `Row`, a `Stack`, a `Grid` or `Layers` may be narrower than what it holds, whatever
-// element it is but a picture, and a word longer than its line breaks inside its box (styles.css, for every text):
+// element it is but a picture, and so may words given to the part with no element around them; a word longer than
+// its line breaks inside its box (styles.css, for every text):
 // the child that must keep its size says so (`rigid`), and that is for what has a size of its own (an avatar, a
 // button, a tab), never for a text someone wrote; a short label of the interface that must keep its words whole
 // beside a text that wraps says `words`. Beside a child that takes the room left (`grow`), not one as wide
@@ -631,12 +632,21 @@ function flow(className: string, { align, justify, gap }: Flow) {
 /**
  * What a part that places children side by side gives each of them unasked: it may be narrower than what it holds.
  * A picture (an image, a glyph, a video, a canvas) is no box of text: it keeps the size it has, which squeezing would
- * distort. Without specificity, so that a child's own least width is heard.
+ * distort. Without specificity, so that a child's own least width is heard. `BARE` goes with it.
  */
 const SHRINKS = "[:where(&)>:where(:not(img,svg,video,canvas,picture))]:min-w-0";
 
-/** A child that does not fill what holds it is no wider than it, its padding counted. */
+/** A child that does not fill what holds it is no wider than it, its padding counted. `BARE` goes with it. */
 const FITS = "[:where(&)>*]:box-border [:where(&)>*]:max-w-full";
+
+/**
+ * The same for words given to the part with no element around them (a string as its child): they are a box no rule
+ * of a child reaches, as wide at least as its longest word. Where a word may break is the one thing such a box takes
+ * from the part, so the part lets its own words break anywhere, which makes that least width a letter's, and gives
+ * each child back the page's rule (a word breaks only where it runs past its box, styles.css), without specificity:
+ * nothing changes for a child, nor for a child that says where its own words break.
+ */
+const BARE = "wrap-anywhere [:where(&)>*]:wrap-break-word";
 
 /** How far each child of a row lies over the one before it: faces in a strip. */
 const OVERLAP = {
@@ -673,7 +683,7 @@ export function Row({ inline, wrap, align, justify, gap, gapX, gapY, overlap, ev
     gap,
   });
   // A box inside a line is as wide as what it holds: no wider than the line, its padding counted.
-  c += inline ? ` box-border max-w-full ${SHRINKS}` : ` ${SHRINKS}`;
+  c += inline ? ` box-border max-w-full ${SHRINKS} ${BARE}` : ` ${SHRINKS} ${BARE}`;
   if (gapX) c += ` ${GAP_X[gapX]}`;
   if (gapY) c += ` ${GAP_Y[gapY]}`;
   if (overlap) c += ` ${OVERLAP[overlap]}`;
@@ -694,7 +704,7 @@ export type ColumnProps = PartProps & Flow;
 export function Column({ align, justify, gap, ...rest }: ColumnProps) {
   // Across a column a child is as wide as the column, or, where it stands at one side of it, no wider.
   const c = flow("flex flex-col", { align, justify, gap });
-  return part(align === undefined || align === "stretch" ? c : `${c} ${FITS}`, rest);
+  return part(align === undefined || align === "stretch" ? c : `${c} ${FITS} ${BARE}`, rest);
 }
 
 const CONTENT = { start: "content-start", center: "content-center" } as const;
@@ -713,7 +723,7 @@ export type StackProps = PartProps & {
 export function Stack({ gap, justify, pack, ...rest }: StackProps) {
   let c = "grid grid-cols-[minmax(0,1fr)]";
   if (gap) c += ` ${GAP[gap]}`;
-  if (justify) c += ` ${JUSTIFY_ITEMS[justify]} ${FITS}`;
+  if (justify) c += ` ${JUSTIFY_ITEMS[justify]} ${FITS} ${BARE}`;
   if (pack) c += ` ${CONTENT[pack]}`;
   return part(c, rest);
 }
@@ -764,7 +774,7 @@ export type LayersProps = PartProps & {
  */
 export function Layers({ center, ...rest }: LayersProps) {
   const cell = "grid grid-cols-[minmax(0,1fr)] [&>*]:[grid-area:1/1]";
-  return part(center ? `${cell} place-items-center ${FITS}` : cell, rest);
+  return part(center ? `${cell} place-items-center ${FITS} ${BARE}` : cell, rest);
 }
 
 /** How far from an edge a pinned or a sticky box is held: on it, or a token of the theme's spacing away. */

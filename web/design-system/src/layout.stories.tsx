@@ -215,6 +215,21 @@ export const RowLongWord: Story = {
   ),
 };
 
+/** Bare words given to a row, with no element around them, give way and break as a child does. */
+export const RowBareLongWord: Story = {
+  name: "Row, a long word with no element around it",
+  render: () => (
+    <div style={frame}>
+      <Row align="start" gap="entry-caption">
+        {word}
+        <Box rigid>
+          <Block style={quiet}>End</Block>
+        </Box>
+      </Row>
+    </div>
+  ),
+};
+
 /** A short label that keeps its words whole beside a text that wraps: the text gives way first. */
 export const RowWords: Story = {
   name: "Row, a label's words kept whole",
