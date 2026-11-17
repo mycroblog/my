@@ -798,8 +798,8 @@ jobs:
 
   layout:
     # The tests in a browser on the built catalog (ADR-0171 §1, §4), with the E2E tests' runner and no server, when
-    # the stories context changes: the layout tests of the design system's layout parts and overlays, within their 60
-    # seconds (§7, the run's limit in web/e2e/catalog/playwright.config.ts), and the browser tests of the parts.
+    # the stories context changes: the layout tests of the design system's layout parts and overlays, and the browser
+    # tests of the parts.
     # Chromium comes from Playwright's CLI, run on Bun.
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.stories == 'true'

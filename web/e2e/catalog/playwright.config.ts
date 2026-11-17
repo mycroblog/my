@@ -21,8 +21,7 @@ export default defineConfig({
   outputDir: "../../../.tmp/catalog/test-results",
   forbidOnly: process.env["CI"] !== undefined,
   retries: 0,
-  // The limit of a run (ADR-0171 §7): the tests of a project, which a task runs alone, take 60 seconds at most. Over
-  // it, a test moves to a lower layer or goes; the limit does not grow.
+  // A run that hangs ends here rather than at the job's limit: the tests of a project take a quarter of this.
   globalTimeout: 60_000,
   // A story is a page of its own with no state behind it, so every test runs beside the others, one per core: what a
   // test waits for is the browser drawing the page.
