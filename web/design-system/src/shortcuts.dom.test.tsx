@@ -11,7 +11,7 @@ import { I18nProvider } from "react-aria-components";
 import { IconButton } from "./icon-button";
 import type { ListedGroup } from "./keys";
 import { MenuButton, MenuGroup, MenuItem } from "./menu";
-import { ActionScope, ShortcutList, ShortcutProvider, useAction } from "./shortcuts";
+import { ActionScope, HeardShortcuts, ShortcutList, ShortcutProvider, useAction } from "./shortcuts";
 
 const keymap = {
   "shortcuts.help": { keys: ["?"] },
@@ -157,6 +157,47 @@ test("a focus action runs only while the focus is inside what it acts on, and on
   await user.keyboard("r");
 
   expect(ran).toEqual(["reply First post", "reply First post", "reply Second post"]);
+});
+
+/** An action of the compose key that does nothing: it returns false. */
+function Declining({ ran }: { ran: Ran }) {
+  useAction(
+    "compose.open",
+    () => {
+      ran.push("compose, declined");
+      return false;
+    },
+    { scope: "screen", label: "New post" },
+  );
+  return null;
+}
+
+test("what is told of the actions that ran inside HeardShortcuts is those that ran on a key and did something, not those around it", async () => {
+  const user = userEvent.setup();
+  const ran: Ran = [];
+  const heard: string[] = [];
+  render(
+    <ShortcutProvider keymap={keymap} mac={false}>
+      <HeardShortcuts onAct={() => heard.push("heard")}>
+        <Post name="First post" ran={ran} />
+        <Declining ran={ran} />
+      </HeardShortcuts>
+      <Others ran={ran} />
+    </ShortcutProvider>,
+  );
+  await user.tab();
+
+  // A focus action declared inside, run on its key.
+  await user.keyboard("r");
+  expect(heard).toEqual(["heard"]);
+  // Declared inside, but it did nothing.
+  await user.keyboard("n");
+  expect(ran).toContain("compose, declined");
+  expect(heard).toEqual(["heard"]);
+  // Declared around, though it runs and does something.
+  await user.keyboard("{Control>}s{/Control}");
+  expect(ran).toContain("send");
+  expect(heard).toEqual(["heard"]);
 });
 
 test("in a text field a key types, and only an action the keymap allows there runs", async () => {

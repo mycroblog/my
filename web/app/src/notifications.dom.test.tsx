@@ -30,6 +30,16 @@ test("a notification's line leads to what it tells of, where the screen's headin
   expect(app.title()).toBe("Notifications");
 });
 
+test("a visitor at the address a push opens is asked to sign in, and the link comes back to that address", async () => {
+  const path = "/notifications/01890a5d-ac96-774b-bcce-b302099a8057";
+  await renderApp(path, { visitor: true });
+
+  const link = await within(screen.getByRole("main")).findByRole("link", { name: "Sign in" });
+  const href = new URL(link.getAttribute("href") ?? "", "http://app.test");
+  expect(href.pathname).toBe("/login");
+  expect(href.searchParams.get("return_to")).toBe(path);
+});
+
 test("a visitor at the notifications is asked to sign in, in their language", async () => {
   await renderApp("/notifications", { visitor: true, locale: "ja" });
 
@@ -56,6 +66,7 @@ async function inbox(options: AppOptions = {}) {
 
 /** The rows of the scenario's notifications that carry something to press: each is found in the feed it is in. */
 const rows = {
+  follow: (feed: HTMLElement) => within(feed).getByRole("article", { name: "Marco followed you" }),
   boost: (feed: HTMLElement) => within(feed).getByRole("article", { name: "Hana 花 boosted your post" }),
   /** Yuki's mention of sam: a post with its reply, boost, favourite, react and more. */
   mention: (feed: HTMLElement) => {
@@ -136,6 +147,38 @@ for (const [key, asks] of [
     await app.user.keyboard(key);
     await becomesRead(() => rows.mention(feed()), 10);
   });
+}
+
+test("the key m on the focused notification opens its More menu, and reads it", async () => {
+  const { app, feed } = await inbox(everything);
+  focus(rows.mention(feed()));
+
+  await app.user.keyboard("m");
+
+  expect(await screen.findByRole("menu", { name: "More" })).toBeDefined();
+  await becomesRead(() => rows.mention(feed()), 10);
+});
+
+// The keys of what is not the notification's own do not read it: a new post (n) and the help (?), also on a
+// notification drawn as one line, which declares no shortcut of its own.
+
+for (const [key, opens, dialog] of [
+  ["n", "the composer", "New post"],
+  ["?", "the shortcuts' help", /shortcuts/i],
+] as const) {
+  for (const row of ["mention", "follow"] as const) {
+    test(`the key ${key} on the focused ${row === "mention" ? "mention" : "follow"} opens ${opens}, and does not read it`, async () => {
+      const { app, feed, marker } = await inbox(everything);
+      const focused = rows[row](feed());
+      focus(focused);
+
+      await app.user.keyboard(key);
+
+      expect(await screen.findByRole("dialog", { name: dialog })).toBeDefined();
+      staysUnread(focused, 11);
+      expect(marker.seen).toHaveLength(0);
+    });
+  }
 }
 
 test("moving to the next and the previous notification does not read either", async () => {
