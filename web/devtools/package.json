@@ -14,7 +14,7 @@
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",
-    "test": "bun test"
+    "test": "bun test --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && bun src/dom-tests.ts happy-dom && bun src/dom-tests.ts jsdom"
   },
   "dependencies": {
     "magic-string": "1.4.5"
