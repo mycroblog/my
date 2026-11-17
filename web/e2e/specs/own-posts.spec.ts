@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A person deletes, redrafts and edits their own post from its more menu, reads its edit history, and copies its link;
-// the menu offers each reader what they may do to a post.
+// the menu offers each reader what they may do to a post, the thread's mute to one with an account.
 
 import { homeTimeline, Landing, localTimeline, Notice, SignIn, Thread } from "./screens";
 import { expect, test } from "./test";
@@ -72,7 +72,7 @@ test("Copy link copies the post's address and says so", async ({ page, context, 
 });
 
 test.describe("the more menu", () => {
-  test("of one's own post: its link, sharing, the bookmark, edit, redraft and delete", async ({
+  test("of one's own post: its link, sharing, the bookmark, the thread's mute, edit, redraft and delete", async ({
     page,
     signIn,
     fresh,
@@ -81,7 +81,15 @@ test.describe("the more menu", () => {
     const { text } = await fresh.post(writer, { text: "A post of one's own." });
     await signIn(writer);
     const items = await homeTimeline(page).post(writer.displayName, text).more();
-    await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Edit", "Delete and redraft…", "Delete…"]);
+    await expect(items).toHaveText([
+      "Copy link",
+      "Share",
+      "Bookmark",
+      "Mute thread",
+      "Edit",
+      "Delete and redraft…",
+      "Delete…",
+    ]);
   });
 
   test("of one's own post with a poll: no edit, which the server refuses", async ({ page, signIn, fresh }) => {
@@ -92,10 +100,10 @@ test.describe("the more menu", () => {
     });
     await signIn(writer);
     const items = await homeTimeline(page).post(writer.displayName, text).more();
-    await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Delete and redraft…", "Delete…"]);
+    await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Mute thread", "Delete and redraft…", "Delete…"]);
   });
 
-  test("of another's post: its link, sharing and the bookmark, then muting and blocking its author", async ({
+  test("of another's post: its link, sharing, the bookmark and the thread's mute, then muting and blocking its author", async ({
     page,
     signIn,
     fresh,
@@ -105,7 +113,7 @@ test.describe("the more menu", () => {
     const { text } = await fresh.post(author, { text: "A post of someone else's." });
     await signIn(await fresh.person({ follows: [author] }));
     const items = await homeTimeline(page).post(author.displayName, text).more();
-    await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Mute", "Block…"]);
+    await expect(items).toHaveText(["Copy link", "Share", "Bookmark", "Mute thread", "Mute", "Block…"]);
   });
 
   test("of a visitor: the link and sharing work, and the bookmark leads to the sign-in", async ({ page, fresh }) => {
