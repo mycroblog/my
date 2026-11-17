@@ -158,6 +158,8 @@ export type PostProps = {
    * closed by default.
    */
   defaultViewing?: number | undefined;
+  /** Its more menu is open at first, before any press; closed by default. */
+  defaultMenuOpen?: boolean | undefined;
 };
 
 /**
@@ -825,6 +827,7 @@ function Actions({
   act,
   picker,
   authorMenu,
+  defaultMenuOpen,
 }: {
   status: PostStatus;
   own: boolean;
@@ -833,6 +836,7 @@ function Actions({
   act: Act;
   picker: PostPicker | undefined;
   authorMenu: ReactNode;
+  defaultMenuOpen: boolean;
 }) {
   const on = (type: "reply" | "boost" | "quote" | "favourite" | "react") => () => {
     act({ type, id: status.id });
@@ -844,7 +848,7 @@ function Actions({
     quote: status.permissions?.quote === "pending",
   };
   const handle = `@${status.account.acct}`;
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(defaultMenuOpen);
   // The keys of the focused post: reply, boost (or take it back) and favourite at once, and more opens its menu.
   // The help lists them once for every post, under the post's group.
   const keyed = (label: string) => ({ scope: "focus" as const, label, groupLabel: t("post.shortcuts") });
@@ -932,6 +936,7 @@ export function Post({
   authorMenu,
   defaultShown = false,
   defaultViewing,
+  defaultMenuOpen = false,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -1114,6 +1119,7 @@ export function Post({
         act={act}
         picker={signIn === undefined ? picker : undefined}
         authorMenu={authorMenu}
+        defaultMenuOpen={defaultMenuOpen}
       />
       {after}
       {viewer}

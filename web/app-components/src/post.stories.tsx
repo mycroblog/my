@@ -18,7 +18,7 @@ import { Preview, PreviewExpanded, type PreviewState } from "@my/design-system/p
 import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
 import { breakpoint, rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { statusPath } from "./paths";
 import type { PostProps, TranslationFailure } from "./post";
 import { mediaPosts, posts, translatedWhole, type TimelinePost } from "./post.samples";
@@ -251,7 +251,7 @@ function Shown({
   translationAs?: Translation;
   votingAt?: readonly number[];
   open?: SampleOpen | undefined;
-} & Pick<PostProps, "cardSize" | "defaultViewing">) {
+} & Pick<PostProps, "cardSize" | "defaultViewing" | "defaultMenuOpen">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -340,24 +340,6 @@ function Reacting({ post }: { post: TimelinePost }) {
   );
 }
 
-/** A sample post with its more menu open, as a pointer opens it: its last button (more) pressed once mounted. */
-function MenuOpen({ post }: { post: TimelinePost }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const buttons = ref.current?.querySelectorAll<HTMLElement>("article button[aria-haspopup]");
-    const more = buttons?.[buttons.length - 1];
-    if (more === undefined) return;
-    const at = { bubbles: true, cancelable: true, pointerType: "mouse", pointerId: 1, button: 0, isPrimary: true };
-    more.dispatchEvent(new PointerEvent("pointerdown", at));
-    more.dispatchEvent(new PointerEvent("pointerup", at));
-    more.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 }));
-  }, []);
-  return (
-    <div ref={ref}>
-      <Shown post={post} />
-    </div>
-  );
-}
 /** A post in the other language than the reader's that translates into theirs, without images. */
 function foreignIn(lang: "en" | "ja"): TimelinePost {
   const foreign = posts.find((p) => p.lang !== lang && p.translation?.[lang] !== undefined && p.media === undefined);
@@ -583,9 +565,9 @@ export const FocusVisible: Story = {
   render: () => <Shown post={byId("alice-reply")} state="focus-visible" />,
 };
 /** The more menu of the reader's own post: its link and sharing, the bookmark, edit, then delete and redraft apart. */
-export const OwnMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("own")} /> };
+export const OwnMenu: Story = { ...fixed, render: () => <Shown post={byId("own")} defaultMenuOpen /> };
 /** The more menu of another's post from another server: its link, its original page, sharing, the bookmark. */
-export const OthersMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("lena-quiet")} /> };
+export const OthersMenu: Story = { ...fixed, render: () => <Shown post={byId("lena-quiet")} defaultMenuOpen /> };
 /** The confirmation of Delete…, over the post. */
 export const DeleteConfirmation: Story = { ...fixed, render: () => <EditedOwn open="delete" /> };
 /** The confirmation of Delete and redraft…, over the post. */
@@ -593,7 +575,7 @@ export const RedraftConfirmation: Story = { ...fixed, render: () => <EditedOwn o
 /** The confirmation of Delete and redraft… of the reader's post with a poll, whose votes it loses. */
 export const RedraftPollConfirmation: Story = { ...fixed, render: () => <Shown post={ownPoll} open="redraft" /> };
 /** The more menu of the reader's post with a poll: no edit, which the server refuses for a poll. */
-export const OwnPollMenu: Story = { ...fixed, render: () => <MenuOpen post={ownPoll} /> };
+export const OwnPollMenu: Story = { ...fixed, render: () => <Shown post={ownPoll} defaultMenuOpen /> };
 /** Edited posts, one's own and another's, "edited" after their time, beside one never edited. */
 export const Edited: Story = { ...fixed, render: () => <EditedPosts /> };
 /**
