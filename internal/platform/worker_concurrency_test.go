@@ -46,7 +46,8 @@ func TestWorkerRunsRealJobsAtOnce(t *testing.T) {
 		env  func(t *testing.T) map[string]string
 	}{
 		{"sqlite", func(t *testing.T) map[string]string {
-			return map[string]string{"MY_DATABASE_URL": newDatabase(t, true)}
+			// The slots stay below the pool's maximum, whose default follows the machine's processors.
+			return map[string]string{"MY_DATABASE_URL": newDatabase(t, true) + "?pool_max_conns=16"}
 		}},
 		{"postgres", func(t *testing.T) map[string]string {
 			return map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 16)}
