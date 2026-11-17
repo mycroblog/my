@@ -543,8 +543,6 @@ export const PermissionsByKind: Story = shows("permissions-kinds");
 export const PermissionOfAKind: Story = shows("permissions-kind");
 /** Replying to a post whose author approves the reader's replies: a line over the row says so. */
 export const ReplyWaits: Story = shows("reply-waits");
-/** The same, to look at at the minimum width, where the line over the row wraps. */
-export const ReplyWaitsMinimumWidth: Story = shows("reply-waits");
 export const Direct: Story = shows("visibility-direct");
 export const ContentWarning: Story = shows("cw");
 /**
@@ -552,10 +550,8 @@ export const ContentWarning: Story = shows("cw");
  * the content warning, its custom emoji alone.
  */
 export const Marks: Story = shows("marks");
-export const MarksRightToLeft: Story = shows("marks");
 /** `@m` typed: the accounts the server found, the followed first, under the caret's line, the first active. */
 export const SuggestAccounts: Story = { ...shows("suggest-account"), play: suggest };
-export const SuggestAccountsRightToLeft: Story = { ...shows("suggest-account"), play: suggest };
 /** `#ba` (`#写` in ja): the hashtags the server found, the most used first, with how many posts carry each. */
 export const SuggestHashtags: Story = { ...shows("suggest-hashtag"), play: suggest };
 /** `:wa`: the custom emoji, then the Unicode ones, that match. */
@@ -593,8 +589,6 @@ export const Posting: Story = shows("posting");
 export const WarningRefused: Story = shows("refused-cw");
 export const PollOptionRefused: Story = shows("refused-option");
 export const DescriptionRefused: Story = shows("refused-description");
-/** A poll's option refused, as PollOptionRefused shows it: the next letter typed in it clears what the server said. */
-export const PollOptionRefusedEdited: Story = shows("refused-option");
 /** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
 export const PostFormNotLoaded: Story = shows("unloaded-composer");
 /**
@@ -602,10 +596,6 @@ export const PostFormNotLoaded: Story = shows("unloaded-composer");
  * warning's band empty, the count away and Post disabled.
  */
 export const EditorNotLoaded: Story = shows("unloaded-editor");
-export const RightToLeft: Story = shows("typing");
-export const MinimumWidth: Story = shows("typing");
-/** A time set, to look at at the narrowest width: the row keeps its tools, the count and Schedule on one line. */
-export const ScheduledMinimumWidth: Story = shows("scheduled");
 /** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
 export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
 /** The same on a phone: the picker in a sheet from the bottom. */

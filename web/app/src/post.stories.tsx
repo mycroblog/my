@@ -40,10 +40,6 @@ export const Translatable: Story = {
 export const TranslationFailed: Story = {
   parameters: screen({ at: thread, server: { translation: { provider: "failed" } } }),
 };
-/** The thread whose mute a post's more menu offers (ADR-0158 §8): Mute thread, then Unmute thread in its place. */
-export const ThreadMuted: Story = {};
-export const RightToLeft: Story = {};
-export const MinimumWidth: Story = {};
 /**
  * A post whose author approves replies and boosts by hand (ADR-0155): the reader's boost of it says it waits, and the
  * reader's replies under it, which the reader alone sees, say one waits and the other was not approved.
@@ -51,37 +47,20 @@ export const MinimumWidth: Story = {};
 export const WaitingForApproval: Story = { parameters: screen({ at: "layla-asks", server: { approvals: true } }) };
 /** An article's page (ADR-0160): its head, its text in full for long reading, its actions, and its replies under it. */
 export const Article: Story = { parameters: screen({ at: "sam-article" }) };
-export const ArticleMinimumWidth: Story = { parameters: screen({ at: "sam-article" }) };
 
-// The servers on which a translation goes each of its ways once the reader presses Translate: the provider answers,
-// it fails, no provider may receive the post and the browser translates, and the server is over its limit, with a
-// browser that translates and with one that does not. What the post then shows is in the Post stories of
-// @my/app-components, by props.
-
-/** A provider that answers: Translate shows the translation and who made it; Show original goes back. */
-export const TranslateAndBack: Story = {
-  parameters: screen({ at: thread, server: { translation: { provider: "answers" } } }),
-};
-
-/** The provider down: Translate says so, with Try again. */
-export const TranslateFails: Story = {
-  parameters: screen({ at: thread, server: { translation: { provider: "failed" } } }),
-};
+// The servers on which a translation goes another way once the reader presses Translate, beside the provider that
+// answers and the one that fails above. What the post then shows is in the Post stories of @my/app-components, by
+// props.
 
 /** No provider may receive the post: the browser's translator, where the browser has one, translates it. */
 export const TranslateInBrowser: Story = {
   parameters: screen({ at: thread, server: { translation: { provider: "unavailable", browser: true } } }),
 };
 
-/** Over the server's limit: Translate offers the browser's translator, where the browser has one. */
-export const TranslateInBrowserNext: Story = {
-  parameters: screen({ at: thread, server: { translation: { provider: "limit", browser: true } } }),
-};
-
-/** Sam's article on its page: its head, its cover, its whole text, and Yuki's reply under it. */
-export const ArticleRead: Story = { parameters: screen({ at: "sam-article" }) };
-
-/** Over the server's limit in a browser without a translator: Translate says when translation comes back. */
+/**
+ * Over the server's limit: Translate offers the browser's translator where the browser has one, and else says when
+ * translation comes back.
+ */
 export const TranslationLimit: Story = {
   parameters: screen({ at: thread, server: { translation: { provider: "limit", browser: true } } }),
 };

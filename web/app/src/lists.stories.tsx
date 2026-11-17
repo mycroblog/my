@@ -2,8 +2,8 @@
 
 // The reader's lists, which the menu leads to, a list's timeline and its members: a story per state every screen is
 // shown in (app.samples.tsx), of each; a list deleted; and managing them (#3124): a list made in place and refused at
-// the limit of lists, renamed, its deletion confirmed, an account added to its members and refused at the limit of
-// members, and Add to list on a profile, for an account the reader follows (and a list checked there) and one they do
+// the limit of lists, its name in its field, its deletion asked, an account added to its members and refused at the
+// limit of members, and Add to list on a profile, for an account the reader follows (and a list checked there) and one they do
 // not. What a press alone reaches (a refusal, a field in the title's place, a menu, a confirmation) a play presses, in
 // the story's locale, and asserts nothing: the features' tests hold what each state shows.
 
@@ -28,15 +28,14 @@ export const Index: Story = {};
 export const IndexEmpty: Story = { parameters: screen({ at: index, state: "empty" }) };
 export const IndexLoading: Story = { parameters: screen({ at: index, state: "loading" }) };
 export const IndexFailed: Story = { parameters: screen({ at: index, state: "error" }) };
-export const IndexMinimumWidth: Story = {};
 export const ListTimeline: Story = { parameters: screen({ at: list }) };
 export const ListEmpty: Story = { parameters: screen({ at: list, state: "empty" }) };
 export const ListLoading: Story = { parameters: screen({ at: list, state: "loading" }) };
 export const ListFailed: Story = { parameters: screen({ at: list, state: "error" }) };
 export const ListGone: Story = { parameters: screen({ at: "/lists/gone" }) };
 export const ListLongText: Story = { parameters: screen({ at: "list:2", state: "long" }) };
-export const ListRightToLeft: Story = { parameters: screen({ at: list }) };
-export const ListMinimumWidth: Story = { parameters: screen({ at: "list:2" }) };
+/** The list whose name runs long, with its own posts. */
+export const ListLongName: Story = { parameters: screen({ at: "list:2" }) };
 
 // ---- Managing the lists (ADR-0013 §11–§15) -------------------------------------------------------------------------
 
@@ -96,12 +95,6 @@ export const Renaming: Story = {
   },
 };
 
-/** The list as ListTimeline shows it: a saved rename leaves the same screen under another name. */
-export const Renamed: Story = { parameters: screen({ at: list }) };
-
-/** The list as ListTimeline shows it: a confirmed deletion leaves the index, without the list. */
-export const Deleted: Story = { parameters: screen({ at: list }) };
-
 /** Delete list… chosen from the list's menu: its confirmation over the page. */
 export const DeleteConfirm: Story = {
   parameters: screen({ at: list }),
@@ -116,7 +109,8 @@ export const Members: Story = { parameters: screen({ at: "members:0" }) };
 export const MembersEmpty: Story = { parameters: screen({ at: "members:0", state: "empty" }) };
 export const MembersLoading: Story = { parameters: screen({ at: "members:0", state: "loading" }) };
 export const MembersFailed: Story = { parameters: screen({ at: "members:0", state: "error" }) };
-export const MembersMinimumWidth: Story = { parameters: screen({ at: "members:2" }) };
+/** The members of the list whose name runs long. */
+export const MembersLongName: Story = { parameters: screen({ at: "members:2" }) };
 
 /** Finds `q` among the accounts the reader follows, and presses Add on the first found: what was found. */
 async function adding(context: StoryContext, q: string) {
@@ -149,9 +143,6 @@ export const MembersLimit: Story = {
     });
   },
 };
-
-/** The members as Members shows them: a Remove leaves the same screen with one member fewer. */
-export const MembersRemoving: Story = { parameters: screen({ at: "members:0" }) };
 
 /** Opens the profile's menu (the first More of the screen, before any post's), and Add to list when `into`. */
 async function profileMenu(context: StoryContext, into: boolean) {

@@ -64,14 +64,12 @@ function actionsOf(post: HTMLElement) {
 
 /** Over the notifications, a row counts the three requests and opens their screen. */
 export const Counted: Story = {};
-export const CountedJapanesePC: Story = {};
 
 const laylaAsks = screen({ at: "layla-asks", server: { approvals: true } });
 const laylaAsksToSam = screen({ at: "layla-asks", viewer: "sam", server: { approvals: true } });
 
 /** Under layla-asks, the reader's waiting boost and replies each carry their line. */
 export const OwnLines: Story = { parameters: laylaAsks };
-export const OwnLinesJapaneseMinimumWidth: Story = { parameters: laylaAsks };
 
 /** Someone else reads layla-asks: neither yuki's reply that waits nor the one declined, and no line. */
 export const OthersSee: Story = { parameters: laylaAsksToSam };
@@ -85,7 +83,6 @@ async function boostSaysBefore(context: StoryContext) {
 }
 
 export const BoostSaysBefore: Story = { parameters: laylaAsksToSam, play: boostSaysBefore };
-export const BoostSaysBeforeJapanese: Story = { parameters: laylaAsksToSam, play: boostSaysBefore };
 
 /** The reply composer of the screen's post whose text holds `text`, opened from its Reply. */
 async function replyComposer(context: StoryContext, text: string) {
@@ -107,7 +104,6 @@ const replying = (text: string) => async (context: StoryContext) => {
 
 /** A reply to layla-asks, whose author approves the reader's replies: the composer says it waits, before it is sent. */
 export const ReplyWaits: Story = { parameters: laylaAsks, play: replying("Translating a poem") };
-export const ReplyWaitsJapanese: Story = { parameters: laylaAsks, play: replying("Translating a poem") };
 
 /** A reply to a post that admits the reader at once: nothing says it waits. */
 export const ReplyAtOnce: Story = {
@@ -158,7 +154,6 @@ async function choosesApproval(context: StoryContext) {
 }
 
 export const ChoosesApproval: Story = { parameters: laylaAsks, play: choosesApproval };
-export const ChoosesApprovalJapanesePC: Story = { parameters: laylaAsks, play: choosesApproval };
 
 const waitingScreen = screen({ at: "/notifications/waiting", server: { approvals: true } });
 
@@ -194,4 +189,3 @@ async function answered(context: StoryContext) {
 
 // Last in the file: an answer leaves an entry in React Aria's live announcer, which outlives the story.
 export const Answered: Story = { parameters: waitingScreen, play: answered };
-export const AnsweredJapanesePC: Story = { parameters: waitingScreen, play: answered };

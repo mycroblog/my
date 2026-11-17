@@ -58,5 +58,3 @@ export const Empty: Story = { parameters: screen({ at: other, state: "empty" }) 
 export const Loading: Story = { parameters: screen({ at: other, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: other, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: other, state: "long" }) };
-export const RightToLeft: Story = { parameters: screen({ at: other }) };
-export const MinimumWidth: Story = { parameters: screen({ at: other }) };

@@ -28,5 +28,3 @@ export const Empty: Story = { parameters: screen({ at: followers, state: "empty"
 export const Loading: Story = { parameters: screen({ at: followers, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: followers, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: followers, state: "long" }) };
-export const RightToLeft: Story = {};
-export const MinimumWidth: Story = {};

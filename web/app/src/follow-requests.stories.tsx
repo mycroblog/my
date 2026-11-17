@@ -28,8 +28,6 @@ export const Empty: Story = { parameters: screen({ at, viewer, server, state: "e
 export const Loading: Story = { parameters: screen({ at, viewer, server, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at, viewer, server, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at, viewer, server, state: "long" }) };
-export const RightToLeft: Story = {};
-export const MinimumWidth: Story = {};
 /** The notifications of ren, with the row of the follow requests over them. */
 export const InNotifications: Story = { parameters: screen({ at: "/notifications", viewer, server }) };
 

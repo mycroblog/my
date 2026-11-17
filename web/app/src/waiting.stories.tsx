@@ -26,8 +26,6 @@ export const Empty: Story = { parameters: screen({ at, server, state: "empty" })
 export const Loading: Story = { parameters: screen({ at, server, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at, server, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at, server, state: "long" }) };
-export const RightToLeft: Story = {};
-export const MinimumWidth: Story = {};
 
 /**
  * Approves the reply (the oldest request, last on the screen) as the reader presses it, in the toolbar's locale, and

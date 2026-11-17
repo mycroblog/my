@@ -32,7 +32,6 @@ export const PostsNotOffered: Story = { parameters: screen({ at: "/search?q=sa" 
  */
 const every = "/search?q=bak";
 export const Results: Story = { parameters: screen({ at: every, server: posts }) };
-export const ResultsJapanese: Story = { parameters: screen({ at: every, server: posts }) };
 /** An account of another server named by its handle, looked up there and put first. */
 export const RemoteLookup: Story = { parameters: screen({ at: "/search?q=%40kiri%40far.example" }) };
 /** A handle no server has. */
@@ -41,8 +40,8 @@ export const NothingFound: Story = { parameters: screen({ at: "/search?q=zzqx", 
 export const Loading: Story = { parameters: screen({ at: "/search?q=sa", server: posts, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: "/search?q=sa", server: posts, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: "/search?q=a", server: posts, state: "long" }) };
-export const RightToLeft: Story = { parameters: screen({ at: "/search?q=sa", server: posts }) };
-export const MinimumWidth: Story = { parameters: screen({ at: "/search?q=sa", server: posts }) };
+/** People and posts on a server with a search engine: "sa" finds Sam and the posts that hold it, and no hashtag. */
+export const PeopleAndPosts: Story = { parameters: screen({ at: "/search?q=sa", server: posts }) };
 
 /** The screen of the suggested accounts, each with its follow. */
 export const People: Story = { parameters: screen({ at: "/people" }) };
@@ -50,7 +49,6 @@ export const People: Story = { parameters: screen({ at: "/people" }) };
 export const PeopleEmpty: Story = { parameters: screen({ at: "/people", state: "empty" }) };
 export const PeopleLoading: Story = { parameters: screen({ at: "/people", state: "loading" }) };
 export const PeopleFailed: Story = { parameters: screen({ at: "/people", state: "error" }) };
-export const PeopleMinimumWidth: Story = { parameters: screen({ at: "/people" }) };
 /** A one-person server suggests no one, and finding people is no place of its menu. */
 export const PeopleSingleUser: Story = {
   parameters: screen({ at: "/people", viewer: "hana", server: { singleUser: true } }),

@@ -8,7 +8,7 @@
 // (who opens any other server on the landing page, landing.stories.tsx); the closure announced, and the
 // server closed with no export, one being built and one ready; the maintenance; the reader offline and the server down;
 // a call; the toasts of a newer version and of one the server needs; the voice rooms off; the column beside the main
-// one with none of its sections; and the menu open, as the phone's sheet too, and the floating New post's menu open.
+// one with none of its sections; and the menu open (a sheet on a phone), and the floating New post's menu open.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, waitFor } from "storybook/test";
@@ -90,9 +90,6 @@ export const MenuOpen: Story = {
   },
 };
 
-/** The phone's Menu left open: the tab bar's sheet over the dimmed and blurred page, at a phone's width. */
-export const MenuSheet: Story = { ...MenuOpen };
-
 /**
  * The floating New post's menu left open on a phone (a long press, here its right click): New post and New article,
  * in a sheet over the page. From a tablet no New post floats, and the shell shows as it is.
@@ -109,6 +106,3 @@ export const NewPostMenu: Story = {
     await menuRisen(context.canvasElement.ownerDocument);
   },
 };
-
-export const RightToLeft: Story = {};
-export const MinimumWidth: Story = {};
