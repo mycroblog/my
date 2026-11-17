@@ -2,12 +2,12 @@
 
 // A writer writes an article in its own editor (ADR-0160) against the server: the preview is the server's rendering of
 // what is written, a cover and an image of the body are uploaded, and the article published reads on its page as the
-// preview showed it; a published article is edited from its menu, and an edit closed is discarded; a new article closed
-// or saved is a draft of an article on the server (ADR-0156), which reopens from the editor's list (articles only) and
-// the composer's (marked an article), and one is scheduled.
+// preview showed it; a published article is edited from its menu, and an edit closed is discarded. That a new article
+// closed or saved is a draft of an article, which reopens and is published or scheduled, is the app's
+// (web/app/src/article-drafts.dom.test.tsx): the drafts' own way to the server and back is drafts.spec.ts.
 
 import { drawPNG } from "../src/seed/png";
-import { ArticleEditor, ArticleText, Frame, Thread, type Upload } from "./screens";
+import { ArticleEditor, ArticleText, Thread, type Upload } from "./screens";
 import { expect, test } from "./test";
 
 /** A small PNG to pick in the file picker. */
@@ -89,7 +89,7 @@ test("a writer writes an article with a cover, a body image and a hashtag, previ
   await expect(text.image("A jar of starter on the sill")).toBeVisible();
 });
 
-test("a writer edits their article from its menu; an edit closed is discarded, one saved is the article's", async ({
+test("a writer edits their article from its menu; an edit closed is discarded, one saved is the article's after a reload", async ({
   page,
   signIn,
   fresh,
@@ -135,91 +135,14 @@ test("a writer edits their article from its menu; an edit closed is discarded, o
   await expect(text.title("Notes on a rye loaf, revised")).toBeVisible();
   await expect(text.paragraph("After the edit.")).toHaveCount(2);
   await expect(edited.edited).toBeVisible();
+  // The edit is the server's: the page read again shows it.
+  await page.reload();
+  await expect(text.title("Notes on a rye loaf, revised")).toBeVisible();
+  await expect(text.paragraph("After the edit.")).toHaveCount(2);
+  await expect(edited.edited).toBeVisible();
 
   // Neither the closed edit nor the saved one left a draft.
   await editor.openNew();
   const drafts = await editor.openDrafts();
   await expect(drafts.opener(title)).toHaveCount(0);
-});
-
-test("a new article closed is kept as a draft of an article, which reopens, is saved and is published", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
-  const writer = await fresh.person();
-  const post = await fresh.draft(writer, { text: "Draft check: a post, not an article." });
-  const title = "Kept when the editor closes";
-  await signIn(writer);
-  const editor = new ArticleEditor(page);
-  await editor.openNew();
-  await editor.title.fill(title);
-  await editor.write("Written, then closed.");
-  await editor.closeKept();
-  // Back where it was opened from.
-  await expect(new Frame(page).heading("Home")).toBeVisible();
-
-  // The composer's list holds both, and marks the article's.
-  const drafts = await (await new Frame(page).newPost()).openDrafts();
-  await expect(drafts.heading("Drafts 2")).toBeVisible();
-  await expect(drafts.row(title).getByRole("img", { name: "An article", exact: true })).toBeVisible();
-  await expect(drafts.row(post.text).getByRole("img", { name: "An article", exact: true })).toHaveCount(0);
-  // It opens in the editor.
-  await drafts.opener(title).click();
-  await expect(page).toHaveURL(/\/articles\/new\?draft=[^&/]+$/);
-  await expect(editor.title).toHaveValue(title);
-  await editor.holds("Written, then closed.");
-
-  // The editor's own list holds the drafts of articles alone.
-  const own = await editor.openDrafts();
-  await expect(own.heading("Drafts 1")).toBeVisible();
-  await expect(own.opener(title)).toBeVisible();
-  await expect(own.row(post.text)).toHaveCount(0);
-  await own.close();
-
-  await editor.write(" Then changed and saved.");
-  await editor.saveAsDraft();
-  await editor.openNew();
-  const again = await editor.openDrafts();
-  await again.opener(title).click();
-  await editor.holds("Written, then closed. Then changed and saved.");
-
-  await editor.publish();
-  const text = new ArticleText(new Thread(page).post(writer.displayName, title));
-  await expect(text.title(title)).toBeVisible();
-  await expect(text.paragraph("Written, then closed. Then changed and saved.")).toHaveCount(2);
-  // Published, the draft is gone; the post's stays.
-  const after = await (await new Frame(page).newPost()).openDrafts();
-  await expect(after.opener(post.text)).toBeVisible();
-  await expect(after.opener(title)).toHaveCount(0);
-});
-
-test("a writer schedules an article, which waits in the lists and reopens with its time", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
-  const writer = await fresh.person();
-  const title = "Out next week";
-  await signIn(writer);
-  const editor = new ArticleEditor(page);
-  await editor.openNew();
-  await editor.title.fill(title);
-  await editor.write("Scheduled, not yet published.");
-  await editor.setTime();
-  await expect(editor.button("Change the scheduled time")).toHaveAttribute("aria-pressed", "true");
-  await expect(editor.note(/^Scheduled for .+:00\s[AP]M \(.+\)\s*Change time$/)).toBeVisible();
-  await expect(editor.button("Publish")).toHaveCount(0);
-  await editor.schedule();
-  await expect(new Frame(page).heading("Home")).toBeVisible();
-
-  const drafts = await (await new Frame(page).newPost()).openDrafts();
-  await expect(drafts.heading("Scheduled 1")).toBeVisible();
-  await expect(drafts.row(title, drafts.scheduled).getByRole("img", { name: "An article", exact: true })).toBeVisible();
-  await drafts.opener(title, drafts.scheduled).click();
-  await expect(editor.title).toHaveValue(title);
-  await editor.holds("Scheduled, not yet published.");
-  await expect(editor.note(/^Scheduled for .+:00\s[AP]M \(.+\)\s*Change time$/)).toBeVisible();
-  await expect(editor.button("Schedule")).toBeVisible();
-  await expect(editor.button("Publish")).toHaveCount(0);
 });

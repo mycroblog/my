@@ -19,24 +19,6 @@ export class EmojiPicker {
     return this.dialog.getByRole("searchbox", { name: "Search emoji", exact: true });
   }
 
-  /** The skin tone's button, named by the tone chosen ("Skin tone: Default"). */
-  get tone(): Locator {
-    return this.dialog.getByRole("button", { name: /^Skin tone: .+$/ });
-  }
-
-  /** The button of the toolbar of categories that takes the grid to the section `name`. */
-  category(name: string): Locator {
-    return this.dialog.getByRole("toolbar", { name: "Emoji categories", exact: true }).getByRole("button", {
-      name,
-      exact: true,
-    });
-  }
-
-  /** The line that tells how many emoji a search found, once typing rests. */
-  get found(): Locator {
-    return this.dialog.getByRole("status");
-  }
-
   /** The emoji named `name` in the section `section` ("Custom emoji", "Smileys & emotion", "Search results"). */
   emoji(section: string, name: string): Locator {
     return this.dialog

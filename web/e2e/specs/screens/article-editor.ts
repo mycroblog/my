@@ -159,11 +159,6 @@ export class ArticleEditor {
     return this.page.getByRole("paragraph").filter({ hasText: text });
   }
 
-  /** The form's alert before the row: why it was not published. */
-  get alert(): Locator {
-    return this.page.getByRole("alert");
-  }
-
   /** A button of the row, or of the head, by its words. */
   button(name: string): Locator {
     return this.page.getByRole("button", { name, exact: true });
@@ -191,14 +186,6 @@ export class ArticleEditor {
     await expect(this.title).toBeHidden();
   }
 
-  /** Closes a new article, written or changed, and returns once the server has kept it as a draft. */
-  async closeKept(): Promise<void> {
-    await answered(this.page, { methods: ["POST", "PUT"], path: /\/drafts(?:\/[^/]+)?$/ }, async () => {
-      await this.button("Close").click();
-    });
-    await expect(this.title).toBeHidden();
-  }
-
   /** Chooses `item` of the drafts' menu in the editor's head. */
   async draftsMenu(item: "Save as draft" | "Drafts and scheduled posts"): Promise<void> {
     await this.button("Drafts").click();
@@ -208,66 +195,10 @@ export class ArticleEditor {
       .click();
   }
 
-  /** Keeps the article as a draft on the server, and returns once the server has answered and the editor is left. */
-  async saveAsDraft(): Promise<void> {
-    await answered(this.page, { methods: ["POST", "PUT"], path: /\/drafts(?:\/[^/]+)?$/ }, async () => {
-      await this.draftsMenu("Save as draft");
-    });
-    await expect(this.title).toBeHidden();
-  }
-
   /** Opens the reader's drafts and scheduled articles over the editor. */
   async openDrafts(): Promise<Drafts> {
     await this.draftsMenu("Drafts and scheduled posts");
     return new Drafts(this.page);
-  }
-
-  /**
-   * The audience tool of the row, the composer's: named by who can see the article ("Who can see it: Public"), and
-   * whether replies, boosts or quotes are limited.
-   */
-  get audienceTool(): Locator {
-    return this.page.getByRole("button", { name: /^Who can see it: .+$/ });
-  }
-
-  /** The audience menu, once open: who can see the article, and who can reply, boost and quote it. */
-  get audienceMenu(): Locator {
-    return this.page.getByRole("menu", { name: "Who can see and reply", exact: true });
-  }
-
-  /** The audience menu's panel named `name`, once open: the menu itself, or the submenu that took its place. */
-  audiencePanel(name: string): Locator {
-    return this.page.getByRole("menu", { name, exact: true });
-  }
-
-  /**
-   * Chooses who can see the article from the audience menu: its first row opens the visibilities (never Direct), and a
-   * choice closes the menu.
-   */
-  async chooseVisibility(name: "Public" | "Local" | "Quiet public" | "Followers only"): Promise<void> {
-    await this.audienceTool.click();
-    // An item is named by its label, then what it holds now (a row) or its quiet line (a visibility).
-    await this.audienceMenu.getByRole("menuitem", { name: /^Who can see it\b.*$/ }).click();
-    await this.audiencePanel("Who can see it")
-      .getByRole("menuitemradio", { name: new RegExp(`^${name}\\b.*$`) })
-      .click();
-    await expect(this.audiencePanel("Who can see it")).toBeHidden();
-  }
-
-  /** Sets the time the schedule's form starts with: the first whole hour an hour or more from now. */
-  async setTime(): Promise<void> {
-    await this.button("Schedule").click();
-    const form = this.page.getByRole("dialog", { name: "Schedule", exact: true });
-    await form.getByRole("button", { name: "Set time", exact: true }).click();
-    await expect(form).toBeHidden();
-  }
-
-  /** Schedules the article with Schedule, which takes Publish's place once a time is set, and returns once answered. */
-  async schedule(): Promise<void> {
-    await answered(this.page, { methods: ["PUT"], path: /\/drafts\/[^/]+\/schedule$/ }, async () => {
-      await this.button("Schedule").click();
-    });
-    await expect(this.title).toBeHidden();
   }
 }
 

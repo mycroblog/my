@@ -2,7 +2,7 @@
 
 // A person's lists of follows and followers, opened from the counts of their profile: a tab replaces the address. A
 // list its owner keeps from the reader says so (FR-311) in the feature (profile/profile.dom.test.tsx). That a follow
-// from a row stays is the E2E tests' (web/e2e/specs/follows.spec.ts).
+// from a row stays is the E2E tests' (web/e2e/specs/profile.spec.ts).
 
 import { expect, test } from "bun:test";
 import { screen, within } from "@testing-library/react";

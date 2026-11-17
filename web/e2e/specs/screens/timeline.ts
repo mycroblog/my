@@ -41,11 +41,6 @@ export class Post {
     return this.article.getByRole("link", { name });
   }
 
-  /** The button that shows the text behind a content warning. */
-  get showButton(): Locator {
-    return this.article.getByRole("button", { name: "Show", exact: true });
-  }
-
   /** The favourite button, which is pressed when the reader has favourited the post. */
   get favouriteButton(): Locator {
     return this.article.getByRole("button", { name: counted("Favourite") });
@@ -107,24 +102,18 @@ export class Post {
     return this.reactions.getByRole("button", { pressed: true });
   }
 
-  /** Opens the emoji picker from the React button, by pointer or with a key pressed on it, and returns it. */
-  async react(by: "pointer" | "Enter" | "Space" = "pointer"): Promise<EmojiPicker> {
-    if (by === "pointer") await this.reactButton.click();
-    else await this.reactButton.press(by);
+  /** Opens the emoji picker from the React button, and returns it. */
+  async react(): Promise<EmojiPicker> {
+    await this.reactButton.click();
     return new EmojiPicker(this.page.getByRole("dialog", { name: "React", exact: true }));
   }
 
   /**
-   * Does `act`, a pick in the picker by pointer or key that sets or takes back the reader's reaction, and returns once
-   * the server has answered it.
+   * Picks `emoji`, a cell of the picker, which sets or takes back the reader's reaction, and returns once the server
+   * has answered it.
    */
-  async reacting(act: () => Promise<void>): Promise<void> {
-    await answered(this.page, { methods: ["PUT", "DELETE"], path: /\/statuses\/[^/]+\/reaction$/ }, act);
-  }
-
-  /** Picks `emoji`, a cell of the picker, with the pointer, and returns once the server has answered the reaction. */
   async pick(emoji: Locator): Promise<void> {
-    await this.reacting(async () => {
+    await answered(this.page, { methods: ["PUT", "DELETE"], path: /\/statuses\/[^/]+\/reaction$/ }, async () => {
       await emoji.click();
     });
   }
@@ -248,11 +237,6 @@ export class Post {
       .getByRole("list", { name: "Edit history", exact: true })
       .getByRole("listitem")
       .filter({ has: this.page.getByRole("time") });
-  }
-
-  /** Reveals the text behind the content warning. */
-  async show(): Promise<void> {
-    await this.showButton.click();
   }
 
   /**

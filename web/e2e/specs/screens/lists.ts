@@ -111,29 +111,3 @@ export class ListScreen extends Timeline {
     });
   }
 }
-
-/** A list's members, at /lists/{id}/members: a list named Members, each row with its Remove. */
-export class ListMembers {
-  readonly page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
-
-  /** The list of the members. */
-  get members(): Locator {
-    return this.page.getByRole("main").getByRole("list", { name: "Members", exact: true });
-  }
-
-  /** The button that takes `name` (a display name) out of the list. */
-  removeButton(name: string): Locator {
-    return this.members.getByRole("button", { name: `Remove ${name}`, exact: true });
-  }
-
-  /** Takes `name` out of the list, and returns once the server has answered. */
-  async remove(name: string): Promise<void> {
-    await answered(this.page, { methods: ["DELETE"], path: /\/lists\/[^/]+\/accounts\/[^/]+$/ }, async () => {
-      await this.removeButton(name).click();
-    });
-  }
-}

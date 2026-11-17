@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A writer keeps a post as a draft on the server and schedules one from the composer (ADR-0156): the draft reopens from
-// the list and is posted, a scheduled post's time is set, changed and taken back, a draft is deleted, and a scheduled
-// post is published at its time.
+// the list and is posted, a scheduled post's time is set, changed and taken back, and a draft and a scheduled post are
+// deleted. That the server publishes a scheduled post at its time is the server's tests'
+// (TestScheduledDraftBeyondTheQueueDelayLimit).
 
 import { Frame, homeTimeline } from "./screens";
 import { expect, test } from "./test";
+
+/** What the list says of a writer with neither a draft nor a scheduled post. */
+const nothing = "No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here.";
 
 test("a writer saves a draft, reopens it from the list and posts it", async ({ page, signIn, fresh }) => {
   const writer = await fresh.person();
@@ -27,26 +31,29 @@ test("a writer saves a draft, reopens it from the list and posts it", async ({ p
   await expect(homeTimeline(page).post(writer.displayName, text).article).toBeVisible();
   // Posted, it leaves the list.
   const after = await (await frame.newPost()).openDrafts();
-  await expect(
-    after.dialog.getByText(
-      "No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  await expect(after.dialog.getByText(nothing, { exact: true })).toBeVisible();
   await after.close();
   await page.reload();
   await expect(homeTimeline(page).post(writer.displayName, text).article).toBeVisible();
 });
 
-test("a writer schedules a post, changes its time from the list, and returns it to the drafts", async ({
+test("a writer schedules a post, changes its time from the list and returns it to the drafts, and deletes it and a scheduled post", async ({
   page,
   signIn,
   fresh,
 }) => {
   const writer = await fresh.person();
+  const reminder = await fresh.draft(writer, { text: "Delete check: a reminder for next month.", inSeconds: 86_400 });
   const text = "Schedule check: the reading group meets at the library.";
   await signIn(writer);
   const frame = new Frame(page);
+  // A scheduled post is deleted after confirming, which leaves the writer nothing.
+  const first = await (await frame.newPost()).openDrafts();
+  await expect(first.heading("Scheduled 1")).toBeVisible();
+  await first.delete(reminder.text, first.scheduled);
+  await expect(first.dialog.getByText(nothing, { exact: true })).toBeVisible();
+  await first.close();
+
   const composer = await frame.newPost();
   await composer.write(text);
   await composer.setTime();
@@ -85,54 +92,12 @@ test("a writer schedules a post, changes its time from the list, and returns it 
   // Closed without a word, the draft stays on the server as it was saved.
   const kept = await (await frame.newPost()).openDrafts();
   await expect(kept.opener(text)).toBeVisible();
-});
-
-test("a writer deletes a draft and a scheduled post after confirming", async ({ page, signIn, fresh }) => {
-  const writer = await fresh.person();
-  const draft = await fresh.draft(writer, { text: "Delete check: a note about the ferry times." });
-  const scheduled = await fresh.draft(writer, { text: "Delete check: a reminder for next month.", inSeconds: 86_400 });
-  await signIn(writer);
-  const frame = new Frame(page);
-  const drafts = await (await frame.newPost()).openDrafts();
-  await expect(drafts.heading("Scheduled 1")).toBeVisible();
-  await expect(drafts.heading("Drafts 1")).toBeVisible();
-  await drafts.delete(draft.text);
-  await expect(drafts.opener(draft.text)).toBeHidden();
-  await expect(drafts.heading("Drafts 0")).toBeVisible();
-  await drafts.delete(scheduled.text, drafts.scheduled);
-  await expect(
-    drafts.dialog.getByText(
-      "No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here.",
-      { exact: true },
-    ),
-  ).toBeVisible();
-  await drafts.close();
+  // Deleted after confirming, it is gone, and so is the scheduled post deleted first: the list read again holds
+  // neither.
+  await kept.delete(text);
+  await expect(kept.dialog.getByText(nothing, { exact: true })).toBeVisible();
+  await kept.close();
   await page.reload();
   const again = await (await frame.newPost()).openDrafts();
-  await expect(
-    again.dialog.getByText(
-      "No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here.",
-      { exact: true },
-    ),
-  ).toBeVisible();
-});
-
-test("a scheduled post is published at its time and leaves the list", async ({ page, signIn, fresh }) => {
-  // The nearest time the demo server takes is a minute away (scenario.ts), past the default test timeout.
-  test.slow();
-  const writer = await fresh.person();
-  const scheduled = await fresh.draft(writer, { text: "Publish check: the market opens early today.", inSeconds: 65 });
-  await signIn(writer);
-  const frame = new Frame(page);
-  const drafts = await (await frame.newPost()).openDrafts();
-  await expect(drafts.opener(scheduled.text, drafts.scheduled)).toBeVisible();
-  await drafts.close();
-  // The home timeline is read again until the server has published it.
-  await expect(async () => {
-    await page.reload();
-    await expect(homeTimeline(page).post(writer.displayName, scheduled.text).article).toBeVisible();
-  }).toPass();
-  const after = await (await frame.newPost()).openDrafts();
-  await expect(after.opener(scheduled.text, after.scheduled)).toBeHidden();
-  await expect(after.opener(scheduled.text)).toBeHidden();
+  await expect(again.dialog.getByText(nothing, { exact: true })).toBeVisible();
 });
