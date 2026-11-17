@@ -2,13 +2,9 @@
   "layout-parts": {
     "web/design-system/fixtures/baseline.tsx": {"kept.base": 2, "grown.base": 1, "shrunk.base": 2, "gone.base": 1},
     "web/design-system/src/avatar.tsx": {"avatar.base": 5, "avatar.fallback": 5, "avatar.image": 2},
-    "web/design-system/src/card.tsx": {"card.author": 7, "card.covered": 3, "card.description": 1, "card.figure": 7, "card.image": 2, "card.root": 5, "card.site": 1, "card.text": 5, "card.title": 1},
-    "web/design-system/src/content.tsx": {"CustomEmoji": 4, "body.base": 11, "link.base": 1, "urlPart.base": 7},
     "web/design-system/src/conversation.tsx": {"faces.face": 3, "faces.root": 3, "head.more": 3, "head.root": 2, "head.row": 4, "head.title": 4, "line.end": 6, "line.excerpt": 4, "line.head": 4, "line.more": 4, "line.names": 3, "line.root": 4, "reply.glyph": 2, "reply.people": 2, "reply.root": 3, "reply.row": 3, "reply.to": 5, "reply.tools": 5},
     "web/design-system/src/disclosure.tsx": {"disclosure.glyph": 2, "disclosure.root": 3, "disclosure.summary": 3, "disclosure.text": 3},
     "web/design-system/src/drafts.tsx": {"form.caption": 4, "form.field": 2, "form.hint": 1, "form.input": 2, "form.root": 6, "form.row": 6, "row.foot": 5, "row.lead": 3, "row.leadGlyph": 4, "row.mark": 3, "row.more": 1, "row.open": 5, "row.root": 3, "row.text": 1, "row.warning": 3, "sections.empty": 1, "sections.head": 2, "sections.section": 2, "sections.title": 1},
-    "web/design-system/src/entry.tsx": {"CaptionName": 2, "byline.end": 3, "byline.handle": 4, "byline.handleLine": 3, "byline.heading": 4, "byline.line": 4, "byline.lines": 6, "byline.link": 3, "byline.name": 3, "byline.root": 5, "caption.end": 1, "caption.glyph": 4, "caption.root": 4, "caption.text": 3, "embed.base": 3, "entry.base": 4, "stamp.edited": 5, "stamp.glyph": 2, "stamp.root": 4, "stamp.when": 3},
-    "web/design-system/src/feed.tsx": {"feed.list": 6, "feed.newItems": 8, "feed.root": 3, "feed.top": 3, "notice.root": 1},
     "web/design-system/src/form-page.tsx": {"WidgetSlot": 1},
     "web/design-system/src/history.tsx": {"history.head": 6, "history.image": 1, "history.media": 4, "history.replaced": 1, "history.text": 1, "history.tile": 1, "history.tileAdded": 1, "history.tileRemoved": 2, "history.version": 3},
     "web/design-system/src/icons.tsx": {"icon.glyph": 1, "icon.tile": 4},
