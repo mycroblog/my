@@ -228,7 +228,6 @@ test("a dismissal the server fails brings the notification back with a notice, w
 
 // The notification a push or an email opens.
 
-// Defect: the app lands on the post, but the notification stays unread and no marker is sent.
 test("the address of a notification a push opens reads it, and the reader goes on to what it tells of", async () => {
   const on = fakeApp({ viewer: "sam" });
   const marker = on.fake.script("PUT /notifications/marker");
