@@ -12,7 +12,8 @@ import { fakeData, renderFeature } from "./test/feature";
 import { HomeTimeline, loadHomeTimeline } from "./timeline/home";
 
 /**
- * A server where the reader follows sam: the reader's own post, sam's first loaf, and sam's poll of several choices.
+ * A server where the reader follows sam: the reader's own post and poll, sam's first loaf, and sam's poll of several
+ * choices.
  * The home timeline is loaded and drawn under PostActions; `post(text)` is the post that says `text`.
  */
 async function timeline() {
@@ -22,6 +23,14 @@ async function timeline() {
       follows: [{ follower: "yuki", followee: "sam" }],
       posts: [
         { key: "own", author: "yuki", text: "Post 1", visibility: "public", language: "en" },
+        {
+          key: "ownPoll",
+          author: "yuki",
+          text: "Which loaf shall I bake?",
+          visibility: "public",
+          language: "en",
+          poll: { options: ["Sourdough", "Rye"], days: 1 },
+        },
         { key: "loaf", author: "sam", text: "The first loaf.", visibility: "public", language: "en" },
         {
           key: "asks",
@@ -141,4 +150,41 @@ test("an action that is another feature's, or on a post the cache does not hold,
 
   expect(written()).toEqual([]);
   expect(composed).toEqual([]);
+});
+
+/** The words of the items of the menu that is open, in their order. */
+const itemsOf = () =>
+  within(screen.getByRole("menu", { name: "More" }))
+    .getAllByRole("menuitem")
+    .map((item) => item.textContent);
+
+test("the More menu offers a reader what they may do with the post: their own, their own poll, another's", async () => {
+  const { user, post } = await timeline();
+  /** Opens the More menu of the post that says `text`, and gives the words of its items. */
+  const menuOf = async (text: string) => {
+    await user.click(post(text).getByRole("button", { name: "More" }));
+    const items = itemsOf();
+    await user.keyboard("{Escape}");
+    return items;
+  };
+
+  expect(await menuOf("Post 1")).toEqual([
+    "Copy link",
+    "Share",
+    "Bookmark",
+    "Mute thread",
+    "Edit",
+    "Delete and redraft…",
+    "Delete…",
+  ]);
+  // The server refuses an edit of a post with a poll.
+  expect(await menuOf("Which loaf shall I bake?")).toEqual([
+    "Copy link",
+    "Share",
+    "Bookmark",
+    "Mute thread",
+    "Delete and redraft…",
+    "Delete…",
+  ]);
+  expect(await menuOf("The first loaf.")).toEqual(["Copy link", "Share", "Bookmark", "Mute thread", "Mute", "Block…"]);
 });

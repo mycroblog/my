@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A person deletes and redrafts their own post from its More menu; the menu offers each reader what they may do to a
-// post, the thread's mute to one with an account.
+// A person deletes and redrafts their own post from its More menu, and deletes the post open on its own page; the menu
+// of a reader without an account leads to the sign-in. What the menu offers each reader with an account is the
+// features' (post-actions.dom.test.tsx).
 
 import { expect, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -33,37 +34,7 @@ test("delete and redraft takes the post away and opens it as a new post", async 
   expect(postsLike(feed, "Sam Rivera", "Day 3 of the sourdough")).toHaveLength(0);
 });
 
-test("the More menu of one's own post: its link, sharing, the bookmark, the thread's mute, edit, redraft and delete", async () => {
-  const app = await renderApp("/", { viewer: "sam" });
-  const menu = await openMore(app, postOf(await feedOf("Home timeline"), "Sam Rivera", "Day 3 of the sourdough"));
-
-  expect(items(menu)).toEqual([
-    "Copy link",
-    "Share",
-    "Bookmark",
-    "Mute thread",
-    "Edit",
-    "Delete and redraft…",
-    "Delete…",
-  ]);
-});
-
-test("the More menu of one's own post with a poll: no edit, which the server refuses", async () => {
-  const app = await renderApp("/", { viewer: "sam" });
-  const menu = await openMore(app, postOf(await feedOf("Home timeline"), "Sam Rivera", "Bread for Saturday's meetup"));
-
-  expect(items(menu)).toEqual(["Copy link", "Share", "Bookmark", "Mute thread", "Delete and redraft…", "Delete…"]);
-});
-
-test("the More menu of another's post: its link, sharing, the bookmark and the thread's mute, then muting and blocking its author", async () => {
-  // An author of this server: no page of another server to open, and no server of its own to mute.
-  const app = await renderApp("/", { viewer: "sam" });
-  const menu = await openMore(app, postOf(await feedOf("Home timeline"), "Yuki 雪", "週末の散歩、三枚"));
-
-  expect(items(menu)).toEqual(["Copy link", "Share", "Bookmark", "Mute thread", "Mute", "Block…"]);
-});
-
-test("the More menu of a visitor: the link and sharing, and the bookmark, which leads to the sign-in", async () => {
+test("the More menu of a visitor offers the link, sharing and the bookmark, which leads to the sign-in", async () => {
   const app = await renderApp("/local", { visitor: true });
   const menu = await openMore(app, postOf(await feedOf("Local timeline"), "Sam Rivera", "Bread for Saturday's meetup"));
 
