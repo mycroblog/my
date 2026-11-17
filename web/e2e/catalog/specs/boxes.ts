@@ -85,6 +85,47 @@ export async function expectNoSidewaysScroll(page: Page): Promise<void> {
   await expect.poll(() => sidewaysScroll(page)).toEqual([]);
 }
 
+/**
+ * The texts of the element that a reader sees, in the order of the page: those that are painted, in more than a pixel
+ * of what clips them. Words kept for assistive technology alone take no room, and are not among them.
+ */
+export const shownTexts = (part: Locator): Promise<string[]> =>
+  part.evaluate((element) => {
+    const shown: string[] = [];
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+      const text = (node.textContent ?? "").trim();
+      if (text === "") continue;
+      range.selectNodeContents(node);
+      let { left, top, right, bottom } = range.getBoundingClientRect();
+      let painted = true;
+      for (let el = node.parentElement; el !== null; el = el === element ? null : el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.visibility === "hidden" || style.opacity === "0") painted = false;
+        if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+        const box = el.getBoundingClientRect();
+        left = Math.max(left, box.left);
+        top = Math.max(top, box.top);
+        right = Math.min(right, box.right);
+        bottom = Math.min(bottom, box.bottom);
+      }
+      if (painted && right - left > 1 && bottom - top > 1) shown.push(text);
+    }
+    return shown;
+  });
+
+/** The length a token of the page says (`--icon-button-touch`), in CSS px. */
+export const lengthOf = (page: Page, token: `--${string}`): Promise<number> =>
+  page.evaluate((name) => {
+    const probe = document.createElement("div");
+    probe.style.cssText = `position: absolute; visibility: hidden; inline-size: var(${name})`;
+    document.body.append(probe);
+    const { width } = probe.getBoundingClientRect();
+    probe.remove();
+    return width;
+  }, token);
+
 /** How `inner` reaches out of `outer`, by edge; empty when it is inside. */
 export function outside(inner: Box, outer: Box): string[] {
   const out: string[] = [];

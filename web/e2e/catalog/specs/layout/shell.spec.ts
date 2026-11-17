@@ -3,7 +3,8 @@
 // The frame of the app (shell.tsx): Frame, FrameSide, FrameDock, FrameMain, FrameAside, FrameBanners, FrameActions,
 // NavList and SectionList. On a phone the tab bar is docked at the bottom; from `tablet` a rail stands at the start,
 // which grows into the sidebar from `desktop`; from `wide` a column stands beside the main one, and the section
-// folded above the feed goes. The page scrolls, never a region of the frame.
+// folded above the feed goes. The page scrolls, never a region of the frame. On a phone each place of the tab bar is
+// its glyph alone (ADR-0110 §11).
 
 import { expectNoComputedViolations } from "../axe";
 import {
@@ -14,8 +15,12 @@ import {
   expectInViewport,
   expectMirrored,
   expectNoSidewaysScroll,
+  lengthOf,
   linesOf,
+  outside,
+  shownTexts,
 } from "../boxes";
+import type { Locator } from "@playwright/test";
 import { expect, from, minimum, pc, test } from "../test";
 
 const story = "design-system-shell--closure-announced";
@@ -246,3 +251,71 @@ test("on a phone the press that opens the Menu's sheet does not follow the place
   await expect(menu).toBeVisible();
   await expect(page).toHaveURL(at);
 });
+
+// The places of a phone's tab bar in two stories, in the order of the page, by their accessible names, each with what
+// it shows beside its glyph: the count of its badge, or nothing. The names are the stories' own words.
+const tabBars = [
+  {
+    story: "design-system-shell--staff",
+    places: [
+      ["Home"],
+      ["Local"],
+      ["Federated"],
+      ["Notifications 3 unread", "3"],
+      ["Search"],
+      ["Menu 2 unread in direct messages, 12 waiting in moderation", "2"],
+    ],
+    mirrored: true,
+  },
+  {
+    story: "design-system-shell--timelines-off",
+    places: [["Home"], ["Notifications 3 unread", "3"], ["Search"], ["Menu 2 unread in direct messages", "2"]],
+    mirrored: false,
+  },
+] as const;
+
+for (const { story: id, places, mirrored } of tabBars)
+  test(`on a phone the tab bar's ${String(places.length)} places are glyphs alone, targets of one width side by side inside the bar`, async ({
+    page,
+    open,
+  }) => {
+    const tabs = page.getByRole("navigation", { name: "Main", exact: true });
+    // Menu, the last place, is a button; the others are links.
+    const place = (name: string) => tabs.getByRole(name.startsWith("Menu") ? "button" : "link", { name, exact: true });
+    const items: Record<string, Locator> = Object.fromEntries(places.map(([name]) => [name, place(name)]));
+
+    await open(id);
+    await expectNoSidewaysScroll(page);
+    await expect(tabs.getByRole("link")).toHaveCount(places.length - 1);
+    await expect(tabs.getByRole("button")).toHaveCount(1);
+    const least = await lengthOf(page, "--icon-button-touch");
+    expect(least).toBeGreaterThan(0);
+    const { tabs: bar } = await boxesAtRest({ tabs });
+    const ltr = await boxesAtRest(items);
+    const boxes = places.map(([name]) => {
+      const box = ltr[name];
+      if (box === undefined) throw new Error(`test: no box of ${name}`);
+      return box;
+    });
+    for (const [i, [name, badge]] of places.entries()) {
+      const [box, first, before] = [boxes[i] ?? bar, boxes[0] ?? bar, boxes[i - 1]];
+      expect({ name, out: outside(box, bar) }).toEqual({ name, out: [] });
+      // One row, each after the one before it, none over another.
+      expect({ name, top: box.top, bottom: box.bottom }).toEqual({ name, top: first.top, bottom: first.bottom });
+      if (before !== undefined) expect({ name, after: box.left >= before.right - 0.75 }).toEqual({ name, after: true });
+      // A target of the least size a finger needs on both axes, as wide as every other.
+      expect({ name, wide: box.width >= least, tall: box.height >= least }).toEqual({ name, wide: true, tall: true });
+      expect({ name, alike: Math.abs(box.width - first.width) < 1 }).toEqual({ name, alike: true });
+      // No name shows, only a badge's count; the name is the place's still.
+      expect({ name, shown: await shownTexts(place(name)) }).toEqual({
+        name,
+        shown: badge === undefined ? [] : [badge],
+      });
+      await expect(place(name)).toHaveAccessibleName(name);
+    }
+
+    if (!mirrored) return;
+    await open(id, { locale: "ar-XB" });
+    await expectNoSidewaysScroll(page);
+    await expectMirrored(page, ltr, items);
+  });
