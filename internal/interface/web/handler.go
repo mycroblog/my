@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -459,11 +460,56 @@ func devOrigin(s string) (*url.URL, error) {
 	return u, nil
 }
 
+// listedFile is a file of the build in the list at ETagsPath: its size and its ETag without the quotes, the
+// first 18 bytes of its SHA-256 in unpadded base64url, as etag computes.
+type listedFile struct {
+	Size int64  `json:"size"`
+	ETag string `json:"etag"`
+}
+
 // buildFiles lists the files of the build that are served as they are, with their ETags:
 // every file except the Vite manifest and other hidden files, and the index.html and auth.html
-// that Vite writes (the shell and authpages replace them).
+// that Vite writes (the shell and authpages replace them). The ETags come from the list that the
+// web build wrote, and no file is read: a build embeds tens of MB of fonts. A build whose list is
+// missing, or names other files or other sizes than the build holds, is refused.
 func buildFiles(build fs.FS) (map[string]string, error) {
-	files := map[string]string{}
+	sizes, err := servedFiles(build)
+	if err != nil {
+		return nil, fmt.Errorf("web: list the build: %w", err)
+	}
+	files := make(map[string]string, len(sizes))
+	if len(sizes) == 0 {
+		return files, nil
+	}
+	data, err := fs.ReadFile(build, ETagsPath)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, errors.New("web: the build has no " + ETagsPath + "; run scripts/task.sh web:build")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("web: read %s: %w", ETagsPath, err)
+	}
+	var list map[string]listedFile
+	if err := json.Unmarshal(data, &list); err != nil {
+		return nil, fmt.Errorf("web: parse %s: %w; run scripts/task.sh web:build", ETagsPath, err)
+	}
+	for p, size := range sizes {
+		f, ok := list[p]
+		if !ok || f.Size != size || f.ETag == "" {
+			return nil, fmt.Errorf("web: %s does not match the build at %s; run scripts/task.sh web:build", ETagsPath, p)
+		}
+		files[p] = `"` + f.ETag + `"`
+	}
+	for p := range list {
+		if _, ok := sizes[p]; !ok {
+			return nil, fmt.Errorf("web: %s names %s, which the build does not hold; run scripts/task.sh web:build", ETagsPath, p)
+		}
+	}
+	return files, nil
+}
+
+// servedFiles returns the size of each file of the build that is served as it is, by its path.
+func servedFiles(build fs.FS) (map[string]int64, error) {
+	sizes := map[string]int64{}
 	err := fs.WalkDir(build, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -477,17 +523,32 @@ func buildFiles(build fs.FS) (map[string]string, error) {
 		if d.IsDir() || p == entryKey || p == authEntryKey {
 			return nil
 		}
-		data, err := fs.ReadFile(build, p)
+		info, err := d.Info()
 		if err != nil {
 			return err
 		}
-		files[p] = etag(data)
+		sizes[p] = info.Size()
 		return nil
 	})
+	return sizes, err
+}
+
+// ListETags returns the list of ETagsPath for build as the web build writes it, for a build that the
+// web build did not make, such as the build of a test. It reads every file.
+func ListETags(build fs.FS) ([]byte, error) {
+	sizes, err := servedFiles(build)
 	if err != nil {
-		return nil, fmt.Errorf("web: list the build: %w", err)
+		return nil, err
 	}
-	return files, nil
+	list := make(map[string]listedFile, len(sizes))
+	for p, size := range sizes {
+		data, err := fs.ReadFile(build, p)
+		if err != nil {
+			return nil, err
+		}
+		list[p] = listedFile{Size: size, ETag: strings.Trim(etag(data), `"`)}
+	}
+	return json.Marshal(list)
 }
 
 // etag is a strong entity tag of content.

@@ -15,6 +15,9 @@ import (
 const (
 	// manifestPath is the Vite build manifest (build.manifest: true).
 	manifestPath = ".vite/manifest.json"
+	// ETagsPath is the list of the ETags of the build's files, which the web build writes once every file is in
+	// place (web/app/scripts/etags.ts), so that the server does not read the files when it starts.
+	ETagsPath = ".vite/etags.json"
 	// entryKey is the manifest key of the SPA's entry: the HTML input of the Vite build.
 	entryKey = "index.html"
 	// authEntryKey is the manifest key of the auth entry (ADR-0028 §4, ADR-0090 §16): the HTML

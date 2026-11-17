@@ -22,7 +22,7 @@ import (
 // fakeBuild is a Vite build with an entry that imports a shared chunk, CSS on both, a
 // lazily loaded chunk that must not be preloaded, and the auth entry, which shares the chunk.
 func fakeBuild() fstest.MapFS {
-	return fstest.MapFS{
+	return listed(fstest.MapFS{
 		".vite/manifest.json": {Data: []byte(`{
 			"index.html": {"file": "assets/index-AAAA.js", "src": "index.html", "isEntry": true,
 				"imports": ["_shared-BBBB.js"], "dynamicImports": ["src/lazy.tsx"], "css": ["assets/index-CCCC.css"]},
@@ -49,7 +49,17 @@ func fakeBuild() fstest.MapFS {
 		"icon-192.png":          {Data: []byte("png 192")},
 		"icon-maskable-512.png": {Data: []byte("png maskable")},
 		"apple-touch-icon.png":  {Data: []byte("png apple")},
+	})
+}
+
+// listed adds to build the list of its files' ETags, which the web build writes last.
+func listed(build fstest.MapFS) fstest.MapFS {
+	list, err := web.ListETags(build)
+	if err != nil {
+		panic(err)
 	}
+	build[web.ETagsPath] = &fstest.MapFile{Data: list}
+	return build
 }
 
 func locale(l string) func(context.Context) string {

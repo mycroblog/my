@@ -30,7 +30,7 @@ func TestLinkPreviews(t *testing.T) {
 		".vite/manifest.json":  {Data: []byte(`{"index.html": {"file": "assets/index-AAAA.js", "isEntry": true}}`)},
 		"assets/index-AAAA.js": {Data: []byte("export {}")},
 	}
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), WebBuild: build})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), WebBuild: webBuild(t, build)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}

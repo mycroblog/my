@@ -34,7 +34,7 @@ func TestWebClient(t *testing.T) {
 		"assets/auth-GGGG.css":  {Data: []byte("main{}")},
 		"sw.js":                 {Data: []byte("// sw")},
 	}
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), WebBuild: build})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), WebBuild: webBuild(t, build)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
