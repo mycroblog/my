@@ -314,31 +314,10 @@ export class Composer {
     await expect(this.dialog).toBeHidden();
   }
 
-  /**
-   * Saves a draft opened from the server as a draft when another device saved a newer one since: returns once the
-   * server has refused it, with the composer open and its alert shown.
-   */
-  async saveAsDraftRefused(): Promise<void> {
-    await answered(this.dialog.page(), { methods: ["PUT"], path: /\/drafts\/[^/]+$/ }, async () => {
-      await this.draftsMenu("Save as draft");
-    });
-    await expect(this.alert).toBeVisible();
-  }
-
   /** Opens the reader's drafts and scheduled posts in the composer's place. */
   async openDrafts(): Promise<Drafts> {
     await this.draftsMenu("Drafts and scheduled posts");
     return new Drafts(this.dialog.page());
-  }
-
-  /** The alert over the row: why the post was not sent, or why a draft was not saved. */
-  get alert(): Locator {
-    return this.dialog.getByRole("alert");
-  }
-
-  /** Opens the newer draft that another device saved, from the alert of a refused save. */
-  async openNewer(): Promise<void> {
-    await this.alert.getByRole("button", { name: "Open the newer one", exact: true }).click();
   }
 
   /** The schedule tool of the row: "Schedule" while no time is set, "Change the scheduled time" while one is. */
