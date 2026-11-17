@@ -117,7 +117,7 @@ test("a newer post arriving while the hide is in flight keeps the conversation i
   expect(within(await withSam()).getByRole("img", { name: "Unread" })).toBeDefined();
 });
 
-test("a conversation that is not the reader's says so", async () => {
+test("the address of a conversation that is not the reader's opens the screen of the conversation, which says so", async () => {
   // An ID of the server's form that no conversation has.
   await renderApp("/conversations/01890a5d-ac96-774b-bcce-b302099a8057");
 
