@@ -44,10 +44,6 @@ import {
   MenuGroup,
   MenuItem,
   ModalPresence,
-  PollBox,
-  PollChoices,
-  PollFoot,
-  PollResults,
   preloadEmojiPicker,
   Stack,
   Stamp,
@@ -60,10 +56,11 @@ import {
   type MediaItem,
 } from "@my/design-system";
 import { Component, Fragment, useId, useState, type ReactNode } from "react";
-import { AccountName as Name, handleOf, nameOf } from "./account";
+import { AccountName as Name, handleOf, nameOf, sentenceHandleOf } from "./account";
 import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
+import { PollBox, PollChoices, PollFoot, PollResults } from "./poll";
 import { EmojiText, excerptHtml, PostContent } from "./post-content";
 import type { PostArticle, PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
 
@@ -151,6 +148,18 @@ export type PostProps = {
    * own; the screen's, which answers them.
    */
   authorMenu?: ReactNode;
+  /**
+   * What it holds back is shown at first: its content warning open, and its sensitive media, its card's image and a
+   * sensitive article's cover and text uncovered; folded and covered by default. The reader hides each again.
+   */
+  defaultShown?: boolean | undefined;
+  /**
+   * The media viewer is open at first, at the picture of this index among its pictures (images, GIFs and videos);
+   * closed by default.
+   */
+  defaultViewing?: number | undefined;
+  /** Its more menu is open at first, before any press; closed by default. */
+  defaultMenuOpen?: boolean | undefined;
 };
 
 /**
@@ -166,6 +175,8 @@ export type PostPicker = Omit<EmojiPickerProps, "onSelect" | "current" | "fill" 
   preload?: (() => void) | undefined;
   /** Told when the picker opens. */
   onOpen?: (() => void) | undefined;
+  /** The picker is open at first, before any press, and `onOpen` is not told of it; closed by default. */
+  defaultOpen?: boolean | undefined;
 };
 
 /**
@@ -262,11 +273,11 @@ function Context({
     );
   const to = shown.in_reply_to_account_id;
   if (to === undefined || !replyingTo) return null;
-  const username = to === shown.account.id ? shown.account.username : shown.mentions.find((m) => m.id === to)?.username;
-  if (username === undefined) return null;
+  const who = to === shown.account.id ? shown.account : shown.mentions.find((m) => m.id === to);
+  if (who === undefined) return null;
   return (
     <CaptionLine icon="reply" lang={lang}>
-      {format(t, "post.replying_to", { handle: <bdi dir="ltr">@{username}</bdi> })}
+      {format(t, "post.replying_to", { handle: <bdi dir="ltr">{sentenceHandleOf(who)}</bdi> })}
     </CaptionLine>
   );
 }
@@ -303,7 +314,7 @@ class Contained extends Component<{ children: ReactNode }, { failed: boolean }> 
  * The link card, when the post has neither media nor a quote (ADR-0062 §1); its author on an inline avatar. A card
  * that fails to draw (a page's data the card cannot take) leaves the post without it, never breaks the post (§8).
  */
-function Card({ status, size }: { status: PostStatus; size: "large" | "small" }) {
+function Card({ status, size, defaultShown }: { status: PostStatus; size: "large" | "small"; defaultShown: boolean }) {
   const card = status.card;
   if (card === undefined || status.media_attachments.length > 0 || status.quote?.quoted_status !== undefined)
     return null;
@@ -317,6 +328,7 @@ function Card({ status, size }: { status: PostStatus; size: "large" | "small" })
       site={card.site_name}
       size={size}
       sensitive={status.sensitive ?? false}
+      defaultShown={defaultShown}
       lang={card.language}
       image={
         image === undefined
@@ -732,7 +744,7 @@ function ReactAction({
   act: Act;
   picker: PostPicker | undefined;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(picker?.defaultOpen ?? false);
   if (picker === undefined)
     return (
       <IconButton
@@ -743,7 +755,7 @@ function ReactAction({
         }}
       />
     );
-  const { sheet, title, closeLabel, preload, onOpen, ...rest } = picker;
+  const { sheet, title, closeLabel, preload, onOpen, defaultOpen: _, ...rest } = picker;
   const show = (shown: boolean) => {
     if (shown) onOpen?.();
     setOpen(shown);
@@ -815,6 +827,7 @@ function Actions({
   act,
   picker,
   authorMenu,
+  defaultMenuOpen,
 }: {
   status: PostStatus;
   own: boolean;
@@ -823,6 +836,7 @@ function Actions({
   act: Act;
   picker: PostPicker | undefined;
   authorMenu: ReactNode;
+  defaultMenuOpen: boolean;
 }) {
   const on = (type: "reply" | "boost" | "quote" | "favourite" | "react") => () => {
     act({ type, id: status.id });
@@ -833,8 +847,8 @@ function Actions({
     announce: status.permissions?.announce === "pending",
     quote: status.permissions?.quote === "pending",
   };
-  const handle = `@${status.account.acct}`;
-  const [moreOpen, setMoreOpen] = useState(false);
+  const handle = sentenceHandleOf(status.account);
+  const [moreOpen, setMoreOpen] = useState(defaultMenuOpen);
   // The keys of the focused post: reply, boost (or take it back) and favourite at once, and more opens its menu.
   // The help lists them once for every post, under the post's group.
   const keyed = (label: string) => ({ scope: "focus" as const, label, groupLabel: t("post.shortcuts") });
@@ -920,6 +934,9 @@ export function Post({
   replyingTo = true,
   self,
   authorMenu,
+  defaultShown = false,
+  defaultViewing,
+  defaultMenuOpen = false,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -950,12 +967,12 @@ export function Post({
   const translates =
     translation !== undefined || translating !== false || translationFailure !== undefined || translatable;
   // The media viewer, open at one of the post's pictures; the modal gives the focus back to what opened it.
-  const [viewing, setViewing] = useState<number | null>(null);
+  const [viewing, setViewing] = useState<number | null>(defaultViewing ?? null);
   const media = mediaItems(shown.media_attachments, translation);
   const pictures = media.filter(isPicture);
   const content = (
     <>
-      <Stack gap="line">
+      <Stack gap="entry-line">
         <PostContent html={translation?.content ?? shown.content} emojis={shown.emojis} lang={textLang} />
         {!cw && translateLine}
       </Stack>
@@ -963,12 +980,13 @@ export function Post({
       <MediaGrid
         items={media}
         sensitive={shown.sensitive ?? false}
+        defaultShown={defaultShown}
         onOpen={(index) => {
           setViewing(index);
         }}
       />
       <Contained key={shown.card?.url}>
-        <Card status={shown} size={cardSize} />
+        <Card status={shown} size={cardSize} defaultShown={defaultShown} />
       </Contained>
       {quoted !== undefined && <Quote status={quoted} />}
     </>
@@ -1025,6 +1043,7 @@ export function Post({
         summary={article.summary}
         cover={cover}
         sensitive={sensitive}
+        defaultShown={defaultShown}
         lang={textLang}
       />
     );
@@ -1040,8 +1059,8 @@ export function Post({
         {byline}
         <ArticleTitle title={article.title} summary={article.summary} lang={textLang} />
         {sensitive ? (
-          <Disclosure summary={t("post.article_sensitive")} icon="hidden">
-            <Stack lang={textLang}>
+          <Disclosure summary={t("post.article_sensitive")} icon="hidden" defaultExpanded={defaultShown}>
+            <Stack gap="entry" lang={textLang}>
               {coverPart}
               {text}
             </Stack>
@@ -1062,7 +1081,7 @@ export function Post({
           <Disclosure
             summary={
               translates ? (
-                <Stack gap="line" lang={textLang}>
+                <Stack gap="entry-line" lang={textLang}>
                   <span>
                     <EmojiText text={cw} emojis={shown.emojis} />
                   </span>
@@ -1073,8 +1092,11 @@ export function Post({
               )
             }
             icon="hidden"
+            defaultExpanded={defaultShown}
           >
-            <Stack lang={textLang}>{content}</Stack>
+            <Stack gap="entry" lang={textLang}>
+              {content}
+            </Stack>
           </Disclosure>
         ) : (
           content
@@ -1097,6 +1119,7 @@ export function Post({
         act={act}
         picker={signIn === undefined ? picker : undefined}
         authorMenu={authorMenu}
+        defaultMenuOpen={defaultMenuOpen}
       />
       {after}
       {viewer}

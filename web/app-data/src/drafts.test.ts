@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { scenario, type FakeApi, type FakeOptions } from "@my/e2e/fake";
 import { ProblemError } from "@mycroblog/mykit";
+import type { AppData } from "./app-data";
 import { defaultComposeSettings, publishDraft, refusal, saveDraft, useComposeSettings } from "./compose";
 import {
   defaultDraftLimits,
@@ -13,271 +15,275 @@ import {
   scheduleDraft,
   unscheduleDraft,
   useDrafts,
-  type ServerDraft,
+  type SavedDraft,
 } from "./drafts";
 import { cachedStatus } from "./shadow";
-import { fakeAppData, json, page, status } from "./test/fake";
+import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import { homeTimelineQuery } from "./timeline";
 
-/** A draft of the API with the fields a test sets. */
-const draft = (id: string, fields: Partial<ServerDraft> = {}): ServerDraft => ({
-  id,
-  created_at: "2026-11-14T00:00:00Z",
-  updated_at: "2026-11-14T01:00:00Z",
-  text: `Draft ${id}`,
-  spoiler_text: "",
-  sensitive: false,
-  visibility: "public",
-  media: [],
-  ...fields,
+// In the scenario the reader keeps drafts (`river` among them) and scheduled posts (`weekly` among them).
+const river = "yuki-draft-river";
+const weekly = "yuki-scheduled-weekly";
+/** The ID of no draft: of one deleted on another device since this one read it. */
+const gone = "00000000-0000-7000-8000-00000000ffff";
+
+/** What a save answered, its ETag as "an ETag" when it reads as the server's do, and its ID as `id` says. */
+const shape = (saved: SavedDraft, id: string = saved.id) => ({
+  ...saved,
+  id: saved.id === id ? "the draft" : "another",
+  etag: /^"\d+"$/.test(saved.etag) ? "an ETag" : saved.etag,
 });
 
-/** A draft's answer, with the ETag of its next save. */
-const answer = (body: ServerDraft, etag: string, code = 200) =>
-  new Response(JSON.stringify(body), { status: code, headers: { "Content-Type": "application/json", ETag: etag } });
+/** Whether the lists of drafts are marked to be read again. */
+const stale = (data: AppData) => data.queryClient.getQueryState(draftListsQuery(data).queryKey)?.isInvalidated;
 
-const problem = (code: number, detail?: string) =>
-  json(code, { type: "about:blank", title: "Problem", status: code, ...(detail === undefined ? {} : { detail }) });
-
-/** `METHOD path?query If-Match` of a request. */
-const line = (request: Request) => {
-  const url = new URL(request.url);
-  const ifMatch = request.headers.get("If-Match");
-  return `${request.method} ${url.pathname.replace(/^\/api\/v1/, "")}${url.search}${ifMatch === null ? "" : ` ${ifMatch}`}`;
+/** The `If-Match` of each save over a draft the server was sent, once `fake` is told to keep them. */
+const saves = (fake: FakeApi) => {
+  const sent = fake.script("PUT /drafts/{id}");
+  return () => sent.seen.map((s) => s.headers.get("If-Match"));
 };
 
-/** Whether the lists of drafts are marked to be read again. */
-const stale = (data: ReturnType<typeof fakeAppData>["data"]) =>
-  data.queryClient.getQueryState(draftListsQuery(data).queryKey)?.isInvalidated;
-
-/** Data whose lists of drafts are read already, to see a write mark them stale. */
-async function withLists(handler: (request: Request) => Response | Promise<Response>) {
-  const seen: string[] = [];
-  const fake = fakeAppData((request) => {
-    seen.push(line(request));
-    if (request.method === "GET" && new URL(request.url).pathname.endsWith("/drafts")) return json(200, { items: [] });
-    return handler(request);
-  });
-  await fake.data.queryClient.query(draftListsQuery(fake.data));
-  seen.length = 0;
-  return { ...fake, seen };
+/** Data whose lists of drafts are read already, to see a write mark them stale, and the requests sent since. */
+async function withLists(options: FakeOptions = {}) {
+  const made = fakeData(options);
+  await made.data.queryClient.query(draftListsQuery(made.data));
+  made.requests.length = 0;
+  return made;
 }
 
 test("a draft saved before is saved over with the ETag it was read with, and the next save sends the new one", async () => {
-  const { data, seen } = await withLists(() => answer(draft("d1", { scheduled_at: "2026-11-20T03:00:00Z" }), '"2"'));
-  const saved = await saveDraft(data, { text: "hi", visibility: "public" }, { id: "d1", etag: '"1"' });
-  expect(seen).toEqual(['PUT /drafts/d1 "1"']);
-  expect(saved).toEqual({ id: "d1", etag: '"2"', scheduledAt: "2026-11-20T03:00:00Z" });
+  const { fake, data, requests } = await withLists();
+  const id = fake.idOf(weekly);
+  const sent = saves(fake);
+  const { saved: read } = await readDraft(data, id);
+  requests.length = 0;
+  const saved = await saveDraft(data, { text: "hi", visibility: "public" }, read);
+  expect(requests).toEqual([`PUT /drafts/${id}`]);
+  expect(sent()).toEqual([read.etag]);
+  expect(shape(saved, id)).toEqual({ id: "the draft", etag: "an ETag", scheduledAt: read.scheduledAt });
+  expect(saved.etag).not.toBe(read.etag);
+  expect(read.scheduledAt).toBeDefined();
   expect(stale(data)).toBe(true);
 });
 
 test("a draft never saved is saved as a new one, with its ETag", async () => {
-  const { data, seen } = await withLists(() => answer(draft("d1"), '"1"', 201));
-  expect(await saveDraft(data, { text: "hi", visibility: "public" })).toEqual({ id: "d1", etag: '"1"' });
-  expect(seen).toEqual(["POST /drafts"]);
+  const { data, requests } = await withLists();
+  const saved = await saveDraft(data, { text: "hi", visibility: "public" });
+  expect(shape(saved)).toEqual({ id: "the draft", etag: "an ETag" });
+  expect((await readDraft(data, saved.id)).draft.text).toBe("hi");
+  expect(requests.slice(0, 1)).toEqual(["POST /drafts"]);
 });
 
 test("a save the server refuses for a newer one saved elsewhere (412) is refused, when the reader is to choose", async () => {
-  const { data, seen } = await withLists(() => problem(412));
+  const { fake, data, requests } = await withLists();
+  const id = fake.idOf(river);
+  const sent = saves(fake);
   const error = await saveDraft(
     data,
     { text: "hi", visibility: "public" },
-    { id: "d1", etag: '"1"' },
+    { id, etag: '"1"' },
     {
       onConflict: "refuse",
     },
   ).catch((e: unknown) => e);
   expect(error).toBeInstanceOf(DraftConflictError);
   // Nothing is saved: neither over the newer one nor as another draft.
-  expect(seen).toEqual(['PUT /drafts/d1 "1"']);
+  expect(requests).toEqual([`PUT /drafts/${id}`]);
+  expect(sent()).toEqual(['"1"']);
   expect(stale(data)).toBe(true);
 });
 
 test("a draft deleted elsewhere since it was read is saved as a new one", async () => {
-  const { data, seen } = await withLists((request) =>
-    request.method === "PUT" ? problem(404) : answer(draft("d2"), '"1"', 201),
-  );
-  expect(await saveDraft(data, { text: "hi", visibility: "public" }, { id: "d1", etag: '"3"' })).toEqual({
-    id: "d2",
-    etag: '"1"',
-  });
-  expect(seen).toEqual(['PUT /drafts/d1 "3"', "POST /drafts"]);
+  const { fake, data, requests } = await withLists();
+  const sent = saves(fake);
+  const saved = await saveDraft(data, { text: "hi", visibility: "public" }, { id: gone, etag: '"3"' });
+  expect(shape(saved, gone)).toEqual({ id: "another", etag: "an ETag" });
+  expect(requests).toEqual([`PUT /drafts/${gone}`, "POST /drafts"]);
+  expect(sent()).toEqual(['"3"']);
 });
 
 test("a draft gone since it was read is refused when the reader is to choose: a new one could post it twice", async () => {
   // Its publication's answer was lost, or its schedule fired: Post again must not save it as a new draft to publish.
-  const { data, seen } = await withLists((request) =>
-    request.method === "PUT" ? problem(404) : answer(draft("d2"), '"1"', 201),
-  );
+  const { data, requests } = await withLists();
   const error = await saveDraft(
     data,
     { text: "hi", visibility: "public" },
-    { id: "d1", etag: '"3"' },
+    { id: gone, etag: '"3"' },
     { onConflict: "refuse" },
   ).catch((e: unknown) => e);
   expect(error).toBeInstanceOf(DraftGoneError);
-  expect(seen).toEqual(['PUT /drafts/d1 "3"']);
+  expect(requests).toEqual([`PUT /drafts/${gone}`]);
 });
 
 test("a save refused for anything else rejects with the server's words, and saves no copy", async () => {
-  const { data, seen } = await withLists(() => problem(422, "You have 100 drafts, the most you may keep."));
+  const { fake, data, requests } = await withLists();
+  const id = fake.idOf(river);
+  fake.script("PUT /drafts/{id}", {
+    fail: { type: "about:blank", title: "Problem", status: 422, detail: "You have 100 drafts, the most you may keep." },
+  });
   const error = await saveDraft(
     data,
     { text: "hi", visibility: "public" },
-    { id: "d1", etag: '"1"' },
+    { id, etag: '"1"' },
     {
       onConflict: "refuse",
     },
   ).catch((e: unknown) => e);
   expect(error).not.toBeInstanceOf(DraftConflictError);
   expect(refusal(error)).toBe("You have 100 drafts, the most you may keep.");
-  expect(seen).toEqual(['PUT /drafts/d1 "1"']);
+  expect(requests).toEqual([`PUT /drafts/${id}`]);
 });
 
 test("the lists read every page of the drafts and of the scheduled posts apart, the scheduled soonest first", async () => {
-  const seen: string[] = [];
-  const { data } = fakeAppData((request) => {
-    seen.push(line(request));
-    const url = new URL(request.url);
-    if (url.searchParams.get("scheduled") === "true")
-      return json(200, {
-        items: [
-          draft("s-late", { scheduled_at: "2026-11-30T03:00:00Z" }),
-          draft("s-soon", { scheduled_at: "2026-11-16T03:00:00Z" }),
-          draft("s-mid", { scheduled_at: "2026-11-20T03:00:00Z" }),
-        ],
-      });
-    if (url.searchParams.get("cursor") === "c2") return json(200, { items: [draft("d3")] });
-    return json(200, { items: [draft("d1"), draft("d2")], next_cursor: "c2" });
+  // More drafts than the largest page the server gives (40), and three scheduled posts, saved in another order than
+  // their times.
+  const plain = Array.from({ length: 45 }, (_, i) => `draft-${String(i + 1)}`);
+  const times = { late: 20, soon: 2, mid: 9 };
+  const { fake, data, requests } = fakeData({
+    seed: {
+      people: scenario.people,
+      drafts: [
+        ...plain.map((key) => ({ key, author: "yuki", text: `Draft ${key}`, language: "en" })),
+        ...Object.entries(times).map(([key, inDays]) => ({
+          key,
+          author: "yuki",
+          text: `Scheduled ${key}`,
+          language: "en",
+          schedule: { inDays, hour: 3 },
+        })),
+      ],
+    },
   });
   const lists = await data.queryClient.query(draftListsQuery(data));
-  expect(lists.drafts.map((d) => d.id)).toEqual(["d1", "d2", "d3"]);
-  expect(lists.scheduled.map((d) => d.id)).toEqual(["s-soon", "s-mid", "s-late"]);
+  // The server lists the newest save first.
+  expect(lists.drafts.map((d) => d.id)).toEqual(plain.toReversed().map(fake.idOf));
+  expect(lists.scheduled.map((d) => d.id)).toEqual(["soon", "mid", "late"].map(fake.idOf));
   // The page size is the client's to choose: the lists differ by `scheduled`, and the next page by its cursor.
-  expect(seen.map((s) => s.replace(/&?limit=\d+/, "")).toSorted()).toEqual(
-    ["GET /drafts?scheduled=false", "GET /drafts?scheduled=false&cursor=c2", "GET /drafts?scheduled=true"].toSorted(),
-  );
+  const asked = requests.map((r) => new URL(r.slice("GET ".length), "https://demo.test").searchParams);
+  const pages = (scheduled: string) =>
+    asked.filter((q) => q.get("scheduled") === scheduled).map((q) => q.has("cursor"));
+  expect(pages("true")).toEqual([false]);
+  expect(pages("false").length).toBeGreaterThan(1);
+  expect(pages("false")).toEqual([
+    false,
+    ...pages("false")
+      .slice(1)
+      .map(() => true),
+  ]);
 });
 
 test("a draft is read with the ETag its next save sends, and its schedule", async () => {
-  const { data } = fakeAppData(() => answer(draft("d1", { scheduled_at: "2026-11-20T03:00:00Z" }), '"7"'));
-  const { draft: read, saved } = await readDraft(data, "d1");
-  expect(read.text).toBe("Draft d1");
-  expect(saved).toEqual({ id: "d1", etag: '"7"', scheduledAt: "2026-11-20T03:00:00Z" });
+  const { fake, data } = fakeData();
+  const id = fake.idOf(weekly);
+  const { draft: read, saved } = await readDraft(data, id);
+  expect(read.text).toBe("Weekly photo thread is open. Post one picture from your week, no captions needed.");
+  expect(read.scheduled_at).toBeDefined();
+  expect(shape(saved, id)).toEqual({ id: "the draft", etag: "an ETag", scheduledAt: read.scheduled_at });
 });
 
 test("scheduling sends the time, answers the draft with its schedule, and marks the lists stale", async () => {
-  const bodies: unknown[] = [];
-  const { data, seen } = await withLists(async (request) => {
-    bodies.push(await request.json());
-    return answer(draft("d1", { scheduled_at: "2026-11-20T03:00:00Z" }), '"4"');
-  });
-  expect(await scheduleDraft(data, "d1", "2026-11-20T03:00:00.000Z")).toEqual({
-    id: "d1",
-    etag: '"4"',
-    scheduledAt: "2026-11-20T03:00:00Z",
-  });
-  expect(seen).toEqual(["PUT /drafts/d1/schedule"]);
-  expect(bodies).toEqual([{ publish_at: "2026-11-20T03:00:00.000Z" }]);
+  const { fake, data, requests } = await withLists();
+  const id = fake.idOf(river);
+  const sent = fake.script("PUT /drafts/{id}/schedule");
+  const at = new Date(Date.now() + 3 * 86_400_000).toISOString();
+  expect(shape(await scheduleDraft(data, id, at), id)).toEqual({ id: "the draft", etag: "an ETag", scheduledAt: at });
+  expect(requests).toEqual([`PUT /drafts/${id}/schedule`]);
+  expect(sent.seen.map((s) => s.body)).toEqual([{ publish_at: at }]);
   expect(stale(data)).toBe(true);
 });
 
 test("a time past the server's limits (422) rejects with its words, and the lists are read again", async () => {
-  const { data } = await withLists(() => problem(422, "A post can be scheduled no sooner than 5 minutes from now."));
-  const error = await scheduleDraft(data, "d1", "2026-11-14T00:01:00.000Z").catch((e: unknown) => e);
+  const { fake, data } = await withLists();
+  const soon = new Date(Date.now() + 60_000).toISOString();
+  const error = await scheduleDraft(data, fake.idOf(river), soon).catch((e: unknown) => e);
   expect(error).toBeInstanceOf(ProblemError);
   expect(refusal(error)).toBe("A post can be scheduled no sooner than 5 minutes from now.");
   expect(stale(data)).toBe(true);
 });
 
 test("taking a schedule back answers the draft without one; one not scheduled (409) is read as it is", async () => {
-  const { data, seen } = await withLists(() => answer(draft("d1"), '"5"'));
-  expect(await unscheduleDraft(data, "d1")).toEqual({ id: "d1", etag: '"5"' });
-  expect(seen).toEqual(["DELETE /drafts/d1/schedule"]);
+  const { fake, data, requests } = await withLists();
+  const id = fake.idOf(weekly);
+  expect(shape(await unscheduleDraft(data, id), id)).toEqual({ id: "the draft", etag: "an ETag" });
+  expect(requests).toEqual([`DELETE /drafts/${id}/schedule`]);
   expect(stale(data)).toBe(true);
 
-  const twice = await withLists((request) => (request.method === "DELETE" ? problem(409) : answer(draft("d1"), '"6"')));
-  expect(await unscheduleDraft(twice.data, "d1")).toEqual({ id: "d1", etag: '"6"' });
-  expect(twice.seen).toEqual(["DELETE /drafts/d1/schedule", "GET /drafts/d1"]);
+  const twice = await withLists();
+  const plain = twice.fake.idOf(river);
+  expect(shape(await unscheduleDraft(twice.data, plain), plain)).toEqual({ id: "the draft", etag: "an ETag" });
+  expect(twice.requests).toEqual([`DELETE /drafts/${plain}/schedule`, `GET /drafts/${plain}`]);
 });
 
 test("deleting a draft, or one already gone (404), marks the lists stale; another refusal rejects", async () => {
-  const { data, seen } = await withLists(() => new Response(null, { status: 204 }));
-  await deleteDraft(data, "d1");
-  expect(seen).toEqual(["DELETE /drafts/d1"]);
+  const { fake, data, requests } = await withLists();
+  const id = fake.idOf(river);
+  await deleteDraft(data, id);
+  expect(requests).toEqual([`DELETE /drafts/${id}`]);
   expect(stale(data)).toBe(true);
 
-  const gone = await withLists(() => problem(404));
-  await deleteDraft(gone.data, "d1");
-  expect(stale(gone.data)).toBe(true);
+  const missing = await withLists();
+  await deleteDraft(missing.data, gone);
+  expect(stale(missing.data)).toBe(true);
 
-  const refused = await withLists(() => problem(500));
-  expect(await deleteDraft(refused.data, "d1").catch((e: unknown) => e)).toBeInstanceOf(ProblemError);
+  const refused = await withLists();
+  refused.fake.script("DELETE /drafts/{id}", { fail: 500 });
+  expect(await deleteDraft(refused.data, refused.fake.idOf(river)).catch((e: unknown) => e)).toBeInstanceOf(
+    ProblemError,
+  );
 });
 
 test("publishing a draft posts it from the server, tops the home timeline with it, and marks the lists stale", async () => {
-  const seen: string[] = [];
-  const { data } = fakeAppData((request) => {
-    seen.push(line(request));
-    if (request.method === "POST") return json(201, status("new"));
-    if (new URL(request.url).pathname.endsWith("/drafts")) return json(200, { items: [] });
-    return json(200, page(["1"]));
-  });
-  await data.queryClient.infiniteQuery(homeTimelineQuery(data));
+  const { fake, data, requests } = fakeData();
+  const id = fake.idOf(river);
+  const before = (await data.queryClient.infiniteQuery(homeTimelineQuery(data))).pages[0]?.items.map((s) => s.id);
   await data.queryClient.query(draftListsQuery(data));
-  seen.length = 0;
-  const posted = await publishDraft(data, "d1");
-  expect(posted.id).toBe("new");
-  expect(seen).toEqual(["POST /drafts/d1/publish"]);
+  requests.length = 0;
+  const posted = await publishDraft(data, id);
+  expect(posted.content).toContain("Walked along the river this morning.");
+  expect(requests).toEqual([`POST /drafts/${id}/publish`]);
   expect(data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages[0]?.items.map((s) => s.id)).toEqual([
-    "new",
-    "1",
+    posted.id,
+    ...(before ?? []),
   ]);
-  expect(cachedStatus(data, "new")?.id).toBe("new");
+  expect(cachedStatus(data, posted.id)?.id).toBe(posted.id);
   expect(stale(data)).toBe(true);
 });
 
 test("a draft gone when it is published (404) rejects as gone: it may have been posted", async () => {
-  const { data, seen } = await withLists(() => problem(404));
-  expect(await publishDraft(data, "d1").catch((e: unknown) => e)).toBeInstanceOf(DraftGoneError);
-  expect(seen).toEqual(["POST /drafts/d1/publish"]);
+  const { data, requests } = await withLists();
+  expect(await publishDraft(data, gone).catch((e: unknown) => e)).toBeInstanceOf(DraftGoneError);
+  expect(requests).toEqual([`POST /drafts/${gone}/publish`]);
   expect(stale(data)).toBe(true);
 });
 
 test("useDrafts gives the lists once read, and deletes and unschedules", async () => {
-  const seen: string[] = [];
-  const { data } = fakeAppData((request) => {
-    seen.push(line(request));
-    if (request.method === "GET")
-      return json(200, {
-        items: new URL(request.url).searchParams.get("scheduled") === "true" ? [draft("s1")] : [draft("d1")],
-      });
-    if (request.method === "DELETE" && new URL(request.url).pathname.endsWith("/schedule"))
-      return answer(draft("s1"), '"2"');
-    return new Response(null, { status: 204 });
-  });
+  const { fake, data, requests } = fakeData();
   expect(probe(data, useDrafts)).toMatchObject({ lists: undefined, failed: false });
   await data.queryClient.query(draftListsQuery(data));
   const drafts = probe(data, useDrafts);
-  expect(drafts.lists?.drafts.map((d) => d.id)).toEqual(["d1"]);
-  expect(drafts.lists?.scheduled.map((d) => d.id)).toEqual(["s1"]);
-  seen.length = 0;
-  await drafts.unschedule("s1");
-  await drafts.remove("d1");
-  expect(seen.filter((s) => !s.startsWith("GET"))).toEqual(["DELETE /drafts/s1/schedule", "DELETE /drafts/d1"]);
+  expect(drafts.lists?.drafts.map((d) => d.id)).toContain(fake.idOf(river));
+  expect(drafts.lists?.scheduled.map((d) => d.id)).toContain(fake.idOf(weekly));
+  requests.length = 0;
+  await drafts.unschedule(fake.idOf(weekly));
+  await drafts.remove(fake.idOf(river));
+  expect(requests.filter((s) => !s.startsWith("GET"))).toEqual([
+    `DELETE /drafts/${fake.idOf(weekly)}/schedule`,
+    `DELETE /drafts/${fake.idOf(river)}`,
+  ]);
 });
 
 test("the composer schedules within the instance's limits, the server's defaults until they are read", async () => {
-  const { data } = fakeAppData(() =>
-    json(200, {
-      domain: "my.example",
+  const { fake, data } = fakeData();
+  fake.script("GET /instance", {
+    change: (instance) => ({
+      ...instance,
       limits: {
-        max_post_characters: 500,
+        ...instance.limits,
         drafts: { ...defaultDraftLimits, scheduled_post_min_lead_minutes: 1, scheduled_post_max_lead_days: 30 },
       },
     }),
-  );
+  });
   expect(probe(data, useComposeSettings).schedule).toEqual({ minLeadMinutes: 5, maxLeadDays: 366 });
   expect(defaultComposeSettings.schedule).toEqual({ minLeadMinutes: 5, maxLeadDays: 366 });
   await data.queryClient.query(data.queries.queryOptions("get", "/instance"));

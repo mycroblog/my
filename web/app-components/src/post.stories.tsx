@@ -14,12 +14,11 @@
 // from it. Each post answers its actions as the timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
-import { modalShown, Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
+import { Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
 import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
 import { breakpoint, rootPx } from "@my/design-tokens";
-import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { userEvent, within } from "storybook/test";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState, type ReactNode } from "react";
 import { statusPath } from "./paths";
 import type { PostProps, TranslationFailure } from "./post";
 import { mediaPosts, posts, translatedWhole, type TimelinePost } from "./post.samples";
@@ -252,7 +251,7 @@ function Shown({
   translationAs?: Translation;
   votingAt?: readonly number[];
   open?: SampleOpen | undefined;
-} & Pick<PostProps, "cardSize">) {
+} & Pick<PostProps, "cardSize" | "defaultViewing" | "defaultMenuOpen">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -264,7 +263,10 @@ function Shown({
 }
 
 /** Several sample posts one after another, a timeline's gap apart, in the column. */
-function Several({ posts: several, ...shown }: { posts: readonly TimelinePost[] } & Pick<PostProps, "cardSize">) {
+function Several({
+  posts: several,
+  ...shown
+}: { posts: readonly TimelinePost[] } & Pick<PostProps, "cardSize" | "defaultShown">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -278,7 +280,7 @@ function Several({ posts: several, ...shown }: { posts: readonly TimelinePost[] 
 }
 
 /** The sample posts of these ids, one after another. */
-function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "cardSize">) {
+function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "cardSize" | "defaultShown">) {
   return <Several posts={ids.map(byId)} {...shown} />;
 }
 
@@ -287,21 +289,6 @@ function Posts({ ids, ...shown }: { ids: readonly string[] } & Pick<PostProps, "
  * image.
  */
 const sensitiveIds = ["sensitive", "sensitive-four", "sensitive-cw", "sensitive-mixed", "sensitive-card"] as const;
-
-/** Presses every Show of the story: the sensitive media and the content warnings, shown. */
-async function showAll(canvasElement: HTMLElement) {
-  // A content warning shown brings the line of its media into view: press again until none is left. The lines and the
-  // content warnings' buttons are the folded disclosures that end in Show.
-  for (let pass = 0; pass < 3; pass++) {
-    const shows = within(canvasElement).queryAllByRole("button", { expanded: false, name: /Show$|表示$/ });
-    if (shows.length === 0) return;
-    for (const show of shows) {
-      await userEvent.click(show);
-      // The pointer leaves, so that no post shows its hovered surface at rest.
-      await userEvent.unhover(show);
-    }
-  }
-}
 
 /** The reader's language, en or ja, from the toolbar's locale. */
 const useLang = () => (new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en");
@@ -328,8 +315,8 @@ function EditedPosts() {
 const pickerTitle = { en: { title: "React", close: "Close" }, ja: { title: "リアクション", close: "閉じる" } } as const;
 
 /**
- * A post whose react action opens the emoji picker, as the app opens it: a sheet under the tablet width, which the app
- * decides by the viewport, else a popover under the button. It reacts as the server would answer.
+ * A post with the emoji picker of its react action open, as the app opens it: a sheet under the tablet width, which
+ * the app decides by the viewport, else a popover under the button. It reacts as the server would answer.
  */
 function Reacting({ post }: { post: TimelinePost }) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
@@ -346,40 +333,12 @@ function Reacting({ post }: { post: TimelinePost }) {
           sheet,
           title: pickerTitle[lang].title,
           closeLabel: pickerTitle[lang].close,
+          defaultOpen: true,
         }}
       />
     </Column>
   );
 }
-
-/** A sample post with its more menu open, as a pointer opens it: its last button (more) pressed once mounted. */
-function MenuOpen({ post }: { post: TimelinePost }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const buttons = ref.current?.querySelectorAll<HTMLElement>("article button[aria-haspopup]");
-    const more = buttons?.[buttons.length - 1];
-    if (more === undefined) return;
-    const at = { bubbles: true, cancelable: true, pointerType: "mouse", pointerId: 1, button: 0, isPrimary: true };
-    more.dispatchEvent(new PointerEvent("pointerdown", at));
-    more.dispatchEvent(new PointerEvent("pointerup", at));
-    more.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 }));
-  }, []);
-  return (
-    <div ref={ref}>
-      <Shown post={post} />
-    </div>
-  );
-}
-/** Opens the picker of the story's post, as a press on its react action does. */
-const openPicker = {
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const button = [...canvasElement.querySelectorAll("button")].find((b) =>
-      ["React", "リアクション"].includes(b.getAttribute("aria-label") ?? ""),
-    );
-    button?.click();
-    await new Promise((resolve) => setTimeout(resolve, 400));
-  },
-};
 
 /** A post in the other language than the reader's that translates into theirs, without images. */
 function foreignIn(lang: "en" | "ja"): TimelinePost {
@@ -499,31 +458,7 @@ const postOf = (a: Args): TimelinePost => {
 // A story of one state shows a fixed sample, which the Controls do not change.
 const fixed = { parameters: { controls: { disable: true } } };
 
-/**
- * Waits until the layer open over the post that `selector` finds (a dialog, a menu's sheet) has moved in (it rises in
- * by Motion, translucent until then), so that the story tests check it as the reader sees it.
- */
-const shownBy =
-  (selector: string) =>
-  async ({ canvasElement }: StoryContext) => {
-    const shown = () => {
-      const layer = canvasElement.ownerDocument.querySelector(selector);
-      for (let e: Element | null = layer; e !== null; e = e.parentElement) {
-        const style = getComputedStyle(e);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform)) return false;
-      }
-      return layer !== null;
-    };
-    for (const until = Date.now() + 5000; !shown();) {
-      if (Date.now() > until) throw new Error("the layer did not move in");
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-  };
-const overPost = { ...fixed, play: shownBy('[role="dialog"], [role="alertdialog"]') };
-/** The more menu open, once it has risen in (a sheet on a phone) or shows (a popover). */
-const menuOver = { ...fixed, play: shownBy('[role="menu"]') };
-
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Post",
   tags: ["themes"],
@@ -568,12 +503,11 @@ export const Quoting: Story = { ...fixed, render: () => <Shown post={byId("ravi-
 export const Reactions: Story = { ...fixed, render: () => <Shown post={byId("hana-four")} /> };
 export const OwnReaction: Story = { ...fixed, render: () => <Shown post={ownReaction} /> };
 /**
- * The react action pressed: the emoji picker in a popover under it from the tablet width, in a sheet on a phone, the
+ * The emoji picker of the react action, open: in a popover under it from the tablet width, in a sheet on a phone, the
  * reader's own reaction (🎉) knocked out in it. Picking an emoji moves the reaction there, or adds its chip.
  */
 export const ReactPicker: Story = {
   ...fixed,
-  ...openPicker,
   render: () => (
     <Reacting
       post={{
@@ -590,7 +524,6 @@ export const ReactPicker: Story = {
 /** The same on a post with no reactions yet: the first pick adds the first chip. */
 export const ReactPickerFirst: Story = {
   ...fixed,
-  ...openPicker,
   render: () => <Reacting post={byId("lena-quiet")} />,
 };
 /** In the reader's language, with the language it came from and the provider that translated it. */
@@ -632,24 +565,24 @@ export const FocusVisible: Story = {
   render: () => <Shown post={byId("alice-reply")} state="focus-visible" />,
 };
 /** The more menu of the reader's own post: its link and sharing, the bookmark, edit, then delete and redraft apart. */
-export const OwnMenu: Story = { ...menuOver, render: () => <MenuOpen post={byId("own")} /> };
+export const OwnMenu: Story = { ...fixed, render: () => <Shown post={byId("own")} defaultMenuOpen /> };
 /** The more menu of another's post from another server: its link, its original page, sharing, the bookmark. */
-export const OthersMenu: Story = { ...menuOver, render: () => <MenuOpen post={byId("lena-quiet")} /> };
+export const OthersMenu: Story = { ...fixed, render: () => <Shown post={byId("lena-quiet")} defaultMenuOpen /> };
 /** The confirmation of Delete…, over the post. */
-export const DeleteConfirmation: Story = { ...overPost, render: () => <EditedOwn open="delete" /> };
+export const DeleteConfirmation: Story = { ...fixed, render: () => <EditedOwn open="delete" /> };
 /** The confirmation of Delete and redraft…, over the post. */
-export const RedraftConfirmation: Story = { ...overPost, render: () => <EditedOwn open="redraft" /> };
+export const RedraftConfirmation: Story = { ...fixed, render: () => <EditedOwn open="redraft" /> };
 /** The confirmation of Delete and redraft… of the reader's post with a poll, whose votes it loses. */
-export const RedraftPollConfirmation: Story = { ...overPost, render: () => <Shown post={ownPoll} open="redraft" /> };
+export const RedraftPollConfirmation: Story = { ...fixed, render: () => <Shown post={ownPoll} open="redraft" /> };
 /** The more menu of the reader's post with a poll: no edit, which the server refuses for a poll. */
-export const OwnPollMenu: Story = { ...menuOver, render: () => <MenuOpen post={ownPoll} /> };
+export const OwnPollMenu: Story = { ...fixed, render: () => <Shown post={ownPoll} defaultMenuOpen /> };
 /** Edited posts, one's own and another's, "edited" after their time, beside one never edited. */
 export const Edited: Story = { ...fixed, render: () => <EditedPosts /> };
 /**
  * The edit history of the reader's post, newest first: each version's words and images marked against the version
  * before it, an image taken away by the first edit and another added by the last.
  */
-export const EditHistory: Story = { ...overPost, render: () => <EditedOwn open="history" /> };
+export const EditHistory: Story = { ...fixed, render: () => <EditedOwn open="history" /> };
 export const LongNames: Story = { ...fixed, render: () => <Shown post={longNameEn} /> };
 export const LongNamesJapanese: Story = { ...fixed, render: () => <Shown post={longNameJa} /> };
 /** A poll open to the reader: one choice, then several; pressing Vote sends it, and the results follow. */
@@ -695,23 +628,7 @@ export const MixedMedia: Story = { ...fixed, render: () => <Shown post={byId("mi
  * warning, an image with a sound (folded), and a card's image.
  */
 export const Sensitive: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} /> };
-/** The same, every Show pressed: the media shown, the line ending in Hide. */
-export const SensitiveShown: Story = {
-  ...fixed,
-  render: () => <Posts ids={sensitiveIds} />,
-  play: async ({ canvasElement }) => {
-    await showAll(canvasElement);
-  },
-};
-/** The viewer opened from a post at its first picture: the post's media one at a time, whole. */
-export const ViewerFromPost: Story = {
-  ...fixed,
-  render: () => <Shown post={byId("mixed")} />,
-  play: async ({ canvasElement }) => {
-    // Found by its description, the sample's own words, in every locale.
-    const [first] = within(canvasElement).getAllByRole("button", { name: /A sea under a pale blue sky/ });
-    if (first === undefined) throw new Error("no picture opens");
-    await userEvent.click(first);
-    await modalShown();
-  },
-};
+/** The same, shown: the content warning open and the media shown, the line ending in Hide. */
+export const SensitiveShown: Story = { ...fixed, render: () => <Posts ids={sensitiveIds} defaultShown /> };
+/** The viewer open from a post at its first picture: the post's media one at a time, whole. */
+export const ViewerFromPost: Story = { ...fixed, render: () => <Shown post={byId("mixed")} defaultViewing={0} /> };

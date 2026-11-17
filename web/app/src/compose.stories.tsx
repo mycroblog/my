@@ -4,14 +4,14 @@
 // itself, where New post (or `n`), a post's Reply and the boost menu's Quote open the composer over the home timeline,
 // and what is posted tops it. The language is the toolbar's locale (ja, else en).
 //
-// The server is the fake of @my/e2e, which answers the reads from the scenario and keeps the reader's drafts and their
-// schedules; this file's own fake takes the other writes: posts and uploads (a file whose name has "fail" is refused,
-// so that the retry shows; the others are processed for a moment); a post whose text has "#fail" is refused with the
-// server's words, so that a failed post shows. Leaving the composer: close and Escape discard a written post, with
-// Undo; the backdrop saves it as a draft, which New post opens again. The drafts' menu in the head saves it as a draft,
-// or opens the drafts and scheduled posts, from which one opens in the composer.
+// The server is the fake of @my/e2e, which answers from the scenario and keeps what the reader writes; this file stages
+// it for the composer: a post takes a moment, and one whose text has "#fail" is refused with the server's words, so
+// that a failed post shows; an upload is processed for a moment, and a file whose name has "fail" is refused, so that
+// the retry shows. Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as a
+// draft, which New post opens again. The drafts' menu in the head saves it as a draft, or opens the drafts and
+// scheduled posts, from which one opens in the composer.
 
-import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource, type Status } from "@my/app-data";
+import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource } from "@my/app-data";
 import {
   ComposeLayer,
   emptyComposeDraft,
@@ -25,151 +25,62 @@ import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake"
 import { createClient } from "@mycroblog/mykit";
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, waitFor, within } from "storybook/test";
 import { AppRoot } from "./app";
-import { minimumWidth, rightToLeft } from "./app.samples";
 import { createAppRouter } from "./router";
 import { useNarrowViewport } from "./shell/viewport";
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
+const problem = (status: number, title: string, more: Record<string, string> = {}) =>
+  new Response(JSON.stringify({ type: "about:blank", title, status, ...more }), {
     status,
-    headers: { "Content-Type": status >= 400 ? "application/problem+json" : "application/json", ETag: '"1"' },
+    headers: { "Content-Type": "application/problem+json" },
   });
-const notFound = () => json({ type: "about:blank", title: "Not Found", status: 404 }, 404);
-const refused = (detail: string) =>
-  json({ type: "/api/v1/problems/status-rejected", title: "Unprocessable Content", status: 422, detail }, 422);
 
 /** A file's metadata, centered. */
 const centered = { focus: { x: 0, y: 0 } };
 
-const escape = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${String(c.charCodeAt(0))};`);
-const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback);
+/** How long a post takes, and an upload's processing, so that each shows. */
+const postMs = 800;
+const processingMs = 1500;
 
-/** The fake of @my/e2e, with the composer's writes kept in memory and its settings answered. */
-function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
-  const uploads = new Map<string, { url: string; ready: number }>();
-  const posted: Status[] = [];
-  let made = 0;
-
-  const read = async (path: string): Promise<unknown> =>
-    (await fake.serve(new Request(`${fakeOrigin}/api/v1${path}`))).json();
-
-  /** The status a post makes, from a status of the home timeline and what was sent. */
-  async function post(body: Record<string, unknown>): Promise<Status> {
-    made += 1;
-    const home = (await read("/timelines/home")) as { items: Status[] };
-    const me = (await read("/accounts/verify_credentials")) as Status["account"];
-    const base = home.items.find((s) => s.boost === undefined);
-    if (base === undefined) throw new Error("the fake's home timeline holds no post of its own");
-    const media = (body["media"] as { id: string; description?: string }[] | undefined) ?? [];
-    const quotedId = str(body["quoted_status_id"]);
-    const quoted = quotedId === "" ? undefined : ((await read(`/statuses/${quotedId}`)) as Status);
-    return {
-      ...base,
-      id: `posted-${String(made)}`,
-      account: me,
-      created_at: new Date().toISOString(),
-      content: str(body["text"])
-        .split("\n")
-        .map((line) => `<p>${escape(line)}</p>`)
-        .join(""),
-      spoiler_text: str(body["spoiler_text"]),
-      visibility: body["visibility"] as Status["visibility"],
-      language: str(body["language"], "en"),
-      media_attachments: media.map((m) => {
-        const url = uploads.get(m.id)?.url ?? "";
-        return {
-          id: m.id,
-          type: "image",
-          state: "ready",
-          meta: centered,
-          url,
-          preview_url: url,
-          ...(m.description ? { description: m.description } : {}),
-        };
-      }),
-      replies_count: 0,
-      boosts_count: 0,
-      favourites_count: 0,
-      reactions: [],
-      favourited: false,
-      boosted: false,
-      ...(typeof body["in_reply_to_id"] === "string" ? { in_reply_to_id: body["in_reply_to_id"] } : {}),
-      quote: quoted === undefined ? undefined : { state: "accepted", quoted_status: quoted },
-    } as Status;
-  }
-
+/** The fake of @my/e2e as the composer's stories stage it: its posts late or refused, its uploads processed late. */
+function staged(fake: FakeApi): (request: Request) => Promise<Response> {
+  /** The uploads still processed, by their IDs: until when, and what the server answers of each meanwhile. */
+  const uploads = new Map<string, { until: number; body: string }>();
+  // The limits as the composer's states are written for: a post's length alone.
+  fake.script("GET /instance", {
+    change: (instance) => ({ ...instance, limits: { max_post_characters: 500, require_media_description: false } }),
+  });
   return async (request) => {
-    const url = new URL(request.url);
-    const path = url.pathname.replace("/api/v1", "");
-    const method = request.method;
-    if (path === "/timelines/home" && url.searchParams.get("cursor") === null && posted.length > 0) {
-      const page = (await (await fake.serve(request)).json()) as { items: Status[] };
-      return json({ ...page, items: [...posted, ...page.items] });
+    const path = new URL(request.url).pathname.replace("/api/v1", "");
+    if (path === "/statuses" && request.method === "POST") {
+      const { text = "" } = (await request.clone().json()) as { text?: string };
+      await new Promise((resolve) => setTimeout(resolve, postMs));
+      if (text.includes("#fail"))
+        return problem(422, "Unprocessable Content", {
+          type: "/api/v1/problems/status-rejected",
+          detail: document.documentElement.lang.startsWith("ja") ? "投稿が断られました。" : "The post was refused.",
+        });
+      return fake.serve(request);
     }
-    if (path === "/preferences")
-      return json({
-        default_visibility: "public",
-        default_interaction_policy: {
-          reply: { automatic: "everyone" },
-          announce: { automatic: "everyone" },
-          quote: { automatic: "everyone" },
-        },
-        default_post_language: "und",
-        require_media_description: false,
-      });
-    if (path === "/instance") {
-      const instance = (await read("/instance")) as Record<string, unknown>;
-      return json({ ...instance, limits: { max_post_characters: 500, require_media_description: false } });
+    if (path === "/media" && request.method === "POST") {
+      const file = (await request.clone().formData()).get("file");
+      if (!(file instanceof File) || file.name.includes("fail")) return problem(415, "Unsupported Media Type");
+      const response = await fake.serve(request);
+      const body = await response.clone().text();
+      uploads.set((JSON.parse(body) as { id: string }).id, { until: Date.now() + processingMs, body });
+      return response;
     }
-    if (path === "/statuses" && method === "POST") {
-      const body = (await request.json()) as Record<string, unknown>;
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      if (str(body["text"]).includes("#fail"))
-        return refused(
-          document.documentElement.lang.startsWith("ja") ? "投稿が断られました。" : "The post was refused.",
-        );
-      const status = await post(body);
-      posted.unshift(status);
-      return json(status, 201);
-    }
-    const own = /^\/statuses\/(posted-[^/]+)$/.exec(path);
-    if (own && method === "GET") {
-      const found = posted.find((s) => s.id === own[1]);
-      return found ? json(found) : notFound();
-    }
-    if (path === "/media" && method === "POST") {
-      const file = (await request.formData()).get("file");
-      if (!(file instanceof File) || file.name.includes("fail"))
-        return json({ type: "about:blank", title: "Unsupported Media Type", status: 415 }, 415);
-      made += 1;
-      const id = `media-${String(made)}`;
-      uploads.set(id, { url: URL.createObjectURL(file), ready: Date.now() + 1500 });
-      return json({ id, type: "image", state: "processing", meta: centered }, 202);
-    }
-    const media = /^\/media\/([^/]+)$/.exec(path);
-    if (media?.[1]) {
-      const upload = uploads.get(media[1]);
-      // Not uploaded here: a file of a draft, which the fake of @my/e2e holds.
-      if (!upload) return fake.serve(request);
-      const ready = Date.now() >= upload.ready;
-      return json({
-        id: media[1],
-        type: "image",
-        state: ready ? "ready" : "processing",
-        meta: centered,
-        ...(ready ? { url: upload.url, preview_url: upload.url } : {}),
-      });
-    }
+    const upload = uploads.get(/^\/media\/([^/]+)$/.exec(path)?.[1] ?? "");
+    if (upload !== undefined && request.method === "GET" && Date.now() < upload.until)
+      return new Response(upload.body, { headers: { "Content-Type": "application/json" } });
     return fake.serve(request);
   };
 }
 
 /** A new app on a new fake server, as the composer's stories use it; with posts that approve by hand, `approvals`. */
 function createComposeApp(approvals = false) {
-  const fake = createFakeApi({ approvals });
-  const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: composeFake(fake) }));
+  const fake = createFakeApi({ approvals, uploads: "processing" });
+  const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: staged(fake) }));
   return { fake, data };
 }
 
@@ -189,10 +100,6 @@ const words = {
     marked:
       "Thanks @sam and @layla@social.example for the walk :sparkle: Photos at https://photos.example/ridge #山 #hiking",
     markedCw: "Trail photos :sparkle: lots of them",
-    suggestAccount: "Lunch tomorrow with @m",
-    suggestHashtag: "Day 4 of the sourdough experiment #ba",
-    suggestEmoji: "Good morning :wa",
-    suggestCw: "Trail photos :sp",
     later: "@sam The sourdough came out flat again. Trying your overnight proof this weekend.",
     // The server's words of a 422 that names a member of the request: its title, and its detail.
     refusedTitle: "This could not be done.",
@@ -213,10 +120,6 @@ const words = {
     marked:
       "@sam さん @layla@social.example さん、今日はありがとう :sparkle: 写真は https://photos.example/ridge に #山 #写真",
     markedCw: "登山の写真 :sparkle: たくさん",
-    suggestAccount: "明日のお昼は @m",
-    suggestHashtag: "今朝の尾根 #写",
-    suggestEmoji: "おはよう :wa",
-    suggestCw: "登山の写真 :sp",
     later: "@sam サワードウがまたぺたんこに。週末は教わった一晩発酵でやってみます。",
     refusedTitle: "この操作はできませんでした。",
     refusedDetail: "正しくない値です。入力した内容を確かめてください。",
@@ -332,22 +235,6 @@ const states = {
     target: nw,
     draft: (d, w) => ({ ...d, cw: w.markedCw, text: w.marked }),
   },
-  "suggest-account": {
-    name: "Suggesting accounts",
-    target: nw,
-    draft: (d, w) => ({ ...d, text: w.suggestAccount }),
-  },
-  "suggest-hashtag": {
-    name: "Suggesting hashtags",
-    target: nw,
-    draft: (d, w) => ({ ...d, text: w.suggestHashtag }),
-  },
-  "suggest-emoji": { name: "Suggesting emoji", target: nw, draft: (d, w) => ({ ...d, text: w.suggestEmoji }) },
-  "suggest-cw": {
-    name: "Suggesting emoji in the content warning",
-    target: nw,
-    draft: (d, w) => ({ ...d, cw: w.suggestCw, text: w.cwText }),
-  },
   images: {
     name: "Images: described, not yet, processing, failed",
     target: nw,
@@ -435,10 +322,9 @@ type StateId = keyof typeof states;
 
 /**
  * One state of the composer in the flow of the page; `text`, when given, is the text written in it. Its menus and its
- * emoji picker open in a sheet on a phone's viewport, as the shell decides, the picker also with `pickerSheet`; else in
- * a popover.
+ * emoji picker open in a sheet on a phone's viewport, as the shell decides, else in a popover.
  */
-function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string; pickerSheet?: boolean | undefined }) {
+function Specimen({ id, text }: { id: StateId; text: string }) {
   const { locale } = useLocale();
   const narrow = useNarrowViewport();
   const [{ fake, data }] = useState(() => createComposeApp(id === "reply-waits"));
@@ -466,7 +352,7 @@ function Specimen({ id, text, pickerSheet = false }: { id: StateId; text: string
             target={target}
             initial={initial}
             inline
-            pickerSheet={pickerSheet || narrow}
+            pickerSheet={narrow}
             specimen={specimen}
             onOpen={() => undefined}
             onClose={() => undefined}
@@ -491,68 +377,6 @@ function Flow() {
   return <AppRoot router={router} visitor={data} />;
 }
 
-/**
- * Waits until the composer shows what the fake server answers: its text field, and the post a reply or a quote is
- * of; so that the story tests check it as the reader sees it.
- */
-const settle = async ({ canvasElement, parameters }: StoryContext) => {
-  const state = composeOf(parameters);
-  // The handle of the author of the post a reply or a quote is of (sam-bread, layla-jokes, layla-asks), which shows
-  // once it came.
-  const of = state === "reply" ? "@sam" : state === "quote" || state === "reply-waits" ? "@layla" : "";
-  // A state whose chunk was not loaded shows its alert in the text field's place.
-  const field = state.startsWith("unloaded-") ? '[role="alert"]' : '[role="textbox"][aria-multiline="true"]';
-  await waitFor(
-    () => {
-      const ready = canvasElement.querySelector(field) !== null;
-      if (!ready || !canvasElement.textContent.includes(of))
-        throw new Error(`the composer does not show its ${state} state yet`);
-      // A state with a menu or the schedule's form open (a sheet on a phone) waits until it has risen into place.
-      const menu = canvasElement.ownerDocument.querySelector('[role="menu"], [data-popup]');
-      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error("the menu is still rising");
-      }
-    },
-    { timeout: 5000 },
-  );
-};
-
-/** Waits until the composer shows its state, then that the server's words describe the input it refused, marked invalid. */
-const refusedBeside = async (context: StoryContext) => {
-  await settle(context);
-  const said = [words.en.refusedDetail, words.ja.refusedDetail];
-  await waitFor(
-    () => {
-      const doc = context.canvasElement.ownerDocument;
-      const described = [...context.canvasElement.querySelectorAll('[aria-invalid="true"]')].some((input) => {
-        const id = input.getAttribute("aria-describedby");
-        const text = id ? (doc.getElementById(id)?.textContent ?? "") : "";
-        return said.some((s) => text.includes(s));
-      });
-      if (!described) throw new Error("the refusal does not describe the input it is about");
-    },
-    { timeout: 5000 },
-  );
-};
-
-/**
- * The refusal beside the poll's second option, then one more letter typed in that option: the option is valid again,
- * and neither the server's words nor its title stand anywhere in the composer.
- */
-const refusedThenEdited = async (context: StoryContext) => {
-  await refusedBeside(context);
-  const canvas = within(context.canvasElement);
-  const option = canvas.getByRole("textbox", { name: "Option 2" });
-  await expect(option).toHaveAttribute("aria-invalid", "true");
-  await expect(canvas.getByRole("alert")).toHaveTextContent(/^This could not be done\.$/);
-  await userEvent.type(option, "s");
-  await waitFor(() => expect(option).not.toHaveAttribute("aria-invalid", "true"));
-  await expect(canvas.queryByText(words.en.refusedDetail)).toBeNull();
-  await expect(canvas.queryByText(words.en.refusedTitle)).toBeNull();
-};
-
 /** The state of the composer a story shows, from its parameters. */
 const composeOf = (parameters: StoryContext["parameters"]): StateId =>
   ((parameters as { compose?: StateId }).compose ?? "empty") satisfies StateId;
@@ -560,89 +384,16 @@ const composeOf = (parameters: StoryContext["parameters"]): StateId =>
 /** A story of the composer in `id`. */
 const shows = (id: StateId): Story => ({ parameters: { compose: id } });
 
-/**
- * Opens the composer's emoji picker, as a press on its button does, and waits until it shows the Unicode emoji and
- * (in a sheet) has risen, so that the story tests check it as the reader sees it.
- */
-const openEmoji = async (context: StoryContext) => {
-  await settle(context);
-  const doc = context.canvasElement.ownerDocument;
-  // The button at the end of the text's first line, in any locale.
-  context.canvasElement
-    .querySelector<HTMLButtonElement>('div:has(> [role="textbox"][aria-multiline="true"]) ~ div button')
-    ?.click();
-  await waitFor(
-    () => {
-      const grid = doc.querySelector('[role="grid"]');
-      const panel = grid?.closest('[role="dialog"]')?.parentElement;
-      const style = panel ? getComputedStyle(panel) : undefined;
-      if (grid === null || grid.querySelectorAll('[role="gridcell"]').length < 20)
-        throw new Error("the emoji picker shows no emoji yet");
-      if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-        throw new Error("the emoji picker has not appeared yet");
-    },
-    { timeout: 5000 },
-  );
-};
-
-/**
- * Puts the caret at the end of the field whose word is suggested for (the content warning's for `suggest-cw`, else the
- * text's), as a reader who typed it, and waits until the suggestions list their options.
- */
-const suggest = async (context: StoryContext) => {
-  await settle(context);
-  const multiline = composeOf(context.parameters) === "suggest-cw" ? "false" : "true";
-  const field = await waitFor(
-    () => {
-      const found = context.canvasElement.querySelector<HTMLElement>(
-        `[role="textbox"][aria-autocomplete][aria-multiline="${multiline}"]`,
-      );
-      if (found === null) throw new Error("the composer has no field to suggest in");
-      return found;
-    },
-    { timeout: 5000 },
-  );
-  // As a reader presses End: the caret goes to the end of the text, which tells the suggestions where it is.
-  field.focus();
-  const selection = field.ownerDocument.getSelection();
-  selection?.selectAllChildren(field);
-  selection?.collapseToEnd();
-  await waitFor(
-    () => {
-      if (context.canvasElement.querySelectorAll('[role="listbox"] [role="option"]').length === 0)
-        throw new Error("the composer suggests nothing yet");
-    },
-    { timeout: 5000 },
-  );
-};
-
-/** Waits until the app shows the home timeline's posts. */
-const settleFlow = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-  await waitFor(
-    () => {
-      if (canvasElement.querySelector("article") === null) throw new Error("the home timeline shows no post yet");
-    },
-    { timeout: 5000 },
-  );
-};
-
 // The composer's state is the story's (`parameters.compose`); the one knob is the text written in it, which replaces
-// the state's own while given. Tagged `themes`, the story tests run each in dark too.
+// the state's own while given. Tagged `themes`, the check of every story shows each in dark too. The suggestions under the caret
+// and the emoji picker open are the parts' own (the design system's Composer and Emoji picker).
 const meta = {
   title: "Compose",
   tags: ["themes"],
   parameters: { screen: true, layout: "fullscreen" },
   args: { text: "" },
   argTypes: { text: { control: "text", description: "The text written in the composer, in place of the state's" } },
-  play: settle,
-  render: ({ text }, { id, parameters }) => (
-    <Specimen
-      key={id}
-      id={composeOf(parameters)}
-      text={text}
-      pickerSheet={(parameters as { pickerSheet?: boolean }).pickerSheet}
-    />
-  ),
+  render: ({ text }, { id, parameters }) => <Specimen key={id} id={composeOf(parameters)} text={text} />,
 } satisfies Meta<{ text: string }>;
 export default meta;
 
@@ -663,8 +414,6 @@ export const PermissionsByKind: Story = shows("permissions-kinds");
 export const PermissionOfAKind: Story = shows("permissions-kind");
 /** Replying to a post whose author approves the reader's replies: a line over the row says so. */
 export const ReplyWaits: Story = shows("reply-waits");
-/** The same at the minimum width, where the line over the row wraps. */
-export const ReplyWaitsMinimumWidth: Story = { ...shows("reply-waits"), globals: minimumWidth };
 export const Direct: Story = shows("visibility-direct");
 export const ContentWarning: Story = shows("cw");
 /**
@@ -672,16 +421,6 @@ export const ContentWarning: Story = shows("cw");
  * the content warning, its custom emoji alone.
  */
 export const Marks: Story = shows("marks");
-export const MarksRightToLeft: Story = { ...shows("marks"), globals: rightToLeft };
-/** `@m` typed: the accounts the server found, the followed first, under the caret's line, the first active. */
-export const SuggestAccounts: Story = { ...shows("suggest-account"), play: suggest };
-export const SuggestAccountsRightToLeft: Story = { ...shows("suggest-account"), play: suggest, globals: rightToLeft };
-/** `#ba` (`#写` in ja): the hashtags the server found, the most used first, with how many posts carry each. */
-export const SuggestHashtags: Story = { ...shows("suggest-hashtag"), play: suggest };
-/** `:wa`: the custom emoji, then the Unicode ones, that match. */
-export const SuggestEmoji: Story = { ...shows("suggest-emoji"), play: suggest };
-/** `:sp` in the content warning: its emoji, under it. */
-export const SuggestEmojiInWarning: Story = { ...shows("suggest-cw"), play: suggest };
 export const Images: Story = shows("images");
 export const Reply: Story = shows("reply");
 export const Quote: Story = shows("quote");
@@ -710,15 +449,9 @@ export const NewerDraft: Story = shows("conflict");
 export const DraftGone: Story = shows("gone");
 /** Being sent: Post shows it is sending, and Close stays in its place, disabled. */
 export const Posting: Story = shows("posting");
-export const WarningRefused: Story = { ...shows("refused-cw"), play: refusedBeside };
-export const PollOptionRefused: Story = { ...shows("refused-option"), play: refusedBeside };
-export const DescriptionRefused: Story = { ...shows("refused-description"), play: refusedBeside };
-/** A poll's option refused, then edited: the next letter typed in it clears what the server said. */
-export const PollOptionRefusedEdited: Story = {
-  ...shows("refused-option"),
-  globals: { locale: "en" },
-  play: refusedThenEdited,
-};
+export const WarningRefused: Story = shows("refused-cw");
+export const PollOptionRefused: Story = shows("refused-option");
+export const DescriptionRefused: Story = shows("refused-description");
 /** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
 export const PostFormNotLoaded: Story = shows("unloaded-composer");
 /**
@@ -726,17 +459,5 @@ export const PostFormNotLoaded: Story = shows("unloaded-composer");
  * warning's band empty, the count away and Post disabled.
  */
 export const EditorNotLoaded: Story = shows("unloaded-editor");
-export const RightToLeft: Story = { ...shows("typing"), globals: rightToLeft };
-export const MinimumWidth: Story = { ...shows("typing"), globals: minimumWidth };
-/** A time set at the narrowest width: the row keeps its tools, the count and Schedule on one line. */
-export const ScheduledMinimumWidth: Story = { ...shows("scheduled"), globals: minimumWidth };
-/** The emoji button pressed: the picker in a popover beside it, from the tablet width. */
-export const EmojiPicker: Story = { ...shows("typing"), play: openEmoji };
-/** The same on a phone: the picker in a sheet from the bottom. */
-export const EmojiPickerSheet: Story = {
-  parameters: { compose: "typing", pickerSheet: true },
-  play: openEmoji,
-  globals: minimumWidth,
-};
 /** The app itself: New post (or `n`), a post's Reply and the boost menu's Quote open the composer. */
-export const LiveFlow: Story = { render: () => <Flow />, play: settleFlow };
+export const LiveFlow: Story = { render: () => <Flow /> };

@@ -140,11 +140,15 @@ export const fontWeight = { label: 600, strong: 700 } as const;
 /** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
 export const radius = { control: 0.375, overlay: 0.5 } as const;
 
-/** A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form. */
+/**
+ * A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form; and the block
+ * padding a button in words keeps once its label wraps onto more lines than its height holds, little enough that a
+ * glyph beside the label fits the height.
+ */
 export const control = {
-  timeline: { height: 2, paddingInline: 0.75 },
-  form: { height: 2.5, paddingInline: 1 },
-} as const satisfies Record<string, { height: number; paddingInline: number }>;
+  timeline: { height: 2, paddingInline: 0.75, paddingBlock: 0.25 },
+  form: { height: 2.5, paddingInline: 1, paddingBlock: 0.25 },
+} as const satisfies Record<string, { height: number; paddingInline: number; paddingBlock: number }>;
 
 /**
  * The icon button of a post's actions, in rem: its tile is a timeline control's height, with a narrow inline padding
@@ -197,9 +201,10 @@ export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const
 
 /**
  * The words a version of a post added in its edit history: the share of the text's color in the tint behind them, a
- * neutral grey in both schemes, apart from the warm surfaces and from the coral of links.
+ * neutral grey in both schemes, apart from the warm surfaces and from the coral of links; and the frame the tint makes
+ * around an added image, in rem.
  */
-export const diff = { addedShare: 0.14 } as const;
+export const diff = { addedShare: 0.14, imageFrame: 0.25 } as const;
 
 /**
  * An icon's size where it sits, in rem: in an action of a timeline, beside a caption, or in the app's navigation. An
@@ -227,9 +232,17 @@ export const barShadow = { y: -2, blur: 12, share: { light: 0.08, dark: 0.4 } } 
 
 /**
  * A menu, in rem: its padding around the items, the space between its groups, the gap between an item's glyph and
- * its label, and its least width. Its rows are a form control's height.
+ * its label, and its least width. Its rows are a form control's height; one that grows keeps a padding above and
+ * below: with a quiet line under its label (`describedBlock`), or with a label that wraps (`wrappedBlock`).
  */
-export const menu = { padding: 0.25, groupGap: 0.5, iconGap: 0.625, minWidth: 12 } as const;
+export const menu = {
+  padding: 0.25,
+  groupGap: 0.5,
+  iconGap: 0.625,
+  minWidth: 12,
+  describedBlock: 0.5,
+  wrappedBlock: 0.25,
+} as const;
 
 /**
  * A disclosure, in rem: the space between its summary and what it folds, and between the summary's glyph, text and
@@ -258,7 +271,9 @@ export const content = {
 /**
  * An article (ADR-0160): on its page, the most a line of its text runs, in em of `reading`; the space between its
  * blocks and above a heading, in rem; and its cover's height as a share of its width, at most `coverMaxHeight` rem.
- * In a timeline, its card's square cover is `cardThumb` rem wide.
+ * In a timeline, its card's square cover is `cardThumb` rem wide. In its editor: the block padding of a text of a few
+ * lines on a field's surface; the room the hashtags' field keeps around its hashtags and before what is typed; and
+ * the least width of what is typed there before it goes on a next line.
  */
 export const article = {
   measure: 38,
@@ -267,6 +282,9 @@ export const article = {
   coverRatio: 0.5625,
   coverMaxHeight: 22,
   cardThumb: 5.5,
+  fieldBlock: 0.375,
+  tagsInset: 0.25,
+  tagInput: 6,
 } as const;
 
 /**
@@ -301,6 +319,12 @@ export const feed = { gap: 1.75, scrollMargin: 0.75, tightGap: 1.25 } as const;
 export const embed = { padding: 0.75, gap: 0.375 } as const;
 
 /**
+ * A poll's options inside its card, in rem: the padding of the surface they sit on, an option's inline padding, and
+ * the block padding of an option shown as a result.
+ */
+export const poll = { padding: 0.25, optionInline: 0.5, resultBlock: 0.375 } as const;
+
+/**
  * Media: in a grid at the full width, the gap between them, the height as a share of the width (16:9) and the most
  * it may reach in rem, so that the next entry shows on the same screen; as small previews, their width and height in
  * rem. Over a picture, a mark (ALT, GIF, a video's length) sits `badgeInset` rem from its corner on a backing of black
@@ -322,10 +346,19 @@ export const media = {
 
 /**
  * The media viewer: one picture or video whole over the page, always in the dark scheme, its backing black at
- * `scrim`; its bar's height and the space it keeps around the picture, in rem; the most a picture zooms to, and the
- * step of a wheel's or a key's zoom.
+ * `scrim`; its bar's height and the space it keeps around the picture, in rem; the inline padding of the buttons at
+ * the stage's sides and the height of a specimen in a page, in rem; the most a picture zooms to, and the step of a
+ * wheel's or a key's zoom.
  */
-export const viewer = { scrim: 0.92, bar: 3.5, inset: 0.75, maxZoom: 4, zoomStep: 0.5 } as const;
+export const viewer = {
+  scrim: 0.92,
+  bar: 3.5,
+  inset: 0.75,
+  sideInline: 0.8125,
+  specimen: 40,
+  maxZoom: 4,
+  zoomStep: 0.5,
+} as const;
 
 /**
  * A chip (an emoji reaction), in rem: its height, its inline padding, the gap between its glyph and its count, and
@@ -373,7 +406,8 @@ export const dialog = {
 } as const;
 
 /**
- * The post composer, in rem: the size of an image's thumbnail beside its description; the size and the leading
+ * The post composer, in rem: the size of an image's thumbnail beside its description; the least space inside its
+ * cards, the block padding of a field of text and the room a text keeps for the button that removes it; the size and the leading
  * (unitless) of the text, which keeps `textLines` lines of room while nothing follows it; the space above the dialog
  * from `tablet`, and below it; the width of the line of a poll option's mark, in px; the corner of
  * a mark behind the text (what the server will read, the part over the limit), in px; and the share of the coral in
@@ -382,6 +416,9 @@ export const dialog = {
  */
 export const composer = {
   thumb: 4.5,
+  inset: 0.25,
+  fieldBlock: 0.375,
+  removeRoom: 2,
   textSize: 1,
   textLeading: 1.55,
   textLines: 3,
@@ -445,7 +482,7 @@ export const formPage = {
  * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
  * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
  * ring of the page's surface that cuts it out of that one; and how far a face of a conversation's people tucks under
- * the one before, little enough that each stays recognisable.
+ * the one before, little enough that each stays recognisable; and the padding of the surface under what a field found.
  */
 export const screen = {
   tabGap: 0.25,
@@ -470,6 +507,7 @@ export const screen = {
   faceOverlap: 0.5,
   faceCut: 0.125,
   faceTuck: 0.25,
+  foundPadding: 0.75,
 } as const;
 
 /**
@@ -486,8 +524,8 @@ export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
  * the space the frame keeps from the viewport's edge, between its columns (`gapWide` from `desktop`), and below the
  * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
  * main one; the height of the mark at the top of the rail; the height of the call's bar above the tab bar; the least
- * size of a count's badge and its inline padding; the height of a meter's bar; and the room the menu's sheet leaves
- * above it.
+ * size of a count's badge and its inline padding; the height of a meter's bar; the room the menu's sheet leaves
+ * above it; and the padding of a toast around its controls.
  */
 export const shell = {
   rail: 3.5,
@@ -511,6 +549,7 @@ export const shell = {
   badgeInline: 0.3125,
   meter: 0.375,
   sheetRoom: 4,
+  toastInset: 0.25,
 } as const;
 
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -574,6 +613,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ...Object.entries(control).flatMap(([size, c]): [string, string][] => [
     [`--control-${size}-height`, `${c.height}rem`],
     [`--control-${size}-padding-inline`, `${c.paddingInline}rem`],
+    [`--control-${size}-padding-block`, `${c.paddingBlock}rem`],
   ]),
   ["--icon-button-padding-inline", `${iconButton.paddingInline}rem`],
   ["--icon-button-gap", `${iconButton.gap}rem`],
@@ -598,6 +638,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--spinner-stroke", `${spinner.stroke}em`],
   ["--spinner-track-share", percent(spinner.trackShare)],
   ["--diff-added-share", percent(diff.addedShare)],
+  ["--diff-image-frame", `${diff.imageFrame}rem`],
   ["--icon-action", `${icon.action}rem`],
   ["--icon-caption", `${icon.caption}rem`],
   ["--icon-navigation", `${icon.navigation}rem`],
@@ -621,6 +662,8 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--menu-group-gap", `${menu.groupGap}rem`],
   ["--menu-icon-gap", `${menu.iconGap}rem`],
   ["--menu-min-width", `${menu.minWidth}rem`],
+  ["--menu-described-block", `${menu.describedBlock}rem`],
+  ["--menu-wrapped-block", `${menu.wrappedBlock}rem`],
   ["--disclosure-gap", `${disclosure.gap}rem`],
   ["--disclosure-padding", `${disclosure.padding}rem`],
   ["--disclosure-padding-start", `${disclosure.paddingStart}rem`],
@@ -639,6 +682,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--article-cover-ratio", `${article.coverRatio}`],
   ["--article-cover-max-height", `${article.coverMaxHeight}rem`],
   ["--article-card-thumb", `${article.cardThumb}rem`],
+  ["--article-field-block", `${article.fieldBlock}rem`],
+  ["--article-tags-inset", `${article.tagsInset}rem`],
+  ["--article-tag-input", `${article.tagInput}rem`],
   ["--entry-gap", `${entry.gap}rem`],
   ["--entry-line-gap", `${entry.lineGap}rem`],
   ["--entry-reach", `${entry.reach}rem`],
@@ -654,6 +700,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--feed-tight-gap", `${feed.tightGap}rem`],
   ["--embed-padding", `${embed.padding}rem`],
   ["--embed-gap", `${embed.gap}rem`],
+  ["--poll-padding", `${poll.padding}rem`],
+  ["--poll-option-inline", `${poll.optionInline}rem`],
+  ["--poll-result-block", `${poll.resultBlock}rem`],
   ["--media-gap", `${media.gap}rem`],
   ["--media-ratio", `${media.ratio}`],
   ["--media-max-height", `${media.maxHeight}rem`],
@@ -667,6 +716,8 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--viewer-scrim", `rgb(0 0 0 / ${percent(viewer.scrim)})`],
   ["--viewer-bar", `${viewer.bar}rem`],
   ["--viewer-inset", `${viewer.inset}rem`],
+  ["--viewer-side-inline", `${viewer.sideInline}rem`],
+  ["--viewer-specimen", `${viewer.specimen}rem`],
   ["--chip-height", `${chip.height}rem`],
   ["--chip-padding-inline", `${chip.paddingInline}rem`],
   ["--chip-gap", `${chip.gap}rem`],
@@ -688,6 +739,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
     `light-dark(rgb(0 0 0 / ${percent(dialog.scrim.light)}), rgb(0 0 0 / ${percent(dialog.scrim.dark)}))`,
   ],
   ["--composer-thumb", `${composer.thumb}rem`],
+  ["--composer-inset", `${composer.inset}rem`],
+  ["--composer-field-block", `${composer.fieldBlock}rem`],
+  ["--composer-remove-room", `${composer.removeRoom}rem`],
   ["--composer-text-size", `${composer.textSize}rem`],
   ["--composer-text-leading", `${composer.textLeading}`],
   ["--composer-text-lines", `${composer.textLines}`],

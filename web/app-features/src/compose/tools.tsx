@@ -4,17 +4,8 @@
 // sets the time it goes out within the server's limits (ADR-0156 §7), in the reader's zone, and the language it is
 // written in, by the language's name in its own words.
 
-import { languageName } from "@my/app-components";
-import {
-  FormPopup,
-  localInput,
-  MenuGroup,
-  MenuItem,
-  MenuSurface,
-  readerZone,
-  ScheduleForm,
-  ToolText,
-} from "@my/design-system";
+import { languageName, localInput, readerZone, ScheduleForm } from "@my/app-components";
+import { FormPopup, MenuGroup, MenuItem, MenuSurface, ToolText } from "@my/design-system";
 import { useState, type ReactElement } from "react";
 import type { stringsIn } from "../locale";
 

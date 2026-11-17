@@ -124,20 +124,20 @@ func TestHumanCheckWidget(t *testing.T) {
 		links  []string
 	}{
 		{turnstile, map[string]string{
-			"scriptSrc": "https://challenges.cloudflare.com/turnstile/v0/api.js", "containerClass": "cf-turnstile",
+			"scriptSrc": "https://challenges.cloudflare.com/turnstile/v0/api.js", "containerClassName": "cf-turnstile",
 			"siteKey": "turnstile-site-key", "action": "ACTION", "language": "ja", "theme": "auto",
 		}, "このページは Cloudflare Turnstile でボットかどうかを確認します。", []string{
 			"https://www.cloudflare.com/privacypolicy/ Cloudflare Turnstile のプライバシーポリシー",
 		}},
 		{hcaptcha, map[string]string{
-			"scriptSrc": "https://js.hcaptcha.com/1/api.js?hl=ja", "containerClass": "h-captcha",
+			"scriptSrc": "https://js.hcaptcha.com/1/api.js?hl=ja", "containerClassName": "h-captcha",
 			"siteKey": "hcaptcha-site-key", "action": "", "language": "", "theme": "light",
 		}, "このページは hCaptcha でボットかどうかを確認します。", []string{
 			"https://www.hcaptcha.com/privacy hCaptcha のプライバシーポリシー",
 			"https://www.hcaptcha.com/terms hCaptcha の利用規約",
 		}},
 		{recaptcha, map[string]string{
-			"scriptSrc": "https://www.google.com/recaptcha/api.js?hl=ja", "containerClass": "g-recaptcha",
+			"scriptSrc": "https://www.google.com/recaptcha/api.js?hl=ja", "containerClassName": "g-recaptcha",
 			"siteKey": "recaptcha-site-key", "action": "", "language": "", "theme": "light",
 		}, "このサイトは reCAPTCHA で保護されており、Google のプライバシーポリシーと利用規約が適用されます。", []string{
 			"https://policies.google.com/privacy Google のプライバシーポリシー",
@@ -239,7 +239,7 @@ func TestHumanCheckSignIn(t *testing.T) {
 	}
 	// The form comes back with the widget for another try and keeps the address.
 	if data := screenData(t, w); text(data, "error") != "Complete the check that you are not a bot, then try again." ||
-		text(data, "humanCheck.containerClass") != "cf-turnstile" || text(data, "email") != "alice@example.com" {
+		text(data, "humanCheck.containerClassName") != "cf-turnstile" || text(data, "email") != "alice@example.com" {
 		t.Errorf("sign-in with a bad token: %v", data)
 	}
 	if !strings.Contains(w.Header().Get("Content-Security-Policy"), "challenges.cloudflare.com") {
@@ -274,7 +274,7 @@ func TestHumanCheckSignUp(t *testing.T) {
 			t.Errorf("sign-up with %v = %d, want %d", tc.err, w.Code, tc.status)
 		}
 		if data := screenData(t, w); text(data, "error") != tc.want || text(data, "signUp.username") != "bob" ||
-			text(data, "humanCheck.containerClass") != "h-captcha" {
+			text(data, "humanCheck.containerClassName") != "h-captcha" {
 			t.Errorf("sign-up with %v: %v", tc.err, data)
 		}
 		if len(id.tokens) != 1 || id.tokens[0] != "token" {

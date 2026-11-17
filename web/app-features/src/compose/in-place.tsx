@@ -7,6 +7,7 @@
 // says why in the server's words. A newer latest post arriving while the reader writes is what the reply answers then.
 // Its logic is the composer's (use-composer.ts).
 
+import { ConversationReply } from "@my/app-components";
 import { useComposeSettings, type Status } from "@my/app-data";
 import {
   AttachButton,
@@ -15,7 +16,6 @@ import {
   Button,
   CharCount,
   ComposerText,
-  ConversationReply,
   FormAlert,
   useLocale,
 } from "@my/design-system";

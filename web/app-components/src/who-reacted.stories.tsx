@@ -83,7 +83,7 @@ function List({ custom }: { custom: boolean }) {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Who reacted", tags: ["themes"] } satisfies Meta;
 export default meta;
 

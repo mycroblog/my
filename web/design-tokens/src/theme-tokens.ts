@@ -36,7 +36,7 @@ const rules: readonly Rule[] = [
   { pattern: /^--font-weight-/ },
   {
     pattern:
-      /^--(control|icon-button|target|focus-ring|press|spinner|icon|avatar|menu|disclosure|content|article|entry|feed|embed|media|viewer|chip|toggle|emoji-picker|dialog|composer|diff|kbd|shell|screen|form-page)-/,
+      /^--(control|icon-button|target|focus-ring|press|spinner|icon|avatar|menu|disclosure|content|article|entry|feed|embed|poll|media|viewer|chip|toggle|emoji-picker|dialog|composer|diff|kbd|shell|screen|form-page)-/,
   },
   // Fixed: Tailwind maps a shadow to its utilities.
   { pattern: /^--shadow-/ },

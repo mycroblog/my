@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { findIn, logicalOf } from "./direction";
+import { bothDirections, findIn, logicalOf } from "./direction";
 
 test("logicalOf names the logical utility for each physical side", () => {
   const cases: [string, string][] = [
@@ -36,6 +36,56 @@ test("logicalOf keeps the variants, the negative and the important mark", () => 
   expect(logicalOf("pl-4!")).toBe("ps-4!");
   expect(logicalOf("md:hover:mr-1")).toBe("md:hover:me-1");
   expect(logicalOf("max-[40rem]:[&>button]:pl-2")).toBe("max-[40rem]:[&>button]:ps-2");
+});
+
+test("logicalOf names the logical declaration of an arbitrary property", () => {
+  expect(logicalOf("[margin-left:0]")).toBe("[margin-inline-start:0]");
+  expect(logicalOf("hover:[padding-right:var(--gap)]")).toBe("hover:[padding-inline-end:var(--gap)]");
+  expect(logicalOf("[text-align:left]")).toBe("[text-align:start]");
+  expect(logicalOf("[left:calc(100%_-_1rem)]")).toBe("[inset-inline-start:calc(100%_-_1rem)]");
+  for (const c of ["[margin-inline:0]", "[text-align:center]", "[word-break:auto-phrase]", "[&_p]:m-0"])
+    expect([c, logicalOf(c)]).toEqual([c, null]);
+});
+
+test("bothDirections writes a utility without a logical form for both directions", () => {
+  const cases: [string, string][] = [
+    ["bg-left", "ltr:bg-left rtl:bg-right"],
+    ["bg-right-top", "ltr:bg-right-top rtl:bg-left-top"],
+    ["object-bottom-left", "ltr:object-bottom-left rtl:object-bottom-right"],
+    ["origin-left", "ltr:origin-left rtl:origin-right"],
+    ["origin-top-right", "ltr:origin-top-right rtl:origin-top-left"],
+    ["bg-linear-to-r", "ltr:bg-linear-to-r rtl:bg-linear-to-l"],
+    ["bg-gradient-to-bl", "ltr:bg-gradient-to-bl rtl:bg-gradient-to-br"],
+    ["mask-l-from-50%", "ltr:mask-l-from-50% rtl:mask-r-from-50%"],
+    ["touch-pan-left", "ltr:touch-pan-left rtl:touch-pan-right"],
+    ["translate-x-press", "ltr:translate-x-press rtl:-translate-x-press"],
+    ["-translate-x-1/2", "ltr:-translate-x-1/2 rtl:translate-x-1/2"],
+    ["data-selected:translate-x-full!", "data-selected:ltr:translate-x-full! data-selected:rtl:-translate-x-full!"],
+    ["!-translate-x-[3px]", "ltr:!-translate-x-[3px] rtl:!translate-x-[3px]"],
+  ];
+  for (const [physical, both] of cases) expect([physical, bothDirections(physical)]).toEqual([physical, both]);
+});
+
+test("bothDirections leaves what stands under ltr: or rtl:, what moves nothing and what turns with the page", () => {
+  for (const c of [
+    "ltr:bg-left",
+    "rtl:bg-right",
+    "rtl:-translate-x-full",
+    "hover:ltr:translate-x-press",
+    "translate-x-0",
+    "translate-x-[calc(var(--shift)*var(--my-direction))]",
+    "translate-y-press",
+    "-translate-y-1/2",
+    "bg-top",
+    "bg-center",
+    "origin-center",
+    "object-cover",
+    "bg-linear-to-t",
+    "mask-t-from-50%",
+    "touch-pan-x",
+    "rtl:-scale-x-100",
+  ])
+    expect([c, bothDirections(c)]).toEqual([c, null]);
 });
 
 test("logicalOf leaves the logical utilities and look-alikes alone", () => {
@@ -144,5 +194,57 @@ export { quiet, fine };
     [2, 'float: "right"', 'float: "inline-end"'],
     [5, "left", "insetInlineStart"],
     [5, "right", "insetInlineEnd"],
+  ]);
+});
+
+test("findIn reads left and right in a style object that a style names, and in one typed CSSProperties", () => {
+  const source = `import type { CSSProperties } from "react";
+const box = { left: 1, right: 2 };
+const pinned = { position: "fixed", left: 0 } as const;
+const base = { top: 0 };
+const moved = { ...base, right: box.right };
+const typed: CSSProperties = {
+  right: 4,
+};
+const fine = { insetInlineStart: box.left, top: 0 };
+export const A = ({ on }: { on: boolean }) => (
+  <p style={on ? pinned : moved}>
+    <span style={fine}>{box.left}</span>
+  </p>
+);
+export { typed };
+`;
+  expect(findIn("a.tsx", source).map((f) => [f.line, f.physical, f.logical])).toEqual([
+    [3, "left", "insetInlineStart"],
+    [5, "right", "insetInlineEnd"],
+  ]);
+  const typedOnly = `import type { CSSProperties } from "react";
+const box = { left: 1 };
+export const typed: CSSProperties = {
+  left: box.left,
+};
+`;
+  expect(findIn("a.ts", typedOnly).map((f) => [f.line, f.physical, f.logical])).toEqual([
+    [4, "left", "insetInlineStart"],
+  ]);
+});
+
+test("findIn reads a utility without a logical form and a translateX() that does not turn with the page", () => {
+  const source = `export const a = "bg-left ltr:origin-left rtl:origin-right translate-x-0 hover:translate-x-press";
+export const b = { transform: "translateX(4px)" };
+const along = (sign: number) => \`translateX(calc(\${sign} * var(--shift) * var(--my-direction)))\`;
+export const c = { transform: along(1), still: "translateX(0)", up: "translateY(4px)" };
+`;
+  expect(findIn("a.ts", source).map((f) => [f.line, f.physical, f.logical])).toEqual([
+    [1, "bg-left", "ltr:bg-left rtl:bg-right"],
+    [1, "hover:translate-x-press", "hover:ltr:translate-x-press hover:rtl:-translate-x-press"],
+    [2, "translateX(4px)", "translateX(calc(4px * var(--my-direction)))"],
+  ]);
+  const css = `.a { @apply origin-left; transform: translateX(-50%); }
+.b { transform: translateX(calc(1rem * var(--my-direction))) translateY(2px); }
+`;
+  expect(findIn("a.css", css).map((f) => [f.line, f.physical, f.logical])).toEqual([
+    [1, "origin-left", "ltr:origin-left rtl:origin-right"],
+    [1, "translateX(-50%)", "translateX(calc(-50% * var(--my-direction)))"],
   ]);
 });

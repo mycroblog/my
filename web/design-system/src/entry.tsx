@@ -15,16 +15,17 @@ import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
 import { useFeedPosition } from "./feed";
 import { Icon, type IconName } from "./icons";
+import { Box, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { Preview, usePreviewState } from "./preview";
 import { actionJoint } from "./sentence";
-import { ActionScope } from "./shortcuts";
+import { ActionScope, HeardShortcuts } from "./shortcuts";
 import { RelativeTime } from "./time";
 
 const entry = tv({
   base: [
-    "box-border grid grid-cols-[minmax(0,1fr)] gap-entry rounded-entry text-body text-text outline-hidden",
-    "-m-entry-reach p-entry-reach scroll-mt-feed-scroll scroll-mb-entry-scroll",
+    "box-border rounded-entry text-body text-text outline-hidden",
+    "p-entry-reach scroll-mt-feed-scroll scroll-mb-entry-scroll",
     "data-surface-marked:bg-surface-hover data-focus-visible:shadow-focus",
   ],
 });
@@ -55,72 +56,57 @@ export function Entry({ lang, labelledBy, children }: EntryProps) {
   const focus = focused || preview === "focus-visible";
   const marked = hovered || focus || preview === "hover";
   return (
-    <article
-      ref={ref}
-      lang={lang}
-      dir={direction}
-      tabIndex={0}
-      aria-labelledby={labelledBy}
-      aria-posinset={position?.posinset}
-      aria-setsize={position?.setsize}
-      data-entry=""
-      data-scroll-key={position?.key}
-      data-focus-visible={focus || undefined}
-      {...markedSurface(marked)}
+    <Stack
+      as={
+        <article
+          ref={ref}
+          lang={lang}
+          dir={direction}
+          tabIndex={0}
+          aria-labelledby={labelledBy}
+          aria-posinset={position?.posinset}
+          aria-setsize={position?.setsize}
+          data-entry=""
+          data-scroll-key={position?.key}
+          data-focus-visible={focus || undefined}
+          {...markedSurface(marked)}
+          onPointerEnter={() => {
+            setHovered(true);
+          }}
+          onPointerLeave={() => {
+            setHovered(false);
+          }}
+          onFocus={(e) => {
+            setFocused(e.target === e.currentTarget && e.currentTarget.matches(":focus-visible"));
+          }}
+          onBlur={() => {
+            setFocused(false);
+          }}
+        />
+      }
+      gap="entry"
+      bleedInline="entry-reach"
+      bleedBlock="entry-reach"
       className={entry()}
-      onPointerEnter={() => {
-        setHovered(true);
-      }}
-      onPointerLeave={() => {
-        setHovered(false);
-      }}
-      onFocus={(e) => {
-        setFocused(e.target === e.currentTarget && e.currentTarget.matches(":focus-visible"));
-      }}
-      onBlur={() => {
-        setFocused(false);
-      }}
     >
       <ActionScope target={ref}>
         <Preview state={undefined}>{children}</Preview>
       </ActionScope>
-    </article>
-  );
-}
-
-const stack = tv({
-  base: "grid grid-cols-[minmax(0,1fr)]",
-  variants: { gap: { part: "gap-entry", line: "gap-entry-line" } },
-});
-
-/** Parts one under another at the full width: an entry's gap apart (`part`), or a line's (`line`). */
-export function Stack({
-  gap = "part",
-  lang,
-  children,
-}: {
-  gap?: "part" | "line";
-  lang?: string | undefined;
-  children: ReactNode;
-}) {
-  return (
-    <div className={stack({ gap })} lang={lang}>
-      {children}
-    </div>
+    </Stack>
   );
 }
 
 const caption = tv({
   slots: {
-    root: "m-0 flex items-start gap-entry-caption text-caption text-muted-text",
+    root: "text-caption text-muted-text",
     // The glyph stands on the first line, so that a caption that wraps keeps it at its start.
-    glyph: "inline-flex h-[1lh] shrink-0 items-center",
+    glyph: "",
     // Wrapping between phrases, never inside a word of ja (表示されます); a word longer than the line (a handle of
     // another server, @user@domain) breaks where it must rather than push the line past its column.
-    text: "min-w-0 flex-1 [word-break:auto-phrase] [overflow-wrap:anywhere]",
+    text: "[word-break:auto-phrase] [overflow-wrap:anywhere]",
     action: "whitespace-nowrap",
     // An action of its own at the line's end, on the first line, never broken inside.
-    end: "shrink-0 whitespace-nowrap",
+    end: "whitespace-nowrap",
     // The glyph's place while what the line says is under way: a spinner of the glyph's size.
     spinner: [
       "box-border size-icon-caption rounded-full border-spinner border-solid",
@@ -130,7 +116,7 @@ const caption = tv({
   },
   variants: {
     // On one line: a `CaptionName` in it truncates, and the words around it keep their room and their spaces.
-    oneLine: { true: { text: "flex whitespace-pre" } },
+    oneLine: { true: { text: "whitespace-pre" } },
     // What went wrong with what the reader asked for: the text's own color over the muted caption, without a hue.
     alert: { true: { glyph: "text-text", text: "text-text" } },
     // What the reader did that waits for someone else (a reply until its author approves it): as plain as `alert`,
@@ -151,12 +137,52 @@ export function LivePart({ children }: { children: ReactNode }) {
   );
 }
 
+// What a press of Enter or Space acts on. React Aria runs such a press of its controls itself, with no click.
+const pressed = 'a[href], button, summary, [role="button"], [role="link"], [role^="menuitem"]';
+const pressedBySpace = 'button, summary, [role="button"], [role^="menuitem"]';
+
+/** Whether a press on `on` is one on the entry of `around`: see `HeardActions`. */
+function acts(around: Element, on: Element): boolean {
+  // A press in what the entry opened reaches it through React's tree, from outside its own elements.
+  return around.contains(on) || on.closest('[role^="menuitem"]:not([aria-disabled="true"])') !== null;
+}
+
+/**
+ * Around an entry, with no box of its own: hears every press of the reader on it (a notification is read once the
+ * reader has shown that they saw it), by a pointer or by Enter or Space, on its words or on a control of it, the one
+ * that opens a menu or a picker included, and on an item of a menu it opened. It hears the press before the control
+ * that takes it, where a feed's `onEntryClick` hears only a press no control took. It hears as well each action
+ * declared inside it that ran on its shortcut's key (`HeardShortcuts`): a post's reply, or more, which opens its menu;
+ * not one declared around it (the feed's next entry). It may hear one press twice.
+ */
+export function HeardActions({ onAct, children }: { onAct: () => void; children: ReactNode }) {
+  return (
+    <div
+      className="contents"
+      onClickCapture={(e) => {
+        if (acts(e.currentTarget, e.target as Element)) onAct();
+      }}
+      onKeyDownCapture={(e) => {
+        const on = e.target as Element;
+        const by = e.key === "Enter" ? pressed : e.key === " " ? pressedBySpace : undefined;
+        if (by !== undefined && !e.repeat && on.matches(by) && acts(e.currentTarget, on)) onAct();
+      }}
+    >
+      <HeardShortcuts onAct={onAct}>{children}</HeardShortcuts>
+    </div>
+  );
+}
+
 /**
  * A name inside a one-line caption (who boosted a post): isolated (<bdi>), and the part that truncates first, so the
  * line keeps the words around it, the verb at its end.
  */
 export function CaptionName({ children }: { children: ReactNode }) {
-  return <bdi className="min-w-0 truncate">{children}</bdi>;
+  return (
+    <Box as="bdi" shrink lines={1}>
+      {children}
+    </Box>
+  );
 }
 
 export type CaptionLineProps = {
@@ -208,12 +234,14 @@ export function CaptionLine({
 }: CaptionLineProps) {
   const s = caption({ oneLine, alert, waiting });
   const hasText = children !== undefined && children !== null && children !== false;
+  // On one line, the words around a name stand beside it, the name the one to give way.
+  const Text = oneLine ? Row : Box;
   return (
-    <p className={s.root()} lang={lang}>
-      <span className={s.glyph()}>
+    <Row as="p" align="start" gap="entry-caption" className={s.root()} lang={lang}>
+      <Row as="span" line rigid align="center" className={s.glyph()}>
         {busy ? <span className={s.spinner()} aria-hidden="true" /> : <Icon name={icon} place="caption" />}
-      </span>
-      <span className={s.text()}>
+      </Row>
+      <Text as="span" grow className={s.text()}>
         {spoken === undefined ? (
           children
         ) : (
@@ -225,37 +253,30 @@ export function CaptionLine({
         {/* A dot held to the last word after words; after a full sentence, none (sentence.ts). */}
         {hasText && action !== undefined && actionJoint(children)}
         {action !== undefined && <span className={s.action()}>{action}</span>}
-      </span>
-      {end !== undefined && <span className={s.end()}>{end}</span>}
-    </p>
+      </Text>
+      {end !== undefined && (
+        <Box as="span" rigid className={s.end()}>
+          {end}
+        </Box>
+      )}
+    </Row>
   );
 }
 
 const byline = tv({
   slots: {
-    root: "flex min-w-0 items-center",
-    lines: "min-w-0 flex-1",
-    line: "flex min-w-0 items-baseline gap-entry-name leading-entry",
-    name: "min-w-0 shrink truncate font-strong",
+    line: "leading-entry",
+    name: "font-strong",
     // A name that opens its account: in the text's color, underlined only while hovered.
     link: [
-      "min-w-0 shrink truncate rounded-control text-current no-underline outline-hidden",
+      "rounded-control text-current no-underline outline-hidden",
       "data-hovered:underline data-focus-visible:shadow-focus",
     ],
-    end: "ms-auto flex flex-none",
     // The handle's line, in the page's direction, so that the handle sits at the line's start in either; the handle
     // in it reads left-to-right and, as wide as it is up to the line, truncates at its own end.
-    handleLine: "block min-w-0 text-caption leading-entry text-muted-text",
-    handle: "inline-block max-w-full truncate align-top",
+    handleLine: "text-caption leading-entry text-muted-text",
     // The name as the heading of a screen of the account's things: the name's own look, in a heading's place.
-    heading: "m-0 flex min-w-0 shrink [font:inherit]",
-  },
-  variants: {
-    // The author over the handle beside the post's avatar, or all on one line beside an inline one (a quoted post).
-    compact: {
-      false: { root: "gap-entry-avatar", lines: "grid" },
-      true: { root: "gap-entry-caption", lines: "flex items-baseline gap-entry-caption", handleLine: "flex-1" },
-    },
+    heading: "[font:inherit]",
   },
 });
 
@@ -295,76 +316,83 @@ export function Byline({
   self,
   heading = false,
 }: BylineProps) {
-  const s = byline({ compact });
+  const s = byline();
   const own = useId();
   const bdi = (
-    <bdi id={nameId ?? own} className={s.name()}>
+    <Box as="bdi" id={nameId ?? own} lines={1} className={s.name()}>
       {name}
-    </bdi>
+    </Box>
   );
   const linked =
     href === undefined ? (
       bdi
     ) : (
-      <Link href={href} className={s.link()}>
+      <Box as={<Link href={href} />} lines={1} className={s.link()}>
         {bdi}
-      </Link>
+      </Box>
     );
-  const nameEl = heading ? <h2 className={s.heading()}>{linked}</h2> : linked;
+  const nameEl = heading ? (
+    <Row as="h2" shrink className={s.heading()}>
+      {linked}
+    </Row>
+  ) : (
+    linked
+  );
   const handleEl =
     self === undefined ? (
-      <span className={s.handleLine()}>
-        <bdi dir="ltr" className={s.handle()}>
+      <Box as="span" display="block" grow={compact} className={s.handleLine()}>
+        <Box as="bdi" dir="ltr" display="inline-block" max="full" lines={1} baseline="top">
           {handle}
-        </bdi>
-      </span>
+        </Box>
+      </Box>
     ) : (
-      <span className={s.handleLine()}>
-        <span className={s.handle()}>{self}</span>
+      <Box as="span" display="block" grow={compact} className={s.handleLine()}>
+        <Box as="span" display="inline-block" max="full" lines={1} baseline="top">
+          {self}
+        </Box>
         <span className="sr-only"> {handle}</span>
-      </span>
+      </Box>
     );
-  const endEl = end !== undefined && <span className={s.end()}>{end}</span>;
+  const endEl = end !== undefined && (
+    <Row as="span" push="end" rigid>
+      {end}
+    </Row>
+  );
   return (
-    <div className={s.root()}>
+    <Row shrink align="center" gap={compact ? "entry-caption" : "entry-avatar"}>
       {avatar}
       {compact ? (
-        <div className={s.lines()}>
+        <Row grow align="baseline" gap="entry-caption">
           {nameEl}
           {handleEl}
           {endEl}
-        </div>
+        </Row>
       ) : (
-        <div className={s.lines()}>
-          <div className={s.line()}>
+        <Stack grow>
+          <Row shrink align="baseline" gap="entry-name" className={s.line()}>
             {nameEl}
             {endEl}
-          </div>
+          </Row>
           {handleEl}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Row>
   );
 }
 
 const stamp = tv({
   slots: {
-    root: "flex flex-none items-center gap-entry-caption text-caption text-muted-text",
-    glyph: "inline-flex flex-none",
+    root: "text-caption text-muted-text",
     link: [
       "rounded-control text-current no-underline outline-hidden",
       "data-hovered:underline data-focus-visible:shadow-focus",
     ],
-    // The time and the edited mark together: on a touch screen, one target of the touch height over both.
-    when: "relative inline-flex items-baseline",
+    // The time's link as a target a row of avatars tall, as the faces beside it are.
+    tall: "min-h-avatar-row",
     // The edited mark: a word after the time, muted as the time is, apart from it by a middle dot; it opens the
     // history. On a touch screen its hit area covers the time too, at the touch height.
-    edited: [
-      "inline-flex cursor-pointer items-baseline rounded-control border-0 bg-transparent p-0 font-sans text-caption",
-      "text-current outline-hidden data-hovered:underline data-focus-visible:shadow-focus",
-      "pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2",
-      "pointer-coarse:before:h-icon-button-touch pointer-coarse:before:-translate-y-1/2",
-    ],
+    edited:
+      "cursor-pointer rounded-control border-0 bg-transparent p-0 font-sans text-caption text-current outline-hidden data-hovered:underline data-focus-visible:shadow-focus",
   },
 });
 
@@ -375,6 +403,8 @@ export type StampProps = {
   date: Date | string;
   /** Where the time leads: the entry on a page of its own. */
   href?: string | undefined;
+  /** The link is a target as tall as a row of avatars, where the time stands beside faces of that size. */
+  tall?: boolean | undefined;
   /**
    * The entry was edited: `text` (edited) after the time, named `label` for assistive technology, which opens its
    * history; on a touch screen a press on the time opens it too.
@@ -386,7 +416,7 @@ export type StampProps = {
  * A glyph and the relative time, kept together at the end of a byline's line. The time is isolated (<bdi>), so that
  * it keeps its own order beside the glyph in either direction, with words of an RTL locale reading right-to-left.
  */
-export function Stamp({ glyph, date, href, edited }: StampProps) {
+export function Stamp({ glyph, date, href, tall, edited }: StampProps) {
   const s = stamp();
   const time = (
     <bdi>
@@ -396,42 +426,47 @@ export function Stamp({ glyph, date, href, edited }: StampProps) {
   const linked =
     href === undefined ? (
       time
+    ) : tall ? (
+      <Row as={<Link href={href} className={s.link()} />} inline align="center" className={s.tall()}>
+        {time}
+      </Row>
     ) : (
       <Link href={href} className={s.link()}>
         {time}
       </Link>
     );
   return (
-    <span className={s.root()}>
+    <Row as="span" rigid align="center" gap="entry-caption" className={s.root()}>
       {glyph !== undefined && (
-        <span role="img" aria-label={glyph.label} className={s.glyph()}>
+        <Row as="span" rigid role="img" aria-label={glyph.label}>
           <Icon name={glyph.icon} place="caption" />
-        </span>
+        </Row>
       )}
       {edited === undefined ? (
         linked
       ) : (
-        <span className={s.when()}>
+        // The time and the edited mark together: on a touch screen, one target of the touch height over both.
+        <Row as="span" anchor align="baseline">
           {linked}
           <span aria-hidden="true">&nbsp;·&nbsp;</span>
-          <AriaButton aria-label={edited.label} className={s.edited()} onPress={edited.onPress}>
+          <Row
+            as={<AriaButton aria-label={edited.label} onPress={edited.onPress} />}
+            align="baseline"
+            touch
+            className={s.edited()}
+          >
             {edited.text}
-          </AriaButton>
-        </span>
+          </Row>
+        </Row>
       )}
-    </span>
+    </Row>
   );
 }
 
-const actions = tv({
-  slots: {
-    // The row reaches as far past the body as a tile's inline padding, so that the first glyph lines up with the body.
-    root: "-mx-icon-button-inline flex gap-entry-action",
-    end: "ms-auto inline-flex",
-  },
-});
-
-/** A row of icon buttons close together at the start, and `end` (more) at the row's end. */
+/**
+ * A row of icon buttons close together at the start, and `end` (more) at the row's end; the buttons that do not fit (large
+ * counts, as a right-to-left locale writes them) go on a next line.
+ */
 export function ActionRow({
   lang,
   children,
@@ -441,24 +476,40 @@ export function ActionRow({
   children: ReactNode;
   end?: ReactNode;
 }) {
-  const s = actions();
+  // The row reaches as far past the body as a tile's inline padding, so that the first glyph lines up with the body.
   return (
-    <div className={s.root()} lang={lang}>
+    <Row wrap bleedInline="icon-button-inline" gap="entry-action" lang={lang}>
       {children}
-      {end !== undefined && <span className={s.end()}>{end}</span>}
-    </div>
+      {end !== undefined && (
+        <Row as="span" push="end" rigid>
+          {end}
+        </Row>
+      )}
+    </Row>
   );
 }
 
 const embed = tv({
-  base: "grid grid-cols-[minmax(0,1fr)] gap-embed-gap rounded-control bg-surface-raised p-embed",
+  base: "rounded-control bg-surface-raised p-embed",
+  variants: { clear: { true: "[&>:first-child]:pe-composer-remove-room" } },
 });
 
-/** Something embedded in an entry, on the raised surface: a quoted post, which never outweighs the post that carries it. */
-export function Embed({ lang, children }: { lang?: string | undefined; children: ReactNode }) {
+/**
+ * Something embedded in an entry, on the raised surface: a quoted post, which never outweighs the post that carries
+ * it. `clear` keeps the end of its first line clear of a button pinned over its top end (its remove).
+ */
+export function Embed({
+  lang,
+  clear = false,
+  children,
+}: {
+  lang?: string | undefined;
+  clear?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className={embed()} lang={lang}>
+    <Stack gap="embed-gap" className={embed({ clear })} lang={lang}>
       {children}
-    </div>
+    </Stack>
   );
 }

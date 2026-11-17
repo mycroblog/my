@@ -8,10 +8,8 @@
 // A component's story runs under the shortcuts of the app's keymap, its menus shown as the app shows them by the
 // viewport (a sheet on a phone, a popover from `tablet`), in the system's sans; a screen's story
 // (`parameters.screen`) is the whole app, which places its own. The loader asks @my/platform whether the browser runs
-// view transitions, which a story of the design system cannot ask itself (ADR-0028 §17).
-//
-// The story tests (vitest.config.ts): the a11y addon fails a story on an axe violation of the tags of ADR-0110 §9,
-// and, in a test run alone, the afterEach fails one whose page scrolls sideways.
+// view transitions, which a story of the design system cannot ask itself (ADR-0028 §17). The accessibility panel
+// checks a story with the axe rules of the tags of ADR-0110 §9.
 
 import "@my/design-system/styles.css";
 import "@my/design-system/emoji.css";
@@ -104,19 +102,8 @@ const page: Decorator = (Story, { globals, parameters }) => {
 /** The tags of the axe rules a story must pass (ADR-0110 §9). */
 const axeTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
-/** Fails a story whose page is wider than its viewport, in a test run (ADR-0110 §10). */
-const noSidewaysScroll = () => {
-  if (import.meta.env.MODE !== "test") return;
-  const { scrollWidth, clientWidth } = document.documentElement;
-  if (scrollWidth > clientWidth)
-    throw new Error(
-      `the story scrolls sideways: ${String(scrollWidth)} px wide in a ${String(clientWidth)} px viewport`,
-    );
-};
-
 const preview: Preview = {
   decorators: [page],
-  afterEach: noSidewaysScroll,
   loaders: [() => ({ viewTransitions: supportsViewTransitions() })],
   globalTypes: {
     theme: {

@@ -98,12 +98,10 @@ function cachedConversation(data: AppData, id: string): Conversation | undefined
  * Puts a conversation the server answered into the cache, in place of the cached one. An answer whose latest post is
  * older than the cached one's is out of date (a read answered after a newer post arrived) and changes nothing. One with
  * a newer latest post goes to the top of the list, as does one the cache does not know (a new one); one with the same
- * latest post (a read) changes it where it is, and leaves out of the list one that is not in it (hidden). While the
- * list is being read, the answer may or may not hold it, so the list is read again instead.
+ * latest post (a read) changes it where it is, and leaves out of the list one that is not in it (hidden).
  */
 function putConversation(data: AppData, conversation: Conversation): void {
   const { queryClient } = data;
-  const { queryKey } = conversationsQuery(data);
   const before = cachedConversation(data, conversation.id);
   if (before !== undefined && newer(before.last_status.id, conversation.last_status.id)) return;
   // One the reader hid comes back with a newer post alone.
@@ -114,8 +112,28 @@ function putConversation(data: AppData, conversation: Conversation): void {
   const arrived = !stillHidden && (before === undefined || newer(conversation.last_status.id, before.last_status.id));
   if (before !== undefined) followThread(data, before.last_status, conversation.last_status);
   queryClient.setQueryData(conversationQuery(data, conversation.id).queryKey, conversation);
-  if (queryClient.getQueryCache().find({ queryKey, exact: true })?.state.fetchStatus === "fetching") {
-    void queryClient.invalidateQueries({ queryKey, exact: true });
+  listConversation(data, conversation, arrived);
+}
+
+/**
+ * Puts a conversation into the cached list, at its top when it `arrived`. While the list is being read, the answer may
+ * or may not hold it as it is now (a read answered after the list was asked): a list that holds an answer is read again
+ * instead. Its first read is not asked again before it has answered, so the conversation waits for that answer and
+ * goes into it (`waited`); a first read that failed leaves no list to put it in.
+ */
+function listConversation(data: AppData, conversation: Conversation, arrived: boolean, waited = false): void {
+  const { queryClient } = data;
+  const { queryKey } = conversationsQuery(data);
+  const list = queryClient.getQueryCache().find({ queryKey, exact: true });
+  if (list?.state.fetchStatus === "fetching") {
+    if (waited || list.state.data !== undefined || list.promise === undefined) {
+      void queryClient.invalidateQueries({ queryKey, exact: true });
+      return;
+    }
+    const after = () => {
+      listConversation(data, conversation, arrived, true);
+    };
+    list.promise.then(after, after);
     return;
   }
   queryClient.setQueryData<Pages<Conversation>>(queryKey, (cached) => {

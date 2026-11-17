@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The reader's bookmarks, a place of the navigation: a story per state every screen is shown in (app.samples.tsx),
-// with a few posts bookmarked besides the scenario's; and the minimum width and right to left.
+// with a few posts bookmarked besides the scenario's.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const at = "/bookmarks";
 const server = { bookmarks: ["layla-jokes", "marco-hello", "sam-poll"] };
@@ -23,5 +23,3 @@ export const Empty: Story = { parameters: screen({ at, server, state: "empty" })
 export const Loading: Story = { parameters: screen({ at, server, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at, server, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at, server, state: "long" }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

@@ -14,6 +14,7 @@ import type { ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { motion } from "@my/design-tokens";
 import { Avatar } from "./avatar";
+import { Box, Row, Stack } from "./layout";
 
 export type Suggestion = (
   | {
@@ -49,24 +50,15 @@ export type Suggestion = (
 
 const list = tv({
   slots: {
-    panel: [
-      "box-border grid max-h-[calc(8*var(--control-form-height)+2*var(--menu-padding))] overflow-y-auto rounded-overlay",
-      "bg-surface p-menu-padding font-sans text-body text-text shadow-overlay",
-    ],
+    panel: "box-border rounded-overlay bg-surface p-menu-padding font-sans text-body text-text shadow-overlay",
     option: [
-      "box-border flex h-control-form min-w-0 cursor-default items-center gap-menu-icon-gap overflow-hidden",
-      "rounded-control px-control-timeline-inline hover:bg-surface-raised aria-selected:bg-surface-raised",
+      "box-border h-control-form cursor-default rounded-control px-control-timeline-inline",
+      "hover:bg-surface-raised aria-selected:bg-surface-raised",
     ],
-    lead: "inline-flex shrink-0 items-center justify-center",
-    // The name gives up its width first, down to a few letters; then the handle's user part, down to its start.
-    name: "min-w-[min(4em,30%)] shrink truncate font-label",
-    handle: "flex min-w-0 shrink-[4] text-muted-text",
-    user: "min-w-[3em] truncate",
-    server: "shrink-0 whitespace-nowrap",
-    text: "flex min-w-0 flex-1 items-baseline gap-entry-caption",
-    end: "ms-auto shrink-0 ps-entry-caption text-caption text-muted-text tabular-nums",
+    name: "font-label",
+    end: "ps-entry-caption text-caption text-muted-text tabular-nums",
     emoji: "size-icon-action text-[length:var(--icon-action)] leading-none object-contain",
-    line: "m-0 flex h-control-form items-center gap-entry-caption px-control-timeline-inline text-caption text-muted-text",
+    line: "box-border h-control-form px-control-timeline-inline text-caption text-muted-text",
     spinner: [
       "box-border size-icon-caption rounded-full border-spinner border-solid border-spinner-track border-t-current",
       "animate-spin",
@@ -74,6 +66,31 @@ const list = tv({
     ],
   },
 });
+
+/**
+ * The name of an option: it gives up its width down to a few letters (a share of the line it stands in) and is cut
+ * where it does not fit.
+ */
+function OptionName({ dir, className, children }: { dir: "auto"; className: string; children: ReactNode }) {
+  return (
+    <span dir={dir} className={`${className} min-w-[min(4em,30%)] shrink truncate`}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * An account's handle after its name, left to right: its user part gives up its width down to its start, and the whole
+ * gives up more of it than the name does. What does not fit is cut, never drawn over the name beside it.
+ */
+function OptionHandle({ user, server }: { user: string; server: string }) {
+  return (
+    <span dir="ltr" className="flex min-w-0 shrink-[4] overflow-hidden text-muted-text">
+      <span className="min-w-[3em] truncate">{user}</span>
+      {server !== "" && <span className="shrink-0 whitespace-nowrap">{server}</span>}
+    </span>
+  );
+}
 
 export type SuggestionListProps = {
   /** The listbox's id, which the text's `aria-controls` names; an option's is `<id>-<index>`. */
@@ -93,19 +110,22 @@ export function SuggestionList({ id, label, items, active, onChoose, status }: S
   const s = list();
   if (status !== undefined)
     return (
-      <div className={s.panel()}>
-        <p className={s.line()}>
-          {status.kind === "loading" && <span className={s.spinner()} aria-hidden="true" />}
+      <Stack scroll="y" max="suggestions" className={s.panel()}>
+        <Row as="p" align="center" gap="entry-caption" className={s.line()}>
+          {status.kind === "loading" && <Box as="span" rigid className={s.spinner()} aria-hidden="true" />}
           {status.text}
-        </p>
-      </div>
+        </Row>
+      </Stack>
     );
   return (
-    <div id={id} className={s.panel()} role="listbox" aria-label={label}>
+    <Stack id={id} scroll="y" max="suggestions" className={s.panel()} role="listbox" aria-label={label}>
       {items.map((item, i) => (
-        <div
+        <Row
           key={i}
           id={`${id}-${String(i)}`}
+          align="center"
+          gap="menu-icon-gap"
+          clip
           className={s.option()}
           role="option"
           aria-selected={i === active}
@@ -118,10 +138,10 @@ export function SuggestionList({ id, label, items, active, onChoose, status }: S
             onChoose(i);
           }}
         >
-          <Row item={item} s={s} />
-        </div>
+          <OptionBody item={item} />
+        </Row>
       ))}
-    </div>
+    </Stack>
   );
 }
 
@@ -131,51 +151,52 @@ const handleParts = (handle: string): [string, string] => {
   return at < 0 ? [handle, ""] : [handle.slice(0, at), handle.slice(at)];
 };
 
-function Row({ item, s }: { item: Suggestion; s: ReturnType<typeof list> }) {
+function OptionBody({ item }: { item: Suggestion }) {
+  const s = list();
   switch (item.kind) {
     case "account": {
       const [user, server] = handleParts(item.handle);
       return (
         <>
-          <span className={s.lead()}>
+          <Row as="span" inline rigid align="center" justify="center">
             <Avatar name={item.initialOf} src={item.avatar} size="row" decorative />
-          </span>
-          <span className={s.text()}>
-            <span className={s.name()} dir="auto">
+          </Row>
+          <Row as="span" grow align="baseline" gap="entry-caption">
+            <OptionName dir="auto" className={s.name()}>
               {item.name}
-            </span>
-            <span className={s.handle()} dir="ltr">
-              <span className={s.user()}>{user}</span>
-              {server !== "" && <span className={s.server()}>{server}</span>}
-            </span>
-          </span>
+            </OptionName>
+            <OptionHandle user={user} server={server} />
+          </Row>
         </>
       );
     }
     case "hashtag":
       return (
         <>
-          <span className={s.name()} dir="auto">
+          <OptionName dir="auto" className={s.name()}>
             #{item.name}
-          </span>
-          {/* Apart from the tag in the option's words, as in its name. */} <span className={s.end()}>{item.uses}</span>
+          </OptionName>
+          {/* Apart from the tag in the option's words, as in its name. */}{" "}
+          <Box as="span" push="end" rigid className={s.end()}>
+            {item.uses}
+          </Box>
         </>
       );
     case "emoji":
       return (
         <>
-          <span className={s.lead()}>
+          <Row as="span" inline rigid align="center" justify="center">
             {item.image !== undefined ? (
               <img className={s.emoji()} src={item.image} alt="" />
             ) : (
-              <span className={`${s.emoji()} inline-flex items-center justify-center`} aria-hidden="true">
+              <Row as="span" inline align="center" justify="center" className={s.emoji()} aria-hidden="true">
                 {item.text}
-              </span>
+              </Row>
             )}
-          </span>
-          <span className={s.name()} dir="auto">
+          </Row>
+          <OptionName dir="auto" className={s.name()}>
             {item.name}
-          </span>
+          </OptionName>
         </>
       );
   }

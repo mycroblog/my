@@ -96,7 +96,7 @@ func TestHumanCheck(t *testing.T) {
 			!slices.Equal(cspDirective(csp, "frame-src"), []string{"https://challenges.cloudflare.com"}) || strings.Contains(csp, "unsafe-") {
 			t.Errorf("Content-Security-Policy = %q", csp)
 		}
-		if data := authData(t, body); authText(data, "humanCheck.containerClass") != "cf-turnstile" || authText(data, "humanCheck.siteKey") != "site-key" ||
+		if data := authData(t, body); authText(data, "humanCheck.containerClassName") != "cf-turnstile" || authText(data, "humanCheck.siteKey") != "site-key" ||
 			authText(data, "humanCheck.action") != "sign_in" || authText(data, "humanCheck.language") != "en" || authText(data, "humanCheck.theme") != "auto" {
 			t.Errorf("sign-in page lacks the widget: %v", authAt(data, "humanCheck"))
 		}

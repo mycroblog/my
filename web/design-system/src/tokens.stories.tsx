@@ -43,8 +43,8 @@ const cell = {
 } as const;
 const value = { ...cell, whiteSpace: "nowrap" } as const;
 const table = { borderCollapse: "collapse", fontSize: rem(14), width: "100%" } as const;
-const head = { ...label, borderBottom: "1px solid #ccc" } as const;
-const row = { borderBottom: "1px solid #eee" } as const;
+const head = { ...label, borderBottom: "1px solid var(--color-surface-raised-pressed)" } as const;
+const row = { borderBottom: "1px solid var(--color-surface-raised)" } as const;
 
 function TypeSpecimen() {
   return (
@@ -121,7 +121,15 @@ function Panel() {
 // A color with its value and its contrast on the scheme's surface, wrapping below the swatch where the cell is narrow.
 const swatch = (c: string, surface: string) => (
   <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: `${rem(4)} ${rem(8)}` }}>
-    <div style={{ background: c, border: "1px solid #ccc", borderRadius: 4, height: rem(24), width: rem(40) }} />
+    <div
+      style={{
+        background: c,
+        border: "1px solid var(--color-surface-raised-pressed)",
+        borderRadius: 4,
+        height: rem(24),
+        width: rem(40),
+      }}
+    />
     <code>{c}</code>
     <span style={{ whiteSpace: "nowrap" }}>{verdict(contrast(c, surface))}</span>
   </div>
@@ -201,7 +209,7 @@ function Colors() {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Type and color", tags: ["themes"] } satisfies Meta;
 export default meta;
 

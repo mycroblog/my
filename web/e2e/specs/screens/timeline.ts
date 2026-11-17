@@ -17,20 +17,6 @@ const votes = { methods: ["POST"], path: /\/statuses\/[^/]+\/poll\/votes$/ } as 
 /** A bookmark of a post, set or taken back. */
 const bookmark = { methods: ["POST", "DELETE"], path: /\/statuses\/[^/]+\/bookmark$/ } as const;
 
-/** A request to translate a post. */
-const translation = { methods: ["POST"], path: /\/statuses\/[^/]+\/translation$/ } as const;
-
-/**
- * The whole of `words` as a line reads it: the joiners that keep a line's last word from breaking alone may sit between
- * any two letters, and any space may be one that does not break.
- */
-export function line(words: string): RegExp {
-  const letters = Array.from(words, (c) => c).map((c) =>
-    /\s/.test(c) ? "\\s+" : c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  );
-  return new RegExp(`^${letters.join("⁠?")}$`);
-}
-
 export class Post {
   readonly page: Page;
   readonly article: Locator;
@@ -50,66 +36,9 @@ export class Post {
     return this.article.getByRole("img", { name: alt, exact: true });
   }
 
-  /** The picture that opens in the media viewer: "Open image" or "Open GIF", then ": " and its description if any. */
-  picture(name: string): Locator {
-    return this.article.getByRole("button", { name, exact: true });
-  }
-
-  /** The button that plays a video in place: "Play video", then ": " and its description if any. */
-  playVideo(name: string): Locator {
-    return this.article.getByRole("button", { name, exact: true });
-  }
-
-  /** The playing video, named by its description. */
-  video(description: string): Locator {
-    return this.article.getByLabel(description, { exact: true });
-  }
-
-  /** The button in the corner of a video that opens it in the media viewer. */
-  get openVideo(): Locator {
-    return this.article.getByRole("button", { name: "Open video", exact: true });
-  }
-
-  /** The play or pause button of an attached sound. */
-  audioButton(name: "Play audio" | "Pause audio"): Locator {
-    return this.article.getByRole("button", { name, exact: true });
-  }
-
-  /**
-   * The button of the line above sensitive media, Show or Hide, described by what it covers, `label` ("Sensitive
-   * image", "2 sensitive images").
-   */
-  sensitiveLine(label: string, action: "Show" | "Hide"): Locator {
-    return this.article.getByRole("button", { name: action, description: label, exact: true });
-  }
-
-  /** The covered media, which a press shows too; hidden from a screen reader, which hears the line alone. */
-  covered(label: string): Locator {
-    return this.article
-      .getByRole("button", { name: `${label} · Show`, exact: true, includeHidden: true })
-      .filter({ hasNotText: "Show" });
-  }
-
-  /**
-   * The color [red, green, blue] at the middle of the first blurhash drawn in the post in place of covered media, a
-   * picture hidden from screen readers that only its pixels tell; none while none is drawn.
-   */
-  async coveredColor(): Promise<number[]> {
-    return this.article.evaluate((article) => {
-      const canvas = article.querySelector("canvas");
-      const pixel = canvas?.getContext("2d")?.getImageData(canvas.width / 2, canvas.height / 2, 1, 1).data;
-      return pixel === undefined ? [] : [...pixel.slice(0, 3)];
-    });
-  }
-
   /** The link card of the post's first link, named by its text: the site, the title, and so on. */
   card(name: RegExp): Locator {
     return this.article.getByRole("link", { name });
-  }
-
-  /** The button that shows the text behind a content warning. */
-  get showButton(): Locator {
-    return this.article.getByRole("button", { name: "Show", exact: true });
   }
 
   /** The favourite button, which is pressed when the reader has favourited the post. */
@@ -173,24 +102,18 @@ export class Post {
     return this.reactions.getByRole("button", { pressed: true });
   }
 
-  /** Opens the emoji picker from the React button, by pointer or with a key pressed on it, and returns it. */
-  async react(by: "pointer" | "Enter" | "Space" = "pointer"): Promise<EmojiPicker> {
-    if (by === "pointer") await this.reactButton.click();
-    else await this.reactButton.press(by);
+  /** Opens the emoji picker from the React button, and returns it. */
+  async react(): Promise<EmojiPicker> {
+    await this.reactButton.click();
     return new EmojiPicker(this.page.getByRole("dialog", { name: "React", exact: true }));
   }
 
   /**
-   * Does `act`, a pick in the picker by pointer or key that sets or takes back the reader's reaction, and returns once
-   * the server has answered it.
+   * Picks `emoji`, a cell of the picker, which sets or takes back the reader's reaction, and returns once the server
+   * has answered it.
    */
-  async reacting(act: () => Promise<void>): Promise<void> {
-    await answered(this.page, { methods: ["PUT", "DELETE"], path: /\/statuses\/[^/]+\/reaction$/ }, act);
-  }
-
-  /** Picks `emoji`, a cell of the picker, with the pointer, and returns once the server has answered the reaction. */
   async pick(emoji: Locator): Promise<void> {
-    await this.reacting(async () => {
+    await answered(this.page, { methods: ["PUT", "DELETE"], path: /\/statuses\/[^/]+\/reaction$/ }, async () => {
       await emoji.click();
     });
   }
@@ -237,13 +160,6 @@ export class Post {
     });
   }
 
-  /** Sends the vote again from `tryAgain`, the notice's action, and returns once the server has answered it. */
-  async voteAgain(tryAgain: Locator): Promise<void> {
-    await answered(this.page, votes, async () => {
-      await tryAgain.click();
-    });
-  }
-
   /** Opens the composer of a reply to the post. */
   async reply(): Promise<Composer> {
     await this.article.getByRole("button", { name: counted("Reply") }).click();
@@ -274,19 +190,6 @@ export class Post {
     await answered(this.page, { methods: ["DELETE"], path: /\/statuses\/[^/]+$/ }, async () => {
       await confirm.getByRole("button", { name: "Delete", exact: true }).click();
     });
-  }
-
-  /**
-   * Deletes the reader's post from Delete and redraft… and its confirmation, once the server has answered, and returns
-   * the composer it opens as a new post.
-   */
-  async redraft(): Promise<Composer> {
-    await this.menuItem("Delete and redraft…");
-    const confirm = this.page.getByRole("alertdialog", { name: "Delete and redraft this post?", exact: true });
-    await answered(this.page, { methods: ["DELETE"], path: /\/statuses\/[^/]+$/ }, async () => {
-      await confirm.getByRole("button", { name: "Delete and redraft", exact: true }).click();
-    });
-    return new Composer(this.page.getByRole("dialog", { name: "New post", exact: true }));
   }
 
   /** Bookmarks the post from its more menu, and returns once the server has answered. */
@@ -336,34 +239,6 @@ export class Post {
       .filter({ has: this.page.getByRole("time") });
   }
 
-  /** Reveals the text behind the content warning. */
-  async show(): Promise<void> {
-    await this.showButton.click();
-  }
-
-  /** The Translate button of a post in another language than the reader's. */
-  get translateButton(): Locator {
-    return this.article.getByRole("button", { name: "Translate", exact: true });
-  }
-
-  /** The button that shows the post's original again, in the note of its translation. */
-  get originalButton(): Locator {
-    return this.article.getByRole("button", { name: "Show original", exact: true });
-  }
-
-  /** The button of a refused translation that asks the server's provider again. */
-  get translateAgainButton(): Locator {
-    return this.article.getByRole("button", { name: "Try again", exact: true });
-  }
-
-  /**
-   * The line of the post's translation whose words begin with `start`: the note of who translated it, or why it was
-   * not; read it whole with `line()`.
-   */
-  translationLine(start: string): Locator {
-    return this.article.getByRole("paragraph").filter({ hasText: new RegExp(`^${start}`) });
-  }
-
   /**
    * The line over the reader's own reply or boost while its author's approval is not given: "Waiting for approval" or
    * "Not approved" over the reply, "Boost waiting for approval" over the post boosted.
@@ -372,43 +247,12 @@ export class Post {
     return this.article.getByText(words, { exact: true });
   }
 
-  /** The content warning's words, over the folded text. */
-  warning(text: string): Locator {
-    return this.article.getByText(text, { exact: true });
-  }
-
-  /** Presses Translate (or `button`), and returns once the server has answered the request to translate. */
-  async translate(button: Locator = this.translateButton): Promise<void> {
-    await answered(this.page, translation, async () => {
-      await button.click();
-    });
-  }
-
   /** Opens the post's own screen, with its thread, from the link of its time. */
   async open(): Promise<void> {
     await this.article
       .getByRole("link")
       .filter({ has: this.page.getByRole("time") })
       .click();
-  }
-
-  /**
-   * The card of an article titled `title` (ADR-0160): one link to its page, named "Article", its title, and its summary
-   * when it has one.
-   */
-  articleCard(title: string): Locator {
-    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return this.article.getByRole("link", { name: new RegExp(`^Article ${escaped}( .+)?$`) });
-  }
-
-  /** Opens the page of the article titled `title`, from its card. */
-  async openArticle(title: string): Promise<void> {
-    await this.articleCard(title).click();
-  }
-
-  /** Opens the profile of the post's author, from the link of their name. */
-  async openAuthor(displayName: string): Promise<void> {
-    await this.article.getByRole("link", { name: displayName, exact: true }).click();
   }
 }
 
@@ -429,28 +273,6 @@ export class Timeline {
         .getByRole("article", { name: author, exact: true })
         .filter({ hasText: text })
         .filter({ hasNotText: "boosted" }),
-    );
-  }
-
-  /** The post of `author` that holds `text`, as it leads a profile's feed, pinned, under the line "Pinned". */
-  pinned(author: string, text: string): Post {
-    return new Post(
-      this.page,
-      this.feed
-        .getByRole("article", { name: author, exact: true })
-        .filter({ hasText: text })
-        .filter({ hasText: /^Pinned[^]*$/ }),
-    );
-  }
-
-  /** The boost by `booster` of the post of `author` that holds `text`. */
-  boostOf(booster: string, author: string, text: string): Post {
-    return new Post(
-      this.page,
-      this.feed
-        .getByRole("article", { name: author, exact: true })
-        .filter({ hasText: text })
-        .filter({ hasText: `${booster} boosted` }),
     );
   }
 

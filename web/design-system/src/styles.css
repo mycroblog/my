@@ -9,3 +9,28 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "./**/*.tsx";
 @plugin "./theme.ts";
+
+/*
+ * Where a box stands is its container's to say (ADR-0171 §3): a block of text has no margin of its own, nor has a
+ * checkbox, so that no part takes the browser's off it, and a layout part alone sets the space around it. Without specificity, so that a
+ * part that does set one (the text of a post, of an article) is heard.
+ */
+@layer base {
+  :where(p, h1, h2, h3, h4, h5, h6, ul, ol, dl, dd, figure, blockquote, pre, input) {
+    margin: 0;
+  }
+
+  /* A fieldset's margin and its frame are the browser's too. */
+  :where(fieldset) {
+    margin: 0;
+    border: 0;
+  }
+
+  /*
+   * A word longer than its line breaks inside its box, in place of running past it and widening the page: the layout
+   * parts let a box be narrower than its words (layout.tsx), and this keeps the words in it.
+   */
+  :where(html) {
+    overflow-wrap: break-word;
+  }
+}

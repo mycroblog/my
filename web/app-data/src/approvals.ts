@@ -55,7 +55,8 @@ function cacheAnswer(data: AppData, answered: InteractionRequest): void {
 
 /**
  * Approves or declines an interaction request, and resolves once the cache knows it: the request answered in the
- * lists, and an approved reply under its post, an approved boost counted on it. It rejects with the server's problem.
+ * lists, and an approved reply under its post, an approved boost counted on it. The answer's post counts what the
+ * server recorded with the approval, so its counts are taken as they are. It rejects with the server's problem.
  */
 async function answerInteractionRequest(data: AppData, id: string, accept: boolean): Promise<void> {
   const path = { params: { path: { id } } };
@@ -70,12 +71,12 @@ async function answerInteractionRequest(data: AppData, id: string, accept: boole
   if (answered.state !== "accepted") return;
   const target = answered.status.id;
   if (answered.kind === "reply" && answered.interacting_status !== undefined) {
-    const count = answered.status.replies_count + 1;
+    const count = answered.status.replies_count;
     shadowStatus(data, target, (s) => ({ ...s, replies_count: Math.max(s.replies_count, count) }), "replies").confirm();
     cacheReply(data.queryClient, answered.interacting_status);
   }
   if (answered.kind === "announce") {
-    const count = answered.status.boosts_count + 1;
+    const count = answered.status.boosts_count;
     shadowStatus(data, target, (s) => ({ ...s, boosts_count: Math.max(s.boosts_count, count) }), "boosts").confirm();
   }
 }

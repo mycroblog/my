@@ -335,7 +335,14 @@ export {
   type Found,
   type SearchResults,
 } from "./search";
-export { suggestionsQuery, useSuggestions, type Suggestions } from "./suggestions";
+export {
+  loadHomeSuggestions,
+  suggestionsQuery,
+  useHomeSuggestions,
+  useSuggestions,
+  type HomeSuggestions,
+  type Suggestions,
+} from "./suggestions";
 export {
   accountListsQuery,
   followedSearchQuery,

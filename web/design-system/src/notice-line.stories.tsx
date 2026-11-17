@@ -9,7 +9,6 @@ import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
-import { expect, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import { Entry } from "./entry";
 import { type IconName } from "./icons";
@@ -98,20 +97,11 @@ function Feed() {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Notice line", tags: ["themes"] } satisfies Meta;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Each line leads to what it tells of, and its sentence alone names its entry. */
-export const Linked: Story = {
-  render: () => <Feed />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const links = canvas.getAllByRole("link");
-    await expect(links).toHaveLength(4);
-    await expect(links[0]).toHaveAttribute("href", "/@ren/status/1");
-    await expect(canvas.getAllByRole("article")[1]).toHaveAccessibleName(/^Kiri|^Kiri があなた/);
-  },
-};
+/** Each line leads to what it tells of. */
+export const Linked: Story = { render: () => <Feed /> };

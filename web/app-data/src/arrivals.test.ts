@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
+import { scenario } from "@my/e2e/fake";
 import { InfiniteQueryObserver } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import {
@@ -12,15 +13,23 @@ import {
   type Arrival,
 } from "./arrivals";
 import { shadowed } from "./shadow";
-import { fakeAppData, json, page, status } from "./test/fake";
+import { fakeData } from "./test/data";
 import { homeTimelineQuery } from "./timeline";
 
-/** A server whose home timeline answers `first` for its first page and `second` for the page after "c2". */
-function timeline(first: () => unknown, second: unknown = page(["1"])) {
-  return fakeAppData((request) => {
-    const cursor = new URL(request.url).searchParams.get("cursor");
-    return json(200, cursor === "c2" ? second : first());
+/** The posts of the home timeline, oldest first: one more than a page of the server holds. */
+const keys = Array.from({ length: 21 }, (_, i) => `post-${String(i + 1)}`);
+
+/** A server where the reader follows sam, whose 21 posts make two pages of the home timeline: 20 and 1. */
+function timeline() {
+  const made = fakeData({
+    seed: {
+      people: scenario.people,
+      follows: [{ follower: "yuki", followee: "sam" }],
+      posts: keys.map((key) => ({ key, author: "sam", text: `Loaf ${key}.`, visibility: "public", language: "en" })),
+    },
   });
+  const [oldest = "", ...later] = keys.map(made.fake.idOf);
+  return { ...made, first: later.toReversed(), second: [oldest] };
 }
 
 const load = (data: AppData) => data.queryClient.infiniteQuery({ ...homeTimelineQuery(data), staleTime: Infinity });
@@ -31,27 +40,29 @@ const cached = (data: AppData) =>
     .getQueryData(homeTimelineQuery(data).queryKey)
     ?.pages.map((p) => p.items.filter((s) => shadowed(data, s) !== undefined).map((s) => s.id));
 
-/** Loads the first two pages: ["3", "2"] and ["1"]. */
-async function twoPages(first: () => unknown = () => page(["3", "2"], "c2")) {
-  const fake = timeline(first);
-  await load(fake.data);
-  const observer = new InfiniteQueryObserver(fake.data.queryClient, homeTimelineQuery(fake.data));
+/** Loads the two pages, `first` and `second`. */
+async function twoPages() {
+  const made = timeline();
+  await load(made.data);
+  const observer = new InfiniteQueryObserver(made.data.queryClient, homeTimelineQuery(made.data));
   await observer.fetchNextPage();
-  return { ...fake, observer };
+  return { ...made, observer };
 }
 
 describe("while no screen shows the home timeline", () => {
   test("a new status goes at once to the top of the cached first page, once", async () => {
-    const { data } = await twoPages();
-    receiveHomeStatuses(data, [status("5"), status("4")]);
-    receiveHomeStatuses(data, [status("4")]);
-    expect(cached(data)).toEqual([["5", "4", "3", "2"], ["1"]]);
+    const { fake, data, first, second } = await twoPages();
+    const [five, four] = fake.newPosts(2);
+    if (five === undefined || four === undefined) throw new Error("test: the fake made no posts");
+    receiveHomeStatuses(data, [five, four]);
+    receiveHomeStatuses(data, [four]);
+    expect(cached(data)).toEqual([[five.id, four.id, ...first], second]);
   });
 
   test("a break keeps the first page alone and marks it, so that the next screen reads it again", async () => {
-    const { data, requests } = await twoPages();
+    const { data, requests, first } = await twoPages();
     receiveHomeGap(data);
-    expect(cached(data)).toEqual([["3", "2"]]);
+    expect(cached(data)).toEqual([first]);
     expect(data.queryClient.getQueryState(homeTimelineQuery(data).queryKey)?.isInvalidated).toBe(true);
     // Nothing shows it, so nothing is fetched until a loader asks.
     await Promise.resolve();
@@ -59,68 +70,68 @@ describe("while no screen shows the home timeline", () => {
   });
 
   test("a status that arrives while the next page loads goes in once it has", async () => {
-    let answer: (r: Response) => void = () => undefined;
-    const { data } = fakeAppData((request) =>
-      new URL(request.url).searchParams.get("cursor") === "c2"
-        ? new Promise<Response>((resolve) => {
-            answer = resolve;
-          })
-        : json(200, page(["3", "2"], "c2")),
-    );
+    const { fake, data, first, second } = timeline();
     await load(data);
+    const next = fake.script("GET /timelines/home", { hold: "response" });
     const more = new InfiniteQueryObserver(data.queryClient, homeTimelineQuery(data)).fetchNextPage();
-    await Promise.resolve();
-    receiveHomeStatuses(data, [status("4")]);
-    answer(json(200, page(["1"])));
+    await next.arrived();
+    const arrived = fake.newPosts(1);
+    receiveHomeStatuses(data, arrived);
+    next.release();
     await more;
     await Promise.resolve();
-    expect(cached(data)).toEqual([["4", "3", "2"], ["1"]]);
+    expect(cached(data)).toEqual([[...arrived.map((s) => s.id), ...first], second]);
   });
 
   test("a status before the first page is fetched is left to that fetch", () => {
-    const { data } = timeline(() => page(["1"]));
-    receiveHomeStatuses(data, [status("2")]);
+    const { fake, data } = timeline();
+    receiveHomeStatuses(data, fake.newPosts(1));
     expect(cached(data)).toBeUndefined();
   });
 });
 
 describe("while a screen shows it", () => {
   test("the policy decides at each arrival; what it takes goes in, what it does not is held", async () => {
-    const { data } = await twoPages();
+    const { fake, data, first, second } = await twoPages();
     const asked: Arrival[] = [];
     let takes = false;
     const leave = showHomeTimeline(data, (arrival) => {
       asked.push(arrival);
       return takes;
     });
-    receiveHomeStatuses(data, [status("4")]);
-    receiveHomeStatuses(data, [status("5")]);
-    expect(cached(data)).toEqual([["3", "2"], ["1"]]);
+    const four = fake.newPosts(1);
+    const five = fake.newPosts(1);
+    receiveHomeStatuses(data, four);
+    receiveHomeStatuses(data, five);
+    expect(cached(data)).toEqual([first, second]);
     // The second arrival offers both held statuses.
     expect(asked).toEqual([
       { kind: "statuses", count: 1 },
       { kind: "statuses", count: 2 },
     ]);
     takes = true;
-    receiveHomeStatuses(data, [status("6")]);
-    expect(cached(data)).toEqual([["6", "5", "4", "3", "2"], ["1"]]);
+    const six = fake.newPosts(1);
+    receiveHomeStatuses(data, six);
+    expect(cached(data)).toEqual([[...[...six, ...five, ...four].map((s) => s.id), ...first], second]);
     leave();
   });
 
   test("what is still held when the screen goes is put in", async () => {
-    const { data } = await twoPages();
+    const { fake, data, first, second } = await twoPages();
     const leave = showHomeTimeline(data, () => false);
-    receiveHomeStatuses(data, [status("4")]);
+    const [four] = fake.newPosts(1);
+    const [five] = fake.newPosts(1);
+    if (four === undefined || five === undefined) throw new Error("test: the fake made no posts");
+    receiveHomeStatuses(data, [four]);
     leave();
-    expect(cached(data)).toEqual([["4", "3", "2"], ["1"]]);
+    expect(cached(data)).toEqual([[four.id, ...first], second]);
     // From then on nothing is held.
-    receiveHomeStatuses(data, [status("5")]);
-    expect(cached(data)).toEqual([["5", "4", "3", "2"], ["1"]]);
+    receiveHomeStatuses(data, [five]);
+    expect(cached(data)).toEqual([[five.id, four.id, ...first], second]);
   });
 
   test("past the most it holds, it is a break: the first page is read again in place of every page", async () => {
-    let first = page(["3", "2"], "c2");
-    const { data, requests, observer } = await twoPages(() => first);
+    const { fake, data, requests, observer } = await twoPages();
     // The screen's column observes the timeline.
     const unobserve = observer.subscribe(() => undefined);
     const asked: Arrival[] = [];
@@ -129,39 +140,41 @@ describe("while a screen shows it", () => {
       asked.push(arrival);
       return takes;
     });
-    receiveHomeStatuses(
-      data,
-      Array.from({ length: maxHeld + 1 }, (_, i) => status(`n${maxHeld - i}`)),
-    );
+    const arrived = fake.newPosts(maxHeld + 1);
+    receiveHomeStatuses(data, arrived);
     expect(asked.at(-1)).toEqual({ kind: "gap" });
-    first = page(["n200", "n199"], "c2");
     takes = true;
     receiveHomeGap(data);
     await data.queryClient.getQueryCache().find({ queryKey: homeTimelineQuery(data).queryKey })?.promise;
-    expect(cached(data)).toEqual([["n200", "n199"]]);
+    expect(cached(data)).toEqual([arrived.slice(0, 20).map((s) => s.id)]);
     expect(requests).toHaveLength(3);
     leave();
     unobserve();
   });
 
   test("a deleted status leaves the timeline and what it holds", async () => {
-    const { data } = await twoPages();
+    const { fake, data, first, second } = await twoPages();
     const leave = showHomeTimeline(data, () => false);
-    receiveHomeStatuses(data, [status("4")]);
-    receiveHomeStatuses(data, [status("5", { boost: status("2") })]);
-    receiveDeletion(data, "2");
-    receiveDeletion(data, "4");
-    expect(cached(data)).toEqual([["3"], ["1"]]);
+    const [four, five] = fake.newPosts(2).toReversed();
+    const [newest, ...rest] = data.queryClient.getQueryData(homeTimelineQuery(data).queryKey)?.pages[0]?.items ?? [];
+    if (four === undefined || five === undefined || newest === undefined) throw new Error("test: no posts");
+    receiveHomeStatuses(data, [four]);
+    // A boost of the page's newest post arrives.
+    receiveHomeStatuses(data, [{ ...five, boost: newest }]);
+    receiveDeletion(data, newest.id);
+    receiveDeletion(data, four.id);
+    expect(first[0]).toBe(newest.id);
+    expect(cached(data)).toEqual([rest.map((s) => s.id), second]);
     leave();
-    expect(cached(data)).toEqual([["3"], ["1"]]);
+    expect(cached(data)).toEqual([rest.map((s) => s.id), second]);
   });
 
   test("a break the policy holds is read again when the screen goes", async () => {
-    const { data } = await twoPages();
+    const { data, first, second } = await twoPages();
     const leave = showHomeTimeline(data, () => false);
     receiveHomeGap(data);
-    expect(cached(data)).toEqual([["3", "2"], ["1"]]);
+    expect(cached(data)).toEqual([first, second]);
     leave();
-    expect(cached(data)).toEqual([["3", "2"]]);
+    expect(cached(data)).toEqual([first]);
   });
 });

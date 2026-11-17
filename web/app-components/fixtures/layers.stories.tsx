@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A story, and a sample module beside it (`*.samples.ts`), may also import the fake server of @my/e2e, which exists for
-// the stories, and the live options of @my/devtools, and no other part of either or layer above its own.
+// A story, and a sample module beside it (`*.samples.ts`), may also import the fake API of @my/e2e and the live
+// options of @my/devtools, and no other part of either or layer above its own.
 
 import { Button } from "@my/design-system";
 import { serverHtml } from "@my/e2e/fake";

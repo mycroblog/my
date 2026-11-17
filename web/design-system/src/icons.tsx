@@ -140,6 +140,7 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 import { tv } from "tailwind-variants/lite";
+import { Box, Row } from "./layout";
 
 /** How an icon's on state is drawn: another glyph, or the off glyph knocked out of a solid tile. */
 type On = TablerIcon | "tile";
@@ -334,8 +335,8 @@ export type IconPlace = "action" | "caption" | "navigation";
 
 const icon = tv({
   slots: {
-    glyph: "shrink-0",
-    tile: "inline-flex shrink-0 items-center justify-center rounded-icon-tile bg-current",
+    glyph: "",
+    tile: "rounded-icon-tile bg-current",
     inner: "size-icon-tile-glyph text-surface",
   },
   variants: {
@@ -352,7 +353,13 @@ const icon = tv({
 const tileStroke = 2.5;
 
 function draw(Glyph: TablerIcon, className: string, stroke?: number) {
-  return <Glyph aria-hidden="true" focusable="false" className={className} {...(stroke ? { stroke } : {})} />;
+  return (
+    <Box
+      rigid
+      as={<Glyph aria-hidden="true" focusable="false" {...(stroke ? { stroke } : {})} />}
+      className={className}
+    />
+  );
 }
 
 /** An icon by its meaning, at the size of its place; `on` draws its on state. */
@@ -362,9 +369,9 @@ export function Icon({ name, place, on = false }: { name: IconName; place: IconP
   const shape = on ? entry.on : undefined;
   if (shape === "tile")
     return (
-      <span aria-hidden="true" className={s.tile()}>
+      <Row as="span" inline rigid align="center" justify="center" aria-hidden="true" className={s.tile()}>
         {draw(entry.off, s.inner(), tileStroke)}
-      </span>
+      </Row>
     );
   return draw(shape ?? entry.off, s.glyph());
 }

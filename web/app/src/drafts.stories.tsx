@@ -8,7 +8,6 @@ import type { ServerDraft } from "@my/app-data";
 import { DraftsView, type DraftsState } from "@my/app-features";
 import { useLocale } from "@my/design-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft } from "./app.samples";
 import { useNarrowViewport } from "./shell/viewport";
 
 /** A moment `hours` hours from now, as an ISO 8601 string. */
@@ -158,5 +157,3 @@ export const NoneScheduled: Story = shows("empty-scheduled");
 export const Empty: Story = shows("empty");
 export const Loading: Story = shows("loading");
 export const LoadFailed: Story = shows("failed");
-export const RightToLeft: Story = { ...shows("listed"), globals: rightToLeft };
-export const MinimumWidth: Story = { ...shows("listed"), globals: minimumWidth };

@@ -1,54 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+// The arithmetic of a list that keeps its place, over the part of an element it reads (`Box`), which a stand-in gives
+// here. Saving and restoring the page's position by its keyed elements is in scroll.dom.test.tsx.
+
 import { describe, expect, test } from "bun:test";
-import { anchoring, firstInView, positionOf, restorePosition } from "./scroll";
-
-/** A stand-in for a page whose keyed elements have a height each, one under another from `at` in the content. */
-function keyedPage(keys: string[], { at = 20, height = 100, scrollTop = 0 } = {}) {
-  const scroller: { scrollTop: number; ownerDocument?: Document } = { scrollTop };
-  const state = { keys };
-  const element = (key: string) => ({
-    getAttribute: () => key,
-    getBoundingClientRect() {
-      const top = at + state.keys.indexOf(key) * height - scroller.scrollTop;
-      return { top, bottom: top + height };
-    },
-  });
-  const doc = {
-    scrollingElement: scroller,
-    documentElement: scroller,
-    defaultView: { getComputedStyle: () => ({ scrollPaddingTop: "0px" }) },
-    querySelectorAll: () => state.keys.map(element),
-  } as unknown as Document;
-  scroller.ownerDocument = doc;
-  return { doc, scroller, state };
-}
-
-describe("saving and restoring a position", () => {
-  test("it saves the element at the top of the view by its key, and its offset", () => {
-    const { doc } = keyedPage(["c", "b", "a"], { scrollTop: 150 });
-    expect(positionOf(doc)).toEqual({ top: 150, anchor: { key: "b", offset: -30 } });
-  });
-
-  test("it brings that element back to its offset, though entries went in above while away", () => {
-    const { doc, scroller, state } = keyedPage(["c", "b", "a"], { scrollTop: 150 });
-    const saved = positionOf(doc);
-    state.keys = ["e", "d", "c", "b", "a"];
-    scroller.scrollTop = 0;
-    restorePosition(doc, saved);
-    expect(scroller.scrollTop).toBe(350);
-    expect(positionOf(doc).anchor).toEqual(saved.anchor);
-  });
-
-  test("without the element, it goes back to the plain offset", () => {
-    const { doc, scroller, state } = keyedPage(["c", "b", "a"], { scrollTop: 150 });
-    const saved = positionOf(doc);
-    state.keys = ["z"];
-    scroller.scrollTop = 0;
-    restorePosition(doc, saved);
-    expect(scroller.scrollTop).toBe(150);
-  });
-});
+import { anchoring, firstInView } from "./scroll";
 
 /**
  * A stand-in for a scroller and the items of a list in it: each item has a height and sits under the one before, the

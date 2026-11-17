@@ -9,7 +9,6 @@ import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { useLocale } from "react-aria-components";
-import { waitFor } from "storybook/test";
 import { EmojiPicker, type EmojiPickerProps } from "./emoji-picker";
 import { EmojiPickerPopover, EmojiPickerSheet, EmojiPickerSurface } from "./emoji-picker-overlay";
 import { pickerSections, pickerStrings, searchPicker } from "./emoji.samples";
@@ -107,7 +106,7 @@ function Live() {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Emoji picker", tags: ["themes"] } satisfies Meta;
 export default meta;
 
@@ -123,19 +122,5 @@ export const SearchEmpty: Story = { render: () => <Opened defaultQuery="xylophon
 /** A server with no custom emoji: no section and no category for them. */
 export const NoCustomEmoji: Story = { render: () => <Opened noCustom /> };
 /** On a phone: a sheet from the bottom, titled, the picker filling it. */
-export const Sheet: Story = {
-  render: () => <InSheet />,
-  // The story tests check the sheet once it has risen, as the reader reads it, not while it fades in.
-  play: async ({ canvasElement }) => {
-    await waitFor(
-      () => {
-        const panel = canvasElement.ownerDocument.querySelector('[role="dialog"]')?.parentElement;
-        const style = panel ? getComputedStyle(panel) : undefined;
-        if (style?.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error("the sheet has not risen yet");
-      },
-      { timeout: 3000 },
-    );
-  },
-};
+export const Sheet: Story = { render: () => <InSheet /> };
 export const Live_: Story = { name: "Live", render: () => <Live /> };

@@ -6,6 +6,7 @@
 // and accessible name, and keep the operations of a screen in @my/e2e (restrict/e2e-queries), out of the patterns that
 // made them flaky (restrict/e2e-flaky).
 
+import { availableParallelism } from "node:os";
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
@@ -16,8 +17,10 @@ export default defineConfig({
   // No test runs again here: the pull request jobs of CI pass --retries, and the slow suite, which finds the tests
   // that fail only sometimes, --repeat-each.
   retries: 0,
-  // The specs share one seeded server; each signs in as a person of the scenario.
-  ...(process.env["CI"] === undefined ? {} : { workers: 2 }),
+  // The specs share one seeded server; each signs in as a person of the scenario. That one server answers every
+  // worker, so more workers than it sustains make every request slower: the suite takes longer with twelve than with
+  // six, and its heaviest test (three people signed in) passes its limit.
+  workers: process.env["CI"] === undefined ? Math.min(6, Math.max(1, Math.floor(availableParallelism() / 2))) : 2,
   reporter: process.env["CI"] === undefined ? "list" : [["list"], ["github"]],
   use: {
     locale: "en",

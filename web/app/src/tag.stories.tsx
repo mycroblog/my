@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The timeline of a hashtag, reached from a hashtag in a post: a story per state every screen is shown in
-// (app.samples.tsx), of #baking; a hashtag written in another script; a visitor's; and the minimum width and right to
-// left.
+// (app.samples.tsx), of #baking; a hashtag written in another script; and a visitor's.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const at = "/tags/baking";
 
@@ -25,5 +24,3 @@ export const Loading: Story = { parameters: screen({ at, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at, state: "long" }) };
 export const Visitor: Story = { parameters: screen({ at, signedOut: true }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

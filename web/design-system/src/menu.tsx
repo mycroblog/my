@@ -13,7 +13,18 @@
 // its glyph on. Its groups stand apart by space; a group of actions on another account goes under a caption naming it;
 // destructive items sit last and apart, with no color of their own.
 
-import { createContext, use, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -21,6 +32,7 @@ import {
   Menu,
   MenuItem as AriaMenuItem,
   MenuSection,
+  MenuStateContext,
   MenuTrigger,
   Popover,
   type Selection,
@@ -28,6 +40,7 @@ import {
 import { tv } from "tailwind-variants/lite";
 import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
+import { Box, Column, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { ModalLayer, ModalPresence } from "./modal";
 import { usePreviewItemState } from "./preview";
@@ -35,30 +48,30 @@ import { usePreviewItemState } from "./preview";
 const menu = tv({
   slots: {
     panel: [
-      "box-border min-w-[var(--menu-min-width)] rounded-overlay bg-surface p-menu-padding shadow-overlay",
+      "box-border min-w-menu-min-width rounded-overlay bg-surface p-menu-padding shadow-overlay",
       "font-sans text-text outline-hidden",
     ],
-    list: "flex flex-col gap-menu-group-gap outline-hidden",
-    group: "flex flex-col",
+    list: "outline-hidden",
     header: "px-control-timeline-inline py-menu-padding text-caption text-muted-text",
     item: [
-      "box-border flex cursor-default gap-menu-icon-gap rounded-control",
+      "box-border cursor-default rounded-control",
       "px-control-timeline-inline text-body whitespace-nowrap no-underline outline-hidden [&[href]]:text-inherit",
     ],
-    glyph: "inline-flex text-muted-text",
-    // An item's label over its quiet line, which wraps between phrases within a menu's width.
-    text: "grid gap-[0.125rem]",
-    about: "max-w-[16rem] text-caption whitespace-normal text-muted-text [word-break:auto-phrase]",
+    glyph: "text-muted-text",
+    // An item's quiet line, which wraps between phrases within a menu's width.
+    about: "text-caption whitespace-normal text-muted-text [word-break:auto-phrase]",
     // What sits at the item's end: the chosen value's check, or what a submenu holds now and its ›.
-    end: "ms-auto inline-flex items-center gap-menu-icon-gap ps-menu-icon-gap text-caption text-muted-text",
+    end: "ps-menu-icon-gap text-caption text-muted-text",
   },
   variants: {
-    // An item is a form control's height; one with a line under its label grows with it (never clipped), padded so
-    // that the line stands apart from the next item's label, its glyph on the label's line. The height is set here
-    // alone: the variants' classes are not merged, so a fixed height beside a grown one would leave either.
-    described: {
-      false: { item: "h-control-form items-center" },
-      true: { item: "min-h-control-form items-start py-[0.5rem]", glyph: "h-[1lh] items-center" },
+    // An item is a form control's height; one that grows is at least as tall, and padded: with a line under its
+    // label (never clipped), so that the line stands apart from the next item's label; or in a sheet, where a label
+    // wraps, so that it never runs over the next row or into the gap before a group. The height is set here alone:
+    // the variants' classes are not merged, so a fixed height beside a grown one would leave either.
+    height: {
+      control: { item: "h-control-form" },
+      wrapped: { item: "min-h-control-form py-menu-wrapped-block" },
+      described: { item: "min-h-control-form py-menu-described-block" },
     },
     // Hovered or focused, the item steps a surface up from the menu's; pressed, one more.
     state: {
@@ -70,46 +83,55 @@ const menu = tv({
     ring: { true: { item: "shadow-focus-inset" } },
     // What cannot be done now (add to a list an account the reader does not follow): muted, its line saying why.
     disabled: { true: { item: "text-muted-text" } },
-    // On a phone, a sheet from the bottom edge: its head stays while its items scroll under it, and its bottom keeps
-    // the room of its top and the device's safe area, so that no row sits at the edge.
+    // On a phone, a sheet from the bottom edge: its bottom keeps the room of its top and the device's safe area, so
+    // that no row sits at the edge.
     sheet: {
       true: {
-        panel: [
-          "flex max-h-[85dvh] min-h-0 w-full flex-col rounded-b-none pt-[var(--dialog-padding)]",
-          "pb-[calc(var(--dialog-padding)+env(safe-area-inset-bottom))]",
-        ],
+        panel: "rounded-b-none pt-dialog pb-dialog-safe-bottom",
         // As wide as the viewport and no wider: an item's label and what it holds wrap, never scrolling sideways.
-        // A row grows with a label that wraps, never running over the next row or into the gap before a group.
-        list: [
-          "min-h-0 overflow-y-auto [&_[role^=menuitem]]:whitespace-normal",
-          "[&_.h-control-form]:h-auto [&_.h-control-form]:min-h-control-form [&_.h-control-form]:py-[0.25rem]",
-        ],
+        list: "[&_[role^=menuitem]]:whitespace-normal",
       },
     },
   },
 });
 
-const sheet = tv({
-  slots: {
-    // Over the viewport less the software keyboard where one is open, so that the sheet's bottom stays above it; room
-    // above it shows the page under the backdrop.
-    overlay: [
-      "fixed inset-0 z-50 box-border flex flex-col justify-end pt-shell-sheet-room",
-      "pb-[var(--keyboard-inset,env(keyboard-inset-height,0px))]",
-    ],
-    // Positioned, so that it paints over the fixed backdrop before it in the overlay.
-    panel: "relative flex min-h-0 w-full flex-col",
-  },
-});
-
 const head = tv({
   slots: {
-    // A group's space under it, as between groups; it does not scroll with the items.
-    root: "mb-menu-group-gap flex shrink-0 items-center gap-menu-icon-gap",
-    title: "m-0 min-w-0 flex-1 text-title",
+    title: "text-title",
     start: "ps-control-timeline-inline",
   },
 });
+
+/**
+ * The surface of a menu or of a small form, as `as` when a component renders it: in a popover, a box as wide as what
+ * it holds; in a sheet, a column as wide as the viewport and no taller than a sheet may be, whose head stays while
+ * what is under it scrolls.
+ */
+function Surface({
+  sheet,
+  as,
+  children,
+}: {
+  sheet: boolean;
+  as?: ReactElement<{ className?: unknown }> | undefined;
+  children: ReactNode;
+}) {
+  const paint = menu({ sheet }).panel();
+  if (!sheet)
+    return (
+      <Box as={as} className={paint}>
+        {children}
+      </Box>
+    );
+  return (
+    <Column as={as} full shrink="block" max="sheet" className={paint}>
+      {children}
+    </Column>
+  );
+}
+
+/** Whether the items are in a sheet, where a label wraps and its row grows with it. */
+const WrapContext = createContext(false);
 
 /**
  * The head of a menu: on a phone, its name with close at its end; in a submenu, on a phone and in a popover alike, a
@@ -128,15 +150,18 @@ export function MenuHead({
 }) {
   const s = head();
   return (
-    <div className={s.root()}>
+    // A group's space under it, as between groups; it does not scroll with the items.
+    <Row rigid align="center" gap="menu-icon-gap" spaceBelow="menu-group-gap">
       {back !== undefined && (
         <IconButton icon="back" label={back.label} {...(back.onPress ? { onPress: back.onPress } : {})} />
       )}
-      <h2 className={back === undefined ? `${s.title()} ${s.start()}` : s.title()}>{title}</h2>
+      <Box as="h2" grow className={back === undefined ? `${s.title()} ${s.start()}` : s.title()}>
+        {title}
+      </Box>
       {close !== undefined && (
         <IconButton icon="close" label={close.label} {...(close.onPress ? { onPress: close.onPress } : {})} />
       )}
-    </div>
+    </Row>
   );
 }
 
@@ -163,7 +188,7 @@ export function MenuPanel({
   const s = menu({ sheet });
   const id = useId();
   return (
-    <div className={s.panel()}>
+    <Surface sheet={sheet}>
       {head}
       {/* A trigger that names the menu otherwise (React Aria names it by its button) gives way to `label`. */}
       {own && (
@@ -171,10 +196,17 @@ export function MenuPanel({
           {label}
         </span>
       )}
-      <Menu aria-label={label} {...(own ? { "aria-labelledby": id } : {})} className={s.list()}>
-        {children}
-      </Menu>
-    </div>
+      <WrapContext value={sheet}>
+        {/* The groups stand apart by space; in a sheet they scroll under the head. */}
+        <Column
+          gap="menu-group-gap"
+          {...(sheet ? ({ shrink: "block", scroll: "y" } as const) : {})}
+          as={<Menu aria-label={label} {...(own ? { "aria-labelledby": id } : {})} className={s.list()} />}
+        >
+          {children}
+        </Column>
+      </WrapContext>
+    </Surface>
   );
 }
 
@@ -233,11 +265,42 @@ export function MenuGroup({
           }
         : {};
   return (
-    <MenuSection className={s.group()} {...selection} {...(stay ? { shouldCloseOnSelect: false } : {})}>
+    <Column as={<MenuSection {...selection} {...(stay ? { shouldCloseOnSelect: false } : {})} />}>
       {title !== undefined && <Header className={s.header()}>{title}</Header>}
       {children}
-    </MenuSection>
+    </Column>
   );
+}
+
+/**
+ * In a `MenuSurface`: the items that opened the submenus down to the one shown, which an item that opens one adds
+ * itself to (`opened`), and the one that back took out of them (`from`), which has the focus in the menu put back.
+ */
+type Trail = { openers: readonly string[]; from: string | undefined };
+const noTrail: Trail = { openers: [], from: undefined };
+const TrailContext = createContext<(Trail & { opened: (id: string) => void }) | undefined>(undefined);
+
+/**
+ * Gives the menu's focus to the item it is drawn in: the value chosen among a group's (React Aria opens a menu with
+ * the focus on the key chosen in the menu's own selection, and a group's selection is the group's own), or the item
+ * whose submenu back closed.
+ */
+function TakesFocus({ id }: { id: string }) {
+  const state = use(MenuStateContext);
+  const take = useEffectEvent(() => {
+    state?.selectionManager.setFocusedKey(id);
+  });
+  // React Aria names an opening menu's first item in an effect of the menu, which runs after those of its items, and
+  // that item takes the focus in an effect of the render that follows. This asks for that render too, and names its
+  // own item in a layout effect of it: after the menu's effect, and before any item takes the focus.
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    setDrawn(true);
+  }, []);
+  useLayoutEffect(() => {
+    if (drawn) take();
+  }, [drawn]);
+  return null;
 }
 
 /**
@@ -284,66 +347,102 @@ export function MenuItem({
   children: string;
 }) {
   const preview = usePreviewItemState(id);
+  const trail = use(TrailContext);
+  // An item that opens a submenu adds itself to the surface's trail as it acts.
+  const act =
+    onAction === undefined || opensValue === undefined
+      ? onAction
+      : () => {
+          trail?.opened(id);
+          onAction();
+        };
   const described = about !== undefined;
-  const s = menu({ described });
+  const wraps = use(WrapContext);
+  const height = described ? "described" : wraps ? "wrapped" : "control";
+  const s = menu();
   return (
-    <AriaMenuItem
-      id={id}
-      textValue={children}
-      isDisabled={disabled}
-      {...(onAction ? { onAction } : {})}
-      {...(href === undefined ? {} : { href })}
-      {...(current
-        ? // React Aria passes no aria-current through: the place where the reader is says so on the element itself.
-          {
-            render: (props: object) => (href === undefined ? <div {...props} /> : <a {...props} aria-current="page" />),
+    // A glyph and its label in a row, in the row's middle; with a line under the label, the glyph on the label's line.
+    <Row
+      gap="menu-icon-gap"
+      align={described ? "start" : "center"}
+      as={
+        <AriaMenuItem
+          id={id}
+          textValue={children}
+          isDisabled={disabled}
+          {...(act ? { onAction: act } : {})}
+          {...(href === undefined ? {} : { href })}
+          {...(current
+            ? // React Aria passes no aria-current through: the place where the reader is says so on the element itself.
+              {
+                render: (props: object) =>
+                  href === undefined ? <div {...props} /> : <a {...props} aria-current="page" />,
+              }
+            : opensValue !== undefined && !disabled
+              ? // An item given aria-haspopup is React Aria's trigger of a submenu of its own, which runs no action:
+                // the item that opens a submenu says so on the element itself, where it shows ›.
+                { render: (props: object) => <div {...props} aria-haspopup="menu" /> }
+              : {})}
+          {...(opensValue === undefined ? {} : { shouldCloseOnSelect: false })}
+          className={({ isHovered, isFocused, isFocusVisible, isPressed }) =>
+            menu({
+              state: disabled
+                ? "rest"
+                : isPressed || preview === "pressed"
+                  ? "pressed"
+                  : isHovered || isFocused || preview !== undefined
+                    ? "hover"
+                    : "rest",
+              ring: isFocusVisible || preview === "focus-visible",
+              height,
+              disabled,
+            }).item()
           }
-        : {})}
-      {...(opensValue === undefined ? {} : { shouldCloseOnSelect: false })}
-      className={({ isHovered, isFocused, isFocusVisible, isPressed }) =>
-        menu({
-          state: disabled
-            ? "rest"
-            : isPressed || preview === "pressed"
-              ? "pressed"
-              : isHovered || isFocused || preview !== undefined
-                ? "hover"
-                : "rest",
-          ring: isFocusVisible || preview === "focus-visible",
-          described,
-          disabled,
-        }).item()
+        >
+          {({ isSelected, selectionMode }) => {
+            const checked = (selectionMode === "single" && isSelected) || chosen;
+            // A submenu that cannot be opened now shows neither what it holds nor ›: its line says why instead.
+            const opens = disabled ? undefined : opensValue;
+            return (
+              <>
+                {(trail?.from === undefined ? selectionMode === "single" && isSelected : trail.from === id) && (
+                  <TakesFocus id={id} />
+                )}
+                <Row
+                  as="span"
+                  inline
+                  rigid
+                  line={described}
+                  align={described ? "center" : undefined}
+                  className={s.glyph()}
+                >
+                  <Icon name={icon} place="action" on={on || current || (selectionMode === "multiple" && isSelected)} />
+                </Row>
+                {described ? (
+                  // The label over its quiet line.
+                  <Stack as="span" gap="hair">
+                    {/* Both read as the item's name: a name without the line it shows is a mismatch for voice control. */}
+                    <span>{children}</span>
+                    <Box as="span" max="menu-about" className={s.about()}>
+                      {about}
+                    </Box>
+                  </Stack>
+                ) : (
+                  <span>{children}</span>
+                )}
+                {(checked || opens !== undefined || badge !== undefined) && (
+                  <Row as="span" inline words align="center" gap="menu-icon-gap" push="end" className={s.end()}>
+                    {opens !== undefined && opens !== "" && <span>{opens}</span>}
+                    {badge}
+                    {(checked || opens !== undefined) && <Icon name={checked ? "chosen" : "onward"} place="action" />}
+                  </Row>
+                )}
+              </>
+            );
+          }}
+        </AriaMenuItem>
       }
-    >
-      {({ isSelected, selectionMode }) => {
-        const checked = (selectionMode === "single" && isSelected) || chosen;
-        // A submenu that cannot be opened now shows neither what it holds nor ›: its line says why instead.
-        const opens = disabled ? undefined : opensValue;
-        return (
-          <>
-            <span className={s.glyph()}>
-              <Icon name={icon} place="action" on={on || current || (selectionMode === "multiple" && isSelected)} />
-            </span>
-            {described ? (
-              <span className={s.text()}>
-                {/* Both read as the item's name: a name without the line it shows is a mismatch for voice control. */}
-                <span>{children}</span>
-                <span className={s.about()}>{about}</span>
-              </span>
-            ) : (
-              <span>{children}</span>
-            )}
-            {(checked || opens !== undefined || badge !== undefined) && (
-              <span className={s.end()}>
-                {opens !== undefined && opens !== "" && <span>{opens}</span>}
-                {badge}
-                {(checked || opens !== undefined) && <Icon name={checked ? "chosen" : "onward"} place="action" />}
-              </span>
-            )}
-          </>
-        );
-      }}
-    </AriaMenuItem>
+    />
   );
 }
 
@@ -388,13 +487,10 @@ function MenuSheetLayer({ onDismiss, children }: { onDismiss: () => void; childr
       document.removeEventListener("pointercancel", arm, true);
     };
   }, [armed]);
-  const s = sheet();
   return (
-    <ModalLayer
-      onDismiss={onDismiss}
-      overlay={armed ? s.overlay() : `${s.overlay()} pointer-events-none`}
-      panel={s.panel()}
-    >
+    // Over the viewport less the software keyboard where one is open, so that the sheet's bottom stays above it; room
+    // above it shows the page under the backdrop.
+    <ModalLayer onDismiss={onDismiss} place="sheet-above-keyboard" idle={!armed}>
       {children}
     </ModalLayer>
   );
@@ -462,8 +558,24 @@ export function MenuSurface({
   const close = () => {
     change(false);
   };
+  // Back closes a submenu, and the item that opened it has the focus again (WAI-ARIA's menu); a menu that closed
+  // remembers none.
+  const [trail, setTrail] = useState(noTrail);
+  if (!shown && trail !== noTrail) setTrail(noTrail);
+  const opened = (id: string) => {
+    setTrail({ openers: [...trail.openers, id], from: undefined });
+  };
   const title = sub?.title ?? label;
-  const back = sub === undefined ? undefined : { label: t("menu.back"), onPress: sub.onBack };
+  const back =
+    sub === undefined
+      ? undefined
+      : {
+          label: t("menu.back"),
+          onPress: () => {
+            setTrail({ openers: trail.openers.slice(0, -1), from: trail.openers.at(-1) });
+            sub.onBack();
+          },
+        };
   return (
     <MenuTrigger isOpen={shown} onOpenChange={change} {...(longPress ? { trigger: "longPress" as const } : {})}>
       {trigger}
@@ -491,7 +603,7 @@ export function MenuSurface({
               )
             }
           >
-            {children}
+            <TrailContext value={{ ...trail, opened }}>{children}</TrailContext>
           </MenuPanel>
         )}
       </SurfaceLayer>
@@ -541,9 +653,9 @@ function SurfaceLayer({
       <ModalPresence onExited={onExited}>
         {shown && (
           <MenuSheetLayer key="menu" onDismiss={onDismiss}>
-            <div className={sheet().panel()} lang={reader.lang} dir={reader.direction}>
+            <Column anchor full shrink="block" lang={reader.lang} dir={reader.direction}>
               {children(true)}
-            </div>
+            </Column>
           </MenuSheetLayer>
         )}
       </ModalPresence>
@@ -598,21 +710,19 @@ export function FormPopup({
       {trigger}
       <SurfaceLayer shown={shown} onDismiss={close} placement="bottom start" offset={4}>
         {(inSheet) => (
-          <Dialog aria-label={label} className={menu({ sheet: inSheet }).panel()} data-popup="">
+          <Surface sheet={inSheet} as={<Dialog aria-label={label} data-popup="" />}>
             {inSheet && <MenuHead title={label} close={{ label: t("menu.close"), onPress: close }} />}
             <HeadedContext value={inSheet}>
               {/* In a sheet, what it holds lines up with the head's name, as a menu's items do, and scrolls under it. */}
-              <div
-                className={
-                  inSheet
-                    ? "min-h-0 overflow-y-auto px-[calc(var(--control-timeline-padding-inline)-0.25rem)]"
-                    : undefined
-                }
-              >
-                {children}
-              </div>
+              {inSheet ? (
+                <Box shrink="block" scroll="y" className="px-menu-form-inline">
+                  {children}
+                </Box>
+              ) : (
+                <div>{children}</div>
+              )}
             </HeadedContext>
-          </Dialog>
+          </Surface>
         )}
       </SurfaceLayer>
     </DialogTrigger>

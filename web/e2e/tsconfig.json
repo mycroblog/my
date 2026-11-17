@@ -1,11 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
-  "//": "The scenario and the fake API (src/, also in the browser, under the stories), the seed and the demo server (on Bun), and the Playwright specs. The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, as the seed runs it; the same path in `paths` lets Playwright's loader, which takes no condition, read it so in the specs' workers (the fixture `fresh`).",
+  "//": "The scenario and the fake API (src/, also under the stories in the browser and under the component tests on Bun), the seed and the demo server (on Bun), the Playwright specs of the E2E tests, and those of the tests in a browser on the built catalog (catalog/). The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, as the seed runs it; the same path in `paths` lets Playwright's loader, which takes no condition, read it so in the specs' workers (the fixture `fresh`).",
   "compilerOptions": {
     "customConditions": ["@mycroblog/source"],
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["bun"],
     "paths": { "@mycroblog/mykit": ["../../pkg/mykit/ts/src/index.ts"] }
   },
-  "include": ["src/**/*.ts", "specs/**/*.ts", "playwright.config.ts"]
+  "include": ["src/**/*.ts", "specs/**/*.ts", "catalog/**/*.ts", "playwright.config.ts"]
 }

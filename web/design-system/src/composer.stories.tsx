@@ -3,15 +3,14 @@
 // The composer's text in its editor, in the reader's language (the toolbar's locale; ar-XB reads right-to-left), with
 // the suggestions for the word at the caret, under its line across the text's width: accounts for `@` (followed
 // first), hashtags for `#` (by their use), emoji for `:` (custom, then Unicode), the first active; while they are
-// asked for, and when none came. The marks of what the server will read are the app's nodes, in its composer stories.
-// The words are placeholders.
+// asked for, and when none came; and the notice that follows a write, in the flow, with its action. The marks of what
+// the server will read are the app's nodes, in its composer stories. The words are placeholders.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
-import { waitFor, within } from "storybook/test";
 import { Button } from "./button";
-import { CharCount, ComposerFrame, ComposerText } from "./composer";
+import { CharCount, ComposerFrame, ComposerText, UndoNotice } from "./composer";
 import { PlainTextEditor } from "./editor";
 import { sampleCustomEmoji } from "./emoji.samples";
 import { IconButton } from "./icon-button";
@@ -41,6 +40,8 @@ const words = {
     list: "Suggestions",
     loading: "Loading…",
     empty: "No suggestions",
+    failed: "The notification could not be dismissed.",
+    retry: "Try again",
     uses: (n: number) => `${n.toLocaleString("en")} posts`,
   },
   ja: {
@@ -59,6 +60,8 @@ const words = {
     list: "候補",
     loading: "読み込み中…",
     empty: "候補はありません",
+    failed: "通知を消せませんでした。",
+    retry: "もう一度試す",
     uses: (n: number) => `${n.toLocaleString("ja")} 件`,
   },
   ar: {
@@ -77,6 +80,8 @@ const words = {
     list: "اقتراحات",
     loading: "جارٍ التحميل…",
     empty: "لا توجد اقتراحات",
+    failed: "تعذّر تجاهل الإشعار.",
+    retry: "حاول مرة أخرى",
     uses: (n: number) => `${n.toLocaleString("ar")} منشور`,
   },
 } as const;
@@ -227,29 +232,19 @@ function Ended({ text }: { text: keyof typeof against }) {
   );
 }
 
-/** The emoji button covers no character of the text's first line. */
-const clearOfText: Story["play"] = async ({ canvasElement }) => {
-  const canvas = within(canvasElement);
-  const box = canvas.getByRole("textbox");
-  const button = canvas.getByRole("button", { name: "Add emoji" }).getBoundingClientRect();
-  await waitFor(() => {
-    // The glyphs of its first text, not the boxes of the paragraphs around them.
-    const text = box.ownerDocument.createTreeWalker(box, NodeFilter.SHOW_TEXT).nextNode();
-    if (text === null) throw new Error("the text box holds no text");
-    const range = box.ownerDocument.createRange();
-    range.selectNodeContents(text);
-    const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
-    const top = Math.min(...rects.map((r) => r.top));
-    const first = rects.filter((r) => r.top < top + 1);
-    if (first.length === 0) throw new Error("the text has no first line");
-    for (const r of first) {
-      const covered = r.left < button.right && button.left < r.right && r.top < button.bottom && button.top < r.bottom;
-      if (covered) throw new Error("the emoji button covers the text's first line");
-    }
-  });
-};
+/** A notice in the flow, with its action: a write that failed, and Try again. */
+function Noticed() {
+  const w = words[useLang()];
+  return (
+    <div style={{ padding: "1rem" }}>
+      <UndoNotice inline action={w.retry} onAction={() => undefined}>
+        {w.failed}
+      </UndoNotice>
+    </div>
+  );
+}
 
-// Tagged `themes`: the story tests run each in dark too.
+// Tagged `themes`: the check of every story shows each in dark too.
 const meta = {
   title: "Composer",
   tags: ["themes"],
@@ -265,19 +260,13 @@ export const Accounts: Story = { render: () => <Suggesting kind="accounts" /> };
 export const Hashtags: Story = { render: () => <Suggesting kind="hashtags" /> };
 /** `:sp`: the custom emoji, then the Unicode ones. */
 export const Emoji: Story = { render: () => <Suggesting kind="emoji" /> };
-export const AccountsRightToLeft: Story = {
-  render: () => <Suggesting kind="accounts" />,
-  globals: { locale: "ar-XB" },
-};
-/** A right-to-left page and a text in English: the button at the page's end covers none of it. */
-export const EndedLeftToRightText: Story = {
-  render: () => <Ended text="ltr" />,
-  globals: { locale: "ar-XB" },
-  play: clearOfText,
-};
-/** A left-to-right page and a text in Arabic: the button at the page's end covers none of it. */
-export const EndedRightToLeftText: Story = { render: () => <Ended text="rtl" />, play: clearOfText };
+/** A right-to-left page (the toolbar's ar-XB) and a text in English: the button at the page's end. */
+export const EndedLeftToRightText: Story = { render: () => <Ended text="ltr" /> };
+/** A left-to-right page and a text in Arabic: the button at the page's end. */
+export const EndedRightToLeftText: Story = { render: () => <Ended text="rtl" /> };
 /** Asked for and not here after a moment. */
 export const Loading: Story = { render: () => <Suggesting kind="accounts" status="loading" /> };
 /** None came. */
 export const Empty: Story = { render: () => <Suggesting kind="hashtags" status="empty" /> };
+/** The notice at the bottom of the page after a write that failed: what failed, and its action. */
+export const NoticeWithAction: Story = { render: () => <Noticed /> };

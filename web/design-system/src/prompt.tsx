@@ -7,28 +7,30 @@
 // failed), announced as it comes; when nothing is left to try, the prompt keeps only its dismiss. It is named by its
 // text for assistive technology.
 
-import { useId, type ReactNode } from "react";
+import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { Icon, type IconName } from "./icons";
+import { Row, Stack } from "./layout";
 
 const prompt = tv({
   slots: {
-    // A container, so that the reason takes the panel's measure where the panel is wide.
-    root: "@container rounded-overlay bg-surface-raised px-embed py-shell-inset text-body text-text",
-    row: "flex items-start gap-entry-avatar",
-    glyph: "inline-flex h-[1lh] flex-none items-center",
-    body: "grid min-w-0 flex-1 gap-shell-inset",
+    root: "rounded-overlay bg-surface-raised px-embed py-shell-inset text-body text-text",
     // A text that wraps breaks between phrases, never inside a word of ja.
-    text: "m-0 [word-break:auto-phrase]",
-    // At the text's measure in a narrow panel; from the glyph's start, the panel's whole measure, in a wide one.
-    note: [
-      "m-0 text-caption [word-break:auto-phrase]",
-      "@min-[30rem]:-ms-[calc(var(--icon-action)+var(--entry-avatar-gap))]",
-    ],
-    actions: "flex flex-wrap items-center gap-shell-inset",
+    text: "[word-break:auto-phrase]",
+    note: "text-caption [word-break:auto-phrase]",
   },
 });
+
+/** The prompt's box: a container, so that the reason takes the panel's measure where the panel is wide. */
+function PromptFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { className: string }) {
+  return <section {...rest} className={`${className} @container`} />;
+}
+
+/** The reason: at the text's measure in a narrow panel; from the glyph's start, the panel's whole measure, in a wide one. */
+function PromptNote({ className, ...rest }: HTMLAttributes<HTMLParagraphElement> & { className: string }) {
+  return <p {...rest} className={`${className} @min-[30rem]:-ms-[calc(var(--icon-action)+var(--entry-avatar-gap))]`} />;
+}
 
 export type InlinePromptProps = {
   /** The glyph of what it offers. */
@@ -51,21 +53,21 @@ export function InlinePrompt({ icon, children, action, dismiss, reason }: Inline
   const s = prompt();
   const id = useId();
   return (
-    <section className={s.root()} aria-labelledby={id}>
-      <div className={s.row()}>
-        <span className={s.glyph()}>
+    <PromptFrame className={s.root()} aria-labelledby={id}>
+      <Row align="start" gap="entry-avatar">
+        <Row as="span" rigid line align="center">
           <Icon name={icon} place="action" />
-        </span>
-        <div className={s.body()}>
+        </Row>
+        <Stack grow gap="shell-inset">
           <p id={id} className={s.text()} dir="auto">
             {children}
           </p>
           {reason !== undefined && (
-            <p className={s.note()} role="alert" dir="auto">
+            <PromptNote className={s.note()} role="alert" dir="auto">
               {reason}
-            </p>
+            </PromptNote>
           )}
-          <div className={s.actions()}>
+          <Row wrap align="center" gap="shell-inset">
             {action !== undefined && (
               <Button kind="primary" size="timeline" onPress={action.onPress}>
                 {action.label}
@@ -74,9 +76,9 @@ export function InlinePrompt({ icon, children, action, dismiss, reason }: Inline
             <Button kind="quiet" size="timeline" onPress={dismiss.onPress}>
               {dismiss.label}
             </Button>
-          </div>
-        </div>
-      </div>
-    </section>
+          </Row>
+        </Stack>
+      </Row>
+    </PromptFrame>
   );
 }

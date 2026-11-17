@@ -93,11 +93,6 @@ export class Notifications {
     return new Held(this.page);
   }
 
-  /** The line over the notifications that the notification a link led to is no longer there. */
-  get gone(): Locator {
-    return this.page.getByRole("main").getByText("That notification is no longer there.", { exact: true });
-  }
-
   /** The prompt to turn Web Push on over the tabs, a region named by its text. */
   get pushPrompt(): Locator {
     return this.page.getByRole("main").getByRole("region", { name: /^Get your notifications on this device.*$/ });
@@ -108,11 +103,6 @@ export class Notifications {
     await answered(this.page, { methods: ["PUT"], path: /\/push\/subscription$/ }, async () => {
       await this.pushPrompt.getByRole("button", { name: "Turn on", exact: true }).click();
     });
-  }
-
-  /** Closes the Web Push prompt with Not now, which only this browser keeps. */
-  async closePush(): Promise<void> {
-    await this.pushPrompt.getByRole("button", { name: "Not now", exact: true }).click();
   }
 
   /** Opens the screen of what waits for the reader's approval from the row that counts `count` of them. */

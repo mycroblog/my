@@ -4,7 +4,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { AppData } from "../app-data";
 import { AppDataProvider } from "../provider";
 
-/** The value `hook` returns in a component under `data`, rendered once. */
+/**
+ * The value `hook` returns in a component under `data`, rendered once; a hook that updates its own state as it renders
+ * is rendered again, its hooks kept, and the value is the last one.
+ */
 export function probe<T>(data: AppData, hook: () => T): T {
   const seen: { value?: T } = {};
   function Probe() {
@@ -18,4 +21,13 @@ export function probe<T>(data: AppData, hook: () => T): T {
   );
   if (!("value" in seen)) throw new Error("the probe did not render");
   return seen.value;
+}
+
+/** Renders `hook` in a component with no provider of the app's data around it, which a hook of the app's data refuses. */
+export function probeOutside(hook: () => unknown): void {
+  function Probe() {
+    hook();
+    return null;
+  }
+  renderToStaticMarkup(<Probe />);
 }

@@ -9,7 +9,7 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 # LiveKit transport contract on livekit-server --dev (ADR-0101), the blob = s3 contract on Garage, the search.Index contracts on the
 # search engines (ADR-0149), the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0023 §7), the restore drill, golangci-lint over everything with the build tag sets,
-# the OpenTofu modules (tofu validate and the tofu tests), the E2E tests of the web client twice over, and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
+# the OpenTofu modules (tofu validate and the tofu tests), the tests of every web package, the check of every story of the web client's catalog, the E2E tests of the web client twice over, and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
 # `gh workflow run slow-suite.yml --ref <branch>`. release.yml calls it as the release gate: the whole suite, or, when a
 # run of it already passed on the commit, `scope: release`, which runs only the jobs that check the commit's images
 # against a release (upgrade, restore-drill), or `scope: none`, which runs nothing, for a pre-release released without
@@ -260,6 +260,48 @@ jobs:
       - name: tofu:aws-plan-test
         run: scripts/task.sh tofu:aws-plan-test
 
+  web-test:
+    if: inputs.scope == 'all'
+    # The tests of every web package, where ci.yml runs those of the packages a change reaches
+    # (scripts/changed-web-packages.sh, ADR-0079 §18): a dependency between packages that no manifest declares fails
+    # here within a day.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: web:test
+        run: scripts/task.sh web:test
+
+  stories-check:
+    if: inputs.scope == 'all'
+    # The check of every story at once (ADR-0171 §6): each story of the built catalog at the minimum width, in both
+    # directions and in the dark theme, for an error, sideways scrolling and axe, with the E2E tests' runner and no
+    # server. No pull request runs it: it finds what the tests of the lower layers missed, and the fix adds a test
+    # there. Chromium comes from Playwright's CLI, run on Bun.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps chromium
+      - name: web:stories
+        run: scripts/task.sh web:stories
+      - name: web:stories-check-built
+        run: scripts/task.sh web:stories-check-built
+
   e2e-build:
     if: inputs.scope == 'all'
     # The test build of bin/my, built once for the jobs of e2e (ADR-0079 §9), as in ci.yml.
@@ -346,7 +388,7 @@ jobs:
   # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
   result:
     if: always()
-    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, e2e-build, e2e, codeql]
+    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, web-test, stories-check, e2e-build, e2e, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

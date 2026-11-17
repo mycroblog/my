@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the call's store tells the voice feature. What the shell's bar shows of the call needs a rendered page (useCall
-// reads the store in the browser alone): the Shell story InCall of web/app checks it.
+// reads the store in the browser alone): web/app/src/call.dom.test.tsx holds it.
 
 import { afterEach, expect, test } from "bun:test";
 import { enterCall, leaveCall, muteCall, updateCall, type Call } from "./store";

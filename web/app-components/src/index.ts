@@ -3,7 +3,15 @@
 // The presentational components shared across the features of the web client (ADR-0025 §2, §4): built on
 // @my/design-system, they take their data as props and fetch nothing. They write no Tailwind class of their own.
 
-export { AccountFollow, AccountLine, AccountName, handleOf, nameOf, type FollowState } from "./account";
+export {
+  AccountFollow,
+  AccountLine,
+  AccountName,
+  handleOf,
+  nameOf,
+  sentenceHandleOf,
+  type FollowState,
+} from "./account";
 export {
   Column,
   FeedKeys,
@@ -14,8 +22,34 @@ export {
   type ListColumnProps,
   type ListWords,
 } from "./column";
+export {
+  ConversationAuthor,
+  ConversationFaces,
+  ConversationHead,
+  ConversationLine,
+  ConversationReply,
+  ConversationText,
+  type ConversationLineProps,
+} from "./conversation";
 export { translateContent, translatePlain, type TranslateText } from "./content-translation";
 export { DeleteConfirm, type DeleteConfirmProps } from "./delete-confirm";
+export {
+  DraftCount,
+  DraftList,
+  DraftRow,
+  DraftsEmpty,
+  DraftSection,
+  DraftSections,
+  localInput,
+  readerZone,
+  ScheduleForm,
+  ScheduleTime,
+  scheduleTime,
+  ScheduleZone,
+  type DraftMark,
+  type DraftRowProps,
+  type ScheduleFormProps,
+} from "./drafts";
 export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-history";
 export { languageName } from "./locale";
 export {
@@ -31,6 +65,17 @@ export {
   waitingPath,
   type NotificationTarget,
 } from "./paths";
+export { PollCard, PollOption, PollOptions } from "./compose";
+export {
+  FieldList,
+  MetaCount,
+  MetaLine,
+  NoteEditor,
+  NoteLine,
+  ProfileHead,
+  TagList,
+  type ProfileHeadProps,
+} from "./profile";
 export { Post, type PostAction, type PostPicker, type PostProps, type TranslationFailure } from "./post";
 export { excerptHtml, PostContent, ServerDomain, type ContentEmoji, type PostContentProps } from "./post-content";
 export { isRemote, QuoteContext, ReplyContext } from "./post-context";

@@ -4,7 +4,7 @@
 // posts and reconnections from the Stream panel; and a first page that fails once and loads on its retry.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const meta = {
   title: "Timeline",
@@ -21,5 +21,3 @@ export const Loading: Story = { parameters: screen({ at: "/", state: "loading" }
 export const Failed: Story = { parameters: screen({ at: "/", state: "error" }, "home") };
 export const LongText: Story = { parameters: screen({ at: "/", state: "long" }, "home") };
 export const FailsFirst: Story = { parameters: screen({ at: "/", failFirst: true }, "home") };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

@@ -27,6 +27,7 @@
 import {
   DeleteConfirm,
   EditHistory,
+  sentenceHandleOf,
   ServerDomain,
   statusPath,
   type PostAccount,
@@ -238,9 +239,6 @@ export function usePostNotice(): Failed {
 export function usePostAuthor(): PostAuthor | undefined {
   return use(Context)?.author;
 }
-
-/** An account's name in a post's menu and in what an action on it leaves: `@user`, else its domain. */
-export const userOf = (account: PostAccount) => (account.username === "" ? account.domain : `@${account.username}`);
 
 /** The address of a post to hand on: its own page where it was posted, else its page here. */
 const linkOf = (status: Status) => status.url ?? new URL(statusPath(status), location.href).href;
@@ -499,7 +497,7 @@ export function PostActions({
         {blocking && (
           <ConfirmDialog
             key={`block:${blocking.status.id}`}
-            title={t("profile.block_confirm_title", { handle: userOf(blocking.status.account) })}
+            title={t("profile.block_confirm_title", { handle: sentenceHandleOf(blocking.status.account) })}
             cancel={t("profile.cancel")}
             confirm={t("profile.block_confirm")}
             onCancel={() => {

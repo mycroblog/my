@@ -75,16 +75,6 @@ export class ListScreen extends Timeline {
     return this.page.getByRole("main").getByRole("heading", { level: 1, name: this.name, exact: true });
   }
 
-  /** Opens the screen of the list with the ID given, at its address. */
-  async open(id: string): Promise<void> {
-    await this.page.goto(`/lists/${id}`);
-  }
-
-  /** What the screen says in place of a list that does not exist. */
-  get gone(): Locator {
-    return this.page.getByRole("main").getByText("This list no longer exists.", { exact: true });
-  }
-
   /** The list's own menu button at the end of its title, named apart from every post's More. */
   get options(): Locator {
     return this.page.getByRole("main").getByRole("button", { name: "List options", exact: true });
@@ -118,32 +108,6 @@ export class ListScreen extends Timeline {
     const confirm = this.page.getByRole("alertdialog", { name: `Delete the list ${this.name}?`, exact: true });
     await answered(this.page, { methods: ["DELETE"], path: /\/lists\/[^/]+$/ }, async () => {
       await confirm.getByRole("button", { name: "Delete", exact: true }).click();
-    });
-  }
-}
-
-/** A list's members, at /lists/{id}/members: a list named Members, each row with its Remove. */
-export class ListMembers {
-  readonly page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
-
-  /** The list of the members. */
-  get members(): Locator {
-    return this.page.getByRole("main").getByRole("list", { name: "Members", exact: true });
-  }
-
-  /** The button that takes `name` (a display name) out of the list. */
-  removeButton(name: string): Locator {
-    return this.members.getByRole("button", { name: `Remove ${name}`, exact: true });
-  }
-
-  /** Takes `name` out of the list, and returns once the server has answered. */
-  async remove(name: string): Promise<void> {
-    await answered(this.page, { methods: ["DELETE"], path: /\/lists\/[^/]+\/accounts\/[^/]+$/ }, async () => {
-      await this.removeButton(name).click();
     });
   }
 }

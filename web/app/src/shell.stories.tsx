@@ -8,12 +8,11 @@
 // (who opens any other server on the landing page, landing.stories.tsx); the closure announced, and the
 // server closed with no export, one being built and one ready; the maintenance; the reader offline and the server down;
 // a call; the toasts of a newer version and of one the server needs; the voice rooms off; the column beside the main
-// one with none of its sections; and the menu open, as the phone's sheet too, and the floating New post's menu open.
+// one with none of its sections. The Menu open and the floating New post's menu open are the parts' own (the design
+// system's Shell and Menu everywhere).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { userEvent, waitFor } from "storybook/test";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
-import { callAcrossScreens } from "./shell.plays";
+import { screen, screenMeta } from "./app.samples";
 
 const meta = {
   title: "Shell",
@@ -52,70 +51,10 @@ export const Offline: Story = {
   parameters: screen({ at: "/", server: { closure: "announced", down: "offline" } }),
 };
 export const Outage: Story = { parameters: screen({ at: "/notifications", server: { down: "outage" } }) };
-/**
- * A call, with a newer build waiting that no toast offers during it. Its play mutes and unmutes from the call's bar,
- * then moves to the notifications and back: the bar stays across the screens.
- */
-export const InCall: Story = {
-  parameters: screen({ at: "/", call: true, updateReady: true }),
-  play: callAcrossScreens,
-};
+/** A call, with a newer build waiting that no toast offers during it. */
+export const InCall: Story = { parameters: screen({ at: "/", call: true, updateReady: true }) };
 export const UpdateReady: Story = { parameters: screen({ at: "/", updateReady: true }) };
 export const UpdateRequired: Story = { parameters: screen({ at: "/notifications", server: { newerEpoch: true } }) };
 /** The voice rooms off: no section of them beside the timeline, and no place of them in the menu. */
 export const VoiceOff: Story = { parameters: screen({ at: "/", server: { voiceOff: true } }) };
 export const AroundEmpty: Story = { parameters: screen({ at: "/", server: { around: "none" } }) };
-
-/** Waits until the menu has risen into place, so that the story tests check it as the reader sees it. */
-async function menuRisen(doc: Document) {
-  await waitFor(
-    () => {
-      const menu = doc.querySelector('[role="menu"]');
-      if (menu === null) throw new Error("no menu is open");
-      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error("the menu is still rising");
-      }
-    },
-    { timeout: 5000 },
-  );
-}
-
-// Menu pressed where it shows, for staff: the tab bar's sheet on a phone, the popover beside the rail's or the
-// sidebar's entry from `tablet`.
-export const MenuOpen: Story = {
-  parameters: screen({ at: "/", viewer: "hana" }),
-  play: async (context) => {
-    await screenMeta.play(context);
-    // The menu is the navigation's one button that opens something, found so in every locale.
-    const menus = [...context.canvasElement.querySelectorAll<HTMLElement>("nav button[aria-expanded]")];
-    const [menu] = menus.filter((m) => m.getClientRects().length > 0);
-    if (menu === undefined) throw new Error("no menu shows");
-    await userEvent.click(menu);
-    await menuRisen(context.canvasElement.ownerDocument);
-  },
-};
-
-/** The phone's Menu left open: the tab bar's sheet over the dimmed and blurred page, at the minimum width. */
-export const MenuSheet: Story = { ...MenuOpen, globals: minimumWidth };
-
-/**
- * The floating New post's menu left open on a phone (a long press, here its right click): New post and New article,
- * in a sheet over the page. From a tablet no New post floats, and the shell shows as it is.
- */
-export const NewPostMenu: Story = {
-  play: async (context) => {
-    await screenMeta.play(context);
-    // The floating New post is the dock's one button with a menu, found so in every locale.
-    const float = [
-      ...context.canvasElement.querySelectorAll<HTMLElement>('button[aria-haspopup="true"]:not(article *)'),
-    ].find((b) => b.getClientRects().length > 0 && b.closest("nav") === null);
-    if (float === undefined) return;
-    await userEvent.pointer({ keys: "[MouseRight]", target: float });
-    await menuRisen(context.canvasElement.ownerDocument);
-  },
-};
-
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

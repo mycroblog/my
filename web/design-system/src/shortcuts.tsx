@@ -35,6 +35,7 @@ import {
   type Pressed,
   type Scope,
 } from "./keys";
+import { Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { ModalLayer, ModalPresence } from "./modal";
 
@@ -43,6 +44,7 @@ export const helpAction = "shortcuts.help";
 
 const StoreContext = createContext<Shortcuts<Element> | null>(null);
 const ScopeContext = createContext<RefObject<HTMLElement | null> | null>(null);
+const HeardContext = createContext<(() => void) | null>(null);
 
 // A layer over the screen: while focus is inside one, only the focus actions inside it act.
 const layers = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]';
@@ -101,8 +103,8 @@ export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; ma
             onDismiss={() => {
               setShown(null);
             }}
-            overlay={help().overlay()}
-            panel={help().modal()}
+            place="center"
+            panelClassName={help().modal()}
           >
             <ShortcutList screen={shown.screen} groups={shown.groups} mac={store.mac} />
           </ModalLayer>
@@ -115,6 +117,14 @@ export function ShortcutProvider({ keymap, mac, children }: { keymap: Keymap; ma
 /** Marks the element focus actions inside it act on: focus must be inside `target` for them to act. */
 export function ActionScope({ target, children }: { target: RefObject<HTMLElement | null>; children: ReactNode }) {
   return <ScopeContext value={target}>{children}</ScopeContext>;
+}
+
+/**
+ * Tells `onAct` each time an action declared inside it ran on its key (a post's reply, or more, which opens its menu),
+ * unless it did nothing. An action declared around it (the next entry of the feed, the screen's) is not its own.
+ */
+export function HeardShortcuts({ onAct, children }: { onAct: () => void; children: ReactNode }) {
+  return <HeardContext value={onAct}>{children}</HeardContext>;
 }
 
 /**
@@ -139,9 +149,10 @@ export function useAction(
   const target = use(ScopeContext);
   if (store !== null && scope === "focus" && target === null)
     throw new Error(`${id} acts on the focused element, but no ActionScope holds it`);
-  const latest = useRef(run);
+  const heard = use(HeardContext);
+  const latest = useRef({ run, heard });
   useLayoutEffect(() => {
-    latest.current = run;
+    latest.current = { run, heard };
   });
   useEffect(() => {
     if (store === null) return undefined;
@@ -150,7 +161,11 @@ export function useAction(
       label,
       scope,
       owner: () => (scope === "focus" ? (target?.current ?? null) : null),
-      run: (press) => latest.current(press),
+      run: (press) => {
+        const did = latest.current.run(press);
+        if (did !== false) latest.current.heard?.();
+        return did;
+      },
       group,
       groupLabel,
     });
@@ -161,24 +176,13 @@ export function useAction(
 
 const help = tv({
   slots: {
-    overlay: "fixed inset-0 z-50 box-border flex items-center justify-center p-dialog-margin",
-    modal: [
-      "relative box-border max-h-full w-full max-w-[var(--dialog-max-width)] overflow-auto rounded-overlay bg-surface",
-      "p-dialog font-sans text-body text-text shadow-overlay outline-hidden",
-    ],
-    dialog: "grid gap-dialog-gap",
-    header: "flex items-center justify-between gap-dialog-gap",
-    title: "m-0 text-title",
-    group: "grid gap-dialog-row",
-    caption: "m-0 flex flex-wrap items-center gap-kbd-gap text-caption font-strong text-muted-text",
+    modal: "rounded-overlay bg-surface p-dialog font-sans text-body text-text shadow-overlay outline-hidden",
+    title: "text-title",
+    caption: "text-caption font-strong text-muted-text",
     current: "rounded-control bg-surface-raised px-kbd-inline font-label text-text",
-    list: "m-0 grid gap-dialog-row",
-    row: "flex items-center justify-between gap-dialog-gap",
-    label: "min-w-0",
-    keys: "m-0 flex flex-none gap-kbd-gap",
     key: [
-      "box-border inline-flex h-kbd min-w-[var(--kbd-min-width)] items-center justify-center rounded-control",
-      "bg-surface-raised px-kbd-inline font-sans text-caption text-text",
+      "box-border h-kbd min-w-kbd-min-width rounded-control bg-surface-raised px-kbd-inline font-sans text-caption",
+      "text-text",
     ],
   },
 });
@@ -199,26 +203,26 @@ function Group({
   const s = help();
   const id = useId();
   return (
-    <section aria-labelledby={id} className={s.group()} data-current={current === undefined ? undefined : ""}>
-      <h3 id={id} className={s.caption()}>
+    <Stack as="section" gap="dialog-row" aria-labelledby={id} data-current={current === undefined ? undefined : ""}>
+      <Row as="h3" id={id} wrap align="center" gap="kbd-gap" className={s.caption()}>
         {title}
         {current !== undefined && <span className={s.current()}>{current}</span>}
-      </h3>
-      <dl className={s.list()}>
+      </Row>
+      <Stack as="dl" gap="dialog-row">
         {actions.map((a) => (
-          <div key={a.id} className={s.row()} data-action={a.id}>
-            <dt className={s.label()}>{a.label}</dt>
-            <dd className={s.keys()}>
+          <Row key={a.id} align="center" justify="between" gap="dialog-gap" data-action={a.id}>
+            <dt>{a.label}</dt>
+            <Row as="dd" rigid gap="kbd-gap">
               {a.keys.map((k) => (
-                <kbd key={k} className={s.key()}>
+                <Row as="kbd" inline align="center" justify="center" key={k} className={s.key()}>
                   {spelled(k, mac)}
-                </kbd>
+                </Row>
               ))}
-            </dd>
-          </div>
+            </Row>
+          </Row>
         ))}
-      </dl>
-    </section>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -240,13 +244,13 @@ export function ShortcutList({
   const { t } = stringsIn(lang);
   return (
     <Dialog className="outline-hidden">
-      <div className={s.dialog()} lang={lang} dir={direction}>
-        <div className={s.header()}>
+      <Stack gap="dialog-gap" scroll="y" max="viewport-dialog" lang={lang} dir={direction}>
+        <Row align="center" justify="between" gap="dialog-gap">
           <Heading slot="title" className={s.title()}>
             {t("shortcuts.title")}
           </Heading>
           <IconButton icon="close" label={t("shortcuts.close")} slot="close" />
-        </div>
+        </Row>
         {screen.length > 0 && <Group title={t("shortcuts.screen")} actions={screen} mac={mac} />}
         {groups.map((g) => (
           <Group
@@ -257,7 +261,7 @@ export function ShortcutList({
             mac={mac}
           />
         ))}
-      </div>
+      </Stack>
     </Dialog>
   );
 }

@@ -20,7 +20,18 @@
 // why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. Its
 // state is the hook's (use-composer.ts).
 
-import { isRemote, QuoteContext, ReplyContext } from "@my/app-components";
+import {
+  isRemote,
+  PollCard,
+  PollOption,
+  PollOptions,
+  QuoteContext,
+  ReplyContext,
+  scheduleTime,
+  ScheduleTime,
+  ScheduleZone,
+  sentenceHandleOf,
+} from "@my/app-components";
 import {
   AttachButton,
   AttachmentList,
@@ -37,13 +48,7 @@ import {
   MenuButton,
   MenuGroup,
   MenuItem,
-  PollCard,
-  PollOption,
-  PollOptions,
   PollSettings,
-  ScheduleTime,
-  scheduleTime,
-  ScheduleZone,
   TextButton,
   useLocale,
   WarningField,
@@ -170,7 +175,11 @@ function Poll({
           label={t("compose.poll.duration")}
           icon="time"
           value={t("compose.poll.ends_in", { duration: durationName(poll.duration, t) })}
-          items={pollDurations.map((d) => ({ id: String(d), icon: "time" as const, label: durationName(d, t) }))}
+          items={pollDurations.map((d) => ({
+            id: String(d),
+            icon: "time" as const,
+            label: durationName(d, t),
+          }))}
           chosen={String(poll.duration)}
           onChoose={(d) => {
             onChange({ ...poll, duration: Number(d) });
@@ -219,7 +228,11 @@ function alertOf(c: Composer, t: T, locale: string): string | undefined {
   if (!c.checked) return undefined;
   if (c.problems.waiting) return t("compose.wait_uploads");
   if (c.problems.pollInvalid)
-    return t("compose.poll.invalid", { min: pollLimits.min, max: pollLimits.max, length: pollLimits.length });
+    return t("compose.poll.invalid", {
+      min: pollLimits.min,
+      max: pollLimits.max,
+      length: pollLimits.length,
+    });
   return undefined;
 }
 
@@ -297,7 +310,7 @@ export function ComposerView({
   const kind = draft.target.kind;
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t, locale);
-  const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
+  const handle = answered ? sentenceHandleOf((answered.boost ?? answered).account) : "";
   // A reply to a post whose author approves the reader's replies says so over the row, before it is sent.
   const waits = kind === "reply" && (answered?.boost ?? answered)?.permissions?.reply === "pending";
   const over = problems.over > 0;
@@ -308,7 +321,12 @@ export function ComposerView({
   const cwError = fieldError(refused, "cw");
   const roomy = draft.attachments.length === 0 && draft.poll === undefined;
   // The text completes accounts, hashtags and emoji; the content warning, emoji alone (ADR-0092 §5).
-  const textSuggest = useSuggestions({ field: textRef, text: draft.text, triggers: ["@", "#", ":"], locale });
+  const textSuggest = useSuggestions({
+    field: textRef,
+    text: draft.text,
+    triggers: ["@", "#", ":"],
+    locale,
+  });
   const cwSuggest = useSuggestions({ field: cwRef, text: draft.cw ?? "", triggers: [":"], locale });
   const scheduled = draft.scheduledAt;
   const setSchedule = (o: boolean) => {

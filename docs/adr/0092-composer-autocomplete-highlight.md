@@ -87,7 +87,7 @@
   強制カラーモードでは背景が消えるので、`forced-colors:` で下線にする。色は新しいデザインシステムのトークン（#988）にライトとダークの組で足す。
 - **書字方向**: 編集器の段落ごとに `dir="auto"` を付け（ADR-0009 §5）、論理プロパティだけを使う。
 - **規則の一致**: Web に `lib/textTokens.ts` を置き、`ParseText` と `ScanShortcodes` の規則を写す（`domainMentionPattern` もこれに寄せる）。
-  共通のテストベクタ（入力の文字列と、期待する区間の種類・位置の一覧）を `pkg/testkit/fixtures/text/` の JSON に置き、Go の `ParseText`・`ScanShortcodes` のテストと Vitest の `textTokens` のテストの両方が読む。
+  共通のテストベクタ（入力の文字列と、期待する区間の種類・位置の一覧）を `pkg/testkit/fixtures/text/` の JSON に置き、Go の `ParseText`・`ScanShortcodes` のテストと Web クライアントの `textTokens` のテストの両方が読む。
   規則を変える PR は両方のテストを同時に直さなければ通らない。
 
 ### 5. 対象の入力欄

@@ -4,7 +4,7 @@
 // the unread marked and one ended; and the page of one, unread (opening it marks it read), read, and ended.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const at = "/announcements";
 
@@ -30,5 +30,3 @@ export const Read: Story = { parameters: screen({ at: "announcement:welcome" }) 
 export const Ended: Story = { parameters: screen({ at: "announcement:ended" }) };
 /** An announcement's page that could not be loaded, with the link to the list. */
 export const PageFailed: Story = { parameters: screen({ at: "announcement:maintenance", state: "error" }) };
-export const RightToLeft: Story = { globals: rightToLeft };
-export const MinimumWidth: Story = { globals: minimumWidth };

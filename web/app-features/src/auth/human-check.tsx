@@ -30,7 +30,7 @@ export function HumanCheck({ check }: { check: Widget }) {
   if (check.language) data["data-language"] = check.language;
   return (
     <>
-      <WidgetSlot marker={check.containerClass} data={data} />
+      <WidgetSlot markerClassName={check.containerClassName} data={data} />
       <FormText muted>{check.notice}</FormText>
       {check.links && check.links.length > 0 && (
         <FormLinks>

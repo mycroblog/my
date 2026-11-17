@@ -8,51 +8,10 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { holds } from "./composer";
 import { Drafts } from "./drafts";
-import { Frame } from "./frame";
 import { answered } from "./write";
 
 /** A file to upload, as the file picker hands it to the page. */
 export type Upload = { name: string; mimeType: string; buffer: Buffer };
-
-/**
- * Holds the server's answers that an upload is processed (GET /media/{id}) until the returned function releases them,
- * so that the page sees its uploads processing for as long as a test needs.
- */
-export async function holdProcessing(page: Page): Promise<() => Promise<void>> {
-  const { promise: released, resolve: release } = Promise.withResolvers<undefined>();
-  const media = (url: URL) => /\/api\/v\d\/media\/[^/]+$/.test(url.pathname);
-  await page.route(media, async (route) => {
-    await released;
-    await route.continue();
-  });
-  return async () => {
-    release(undefined);
-    await page.unroute(media);
-  };
-}
-
-/**
- * Holds the server's previews of a body (POST /articles/preview) until `release`, so that the page keeps showing the
- * preview it had for as long as a test needs; `asked` holds the body of each request, in their order.
- */
-export async function holdPreviews(page: Page): Promise<{ asked: unknown[]; release: () => void }> {
-  const { promise: released, resolve } = Promise.withResolvers<undefined>();
-  const asked: unknown[] = [];
-  const previews = (url: URL) => /\/api\/v\d\/articles\/preview$/.test(url.pathname);
-  await page.route(previews, async (route) => {
-    asked.push(route.request().postDataJSON());
-    await released;
-    // A request the page gave up on meanwhile (an earlier body's, superseded) is gone: nothing to let through.
-    await route.continue().catch(() => undefined);
-  });
-  return {
-    asked,
-    // Released, the route lets every preview through at once; it stays until the page closes.
-    release: () => {
-      resolve(undefined);
-    },
-  };
-}
 
 export class ArticleEditor {
   readonly page: Page;
@@ -64,38 +23,6 @@ export class ArticleEditor {
   /** Opens the editor of a new article at its own address. */
   async openNew(): Promise<void> {
     await this.page.goto("/articles/new");
-    await expect(this.heading("New article")).toBeVisible();
-  }
-
-  /** The main navigation's New article, under New post (from `tablet`), while the reader may write articles. */
-  get navigationEntry(): Locator {
-    return this.page
-      .getByRole("navigation", { name: "Main", exact: true })
-      .getByRole("button", { name: "New article", exact: true });
-  }
-
-  /** Opens the editor from the main navigation's New article. */
-  async openFromNavigation(): Promise<void> {
-    await this.navigationEntry.click();
-    await expect(this.heading("New article")).toBeVisible();
-  }
-
-  /** Opens the editor from the place New article that starts the phone's Menu sheet. */
-  async openFromMenuSheet(): Promise<void> {
-    const menu = await new Frame(this.page).openMenu();
-    await menu.dialog.getByRole("menuitem", { name: "New article", exact: true }).click();
-    await expect(this.heading("New article")).toBeVisible();
-  }
-
-  /** The menu of what can be written, which the phone's floating New post opens on a long press or right click. */
-  get postMenu(): Locator {
-    return this.page.getByRole("menu", { name: "New", exact: true });
-  }
-
-  /** Opens the phone's floating New post's menu with a right click, and the editor from its New article. */
-  async openFromPostMenu(): Promise<void> {
-    await this.page.getByRole("button", { name: "New post", exact: true }).click({ button: "right" });
-    await this.postMenu.getByRole("menuitem", { name: "New article", exact: true }).click();
     await expect(this.heading("New article")).toBeVisible();
   }
 
@@ -136,10 +63,6 @@ export class ArticleEditor {
   /** What is about the article, after the body: its summary, its cover and its hashtags. */
   get details(): Locator {
     return this.page.getByRole("region", { name: "About the article", exact: true });
-  }
-
-  get summary(): Locator {
-    return this.details.getByRole("textbox", { name: "Summary", exact: true });
   }
 
   /** The field that adds a hashtag. */
@@ -236,11 +159,6 @@ export class ArticleEditor {
     return this.page.getByRole("paragraph").filter({ hasText: text });
   }
 
-  /** The form's alert before the row: why it was not published. */
-  get alert(): Locator {
-    return this.page.getByRole("alert");
-  }
-
   /** A button of the row, or of the head, by its words. */
   button(name: string): Locator {
     return this.page.getByRole("button", { name, exact: true });
@@ -268,14 +186,6 @@ export class ArticleEditor {
     await expect(this.title).toBeHidden();
   }
 
-  /** Closes a new article, written or changed, and returns once the server has kept it as a draft. */
-  async closeKept(): Promise<void> {
-    await answered(this.page, { methods: ["POST", "PUT"], path: /\/drafts(?:\/[^/]+)?$/ }, async () => {
-      await this.button("Close").click();
-    });
-    await expect(this.title).toBeHidden();
-  }
-
   /** Chooses `item` of the drafts' menu in the editor's head. */
   async draftsMenu(item: "Save as draft" | "Drafts and scheduled posts"): Promise<void> {
     await this.button("Drafts").click();
@@ -285,66 +195,10 @@ export class ArticleEditor {
       .click();
   }
 
-  /** Keeps the article as a draft on the server, and returns once the server has answered and the editor is left. */
-  async saveAsDraft(): Promise<void> {
-    await answered(this.page, { methods: ["POST", "PUT"], path: /\/drafts(?:\/[^/]+)?$/ }, async () => {
-      await this.draftsMenu("Save as draft");
-    });
-    await expect(this.title).toBeHidden();
-  }
-
   /** Opens the reader's drafts and scheduled articles over the editor. */
   async openDrafts(): Promise<Drafts> {
     await this.draftsMenu("Drafts and scheduled posts");
     return new Drafts(this.page);
-  }
-
-  /**
-   * The audience tool of the row, the composer's: named by who can see the article ("Who can see it: Public"), and
-   * whether replies, boosts or quotes are limited.
-   */
-  get audienceTool(): Locator {
-    return this.page.getByRole("button", { name: /^Who can see it: .+$/ });
-  }
-
-  /** The audience menu, once open: who can see the article, and who can reply, boost and quote it. */
-  get audienceMenu(): Locator {
-    return this.page.getByRole("menu", { name: "Who can see and reply", exact: true });
-  }
-
-  /** The audience menu's panel named `name`, once open: the menu itself, or the submenu that took its place. */
-  audiencePanel(name: string): Locator {
-    return this.page.getByRole("menu", { name, exact: true });
-  }
-
-  /**
-   * Chooses who can see the article from the audience menu: its first row opens the visibilities (never Direct), and a
-   * choice closes the menu.
-   */
-  async chooseVisibility(name: "Public" | "Local" | "Quiet public" | "Followers only"): Promise<void> {
-    await this.audienceTool.click();
-    // An item is named by its label, then what it holds now (a row) or its quiet line (a visibility).
-    await this.audienceMenu.getByRole("menuitem", { name: /^Who can see it\b.*$/ }).click();
-    await this.audiencePanel("Who can see it")
-      .getByRole("menuitemradio", { name: new RegExp(`^${name}\\b.*$`) })
-      .click();
-    await expect(this.audiencePanel("Who can see it")).toBeHidden();
-  }
-
-  /** Sets the time the schedule's form starts with: the first whole hour an hour or more from now. */
-  async setTime(): Promise<void> {
-    await this.button("Schedule").click();
-    const form = this.page.getByRole("dialog", { name: "Schedule", exact: true });
-    await form.getByRole("button", { name: "Set time", exact: true }).click();
-    await expect(form).toBeHidden();
-  }
-
-  /** Schedules the article with Schedule, which takes Publish's place once a time is set, and returns once answered. */
-  async schedule(): Promise<void> {
-    await answered(this.page, { methods: ["PUT"], path: /\/drafts\/[^/]+\/schedule$/ }, async () => {
-      await this.button("Schedule").click();
-    });
-    await expect(this.title).toBeHidden();
   }
 }
 
@@ -354,7 +208,7 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Whether the server's answer `r` with a media file says it is processed. The server answers 200 to a read of a file
  * still processing, its state in the body, so the status alone does not tell.
  */
-export async function processedIn(r: Response): Promise<boolean> {
+async function processedIn(r: Response): Promise<boolean> {
   if (!r.ok()) return false;
   const { state } = (await r.json().catch(() => ({}))) as { state?: string };
   return state !== undefined && state !== "processing";

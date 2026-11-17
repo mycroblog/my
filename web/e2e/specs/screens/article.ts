@@ -33,44 +33,9 @@ export class ArticleText {
     return this.article.getByRole("heading", { level });
   }
 
-  /** The items of the text's lists, in their order. */
-  get listItems(): Locator {
-    return this.article.getByRole("listitem");
-  }
-
-  /** The text's table. */
-  get table(): Locator {
-    return this.article.getByRole("table");
-  }
-
-  /** The column headers of the text's table, in their order. */
-  get columnHeaders(): Locator {
-    return this.table.getByRole("columnheader");
-  }
-
-  /** The rows of the text's table, its head's included. */
-  get rows(): Locator {
-    return this.table.getByRole("row");
-  }
-
   /** The link of the text named `name`: a link the author wrote, or one for an image the server did not keep. */
   link(name: string): Locator {
     return this.article.getByRole("link", { name, exact: true });
-  }
-
-  /** The text's quote. */
-  get quote(): Locator {
-    return this.article.getByRole("blockquote");
-  }
-
-  /** The text's code block, whose text is `text` (and the line break that ends a fenced block). */
-  code(text: string): Locator {
-    return this.article.getByRole("code").filter({ hasText: new RegExp(`^${escape(text)}\\n?$`) });
-  }
-
-  /** The text's rules. */
-  get rules(): Locator {
-    return this.article.getByRole("separator");
   }
 }
 

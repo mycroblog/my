@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 import { ArticleCover, ArticleText, ArticleTitle } from "./article";
-import { articleText } from "./article.samples";
+import { articleCover as cover, articleText } from "./article.samples";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -27,16 +27,6 @@ const head = {
   },
   ja: { title: "小さなサーバーを一年続けて", summary: "必要だったこと、かかった費用、もう一度やるならどうするか。" },
 } as const;
-
-const cover = {
-  src: `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90" width="640" height="360"><rect width="160" height="90" fill="#7fb3d5"/><circle cx="112" cy="34" r="12" fill="#fffbe8"/><path d="M0 60 L40 44 L80 56 L120 40 L160 52 V90 H0Z" fill="#3f6f86"/></svg>`,
-  )}`,
-  width: 640,
-  height: 360,
-  alt: "A blue sea under a pale sun",
-  blurhash: "IxHWWH%h01",
-};
 
 function TextShown() {
   const lang = useLang();
@@ -57,7 +47,7 @@ function HeadShown({ sensitive }: { sensitive: boolean }) {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Article", tags: ["themes"] } satisfies Meta;
 export default meta;
 

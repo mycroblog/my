@@ -4,7 +4,7 @@
 // data-source to the JSX and takes the batches of notes, recording the URL Storybook listens at; the manager
 // (manager.ts) shows the notes, a toolbar tool and a Notes panel beside the canvas; and the preview
 // (storybook-preview.ts) loads the overlay, which picks on the story and marks its notes, and tells it the story shown.
-// A static build of Storybook and the story tests have none of it.
+// A static build of Storybook has none of it.
 // The host lists it in its addons: `addons: ["@my/devtools/storybook"]`.
 
 import { fileURLToPath } from "node:url";
@@ -19,8 +19,8 @@ interface Options {
   https?: boolean;
 }
 
-/** Storybook's dev server, not a static build nor the story tests (whose Vitest serves the stories too). */
-const dev = (options: Options) => options.configType === "DEVELOPMENT" && process.env["VITEST"] === undefined;
+/** Storybook's dev server, not a static build. */
+const dev = (options: Options) => options.configType === "DEVELOPMENT";
 
 export const viteFinal = (config: InlineConfig, options: Options): InlineConfig => {
   if (!dev(options) || options.port === undefined) return config;

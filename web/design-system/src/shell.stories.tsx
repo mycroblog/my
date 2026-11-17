@@ -8,9 +8,9 @@
 // the main one with none of its sections but the notifications, which have none yet; the reader in their direct
 // messages, whose place counts the unread conversations; and the menu's sheet open. Its words are samples in English.
 
+import { breakpoint, color } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState, type ReactNode } from "react";
-import { userEvent, waitFor, within } from "storybook/test";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
@@ -44,7 +44,7 @@ import {
 } from "./shell";
 import type { IconName } from "./icons";
 
-// A stand-in for the brand's wordmark, a short word about twice as wide as it is tall.
+// A stand-in for the brand's wordmark, a short word about twice as wide as it is tall, in the text's color of a scheme.
 const wordmark = (fill: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 24" width="44" height="24"><text x="2" y="19" font-family="system-ui, sans-serif" font-size="21" font-style="italic" font-weight="800" fill="${fill}">my</text></svg>`)}`;
 
@@ -70,6 +70,18 @@ type ShellState = {
   around?: "all" | "some" | "none";
   /** The server lets the reader write articles (`article_authoring`); else no entry to the article editor shows. */
   articles?: boolean;
+  /** The Menu open, where it shows. */
+  menu?: boolean;
+};
+
+// Under `tablet` the tab bar shows, and its Menu; from it, the rail or the sidebar and theirs.
+const phone = `(width < ${String(breakpoint.tablet)}rem)`;
+const subscribePhone = (listener: () => void) => {
+  const list = window.matchMedia(phone);
+  list.addEventListener("change", listener);
+  return () => {
+    list.removeEventListener("change", listener);
+  };
 };
 
 type Place = {
@@ -417,6 +429,13 @@ function Banners({ closure, connection }: ShellState) {
 function Shell(state: ShellState) {
   const { who = "reader", at = "/", call, toast, logo, around = "all" } = state;
   const [muted, setMuted] = useState(state.muted ?? false);
+  // The frame holds two Menus, one hidden at any width: the one that shows is the open one.
+  const [menu, setMenu] = useState(state.menu ?? false);
+  const onPhone = useSyncExternalStore(
+    subscribePhone,
+    () => window.matchMedia(phone).matches,
+    () => false,
+  );
   const { tabs, rest, rights, side } = places(state);
   const reader = who !== "visitor";
   const articles = reader && (state.articles ?? true);
@@ -498,7 +517,7 @@ function Shell(state: ShellState) {
   // The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest.
   const sideMenu = (
     <NavList>
-      <NavMenu label="Menu" footer={footer}>
+      <NavMenu label="Menu" footer={footer} open={menu && !onPhone} onOpenChange={setMenu}>
         {list(server)}
       </NavMenu>
     </NavList>
@@ -522,8 +541,8 @@ function Shell(state: ShellState) {
         <FrameMark
           href="/"
           label="my.example"
-          light={wordmark("#111111")}
-          dark={wordmark("#f2e9e7")}
+          light={wordmark(color.text.light)}
+          dark={wordmark(color.text.dark)}
           logo={logo ? images.logo : undefined}
         />
         {primary}
@@ -559,6 +578,8 @@ function Shell(state: ShellState) {
                 ...(staff ? [`${String(reportsToHandle)} waiting in moderation`] : []),
               ].join(", ")}
               footer={footer}
+              open={menu && onPhone}
+              onOpenChange={setMenu}
             >
               {list(write)}
               {list(rest)}
@@ -583,7 +604,7 @@ function Shell(state: ShellState) {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Shell",
   tags: ["themes"],
@@ -621,44 +642,15 @@ export const AroundEmpty: Story = { args: { around: "none" } };
 export const ArticlesNotAllowed: Story = { args: { articles: false } };
 /** The direct messages' place, where the reader is, with the unread conversations' count. */
 export const DirectMessages: Story = { args: { at: "/direct" } };
-/**
- * Waits until the menu over the page has risen into place (a sheet's; a popover does not move), so that the story
- * tests check it as the reader sees it.
- */
-async function menuRisen(doc: Document) {
-  await waitFor(
-    () => {
-      const menu = doc.querySelector('[role="menu"]');
-      if (menu === null) throw new Error("no menu is open");
-      for (let el: Element | null = menu; el !== null; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform))
-          throw new Error("the menu is still rising");
-      }
-    },
-    { timeout: 5000 },
-  );
-}
-
-// The menu pressed where it shows: the tab bar's sheet on a phone, the popover beside the rail's or the sidebar's
+// The menu open where it shows: the tab bar's sheet on a phone, the popover beside the rail's or the sidebar's
 // entry from `tablet`, the one menu either way.
-export const MenuOpen: Story = {
-  args: { who: "staff" },
-  play: async ({ canvasElement }) => {
-    const [menu] = within(canvasElement).getAllByRole("button", {
-      name: /^Menu/,
-    });
-    if (menu === undefined) throw new Error("no menu shows");
-    await userEvent.click(menu);
-    await menuRisen(canvasElement.ownerDocument);
-  },
-};
+export const MenuOpen: Story = { args: { who: "staff", menu: true } };
 
 const server = {
   name: "my.example",
   description: "A small server for people who like the sea, photography and slow mornings.",
 };
-const pageWordmark = { light: wordmark("#111111"), dark: wordmark("#f2e9e7") };
+const pageWordmark = { light: wordmark(color.text.light), dark: wordmark(color.text.dark) };
 const statusFooter = (
   <FormPageFooter
     label="This server"

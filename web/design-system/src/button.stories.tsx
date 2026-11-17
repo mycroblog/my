@@ -6,6 +6,7 @@
 
 import { color, contrast, mix, press, rootPx, text, type ColorName, type Scheme } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 import { Button, TextButton, TextLink, type ButtonKind, type ButtonSize } from "./button";
 import { Preview, type PreviewState } from "./preview";
 
@@ -75,7 +76,8 @@ const states: readonly [string, Partial<Args>][] = [
   ["busy", { busy: true }],
 ];
 
-// The buttons stay one group: beside the field where they fit, below it where they do not.
+// The buttons stay one group: beside the field where they fit, below it where they do not, and on a line more of
+// their own where the group is wider than the page.
 function Row({ size, lang, field = false }: { size: ButtonSize; lang: Lang; field?: boolean }) {
   const name = lang === "en" ? "Display name" : "表示名";
   return (
@@ -98,7 +100,7 @@ function Row({ size, lang, field = false }: { size: ButtonSize; lang: Lang; fiel
           }}
         />
       )}
-      <div style={{ ...line, flex: "0 0 auto" }}>
+      <div style={{ ...line, flex: "0 0 auto", maxWidth: "100%" }}>
         {kinds.map((kind) => (
           <Specimen key={kind} {...rest} kind={kind} size={size} label={labels[kind][lang]} />
         ))}
@@ -138,7 +140,7 @@ function VariantSheet({ scheme }: { scheme: Scheme }) {
   );
 }
 
-// Tagged `themes`: the story tests run it in dark too.
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Button",
   tags: ["themes"],
@@ -173,6 +175,40 @@ export const FocusVisible: Story = { args: { shown: "focus-visible" } };
 export const Japanese: Story = { args: { label: labels.primary.ja } };
 export const Variants: Story = {
   render: (_, { globals }) => <VariantSheet scheme={globals["theme"] === "dark" ? "dark" : "light"} />,
+};
+
+/** A button and a text button that count their presses beside them, disabled or not by the args. */
+function PressCounts({ isDisabled }: { isDisabled: boolean }) {
+  const [button, setButton] = useState(0);
+  const [text, setText] = useState(0);
+  return (
+    <div style={line}>
+      <Button
+        isDisabled={isDisabled}
+        onPress={() => {
+          setButton((n) => n + 1);
+        }}
+      >
+        Press the button
+      </Button>
+      <output aria-label="Button pressed">{button}</output>
+      <TextButton
+        isDisabled={isDisabled}
+        onPress={() => {
+          setText((n) => n + 1);
+        }}
+      >
+        Press the text button
+      </TextButton>
+      <output aria-label="Text button pressed">{text}</output>
+    </div>
+  );
+}
+
+/** Both kinds of button count what presses them; the args enable them, as a screen does when its field is filled. */
+export const Counting: Story = {
+  args: { isDisabled: true },
+  render: ({ isDisabled }) => <PressCounts isDisabled={isDisabled} />,
 };
 
 // The text button and the text link inside a line of muted text, as a feed's notice holds them: they read alike.

@@ -10,7 +10,7 @@
     "dev": "bun --bun vite",
     "build": "bun --bun vite build",
     "typecheck": "bun --bun tsc -p . && bun --bun tsc -p sw",
-    "test": "bun test --conditions=@mycroblog/source"
+    "test": "bun test --conditions=@mycroblog/source --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom --conditions=@mycroblog/source && dom-tests jsdom --conditions=@mycroblog/source"
   },
   "dependencies": {
     "@lingui/core": "6.12.0",
@@ -31,12 +31,16 @@
     "workbox-strategies": "7.4.1"
   },
   "devDependencies": {
+    "@my/devtools": "workspace:*",
     "@my/e2e": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
     "@storybook/react-vite": "10.6.7",
     "@tailwindcss/vite": "4.3.5",
     "@tanstack/router-generator": "1.168.0",
     "@tanstack/router-plugin": "1.169.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.10",
     "@types/bun": "1.4.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

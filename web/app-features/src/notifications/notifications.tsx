@@ -3,7 +3,8 @@
 // The reader's notifications (FR-205, ADR-0158 §7, the rough of #3047), newest first, one entry each: over them the
 // tabs (all, or the mentions) with mark-all-read at the row's end, then, under all, the row of the requests the
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
-// read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). Over them all, a row
+// read once the reader acts on it or it goes out above the view (@my/app-data moves the marker): a press on its words,
+// on a control or a link of it, or on an item of a menu of it; opening a menu is not yet an action. Over them all, a row
 // counts the follow requests and opens their screen (follow-requests.tsx), and one under it what waits for the reader's
 // approval (waiting.tsx), where those are answered: their notifications here are plain lines. A notification that
 // asks for an answer of its own (follow back) has it as the primary button; that of a scheduled post that could not be
@@ -41,6 +42,7 @@ import {
   Entry,
   Excerpt,
   FeedNotice,
+  HeardActions,
   IconButton,
   NoticeCaption,
   NoticeLine,
@@ -280,9 +282,20 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
         empty: t("notifications.empty"),
       }}
       onPassed={reads.read}
-      onEntryClick={reads.read}
     >
-      {(n) => <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} />}
+      {(n) => {
+        // The one place where a notification is read by what the reader does on it, whatever the row holds, now or
+        // later: a press on it, the one that opens a menu or a picker included, or on an item of a menu of it, and
+        // a shortcut's key that acts on it (reply, boost, favourite, more). Either shows that the reader saw it.
+        const read = () => {
+          reads.read(n.id);
+        };
+        return (
+          <HeardActions onAct={read}>
+            <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} />
+          </HeardActions>
+        );
+      }}
     </ListColumn>
   );
 }
@@ -291,9 +304,18 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
  * The reader's notifications; `instance` is the server's name, which the notices of the server say. `gone` says over
  * them that a notification a link led to is no longer there (dismissed, or never the reader's).
  */
-export function Notifications({ instance, gone = false }: { instance: string; gone?: boolean }) {
+export function Notifications({
+  instance,
+  gone = false,
+  defaultFilter = "all",
+}: {
+  instance: string;
+  gone?: boolean;
+  /** The tab shown at first, which the reader changes; all of them by default. */
+  defaultFilter?: NotificationFilter | undefined;
+}) {
   const { t } = stringsIn(useLocale().locale);
-  const [filter, setFilter] = useState<NotificationFilter>("all");
+  const [filter, setFilter] = useState<NotificationFilter>(defaultFilter);
   const reads = useNotificationReads();
   return (
     <ScreenStack>

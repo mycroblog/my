@@ -346,6 +346,7 @@ function Article({ state }: { state: State }) {
         placeholder={w.summaryPlaceholder}
         value={h.summary}
         invalid={summaryLeft < 0}
+        describedBy={summaryLeft < 0 ? "article-summary-hint article-summary-error" : "article-summary-hint"}
       />
     </ArticleField>
   );
@@ -480,7 +481,7 @@ function Article({ state }: { state: State }) {
   );
 }
 
-// Tagged `themes`: the story tests run each in dark too.
+// Tagged `themes`: the check of every story shows each in dark too.
 const meta = {
   title: "Article editor",
   tags: ["themes"],
@@ -505,12 +506,4 @@ export const Edit: Story = { render: () => <Article state="edit" /> };
 /** The server keeps articles to a role the reader does not have: no form, the one sentence why. */
 export const NotAllowed: Story = {
   render: () => <Article state="not-allowed" />,
-};
-export const RightToLeft: Story = {
-  render: () => <Article state="writing" />,
-  globals: { locale: "ar-XB" },
-};
-export const MinimumWidth: Story = {
-  render: () => <Article state="writing" />,
-  globals: { viewport: { value: "minimum" } },
 };

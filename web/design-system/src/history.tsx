@@ -10,26 +10,25 @@
 
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
+import { Box, Row, Stack } from "./layout";
 
 const history = tv({
   slots: {
-    list: "m-0 grid list-none gap-entry-room p-0",
-    version: "grid grid-cols-[minmax(0,1fr)] gap-entry",
-    head: "flex min-w-0 flex-wrap items-baseline gap-x-entry-name gap-y-0 leading-entry",
+    list: "list-none p-0",
+    head: "leading-entry",
     label: "font-strong",
     time: "text-caption text-muted-text",
-    text: "m-0 whitespace-pre-wrap [overflow-wrap:anywhere]",
+    text: "whitespace-pre-wrap [overflow-wrap:anywhere]",
     added: "rounded-[2px] bg-diff-added text-text no-underline [box-decoration-break:clone]",
     removed: "text-muted-text line-through decoration-1",
-    replaced: "me-[0.3em]",
-    media: "m-0 flex list-none flex-wrap gap-media p-0",
-    tile: "relative box-border rounded-control",
-    image: "block h-media-preview-height w-media-preview-width rounded-control object-cover",
+    media: "list-none p-0",
+    tile: "box-border rounded-control",
+    image: "h-media-preview-height w-media-preview-width rounded-control object-cover",
     // An added image: on the tint, which shows around it as a frame.
-    tileAdded: "bg-diff-added p-[0.25rem]",
+    tileAdded: "bg-diff-added p-diff-image-frame",
     // A removed image: muted, and crossed out by a line of the muted text from corner to corner.
     tileRemoved: [
-      "opacity-50 after:absolute after:inset-0 after:rounded-control",
+      "opacity-50 after:rounded-control",
       "after:bg-[linear-gradient(to_top_right,transparent_calc(50%-1px),var(--color-muted-text)_calc(50%-1px),var(--color-muted-text)_calc(50%+1px),transparent_calc(50%+1px))]",
     ],
   },
@@ -38,9 +37,9 @@ const history = tv({
 /** The versions, newest first, each a `Version`. */
 export function VersionList({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <ol aria-label={label} className={history().list()}>
+    <Stack as="ol" gap="entry-room" aria-label={label} className={history().list()}>
       {children}
-    </ol>
+    </Stack>
   );
 }
 
@@ -59,15 +58,15 @@ export type VersionProps = {
 export function Version({ label, time, lang, children }: VersionProps) {
   const s = history();
   return (
-    <li className={s.version()}>
-      <div className={s.head()}>
+    <Stack as="li" gap="entry">
+      <Row wrap align="baseline" gapX="entry-name" gapY="0" className={s.head()}>
         <span className={s.label()}>{label}</span>
         <span className={s.time()}>{time}</span>
-      </div>
-      <div className={s.version()} lang={lang}>
+      </Row>
+      <Stack gap="entry" lang={lang}>
         {children}
-      </div>
-    </li>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -127,15 +126,17 @@ export function DiffText({
             <Heard text={marks.added.end} lang={marks.lang} />
           </ins>
         ) : (
-          <del
+          <Box
+            as="del"
             key={i}
             // The words that took their place follow a space apart.
-            className={parts[i + 1]?.kind === "added" ? `${s.removed()} ${s.replaced()}` : s.removed()}
+            spaceAfter={parts[i + 1]?.kind === "added" ? "diff-replaced" : undefined}
+            className={s.removed()}
           >
             <Heard text={marks.removed.start} lang={marks.lang} />
             {render(p.text)}
             <Heard text={marks.removed.end} lang={marks.lang} />
-          </del>
+          </Box>
         ),
       )}
     </p>
@@ -153,12 +154,15 @@ export function DiffMedia({ items, marks }: { items: readonly DiffImage[]; marks
   const s = history();
   if (items.length === 0) return null;
   return (
-    <ul className={s.media()}>
+    <Row as="ul" wrap gap="media" className={s.media()}>
       {items.map((m) => {
-        const image = <img className={s.image()} src={m.src} alt={m.alt} />;
+        const image = <Box as={<img src={m.src} alt={m.alt} />} display="block" className={s.image()} />;
         return (
-          <li
+          <Box
+            as="li"
             key={`${m.kind}-${m.id}`}
+            anchor
+            reach={m.kind === "removed"}
             className={
               m.kind === "added"
                 ? `${s.tile()} ${s.tileAdded()}`
@@ -180,9 +184,9 @@ export function DiffMedia({ items, marks }: { items: readonly DiffImage[]; marks
             ) : (
               image
             )}
-          </li>
+          </Box>
         );
       })}
-    </ul>
+    </Row>
   );
 }

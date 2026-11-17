@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The Oxlint JS plugin `restrict` (ADR-0025 §8): the layer rules of ADR-0025 §3 and §4 that a type cannot hold, enabled
 // per path in .oxlintrc.json. restrictions.test.js lints the fixtures of web/devtools/fixtures/restrictions/ and of
-// the layers' fixtures/ with Oxlint and compares its findings with the ones each fixture expects.
+// the layers' fixtures/ with Oxlint and compares its findings with the ones each fixture expects. The rules of the
+// styles (token-colors, layout-parts, viewport-breakpoints) are in styles.js.
 //
 // - layer-imports: a layer imports only the layers below it (§3): design-tokens ← design-system ← app-components ←
 //   app-features ← app, with app-data beside app-components, under app-features, and platform and rtc under app-data;
 //   @my/i18n reaches the app alone. The layer of a file is the package of web/ it is in. It sees `import`, `export …
 //   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
 //   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
-//   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake server
-//   that exists for the stories (ADR-0165 §1), and @my/devtools/options, the live options the decider picks from
-//   (ADR-0168 §1), and nothing else of either package.
+//   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake API
+//   (ADR-0171 §5), and @my/devtools/options, the live options the decider picks from (ADR-0168 §1), and nothing else
+//   of either package. A test (`*.test.ts(x)`) and a module of a
+//   package's `test/` directory, which only the test runner loads, may also import @my/e2e/fake, and nothing else of
+//   it.
 //
 // - design-system-props: outside @my/design-system, no element of one of its components gets a `className` or a
 //   `style` (§4). The `Omit` of each component's props refuses them only while the types hold; this also refuses them
@@ -18,6 +21,9 @@
 //   It does not see, for want of other files and of types:
 //   - a component that another package re-exports under another name (`export { Button as X }` in app-components);
 //   - a wrapper that spreads its own props onto a component (`(p) => <Button {...p} />`), whose callers can pass them.
+//   In the layers above it (app-components, app-features, app) an element of the DOM gets neither: only the design
+//   system writes a class, and its stylesheet holds the classes of its own files alone. A story and a test may, to
+//   stand a specimen in a width.
 //
 // - platform-globals: in a layer other than @my/platform, nothing checks the browser, the PWA or the OS (ADR-0028
 //   §17): no `navigator` or other global of the platform (as a global or a member of any object), no `"x" in window`
@@ -38,6 +44,8 @@
 //   `setTimeout`, `setInterval`, `Date.now()`, `new Date()`), a `timeout` option and a forced action (`force: true`);
 //   the demo server and the seed of src/ poll for readiness and remove their files by force. It refuses the methods by
 //   name on any object, and sees a name or a RegExp written in the file, not one held in a variable.
+
+import { rules as styles } from "./styles.js";
 
 const DESIGN_SYSTEM = /^@my\/design-system(?:\/|$)/;
 const LAYOUT_PROPS = new Set(["className", "style"]);
@@ -69,9 +77,14 @@ function keyName(/** @type {Node} */ property) {
   return undefined;
 }
 
+/** The layers above @my/design-system, by their directories of web/: no element of theirs gets a class or a style. */
+const ABOVE = new Set(["app-components", "app-features", "app"]);
+
 /** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
 function create(context) {
   const { sourceCode } = context;
+  const filename = String(context.filename).replaceAll("\\", "/");
+  const above = ABOVE.has(webDir(filename) ?? "") && !STORY_FILE.test(filename) && !TEST_FILE.test(filename);
 
   /** The variable that `name` refers to at `node`. */
   function resolve(/** @type {Node} */ node, /** @type {string} */ name) {
@@ -112,9 +125,12 @@ function create(context) {
   function report(/** @type {Node} */ node, /** @type {string} */ prop, /** @type {string} */ component) {
     context.report({
       node,
-      message:
-        `<${component}> of @my/design-system gets \`${prop}\`: outside the package a component takes no class and ` +
-        "no style (ADR-0025 §4). Use its props and variants, or add the variant it lacks to @my/design-system.",
+      message: /^[a-z]/.test(component)
+        ? `<${component}> above @my/design-system gets \`${prop}\`: a layer above it writes no class and no style ` +
+          "(ADR-0025 §4), and its stylesheet holds no class written here. Compose the parts of @my/design-system " +
+          "by their props, or add the part or the variant it lacks to @my/design-system."
+        : `<${component}> of @my/design-system gets \`${prop}\`: outside the package a component takes no class and ` +
+          "no style (ADR-0025 §4). Use its props and variants, or add the variant it lacks to @my/design-system.",
     });
   }
 
@@ -172,9 +188,9 @@ function create(context) {
   return {
     JSXOpeningElement(/** @type {Node} */ node) {
       const name = node.name;
-      // A lower-case name is a DOM element, which takes a class and a style.
-      if (name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name)) return;
-      if (name.type === "JSXNamespacedName" || !isDesignSystem(name, 0)) return;
+      // A lower-case name is a DOM element, which takes a class and a style below the layers above the design system.
+      const dom = name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name);
+      if (dom ? !above : name.type === "JSXNamespacedName" || !isDesignSystem(name, 0)) return;
       const component = elementName(name);
       for (const attribute of node.attributes) {
         if (attribute.type === "JSXSpreadAttribute") checkSpread(attribute.argument, component, 0);
@@ -202,8 +218,12 @@ const SHARED_FILES = "brand";
 
 /** A story, or a sample module beside it: what only the Storybook host loads. */
 const STORY_FILE = /\.(?:stories\.tsx|samples\.tsx?)$/;
-/** What a story may import besides the layers below its own: the fake server of the stories, and live options. */
-const STORY_FAKES = new Set(["@my/e2e/fake", "@my/devtools/options"]);
+/** A test, or a module of a `test/` directory: what only the test runner loads. */
+const TEST_FILE = /(?:\.test\.tsx?|\/test\/[^/]+\.tsx?)$/;
+/** The fake API (ADR-0171 §5), which a story and a test may import besides the layers below their own. */
+const FAKE_API = "@my/e2e/fake";
+/** What a story may import besides: the fake API, and live options. */
+const STORY_FAKES = new Set([FAKE_API, "@my/devtools/options"]);
 
 /** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
 function webDir(/** @type {string} */ path) {
@@ -228,11 +248,13 @@ function createLayerImports(context) {
   if (own === undefined || !Object.hasOwn(BELOW, own)) return {};
   const below = new Set(BELOW[/** @type {keyof typeof BELOW} */ (own)]);
   const story = STORY_FILE.test(filename);
+  const test = TEST_FILE.test(filename);
 
   function check(/** @type {Node | null | undefined} */ source) {
     if (source?.type !== "Literal" || typeof source.value !== "string") return;
     const specifier = source.value;
     if (story && STORY_FAKES.has(specifier)) return;
+    if (test && specifier === FAKE_API) return;
     let target;
     let relative = false;
     if (specifier.startsWith("@my/")) target = specifier.slice("@my/".length).split("/")[0];
@@ -624,6 +646,7 @@ function createE2EFlaky(context) {
 export default {
   meta: { name: "restrict" },
   rules: {
+    ...styles,
     "e2e-flaky": {
       meta: {
         type: "problem",
@@ -662,7 +685,10 @@ export default {
     "design-system-props": {
       meta: {
         type: "problem",
-        docs: { description: "Disallow a className or a style on a component of @my/design-system outside it" },
+        docs: {
+          description:
+            "Disallow a className or a style on a component of @my/design-system outside it, and on any element above it",
+        },
         schema: [],
       },
       create,

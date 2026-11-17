@@ -15,6 +15,15 @@ import type { PostAccount } from "./status";
 export const handleOf = (account: PostAccount) =>
   account.username === "" ? account.domain : `@${account.username}@${account.domain}`;
 
+/**
+ * The handle a sentence names an account by: `@user` for a local account and `@user@domain` for a remote one, so that
+ * two accounts of one name on two servers read differently; its domain alone without a confirmed username. A
+ * byline's or a profile's head shows the handle in a part of its own (`handleOf`); every message that takes an
+ * account's handle takes this.
+ */
+export const sentenceHandleOf = (account: { username: string; acct: string; domain?: string }) =>
+  account.username === "" ? (account.domain ?? account.acct) : `@${account.acct || account.username}`;
+
 /** The name an account goes by: its display name, else its username. */
 export const nameOf = (account: PostAccount) => account.display_name || account.username || account.domain;
 

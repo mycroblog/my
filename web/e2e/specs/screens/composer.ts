@@ -199,29 +199,6 @@ export class Composer {
   }
 
   /**
-   * Puts `plain`, and `html` when given, on the clipboard, and pastes it into the focused field as Ctrl+V (⌘V) does.
-   */
-  async paste(data: { plain: string; html?: string }): Promise<void> {
-    const page = this.dialog.page();
-    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-    await page.evaluate(async ({ plain, html }) => {
-      const items: Record<string, Blob> = { "text/plain": new Blob([plain], { type: "text/plain" }) };
-      if (html !== undefined) items["text/html"] = new Blob([html], { type: "text/html" });
-      await navigator.clipboard.write([new ClipboardItem(items)]);
-    }, data);
-    await page.keyboard.press("ControlOrMeta+v");
-  }
-
-  /** Copies the selection of the focused field as Ctrl+C (⌘C) does, and gives the plain text the clipboard holds. */
-  async copy(): Promise<string> {
-    const page = this.dialog.page();
-    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-    await page.evaluate(() => navigator.clipboard.writeText(""));
-    await page.keyboard.press("ControlOrMeta+c");
-    return page.evaluate(() => navigator.clipboard.readText());
-  }
-
-  /**
    * The text that each CSS Custom Highlight of the page marks in the text box, its ranges joined: the part over the
    * limit is one of them. A read of the page at one moment: assert on it with `expect.poll`.
    */
@@ -242,28 +219,6 @@ export class Composer {
    */
   suggestions(kind: "Accounts" | "Hashtags" | "Emoji"): Locator {
     return this.dialog.page().getByRole("listbox", { name: kind, exact: true });
-  }
-
-  /**
-   * The name of the text's active suggestion: the option its `aria-activedescendant` names, inside the list its
-   * `aria-controls` names; undefined while it names none.
-   */
-  async activeSuggestion(): Promise<string | undefined> {
-    return this.text.evaluate((text) => {
-      const active = text.ariaActiveDescendantElement;
-      const inList = (text.ariaControlsElements ?? []).some((list) => active !== null && list.contains(active));
-      if (active === null || !inList) return undefined;
-      return active.ariaLabel ?? active.textContent;
-    });
-  }
-
-  /**
-   * The live region of the dialog that announces `words` whole: the text announces how many suggestions opened ("2
-   * suggestions"), or the line in their place ("Loading suggestions…", "No matching accounts").
-   */
-  announced(words: string | RegExp): Locator {
-    const whole = typeof words === "string" ? new RegExp(`^${words.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`) : words;
-    return this.dialog.getByRole("status").filter({ hasText: whole });
   }
 
   /** The button at the end of the text that opens the emoji picker, which writes the emoji picked at the caret. */
@@ -314,31 +269,10 @@ export class Composer {
     await expect(this.dialog).toBeHidden();
   }
 
-  /**
-   * Saves a draft opened from the server as a draft when another device saved a newer one since: returns once the
-   * server has refused it, with the composer open and its alert shown.
-   */
-  async saveAsDraftRefused(): Promise<void> {
-    await answered(this.dialog.page(), { methods: ["PUT"], path: /\/drafts\/[^/]+$/ }, async () => {
-      await this.draftsMenu("Save as draft");
-    });
-    await expect(this.alert).toBeVisible();
-  }
-
   /** Opens the reader's drafts and scheduled posts in the composer's place. */
   async openDrafts(): Promise<Drafts> {
     await this.draftsMenu("Drafts and scheduled posts");
     return new Drafts(this.dialog.page());
-  }
-
-  /** The alert over the row: why the post was not sent, or why a draft was not saved. */
-  get alert(): Locator {
-    return this.dialog.getByRole("alert");
-  }
-
-  /** Opens the newer draft that another device saved, from the alert of a refused save. */
-  async openNewer(): Promise<void> {
-    await this.alert.getByRole("button", { name: "Open the newer one", exact: true }).click();
   }
 
   /** The schedule tool of the row: "Schedule" while no time is set, "Change the scheduled time" while one is. */

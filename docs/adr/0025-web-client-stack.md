@@ -26,8 +26,8 @@
 | i18n | Lingui（`@lingui/core`、ADR-0009）。カタログは `@my/i18n` がコンパイル |
 | 検証 | Zod 4（検索パラメータとフォーム） |
 | エラー境界 | `react-error-boundary` |
-| テスト | Vitest（ブラウザモードを含む）、Testing Library、`user-event`、MSW、Playwright + `@axe-core/playwright`（ADR-0110） |
-| 部品カタログ | Storybook 10（`@storybook/react-vite`、a11y アドオン、Vitest アドオン） |
+| テスト | `bun test`、happy-dom（それで検証できないテストだけ jsdom）、Testing Library、`user-event`、Playwright + axe-core（ADR-0171） |
+| 部品カタログ | Storybook 10（`@storybook/react-vite`、a11y アドオン） |
 | lint | Oxlint（`oxlint`、`oxlint-tsgolint`。§8）、`knip` |
 
 音声通話の `livekit-client` と `sora-js-sdk` は ADR-0101 が足す。
@@ -37,7 +37,7 @@
 - **React Aria Components**: 候補の中で i18n（`ja` / `ar` の組み込み文言、RTL でのキー操作の反転）が最も強い。主要なスクリーンリーダーでテストされている。マウス・タッチ・キーボードの押下を正規化するので、Tauri の WebView にも向く。
 - **TanStack Router**: React Router の型安全なルートは framework mode 限定で、SPA では型安全にならない。
 - **TanStack Query**: React 19 の `use` はキャッシュを持たず、無効化・ページングも提供しない。
-- **Vitest**: React Compiler の変換をテストにも同じように適用でき、Storybook と組み合わせて実ブラウザでアクセシビリティの検査ができる。
+- **`bun test`**: ランタイムに含まれるランナーで、ブラウザを使わないテストをこれ 1 つで実行する。ブラウザが要る検証は Playwright が担う（ADR-0171 §4）。
 
 対応するブラウザは Chrome 123・Firefox 120・Safari 17.5 以上とし、ビルドの CSS の対象にする。`light-dark()` を書き換えさせないため（決定者、2026-11-13）。
 
@@ -166,7 +166,7 @@ React Compiler は `oxc-transform-react` で動かし、React のパッケージ
     `"use no memo"` / `"use no forget"` で始まる関数の中の診断は除く。関数の範囲は Vite が出す `parseSync`（Rolldown の Oxc のパーサ）で求め、
     診断の UTF-8 のバイト位置を UTF-16 の位置に直して比べる。出力の `_c(N)` が 1 つもなければ失敗させる。
   - このゲートは診断のすべてを失敗にするので、位置のない検証を数えなかった Babel 版より厳しい。決定者はこの厳しさを受け入れている。
-- ほかの React のパッケージ（Storybook と Vitest）は、`@vitejs/plugin-react` の `compiler` オプションで同じ `oxc-transform-react` を使う。ゲートは `@my/app` のビルドが持つ。
+- ほかの React のパッケージ（Storybook）は、`@vitejs/plugin-react` の `compiler` オプションで同じ `oxc-transform-react` を使う。ゲートは `@my/app` のビルドが持つ。
 - 0.x の experimental な `oxc-transform-react` を本番のビルドに使う。決定者はこれを受け入れている。
 - 版は、すべてのパッケージで同じ `oxc-transform-react` の版に固定する。`@vitejs/plugin-react` の peer の範囲の外の版も使う。
 - 版を上げるときは、`@my/app` のビルドが出すメモ化した関数の数と、検査と E2E の結果を PR に書く。
@@ -188,7 +188,7 @@ React Compiler は `oxc-transform-react` で動かし、React のパッケージ
 
 | ツール | 動かし方 |
 | --- | --- |
-| Vite・Vitest（ブラウザモードを含む）・Storybook・Playwright・Astro・openapi-typescript・tsc・Oxlint・knip | `bun --bun <bin>` |
+| Vite・Storybook・Playwright・Astro・openapi-typescript・tsc・Oxlint・knip | `bun --bun <bin>` |
 | Lingui のコンパイラ | Bun のスクリプトから `@lingui/message-utils`。CLI と違って Babel を要らない |
 | Redocly CLI・markdownlint-cli2・Wrangler | `bunx --bun` |
 | 整形・テスト・i18n のツール・リポジトリのスクリプト | `bun fmt`・`bun test`・`bun <file>` |

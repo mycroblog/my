@@ -8,22 +8,21 @@
 // reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
 // why; assistive technology reads the line as the switch's description.
 
-import type { ReactNode } from "react";
+import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { SwitchButton, SwitchField, Text } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 
 const toggle = tv({
   slots: {
-    // Two columns: the label over its description, and the track beside both.
-    root: "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-toggle-gap text-body text-text",
+    root: "text-body text-text",
     // The button's box is its parts', placed in the root's grid; the label and the track take its presses.
     button: "group contents cursor-pointer data-disabled:cursor-not-allowed",
     // The label and its description wrap between phrases, never inside a word of ja (フォロワー); disabled, the label
     // turns muted, as every disabled label does.
-    label: "col-start-1 row-start-1 [word-break:auto-phrase] group-data-disabled:text-muted-text",
-    description: "col-start-1 row-start-2 text-caption text-muted-text [word-break:auto-phrase]",
+    label: "[word-break:auto-phrase] group-data-disabled:text-muted-text",
+    description: "text-caption text-muted-text [word-break:auto-phrase]",
     track: [
-      "relative col-start-2 row-span-2 row-start-1 box-border inline-flex h-toggle-height w-toggle-width",
+      "box-border h-toggle-height w-toggle-width",
       "rounded-[calc(var(--toggle-height)/2)] bg-surface-raised-hover group-data-hovered:bg-surface-raised-pressed",
       "group-data-selected:bg-text group-data-selected:group-data-hovered:bg-text",
       "group-data-focus-visible:shadow-focus",
@@ -31,13 +30,46 @@ const toggle = tv({
       "group-data-disabled:group-data-selected:bg-muted-text",
     ],
     thumb: [
-      "absolute inset-y-0 my-auto size-toggle-thumb rounded-full bg-muted-text",
-      "start-[calc((var(--toggle-height)-var(--toggle-thumb))/2)]",
-      "group-data-selected:start-[calc(var(--toggle-width)-(var(--toggle-height)+var(--toggle-thumb))/2)]",
+      "size-toggle-thumb rounded-full bg-muted-text",
       "group-data-selected:bg-surface group-data-disabled:opacity-disabled",
     ],
   },
 });
+
+/** The switch's own grid: two columns, the label over its description and the track beside both. */
+function ToggleFrame({ className, ...rest }: ComponentProps<typeof SwitchField> & { className: string }) {
+  return (
+    <SwitchField
+      {...rest}
+      className={`${className} grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-toggle-gap`}
+    />
+  );
+}
+
+const PLACE = {
+  label: "col-start-1 row-start-1",
+  // The track spans both rows, level with the label and its description.
+  track: "relative col-start-2 row-span-2 row-start-1 inline-flex",
+  // The thumb stands at the track's start, off, and at its end, on; the side follows the reading direction.
+  thumb: [
+    "absolute inset-y-0 my-auto start-[calc((var(--toggle-height)-var(--toggle-thumb))/2)]",
+    "group-data-selected:start-[calc(var(--toggle-width)-(var(--toggle-height)+var(--toggle-thumb))/2)]",
+  ].join(" "),
+} as const;
+
+/** Where a part of the switch stands in its grid: the label, the track, and the thumb on the track. */
+function TogglePlace({
+  at,
+  className,
+  ...rest
+}: { at: keyof typeof PLACE; className: string } & HTMLAttributes<HTMLSpanElement>) {
+  return <span {...rest} className={`${className} ${PLACE[at]}`} />;
+}
+
+/** The line that describes the switch, under its label. */
+function ToggleNote({ className, ...rest }: ComponentProps<typeof Text> & { className: string }) {
+  return <Text {...rest} className={`${className} col-start-1 row-start-2`} />;
+}
 
 export type SwitchProps = {
   /** What it turns on or off. */
@@ -69,7 +101,7 @@ export function Switch({
   const s = toggle();
   const below = isDisabled && reason !== undefined ? reason : description;
   return (
-    <SwitchField
+    <ToggleFrame
       className={s.root()}
       {...(isSelected === undefined ? {} : { isSelected })}
       {...(defaultSelected === undefined ? {} : { defaultSelected })}
@@ -78,18 +110,18 @@ export function Switch({
       isDisabled={isDisabled}
     >
       <SwitchButton className={s.button()}>
-        <span className={s.label()} dir="auto">
+        <TogglePlace at="label" className={s.label()} dir="auto">
           {label}
-        </span>
-        <span className={s.track()} aria-hidden="true">
-          <span className={s.thumb()} />
-        </span>
+        </TogglePlace>
+        <TogglePlace at="track" className={s.track()} aria-hidden="true">
+          <TogglePlace at="thumb" className={s.thumb()} />
+        </TogglePlace>
       </SwitchButton>
       {below !== undefined && (
-        <Text slot="description" className={s.description()} dir="auto">
+        <ToggleNote slot="description" className={s.description()} dir="auto">
           {below}
-        </Text>
+        </ToggleNote>
       )}
-    </SwitchField>
+    </ToggleFrame>
   );
 }

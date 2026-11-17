@@ -2,10 +2,21 @@
 
 // Fails on what sets a physical side in the TypeScript and CSS of the web packages, and names the logical one that
 // follows the reading direction, so that a part lays out right-to-left under an I18nProvider of an RTL locale
-// (ADR-0009 §1, ADR-0025 §1): a Tailwind utility (ml-, pl-, left-, text-left, rounded-l, border-r…), a CSS
-// declaration (margin-left, left, border-right-width, border-top-left-radius, text-align: left, float: right…), and
-// the same keys of a React style object (marginLeft, textAlign: "left", and left or right in style={{…}}). It reads
-// the code of a file without its comments; tests may name what it refuses.
+// (ADR-0009 §1, ADR-0025 §1): a Tailwind utility (ml-, pl-, left-, text-left, rounded-l, border-r…, and an arbitrary
+// property such as [margin-left:0]), a CSS declaration (margin-left, left, border-right-width,
+// border-top-left-radius, text-align: left, float: right…), and the same keys of a React style object (marginLeft,
+// textAlign: "left", and left or right in a style object: one written in place, one the `style` names, and one typed
+// CSSProperties; elsewhere left and right may be the coordinates of a box).
+//
+// A utility that sets a side and has no logical form (a position: bg-left, object-right, origin-top-left; a gradient
+// or a mask toward a side: bg-linear-to-r, mask-l-from-50%; touch-pan-left; and a shift along the line, translate-x-)
+// fails unless it stands under `ltr:` or `rtl:`, where the other direction is written beside it: a shift that is the
+// same in both directions is written twice. translateX() in a value fails unless it turns with the page, by
+// `var(--my-direction)` (1, and -1 in a right-to-left page: motion-css.ts). A shift of 0 moves nothing. A branch on the
+// direction in TypeScript (`direction === "rtl"`) is how a part mirrors what CSS cannot.
+//
+// It reads the code of a file without its comments; tests may name what it refuses. It does not see a style object
+// that comes from another file, a side assigned to `element.style`, or the `x` of a motion library.
 //
 //   bun src/direction.ts <directory or file>...
 
@@ -26,6 +37,23 @@ const rules: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^border-([lr])(-.+)?$/, (m) => `border-${side(m[1] ?? "")}${m[2] ?? ""}`],
 ];
 
+const swap = (s: string) => s.replace(/left|right/g, (m) => (m === "left" ? "right" : "left"));
+const flip = (s: string | undefined) => (s === "l" ? "r" : "l");
+
+// Each utility that sets a physical side and has no logical form, and the one of the other side.
+const sided: [RegExp, (m: RegExpExecArray) => string][] = [
+  [
+    /^(bg|object|origin)-((?:top-|bottom-)?(?:left|right)|(?:left|right)-(?:top|bottom))$/,
+    (m) => `${m[1] ?? ""}-${swap(m[2] ?? "")}`,
+  ],
+  [/^(bg-(?:linear|gradient)-to)-([tb]?)([lr])$/, (m) => `${m[1] ?? ""}-${m[2] ?? ""}${flip(m[3])}`],
+  [/^mask-([lr])(-.+)$/, (m) => `mask-${flip(m[1])}${m[2] ?? ""}`],
+  [/^touch-pan-(left|right)$/, (m) => `touch-pan-${swap(m[1] ?? "")}`],
+];
+
+/** Whether a shift along the x axis moves nothing, or turns with the page's direction. */
+const turns = (shift: string) => /^0(?:px|%|rem)?$/.test(shift.trim()) || shift.includes("--my-direction");
+
 /** The utility of a class (what follows its last variant, outside brackets), and where it starts. */
 function utilityOf(token: string): number {
   let depth = 0;
@@ -44,12 +72,72 @@ export function logicalOf(token: string): string | null {
   const start = utilityOf(token);
   const prefix = /^!?-?/.exec(token.slice(start))?.[0] ?? "";
   const utility = token.slice(start + prefix.length).replace(/!$/, "");
+  const rest = token.slice(start + prefix.length + utility.length);
   for (const [pattern, logical] of rules) {
     const m = pattern.exec(utility);
-    if (m)
-      return token.slice(0, start + prefix.length) + logical(m) + token.slice(start + prefix.length + utility.length);
+    if (m) return token.slice(0, start + prefix.length) + logical(m) + rest;
+  }
+  // An arbitrary property: [margin-left:0], [text-align:left].
+  const [, property, value] = /^\[([a-z-]+):(.+)\]$/.exec(utility) ?? [];
+  const d = property === undefined ? null : logicalDeclaration(property, (value ?? "").replaceAll("_", " "));
+  if (!d) return null;
+  const declared = d.logical.includes(": ") ? d.logical.replace(": ", ":") : `${d.logical}:${value ?? ""}`;
+  return `${token.slice(0, start + prefix.length)}[${declared}]${rest}`;
+}
+
+/**
+ * For a class that sets a physical side and has no logical form, the two classes that say both directions (`bg-left`
+ * as `ltr:bg-left rtl:bg-right`), or null: for a class under `ltr:` or `rtl:`, and for a shift that moves nothing or
+ * turns with the page.
+ */
+export function bothDirections(token: string): string | null {
+  const start = utilityOf(token);
+  const variants = token.slice(0, start);
+  if (/(?:^|:)(?:ltr|rtl):/.test(variants)) return null;
+  const prefix = /^!?-?/.exec(token.slice(start))?.[0] ?? "";
+  const utility = token.slice(start + prefix.length).replace(/!$/, "");
+  const rest = token.slice(start + prefix.length + utility.length);
+  const both = (ltr: string, rtl: string) => `${variants}ltr:${ltr}${rest} ${variants}rtl:${rtl}${rest}`;
+  const shift = /^translate-x-(.+)$/.exec(utility);
+  if (shift) {
+    if (turns(shift[1] ?? "")) return null;
+    const sign = prefix.replace("!", "");
+    return both(prefix + utility, prefix.replace("-", "") + (sign === "-" ? "" : "-") + utility);
+  }
+  for (const [pattern, other] of sided) {
+    const m = pattern.exec(utility);
+    if (m) return both(prefix + utility, prefix + other(m));
   }
   return null;
+}
+
+/** The class or classes to write for a class that sets a physical side, or null. */
+const directed = (token: string) => logicalOf(token) ?? bothDirections(token);
+
+// The function of a transform that shifts along the x axis, named apart from its parenthesis, so that this file names
+// no shift of its own.
+const shiftX = "translateX";
+
+/** Each translateX() of `code` that does not turn with the page, where it is, and the one that does. */
+function shifts(code: string): { at: number; physical: string; logical: string }[] {
+  return Array.from(code.matchAll(new RegExp(`\\b${shiftX}\\(`, "g")), (m) => {
+    let depth = 0;
+    let end = m.index + m[0].length - 1;
+    for (; end < code.length; end++) {
+      if (code[end] === "(") depth++;
+      else if (code[end] === ")" && --depth === 0) break;
+    }
+    const shift = code.slice(m.index + m[0].length, end);
+    return turns(shift)
+      ? []
+      : [
+          {
+            at: m.index,
+            physical: `${shiftX}(${shift})`,
+            logical: `${shiftX}(calc(${shift} * var(--my-direction)))`,
+          },
+        ];
+  }).flat();
 }
 
 // A .ts file is read as TypeScript, not TSX, where a generic arrow function (`<T>(`) would read as a tag.
@@ -105,9 +193,10 @@ function findInCSS(file: string, source: string): Finding[] {
   const found: Finding[] = [];
   for (const m of code.matchAll(/(\S+)/g)) {
     const token = (m[1] ?? "").replace(/^["'`{(]+|["'`,;{})]+$/g, "");
-    const logical = logicalOf(token);
+    const logical = directed(token);
     if (logical !== null) found.push({ file, line: lineAt(code, m.index), physical: token, logical });
   }
+  for (const { at, ...shift } of shifts(code)) found.push({ file, line: lineAt(code, at), ...shift });
   for (const m of code.matchAll(/([{;]\s*)(-?[a-zA-Z-]+)\s*:\s*([^;{}]*)(?=[;}])/g)) {
     const d = logicalDeclaration(m[2] ?? "", m[3] ?? "");
     if (d) found.push({ file, line: lineAt(code, m.index + (m[1] ?? "").length), ...d });
@@ -115,23 +204,67 @@ function findInCSS(file: string, source: string): Finding[] {
   return found.sort((a, b) => a.line - b.line);
 }
 
-// The spans of the style objects written in place (style={{…}}) in transpiled code, where `left` and `right` are
-// sides; elsewhere they may be the coordinates of a box.
-function styleSpans(code: string): [number, number][] {
-  return Array.from(code.matchAll(/\bstyle:\s*\{/g), (m) => {
-    let depth = 0;
-    for (let i = m.index + m[0].length - 1; i < code.length; i++) {
-      if (code[i] === "{") depth++;
-      else if (code[i] === "}" && --depth === 0) return [m.index, i] as [number, number];
+/** The end of the object that opens at `open` in `code`: its closing brace. */
+function objectEnd(code: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < code.length; i++) {
+    if (code[i] === "{") depth++;
+    else if (code[i] === "}" && --depth === 0) return i;
+  }
+  return code.length;
+}
+
+/** The end of the value of a property that starts at `start` in `code`: the comma or the brace that closes it. */
+function valueEnd(code: string, start: number): number {
+  let depth = 0;
+  for (let i = start; i < code.length; i++) {
+    const c = code[i];
+    if (c === "{" || c === "(" || c === "[") depth++;
+    else if (c === "}" || c === ")" || c === "]") {
+      if (depth === 0) return i;
+      depth--;
+    } else if (c === "," && depth === 0) return i;
+  }
+  return code.length;
+}
+
+// The spans of the style objects of transpiled code, where `left` and `right` are sides; elsewhere they may be the
+// coordinates of a box. A style object is the value of a `style` (style={…}), with the objects of the names it reads
+// whole (not a member of one, such as `box.left`), and the object of a name the source types CSSProperties.
+function styleSpans(code: string, source: string): { spans: [number, number][]; names: string[] } {
+  const spans: [number, number][] = [];
+  const named = new Set<string>();
+  /** Adds the span from `start` to `end`, and the objects of the names read whole in it. */
+  const add = (start: number, end: number) => {
+    spans.push([start, end]);
+    // A name read whole: not a key (`left:`), unless it follows a `?`; no member, call or index of it.
+    for (const m of code
+      .slice(start, end)
+      .matchAll(/(\?\s*)?(?<![\w$.])([A-Za-z_$][\w$]*)(?![\w$]*\s*[.([])(\s*:)?/g)) {
+      const name = m[2] ?? "";
+      if ((m[3] !== undefined && m[1] === undefined) || named.has(name)) continue;
+      named.add(name);
+      declared(name);
     }
-    return [m.index, code.length] as [number, number];
-  });
+  };
+  /** Adds the object that the name is declared as. */
+  const declared = (name: string) => {
+    const at = new RegExp(`\\b(?:const|let|var)\\s+${name.replaceAll("$", "\\$")}\\s*=\\s*\\{`).exec(code);
+    if (at) add(at.index + at[0].length - 1, objectEnd(code, at.index + at[0].length - 1));
+  };
+  for (const m of code.matchAll(/\bstyle:\s*/g)) add(m.index + m[0].length, valueEnd(code, m.index + m[0].length));
+  for (const m of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*:\s*(?:React\.)?CSSProperties\b/g))
+    if (!named.has(m[1] ?? "")) {
+      named.add(m[1] ?? "");
+      declared(m[1] ?? "");
+    }
+  return { spans, names: [...named] };
 }
 
 /**
- * A TypeScript file's physical utilities, and the physical keys of its React style objects: a camel-case key that
- * names a side (marginLeft, borderTopRightRadius) anywhere, textAlign, float or clear set to "left" or "right", and
- * left or right in a style object written in place. Each is named once, at the line of its first use.
+ * A TypeScript file's physical utilities and shifts, and the physical keys of its React style objects: a camel-case
+ * key that names a side (marginLeft, borderTopRightRadius) anywhere, textAlign, float or clear set to "left" or
+ * "right", and left or right in a style object (styleSpans). Each is named once, at the line of its first use.
  */
 function findInTS(file: string, source: string): Finding[] {
   const code = transpilers[file.endsWith(".tsx") ? "tsx" : "ts"].transformSync(source);
@@ -143,25 +276,33 @@ function findInTS(file: string, source: string): Finding[] {
     found.push({ file, line: lineAt(source, at), physical, logical });
   };
   for (const token of code.split(/[\s"'`,;{}]+/)) {
-    const logical = token === "" ? null : logicalOf(token);
+    const logical = token === "" ? null : directed(token);
     if (logical !== null) add(token, logical, source.indexOf(token));
   }
-  const spans = styleSpans(code);
+  for (const shift of shifts(code)) add(shift.physical, shift.logical, source.indexOf(`${shiftX}(`));
+  const { spans, names } = styleSpans(code, source);
+  /** Where a style object of the source sets the side `key`: one written in place, then one a `style` names. */
+  const sideAt = (key: string) => {
+    const inPlace = new RegExp(`style=\\{\\{[^}]*?\\b${key}\\s*:`).exec(source);
+    if (inPlace) return inPlace.index + inPlace[0].lastIndexOf(key);
+    for (const name of names) {
+      const at = new RegExp(
+        `\\b(?:const|let|var)\\s+${name.replaceAll("$", "\\$")}\\b[^={]*=\\s*\\{[^}]*?\\b${key}\\s*:`,
+      ).exec(source);
+      if (at) return at.index + at[0].lastIndexOf(key);
+    }
+    return source.search(new RegExp(`\\b${key}\\s*:`));
+  };
   for (const m of code.matchAll(/(?<![\w$.])([a-zA-Z]+):\s*(?:"([^"]*)"|'([^']*)')?/g)) {
     const key = m[1] ?? "";
-    if ((key === "left" || key === "right") && !spans.some(([a, b]) => m.index > a && m.index < b)) continue;
+    if ((key === "left" || key === "right") && !spans.some(([a, b]) => m.index >= a && m.index < b)) continue;
     if (key !== "left" && key !== "right" && !/[A-Z]/.test(key) && !(kebab(key) in values)) continue;
     const d = logicalDeclaration(kebab(key), m[2] ?? m[3] ?? "");
     if (!d) continue;
     const physical = d.physical.includes(":") ? `${key}: "${m[2] ?? m[3] ?? ""}"` : key;
     const logical = d.logical.includes(":") ? `${key}: "${d.logical.split(": ")[1] ?? ""}"` : camel(d.logical);
-    const inStyle = new RegExp(`style=\\{\\{[^}]*?\\b${key}\\s*:`).exec(source);
     const side = key === "left" || key === "right";
-    add(
-      physical,
-      logical,
-      side && inStyle ? inStyle.index + inStyle[0].lastIndexOf(key) : source.search(new RegExp(`\\b${key}\\s*:`)),
-    );
+    add(physical, logical, side ? sideAt(key) : source.search(new RegExp(`\\b${key}\\s*:`)));
   }
   return found;
 }

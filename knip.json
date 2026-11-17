@@ -11,7 +11,7 @@
       "ignoreDependencies": ["satteri", "starlight-openapi-sources"]
     },
     "web/devtools": {
-      "entry": ["src/storybook-preview.ts", "src/manager.ts", "src/**/*.test.{ts,tsx}"],
+      "entry": ["src/storybook-preview.ts", "src/manager.ts", "src/happy-dom.ts", "src/jsdom.ts", "src/**/*.test.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "web/design-tokens": {
@@ -54,8 +54,8 @@
       "project": [".storybook/*.{ts,tsx}"]
     },
     "web/e2e": {
-      "entry": ["src/seed/main.ts", "specs/**/*.ts"],
-      "project": ["src/**/*.ts", "specs/**/*.ts"]
+      "entry": ["src/seed/main.ts", "src/**/*.test.ts", "specs/**/*.ts", "catalog/playwright.config.ts", "catalog/**/*.ts"],
+      "project": ["src/**/*.ts", "specs/**/*.ts", "catalog/**/*.ts"]
     },
     "web/i18n": {
       "entry": ["src/**/*.test.ts"],

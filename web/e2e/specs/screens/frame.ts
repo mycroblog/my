@@ -34,11 +34,6 @@ export class Menu {
   async goTo(place: MenuPlace): Promise<void> {
     await this.link(place).click();
   }
-
-  /** Closes the menu's sheet with its Close button, at the end of its head. */
-  async close(): Promise<void> {
-    await this.page.getByRole("button", { name: "Close", exact: true }).click();
-  }
 }
 
 export class Frame {
@@ -78,11 +73,6 @@ export class Frame {
   async openMenu(): Promise<Menu> {
     await this.menuButton.click();
     return new Menu(this.page);
-  }
-
-  /** The language of the document (`<html lang>`), the language the client speaks to the reader in. */
-  async language(): Promise<string> {
-    return this.page.evaluate(() => document.documentElement.lang);
   }
 
   /** The heading of the screen, which names it. */

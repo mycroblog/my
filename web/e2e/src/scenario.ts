@@ -2,7 +2,8 @@
 
 // The scenario (ADR-0015 §5): the people, posts and relationships of a small server in use, as data only. The seed
 // (seed/seed.ts) applies it to a running `my serve` in the order of this file; the E2E tests sign in as its people;
-// the fake API (fake/api.ts) answers the screens' stories from it. It holds what the screens of the web client show
+// the fake API (fake/api.ts) answers the component tests and the screens' stories from it. It holds what the screens
+// of the web client show
 // today (the home timeline, the composer with its drafts and scheduled posts, a post, its edit history and its thread,
 // an article as its card and on its page,
 // the notifications, a profile, a hashtag, the reader's lists and bookmarks, the sign-in with a password, a two-factor

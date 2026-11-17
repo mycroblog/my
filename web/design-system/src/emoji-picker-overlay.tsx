@@ -13,6 +13,7 @@ import { tv } from "tailwind-variants/lite";
 import type { EmojiPickerProps } from "./emoji-picker";
 import { IconButton } from "./icon-button";
 import { whenIdle } from "./idle";
+import { Box, Grid, Row } from "./layout";
 import { useReader } from "./locale";
 import { ModalLayer, ModalPresence } from "./modal";
 
@@ -47,20 +48,16 @@ const overlay = tv({
     // The room the picker takes while its module arrives, so that what holds it does not jump.
     placeholder: "min-h-emoji-picker-height",
     popover: [
-      "box-border w-[min(var(--emoji-picker-width),calc(100vw-2*var(--dialog-margin)))] rounded-overlay bg-surface",
-      "p-emoji-picker-gap shadow-overlay outline-hidden",
+      "box-border w-emoji-picker-popover rounded-overlay bg-surface p-emoji-picker-gap shadow-overlay outline-hidden",
     ],
     dialog: "outline-hidden",
-    sheetOverlay: "fixed inset-0 z-50 box-border flex flex-col justify-end pt-shell-sheet-room",
     sheet: [
-      "relative box-border flex h-[min(100%,var(--emoji-picker-sheet))] w-full flex-col",
-      "rounded-t-overlay bg-surface px-emoji-picker-gap pt-shell-inset",
-      "pb-[calc(var(--emoji-picker-gap)+env(safe-area-inset-bottom))] font-sans text-body text-text shadow-overlay",
-      "outline-hidden",
+      "box-border h-emoji-picker-sheet-height rounded-t-overlay bg-surface px-emoji-picker-gap pt-shell-inset",
+      "pb-emoji-picker-sheet-foot font-sans text-body text-text shadow-overlay outline-hidden",
     ],
-    sheetDialog: "grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-emoji-picker-gap outline-hidden",
-    head: "flex items-center justify-between gap-dialog-gap ps-emoji-picker-heading-gap",
-    title: "m-0 text-title",
+    sheetDialog: "outline-hidden",
+    head: "ps-emoji-picker-heading-gap",
+    title: "text-title",
   },
 });
 
@@ -76,9 +73,9 @@ export function LazyEmojiPicker(props: EmojiPickerProps) {
 /** The popover's surface, open at rest (a story's), around the picker. */
 export function EmojiPickerSurface({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={overlay().popover()} role="dialog" aria-label={label}>
+    <Box className={overlay().popover()} role="dialog" aria-label={label}>
       {children}
-    </div>
+    </Box>
   );
 }
 
@@ -108,18 +105,22 @@ export function EmojiPickerPopover({
 }) {
   const s = overlay();
   const popover = (
-    <Popover
-      placement={placement}
-      offset={4}
+    <Box
+      as={
+        <Popover
+          placement={placement}
+          offset={4}
+          {...(triggerRef ? { triggerRef } : {})}
+          {...(open === undefined ? {} : { isOpen: open })}
+          {...(onOpenChange ? { onOpenChange } : {})}
+        />
+      }
       className={s.popover()}
-      {...(triggerRef ? { triggerRef } : {})}
-      {...(open === undefined ? {} : { isOpen: open })}
-      {...(onOpenChange ? { onOpenChange } : {})}
     >
       <Dialog aria-label={label} className={s.dialog()}>
         {children}
       </Dialog>
-    </Popover>
+    </Box>
   );
   if (trigger === undefined) return popover;
   return (
@@ -154,16 +155,25 @@ export function EmojiPickerSheet({
   return (
     <ModalPresence>
       {open && (
-        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" overlay={s.sheetOverlay()} panel={s.sheet()}>
-          <Dialog className={s.sheetDialog()} lang={lang} dir={direction}>
-            <div className={s.head()}>
+        <ModalLayer key="emoji-picker" onDismiss={onClose} backdrop="dim" place="sheet" panelClassName={s.sheet()}>
+          <Grid
+            as={<Dialog />}
+            rows="head"
+            grow
+            shrink="block"
+            gap="emoji-picker-gap"
+            className={s.sheetDialog()}
+            lang={lang}
+            dir={direction}
+          >
+            <Row align="center" justify="between" gap="dialog-gap" className={s.head()}>
               <Heading slot="title" className={s.title()}>
                 {title}
               </Heading>
               <IconButton icon="close" label={closeLabel} onPress={onClose} />
-            </div>
+            </Row>
             {children}
-          </Dialog>
+          </Grid>
         </ModalLayer>
       )}
     </ModalPresence>

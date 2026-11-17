@@ -7,14 +7,13 @@
 // beside its confirmation, and the row that opens what waits elsewhere. Everything sits on the page's one surface,
 // apart by space; a raised surface marks only a control (the current tab) and what a field found.
 
-import { useId, type ReactNode, type Ref } from "react";
+import { useId, type ReactElement, type ReactNode, type Ref } from "react";
 import { Button, Link, Tab, TabList, TabPanel, Tabs } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Byline, Stamp } from "./entry";
 import { Icon, type IconName } from "./icons";
+import { Box, Row, Stack, type Gap } from "./layout";
 import { useReader } from "./locale";
-
-const screen = tv({ base: "grid grid-cols-[minmax(0,1fr)] gap-entry-room" });
 
 /**
  * A screen's parts one under another (a head, the tabs, a row, the feed), apart by the room a feed entry's ring needs;
@@ -22,26 +21,21 @@ const screen = tv({ base: "grid grid-cols-[minmax(0,1fr)] gap-entry-room" });
  */
 export function ScreenStack({ busy = false, children }: { busy?: boolean | undefined; children: ReactNode }) {
   return (
-    <div className={screen()} aria-busy={busy || undefined}>
+    <Stack gap="entry-room" aria-busy={busy || undefined}>
       {children}
-    </div>
+    </Stack>
   );
 }
 
 const tabs = tv({
   slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-entry-room",
-    row: "flex items-center gap-screen-tabs-gap",
-    // Its first tab's text on the column's edge, as the heading and the back link above it, its surface reaching out.
-    list: "-ms-control-timeline-inline flex min-w-0 flex-1 gap-screen-tab-gap overflow-x-auto overflow-y-hidden",
     // A tab: muted text on the page; the current one on the raised surface, in the text's color, as a tonal control.
     tab: [
-      "box-border flex h-control-timeline cursor-pointer items-center rounded-control px-control-timeline-inline",
+      "box-border h-control-timeline cursor-pointer rounded-control px-control-timeline-inline",
       "text-body font-label whitespace-nowrap text-muted-text outline-hidden",
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
       "data-selected:bg-surface-raised data-selected:text-text",
     ],
-    end: "ms-auto inline-flex flex-none",
     panel: "outline-hidden",
   },
 });
@@ -64,89 +58,98 @@ export function TabRow<T extends string>({ label, tabs: items, current, onChange
   const s = tabs();
   const { direction } = useReader(undefined);
   return (
-    <Tabs
-      className={s.root()}
-      selectedKey={current}
-      onSelectionChange={(key) => {
-        const tab = items.find((t) => t.id === key);
-        if (tab) onChange(tab.id);
-      }}
+    <Stack
+      gap="entry-room"
+      as={
+        <Tabs
+          selectedKey={current}
+          onSelectionChange={(key) => {
+            const tab = items.find((t) => t.id === key);
+            if (tab) onChange(tab.id);
+          }}
+        />
+      }
     >
-      <div className={s.row()} dir={direction}>
-        <TabList aria-label={label} className={s.list()}>
+      <Row align="center" gap="screen-tabs-gap" dir={direction}>
+        {/* The first tab's text on the column's edge, as the heading and the back link above it, its surface reaching
+            out; the tabs that do not fit scroll sideways. */}
+        <Row
+          grow
+          gap="screen-tab-gap"
+          bleedStart="control-timeline-inline"
+          scroll="x"
+          clip="y"
+          as={<TabList aria-label={label} />}
+        >
           {items.map((tab) => (
-            <Tab key={tab.id} id={tab.id} className={s.tab()}>
+            <Row key={tab.id} rigid align="center" as={<Tab id={tab.id} className={s.tab()} />}>
               {tab.name}
-            </Tab>
+            </Row>
           ))}
-        </TabList>
-        {end !== undefined && <span className={s.end()}>{end}</span>}
-      </div>
+        </Row>
+        {end !== undefined && (
+          <Row as="span" inline rigid push="end">
+            {end}
+          </Row>
+        )}
+      </Row>
       {items.map((tab) => (
         <TabPanel key={tab.id} id={tab.id} className={s.panel()}>
           {children}
         </TabPanel>
       ))}
-    </Tabs>
+    </Stack>
   );
 }
 
-const group = tv({
-  base: [
-    "m-0 text-caption font-normal text-muted-text",
-    // In a feed, which owns its articles alone, it stands in the first entry of the group it heads, above the post,
-    // with the group's space above it.
-    "[[data-entry]>&]:mt-screen-group-gap",
-  ],
-});
+const group = tv({ base: "text-caption font-normal text-muted-text" });
+
+/**
+ * Where the heading of a group stands: in a feed, which owns its articles alone, it is in the first entry of the group
+ * it heads, above the post, and keeps the group's space above it there.
+ */
+function GroupPlace({ id, className, children }: { id?: string | undefined; className: string; children: string }) {
+  return (
+    <h2 id={id} className={`${className} [[data-entry]>&]:mt-screen-group-gap`}>
+      {children}
+    </h2>
+  );
+}
 
 /** A heading of a group of a list (the replies of a post), muted and small, as the column beside the main one heads its sections. */
 export function GroupHeading({ children }: { children: string }) {
-  return <h2 className={group()}>{children}</h2>;
+  return <GroupPlace className={group()}>{children}</GroupPlace>;
 }
 
-const fold = tv({ base: "m-0 text-caption" });
+const fold = tv({ base: "text-caption" });
 
 /** A fold of what a list does not show yet: a `TextButton` that shows it, at the start of the column. */
 export function Fold({ children }: { children: ReactNode }) {
   return <p className={fold()}>{children}</p>;
 }
 
-const unread = tv({ base: "inline-block size-screen-unread flex-none self-center rounded-full bg-text" });
+const unread = tv({ base: "size-screen-unread rounded-full bg-text" });
 
 /** The mark of something unread: a dot in the text's color, a shape with no hue, and its label for assistive technology. */
 export function UnreadMark({ label }: { label: string }) {
-  return <span role="img" aria-label={label} className={unread()} />;
+  return (
+    <Box as="span" display="inline-block" rigid self="center" role="img" aria-label={label} className={unread()} />
+  );
 }
 
 const notice = tv({
   slots: {
-    // The glyph, the avatar's place and the body, which holds the sentence and what it is about under it. The link, when
-    // there is one, reaches over the whole line from the sentence. Its parts stand close, so that a short sentence
-    // keeps to one line beside the time at 320 px.
-    root: "relative flex items-start gap-entry-caption",
-    // The glyph and the avatar stand on the text's first line, so that a sentence that wraps keeps them at its start.
-    glyph: [
-      // At the icon's width whatever it holds (a reaction's emoji too), so that every sentence starts in one column.
-      "inline-flex h-[1lh] w-icon-action flex-none items-center justify-center text-muted-text",
-      "text-[length:var(--icon-action)] leading-none",
-    ],
+    // At the icon's width whatever it holds (a reaction's emoji too), so that every sentence starts in one column.
+    glyph: "w-icon-action text-muted-text text-[length:var(--icon-action)] leading-none",
     // Held empty where no account acted (a notice of the server), so that every sentence starts in one column.
-    avatar: "inline-flex h-[1lh] w-avatar-inline flex-none items-center",
-    body: "grid min-w-0 flex-1 gap-entry-line",
+    avatar: "w-avatar-inline",
     // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り), its lines
-    // kept even; the time floats at its first line's end, and the lines under it run to the column's end.
-    text: "m-0 [text-wrap:pretty] [word-break:auto-phrase]",
-    // The unread mark, the time and the control stand close, so that the first line keeps more of its measure.
-    end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-chip-gap",
-    // A control at the end, over the line's link, at a timeline control's height on the first line's.
-    action: "relative z-1 -my-[calc((var(--control-timeline-height)-1lh)/2)] -me-icon-button-inline inline-flex",
-    // The sentence as the link to what it tells of, in the line's own color, underlined while hovered; it reaches over
-    // the whole line, so that a press anywhere on it follows the link.
+    // kept even.
+    text: "[text-wrap:pretty] [word-break:auto-phrase]",
+    // The sentence as the link to what it tells of, in the line's own color, underlined while hovered.
     link: [
       "rounded-control text-current no-underline outline-hidden data-hovered:underline",
       "data-hovered:underline-offset-[0.15em] data-focus-visible:shadow-focus",
-      "after:absolute after:inset-0 after:content-['']",
     ],
   },
   variants: {
@@ -199,40 +202,58 @@ export function NoticeLine({
 }: NoticeLineProps) {
   const s = notice({ read: mark === undefined });
   return (
-    <div className={s.root()}>
-      <span className={s.glyph()}>{emoji ?? <Icon name={icon} place="action" />}</span>
-      <span className={s.avatar()}>{avatar}</span>
-      <div className={s.body()}>
+    // The glyph, the avatar's place and the body, which holds the sentence and what it is about under it. Its parts
+    // stand close, so that a short sentence keeps to one line beside the time at 320 px. The glyph and the avatar
+    // stand on the text's first line, so that a sentence that wraps keeps them at its start.
+    <Row anchor align="start" gap="entry-caption">
+      <Row as="span" inline line rigid align="center" justify="center" className={s.glyph()}>
+        {emoji ?? <Icon name={icon} place="action" />}
+      </Row>
+      <Row as="span" inline line rigid align="center" className={s.avatar()}>
+        {avatar}
+      </Row>
+      <Stack grow gap="entry-line">
         <p className={s.text()}>
-          <span className={s.end()}>
+          {/* The unread mark, the time and the control stand close, so that the first line keeps more of its measure:
+              they float at its end, and the lines under it run to the column's end. */}
+          <Row as="span" inline line align="center" gap="chip-gap" float="end" spaceBefore="entry-caption">
             {mark !== undefined && <UnreadMark label={mark} />}
             <Stamp date={date} />
-            {action !== undefined && <span className={s.action()}>{action}</span>}
-          </span>
+            {action !== undefined && (
+              // Over the line's link, at a timeline control's height on the first line's.
+              <Row as="span" inline anchor layer={1} bleedBlock="control-timeline-line" bleedEnd="icon-button-inline">
+                {action}
+              </Row>
+            )}
+          </Row>
           {/* The sentence alone names the entry, not the time before it. */}
           <span id={id}>
             {href === undefined ? (
               children
             ) : (
-              <Link href={href} className={s.link()} {...(onFollow === undefined ? {} : { onPress: onFollow })}>
+              // The link reaches over the whole line, so that a press anywhere on it follows it.
+              <Box
+                reach
+                as={
+                  <Link href={href} className={s.link()} {...(onFollow === undefined ? {} : { onPress: onFollow })} />
+                }
+              >
                 {children}
-              </Link>
+              </Box>
             )}
           </span>
         </p>
         {excerpt}
-      </div>
-    </div>
+      </Stack>
+    </Row>
   );
 }
 
 const noticeCaption = tv({
   slots: {
-    root: "flex items-center gap-entry-avatar text-caption",
-    text: "m-0 flex min-w-0 flex-1 items-start gap-entry-caption [word-break:auto-phrase]",
-    glyph: "inline-flex h-[1lh] flex-none items-center text-muted-text",
-    // A control at the end, its whole height in the line, so that it keeps clear of the post's byline under it.
-    action: "-me-icon-button-inline inline-flex flex-none",
+    root: "text-caption",
+    text: "[word-break:auto-phrase]",
+    glyph: "text-muted-text",
   },
   variants: { read: { true: { text: "text-muted-text" }, false: { text: "text-text" } } },
 });
@@ -256,16 +277,21 @@ export function NoticeCaption({
 }) {
   const s = noticeCaption({ read: mark === undefined });
   return (
-    <div className={s.root()}>
-      <p className={s.text()}>
-        <span className={s.glyph()}>
+    <Row align="center" gap="entry-avatar" className={s.root()}>
+      <Row as="p" grow align="start" gap="entry-caption" className={s.text()}>
+        <Row as="span" inline line rigid align="center" className={s.glyph()}>
           <Icon name={icon} place="caption" />
-        </span>
+        </Row>
         <span>{children}</span>
-      </p>
+      </Row>
       {mark !== undefined && <UnreadMark label={mark} />}
-      {action !== undefined && <span className={s.action()}>{action}</span>}
-    </div>
+      {action !== undefined && (
+        // Its whole height in the line, so that it keeps clear of the post's byline under it.
+        <Row as="span" inline rigid bleedEnd="icon-button-inline">
+          {action}
+        </Row>
+      )}
+    </Row>
   );
 }
 
@@ -278,23 +304,38 @@ export function SentenceName({ children }: { children: ReactNode }) {
 
 // Wrapping between phrases, never inside a word of ja, as the sentence over it does.
 const excerpt = tv({
-  base: "line-clamp-2 text-muted-text [word-break:auto-phrase] [&_p]:inline [&_p+p]:before:content-['_']",
+  base: "[&_p+p]:before:content-['_']",
+  variants: {
+    // A post's body (`ContentBody`) runs on in the excerpt's tone, not in the text colour of its own.
+    body: { true: "[&_div]:text-[inherit]", false: "[word-break:auto-phrase]" },
+  },
 });
 
+type ExcerptProps = {
+  lang?: string | undefined;
+  /** How many lines show before it ends in an ellipsis. */
+  lines?: 1 | 2 | 3 | undefined;
+  /** Its colour: muted, or the text's own for what is unread. */
+  tone?: "muted" | "text" | undefined;
+  /** What it holds is a post's body (`ContentBody`), whose blocks all run on as one text, in the excerpt's tone. */
+  body?: boolean | undefined;
+  children: ReactNode;
+};
+
 /**
- * The first words of something a line is about (the reader's post a notice is about): muted, its paragraphs run on,
- * on two lines at most.
+ * The first words of something a line is about (the reader's post a notice is about): its paragraphs run on, on two
+ * lines at most, muted unless its tone says the text's own.
  */
-export function Excerpt({ lang, children }: { lang?: string | undefined; children: ReactNode }) {
+export function Excerpt({ lang, lines = 2, tone = "muted", body = false, children }: ExcerptProps) {
   return (
-    <div className={excerpt()} lang={lang}>
+    <Box lines={lines} run={body ? "all" : true} tone={tone} className={excerpt({ body })} lang={lang}>
       {children}
-    </div>
+    </Box>
   );
 }
 
 const state = tv({
-  base: "inline-flex h-control-timeline items-center text-caption text-muted-text",
+  base: "h-control-timeline text-caption text-muted-text",
   // One that takes the focus of the button it replaces keeps that button's box (a timeline button's inline padding),
   // so that its ring has room around the text and the row keeps its footprint.
   variants: {
@@ -310,20 +351,26 @@ const state = tv({
 export function StateText({ children, ref }: { children: string; ref?: Ref<HTMLSpanElement> | undefined }) {
   const focusable = ref !== undefined;
   return (
-    <span ref={ref} className={state({ focusable })} tabIndex={focusable ? -1 : undefined}>
+    <Row
+      inline
+      align="center"
+      as={<span ref={ref} className={state({ focusable })} tabIndex={focusable ? -1 : undefined} />}
+    >
       {children}
-    </span>
+    </Row>
   );
 }
 
-const pair = tv({ base: "flex flex-none items-center justify-end gap-screen-tabs-gap" });
-
 /** A refusal beside its confirmation, the confirmation at the end; or one action alone at the end. */
 export function ButtonPair({ children }: { children: ReactNode }) {
-  return <div className={pair()}>{children}</div>;
+  return (
+    <Row rigid align="center" justify="end" gap="screen-tabs-gap">
+      {children}
+    </Row>
+  );
 }
 
-const found = tv({ base: "grid gap-entry-room rounded-overlay bg-surface-raised p-[0.75rem]" });
+const found = tv({ base: "rounded-overlay bg-surface-raised p-screen-found-padding" });
 
 /**
  * What a field found, under it, on the raised surface in the rhythm of the rows (the accounts a list's members may
@@ -331,31 +378,41 @@ const found = tv({ base: "grid gap-entry-room rounded-overlay bg-surface-raised 
  */
 export function FoundRows({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div role="group" aria-label={label} className={found()}>
+    <Stack gap="entry-room" role="group" aria-label={label} className={found()}>
       {children}
-    </div>
+    </Stack>
   );
 }
 
-const rows = tv({ base: "m-0 grid list-none gap-entry-room p-0" });
+const rows = tv({ base: "list-none p-0" });
 
 /** Rows of one kind (a list's members) as a list, named by `label`, in the rhythm of the rows: each a `RowItem`. */
 export function RowList({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <ul aria-label={label} className={rows()}>
+    <Stack as="ul" gap="entry-room" aria-label={label} className={rows()}>
       {children}
-    </ul>
+    </Stack>
   );
 }
 
-const result = tv({
-  base: [
-    // Room above the caption, which sits tight on its rows; the same caption-to-row space for every kind of row, a row
-    // that opens (an `OpenRow`, padded for its hover) drawn up by its padding.
-    "m-0 mt-screen-group-gap grid grid-cols-[minmax(0,1fr)] gap-screen-air",
-    "[&>ul>li:first-child>a]:-mt-screen-row-block",
-  ],
-});
+/**
+ * Where one kind of what a screen found stands: room above its caption, which sits tight on its rows, with the same
+ * caption-to-row space for every kind of row, a row that opens (an `OpenRow`, padded for its hover) drawn up by its
+ * padding.
+ */
+function ResultPlace({ labelledBy, children }: { labelledBy: string; children: ReactNode }) {
+  return (
+    <Stack
+      as="section"
+      gap="screen-air"
+      spaceAbove="screen-group-gap"
+      aria-labelledby={labelledBy}
+      className="[&>ul>li:first-child>a]:-mt-screen-row-block"
+    >
+      {children}
+    </Stack>
+  );
+}
 
 /**
  * One kind of what a screen found (the people of a search), a region named by its heading, muted and small as a
@@ -364,12 +421,12 @@ const result = tv({
 export function ResultGroup({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className={result()}>
-      <h2 id={id} className={group()}>
+    <ResultPlace labelledBy={id}>
+      <GroupPlace id={id} className={group()}>
         {title}
-      </h2>
+      </GroupPlace>
       {children}
-    </section>
+    </ResultPlace>
   );
 }
 
@@ -378,17 +435,8 @@ export function RowItem({ children }: { children: ReactNode }) {
   return <li>{children}</li>;
 }
 
-const account = tv({
-  slots: {
-    // What the reader may do goes under the name, at the end, where beside it the name and the handle would keep less
-    // than 12rem (a 320 px row with two buttons), so that the handle stays readable.
-    root: "flex flex-wrap items-center gap-screen-row-gap",
-    who: "grid min-w-0 flex-[1_1_12rem] gap-entry-line",
-    end: "ms-auto",
-    // A line under the byline at the name's start (how many notifications an account's request holds).
-    note: "m-0 ps-[calc(var(--avatar-post)+var(--entry-avatar-gap))] text-caption text-muted-text",
-  },
-});
+// A line under the byline at the name's start (how many notifications an account's request holds).
+const account = tv({ slots: { note: "ps-entry-name-start text-caption text-muted-text" } });
 
 /**
  * An account on a row of its own: its avatar, its name over its handle, a note under them, and what the reader may do
@@ -416,33 +464,45 @@ export function AccountRow({
 }) {
   const s = account();
   return (
-    <div className={s.root()}>
-      <div className={s.who()}>
+    // What the reader may do goes under the name, at the end, where beside it the name and the handle would keep less
+    // than their least width (a 320 px row with two buttons), so that the handle stays readable.
+    <Row wrap align="center" gap="screen-row-gap">
+      <Stack grow="names" gap="entry-line">
         <Byline avatar={avatar} name={accountName} handle={handle} href={href} heading={heading} />
         {note !== undefined && <p className={s.note()}>{note}</p>}
-      </div>
+      </Stack>
       {end !== undefined && (
-        <div className={s.end()}>
+        <Box push="end">
           <ButtonPair>{end}</ButtonPair>
-        </div>
+        </Box>
       )}
-    </div>
+    </Row>
   );
 }
 
 const row = tv({
   slots: {
     root: [
-      "-mx-screen-row-inline flex items-center gap-screen-row-gap rounded-control px-screen-row-inline py-screen-row-block",
+      "rounded-control px-screen-row-inline py-screen-row-block",
       "text-text no-underline outline-hidden data-hovered:bg-surface-hover data-focus-visible:shadow-focus",
     ],
-    glyph: "inline-flex flex-none",
-    lines: "grid min-w-0 flex-1",
     title: "text-body font-label",
     hint: "text-caption text-muted-text",
-    chevron: "inline-flex flex-none text-muted-text",
+    chevron: "text-muted-text",
   },
 });
+
+/**
+ * A row that is one link, as `as`: its parts in its middle, a row's gap apart; its surface reaches past the column by
+ * its inline padding, so that what it holds lines up with the column's edges.
+ */
+function LinkRow({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
+  return (
+    <Row as={as} align="center" gap="screen-row-gap" bleedInline="screen-row-inline">
+      {children}
+    </Row>
+  );
+}
 
 /** A row that opens what waits elsewhere (the requests the notification policy holds back): its glyph, a title over a hint. */
 export function OpenRow({
@@ -458,18 +518,18 @@ export function OpenRow({
 }) {
   const s = row();
   return (
-    <Link href={href} className={s.root()}>
-      <span className={s.glyph()}>
+    <LinkRow as={<Link href={href} className={s.root()} />}>
+      <Row as="span" inline rigid>
         <Icon name={icon} place="action" />
-      </span>
-      <span className={s.lines()}>
+      </Row>
+      <Stack as="span" grow>
         <span className={s.title()}>{title}</span>
         {hint !== undefined && <span className={s.hint()}>{hint}</span>}
-      </span>
-      <span className={s.chevron()}>
+      </Stack>
+      <Row as="span" inline rigid className={s.chevron()}>
         <Icon name="onward" place="action" />
-      </span>
-    </Link>
+      </Row>
+    </LinkRow>
   );
 }
 
@@ -478,19 +538,18 @@ const faces = tv({
     // The whole row is the link: the surface on hover and the ring on focus, so its chevron reads as part of it. The
     // ring that cuts a face out takes the surface under it.
     root: [
-      "-mx-screen-row-inline flex items-center gap-screen-row-gap rounded-control px-screen-row-inline py-screen-row-block",
+      "rounded-control px-screen-row-inline py-screen-row-block",
       "text-text no-underline outline-hidden [--face-cut-color:var(--color-surface)]",
       "data-hovered:bg-surface-hover data-hovered:[--face-cut-color:var(--color-surface-hover)]",
       "data-focus-visible:shadow-focus",
     ],
-    lead: "inline-flex min-w-screen-faces-lead flex-none items-center gap-chip-gap text-body",
-    glyph: "inline-flex text-[length:var(--chip-glyph)] leading-none text-muted-text",
+    lead: "min-w-screen-faces-lead text-body",
+    glyph: "text-[length:var(--chip-glyph)] leading-none text-muted-text",
     count: "tabular-nums",
-    // As many faces as fit: a face that does not wraps to a second line, which the strip's height hides, so that faces
-    // drop from the end whole, never shrink or scroll. The padding keeps their cut rings inside it.
-    strip: ["box-content flex h-avatar-post min-w-0 flex-1 flex-wrap overflow-hidden", "p-screen-face-cut"],
-    face: "inline-flex flex-none rounded-full shadow-face-cut [&+&]:-ms-screen-face-overlap",
-    chevron: "inline-flex flex-none text-muted-text",
+    // The strip is as tall as one face, and its padding keeps the faces' cut rings inside it.
+    strip: "box-content h-avatar-post p-screen-face-cut",
+    face: "rounded-full shadow-face-cut",
+    chevron: "text-muted-text",
   },
 });
 
@@ -516,31 +575,45 @@ export function FacesRow({ href, label, glyph, count, faces: items }: FacesRowPr
   const s = faces();
   const { lang } = useReader(undefined);
   return (
-    <Link href={href} className={s.root()} aria-label={label} {...{ title: label }}>
-      <span className={s.lead()} aria-hidden="true">
-        <span className={s.glyph()}>{glyph}</span>{" "}
+    // React Aria passes no title through: the link says its label on hover on the element itself.
+    <LinkRow
+      as={
+        <Link
+          href={href}
+          className={s.root()}
+          aria-label={label}
+          render={(props: object) => <a {...props} title={label} />}
+        />
+      }
+    >
+      <Row as="span" inline rigid align="center" gap="chip-gap" className={s.lead()} aria-hidden="true">
+        <Row as="span" inline className={s.glyph()}>
+          {glyph}
+        </Row>{" "}
         <bdi dir="ltr" lang={lang} className={s.count()}>
           {count}
         </bdi>
-      </span>
-      <span className={s.strip()} aria-hidden="true">
+      </Row>
+      {/* As many faces as fit: a face that does not wraps to a second line, which the strip's height hides, so that
+          faces drop from the end whole, never shrink or scroll. */}
+      <Row as="span" wrap grow clip overlap="screen-face-overlap" className={s.strip()} aria-hidden="true">
         {items.map((face, i) => (
-          <span key={i} className={s.face()}>
+          <Row key={i} as="span" inline rigid className={s.face()}>
             {face}
-          </span>
+          </Row>
         ))}
-      </span>
-      <span className={s.chevron()} aria-hidden="true">
+      </Row>
+      <Row as="span" inline rigid className={s.chevron()} aria-hidden="true">
         <Icon name="onward" place="action" />
-      </span>
-    </Link>
+      </Row>
+    </LinkRow>
   );
 }
 
 const title = tv({
   slots: {
-    root: "m-0 flex flex-wrap items-center gap-x-entry-caption text-title font-normal",
-    glyph: "inline-flex text-muted-text",
+    root: "text-title font-normal",
+    glyph: "text-muted-text",
     count: "text-body text-muted-text tabular-nums",
   },
 });
@@ -552,11 +625,15 @@ const title = tv({
 export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count?: string; children: ReactNode }) {
   const s = title();
   return (
-    <h2 className={s.root()}>
-      {glyph !== undefined && <span className={s.glyph()}>{glyph}</span>}
+    <Row as="h2" wrap align="center" gapX="entry-caption" className={s.root()}>
+      {glyph !== undefined && (
+        <Row as="span" inline className={s.glyph()}>
+          {glyph}
+        </Row>
+      )}
       <span>{children}</span>
       {count !== undefined && <span className={s.count()}>{count}</span>}
-    </h2>
+    </Row>
   );
 }
 
@@ -566,24 +643,20 @@ export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count
  */
 export function ScreenHead({ back, children }: { back: ReactNode; children: ReactNode }) {
   return (
-    <div className={screenTitle().root()}>
+    // The back button close over the row, so that it reads as part of the head.
+    <Stack gap="screen-name-gap">
       {back}
       {children}
-    </div>
+    </Stack>
   );
 }
 
 const screenTitle = tv({
   slots: {
-    // The back button close over the row, so that it reads as part of the head.
-    root: "grid gap-screen-name-gap",
-    // The title at the start, what the reader may do at the end, on the baseline of the title's first line.
-    row: "flex items-baseline gap-screen-head-room",
     // One run of text, so that a long name wraps under its glyph and the count follows its last line.
-    title: "m-0 min-w-0 flex-1 text-title font-normal [overflow-wrap:anywhere]",
-    glyph: "me-entry-caption inline-flex align-[-0.125em] text-muted-text",
+    title: "text-title font-normal [overflow-wrap:anywhere]",
+    glyph: "text-muted-text",
     count: "text-body whitespace-nowrap text-muted-text tabular-nums",
-    actions: "flex flex-none items-center gap-screen-tab-gap",
   },
 });
 
@@ -617,14 +690,16 @@ export type ScreenTitleProps = {
 export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTitleProps) {
   const s = screenTitle();
   return (
-    <div className={s.root()}>
+    // The back button close over the row, so that it reads as part of the head.
+    <Stack gap="screen-name-gap">
       {back}
-      <div className={s.row()}>
-        <h2 className={s.title()}>
+      {/* The title at the start, what the reader may do at the end, on the baseline of the title's first line. */}
+      <Row align="baseline" gap="screen-head-room">
+        <Box as="h2" grow className={s.title()}>
           {glyph !== undefined && (
-            <span className={s.glyph()}>
+            <Row as="span" inline baseline="glyph" spaceAfter="entry-caption" className={s.glyph()}>
               <Icon name={glyph} place="action" />
-            </span>
+            </Row>
           )}
           <bdi>{breakable(children)}</bdi>
           {/* A space apart from the name, read so too: "Bread and coffee 2 members", never "coffee2 members". */}
@@ -634,18 +709,22 @@ export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTit
               <span className={s.count()}>{count}</span>
             </>
           )}
-        </h2>
-        {actions !== undefined && actions !== false && actions !== null && <div className={s.actions()}>{actions}</div>}
-      </div>
-    </div>
+        </Box>
+        {actions !== undefined && actions !== false && actions !== null && (
+          <Row rigid align="center" gap="screen-tab-gap">
+            {actions}
+          </Row>
+        )}
+      </Row>
+    </Stack>
   );
 }
 
 const back = tv({
   slots: {
-    root: "m-0 text-caption",
+    root: "text-caption",
     button: [
-      "inline-flex cursor-pointer items-center gap-entry-caption rounded-control border-0 bg-transparent p-0",
+      "cursor-pointer rounded-control border-0 bg-transparent p-0",
       "text-caption text-muted-text outline-hidden [font-family:inherit]",
       "data-hovered:text-text data-focus-visible:shadow-focus",
     ],
@@ -657,10 +736,64 @@ export function BackButton({ onPress, children }: { onPress: () => void; childre
   const s = back();
   return (
     <p className={s.root()}>
-      <Button className={s.button()} onPress={onPress}>
+      <Row inline align="center" gap="entry-caption" as={<Button className={s.button()} onPress={onPress} />}>
         <Icon name="back" place="caption" />
         {children}
-      </Button>
+      </Row>
     </p>
+  );
+}
+
+const press = tv({
+  base: [
+    "cursor-pointer rounded-control border-0 bg-transparent px-screen-row-inline py-screen-row-block text-start",
+    "font-sans outline-hidden data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
+    "data-focus-visible:shadow-focus",
+  ],
+});
+
+/**
+ * A row of a list that is pressed as a whole: a surface on hover and press, the ring on focus, its parts a `gap` apart,
+ * one under another (`stack`) or side by side from the top (`row`). Its surface reaches past the column by its inline
+ * padding, so that what it holds lines up with the column's edge: at its start (`start`, beside something that stands
+ * at its end), or at both (`inline`). `grow` takes the room left in a row. Its text is the caption's or the body's,
+ * the text's color or muted.
+ */
+export function PressRow({
+  onPress,
+  flow = "stack",
+  gap,
+  bleed,
+  grow = false,
+  text = "body",
+  tone = "text",
+  children,
+}: {
+  onPress?: (() => void) | undefined;
+  flow?: "stack" | "row";
+  gap: Gap;
+  bleed: "start" | "inline";
+  grow?: boolean;
+  text?: "caption" | "body";
+  tone?: "text" | "muted";
+  children: ReactNode;
+}) {
+  const as = <Button className={press()} {...(onPress ? { onPress } : {})} />;
+  const place = {
+    as,
+    grow,
+    text,
+    tone,
+    bleedStart: bleed === "start" ? ("screen-row-inline" as const) : undefined,
+    bleedInline: bleed === "inline" ? ("screen-row-inline" as const) : undefined,
+  };
+  return flow === "row" ? (
+    <Row {...place} align="start" gap={gap}>
+      {children}
+    </Row>
+  ) : (
+    <Stack {...place} gap={gap}>
+      {children}
+    </Stack>
   );
 }

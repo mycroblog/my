@@ -49,9 +49,6 @@ export { FollowRequests, loadFollowRequests } from "./notifications/follow-reque
 export { PostActions, type ComposeRequest } from "./post-actions";
 export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTranslationState } from "./post-translation";
 export { Follows, loadFollows } from "./profile/follows";
-/** The features' strings in a locale: what a story's play presses and reads by the words a screen shows. */
-export { stringsIn as featureStringsIn } from "./locale";
-export type { MessageId as FeatureMessageId } from "./messages.gen";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
 export { loadReactors, ReactorList } from "./thread/reactors";
 export { loadThread, Thread } from "./thread/thread";

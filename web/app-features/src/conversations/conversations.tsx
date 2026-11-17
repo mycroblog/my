@@ -12,7 +12,17 @@
 // theirs and none saying whom it replies to; then the reply in place, which the app places (`reply`). Opening it marks
 // it read on every device, and so does a post arriving while it is open.
 
-import { AccountName, FeedKeys, ListColumn, nameOf, PostContent } from "@my/app-components";
+import {
+  AccountName,
+  ConversationAuthor,
+  ConversationHead,
+  ConversationLine,
+  ConversationText,
+  FeedKeys,
+  ListColumn,
+  nameOf,
+  PostContent,
+} from "@my/app-components";
 import {
   conversationQuery,
   conversationsQuery,
@@ -28,10 +38,6 @@ import {
 import {
   Avatar,
   BackButton,
-  ConversationAuthor,
-  ConversationHead,
-  ConversationLine,
-  ConversationText,
   Entry,
   Feed,
   FeedItem,

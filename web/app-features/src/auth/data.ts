@@ -34,7 +34,7 @@ type DocumentLink = { path: string; title: string };
 
 export type HumanCheck = {
   scriptSrc: string;
-  containerClass: string;
+  containerClassName: string;
   siteKey: string;
   action?: string;
   language?: string;

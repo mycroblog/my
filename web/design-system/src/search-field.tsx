@@ -12,23 +12,21 @@ import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Icon } from "./icons";
+import { Box, Pin, Row, Stack } from "./layout";
 
 const field = tv({
   slots: {
-    root: "grid gap-form-page-field-gap",
     label: "font-label",
-    hint: "m-0 text-caption text-muted-text [word-break:auto-phrase]",
-    // A little room under the hint, so that the field and its focus ring stand clear of it.
-    box: "relative mt-screen-air flex items-center",
-    glyph: "pointer-events-none absolute start-control-timeline-inline inline-flex text-muted-text",
+    hint: "text-caption text-muted-text [word-break:auto-phrase]",
+    glyph: "pointer-events-none text-muted-text",
     input: [
-      "box-border h-control-form w-full appearance-none rounded-control border-0 bg-surface-raised font-sans",
-      "ps-[calc(var(--control-timeline-padding-inline)*2+var(--icon-action))] pe-[var(--control-form-height)]",
+      "box-border h-control-form appearance-none rounded-control border-0 bg-surface-raised font-sans",
+      "ps-search-field-start pe-control-form",
       "text-body text-text outline-hidden focus-visible:shadow-focus [&::-webkit-search-cancel-button]:appearance-none",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
-    end: "absolute end-0 inline-flex size-[var(--control-form-height)] items-center justify-center",
+    end: "size-control-form",
     spinner: [
       "box-border size-spinner rounded-full border-spinner border-solid border-spinner-track border-t-current",
       "animate-spin text-muted-text",
@@ -77,7 +75,7 @@ export function SearchField({
   };
   const described = [hint && `${id}-hint`, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
   return (
-    <div className={s.root()}>
+    <Stack gap="form-page-field-gap">
       <label className={s.label()} htmlFor={id}>
         {label}
       </label>
@@ -86,39 +84,45 @@ export function SearchField({
           {hint}
         </p>
       )}
-      <div className={s.box()}>
-        <span className={s.glyph()}>
+      {/* A little room under the hint, so that the field and its focus ring stand clear of it. */}
+      <Row anchor align="center" spaceAbove="screen-air">
+        <Pin start="control-timeline-inline" as={<Row as="span" inline align="center" />} className={s.glyph()}>
           <Icon name="search" place="action" />
-        </span>
-        <input
-          ref={input}
-          id={id}
-          type="search"
+        </Pin>
+        <Box
+          full
           className={s.input()}
-          value={value}
-          autoComplete="off"
-          spellCheck={false}
-          autoFocus={autoFocus}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={described}
-          aria-busy={busy || undefined}
-          onChange={(e) => {
-            change(e.currentTarget.value);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Escape" && value !== "" && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              change("");
-            }
-          }}
+          as={
+            <input
+              ref={input}
+              id={id}
+              type="search"
+              value={value}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus={autoFocus}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={described}
+              aria-busy={busy || undefined}
+              onChange={(e) => {
+                change(e.currentTarget.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && value !== "" && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  change("");
+                }
+              }}
+            />
+          }
         />
         {busy ? (
-          <span className={s.end()} aria-hidden="true">
+          <Pin end="0" as={<Row as="span" align="center" justify="center" />} className={s.end()} aria-hidden="true">
             <span className={s.spinner()} />
-          </span>
+          </Pin>
         ) : (
           value !== "" && (
-            <span className={s.end()}>
+            <Pin end="0" as={<Row as="span" align="center" justify="center" />} className={s.end()}>
               <IconButton
                 icon="close"
                 label={clearLabel}
@@ -127,11 +131,11 @@ export function SearchField({
                   input.current?.focus();
                 }}
               />
-            </span>
+            </Pin>
           )
         )}
-      </div>
+      </Row>
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
-    </div>
+    </Stack>
   );
 }

@@ -4,7 +4,8 @@
 // - typescript/*: the type-aware rules run in tsgolint (options.typeAware), with each file's project found from the
 //   nearest tsconfig.json.
 // - jsPlugins: eslint-comments, so that a disable comment says why; restrict/* (web/devtools/src/restrictions.js), the
-//   layer rules of ADR-0025 §3 and §4 that a type cannot hold, which restrictions.test.js proves.
+//   layer rules of ADR-0025 §3 and §4 that a type cannot hold and the rules of the styles of ADR-0171 §2 and §3, which
+//   restrictions.test.js proves.
 // options.denyWarnings makes a warning fail like an error.
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -376,6 +377,70 @@
       "rules": {
         "restrict/layer-imports": "error",
         "restrict/platform-globals": "error"
+      }
+    },
+    // A colour is a token (ADR-0171 §2): restrict/token-colors refuses one written out, except where the tokens are
+    // defined (@my/design-tokens and the design system's theme), in the tests, their material (@my/e2e: the fake
+    // server and the scenario) and the sample pictures of the stories (the sample modules), and in @my/devtools, which
+    // draws its own chrome over any story and in Storybook's manager, where no token is.
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/token-colors": "error"
+      }
+    },
+    {
+      "files": [
+        "web/design-tokens/**",
+        "web/design-system/src/theme.ts",
+        "web/design-system/src/samples.tsx",
+        "web/devtools/**",
+        "web/e2e/**",
+        "**/*.samples.ts",
+        "**/*.samples.tsx",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": {
+        "restrict/token-colors": "off"
+      }
+    },
+    // Only a layout part of @my/design-system writes layout (ADR-0171 §3), and only the frame of a page decides by the
+    // viewport (ADR-0025 §4; the app decides for itself); web/devtools/src/layout-parts.js names both. A story lays
+    // out its specimens and stands in for the app.
+    {
+      "files": [
+        "web/design-system/**",
+        "web/app-components/**",
+        "web/app-features/**"
+      ],
+      "rules": {
+        "restrict/layout-parts": "error",
+        "restrict/viewport-breakpoints": "error"
+      }
+    },
+    {
+      "files": [
+        "web/app/**"
+      ],
+      "rules": {
+        "restrict/layout-parts": "error"
+      }
+    },
+    {
+      "files": [
+        "web/design-system/src/samples.tsx",
+        "**/*.stories.tsx",
+        "**/*.samples.ts",
+        "**/*.samples.tsx",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": {
+        "restrict/layout-parts": "off",
+        "restrict/viewport-breakpoints": "off"
       }
     },
     // The E2E tests and the operations of the screens in @my/e2e find an element by its role and accessible name, and

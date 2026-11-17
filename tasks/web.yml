@@ -30,7 +30,16 @@ vars:
 tasks:
   check:
     desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/storybook in parallel, with the app's build
-    deps: [fmt-check, licenses, typecheck, lint, direction, knip, test, build, devtools-absent]
+    deps:
+      - fmt-check
+      - licenses
+      - typecheck
+      - lint
+      - direction
+      - knip
+      - { task: test, vars: { PACKAGES: "{{.PACKAGES}}" } }
+      - build
+      - build-check
 
   # The app's Vite dev server on http://localhost:5173, which passes /api, /oauth and /auth on to the server of
   # `docker compose up` (MY_SERVER=<origin> names another); `my serve -dev-vite-origin http://localhost:5173` loads the
@@ -75,15 +84,53 @@ tasks:
     cmds:
       - bun --bun storybook build -o dist --quiet
 
-  # The story tests (ADR-0110 §9): Storybook's Vitest addon in browser mode (web/storybook/vitest.config.ts). Chromium
-  # comes from `bun --bun playwright install chromium` in web/storybook. Not a part of `check`: CI runs it when the
-  # stories context changes.
-  stories-test:
-    desc: Test every story of the Storybook host in Chromium at 320 px, in en and right-to-left in ar-XB, with axe and for sideways scrolling (CLI_ARGS go to Vitest)
-    deps: [install, ":i18n:compile", routes]
-    dir: web/storybook
+  # The layout tests (ADR-0171 §1, §4): what only a layout engine decides of the design system's layout parts and
+  # overlays, on the stories of the built catalog, with the E2E tests' runner and no server
+  # (web/e2e/catalog/playwright.config.ts, the project `layout`). Chromium comes from
+  # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the stories context
+  # changes.
+  layout-test:
+    desc: Build the catalog (web:stories) and run the layout tests of web/e2e/catalog on its stories in Chromium (CLI_ARGS go to Playwright)
+    deps: [stories]
     cmds:
-      - bun --bun vitest run {{.CLI_ARGS}}
+      - task: layout-test-built
+
+  # CI builds the catalog once for the tests that open it.
+  layout-test-built:
+    desc: Run the layout tests of web/e2e/catalog on the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project layout {{.CLI_ARGS}}
+
+  # The browser tests of the parts (the project `browser` of the same configuration): what a part does with an input
+  # only a browser has (an input method's composition, the caret's keys, the clipboard), on a story. No layout tests.
+  browser-test:
+    desc: Build the catalog (web:stories) and run the browser tests of web/e2e/catalog on its stories in Chromium (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: browser-test-built
+
+  browser-test-built:
+    desc: Run the browser tests of web/e2e/catalog on the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project browser {{.CLI_ARGS}}
+
+  # The check of every story at once (ADR-0171 §6, the project `stories` of the same configuration): each story of the
+  # built catalog at the minimum width, in both directions and, where its look depends on it, in the dark theme, for
+  # an error, sideways scrolling and axe. An upper layer: the slow suite runs it, no pull request and not `check`, and
+  # what it finds gets its test in the layer that missed it. It takes minutes, so its run has a limit of its own.
+  stories-check:
+    desc: Build the catalog (web:stories) and check every story of it in Chromium at 320 px, in en and right-to-left in ar-XB, for an error, sideways scrolling and axe (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: stories-check-built
+
+  stories-check-built:
+    desc: Check every story of the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project stories --global-timeout 1800000 {{.CLI_ARGS}}
 
   # What the visual evaluator sees (ADR-0169 §2): web/storybook/shot.ts prints the path of each shot.
   shot:
@@ -136,17 +183,21 @@ tasks:
       - cd web/e2e && bun --bun tsc -p .
 
   # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3), and
-  # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17).
+  # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17). The rules of the styles
+  # (ADR-0171 §2, §3) refuse a colour that is no token (restrict/token-colors, and colors.js for the CSS, which Oxlint
+  # does not read), layout outside the layout parts and a viewport breakpoint outside the frames of a page
+  # (restrict/layout-parts, restrict/viewport-breakpoints).
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
     deps: [install, ":i18n:compile", routes]
     cmds:
       - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
+      - bun web/devtools/src/colors.js web/design-system web/app-components web/platform web/app-data web/app-features web/app web/storybook web/i18n
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
     cmds:
       - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
 
@@ -156,19 +207,71 @@ tasks:
     cmds:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
+  # A package's manifest says how its tests run (its `test` script) and what they depend on: scripts/changed-web-packages.sh
+  # reads there which packages there are and which a change reaches (ADR-0079 §18).
   test:
-    desc: Run the tests of web/design-tokens (which fail on a stale internal/domain/instance/theme_tokens.gen.go), web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app and web/devtools
+    desc: Run the tests of the packages under web/ (web/design-tokens' fail on a stale internal/domain/instance/theme_tokens.gen.go), side by side, each kind on its DOM - every package, or those of PACKAGES (PACKAGES=app,app-features; `none` for none)
     deps: [install, ":i18n:compile", routes]
+    vars:
+      SELECTED:
+        sh: |
+          all="$(scripts/changed-web-packages.sh --all)"
+          case '{{.PACKAGES}}' in
+            "") echo "$all" ;;
+            none) ;;
+            *)
+              for p in $(echo '{{.PACKAGES}}' | tr ',' ' '); do
+                echo "$all" | grep -qx -- "$p" || { echo "web:test: web/$p is no package with tests: $(echo $all)" >&2; exit 1; }
+                echo "$p"
+              done
+              ;;
+          esac
     cmds:
-      - cd web/design-tokens && bun test
-      - cd web/design-system && bun test
-      - cd web/app-components && bun test
-      - cd web/platform && bun test
-      # The condition reads @mycroblog/mykit from its TypeScript sources, as tsconfig.json does.
-      - cd web/app-data && bun test --conditions=@mycroblog/source
-      - cd web/app-features && bun test --conditions=@mycroblog/source
-      - cd web/app && bun test --conditions=@mycroblog/source
-      - cd web/devtools && bun test
+      - task: test-packages
+        vars: { PACKAGES: "{{.SELECTED}}" }
+
+  # The packages side by side, as many at once as there are cores and no more: a test process uses one core, and a
+  # test that waits for a core takes that much longer and passes its limit (nine packages at once on a runner of four
+  # cores did). The packages' tests share nothing while they run. The packages whose tests run on a DOM share the
+  # cores: each one's `dom-tests` takes one of BESIDE parts of them, BESIDE being how many of them run at once.
+  test-packages:
+    internal: true
+    vars:
+      JOBS:
+        sh: |
+          n=$(echo '{{.PACKAGES}}' | wc -w)
+          cores=$(nproc)
+          if [ "$n" -gt "$cores" ]; then n=$cores; fi
+          echo "$n"
+      BESIDE:
+        sh: |
+          n=0
+          for p in $(echo '{{.PACKAGES}}' | tr '\n' ' '); do
+            if grep -q 'dom-tests' "web/$p/package.json"; then n=$((n + 1)); fi
+          done
+          cores=$(nproc)
+          if [ "$n" -gt "$cores" ]; then n=$cores; fi
+          echo "$n"
+    cmds:
+      - |
+        echo '{{.PACKAGES}}' | tr ' ' '\n' | grep -v '^$' | xargs -P {{.JOBS}} -I {} \
+          "{{.ROOT_DIR}}/scripts/task.sh" web:test-package PACKAGE={} BESIDE={{.BESIDE}}
+
+  # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each kind in processes of its own:
+  # `*.test.ts(x)` with no DOM, `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on
+  # jsdom. `dom-tests` of @my/devtools, which a package with such tests depends on, runs the files of a DOM side by
+  # side, on a preload that registers the DOM before a test module loads. The condition of a package above
+  # @mycroblog/mykit reads it from its TypeScript sources, as tsconfig.json does.
+  # web/e2e's runs the unit tests of the fake API (ADR-0171 §5), under src alone: the Playwright specs beside it are
+  # the E2E tests, which web:e2e runs against a server.
+  test-package:
+    desc: Run the tests of one web package (PACKAGE=app; web:test runs the packages a change reaches, side by side)
+    requires: { vars: [PACKAGE] }
+    dir: web/{{.PACKAGE}}
+    env:
+      DOM_TESTS_BESIDE: "{{.BESIDE}}"
+    cmds:
+      - bun run test
 
   # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
   # generator reads no node_modules.
@@ -179,14 +282,17 @@ tasks:
     cmds:
       - bun web/design-tokens/src/theme-tokens.ts
 
-  # The production build is the app's (web/app), which this builds apart from web:build's, into .tmp/, so that the two
-  # can run at once; it fails when the output contains @my/devtools, which only the Storybook host loads.
-  devtools-absent:
-    desc: Build web/app for production into .tmp/devtools-absent and fail if the build contains @my/devtools (ADR-0168 §3)
+  # The checks of what the production build holds (ADR-0171 §2), which need no browser and no server. The build is the
+  # app's (web/app), which this builds apart from web:build's, into .tmp/, so that the two can run at once. It fails
+  # when the output contains @my/devtools, which only the Storybook host loads, lacks the license notice of a font it
+  # ships, or holds the editor in a chunk that an entry loads with the page.
+  build-check:
+    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, or loads Lexical with an entry
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/devtools-absent --emptyOutDir
-      - bun web/devtools/src/absent.ts .tmp/devtools-absent
+      - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/build-check --emptyOutDir
+      - bun web/devtools/src/absent.ts .tmp/build-check
+      - bun web/app/scripts/build-check.ts .tmp/build-check
 
   # It skips while node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.
