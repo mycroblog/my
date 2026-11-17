@@ -660,10 +660,10 @@ export function ChoiceSelect<T extends string>({
   chosen,
   onChoose,
 }: {
-  /** The name of what it chooses. */
+  /** The name of what it chooses, which names its menu. */
   label: string;
   icon: IconName;
-  /** What it holds now, as it reads. */
+  /** What it holds now, as it reads alone: the control's name, which says what it chooses too ("Ends in 1 day"). */
   value: string;
   items: readonly Choice<T>[];
   chosen: T;
