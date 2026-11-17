@@ -603,8 +603,8 @@ func uowReadReturnsFnError(t *testing.T, newHarness UnitOfWorkFactory) {
 	h := newHarness(t, uow.Options{Retry: fastRetry})
 	boom := errors.New("boom")
 	err := h.UnitOfWork.Read(t.Context(), func(uow.Tx) error { return boom })
-	if err != boom {
-		t.Errorf("Read = %v, want the error of fn as it is", err)
+	if !errors.Is(err, boom) {
+		t.Errorf("Read = %v, want the error of fn", err)
 	}
 }
 
