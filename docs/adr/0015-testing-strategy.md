@@ -19,7 +19,7 @@
 | API conformance | OpenAPI スキーマとサーバー実装・生成クライアントの一致 | CI | 本検査 |
 | Federation fixtures | 実サーバー由来の JSON を入力にした受信・生成の回帰テスト | CI | 本検査 |
 | Federation live | docker compose で Mastodon / GoToSocial 等と実際に連合 | CI | 遅い検査 |
-| E2E (web) | Playwright。シナリオ（§5）は `en` の 1 プロジェクトで回す。置くのは本物のサーバーが要る旅だけで、ほかの確かめの持ち主は ADR-0171 が決める | CI | client が変わったときの本検査で 1 回ずつ。同じサーバーで 2 回ずつ回すのは遅い検査。PR と main への push では回さない |
+| E2E (web) | Playwright。シナリオ（§5）は `en` の 1 プロジェクトで回す。対象は実サーバーが必要なフローだけで、それ以外の検証の担当は ADR-0171 が決める | CI | client が変わったときの本検査で各テストを 1 回。同じサーバーに対して 2 回ずつ実行するのは遅い検査。PR と main への push では回さない |
 | Deploy smoke | 各ターゲットへデプロイしてヘルスチェック + 投稿 | 実クラウド | nightly / リリース前 |
 
 ### 2. 検査の原則
