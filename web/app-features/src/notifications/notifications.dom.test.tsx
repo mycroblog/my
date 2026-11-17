@@ -1,10 +1,218 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+// The notifications as a feature: what its loader reads, what each notification says and whether it is unread, the
+// rows over the list, and what a press on a mention's post asks of the server or of the screen.
+
 import { expect, test } from "bun:test";
-import { fakeHost } from "@my/e2e/fake";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fakeHost, scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { PostActions, type ComposeRequest } from "../post-actions";
 import { fakeData, renderFeature } from "../test/feature";
 import { loadNotifications, Notifications } from "./notifications";
+
+type Post = FakeSeed["posts"][number];
+
+/** marco's post that mentions the reader, with `more`. */
+const mention = (more: Partial<Post> = {}): Post => ({
+  key: "m",
+  author: "marco",
+  text: "@ren Are you coming on Saturday?",
+  visibility: "public",
+  language: "en",
+  ...more,
+});
+
+/**
+ * A server as ren reads it, whose follows need their approval: sam asked to follow them, marco mentioned them, and
+ * hana favourited their post, the newest; they have not read the last two. The server's policy holds back three
+ * notifications of two people, and the list ends with a notice of the moderators and a notification of a kind a
+ * newer server sends, which this client does not know.
+ */
+const answers = (posts: Post[] = [mention()]): FakeOptions => ({
+  viewer: "ren",
+  seed: {
+    people: scenario.people,
+    follows: [{ follower: "sam", followee: "ren" }],
+    posts: [{ key: "y", author: "ren", text: "Bread tomorrow.", visibility: "public", language: "en" }, ...posts],
+    interactions: [{ kind: "favourite", by: "hana", post: "y" }],
+  },
+  held: true,
+  unreadNotifications: 2,
+});
+
+function server(options = answers()) {
+  const made = fakeData(options);
+  made.fake.script("GET /notifications", {
+    change: (page) => ({
+      ...page,
+      items: [
+        ...page.items,
+        {
+          id: "00000000-0000-7000-8000-000000000002",
+          type: "moderation_notice" as const,
+          created_at: "2026-11-13T01:00:00Z",
+        },
+        {
+          id: "00000000-0000-7000-8000-000000000001",
+          // No kind of the specification: one a server newer than this client sends.
+          type: "some_new_kind" as never,
+          created_at: "2026-11-12T01:00:00Z",
+        },
+      ],
+    }),
+  });
+  return made;
+}
+
+/** The notifications of `made`, loaded and alone in the document, for a reader of `locale`: the reader's hands. */
+async function shown(made = server(), locale = "en", onCompose: (to: ComposeRequest) => void = () => undefined) {
+  await loadNotifications(made.data);
+  cleanup();
+  return renderFeature(
+    made.data,
+    <PostActions onCompose={onCompose}>
+      <Notifications instance="my.example" />
+    </PostActions>,
+    locale,
+  );
+}
+
+const feed = () => screen.getByRole("feed", { name: "Notifications" });
+/** The notifications of the list, each by its words. */
+const entries = () => within(feed()).getAllByRole("article");
+const entry = (words: RegExp) => {
+  const found = entries().filter((article) => words.test(article.textContent));
+  if (found.length !== 1) throw new Error(`test: ${String(found.length)} notifications say ${String(words)}`);
+  return found[0] as HTMLElement;
+};
+
+/** The buttons of a notification, by their names. */
+const buttons = (article: HTMLElement) =>
+  within(article)
+    .queryAllByRole("button")
+    .map((button) => button.getAttribute("aria-label") ?? button.textContent);
+
+test("the loader reads the notifications, the read marker, the count of the requests, what waits for approval and the follow requests, then what the prompt of Web Push reads", async () => {
+  const { data, requests } = server();
+
+  await loadNotifications(data);
+
+  expect(requests.map((r) => r.split("?")[0])).toEqual([
+    "GET /notifications",
+    "GET /notifications/marker",
+    "GET /notifications/requests/summary",
+    "GET /interaction_requests",
+    "GET /follow_requests",
+    "GET /push/subscription",
+    "GET /preferences/notifications",
+  ]);
+});
+
+test("each notification newer than the marker carries its own unread mark, the others none, newest first", async () => {
+  await shown();
+  const favourite = entry(/favourited your post/);
+  const mentioned = entry(/mentioned you/);
+  const requested = entry(/requested to follow you/);
+
+  expect(entries().slice(0, 3)).toEqual([favourite, mentioned, requested]);
+  expect(within(favourite).getAllByRole("img", { name: "Unread" })).toHaveLength(1);
+  expect(within(mentioned).getAllByRole("img", { name: "Unread" })).toHaveLength(1);
+  expect(within(requested).queryAllByRole("img", { name: "Unread" })).toHaveLength(0);
+  expect(within(feed()).getAllByRole("img", { name: "Unread" })).toHaveLength(2);
+});
+
+test("a sentence names the account, isolated, in the server's words, and a kind the client does not know says there is one", async () => {
+  await shown();
+  const sentence = within(entry(/mentioned you/)).getByText(/mentioned you$/);
+
+  expect(sentence.textContent).toBe("Marco mentioned you");
+  expect(within(sentence).getByText("Marco").tagName).toBe("BDI");
+  expect(within(feed()).getByText(/The moderators of my\.example sent you a notice/)).not.toBeNull();
+  expect(within(feed()).getByText(/You have a new notification on my\.example/)).not.toBeNull();
+
+  await shown(server(), "ja");
+  expect(screen.getByText(/さんがあなたをメンションしました$/)).not.toBeNull();
+});
+
+test("over the list, the tabs, mark-all-read, and the row of the requests", async () => {
+  await shown();
+  const tabs = screen.getByRole("tablist", { name: "Show" });
+  const held = screen.getByRole("link", { name: /^3 held-back notifications · from 2 people/ });
+
+  expect(
+    within(tabs)
+      .getAllByRole("tab")
+      .map((tab) => tab.textContent),
+  ).toEqual(["All", "Mentions"]);
+  expect(screen.getByRole("button", { name: "Mark all as read" })).not.toBeNull();
+  expect(held.getAttribute("href")).toBe("/notifications/requests");
+  expect(held.compareDocumentPosition(feed()) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+});
+
+test("a row over the list counts the follow requests and opens their screen; a request's notification has no buttons to answer it", async () => {
+  await shown();
+  const row = screen.getByRole("link", { name: "1 follow request" });
+
+  expect(row.getAttribute("href")).toBe("/notifications/follow_requests");
+  expect(row.compareDocumentPosition(feed()) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  expect(buttons(entry(/requested to follow you/))).toEqual(["Dismiss notification"]);
+});
+
+test("over the list, a row counts what waits for the reader's approval; a request's notification has no buttons to answer it", async () => {
+  // A post of yuki's waits for their answers to marco's reply and boost and mio's quote (the fake's `approvals`).
+  const made = fakeData({ approvals: true });
+  await shown(made);
+  const row = screen.getByText("3 waiting for your approval");
+  const asked = entry(/asked to reply to your post/);
+
+  expect(row.compareDocumentPosition(asked) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  expect(buttons(asked)).toEqual(["Dismiss notification"]);
+
+  await shown(made, "ja");
+  expect(screen.getByText("承認待ち 3件")).not.toBeNull();
+});
+
+test("without a request waiting, no row counts them", async () => {
+  await shown();
+
+  expect(screen.queryAllByText(/waiting for your approval/)).toHaveLength(0);
+});
+
+test("the post of a mention answers its actions: a favourite reaches the server, Reply opens the composer", async () => {
+  const made = server();
+  const id = made.fake.idOf("m");
+  const favourite = made.fake.script("POST /statuses/{id}/favourite");
+  const composed: ComposeRequest[] = [];
+  const user = await shown(made, "en", (to) => composed.push(to));
+  const post = within(entry(/mentioned you/));
+
+  await user.click(post.getByRole("button", { name: /^Favourite/ }));
+  expect((await favourite.arrived()).url.pathname).toEndWith(`/statuses/${id}/favourite`);
+  await waitFor(() => {
+    if (post.queryAllByRole("button", { name: /^Favourite/, pressed: true }).length === 0)
+      throw new Error("the post does not say it is favourited");
+  });
+
+  await user.click(post.getByRole("button", { name: /^Reply/ }));
+  expect(composed).toEqual([{ kind: "reply", id }]);
+});
+
+test("a vote in the poll of a mentioning post reaches the server", async () => {
+  const made = server(answers([mention({ poll: { options: ["Yes", "No"], days: 1 } })]));
+  const sent = made.fake.script("POST /statuses/{id}/poll/votes");
+  const user = await shown(made);
+  const poll = within(within(entry(/mentioned you/)).getByRole("group", { name: "Poll" }));
+
+  await user.click(poll.getByRole("radio", { name: "No" }));
+  await user.click(poll.getByRole("button", { name: "Vote" }));
+
+  const { url, body } = await sent.arrived();
+  expect(url.pathname).toEndWith(`/statuses/${made.fake.idOf("m")}/poll/votes`);
+  expect(body.choices).toEqual([1]);
+  await waitFor(() => {
+    if (poll.queryAllByText(/your vote/).length !== 1) throw new Error("the poll shows no vote of the reader's");
+  });
+});
 
 test("the Mentions tab asks the server for the mentions alone, and shows them in place of every notification", async () => {
   const { fake, data } = fakeData({ viewer: "sam" });
