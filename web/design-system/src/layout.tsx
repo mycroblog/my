@@ -184,6 +184,8 @@ const MAX = {
   reading: "max-h-[33dvh] max-w-[40rem]",
   // An article's cover is never taller than this, whatever its width.
   "article-cover": "max-h-article-cover-max",
+  // A link card's image is never taller than this, whatever its width.
+  "media-card": "max-h-media-card-max",
 } as const;
 
 const CLIP = { both: "overflow-hidden", x: "overflow-x-hidden", y: "overflow-y-hidden" } as const;
@@ -224,26 +226,26 @@ const SPACE_ABOVE = {
   "form-page-gap": "mt-form-page-gap",
   "screen-air": "mt-screen-air",
   "screen-group-gap": "mt-screen-group-gap",
+  "content-emoji-line": "mt-content-emoji-line",
 } as const;
 const SPACE_BELOW = {
-  "content-emoji-line": "mt-content-emoji-line",
   "menu-group-gap": "mb-menu-group-gap",
   "shell-edge": "mb-shell-edge",
   "shell-gap": "mb-shell-gap",
+  "content-emoji-line": "mb-content-emoji-line",
 } as const;
 const SPACE_BEFORE = {
-  "content-emoji-line": "mb-content-emoji-line",
   "entry-caption": "ms-entry-caption",
   "form-page-list-gap": "ms-form-page-list-gap",
   "screen-avatar-inset": "ms-screen-avatar-inset",
+  "content-emoji-side": "ms-content-emoji-side",
 } as const;
 const SPACE_AFTER = {
-  "content-emoji-side": "ms-content-emoji-side",
   "entry-caption": "me-entry-caption",
   "shell-edge": "me-shell-edge",
+  "content-emoji-side": "me-content-emoji-side",
 } as const;
 
-  "content-emoji-side": "me-content-emoji-side",
 /** How the box of a part sits in the part that holds it. */
 type Placement = {
   /**
@@ -439,16 +441,21 @@ export type BoxProps = PartProps & {
   run?: boolean | "all" | undefined;
   /** As wide as this share of its container (0 to 1): the fill of a meter. */
   share?: number | undefined;
+  /** As wide as it is tall times this (width over height): a picture's box, whatever its width. */
+  ratio?: number | undefined;
   /** Its press reaches over the whole of the nearest `anchor` (a line that is one link). */
   reach?: boolean | undefined;
 };
 
 /** One box, and how it sits where it is put: it arranges nothing inside itself. */
-export function Box({ display, only, run, share, reach, ...rest }: BoxProps) {
+export function Box({ display, only, run, share, ratio, reach, ...rest }: BoxProps) {
   let c = display ? DISPLAY[display] : only ? ONLY[only] : "";
   if (run) c += run === "all" ? " [&_p]:inline [&_div]:inline" : " [&_p]:inline";
   if (reach) c += " after:absolute after:inset-0 after:content-['']";
-  return part(c, rest, share === undefined ? undefined : { inlineSize: `${String(Math.round(share * 1000) / 10)}%` });
+  const style: Record<string, string> = {};
+  if (share !== undefined) style["inlineSize"] = `${String(Math.round(share * 1000) / 10)}%`;
+  if (ratio !== undefined) style["aspectRatio"] = String(ratio);
+  return part(c, rest, share === undefined && ratio === undefined ? undefined : style);
 }
 
 type Flow = {

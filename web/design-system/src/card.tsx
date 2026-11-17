@@ -14,6 +14,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { Blurhash } from "./blurhash";
+import { Box, Column, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { SensitiveLine, sensitiveLabel } from "./media";
 
@@ -44,36 +45,44 @@ export type LinkCardProps = {
 const card = tv({
   slots: {
     root: [
-      "box-border flex overflow-hidden rounded-control bg-surface-raised text-text no-underline outline-hidden",
+      "box-border rounded-control bg-surface-raised text-text no-underline outline-hidden",
       "data-[hovered]:bg-surface-raised-hover hover:bg-surface-raised-hover focus-visible:shadow-focus",
     ],
-    figure: "relative m-0 shrink-0 overflow-hidden bg-surface-raised-pressed",
-    image: "block size-full object-cover",
-    covered: "grid grid-cols-[minmax(0,1fr)] gap-media",
-    text: "grid min-w-0 flex-1 content-start gap-[0.125rem] p-embed",
-    site: "truncate text-caption text-muted-text",
-    title: "line-clamp-2 text-body font-label",
-    description: "line-clamp-2 text-caption text-muted-text",
-    author: [
-      "mt-embed-gap flex min-w-0 items-center gap-entry-caption text-caption text-muted-text",
-      "[&>bdi]:min-w-0 [&>bdi]:truncate",
-    ],
+    figure: "bg-surface-raised-pressed",
+    image: "object-cover",
+    text: "p-embed",
+    site: "text-caption text-muted-text",
+    title: "text-body font-label",
+    description: "text-caption text-muted-text",
+    author: "text-caption text-muted-text",
   },
   variants: {
     size: {
-      large: {
-        root: "flex-col",
-        figure: "max-h-media-card-max w-full",
-      },
+      large: {},
       small: {
-        root: "flex-row items-stretch",
-        figure: "aspect-square w-media-card-thumb self-start",
+        figure: "aspect-square w-media-card-thumb",
         text: "py-embed-gap",
       },
     },
     covered: { true: { image: "cursor-pointer" } },
   },
 });
+
+/** The line of the page's author: an inline avatar and the name, which ends in an ellipsis where the line is narrower. */
+function AuthorLine({ className, children }: { className: string; children: ReactNode }) {
+  return (
+    <Row
+      as="span"
+      align="center"
+      gap="entry-caption"
+      spaceAbove="embed-gap"
+      className={`${className} [&>bdi]:truncate`}
+      aria-hidden="true"
+    >
+      {children}
+    </Row>
+  );
+}
 
 export function LinkCard({
   href,
@@ -95,12 +104,25 @@ export function LinkCard({
   const s = card({ size, covered });
   // The large image is never taller than 16:9: a taller one is cropped to it, a wider one keeps its shape.
   const ratio = image === undefined ? undefined : Math.max(image.width / image.height, 16 / 9);
+  // The image above the text, or beside it.
+  const Layout = size === "large" ? Column : Row;
   const link = (
-    <a id={id} className={s.root()} href={href} target="_blank" rel="noopener noreferrer nofollow" dir={direction}>
+    <Layout
+      as={<a id={id} href={href} target="_blank" rel="noopener noreferrer nofollow" dir={direction} />}
+      clip
+      className={s.root()}
+    >
       {image !== undefined && (
-        <span
+        <Box
+          as="span"
+          anchor
+          clip
+          rigid
+          full={size === "large"}
+          max={size === "large" ? "media-card" : undefined}
+          self={size === "small" ? "start" : undefined}
+          ratio={size === "large" ? ratio : undefined}
           className={s.figure()}
-          style={size === "large" && ratio !== undefined ? { aspectRatio: String(ratio) } : undefined}
           // A press on the covered image shows it, as the line above does, instead of opening the page.
           onClick={
             covered
@@ -113,39 +135,37 @@ export function LinkCard({
         >
           {covered ? (
             // Nothing of a covered image loads: its blurhash stands in for it.
-            <Blurhash hash={image.blurhash} className={s.image()} />
+            <Box as={<Blurhash hash={image.blurhash} />} display="block" full="both" className={s.image()} />
           ) : (
-            <img className={s.image()} src={image.src} alt={image.alt ?? ""} />
+            <Box as={<img src={image.src} alt={image.alt ?? ""} />} display="block" full="both" className={s.image()} />
           )}
-        </span>
+        </Box>
       )}
-      <span className={s.text()} lang={lang}>
-        <bdi className={s.site()} dir="auto">
+      <Stack as="span" grow pack="start" gap="hair" className={s.text()} lang={lang}>
+        <Box as="bdi" lines={1} className={s.site()} dir="auto">
           {site}
-        </bdi>
-        <span className={s.title()} dir="auto">
+        </Box>
+        <Box as="span" lines={2} className={s.title()} dir="auto">
           {title}
-        </span>
+        </Box>
         {description !== "" && (
-          <span className={s.description()} dir="auto">
+          <Box as="span" lines={2} className={s.description()} dir="auto">
             {description}
-          </span>
+          </Box>
         )}
         {author !== undefined && (
           <>
-            <span className={s.author()} aria-hidden="true">
-              {author.shown}
-            </span>
+            <AuthorLine className={s.author()}>{author.shown}</AuthorLine>
             <span className="sr-only">{t("card.author", { name: author.name })}</span>
           </>
         )}
-      </span>
+      </Stack>
       <span className="sr-only"> {t("media.new_tab")}</span>
-    </a>
+    </Layout>
   );
   if (!coverable) return link;
   return (
-    <div className={s.covered()} dir={direction}>
+    <Stack gap="media" dir={direction}>
       <SensitiveLine
         label={sensitiveLabel([{ kind: "image" }], t)}
         shown={shown}
@@ -155,6 +175,6 @@ export function LinkCard({
         }}
       />
       {link}
-    </div>
+    </Stack>
   );
 }
