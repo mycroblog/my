@@ -223,13 +223,6 @@ export class Post {
     });
   }
 
-  /** Sends the vote again from `tryAgain`, the notice's action, and returns once the server has answered it. */
-  async voteAgain(tryAgain: Locator): Promise<void> {
-    await answered(this.page, votes, async () => {
-      await tryAgain.click();
-    });
-  }
-
   /** Opens the composer of a reply to the post. */
   async reply(): Promise<Composer> {
     await this.article.getByRole("button", { name: counted("Reply") }).click();
