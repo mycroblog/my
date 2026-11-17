@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { instance } from "../test/server";
+import { instanceOf } from "../test/server";
 import { accountOffer, visitorPlaces } from "./landing";
 
 test("a server that takes new accounts offers Create an account, with what an account takes but in open mode", () => {
@@ -14,10 +14,10 @@ test("a server closed to new accounts offers no Create an account, and says it t
   expect(accountOffer("closed")).toEqual({ signUp: false, note: "app.landing_closed" });
 });
 
-test("a visitor goes on to the timelines shown to everyone, and to search", () => {
-  const hrefs = (local: "off" | "signed_in" | "everyone", federated: "off" | "signed_in" | "everyone") =>
-    visitorPlaces(instance({ timelines: { local, federated } })).map((p) => p.href);
-  expect(hrefs("everyone", "everyone")).toEqual(["/local", "/public", "/search"]);
-  expect(hrefs("everyone", "signed_in")).toEqual(["/local", "/search"]);
-  expect(hrefs("signed_in", "off")).toEqual(["/search"]);
+test("a visitor goes on to the timelines shown to everyone, and to search", async () => {
+  const hrefs = async (local: "off" | "signed_in" | "everyone", federated: "off" | "signed_in" | "everyone") =>
+    visitorPlaces(await instanceOf({ timelines: { local, federated } })).map((p) => p.href);
+  expect(await hrefs("everyone", "everyone")).toEqual(["/local", "/public", "/search"]);
+  expect(await hrefs("everyone", "signed_in")).toEqual(["/local", "/search"]);
+  expect(await hrefs("signed_in", "off")).toEqual(["/search"]);
 });
