@@ -233,19 +233,36 @@ func TestWorkerJobConcurrencyAgainstThePool(t *testing.T) {
 
 func TestWorkerJobConcurrencyAgainstTheSQLitePool(t *testing.T) {
 	t.Parallel()
+	const fails = "must be below"
 	for _, tc := range []struct {
-		pool, concurrency string
-		wantErr           bool
-	}{{"4", "3", false}, {"4", "4", true}, {"2", "5", true}} {
-		t.Run(tc.pool+"/"+tc.concurrency, func(t *testing.T) {
+		name        string
+		pool        string
+		concurrency string // empty: not given, so the default of 1
+		role        string
+		wantErr     bool
+	}{
+		{"below the pool", "4", "3", "worker", false},
+		{"at the pool", "4", "4", "worker", true},
+		{"above the pool", "2", "5", "worker", true},
+		{"not given on a pool of one", "1", "", "worker", false},
+		{"given as one on a pool of one", "1", "1", "worker", true},
+		{"a web process does not run jobs", "1", "1", "web", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			env := map[string]string{"MY_DATABASE_URL": newDatabase(t, true) + "?pool_max_conns=" + tc.pool, "MY_ROLE": "worker", "MY_WORKER_JOB_CONCURRENCY": tc.concurrency}
+			env := map[string]string{"MY_DATABASE_URL": newDatabase(t, true) + "?pool_max_conns=" + tc.pool, "MY_ROLE": tc.role}
+			if tc.concurrency != "" {
+				env["MY_WORKER_JOB_CONCURRENCY"] = tc.concurrency
+			}
 			a, err := platform.NewApp(t.Context(), loadConfig(t, env), platform.AppOptions{})
 			if err == nil {
 				t.Cleanup(func() { _ = a.Close() })
 			}
-			if got := err != nil && strings.Contains(err.Error(), "must be below"); got != tc.wantErr {
-				t.Errorf("NewApp = %v, want an error = %v", err, tc.wantErr)
+			switch {
+			case tc.wantErr && (err == nil || !strings.Contains(err.Error(), fails)):
+				t.Errorf("NewApp = %v, want an error with %q", err, fails)
+			case !tc.wantErr && err != nil:
+				t.Errorf("NewApp = %v", err)
 			}
 		})
 	}
