@@ -544,15 +544,23 @@ const durations = [
   { id: "3d", icon: "schedule", label: "3 days" },
 ] as const;
 
-test("a choice control shows what it holds and opens a menu named by its label, the chosen one checked", async () => {
+/** A poll's duration, as the app passes it: the value reads alone and says what it chooses, the label names the menu. */
+const duration = {
+  label: "Ends in",
+  icon: "schedule",
+  value: "Ends in 1 day",
+  items: durations,
+  chosen: "1d",
+} as const;
+
+test("a choice control is named by its value, which says what it chooses, and opens a menu named by its label", async () => {
   const user = userEvent.setup();
-  render(<ChoiceSelect label="Duration" icon="schedule" value="1 day" items={durations} chosen="1d" onChoose={none} />);
-  const control = screen.getByRole("button", { expanded: false });
-  expect(control.textContent).toBe("1 day");
+  render(<ChoiceSelect {...duration} onChoose={none} />);
+  const control = screen.getByRole("button", { name: "Ends in 1 day", expanded: false });
 
   await user.click(control);
 
-  const menu = await screen.findByRole("menu", { name: "Duration" });
+  const menu = await screen.findByRole("menu", { name: "Ends in" });
   expect(within(menu).getByRole("menuitemradio", { name: "1 day", checked: true })).not.toBeNull();
   expect(within(menu).getByRole("menuitemradio", { name: "3 days", checked: false })).not.toBeNull();
 });
@@ -560,17 +568,8 @@ test("a choice control shows what it holds and opens a menu named by its label, 
 test("a choice tells the caller, closes the menu, and gives the focus back to the control", async () => {
   const user = userEvent.setup();
   const chosen: string[] = [];
-  render(
-    <ChoiceSelect
-      label="Duration"
-      icon="schedule"
-      value="1 day"
-      items={durations}
-      chosen="1d"
-      onChoose={(id) => chosen.push(id)}
-    />,
-  );
-  const control = screen.getByRole("button", { expanded: false });
+  render(<ChoiceSelect {...duration} onChoose={(id) => chosen.push(id)} />);
+  const control = screen.getByRole("button", { name: "Ends in 1 day", expanded: false });
 
   await user.click(control);
   await user.click(await screen.findByRole("menuitemradio", { name: "3 days" }));
@@ -578,13 +577,6 @@ test("a choice tells the caller, closes the menu, and gives the focus back to th
   expect(chosen).toEqual(["3d"]);
   expect(screen.queryByRole("menu")).toBeNull();
   expect(document.activeElement === control).toBe(true);
-});
-
-// As a select reads: "Duration, 1 day". The control says only what it holds; what it chooses names the menu alone.
-test.failing("a choice control is named by what it chooses and what it holds", () => {
-  render(<ChoiceSelect label="Duration" icon="schedule" value="1 day" items={durations} chosen="1d" onChoose={none} />);
-
-  expect(screen.queryByRole("button", { name: /Duration.*1 day/ }) !== null).toBe(true);
 });
 
 test("a tool in words is a button named by its label, and its words, hidden from the name, are in their language", () => {
