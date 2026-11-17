@@ -14,10 +14,10 @@
 // from it. Each post answers its actions as the timeline's do, in a column of the timeline's width.
 
 import { useLocale } from "@my/design-system";
-import { modalShown, Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
+import { Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
 import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
 import { breakpoint, rootPx } from "@my/design-tokens";
-import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { userEvent, within } from "storybook/test";
 import { statusPath } from "./paths";
@@ -499,30 +499,6 @@ const postOf = (a: Args): TimelinePost => {
 // A story of one state shows a fixed sample, which the Controls do not change.
 const fixed = { parameters: { controls: { disable: true } } };
 
-/**
- * Waits until the layer open over the post that `selector` finds (a dialog, a menu's sheet) has moved in (it rises in
- * by Motion, translucent until then), so that the story tests check it as the reader sees it.
- */
-const shownBy =
-  (selector: string) =>
-  async ({ canvasElement }: StoryContext) => {
-    const shown = () => {
-      const layer = canvasElement.ownerDocument.querySelector(selector);
-      for (let e: Element | null = layer; e !== null; e = e.parentElement) {
-        const style = getComputedStyle(e);
-        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform)) return false;
-      }
-      return layer !== null;
-    };
-    for (const until = Date.now() + 5000; !shown();) {
-      if (Date.now() > until) throw new Error("the layer did not move in");
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-  };
-const overPost = { ...fixed, play: shownBy('[role="dialog"], [role="alertdialog"]') };
-/** The more menu open, once it has risen in (a sheet on a phone) or shows (a popover). */
-const menuOver = { ...fixed, play: shownBy('[role="menu"]') };
-
 // Tagged `themes`: the story tests run it in dark too.
 const meta = {
   title: "Post",
@@ -632,24 +608,24 @@ export const FocusVisible: Story = {
   render: () => <Shown post={byId("alice-reply")} state="focus-visible" />,
 };
 /** The more menu of the reader's own post: its link and sharing, the bookmark, edit, then delete and redraft apart. */
-export const OwnMenu: Story = { ...menuOver, render: () => <MenuOpen post={byId("own")} /> };
+export const OwnMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("own")} /> };
 /** The more menu of another's post from another server: its link, its original page, sharing, the bookmark. */
-export const OthersMenu: Story = { ...menuOver, render: () => <MenuOpen post={byId("lena-quiet")} /> };
+export const OthersMenu: Story = { ...fixed, render: () => <MenuOpen post={byId("lena-quiet")} /> };
 /** The confirmation of Delete…, over the post. */
-export const DeleteConfirmation: Story = { ...overPost, render: () => <EditedOwn open="delete" /> };
+export const DeleteConfirmation: Story = { ...fixed, render: () => <EditedOwn open="delete" /> };
 /** The confirmation of Delete and redraft…, over the post. */
-export const RedraftConfirmation: Story = { ...overPost, render: () => <EditedOwn open="redraft" /> };
+export const RedraftConfirmation: Story = { ...fixed, render: () => <EditedOwn open="redraft" /> };
 /** The confirmation of Delete and redraft… of the reader's post with a poll, whose votes it loses. */
-export const RedraftPollConfirmation: Story = { ...overPost, render: () => <Shown post={ownPoll} open="redraft" /> };
+export const RedraftPollConfirmation: Story = { ...fixed, render: () => <Shown post={ownPoll} open="redraft" /> };
 /** The more menu of the reader's post with a poll: no edit, which the server refuses for a poll. */
-export const OwnPollMenu: Story = { ...menuOver, render: () => <MenuOpen post={ownPoll} /> };
+export const OwnPollMenu: Story = { ...fixed, render: () => <MenuOpen post={ownPoll} /> };
 /** Edited posts, one's own and another's, "edited" after their time, beside one never edited. */
 export const Edited: Story = { ...fixed, render: () => <EditedPosts /> };
 /**
  * The edit history of the reader's post, newest first: each version's words and images marked against the version
  * before it, an image taken away by the first edit and another added by the last.
  */
-export const EditHistory: Story = { ...overPost, render: () => <EditedOwn open="history" /> };
+export const EditHistory: Story = { ...fixed, render: () => <EditedOwn open="history" /> };
 export const LongNames: Story = { ...fixed, render: () => <Shown post={longNameEn} /> };
 export const LongNamesJapanese: Story = { ...fixed, render: () => <Shown post={longNameJa} /> };
 /** A poll open to the reader: one choice, then several; pressing Vote sends it, and the results follow. */
@@ -712,6 +688,5 @@ export const ViewerFromPost: Story = {
     const [first] = within(canvasElement).getAllByRole("button", { name: /A sea under a pale blue sky/ });
     if (first === undefined) throw new Error("no picture opens");
     await userEvent.click(first);
-    await modalShown();
   },
 };

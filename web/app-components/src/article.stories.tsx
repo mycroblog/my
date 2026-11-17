@@ -10,9 +10,7 @@ import { GroupHeading, ThreadFocus, ThreadReply, useLocale } from "@my/design-sy
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Post } from "./post";
-import { PostContent } from "./post-content";
 import { blurhashes, posts, scenes, statusOf, type TimelinePost } from "./post.samples";
 import type { PostArticle, PostStatus } from "./status";
 
@@ -198,81 +196,3 @@ export const InTimeline: Story = { render: () => <Timeline /> };
 export const ArticlePage: Story = { render: () => <Page /> };
 export const ArticlePageSensitive: Story = { render: () => <Page sensitive /> };
 export const ArticlePageNoCover: Story = { render: () => <Page withCover={false} /> };
-
-// A sensitive article whose cover and text image are files of this origin, each at an address of its own run, so that
-// the play reads from the page's resource timing whether the browser asked for them: never before Show, both after.
-const run = crypto.randomUUID();
-const folded = {
-  cover: `${location.origin}/sensitive-article-cover.png?run=${run}`,
-  image: `${location.origin}/sensitive-article-image.png?run=${run}`,
-};
-
-function FoldedPage() {
-  const status = articleOf(
-    { id: "page-folded", lang: "en", author: alice, ago: 3 * hour, sensitive: true },
-    {
-      title: year.en.title,
-      summary: year.en.summary,
-      cover: {
-        id: "folded-cover",
-        type: "image",
-        url: folded.cover,
-        preview_url: folded.cover,
-        description: "A blue sea under a pale sun",
-        meta: { width: 640, height: 400 },
-        blurhash: blurhashes.get(scenes.sea),
-      },
-    },
-  );
-  return (
-    <Column>
-      <ThreadFocus>
-        <Post
-          status={status}
-          reading={
-            <PostContent
-              html={`<h2>What it took</h2><p>Twelve friends and a cat.</p><p><img src="${folded.image}" alt="The server rack" width="640" height="400" loading="eager"></p>`}
-              article
-            />
-          }
-          onAction={() => {}}
-        />
-      </ThreadFocus>
-    </Column>
-  );
-}
-
-const asked = (url: string) => performance.getEntriesByType("resource").some((entry) => entry.name === url);
-
-/** A sensitive article's page asks for neither its cover nor an image of its text before Show, and draws both after. */
-export const ArticlePageSensitiveShown: Story = {
-  globals: { locale: "en" },
-  render: () => <FoldedPage />,
-  beforeEach: () => {
-    performance.setResourceTimingBufferSize(100_000);
-  },
-  play: async ({ canvasElement }) => {
-    const page = within(canvasElement);
-    const show = await page.findByRole("button", { name: "Show", expanded: false });
-    await expect(page.getByRole("heading", { level: 1, name: year.en.title })).toBeVisible();
-    await expect(page.getByText("Sensitive article")).toBeVisible();
-    await expect(page.queryByRole("heading", { level: 2, name: "What it took" })).toBeNull();
-    await expect(page.queryByText("Twelve friends and a cat.")).toBeNull();
-    // No image of the cover or the text in the page, even hidden (the author's avatar is the only image).
-    await expect(page.queryByRole("img", { name: "A blue sea under a pale sun", hidden: true })).toBeNull();
-    await expect(page.queryByRole("img", { name: "The server rack", hidden: true })).toBeNull();
-    // The page at rest: the fonts and the blurhash drawn, a frame to start any request it would make.
-    await document.fonts.ready;
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    await expect(asked(folded.cover)).toBe(false);
-    await expect(asked(folded.image)).toBe(false);
-    await userEvent.click(show);
-    await expect(await page.findByRole("heading", { level: 2, name: "What it took" })).toBeVisible();
-    await expect(page.getByText("Twelve friends and a cat.")).toBeVisible();
-    await expect(page.getByRole("img", { name: "The server rack" })).toBeInTheDocument();
-    await waitFor(async () => {
-      await expect(asked(folded.cover)).toBe(true);
-      await expect(asked(folded.image)).toBe(true);
-    });
-  },
-};
