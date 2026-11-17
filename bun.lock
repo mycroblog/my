@@ -71,6 +71,7 @@
         "workbox-strategies": "7.4.1",
       },
       "devDependencies": {
+        "@my/devtools": "workspace:*",
         "@my/e2e": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
         "@storybook/react-vite": "10.6.7",
@@ -98,6 +99,7 @@
       },
       "devDependencies": {
         "@my/design-tokens": "workspace:*",
+        "@my/devtools": "workspace:*",
         "@my/e2e": "workspace:*",
         "@storybook/react-vite": "10.6.7",
         "@testing-library/dom": "10.4.2",
@@ -146,6 +148,7 @@
         "lexical": "0.53.0",
       },
       "devDependencies": {
+        "@my/devtools": "workspace:*",
         "@my/e2e": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
         "@testing-library/dom": "10.4.2",
@@ -180,6 +183,7 @@
         "tailwindcss": "4.3.5",
       },
       "devDependencies": {
+        "@my/devtools": "workspace:*",
         "@storybook/react-vite": "10.6.7",
         "@testing-library/dom": "10.4.2",
         "@testing-library/react": "16.3.3",

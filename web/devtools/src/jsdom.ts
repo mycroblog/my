@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The preload of the component tests happy-dom cannot decide (`*.jsdom.test.tsx`, ADR-0171 §4): jsdom is the global
-// DOM before a test module loads (`bun test --preload`, tasks/web.yml).
+// DOM before a test module loads (`bun test --preload @my/devtools/jsdom`, the package's `test` script).
 
 import globalJsdom from "global-jsdom";
 

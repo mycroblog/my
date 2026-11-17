@@ -7,7 +7,9 @@
     "./vite": "./src/vite.ts",
     "./options": "./src/options.tsx",
     "./sizes": "./src/sizes.ts",
-    "./storybook": "./src/storybook.ts"
+    "./storybook": "./src/storybook.ts",
+    "./happy-dom": "./src/happy-dom.ts",
+    "./jsdom": "./src/jsdom.ts"
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",
