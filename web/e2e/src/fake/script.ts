@@ -74,7 +74,8 @@ function failure(fail: Failure): Response {
 
 /**
  * Puts scripts before `serve`, which answers the operations of `implemented`: `script` begins one, and `serve` of what
- * it returns answers a request as the scripts of its operation say, the first that still acts on requests acting.
+ * it returns answers a request as the scripts of its operation say: every one of them counts and keeps it, and the
+ * first that holds, fails or changes and still acts on requests does so.
  */
 export function createScripts(
   implemented: readonly Route[],
@@ -144,7 +145,9 @@ export function createScripts(
       r.seen.push(seen);
       places.push([r, r.seen.length]);
       for (const w of r.waiting.filter((w) => w.n === r.seen.length)) w.resolve(seen);
-      if (acting === undefined && r.left > 0) {
+      // A script that names nothing only counts and keeps: it leaves the request to the next one.
+      const acts = r.script.hold !== undefined || r.script.fail !== undefined || r.script.change !== undefined;
+      if (acting === undefined && acts && r.left > 0) {
         r.left -= 1;
         acting = r;
       }
