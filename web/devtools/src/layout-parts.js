@@ -54,6 +54,7 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/media.tsx": ["PictureGrid"],
   "web/design-system/src/switch.tsx": ["ToggleFrame", "TogglePlace", "ToggleNote"],
   "web/design-system/src/disclosure.tsx": ["DisclosureFrame", "DisclosureSummary"],
+  "web/design-system/src/prompt.tsx": ["PromptFrame", "PromptNote"],
   "web/design-system/src/thread.tsx": ["ThreadReply"],
   "web/design-system/src/drafts.tsx": ["DraftSections", "DraftList"],
   "web/design-system/src/history.tsx": ["VersionList"],
