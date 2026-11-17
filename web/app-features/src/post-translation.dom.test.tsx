@@ -218,6 +218,107 @@ test("over the monthly limit, the line says so and when translation comes back, 
   expect(post.queryAllByRole("button", { name: "Try again" })).toHaveLength(0);
 });
 
+// The browser's own translator (the Translator API), where the server lets readers use it. The app keeps what a
+// browser said of a pair of languages for the session, so each of these tests translates from a language of its own.
+
+/** A server that holds one public post of yuki's, in `language`. */
+const postIn = (language: string, text: string) =>
+  ({
+    people: scenario.people,
+    posts: [{ key: "foreign", author: "yuki", text, language, visibility: "public" }],
+  }) satisfies FakeOptions["seed"];
+
+/**
+ * Gives the browser a translator that answers `availability` for every pair and puts the language it translates into
+ * before each text, as the server's fake provider does; its model downloads in halves. It returns the shares of the
+ * download it reported.
+ */
+function browserTranslator(availability: "available" | "downloadable") {
+  const downloaded: number[] = [];
+  Object.defineProperty(globalThis, "Translator", {
+    configurable: true,
+    value: {
+      availability: () => Promise.resolve(availability),
+      create: ({ targetLanguage, monitor }: { targetLanguage: string; monitor?: (m: EventTarget) => void }) => {
+        const target = new EventTarget();
+        monitor?.(target);
+        if (availability === "downloadable")
+          for (const loaded of [0.5, 1]) {
+            downloaded.push(loaded);
+            target.dispatchEvent(Object.assign(new Event("downloadprogress"), { loaded }));
+          }
+        return Promise.resolve({
+          translate: (text: string) => Promise.resolve(`[${targetLanguage}] ${text}`),
+          destroy: () => undefined,
+        });
+      },
+    },
+  });
+  return downloaded;
+}
+
+test("where no provider may receive the post, a browser whose translator needs no download translates it at once, and names no provider", async () => {
+  browserTranslator("available");
+  const text = "Le pain est prêt.";
+  const { user, post, translate } = await drawn(
+    { key: "foreign" },
+    { provider: "unavailable", browser: true },
+    { seed: postIn("fr", text) },
+  );
+  const [button] = translate();
+  if (button === undefined) throw new Error("test: the post offers no Translate");
+
+  await user.click(button);
+
+  expect(await post.findByText(`[en] ${text}`)).not.toBeNull();
+  expect(post.getByRole("button", { name: "Show original" })).not.toBeNull();
+  expect(post.queryAllByText(/Demo Translate|cannot be sent/)).toHaveLength(0);
+});
+
+test("over the monthly limit, a browser whose translator must download its model first is offered on the line, and its press downloads the model and translates", async () => {
+  const downloaded = browserTranslator("downloadable");
+  const text = "Das Brot ist fertig.";
+  const { user, post, translate } = await drawn(
+    { key: "foreign" },
+    { provider: "limit", browser: true },
+    { locale: "ja", seed: postIn("de", text) },
+  );
+  const [button] = translate();
+  if (button === undefined) throw new Error("test: the post offers no Translate");
+
+  await user.click(button);
+
+  const offer = await post.findByRole("button", { name: "このブラウザで翻訳する" });
+  // The post's words as a reader reads them, without the joiners that hold a line's last words together.
+  const said = screen.getByRole("article").textContent.replaceAll("\u2060", "").replaceAll("\u00a0", " ");
+  expect(said).toContain("このサーバーで今月翻訳できる量の上限に達しました。このブラウザで翻訳する");
+  // The browser is what to try next: the line does not say to wait for next month.
+  expect(said).not.toContain("来月");
+  expect(downloaded).toEqual([]);
+  await user.click(offer);
+
+  expect(await post.findByText(`[ja] ${text}`)).not.toBeNull();
+  expect(downloaded).toEqual([0.5, 1]);
+});
+
+test("over the monthly limit in a browser without a translator, the line says when translation comes back, and offers neither the browser nor Try again", async () => {
+  const { user, post, translate } = await drawn(
+    { key: "foreign" },
+    { provider: "limit", browser: true },
+    { seed: postIn("it", "Il pane è pronto.") },
+  );
+  const [button] = translate();
+  if (button === undefined) throw new Error("test: the post offers no Translate");
+
+  await user.click(button);
+
+  const line = await post.findByText(/^This server's monthly translation limit is reached\./);
+  expect(line.textContent.replaceAll("\u2060", "").replaceAll("\u00a0", " ").trim()).toBe(
+    "This server's monthly translation limit is reached. Translation is available again next month.",
+  );
+  expect(post.queryAllByRole("button", { name: /Translate in this browser|Try again/ })).toHaveLength(0);
+});
+
 test("behind a content warning, the warning, the poll's options and the alt text are translated with the text", async () => {
   const soup = {
     name: "soup.png",

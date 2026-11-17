@@ -160,7 +160,8 @@ test("in ja, the permissions read who may and that others may ask, and the tool 
   const wrapped = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = false;
   onTestFinished(() => {
-    environment.IS_REACT_ACT_ENVIRONMENT = wrapped;
+    if (wrapped === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
+    else environment.IS_REACT_ACT_ENVIRONMENT = wrapped;
   });
   const target = { kind: "new" as const };
   /** Anyone replies, followers boost and others ask for approval, the author alone quotes. */

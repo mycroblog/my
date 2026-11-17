@@ -5,7 +5,7 @@
 
 import { expect, test } from "bun:test";
 import { defaultComposeSettings, type MediaAttachment } from "@my/app-data";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { fakeData, renderFeature } from "../test/feature";
 import { ComposerView } from "./composer";
 import { emptyDraft, type Draft } from "./model";
@@ -22,8 +22,8 @@ function composer(fields: Partial<Draft>, phase: Phase) {
     const c = useComposer(initial, { onPosted: none, onKept: none }, phase);
     return <ComposerView c={c} layer={false} onClose={none} onDismiss={none} />;
   }
-  renderFeature(fakeData().data, <Composing />);
-  return within(screen.getByRole("dialog"));
+  const user = renderFeature(fakeData().data, <Composing />);
+  return Object.assign(within(screen.getByRole("dialog")), { user });
 }
 
 /** The fields of the composer that are marked invalid. */
@@ -71,4 +71,37 @@ test("a refusal of no input says the server's words in the alert, and marks no i
 
   expect(invalid(form)).toHaveLength(0);
   expect(form.getByRole("alert").textContent).toBe("The post was refused.");
+});
+
+test("a content warning refused stands invalid, described by what is wrong, and the alert says the title alone", async () => {
+  const form = composer({ cw: "Spoilers for the season finale" }, failed("cw"));
+
+  // The warning's editor is a chunk of its own: it is there once it came.
+  const warning = await form.findByRole("textbox", { name: "Content warning" });
+  expect(warning.getAttribute("aria-invalid")).toBe("true");
+  expect(described(warning)).toContain(detail);
+  // The option's and the descriptions' fields are not there to be marked, and the text is not.
+  expect(form.getAllByRole("textbox").filter((field) => field.getAttribute("aria-invalid") === "true")).toHaveLength(1);
+  expect(form.getByRole("alert").textContent).toBe(title);
+});
+
+test("the next letter typed in a refused option clears what the server said: the option is valid again, and neither the detail nor the title stands", async () => {
+  const form = composer(
+    { poll: { options: ["Sat", "Sun"], duration: 3600, multiple: false, hideTotals: false } },
+    failed("option:1"),
+  );
+  const [option] = invalid(form);
+  if (option === undefined) throw new Error("test: no option is refused");
+
+  await form.user.type(option, "s");
+
+  await waitFor(() => {
+    if (invalid(form).length > 0) throw new Error("the option is still invalid");
+  });
+  expect(form.getByRole<HTMLInputElement>("textbox", { name: "Option 2" }).value).toBe("Suns");
+  expect(form.queryAllByText(detail)).toHaveLength(0);
+  expect(form.queryAllByText(title)).toHaveLength(0);
+  expect(form.queryAllByRole("alert")).toHaveLength(0);
+  // The text's editor is a chunk of its own: the test ends once it came.
+  await form.findAllByRole("textbox", { name: "Text" });
 });

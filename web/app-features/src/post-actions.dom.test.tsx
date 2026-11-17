@@ -189,6 +189,30 @@ test("the More menu offers a reader what they may do with the post: their own, t
   expect(await menuOf("The first loaf.")).toEqual(["Copy link", "Share", "Bookmark", "Mute thread", "Mute", "Block…"]);
 });
 
+test("Mute thread reaches the server, and the menu then offers Unmute thread, which ends the mute and offers Mute thread again", async () => {
+  const { fake, user, post } = await timeline();
+  const id = fake.idOf("own");
+  const muted = fake.script("POST /statuses/{id}/mute");
+  const unmuted = fake.script("DELETE /statuses/{id}/mute");
+  /** Opens the More menu of the reader's post, and chooses its item `name`. */
+  const choose = async (name: string) => {
+    await user.click(post("Post 1").getByRole("button", { name: "More" }));
+    await user.click(within(await screen.findByRole("menu", { name: "More" })).getByRole("menuitem", { name }));
+    await waitFor(() => {
+      if (screen.queryAllByRole("menu").length > 0) throw new Error("the menu is still open");
+    });
+  };
+
+  await choose("Mute thread");
+  expect((await muted.arrived()).url.pathname).toEndWith(`/statuses/${id}/mute`);
+  await choose("Unmute thread");
+  expect((await unmuted.arrived()).url.pathname).toEndWith(`/statuses/${id}/mute`);
+
+  await user.click(post("Post 1").getByRole("button", { name: "More" }));
+  expect(itemsOf()).toContain("Mute thread");
+  expect(itemsOf()).not.toContain("Unmute thread");
+});
+
 test("a vote that gets no answer holds the choice while it is in flight, shows the poll again, and Try again sends it", async () => {
   const { fake, user, post } = await timeline();
   const sent = fake.script("POST /statuses/{id}/poll/votes", { times: 1, hold: "request", fail: "network" });

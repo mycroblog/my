@@ -2,7 +2,7 @@
 
 // Finding people at their addresses: what is typed in the search is in the address and finds an account by its name
 // (FR-307), and finding people suggests accounts (FR-308). Following from a row is the features' (people/people.dom.test.tsx).
-// The reader is Sam.
+// The reader is Sam, or QuickDeals, who follows no one yet.
 
 import { expect, test } from "bun:test";
 import { waitFor, within } from "@testing-library/react";
@@ -33,4 +33,14 @@ test("the address /people suggests an account", async () => {
   await renderApp("/people", { viewer: "sam" });
 
   await rowOf("Find people", mio);
+});
+
+test("Find more people, on the home of a reader who follows no one, opens the screen of all the suggested people", async () => {
+  const app = await renderApp("/", { viewer: "quickdeals" });
+
+  await app.user.click(await main().findByRole("link", { name: "Find more people" }));
+
+  await rowOf("Find people", mio);
+  expect(app.path()).toBe("/people");
+  expect(main().getByRole("heading", { level: 1, name: "Find people" })).toBeDefined();
 });

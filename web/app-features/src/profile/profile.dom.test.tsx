@@ -159,6 +159,113 @@ test("a muted account says so, with an unmute", async () => {
   );
 });
 
+for (const [on, options] of [
+  [false, {}],
+  [true, { subscriptions: ["sam"] }],
+] as const)
+  test(`an account the reader follows offers the bell of its new posts, ${on ? "on once they asked to be notified of them" : "off"}`, async () => {
+    const { head } = await shown("sam", options, button("Notify me of new posts"));
+
+    expect(head.getByRole("button", { name: "Notify me of new posts" }).getAttribute("aria-pressed")).toBe(String(on));
+  });
+
+test("an account the reader does not follow offers no bell", async () => {
+  // sora follows the reader, who does not follow sora.
+  const { buttons } = await shown(sora, {}, button("Follow back"));
+
+  expect(buttons()).not.toContain("Notify me of new posts");
+});
+
+test("an account whose server the reader mutes says so, with the unmute of the server", async () => {
+  const { head } = await shown(sora, { domainMutes: ["photos.example"] }, button("Unmute server"));
+
+  // After a full sentence, the action follows with no dot between them.
+  const line = head.getByText(/^You muted the server ⁨?photos\.example⁩?\.$/);
+  expect(line.parentElement?.textContent).toMatch(/^You muted the server ⁨?photos\.example⁩?\.\s?Unmute server$/);
+});
+
+test("the reader's note on an account is the button that edits it, and a press opens its editor, which holds the note", async () => {
+  const note = "Met at the bakery on Saturday. 土曜のパン屋で会った。";
+  const { user, head } = await shown("sam", { notes: { sam: note } }, button("Following"));
+
+  const edit = await head.findByRole("button", { name: /^Edit note/ });
+  expect(edit.textContent).toContain(note);
+  await user.click(edit);
+
+  expect((await head.findByRole<HTMLTextAreaElement>("textbox", { name: "Private note" })).value).toBe(note);
+});
+
+test("an account that is not there says so with its handle, offers Back, and shows no head", async () => {
+  // nao deactivated their account, which the server answers as not there.
+  const { data } = fakeData();
+  await loadProfile(data, "nao");
+  const left: string[] = [];
+  const user = renderFeature(data, <Profile acct="nao" onBack={() => left.push("back")} />);
+
+  // The screen says it loads until the server answered that no such account is there.
+  const said = await waitFor(() => {
+    const status = screen.getByRole("status");
+    if (!status.textContent.includes("was not found")) throw new Error(`the screen says "${status.textContent}"`);
+    return status;
+  });
+  expect(said.textContent).toMatch(
+    /^⁨?@nao⁩? was not found\. The account may no longer exist, or the link may be wrong\.$/,
+  );
+  expect(screen.queryAllByRole("region")).toHaveLength(0);
+  await user.click(screen.getByRole("button", { name: "Back" }));
+  expect(left).toEqual(["back"]);
+});
+
+/** Opens the menu of what the reader may do with the account of the profile drawn. */
+async function more(user: Awaited<ReturnType<typeof shown>>["user"], head: Awaited<ReturnType<typeof shown>>["head"]) {
+  await user.click(head.getByRole("button", { name: "More" }));
+  return within(await screen.findByRole("menu", { name: "More" }));
+}
+
+test("Add to list, on an account the reader follows, lists the reader's lists, those that hold the account checked; checking another adds the account at once, the menu still open", async () => {
+  // The reader follows sam, whom two of their three lists hold: not 翻訳の仲間.
+  const { fake, user, head } = await shown("sam", {}, button("Following"));
+  const sent = fake.script("POST /lists/{id}/accounts/{account_id}");
+  const menu = await more(user, head);
+
+  await user.click(menu.getByRole("menuitem", { name: /^Add to list/ }));
+
+  const lists = within(await screen.findByRole("menu", { name: "Add to list" }));
+  const checked = () =>
+    lists.getAllByRole("menuitemcheckbox").map((list) => [list.textContent, list.getAttribute("aria-checked")]);
+  await waitFor(() => {
+    if (lists.queryAllByRole("menuitemcheckbox", { checked: true }).length === 0)
+      throw new Error("no list is checked yet");
+  });
+  expect(checked().slice(0, 2)).toEqual([
+    ["Bread and coffee", "true"],
+    ["翻訳の仲間", "false"],
+  ]);
+  expect(lists.getByRole("menuitem", { name: "New list" }).getAttribute("href")).toBe("/lists?create=1");
+
+  await user.click(lists.getByRole("menuitemcheckbox", { name: "翻訳の仲間" }));
+
+  expect((await sent.arrived()).url.pathname).toEndWith(`${fake.listPath(1)}/accounts/${fake.accountId("sam")}`);
+  await waitFor(() => {
+    if (lists.getByRole("menuitemcheckbox", { name: "翻訳の仲間" }).getAttribute("aria-checked") !== "true")
+      throw new Error("the list is not checked yet");
+  });
+  expect(checked().slice(0, 2)).toEqual([
+    ["Bread and coffee", "true"],
+    ["翻訳の仲間", "true"],
+  ]);
+});
+
+test("Add to list, on an account the reader does not follow, is disabled and says that only followed accounts can be added", async () => {
+  // The reader does not follow marco.
+  const { user, head } = await shown("marco", {}, button("Follow"));
+  const menu = await more(user, head);
+
+  const item = menu.getByRole("menuitem", { name: /^Add to list/ });
+  expect(item.getAttribute("aria-disabled")).toBe("true");
+  expect(item.textContent).toMatch(/^Add to list\s*You can add only accounts you follow$/);
+});
+
 test("the reader's own profile offers no follow and no menu of what to do with the account", async () => {
   const { buttons } = await shown("yuki", {}, () => screen.getByRole("feed", { name: "Posts of the account" }));
 
