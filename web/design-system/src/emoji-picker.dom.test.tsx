@@ -225,8 +225,8 @@ test("the skin tone button opens a menu of the six tones, the one in use checked
 
   await user.click(screen.getByRole("button", { name: "Skin tone: Medium", expanded: false }));
 
-  // Named by its button, which says the tone in use too.
-  const menu = await screen.findByRole("menu", { name: "Skin tone: Medium" });
+  // Named by its own label: its button's name says the tone in use too.
+  const menu = await screen.findByRole("menu", { name: "Skin tone" });
   expect(within(menu).getAllByRole("menuitemradio")).toHaveLength(6);
   expect(within(menu).getByRole("menuitemradio", { name: "Medium", checked: true })).not.toBeNull();
   await user.click(within(menu).getByRole("menuitemradio", { name: "Medium-dark", checked: false }));

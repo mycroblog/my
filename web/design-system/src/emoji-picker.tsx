@@ -49,6 +49,7 @@ import {
   memo,
   useDeferredValue,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -481,6 +482,7 @@ function ToneButton({
   onChange: (tone: number) => void;
 }) {
   const s = picker();
+  const id = useId();
   return (
     <MenuTrigger>
       <AriaButton className={s.tone()} aria-label={`${labels.tone}: ${labels.tones[tone] ?? ""}`}>
@@ -488,8 +490,13 @@ function ToneButton({
       </AriaButton>
       <Popover placement="bottom end" offset={4} className="outline-hidden">
         <div className={s.menu()}>
+          {/* React Aria names the menu by its button, whose name says the tone in use too: its own label names it. */}
+          <span id={id} hidden>
+            {labels.tone}
+          </span>
           <Menu
             aria-label={labels.tone}
+            aria-labelledby={id}
             className={s.menuList()}
             selectionMode="single"
             selectedKeys={[String(tone)]}
